@@ -61,7 +61,7 @@ import { prefersReducedMotion } from '@lib/utils/environment'
 import { updateSelectedNodeMotes } from './three-lens-motes'
 import { updateSelectedNodePetals } from './three-lens-petals'
 import { updateSelectedNodeFilaments } from './three-lens-filaments'
-import { initMicroDemoBridge, disposeMicroDemoBridge } from './three-micro-demo-bridge'
+import { disposeMicroDemoBridge } from './three-micro-demo-bridge'
 import { initLensGlowSpoke } from './three-lens-glow-spoke'
 import { initFocusLens } from './three-lens-focusgeo'
 import { initAnchorBloomLight } from './three-lens-anchor-bloom'
@@ -651,5 +651,5 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
 
 // ── Micro-demo Visual Bridge ────────────────────────────────────────────────
 // Extracted to three-micro-demo-bridge.ts (Phase 2).
-// initMicroDemoBridge() is called once at module load time below.
-initMicroDemoBridge()
+// initMicroDemoBridge() is intentionally NOT wired — the 10-phase DemoChoreography.svelte
+// store owns the micro-demo (P3-I). The bridge is a deprecated no-op seam.

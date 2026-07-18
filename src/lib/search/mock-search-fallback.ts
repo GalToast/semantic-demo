@@ -192,7 +192,7 @@ const MOCK_BUSINESSES: readonly MockBusiness[] = [
     }
 ]
 
-export function sleep(ms: number, signal: AbortSignal): Promise<void> {
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         if (signal.aborted) {
             reject(new DOMException('Aborted', 'AbortError'))
@@ -221,7 +221,7 @@ const MOCK_SEARCH_DELAY_MS = (() => {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : 165
 })()
 
-export function scoreBusiness(biz: MockBusiness, queryLower: string): number {
+function scoreBusiness(biz: MockBusiness, queryLower: string): number {
     const nameLower = biz.name.toLowerCase()
     if (nameLower.includes(queryLower)) return 0.85 + (nameLower.startsWith(queryLower) ? 0.15 : 0)
     let keywordHits = 0

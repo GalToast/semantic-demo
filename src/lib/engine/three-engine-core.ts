@@ -466,7 +466,6 @@ export function animate() {
         }
 
         const updateStart = performance.now()
-        const _state = engineState.state
         const {
             revealed: revealProgress,
             points: pointsRevealProgress,
@@ -475,65 +474,17 @@ export function animate() {
 
         if (lerpNodesForFrame(frameNow)) return
 
-        lerpCameraForReveal(cameraRevealProgress, revealProgress, _state)
-
+        lerpCameraForReveal(cameraRevealProgress, revealProgress, engineState.state)
         updatePointsMaterial(pointsRevealProgress, engineState.state)
-
         updateFogDensity(pointsRevealProgress)
-
         updateReferenceSphereOpacity(revealProgress, engineState.state?.sceneRevealActive)
-
         updateSporeOpacity(pointsRevealProgress, engineState.state)
 
         const hoveredNode = engineState.state?.hoverHighlightIndex ?? -1
         const focusedNode = engineState.state?.focusedNode ?? null
 
-        // ── Hover emissive flash (spore material) ───────────────────────────────
-        updateHoverEmissiveFlash(engineState.state)
-
-        const threadsVisible = updateMyceliumPulse(engineState.state)
-
-        updateThreadLayerOpacities(threadsVisible, pointsRevealProgress, engineState.state)
-
-        updatePointsShaderHoverBoost(hoveredNode, engineState.state)
-
-        if (sceneNeedsContinuous) {
-            engineState.threeInteractionVisuals?.updateInteractionVisuals(frameNow, hoveredNode, focusedNode)
-            engineState.threeSearchAnimations?.updateCorridorNodeGlow(frameNow)
-            engineState.threeSearchAnimations?.updateSearchCorridorAnimation(frameNow)
-
-            try {
-                engineState.inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)
-                updateRouteTraceOverlayFrame(frameNow)
-                updateArrivalHandoffOverlayFrame(frameNow)
-                updateFocusSemanticOverlayFrame(frameNow)
-                updateFocusSemanticOverlayPositions()
-                syncFocusPocketSizeMesh()
-            } catch (overlayErr) {
-                debugWarn('overlay update threw:', overlayErr)
-            }
-        }
-
-        // Note: engineState.focusPocket.applyFocusPocketBreathing(...) is already called inside
-        // the node-position lerp block above (around L951) where its boolean return
-        // drives per-pocket instance-matrix updates. A second invocation here would
-        // re-write pocket positions without ever pushing them to the GPU buffers,
-        // doubling the per-frame breathing cost (50-200ms in QA). Removed per
-        // W15-T1 focus-deadlock diagnosis (tmp/w15-focus-deadlock-diagnosis.md).
-
-        if (sceneNeedsContinuous && shouldRenderThreadsPort()) {
-            // W50: route through thread-manager.ts (per-vertex color updates +
-            // dirty-node amortization) instead of the legacy mycelium-engine.ts
-            // path, whose updateMyceliumThreads only wrote positions.
-            updateMyceliumThreadsPort()
-        } else if (sceneNeedsContinuous) {
-            // Threads are not being rendered this frame (e.g. map mode).
-            // Drain the dirty-node set + myceliumDirty so they don't accumulate
-            // unboundedly while updateMyceliumThreads is skipped. Without this,
-            // markNodesDirty() grows every frame and myceliumDirty stays true,
-            // keeping the RAF loop from going idle.
-            drainMyceliumDirtyStatePort()
-        }
+        tickInteraction(frameNow, hoveredNode, focusedNode, sceneNeedsContinuous, pointsRevealProgress)
+        tickThreads(sceneNeedsContinuous)
         if (sceneNeedsContinuous) {
             engineState.cameraControls?.applySemanticCentroidCamera(frameNow)
             engineState.clusterLabels?.updateClusterLabels()
@@ -541,64 +492,7 @@ export function animate() {
 
         const updateEnd = performance.now()
         const renderStart = performance.now()
-
-        if (webglContext.renderer && webglContext.scene && webglContext.camera) {
-            // W49-H: conditional render-skip instrumentation. The actual skip
-            // is gated on engineState._canSkipRenders (a build-time flag
-            // set in three-engine-timers; off by default so a future
-            // developer can flip it on once the data justifies it). Until
-            // then we COUNT how many ticks the helper says were skippable.
-            // That count is what `renderSkipOpportunities` /
-            // `consecutiveSkippedFrames` capture — they're the proof that
-            // skipping is safe to enable for a given viewport.
-            const camera = webglContext.camera!
-            const posArr = camera.position.toArray() as unknown as [number, number, number]
-            const quatArr = camera.quaternion.toArray() as unknown as [number, number, number, number]
-            const newSnapshot: SceneStaticSnapshot = {
-                cameraPos: [posArr[0], posArr[1], posArr[2]] as const,
-                cameraQuat: [quatArr[0], quatArr[1], quatArr[2], quatArr[3]] as const
-            }
-            const skipCheck = shouldSkipNextRenderHelper(
-                engineState.lastCameraSnapshot,
-                newSnapshot,
-                sceneNeedsContinuous
-            )
-
-            // Premium mode: render through EffectComposer. When premium mode is off
-            // (or composer is not yet initialized), renderPostProcessing() returns
-            // false and we fall through to the vanilla renderer.render() path.
-            const pp = engineState.ppModule
-            const renderedViaComposer = pp ? pp.renderPostProcessing() : false
-            if (!renderedViaComposer) {
-                webglContext.renderer.render(webglContext.scene, webglContext.camera)
-            }
-
-            // Always update the snapshot AFTER the render (so the next
-            // frame has a baseline to compare against). Count the skip
-            // opportunity regardless of whether the render is actually
-            // skipped today — when the developer flips on the gate, the
-            // counter is already accurate.
-            engineState.lastCameraSnapshot = newSnapshot
-            if (skipCheck.shouldSkip) {
-                engineState.renderSkipOpportunities += 1
-                engineState.consecutiveSkippedFrames += 1
-            } else {
-                engineState.consecutiveSkippedFrames = 0
-            }
-
-            engineState.withStateMutation?.(() => {
-                if (!engineState.state?.scenePerformanceDiagnostics) return
-                engineState.state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer!.info.render.calls
-                engineState.state.scenePerformanceDiagnostics.triangles = webglContext.renderer!.info.render.triangles
-                engineState.state.scenePerformanceDiagnostics.renderSkipOpportunities =
-                    engineState.renderSkipOpportunities
-                engineState.state.scenePerformanceDiagnostics.consecutiveSkippedFrames =
-                    engineState.consecutiveSkippedFrames
-            })
-        }
-
-        const renderEnd = performance.now()
-
+        const renderEnd = tickRenderAndPerf(frameNow, sceneFrameMs, sceneNeedsContinuous)
         sampleScenePerformance(
             sceneFrameMs,
             {
@@ -611,6 +505,77 @@ export function animate() {
         debugError('[three-engine] Unhandled exception in animate loop:', err)
         engineState.circuitBreakerTripped = true
     }
+}
+
+function tickInteraction(
+    frameNow: number,
+    hoveredNode: number,
+    focusedNode: number | null,
+    sceneNeedsContinuous: boolean,
+    pointsRevealProgress: number
+): void {
+    const state = engineState.state
+    updateHoverEmissiveFlash(state)
+    const threadsVisible = updateMyceliumPulse(state)
+    updateThreadLayerOpacities(threadsVisible, pointsRevealProgress, state)
+    updatePointsShaderHoverBoost(hoveredNode, state)
+    if (sceneNeedsContinuous) {
+        engineState.threeInteractionVisuals?.updateInteractionVisuals(frameNow, hoveredNode, focusedNode)
+        engineState.threeSearchAnimations?.updateCorridorNodeGlow(frameNow)
+        engineState.threeSearchAnimations?.updateSearchCorridorAnimation(frameNow)
+        try {
+            engineState.inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)
+            updateRouteTraceOverlayFrame(frameNow)
+            updateArrivalHandoffOverlayFrame(frameNow)
+            updateFocusSemanticOverlayFrame(frameNow)
+            updateFocusSemanticOverlayPositions()
+            syncFocusPocketSizeMesh()
+        } catch (overlayErr) {
+            debugWarn('overlay update threw:', overlayErr)
+        }
+    }
+}
+
+function tickThreads(sceneNeedsContinuous: boolean): void {
+    if (sceneNeedsContinuous && shouldRenderThreadsPort()) {
+        updateMyceliumThreadsPort()
+    } else if (sceneNeedsContinuous) {
+        drainMyceliumDirtyStatePort()
+    }
+}
+
+function tickRenderAndPerf(frameNow: number, sceneFrameMs: number, sceneNeedsContinuous: boolean): number {
+    if (!(webglContext.renderer && webglContext.scene && webglContext.camera)) {
+        return performance.now()
+    }
+    const camera = webglContext.camera!
+    const posArr = camera.position.toArray() as unknown as [number, number, number]
+    const quatArr = camera.quaternion.toArray() as unknown as [number, number, number, number]
+    const newSnapshot: SceneStaticSnapshot = {
+        cameraPos: [posArr[0], posArr[1], posArr[2]] as const,
+        cameraQuat: [quatArr[0], quatArr[1], quatArr[2], quatArr[3]] as const
+    }
+    const skipCheck = shouldSkipNextRenderHelper(engineState.lastCameraSnapshot, newSnapshot, sceneNeedsContinuous)
+    const pp = engineState.ppModule
+    const renderedViaComposer = pp ? pp.renderPostProcessing() : false
+    if (!renderedViaComposer) {
+        webglContext.renderer.render(webglContext.scene, webglContext.camera)
+    }
+    engineState.lastCameraSnapshot = newSnapshot
+    if (skipCheck.shouldSkip) {
+        engineState.renderSkipOpportunities += 1
+        engineState.consecutiveSkippedFrames += 1
+    } else {
+        engineState.consecutiveSkippedFrames = 0
+    }
+    engineState.withStateMutation?.(() => {
+        if (!engineState.state?.scenePerformanceDiagnostics) return
+        engineState.state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer!.info.render.calls
+        engineState.state.scenePerformanceDiagnostics.triangles = webglContext.renderer!.info.render.triangles
+        engineState.state.scenePerformanceDiagnostics.renderSkipOpportunities = engineState.renderSkipOpportunities
+        engineState.state.scenePerformanceDiagnostics.consecutiveSkippedFrames = engineState.consecutiveSkippedFrames
+    })
+    return performance.now()
 }
 
 // Wire animate callback into timers module (avoids circular import)
