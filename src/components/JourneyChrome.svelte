@@ -21,6 +21,7 @@
   import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector, focusStore, setPocketRoleFilter } from '@lib/stores/focus.svelte.ts';
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
+  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
 
   import { walkThreadNeighbor } from '@lib/journey/thread-settler';
   import { roleToFilterBucket } from '@lib/journey/role-filter-bucket';
@@ -128,11 +129,27 @@
   // Thread computation is synchronous (walkThreadNeighbor → WalkResult | null), so there is no
   // async trail-loading state to surface here. Removed the dead `isLoading` derived value and
   // its aria-busy attribute (M7-deferred #4 fix). Re-instate when trail loading becomes async.
+  // W53 trail-button widening: mirror the W49-c widening of `focusActive` at
+  // App.svelte:211. Without these parity predicates here, JourneyChrome can
+  // mount (via `focusActive`) while `chromeHasFocus` stays false — e.g. when
+  // navSnapshot.focusedIndex == null from a bridge race even though
+  // parity.panelSurface === 'focus-search'. That gate-mismatch makes
+  // TrailControls.active false → #btn-focus-path never renders → the
+  // map-trail surface contract times out at `#btn-focus-path` (30s).
+  const parity = useParityAttrs();
+
   const chromeHasFocus = $derived(
     navSnapshot.mode === 'focus' ||
     navSnapshot.mode === 'inside' ||
     navSnapshot.mode === 'trail' ||
-    currentFocusedIndex != null
+    currentFocusedIndex != null ||
+    parity.focusPanelMode === 'field-node' ||
+    parity.panelSurface === 'focus' ||
+    parity.panelSurface === 'inside' ||
+    parity.panelSurface === 'trail' ||
+    parity.panelSurface === 'focus-search' ||
+    parity.focusSearchForced ||
+    parity.panelSurface === 'semantic-dive'
   );
   const chromeHasTrail = $derived(currentTrailDepth > 0);
 
