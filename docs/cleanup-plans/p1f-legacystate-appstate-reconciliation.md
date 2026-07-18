@@ -1,0 +1,125 @@
+# P1-F — `legacyState` → `appState` Reconciliation Plan
+
+**Status:** Planned (not executed). Branch: `p1f/legacystate-to-appstate`.
+**Why deferred from the remediation pass:** the migration is a _behavior-sensitive_
+interface reconciliation, not a mechanical deletion. Executing it blindly at the
+tail of a remediation session risks breaking the render loop.
+
+## Goal
+
+Remove the unsafe `as unknown as LegacyState` cast in
+`src/lib/state/app.svelte.ts`:
+
+```ts
+// current (loose escape hatch)
+export const legacyState = appState as unknown as LegacyState
+// target
+export const legacyState = appState // legacyState becomes AppState-typed
+```
+
+…and make `legacyState` / `engineState.state` properly typed as `AppState` so every
+access is type-checked.
+
+## Blocker: `LegacyState` flattens `appState` (structural mismatch)
+
+`LegacyState` (defined in `src/lib/state/legacy-state.ts`) exposes a **flat** shape.
+`AppState` (`src/lib/state/app.svelte.ts`) stores the same domain data in **nested
+sub-aggregates**. The flat fields are NOT top-level on `AppState`. Confirmed mapping:
+
+| `LegacyState` field        | Real location on `appState`                         | Notes                                                                              |
+| -------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `focusPocketMotionByIndex` | `appState.focusState.pocketMotionByIndex`           | name differs (`pocketMotionByIndex`, a `Map`)                                      |
+| `selectedPoint`            | `appState.focusState.selectedPoint`                 | nested                                                                             |
+| `nodesAreSettling`         | `appState.focusState.nodesAreSettling`              | nested                                                                             |
+| `inspectedThreadIndex`     | `appState.focusState.inspectedThreadIndex`          | nested                                                                             |
+| `pinnedThreadIndex`        | `appState.focusState.pinnedThreadIndex`             | nested                                                                             |
+| `autoRotate`               | `appState.navState.autoRotate`                      | nested (no top-level)                                                              |
+| `autoRotateSuspended`      | `appState.navState.autoRotateSuspended`             | nested (no top-level)                                                              |
+| `sceneRevealActive`        | `appState.sceneRevealActive` (top-level, l.573)     | top-level exists                                                                   |
+| `myceliumDirty`            | `appState.myceliumDirty` (top-level, l.229)         | top-level                                                                          |
+| `routeTraceLines`          | `appState.routeTraceLines` (top-level, l.384)       | top-level                                                                          |
+| `autoRotateResumeDueAt`    | `appState.autoRotateResumeDueAt` (top-level, l.571) | top-level                                                                          |
+| `weather`                  | `appState.weather` (`WeatherData \| null`, l.256)   | top-level; shape differs (see below)                                               |
+| `pulsePhase`               | `appState.pulsePhase` (top-level, l.264)            | top-level                                                                          |
+| `hoverHighlightIndex`      | `appState.hoverHighlightIndex` (top-level, l.269)   | top-level                                                                          |
+| `forceAnimate`             | **does not exist on `appState`**                    | only declared in `engine-types.ts:463`; no writer; reads currently get `undefined` |
+
+### Critical finding
+
+At runtime today, `legacyState = appState`. So `legacyState.autoRotate`,
+`legacyState.focusPocketMotionByIndex`, `legacyState.nodesAreSettling`,
+`legacyState.selectedPoint`, `legacyState.forceAnimate` **all read `undefined`**
+(the cast hides the missing top-level fields). The engine functions consuming these
+(`sceneNeedsContinuousFrame`, the `three-engine-core.ts` frame-loop sites) are
+therefore operating on `undefined` for these flattened fields — the bridge was never
+a faithful mapping. **The migration must decide intended behavior**, not just add
+fields.
+
+## Cascade errors observed (revert point)
+
+Removing the cast + retyping `engineState.state: AppState | null` produced 6 errors:
+
+1. `three-engine-frame-updates.ts:264` — `engineState.state.focusPocketMotionByIndex`
+   (missing; → `focusState.pocketMotionByIndex`)
+2. `three-engine-core.ts:445` — `engineState.state?.forceAnimate` (missing; see below)
+3. `three-engine-core.ts:452` — `sceneNeedsContinuousFrame(frameNow, engineState.state)`
+   param `LegacyState | null` ← `AppState`
+4. `three-engine-core.ts:477` — `lerpCameraForReveal(..., engineState.state)` +
+   `updatePointsMaterial(..., engineState.state)` params `LegacyState`
+5. `three-engine-core.ts:519` — `updateMyceliumPulse(state)` where
+   `state: Pick<LegacyState,'pulsePhase'> & { weather?: { wind_speed_10m? } }`
+6. `window-actions.ts:126` — `w.__APP_STATE__ ??= modules.state` (AppState vs
+   `Record<string, unknown>` global)
+
+### Safe, mechanical parts (apply first, no behavior change)
+
+- `src/lib/state/app.svelte.ts`: `export class AppState` (add `export`); drop the
+  `as unknown as LegacyState` cast; remove `import type { LegacyState }`.
+- `src/lib/engine/three-engine-state.ts`: `state: AppState | null`; import `AppState`;
+  `__LEGACY_APP_STATE__?: AppState`.
+- `src/window.d.ts`: `__LEGACY_APP_STATE__?: AppState`; import type `AppState`.
+- `src/lib/orchestration/window-actions.ts`: `LegacyActionModules.state?: AppState`.
+
+These retype the legacy _bags_ to `AppState` and resolve errors 6 + the
+"AppState not exported" error. They do NOT touch engine field reads.
+
+### Behavior-sensitive parts (require remap + owner sign-off)
+
+- **Functions whose params are `LegacyState`** → change to `AppState` and remap the
+  flattened field reads inside their bodies:
+    - `sceneNeedsContinuousFrame` (`three-engine-helpers.ts:14`) — reads
+      `focusPocketMotionByIndex`, `autoRotate`, `autoRotateSuspended`,
+      `autoRotateResumeDueAt`, `routeTraceLines`, `forceAnimate`, `sceneRevealActive`,
+      `nodesAreSettling`, `myceliumDirty`, `searchState?.searchGlowActive`,
+      `hoverHighlightIndex`, `focusedNode`, `inspectedThreadIndex`, `pinnedThreadIndex`.
+    - `lerpCameraForReveal` / `updatePointsMaterial` (`three-engine-frame-updates.ts:92/301`).
+    - `updateMyceliumPulse` (`three-engine-frame-updates.ts:170`) — param
+      `Pick<LegacyState,'pulsePhase'> & { weather?: { wind_speed_10m? } }`; body reads
+      `state.weather.wind_speed_10m`. Reconcile `weather` shape (AppState.weather is
+      `WeatherData`; confirm `WeatherData.wind_speed_10m` exists, else map).
+- **`forceAnimate`**: no backing on `appState`. Either (a) add a backed
+  `forceAnimate = $state<boolean>(false)` field + wire its writer, or (b) map the
+  read to a safe default (`false`) preserving the `state.forceAnimate ||` fallthrough.
+  **Decision needed from engine owner** — current runtime value is always `undefined`.
+- **Access-site remaps** (`three-engine-core.ts:445`, `three-engine-frame-updates.ts:264`):
+  `engineState.state?.forceAnimate` → intended source; `engineState.state.focusPocketMotionByIndex`
+  → `engineState.state?.focusState.pocketMotionByIndex`.
+
+## Verification gates (must all pass before merge)
+
+- `npm run check` → 0 errors.
+- `npm run lint` → 0 errors on changed files.
+- `npm run test:unit` + `npm run test:contract` → green.
+- **Runtime render-loop smoke test** (headless WebGL): confirm the
+  `requestAnimationFrame` loop still schedules/deschedules correctly — the
+  `sceneNeedsContinuousFrame` decision now uses real (non-`undefined`) nested fields,
+  so frame cadence may change. A visual/journey check on `desktop-idle` +
+  `focus-pocket` surfaces is required, not just type-check.
+- `npm run qa:journey:headless` for any focus/trail surface touched.
+
+## Risk
+
+Highest-risk item in the remediation plan (flagged lower-confidence). Touching the
+render-loop field reads can change frame scheduling and focus-pocket motion. Must be
+its own PR with engine-owner review + runtime verification, separate from the
+dead-code removal (P0) that already landed on `master`.
