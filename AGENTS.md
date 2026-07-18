@@ -158,4 +158,8 @@ Use narrower checks when validating a scoped change.
     - **First-visit help dialog** can sit on top of the search input on mobile; dismiss it in any test that types into the input (fills dialog + 1 .fill() line).
     - All three land together in one fix. Same pattern recurs wherever a module has `const foo = getInitial*()` at the top.
 
+- **W49-c asymmetric widening pattern (W53 trail-button fix `671af64c`):**
+    - When you WIDEN a parent `$derived` gate (`App.svelte:211` `focusActive`) with new parity predicates, mirror those SAME predicates into child `$derived` gates that gate visible DOM on the same reactive state (`JourneyChrome.svelte:131` `chromeHasFocus`). Asymmetric gating produces silent inter-component race timeouts that only e2e Playwright contract tests surface — `check:svelte + lint` won't catch them. Symptom: parent mounts the child (parent gate true via new parity predicate) but child's stricter gate stays false (e.g., `navSnapshot.focusedIndex == null` from a bridge race) → child's `{:else}` idle branch mounts WITHOUT the expected DOM node (e.g., `#btn-focus-path`) → `waitForSelector` times out at 30s, even though gate looks correct in code review.
+    - Turn-key predicate set for `focusActive` (App.svelte) + `chromeHasFocus` (JourneyChrome) MUST stay lockstep: `parity.focusPanelMode === 'field-node' || parity.panelSurface in {focus,inside,trail,focus-search,semantic-dive} || parity.focusSearchForced`. Both gates now import `useParityAttrs()` so a parity change immediately flips both via reactive getters in `$derived`.
+
 ## Pi Harness Notes
