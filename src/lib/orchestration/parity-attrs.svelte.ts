@@ -452,7 +452,7 @@ function applyBodyClassMirrors(map: ParityAttributeMap): void {
  * Also manages the body class list — the legacy composition-state.ts:106
  * line `root.classList.toggle('is-active', Boolean(surface))` was the
  * single source of truth for many mobile CSS rules (e.g.,
- * mobile_premium__chrome.css:789 hides the welcome card on search
+ * mobile_premium__layout.css:789 hides the welcome card on search
  * mode, gated on `body.is-active`). The Svelte parity port originally
  * scoped itself to data-* only and missed the class toggle, which
  * left dozens of CSS rules silently dormant. This function now owns

@@ -1,4 +1,4 @@
-/* Part of the mobile_premium cascade — see mobile_premium__focus-dive.css for the cascade header. */
+/* Part of the mobile_premium cascade — see mobile_premium__components.css for the cascade header. */
 
 @media (max-width: 768px) {
     /* ─── CHROME (UI furniture across states) ─────────── */
@@ -973,7 +973,7 @@
         transform: none;
     }
 }
-/* Part of the mobile_premium cascade — see mobile_premium__focus-dive.css for the cascade header. */
+/* Part of the mobile_premium cascade — see mobile_premium__components.css for the cascade header. */
 
 /* ─── NARROW VIEWPORT (≤ 360px) ─────────────────────
    Below 360 (small Android, iPhone SE 1st gen, foldable inner displays)
@@ -1127,7 +1127,7 @@
        no rule re-enables it, so the canvas intercepts all clicks on
        the panel and its contents. This block restores pointer-events
        for active panel surfaces that show the info-panel.
-       See also the short-landscape fix in mobile_premium__chrome.css. */
+       See also the short-landscape fix in mobile_premium__layout.css. */
     body.surface-idle .info-panel,
     body.surface-search .info-panel,
     body.surface-focus-search .info-panel {

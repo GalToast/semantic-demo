@@ -2107,7 +2107,7 @@
         margin: 0;
     }
 }
-/* Part of the mobile_premium cascade — see mobile_premium__focus-dive.css for the cascade header. */
+/* Part of the mobile_premium cascade — see mobile_premium__components.css for the cascade header. */
 
 /* ─── IDLE STATE ───────────────────────────────────── */
 
@@ -2130,7 +2130,7 @@
            <details> behavior keeps non-summary children hidden when
            [open] is absent. The [open]-only showing rule in App.svelte
            (`:global(#filters-section[open])`) and the mobile_premium
-           idle-open rule in mobile_premium__chrome.css both handle the
+           idle-open rule in mobile_premium__layout.css both handle the
            expanded state. See the matching comments in
            progressive_disclosure.css and strands.css. */
         display: none;

@@ -240,7 +240,7 @@
     letter-spacing: 0.06em;
     text-align: center;
     text-transform: uppercase;
-    /* Default: no wrap, single line. Tighter breakpoints (css/mobile_premium__narrow.css
+    /* Default: no wrap, single line. Tighter breakpoints (css/mobile_premium__layout.css
        @media (max-width: 360px)) allow wrap and reduce tracking so the
        47-char "Montgomery County records in the semantic field" caption
        doesn't bleed past a 320px viewport. */
@@ -387,7 +387,7 @@ body.surface-map-any .info-panel {
 
 /* W47-e: drop the SearchBar.svelte translateX(-50%) centering transform for
    Map mode at all viewports. The mobile_premium__state.css and
-   mobile_premium__surfaces.css rules handle narrow screens via their own
+   mobile_premium__state.css rules handle narrow screens via their own
    media queries; this is the desktop fallback. Without this override the
    floating map-trail SearchBar centers on the full container width and the
    search-result-row grid first column shifts off-screen left, hiding

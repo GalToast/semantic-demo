@@ -1,4 +1,4 @@
-/* Part of the mobile_premium cascade — see mobile_premium__focus-dive.css for the cascade header. */
+/* Part of the mobile_premium cascade — see mobile_premium__components.css for the cascade header. */
 
 /* ─── STATE-MACHINE STYLES ─────────────────────────── */
 @media (max-width: 640px) {
@@ -800,7 +800,7 @@
    falling back to the Svelte scoped position:absolute.
    These rules narrow the panel toward its desktop side-panel footprint
    so the 768px↔769px crossing interpolates smoothly via the transition
-   added in mobile_premium__surfaces.css root-sheet-style. */
+   added in mobile_premium__state.css root-sheet-style. */
 @media (min-width: 641px) and (max-width: 768px) {
     body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .info-panel {
         position: fixed;
@@ -857,12 +857,14 @@
         pointer-events: none;
     }
 }
-/* Part of the mobile_premium cascade — see mobile_premium__focus-dive.css for the cascade header. */
+/* Part of the mobile_premium cascade — see mobile_premium__components.css for the cascade header. */
 
 /* ─── SURFACES (panel-specific) ───────────────────── */
-body:not(.surface-idle) #selected-details.active:not([hidden]) {
-    display: block;
-    opacity: 1;
+@media (max-width: 768px) {
+    body:not(.surface-idle) #selected-details.active:not([hidden]) {
+        display: block;
+        opacity: 1;
+    }
 }
 
 /* On narrow mobile idle, the bottom sheet already carries the product

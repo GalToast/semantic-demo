@@ -25,13 +25,13 @@
         box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* A2.1 (2026-07-15): at ≤360px the narrow tier (css/mobile_premium__narrow.css,
+/* A2.1 (2026-07-15): at ≤360px the narrow tier (css/mobile_premium__layout.css,
    the ≤360 block gated on body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any))
    re-pins .journey-compass with left:10px; right:10px but never clears the base
    translateX(-50%) centering from the rule above. The result: the compass panel
    is shoved half its width off the left viewport edge (rail centering offset).
    journey_active.css is @import-ed into semantic-demo.css (the first legacy link),
-   so it cascades BEFORE mobile_premium__narrow.css — this override must mirror the
+   so it cascades BEFORE mobile_premium__layout.css — this override must mirror the
    narrow gate exactly so it only clears the transform where narrow re-pins left/right.
    Surface-map-any / idle keep translateX(-50%) centering (correct at these widths);
    widths ≥361px keep translateX(-50%) centering untouched. */
@@ -60,7 +60,7 @@ body.surface-map-any .journey-compass[data-density='hidden'] {
  * The base rule in css/shell.css positions the empty state at viewport
  * center (top:50%; left:50%; transform:translate(-50%, -50%)) at
  * 320×207 — this blocks the map center where the colorful markers
- * cluster. The mobile idle rule (css/mobile_premium__chrome.css:300)
+ * cluster. The mobile idle rule (css/mobile_premium__layout.css:300)
  * moves it to bottom-anchor, but only inside @media (max-width: 768px).
  * On desktop (1440×900) the user gets the 320×207 panel dead-center
  * with no map visible behind it.
@@ -111,7 +111,7 @@ body.surface-map-idle .map-empty-state-note {
        rgba(255,255,255,0.58) — a fade the W52 vision jury flagged as
        "low-contrast white text" on Surface 06 (desktop map @view=map).
        Pull desktop note contrast up to match the mobile idle overlay in
-       css/mobile_premium__chrome.css `.map-empty-state-note` override
+       css/mobile_premium__layout.css `.map-empty-state-note` override
        (rgba(218,232,229,0.85)) so both surfaces read at the same A-RANK
        contrast against the 0.82-alpha dark gradient pill background.
        Title is already concentrated at rgba(255,255,255,0.94) and

@@ -61,8 +61,14 @@ if (!fs.existsSync(indexPath)) {
     assertIncludes(
         'dist/svelte/index.html',
         html,
-        'css/mobile_premium__focus-dive.css',
+        'css/mobile_premium__components.css',
         'production output must include the mobile premium cascade'
+    )
+    assertExcludes(
+        'dist/svelte/index.html',
+        html,
+        'css/mobile_premium__focus-dive.css',
+        'production output must not reference the deleted focus-dive shard'
     )
 
     const assetRefs = localRefs(html)
@@ -92,7 +98,9 @@ assertExcludes('src/index.html', srcHtml, 'href="/semantic-demo.css"', 'source s
 for (const requiredPath of [
     'dist/svelte/semantic-demo.css',
     'dist/svelte/vector-explorer-pandora.css',
-    'dist/svelte/css/mobile_premium__focus-dive.css',
+    'dist/svelte/css/mobile_premium__components.css',
+    'dist/svelte/css/mobile_premium__layout.css',
+    'dist/svelte/css/mobile_premium__state.css',
     'dist/svelte/css/modules/focus_stage.css',
     'dist/svelte/data.dat',
     'dist/svelte/data.dat.gz',

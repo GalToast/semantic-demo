@@ -456,7 +456,7 @@
     #focus-stage — Legacy focus-stage container.
     Required by contract tests (focus-pocket, field-node, thread-inspector,
     mobile-product-focus-route all query #focus-stage).
-    Provides the wrapping element that the legacy CSS (mobile_premium__focus-dive.css,
+    Provides the wrapping element that the legacy CSS (mobile_premium__components.css,
     focus_stage.css) targets for visibility/positioning of focus UI.
     Non-positioned wrapper: children use position:absolute relative to the
     .semantic-explorer root, which is the nearest positioned ancestor.

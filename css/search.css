@@ -51,7 +51,7 @@ body:is(
    hint that more results exist below without obscuring content.
    Uses position: sticky on a pseudo-element so it follows the viewport
    bottom regardless of scroll position. Safe to layer over any
-   background-image already set by css/mobile_premium__chrome.css. */
+   background-image already set by css/mobile_premium__layout.css. */
 body:is(
         [data-panel-surface='search'],
         [data-panel-surface='focus-search'],
