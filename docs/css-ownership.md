@@ -16,78 +16,64 @@ There is **no `@import` chain** in `css/` at all (verified: `grep -rn "@import" 
 returns nothing). The "cascade" is purely `<link>` injection **ORDER** in
 `vite.config.ts` → `LEGACY_CSS_LINKS`. Later links win on equal specificity.
 
-Injection order (current HEAD, after `refactor(css): delete empty
-mobile_premium__map.css stub`):
+Injection order (current HEAD, after `refactor(css): consolidate
+mobile_premium 7-shard split into 3 files`):
 
 1. `semantic-demo.css`
 2. `vector-explorer-pandora.css`
-3. `css/mobile_premium__focus-dive.css`
-4. `css/mobile_premium__chrome.css`
-5. `css/mobile_premium__state.css`
-6. `css/mobile_premium__idle.css`
-7. `css/mobile_premium__surfaces.css` (`mobile_premium__map.css` deleted)
-8. `css/mobile_premium__narrow.css`
-9. `css/modules/focus_stage.css` (loaded last)
+3. `css/mobile_premium__components.css` (FOCUS/DIVE/IDLE components)
+4. `css/mobile_premium__layout.css` (chrome/furniture + narrow breakpoint)
+5. `css/mobile_premium__state.css` (surface state machine)
+6. `css/modules/focus_stage.css` (loaded last)
+
+The previous 7-way shard split (`focus-dive`, `chrome`, `state`, `idle`,
+`surfaces`, `map`, `narrow`) was consolidated in `7726d39c`.
 
 ## 2. Module ownership table
 
-Total: **23 files** (`css/*.css` roots + `css/modules/focus_stage.css`).
-LOC from `find css -name '*.css' | xargs wc -l` at plan-investigation HEAD.
-`mobile_premium__map.css` (was 1 line, empty stub) deleted by `2eba62bf`.
+Total: **21 files** (`css/*.css` roots + `css/modules/focus_stage.css`).
+`mobile_premium__map.css` (empty stub) was deleted by `2eba62bf`; the remaining
+6 mobile premium shards were consolidated into 3 files by `7726d39c`.
 
-| File                                 | LOC  | Owns                                                                                     |
-| ------------------------------------ | ---- | ---------------------------------------------------------------------------------------- |
-| `css/mobile_premium__focus-dive.css` | 2107 | FOCUS/DIVE states; journey-compass focus geometry; focus-stage-card; cascade header      |
-| `css/search.css`                     | 1822 | Search chrome, results, filters, `.rail-section` (desktop+global)                        |
-| `css/mobile_premium__surfaces.css`   | 1512 | Panel-specific surface rules (info-panel, selected-details, view-toggle in idle)         |
-| `css/strands.css`                    | 1421 | Strand/thread visuals, compass geometry, canvas                                          |
-| `css/layout_base.css`                | 1292 | Core desktop layout; references shard interplay                                          |
-| `css/modules/focus_stage.css`        | 1290 | Focus-stage visibility/positioning; loaded last via `<link>`                             |
-| `css/progressive_disclosure.css`     | 1061 | Disclosure/rail expansions; references `surfaces.css`                                    |
-| `css/mobile_premium__chrome.css`     | 961  | Chrome/furniture across states (≤768px + 900 landscape)                                  |
-| `css/journey_steps.css`              | 916  | Journey step UI                                                                          |
-| `css/mobile_premium__state.css`      | 859  | State-machine styles (≤640px + 641–768px)                                                |
-| `css/shell.css`                      | 759  | App shell                                                                                |
-| `css/journey_active.css`             | 668  | Active journey state                                                                     |
-| `css/mobile_base.css`                | 566  | Base mobile layout                                                                       |
-| `css/controls.css`                   | 451  | Control widgets                                                                          |
-| `css/time_weather.css`               | 441  | Weather/time widget                                                                      |
-| `css/clusters.css`                   | 401  | Cluster visuals                                                                          |
-| `css/loading.css`                    | 350  | Loading overlay                                                                          |
-| `css/base.css`                       | 285  | Root base                                                                                |
-| `css/mobile_premium__narrow.css`     | 253  | ≤360px narrow viewport tightening                                                        |
-| `css/synthesis.css`                  | 196  | Synthesis panel                                                                          |
-| `css/animations.css`                 | 129  | Keyframes                                                                                |
-| `css/mobile_premium__idle.css`       | 102  | Idle surface rules (≤768px)                                                              |
-| `css/demo_ui.css`                    | 12   | **Near-dead** — 1 live rule (`body[data-demo-active='true'] .view-toggle`), rest comment |
+| File                                 | LOC  | Owns                                                                                         |
+| ------------------------------------ | ---- | -------------------------------------------------------------------------------------------- |
+| `css/mobile_premium__components.css` | 2185 | FOCUS/DIVE/IDLE components; journey-compass focus geometry; focus-stage-card; cascade header |
+| `css/search.css`                     | 1822 | Search chrome, results, filters, `.rail-section` (desktop+global)                            |
+| `css/mobile_premium__state.css`      | 1664 | Surface state-machine + panel-specific rules (info-panel, selected-details, view-toggle)       |
+| `css/strands.css`                    | 1421 | Strand/thread visuals, compass geometry, canvas                                              |
+| `css/layout_base.css`                | 1292 | Core desktop layout; references shard interplay                                                |
+| `css/modules/focus_stage.css`        | 1290 | Focus-stage visibility/positioning; loaded last via `<link>`                                 |
+| `css/progressive_disclosure.css`     | 1061 | Disclosure/rail expansions; references state.css                                               |
+| `css/mobile_premium__layout.css`     | 1048 | Mobile chrome/furniture across states + ≤360px narrow breakpoint                               |
+| `css/journey_steps.css`              | 916  | Journey step UI                                                                              |
+| `css/journey_active.css`             | 668  | Active journey state                                                                         |
+| `css/shell.css`                      | 759  | App shell                                                                                    |
+| `css/mobile_base.css`                | 566  | Base mobile layout                                                                           |
+| `css/controls.css`                   | 451  | Control widgets                                                                              |
+| `css/time_weather.css`               | 441  | Weather/time widget                                                                          |
+| `css/clusters.css`                   | 401  | Cluster visuals                                                                              |
+| `css/loading.css`                      | 350  | Loading overlay                                                                              |
+| `css/base.css`                       | 285  | Root base                                                                                    |
+| `css/synthesis.css`                  | 196  | Synthesis panel                                                                              |
+| `css/animations.css`                 | 129  | Keyframes                                                                                    |
+| `css/demo_ui.css`                    | 12   | **Near-dead** — 1 live rule (`body[data-demo-active='true'] .view-toggle`), rest comment      |
 
 ## 3. Mobile premium shard map
 
-The 7 `mobile_premium__*.css` shards were micro-sliced on 2026-06-02
-("because the chrome/state/surfaces files all targeted 6–8 of the same
-`data-panel-surface` values with overlapping concerns" — see the cascade
-header in `css/mobile_premium__focus-dive.css:1-25`).
+The previous 7-way shard split was consolidated in `7726d39c` to remove
+overlapping ownership and fragmented breakpoint tiers. The current 3-file map:
 
-`mobile_premium__map.css` was an empty 1-line stub and is **deleted**
-(`2eba62bf`).
+| File | Source files | Concern |
+| ---- | ------------ | ------- |
+| `css/mobile_premium__components.css` | `focus-dive` + `idle` | FOCUS/DIVE/IDLE component geometry, focus-stage-card, journey-compass focus geometry |
+| `css/mobile_premium__state.css` | `state` + `surfaces` | Surface state machine + panel-specific rules (info-panel, selected-details, view-toggle) |
+| `css/mobile_premium__layout.css` | `chrome` + `narrow` | Mobile chrome/furniture and ≤360px narrow breakpoint |
+| *(deleted)* | `map.css` | Empty 1-line stub removed in `2eba62bf` |
 
-Remaining 6 shards have documented overlap — e.g. `body.surface-idle .info-panel`
-is styled in chrome + state + surfaces + narrow; `.focus-stage-card` for
-`body.surface-semantic-dive` has 9 blocks inside `focus-dive.css` alone.
-Fragmented breakpoint tiers (360 / 480 / 640 / 768 / 900) compound the drift.
-
-**Planned consolidation** (see `docs/cleanup-plans/css-surface-cleanup-plan.md` §3):
-merge the 6 shards → 3:
-
-- `mobile_premium__components.css` ← `focus-dive` (rename) + `idle` (fold)
-- `mobile_premium__state.css` ← `state` + `surfaces` (fold)
-- `mobile_premium__layout.css` ← `chrome` + `narrow` (fold)
-
-After merge, update `LEGACY_CSS_LINKS` and the cascade-header comment, and
-re-point the cross-file references in `journey_active.css:47`,
-`mobile_premium__idle.css:24`, `mobile_premium__narrow.css:155`,
-`search.css:54`, `strands.css:815,619`, `layout_base.css:243,389-390`,
-`progressive_disclosure.css:790`.
+Within each file, the original source order is preserved so the cascade is
+stable. Cross-file references in `journey_active.css`, `layout_base.css`,
+`search.css`, `strands.css`, `progressive_disclosure.css`, `App.svelte`, and
+`parity-attrs.svelte.ts` were re-pointed in `537bb582`.
 
 ## 4. Component-owned CSS convention
 
@@ -112,21 +98,22 @@ State is gated via `body.surface-*` classes and `data-panel-surface`
 attributes (idle / search / focus / semantic-dive / map). Many broad
 selectors (`body.surface-idle`, `body.surface-focus`, `.journey-compass`,
 `#canvas-container`, `.stat-caption`, `.info-header`, `.rail-section`,
-`.view-toggle`) appear in 8–13 files each — these are state-gated _context_
+`.view-toggle`) appear in 8–13 files each — these are state-gated *context*
 prefixes, not duplicate rules. When editing a surface rule, grep every shard
 that gates the same `body.surface-*` class to avoid silent cascade drift.
 
-One un-gated rule to watch: `css/mobile_premium__surfaces.css:3-5`
-(`body:not(.surface-idle) #selected-details.active:not([hidden])`) has **no
-`@media`** and applies at all viewports — a desktop-leak risk. If merged, gate
-it explicitly with `@media (max-width:768px)` or confirm intent.
+One previously un-gated rule in `css/mobile_premium__surfaces.css:3-5`
+(`body:not(.surface-idle) #selected-details.active:not([hidden])`) now lives in
+`css/mobile_premium__state.css` and is explicitly gated by
+`@media (max-width:768px)` so it does not leak to desktop.
 
 ## 6. Change protocol
 
 - **Add a CSS file:** append its `<link>` to `LEGACY_CSS_LINKS` in load order
   (later entry = higher cascade priority). Do not introduce an `@import` chain.
-- **Add a mobile surface:** prefer folding into the matching shard; do **not**
-  re-splinter into new `mobile_premium__*.css` files.
+- **Add a mobile surface:** prefer folding into the matching shard
+  (`components`, `state`, or `layout`); do **not** re-splinter into new
+  `mobile_premium__*.css` files.
 - **New breakpoint:** reuse the existing tier set (360 / 480 / 640 / 768 / 900);
   avoid one-off `@media` widths that fragment the taxonomy.
 - **Preserve `!important` counts:** `tests/unit-active/css-important-invariant.test.ts`
