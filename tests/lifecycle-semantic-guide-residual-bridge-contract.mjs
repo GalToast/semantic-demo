@@ -95,7 +95,6 @@ function testRestoreLegendCollapsedPanelOwner() {
 
     const storeSrc = readSrc(LEGEND_PANEL_STORE)
     const legendBindingsPath = path.join(SEMDEMO_ROOT, 'src/lib/ui/legend-bindings.ts')
-    const legendBindingsSrc = readSrc(legendBindingsPath)
 
     assert(
         storeSrc.includes('export function restoreLegendCollapsedPanel'),
@@ -105,10 +104,16 @@ function testRestoreLegendCollapsedPanelOwner() {
         !storeSrc.includes('window.restoreLegendCollapsedPanel'),
         'legend-panel.svelte.ts must not keep the retired window.restoreLegendCollapsedPanel export'
     )
-    assert(
-        !legendBindingsSrc.includes('window.restoreLegendCollapsedPanel = restoreLegendCollapsedPanel'),
-        'legend-bindings.ts must not own the restoreLegendCollapsedPanel window export'
-    )
+
+    if (!fs.existsSync(legendBindingsPath)) {
+        console.log('  SKIP — src/lib/ui/legend-bindings.ts was deleted as dead code; window-export consumer absent')
+    } else {
+        const legendBindingsSrc = readSrc(legendBindingsPath)
+        assert(
+            !legendBindingsSrc.includes('window.restoreLegendCollapsedPanel = restoreLegendCollapsedPanel'),
+            'legend-bindings.ts must not own the restoreLegendCollapsedPanel window export'
+        )
+    }
 
     const closeLegendGuideMatch = storeSrc.match(/export function closeLegendGuide[\s\S]*?^}/m)
     assert(closeLegendGuideMatch, 'legend-panel.svelte.ts must define closeLegendGuide')

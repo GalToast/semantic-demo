@@ -68,6 +68,11 @@ function testLegendPanelStoreExportsPorts() {
 function testLegendBindingsImportsFromCanonicalStore() {
     console.log('\n[TEST 2] legend-bindings.ts imports from the canonical legend-panel store')
 
+    if (!fs.existsSync(LEGEND_BINDINGS)) {
+        console.log('  SKIP — src/lib/ui/legend-bindings.ts was deleted as dead code; no consumer to verify')
+        return
+    }
+
     const src = readSrc(LEGEND_BINDINGS)
 
     assert(
@@ -152,24 +157,32 @@ function testEventBindingsImportsFromCanonicalStore() {
     // event-bindings.ts imports buildLegend from the store
     const ebSrc = readSrc(eventBindingsPath)
     assert(
-        ebSrc.includes("from '@lib/stores/legend-panel") || ebSrc.includes("from '@lib/engine/legend-ui-bridge'"),
+        ebSrc.includes("from '@lib/stores/legend-panel'") || ebSrc.includes("from '@lib/engine/legend-ui-bridge'"),
         'event-bindings.ts imports from the canonical store'
     )
 
-    // legend-bindings.ts imports from the store
-    const lbSrc = readSrc(legendBindingsPath)
-    assert(
-        lbSrc.includes("from '@lib/stores/legend-panel'") ||
-            lbSrc.includes("from '@lib/stores/legend-panel.svelte.ts'"),
-        'legend-bindings.ts imports from the canonical store'
-    )
+    if (fs.existsSync(legendBindingsPath)) {
+        // legend-bindings.ts imports from the store
+        const lbSrc = readSrc(legendBindingsPath)
+        assert(
+            lbSrc.includes("from '@lib/stores/legend-panel'") ||
+                lbSrc.includes("from '@lib/stores/legend-panel.svelte.ts'"),
+            'legend-bindings.ts imports from the canonical store'
+        )
 
-    // Neither should import from the deleted kernel
-    assert(
-        !ebSrc.includes("from '../../../js/modules/legend-ui") &&
-            !lbSrc.includes("from '../../../js/modules/legend-ui"),
-        'event-bindings/legend-bindings must not import from the deleted kernel'
-    )
+        // Neither should import from the deleted kernel
+        assert(
+            !ebSrc.includes("from '../../../js/modules/legend-ui") &&
+                !lbSrc.includes("from '../../../js/modules/legend-ui"),
+            'event-bindings/legend-bindings must not import from the deleted kernel'
+        )
+    } else {
+        console.log('  SKIP — src/lib/ui/legend-bindings.ts deleted as dead code; verifying panel-bindings only')
+        assert(
+            !ebSrc.includes("from '../../../js/modules/legend-ui"),
+            'event-bindings must not import from the deleted kernel'
+        )
+    }
 
     console.log('  OK — event-bindings imports from the canonical store')
 }

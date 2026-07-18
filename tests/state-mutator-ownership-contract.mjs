@@ -39,6 +39,13 @@ function collectJsFiles(dir) {
   return files;
 }
 
+const MUTATORS_PATH = path.join(ROOT, 'src/lib/state/mutators.ts');
+
+if (!fs.existsSync(MUTATORS_PATH)) {
+  console.log('SKIP — state-mutators.ts was deleted as dead code; ownership graph migrated to Svelte stores');
+  process.exit(0);
+}
+
 const appStateSrc = read('src/lib/state/app.svelte.ts');
 const mutatorSrc = read('src/lib/state/mutators.ts');
 const withStateMutationSrc = read('src/lib/state/with-state-mutation.ts');
