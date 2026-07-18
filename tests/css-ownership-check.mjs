@@ -36,8 +36,8 @@ const selectorBaselines = {
     '.focus-stage-route': {
         'journey_steps.css': 14,
         'journey_active.css': 5,
-        'mobile_premium__focus-dive.css': 2,
-        'mobile_premium__surfaces.css': 3
+        'mobile_premium__components.css': 2,
+        'mobile_premium__state.css': 3
     },
     '.focus-stage-card': {
         'animations.css': 3,
@@ -46,7 +46,7 @@ const selectorBaselines = {
         'journey_steps.css': 18,
         'mobile_base.css': 0,
         // Includes the documented focus-search active-trail two-lane modifier.
-        'mobile_premium__focus-dive.css': 31,
+        'mobile_premium__components.css': 31,
         'progressive_disclosure.css': 1,
         'strands.css': 5
     },
@@ -58,10 +58,8 @@ const selectorBaselines = {
         'progressive_disclosure.css': 2,
         'strands.css': 7,
         'animations.css': 0,
-        'mobile_premium__chrome.css': 6,
-        'mobile_premium__focus-dive.css': 1,
-        'mobile_premium__idle.css': 2,
-        'mobile_premium__layout.css': 6
+        'mobile_premium__layout.css': 6,
+        'mobile_premium__components.css': 3
     },
     '.legend-toggle': {
         'controls.css': 1,
@@ -69,9 +67,8 @@ const selectorBaselines = {
         'journey_active.css': 1,
         'strands.css': 2,
         'mobile_base.css': 1,
-        'mobile_premium__chrome.css': 5,
-        'mobile_premium__state.css': 2,
-        'mobile_premium__layout.css': 5
+        'mobile_premium__layout.css': 5,
+        'mobile_premium__state.css': 2
     },
     '.search-results.active': {
         'search.css': 6,
@@ -79,18 +76,14 @@ const selectorBaselines = {
         'journey_active.css': 1,
         'progressive_disclosure.css': 3,
         'strands.css': 1,
-        'mobile_premium__chrome.css': 10,
-        'mobile_premium__state.css': 10,
-        'mobile_premium__narrow.css': 0,
-        'mobile_premium__surfaces.css': 1,
         'mobile_premium__layout.css': 10,
+        'mobile_premium__state.css': 11,
         'animations.css': 1
     },
     '.help-toggle': {
         'layout_base.css': 5,
         'journey_active.css': 1,
         'mobile_base.css': 1,
-        'mobile_premium__chrome.css': 4,
         'mobile_premium__layout.css': 4,
         'strands.css': 2
     },
@@ -98,43 +91,37 @@ const selectorBaselines = {
         'layout_base.css': 1,
         'journey_active.css': 14,
         'mobile_base.css': 0,
-        'mobile_premium__focus-dive.css': 5,
-        'mobile_premium__state.css': 1,
-        'mobile_premium__surfaces.css': 4,
+        'mobile_premium__components.css': 5,
+        'mobile_premium__state.css': 5,
         'strands.css': 2
     },
     '.journey-compass-actions': {
         'journey_active.css': 15,
-        'mobile_premium__chrome.css': 1,
-        'mobile_premium__focus-dive.css': 4,
-        'mobile_premium__narrow.css': 1,
-        'mobile_premium__surfaces.css': 7,
-        'mobile_premium__layout.css': 1,
+        'mobile_premium__layout.css': 2,
+        'mobile_premium__components.css': 4,
+        'mobile_premium__state.css': 7,
         'progressive_disclosure.css': 1,
         'strands.css': 6
     },
     '.journey-compass-rail': {
         'layout_base.css': 1,
         'journey_active.css': 15,
-        'mobile_premium__focus-dive.css': 4,
-        'mobile_premium__narrow.css': 12,
-        'mobile_premium__state.css': 1,
-        'mobile_premium__surfaces.css': 1,
+        'mobile_premium__components.css': 4,
         'mobile_premium__layout.css': 12,
+        'mobile_premium__state.css': 2,
         'strands.css': 2
     },
     '.journey-compass-action.primary': {
         'animations.css': 2,
         'journey_active.css': 6,
         'mobile_base.css': 4,
-        'mobile_premium__chrome.css': 1,
-        'mobile_premium__focus-dive.css': 4,
-        'mobile_premium__surfaces.css': 4,
         'mobile_premium__layout.css': 1,
+        'mobile_premium__components.css': 4,
+        'mobile_premium__state.css': 4,
         'search.css': 0,
         'strands.css': 5
     }
-}
+};
 
 const mobilePremiumLegacyStatePatterns = [
     'data-active-view="galaxy"',
@@ -148,7 +135,7 @@ const mobilePremiumLegacyStatePatterns = [
 // because the migration to data-panel-surface is planned for a later mobile-
 // layout refactor. Do NOT add new patterns here without a matching refactor
 // issue.
-const mobilePremiumLegacyStatePatternExceptions = new Map([['mobile_premium__focus-dive.css', ['data-semantic-dive']]])
+const mobilePremiumLegacyStatePatternExceptions = new Map([['mobile_premium__components.css', ['data-semantic-dive']]])
 
 const globalLegacyPanelStatePatterns = ['data-graph-context', 'data-map-context', 'data-semantic-dive="active"']
 
