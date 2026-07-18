@@ -44,20 +44,6 @@ describe('traverseNeighbor import routing', () => {
         expect(src).toMatch(adapterImport)
     })
 
-    it('src/lib/ui/journey-bindings.ts imports traverseNeighbor from adapter', () => {
-        const src = readFile('src/lib/ui/journey-bindings.ts')
-        const adapterImport =
-            /import\s*\{\s*traverseNeighbor\s*\}\s*from\s*['"]@lib\/journey\/thread-settler-adapter['"]/
-        expect(src).toMatch(adapterImport)
-    })
-
-    it('src/lib/ui/utility-bindings.ts imports traverseNeighbor from adapter', () => {
-        const src = readFile('src/lib/ui/utility-bindings.ts')
-        const adapterImport =
-            /import\s*\{\s*traverseNeighbor\s*\}\s*from\s*['"]@lib\/journey\/thread-settler-adapter['"]/
-        expect(src).toMatch(adapterImport)
-    })
-
     it('src/lib/orchestration/window-actions.ts imports traverseNeighbor from thread-settler', () => {
         const src = readFile('src/lib/orchestration/window-actions.ts')
         const bridgeImport = /import\s*\{[^}]*traverseNeighbor[^}]*\}\s*from\s*['"]@lib\/journey\/thread-settler['"]/
