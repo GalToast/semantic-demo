@@ -105,7 +105,8 @@ export function syncSemanticDiveUi(): void {
         document.body.dataset.semanticDive = isTransitioning ? 'transitioning' : active ? 'active' : 'inactive'
     }
 
-    const diveButton = (document.getElementById('btn-focus-dive') || document.getElementById('btn-focus-dive-legacy')) as HTMLButtonElement | null
+    const diveButton = (document.getElementById('btn-focus-dive') ||
+        document.getElementById('btn-focus-dive-legacy')) as HTMLButtonElement | null
     const insideControls = document.getElementById('focus-stage-inside-controls')
     const insideStatus = document.getElementById('focus-stage-inside-status')
     const insideStatusCopy = document.getElementById('focus-stage-inside-status-copy')

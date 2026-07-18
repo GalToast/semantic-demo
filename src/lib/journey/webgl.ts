@@ -13,9 +13,7 @@
 
 // ── Module holders ────────────────────────────────────────────────────────────
 
-let routeArrivalOverlayAdapterModule:
-    | typeof import('@lib/journey/route-arrival-overlay-adapter')
-    | null = null
+let routeArrivalOverlayAdapterModule: typeof import('@lib/journey/route-arrival-overlay-adapter') | null = null
 let semanticOverlayModule: typeof import('@lib/journey/semantic-overlay') | null = null
 
 // ── Lazy initializers ─────────────────────────────────────────────────────────
@@ -24,9 +22,7 @@ async function ensureRouteArrivalOverlayAdapterModule(): Promise<
     typeof import('@lib/journey/route-arrival-overlay-adapter')
 > {
     if (!routeArrivalOverlayAdapterModule) {
-        routeArrivalOverlayAdapterModule = await import(
-            '@lib/journey/route-arrival-overlay-adapter'
-        )
+        routeArrivalOverlayAdapterModule = await import('@lib/journey/route-arrival-overlay-adapter')
         // Register updaters with lazy wrappers so they resolve on first call.
         routeArrivalOverlayAdapterModule.setRouteArrivalOverlayUpdaters({
             updateRouteTraceOverlayPositions: lazyUpdateRouteTraceOverlayPositions,
@@ -36,9 +32,7 @@ async function ensureRouteArrivalOverlayAdapterModule(): Promise<
     return routeArrivalOverlayAdapterModule
 }
 
-async function ensureSemanticOverlayModule(): Promise<
-    typeof import('@lib/journey/semantic-overlay')
-> {
+async function ensureSemanticOverlayModule(): Promise<typeof import('@lib/journey/semantic-overlay')> {
     if (!semanticOverlayModule) {
         semanticOverlayModule = await import('@lib/journey/semantic-overlay')
     }
@@ -48,15 +42,11 @@ async function ensureSemanticOverlayModule(): Promise<
 // ── Route-arrival-overlay-adapter forwarding functions ────────────────────────
 
 function lazyUpdateRouteTraceOverlayPositions(now?: number): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.updateRouteTraceOverlayPositions?.(now)
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.updateRouteTraceOverlayPositions?.(now))
 }
 
 function lazyUpdateArrivalHandoffOverlay(now?: number): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.updateArrivalHandoffOverlay?.()
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.updateArrivalHandoffOverlay?.())
 }
 
 // ── Semantic-overlay forwarding functions ─────────────────────────────────────
@@ -88,71 +78,49 @@ export function syncFocusSemanticOverlayResolution(): void {
 // ── Route-trace forwarding functions ──────────────────────────────────────────
 
 export function resetRouteTraceDiagnostics(): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.resetRouteTraceDiagnostics?.()
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.resetRouteTraceDiagnostics?.())
 }
 
 export function removeRouteTraceOverlay(): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.removeRouteTraceOverlay?.()
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.removeRouteTraceOverlay?.())
 }
 
 export function setRouteChoreographyPhase(phase: string): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.setRouteChoreographyPhase?.(phase)
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.setRouteChoreographyPhase?.(phase))
 }
 
 export function refreshRouteTraceOverlay(): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.refreshRouteTraceOverlay?.()
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.refreshRouteTraceOverlay?.())
 }
 
 export function updateRouteTraceOverlayPositions(now?: number): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.updateRouteTraceOverlayPositions?.(now)
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.updateRouteTraceOverlayPositions?.(now))
 }
 
 export function initRouteTraceSubscriptions(): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.initRouteTraceSubscriptions?.()
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.initRouteTraceSubscriptions?.())
 }
 
 // ── Arrival-handoff forwarding functions ──────────────────────────────────────
 
 export function removeArrivalHandoffOverlay(): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.removeArrivalHandoffOverlay?.()
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.removeArrivalHandoffOverlay?.())
 }
 
 export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: number): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.buildArrivalHandoffOverlay?.(fromIndex, targetIndex)
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.buildArrivalHandoffOverlay?.(fromIndex, targetIndex))
 }
 
 export function disposeArrivalHandoffOverlay(): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.disposeArrivalHandoffOverlay?.()
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.disposeArrivalHandoffOverlay?.())
 }
 
 export function syncArrivalHandoffOverlay(): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.syncArrivalHandoffOverlay?.()
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.syncArrivalHandoffOverlay?.())
 }
 
 export function updateArrivalHandoffOverlay(): void {
-    ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.updateArrivalHandoffOverlay?.()
-    )
+    ensureRouteArrivalOverlayAdapterModule().then((mod) => mod.updateArrivalHandoffOverlay?.())
 }
 
 // ── Diagnostic probe ──────────────────────────────────────────────────────────
