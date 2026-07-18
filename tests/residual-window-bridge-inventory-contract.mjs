@@ -88,10 +88,22 @@ function read(mod) {
     }
     const src = fs.readFileSync(filePath, 'utf-8')
     if (mod === 'threeSetup' && MODULES.threeEngineCore && MODULES.threeEngineState) {
-        return src + '\n' + fs.readFileSync(MODULES.threeEngineCore, 'utf-8') + '\n' + fs.readFileSync(MODULES.threeEngineState, 'utf-8')
+        return (
+            src +
+            '\n' +
+            fs.readFileSync(MODULES.threeEngineCore, 'utf-8') +
+            '\n' +
+            fs.readFileSync(MODULES.threeEngineState, 'utf-8')
+        )
     }
     if (mod === 'threadInspector' && MODULES.threadInspectorState && MODULES.threadInspectorRender) {
-        return src + '\n' + fs.readFileSync(MODULES.threadInspectorState, 'utf-8') + '\n' + fs.readFileSync(MODULES.threadInspectorRender, 'utf-8')
+        return (
+            src +
+            '\n' +
+            fs.readFileSync(MODULES.threadInspectorState, 'utf-8') +
+            '\n' +
+            fs.readFileSync(MODULES.threadInspectorRender, 'utf-8')
+        )
     }
     return src
 }

@@ -2981,7 +2981,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         )
     })
 
-    test('W53 issue #6 (Tier-1 HIGH — cross-juror consensus): FocusCard dismiss button deselects the business', async ({ page }) => {
+    test('W53 issue #6 (Tier-1 HIGH — cross-juror consensus): FocusCard dismiss button deselects the business', async ({
+        page
+    }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
