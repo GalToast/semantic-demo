@@ -206,7 +206,10 @@
     color: var(--color-text-teal-light);
     text-decoration: underline;
     text-underline-offset: 2px;
-    text-decoration-color: rgba(var(--color-primary-alt-rgb), 0.6);
+    /* W53 jury-rerun (2026-07-18): 4/5 jurors read the 0.6-α underline as
+       "no underline / not a link" (JPEG-flattened + genuinely faint).
+       Bump to 0.95 so the underline reads as a clear actionable affordance. */
+    text-decoration-color: rgba(var(--color-primary-alt-rgb), 0.95);
     opacity: 1;
   }
   .selected-facts a:hover,

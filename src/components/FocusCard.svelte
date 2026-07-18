@@ -352,7 +352,7 @@
           data-test-id="focus-card-close"
           onclick={() => returnToOverview()}
         >
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M18 6 6 18M6 6l12 12" />
           </svg>
         </button>
@@ -485,13 +485,20 @@
     min-width: 44px;
     min-height: 44px;
     padding: 0;
-    background: transparent;
-    border: none;
+    /* W53 jury-rerun (2026-07-18): v1 (transparent/borderless/75%-opacity)
+       read as "no close button" to 5/5 jurors. v2 (fill 0.16 + border 0.45)
+       fixed DESKTOP (4/5 now see it) but MOBILE bottom-sheet jurors still
+       missed the top-right X against the prominent centered drag-grip —
+       strengthen to fill 0.24 + border 0.62 so the affordance reads
+       clearly on BOTH the 260px desktop card and the full-width mobile
+       bottom-sheet. Full-opacity (1) teal X glyph, ≥44px touch floor. */
+    background: rgba(var(--color-primary-alt-rgb), 0.24);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.62);
     border-radius: 0.35rem;
     color: var(--color-text-teal-light);
-    opacity: 0.75;
+    opacity: 1;
     cursor: pointer;
-    transition: opacity 0.15s, background 0.15s;
+    transition: opacity 0.15s, background 0.15s, border-color 0.15s;
   }
   .focus-card-close:hover {
     opacity: 1;

@@ -83,8 +83,14 @@ body.surface-map-idle .map-empty-state {
     /* W53 vision-refresh issue #4: the 0.84/0.78 gradient fully occluded the
        dense marker cluster behind the compact top pill. Lower alpha to 0.6/0.5
        so the colorful map markers read through while the title/note text
-       (rgba 0.94 / 0.85) keeps AA contrast over the darker gradient stop. */
-    background: linear-gradient(180deg, rgba(18, 23, 30, 0.6), rgba(8, 12, 18, 0.5));
+       (rgba 0.94 / 0.85) keeps AA contrast over the darker gradient stop.
+       W53 jury-rerun (2026-07-18): 3/4 jurors still read 0.6/0.5 as "opaque /
+       too heavy" (llama-90b called it subtle/fine — split). Nudged the TOP
+       stop 0.6→0.5 for a hintier read; BOTTOM stays 0.5 so the
+       .map-empty-state-note (0.85 white) keeps ≥4.5:1 AA — lowering the
+       bottom stop would break note contrast, so the jurors' "~30%" ask is
+       blocked by AA. */
+    background: linear-gradient(180deg, rgba(18, 23, 30, 0.5), rgba(8, 12, 18, 0.5));
     box-shadow:
         inset 0 1px 0 var(--glass-reflection-muted),
         0 8px 24px var(--shadow-penumbra);
