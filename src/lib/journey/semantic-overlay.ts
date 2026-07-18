@@ -242,6 +242,31 @@ function getActiveNextFocusIndex(): number | null {
     return Number.isFinite(candidate.index) ? candidate.index : null
 }
 
+function selectPocketThreadIndices(
+    focusPocketIndices: readonly number[] | undefined,
+    focusIndex: number,
+    roleByIndex: Map<number, string>
+): number[] {
+    const roleBudgets: Record<string, number> = { primary: 12, support: 6, halo: 3, trail: 4 }
+    const roleOrder: Record<string, number> = { primary: 0, support: 1, halo: 2, trail: 3 }
+    const roleCounts: Record<string, number> = { primary: 0, support: 0, halo: 0, trail: 0 }
+    return (focusPocketIndices || [])
+        .filter((index: number) => Number.isFinite(index) && index !== focusIndex)
+        .sort((a: number, b: number) => {
+            const roleA = roleByIndex.get(a) || 'trail'
+            const roleB = roleByIndex.get(b) || 'trail'
+            return (roleOrder[roleA] ?? 4) - (roleOrder[roleB] ?? 4)
+        })
+        .filter((index: number) => {
+            const role = roleByIndex.get(index) || 'trail'
+            const budget = roleBudgets[role] ?? roleBudgets.trail
+            const count = roleCounts[role] ?? 0
+            if (count >= (budget ?? 0)) return false
+            roleCounts[role] = count + 1
+            return true
+        })
+}
+
 export function refreshFocusSemanticOverlay(): void {
     const startedAt = performance.now()
     removeFocusSemanticOverlay()
@@ -288,24 +313,7 @@ export function refreshFocusSemanticOverlay(): void {
         .slice(0, 10)
     const roleByIndex =
         state.navState.focusPocketRoleByIndex instanceof Map ? state.navState.focusPocketRoleByIndex : new Map()
-    const roleBudgets: Record<string, number> = { primary: 12, support: 6, halo: 3, trail: 4 }
-    const roleOrder: Record<string, number> = { primary: 0, support: 1, halo: 2, trail: 3 }
-    const roleCounts: Record<string, number> = { primary: 0, support: 0, halo: 0, trail: 0 }
-    const pocketThreadIndices = (state.navState.focusPocketIndices || [])
-        .filter((index: number) => Number.isFinite(index) && index !== focusIndex)
-        .sort((a: number, b: number) => {
-            const roleA = roleByIndex.get(a) || 'trail'
-            const roleB = roleByIndex.get(b) || 'trail'
-            return (roleOrder[roleA] ?? 4) - (roleOrder[roleB] ?? 4)
-        })
-        .filter((index: number) => {
-            const role = roleByIndex.get(index) || 'trail'
-            const budget = roleBudgets[role] ?? roleBudgets.trail
-            const count = roleCounts[role] ?? 0
-            if (count >= (budget ?? 0)) return false
-            roleCounts[role] = count + 1
-            return true
-        })
+    const pocketThreadIndices = selectPocketThreadIndices(state.navState.focusPocketIndices, focusIndex, roleByIndex)
     const pocketThreadSet = new Set(pocketThreadIndices)
     const stagedSemanticIndices = semanticCandidates
         .map((candidate: ThreadCandidateRef) => candidate.index)
@@ -375,7 +383,8 @@ export function refreshFocusSemanticOverlay(): void {
             const t1 = (segment + 1) / state.FOCUS_THREAD_SEGMENTS
             const segmentEdge: FocusConnectionSegment = { ...edge, t0, t1, cue: isNextEdge ? 1 : 0 }
             state.focusSemanticConnectionPairs.push(segmentEdge)
-        setOverlayDebugPushRef(state.focusSemanticConnectionPairs); setOverlayDebugPushN(overlayDebug.pushN + 1)
+            setOverlayDebugPushRef(state.focusSemanticConnectionPairs)
+            setOverlayDebugPushN(overlayDebug.pushN + 1)
             const p0 = getFocusCurvePointLocal(segmentEdge, t0)
             const p1 = getFocusCurvePointLocal(segmentEdge, t1)
             const c0 = focusColor.clone().lerp(candidateColor, t0)

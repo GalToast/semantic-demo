@@ -188,13 +188,10 @@ function topoKnnCandidates(
     }))
 }
 
-export function applyLocalNeighborhoodFocus(index: number): boolean {
-    const points = appState.points
-    const originalPositions = appState.originalPositions
+function capturePreviousPocketState(index: number): Map<number, { x: number; y: number; z: number }> {
+    const navState = appState.navState
     const nodePositions = appState.nodePositions
     const targetPositions = appState.targetPositions
-    const navState = appState.navState
-
     const prevPocketIndexArray = Array.isArray(navState.focusPocketIndices) ? [...navState.focusPocketIndices] : []
     const prevPocketMeta = navState.focusPocketMeta as { active?: boolean } | null
     const prevPocketIndices = prevPocketMeta?.active ? new Set([index, ...prevPocketIndexArray]) : new Set<number>()
@@ -207,7 +204,13 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
             }
         })
     }
+    return prevTargetByIndex
+}
 
+function resetTargetPositionsFromOriginal(): boolean {
+    const points = appState.points
+    const originalPositions = appState.originalPositions
+    const targetPositions = appState.targetPositions
     if (!points || !Array.isArray(points) || !originalPositions) return false
     for (let i = 0; i < points.length; i++) {
         const pos = originalPositions[i]
@@ -216,6 +219,17 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
         const pz = Number.isFinite(pos?.z) ? pos!.z : 0
         if (targetPositions) targetPositions[i] = { x: px, y: py, z: pz }
     }
+    return true
+}
+
+export function applyLocalNeighborhoodFocus(index: number): boolean {
+    const points = appState.points
+    const originalPositions = appState.originalPositions
+    const targetPositions = appState.targetPositions
+    const navState = appState.navState
+
+    const prevTargetByIndex = capturePreviousPocketState(index)
+    if (!resetTargetPositionsFromOriginal()) return false
 
     const personality = getNeighborhoodPersonality(index)
     navState.currentPersonality = personality.type

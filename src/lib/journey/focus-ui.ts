@@ -84,6 +84,14 @@ export function initFocusNeighborRailSubscriptions(): void {
     subscribeKeyed('focus-neighbor-rail:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync)
 }
 
+function hideNeighborRail(rail: HTMLElement, list: HTMLElement, countEl: HTMLElement | null): void {
+    rail.classList.remove('active')
+    rail.hidden = true
+    rail.setAttribute('aria-hidden', 'true')
+    list.textContent = ''
+    if (countEl) countEl.textContent = '0 visible neighbors'
+}
+
 export function updateFocusNeighborRail(): void {
     const rail = document.getElementById('focus-stage-neighbors')
     const list = document.getElementById('focus-stage-neighbor-list')
@@ -93,11 +101,7 @@ export function updateFocusNeighborRail(): void {
     const threadInspectSurface = document.body?.dataset?.threadInspectSurface
     const threadInspectorOwnsSurface = !!threadInspectSurface && threadInspectSurface !== 'idle'
     if (threadInspectorOwnsSurface) {
-        rail.classList.remove('active')
-        rail.hidden = true
-        rail.setAttribute('aria-hidden', 'true')
-        list.textContent = ''
-        if (countEl) countEl.textContent = '0 visible neighbors'
+        hideNeighborRail(rail, list, countEl)
         return
     }
 
@@ -116,11 +120,7 @@ export function updateFocusNeighborRail(): void {
     }
 
     if (shouldSuppressSelectedBusinessNeighborRail()) {
-        rail.classList.remove('active')
-        rail.hidden = true
-        rail.setAttribute('aria-hidden', 'true')
-        list.textContent = ''
-        if (countEl) countEl.textContent = '0 visible neighbors'
+        hideNeighborRail(rail, list, countEl)
         return
     }
 
