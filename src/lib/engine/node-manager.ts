@@ -74,6 +74,12 @@ const _threadTintColor = new Color(THREAD_TINT_COLOR)
 
 const SPORE_SEGMENTS_VISIBLE = 6
 
+// W54: Spore material tuned for concentric focus visuals. Phong shininess is
+// zeroed so the bright center is not pulled off-center by a specular highlight;
+// emissive intensity is raised to keep the glow centered and legible.
+export const SPORE_EMISSIVE_INTENSITY_BASE = 1.5
+export const SPORE_EMISSIVE_FLASH_PEAK = 2.5
+
 // _nodeSporeObject is a module-level scratch Object3D used in setNodeSporeInstanceMatrix().
 // This is safe under the single-threaded JS execution model. If any future Web Worker
 // offload touches this path, refactor to per-call Object3D instances.
@@ -357,8 +363,8 @@ export function createNodeSporeLayer() {
     const sporeMat = new MeshPhongMaterial({
         color: 0xc8d4d0,
         emissive: 0x2a8a7a,
-        emissiveIntensity: 0.55,
-        shininess: 58,
+        emissiveIntensity: SPORE_EMISSIVE_INTENSITY_BASE,
+        shininess: 0,
         transparent: true,
         opacity: SCENE_ATMOSPHERE.sporeOpacity,
         vertexColors: true,

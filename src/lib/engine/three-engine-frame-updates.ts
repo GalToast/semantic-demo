@@ -21,7 +21,9 @@ import { webglContext } from '@lib/engine/webgl-context'
 import { CONFIG } from '@lib/engine/config'
 import {
     SCENE_ATMOSPHERE as PORT_SCENE_ATMOSPHERE,
-    setNodeSporeInstanceMatrix as setNodeSporeInstanceMatrixPort
+    setNodeSporeInstanceMatrix as setNodeSporeInstanceMatrixPort,
+    SPORE_EMISSIVE_INTENSITY_BASE,
+    SPORE_EMISSIVE_FLASH_PEAK
 } from '@lib/engine/node-manager'
 import {
     shouldRenderThreads,
@@ -139,12 +141,10 @@ export function updateHoverEmissiveFlash(
     }
     engineState.lastHoveredNode = hoveredNode
     if (engineState.hoverEmissiveFlash > 0.001 && webglContext.nodeSporeMaterial) {
-        // W48-T1A: base intensity bumped from 0.34 → 0.55 to match the
-        // new spore material baseline (was 0.34, raised for bioluminescent
-        // identity). Without this sync, the post-flash settle would set
-        // emissive back to 0.34 — dimmer than the resting state.
-        const baseIntensity = 0.55
-        const flashPeak = 1.8
+        // W54: base / peak are now exported from node-manager so the flash
+        // settles back to the spore material's resting emissive intensity.
+        const baseIntensity = SPORE_EMISSIVE_INTENSITY_BASE
+        const flashPeak = SPORE_EMISSIVE_FLASH_PEAK
         const targetIntensity = baseIntensity + (flashPeak - baseIntensity) * engineState.hoverEmissiveFlash
         ;(webglContext.nodeSporeMaterial as MeshPhongMaterial).emissiveIntensity = targetIntensity
         engineState.hoverEmissiveFlash *= 0.92
@@ -168,9 +168,7 @@ export function updateHoverEmissiveFlash(
  *   consumed by the thread-opacity block (A13) that remains in animate().
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A12)
  */
-export function updateMyceliumPulse(
-    state: (Pick<AppState, 'pulsePhase' | 'weather'>) | null | undefined
-): boolean {
+export function updateMyceliumPulse(state: Pick<AppState, 'pulsePhase' | 'weather'> | null | undefined): boolean {
     const threadsVisible = shouldRenderThreads()
     if (webglContext.myceliumGroup) {
         webglContext.myceliumGroup.visible = threadsVisible
@@ -260,11 +258,8 @@ export function lerpNodesForFrame(now: number): boolean {
         // Focus pocket breathing mutates nodePositions. Make sure the GPU
         // instance matrices for every breathing node are refreshed this frame.
         const pocketMotionByIndex =
-            engineState.state?.focusState.pocketMotionByIndex ??
-            engineState.focusPocket?.getFocusPocketMotionByIndex()
-        const pocketMotionIndices = pocketMotionByIndex
-            ? Array.from(pocketMotionByIndex.keys())
-            : undefined
+            engineState.state?.focusState.pocketMotionByIndex ?? engineState.focusPocket?.getFocusPocketMotionByIndex()
+        const pocketMotionIndices = pocketMotionByIndex ? Array.from(pocketMotionByIndex.keys()) : undefined
         pocketMotionIndices?.forEach((idx: number) => {
             setNodeSporeInstanceMatrixPort(idx)
             movedIndices.push(idx)

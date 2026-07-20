@@ -50,7 +50,9 @@ vi.mock('@lib/engine/webgl-context', () => ({
 vi.mock('@lib/engine/node-manager', () => ({
     PORT_SCENE_ATMOSPHERE: { pointOpacityScale: 1.0, fogDensity: 0.0028, sporeOpacity: 0.65 },
     SCENE_ATMOSPHERE: { pointOpacityScale: 1.0, fogDensity: 0.0028, sporeOpacity: 0.65 },
-    setNodeSporeInstanceMatrix: _setNodeSporeInstanceMatrix
+    setNodeSporeInstanceMatrix: _setNodeSporeInstanceMatrix,
+    SPORE_EMISSIVE_INTENSITY_BASE: 1.5,
+    SPORE_EMISSIVE_FLASH_PEAK: 2.5
 }))
 
 vi.mock('@lib/engine/thread-manager', () => ({
@@ -98,7 +100,7 @@ function makePointsMaterial(shaderUniforms: ReturnType<typeof makeShaderUniforms
 
 function makeNodeSporeMaterial() {
     return {
-        emissiveIntensity: 0.55
+        emissiveIntensity: 1.5
     }
 }
 
@@ -268,7 +270,7 @@ describe('updateHoverEmissiveFlash (A11)', () => {
         updateHoverEmissiveFlash(state)
         // Peak at 1.0 then decay by 0.92 in same call → 0.92 left in state.
         // The intermediate peak is observable via the emissiveIntensity write
-        // (target = 0.55 + (1.8 - 0.55) * 1.0) but the stored flash has already
+        // (target = 1.5 + (2.5 - 1.5) * 1.0) but the stored flash has already
         // decayed.
         expect(_engineStateProxy.hoverEmissiveFlash).toBeCloseTo(0.92, 5)
         expect(_engineStateProxy.lastHoveredNode).toBe(5)
@@ -299,11 +301,11 @@ describe('updateHoverEmissiveFlash (A11)', () => {
         const state = { hoverHighlightIndex: 5 }
         updateHoverEmissiveFlash(state)
         // Function writes intensity while flash is still at peak (pre-decay).
-        // target = baseIntensity + (flashPeak - baseIntensity) * 1.0 = 1.8
+        // target = baseIntensity + (flashPeak - baseIntensity) * 1.0 = 2.5
         // Flash then decays to 0.92 in same call, but the intensity write used
-        // the pre-decay value, so emissiveIntensity ends at 1.8.
+        // the pre-decay value, so emissiveIntensity ends at 2.5.
         expect(_engineStateProxy.hoverEmissiveFlash).toBeCloseTo(0.92, 5)
-        expect(sporeMat.emissiveIntensity).toBeCloseTo(1.8, 5)
+        expect(sporeMat.emissiveIntensity).toBeCloseTo(2.5, 5)
     })
 
     it('resets flash to 0 and emissiveIntensity to base when flash decays below 0.005', () => {
@@ -312,7 +314,7 @@ describe('updateHoverEmissiveFlash (A11)', () => {
         const state = { hoverHighlightIndex: 5 }
         updateHoverEmissiveFlash(state)
         expect(_engineStateProxy.hoverEmissiveFlash).toBe(0)
-        expect(sporeMat.emissiveIntensity).toBe(0.55)
+        expect(sporeMat.emissiveIntensity).toBe(1.5)
     })
 
     it('sets emissiveIntensity to flashPeak when flash is 1.0', () => {
@@ -321,8 +323,8 @@ describe('updateHoverEmissiveFlash (A11)', () => {
         const state = { hoverHighlightIndex: 3 }
         updateHoverEmissiveFlash(state)
         // flash was peaked to 1.0, then targetIntensity computed before decay
-        // target = 0.55 + (1.8 - 0.55) * 1.0 = 1.8
-        expect(sporeMat.emissiveIntensity).toBeCloseTo(1.8, 5)
+        // target = 1.5 + (2.5 - 1.5) * 1.0 = 2.5
+        expect(sporeMat.emissiveIntensity).toBeCloseTo(2.5, 5)
     })
 
     it('clears hover on transition back to no hover (5 → null)', () => {
@@ -577,9 +579,7 @@ describe('lerpNodesForFrame (A5)', () => {
     })
 
     it('falls back to focusPocket.getFocusPocketMotionByIndex when state map is absent', () => {
-        const fallbackMap = new Map([
-            [0, { frame: 0, delta: { x: 0, y: 0.1, z: 0 } }]
-        ])
+        const fallbackMap = new Map([[0, { frame: 0, delta: { x: 0, y: 0.1, z: 0 } }]])
         _engineStateProxy.state!.focusState.pocketMotionByIndex = undefined
         _engineStateProxy.focusPocket = {
             applyFocusPocketBreathing: vi.fn().mockReturnValue(true),
