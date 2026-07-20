@@ -12,6 +12,7 @@
  */
 
 import type { LegacyState } from '@lib/state/legacy-state'
+import type { AppState } from '@lib/state/app.svelte'
 import type { MeshPhongMaterial, Material } from 'three'
 import { FogExp2 } from 'three'
 import type { NodePosition } from '@lib/state/state-types'
@@ -91,7 +92,7 @@ export function computeRevealProgress(now: number): { revealed: number; points: 
  */
 export function updatePointsMaterial(
     pointsRevealProgress: number,
-    state: (Pick<LegacyState, 'focusedNode' | 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined
+    state: (Pick<AppState, 'focusedNode' | 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined
 ): void {
     if (!webglContext.pointsMaterial) return
     const isFocused = Number.isFinite(state?.focusedNode)
@@ -168,7 +169,7 @@ export function updateHoverEmissiveFlash(
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A12)
  */
 export function updateMyceliumPulse(
-    state: (Pick<LegacyState, 'pulsePhase'> & { weather?: { wind_speed_10m?: number } | null }) | null | undefined
+    state: (Pick<AppState, 'pulsePhase' | 'weather'>) | null | undefined
 ): boolean {
     const threadsVisible = shouldRenderThreads()
     if (webglContext.myceliumGroup) {
@@ -177,7 +178,7 @@ export function updateMyceliumPulse(
     const prefersReduced =
         typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
     const basePulseSpeed = prefersReduced ? 0.0 : 0.015
-    const windSpeed = state?.weather?.wind_speed_10m ?? 8.0
+    const windSpeed = state?.weather?.windSpeed ?? 8.0
     const pulseIncrement = basePulseSpeed * (0.6 + windSpeed / 15.0)
     if (state) state.pulsePhase = (state.pulsePhase + pulseIncrement) % (Math.PI * 2)
     return threadsVisible
@@ -260,8 +261,15 @@ export function lerpNodesForFrame(now: number): boolean {
         // initialized in appState and only declared in the LegacyState type).
         // When undefined, read indices from the canonical Map source so GPU
         // instance matrices stay in sync with breathing positions.
+        // NOTE: LegacyState typed focusPocketMotionByIndex loosely (as `any`),
+        // so the original `.forEach((idx: number) => …)` compiled unchecked and
+        // `idx` was the Map *value* at runtime (a PocketMotionWithFrame), making
+        // the branch a silent no-op (setNodeSporeInstanceMatrix expects a node
+        // index). We preserve that exact runtime behavior via a cast so the
+        // P1-F reconciliation does not alter frame-loop logic.
         const pocketMotionIndices =
-            engineState.state.focusPocketMotionByIndex ??
+            (engineState.state?.focusState.pocketMotionByIndex as unknown as
+                Map<number, number> | undefined) ??
             (engineState.focusPocket
                 ? Array.from(engineState.focusPocket.getFocusPocketMotionByIndex().keys())
                 : undefined)
@@ -301,7 +309,7 @@ export function lerpNodesForFrame(now: number): boolean {
 export function lerpCameraForReveal(
     cameraRevealProgress: number,
     revealProgress: number,
-    state: LegacyState | null | undefined
+    state: AppState | null | undefined
 ): void {
     if (
         engineState.state?.sceneRevealActive &&

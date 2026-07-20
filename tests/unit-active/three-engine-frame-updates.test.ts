@@ -360,7 +360,7 @@ describe('updateMyceliumPulse (A12)', () => {
 
     it('sets myceliumGroup.visible from shouldRenderThreads return', () => {
         _shouldRenderThreads.mockReturnValue(true)
-        const state = { pulsePhase: 0, weather: { wind_speed_10m: 8.0 } }
+        const state = { pulsePhase: 0, weather: { windSpeed: 8.0 } }
         const visible = updateMyceliumPulse(state)
         expect(visible).toBe(true)
         expect(myceliumGroup.visible).toBe(true)
@@ -368,7 +368,7 @@ describe('updateMyceliumPulse (A12)', () => {
 
     it('hides myceliumGroup when shouldRenderThreads returns false', () => {
         _shouldRenderThreads.mockReturnValue(false)
-        const state = { pulsePhase: 0, weather: { wind_speed_10m: 8.0 } }
+        const state = { pulsePhase: 0, weather: { windSpeed: 8.0 } }
         const visible = updateMyceliumPulse(state)
         expect(visible).toBe(false)
         expect(myceliumGroup.visible).toBe(false)
@@ -376,7 +376,7 @@ describe('updateMyceliumPulse (A12)', () => {
 
     it('advances pulsePhase by (0.015 * (0.6 + wind/15)) for normal motion', () => {
         _shouldRenderThreads.mockReturnValue(false)
-        const state = { pulsePhase: 0, weather: { wind_speed_10m: 7.5 } }
+        const state = { pulsePhase: 0, weather: { windSpeed: 7.5 } }
         updateMyceliumPulse(state)
         // basePulseSpeed = 0.015, windSpeed = 7.5
         // increment = 0.015 * (0.6 + 7.5/15) = 0.015 * (0.6 + 0.5) = 0.015 * 1.1 = 0.0165
@@ -396,7 +396,7 @@ describe('updateMyceliumPulse (A12)', () => {
         })) as any
 
         _shouldRenderThreads.mockReturnValue(false)
-        const state = { pulsePhase: 1.0, weather: { wind_speed_10m: 12.0 } }
+        const state = { pulsePhase: 1.0, weather: { windSpeed: 12.0 } }
         updateMyceliumPulse(state)
         // basePulseSpeed = 0.0, so increment = 0 regardless of wind
         expect(state.pulsePhase).toBe(1.0)
@@ -406,7 +406,7 @@ describe('updateMyceliumPulse (A12)', () => {
 
     it('wraps pulsePhase modulo 2π', () => {
         _shouldRenderThreads.mockReturnValue(false)
-        const state = { pulsePhase: Math.PI * 2 - 0.01, weather: { wind_speed_10m: 8.0 } }
+        const state = { pulsePhase: Math.PI * 2 - 0.01, weather: { windSpeed: 8.0 } }
         updateMyceliumPulse(state)
         expect(state.pulsePhase).toBeLessThan(Math.PI * 2)
         expect(state.pulsePhase).toBeGreaterThan(0)
@@ -435,7 +435,7 @@ describe('updateMyceliumPulse (A12)', () => {
     it('does not throw when myceliumGroup is null', () => {
         _webglContextProxy.myceliumGroup = null
         _shouldRenderThreads.mockReturnValue(true)
-        const state = { pulsePhase: 0, weather: { wind_speed_10m: 5.0 } }
+        const state = { pulsePhase: 0, weather: { windSpeed: 5.0 } }
         expect(() => updateMyceliumPulse(state)).not.toThrow()
     })
 })

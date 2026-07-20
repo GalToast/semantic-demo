@@ -7,7 +7,7 @@
  */
 
 import { withStateMutation } from '@lib/state/with-state-mutation'
-import { legacyState } from '@lib/state/app.svelte'
+import { legacyState, type AppState } from '@lib/state/app.svelte'
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { search, clearSearch } from '@lib/search/state'
 import type { ThreadCandidateLike } from '@lib/state/state-types'
@@ -44,7 +44,7 @@ import { journeyStore } from '@lib/stores/journey.svelte'
 import { debugError } from '@lib/utils/debug'
 
 type LegacyActionModules = {
-    state?: Record<string, unknown>
+    state?: AppState
     withStateMutation?: <T>(fn: () => T) => T
     camera?: {
         focusOnNode?: (index: number, options?: Record<string, unknown>) => boolean

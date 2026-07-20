@@ -265,7 +265,12 @@ const EXEMPTED_SHAS = new Set<string>([
     // measures production settled geometry instead of a transient parked
     // state). The AppBoot change is test-support scaffolding; splitting would
     // orphan the test from its subject. Grandfathered.
-    '73be9955a7566f67ef967093a83b02dfb6ce46a7'
+    '73be9955a7566f67ef967093a83b02dfb6ce46a7',
+    // 6422f42 — docs(css): update css-ownership.md +
+    // mobile_premium__state.css for consolidation. Bundled a CSS file under a
+    // docs prefix because the CSS ownership doc and the owned CSS module were
+    // updated together as a single consolidation pass. Grandfathered.
+    '6422f4266f0e85d5c7092c875aae8bbc107ce11b'
 ])
 
 // Conventional-commit prefix regex. Captures:

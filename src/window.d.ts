@@ -15,6 +15,8 @@
 
 export {}
 
+import type { AppState } from './lib/state/app.svelte'
+
 declare global {
     interface Window {
         /**
@@ -29,14 +31,14 @@ declare global {
          * `page.evaluate(() => window.__LEGACY_APP_STATE__)` access path.
          * Loose shape — the contract tests assert specific properties exist.
          */
-        __LEGACY_APP_STATE__?: Record<string, unknown>
+        __LEGACY_APP_STATE__?: AppState | undefined
 
         /**
          * Test compat state proxy published by orchestration/app-init.ts.
          * A bag of action handles for Playwright tests; the .state getter
          * returns a snapshot of the live AppState.
          */
-        __APP_STATE__?: Record<string, unknown>
+        __APP_STATE__?: AppState | undefined
 
         /**
          * Test compat action proxy published by orchestration/app-init.ts.

@@ -10,7 +10,7 @@
  * directly to the cached module refs.
  */
 
-import type { LegacyState } from '@lib/state/legacy-state'
+import type { AppState } from '@lib/state/app.svelte'
 import type { DisposableRegistry } from '@lib/utils/disposable-registry'
 import type { SceneStaticSnapshot } from '@lib/engine/renderer/scene-static-tracker'
 export type PostProcessingModule = {
@@ -27,7 +27,7 @@ interface WithStateMutationFn {
 }
 
 interface WindowWithDevGlobals extends Window {
-    __LEGACY_APP_STATE__?: Record<string, unknown> | undefined
+    __LEGACY_APP_STATE__?: AppState | undefined
     __refreshTestCompatState__?: () => void
 }
 
@@ -72,7 +72,7 @@ export interface ThreeEngineState {
     audioScape: AudioScapeModule | null
     loadingUi: LoadingUiModule | null
     threeInteractionVisuals: ThreeInteractionVisualsModule | null
-    state: LegacyState | null
+    state: AppState | null
     loaded: boolean
 
     // Render-loop bookkeeping

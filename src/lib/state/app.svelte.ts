@@ -67,7 +67,7 @@ import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
 // ── App State class ─────────────────────────────────────────────────────────
 
-class AppState {
+export class AppState {
     // ==== SEARCH SUB-AGGREGATE (Phase 6b) ====
     // All 20 persistent search-domain fields grouped here. The factory
     // migration's `computeFromAppState` reads from appState, so the
@@ -571,6 +571,7 @@ class AppState {
     autoRotateResumeDueAt = $state<number>(0)
     autoRotateSoftResumeStartedAt = $state<number>(0)
     sceneRevealActive = $state<boolean>(false)
+    forceAnimate = $state<boolean>(false)
     sceneRevealStartedAt = $state<number>(0)
     sceneRevealCameraStart = $state<Vector3Like | null>(null)
     sceneRevealCameraEnd = $state<Vector3Like | null>(null)
@@ -784,8 +785,9 @@ if (typeof window !== 'undefined') {
     })
 }
 
-// ── LegacyState bridge ─────────────────────────────────────────────────────
-// Replaces legacy-state-adapter.ts — the typed escape hatch for engine
-// subsystems that read appState through the LegacyState interface.
-import type { LegacyState } from './state-types'
-export const legacyState = appState as unknown as LegacyState
+// ── LegacyState alias (historical) ───────────────────────────────────────────
+// Replaces legacy-state-adapter.ts. Some legacy subsystems still read appState
+// through this alias. It is the same object as appState, typed as AppState.
+// The unsafe `as unknown as LegacyState` cast was removed in the P1-F cleanup so
+// every access is now type-checked.
+export const legacyState = appState

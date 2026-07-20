@@ -61,7 +61,7 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
             component: 'SearchResults',
             file: 'src/components/SearchResults.svelte',
             loading: { marker: 'search-loading' },
-            error: { marker: 'search-error-state', hasRetry: true },
+            error: { marker: 'search-error-state', hasRetry: true, errorFile: 'src/components/ErrorState.svelte' },
             empty: { marker: 'search-empty-state', hasSuggestions: true }
             // NOTE: A single .sr-only live region at the top of the component
             // announces loading/error/empty state changes; markers themselves
@@ -73,6 +73,10 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
     for (const c of tier1) {
         describe(`${c.component}`, () => {
             const src = readFile(c.file)
+        // Error surfaces were extracted into the shared ErrorState.svelte
+        // presentational component, so a tier entry may point its error
+        // marker at a different file than the component under test.
+        const errorSrc = c.error && c.error.errorFile ? readFile(c.error.errorFile) : src
 
             if (c.loading) {
                 it(`has loading marker (${c.loading.marker})`, () => {
@@ -98,22 +102,22 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
 
             if (c.error) {
                 it(`has error marker (${c.error.marker})`, () => {
-                    const lastIdx = src.lastIndexOf(c.error.marker)
+                    const lastIdx = errorSrc.lastIndexOf(c.error.marker)
                     expect(lastIdx).toBeGreaterThan(0)
                 })
 
                 if (c.error.role) {
                     it(`error marker uses role="${c.error.role}"`, () => {
-                        const markerIdx = src.lastIndexOf(c.error.marker)
-                        const window = src.substring(Math.max(0, markerIdx - 200), markerIdx + 200)
+                        const markerIdx = errorSrc.lastIndexOf(c.error.marker)
+                        const window = errorSrc.substring(Math.max(0, markerIdx - 200), markerIdx + 200)
                         expect(window).toMatch(new RegExp(`role=["']${c.error.role}["']`))
                     })
                 }
 
                 if (c.error.hasRetry) {
                     it('error state offers a retry action', () => {
-                        const markerIdx = src.lastIndexOf(c.error.marker)
-                        const window = src.substring(markerIdx, Math.min(src.length, markerIdx + 2000))
+                        const markerIdx = errorSrc.lastIndexOf(c.error.marker)
+                        const window = errorSrc.substring(markerIdx, Math.min(errorSrc.length, markerIdx + 2000))
                         expect(window).toMatch(/retry/i)
                         // Should be a real button, not just text. Allow
                         // class-based detection (e.g. class="search-error-retry-btn").

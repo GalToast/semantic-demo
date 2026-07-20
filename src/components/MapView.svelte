@@ -16,6 +16,7 @@
   import { debugWarn } from '@lib/utils/debug'
   import { DisposableRegistry } from '@lib/utils/disposable-registry'
   import { friendlyErrorMessage } from '@lib/utils/error-messages'
+  import ErrorState from '@components/ErrorState.svelte'
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
   import {
     centerMapOnRouteAnchor,
@@ -244,17 +245,14 @@
     <div class="map-status" class:is-error={status === 'error'} role="status" aria-live="polite">
       <span class="map-status-dot" aria-hidden="true"></span>
       {#if status === 'error' && friendlyMapError}
-        <div class="map-status-text">
-          <strong>{friendlyMapError.title}</strong>
-          {#if friendlyMapError.detail}<div class="map-status-detail">{friendlyMapError.detail}</div>{/if}
-          {#if friendlyMapError.technical}
-            <details class="map-status-technical">
-              <summary>Technical details</summary>
-              <code>{friendlyMapError.technical}</code>
-            </details>
-          {/if}
-        </div>
-        <button class="map-retry-btn" type="button" onclick={activateLeafletMap}>Retry</button>
+        <ErrorState
+          variant="map"
+          title={friendlyMapError.title}
+          detail={friendlyMapError.detail}
+          technical={friendlyMapError.technical}
+          retryLabel="Retry"
+          onRetry={activateLeafletMap}
+        />
       {:else}
         <span>{statusDetail}</span>
       {/if}
@@ -379,36 +377,6 @@
     animation: none;
   }
 
-  .map-status-text {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-    text-align: left;
-  }
-  .map-status-detail {
-    font-size: 0.78rem;
-    color: rgba(255, 225, 209, 0.85);
-    font-weight: 400;
-  }
-  .map-status-technical {
-    font-size: 0.65rem;
-    margin-top: 0.25rem;
-  }
-  .map-status-technical summary {
-    cursor: pointer;
-    user-select: none;
-    color: rgba(255, 225, 209, 0.85);
-  }
-  .map-status-technical code {
-    display: block;
-    font-family: var(--font-mono, monospace);
-    font-size: 0.6rem;
-    color: rgba(255, 225, 209, 0.85); /* a11y-ok: technical-only, rendered inside <details> collapsed by default */
-    word-break: break-word;
-    margin-top: 0.2rem;
-  }
-
   .map-view-footer {
     left: 24px;
     right: 24px;
@@ -419,8 +387,7 @@
     gap: 14px;
   }
 
-  .map-back-btn,
-  .map-retry-btn {
+  .map-back-btn {
     min-height: 44px;
     border: 1px solid rgba(126, 231, 219, 0.35);
     border-radius: 8px;
@@ -442,13 +409,7 @@
     padding: 0 16px;
   }
 
-  .map-retry-btn {
-    min-height: 44px;
-    padding: 0 12px;
-  }
-
-  .map-back-btn:hover,
-  .map-retry-btn:hover {
+  .map-back-btn:hover {
     background: rgba(17, 41, 47, 0.92);
     border-color: rgba(126, 231, 219, 0.64);
     transform: translateY(-1px);

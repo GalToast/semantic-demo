@@ -5,25 +5,25 @@
  * Each function is pure or data-dependent (no module-level state access).
  */
 
-import type { LegacyState } from '@lib/state/legacy-state'
+import type { AppState } from '@lib/state/app.svelte'
 
 export function hasFiniteNodeIndex(value: unknown): boolean {
     return typeof value === 'number' && Number.isFinite(value) && value >= 0
 }
 
-export function sceneNeedsContinuousFrame(now: number, state: LegacyState | null): boolean {
+export function sceneNeedsContinuousFrame(now: number, state: AppState | null): boolean {
     if (!state) return true
-    const focusPocketMotion = state.focusPocketMotionByIndex as unknown
+    const focusPocketMotion = state.focusState.pocketMotionByIndex as unknown
     const focusPocketMoving = Array.isArray(focusPocketMotion)
         ? focusPocketMotion.length > 0
         : (focusPocketMotion as Map<unknown, unknown>)?.size > 0
-    const autoRotateActive = Boolean(state.autoRotate && !state.autoRotateSuspended)
+    const autoRotateActive = Boolean(state.navState.autoRotate && !state.navState.autoRotateSuspended)
     const autoRotateResumePending = typeof state.autoRotateResumeDueAt === 'number' && state.autoRotateResumeDueAt > now
     const routeTraceActive = Boolean(state.routeTraceLines)
     return Boolean(
         state.forceAnimate ||
         state.sceneRevealActive ||
-        state.nodesAreSettling ||
+        state.focusState.nodesAreSettling ||
         state.myceliumDirty ||
         routeTraceActive ||
         focusPocketMoving ||
@@ -32,7 +32,7 @@ export function sceneNeedsContinuousFrame(now: number, state: LegacyState | null
         state.searchState?.searchGlowActive ||
         hasFiniteNodeIndex(state.hoverHighlightIndex) ||
         hasFiniteNodeIndex(state.focusedNode) ||
-        hasFiniteNodeIndex(state.inspectedThreadIndex) ||
-        hasFiniteNodeIndex(state.pinnedThreadIndex)
+        hasFiniteNodeIndex(state.focusState.inspectedThreadIndex) ||
+        hasFiniteNodeIndex(state.focusState.pinnedThreadIndex)
     )
 }

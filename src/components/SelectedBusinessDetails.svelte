@@ -203,7 +203,13 @@
      contact links read as actionable. (The badge row above already surfaces
      the same info as chips; this makes the actual link usable.) */
   .selected-facts a {
-    color: var(--color-text-teal-light);
+    /* W53 close-up jury (2026-07-18): the link text was near-white
+       --color-text-teal-light, the SAME hue as the sibling Email/Phone
+       labels, so 'Website' didn't stand out as a link (only its underline
+       did, + some jurors missed even that). Use --color-primary-alt
+       (teal #4ECDC4) so the link text reads as a clearly distinct clickable
+       hyperlink alongside the plain white labels. */
+    color: var(--color-primary-alt);
     text-decoration: underline;
     text-underline-offset: 2px;
     /* W53 jury-rerun (2026-07-18): 4/5 jurors read the 0.6-α underline as

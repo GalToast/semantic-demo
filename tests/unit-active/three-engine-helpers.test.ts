@@ -40,10 +40,22 @@ describe('sceneNeedsContinuousFrame', () => {
     // Minimal mock factory — only the fields the function actually reads
     // -----------------------------------------------------------------------
     function mockState(partial: Record<string, unknown>) {
-        return partial as unknown as ReturnType<typeof sceneNeedsContinuousFrame> extends (
-            _now: number,
-            state: infer S
-        ) => boolean
+        const focusState = {
+            pocketMotionByIndex: undefined as unknown,
+            nodesAreSettling: false,
+            inspectedThreadIndex: null as number | null,
+            pinnedThreadIndex: null as number | null,
+            ...(partial.focusState as Record<string, unknown> | undefined || {})
+        }
+        const navState = {
+            autoRotate: false,
+            autoRotateSuspended: false,
+            ...(partial.navState as Record<string, unknown> | undefined || {})
+        }
+        const { focusState: _focusOverride, navState: _navOverride, ...rest } = partial
+        return { focusState, navState, ...rest } as unknown as ReturnType<
+            typeof sceneNeedsContinuousFrame
+        > extends (_now: number, state: infer S) => boolean
             ? S
             : never
     }
@@ -60,7 +72,7 @@ describe('sceneNeedsContinuousFrame', () => {
     })
 
     it('returns true when nodesAreSettling is true', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ nodesAreSettling: true }))).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { nodesAreSettling: true } }))).toBe(true)
     })
 
     it('returns true when myceliumDirty is true', () => {
@@ -76,38 +88,38 @@ describe('sceneNeedsContinuousFrame', () => {
     })
 
     it('returns true when focusPocketMotion is a non-empty array', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: [{}] }))).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pocketMotionByIndex: [{}] } }))).toBe(true)
     })
 
     it('returns true when focusPocketMotion is a non-empty Map', () => {
         const m = new Map()
         m.set('k', 'v')
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: m }))).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pocketMotionByIndex: m } }))).toBe(true)
     })
 
     it('returns false when focusPocketMotion is an empty array', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: [] }))).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pocketMotionByIndex: [] } }))).toBe(false)
     })
 
     it('returns false when focusPocketMotion is an empty Map', () => {
         const m = new Map()
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: m }))).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pocketMotionByIndex: m } }))).toBe(false)
     })
 
     it('returns true when autoRotate is true and autoRotateSuspended is false', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotate: true, autoRotateSuspended: false }))).toBe(
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ navState: { autoRotate: true, autoRotateSuspended: false } }))).toBe(
             true
         )
     })
 
     it('returns false when autoRotate is true but autoRotateSuspended is also true', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotate: true, autoRotateSuspended: true }))).toBe(
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ navState: { autoRotate: true, autoRotateSuspended: true } }))).toBe(
             false
         )
     })
 
     it('returns false when autoRotate is false', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotate: false }))).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ navState: { autoRotate: false } }))).toBe(false)
     })
 
     it('returns true when autoRotateResumeDueAt is in the future', () => {
@@ -151,19 +163,19 @@ describe('sceneNeedsContinuousFrame', () => {
     })
 
     it('returns true when inspectedThreadIndex is a finite non-negative number', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ inspectedThreadIndex: 2 }))).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { inspectedThreadIndex: 2 } }))).toBe(true)
     })
 
     it('returns false when inspectedThreadIndex is null', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ inspectedThreadIndex: null }))).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { inspectedThreadIndex: null } }))).toBe(false)
     })
 
     it('returns true when pinnedThreadIndex is a finite non-negative number', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ pinnedThreadIndex: 7 }))).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pinnedThreadIndex: 7 } }))).toBe(true)
     })
 
     it('returns false when pinnedThreadIndex is null', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ pinnedThreadIndex: null }))).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pinnedThreadIndex: null } }))).toBe(false)
     })
 
     // -----------------------------------------------------------------------
@@ -180,18 +192,22 @@ describe('sceneNeedsContinuousFrame', () => {
                 mockState({
                     forceAnimate: false,
                     sceneRevealActive: false,
-                    nodesAreSettling: false,
+                    focusState: {
+                        nodesAreSettling: false,
+                        pocketMotionByIndex: [],
+                        inspectedThreadIndex: null,
+                        pinnedThreadIndex: null
+                    },
                     myceliumDirty: false,
                     routeTraceLines: undefined,
-                    focusPocketMotionByIndex: [],
-                    autoRotate: false,
-                    autoRotateSuspended: false,
+                    navState: {
+                        autoRotate: false,
+                        autoRotateSuspended: false
+                    },
                     autoRotateResumeDueAt: undefined,
-                    searchGlowActive: false,
+                    searchState: { searchGlowActive: false },
                     hoverHighlightIndex: NaN,
-                    focusedNode: null,
-                    inspectedThreadIndex: null,
-                    pinnedThreadIndex: null
+                    focusedNode: null
                 })
             )
         ).toBe(false)

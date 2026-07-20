@@ -37,6 +37,7 @@
   import { friendlyErrorMessage } from '@lib/utils/error-messages';
   import type { SearchResult } from '@lib/types/state';
   import SearchResultItem from '@components/SearchResultItem.svelte';
+  import ErrorState from '@components/ErrorState.svelte';
 
   interface Props {
     /** Whether the results panel is visible */
@@ -374,25 +375,19 @@
         <div class="search-loading-text">Searching...</div>
       </div>
     {:else if isFullError}
-      <div class="search-error-state">
-        <span class="search-error-kicker">Retry needed</span>
-        <div class="search-error-text">
-          <strong>{friendlyError?.title ?? 'Something went wrong'}</strong>
-          {#if friendlyError?.detail}
-            <div class="search-error-detail-message">{friendlyError.detail}</div>
-          {/if}
-        </div>
-        {#if friendlyError?.technical}
-          <details class="search-error-technical" data-testid="search-error-detail">
-            <summary>Technical details</summary>
-            <code>{friendlyError.technical}</code>
-          </details>
-        {/if}
-        <div class="search-error-actions">
-          <button class="search-error-retry-btn" type="button" aria-label={`Retry search for ${searchError?.query}`} onclick={onRetry}>Retry</button>
-          <button class="search-error-dismiss-btn" type="button" aria-label="Clear search and dismiss" onclick={onClear}>Clear</button>
-        </div>
-      </div>
+      <ErrorState
+        kicker="Retry needed"
+        title={friendlyError?.title ?? 'Something went wrong'}
+        detail={friendlyError?.detail}
+        technical={friendlyError?.technical}
+        retryLabel="Retry"
+        retryAriaLabel={`Retry search for ${searchError?.query}`}
+        onRetry={onRetry}
+        dismissLabel="Clear"
+        dismissAriaLabel="Clear search and dismiss"
+        onDismiss={onClear}
+        technicalTestId="search-error-detail"
+      />
     {:else if isEmpty}
       <div class="search-empty-state fade-in">
         <div class="search-empty-icon-wrap">

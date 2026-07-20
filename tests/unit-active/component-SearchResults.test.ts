@@ -21,9 +21,14 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 const SEARCH_RESULTS_PATH = resolve(__dirname, '../../src/components/SearchResults.svelte')
+const ERROR_STATE_PATH = resolve(__dirname, '../../src/components/ErrorState.svelte')
 
 function readSource(): string {
     return readFileSync(SEARCH_RESULTS_PATH, 'utf-8')
+}
+
+function readErrorState(): string {
+    return readFileSync(ERROR_STATE_PATH, 'utf-8')
 }
 
 describe('SearchResults component', () => {
@@ -46,9 +51,13 @@ describe('SearchResults component', () => {
     })
 
     it('error state .search-error-state exists and a single polite live region announces it', () => {
-        expect(source).toContain('class="search-error-state"')
-        expect(source).toContain('search-error-kicker')
-        expect(source).toContain('Retry needed')
+        // The error surface was extracted into the shared ErrorState.svelte
+        // presentational component (SearchResults renders <ErrorState />), so
+        // the marker assertions live there now.
+        const errorState = readErrorState()
+        expect(errorState).toContain('class="search-error-state"')
+        expect(errorState).toContain('search-error-kicker')
+        expect(errorState).toContain('Retry needed')
         // A single .sr-only live region (not the marker itself) handles all
         // loading/error/empty announcements so they don't interrupt the user.
         expect(source).toMatch(/<div[^>]*class="sr-only"[^>]*aria-live="polite"[^>]*role="status"/)
