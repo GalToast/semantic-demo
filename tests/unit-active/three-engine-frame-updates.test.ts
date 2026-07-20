@@ -18,6 +18,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const _getSceneRevealProgress = vi.hoisted(() => vi.fn())
 const _shouldRenderThreads = vi.hoisted(() => vi.fn())
+const _setNodeSporeInstanceMatrix = vi.hoisted(() => vi.fn())
+const _markNodesDirty = vi.hoisted(() => vi.fn())
 
 // ── Trackable engineState proxy ───────────────────────────────────────────────
 
@@ -47,11 +49,13 @@ vi.mock('@lib/engine/webgl-context', () => ({
 
 vi.mock('@lib/engine/node-manager', () => ({
     PORT_SCENE_ATMOSPHERE: { pointOpacityScale: 1.0, fogDensity: 0.0028, sporeOpacity: 0.65 },
-    SCENE_ATMOSPHERE: { pointOpacityScale: 1.0, fogDensity: 0.0028, sporeOpacity: 0.65 }
+    SCENE_ATMOSPHERE: { pointOpacityScale: 1.0, fogDensity: 0.0028, sporeOpacity: 0.65 },
+    setNodeSporeInstanceMatrix: _setNodeSporeInstanceMatrix
 }))
 
 vi.mock('@lib/engine/thread-manager', () => ({
-    shouldRenderThreads: _shouldRenderThreads
+    shouldRenderThreads: _shouldRenderThreads,
+    markNodesDirty: _markNodesDirty
 }))
 
 vi.mock('@lib/engine/config', () => ({
@@ -69,7 +73,8 @@ import {
     updatePointsMaterial,
     updateHoverEmissiveFlash,
     updateMyceliumPulse,
-    updatePointsShaderHoverBoost
+    updatePointsShaderHoverBoost,
+    lerpNodesForFrame
 } from '@lib/engine/three-engine-frame-updates'
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
@@ -522,5 +527,74 @@ describe('updatePointsShaderHoverBoost (A14)', () => {
         uniforms.uHoverBoost.value = 1.5
         updatePointsShaderHoverBoost(Infinity, null)
         expect(uniforms.uHoverBoost.value).toBeCloseTo(1.4, 5)
+    })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 6. lerpNodesForFrame (A5) — focus-pocket matrix regression
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('lerpNodesForFrame (A5)', () => {
+    function makePosition(x = 0, y = 0, z = 0) {
+        return { x, y, z }
+    }
+
+    function resetEngine() {
+        _setNodeSporeInstanceMatrix.mockClear()
+        _markNodesDirty.mockClear()
+        _engineStateProxy.state = {
+            nodePositions: [makePosition(0, 0, 0), makePosition(1, 0, 0), makePosition(2, 0, 0)],
+            targetPositions: [makePosition(0, 0, 0), makePosition(1, 0, 0), makePosition(2, 0, 0)],
+            focusState: { pocketMotionByIndex: new Map() },
+            myceliumDirty: false
+        }
+        _engineStateProxy.focusPocket = null
+        _webglContextProxy.nodeSporeMesh = null
+        _webglContextProxy.pointsMesh = null
+    }
+
+    beforeEach(resetEngine)
+
+    it('updates node spore matrices for every key in focusState.pocketMotionByIndex when focus pocket breathes', () => {
+        const motionMap = new Map([
+            [1, { frame: 0, delta: { x: 0.1, y: 0, z: 0 } }],
+            [2, { frame: 0, delta: { x: 0.2, y: 0, z: 0 } }]
+        ])
+        _engineStateProxy.state!.focusState.pocketMotionByIndex = motionMap
+        _engineStateProxy.focusPocket = {
+            applyFocusPocketBreathing: vi.fn().mockReturnValue(true)
+        }
+
+        const aborted = lerpNodesForFrame(0)
+
+        expect(aborted).toBe(false)
+        // The bug being fixed: the old code iterated Map values, so it passed
+        // motion objects to setNodeSporeInstanceMatrix instead of node indices.
+        // After the fix, it must iterate keys and call the port for indices 1 and 2.
+        expect(_setNodeSporeInstanceMatrix).toHaveBeenCalledTimes(2)
+        expect(_setNodeSporeInstanceMatrix).toHaveBeenNthCalledWith(1, 1)
+        expect(_setNodeSporeInstanceMatrix).toHaveBeenNthCalledWith(2, 2)
+    })
+
+    it('falls back to focusPocket.getFocusPocketMotionByIndex when state map is absent', () => {
+        const fallbackMap = new Map([
+            [0, { frame: 0, delta: { x: 0, y: 0.1, z: 0 } }]
+        ])
+        _engineStateProxy.state!.focusState.pocketMotionByIndex = undefined
+        _engineStateProxy.focusPocket = {
+            applyFocusPocketBreathing: vi.fn().mockReturnValue(true),
+            getFocusPocketMotionByIndex: vi.fn().mockReturnValue(fallbackMap)
+        }
+
+        lerpNodesForFrame(0)
+
+        expect(_setNodeSporeInstanceMatrix).toHaveBeenCalledTimes(1)
+        expect(_setNodeSporeInstanceMatrix).toHaveBeenCalledWith(0)
+    })
+
+    it('returns early without error when state has no positions', () => {
+        _engineStateProxy.state = null
+        expect(() => lerpNodesForFrame(0)).not.toThrow()
+        expect(_setNodeSporeInstanceMatrix).not.toHaveBeenCalled()
     })
 })

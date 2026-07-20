@@ -257,22 +257,14 @@ export function lerpNodesForFrame(now: number): boolean {
     if (!engineState.state) return true
 
     if (engineState.focusPocket?.applyFocusPocketBreathing(now, engineState.state.nodePositions)) {
-        // Guard against focusPocketMotionByIndex being undefined (it is never
-        // initialized in appState and only declared in the LegacyState type).
-        // When undefined, read indices from the canonical Map source so GPU
-        // instance matrices stay in sync with breathing positions.
-        // NOTE: LegacyState typed focusPocketMotionByIndex loosely (as `any`),
-        // so the original `.forEach((idx: number) => …)` compiled unchecked and
-        // `idx` was the Map *value* at runtime (a PocketMotionWithFrame), making
-        // the branch a silent no-op (setNodeSporeInstanceMatrix expects a node
-        // index). We preserve that exact runtime behavior via a cast so the
-        // P1-F reconciliation does not alter frame-loop logic.
-        const pocketMotionIndices =
-            (engineState.state?.focusState.pocketMotionByIndex as unknown as
-                Map<number, number> | undefined) ??
-            (engineState.focusPocket
-                ? Array.from(engineState.focusPocket.getFocusPocketMotionByIndex().keys())
-                : undefined)
+        // Focus pocket breathing mutates nodePositions. Make sure the GPU
+        // instance matrices for every breathing node are refreshed this frame.
+        const pocketMotionByIndex =
+            engineState.state?.focusState.pocketMotionByIndex ??
+            engineState.focusPocket?.getFocusPocketMotionByIndex()
+        const pocketMotionIndices = pocketMotionByIndex
+            ? Array.from(pocketMotionByIndex.keys())
+            : undefined
         pocketMotionIndices?.forEach((idx: number) => {
             setNodeSporeInstanceMatrixPort(idx)
             movedIndices.push(idx)
