@@ -179,6 +179,7 @@
     color: var(--color-primary-alt);
     cursor: pointer;
     padding: 0.25rem 0.6rem;
+    min-width: 72px;
     min-height: 44px;
     font-family: var(--font-body);
     font-size: 0.65rem;

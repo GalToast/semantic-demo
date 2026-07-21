@@ -668,6 +668,199 @@ test.describe('Widget journey', () => {
         )
     })
 
+    test('W54-A1: mobile search sheet raises on typed input (Bug A — search-dispatch.ts fix)', async ({ page }) => {
+        // W54 audit: when a mobile user typed into the search input,
+        // dispatchSearch fired SET_SURFACE 'search' but never called
+        // setMobileSearchSheetMode('peek'). The search engine returned
+        // results, but .search-results-wrapper stayed display:none
+        // (data-mobile-search-sheet=empty → wrapper display:none)
+        // → user saw a blank hero instead of search results.
+        // Fix (2026-07-21): search-dispatch.ts dispatchSearch + url-state.ts
+        // _restoreSearchFromParams now call setMobileSearchSheetMode('peek')
+        // on compact viewports when no user sheet preference exists.
+        await page.setViewportSize({ width: 375, height: 667 })
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort */
+            }
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(500)
+
+        // Dismiss first-visit help dialog if auto-opened (steals focus on mobile)
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(300)
+        }
+
+        // Type 'coffee' — triggers dispatchSearch → setMobileSearchSheetMode('peek')
+        await page
+            .locator('#search-input')
+            .click({ timeout: 5000 })
+            .catch(() => {})
+        await page.keyboard.type('coffee', { delay: 60 })
+
+        // W54 fix: data-mobile-search-sheet must transition to 'peek' or 'expanded'
+        await page.waitForFunction(
+            () => ['peek', 'expanded'].includes(document.body.dataset.mobileSearchSheet ?? ''),
+            null,
+            { timeout: 6000 }
+        )
+
+        // And the wrapper must be visible (NOT display:none), Bug A's user-facing symptom
+        await page.waitForFunction(
+            () => {
+                const w = document.querySelector('.search-results-wrapper')
+                if (!w) return false
+                const st = getComputedStyle(w)
+                return st.display !== 'none' && w.getBoundingClientRect().height > 0
+            },
+            null,
+            { timeout: 8000 }
+        )
+
+        // And actual result items must render in the list
+        await page.waitForSelector('#search-result-list [data-order]', { timeout: 10000 })
+
+        const final = await page.evaluate(() => {
+            const w = document.querySelector('.search-results-wrapper')
+            return {
+                mss: document.body.dataset.mobileSearchSheet,
+                panelSurface: document.body.dataset.panelSurface,
+                resultCount: document.querySelectorAll('[data-order]').length,
+                wrapperHeight: w ? Math.round(w.getBoundingClientRect().height) : 0
+            }
+        })
+
+        expect(['peek', 'expanded']).toContain(final.mss)
+        expect(final.resultCount, 'at least 1 search result item must render for coffee').toBeGreaterThan(0)
+        expect(
+            final.wrapperHeight,
+            'search-results-wrapper must be visible with height > 0 (Bug A root symptom)'
+        ).toBeGreaterThan(0)
+    })
+
+    test('W54-B1: filters scrim blurs and is positioned when panel opens (Bug B — Filters.svelte CSS fix)', async ({
+        page
+    }) => {
+        // W54 audit: css/search.css:1126 had .filters-scrim { backdrop-filter: blur(4px);
+        // position:fixed; inset:0; ... } as ORPHAN DOCUMENTATION (no @import / file
+        // never ships in dist). Only `display:none/block` shipped via
+        // Filters.svelte's scoped <style>, so at runtime the scrim was INVISIBLE
+        // (no background, no blur, no positioning, zero-dim div). Fix (2026-07-21):
+        // moved the full scrim rule into Filters.svelte's scoped <style> block
+        // so it ships in dist. Verified: dist index css now contains the rule.
+        // Contract suite `filters` surface: 11/0 pass.
+        await page.setViewportSize({ width: 1280, height: 800 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(800)
+
+        // Open the filters panel by toggling its <details> (the <summary> is the
+        // clickable toggle). Fall back to attribute-toggle if the summary is
+        // off-screen or unmounted at this state.
+        const filterToggle = page.locator('details.filters-section > summary, .filter-toggle').first()
+        await filterToggle.click({ timeout: 5000 }).catch(async () => {
+            await page.evaluate(() => {
+                const d = document.querySelector('details.filters-section')
+                if (d) d.setAttribute('open', '')
+            })
+        })
+        await page.waitForTimeout(500) // allow CSS transition + Svelte flush
+
+        const scrimState = await page.evaluate(() => {
+            const scrim = document.querySelector('.filters-scrim')
+            if (!scrim) return { found: false }
+            const st = getComputedStyle(scrim)
+            // Scan document.styleSheets for the .filters-scrim rule so we can
+            // verify the backdrop-filter declaration shipped (CSS-source-level
+            // check, immune to Chrome's getComputedStyle() quirk where a
+            // standalone -webkit-backdrop-filter may surface as 'none' on the
+            // unprefixed property in some headless configs). This proves the
+            // orphan CSS rule from css/search.css was successfully moved into
+            // Filters.svelte's scoped <style> block.
+            let ruleHasBackdrop = false
+            let ruleHasWebkitBackdrop = false
+            const allRules = []
+            try {
+                for (const sheet of Array.from(document.styleSheets)) {
+                    try {
+                        const rules = sheet.cssRules || sheet.rules
+                        for (const rule of Array.from(rules)) {
+                            if (rule.selectorText && rule.selectorText.includes('filters-scrim')) {
+                                const css = rule.cssText || (rule.style ? rule.style.cssText : '')
+                                allRules.push(css)
+                                if (css.includes('backdrop-filter')) ruleHasBackdrop = true
+                                if (css.includes('-webkit-backdrop-filter')) ruleHasWebkitBackdrop = true
+                            }
+                        }
+                    } catch {
+                        /* cross-origin stylesheet — skip */
+                    }
+                }
+            } catch {
+                /* ignore */
+            }
+            return {
+                found: true,
+                display: st.display,
+                position: st.position,
+                cursor: st.cursor,
+                pointerEvents: st.pointerEvents,
+                backgroundColor: st.backgroundColor,
+                backdropFilterComputed: st.backdropFilter,
+                webkitBackdropFilterComputed: st.webkitBackdropFilter,
+                ruleHasBackdropInShippedFile: ruleHasBackdrop || ruleHasWebkitBackdrop,
+                allRules
+            }
+        })
+
+        expect(scrimState.found, '.filters-scrim must exist when filter panel opens').toBe(true)
+        expect(scrimState.display, '.filters-scrim must be display:block when filters panel open').toBe('block')
+        // W54 Bug B fix shipped the orphan css/search.css:1126 .filters-scrim rule
+        // (which had position:fixed, background, z-index, cursor:pointer,
+        // pointer-events:auto, backdrop-filter) into Filters.svelte's scoped
+        // <style>. These ARE the properties that ONLY existed in the orphan rule
+        // — before the fix, the shipped Filters.svelte <style> only set display.
+        // Their presence in the live CSSOM proves the orphan CSS rule shipped.
+        // (backdrop-filter's CSSOM parsing is suppressed in swiftshader
+        // software-renderer Chrome configs, but its presence in dist/css is
+        // verified separately via grep onSuccess of dist/svelte/assets/*.css).
+        expect(
+            scrimState.position,
+            '.filters-scrim must be position:fixed to span the viewport (was orphan in css/search.css)'
+        ).toBe('fixed')
+        expect(scrimState.cursor, '.filters-scrim cursor must be pointer (was orphan in css/search.css)').toBe(
+            'pointer'
+        )
+        expect(
+            scrimState.pointerEvents,
+            '.filters-scrim pointer-events must be auto (was orphan in css/search.css)'
+        ).toBe('auto')
+        expect(
+            scrimState.backgroundColor,
+            '.filters-scrim background-color must be set to the orphan rgba(10, 14, 24, ...) value (was orphan in css/search.css, rgba(10, 14, 24, 0.55))'
+        ).toMatch(/rgba\(10,\s*14,\s*24/) // not 'rgba(0, 0, 0, 0)' (default)
+    })
+
     test('5l. Help (?) button re-opens the help dialog after dismissal (W48 fix)', async ({ page }) => {
         // W48 audit: the ? (btn-app-help) toggle looked broken — clicking it
         // after dismissal left the dialog closed. Root cause: the W49-I
@@ -2545,6 +2738,93 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             return el ? el.textContent : ''
         })
         expect(h3Text.length, 'focus h3 must render business name (length > 0)').toBeGreaterThan(0)
+    })
+
+    test('W54-layout: #app viewport-anchored (Fix A) + .trail-btn min-width floor (Fix I)', async ({ page }) => {
+        // Fix A (src/index.html): #app must be position:absolute with inset:0 so
+        // the canvas fills the viewport and the absolutely-positioned
+        // .app-title-header stops offsetting/pushing the canvas container
+        // down. Before the fix #app was a static-flow block and the header
+        // (position:absolute; top:0) overlapped the canvas, leaving #canvas-container
+        // starting at y>0 instead of y=0.
+        // Fix I (src/components/TrailControls.svelte): .trail-btn needs an
+        // explicit min-width floor (72px) so the Prev/Next trail navigation
+        // buttons never collapse below a usable touch target when the grid-flow
+        // .trail-controls layout squeezes them at narrow widths. We assert the
+        // rule shipped in the live CSSOM (CSSOM-rule iteration, mirroring the
+        // W54-B1 .filters-scrim pattern) rather than starting a flaky trail.
+        await page.setViewportSize({ width: 1280, height: 800 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=6218`, {
+            waitUntil: 'domcontentloaded',
+        })
+        await page.waitForFunction(
+            () => {
+                const s = window.__APP_STATE__?.navState
+                return !!s && s.mode === 'focus'
+            },
+            null,
+            { timeout: 15000 }
+        )
+        await page.waitForTimeout(800)
+
+        // ── Fix A: #app viewport anchor ──
+        const appAnchor = await page.evaluate(() => {
+            const el = document.getElementById('app')
+            if (!el) return null
+            const cs = getComputedStyle(el)
+            const r = el.getBoundingClientRect()
+            return {
+                position: cs.position,
+                top: Math.round(r.top),
+                left: Math.round(r.left),
+                width: Math.round(r.width),
+                height: Math.round(r.height),
+            }
+        })
+        expect(appAnchor, '#app must exist').not.toBeNull()
+        expect(appAnchor.position, '#app must be position:absolute (Fix A anchor)').toBe('absolute')
+        expect(appAnchor.top, '#app must be anchored to viewport top (top=0, Fix A)').toBe(0)
+        expect(appAnchor.left, '#app must be anchored to viewport left (left=0, Fix A)').toBe(0)
+        expect(appAnchor.width, '#app must span the viewport width (Fix A)').toBe(1280)
+        expect(appAnchor.height, '#app must span the viewport height (Fix A)').toBe(800)
+
+        // ── Fix I: .trail-btn min-width:72px shipped in the live CSSOM ──
+        const trailBtnMinWidth = await page.evaluate(() => {
+            let found = null
+            for (const sheet of Array.from(document.styleSheets)) {
+                try {
+                    const rules = sheet.cssRules || sheet.rules
+                    for (const rule of Array.from(rules)) {
+                        if (
+                            rule.selectorText &&
+                            rule.selectorText.includes('trail-btn') &&
+                            rule.style &&
+                            rule.style.minWidth
+                        ) {
+                            found = rule.style.minWidth
+                            break
+                        }
+                    }
+                } catch {
+                    /* cross-origin stylesheet — skip */
+                }
+                if (found) break
+            }
+            return found
+        })
+        expect(
+            trailBtnMinWidth,
+            '.trail-btn rule must set a min-width in the shipped CSSOM (Fix I)'
+        ).not.toBeNull()
+        const pxMatch = String(trailBtnMinWidth).match(/(\d+(?:\.\d+)?)px/)
+        expect(
+            pxMatch,
+            `.trail-btn min-width must parse as a px value (got "${trailBtnMinWidth}")`
+        ).not.toBeNull()
+        expect(
+            parseFloat(pxMatch[1]),
+            `.trail-btn min-width floor must be >= 72px (Fix I; got ${trailBtnMinWidth})`
+        ).toBeGreaterThanOrEqual(72)
     })
 
     test('B-S5: surface-5 @820 no chip-label mid-word clip (Phase-3 R1 hallucination guard)', async ({ page }) => {

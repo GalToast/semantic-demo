@@ -623,6 +623,17 @@
     pointer-events: none;
   }
 
+  /* W50-UX / W49-A2-6 follow-up: take the H1 wrapper out of normal
+   * flow so it no longer pushes <main> down by ~74px on desktop.
+   * The h1 keeps its margin-top:56px to clear the chip rail, and
+   * stays in the DOM for SR/SEO. Mobile sr-only behavior unchanged. */
+  .app-title-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+
   /* A2-6: H1 page title — first heading on the page.
    * Styled as a small, unobtrusive page-title rather than a competing
    * banner. The header below carries the visible brand + chip rail;
@@ -796,6 +807,19 @@
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
+  }
+  /* The placeholder backdrop must NEVER capture pointer events across its
+     full-viewport area — only its CTA (pointer-events: auto inside
+     Placeholder2D.svelte) should. The active .placeholder-layer is
+     position:absolute inset:0, painted above the mobile mode-chip rail
+     (#mode-chips) and search-result list (#search-result-list), which are
+     static normal-flow chrome; leaving its .active pointer-events: auto
+     lets the whole-screen layer intercept taps meant for that chrome.
+     The canvas-layer keeps .active pe:auto so the 3D scene receives
+     drag/zoom. Same specificity as .layer.active -> declared later so
+     source order wins. */
+  .layer.placeholder-layer {
+    pointer-events: none;
   }
   /* Layers are stacked by DOM order (later = higher). No z-index needed,
      which lets children (e.g. error overlays) escape the crossfade stack
