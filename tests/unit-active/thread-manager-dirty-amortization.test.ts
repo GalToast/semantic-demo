@@ -113,7 +113,7 @@ vi.mock('@lib/utils/ui-presentation-three', () => ({
 import { updateMyceliumThreads, markNodesDirty } from '../../src/lib/engine/thread-manager'
 
 describe('thread-manager dirty-node amortization (in-place update)', () => {
-    const SEGMENTS_PER_PAIR = 5
+    const SEGMENTS_PER_PAIR = 10
 
     function makeLayerLine(pairCount: number) {
         const segCount = pairCount * SEGMENTS_PER_PAIR
@@ -174,7 +174,7 @@ describe('thread-manager dirty-node amortization (in-place update)', () => {
         const startArray = mockWebglContext.myceliumCoreLines.geometry.getAttribute('instanceStart')
             .array as Float32Array
 
-        // Snapshot a clean pair's data (pair index 1, nodes 1-2, at segment 5).
+        // Snapshot a clean pair's data (pair index 1, nodes 1-2, at segment 10).
         const cleanPairBaseSeg = 1 * SEGMENTS_PER_PAIR
         const cleanPairStartX_before = startArray[cleanPairBaseSeg * 3]
 
@@ -189,12 +189,12 @@ describe('thread-manager dirty-node amortization (in-place update)', () => {
         // CRITICAL: no sentinel 7.0 anywhere in the used range — proves
         // clean pairs were NOT zeroed (the old bug zeroed everything after
         // the dirty pair count).
-        for (let i = 0; i < 30 * 3; i++) {
+        for (let i = 0; i < 60 * 3; i++) {
             expect(startArray[i], `startArray[${i}] should not be sentinel (clean pair was zeroed)`).not.toBe(7.0)
         }
     })
 
-    it('partial update: dirty pair at index N writes to segment N*5, not segment 0', () => {
+    it('partial update: dirty pair at index N writes to segment N*10, not segment 0', () => {
         // Prime the buffer the same way (mark all 7 nodes dirty + update).
         markNodesDirty([0, 1, 2, 3, 4, 5, 6])
         updateMyceliumThreads()
@@ -203,8 +203,8 @@ describe('thread-manager dirty-node amortization (in-place update)', () => {
             .array as Float32Array
 
         // Mark node 5 as dirty → only pair 5 {5,6} is dirty.
-        // Pair 5 should write to segments 25-29 (baseSeg = 5*5 = 25).
-        // Pair 0 (nodes 0,1) is clean and should be UNCHANGED at segments 0-4.
+        // Pair 5 should write to segments 50-59 (baseSeg = 5*10 = 50).
+        // Pair 0 (nodes 0,1) is clean and should be UNCHANGED at segments 0-9.
         const pair0Seg0_before = startArray[0]
 
         // Move node 5 so pair 5's geometry changes.
@@ -215,9 +215,9 @@ describe('thread-manager dirty-node amortization (in-place update)', () => {
         // Pair 0 (clean, segment 0) should be UNCHANGED.
         expect(startArray[0]).toBe(pair0Seg0_before)
 
-        // Pair 5 (dirty) at segment 25 should reflect node 5's new x=99.
+        // Pair 5 (dirty) at segment 50 should reflect node 5's new x=99.
         // Bezier segment 0 starts at node 5's position → start.x = 99.
-        const pair5Seg0_startX = startArray[25 * 3]
+        const pair5Seg0_startX = startArray[50 * 3]
         expect(pair5Seg0_startX).toBe(99)
 
         // Segment 0 should NOT have been overwritten with pair 5's data.

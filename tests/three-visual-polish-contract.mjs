@@ -162,7 +162,7 @@ const updateThreadsSource = sectionBetween(
 includesAll(
     threadManager,
     [
-        'SEGMENTS_PER_PAIR = 5',
+        'BEZIER_SEGMENTS_PER_PAIR = 10',
         'FLOATS_PER_SEGMENT = 6',
         "geom?.getAttribute('instanceStart')",
         "geom?.getAttribute('instanceEnd')"

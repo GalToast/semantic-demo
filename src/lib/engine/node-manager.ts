@@ -72,7 +72,7 @@ const NODE_SPORE_ROLE_TINT_HALO = new Color(0xff6b6b) // rose - .civic
 const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint
 const _threadTintColor = new Color(THREAD_TINT_COLOR)
 
-const SPORE_SEGMENTS_VISIBLE = 6
+const SPORE_SEGMENTS_VISIBLE = 10
 
 // W54: Spore material tuned for concentric focus visuals. Phong shininess is
 // zeroed so the bright center is not pulled off-center by a specular highlight;

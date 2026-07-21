@@ -25,6 +25,10 @@ import type { SemanticNeighborDetail } from '@lib/types/business'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
+/** Number of straight line segments each mycelium bezier curve is broken into.
+ * 5 was visibly angular; 10 gives smooth filaments without bloating the buffer. */
+const BEZIER_SEGMENTS_PER_PAIR = 10
+
 type EdgePair = { a: number; b: number }
 type MyceliumEdgeSets = {
     corePairs: EdgePair[]
@@ -234,7 +238,7 @@ function getBezierControlPoint(
         .addScaledVector(viewVector, lift * 0.14)
 }
 
-function pushBezierLinePair(positions: number[], colors: number[], pair: EdgePair, intensity = 1, segments = 5): void {
+function pushBezierLinePair(positions: number[], colors: number[], pair: EdgePair, intensity = 1, segments = BEZIER_SEGMENTS_PER_PAIR): void {
     const start = state.nodePositions[pair.a]
     const end = state.nodePositions[pair.b]
     if (!start || !end) return
@@ -614,7 +618,7 @@ function rebuildDirtyPairsInLayer(
     layer: number,
     layerIntensity: Record<number, number>
 ): void {
-    const SEGMENTS_PER_PAIR = 5
+    const SEGMENTS_PER_PAIR = BEZIER_SEGMENTS_PER_PAIR
     const FLOATS_PER_SEGMENT = 6 // 3 start + 3 end
 
     const geom = line?.geometry as LineGeometry | undefined
