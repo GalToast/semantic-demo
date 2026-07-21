@@ -497,7 +497,7 @@ export function applyFocusPocketBreathing(
 
     let changed = false
     pocketMotionByIndex.forEach((motion, index) => {
-        const basePosition = targetPositions[index] || nodePositions[index] || originalPositions[index]
+        const basePosition = positions[index] || targetPositions[index] || originalPositions[index]
         if (!basePosition) return
         if (index === anchorIndex || !anchor) return
         const delay = motion.delay || 0

@@ -446,72 +446,100 @@ function testReducedMotionBreathing() {
     state.focusState.pocketTransitionStartedAt = 0
     _clockNow = 500 // mid-animation
 
-    // positions buffer (flat x,y,z per node)
-    const positions = new Float32Array(8 * 3)
-    // Fill with target positions so applyFocusPocketBreathing has something to read
-    for (let i = 0; i < 8; i++) {
+    // positions buffer: array of {x,y,z} objects matching the production path
+    // where applyFocusPocketBreathing mutates appState.nodePositions.
+    const positions = Array.from({ length: 8 }, (_, i) => {
         const p = state.nodePositions[i] || state.targetPositions[i] || { x: 0, y: 0, z: 0 }
-        positions[i * 3] = p.x
-        positions[i * 3 + 1] = p.y
-        positions[i * 3 + 2] = p.z
-    }
+        return { x: p.x, y: p.y, z: p.z }
+    })
 
     // --- Reduced motion OFF: breathing may change positions ---
     const resultNoReduced = applyFocusPocketBreathing(_clockNow, positions)
-    // resultNoReduced is a boolean — when breathing is active and positions change, returns true
-    // When reduced-motion is off (our shim returns matches:false for non-reduce queries),
-    // breathing IS active so we expect a boolean back
     assert(typeof resultNoReduced === 'boolean', `breathing returns boolean: ${typeof resultNoReduced}`)
 
     // --- Verify the breathing function is accessible and returns a boolean contract ---
-    // We can't fully test reduced-motion without a real matchMedia that we control per-call,
-    // so we verify:
-    // 1. The function runs without throwing
-    // 2. It consults matchMedia (captured in _matchMediaCalls)
     assert(_matchMediaCalls.length > 0, 'breathing consulted matchMedia')
 
     _prefersReducedMotion = true
-    const reducedPositions = new Float32Array(positions)
+    const reducedPositions = positions.map((p) => ({ ...p }))
     assert(
         applyFocusPocketBreathing(_clockNow + 120, reducedPositions) === false,
         'reduced-motion breathing exits without changing positions'
     )
     assert(
-        reducedPositions.every((value, index) => value === positions[index]),
+        reducedPositions.every(
+            (value, index) =>
+                Math.abs(value.x - positions[index].x) < 1e-9 &&
+                Math.abs(value.y - positions[index].y) < 1e-9 &&
+                Math.abs(value.z - positions[index].z) < 1e-9
+        ),
         'reduced-motion breathing leaves position buffer unchanged'
     )
 
     // 3. NaN guard: positions with bad values don't propagate
-    const badPositions = new Float32Array([
-        NaN,
-        0,
-        0,
-        0,
-        Infinity,
-        0,
-        0,
-        0,
-        NaN,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-    ])
+    const badPositions = [
+        { x: NaN, y: 0, z: 0 },
+        { x: 0, y: Infinity, z: 0 },
+        { x: 0, y: 0, z: NaN },
+        { x: 0, y: 0, z: 0 },
+        { x: 0, y: 0, z: 0 },
+        { x: 0, y: 0, z: 0 },
+        { x: 0, y: 0, z: 0 },
+        { x: 0, y: 0, z: 0 }
+    ]
     const resultSafe = applyFocusPocketBreathing(200, badPositions)
     assert(resultSafe === false || resultSafe === true, 'breathing with bad positions returns boolean, not throws')
 
     console.log('  ✓ Reduced-motion breathing returns boolean, consults matchMedia, guards NaN')
+}
+
+// ---------------------------------------------------------------------------
+// TESTS: Breathing Preserves Lerp Progress
+// ---------------------------------------------------------------------------
+
+function testBreathingPreservesLerpProgress() {
+    console.log('\n[TEST] Breathing Preserves Lerp Progress')
+
+    setupMinimalState(8)
+    withStateMutation(() => {
+        state.navState.focusedIndex = 0
+        state.navState.focusPocketMeta = { active: true }
+    })
+
+    // Anchor at origin
+    state.nodePositions[0] = { x: 0, y: 0, z: 0 }
+    state.targetPositions[0] = { x: 0, y: 0, z: 0 }
+    state.originalPositions[0] = { x: 0, y: 0, z: 0 }
+
+    // Pocket node: original far away, target close to anchor, current mid-lerp
+    state.nodePositions[1] = { x: 0.6, y: 0, z: 0 }
+    state.targetPositions[1] = { x: 0.2, y: 0, z: 0 }
+    state.originalPositions[1] = { x: 1.0, y: 0, z: 0 }
+
+    state.focusState.pocketMotionByIndex = new Map([
+        [1, { role: 'primary', delay: 0, duration: 1000, speed: 0.24, breatheAmp: 0.1, phase: 0 }]
+    ])
+    state.focusState.pocketTransitionStartedAt = 0
+    _clockNow = 500
+
+    // positions is the live buffer the function mutates
+    const positions = state.nodePositions.map((p) => ({ x: p.x, y: p.y, z: p.z }))
+
+    applyFocusPocketBreathing(_clockNow, positions)
+
+    // After breathing, the node should still be near its mid-lerp position (~0.6),
+    // not snapped to the target position (~0.2). The breathing is small, so the
+    // radial distance should stay much closer to 0.6 than to 0.2.
+    const afterDistance = Math.sqrt(positions[1].x ** 2 + positions[1].y ** 2 + positions[1].z ** 2)
+    const snapDistance = Math.abs(afterDistance - 0.2)
+    const preserveDistance = Math.abs(afterDistance - 0.6)
+
+    assert(
+        snapDistance > preserveDistance,
+        `breathing preserved lerp progress: distance ${afterDistance} is closer to 0.6 than 0.2`
+    )
+
+    console.log('  ✓ Breathing uses current animated position as base, not target')
 }
 
 // ---------------------------------------------------------------------------
@@ -649,6 +677,7 @@ try {
     run('Placement Geometry & Compression', testPlacementGeometry)
     run('Build Focused Pocket Staged Positions', testBuildFocusedPocketStagedPositions)
     run('Reduced Motion Breathing Contract', testReducedMotionBreathing)
+    run('Breathing Preserves Lerp Progress', testBreathingPreservesLerpProgress)
     run('Focus Thread Curve Point', testFocusThreadCurvePoint)
     run('Sync Runtime State Snapshot', testSyncRuntimeState)
 
