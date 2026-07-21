@@ -464,10 +464,10 @@ function updateFocusCoreVisuals(
                 state.focusHalo.position.copy(worldPos)
                 const auraScale = isInside ? 0.06 : 0.12
                 state.focusHalo.scale.set(auraScale * auraPulse, auraScale * auraPulse, 1)
-                if (appState.camera) state.focusHalo.lookAt(appState.camera.position)
+                if (state.camera) state.focusHalo.lookAt(state.camera.position)
             }
             state.focusCore.position.copy(worldPos)
-            if (appState.camera) state.focusCore.lookAt(appState.camera.position)
+            if (state.camera) state.focusCore.lookAt(state.camera.position)
             updateSelectedNodeMotes(worldPos, time, isInside)
             updateSelectedNodePetals(worldPos, time, isInside)
             updateSelectedNodeFilaments(worldPos, time, isInside)
