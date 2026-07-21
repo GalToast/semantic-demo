@@ -286,6 +286,7 @@ export function initSemanticLens() {
     // === FOCUS HALO + CORE (soft glow + bright dot at focused node) ===
     const haloGeo = new CircleGeometry(1, 64)
     const haloMat = new MeshBasicMaterial({
+        side: DoubleSide,
         color: 0x7ce7dd,
         transparent: true,
         opacity: 0,
@@ -298,6 +299,7 @@ export function initSemanticLens() {
 
     const coreGeo = new CircleGeometry(1, 32)
     const coreMat = new MeshBasicMaterial({
+        side: DoubleSide,
         color: 0xcffcf4,
         transparent: true,
         opacity: 0,
@@ -462,8 +464,10 @@ function updateFocusCoreVisuals(
                 state.focusHalo.position.copy(worldPos)
                 const auraScale = isInside ? 0.06 : 0.12
                 state.focusHalo.scale.set(auraScale * auraPulse, auraScale * auraPulse, 1)
+                if (appState.camera) state.focusHalo.lookAt(appState.camera.position)
             }
             state.focusCore.position.copy(worldPos)
+            if (appState.camera) state.focusCore.lookAt(appState.camera.position)
             updateSelectedNodeMotes(worldPos, time, isInside)
             updateSelectedNodePetals(worldPos, time, isInside)
             updateSelectedNodeFilaments(worldPos, time, isInside)

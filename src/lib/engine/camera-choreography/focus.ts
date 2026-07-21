@@ -90,7 +90,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
     const startPos = camera.position.clone()
     const currentHeading = camera.position.clone().sub(controls.target).normalize()
 
-    let defaultDistance = 0.75
+    let defaultDistance = 0.88
     if (transitionStyle === 'search') defaultDistance = 0.95
     if (transitionStyle === 'walk' || transitionStyle === 'dive' || transitionStyle === 'dive-walk')
         defaultDistance = 0.88

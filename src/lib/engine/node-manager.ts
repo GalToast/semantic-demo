@@ -175,11 +175,18 @@ export function setNodeSporeInstanceMatrix(
         seededUnit(index, 4.2) * Math.PI * 2,
         seededUnit(index, 5.3) * Math.PI
     )
-    _nodeSporeObject.scale.set(
-        base * (0.94 + seededUnit(index, 6.4) * 0.12),
-        base * (0.94 + seededUnit(index, 7.5) * 0.12),
-        base * (0.94 + seededUnit(index, 8.6) * 0.12)
-    )
+    const isFocusedNode = index === state.focusedNode
+    if (isFocusedNode) {
+        // Keep the focused hero spore perfectly spherical so it reads as a
+        // round glow from every camera angle.
+        _nodeSporeObject.scale.set(base, base, base)
+    } else {
+        _nodeSporeObject.scale.set(
+            base * (0.94 + seededUnit(index, 6.4) * 0.12),
+            base * (0.94 + seededUnit(index, 7.5) * 0.12),
+            base * (0.94 + seededUnit(index, 8.6) * 0.12)
+        )
+    }
     _nodeSporeObject.updateMatrix()
     targetMesh.setMatrixAt(index, _nodeSporeObject.matrix)
 }
