@@ -147,8 +147,8 @@ assert(
 )
 assert(
     interactionVisuals.includes('const auraTargetOpacity = hasFocus ? (isInside ? 0.065 : 0.135) : 0.0') &&
-        interactionVisuals.includes('const auraScale = isInside ? 0.044 : 0.082'),
-    'focus halo should stay restrained so it does not wash out the selected-node scene'
+        interactionVisuals.includes('const auraScale = isInside ? 0.06 : 0.12'),
+    'focus halo should be large enough to emphasize the selected node without washing out the scene'
 )
 
 // updateMyceliumThreads now uses LineSegments2 fat-line attributes

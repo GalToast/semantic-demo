@@ -18,6 +18,13 @@ import { focusStore } from '@lib/stores/focus.svelte'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '@lib/stores/filter.svelte'
 import { showExperienceToast } from '@lib/orchestration/toast'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
+import { animateCameraToNode } from '@lib/engine/camera-choreography/focus'
+import {
+    refreshFocusSemanticOverlay,
+    updateFocusSemanticOverlayPositions
+} from '@lib/journey/semantic-overlay'
+import { applyPointFilterColors } from '@lib/journey/point-color'
 import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import { appState } from '@lib/state/app.svelte'
 import { applyFilters } from '@lib/orchestration/search-filter-core'
@@ -611,46 +618,58 @@ function _restoreFocusStateForAnchor(numericId: number): void {
  * shittiest-parts #1: deep-link focus built the pocket + connection rays but never
  * framed the camera, so they sat off-screen in the full mycelium cloud. Frame the
  * camera on the focused anchor/pocket once the pocket is built. Idempotent + guarded
- * inside animateCameraToNode (no-op if camera/controls aren't ready yet). Dynamic
- * import keeps boot lean. Also guarantees the anchor→satellite rays are (re)built
- * for this pocket even if the focus-ui effect hasn't fired yet on a deep-link boot.
+ * inside animateCameraToNode (no-op if camera/controls aren't ready yet). Related
+ * helpers are imported directly so the camera frame + overlay refresh stay in one
+ * place. Also guarantees the anchor→satellite rays are (re)built for this pocket even
+ * if the focus-ui effect hasn't fired yet on a deep-link boot.
  */
 function _frameCameraOnAnchor(index: number): void {
     if (!Number.isFinite(index)) return
-    void import('@lib/engine/camera-choreography/focus')
-        .then((m) => {
+
+    // PR-B4 follow-up: applyUrlState() runs as soon as data is ready, but the
+    // WebGL Canvas initializes asynchronously. The engine creates camera/controls
+    // mid-init and then finishes by setting the default overview camera position.
+    // If we call animateCameraToNode too early, the move is overwritten. We poll
+    // until camera/controls exist, wait one extra tick for the engine to settle, and
+    // only then frame the focused anchor.
+    const reg = new DisposableRegistry({ label: '_frameCameraOnAnchor' })
+    let attempts = 0
+    const maxAttempts = 200
+    const tryFrame = () => {
+        attempts += 1
+        if (!appState.camera || !appState.controls) {
+            if (attempts <= maxAttempts) {
+                reg.schedule(100, tryFrame)
+            } else {
+                debugWarn('[url-state] camera frame on anchor timed out waiting for camera/controls', index)
+                reg.disposeAll()
+            }
+            return
+        }
+
+        // Camera/controls exist, but the engine may still be settling its initial
+        // overview framing. Wait 500ms before animating so the camera move sticks.
+        reg.schedule(500, () => {
+            reg.disposeAll()
             try {
-                m.animateCameraToNode(index, { transitionStyle: 'focus' })
+                animateCameraToNode(index, { transitionStyle: 'focus' })
             } catch (e) {
                 debugWarn('[url-state] camera frame on anchor failed', index, e)
             }
-        })
-        .catch((e) => debugWarn('[url-state] camera-choreography import failed', e))
-    void import('@lib/journey/semantic-overlay')
-        .then((m) => {
             try {
-                m.refreshFocusSemanticOverlay()
-                m.updateFocusSemanticOverlayPositions()
+                refreshFocusSemanticOverlay()
+                updateFocusSemanticOverlayPositions()
             } catch (e) {
                 debugWarn('[url-state] focus semantic overlay refresh failed', index, e)
             }
-        })
-        .catch((e) => debugWarn('[url-state] semantic-overlay import failed', e))
-    // shittiest-parts #1: the focus dim/brightness logic in point-color.ts only
-    // runs when applyPointFilterColors() is invoked. The interactive focus path
-    // calls it (restoreFocusTrailState), but the deep-link path never did — so
-    // the pocket's relative brightness (and the background dim) never applied on
-    // ?anchor=/?record= deep links. Refresh colors here so the gathered
-    // neighborhood reads as prominent against the 8,406-dot field.
-    void import('@lib/journey/point-color')
-        .then((m) => {
             try {
-                m.applyPointFilterColors()
+                applyPointFilterColors()
             } catch (e) {
                 debugWarn('[url-state] point-color refresh failed', index, e)
             }
         })
-        .catch((e) => debugWarn('[url-state] point-color import failed', e))
+    }
+    tryFrame()
 }
 
 /**

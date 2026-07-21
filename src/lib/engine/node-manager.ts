@@ -72,12 +72,12 @@ const NODE_SPORE_ROLE_TINT_HALO = new Color(0xff6b6b) // rose - .civic
 const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint
 const _threadTintColor = new Color(THREAD_TINT_COLOR)
 
-const SPORE_SEGMENTS_VISIBLE = 10
+const SPORE_SEGMENTS_VISIBLE = 24
 
 // W54: Spore material tuned for concentric focus visuals. Phong shininess is
 // zeroed so the bright center is not pulled off-center by a specular highlight;
 // emissive intensity is raised to keep the glow centered and legible.
-export const SPORE_EMISSIVE_INTENSITY_BASE = 1.5
+export const SPORE_EMISSIVE_INTENSITY_BASE = 2.0
 export const SPORE_EMISSIVE_FLASH_PEAK = 2.5
 
 // _nodeSporeObject is a module-level scratch Object3D used in setNodeSporeInstanceMatrix().
@@ -140,10 +140,10 @@ export function getNodeSporeScale(index: number) {
     let emphasis = 1
     if (Number.isFinite(state.focusedNode)) {
         if (index === state.focusedNode) {
-            emphasis = 2.4
+            emphasis = 8.0
         } else if (state.navState.focusPocketIndices?.includes(index)) {
             const role = state.navState.focusPocketRoleByIndex?.get(index)
-            emphasis = role === 'primary' ? 1.3 : 1.15
+            emphasis = role === 'primary' ? 2.0 : 1.6
         } else {
             const trailNeighbors = state.navState.trailNeighborIndices || []
             for (let i = 0; i < Math.min(12, trailNeighbors.length); i += 1) {

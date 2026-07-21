@@ -238,7 +238,13 @@ function getBezierControlPoint(
         .addScaledVector(viewVector, lift * 0.14)
 }
 
-function pushBezierLinePair(positions: number[], colors: number[], pair: EdgePair, intensity = 1, segments = BEZIER_SEGMENTS_PER_PAIR): void {
+function pushBezierLinePair(
+    positions: number[],
+    colors: number[],
+    pair: EdgePair,
+    intensity = 1,
+    segments = BEZIER_SEGMENTS_PER_PAIR
+): void {
     const start = state.nodePositions[pair.a]
     const end = state.nodePositions[pair.b]
     if (!start || !end) return

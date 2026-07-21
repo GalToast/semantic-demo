@@ -460,7 +460,7 @@ function updateFocusCoreVisuals(
                     ? 1.0
                     : 1.0 + Math.sin(time * 0.82) * 0.09 + Math.sin(time * 0.31 + 1.4) * 0.035
                 state.focusHalo.position.copy(worldPos)
-                const auraScale = isInside ? 0.044 : 0.082
+                const auraScale = isInside ? 0.06 : 0.12
                 state.focusHalo.scale.set(auraScale * auraPulse, auraScale * auraPulse, 1)
             }
             state.focusCore.position.copy(worldPos)
