@@ -12,9 +12,21 @@ CSS is injected into `index.html` at build time via the `legacyRootAssetPlugin`
 in `vite.config.ts`, which serializes the `LEGACY_CSS_LINKS` array into
 `<link>` tags inside `transformIndexHtml`.
 
-There is **no `@import` chain** in `css/` at all (verified: `grep -rn "@import" css/`
-returns nothing). The "cascade" is purely `<link>` injection **ORDER** in
-`vite.config.ts` → `LEGACY_CSS_LINKS`. Later links win on equal specificity.
+The effective cascade has two stages:
+
+1. `<link>` injection **ORDER** from `vite.config.ts` → `LEGACY_CSS_LINKS`
+   (`semantic-demo.css`, `vector-explorer-pandora.css`, three `mobile_premium__*`
+   shards, `css/modules/focus_stage.css`). Later links win on equal specificity.
+2. Inside the first linked shell, `semantic-demo.css` contains **sixteen `@import`
+   rules** that load every remaining `css/*.css` file in documented order.
+   The `@import`s live at the repo root (`semantic-demo.css`), not inside `css/`
+   itself — a `grep -rn "@import" css/` therefore returns nothing while the
+   imports still ship.
+
+`vite.config.ts` `copyRuntimeAssetsPlugin` preserves `@import` URLs literally
+in `dist/svelte/semantic-demo.css` (LightningCSS is invoked without
+`resolve: true`). Do not widen the “no `@import` in `css/`” claim into a
+claim that the project has no `@import` anywhere.
 
 Injection order (current HEAD, after `refactor(css): consolidate
 mobile_premium 7-shard split into 3 files`):
@@ -110,7 +122,9 @@ One previously un-gated rule in `css/mobile_premium__surfaces.css:3-5`
 ## 6. Change protocol
 
 - **Add a CSS file:** append its `<link>` to `LEGACY_CSS_LINKS` in load order
-  (later entry = higher cascade priority). Do not introduce an `@import` chain.
+  (later entry = higher cascade priority). Do not introduce new @import
+  chains; the existing chain in `semantic-demo.css` is grandfathered and
+  maintained separately.
 - **Add a mobile surface:** prefer folding into the matching shard
   (`components`, `state`, or `layout`); do **not** re-splinter into new
   `mobile_premium__*.css` files.

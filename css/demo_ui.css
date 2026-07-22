@@ -1,3 +1,11 @@
+/* DEPRECATED-ORPHAN-DOC: 2026-07-22
+ *
+ * This file DOES ship: semantic-demo.css:9 @imports it. But it is
+ * effectively dead: 12 LOC total, 1 live rule, rest are comments.
+ * Do not add new rules here; migrate the live rule to the owning
+ * component's <style> when convenient.
+ */
+
 /* Demo UI: micro-demo overlay tag and demo-mode indicators. */
 
 /* Previously contained dead selectors removed 2026-06-06 (bug-sweep).
