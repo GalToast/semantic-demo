@@ -26,8 +26,6 @@
 
 import { test, expect } from '@playwright/test'
 import fs from 'fs'
-import { focusOnNode } from '@lib/orchestration/lifecycle'
-import { setTrailDepth } from '@lib/stores/journey.svelte'
 import {
     openApp,
     probe,
@@ -479,8 +477,8 @@ test.describe('focus-neighborhood interaction', () => {
                     }
                 }
             }
-            const focusNode = focusOnNode
-            const setTrailDepth = setTrailDepth
+            const focusNode = window.__navActions__?.focusOnNode
+            const setTrailDepth = window.__navActions__?.setTrailDepth
             focusNode?.(targetIndex, { skipUrlSync: true })
             setTrailDepth?.(1, { skipUrlSync: true })
         })
@@ -562,8 +560,8 @@ test.describe('focus-neighborhood interaction', () => {
                     }
                 }
             }
-            const focusNode = focusOnNode
-            const setTrailDepth = setTrailDepth
+            const focusNode = window.__navActions__?.focusOnNode
+            const setTrailDepth = window.__navActions__?.setTrailDepth
             focusNode?.(targetIndex, { skipUrlSync: true })
             setTrailDepth?.(1, { skipUrlSync: true })
         })
@@ -1064,8 +1062,8 @@ test.describe('focus-neighborhood interaction', () => {
                     }
                 }
             }
-            const focusNode = focusOnNode
-            const setTrailDepth = setTrailDepth
+            const focusNode = window.__navActions__?.focusOnNode
+            const setTrailDepth = window.__navActions__?.setTrailDepth
             focusNode?.(targetIndex, { skipUrlSync: true })
             setTrailDepth?.(1, { skipUrlSync: true })
         })

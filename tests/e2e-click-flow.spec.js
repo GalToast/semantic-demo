@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test'
-import { resetExperienceState } from '@lib/orchestration/lifecycle'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
@@ -41,7 +40,7 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
     })
 
     // 1. Initial Load
-    await page.goto(`${BASE_URL}${APP_PATH}`)
+    await page.goto(`${BASE_URL}${APP_PATH}?q=coffee&nodemo=1`)
     await expect(page).toHaveTitle(/Semantic Explorer|MoCo Business Mycelium/)
     await page.waitForSelector('#search-input', { state: 'visible', timeout: 15000 })
     await page
@@ -92,6 +91,7 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
 
     // 6. Reset
     await page.evaluate(() => {
+        const resetExperienceState = window.__navActions__?.resetExperienceState
         if (typeof resetExperienceState === 'function') {
             resetExperienceState()
         }

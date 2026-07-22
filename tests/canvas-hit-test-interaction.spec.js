@@ -16,13 +16,10 @@
  * This is NOT a visual snapshot test. It uses behavioral assertions that fail
  * specifically and cleanly when canvas pointer-events are misconfigured.
  */
-/* eslint-disable no-unused-vars */
+ 
 
 
 import { test, expect } from '@playwright/test'
-import { focusOnNode, refreshCompositionState } from '@lib/orchestration/lifecycle'
-import { setTrailDepth } from '@lib/stores/journey.svelte'
-import { search } from '@lib/search/state'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795'
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
@@ -58,7 +55,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
     await page.addInitScript(() => {
         window.__PLAYWRIGHT__ = true
     })
-    await page.goto(`${BASE_URL}${APP_PATH}?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`${BASE_URL}${APP_PATH}?q=coffee&nodemo=1`, { waitUntil: 'domcontentloaded' })
     // Wait for app state to be initialized - the authoritative readiness signal.
     // Do NOT require search-input here; it is a UI element that may not exist at
     // boot on certain viewports (especially mobile). The real source of truth is
@@ -114,7 +111,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
 async function performSearch(page, query = 'coffee') {
     await prepareSearchInput(page, query)
     await page.evaluate(async (q) => {
-        const search = search
+        const search = window.__navActions__?.search
         if (typeof search === 'function') {
             await search(q, { preferCachedResults: false })
         }
@@ -140,7 +137,7 @@ async function enterFocusFromSearch(page) {
         () => {
             const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
             return (
-                typeof focusOnNode === 'function' &&
+                typeof window.__navActions__?.focusOnNode === 'function' &&
                 Array.isArray(appState?.points) &&
                 appState.points.length > 0
             )
@@ -152,9 +149,9 @@ async function enterFocusFromSearch(page) {
         return appState?.pointIndexByLeadId?.get?.('1') ?? appState?.pointIndexByLeadId?.get?.(1) ?? 0
     })
     await page.evaluate((index) => {
-        const focusNode = focusOnNode
-        const setTrailDepth = setTrailDepth
-        const refreshCompositionState = refreshCompositionState
+        const focusNode = window.__navActions__?.focusOnNode
+        const setTrailDepth = window.__navActions__?.setTrailDepth
+        const refreshCompositionState = window.__navActions__?.refreshCompositionState
         if (typeof focusNode === 'function') {
             focusNode(index, { fromSearchResult: true, skipUrlSync: true })
         }
@@ -391,9 +388,9 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
             return appState?.pointIndexByLeadId?.get?.(1) ?? 0
         })
         await page.evaluate((idx) => {
-            const focusNode = focusOnNode
-            const setTrailDepth = setTrailDepth
-            const refreshCompositionState = refreshCompositionState
+            const focusNode = window.__navActions__?.focusOnNode
+            const setTrailDepth = window.__navActions__?.setTrailDepth
+            const refreshCompositionState = window.__navActions__?.refreshCompositionState
             if (typeof focusNode === 'function') {
                 focusNode(idx, { fromSearchResult: true, skipUrlSync: true, query: 'coffee' })
             }
@@ -472,9 +469,9 @@ test.describe('canvas hit-test: proving canvas does not intercept UI clicks', ()
             return appState?.pointIndexByLeadId?.get?.(1) ?? 0
         })
         await page.evaluate((idx) => {
-            const focusNode = focusOnNode
-            const setTrailDepth = setTrailDepth
-            const refreshCompositionState = refreshCompositionState
+            const focusNode = window.__navActions__?.focusOnNode
+            const setTrailDepth = window.__navActions__?.setTrailDepth
+            const refreshCompositionState = window.__navActions__?.refreshCompositionState
             if (typeof focusNode === 'function') {
                 focusNode(idx, { fromSearchResult: true, skipUrlSync: true, query: 'coffee' })
             }
