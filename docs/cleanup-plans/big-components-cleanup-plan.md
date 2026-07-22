@@ -7,6 +7,12 @@
 
 > **⚠️ Superseded by W52 `4dde21b7` + `2833be6c` + `12ae8927` + `2537a84c`:** the Header.svelte + JourneyCompass.svelte extractions described in §1 #1 + §1 #2 below were already executed during the W52 cleanup campaign — `ModeChipRail.svelte` + `HelpDialog.svelte` extracted at `4dde21b7` / `2833be6c`; JourneyCompass split into `CompassHeader` + `CompassActionButton` + `CompassDiveSurface` at `12ae8927` / `2537a84c`. The Header.svelte line-number ranges `311-484` + JourneyCompass `357-440` referenced below are pre-extraction numbers (revision-checked at the then-current HEAD `5222e684`). The SearchResults/MapView `ErrorState` / `RetryButton` shared-seam proposal in §1 #3 remains a live follow-up pending parallel-session convergence on `SearchResults.svelte`. Treat the §1 #1 + §1 #2 narratives as historical (see post-W52 `docs/important-files.md` for the canonical parent → child inventory).
 
+> **STATUS (2026-07-22, HEAD `840411fb`):** Additional closures since W52:
+>
+> - **§1 #5 / §106 shared `ErrorState` + `RetryButton` seam — DONE.** `src/components/ErrorState.svelte` exists with a `map` variant and a `card` variant. MapView consumes the `map` variant: `MapView.svelte` renders `<ErrorState variant="map" title={friendlyMapError.title} detail={friendlyMapError.detail} technical={friendlyMapError.technical} retryLabel="Retry" onRetry={activateLeafletMap} />` in its error branch; the retry button resolves to `.map-retry-btn`. SearchResults consumes the `card` variant.
+> - **§175 / §181 / §184 MapView + Placeholder2D journey-coverage gap — IN PROGRESS.** A dispatched subagent is authoring `tests/mapview-placeholder-journey.spec.js` (mirroring the `tests/map-empty-state-journey.spec.js` precedent) with minimal headless assertions: map chrome mount via `?view=map`, map error→retry via tile-host interception, placeholder CTA + legend + title/copy on mobile cold-load, CTA → `engineReady.signalReady()`, legend-dot color parity with `CLUSTER_COLORS`. A `qa:mapview-placeholder` playwright script registers the new file. The actual `qa:mapview-placeholder` run is deferred to the main lane until the live parallel-session engine refactor (mid-editing `three-engine-core.ts`) commits.
+> - §1 #6 (Placeholder2D `PlaceholderCategoryLegend` extraction) + §1 #7 (MapView status/back extraction) remain **lowest-priority**, gated on the above coverage gap landing + engine-owner sign-off (Leaflet/style risk).
+
 ---
 
 ## 1. Executive Summary

@@ -1,5 +1,7 @@
 # Wave 1 — Search Layer Cleanup Plan
 
+> **STATUS (2026-07-22, HEAD `840411fb`):** The FULL Wave-1 search-layer cleanup is now CLOSED, including the SearchInput-controller extraction follow-up that this plan defers to a Wave-2. `src/lib/search/search-debounce.ts` AND `src/lib/search/search-dispatch.ts` both exist (confirmed by `ls`). So §1 / §5 / §2c are all DONE — the deferred SearchInput-convergence controller extraction the plan flagged as the outstanding item has landed. Nothing in this plan remains open.
+
 > Read-only investigation. Source files were NOT edited. All claims cite `file:line`
 > from `rg`/`find`/`wc`/`sed`. HEAD `161194f1` at investigation; **current HEAD `5222e684`** after the parallel-lane merge of 7 commits landed between investigation and polish (no files cited in this plan were structurally relocated by that merge — line numbers below are stable at `5222e684` for verified cites).
 

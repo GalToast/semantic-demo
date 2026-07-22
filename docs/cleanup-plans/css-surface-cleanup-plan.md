@@ -1,5 +1,7 @@
 # Wave 1 — CSS Surface Cleanup Plan
 
+> **STATUS (2026-07-22, HEAD `840411fb`):** The CSS 7→3 shard merge is **DONE** — landed by a parallel session at commits `7726d39c` ("refactor(css): consolidate mobile_premium 7-shard split into 3 files") + `537bb582` ("refactor(css): refresh cross-file shard references and resolve un-gated surfaces rule"). Post-merge shard set is `css/mobile_premium__components.css` + `css/mobile_premium__layout.css` + `css/mobile_premium__state.css`. `tests/css-ownership-check.mjs` is **green** (no shared-selector regressions past the documented baseline). The merge-blocker itself is closed; the Wave-2 per-shard style review / selector-bailout follow-ups below stay valid.
+
 > Read-only investigation. No source edits, no builds, no tests. Every claim cites `file:line`.
 > Repo: `/c/Users/HP/repos/semantic-explorer`, branch `master`. Investigated at HEAD `161194f1`; **current HEAD `5222e684`** after a parallel-lane merge of 7 commits. None of the CSS shards cited below were structurally modified by that merge — `5222e684` only touched `css/clusters.css` (7 lines) and `css/layout_base.css` (8 lines) cosmetically. Section cites remain valid.
 

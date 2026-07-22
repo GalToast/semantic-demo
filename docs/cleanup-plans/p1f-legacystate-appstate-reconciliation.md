@@ -1,6 +1,12 @@
 # P1-F — `legacyState` → `appState` Reconciliation Plan
 
-**Status:** Planned (not executed). Branch: `p1f/legacystate-to-appstate`.
+**Status:** **In-flight (2026-07-22, HEAD `840411fb`) — partially landed by a parallel session:**
+
+- **Mechanical cast removal — DONE.** The unsafe `as unknown as LegacyState` cast was deleted; `legacyState` is now `export const legacyState = appState` (typed `AppState`, see `src/lib/state/app.svelte.ts:791-793`). All access is now type-checked.
+- **Behavior-sensitive engine remaps — IN-FLIGHT.** A parallel session was actively editing `src/lib/engine/three-engine-core.ts` mid-refactor on 2026-07-22. Remaining engine sites still typed against `LegacyState`: `three-engine-core.ts:25` `import type { LegacyState }`; `three-engine-frame-updates.ts:14` same import + `Pick<LegacyState, …>` function params at `:131` / `:197` / `:293` (`focusedNode` / `semanticDiveMode` / `trailDepth` / `hoverHighlightIndex` / `nodePositions` selector picks); `three-engine-helpers.ts:24` reads `state.forceAnimate` (still flat); `three-engine-core.ts:503` reads `engineState.state?.forceAnimate` top-level.
+- **Remaining work:** retype the engine function params `LegacyState → AppState` + remap the flat reads to nested `focusState`/`navState`. **Decide the `forceAnimate` default** — `AppState` exposes no top-level `forceAnimate` (add a backed default field, mirroring the `engineState.focusPocket` bridge already used at `frame-updates.ts:261`, OR map flat-read call-sites to a `false` default). Re-verify with a runtime render-loop smoke test (engine-owner sign-off still required).
+
+**Original branch idea:** `p1f/legacystate-to-appstate`.
 **Why deferred from the remediation pass:** the migration is a _behavior-sensitive_
 interface reconciliation, not a mechanical deletion. Executing it blindly at the
 tail of a remediation session risks breaking the render loop.
