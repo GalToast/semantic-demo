@@ -6,6 +6,8 @@ import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { debugWarn } from '@lib/utils/debug'
 import { SearchDebounce } from '@lib/search/search-debounce'
+import { setMobileSearchSheetMode } from '@lib/search/search-panel-adapter'
+import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 
 export interface SearchDispatchOptions {
     /** Called when the controller sets a new active query (e.g. splash fulfillment). */
@@ -92,6 +94,10 @@ export class SearchDispatch {
         setSearchStatus('searching')
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
         this.surfaceSwitchedToSearch = true
+
+        if (isCompactSearchViewport() && !document.body.dataset.mobileSearchSheet) {
+            setMobileSearchSheetMode('peek')
+        }
 
         runSearch(trimmed, signal).catch((err: unknown) => {
             // runSearch already handles AbortError + setSearchError internally;

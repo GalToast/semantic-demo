@@ -45,17 +45,18 @@ describe('sceneNeedsContinuousFrame', () => {
             nodesAreSettling: false,
             inspectedThreadIndex: null as number | null,
             pinnedThreadIndex: null as number | null,
-            ...(partial.focusState as Record<string, unknown> | undefined || {})
+            ...((partial.focusState as Record<string, unknown> | undefined) || {})
         }
         const navState = {
             autoRotate: false,
             autoRotateSuspended: false,
-            ...(partial.navState as Record<string, unknown> | undefined || {})
+            ...((partial.navState as Record<string, unknown> | undefined) || {})
         }
         const { focusState: _focusOverride, navState: _navOverride, ...rest } = partial
-        return { focusState, navState, ...rest } as unknown as ReturnType<
-            typeof sceneNeedsContinuousFrame
-        > extends (_now: number, state: infer S) => boolean
+        return { focusState, navState, ...rest } as unknown as ReturnType<typeof sceneNeedsContinuousFrame> extends (
+            _now: number,
+            state: infer S
+        ) => boolean
             ? S
             : never
     }
@@ -88,7 +89,9 @@ describe('sceneNeedsContinuousFrame', () => {
     })
 
     it('returns true when focusPocketMotion is a non-empty array', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pocketMotionByIndex: [{}] } }))).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pocketMotionByIndex: [{}] } }))).toBe(
+            true
+        )
     })
 
     it('returns true when focusPocketMotion is a non-empty Map', () => {
@@ -98,7 +101,9 @@ describe('sceneNeedsContinuousFrame', () => {
     })
 
     it('returns false when focusPocketMotion is an empty array', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pocketMotionByIndex: [] } }))).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pocketMotionByIndex: [] } }))).toBe(
+            false
+        )
     })
 
     it('returns false when focusPocketMotion is an empty Map', () => {
@@ -107,15 +112,21 @@ describe('sceneNeedsContinuousFrame', () => {
     })
 
     it('returns true when autoRotate is true and autoRotateSuspended is false', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ navState: { autoRotate: true, autoRotateSuspended: false } }))).toBe(
-            true
-        )
+        expect(
+            sceneNeedsContinuousFrame(
+                Date.now(),
+                mockState({ navState: { autoRotate: true, autoRotateSuspended: false } })
+            )
+        ).toBe(true)
     })
 
     it('returns false when autoRotate is true but autoRotateSuspended is also true', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ navState: { autoRotate: true, autoRotateSuspended: true } }))).toBe(
-            false
-        )
+        expect(
+            sceneNeedsContinuousFrame(
+                Date.now(),
+                mockState({ navState: { autoRotate: true, autoRotateSuspended: true } })
+            )
+        ).toBe(false)
     })
 
     it('returns false when autoRotate is false', () => {
@@ -167,7 +178,9 @@ describe('sceneNeedsContinuousFrame', () => {
     })
 
     it('returns false when inspectedThreadIndex is null', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { inspectedThreadIndex: null } }))).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { inspectedThreadIndex: null } }))).toBe(
+            false
+        )
     })
 
     it('returns true when pinnedThreadIndex is a finite non-negative number', () => {
@@ -175,7 +188,9 @@ describe('sceneNeedsContinuousFrame', () => {
     })
 
     it('returns false when pinnedThreadIndex is null', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pinnedThreadIndex: null } }))).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusState: { pinnedThreadIndex: null } }))).toBe(
+            false
+        )
     })
 
     // -----------------------------------------------------------------------

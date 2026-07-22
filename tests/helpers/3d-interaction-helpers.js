@@ -5,7 +5,12 @@ export { SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch }
 
 export async function openApp(page, viewport = { width: 1440, height: 900 }, options = {}) {
     const appPath = options.appPath || '/dist/svelte/index.html'
-    page.on('console', (msg) => console.log('BROWSER:', msg.text()))
+    // Keep the console listener quiet by default; verbose WebGL driver warnings
+    // (e.g., GPU stall due to ReadPixels) can overwhelm the test runner and cause
+    // timeouts. Re-enable locally only when debugging a specific failure.
+    if (options.logConsole) {
+        page.on('console', (msg) => console.log('BROWSER:', msg.text()))
+    }
     await setupMockSearch(page)
     await page.setViewportSize(viewport)
     await page.goto(`${BASE_URL}${appPath}?q=coffee&nodemo=1`, { waitUntil: 'domcontentloaded' })
@@ -22,12 +27,9 @@ export async function openApp(page, viewport = { width: 1440, height: 900 }, opt
         },
         { timeout: 20000 }
     )
-    // After renderer/canvas are ready, the app is functionally initialized.
-    // The loading-overlay CSS class may drift or never fully clear on some
-    // viewports (e.g. short-landscape, mobile); do not block on it.
-    // Accept: overlay absent, or overlay non-blocking, or already hidden.
-    // If none of those apply within the timeout the app still passes
-    // because core state (points+renderer+camera) is already confirmed.
+    // Wait briefly for the loading overlay to become non-blocking or hidden.
+    // This is best-effort; tests verify core state above, and some viewports
+    // never fully clear the overlay class even though the UI is interactive.
     await page
         .waitForFunction(
             () => {
@@ -41,28 +43,7 @@ export async function openApp(page, viewport = { width: 1440, height: 900 }, opt
                     styles.pointerEvents === 'none'
                 )
             },
-            { timeout: 10000 }
-        )
-        .catch(() => {
-            // Non-fatal: core app state is already confirmed ready above.
-        })
-    // navState.mode===overview is a stronger signal but can lag on mobile
-    // boots; treat as best-effort after core state is confirmed.
-    await page
-        .waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.navState?.mode === 'overview', {
-            timeout: 8000
-        })
-        .catch(() => {
-            // Non-fatal when core app state is ready.
-        })
-    // Wait for the info panel surface to reach idle state instead of a fixed sleep.
-    await page
-        .waitForFunction(
-            () => {
-                const ps = document.body?.dataset?.panelSurface
-                return ps === 'idle' || ps === 'overview'
-            },
-            { timeout: 8000 }
+            { timeout: 5000 }
         )
         .catch(() => {})
 }
@@ -114,20 +95,11 @@ export async function openAppForTouch(page, viewport = { width: 1440, height: 90
                     styles.pointerEvents === 'none'
                 )
             },
-            { timeout: 10000 }
+            { timeout: 5000 }
         )
         .catch(() => {
             // Non-fatal: core app state is already confirmed ready above.
         })
-    await page
-        .waitForFunction(
-            () => {
-                const ps = document.body?.dataset?.panelSurface
-                return ps === 'idle' || ps === 'overview'
-            },
-            { timeout: 8000 }
-        )
-        .catch(() => {})
 }
 
 export async function probe(page) {

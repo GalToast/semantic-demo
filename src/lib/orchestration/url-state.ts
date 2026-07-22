@@ -20,10 +20,7 @@ import { restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { animateCameraToNode } from '@lib/engine/camera-choreography/focus'
-import {
-    refreshFocusSemanticOverlay,
-    updateFocusSemanticOverlayPositions
-} from '@lib/journey/semantic-overlay'
+import { refreshFocusSemanticOverlay, updateFocusSemanticOverlayPositions } from '@lib/journey/semantic-overlay'
 import { applyPointFilterColors } from '@lib/journey/point-color'
 import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import { appState } from '@lib/state/app.svelte'
@@ -36,6 +33,8 @@ import {
     getLocationPathname,
     isDomForcedFocusSearchSurface
 } from '@lib/orchestration/url-params'
+import { setMobileSearchSheetMode } from '@lib/search/search-panel-adapter'
+import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -812,6 +811,18 @@ async function _restoreSearchFromParams(
         // runSearch still rejects with a timeout reason instead of blocking
         // forever. The restore signal aborts when a newer applyUrlState starts.
         const searchSignal = AbortSignal.any([signal, AbortSignal.timeout(30000)])
+
+        // W54: raise mobile search sheet for the deep-link / URL-restore path
+        // (/?q=coffee). dispatchSearch handles the typed-input path
+        // (search-dispatch.ts); this handles the URL-param path that goes
+        // through applyUrlState -> _restoreSearchFromParams -> runSearch
+        // without ever calling dispatchSearch. Without this, mobile users
+        // who land on ?q=coffee see a blank hero (panelSurface='focus-search'
+        // but data-mobile-search-sheet='' -> .search-results-wrapper display:none).
+        if (isCompactSearchViewport() && !document.body.dataset.mobileSearchSheet) {
+            setMobileSearchSheetMode('peek')
+        }
+
         await runSearch(query, searchSignal)
         // Token-abort: bail before post-runSearch writes (DOM mutation,
         // SEARCH_FOCUS_REQUESTED publish, preserveDomForcedFocusSearchSurface)

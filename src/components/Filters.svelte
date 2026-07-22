@@ -285,6 +285,11 @@ function handleContactToggle(id: string): void {
     transform: translateX(-50%);
     z-index: var(--z-controls, 50);
   }
+  @media (max-width: 768px) {
+    .filters-section {
+      bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
   .filter-toolbar {
     display: flex;
     gap: 1rem;
@@ -294,6 +299,12 @@ function handleContactToggle(id: string): void {
     padding: 0.6rem 0.75rem;
     align-items: center;
     flex-wrap: wrap;
+  }
+  @media (max-width: 768px) {
+    .filter-toolbar {
+      flex-direction: column;
+      width: 90vw;
+    }
   }
   .filter-group {
     display: flex;
@@ -453,6 +464,15 @@ function handleContactToggle(id: string): void {
   /* ── Scrim backdrop ───────────────────────────────────────────────────── */
   .filters-scrim {
     display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 14, 24, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: var(--z-overlay-elevated);
+    cursor: pointer;
+    pointer-events: auto;
+    transition: opacity 0.2s ease;
   }
   details[open] ~ .filters-scrim {
     display: block;

@@ -16,8 +16,6 @@
  * This is NOT a visual snapshot test. It uses behavioral assertions that fail
  * specifically and cleanly when canvas pointer-events are misconfigured.
  */
- 
-
 
 import { test, expect } from '@playwright/test'
 

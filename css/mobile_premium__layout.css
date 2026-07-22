@@ -28,6 +28,11 @@
     body.surface-idle #filters-section[open] {
         display: block;
         max-height: min(30vh, 244px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    body.surface-idle #filters-section {
+        bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     }
 
     body.surface-idle #filters-section .rail-section-body {
@@ -983,7 +988,6 @@
 @media (max-width: 360px) {
     /* stat-caption appears across idle/search/focus-search/map states;
        gate on any active surface to avoid leaking into transition states. */
-
 
     /* map-trail-strip / map-strip-title are map-only elements
        (see chrome.css:337,359 for the same gate pattern). */

@@ -211,12 +211,32 @@
        hyperlink alongside the plain white labels. */
     color: var(--color-primary-alt);
     text-decoration: underline;
-    text-underline-offset: 2px;
-    /* W53 jury-rerun (2026-07-18): 4/5 jurors read the 0.6-α underline as
-       "no underline / not a link" (JPEG-flattened + genuinely faint).
-       Bump to 0.95 so the underline reads as a clear actionable affordance. */
     text-decoration-color: rgba(var(--color-primary-alt-rgb), 0.95);
+    text-underline-offset: 2px;
     opacity: 1;
+    /* Prevent long URLs/emails from overflowing the panel */
+    overflow-wrap: break-word;
+    word-break: break-all;
+  }
+
+  /* Prevent badge row and action button from overflowing the panel */
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .badge-row .signal-badge {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .selected-action-row .action-btn {
+    /* Ensure button text wraps and doesn't overflow */
+    white-space: normal;
+    word-break: break-word;
   }
   .selected-facts a:hover,
   .selected-facts a:focus {

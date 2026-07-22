@@ -234,6 +234,13 @@
     justify-content: center;
     z-index: var(--z-canvas, 0);
     overflow: hidden;
+    /* Decorative preview backdrop: NEVER eat pointer events. The fixed
+       z-canvas overlay paints above static normal-flow mobile chrome
+       (#mode-chips rail, #search-result-list) and without pe:none its
+       full-viewport orb SVG intercepts taps meant for those rails.
+       Clicks pass through to the chrome painted below it. The CTA (and
+       legend) opt back in via their own `pointer-events: auto` rules. */
+    pointer-events: none;
   }
 
   .placeholder-svg {
@@ -242,6 +249,10 @@
     width: 100%;
     height: 100%;
     display: block;
+    /* The orb SVG (aria-hidden decoration) must not capture hits — it
+       spans the whole viewport and otherwise absorbs every tap on the
+       mobile mode-chip rail and search-result rows behind it. */
+    pointer-events: none;
   }
 
   .placeholder-overlay {
