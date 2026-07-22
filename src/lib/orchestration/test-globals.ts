@@ -29,6 +29,7 @@
  *   await page.evaluate(() => window.__navActions__.setSurface('focus'))
  */
 
+import * as THREE from 'three'
 import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { searchStore } from '@lib/stores/search.svelte'
@@ -90,6 +91,12 @@ declare global {
 
 export function installTestStoreGlobals(): () => void {
     if (typeof window === 'undefined') return () => {}
+
+    // Expose the bundled THREE build so that Playwright page.evaluate blocks
+    // can reuse the same math classes the app uses (Vector3, Matrix4, Color,
+    // etc.). Many .spec.js and .mjs tests project node positions onto screen
+    // coordinates using window.THREE.Vector3.
+    window.THREE = THREE
 
     const navActions: NavActions = {
         setSurface,
@@ -174,5 +181,6 @@ export function installTestStoreGlobals(): () => void {
         delete window.__navActions__
         delete window.__dataLoadState__
         delete window.__publishCameraNodeFocused__
+        delete window.THREE
     }
 }

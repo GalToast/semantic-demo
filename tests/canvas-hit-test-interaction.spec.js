@@ -72,9 +72,8 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
         },
         { timeout: 20000 }
     )
-    // Same tolerant overlay check as 3d-interaction-helpers.js openApp.
-    // The overlay class may drift or never fully clear on some viewports;
-    // core state (search-input + renderer/canvas) is already confirmed above.
+    // Wait briefly for the loading overlay to become non-blocking or hidden.
+    // This is best-effort; core state is already confirmed above.
     await page
         .waitForFunction(
             () => {
@@ -88,19 +87,9 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
                     styles.pointerEvents === 'none'
                 )
             },
-            { timeout: 10000 }
+            { timeout: 5000 }
         )
-        .catch(() => {
-            // Non-fatal: core app state is already confirmed ready.
-        })
-    // navState.mode===overview is a stronger signal but can lag on mobile boots.
-    await page
-        .waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.navState?.mode === 'overview', {
-            timeout: 8000
-        })
-        .catch(() => {
-            // Non-fatal when core app state is ready.
-        })
+        .catch(() => {})
     await page
         .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 5000 })
         .catch(() => {})
