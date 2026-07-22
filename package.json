@@ -91,6 +91,7 @@
         "qa:journey": "npx playwright test tests/widget-journey.spec.js --browser=chromium --headed",
         "qa:journey:headless": "npx playwright test tests/widget-journey.spec.js --browser=chromium",
         "qa:map-empty-state": "npx playwright test tests/map-empty-state-journey.spec.js --browser=chromium",
+        "qa:mapview-placeholder": "npx playwright test tests/mapview-placeholder-journey.spec.js --browser=chromium",
         "qa:journey:live": "npx playwright test tests/widget-journey.spec.js --browser=chromium --workers=1 --grep @live",
         "qa:live-step-inside": "npx playwright test tests/live-step-inside-url-body-state-sync.spec.js --browser=chromium --headed",
         "qa:live-reset-interaction": "npx playwright test tests/live-ui-reset-interaction.spec.js --browser=chromium --headed",
