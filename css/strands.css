@@ -1042,20 +1042,25 @@ body.surface-focus-search .controls .control-btn {
     }
 
     body.surface-focus-search .info-panel {
-        display: none;
+        width: 318px;
         top: 116px;
         bottom: auto;
-        width: 318px;
-        max-height: 132px;
+        height: min(430px, calc(100dvh - 148px));
+        max-height: calc(100dvh - 148px);
         border-radius: 8px;
         opacity: 0.94;
         overflow: hidden;
     }
 
     body.surface-focus-search .info-content {
-        max-height: none;
-        padding: 14px 16px;
-        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-height: calc(100dvh - 204px);
+        min-height: 0;
+        padding: 10px 12px 12px;
+        overflow-y: hidden;
+        overflow-x: hidden;
     }
 
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .info-header,
@@ -1073,6 +1078,20 @@ body.surface-focus-search .controls .control-btn {
     }
 
     body.surface-focus-search .search-container {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    body.surface-focus-search .search-container.has-query {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        position: relative;
+        top: auto;
+        min-height: 0;
+        height: 100%;
         margin: 0;
         padding: 0;
         border: 0;

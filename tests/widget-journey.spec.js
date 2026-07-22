@@ -1542,6 +1542,61 @@ test.describe('Widget journey', () => {
     )
 
     test(
+        'PR-fix: desktop focus-search #info-panel stays VISIBLE (regression for strands.css display:none bug)',
+        { tag: '@live' },
+        async ({ page }) => {
+            await page.setViewportSize({ width: 1440, height: 900 })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+            await explore.waitFor({ state: 'visible', timeout: 40000 })
+            await explore.click()
+
+            await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+                timeout: 15000
+            })
+            await page.waitForTimeout(1200)
+
+            const helpDialog = page.locator('dialog.help-dialog[open]')
+            if ((await helpDialog.count()) > 0) {
+                await page.keyboard.press('Escape')
+                await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+                await page.waitForTimeout(200)
+            }
+
+            // Force the desktop focus-search surface directly (mirrors Bug 3a's
+            // class-injection approach). Before the strands.css:1043 fix the
+            // `body.surface-focus-search .info-panel { display: none }` desktop
+            // rule collapsed #info-panel to 0x0, hiding the entire search UI.
+            await page.evaluate(() => document.body.classList.add('surface-focus-search'))
+            await page.waitForTimeout(200)
+
+            const panelState = await page.evaluate(() => {
+                const panel = document.getElementById('info-panel')
+                if (!panel) return null
+                const r = panel.getBoundingClientRect()
+                const cs = getComputedStyle(panel)
+                return {
+                    display: cs.display,
+                    height: cs.height,
+                    maxHeight: cs.maxHeight,
+                    rectW: Math.round(r.width),
+                    rectH: Math.round(r.height),
+                    visible: r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden'
+                }
+            })
+            expect(panelState, '#info-panel must exist in desktop focus-search').not.toBeNull()
+            expect(panelState.display, '#info-panel must not be display:none in desktop focus-search').not.toBe('none')
+            expect(panelState.rectW, '#info-panel must have positive width in desktop focus-search').toBeGreaterThan(0)
+            expect(
+                panelState.rectH,
+                '#info-panel must have positive height in desktop focus-search (was 0 via strands.css:1043 display:none)'
+            ).toBeGreaterThan(100)
+            expect(panelState.visible, '#info-panel must be visible in desktop focus-search').toBe(true)
+        }
+    )
+
+    test(
         'Bug 3b: mobile "View on Map" button switches to the map view (audit dead-end fix)',
         { tag: '@live' },
         async ({ page }) => {
@@ -2755,7 +2810,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // W54-B1 .filters-scrim pattern) rather than starting a flaky trail.
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=6218`, {
-            waitUntil: 'domcontentloaded',
+            waitUntil: 'domcontentloaded'
         })
         await page.waitForFunction(
             () => {
@@ -2778,7 +2833,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
                 top: Math.round(r.top),
                 left: Math.round(r.left),
                 width: Math.round(r.width),
-                height: Math.round(r.height),
+                height: Math.round(r.height)
             }
         })
         expect(appAnchor, '#app must exist').not.toBeNull()
@@ -2812,15 +2867,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             }
             return found
         })
-        expect(
-            trailBtnMinWidth,
-            '.trail-btn rule must set a min-width in the shipped CSSOM (Fix I)'
-        ).not.toBeNull()
+        expect(trailBtnMinWidth, '.trail-btn rule must set a min-width in the shipped CSSOM (Fix I)').not.toBeNull()
         const pxMatch = String(trailBtnMinWidth).match(/(\d+(?:\.\d+)?)px/)
-        expect(
-            pxMatch,
-            `.trail-btn min-width must parse as a px value (got "${trailBtnMinWidth}")`
-        ).not.toBeNull()
+        expect(pxMatch, `.trail-btn min-width must parse as a px value (got "${trailBtnMinWidth}")`).not.toBeNull()
         expect(
             parseFloat(pxMatch[1]),
             `.trail-btn min-width floor must be >= 72px (Fix I; got ${trailBtnMinWidth})`
