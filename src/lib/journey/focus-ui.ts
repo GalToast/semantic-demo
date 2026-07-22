@@ -8,7 +8,7 @@ import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { formatBusinessName, cleanOptionalValue, formatThreadSourceLabel } from '@lib/utils/dom-formatters'
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation'
 import { isPointVisible } from '@lib/utils/geo-data'
-import type { ThreadCandidateRef } from '@lib/types/state'
+import type { NavState, ThreadCandidateRef } from '@lib/types/state'
 import { truncateMicrocopy } from '@lib/journey/text-helpers'
 import { setStrandContinuityState } from '@lib/utils/strand-continuity'
 import { summarizeNeighborReason, walkThreadNeighbor } from '@lib/journey/thread-settler'
@@ -92,6 +92,109 @@ function hideNeighborRail(rail: HTMLElement, list: HTMLElement, countEl: HTMLEle
     if (countEl) countEl.textContent = '0 visible neighbors'
 }
 
+function _collectNeighborCandidates(candidateLimit: number): ThreadCandidateRef[] {
+    const nav = appState.navState
+    return (nav.threadCandidates || [])
+        .filter((candidate: ThreadCandidateRef) => candidate && candidate.index !== nav.focusedIndex)
+        .filter((candidate: ThreadCandidateRef) =>
+            isPointVisible(candidate.index, appState.points!, null, appState.activeFilters)
+        )
+        .slice(0, candidateLimit)
+}
+
+function _renderNeighborPill(
+    candidate: ThreadCandidateRef,
+    order: number,
+    nav: NavState
+): HTMLButtonElement {
+    const points = appState.points!
+    const point =
+        Number.isFinite(candidate.index) && candidate.index >= 0 && candidate.index < points.length
+            ? (points[candidate.index] ?? null)
+            : null
+    const button = document.createElement('button')
+    button.className = 'focus-stage-neighbor-pill' + (order === 0 ? ' is-next-stop' : '')
+    button.type = 'button'
+    button.tabIndex = 0
+    button.dataset.index = String(candidate.index)
+    button.dataset.role = nav.focusPocketRoleByIndex?.get(candidate.index) || 'trail'
+    const relationshipRole = normalizeRelationshipRole(candidate.relationshipRole)
+    button.dataset.relationshipRole = relationshipRole
+    button.dataset.reason = candidate.reason || 'semantic neighbor'
+    const name = formatBusinessName(point?.name || 'Nearby business')
+    const city = cleanOptionalValue(point?.city) || 'Montgomery County'
+    const reason = summarizeNeighborReason(candidate)
+    const relationshipLabel = getRelationshipRoleLabel(relationshipRole, 'rail')
+    const relationshipTitle = getRelationshipRoleLabel(relationshipRole, 'title')
+    const reasonLabel = isCompactFocusStageViewport()
+        ? truncateMicrocopy(reason, 58)
+        : `${truncateMicrocopy(reason, 72)} | ${city}`
+    const ariaLabel =
+        order === 0 ? `Next stop: ${name}. ${relationshipTitle}.` : `Explore ${name}: ${relationshipTitle}.`
+    button.setAttribute('aria-label', ariaLabel)
+    button.replaceChildren()
+
+    const mainSpan = document.createElement('span')
+    mainSpan.className = 'focus-stage-neighbor-main'
+
+    const indexSpan = document.createElement('span')
+    indexSpan.className = 'focus-stage-neighbor-index'
+    indexSpan.textContent = String(order + 1).padStart(2, '0')
+    mainSpan.appendChild(indexSpan)
+
+    const copySpan = document.createElement('span')
+    copySpan.className = 'focus-stage-neighbor-copy'
+
+    const nameSpan = document.createElement('span')
+    nameSpan.className = 'focus-stage-neighbor-name'
+    nameSpan.textContent = name
+
+    const roleSpan = document.createElement('span')
+    roleSpan.className = 'focus-stage-neighbor-role'
+    roleSpan.textContent = relationshipLabel
+    nameSpan.appendChild(roleSpan)
+
+    if (order === 0) {
+        const badge = document.createElement('span')
+        badge.className = 'focus-stage-neighbor-next-stop-badge'
+        badge.textContent = 'Next stop'
+        nameSpan.appendChild(badge)
+    }
+
+    copySpan.appendChild(nameSpan)
+
+    const reasonSpan = document.createElement('span')
+    reasonSpan.className = 'focus-stage-neighbor-reason'
+    reasonSpan.textContent = reasonLabel
+    copySpan.appendChild(reasonSpan)
+
+    mainSpan.appendChild(copySpan)
+
+    const actionsSpan = document.createElement('span')
+    actionsSpan.className = 'focus-stage-neighbor-actions'
+    actionsSpan.setAttribute('aria-label', 'Strand actions')
+
+    const inspectBtn = document.createElement('button')
+    inspectBtn.className = 'focus-stage-neighbor-action'
+    inspectBtn.type = 'button'
+    inspectBtn.dataset.neighborAction = 'inspect'
+    inspectBtn.setAttribute('aria-label', 'Inspect connection')
+    inspectBtn.textContent = 'Inspect'
+    actionsSpan.appendChild(inspectBtn)
+
+    const pinBtn = document.createElement('button')
+    pinBtn.className = 'focus-stage-neighbor-action primary'
+    pinBtn.type = 'button'
+    pinBtn.dataset.neighborAction = 'pin'
+    pinBtn.setAttribute('aria-label', 'Pin connection')
+    pinBtn.textContent = 'Pin'
+    actionsSpan.appendChild(pinBtn)
+
+    button.appendChild(mainSpan)
+    button.appendChild(actionsSpan)
+    return button
+}
+
 export function updateFocusNeighborRail(): void {
     const rail = document.getElementById('focus-stage-neighbors')
     const list = document.getElementById('focus-stage-neighbor-list')
@@ -131,13 +234,8 @@ export function updateFocusNeighborRail(): void {
           : isCompactFocusStageViewport()
             ? 4
             : 5
-    const nav = appState.navState!
-    const candidates = (nav.threadCandidates || [])
-        .filter((candidate: ThreadCandidateRef) => candidate && candidate.index !== nav.focusedIndex)
-        .filter((candidate: ThreadCandidateRef) =>
-            isPointVisible(candidate.index, appState.points!, null, appState.activeFilters)
-        )
-        .slice(0, candidateLimit)
+    const nav = appState.navState
+    const candidates = _collectNeighborCandidates(candidateLimit)
 
     if (!candidates.length) {
         rail.classList.remove('active')
@@ -161,91 +259,7 @@ export function updateFocusNeighborRail(): void {
     }
 
     candidates.forEach((candidate: ThreadCandidateRef, order: number) => {
-        const points = appState.points!
-        const point =
-            Number.isFinite(candidate.index) && candidate.index >= 0 && candidate.index < points.length
-                ? (points[candidate.index] ?? null)
-                : null
-        const button = document.createElement('button')
-        button.className = 'focus-stage-neighbor-pill' + (order === 0 ? ' is-next-stop' : '')
-        button.type = 'button'
-        button.tabIndex = 0
-        button.dataset.index = String(candidate.index)
-        button.dataset.role = nav.focusPocketRoleByIndex?.get(candidate.index) || 'trail'
-        const relationshipRole = normalizeRelationshipRole(candidate.relationshipRole)
-        button.dataset.relationshipRole = relationshipRole
-        button.dataset.reason = candidate.reason || 'semantic neighbor'
-        const name = formatBusinessName(point?.name || 'Nearby business')
-        const city = cleanOptionalValue(point?.city) || 'Montgomery County'
-        const reason = summarizeNeighborReason(candidate)
-        const relationshipLabel = getRelationshipRoleLabel(relationshipRole, 'rail')
-        const relationshipTitle = getRelationshipRoleLabel(relationshipRole, 'title')
-        const reasonLabel = isCompactFocusStageViewport()
-            ? truncateMicrocopy(reason, 58)
-            : `${truncateMicrocopy(reason, 72)} | ${city}`
-        const ariaLabel =
-            order === 0 ? `Next stop: ${name}. ${relationshipTitle}.` : `Explore ${name}: ${relationshipTitle}.`
-        button.setAttribute('aria-label', ariaLabel)
-        button.replaceChildren()
-
-        const mainSpan = document.createElement('span')
-        mainSpan.className = 'focus-stage-neighbor-main'
-
-        const indexSpan = document.createElement('span')
-        indexSpan.className = 'focus-stage-neighbor-index'
-        indexSpan.textContent = String(order + 1).padStart(2, '0')
-        mainSpan.appendChild(indexSpan)
-
-        const copySpan = document.createElement('span')
-        copySpan.className = 'focus-stage-neighbor-copy'
-
-        const nameSpan = document.createElement('span')
-        nameSpan.className = 'focus-stage-neighbor-name'
-        nameSpan.textContent = name
-
-        const roleSpan = document.createElement('span')
-        roleSpan.className = 'focus-stage-neighbor-role'
-        roleSpan.textContent = relationshipLabel
-        nameSpan.appendChild(roleSpan)
-
-        if (order === 0) {
-            const badge = document.createElement('span')
-            badge.className = 'focus-stage-neighbor-next-stop-badge'
-            badge.textContent = 'Next stop'
-            nameSpan.appendChild(badge)
-        }
-
-        copySpan.appendChild(nameSpan)
-
-        const reasonSpan = document.createElement('span')
-        reasonSpan.className = 'focus-stage-neighbor-reason'
-        reasonSpan.textContent = reasonLabel
-        copySpan.appendChild(reasonSpan)
-
-        mainSpan.appendChild(copySpan)
-
-        const actionsSpan = document.createElement('span')
-        actionsSpan.className = 'focus-stage-neighbor-actions'
-        actionsSpan.setAttribute('aria-label', 'Strand actions')
-
-        const inspectBtn = document.createElement('button')
-        inspectBtn.className = 'focus-stage-neighbor-action'
-        inspectBtn.type = 'button'
-        inspectBtn.dataset.neighborAction = 'inspect'
-        inspectBtn.setAttribute('aria-label', 'Inspect connection')
-        inspectBtn.textContent = 'Inspect'
-        actionsSpan.appendChild(inspectBtn)
-
-        const pinBtn = document.createElement('button')
-        pinBtn.className = 'focus-stage-neighbor-action primary'
-        pinBtn.type = 'button'
-        pinBtn.dataset.neighborAction = 'pin'
-        pinBtn.setAttribute('aria-label', 'Pin connection')
-        pinBtn.textContent = 'Pin'
-        actionsSpan.appendChild(pinBtn)
-
-        button.appendChild(mainSpan)
-        button.appendChild(actionsSpan)
+        const button = _renderNeighborPill(candidate, order, nav)
         list.appendChild(button)
     })
 
