@@ -426,25 +426,13 @@ export function animate() {
     // callback would see engineState.rafId != null and exit, killing the loop.
     engineState.rafId = null
 
-    if (engineState.circuitBreakerTripped) {
+    if (_shouldSkipFrame()) {
         return
     }
-    if (engineState.webglContextLost) {
-        return
-    }
-    // Pause the steady-state RAF loop when the document is not visible.
-    // This lets Lighthouse find an idle period so the perf score becomes
-    // measurable.  The loop resumes via the visibilitychange listener
-    // registered in initThreeJS.
-    if (typeof document !== 'undefined' && document.hidden) {
-        return
-    }
-    if (!webglContext.renderer || !webglContext.scene || !webglContext.camera) {
-        return
-    }
-    if (engineState.state?.currentView !== 'galaxy' && !engineState.state?.forceAnimate) {
-        return
-    }
+    // _shouldSkipFrame() already verified state?.currentView, but TS can't
+    // narrow across the function boundary. Re-capture for the rest of the frame.
+    const state = engineState.state
+    if (!state) return
 
     try {
         const frameStart = performance.now()
@@ -474,11 +462,7 @@ export function animate() {
 
         if (lerpNodesForFrame(frameNow)) return
 
-        lerpCameraForReveal(cameraRevealProgress, revealProgress, engineState.state)
-        updatePointsMaterial(pointsRevealProgress, engineState.state)
-        updateFogDensity(pointsRevealProgress)
-        updateReferenceSphereOpacity(revealProgress, engineState.state?.sceneRevealActive)
-        updateSporeOpacity(pointsRevealProgress, engineState.state)
+        _tickRevealAndParticles(cameraRevealProgress, revealProgress, pointsRevealProgress)
 
         const hoveredNode = engineState.state?.hoverHighlightIndex ?? -1
         const focusedNode = engineState.state?.focusedNode ?? null
@@ -499,12 +483,39 @@ export function animate() {
                 updateMs: updateEnd - updateStart,
                 renderMs: renderEnd - renderStart
             },
-            engineState.state
+            state
         )
     } catch (err) {
         debugError('[three-engine] Unhandled exception in animate loop:', err)
         engineState.circuitBreakerTripped = true
     }
+}
+
+function _shouldSkipFrame(): boolean {
+    if (engineState.circuitBreakerTripped) return true
+    if (engineState.webglContextLost) return true
+    // Pause the steady-state RAF loop when the document is not visible.
+    // This lets Lighthouse find an idle period so the perf score becomes
+    // measurable. The loop resumes via the visibilitychange listener
+    // registered in initThreeJS.
+    if (typeof document !== 'undefined' && document.hidden) return true
+    if (!webglContext.renderer || !webglContext.scene || !webglContext.camera) return true
+    if (engineState.state?.currentView !== 'galaxy' && !engineState.state?.forceAnimate) return true
+    return false
+}
+
+function _tickRevealAndParticles(
+    cameraRevealProgress: number,
+    revealProgress: number,
+    pointsRevealProgress: number
+): void {
+    const state = engineState.state
+    if (!state) return
+    lerpCameraForReveal(cameraRevealProgress, revealProgress, state)
+    updatePointsMaterial(pointsRevealProgress, state)
+    updateFogDensity(pointsRevealProgress)
+    updateReferenceSphereOpacity(revealProgress, state?.sceneRevealActive)
+    updateSporeOpacity(pointsRevealProgress, state)
 }
 
 function tickInteraction(
