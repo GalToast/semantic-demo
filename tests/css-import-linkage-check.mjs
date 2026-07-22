@@ -2,8 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const root = process.cwd()
-const demoPath = path.join(root, 'semantic-demo.css')
 const cssDir = path.join(root, 'css')
+const viteConfigPath = path.join(root, 'vite.config.ts')
 
 const failures = []
 
@@ -11,48 +11,34 @@ function fail(message) {
     failures.push(message)
 }
 
-function read(relativePath) {
-    const absolutePath = path.join(root, relativePath)
-    if (!fs.existsSync(absolutePath)) {
-        fail(`${relativePath} is missing`)
-        return ''
-    }
-    return fs.readFileSync(absolutePath, 'utf8')
-}
-
-// css/ files loaded by LEGACY_CSS_LINKS <link> tags (see vite.config.ts) —
-// they ship but are not required to appear in semantic-demo.css @import.
-const linkSharded = new Set([
-    'mobile_premium__components.css',
-    'mobile_premium__layout.css',
-    'mobile_premium__state.css'
-])
-
-const demoText = read('semantic-demo.css')
-const imported = new Set([...demoText.matchAll(/@import\s+url\(['"]\.\/css\/([^?'"]+)/g)].map((m) => m[1]))
-
 const onDisk = fs.readdirSync(cssDir).filter((f) => f.endsWith('.css'))
 
-for (const file of onDisk) {
-    if (linkSharded.has(file)) continue
-    if (!imported.has(file)) {
-        fail(`css/${file} exists on disk but is NOT @imported by semantic-demo.css`)
-    }
+const viteConfig = fs.readFileSync(viteConfigPath, 'utf8')
+const legacyStart = viteConfig.indexOf('const LEGACY_CSS_LINKS = [')
+const legacyEnd = viteConfig.indexOf(']', legacyStart)
+if (legacyStart === -1 || legacyEnd === -1) {
+    fail('LEGACY_CSS_LINKS array not found in vite.config.ts')
 }
 
-for (const file of imported) {
-    if (linkSharded.has(file)) continue
-    if (!onDisk.includes(file)) {
-        fail(`semantic-demo.css imports css/${file} but the file is missing on disk`)
+const block = viteConfig.slice(legacyStart, legacyEnd + 1)
+const linked = new Set(
+    [...block.matchAll(/href="([^"]+\.css)"/g)]
+        .map((m) => m[1])
+        .map((href) => href.replace(/^\.\//, '').replace(/^css\//, ''))
+)
+
+for (const file of onDisk) {
+    if (!linked.has(file)) {
+        fail(`css/${file} exists on disk but is not linked in LEGACY_CSS_LINKS`)
     }
 }
 
 if (failures.length) {
-    console.error('CSS import linkage check failed:')
+    console.error('CSS link linkage check failed:')
     for (const failure of failures) console.error(`- ${failure}`)
     process.exit(1)
 }
 
 console.log(
-    `CSS import linkage check OK: ${onDisk.length} css/ files assessed (${linkSharded.size} link-sharded, ${imported.size - linkSharded.size} @imported)`
+    `CSS link linkage check OK: ${onDisk.length} css/ files, ${linked.size} legacy CSS links verified in vite.config.ts`
 )

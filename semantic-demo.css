@@ -1,20 +1,4 @@
 /* Semantic Demo CSS module shell.
-   Source modules live under ./css/ and are imported in the original cascade order.
-   Keep @import rules first; append no local declarations here. */
-
-@import url("./css/base.css?v=1ca3c9e9e376");
-@import url('./css/loading.css?v=6e405781b153');
-@import url('./css/shell.css?v=4b23f48929e0');
-@import url('./css/time_weather.css?v=80e53066ec4e');
-@import url('./css/demo_ui.css?v=6f7c32b47c41');
-@import url('./css/synthesis.css?v=33259093521e');
-@import url('./css/controls.css?v=f59cb7afeae2');
-@import url('./css/layout_base.css?v=d297997963fb');
-@import url('./css/search.css?v=fe00c7385188');
-@import url('./css/mobile_base.css?v=fix-controls-rail-v2-2026-06-12');
-@import url('./css/journey_steps.css?v=2eea83762bf2');
-@import url('./css/journey_active.css?v=be09228bf540');
-@import url('./css/clusters.css?v=cd52f72063bb');
-@import url('./css/progressive_disclosure.css?v=baad589b44e0');
-@import url('./css/strands.css?v=d8a6e3f0a065');
-@import url("./css/animations.css?v=30f95a05a0fa");
+   Individual css/ files are loaded via explicit <link> tags injected by
+   vite.config.ts → LEGACY_CSS_LINKS. This file is retained as the shell
+   entry point; do not add @import rules here. */
