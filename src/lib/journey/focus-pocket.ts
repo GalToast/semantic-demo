@@ -222,6 +222,63 @@ function resetTargetPositionsFromOriginal(): boolean {
     return true
 }
 
+function _trySemanticPocket(
+    index: number,
+    prevTargetByIndex: Map<number, { x: number; y: number; z: number }>
+): boolean {
+    const navState = appState.navState
+    if (navState.threadSource !== 'semantic') return false
+
+    const targetPositions = appState.targetPositions
+    const pocket = buildFocusedSemanticPocket(index)
+    const _pocketIndices = pocket?.indices?.filter((candidateIndex) => candidateIndex !== index) ?? []
+    // Only take the semantic pocket if it actually has neighbors. An empty
+    // semantic pocket (deep-link boot before the 40 MB artifact loads)
+    // must fall through to the topological k-NN fallback below so the
+    // focus pocket is never blank (tmp/focus-blank-investigation.md).
+    if (!pocket?.positions?.size || _pocketIndices.length === 0) return false
+
+    pocket.positions.forEach((position, pocketIndex) => {
+        if (position && targetPositions) {
+            targetPositions[pocketIndex] = { x: position.x, y: position.y, z: position.z }
+        }
+    })
+    setFocusPocketIndices(pocket.indices?.filter((candidateIndex: number) => candidateIndex !== index) ?? [])
+    setFocusPocketRoleByIndex(pocket.roles || new Map())
+
+    const newPocketSet = new Set(pocket.indices ?? [])
+    const motion = pocket.motion || new Map<number, PocketMotionWithFrame>()
+    prevTargetByIndex.forEach((prevPos, pocketIndex) => {
+        if (newPocketSet.has(pocketIndex)) {
+            const existing = motion.get(pocketIndex)
+            const base: PocketMotionWithFrame = existing || { role: 'direct', delay: 0, duration: 0, speed: 0 }
+            motion.set(pocketIndex, {
+                ...base,
+                _preservePos: { x: prevPos.x, y: prevPos.y, z: prevPos.z },
+                _firstFrameApplied: false
+            })
+        }
+    })
+    setFocusPocketMotionByIndex(motion)
+
+    const pocketMeta = pocket.meta
+    const pocketMotif = pocketMeta?.motif || 'market'
+    const pocketMotifLabel = pocketMeta?.motifLabel || 'semantic constellation'
+    setFocusPocketMeta(
+        pocketMeta || {
+            active: getFocusPocketIndices().length > 0,
+            nodeCount: pocket.indices?.length ?? 0,
+            primaryCount: Math.min(12, getFocusPocketIndices().length),
+            supportCount: Math.max(0, (pocket.indices?.length ?? 0) - 1 - Math.min(12, getFocusPocketIndices().length)),
+            motif: pocketMotif,
+            motifLabel: pocketMotifLabel
+        }
+    )
+    appState.focusState.nodesAreSettling = true
+    appState.autoRotate = false
+    return true
+}
+
 export function applyLocalNeighborhoodFocus(index: number): boolean {
     const points = appState.points
     const originalPositions = appState.originalPositions
@@ -245,58 +302,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     clearFocusPocketMotionByIndex()
     appState.focusState.pocketTransitionStartedAt = performance.now()
 
-    if (navState.threadSource === 'semantic') {
-        const pocket = buildFocusedSemanticPocket(index)
-        const _pocketIndices = pocket?.indices?.filter((candidateIndex) => candidateIndex !== index) ?? []
-        // Only take the semantic pocket if it actually has neighbors. An empty
-        // semantic pocket (deep-link boot before the 40 MB artifact loads)
-        // must fall through to the topological k-NN fallback below so the
-        // focus pocket is never blank (tmp/focus-blank-investigation.md).
-        if (pocket?.positions?.size && _pocketIndices.length > 0) {
-            pocket.positions.forEach((position, pocketIndex) => {
-                if (position && targetPositions) {
-                    targetPositions[pocketIndex] = { x: position.x, y: position.y, z: position.z }
-                }
-            })
-            setFocusPocketIndices(pocket.indices?.filter((candidateIndex: number) => candidateIndex !== index) ?? [])
-            setFocusPocketRoleByIndex(pocket.roles || new Map())
-
-            const newPocketSet = new Set(pocket.indices ?? [])
-            const motion = pocket.motion || new Map<number, PocketMotionWithFrame>()
-            prevTargetByIndex.forEach((prevPos, pocketIndex) => {
-                if (newPocketSet.has(pocketIndex)) {
-                    const existing = motion.get(pocketIndex)
-                    const base: PocketMotionWithFrame = existing || { role: 'direct', delay: 0, duration: 0, speed: 0 }
-                    motion.set(pocketIndex, {
-                        ...base,
-                        _preservePos: { x: prevPos.x, y: prevPos.y, z: prevPos.z },
-                        _firstFrameApplied: false
-                    })
-                }
-            })
-            setFocusPocketMotionByIndex(motion)
-
-            const pocketMeta = pocket.meta
-            const pocketMotif = pocketMeta?.motif || 'market'
-            const pocketMotifLabel = pocketMeta?.motifLabel || 'semantic constellation'
-            setFocusPocketMeta(
-                pocketMeta || {
-                    active: getFocusPocketIndices().length > 0,
-                    nodeCount: pocket.indices?.length ?? 0,
-                    primaryCount: Math.min(12, getFocusPocketIndices().length),
-                    supportCount: Math.max(
-                        0,
-                        (pocket.indices?.length ?? 0) - 1 - Math.min(12, getFocusPocketIndices().length)
-                    ),
-                    motif: pocketMotif,
-                    motifLabel: pocketMotifLabel
-                }
-            )
-            appState.focusState.nodesAreSettling = true
-            appState.autoRotate = false
-            return true
-        }
-    }
+    if (_trySemanticPocket(index, prevTargetByIndex)) return true
 
     const focusPos = originalPositions?.[index]
     if (!focusPos) {
