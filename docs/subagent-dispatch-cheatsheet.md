@@ -19,7 +19,7 @@ Need a subagent worker?
 │
 ├─ Quick / Low-stakes (formatting, simple queries, data processing)?
 │  ├─ Any tier → MiMo V2.5 (repo default, fast)
-│  └─ Free → hy3-free, North Mini Code, or DeepSeek V4 Flash free
+│  └─ Free → Laguna S 2.1 Free, HY3, Qwen 3.6 Flash, DeepSeek V4 Flash Free, or North Mini Code
 │
 └─ Domain-specific (image, video, embedding, speech)?
    └─ Not suitable for general subagent work — use primary model instead
@@ -51,12 +51,14 @@ Need a subagent worker?
 - **All models** are accessed through the `openai` provider key in `model-providers.json` (they're routed via OpenAI-compatible endpoints)
 - **Free routes** are marked with `free: true` in the config
 - **Avoid** `owl-alpha` and `agnes-2.0-flash` for production subagent work (no public benchmark trail, reliability concerns)
-- **Free-tier general-investigation pick:** `hy3-free` (bare ref → `opencode-zen/hy3-free`) — new lane, viable alternative to `mimo-v2.5-free` for free-tier workers
+- **Free-tier general-investigation pick:** `laguna-s-2.1-free` (`opencode-zen/laguna-s-2.1-free` or `kilo/poolside/laguna-s-2.1:free`) — new free lane, viable alternative to `mimo-v2.5-free`
+- **HY3 route:** prefer `tencent/hy3` on Kilo/OpenRouter; bare `hy3-free` maps to OpenCode Zen (`opencode-zen/hy3-free`)
+- **Qwen 3.6 free routes:** `kilo/qwen/qwen3.6-plus`, `kilo/qwen/qwen3.6-flash`, `kilo/qwen/qwen3.6-27b`, `kilo/qwen/qwen3.6-35b-a3b`
 - **Embedding/image/video models** in the catalog are not suitable for general-purpose subagent tasks
 
 ## File Locations
 
 - Full catalog: `docs/model-benchmark-scorecard.md`
 - Leaderboard scores: `docs/ai-model-leaderboard-scores.md`
-- Provider config: `tmp/model-providers.json`
+- Provider config: `C:\Users\HP\.pi\agent\model-providers.json`
 - Lane inventory: `docs/subagent-models.md`

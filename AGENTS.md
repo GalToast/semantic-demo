@@ -53,7 +53,7 @@ See `docs/session-coordination.md` — session lock + parallel-session + switchb
 
 - Primary: `minimax-m3` (MiniMax-M3 — main lane; verified vision-capable 2026-07-15, routes: kilo/minimax, logfare, opencode-zen, minimax-direct). Previous `kilo/openrouter/owl-alpha` is dead (404 on both the kilo gateway and OpenRouter; absent from `/v1/models`) — do not re-add.
 - Registered alt: `agnes-2.0-flash` (bare ref for subagent — no provider prefix)
-- Free fallbacks: `mimo-v2.5-free`, `deepseek-v4-flash-free`, `nemotron-3-ultra-free`, `qwen3.6-plus-free` (not in live free catalog 2026-07-15), `north-mini-code-free`, `hy3-free`
+- Free fallbacks: `laguna-s-2.1-free`, `laguna-xs-2.1-free`, `mimo-v2.5-free`, `deepseek-v4-flash-free`, `nemotron-3-ultra-free`, `north-mini-code-free`, `hy3-free` / `tencent/hy3`, `qwen3.6-plus`, `qwen3.6-flash`, `qwen3.6-27b`, `qwen3.6-35b-a3b`
 
 ## Key Product Invariants
 
