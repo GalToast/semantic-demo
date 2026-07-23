@@ -52,16 +52,14 @@ async function seedSearchGuideState(page) {
         const mutate = window.withStateMutation ?? s?.withMutation ?? ((fn) => fn())
 
         return mutate(() => {
-            if (!Array.isArray(s.points) || s.points.length < 4) {
-                s.points = Array.from({ length: 4 }, (_, index) => ({
-                    lead_id: `test_${index}`,
-                    name: `Coffee Test ${index}`,
-                    city: index % 2 === 0 ? 'Conroe' : 'The Woodlands',
-                    category: 'Coffee',
-                    cluster_label: 'Coffee',
-                    status: 'active'
-                }))
-            }
+            s.points = Array.from({ length: 4 }, (_, index) => ({
+                lead_id: `test_${index}`,
+                name: `Coffee Test ${index}`,
+                city: index % 2 === 0 ? 'Conroe' : 'The Woodlands',
+                category: 'Coffee',
+                cluster_label: 'Coffee',
+                status: 'active'
+            }))
 
             s.searchState.currentSearchSummary = {
                 query: 'coffee',
@@ -109,16 +107,14 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
             const mutate = window.withStateMutation ?? s?.withMutation ?? ((fn) => fn())
 
             mutate(() => {
-                if (!Array.isArray(s.points) || s.points.length < 4) {
-                    s.points = Array.from({ length: 4 }, (_, index) => ({
-                        lead_id: `test_${index}`,
-                        name: `Coffee Test ${index}`,
-                        city: index % 2 === 0 ? 'Conroe' : 'The Woodlands',
-                        category: 'Coffee',
-                        cluster_label: 'Coffee',
-                        status: 'active'
-                    }))
-                }
+                s.points = Array.from({ length: 4 }, (_, index) => ({
+                    lead_id: `test_${index}`,
+                    name: `Coffee Test ${index}`,
+                    city: index % 2 === 0 ? 'Conroe' : 'The Woodlands',
+                    category: 'Coffee',
+                    cluster_label: 'Coffee',
+                    status: 'active'
+                }))
                 s.searchState.currentSearchSummary = {
                     query: 'coffee',
                     anchorIndex: 0,
