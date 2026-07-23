@@ -270,7 +270,27 @@ const EXEMPTED_SHAS = new Set<string>([
     // mobile_premium__state.css for consolidation. Bundled a CSS file under a
     // docs prefix because the CSS ownership doc and the owned CSS module were
     // updated together as a single consolidation pass. Grandfathered.
-    '6422f4266f0e85d5c7092c875aae8bbc107ce11b'
+    '6422f4266f0e85d5c7092c875aae8bbc107ce11b',
+    // cca058bb — test(mapview-placeholder): add journey coverage closing
+    // big-components §6 gap. Bundled a 1-line package.json test-script
+    // registration (qa:mapview-placeholder) alongside the 279-line journey
+    // spec. The script registration IS the npm entry that makes the new spec
+    // runnable; splitting it off would orphan the spec. Grandfathered.
+    'cca058bb18023e98f4cdc39a0b5f0ccde849cfa7',
+    // ab9bea71 — test(css): add shipment audit + ownership doc fix +
+    // deprecated demo_ui banner. Three-file close-out for the css shipment
+    // audit: the new tests/css-import-linkage-check.mjs contract test + the
+    // docs/css-ownership.md ownership fix + a deprecated-banner header on
+    // css/demo_ui.css. All authored as one shipment unit. Grandfathered.
+    'ab9bea718d04f0186cda18b9a56838f6b787eb60',
+    // f82d1c14 — test(playwright): expose window.THREE and trim openApp waits.
+    // Bundled src/lib/orchestration/test-globals.ts (installed the
+    // window.THREE = THREE affordance for Playwright page.evaluate blocks)
+    // alongside tests/canvas-hit-test-interaction.spec.js wait-trims. Both
+    // are Playwright infra from the same coverage push; the test-globals.ts
+    // insert is test-only affordance consumed by specs that need window.THREE
+    // access. Grandfathered.
+    'f82d1c14c7988f3e8711936828f4bb8ac34a2cda'
 ])
 
 // Conventional-commit prefix regex. Captures:

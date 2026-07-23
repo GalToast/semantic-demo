@@ -185,5 +185,13 @@ declare global {
                 dedupeKey?: string
             }) => void
         }
+
+        /**
+         * Bundled `three` build exposed by `lib/orchestration/test-globals.ts`
+         * (commit f82d1c14 — test(playwright): expose window.THREE) so
+         * Playwright `page.evaluate` blocks can reuse the same math classes
+         * the app uses (Vector3, Matrix4, Color, etc.).
+         */
+        THREE?: typeof import('three')
     }
 }
