@@ -68,7 +68,6 @@ const LEGACY_CSS_LINKS = [
     '<link rel="stylesheet" href="css/loading.css">',
     '<link rel="stylesheet" href="css/shell.css">',
     '<link rel="stylesheet" href="css/time_weather.css">',
-    '<link rel="stylesheet" href="css/demo_ui.css">',
     '<link rel="stylesheet" href="css/synthesis.css">',
     '<link rel="stylesheet" href="css/controls.css">',
     '<link rel="stylesheet" href="css/layout_base.css">',

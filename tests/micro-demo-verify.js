@@ -15,7 +15,6 @@
  */
 
 import { chromium } from 'playwright';
-import fs from 'node:fs/promises';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 const PATH = process.env.TEST_APP_PATH || '/index.html';
@@ -23,7 +22,6 @@ const DEMO_FORCE = '?demo=force';
 const DEMO_NODEMO = '?nodemo';
 const STORAGE_KEY = 'moco_mycelium_demo_v1';
 const _SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1';
-const PROOF_DIR = 'tmp/micro-demo-proof';
 
 let passed = 0;
 let failed = 0;
@@ -193,20 +191,13 @@ async function runTests() {
       'Demo pill has a visible rendered box',
     );
 
-    const demoActiveViewToggle = await page.evaluate(() => {
-      const viewToggle = document.querySelector('.view-toggle');
-      return {
-        demoActive: document.body.dataset.demoActive,
-        viewToggleDisplay: viewToggle ? window.getComputedStyle(viewToggle).display : null,
-      };
-    });
-    assert(demoActiveViewToggle.demoActive === 'true', 'body[data-demo-active="true"] is set while demo runs');
-    assert(demoActiveViewToggle.viewToggleDisplay === 'none', 'View toggle is hidden while demo pill is active');
-    await fs.mkdir(PROOF_DIR, { recursive: true });
-    const viewToggleProofPath = `${PROOF_DIR}/view-toggle-hidden-during-demo.png`;
-    await page.screenshot({ path: viewToggleProofPath, fullPage: false });
-    await fs.stat(viewToggleProofPath);
-    assert(true, `Saved visual proof: ${viewToggleProofPath}`);
+    // data-active body attribute flips true while the demo pill is shown.
+    // (.view-toggle rule was deleted 2026-07-23 — no DOM ever matched the
+    // .view-toggle class, so its `body[data-demo-active='true'] .view-toggle
+    // { display: none }` rule was dead CSS; the file css/demo_ui.css was
+    // deleted too.)
+    const demoActiveSet = await page.evaluate(() => document.body.dataset.demoActive);
+    assert(demoActiveSet === 'true', 'body[data-demo-active="true"] is set while demo runs');
 
     // ── Test 4: Demo does NOT fire on repeat visits (seen guard) ───────────
     console.log('\nTest 4: Demo does not fire on repeat visits (seen=true blocks)');

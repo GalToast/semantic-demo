@@ -60,7 +60,6 @@ Total: **21 files** (`css/*.css` roots + `css/modules/focus_stage.css`).
 | `css/base.css`                       | 285  | Root base                                                                                    |
 | `css/synthesis.css`                  | 196  | Synthesis panel                                                                              |
 | `css/animations.css`                 | 129  | Keyframes                                                                                    |
-| `css/demo_ui.css`                    | 12   | **Near-dead** — 1 live rule (`body[data-demo-active='true'] .view-toggle`), rest comment     |
 
 ## 3. Mobile premium shard map
 
@@ -93,8 +92,9 @@ default). Only **2** use the Header `@import` pattern:
 No high-ROI extract-global-into-component candidates exist — large global
 files (`search.css` 1822, `strands.css` 1421) style 8–13 components per
 selector; pulling them inline would force re-extraction of every dependent
-component. The only safe, dependency-free inline candidate is `demo_ui.css`'s
-single live rule.
+component. (`demo_ui.css`'s single live rule was deleted 2026-07-23 as dead
+CSS — no DOM ever matched the `.view-toggle` class — so no further
+dependency-free inline candidates exist.)
 
 ## 5. Body-class / state taxonomy
 
