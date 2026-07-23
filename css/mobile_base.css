@@ -1,6 +1,6 @@
 /* Mobile journey-compass layout moved to the css/mobile_premium__*.css split
-   (state.css, focus-dive.css). Keep this file limited to base/mobile atoms
-   and reduced-motion support. */
+   (mobile_premium__layout.css, mobile_premium__components.css).
+   Keep this file limited to base/mobile atoms and reduced-motion support. */
 
 .filter-select {
     width: 100%;

@@ -210,18 +210,22 @@ function narrowToPoint(business: BusinessRecord | null): Point | null {
  * `readable.on.subscribe` callback path that the `viewport.svelte.ts` migration
  * audit verified).
  */
-function _buildPocketNode(idx: number, anchorIndex: number | null, targetPositions: any, nodePositions: any, originalPositions: any, roles: Map<number, string>, records: readonly BusinessRecord[]): FocusPocketNode | null {
+function _buildPocketNode(
+    idx: number,
+    anchorIndex: number | null,
+    targetPositions: any,
+    nodePositions: any,
+    originalPositions: any,
+    roles: Map<number, string>,
+    records: readonly BusinessRecord[]
+): FocusPocketNode | null {
     if (!Number.isFinite(idx) || idx < 0) return null
     if (anchorIndex != null && idx === anchorIndex) return null
     const position = targetPositions?.[idx] ?? nodePositions?.[idx] ?? originalPositions?.[idx] ?? null
     if (!position) return null
     const legacyRole = (roles.get(idx) || 'support').toLowerCase()
     const role: FocusPocketNode['role'] =
-        legacyRole === 'primary' || legacyRole === 'direct'
-            ? 'direct'
-            : legacyRole === 'civic'
-              ? 'civic'
-              : 'support'
+        legacyRole === 'primary' || legacyRole === 'direct' ? 'direct' : legacyRole === 'civic' ? 'civic' : 'support'
     const record = records[idx]
     const label = record?.name ? formatBusinessName(record.name as string) : `Node ${idx}`
     return {
@@ -250,7 +254,15 @@ function _readFocusSnapshot(): FocusStoreState {
 
     const nodes: FocusPocketNode[] = []
     for (const idx of indices) {
-        const node = _buildPocketNode(idx, anchorIndex, targetPositions, nodePositions, originalPositions, roles, records)
+        const node = _buildPocketNode(
+            idx,
+            anchorIndex,
+            targetPositions,
+            nodePositions,
+            originalPositions,
+            roles,
+            records
+        )
         if (node) nodes.push(node)
     }
 

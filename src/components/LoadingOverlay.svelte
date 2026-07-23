@@ -19,6 +19,7 @@
   import { fade } from 'svelte/transition';
   import { loadingPhaseStore, dataLoadState } from '@lib/data-store';
   import { friendlyErrorMessage } from '@lib/utils/error-messages';
+  import ErrorState from '@components/ErrorState.svelte';
   import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state';
 
   interface Props {
@@ -84,26 +85,17 @@
   >
     <div class="loading-shell">
       {#if isError}
-        <div class="loading-kicker">Semantic Explorer</div>
-        <div class="loading-title">Unable to load</div>
-        <p id="loading-error-message" class="loading-note" role="alert" aria-live="assertive">
-          <strong>{friendly?.title ?? 'Something went wrong'}</strong>
-          {#if friendly?.detail}<br />{friendly.detail}{/if}
-        </p>
-        {#if friendly?.technical}
-          <details class="loading-error-technical">
-            <summary>Technical details</summary>
-            <code>{friendly.technical}</code>
-          </details>
-        {/if}
-        <button
-          type="button"
-          class="loading-retry-btn"
-          onclick={() => window.location.reload()}
-        >
-          Reload
-        </button>
-        <p class="loading-foot">If the problem continues, check your connection and try again.</p>
+        <ErrorState
+          variant="overlay"
+          kicker="Semantic Explorer"
+          heading="Unable to load"
+          title={friendly?.title ?? 'Something went wrong'}
+          detail={friendly?.detail}
+          technical={friendly?.technical}
+          retryLabel="Reload"
+          onRetry={() => window.location.reload()}
+          footer="If the problem continues, check your connection and try again."
+        />
       {:else}
         <!-- Kicker label -->
         <div class="loading-kicker">Semantic Explorer</div>
@@ -167,49 +159,6 @@
     font-size: 0.7rem;
     color: var(--color-primary-alt);
     margin-top: 0.25rem;
-  }
-  .loading-overlay.is-error .loading-note {
-    color: var(--status-danger, #ff6b6b);
-  }
-  .loading-retry-btn {
-    font-family: var(--font-body);
-    font-size: 0.8rem;
-    font-weight: 600;
-    padding: 0.5rem 1.25rem;
-    border: 1px solid var(--color-primary-alt, var(--color-primary-alt));
-    border-radius: 0.375rem;
-    background: transparent;
-    color: var(--color-primary-alt, var(--color-primary-alt));
-    cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .loading-error-technical {
-    font-size: 0.7rem;
-    color: rgba(255, 230, 230, 0.85);
-    margin: 0.25rem 0 0.5rem;
-  }
-  .loading-error-technical summary {
-    cursor: pointer;
-    user-select: none;
-    margin-bottom: 0.25rem;
-  }
-  .loading-error-technical code {
-    display: block;
-    font-family: var(--font-mono, monospace);
-    font-size: 0.65rem;
-    color: rgba(255, 230, 230, 0.85); /* a11y-ok: technical-only, rendered inside <details> collapsed by default */
-    word-break: break-word;
-    padding: 0.25rem 0.5rem;
-    background: rgba(0, 0, 0, 0.25);
-    border-radius: 0.25rem;
-  }
-  .loading-retry-btn:hover {
-    background: var(--color-primary-alt, var(--color-primary-alt));
-    color: #071018;
-  }
-  .loading-retry-btn:focus-visible {
-    outline: 2px solid var(--color-primary-alt, var(--color-primary-alt));
-    outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {
     .loading-logo {

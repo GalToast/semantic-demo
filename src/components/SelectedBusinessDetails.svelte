@@ -1,15 +1,20 @@
 <script lang="ts">
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
-  import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
-  import type { BusinessRecord } from '@lib/types/business';
+import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
+import type { BusinessRecord } from '@lib/types/business';
+import SelectedMatchNarrative from '@lib/components/focus/SelectedMatchNarrative.svelte';
 
   interface Props {
     viewModel: Record<string, any>;
     selectedCity: string;
     idPrefix?: string;
-  }
+    /** When false, the hero header + meta strip are skipped (rendered by parent). Default true. */
+    showHeader?: boolean;
+    /** When false, the match panel is hidden (rendered by parent). Default true. */
+    showMatchPanel?: boolean;
+}
 
-  let { viewModel, selectedCity, idPrefix = '' }: Props = $props();
+  let { viewModel, selectedCity, idPrefix = '', showHeader = true, showMatchPanel = true }: Props = $props();
 
   // Reactive replacement for selectedPointStore(): the snapshot helper froze at
   // first render (null) because a $derived over a get()-snapshot establishes no
@@ -32,6 +37,7 @@
   }
 </script>
 
+{#if showHeader}
 <div class="selected-hero">
   <div class="selected-hero-main">
     <h3 id="{idPrefix}selected-name" title={viewModel.name} aria-label={viewModel.name}>{viewModel.name}</h3>
@@ -51,6 +57,7 @@
     <span class="focus-stage-chip">{viewModel.status}</span>
   {/if}
 </div>
+{/if}
 
 <!-- Badge row -->
 <div class="badge-row" id="{idPrefix}selected-badges">
@@ -104,10 +111,13 @@
 </div>
 
 <!-- Match panel -->
-<div class="selected-match-panel" id="{idPrefix}selected-match-panel" hidden={!viewModel.showMatchPanel}>
-  <div class="selected-match-label" id="{idPrefix}selected-match-label">Why this record</div>
-  <div class="selected-match-copy" id="{idPrefix}selected-match-copy">{viewModel.matchNarrative}</div>
-</div>
+{#if showMatchPanel}
+  <SelectedMatchNarrative
+    matchNarrative={viewModel.matchNarrative}
+    showMatchPanel={viewModel.showMatchPanel}
+    idPrefix={idPrefix}
+  />
+{/if}
 
 <!-- Action row -->
 <div class="selected-action-row" id="{idPrefix}selected-action-row" hidden={!viewModel.isPopulated}>
@@ -375,20 +385,6 @@
       line-height: var(--mobile-line-normal);
       overflow-wrap: break-word;
       word-break: break-word;
-    }
-
-    /* Match panel: longer explanatory copy stays legible. */
-    .selected-match-panel {
-      padding: var(--space-3);
-    }
-
-    .selected-match-label {
-      font-size: var(--mobile-type-kicker);
-    }
-
-    .selected-match-copy {
-      font-size: var(--mobile-type-body);
-      line-height: var(--mobile-line-relaxed);
     }
 
     /* Action button: full-width with a 44px touch target. */

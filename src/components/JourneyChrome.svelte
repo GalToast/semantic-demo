@@ -18,20 +18,17 @@
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { journeyStore } from '@lib/stores/journey.svelte.ts';
   import { getJourneyCompassState } from '@lib/journey/compass-state';
-  import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector, focusStore, setPocketRoleFilter } from '@lib/stores/focus.svelte.ts';
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
-  import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
 
   import { walkThreadNeighbor } from '@lib/journey/thread-settler';
-  import { roleToFilterBucket } from '@lib/journey/role-filter-bucket';
   import { normalizeRelationshipRole, getRelationshipRoleLabel } from '@lib/utils/relationship-roles';
   import { formatThreadSourceLabel } from '@lib/utils/dom-formatters';
   import type { BusinessRecord } from '@lib/types/business';
   import type { RelationshipRole } from '@lib/utils/relationship-roles';
   import WalkBreadcrumb from '@components/WalkBreadcrumb.svelte';
   import TrailControls from '@components/TrailControls.svelte';
-  import NeighborRail from '@components/NeighborRail.svelte';
+  import FocusNeighborhood from '@lib/components/journey/FocusNeighborhood.svelte';
 
   // CSS side-effect import. Required because Svelte 5 does NOT support
   // `<style src="./X.css">` (silently dropped — file ends up outside
@@ -62,7 +59,6 @@
 
   let { visible = false }: Props = $props();
 
-  let hoverTimer: ReturnType<typeof setTimeout> | null = $state(null);
 
   function valueArray(value: unknown): unknown[] {
     if (Array.isArray(value)) return value;
@@ -261,118 +257,18 @@
     });
   }
 
-  // ── Neighbor rail ─────────────────────────────────────────────────────────
-
-  // Use $viewport auto-subscription so the derived re-runs on viewport changes.
-  // (Calling isCompact()/isMobile()/etc. in a $derived.by is a snapshot read
-  // in Svelte 5 runes mode — they don't track the store.) See the audit at
-  // qa-screenshots/AUDIT.md for the full pattern.
-  const candidateLimit = $derived.by(() => {
-    if ($viewport.isCompact && !$viewport.isUltraCompactPortrait) return 1;
-    if ($viewport.isCompactLandscape || $viewport.isUltraCompactPortrait) return 2;
-    if ($viewport.isMobile && $viewport.isCompact) return 4;
-    return 5;
-  });
-
-  // ── Relationship role filter ────────────────────────────────────────────
-
-  const ROLE_FILTER_OPTIONS: Array<'all' | 'direct' | 'support' | 'civic'> = ['all', 'direct', 'support', 'civic'];
-  const currentRoleFilter = $derived(focusStore().pocketRoleFilter ?? 'all');
-
-  // roleToFilterBucket (imported from @lib/journey/role-filter-bucket) collapses
-  // the 26-role enum into the 3 chip buckets, so the filter matches candidates
-  // by bucket rather than by strict role equality (which matched almost nothing
-  // and silently emptied the rail). The raw relationshipRole string is
-  // normalized first (it may arrive cased/aliased).
-
-  function applyRoleFilter(candidates: NormalizedCandidate[]): NormalizedCandidate[] {
-    if (currentRoleFilter === 'all') return candidates;
-    return candidates.filter(
-      (c) => roleToFilterBucket(normalizeRelationshipRole(c.relationshipRole)) === currentRoleFilter
-    );
-  }
-
-  // Per-bucket counts so each chip can show how many neighbors it would
-  // surface (and signal an empty bucket before the user commits to it).
-  const roleFilterCounts = $derived.by(() => {
-    const counts: Record<'direct' | 'support' | 'civic', number> = { direct: 0, support: 0, civic: 0 };
-    const focusIdx = currentFocusedIndex;
-    for (const c of currentThreadCandidates) {
-      if (!Number.isFinite(c.index) || c.index === focusIdx) continue;
-      counts[roleToFilterBucket(normalizeRelationshipRole(c.relationshipRole))]++;
-    }
-    return counts;
-  });
-
-  const filteredCandidates = $derived.by(() => {
-    const candidates = currentThreadCandidates;
-    const focusIdx = currentFocusedIndex;
-    return applyRoleFilter(
-      candidates.filter((c) => Number.isFinite(c.index) && !(c.index === focusIdx))
-    ).slice(0, candidateLimit);
-  });
-
-  const showRoleFilters = $derived(
-    chromeHasFocus &&
-    currentThreadCandidates.some((c) => c.relationshipRole !== 'unclassified')
-  );
-
-  const showNeighborRail = $derived(
-    chromeHasFocus &&
-    filteredCandidates.length > 0 &&
-    (!threadInspectorActive() || threadInspector().source === 'rail-hover')
-  );
-
-  function selectRoleFilter(filter: 'all' | 'direct' | 'support' | 'civic'): void {
-    setPocketRoleFilter(filter);
-  }
 
   function getPointForIndex(idx: number): BusinessRecord | null {
     if (idx < 0 || idx >= getBusinessRecords().length) return null;
     return (getBusinessRecords()[idx] as BusinessRecord | undefined) ?? null;
   }
 
-  // scheduleInspection / cancelInspection removed — neighbor pill
-  // no longer has hover-to-inspect; use inner Inspect button instead.
-
-  function inspectCandidate(idx: number): void {
-    if (hoverTimer) clearTimeout(hoverTimer);
-    updateThreadInspector({
-      active: true,
-      inspectedIndex: idx,
-      source: 'rail-inspect',
-      segmentCount: 1,
-      braidCount: 0,
-      endpointCount: 2
-    });
-  }
-
-  // inspectCandidateFromEvent removed — neighbor pill no longer has
-  // outer click handler; inner buttons handle their own events.
+  // ── Event guard for journey-chrome surface ─────────────────────────────
 
   function stopRailSurfaceEvent(event: Event): void {
     event.stopPropagation();
     event.stopImmediatePropagation?.();
   }
-
-  function pinCandidate(idx: number): void {
-    pinThread(idx);
-  }
-
-  function walkToCandidate(candidate: NormalizedCandidate): void {
-    walkThreadNeighbor(candidate.index, {
-      surface: 'rail',
-      reason: getRelationshipRoleLabel(normalizeRelationshipRole(candidate.relationshipRole)) || candidate.reason || 'nearby business relationship'
-    });
-  }
-
-  // ── Cleanup on unmount ────────────────────────────────────────────────────
-
-  $effect(() => {
-    return () => {
-      if (hoverTimer) clearTimeout(hoverTimer);
-    };
-  });
 
   // ── Compass status header ─────────────────────────────────────────────────
 
@@ -428,41 +324,13 @@
       onNext={goNext}
     />
 
-    <!-- ├─ Role Filter Chips ──────────────────────────────────────────────── -->
-    {#if showRoleFilters}
-      <div class="focus-role-filters" id="focus-role-filters" role="group" aria-label="Filter neighbors by relationship">
-        {#each ROLE_FILTER_OPTIONS as filter}
-          {@const label = filter === 'all' ? 'All' : getRelationshipRoleLabel(filter, 'rail')}
-          {@const active = currentRoleFilter === filter}
-          {@const count = filter === 'all' ? null : roleFilterCounts[filter]}
-          {@const isEmpty = count !== null && count === 0}
-          <button
-            class="focus-role-filter-chip"
-            class:active
-            class:empty={isEmpty}
-            type="button"
-            data-role-filter={filter}
-            aria-pressed={active}
-            aria-label={count !== null ? `${label} (${count})` : label}
-            onclick={() => selectRoleFilter(filter)}
-          >
-            {label}{#if count !== null}<span class="filter-count" aria-hidden="true"> {count}</span>{/if}
-          </button>
-        {/each}
-      </div>
-    {/if}
-
-    <!-- ├─ Neighbor Rail ───────────────────────────────────────────────────── -->
-    {#if showNeighborRail}
-      <NeighborRail candidates={filteredCandidates} getPointForIndex={getPointForIndex} onInspect={inspectCandidate} onPin={pinCandidate} onWalk={walkToCandidate} />
-    {:else if chromeHasFocus && filteredCandidates.length === 0 && !threadInspectorActive()}
-      <div class="focus-stage-neighbors" id="focus-stage-neighbors">
-        <div class="neighbor-count" id="focus-stage-neighbor-count">0 visible neighbors</div>
-        <div class="focus-stage-neighbor-list" id="focus-stage-neighbor-list">
-          <div class="empty-state">No neighboring stops found in this area.</div>
-        </div>
-      </div>
-    {/if}
+    <!-- ├─ Focus Neighborhood (role filters, neighbor rail, empty state) ── -->
+    <FocusNeighborhood
+      chromeHasFocus={chromeHasFocus}
+      threadCandidates={currentThreadCandidates}
+      focusedIndex={currentFocusedIndex}
+      getPointForIndex={getPointForIndex}
+    />
     </div><!-- /focus-stage-journey -->
   </div>
 {/if}

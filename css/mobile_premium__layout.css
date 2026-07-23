@@ -946,12 +946,13 @@
     /* ─── INFO-PANEL VISIBILITY (Short Landscape 844x390) ─────────────
        Multiple CSS sources hide the info-panel for focus/focus-search/
        semantic-dive at ≤900×420/480 landscape:
-       - focus-dive.css: display:none (≤900×420) — loads BEFORE chrome.css
+       - mobile_premium__components.css: display:none (≤900×420)
        - strands.css: opacity:0, visibility:hidden (≤900×480) — lower specificity
        This override restores the panel so controls like Step Inside and
-       selected cards are usable. chrome.css loads AFTER focus-dive.css in
-       the cascade (link order 31 vs 30), so equal specificity (0,3,1) wins
-       naturally. strands.css has lower specificity (0,2,1) and loses.
+       selected cards are usable. mobile_premium__layout.css loads AFTER
+       mobile_premium__components.css in the cascade (link order 19 vs 18),
+       so equal specificity (0,3,1) wins naturally. strands.css has lower
+       specificity (0,2,1) and loses.
        No !important needed. Scope: only focus/focus-search/semantic-dive
        inside this mobile landscape media query. */
     body.surface-focus .info-panel,
@@ -990,7 +991,7 @@
        gate on any active surface to avoid leaking into transition states. */
 
     /* map-trail-strip / map-strip-title are map-only elements
-       (see chrome.css:337,359 for the same gate pattern). */
+       (see mobile_premium__layout.css earlier in this file for the same gate pattern). */
     body.surface-map-any .map-trail-strip {
         padding: 8px 10px;
         gap: 8px;
@@ -1066,18 +1067,18 @@
    focusing on a business the user is trapped: cannot open search, switch
    views, or escape. This override re-shows the chrome in focus, focus-
    search, and semantic-dive states so the user always has a way out.
-   Loaded after chrome.css / state.css / surfaces.css / strands.css, so
-   source order wins over the hides.
+   Loaded after mobile_premium__components.css / mobile_premium__state.css /
+   strands.css, so source order wins over the hides.
    Choice: option (a) — keep chrome visible in focus state — because it is
    uniform and stateless; option (b) (only show on panel open) would
    require JS-driven state and would still strand the user in the
    non-panel-open case.
    Specificity: selectors mirror the highest-specificity hide rules they
    are overriding (e.g. `.journey-compass.glass-heavy` matches the
-   focus-dive.css hide for the rail). Source order alone wins when
-   specificity ties. Display values mirror the canonical definitions in
-   controls.css / time_weather.css / layout_base.css so the natural
-   layout is preserved. */
+   mobile_premium__components.css hide for the rail). Source order alone
+   wins when specificity ties. Display values mirror the canonical
+   definitions in controls.css / time_weather.css / layout_base.css so the
+   natural layout is preserved. */
 @media (min-width: 361px) and (max-width: 768px) {
     body.surface-focus .view-toggle,
     body.surface-focus-search .view-toggle,

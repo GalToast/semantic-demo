@@ -73,10 +73,10 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
     for (const c of tier1) {
         describe(`${c.component}`, () => {
             const src = readFile(c.file)
-        // Error surfaces were extracted into the shared ErrorState.svelte
-        // presentational component, so a tier entry may point its error
-        // marker at a different file than the component under test.
-        const errorSrc = c.error && c.error.errorFile ? readFile(c.error.errorFile) : src
+            // Error surfaces were extracted into the shared ErrorState.svelte
+            // presentational component, so a tier entry may point its error
+            // marker at a different file than the component under test.
+            const errorSrc = c.error && c.error.errorFile ? readFile(c.error.errorFile) : src
 
             if (c.loading) {
                 it(`has loading marker (${c.loading.marker})`, () => {
@@ -156,7 +156,8 @@ describe('UX state coverage — Tier 1b (loading OR error OR empty)', () => {
     })
 
     it('SearchInput announces error + empty in one status div and defers searching narrative to the cue', () => {
-        const src = readFile('src/components/SearchInput.svelte')
+        // Status div lives in the extracted SearchInputChrome.svelte child
+        const src = readFile('src/lib/components/search/SearchInputChrome.svelte')
         // The status div handles error/empty states; searching state keeps the
         // spinner visible and lets the search-trail cue overlay provide the
         // narrative so we don't duplicate "Scanning..." announcements.

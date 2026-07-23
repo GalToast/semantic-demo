@@ -39,9 +39,12 @@ const threadInspectorCombinedSrc = () => {
         // previously the imperative render.ts). Include it in the
         // combined source so text-content contract assertions
         // ('Current Stop', 'Pin Connection', etc.) find the strings.
-        resolveSource('src/components/ThreadInspector.svelte', SEMDEMO_ROOT)
+        resolveSource('src/components/ThreadInspector.svelte', SEMDEMO_ROOT),
+        // PR-T2 extraction: ThreadInspectorPanel.svelte now owns the panel
+        // content + button text logic extracted from ThreadInspector.svelte.
+        resolveSource('src/lib/components/journey/ThreadInspectorPanel.svelte', SEMDEMO_ROOT)
     ]
-    return paths.map((p) => fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : '').join('\n')
+    return paths.map((p) => (fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : '')).join('\n')
 }
 const JOURNEY_THREAD_MODEL_PATH = resolveSource('src/lib/journey/thread-model.ts', SEMDEMO_ROOT)
 // retired journey-thread-model-bridge.ts in Svelte 5 modernization sweep
@@ -319,7 +322,9 @@ function testThreadInspectorSemanticFirst() {
     assert(
         threadInspectorSrc.includes('getSemanticThreadCandidates') ||
             journeySrc.includes('getSemanticThreadCandidates') ||
-            fs.readFileSync(resolveSource('src/lib/journey/neighborhood.ts', SEMDEMO_ROOT), 'utf-8').includes('getSemanticThreadCandidates'),
+            fs
+                .readFileSync(resolveSource('src/lib/journey/neighborhood.ts', SEMDEMO_ROOT), 'utf-8')
+                .includes('getSemanticThreadCandidates'),
         'thread-inspector or journey re-exports getSemanticThreadCandidates'
     )
     assertContains(
@@ -331,7 +336,9 @@ function testThreadInspectorSemanticFirst() {
     assert(
         threadInspectorSrc.includes('getThreadCandidatesForIndex') ||
             journeySrc.includes('getThreadCandidatesForIndex') ||
-            fs.readFileSync(resolveSource('src/lib/journey/neighborhood.ts', SEMDEMO_ROOT), 'utf-8').includes('getThreadCandidatesForIndex'),
+            fs
+                .readFileSync(resolveSource('src/lib/journey/neighborhood.ts', SEMDEMO_ROOT), 'utf-8')
+                .includes('getThreadCandidatesForIndex'),
         'thread-inspector or journey re-exports getThreadCandidatesForIndex'
     )
     assertContains(

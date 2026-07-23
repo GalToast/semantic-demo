@@ -24,8 +24,12 @@
     detail?: string | null;
     /** Optional technical detail string shown in a collapsible <details> (null/undefined treated as absent). */
     technical?: string | null;
-    /** Optional kicker pill (e.g. "Retry needed"). Card variant only. */
+    /** Optional kicker pill (e.g. "Retry needed"). Card and overlay variants. */
     kicker?: string;
+    /** Optional heading above the note (overlay variant only). */
+    heading?: string;
+    /** Optional footer text below the retry button (overlay variant only). */
+    footer?: string;
     /** Retry button label. */
     retryLabel?: string;
     /** Retry button click handler. */
@@ -40,8 +44,8 @@
     onDismiss?: () => void;
     /** Adds the `.compact` modifier to the retry button (card variant). */
     compact?: boolean;
-    /** Visual variant: 'card' (search results) or 'map' (map status bar). */
-    variant?: 'card' | 'map';
+    /** Visual variant: 'card' (search results), 'map' (map status bar), or 'overlay' (loading overlay). */
+    variant?: 'card' | 'map' | 'overlay';
     /** Optional data-testid on the technical <details> block. */
     technicalTestId?: string;
   }
@@ -59,7 +63,9 @@
     onDismiss,
     compact = false,
     variant = 'card',
-    technicalTestId
+    technicalTestId,
+    heading,
+    footer
   }: Props = $props();
 </script>
 
@@ -79,6 +85,35 @@
     {/if}
   </div>
   <button class="map-retry-btn" type="button" onclick={onRetry}>{retryLabel}</button>
+{:else if variant === 'overlay'}
+  <!-- LoadingOverlay error branch: renders the exact DOM contract expected by
+       contract tests (#loading-error-message, .loading-error-technical,
+       .loading-retry-btn, .loading-foot) while centralizing the surface on
+       the shared ErrorState component. -->
+  {#if kicker}
+    <div class="loading-kicker">{kicker}</div>
+  {/if}
+  {#if heading}
+    <div class="loading-title">{heading}</div>
+  {/if}
+  <p id="loading-error-message" class="loading-note" role="alert" aria-live="assertive">
+    <strong>{title}</strong>
+    {#if detail}
+      <br />{detail}
+    {/if}
+  </p>
+  {#if technical}
+    <details class="loading-error-technical">
+      <summary>Technical details</summary>
+      <code>{technical}</code>
+    </details>
+  {/if}
+  <button class="loading-retry-btn" type="button" onclick={onRetry}>
+    {retryLabel}
+  </button>
+  {#if footer}
+    <p class="loading-foot">{footer}</p>
+  {/if}
 {:else}
   <div class="search-error-state">
     {#if kicker}
@@ -172,5 +207,51 @@
     background: rgba(17, 41, 47, 0.92);
     border-color: rgba(126, 231, 219, 0.64);
     transform: translateY(-1px);
+  }
+
+  /* LoadingOverlay error styling — moved here alongside the overlay variant so
+     the extracted error DOM keeps the same look and scoped hover/focus states. */
+  .loading-note {
+    color: var(--status-danger, #ff6b6b);
+  }
+  .loading-retry-btn {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid var(--color-primary-alt, var(--color-primary-alt));
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--color-primary-alt, var(--color-primary-alt));
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .loading-error-technical {
+    font-size: 0.7rem;
+    color: rgba(255, 230, 230, 0.85);
+    margin: 0.25rem 0 0.5rem;
+  }
+  .loading-error-technical summary {
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0.25rem;
+  }
+  .loading-error-technical code {
+    display: block;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.65rem;
+    color: rgba(255, 230, 230, 0.85); /* a11y-ok: technical-only, rendered inside <details> collapsed by default */
+    word-break: break-word;
+    padding: 0.25rem 0.5rem;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 0.25rem;
+  }
+  .loading-retry-btn:hover {
+    background: var(--color-primary-alt, var(--color-primary-alt));
+    color: #071018;
+  }
+  .loading-retry-btn:focus-visible {
+    outline: 2px solid var(--color-primary-alt, var(--color-primary-alt));
+    outline-offset: 2px;
   }
 </style>

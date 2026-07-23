@@ -18,6 +18,7 @@
     getFilterState
   } from '@lib/stores/filter.svelte';
   import { businessRecords } from '@lib/data-store';
+  import FilterChipGroup from '@lib/components/filters/FilterChipGroup.svelte';
 
   interface Props {
     /** Whether the filter panel is open */
@@ -158,23 +159,7 @@ function handleContactToggle(id: string): void {
     resetFilters();
   }
 
-  // ── Keyboard navigation ─────────────────────────────────────────────────────
-  function handleChipKeydown(event: KeyboardEvent, filterId: string) {
-    const chips = Array.from(
-      (event.currentTarget as HTMLElement).closest('.filter-group')?.querySelectorAll('.filter-chip') ?? []
-    ) as HTMLElement[];
-    const idx = chips.findIndex((c) => c.dataset.statusFilter === filterId || c.dataset.contactFilter === filterId);
-    if (idx === -1) return;
-    if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      const next = chips[(idx + 1) % chips.length];
-      next?.focus();
-    } else if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      const prev = chips[(idx - 1 + chips.length) % chips.length];
-      prev?.focus();
-    }
-  }
+
 </script>
 
 <details
@@ -194,41 +179,21 @@ function handleContactToggle(id: string): void {
     {/if}
   </summary>
   <div class="filter-toolbar">
-    <!-- Status filter chips -->
-    <div class="filter-group">
-      <h4 class="filter-group-title">Status</h4>
-      {#each statusFilters as filter (filter.id)}
-        <button
-          class="filter-chip"
-          class:active={isStatusActive(filter.id)}
-          data-status-filter={filter.id}
-          onclick={() => handleStatusToggle(filter.id)}
-          onkeydown={(e) => handleChipKeydown(e, filter.id)}
-          aria-pressed={isStatusActive(filter.id)}
-          type="button"
-        >
-          {filter.label}
-       </button>
-      {/each}
-   </div>
+    <FilterChipGroup
+      title="Status"
+      options={statusFilters}
+      dataAttr="status-filter"
+      isActive={isStatusActive}
+      onToggle={handleStatusToggle}
+    />
 
-    <!-- Contact/signal filter chips -->
-    <div class="filter-group">
-      <h4 class="filter-group-title">Contact</h4>
-      {#each contactFilters as filter (filter.id)}
-        <button
-          class="filter-chip"
-          class:active={isContactActive(filter.id)}
-          data-contact-filter={filter.id}
-          onclick={() => handleContactToggle(filter.id)}
-          onkeydown={(e) => handleChipKeydown(e, filter.id)}
-          aria-pressed={isContactActive(filter.id)}
-          type="button"
-        >
-          {filter.label}
-       </button>
-      {/each}
-   </div>
+    <FilterChipGroup
+      title="Contact"
+      options={contactFilters}
+      dataAttr="contact-filter"
+      isActive={isContactActive}
+      onToggle={handleContactToggle}
+    />
 
     <!-- City filter select -->
     <div class="filter-group">
@@ -321,33 +286,7 @@ function handleContactToggle(id: string): void {
     font-family: var(--font-display);
     margin: 0;
   }
-  .filter-chip {
-    padding: 0 0.5rem;
-    background: rgba(var(--color-primary-alt-rgb), 0.08);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
-    border-radius: 0.3rem;
-    color: var(--color-text-teal-muted);
-    font-size: 0.65rem;
-    font-family: var(--font-body);
-    cursor: pointer;
-    transition: all 0.15s;
-    height: 44px;
-    min-width: 44px;
-    width: auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    line-height: 44px;
-  }
-  .filter-chip:hover {
-    border-color: rgba(var(--color-primary-alt-rgb), 0.35);
-  }
-  .filter-chip.active {
-    background: rgba(var(--color-primary-alt-rgb), 0.2);
-    border-color: var(--color-primary-alt);
-    color: var(--color-primary-alt);
-  }
+
   .city-filter {
     padding: 0.3rem 0.5rem;
     background: rgba(var(--color-primary-alt-rgb), 0.08);

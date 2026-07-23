@@ -50,7 +50,7 @@
        2. Journey compass — core layout
           Shared across focus-search and dive states.
        ---------------------------------------------------------------- */
-    /* Specificity 0,4,1 to beat surfaces.css position:relative (0,4,1) via source order.
+    /* Specificity 0,4,1 to beat mobile_premium__state.css position:relative (0,4,1) via source order.
        Without position:fixed the compass flows in the document; left/right become offsets
        instead of edge constraints, so width stays at 100% and overflows by the left offset. */
     body.surface-focus-search:not(.surface-map-any) .journey-compass,
@@ -868,7 +868,7 @@
 
     /* Field-node bottom-flush: pin the focus card to the viewport bottom.
        The card must overlap the journey-compass (which collapses in field-node
-       via the .journey-compass visibility rule in surfaces.css) and stay
+       via the .journey-compass visibility rule in mobile_premium__state.css) and stay
        flush with the viewport edge. */
     body.surface-focus-search[data-focus-panel-mode='field-node'] #focus-stage .focus-stage-card {
         position: fixed;

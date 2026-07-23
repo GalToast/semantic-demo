@@ -1825,7 +1825,7 @@
     /* Final focus cockpit conflict guard. The Svelte #journey-chrome lane owns
        visible journey navigation; legacy focus-stage journey fragments must
        not draw inside or over the selected-business card. This belongs in
-       surfaces.css because it loads after the focus-dive owner rules. */
+       mobile_premium__state.css (loaded after mobile_premium__components.css). */
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
         .focus-stage-journey,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)

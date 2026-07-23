@@ -25,6 +25,11 @@ function readSearchInput(): string {
     return readFileSync(srcPath, 'utf-8')
 }
 
+function readSearchInputChrome(): string {
+    const srcPath = resolve(__dirname, '../../src/lib/components/search/SearchInputChrome.svelte')
+    return readFileSync(srcPath, 'utf-8')
+}
+
 function readSearchDispatch(): string {
     const srcPath = resolve(__dirname, '../../src/lib/search/search-dispatch.ts')
     return readFileSync(srcPath, 'utf-8')
@@ -34,52 +39,54 @@ function readSearchDispatch(): string {
 
 describe('search-back-affordance (UI-9)', () => {
     let source: string
+    let chromeSource: string
     let dispatchSource: string
 
     beforeEach(() => {
         source = readSearchInput()
+        chromeSource = readSearchInputChrome()
         dispatchSource = readSearchDispatch()
     })
 
     describe('DOM structure', () => {
-        it('renders a .search-back-btn button', () => {
-            expect(source).toContain('class="search-back-btn"')
+        it('renders a .search-back-btn button (in chrome child)', () => {
+            expect(chromeSource).toContain('class="search-back-btn"')
         })
 
         it('the button has aria-label="Back to overview"', () => {
-            expect(source).toContain('aria-label="Back to overview"')
+            expect(chromeSource).toContain('aria-label="Back to overview"')
         })
 
         it('the button is inside .search-input-wrap', () => {
             // The button should appear between the opening .search-input-wrap div
-            // and the search icon SVG
-            const wrapIdx = source.indexOf('class="search-input-wrap"')
-            const backBtnIdx = source.indexOf('class="search-back-btn"')
-            const searchIconIdx = source.indexOf('class="search-icon"')
+            // and the search icon SVG (both in the chrome child component)
+            const wrapIdx = chromeSource.indexOf('class="search-input-wrap"')
+            const backBtnIdx = chromeSource.indexOf('class="search-back-btn"')
+            const searchIconIdx = chromeSource.indexOf('class="search-icon"')
             expect(wrapIdx).toBeGreaterThan(-1)
             expect(backBtnIdx).toBeGreaterThan(wrapIdx)
             expect(searchIconIdx).toBeGreaterThan(backBtnIdx)
         })
 
         it('the button uses an SVG left-arrow icon', () => {
-            expect(source).toContain('M19 12H5M12 5l-7 7 7 7')
+            expect(chromeSource).toContain('M19 12H5M12 5l-7 7 7 7')
         })
 
         it('the button has type="button" to prevent form submission', () => {
-            expect(source).toContain('type="button"')
+            expect(chromeSource).toContain('type="button"')
         })
 
         it('the button has tabindex="0" for keyboard accessibility', () => {
-            expect(source).toContain('tabindex="0"')
+            expect(chromeSource).toContain('tabindex="0"')
         })
     })
 
     describe('click handler', () => {
-        it('the button onclick calls handleClear', () => {
-            expect(source).toContain('onclick={handleClear}')
+        it('the button onclick calls onClear (passed as prop from parent)', () => {
+            expect(chromeSource).toContain('onclick={onClear}')
         })
 
-        it('handleClear delegates to the search dispatch controller', () => {
+        it('parent SearchInput still exports handleClear that delegates to dispatch', () => {
             expect(source).toContain('function handleClear')
             expect(source).toContain('dispatch.clear()')
         })
@@ -96,18 +103,20 @@ describe('search-back-affordance (UI-9)', () => {
     describe('CSS visibility', () => {
         it('the back button has display: none by default (hidden in idle)', () => {
             // Find the .search-back-btn style block and verify display: none
-            const backBtnStyleMatch = source.match(/\.search-back-btn\s*\{[^}]*display:\s*none/)
+            const backBtnStyleMatch = chromeSource.match(/\.search-back-btn\s*\{[^}]*display:\s*none/)
             expect(backBtnStyleMatch).not.toBeNull()
         })
 
-        it('the back button shows in search state via .search-active class', () => {
-            // Phase 3 migration: body attribute CSS replaced with reactive class
-            expect(source).toContain('.search-active .search-back-btn')
-            expect(source).toContain('display: inline-flex')
+        it('the back button shows in search state via .search-active class on wrapper', () => {
+            // Phase 3 migration: body attribute CSS replaced with reactive class.
+            // After extraction, the class is applied to .search-input-wrap directly
+            // via the searchActive prop, so the selector is .search-input-wrap.search-active .search-back-btn
+            expect(chromeSource).toContain('.search-input-wrap.search-active .search-back-btn')
+            expect(chromeSource).toContain('display: inline-flex')
         })
 
         it('does not use :global() body selector (migration complete)', () => {
-            expect(source).not.toContain(':global(body[data-panel-surface')
+            expect(chromeSource).not.toContain(':global(body[data-panel-surface')
         })
     })
 

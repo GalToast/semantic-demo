@@ -6,7 +6,7 @@
  * files). For equal-specificity selectors, this file overrides:
  *   - Tier 1: 17 modules from css/semantic-demo.css
  *   - Tier 2: vector-explorer-pandora.css (theme overlay)
- *   - Tier 3: 7 css/mobile_premium__*.css files (mobile premium)
+ *   - Tier 3: 3 css/mobile_premium__*.css files (mobile premium)
  *
  * This tail-load position is INTENTIONAL: it gives .focus-stage selectors
  * final authority across all viewport tiers.

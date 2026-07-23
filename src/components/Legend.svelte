@@ -16,6 +16,7 @@
 
   import { legendOpen } from '@lib/stores/legend.svelte';
   import { DisposableRegistry } from '@lib/utils/disposable-registry';
+  import LegendClusterList from '@lib/components/LegendClusterList.svelte';
 
   interface Props {
     open?: boolean;
@@ -25,9 +26,6 @@
   }
 
   let { open = false, mapView = false, concealedByFocus = false }: Props = $props();
-  let activeLegendButtonIndex = $state(0);
-  let legendButtons: HTMLButtonElement[] = $state([]);
-
   const legendRegistry = new DisposableRegistry({ label: 'Legend', warnAfterDispose: false });
 
   /**
@@ -158,40 +156,8 @@
     };
   });
 
-  $effect(() => {
-    if (activeLegendButtonIndex >= clusterEntries.length) {
-      activeLegendButtonIndex = Math.max(0, clusterEntries.length - 1);
-    }
-  });
-
-  function focusLegendButton(index: number): void {
-    if (!clusterEntries.length) return;
-    const nextIndex = (index + clusterEntries.length) % clusterEntries.length;
-    activeLegendButtonIndex = nextIndex;
-    legendButtons[nextIndex]?.focus();
-  }
-
-  function handleLegendKeydown(event: KeyboardEvent, index: number): void {
-    switch (event.key) {
-      case 'ArrowDown':
-      case 'ArrowRight':
-        event.preventDefault();
-        focusLegendButton(index + 1);
-        break;
-      case 'ArrowUp':
-      case 'ArrowLeft':
-        event.preventDefault();
-        focusLegendButton(index - 1);
-        break;
-      case 'Home':
-        event.preventDefault();
-        focusLegendButton(0);
-        break;
-      case 'End':
-        event.preventDefault();
-        focusLegendButton(clusterEntries.length - 1);
-        break;
-    }
+  function resetClusterFilter(): void {
+    applyClusterFilter(null);
   }
 
   function toggleCluster(_name: string, index: number): void {
@@ -233,38 +199,14 @@
   ondblclick={(e) => e.stopPropagation()}
 >
   <h3 class="legend-title">Categories</h3>
-  {#if filtered}
-    <span class="legend-filtered-badge">filtered</span>
-  {/if}
-  <div
-    class="legend-list"
-    role="group"
-    aria-label="Business categories. Use arrow keys to move between categories."
-  >
-    {#each clusterEntries as entry, i (entry.name)}
-      <button
-        bind:this={legendButtons[i]}
-        class="legend-item"
-        class:inactive={$activeClusterFilter != null && Number($activeClusterFilter) === entry.index}
-        onclick={() => toggleCluster(entry.name, entry.index)}
-        onfocus={() => {
-          activeLegendButtonIndex = i;
-        }}
-        onkeydown={(event) => handleLegendKeydown(event, i)}
-        type="button"
-        tabindex={open && !concealedByFocus && i === activeLegendButtonIndex ? 0 : -1}
-        aria-pressed={$activeClusterFilter != null && Number($activeClusterFilter) === entry.index}
-      >
-        <span
-          class="legend-swatch"
-          style="background-color: {entry.color}"
-          title="A group of businesses with a similar category or industry. The 12 categories are color-coded in the legend."
-        ></span>
-        <span class="legend-label">{entry.name}</span>
-        <span class="legend-count">{entry.count}</span>
-      </button>
-    {/each}
-  </div>
+  <LegendClusterList
+      {clusterEntries}
+      activeClusterFilter={$activeClusterFilter}
+      isFocusable={open && !concealedByFocus}
+      {filtered}
+      onSelect={toggleCluster}
+      onReset={resetClusterFilter}
+    />
   {#if hasOverflow}
     <div class="legend-overflow-indicator" aria-live="polite" data-testid="legend-overflow">
       <span class="legend-overflow-text">
@@ -331,65 +273,6 @@
     margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-  }
-  .legend-list {
-    list-style: none;
-    padding: 0;
-  }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.15rem 0;
-    min-height: 44px;
-    font-size: 0.7rem;
-    color: var(--color-text-teal-muted);
-  }
-  .legend-swatch {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .legend-label {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .legend-item.inactive {
-    opacity: 0.35;
-  }
-  .legend-item.inactive .legend-swatch {
-    filter: grayscale(0.8);
-  }
-  .legend-item {
-    cursor: pointer;
-    user-select: none;
-  }
-  .legend-item:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
-    outline-offset: 2px;
-    border-radius: 0.25rem;
-  }
-  .legend-filtered-badge {
-    display: inline-block;
-    font-family: 'Nunito Sans', sans-serif;
-    font-size: 0.55rem;
-    color: #ffd93d;
-    background: rgba(255, 217, 61, 0.12);
-    border: 1px solid rgba(255, 217, 61, 0.25);
-    border-radius: 0.25rem;
-    padding: 0.05rem 0.35rem;
-    margin-bottom: 0.35rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .legend-count {
-    margin-left: auto;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    color: rgba(176, 208, 208, 0.75);
-    flex-shrink: 0;
   }
   /* D: "N of M shown" overflow affordance. The legend list has
    * max-height: 38vh in map mode (60vh elsewhere) — at ~50px per

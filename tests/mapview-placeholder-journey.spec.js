@@ -41,7 +41,9 @@ const LEAFLET_JS_ROUTE = '**/vendor/leaflet/leaflet.js'
 const LEAFLET_CSS_ROUTE = '**/vendor/leaflet/leaflet.css'
 
 test.describe('MapView journey', () => {
-    test('M1: ?view=map mounts the map chrome with an accessible header + footer + activates the leaflet container', async ({ page }) => {
+    test('M1: ?view=map mounts the map chrome with an accessible header + footer + activates the leaflet container', async ({
+        page
+    }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?view=map&nodemo=1`, {
             waitUntil: 'domcontentloaded'

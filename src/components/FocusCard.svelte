@@ -32,6 +32,7 @@
   import { fade } from 'svelte/transition';
   import SelectedBusinessDetails from '@components/SelectedBusinessDetails.svelte';
   import { returnToOverview } from '@lib/orchestration/lifecycle';
+  import FocusCardHeader from '@lib/components/focus/FocusCardHeader.svelte';
 
 
   // ── Business records (reactive store subscription) ─────────────────────
@@ -379,7 +380,8 @@
          W53 corrective: no double-render during load transition.) -->
     {#if !isEmpty}
       <div id="fc-selected-details" class="selected-details" transition:fade={{ duration: 150 }}>
-        <SelectedBusinessDetails {viewModel} {selectedCity} idPrefix="fc-" />
+        <FocusCardHeader {viewModel} {selectedCity} idPrefix="fc-" />
+        <SelectedBusinessDetails {viewModel} {selectedCity} idPrefix="fc-" showHeader={false} />
       </div>
     {/if}
   </div>
