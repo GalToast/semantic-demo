@@ -71,17 +71,11 @@ import { debugWarn } from '@lib/utils/debug'
 import { debugLog, debugError } from '@lib/utils/debug'
 
 // ── Legacy-access helpers ────────────────────────────────────────────────────
-// Consolidate `window as unknown as Record<string, unknown>` and
-// `appState as unknown as Record<string, unknown>` casts that appear
-// at multiple sites for __THREE_APP__ exposure and semantic-thread
-// attachLegacyState() calls.
+// Consolidate `window as unknown as Record<string, unknown>` casts that appear
+// at multiple sites for __THREE_APP__ exposure.
 
 function getLegacyWindow(): Record<string, unknown> {
     return window as unknown as Record<string, unknown>
-}
-
-function getLegacyAppState(): Record<string, unknown> {
-    return appState as unknown as Record<string, unknown>
 }
 
 // ── Module-scoped State ──────────────────────────────────────────────────────
@@ -343,7 +337,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             w.__THREE_APP__ = {
                 renderer: appState.renderer,
                 scene: appState.scene,
-                camera: getLegacyAppState().camera,
+                camera: appState.camera,
                 simulateWebGLContextLoss: () => {
                     const canvas = document.querySelector('canvas')
                     if (!canvas) {
@@ -386,7 +380,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         // 8. Attach legacy state to semantic threads (thread loading is deferred to
         // the deferred-hydration phase in ui/loading.ts to avoid blocking startup).
         const semanticThreads = await import('@lib/engine/semantic-threads')
-        semanticThreads.attachLegacyState(getLegacyAppState())
+        semanticThreads.attachLegacyState(appState)
         semanticThreads.loadSemanticThreads({ reason: 'lifecycle-init' }).catch((err: unknown) => {
             debugWarn('[engine/lifecycle] semantic-thread load failed:', err)
         })

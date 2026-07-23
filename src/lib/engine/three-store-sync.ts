@@ -37,7 +37,7 @@ import type {
 } from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
-import type { LegacyState } from '@lib/state/legacy-state'
+import type { AppState } from '@lib/state/app.svelte'
 import type { ThreeEngineState } from './three-engine-state'
 import type { WebGLContextState } from '@lib/engine/webgl-context'
 import { webglContext } from '@lib/engine/webgl-context'
@@ -64,7 +64,7 @@ import { engineState } from './three-engine-state'
 export interface SceneSyncSinks {
     webglContext: Pick<WebGLContextState, 'scene' | 'camera' | 'renderer' | 'controls' | 'hemiLight' | 'dirLight'>
     appState: Pick<typeof appState, 'scene' | 'renderer' | 'controls'>
-    legacyState: Pick<LegacyState, 'camera' | 'hemiLight' | 'dirLight'> | null
+    legacyState: Pick<AppState, 'camera' | 'hemiLight' | 'dirLight'> | null
     engineState: Pick<ThreeEngineState, 'state'>
 }
 
@@ -84,7 +84,7 @@ export interface MyceliumSyncSinks {
         typeof appState,
         'myceliumGroup' | 'myceliumCoreLines' | 'myceliumWispyLines' | 'myceliumBridgeLines'
     >
-    legacyState: Pick<LegacyState, 'myceliumConnectionPairs'> | null
+    legacyState: Pick<AppState, 'myceliumConnectionPairs'> | null
     engineState: Pick<ThreeEngineState, 'state'>
 }
 

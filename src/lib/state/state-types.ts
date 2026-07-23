@@ -62,7 +62,6 @@ export type {
     StrandContinuityState,
     FocusOrbitSlackState,
     SemanticState,
-    LegacyState,
 } from './types/engine-types'
 
 // ── Canonical type re-exports ────────────────────────────────────────────────

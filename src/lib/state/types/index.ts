@@ -42,7 +42,7 @@ export type {
     SearchAppState,
 } from './search-types'
 
-// Engine types (performance diagnostics, SemanticState, LegacyState, route/strand state)
+// Engine types (performance diagnostics, SemanticState, route/strand state)
 export type {
     ScenePerformanceDiagnostics,
     FocusConnectionSegment,
@@ -57,7 +57,6 @@ export type {
     StrandContinuityState,
     FocusOrbitSlackState,
     SemanticState,
-    LegacyState,
 } from './engine-types'
 
 // Canonical re-exports (NavState, ActiveFilters from @lib/types/state)

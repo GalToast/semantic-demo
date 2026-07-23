@@ -30,10 +30,10 @@ import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store
 // attachLegacyState().  Do NOT import directly from ../../js/state.js —
 // the CJS require fails under Vite's ESM pipeline and creates a second
 // stateProxy instance that diverges from the live one.
-import type { SemanticState } from '@lib/state/state-types'
+import type { AppState } from '@lib/state/app.svelte'
 import { debugError } from '@lib/utils/debug'
 
-let _state: SemanticState | null = null
+let _state: AppState | null = null
 // Promise gate: resolves when attachLegacyState() is called, so
 // loadSemanticThreads() can await instead of polling with a busy-wait.
 let _stateReadyResolve: (() => void) | null = null
@@ -41,20 +41,20 @@ const _stateReady = new Promise<void>((resolve) => {
     _stateReadyResolve = resolve
 })
 
-function getState(): SemanticState {
+function getState(): AppState {
     if (!_state) throw new Error('semantic-threads: state not attached')
     return _state
 }
 
 /**
- * Attach the legacy state singleton (called by the engine bridge during init).
+ * Attach the AppState singleton (called by the engine lifecycle during init).
  *
  * Must be called before loadSemanticThreads() so that state.semanticNeighborMapByLeadId
  * and other tracked properties are written to the SAME state object the Three.js
  * engine reads from.
  */
-export function attachLegacyState(stateRef: Record<string, unknown> | unknown): void {
-    _state = stateRef as typeof _state
+export function attachLegacyState(stateRef: AppState): void {
+    _state = stateRef
     if (_stateReadyResolve) {
         _stateReadyResolve()
         _stateReadyResolve = null

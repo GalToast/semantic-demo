@@ -11,7 +11,6 @@
  *   - docs/three-engine-decomposition-plan.md §4 (A4, A7, A11, A12, A14)
  */
 
-import type { LegacyState } from '@lib/state/legacy-state'
 import type { AppState } from '@lib/state/app.svelte'
 import type { MeshPhongMaterial, Material } from 'three'
 import { FogExp2 } from 'three'
@@ -51,8 +50,8 @@ function syncPointsGeometryPositions(movedIndices: readonly number[]): void {
     if (!attr) return
     const arr = attr.array as Float32Array
     if (!arr) return
-    // nodePositions rides the runtime state object (LegacyState index-signature
-    // member); assert the structural shape like camera-choreography/routes.ts does.
+    // nodePositions lives on the runtime AppState object; assert the structural
+    // shape like camera-choreography/routes.ts does.
     const nodePositions = engineState.state?.nodePositions as NodePosition[] | undefined
     if (!nodePositions) return
     for (const i of movedIndices) {
@@ -89,7 +88,7 @@ export function computeRevealProgress(now: number): { revealed: number; points: 
  * reveal progress and focus/semantic-dive state.
  *
  * @param pointsRevealProgress — eased reveal fraction for points (0–1)
- * @param state — subset of LegacyState for focusedNode/semanticDiveMode/trailDepth reads
+ * @param state — subset of AppState for focusedNode/semanticDiveMode/trailDepth reads
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A7)
  */
 export function updatePointsMaterial(
@@ -124,11 +123,11 @@ export function updatePointsMaterial(
  * Reads `state.hoverHighlightIndex` to detect hover. Mutates
  * `engineState.lastHoveredNode` and `engineState.hoverEmissiveFlash`.
  *
- * @param state — subset of LegacyState for hoverHighlightIndex reads
+ * @param state — subset of AppState for hoverHighlightIndex reads
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A11)
  */
 export function updateHoverEmissiveFlash(
-    state: Partial<Pick<LegacyState, 'hoverHighlightIndex'>> | null | undefined
+    state: Partial<Pick<AppState, 'hoverHighlightIndex'>> | null | undefined
 ): void {
     const hoveredNode = state?.hoverHighlightIndex ?? -1
     const hasHover = Number.isFinite(hoveredNode) && hoveredNode >= 0
@@ -163,7 +162,7 @@ export function updateHoverEmissiveFlash(
  *
  * Reads `state.weather.wind_speed_10m`, mutates `state.pulsePhase`.
  *
- * @param state — subset of LegacyState for weather (wind_speed_10m) + pulsePhase
+ * @param state — subset of AppState for weather (wind_speed_10m) + pulsePhase
  * @returns `threadsVisible` — whether mycelium threads should be rendered,
  *   consumed by the thread-opacity block (A13) that remains in animate().
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A12)
@@ -189,12 +188,12 @@ export function updateMyceliumPulse(state: Pick<AppState, 'pulsePhase' | 'weathe
  * `uHoverNodePos` to the hovered node's world position.
  *
  * @param hoveredNode — index of the currently hovered node (-1 if none)
- * @param state — subset of LegacyState for nodePositions reads
+ * @param state — subset of AppState for nodePositions reads
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A14)
  */
 export function updatePointsShaderHoverBoost(
     hoveredNode: number,
-    state: Pick<LegacyState, 'nodePositions'> | null | undefined
+    state: Pick<AppState, 'nodePositions'> | null | undefined
 ): void {
     if (!webglContext.pointsMaterial?.userData?.shader) return
     const shader = webglContext.pointsMaterial.userData.shader
@@ -290,7 +289,7 @@ export function lerpNodesForFrame(now: number): boolean {
  *
  * @param cameraRevealProgress — eased camera progress fraction (0–1), from computeRevealProgress().camera
  * @param revealProgress — raw scene reveal fraction (0–1), from computeRevealProgress().revealed
- * @param state — the full LegacyState (or null), used inside withStateMutation to clear reveal flags
+ * @param state — the full AppState (or null), used inside withStateMutation to clear reveal flags
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A6)
  */
 export function lerpCameraForReveal(
@@ -371,12 +370,12 @@ export function updateReferenceSphereOpacity(revealProgress: number, sceneReveal
  * each frame for a smooth fade-in.
  *
  * @param pointsRevealProgress — eased reveal fraction for points (0–1)
- * @param state — subset of LegacyState for semanticDiveMode/trailDepth reads
+ * @param state — subset of AppState for semanticDiveMode/trailDepth reads
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A10)
  */
 export function updateSporeOpacity(
     pointsRevealProgress: number,
-    state: (Pick<LegacyState, 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined
+    state: (Pick<AppState, 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined
 ): void {
     if (webglContext.nodeSporeMaterial) {
         const isSemanticDive = state?.semanticDiveMode === true || (state?.trailDepth ?? 0) >= 2
@@ -398,14 +397,14 @@ export function updateSporeOpacity(
  * @param threadsVisible — whether mycelium threads should render (from A12)
  * @param pointsRevealProgress — eased points-material reveal fraction (0–1),
  *   used to compute threadRevealProgress (threads fade in after points)
- * @param state — subset of LegacyState for pulsePhase/semanticDiveMode/trailDepth reads
+ * @param state — subset of AppState for pulsePhase/semanticDiveMode/trailDepth reads
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A13)
  */
 export function updateThreadLayerOpacities(
     threadsVisible: boolean,
     pointsRevealProgress: number,
     state:
-        | (Pick<LegacyState, 'pulsePhase'> & {
+        | (Pick<AppState, 'pulsePhase'> & {
               semanticDiveMode?: boolean
               trailDepth?: number
           })

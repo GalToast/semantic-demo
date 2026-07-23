@@ -20,10 +20,6 @@ import {
     exposeDevEngineBridge
 } from './three-engine-init-helpers'
 import { sceneNeedsContinuousFrame } from './three-engine-helpers'
-// LegacyState is imported from @lib/state/legacy-state (Phase 4, 2026-06-25)
-// so it can be shared with legacy-state-adapter.ts without a circular import.
-import type { LegacyState } from '@lib/state/legacy-state'
-export type { LegacyState }
 import { webglContext } from '@lib/engine/webgl-context'
 import { disposeEventListeners } from '@lib/ui/global-bindings'
 import { cancelOverviewCameraAnimation } from '@lib/demo/camera'
