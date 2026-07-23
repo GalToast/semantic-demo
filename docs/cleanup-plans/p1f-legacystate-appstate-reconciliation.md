@@ -1,6 +1,6 @@
 # P1-F — `legacyState` → `appState` Reconciliation Plan
 
-**Status:** **DONE (2026-07-23, HEAD `TBD`)** — landed by main lane after the parallel
+**Status:** **DONE (2026-07-23, HEAD `31c027e5`)** — landed by main lane after the parallel
 session's partial work.
 
 **What changed in this pass:**
