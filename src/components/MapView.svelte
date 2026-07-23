@@ -16,7 +16,8 @@
   import { debugWarn } from '@lib/utils/debug'
   import { DisposableRegistry } from '@lib/utils/disposable-registry'
   import { friendlyErrorMessage } from '@lib/utils/error-messages'
-  import ErrorState from '@components/ErrorState.svelte'
+  import MapBackButton from '@lib/components/MapBackButton.svelte'
+  import MapStatusOverlay from '@lib/components/MapStatusOverlay.svelte'
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
   import {
     centerMapOnRouteAnchor,
@@ -233,41 +234,10 @@
     <h2 class="map-view-title">County terrain</h2>
   </header>
 
-  {#if status === 'loading'}
-    <div class="map-shimmer" aria-hidden="true">
-      <div class="shimmer-row"></div>
-      <div class="shimmer-row short"></div>
-      <div class="shimmer-row medium"></div>
-    </div>
-  {/if}
-
-  {#if !(status === 'ready')}
-    <div class="map-status" class:is-error={status === 'error'} role="status" aria-live="polite">
-      <span class="map-status-dot" aria-hidden="true"></span>
-      {#if status === 'error' && friendlyMapError}
-        <ErrorState
-          variant="map"
-          title={friendlyMapError.title}
-          detail={friendlyMapError.detail}
-          technical={friendlyMapError.technical}
-          retryLabel="Retry"
-          onRetry={activateLeafletMap}
-        />
-      {:else}
-        <span>{statusDetail}</span>
-      {/if}
-    </div>
-  {/if}
+  <MapStatusOverlay {status} {statusDetail} friendlyError={friendlyMapError} onRetry={() => void activateLeafletMap()} />
 
   <footer class="map-view-footer">
-    <button
-      class="map-back-btn"
-      type="button"
-      onclick={returnToOverview}
-      aria-label="Return to overview"
-    >
-      Overview
-    </button>
+    <MapBackButton onClick={returnToOverview} label="Overview" ariaLabel="Return to overview" />
     <span class="map-attribution">OpenStreetMap | CARTO</span>
   </footer>
 </section>
@@ -304,8 +274,7 @@
   }
 
   .map-view-header,
-  .map-view-footer,
-  .map-status {
+  .map-view-footer {
     position: absolute;
     pointer-events: auto;
     z-index: var(--z-controls, 1);
@@ -337,46 +306,6 @@
     text-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
   }
 
-  .map-status {
-    left: 50%;
-    top: 50%;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 44px;
-    max-width: min(420px, calc(100vw - 32px));
-    padding: 10px 14px;
-    border: 1px solid rgba(126, 231, 219, 0.22);
-    border-radius: 8px;
-    background: rgba(7, 16, 24, 0.82);
-    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
-    transform: translate(-50%, -50%);
-    color: rgba(238, 255, 251, 0.9);
-    font-size: 0.86rem;
-    font-weight: 700;
-    backdrop-filter: blur(20px) saturate(150%);
-  }
-
-  .map-status.is-error {
-    border-color: rgba(255, 151, 107, 0.38);
-    color: #ffe1d1;
-  }
-
-  .map-status-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 999px;
-    background: #7ee7db;
-    box-shadow: 0 0 18px rgba(126, 231, 219, 0.9);
-    animation: mapStatusPulse 1.3s ease-in-out infinite;
-  }
-
-  .map-status.is-error .map-status-dot {
-    background: #ff976b;
-    box-shadow: 0 0 18px rgba(255, 151, 107, 0.75);
-    animation: none;
-  }
-
   .map-view-footer {
     left: 24px;
     right: 24px;
@@ -385,34 +314,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-  }
-
-  .map-back-btn {
-    min-height: 44px;
-    border: 1px solid rgba(126, 231, 219, 0.35);
-    border-radius: 8px;
-    background: rgba(10, 23, 29, 0.78);
-    color: #eafffb;
-    font: inherit;
-    font-size: 0.84rem;
-    font-weight: 800;
-    letter-spacing: 0;
-    cursor: pointer;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
-    transition:
-      background 0.16s ease,
-      border-color 0.16s ease,
-      transform 0.16s ease;
-  }
-
-  .map-back-btn {
-    padding: 0 16px;
-  }
-
-  .map-back-btn:hover {
-    background: rgba(17, 41, 47, 0.92);
-    border-color: rgba(126, 231, 219, 0.64);
-    transform: translateY(-1px);
   }
 
   .map-attribution {
@@ -464,62 +365,4 @@
     background: #071018;
   }
 
-  @keyframes mapStatusPulse {
-    0%,
-    100% {
-      opacity: 0.55;
-      transform: scale(0.82);
-    }
-
-    50% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  /* ── Loading shimmer ──────────────────────────────────────────────────────── */
-  .map-shimmer {
-    position: absolute;
-    inset: 0;
-    z-index: var(--z-canvas, 0);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 2rem;
-    pointer-events: none;
-  }
-  .shimmer-row {
-    width: min(320px, 70vw);
-    height: 10px;
-    border-radius: 5px;
-    background: linear-gradient(
-      90deg,
-      rgba(78, 205, 196, 0.04) 0%,
-      rgba(78, 205, 196, 0.12) 40%,
-      rgba(78, 205, 196, 0.04) 80%
-    );
-    background-size: 200% 100%;
-    animation: shimmerSlide 1.6s ease-in-out infinite;
-  }
-  .shimmer-row.short {
-    width: min(200px, 50vw);
-    animation-delay: 0.15s;
-  }
-  .shimmer-row.medium {
-    width: min(260px, 60vw);
-    animation-delay: 0.3s;
-  }
-
-  @keyframes shimmerSlide {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .map-status-dot,
-    .shimmer-row {
-      animation: none;
-    }
-  }
 </style>

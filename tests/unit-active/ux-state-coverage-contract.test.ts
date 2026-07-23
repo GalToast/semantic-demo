@@ -167,12 +167,14 @@ describe('UX state coverage — Tier 1b (loading OR error OR empty)', () => {
         expect(src).toContain('No matching businesses found')
     })
 
-    it('MapView has typed status enum with loading/ready/error', () => {
-        const src = readFile('src/components/MapView.svelte')
-        expect(src).toMatch(/type\s+MapStatus\s*=\s*['"]loading['"]\s*\|\s*['"]ready['"]\s*\|\s*['"]error['"]/)
-        expect(src).toContain('aria-live="polite"')
-        // Status block surfaces the error
-        expect(src).toMatch(/status\s*===\s*['"]error['"]/)
+    it('MapView has typed status enum with loading/ready/error and renders MapStatusOverlay', () => {
+        const mapViewSrc = readFile('src/components/MapView.svelte')
+        const overlaySrc = readFile('src/lib/components/MapStatusOverlay.svelte')
+        expect(mapViewSrc).toMatch(/type\s+MapStatus\s*=\s*['"]loading['"]\s*\|\s*['"]ready['"]\s*\|\s*['"]error['"]/)
+        expect(mapViewSrc).toContain('MapStatusOverlay')
+        expect(mapViewSrc).toMatch(/status\s*===\s*['"]error['"]/)
+        expect(overlaySrc).toContain('aria-live="polite"')
+        expect(overlaySrc).toContain('role="status"')
     })
 
     it('FocusPocket has loading state with role=status', () => {
