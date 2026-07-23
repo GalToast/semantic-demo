@@ -14,6 +14,7 @@ const ROOT = resolve(import.meta.dirname, '../..')
 const CANVAS = join(ROOT, 'src/components/Canvas.svelte')
 const THREAD_INSPECTOR = join(ROOT, 'src/components/ThreadInspector.svelte')
 const SEARCH_RESULTS = join(ROOT, 'src/components/SearchResults.svelte')
+const SEARCH_RESULT_LIST = join(ROOT, 'src/lib/components/search/SearchResultList.svelte')
 const SEARCH_RESULT_ITEM = join(ROOT, 'src/components/SearchResultItem.svelte')
 
 function read(path) {
@@ -123,7 +124,8 @@ describe('A11y W42-B: Search results live announcement', () => {
     })
 
     it('result listbox has aria-label', () => {
-        expect(src).toMatch(/role="listbox"[\s\S]*?aria-label="Search result businesses"/)
+        const resultListSrc = read(SEARCH_RESULT_LIST)
+        expect(resultListSrc).toMatch(/role="listbox"[\s\S]*?aria-label="Search result businesses"/)
     })
 
     it('result listbox has aria-keyshortcuts', () => {
@@ -131,11 +133,13 @@ describe('A11y W42-B: Search results live announcement', () => {
         // they were removed from the handler. The listbox only honors
         // ArrowDown/Up (move), Home/End (jump), Enter/Space (activate),
         // Escape (clear).
-        expect(src).toMatch(/aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"/)
+        const resultListSrc = read(SEARCH_RESULT_LIST)
+        expect(resultListSrc).toMatch(/aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"/)
     })
 
     it('result listbox has aria-activedescendant', () => {
-        expect(src).toMatch(/aria-activedescendant=\{activeIndex >= 0 \? `search-result-/)
+        const resultListSrc = read(SEARCH_RESULT_LIST)
+        expect(resultListSrc).toMatch(/aria-activedescendant=\{activeIndex >= 0 \? `search-result-/)
     })
 
     it('result options have aria-selected', () => {

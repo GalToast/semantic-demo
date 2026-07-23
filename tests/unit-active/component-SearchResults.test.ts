@@ -21,10 +21,20 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 const SEARCH_RESULTS_PATH = resolve(__dirname, '../../src/components/SearchResults.svelte')
+const SEARCH_RESULT_LIST_PATH = resolve(__dirname, '../../src/lib/components/search/SearchResultList.svelte')
+const SEARCH_EMPTY_STATE_PATH = resolve(__dirname, '../../src/lib/components/search/SearchEmptyState.svelte')
 const ERROR_STATE_PATH = resolve(__dirname, '../../src/components/ErrorState.svelte')
 
 function readSource(): string {
     return readFileSync(SEARCH_RESULTS_PATH, 'utf-8')
+}
+
+function readResultList(): string {
+    return readFileSync(SEARCH_RESULT_LIST_PATH, 'utf-8')
+}
+
+function readEmptyState(): string {
+    return readFileSync(SEARCH_EMPTY_STATE_PATH, 'utf-8')
 }
 
 function readErrorState(): string {
@@ -64,34 +74,39 @@ describe('SearchResults component', () => {
     })
 
     it('empty state .search-empty-state exists and is announced by the polite live region', () => {
-        expect(source).toContain('class="search-empty-state')
-        expect(source).toContain('search-empty-title')
-        expect(source).toContain('No results found')
+        const emptyState = readEmptyState()
+        expect(emptyState).toContain('class="search-empty-state')
+        expect(emptyState).toContain('search-empty-title')
+        expect(emptyState).toContain('No results found')
     })
 
     it('results count #search-results-count exists and is announced by the polite live region', () => {
-        expect(source).toContain('id="search-results-count"')
+        const resultList = readResultList()
+        expect(resultList).toContain('id="search-results-count"')
         expect(source).toContain('aria-atomic="true"')
     })
 
     it('result list #search-result-list with role="listbox" and aria-label', () => {
-        expect(source).toContain('id="search-result-list"')
-        expect(source).toContain('class="search-result-list"')
-        expect(source).toContain('role="listbox"')
-        expect(source).toContain('aria-label="Search result businesses"')
+        const resultList = readResultList()
+        expect(resultList).toContain('id="search-result-list"')
+        expect(resultList).toContain('class="search-result-list"')
+        expect(resultList).toContain('role="listbox"')
+        expect(resultList).toContain('aria-label="Search result businesses"')
     })
 
     it('show-more button .search-show-more-btn with aria-expanded="false"', () => {
-        expect(source).toContain('class="search-show-more-btn"')
-        expect(source).toContain('aria-expanded="false"')
-        expect(source).toContain('aria-controls="search-result-list"')
-        expect(source).toContain('aria-describedby="search-results-count"')
+        const resultList = readResultList()
+        expect(resultList).toContain('class="search-show-more-btn"')
+        expect(resultList).toContain('aria-expanded="false"')
+        expect(resultList).toContain('aria-controls="search-result-list"')
+        expect(resultList).toContain('aria-describedby="search-results-count"')
     })
 
     it('keyboard aria-keyshortcuts on result list container', () => {
         // W48-D: ArrowLeft/Right removed (they were silently cycling).
         // The listbox now only advertises the keys it actually honors.
-        expect(source).toContain('aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"')
+        const resultList = readResultList()
+        expect(resultList).toContain('aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"')
     })
 
     it('peek label uses canonical panelSurfaceDetail state, not summary.mode', () => {

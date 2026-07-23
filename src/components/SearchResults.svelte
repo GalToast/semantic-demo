@@ -36,8 +36,9 @@
   import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
   import { friendlyErrorMessage } from '@lib/utils/error-messages';
   import type { SearchResult } from '@lib/types/state';
-  import SearchResultItem from '@components/SearchResultItem.svelte';
-  import ErrorState from '@components/ErrorState.svelte';
+  import SearchErrorState from '@lib/components/search/SearchErrorState.svelte';
+  import SearchEmptyState from '@lib/components/search/SearchEmptyState.svelte';
+  import SearchResultList from '@lib/components/search/SearchResultList.svelte';
 
   interface Props {
     /** Whether the results panel is visible */
@@ -104,6 +105,7 @@
   // inline retry banner use the same friendly title/detail.
   let friendlyError = $derived(isFullError || isInlineError ? friendlyErrorMessage(searchError?.message) : null);
   const isResultsSurfaceActive = $derived(isSearching || isFullError || isEmpty || total > 0);
+  const isPeek = $derived(parityMap.panelSurfaceDetail === 'peek');
 
   // ── Roving tabindex active index ──────────────────────────────────────────────
 
@@ -375,109 +377,36 @@
         <div class="search-loading-text">Searching...</div>
       </div>
     {:else if isFullError}
-      <ErrorState
-        kicker="Retry needed"
-        title={friendlyError?.title ?? 'Something went wrong'}
-        detail={friendlyError?.detail}
-        technical={friendlyError?.technical}
-        retryLabel="Retry"
-        retryAriaLabel={`Retry search for ${searchError?.query}`}
+      <SearchErrorState
+        {searchError}
+        {friendlyError}
         onRetry={onRetry}
-        dismissLabel="Clear"
-        dismissAriaLabel="Clear search and dismiss"
         onDismiss={onClear}
-        technicalTestId="search-error-detail"
       />
     {:else if isEmpty}
-      <div class="search-empty-state fade-in">
-        <div class="search-empty-icon-wrap">
-          <svg class="search-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-            <circle cx="11" cy="11" r="7"></circle>
-            <path d="M16.5 16.5L21 21"></path>
-            <path d="M7 11h8" stroke-opacity="0.5"></path>
-          </svg>
-        </div>
-        <p class="search-empty-title">No results found for "{summary?.query || ''}"</p>
-        <p class="search-empty-note">Try clearing filters or searching nearby categories:</p>
-        <div class="search-empty-suggestions">
-          <div class="search-suggestion-buttons">
-            {#each suggestions as suggestion}
-              <button class="search-suggestion-chip" type="button" aria-label={`Try search for ${suggestion}`} onclick={() => onSuggestionClick(suggestion)}>
-                {suggestion}
-              </button>
-            {/each}
-          </div>
-        </div>
-        <div class="search-empty-discovery">
-          <span class="discovery-tag">Tip</span>
-          <span class="discovery-text">Results match what businesses do, not just where they are. Try a category like “HVAC” or a vibe like “cozy.”</span>
-        </div>
-      </div>
+      <SearchEmptyState
+        query={summary?.query || ''}
+        {suggestions}
+        onSuggestionClick={onSuggestionClick}
+      />
     {:else if total > 0}
-      {#if isInlineError}
-        <div class="search-error-inline-retry">
-          <span class="search-error-inline-msg">
-            <strong>{friendlyError?.title ?? 'Search is recovering'}</strong>
-            for "<strong>{searchError?.query}</strong>".
-            {#if friendlyError?.detail}<span class="search-error-inline-detail">{friendlyError.detail}</span>{/if}
-          </span>
-          <button class="search-error-retry-btn compact" type="button" aria-label={`Retry search for ${searchError?.query}`} onclick={onRetry}>Retry</button>
-        </div>
-      {/if}
-
-      <div id="search-results-count" class="search-results-count">
-        {#if total === 1}
-          <span class="search-results-count-anchor">Top match</span>
-        {:else if parityMap.panelSurfaceDetail === 'peek' && total > visibleCount}
-          <span class="search-results-count-anchor">Top match</span>
-          <span class="search-results-count-divider" aria-hidden="true">·</span>
-          <span class="search-results-count-hidden">{total - visibleCount} more</span>
-        {:else if visibleCount >= total}
-          <span class="search-results-count-all">All {total}</span>
-          <span class="search-results-count-suffix"> matches</span>
-        {:else}
-          <span class="search-results-count-shown">{visibleCount} of {total}</span>
-          <span class="search-results-count-divider" aria-hidden="true">·</span>
-          <span class="search-results-count-hidden">{total - visibleCount} behind</span>
-        {/if}
-      </div>
-
-      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-      <div
-        id="search-result-list"
-        class="search-result-list"
-        role="listbox"
-        tabindex="-1"
-        aria-label="Search result businesses"
-        aria-activedescendant={activeIndex >= 0 ? `search-result-option-${activeIndex}` : undefined}
-        aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"
-        onkeydown={handleContainerKeyDown}
-      >
-        {#each resultSlice as result, order (result.index ?? order)}
-          <SearchResultItem
-            {result}
-            {order}
-            active={order === activeIndex}
-            trimmedQuery={renderContext.trimmedQuery}
-            onClick={() => handleResultClick(result.index)}
-          />
-        {/each}
-
-      </div>
-
-      {#if showMore}
-        <button
-          class="search-show-more-btn"
-          type="button"
-          aria-label={`Show ${remaining} more search results`}
-          aria-expanded="false"
-          aria-controls="search-result-list"
-          aria-describedby="search-results-count"
-          onclick={handleShowMore}
-        >
-          Show {remaining} more results
-        </button>
-      {/if}
+      <SearchResultList
+        {resultSlice}
+        {activeIndex}
+        {renderContext}
+        {total}
+        {visibleCount}
+        {showMore}
+        {remaining}
+        {isPeek}
+        {isInlineError}
+        {friendlyError}
+        {searchError}
+        onContainerKeyDown={handleContainerKeyDown}
+        onShowMore={handleShowMore}
+        onResultClick={handleResultClick}
+        onRetry={onRetry}
+      />
     {/if}
   </div>
 {/if}
@@ -557,40 +486,6 @@
        to its parent to prevent this. */
     max-width: 100%;
     overflow-x: hidden;
-  }
-
-  .search-show-more-btn {
-    display: block;
-    width: 100%;
-    min-height: 44px;
-    margin-top: 0.5rem;
-    padding: 0 1rem;
-    /* Sticky so the control stays in-frame at the bottom of the scrollable
-       results surface and is always reachable when results remain. */
-    position: sticky;
-    bottom: 0;
-    z-index: 1;
-    background: rgba(var(--color-surface-chrome-rgb), 0.96);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
-    border-radius: 0.4rem;
-    color: rgba(224, 240, 240, 0.9);
-    font-family: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        color 0.18s ease;
-  }
-  .search-show-more-btn:hover {
-    background: rgba(var(--color-primary-alt-rgb), 0.16);
-    border-color: rgba(var(--color-primary-alt-rgb), 0.34);
-    color: var(--color-text-teal-light);
-  }
-  .search-show-more-btn:focus-visible {
-    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
-    outline-offset: 2px;
   }
 
   /* Mobile: constrain results to prevent overlapping with mode chips */

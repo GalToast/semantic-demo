@@ -13,6 +13,7 @@ import { resolve } from 'node:path'
 
 const ROOT = resolve(import.meta.dirname, '../..')
 const SEARCH_RESULTS = `${ROOT}/src/components/SearchResults.svelte`
+const SEARCH_RESULT_LIST = `${ROOT}/src/lib/components/search/SearchResultList.svelte`
 const SEARCH_RESULT_ITEM = `${ROOT}/src/components/SearchResultItem.svelte`
 
 function read(path) {
@@ -147,7 +148,8 @@ describe('A11y W43-A: Active result live announcement', () => {
     })
 
     it('aria-activedescendant is set on the listbox', () => {
-        expect(src).toMatch(/aria-activedescendant=\{activeIndex >= 0/)
+        const resultListSrc = read(SEARCH_RESULT_LIST)
+        expect(resultListSrc).toMatch(/aria-activedescendant=\{activeIndex >= 0/)
     })
 
     it('result options have aria-selected attribute', () => {
@@ -166,7 +168,8 @@ describe('A11y W43-A: No keyboard trap — Tab is not trapped', () => {
     })
 
     it('listbox role is present for proper semantics', () => {
-        expect(src).toMatch(/role="listbox"/)
+        const resultListSrc = read(SEARCH_RESULT_LIST)
+        expect(resultListSrc).toMatch(/role="listbox"/)
     })
 
     it('result items have role="option"', () => {

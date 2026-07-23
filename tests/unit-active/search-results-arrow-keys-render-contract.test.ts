@@ -11,10 +11,15 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const SEARCH_RESULTS = resolve(import.meta.dirname, '../../src/components/SearchResults.svelte')
+const SEARCH_RESULT_LIST = resolve(import.meta.dirname, '../../src/lib/components/search/SearchResultList.svelte')
 const SEARCH_RESULT_ITEM = resolve(import.meta.dirname, '../../src/components/SearchResultItem.svelte')
 
 function readSource(): string {
     return readFileSync(SEARCH_RESULTS, 'utf-8')
+}
+
+function readResultList(): string {
+    return readFileSync(SEARCH_RESULT_LIST, 'utf-8')
 }
 
 describe('A2-8: search results arrow-key navigation', () => {
@@ -31,13 +36,15 @@ describe('A2-8: search results arrow-key navigation', () => {
     })
 
     it('uses listbox/option ARIA roles on the container and results', () => {
-        expect(src).toContain('role="listbox"')
+        const resultListSrc = readResultList()
+        expect(resultListSrc).toContain('role="listbox"')
         const childSrc = readFileSync(SEARCH_RESULT_ITEM, 'utf8')
         expect(childSrc).toContain('role="option"')
     })
 
     it('declares aria-activedescendant on the listbox container', () => {
-        expect(src).toContain('aria-activedescendant=')
+        const resultListSrc = readResultList()
+        expect(resultListSrc).toContain('aria-activedescendant=')
     })
 
     it('marks each option with aria-selected', () => {
@@ -46,7 +53,8 @@ describe('A2-8: search results arrow-key navigation', () => {
     })
 
     it('has a keydown handler on the results list container', () => {
-        expect(src).toContain('onkeydown={handleContainerKeyDown}')
+        const resultListSrc = readResultList()
+        expect(resultListSrc).toContain('onkeydown={onContainerKeyDown}')
     })
 
     it('keydown handler covers ArrowDown, ArrowUp, ArrowRight, ArrowLeft', () => {
@@ -73,8 +81,9 @@ describe('A2-8: search results arrow-key navigation', () => {
     })
 
     it('declares aria-keyshortcuts on the listbox container', () => {
-        expect(src).toContain('aria-keyshortcuts=')
-        expect(src).toMatch(/aria-keyshortcuts="ArrowDown ArrowUp/)
+        const resultListSrc = readResultList()
+        expect(resultListSrc).toContain('aria-keyshortcuts=')
+        expect(resultListSrc).toMatch(/aria-keyshortcuts="ArrowDown ArrowUp/)
     })
 
     it('applies visual focus indicator via active class on focused result', () => {
