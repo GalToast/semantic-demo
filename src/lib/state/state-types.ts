@@ -33,7 +33,7 @@ export type {
     Point,
     SemanticNeighbor,
     SemanticNode,
-    StateConfig,
+    StateConfig
 } from './types/core-types'
 
 // ── Search types ─────────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ export type {
     SearchResultPoint,
     SearchResult,
     SemanticSearchCacheDiagnostics,
-    SearchAppState,
+    SearchAppState
 } from './types/search-types'
 
 // ── Engine types ─────────────────────────────────────────────────────────────
@@ -61,7 +61,7 @@ export type {
     RouteChoreographyState,
     StrandContinuityState,
     FocusOrbitSlackState,
-    SemanticState,
+    SemanticState
 } from './types/engine-types'
 
 // ── Canonical type re-exports ────────────────────────────────────────────────
@@ -73,10 +73,7 @@ export type {
 export type { NavState, ActiveFilters } from './types/engine-types'
 
 // ── Navigation types ─────────────────────────────────────────────────────────
-export type {
-    FocusAppState,
-    ViewportAppState,
-} from './types/navigation-types'
+export type { FocusAppState, ViewportAppState } from './types/navigation-types'
 
 // ── Cross-file re-exports ────────────────────────────────────────────────────
 export type { LaneHealthPayload } from '../orchestration/semantic-lane'
