@@ -500,7 +500,7 @@ function _shouldSkipFrame(): boolean {
     // registered in initThreeJS.
     if (typeof document !== 'undefined' && document.hidden) return true
     if (!webglContext.renderer || !webglContext.scene || !webglContext.camera) return true
-    if (engineState.state?.currentView !== 'galaxy' && !engineState.state?.forceAnimate) return true
+    if (engineState.state?.currentView !== 'galaxy') return true
     return false
 }
 

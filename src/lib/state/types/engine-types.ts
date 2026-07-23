@@ -460,7 +460,6 @@ export interface LegacyState {
     autoRotate: boolean
     autoRotateSuspended: boolean
     autoRotateResumeDueAt?: number
-    forceAnimate: boolean
     pulsePhase: number
     weather: { wind_speed_10m?: number }
 

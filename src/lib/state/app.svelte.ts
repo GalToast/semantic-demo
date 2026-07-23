@@ -571,7 +571,6 @@ export class AppState {
     autoRotateResumeDueAt = $state<number>(0)
     autoRotateSoftResumeStartedAt = $state<number>(0)
     sceneRevealActive = $state<boolean>(false)
-    forceAnimate = $state<boolean>(false)
     sceneRevealStartedAt = $state<number>(0)
     sceneRevealCameraStart = $state<Vector3Like | null>(null)
     sceneRevealCameraEnd = $state<Vector3Like | null>(null)

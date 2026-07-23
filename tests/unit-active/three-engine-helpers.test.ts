@@ -64,10 +64,6 @@ describe('sceneNeedsContinuousFrame', () => {
     // -----------------------------------------------------------------------
     // Each individual truthy flag forces true
     // -----------------------------------------------------------------------
-    it('returns true when forceAnimate is true', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ forceAnimate: true }))).toBe(true)
-    })
-
     it('returns true when sceneRevealActive is true', () => {
         expect(sceneNeedsContinuousFrame(Date.now(), mockState({ sceneRevealActive: true }))).toBe(true)
     })
@@ -205,7 +201,6 @@ describe('sceneNeedsContinuousFrame', () => {
             sceneNeedsContinuousFrame(
                 Date.now(),
                 mockState({
-                    forceAnimate: false,
                     sceneRevealActive: false,
                     focusState: {
                         nodesAreSettling: false,
@@ -236,7 +231,6 @@ describe('sceneNeedsContinuousFrame', () => {
             sceneNeedsContinuousFrame(
                 Date.now(),
                 mockState({
-                    forceAnimate: true,
                     sceneRevealActive: true,
                     nodesAreSettling: true
                 })

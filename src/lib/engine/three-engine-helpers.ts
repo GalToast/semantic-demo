@@ -21,7 +21,6 @@ export function sceneNeedsContinuousFrame(now: number, state: AppState | null): 
     const autoRotateResumePending = typeof state.autoRotateResumeDueAt === 'number' && state.autoRotateResumeDueAt > now
     const routeTraceActive = Boolean(state.routeTraceLines)
     return Boolean(
-        state.forceAnimate ||
         state.sceneRevealActive ||
         state.focusState.nodesAreSettling ||
         state.myceliumDirty ||

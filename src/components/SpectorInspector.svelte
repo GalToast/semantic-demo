@@ -171,8 +171,8 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
       //
       // Pre-render trick: Spector's frame-finder needs to see a draw
       // call dispatched on the captured context during its capture
-      // window. Three.js only renders when state.currentView === 'galaxy'
-      // (or forceAnimate). We force a synchronous renderer.render() call
+      // window. Three.js only renders when state.currentView === 'galaxy'.
+      // We force a synchronous renderer.render() call
       // right before captureContext() via the dev-only __semanticEngine
       // handle so the frame-finder always finds commands.
       capture: async (canvasSelector?: string, maxFrames = 0) => {
