@@ -267,6 +267,179 @@ function selectPocketThreadIndices(
         })
 }
 
+function getPocketEdgePriority(
+    index: number,
+    order: number,
+    roleByIndex: Map<number, string>,
+    pocketSet: Set<number>
+): number {
+    const role = roleByIndex.get(index)
+    if (role === 'primary') return 0.78
+    if (role === 'support') return 0.54
+    if (role === 'halo') return 0.34
+    return pocketSet.has(index) ? 0.62 : 0.58 - order * 0.025
+}
+
+interface _BuildOverlayEdgesResult {
+    pairs: FocusConnectionSegment[]
+    nextCueSegments: number
+    directEdgeCount: number
+    supportEdgeCount: number
+    subduedEdgeCount: number
+    localEdgeKeys: Set<string>
+}
+
+function _buildOverlayEdges({
+    focusIndex,
+    focusCluster,
+    pocketSet,
+    overlayIndices,
+    nextFocusIndex,
+    focusColor,
+    cueColor,
+    roleByIndex
+}: {
+    focusIndex: number
+    focusCluster: number
+    pocketSet: Set<number>
+    overlayIndices: number[]
+    nextFocusIndex: number | null
+    focusColor: Color
+    cueColor: Color
+    roleByIndex: Map<number, string>
+}): _BuildOverlayEdgesResult {
+    const positions: number[] = []
+    const colors: number[] = []
+    const progress: number[] = []
+    const cue: number[] = []
+    const priority: number[] = []
+    const lane: number[] = []
+    const semanticScore: number[] = []
+    const localEdgeKeys = new Set<string>()
+    let nextCueSegments = 0
+    let directEdgeCount = 0
+    let supportEdgeCount = 0
+    let subduedEdgeCount = 0
+
+    const addEdge = (a: number, b: number, role: string = 'direct', edgePriority: number = 0.66): void => {
+        const edgeKey = a < b ? `${a}:${b}` : `${b}:${a}`
+        if (localEdgeKeys.has(edgeKey)) return
+        if (!state.nodePositions[a] || !state.nodePositions[b]) return
+        localEdgeKeys.add(edgeKey)
+        if (role === 'direct') directEdgeCount += 1
+        else supportEdgeCount += 1
+        if (edgePriority < 0.42) subduedEdgeCount += 1
+
+        const isNextEdge =
+            Number.isFinite(nextFocusIndex) &&
+            ((a === focusIndex && b === nextFocusIndex) || (b === focusIndex && a === nextFocusIndex))
+        const candidateCluster = state.points[b]?.cluster ?? focusCluster
+        const candidateColor = new Color(CLUSTER_COLORS[candidateCluster % CLUSTER_COLORS.length]).lerp(
+            isNextEdge ? cueColor : new Color(FOCUS_SEMANTIC_COLORS.candidate),
+            isNextEdge ? 0.58 : 0.24
+        )
+        const edge = {
+            a,
+            b,
+            side: (a * 31 + b * 17) % 2 === 0 ? 1 : -1,
+            rise: (((a + b) % 5) - 2) / 2 || 0.45,
+            depth: role === 'direct' ? 0.9 : 0.42,
+            curveLift: role === 'direct' ? (pocketSet.has(b) ? 0.68 : 0.54) : 0.34,
+            motifBraid: 0.56,
+            anchorPull: role === 'direct' ? 0.14 : 0.24,
+            role,
+            priority: edgePriority
+        }
+
+        for (let segment = 0; segment < state.FOCUS_THREAD_SEGMENTS; segment += 1) {
+            const t0 = segment / state.FOCUS_THREAD_SEGMENTS
+            const t1 = (segment + 1) / state.FOCUS_THREAD_SEGMENTS
+            const segmentEdge: FocusConnectionSegment = { ...edge, t0, t1, cue: isNextEdge ? 1 : 0 }
+            state.focusSemanticConnectionPairs.push(segmentEdge)
+            setOverlayDebugPushRef(state.focusSemanticConnectionPairs)
+            setOverlayDebugPushN(overlayDebug.pushN + 1)
+            const p0 = getFocusCurvePointLocal(segmentEdge, t0)
+            const p1 = getFocusCurvePointLocal(segmentEdge, t1)
+            const c0 = focusColor.clone().lerp(candidateColor, t0)
+            const c1 = focusColor.clone().lerp(candidateColor, t1)
+            if (isNextEdge) {
+                c0.lerp(cueColor, 0.34)
+                c1.lerp(cueColor, 0.44)
+                nextCueSegments += 1
+            }
+            positions.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z)
+            colors.push(c0.r, c0.g, c0.b, c1.r, c1.g, c1.b)
+            progress.push(t0, t1)
+            cue.push(isNextEdge ? 1 : 0, isNextEdge ? 1 : 0)
+            priority.push(edgePriority, edgePriority)
+            lane.push(edge.side, edge.side)
+            semanticScore.push(edgePriority, edgePriority)
+        }
+    }
+
+    overlayIndices.forEach((index: number, order: number) => {
+        const isNext = index === nextFocusIndex
+        const pocketRole = roleByIndex.get(index)
+        const edgeRole = pocketRole === 'support' || pocketRole === 'halo' ? 'support' : 'direct'
+        addEdge(focusIndex, index, edgeRole, isNext ? 1 : getPocketEdgePriority(index, order, roleByIndex, pocketSet))
+    })
+
+    return {
+        pairs: state.focusSemanticConnectionPairs,
+        nextCueSegments,
+        directEdgeCount,
+        supportEdgeCount,
+        subduedEdgeCount,
+        localEdgeKeys
+    }
+}
+
+function _buildOverlayEdgeArrays(pairs: readonly FocusConnectionSegment[]): {
+    positions: number[]
+    colors: number[]
+    progress: number[]
+    cue: number[]
+    priority: number[]
+    lane: number[]
+    semanticScore: number[]
+} {
+    const positions: number[] = []
+    const colors: number[] = []
+    const progress: number[] = []
+    const cue: number[] = []
+    const priority: number[] = []
+    const lane: number[] = []
+    const semanticScore: number[] = []
+    for (const segmentEdge of pairs) {
+        const t0 = segmentEdge.t0
+        const t1 = segmentEdge.t1
+        const p0 = getFocusCurvePointLocal(segmentEdge, segmentEdge.t0!)
+        const p1 = getFocusCurvePointLocal(segmentEdge, segmentEdge.t1!)
+        const a = segmentEdge.a
+        const focusCluster = state.points[a]?.cluster ?? 0
+        const focusColor = new Color(CLUSTER_COLORS[focusCluster % CLUSTER_COLORS.length]).lerp(
+            new Color(FOCUS_SEMANTIC_COLORS.focusLerp),
+            0.42
+        )
+        const candidateCluster = state.points[segmentEdge.b]?.cluster ?? focusCluster
+        const candidateLerp = segmentEdge.cue ? segmentEdge.cue : 0
+        const candidateColor = new Color(CLUSTER_COLORS[candidateCluster % CLUSTER_COLORS.length]).lerp(
+            new Color(FOCUS_SEMANTIC_COLORS.candidate),
+            candidateLerp ? 0.58 : 0.24
+        )
+        const c0 = focusColor.clone().lerp(candidateColor, segmentEdge.t0!)
+        const c1 = focusColor.clone().lerp(candidateColor, segmentEdge.t1!)
+        positions.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z)
+        colors.push(c0.r, c0.g, c0.b, c1.r, c1.g, c1.b)
+        progress.push(segmentEdge.t0!, segmentEdge.t1!)
+        cue.push(segmentEdge.cue ?? 0, segmentEdge.cue ?? 0)
+        priority.push(segmentEdge.priority ?? 0, segmentEdge.priority ?? 0)
+        lane.push(segmentEdge.side ?? 0, segmentEdge.side ?? 0)
+        semanticScore.push(segmentEdge.priority ?? 0, segmentEdge.priority ?? 0)
+    }
+    return { positions, colors, progress, cue, priority, lane, semanticScore }
+}
+
 export function refreshFocusSemanticOverlay(): void {
     const startedAt = performance.now()
     removeFocusSemanticOverlay()
@@ -329,95 +502,28 @@ export function refreshFocusSemanticOverlay(): void {
     }
     setOverlayDebugOverlayN(overlayIndices.length)
 
-    const positions: number[] = []
-    const colors: number[] = []
-    const progress: number[] = []
-    const cue: number[] = []
-    const priority: number[] = []
-    const lane: number[] = []
-    const semanticScore: number[] = []
-    const localEdgeKeys = new Set<string>()
     const pocketSet = new Set(state.navState.focusPocketIndices || [])
     const focusColor = new Color(CLUSTER_COLORS[focusCluster % CLUSTER_COLORS.length]).lerp(
         new Color(FOCUS_SEMANTIC_COLORS.focusLerp),
         0.42
     )
     const cueColor = new Color(FOCUS_SEMANTIC_COLORS.cue)
-    let nextCueSegments = 0
-    let directEdgeCount = 0
-    let supportEdgeCount = 0
-    let subduedEdgeCount = 0
 
-    const addEdge = (a: number, b: number, role: string = 'direct', edgePriority: number = 0.66): void => {
-        const edgeKey = a < b ? `${a}:${b}` : `${b}:${a}`
-        if (localEdgeKeys.has(edgeKey)) return
-        if (!state.nodePositions[a] || !state.nodePositions[b]) return
-        localEdgeKeys.add(edgeKey)
-        if (role === 'direct') directEdgeCount += 1
-        else supportEdgeCount += 1
-        if (edgePriority < 0.42) subduedEdgeCount += 1
-
-        const isNextEdge =
-            Number.isFinite(nextFocusIndex) &&
-            ((a === focusIndex && b === nextFocusIndex) || (b === focusIndex && a === nextFocusIndex))
-        const candidateCluster = state.points[b]?.cluster ?? focusCluster
-        const candidateColor = new Color(CLUSTER_COLORS[candidateCluster % CLUSTER_COLORS.length]).lerp(
-            isNextEdge ? cueColor : new Color(FOCUS_SEMANTIC_COLORS.candidate),
-            isNextEdge ? 0.58 : 0.24
-        )
-        const edge = {
-            a,
-            b,
-            side: (a * 31 + b * 17) % 2 === 0 ? 1 : -1,
-            rise: (((a + b) % 5) - 2) / 2 || 0.45,
-            depth: role === 'direct' ? 0.9 : 0.42,
-            curveLift: role === 'direct' ? (pocketSet.has(b) ? 0.68 : 0.54) : 0.34,
-            motifBraid: 0.56,
-            anchorPull: role === 'direct' ? 0.14 : 0.24,
-            role,
-            priority: edgePriority
-        }
-
-        for (let segment = 0; segment < state.FOCUS_THREAD_SEGMENTS; segment += 1) {
-            const t0 = segment / state.FOCUS_THREAD_SEGMENTS
-            const t1 = (segment + 1) / state.FOCUS_THREAD_SEGMENTS
-            const segmentEdge: FocusConnectionSegment = { ...edge, t0, t1, cue: isNextEdge ? 1 : 0 }
-            state.focusSemanticConnectionPairs.push(segmentEdge)
-            setOverlayDebugPushRef(state.focusSemanticConnectionPairs)
-            setOverlayDebugPushN(overlayDebug.pushN + 1)
-            const p0 = getFocusCurvePointLocal(segmentEdge, t0)
-            const p1 = getFocusCurvePointLocal(segmentEdge, t1)
-            const c0 = focusColor.clone().lerp(candidateColor, t0)
-            const c1 = focusColor.clone().lerp(candidateColor, t1)
-            if (isNextEdge) {
-                c0.lerp(cueColor, 0.34)
-                c1.lerp(cueColor, 0.44)
-                nextCueSegments += 1
-            }
-            positions.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z)
-            colors.push(c0.r, c0.g, c0.b, c1.r, c1.g, c1.b)
-            progress.push(t0, t1)
-            cue.push(isNextEdge ? 1 : 0, isNextEdge ? 1 : 0)
-            priority.push(edgePriority, edgePriority)
-            lane.push(edge.side, edge.side)
-            semanticScore.push(edgePriority, edgePriority)
-        }
-    }
-
-    const getPocketEdgePriority = (index: number, order: number): number => {
-        const role = roleByIndex.get(index)
-        if (role === 'primary') return 0.78
-        if (role === 'support') return 0.54
-        if (role === 'halo') return 0.34
-        return pocketSet.has(index) ? 0.62 : 0.58 - order * 0.025
-    }
-
-    overlayIndices.forEach((index: number, order: number) => {
-        const isNext = index === nextFocusIndex
-        const pocketRole = roleByIndex.get(index)
-        const edgeRole = pocketRole === 'support' || pocketRole === 'halo' ? 'support' : 'direct'
-        addEdge(focusIndex, index, edgeRole, isNext ? 1 : getPocketEdgePriority(index, order))
+    const edges = _buildOverlayEdges({
+        focusIndex,
+        focusCluster,
+        pocketSet,
+        overlayIndices,
+        nextFocusIndex: Number.isFinite(nextFocusIndex) ? nextFocusIndex : null,
+        focusColor,
+        cueColor,
+        roleByIndex
     })
+    const { positions, colors, progress, cue, priority, lane, semanticScore } = _buildOverlayEdgeArrays(edges.pairs)
+    const nextCueSegments = edges.nextCueSegments
+    const directEdgeCount = edges.directEdgeCount
+    const supportEdgeCount = edges.supportEdgeCount
+    const subduedEdgeCount = edges.subduedEdgeCount
 
     const lineGeometry = new LineGeometry()
     lineGeometry.setPositions(positions)
@@ -464,7 +570,7 @@ export function refreshFocusSemanticOverlay(): void {
         nextIndex: Number.isFinite(nextFocusIndex) ? nextFocusIndex : null,
         pocketIndexCount: (state.navState.focusPocketIndices || []).length,
         nextCueSegments,
-        edgeCount: localEdgeKeys.size,
+        edgeCount: edges.localEdgeKeys.size,
         directEdgeCount,
         supportEdgeCount,
         subduedEdgeCount,
@@ -485,7 +591,7 @@ export function refreshFocusSemanticOverlay(): void {
     state.focusThreadDiagnostics = {
         active: true,
         reason: 'built',
-        edgeCount: localEdgeKeys.size,
+        edgeCount: edges.localEdgeKeys.size,
         directEdgeCount,
         supportEdgeCount,
         subduedEdgeCount,
