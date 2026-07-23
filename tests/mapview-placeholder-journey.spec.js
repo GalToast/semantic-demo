@@ -54,10 +54,7 @@ test.describe('MapView journey', () => {
         await map.waitFor({ state: 'attached', timeout: 30000 })
 
         await expect(map).toHaveAttribute('role', 'application')
-        await expect(map).toHaveAttribute(
-            'aria-label',
-            'Interactive business map of Montgomery County'
-        )
+        await expect(map).toHaveAttribute('aria-label', 'Interactive business map of Montgomery County')
 
         const header = map.locator('.map-view-header')
         await expect(header).toHaveCount(1)
@@ -119,9 +116,7 @@ test.describe('MapView journey', () => {
             () => {
                 const m = document.querySelector('.map-view')
                 if (!m) return false
-                return (
-                    !m.classList.contains('is-error') || m.classList.contains('is-loading')
-                )
+                return !m.classList.contains('is-error') || m.classList.contains('is-loading')
             },
             null,
             { timeout: 10000 }
@@ -143,11 +138,9 @@ test.describe('Placeholder2D journey', () => {
             waitUntil: 'domcontentloaded'
         })
 
-        await page.waitForFunction(
-            () => document.body.classList.contains('render-kind-placeholder2d'),
-            null,
-            { timeout: 10000 }
-        )
+        await page.waitForFunction(() => document.body.classList.contains('render-kind-placeholder2d'), null, {
+            timeout: 10000
+        })
 
         const placeholder = page.locator('[data-testid="placeholder-2d"]')
         await placeholder.waitFor({ state: 'visible', timeout: 15000 })
@@ -196,11 +189,9 @@ test.describe('Placeholder2D journey', () => {
             waitUntil: 'domcontentloaded'
         })
 
-        await page.waitForFunction(
-            () => document.body.classList.contains('render-kind-placeholder2d'),
-            null,
-            { timeout: 10000 }
-        )
+        await page.waitForFunction(() => document.body.classList.contains('render-kind-placeholder2d'), null, {
+            timeout: 10000
+        })
 
         const cta = page.locator('[data-testid="placeholder-cta"]')
         await cta.waitFor({ state: 'visible', timeout: 15000 })
@@ -213,11 +204,9 @@ test.describe('Placeholder2D journey', () => {
         // renderKind==='placeholder2d').
         await cta.click()
 
-        await page.waitForFunction(
-            () => document.body.classList.contains('render-kind-webgl'),
-            null,
-            { timeout: 15000 }
-        )
+        await page.waitForFunction(() => document.body.classList.contains('render-kind-webgl'), null, {
+            timeout: 15000
+        })
         await expect(cta).toBeHidden({ timeout: 10000 })
     })
 
@@ -238,11 +227,9 @@ test.describe('Placeholder2D journey', () => {
             waitUntil: 'domcontentloaded'
         })
 
-        await page.waitForFunction(
-            () => document.body.classList.contains('render-kind-placeholder2d'),
-            null,
-            { timeout: 10000 }
-        )
+        await page.waitForFunction(() => document.body.classList.contains('render-kind-placeholder2d'), null, {
+            timeout: 10000
+        })
 
         const dots = page.locator('[data-testid="placeholder-legend"] .placeholder-legend-dot')
         await dots.first().waitFor({ state: 'attached', timeout: 15000 })
@@ -256,10 +243,9 @@ test.describe('Placeholder2D journey', () => {
         })
         expect(inlineStyles).toHaveLength(5)
         for (const style of inlineStyles) {
-            expect(
-                style.toLowerCase(),
-                'each legend dot must carry an inline background-color directive'
-            ).toContain('background-color')
+            expect(style.toLowerCase(), 'each legend dot must carry an inline background-color directive').toContain(
+                'background-color'
+            )
         }
 
         const computedColors = await page.evaluate(() => {

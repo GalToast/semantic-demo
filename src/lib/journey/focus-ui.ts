@@ -102,11 +102,7 @@ function _collectNeighborCandidates(candidateLimit: number): ThreadCandidateRef[
         .slice(0, candidateLimit)
 }
 
-function _renderNeighborPill(
-    candidate: ThreadCandidateRef,
-    order: number,
-    nav: NavState
-): HTMLButtonElement {
+function _renderNeighborPill(candidate: ThreadCandidateRef, order: number, nav: NavState): HTMLButtonElement {
     const points = appState.points!
     const point =
         Number.isFinite(candidate.index) && candidate.index >= 0 && candidate.index < points.length

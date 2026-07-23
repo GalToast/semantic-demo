@@ -3396,21 +3396,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?anchor=100&nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        await page.waitForFunction(
-            () => (window.__APP_STATE__?.points?.length ?? 0) > 0,
-            null,
-            { timeout: 15000 }
-        )
-        await page.waitForFunction(
-            () => document.body.dataset?.sceneReady === 'true',
-            null,
-            { timeout: 10000 }
-        )
-        await page.waitForFunction(
-            () => window.__APP_STATE__?.navState?.mode === 'focus',
-            null,
-            { timeout: 10000 }
-        )
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 0, null, { timeout: 15000 })
+        await page.waitForFunction(() => document.body.dataset?.sceneReady === 'true', null, { timeout: 10000 })
+        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'focus', null, { timeout: 10000 })
 
         const pocket = await page.evaluate(() => {
             const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
@@ -3421,7 +3409,10 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             }
         })
 
-        expect(pocket.pocketIndices.length, 'focus pocket should have at least one neighbor after focusing').toBeGreaterThan(0)
+        expect(
+            pocket.pocketIndices.length,
+            'focus pocket should have at least one neighbor after focusing'
+        ).toBeGreaterThan(0)
         expect(pocket.focusedIndex, 'focused node index should not be null').not.toBeNull()
         expect(pocket.focusedNode, 'focused node should not be null').not.toBeNull()
     })

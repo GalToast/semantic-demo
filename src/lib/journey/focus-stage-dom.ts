@@ -11,38 +11,41 @@
  * own attribute/state mutations on these elements.
  */
 
-const AUXILIARY_SURFACE_ID = 'focus-stage-auxiliary-surfaces';
+const AUXILIARY_SURFACE_ID = 'focus-stage-auxiliary-surfaces'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface MakeElementOptions {
-    id?: string;
-    className?: string;
-    text?: string;
-    attributes?: Record<string, string>;
-    hidden?: boolean;
+    id?: string
+    className?: string
+    text?: string
+    attributes?: Record<string, string>
+    hidden?: boolean
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function makeElement(tagName: string, { id, className, text, attributes = {}, hidden = false }: MakeElementOptions = {}): HTMLElement {
-    const el = document.createElement(tagName);
-    if (id) el.id = id;
-    if (className) el.className = className;
-    if (text) el.textContent = text;
+function makeElement(
+    tagName: string,
+    { id, className, text, attributes = {}, hidden = false }: MakeElementOptions = {}
+): HTMLElement {
+    const el = document.createElement(tagName)
+    if (id) el.id = id
+    if (className) el.className = className
+    if (text) el.textContent = text
     if (hidden) {
-        el.hidden = true;
+        el.hidden = true
         // Hidden elements should not be reachable by keyboard or
         // screen readers; CSS-driven display:none elsewhere in the app
         // also leaves the element in the tab order. Tabindex=-1 plus
         // aria-hidden=true removes it from both.
-        el.setAttribute('tabindex', '-1');
-        el.setAttribute('aria-hidden', 'true');
+        el.setAttribute('tabindex', '-1')
+        el.setAttribute('aria-hidden', 'true')
     }
     Object.entries(attributes).forEach(([name, value]) => {
-        el.setAttribute(name, value);
-    });
-    return el;
+        el.setAttribute(name, value)
+    })
+    return el
 }
 
 // ── Append functions ───────────────────────────────────────────────────────
@@ -52,8 +55,8 @@ function appendFocusNeighborRail(root: HTMLElement): void {
         id: 'focus-stage-neighbors',
         className: 'focus-stage-neighbors',
         attributes: { 'aria-live': 'off' }
-    });
-    const header = makeElement('div', { className: 'focus-stage-neighbor-header' });
+    })
+    const header = makeElement('div', { className: 'focus-stage-neighbor-header' })
     header.append(
         makeElement('div', { className: 'focus-stage-neighbor-kicker', text: 'Nearby Stops' }),
         makeElement('div', {
@@ -61,12 +64,15 @@ function appendFocusNeighborRail(root: HTMLElement): void {
             className: 'focus-stage-neighbor-count',
             text: '0 visible neighbors'
         })
-    );
-    rail.append(header, makeElement('div', {
-        id: 'focus-stage-neighbor-list',
-        className: 'focus-stage-neighbor-list'
-    }));
-    root.appendChild(rail);
+    )
+    rail.append(
+        header,
+        makeElement('div', {
+            id: 'focus-stage-neighbor-list',
+            className: 'focus-stage-neighbor-list'
+        })
+    )
+    root.appendChild(rail)
 }
 
 function appendInsideControls(root: HTMLElement): void {
@@ -79,7 +85,7 @@ function appendInsideControls(root: HTMLElement): void {
             'aria-atomic': 'false',
             'aria-hidden': 'true'
         }
-    });
+    })
     status.append(
         makeElement('span', {
             className: 'focus-stage-inside-pulse',
@@ -90,13 +96,13 @@ function appendInsideControls(root: HTMLElement): void {
             className: 'focus-stage-inside-status-copy',
             text: 'Step into this neighborhood to follow related businesses.'
         })
-    );
+    )
 
     const controls = makeElement('div', {
         id: 'focus-stage-inside-controls',
         className: 'focus-stage-inside-controls',
         attributes: { 'aria-hidden': 'true' }
-    });
+    })
     controls.append(
         makeElement('button', {
             id: 'btn-inside-next',
@@ -126,9 +132,9 @@ function appendInsideControls(root: HTMLElement): void {
                 tabindex: '-1'
             }
         })
-    );
+    )
 
-    root.append(status, controls);
+    root.append(status, controls)
 }
 
 function appendThreadInspector(root: HTMLElement): void {
@@ -136,7 +142,7 @@ function appendThreadInspector(root: HTMLElement): void {
         id: 'focus-thread-inspector',
         className: 'focus-thread-inspector',
         attributes: { 'aria-hidden': 'true' }
-    });
+    })
     inspector.append(
         makeElement('div', { className: 'focus-thread-inspector-kicker', text: 'Connection Preview' }),
         makeElement('div', {
@@ -154,9 +160,9 @@ function appendThreadInspector(root: HTMLElement): void {
             className: 'focus-thread-inspector-meta',
             text: 'Preview connection'
         })
-    );
+    )
 
-    const actions = makeElement('div', { className: 'focus-thread-inspector-actions' });
+    const actions = makeElement('div', { className: 'focus-thread-inspector-actions' })
     actions.append(
         makeElement('button', {
             id: 'btn-thread-pin',
@@ -176,9 +182,9 @@ function appendThreadInspector(root: HTMLElement): void {
             text: 'Clear',
             attributes: { type: 'button', disabled: '' }
         })
-    );
-    inspector.appendChild(actions);
-    root.appendChild(inspector);
+    )
+    inspector.appendChild(actions)
+    root.appendChild(inspector)
 }
 
 function appendTrailControls(root: HTMLElement): void {
@@ -186,7 +192,7 @@ function appendTrailControls(root: HTMLElement): void {
         id: 'trail-controls',
         className: 'trail-controls',
         attributes: { 'aria-label': 'Connection path controls' }
-    });
+    })
     controls.append(
         makeElement('button', {
             id: 'btn-prev-node',
@@ -200,11 +206,8 @@ function appendTrailControls(root: HTMLElement): void {
             text: 'Next Stop',
             attributes: { type: 'button', 'aria-label': 'Go to next path stop', disabled: '' }
         })
-    );
-    root.append(
-        controls,
-        makeElement('div', { id: 'trail-context', className: 'trail-context' })
-    );
+    )
+    root.append(controls, makeElement('div', { id: 'trail-context', className: 'trail-context' }))
 }
 
 // ── Dive button helpers ─────────────────────────────────────────────────────
@@ -221,40 +224,46 @@ function appendDiveButton(root: HTMLElement): void {
             'aria-disabled': 'true',
             tabindex: '-1'
         }
-    });
+    })
     diveBtn.append(
         makeElement('span', { className: 'focus-stage-dive-label', text: 'Explore Neighborhood' }),
-        makeElement('span', { className: 'focus-stage-dive-copy', text: 'Explore related businesses in the neighborhood.' })
-    );
-    root.appendChild(diveBtn);
+        makeElement('span', {
+            className: 'focus-stage-dive-copy',
+            text: 'Explore related businesses in the neighborhood.'
+        })
+    )
+    root.appendChild(diveBtn)
 }
 
 // ── Public API ─────────────────────────────────────────────────────────────
 
 export function ensureFocusStageAuxiliaryDom(): boolean {
-    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return false;
-    const card = document.getElementById('focus-pocket') || document.querySelector?.('.focus-stage-card');
-    if (!card) return false;
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return false
+    const card = document.getElementById('focus-pocket') || document.querySelector?.('.focus-stage-card')
+    if (!card) return false
 
-    let root = document.getElementById(AUXILIARY_SURFACE_ID);
+    let root = document.getElementById(AUXILIARY_SURFACE_ID)
     if (!root) {
         root = makeElement('div', {
             id: AUXILIARY_SURFACE_ID,
             className: 'focus-stage-auxiliary-surfaces'
-        });
-        card.appendChild(root);
+        })
+        card.appendChild(root)
     }
 
-    if (!document.getElementById('focus-stage-neighbors')) appendFocusNeighborRail(root);
-    if (!document.getElementById('focus-stage-inside-status') || !document.getElementById('focus-stage-inside-controls')) {
-        appendInsideControls(root);
+    if (!document.getElementById('focus-stage-neighbors')) appendFocusNeighborRail(root)
+    if (
+        !document.getElementById('focus-stage-inside-status') ||
+        !document.getElementById('focus-stage-inside-controls')
+    ) {
+        appendInsideControls(root)
     }
-    if (!document.getElementById('focus-thread-inspector')) appendThreadInspector(root);
+    if (!document.getElementById('focus-thread-inspector')) appendThreadInspector(root)
     if (!document.getElementById('trail-controls') || !document.getElementById('trail-context')) {
-        appendTrailControls(root);
+        appendTrailControls(root)
     }
 
-    return true;
+    return true
 }
 
 /**
@@ -264,36 +273,36 @@ export function ensureFocusStageAuxiliaryDom(): boolean {
  * child of #focus-pocket, #selected-details, or the info-panel as available.
  */
 export function ensureDiveButton(): void {
-    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return;
-    const existing = document.getElementById('btn-focus-dive');
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return
+    const existing = document.getElementById('btn-focus-dive')
 
     // Prefer the focus-pocket card or its auxiliary surfaces root
-    const card = document.getElementById('focus-pocket')
-        || document.querySelector?.('.focus-stage-card');
+    const card = document.getElementById('focus-pocket') || document.querySelector?.('.focus-stage-card')
     if (card) {
-        let root = document.getElementById(AUXILIARY_SURFACE_ID);
+        let root = document.getElementById(AUXILIARY_SURFACE_ID)
         if (!root) {
             root = makeElement('div', {
                 id: AUXILIARY_SURFACE_ID,
                 className: 'focus-stage-auxiliary-surfaces'
-            });
-            card.appendChild(root);
+            })
+            card.appendChild(root)
         }
         if (existing) {
-            if (!root.contains(existing)) root.appendChild(existing);
-            return;
+            if (!root.contains(existing)) root.appendChild(existing)
+            return
         }
-        appendDiveButton(root);
-        return;
+        appendDiveButton(root)
+        return
     }
 
-    if (existing) return;
+    if (existing) return
 
     // Fallback: create inside #selected-details or #info-panel
-    const target = document.getElementById('selected-details')
-        || document.getElementById('info-panel-content')
-        || document.getElementById('info-panel');
+    const target =
+        document.getElementById('selected-details') ||
+        document.getElementById('info-panel-content') ||
+        document.getElementById('info-panel')
     if (target) {
-        appendDiveButton(target);
+        appendDiveButton(target)
     }
 }
