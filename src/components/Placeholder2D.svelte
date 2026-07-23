@@ -44,6 +44,7 @@
   import { getBypassAttr } from '@lib/orchestration/parity-attrs.svelte'
   import { CONFIG } from '@lib/engine/config'
   import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
+  import PlaceholderCategoryLegend from '@lib/components/PlaceholderCategoryLegend.svelte'
 
   // W50-UX-2: Auto-open the category legend on mobile splash so users
   // discover the category labels. The full Legend.svelte panel is
@@ -211,14 +212,7 @@
       Enter 3D Scene
     </button>
 
-    <ul class="placeholder-legend" data-testid="placeholder-legend" aria-label="Business categories in the dataset">
-      {#each previewCategories as cat (cat.name)}
-        <li class="placeholder-legend-item">
-          <span class="placeholder-legend-dot" style="background-color: {cat.color}" aria-hidden="true"></span>
-          <span class="placeholder-legend-label">{cat.name}</span>
-        </li>
-      {/each}
-    </ul>
+    <PlaceholderCategoryLegend categories={previewCategories} />
 
     <p class="placeholder-hint" id="placeholder-hint">
       Click or tap to load the full 3D scene.
@@ -372,41 +366,6 @@
     letter-spacing: 0.02em;
   }
 
-  /* W47-C2 (Tier 2 #2.4): compact inline legend so mobile users get
-     terminology access even though the full Legend.svelte panel is
-     hidden behind the CTA on the placeholder. Two-column grid of 5 items;
-     capped at 320px wide so it doesn't dominate the placeholder. */
-  .placeholder-legend {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.35rem 0.9rem;
-    margin: 1.1rem auto 0;
-    padding: 0;
-    list-style: none;
-    max-width: 20rem;
-    pointer-events: auto;
-  }
-  .placeholder-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    font-size: 0.7rem;
-    color: rgba(231, 240, 240, 0.85);
-    letter-spacing: 0.01em;
-  }
-  .placeholder-legend-dot {
-    display: inline-block;
-    width: 0.6rem;
-    height: 0.6rem;
-    border-radius: 999px;
-    flex-shrink: 0;
-  }
-  .placeholder-legend-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   /* ── Motion ────────────────────────────────────────────────────────────
      Each orb drifts a few pixels on its own slow loop with a negative
      delay so they don't pulse in lock-step. The CTA breathes a soft
@@ -491,14 +450,6 @@
       padding: 0.6rem 1.5rem;
       font-size: 0.95rem;
     }
-    .placeholder-legend {
-      grid-template-columns: 1fr;
-      max-width: 16rem;
-      gap: 0.25rem 0.6rem;
-    }
-    .placeholder-legend-item {
-      font-size: 0.65rem;
-    }
     .placeholder-hint {
       font-size: 0.75rem;
     }
@@ -507,9 +458,6 @@
   @media (max-height: 700px) {
     .placeholder-overlay {
       padding: 1.25rem;
-    }
-    .placeholder-legend {
-      margin-top: 0.8rem;
     }
     .placeholder-hint {
       margin-top: 0.6rem;
