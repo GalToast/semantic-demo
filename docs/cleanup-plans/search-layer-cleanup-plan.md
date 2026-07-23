@@ -1,5 +1,7 @@
 # Wave 1 — Search Layer Cleanup Plan
 
+> **STATUS (2026-07-23, HEAD `c7e99114`):** ALL three waves CLOSED at current HEAD. Last verified by main-lane audit on 2026-07-23. §4a Wave-2 `search-debounce.ts` timer closed by `9d1610a1`; §4b Wave-2 `search-dispatch.ts` controller closed by `7e24c0f2` (test coverage `9baf5293` + `057da257`). §1 #2 URL-param sticky-flag bug CLOSED — `src/lib/search/mock-search-fallback.ts:369` `shouldBypassApiSearch()` returns the bypass `boolean` directly without calling `markApiUnreachable('url-param')`; grep → 0 hits. **Wave-3 presentational-search extract LANDED via `c7e99114`** — pulls 3 components into new dir `src/lib/components/search/`; `src/components/SearchResults.svelte:32-34` imports all 3 (orchestration-only surface). Audit PASSED svelte-extract-scoped-css-reactivity + ErrorState REUSE checks. See bottom-of-file “Wave-2 follow-up CLOSED + Wave-3 extension LANDED” block for the full cite.
+
 > **STATUS (2026-07-22, HEAD `840411fb`):** The FULL Wave-1 search-layer cleanup is now CLOSED, including the SearchInput-controller extraction follow-up that this plan defers to a Wave-2. `src/lib/search/search-debounce.ts` AND `src/lib/search/search-dispatch.ts` both exist (confirmed by `ls`). So §1 / §5 / §2c are all DONE — the deferred SearchInput-convergence controller extraction the plan flagged as the outstanding item has landed. Nothing in this plan remains open.
 
 > Read-only investigation. Source files were NOT edited. All claims cite `file:line`
@@ -16,9 +18,27 @@
 >
 > The narrative below is retained as a **historical Wave-1 investigation** — the line cites (`search-cache.ts:N`, `api-cache.ts:N`, `mapper.ts:N`) reference now-absent files.
 >
-> **Still open (Wave-2 follow-up, NOT Wave-1):**
+> **Wave-2 follow-up CLOSED + Wave-3 extension LANDED at HEAD `c7e99114` (2026-07-23):**
 >
-> - **§4 Wave-2 `search-dispatch.ts` controller** — extract `searchState` / `pendingSearch` / `engineReady` orchestration out of `SearchInput.svelte`. Per §4 note this was deferred “until after §3c” (now DONE, so unlocked); defer until SearchInput.svelte owner-converges with the parallel session sprint.
+> - **§4a Wave-2 `search-debounce.ts` timer** — LANDED via `9d1610a1 refactor(search): extract SearchDebounce timer from SearchInput.svelte` (test coverage `9baf5293 test(search): cover SearchDebounce + align Enter-key contract`).
+> - **§4b Wave-2 `search-dispatch.ts` controller** — LANDED via `7e24c0f2 refactor(search): extract SearchDispatch controller from SearchInput.svelte` (test coverage `057da257 test(search): add SearchDispatch unit coverage and update SearchInput architecture guards`). The “until `SearchInput.svelte` owner-converges with parallel session sprint” wait is RESOLVED — the parallel sprint harvested both §4a + §4b in one coordinated pair.
+> - **§1 #2 URL-param sticky-flag bug** — CLOSED per PR-M triad. Verified at HEAD `c7e99114`: `src/lib/search/mock-search-fallback.ts:369` `shouldBypassApiSearch()` returns the URL-bypass `boolean` directly without calling `markApiUnreachable('url-param')`; explicit comment at file:374-380 documents the contract; `grep "markApiUnreachable('url-param')" src/lib/search/mock-search-fallback.ts` → 0 hits.
+>
+> Wave-1+2 closure trajectory: 8a467b72 · eb82baa3 · 88df7661 · ce958405 · PR-M loose · 9d1610a1 · 7e24c0f2 → Wave-3 extract `c7e99114`.
+>
+> **Wave-3 extension (NEW, undocumented by original Wave-1 plan, opened 2026-07-23):** parallel Pi session harvested the **presentational halves** out of `SearchResults.svelte` AFTER Wave-1+2 controller extractions landed. Wave-3 LANDED via `c7e99114 refactor(search): extract SearchErrorState, SearchEmptyState, SearchResultList` into NEW dir `src/lib/components/search/`:
+>
+> - `SearchErrorState.svelte` — wrapper around shared `@components/ErrorState.svelte` `variant="card"` (`SearchErrorState.svelte:13-14` imports it; no inline-render duplication). DOM `.search-error-*` rules preserved via GLOBAL `css/search.css:1548-1681`.
+> - `SearchEmptyState.svelte` — NEW presentation-only no-results + suggestions; pure props; no store subscriptions.
+> - `SearchResultList.svelte` — presentation-only listbox + count + Show-more; imports `SearchResultItem` from `@components/`; **ships its own scoped `.search-show-more-btn` CSS** in its `<style>` block (file:145/169/174) — moved FROM `SearchResults.svelte` so Svelte's scoped CSS applies correctly to the button rendered by THIS component (move documented by comment at file:143-144).
+>
+> **Wave-3 audit (main-lane verification at HEAD `c7e99114`):**
+>
+> - **svelte-extract-scoped-css-reactivity PASSED**: `grep -nE '^\s*\.(search-error-|search-empty-|search-result-list|search-show-more-btn)' src/components/SearchResults.svelte` matches at lines 11-21 — these are inside the parent's HTML comment at lines 1-29 (`<!-- ... DOM ids/classes expected by contract tests ... -->`), NOT orphan scoped CSS rules; parent's `<style>` block no longer defines these (only `.search-results-wrapper` + `.sr-only` + `:global()` modifiers stay, which is correct — wrapper owned by parent).
+> - **CSS split verified**: `.search-show-more-btn` moved TO `SearchResultList.svelte` scoped block (file:145/:169/:174); `.search-error-*` + `.search-empty-*` stay GLOBAL at `css/search.css`; DOM-contract comment at `SearchResults.svelte:1-29` documents the classes (no orphan-rule drift).
+> - **ErrorState REUSE**: `SearchErrorState.svelte:13-14` imports ErrorState + FriendlyError (variant="card"); no duplicate inline render.
+>
+> Wave-3 is driven entirely by the parallel Pi session; this Wave-1 plan leaves the presentational-extract surface to that session and stops at verifying the audit.
 
 ## 1. Executive Summary (ranked by impact ÷ effort)
 
