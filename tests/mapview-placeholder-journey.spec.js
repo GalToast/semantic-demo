@@ -41,7 +41,7 @@ const LEAFLET_JS_ROUTE = '**/vendor/leaflet/leaflet.js'
 const LEAFLET_CSS_ROUTE = '**/vendor/leaflet/leaflet.css'
 
 test.describe('MapView journey', () => {
-    test('M1: ?view=map mounts the map chrome with an accessible header + status region', async ({ page }) => {
+    test('M1: ?view=map mounts the map chrome with an accessible header + footer + activates the leaflet container', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?view=map&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -61,13 +61,26 @@ test.describe('MapView journey', () => {
         await expect(map.locator('.map-view-kicker')).toHaveText('MAP | MONTGOMERY COUNTY')
         await expect(map.locator('.map-view-title')).toHaveText('County terrain')
 
-        // `.map-status` is rendered while `status !== 'ready'` — i.e. during the
-        // initial 'loading' state MapView's onMount activates the leaflet map via
-        // `activateLeafletMap()`. We only assert the structural carrier (the
-        // status region + dot); we do NOT assert tile presence (network-dependent).
-        const status = map.locator('.map-status')
-        await status.waitFor({ state: 'attached', timeout: 30000 })
-        await expect(status.locator('.map-status-dot')).toHaveCount(1)
+        // `.map-status` is transient chrome — only rendered while `status !==
+        // 'ready'` (loading→ready flips in ~ms against vendored-local leaflet;
+        // the region unmounts before a stable `waitFor('attached')` can lock —
+        // the cause of the original 30s TimeoutError). M2 covers the
+        // `status='error'` failure surface explicitly via the leaflet-abort path.
+        // Here we assert the PERSISTENT map chrome instead: the footer (Overview
+        // button + attribution) plus `#map-container.active` as the deterministic
+        // signal that MapView's onMount reached `activateMapShell()`.
+        const footer = map.locator('.map-view-footer')
+        await expect(footer).toHaveCount(1)
+        await expect(footer.locator('.map-back-btn')).toContainText('Overview')
+        await expect(footer.locator('.map-attribution')).toHaveText('OpenStreetMap | CARTO')
+
+        // `activateMapShell()` synchronously adds `.active` to #map-container and
+        // sets `dataset.activeView='map'`. #map-container is owned by Canvas
+        // (engineReady.signalReady() fires immediately on deep-link desktop, so
+        // Canvas is mounted by the time MapView's onMount runs).
+        const mapContainer = page.locator('#map-container')
+        await expect(mapContainer).toHaveClass(/active/, { timeout: 15000 })
+        await expect(mapContainer).toHaveAttribute('data-active-view', 'map')
     })
 
     test('M2: Leaflet load failure surfaces the shared ErrorState retry surface + Retry re-fires activateLeafletMap', async ({
