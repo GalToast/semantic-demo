@@ -15,6 +15,8 @@ const providerArg = process.argv.find((arg) => arg.startsWith('--provider='))
 const providerFilter = providerArg ? new Set(providerArg.slice('--provider='.length).split(',').filter(Boolean)) : null
 const limitArg = process.argv.find((arg) => arg.startsWith('--limit='))
 const perProviderLimit = limitArg ? Number(limitArg.slice('--limit='.length)) : 12
+const smokeDelayArg = process.argv.find((arg) => arg.startsWith('--smoke-delay='))
+const smokeDelayMs = smokeDelayArg ? Number(smokeDelayArg.slice('--smoke-delay='.length)) : 0
 
 // Reasoning-emission check (opt-in, key-rate-limited). Detects models wired for reasoning that no
 // longer stream a reasoning_content/reasoning delta (the DeepSeek V4 Pro hang class).
@@ -64,6 +66,9 @@ const notablePatterns = [
     /grok-4\.3/i,
     /deepseek.*v4/i
 ]
+
+const timeoutArg = process.argv.find((arg) => arg.startsWith('--timeout='))
+const TIMEOUT_MS = timeoutArg ? Number(timeoutArg.slice('--timeout='.length)) : 120000
 
 function isLikelyNonChat(id) {
     return /embedding|rerank|image|tts|audio|whisper|lyria|banana|deplot|safety/i.test(id)
@@ -202,16 +207,13 @@ async function smokeModel(route, model) {
     const url = `${base}/chat/completions`
     const payload = {
         model,
-        messages: [
-            { role: 'system', content: 'Reply with exactly: ok' },
-            { role: 'user', content: 'health check' }
-        ],
+        messages: [{ role: 'user', content: 'Reply with exactly: ok' }],
         max_tokens: 8,
-        temperature: 0
+        temperature: 0.01
     }
     const started = Date.now()
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 45000)
+    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
     try {
         const { res, json, text } = await getJson(url, {
             method: 'POST',
@@ -647,11 +649,17 @@ async function main() {
                 entry.smokeCandidates = selectSmokeIds(route.providerKey, entry.ids)
                 entry.skippedCount = entry.ids.length - entry.smokeCandidates.length
                 if (smoke) {
-                    for (const id of entry.smokeCandidates) {
+                    for (let si = 0; si < entry.smokeCandidates.length; si++) {
+                        const id = entry.smokeCandidates[si]
                         const s = await smokeModel(route, id)
                         entry.smokes.push(s)
                         if (s.ok) entry.smokeOk += 1
                         else entry.smokeFail += 1
+                        // Throttle between requests to avoid triggering provider rate limits
+                        // (especially Cloudflare-backed providers like Zydit)
+                        if (smokeDelayMs > 0 && si < entry.smokeCandidates.length - 1) {
+                            await sleep(smokeDelayMs)
+                        }
                     }
                 }
             }

@@ -49,10 +49,10 @@ Measure: time-to-first-token, time-to-tool-call, completion status.
 
 All three free models completed a 1-tool-call smoke test successfully.
 
-| Model | TTFT tool-call | Total time | Settled | Notes |
-|------|----------------|-----------|---------|-------|
-| `opencode-zen/north-mini-code-free` | 170ms | **29.0s** | yes | cleanest run, no LSP timeout |
-| `opencode-zen/mimo-v2.5-free` | **149ms** | 48.0s | yes | fastest first-token, LSP timeout warning in stderr |
-| `opencode-zen/nemotron-3-ultra-free` | 230ms | 59.6s | yes | slowest, LSP timeout warning in stderr |
+| Model                                | TTFT tool-call | Total time | Settled | Notes                                              |
+| ------------------------------------ | -------------- | ---------- | ------- | -------------------------------------------------- |
+| `opencode-zen/north-mini-code-free`  | 170ms          | **29.0s**  | yes     | cleanest run, no LSP timeout                       |
+| `opencode-zen/mimo-v2.5-free`        | **149ms**      | 48.0s      | yes     | fastest first-token, LSP timeout warning in stderr |
+| `opencode-zen/nemotron-3-ultra-free` | 230ms          | 59.6s      | yes     | slowest, LSP timeout warning in stderr             |
 
 **Recommendation:** prefer `north-mini-code-free` for subagent work; `mimo-v2.5-free` as fallback.
