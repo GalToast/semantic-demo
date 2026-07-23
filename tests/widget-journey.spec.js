@@ -391,6 +391,55 @@ test.describe('Widget journey', () => {
         }
     })
 
+    test('5k. URL-param search bypass yields mock results without polluting sessionStorage.api_unreachable', async ({
+        page
+    }) => {
+        // PR-M / cleanup-plan gap: `?staticOnly=1`, `?offline=1`, and `?noApi=1`
+        // are explicit permanent bypasses that skip the live API. They must
+        // (a) still surface results through the local index / mock fallback and
+        // (b) NOT write the transient `sessionStorage.api_unreachable` sticky
+        // flag — that flag is reserved for real API failures.
+        await page.setViewportSize({ width: 1280, height: 800 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&offline=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForTimeout(1500)
+
+        // Dismiss first-visit help dialog if auto-opened.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Trigger a search under the offline bypass. The app falls through
+        // to the local index / mock catalog instead of hitting /api.php.
+        await page.fill('#search-input', 'coffee')
+        await page.evaluate(() => {
+            const f = document.querySelector('#search-input')?.closest('form')
+            if (f) f.requestSubmit()
+        })
+
+        await page.waitForFunction(
+            () => {
+                const items = document.querySelectorAll('.search-result-listitem, [role="option"]')
+                return items.length >= 1
+            },
+            null,
+            { timeout: 15000 }
+        )
+
+        // URL-param bypass must NOT write the transient sticky flag.
+        const apiUnreachable = await page.evaluate(() => window.sessionStorage.getItem('api_unreachable'))
+        expect(apiUnreachable, 'sessionStorage.api_unreachable must stay null under URL-param bypass').toBeNull()
+    })
+
     test('B-S7: mobile 375px brand-label hidden + chips no overlap with right-side toggles', async ({ page }) => {
         // Surface-7 fix (2026-07-15): on mobile ≤390px the .brand-label
         // ("MONTGOMERY COUNTY") overflowed the header flex row and overlapped
