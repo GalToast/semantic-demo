@@ -210,6 +210,31 @@ function narrowToPoint(business: BusinessRecord | null): Point | null {
  * `readable.on.subscribe` callback path that the `viewport.svelte.ts` migration
  * audit verified).
  */
+function _buildPocketNode(idx: number, anchorIndex: number | null, targetPositions: any, nodePositions: any, originalPositions: any, roles: Map<number, string>, records: readonly BusinessRecord[]): FocusPocketNode | null {
+    if (!Number.isFinite(idx) || idx < 0) return null
+    if (anchorIndex != null && idx === anchorIndex) return null
+    const position = targetPositions?.[idx] ?? nodePositions?.[idx] ?? originalPositions?.[idx] ?? null
+    if (!position) return null
+    const legacyRole = (roles.get(idx) || 'support').toLowerCase()
+    const role: FocusPocketNode['role'] =
+        legacyRole === 'primary' || legacyRole === 'direct'
+            ? 'direct'
+            : legacyRole === 'civic'
+              ? 'civic'
+              : 'support'
+    const record = records[idx]
+    const label = record?.name ? formatBusinessName(record.name as string) : `Node ${idx}`
+    return {
+        index: idx,
+        position: [position.x ?? 0, position.y ?? 0, position.z ?? 0],
+        role,
+        score: 0.62,
+        label,
+        rotationSeed: (idx * 7919) % 360,
+        scaleSeed: ((idx * 104729) % 1000) / 1000
+    }
+}
+
 function _readFocusSnapshot(): FocusStoreState {
     const source = getFocusHydrationSource()
     const navState = source.navState ?? {}
@@ -225,28 +250,8 @@ function _readFocusSnapshot(): FocusStoreState {
 
     const nodes: FocusPocketNode[] = []
     for (const idx of indices) {
-        if (!Number.isFinite(idx) || idx < 0) continue
-        if (anchorIndex != null && idx === anchorIndex) continue
-        const position = targetPositions?.[idx] ?? nodePositions?.[idx] ?? originalPositions?.[idx] ?? null
-        if (!position) continue
-        const legacyRole = (roles.get(idx) || 'support').toLowerCase()
-        const role: FocusPocketNode['role'] =
-            legacyRole === 'primary' || legacyRole === 'direct'
-                ? 'direct'
-                : legacyRole === 'civic'
-                  ? 'civic'
-                  : 'support'
-        const record = records[idx]
-        const label = record?.name ? formatBusinessName(record.name as string) : `Node ${idx}`
-        nodes.push({
-            index: idx,
-            position: [position.x ?? 0, position.y ?? 0, position.z ?? 0],
-            role,
-            score: 0.62,
-            label,
-            rotationSeed: (idx * 7919) % 360,
-            scaleSeed: ((idx * 104729) % 1000) / 1000
-        })
+        const node = _buildPocketNode(idx, anchorIndex, targetPositions, nodePositions, originalPositions, roles, records)
+        if (node) nodes.push(node)
     }
 
     return {
