@@ -5,22 +5,22 @@
 
 ## Confirmed active wedge-shield patches
 
-| Layer | Target file | Marker present |
-|------|-------------|----------------|
-| L1 | `pi-agent-core/dist/proxy.js` | `Proxy toolcall_end final re-parse patch` |
-| L3A | `pi-ai/dist/utils/json-parse.js` | `[pi-ai patch] parseStreamingJson failed:` |
-| L3B | `pi-ai/dist/api/openai-completions.js` | `const rawArgs = toolCall.function?.arguments ?? toolCall.arguments;` |
+| Layer | Target file                            | Marker present                                                        |
+| ----- | -------------------------------------- | --------------------------------------------------------------------- |
+| L1    | `pi-agent-core/dist/proxy.js`          | `Proxy toolcall_end final re-parse patch`                             |
+| L3A   | `pi-ai/dist/utils/json-parse.js`       | `[pi-ai patch] parseStreamingJson failed:`                            |
+| L3B   | `pi-ai/dist/api/openai-completions.js` | `const rawArgs = toolCall.function?.arguments ?? toolCall.arguments;` |
 
 All three layers are live in the installed dist files. The empty-args wedge family is mitigated.
 
 ## Model behavior observations
 
-| Model | Prompt type | Result | Notes |
-|------|------------|--------|-------|
-| `opencode-zen/deepseek-v4-flash-free` | simple text `pong` | `pong` | ~22s total, `turn_end` + `agent_settled` |
-| `opencode-zen/deepseek-v4-flash-free` | simple tool call `bash echo tool-smoke-ok` | `tool-smoke-ok` | ~63s total, tool call executed successfully |
-| `opencode-zen/deepseek-v4-flash-free` | multi-step audit: read file → follow exactly → write report | silent hang | `message_end(user)` → eternal silence, `assistant_output_seen: false` |
-| `nvidia/deepseek-ai/deepseek-v4-flash` | any | 429 rate limit | Hit before first tool call earlier in session |
+| Model                                  | Prompt type                                                 | Result          | Notes                                                                 |
+| -------------------------------------- | ----------------------------------------------------------- | --------------- | --------------------------------------------------------------------- |
+| `opencode-zen/deepseek-v4-flash-free`  | simple text `pong`                                          | `pong`          | ~22s total, `turn_end` + `agent_settled`                              |
+| `opencode-zen/deepseek-v4-flash-free`  | simple tool call `bash echo tool-smoke-ok`                  | `tool-smoke-ok` | ~63s total, tool call executed successfully                           |
+| `opencode-zen/deepseek-v4-flash-free`  | multi-step audit: read file → follow exactly → write report | silent hang     | `message_end(user)` → eternal silence, `assistant_output_seen: false` |
+| `nvidia/deepseek-ai/deepseek-v4-flash` | any                                                         | 429 rate limit  | Hit before first tool call earlier in session                         |
 
 ## Root-cause assessment
 
@@ -44,3 +44,15 @@ Run a 3-way subagent smoke benchmark across:
 - `opencode-zen/north-mini-code-free`
 
 Measure: time-to-first-token, time-to-tool-call, completion status.
+
+## Benchmark results (2026-07-23 smoke tests)
+
+All three free models completed a 1-tool-call smoke test successfully.
+
+| Model | TTFT tool-call | Total time | Settled | Notes |
+|------|----------------|-----------|---------|-------|
+| `opencode-zen/north-mini-code-free` | 170ms | **29.0s** | yes | cleanest run, no LSP timeout |
+| `opencode-zen/mimo-v2.5-free` | **149ms** | 48.0s | yes | fastest first-token, LSP timeout warning in stderr |
+| `opencode-zen/nemotron-3-ultra-free` | 230ms | 59.6s | yes | slowest, LSP timeout warning in stderr |
+
+**Recommendation:** prefer `north-mini-code-free` for subagent work; `mimo-v2.5-free` as fallback.
