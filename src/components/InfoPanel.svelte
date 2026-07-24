@@ -343,6 +343,7 @@
   class:is-compact-body={testCompact}
   class:has-focused-node={infoPanelHasFocusedNode}
   aria-hidden={!panelOpen}
+  inert={!panelOpen}
   aria-label={panelAriaLabel}
   aria-live="polite"
   id="info-panel"

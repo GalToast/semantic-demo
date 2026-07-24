@@ -2641,6 +2641,101 @@ test.describe('Widget journey', () => {
             timeout: 15000
         })
     })
+
+    // INFO-PANEL-INERT-W54: Verifies the W5 finding fix — `InfoPanel.svelte` `<aside aria-hidden={!panelOpen}>`
+    // wraps the snippet-rendered `#search-input` (search-family surfaces); W46 mitigation forced `infoPanelOpen=true`
+    // for steady-state idle/search surfaces, but residual race windows (lazy-chunk load + surface-transition microtask
+    // lag) can leave the panel closed while children remain focusable. The W54 fix adds `inert={!panelOpen}` adjacent
+    // to `aria-hidden={!panelOpen}` so the closed panel neutralizes ALL focusable descendants regardless of when the
+    // snippet content flushes the markup. See `docs/bugsweep-campaign-2026-07-24.md` (wave-3 fix plan).
+    test('5h. InfoPanel inert tracks aria-hidden across focus/overview transitions — W54 a11y fix', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1500)
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        const infoPanel = page.locator('#info-panel')
+        await infoPanel.waitFor({ state: 'attached', timeout: 15000 })
+
+        // Force-close any open panel (desktop idle starts panel open via App.svelte:236-241 infoPanelOpen gate).
+        await page.evaluate(() => {
+            const a = window.__navActions__
+            if (a?.returnToOverview) a.returnToOverview()
+        })
+
+        await page.waitForFunction(
+            () => document.querySelector('#info-panel')?.getAttribute('aria-hidden') === 'true',
+            null,
+            { timeout: 5000 }
+        )
+
+        // CLOSED invariant — W54 fix: inert must mirror aria-hidden (both derive from `panelOpen`).
+        expect(await infoPanel.getAttribute('aria-hidden'), 'panel closed => aria-hidden=true').toBe('true')
+        expect(
+            await infoPanel.evaluate((el) => el.hasAttribute('inert')),
+            'W54 invariant CLOSED: #info-panel[inert] present alongside aria-hidden=true'
+        ).toBe(true)
+
+        // When inert is present, NO focusable descendant of the closed panel may capture document.activeElement.
+        // This is the W5 race window the inert fix defends against: a closed panel may briefly host snippet-rendered
+        // `#search-input` between surface transitions; `inert` blocks keyboard + touch focus on each of them.
+        const anyChildFocusCaptured = await page.evaluate(() => {
+            const info = document.querySelector('#info-panel')
+            if (!info || !info.hasAttribute('inert')) return null
+            const focusables = info.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            )
+            Array.from(focusables).forEach((el) => {
+                try {
+                    if (typeof el.focus === 'function') el.focus()
+                } catch {
+                    // ignore — focus() may throw on inert-blocked elements; we assert the invariant below
+                }
+            })
+            return Array.from(focusables).some((el) => document.activeElement === el)
+        })
+        expect(
+            anyChildFocusCaptured,
+            'W54 invariant CLOSED: inert present => NO focusable descendant captures document.activeElement (null=panel/inert absent)'
+        ).toBe(false)
+
+        // OPEN via focus surface — inert removed so users can interact with `#search-input` inside the panel.
+        await page.evaluate(() => {
+            const a = window.__navActions__
+            if (!a?.setFocusedIndex) throw new Error('__navActions__.setFocusedIndex missing')
+            if (!a?.setSurface) throw new Error('__navActions__.setSurface missing')
+            a.setFocusedIndex(0)
+            a.setSurface('focus')
+        })
+
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#info-panel')
+                if (!el) return false
+                return el.getAttribute('aria-hidden') === 'false'
+            },
+            null,
+            { timeout: 8000 }
+        )
+
+        expect(await infoPanel.getAttribute('aria-hidden'), 'panel open => aria-hidden=false').toBe('false')
+        expect(
+            await infoPanel.evaluate((el) => el.hasAttribute('inert')),
+            'W54 invariant OPEN: #info-panel[inert] ABSENT so child content is focusable'
+        ).toBe(false)
+    })
 })
 
 test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investigation.md)', () => {
@@ -3464,5 +3559,47 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         ).toBeGreaterThan(0)
         expect(pocket.focusedIndex, 'focused node index should not be null').not.toBeNull()
         expect(pocket.focusedNode, 'focused node should not be null').not.toBeNull()
+    })
+
+    test('Legend title carries a descriptive aria-label (bugsweep W55 a11y)', async ({ page }) => {
+        // Regression: the Legend panel title was a bare "Categories" heading.
+        // The sweep added an aria-label so screen readers announce the purpose
+        // of the color key. This test verifies the live DOM after opening the
+        // category legend via the header toggle.
+        await page.setViewportSize({ width: 1280, height: 800 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForTimeout(800)
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // The legend panel is auto-open on desktop by default; the toggle is
+        // always present in the header. Use the id for a stable locator and wait
+        // long enough for the header chrome to mount after splash dismiss.
+        const legendToggle = page.locator('#btn-legend')
+        await legendToggle.waitFor({ state: 'visible', timeout: 20000 })
+        await legendToggle.click()
+
+        // Legend auto-hides after 10s; assert within a few seconds of opening.
+        const legendTitle = page.locator('#legend-panel .legend-title').first()
+        await legendTitle.waitFor({ state: 'attached', timeout: 5000 })
+
+        const ariaLabel = await legendTitle.getAttribute('aria-label')
+        expect(ariaLabel, 'legend title must have a descriptive aria-label').toBeTruthy()
+        expect(ariaLabel, 'legend aria-label must mention categories and color coding').toMatch(/categories|color/i)
+        expect(await legendTitle.textContent(), 'legend heading text should still read "Categories"').toContain(
+            'Categories'
+        )
     })
 })
