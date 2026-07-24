@@ -84,6 +84,7 @@ export const SPORE_EMISSIVE_FLASH_PEAK = 2.5
 // This is safe under the single-threaded JS execution model. If any future Web Worker
 // offload touches this path, refactor to per-call Object3D instances.
 const _nodeSporeObject = new Object3D()
+let _isCreatingNodeSporeLayer = false
 const _nodeSporeColor = new Color()
 const _trackedTextures: Texture[] = []
 
@@ -168,6 +169,13 @@ export function setNodeSporeInstanceMatrix(
 ) {
     const pos = state.nodePositions[index]
     if (!targetMesh || !pos) return
+    // MEDIUM #5: guard against stale InstancedMesh count when state.points
+    // was mutated in place (push/splice bypass the appState Proxy). If the
+    // mesh count no longer matches, trigger a rebuild and skip this frame.
+    if (targetMesh.count !== state.points.length) {
+        createNodeSporeLayer()
+        return
+    }
     const base = getNodeSporeScale(index) * scaleMultiplier
     _nodeSporeObject.position.set(pos.x, pos.y, pos.z)
     _nodeSporeObject.rotation.set(
@@ -361,44 +369,55 @@ export function disposeNodeVisuals() {
 }
 
 export function createNodeSporeLayer() {
-    if (!webglContext.scene || !state.points?.length || !state.nodePositions?.length) return
-    const sporeGeo = new SphereGeometry(1, SPORE_SEGMENTS_VISIBLE, SPORE_SEGMENTS_VISIBLE - 1)
-    // W48-T1A: Spore material upgraded for bioluminescent identity.
-    // Emissive 0x16453f (dark teal, ~10% perceived) → 0x2a8a7a (brighter teal).
-    // Emissive intensity 0.34 → 0.55. Per-instance color factor 0.85 → 1.62×
-    // (boosts vertex colors 62% above base so cluster palette reads clearly).
-    const sporeMat = new MeshPhongMaterial({
-        color: 0xc8d4d0,
-        emissive: 0x2a8a7a,
-        emissiveIntensity: SPORE_EMISSIVE_INTENSITY_BASE,
-        shininess: 0,
-        transparent: true,
-        opacity: SCENE_ATMOSPHERE.sporeOpacity,
-        vertexColors: true,
-        blending: NormalBlending,
-        depthWrite: false
-    })
-    const sporeMesh = new InstancedMesh(sporeGeo, sporeMat, state.points.length)
-    sporeMesh.name = 'node-spore-instanced-field'
-    sporeMesh.frustumCulled = false
-    sporeMesh.instanceMatrix.setUsage(DynamicDrawUsage)
-    webglContext.nodeSporeMesh = sporeMesh
-    webglContext.nodeSporeMaterial = sporeMat
-    const SPORE_INSTANCE_COLOR_FACTOR = 1.62
-    // W48-T1C: pre-compute cluster sizes once so each instance gets a density-
-    // based scale multiplier. Dense clusters get smaller nodes; sparse ones
-    // get larger ones (per visual critique 2026-06-07 item #10).
-    const clusterSizes = computeClusterSizes()
-    for (let i = 0; i < state.points.length; i += 1) {
-        const cluster = state.points[i]?.cluster
-        const sizeFactor = getClusterSizeFactor(cluster, clusterSizes)
-        setNodeSporeInstanceMatrix(i, sporeMesh, sizeFactor)
-        sporeMesh.setColorAt(i, getNodeSporeColor(i, SPORE_INSTANCE_COLOR_FACTOR))
+    if (_isCreatingNodeSporeLayer) return
+    _isCreatingNodeSporeLayer = true
+    try {
+        if (!webglContext.scene || !state.points?.length || !state.nodePositions?.length) return
+        // MEDIUM #5: if the existing mesh count is stale, dispose it so we
+        // rebuild with the current state.points length. This guards against
+        // in-place array mutations that bypass the Proxy validation.
+        if (webglContext.nodeSporeMesh && webglContext.nodeSporeMesh.count !== state.points.length) {
+            disposeObject3D(webglContext.nodeSporeMesh)
+            webglContext.nodeSporeMesh = null
+        }
+        if (webglContext.nodeSporeMesh) return
+        const sporeGeo = new SphereGeometry(1, SPORE_SEGMENTS_VISIBLE, SPORE_SEGMENTS_VISIBLE - 1)
+        // W48-T1A: Spore material upgraded for bioluminescent identity.
+        // Emissive 0x16453f (dark teal, ~10% perceived) → 0x2a8a7a (brighter teal).
+        // Emissive intensity 0.34 → 0.55. Per-instance color factor 0.85 → 1.62×
+        // (boosts vertex colors 62% above base so cluster palette reads clearly).
+        const sporeMat = new MeshPhongMaterial({
+            color: 0xc8d4d0,
+            emissive: 0x2a8a7a,
+            emissiveIntensity: SPORE_EMISSIVE_INTENSITY_BASE,
+            shininess: 0,
+            transparent: true,
+            opacity: SCENE_ATMOSPHERE.sporeOpacity,
+            vertexColors: true,
+            blending: NormalBlending,
+            depthWrite: false
+        })
+        const sporeMesh = new InstancedMesh(sporeGeo, sporeMat, state.points.length)
+        sporeMesh.name = 'node-spore-instanced-field'
+        sporeMesh.frustumCulled = false
+        sporeMesh.instanceMatrix.setUsage(DynamicDrawUsage)
+        webglContext.nodeSporeMesh = sporeMesh
+        webglContext.nodeSporeMaterial = sporeMat
+        const SPORE_INSTANCE_COLOR_FACTOR = 1.62
+        const clusterSizes = computeClusterSizes()
+        for (let i = 0; i < state.points.length; i += 1) {
+            const cluster = state.points[i]?.cluster
+            const sizeFactor = getClusterSizeFactor(cluster, clusterSizes)
+            setNodeSporeInstanceMatrix(i, sporeMesh, sizeFactor)
+            sporeMesh.setColorAt(i, getNodeSporeColor(i, SPORE_INSTANCE_COLOR_FACTOR))
+        }
+        if (sporeMesh.instanceColor) sporeMesh.instanceColor.needsUpdate = true
+        sporeMesh.instanceMatrix.needsUpdate = true
+        sporeMesh.visible = true
+        webglContext.scene.add(sporeMesh)
+    } finally {
+        _isCreatingNodeSporeLayer = false
     }
-    if (sporeMesh.instanceColor) sporeMesh.instanceColor.needsUpdate = true
-    sporeMesh.instanceMatrix.needsUpdate = true
-    sporeMesh.visible = true
-    webglContext.scene.add(sporeMesh)
 }
 
 export function createPoints() {

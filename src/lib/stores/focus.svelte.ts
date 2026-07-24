@@ -402,9 +402,9 @@ function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): voi
         }
     }
 
-    focusMirror.set(next)
-
-    // Grouped/special-case mirrors that the flat bindings table can't express
+    // Bridge grouped/special-case appState fields BEFORE notifying subscribers.
+    // This prevents a lost-update race where subscribers read from `appState`
+    // after `focusMirror.set()` but before the bridge writes land.
     writeNavStateMirror({
         focusPocketIndices: next.pocketNodes.map((n) => n.index),
         focusPocketRoleByIndex: next.pocketRoleByIndex,
@@ -443,6 +443,9 @@ function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): voi
         if (next.semanticDiveMode) writeNavStateMirror({ trailDepth: 2 })
         else if (appState.navState.trailDepth === 2) writeNavStateMirror({ trailDepth: 1 })
     }
+
+    // Notify subscribers after appState is consistent.
+    focusMirror.set(next)
 }
 
 // ── Public Store API (preserved verbatim from previous implementation) ────────

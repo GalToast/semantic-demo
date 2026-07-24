@@ -148,6 +148,14 @@ function oneOf(set: Set<string>, label: string): StateValidator {
     }
 }
 
+/** Validates that the value is an array. */
+function array(label: string): StateValidator {
+    return (value: unknown): string | null => {
+        if (!Array.isArray(value)) return `${label} must be an array, got ${typeof value}`
+        return null
+    }
+}
+
 /** Returns a non-negative integer validator. */
 function nonNegativeInt(label: string): StateValidator {
     return (value: unknown): string | null => {
@@ -326,13 +334,16 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     },
 
     // Arrays
+    points: array('points'),
+    nodePositions: array('nodePositions'),
+    targetPositions: array('targetPositions'),
+    originalPositions: array('originalPositions'),
     searchResults: (value: unknown): string | null => {
         if (!Array.isArray(value)) return 'searchResults must be an array, got ' + typeof value
         return null
     },
 
     // Passthrough for frequently-written but low-risk properties
-    points: passthrough,
     map: passthrough,
     scene: passthrough,
     camera: passthrough,
@@ -406,9 +417,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     semanticNeighborMapByLeadId: passthrough,
     semanticThreadBundle: passthrough,
     semanticThreadArtifactName: passthrough,
-    nodePositions: passthrough,
-    targetPositions: passthrough,
-    originalPositions: passthrough,
     myceliumCoreLines: passthrough,
     myceliumWispyLines: passthrough,
     myceliumBridgeLines: passthrough,
@@ -475,6 +483,45 @@ export function validateStateProperty(path: string, value: unknown): string | nu
 
 /** Dev-mode flag — when true, invalid state throws instead of warning. */
 export const STATE_VALIDATION_STRICT = import.meta.env?.DEV === true
+
+// ── Nested-state mutation audit (dev-only) ────────────────────────────────
+
+/** Known nested property paths and their validators. Used by the dev-only
+ *  `auditNestedStateMutations()` hook to catch mutations that bypass the
+ *  outer Proxy `set` trap (e.g. `appState.navState.mode = 'bogus'`).
+ *  The outer Proxy only sees top-level keys, so nested assignments never
+ *  reach `validateStateProperty()` without an explicit audit pass. */
+export const NESTED_STATE_PATHS: Record<string, StateValidator> = {
+    'navState.mode': oneOf(VALID_NAV_MODES, 'navState.mode'),
+    'navState.surface': oneOf(VALID_PANEL_SURFACES, 'navState.surface'),
+    'navState.currentView': oneOf(VALID_VIEWS, 'navState.currentView'),
+    'navState.myceliumMode': oneOf(VALID_MYCELIUM_MODES, 'navState.myceliumMode'),
+    'searchState.searchStatus': oneOf(VALID_SEARCH_STATUS, 'searchState.searchStatus'),
+    'focusState.focusTransitionMode': oneOf(VALID_FOCUS_TRANSITION_MODES, 'focusState.focusTransitionMode')
+}
+
+/** Dev-only audit: walks known nested paths on `state` and reports any
+ *  invalid values. Returns collected error strings. Call from mutation
+ *  boundaries or test assertions when you need to verify nested state
+ *  integrity. */
+export function auditNestedStateMutations(state: Record<string, unknown>): string[] {
+    const errors: string[] = []
+    for (const [path, validator] of Object.entries(NESTED_STATE_PATHS)) {
+        const parts = path.split('.')
+        let cursor: unknown = state
+        for (const part of parts) {
+            if (cursor === null || cursor === undefined || typeof cursor !== 'object') {
+                cursor = undefined
+                break
+            }
+            cursor = (cursor as Record<string, unknown>)[part]
+        }
+        if (cursor === undefined) continue
+        const err = validator(cursor)
+        if (err) errors.push(err)
+    }
+    return errors
+}
 
 // ── Phase 6a — runtime safety net for partition refactors ────────────────────
 

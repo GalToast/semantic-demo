@@ -63,6 +63,7 @@ import type { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { validateStateProperty, STATE_VALIDATION_STRICT, validateAppStateEnumFields } from './state-validation'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
 // ── App State class ─────────────────────────────────────────────────────────
@@ -774,6 +775,29 @@ export const appState: AppState = new Proxy({} as AppState, {
         return Reflect.deleteProperty(getAppState(), prop)
     }
 })
+
+// Dev-only nested-state audit: catches mutations that bypass the outer
+// Proxy `set` trap (e.g. `appState.navState.mode = 'bogus'`). The outer
+// trap only sees top-level keys, so nested assignments never reach
+// `validateStateProperty()` without an explicit audit pass.
+async function _runNestedAudit() {
+    try {
+        const { auditNestedStateMutations } = await import('./state-validation')
+        const errors = auditNestedStateMutations(getAppState() as unknown as Record<string, unknown>)
+        if (errors.length > 0 && import.meta.env.DEV) {
+            console.warn('[appState] nested mutation audit:', errors.join('; '))
+        }
+    } catch {
+        // Defensive: audit must never block appState init.
+    }
+}
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+    // Use DisposableRegistry.scheduleInterval to satisfy the no-restricted-syntax
+    // lint rule and ensure the timer is cleared on teardown.
+    const _nestedAuditReg = new DisposableRegistry({ label: 'appState-nested-audit', warnAfterDispose: false })
+    _nestedAuditReg.scheduleInterval(5000, _runNestedAudit)
+    window.addEventListener('beforeunload', () => _nestedAuditReg.disposeAll())
+}
 
 // Also expose on window for devtools / legacy bridge access (triggers instantiation if not yet done)
 if (typeof window !== 'undefined') {
