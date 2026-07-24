@@ -394,6 +394,47 @@ describe('Demo store — state-class appState regression', () => {
         expect(sessionStorage.getItem(DEMO_SESSION_KEY)).toBe('1')
     })
 
+    it('startDemo does not lock the guard when sessionStorage throws', () => {
+        if (typeof sessionStorage === 'undefined') return
+
+        const original = globalThis.sessionStorage
+        const mockStorage = {
+            getItem: vi.fn(() => null),
+            setItem: vi.fn(() => {
+                throw new Error('SecurityError')
+            }),
+            removeItem: vi.fn(() => {}),
+            clear: vi.fn(() => {})
+        }
+
+        try {
+            Object.defineProperty(window, 'sessionStorage', {
+                value: mockStorage,
+                writable: true,
+                configurable: true
+            })
+            ;(globalThis as Record<string, unknown>).sessionStorage = mockStorage
+
+            const first = startDemo()
+            expect(first).toBe(false)
+            expect(_demoState.demoPhase).toBe('IDLE')
+
+            mockStorage.setItem.mockImplementation(() => '1')
+            mockStorage.removeItem(DEMO_SESSION_KEY)
+
+            const second = startDemo()
+            expect(second).toBe(true)
+            expect(_demoState.demoPhase).toBe('OVERVIEW')
+        } finally {
+            Object.defineProperty(window, 'sessionStorage', {
+                value: original,
+                writable: true,
+                configurable: true
+            })
+            ;(globalThis as Record<string, unknown>).sessionStorage = original
+        }
+    })
+
     // ── 8. Constants & misc helpers ─────────────────────────────────────────
 
     it('DEMO_TIMING exposes numeric durations', () => {

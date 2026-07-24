@@ -204,15 +204,18 @@ export async function performSearch(query: string, signal: AbortSignal, page = 0
         if (cached) return cached
     }
 
-    // Advisory deduplication: if an identical key is already in-flight,
-    // piggyback on that promise instead of issuing a duplicate fetch.
+    // Advisory deduplication: if an identical key is already in-flight
+    // and the caller shares the same AbortSignal, piggyback on that promise
+    // instead of issuing a duplicate fetch. Callers with different signals
+    // get their own promise so their cancellation does not abort an unrelated
+    // in-flight request.
     if (!forceApiFailureSurface) {
-        const pending = getPendingSearch(trimmed, normalizedPage, effectiveOffset)
+        const pending = getPendingSearch(trimmed, normalizedPage, effectiveOffset, signal)
         if (pending) return pending
     }
 
     const searchPromise = _executeSearch(trimmed, signal, normalizedPage, effectiveOffset)
-    setPendingSearch(trimmed, normalizedPage, effectiveOffset, searchPromise)
+    setPendingSearch(trimmed, normalizedPage, effectiveOffset, searchPromise, signal)
     return searchPromise
 }
 

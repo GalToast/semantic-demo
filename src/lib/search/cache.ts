@@ -319,8 +319,13 @@ const MAX_ENTRIES = 128
 /** In-memory cache store. */
 const _cache = new Map<string, SearchCacheEntry>()
 
-/** In-flight deduplication: prevents concurrent cold-start fetches for the same key. */
-const _pending = new Map<string, Promise<SearchResult[]>>()
+/** In-flight deduplication: prevents concurrent cold-start fetches for the same key.
+ *  Tracks promises by key so identical concurrent requests can share one fetch.
+ *  If a caller provides an AbortSignal, it is recorded alongside the promise so
+ *  later callers with a different signal do not accidentally share an abortable
+ *  promise they did not create.
+ */
+const _pending = new Map<string, { promise: Promise<SearchResult[]>; signal?: AbortSignal }>()
 
 let _ttlMs = DEFAULT_TTL_MS
 
@@ -365,31 +370,56 @@ export function setCachedSearch(query: string, page: number, offset: number, res
 
 /**
  * Register an in-flight search promise for deduplication.
- * If a pending request already exists for this key, returns the existing
- * promise instead of creating a duplicate fetch.
+ * If a pending request already exists for this key AND the caller's AbortSignal
+ * matches the original signal, returns the existing promise instead of creating
+ * a duplicate fetch. Callers with different or new signals get their own promise
+ * so their cancellation does not abort an unrelated in-flight request.
  *
- * @returns The existing promise if already in-flight, or null if this caller
- *          should proceed with a fresh fetch.
+ * @returns The existing promise if already in-flight with a compatible signal,
+ *          or null if this caller should proceed with a fresh fetch.
  */
-export function getPendingSearch(query: string, page: number, offset: number): Promise<SearchResult[]> | null {
+export function getPendingSearch(
+    query: string,
+    page: number,
+    offset: number,
+    signal?: AbortSignal
+): Promise<SearchResult[]> | null {
     const key = cacheKeyToString({ query, page, offset })
-    return _pending.get(key) ?? null
+    const entry = _pending.get(key)
+    if (!entry) return null
+    if (signal && entry.signal && signal !== entry.signal) return null
+    return entry.promise
 }
 
 /**
  * Store an in-flight search promise for deduplication.
+ * The optional AbortSignal is recorded so later callers can detect whether
+ * their cancellation would affect this in-flight request.
  */
-export function setPendingSearch(query: string, page: number, offset: number, promise: Promise<SearchResult[]>): void {
+export function setPendingSearch(
+    query: string,
+    page: number,
+    offset: number,
+    promise: Promise<SearchResult[]>,
+    signal?: AbortSignal
+): void {
     const key = cacheKeyToString({ query, page, offset })
-    _pending.set(key, promise)
+    const entry = { promise, signal }
+    _pending.set(key, entry)
     // Auto-remove when settled. Use then(success, failure) instead of finally()
     // so a rejected search promise does not create an unhandled child promise.
     void promise.then(
         () => {
-            _pending.delete(key)
+            const current = _pending.get(key)
+            if (current && current.promise === promise) {
+                _pending.delete(key)
+            }
         },
         () => {
-            _pending.delete(key)
+            const current = _pending.get(key)
+            if (current && current.promise === promise) {
+                _pending.delete(key)
+            }
         }
     )
 }

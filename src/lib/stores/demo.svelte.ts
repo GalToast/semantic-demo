@@ -148,14 +148,21 @@ export function startDemo(): boolean {
     // If a prior attempt (or an in-flight retry) already claimed the guard,
     // bail out synchronously before any timer fires.
     if (_startGuardClaimed) return false
-    _startGuardClaimed = true
 
     // Set the per-session guard immediately so a race between this call and
     // any other start path (URL param, button click, auto-start) sees the
     // same barrier.
     if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem(DEMO_SESSION_KEY, '1')
+        try {
+            sessionStorage.setItem(DEMO_SESSION_KEY, '1')
+        } catch {
+            // Storage may be unavailable in private browsing or test sandboxes.
+            // Leave _startGuardClaimed unset so a later startDemo() can retry.
+            return false
+        }
     }
+
+    _startGuardClaimed = true
 
     demoMirror.update((s) => ({ ...s, phase: 'OVERVIEW', startTime: performance.now() }))
     return true
