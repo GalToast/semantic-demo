@@ -219,23 +219,48 @@ The earlier 2026-07-24 'laguna-s.2.1 / ling-3.0-flash' Avoid rows from today wer
 | opencode-zen/mimo-v2.5-free                            | AVOID / 500 across all 6 keys                                                    | STILL 500 today (14:02 UTC via /catalog recentFailures + worker ocw_5d48cb69 crash mid-task); seen as recently as the 'show all routes' check                                                                                                                | AVOID (unchanged)                                                                                                                              |
 | opencode-zen/nemotron-3-ultra-free                     | AVOID / Streaming response failed (cold-start 0-token, 2026-07-23 sweep L5 att2) | MIXED: today worker ocw_ac71331b (pid 7528) on same route produced ~25K useful tokens (8-TODO plan + 2 bash + reasoning content) over 14:21-14:34 UTC before going silent at 14:34 (pid died; cause unknown - possibly post-settle 'the' turn wedge pattern) | Conditional (cold-start flaky on some dispatches but real subagent output achievable)                                                          |
 
-## New Top-Tier Routes Verified — 2026-07-24 ~17:00 UTC post-campaign reprobe
+## Top-Tier Curl Smoke — 2026-07-24 ~17:00 UTC post-campaign reprobe (3 routes bench-dispatched at ~18:05 UTC — ALL FAILED bench, see [Bench-Validation Results](#bench-validation-results--2026-07-24-1805-utc) below)
 
-After the 5-lane campaign `semantic-explorer-pivot-2026-07-24` concluded, two NEW high-value free/shadow routes were verified via router-direct curl probes (not via worker dispatch yet):
+After the 5-lane campaign `semantic-explorer-pivot-2026-07-24` concluded, three NEW routes were verified via router-direct curl probes. These were then bench-dispatched around 18:05 UTC on 2026-07-24 — **all three failed bench** (see the [Bench-Validation Results](#bench-validation-results--2026-07-24-1805-utc) section below for both attempts' outcomes). The curl-era table is kept here for HTTP-layer inspection.
 
-| Route                                  | Smoke                     | Notes                                                                                                                              |
-| -------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `zenmux/z-ai/glm-4.6v-flash-free`      | ✅ 200 / 6.9 s / 162 tok  | Vision-capable GLM exposed via ZenMux free lane. Already captured by Lane B health sweep (200 / 5946 ms). Bench dispatch still needed. |
-| `cloudflare/@cf/moonshotai/kimi-k2.6`  | ✅ 200 / 3.18 s / 85 tok  | Cloudflare route works directly via workers-ai — does NOT require the `agree` warmup noted for sibling `@cf/meta/llama-3.2-11b-vision`. Faster TTFT than most opencode-zen routes today. Bench dispatch still needed. |
-| `modelscope/Tencent-Hunyuan/Hy3`        | ⚠️ 200 / empty body        | Enumerated in `/catalog` (canonical_id `Hy3`); route forwards the request but upstream returns `choices:null, usage.total_tokens:0`. Likely needs `reasoning:{effort:"max"}` extra-body. Bench dispatch must include reasoning config. |
+| Route                                 | Smoke                    | Notes                                                                                                                                                                                                                                  |
+| ------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `zenmux/z-ai/glm-4.6v-flash-free`     | ✅ 200 / 6.9 s / 162 tok | Vision-capable GLM exposed via ZenMux free lane. Already captured by Lane B health sweep (200 / 5946 ms). Bench dispatch still needed.                                                                                                 |
+| `cloudflare/@cf/moonshotai/kimi-k2.6` | ✅ 200 / 3.18 s / 85 tok | Cloudflare route works directly via workers-ai — does NOT require the `agree` warmup noted for sibling `@cf/meta/llama-3.2-11b-vision`. Faster TTFT than most opencode-zen routes today. Bench dispatch still needed.                  |
+| `modelscope/Tencent-Hunyuan/Hy3`      | ⚠️ 200 / empty body      | Enumerated in `/catalog` (canonical_id `Hy3`); route forwards the request but upstream returns `choices:null, usage.total_tokens:0`. Likely needs `reasoning:{effort:"max"}` extra-body. Bench dispatch must include reasoning config. |
 
-### Recommended next bench inclusions
-- `zenmux/z-ai/glm-4.6v-flash-free` — bench validate as a new top-tier free subagent route (vision-capable)
-- `cloudflare/@cf/moonshotai/kimi-k2.6` — bench validate; faster TTFT (3.18 s) than opencode-zen routes today — strong new candidate
-- `modelscope/Tencent-Hunyuan/Hy3` — bench validate with `reasoning:{effort:"max"}` extra-body configured (router recognizes the slug but returns nothing without it)
+### Recommended next bench inclusions — DONE 2026-07-24 ~18:05 UTC
+
+All three routes were bench-dispatched. **All three FAILED bench** — they are NOT usable as new ✅ Reliable routes. See the **Bench-Validation Results** section below for the full verdicts.
 
 ### Caveat
-Router-direct curl ≠ external_subagent dispatch validation. These are HTTP-layer smoke successes — subagent workers must be bench-launched on these routes before listing them in the `## Free / Shadow Routes` main table as ✅ Reliable.
+
+Router-direct curl ≠ external_subagent dispatch validation. These are HTTP-layer smoke successes — subagent workers must be bench-launched on these routes before listing them in the `## Free / Shadow Routes` main table as ✅ Reliable. **The bench-dispatches done at 18:05 UTC on 2026-07-24 demonstrated this caveat crisply: all 3 curl-passing routes failed dispatch (2 hallucination patterns + 1 streaming connection error).**
+
+## Bench-Validation Results — 2026-07-24 ~18:05 UTC
+
+Three routes that had passed the curl-era smoke above were dispatched as actual Pi subagent workers to bench-validate them (the only way to verify tool-call layer behavior, since curl cannot exercise the streaming + tool-schema path). All three FAILED.
+
+| Route                                 | Curl probe                | Worker dispatch outcome                                                                                                                                                                                                                | Bench verdict                                                                                                                                                |
+| ------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `zenmux/z-ai/glm-4.6v-flash-free`     | ✅ 200 / 6.9 s / 162 tok   | Worker completed cleanly (`exit 0`, 18,932 tokens, 16 bash + 6 read stream events) BUT emitted "REPORT.md" + "BENCH-VALIDATION-DONE" **purely as text** — `0 write` tool_calls.                                                          | ❌ **Hallucinated `write` tool** — same pattern as `north-mini-code-free` (Lane A bench, 2026-07-23). Read-only investigation ✅; edit/dispatch ❌.                       |
+| `cloudflare/@cf/moonshotai/kimi-k2.6` | ✅ 200 / 3.18 s / 85 tok   | **2 attempts** both errored with `stopReason:"error", errorMessage:"Connection error."` — **0 tokens emitted**. Pi's auto_retry (`maxAttempts:3, delayMs:2000`) fired both times but the bun external-subagents supervisor terminated the process tree before the retry could complete. | ❌ **Subagent dispatch unstable** — works for OpenAI-shape HTTP one-shot but NOT for streaming SDK adapter (`api:"openai-completions"` stream mode). 2-attempt reproducibility = persistent not transient. |
+| `modelscope/Tencent-Hunyuan/Hy3` (3 reasoning-config variants tested) | ⚠️ 200 / empty body       | Three reasoning config variants (`extra_body.reasoning.effort`, top-level `reasoning.effort`, top-level `reasoning_effort`) all returned **STATUS 200 with `choices:null, usage.total_tokens:0`** — slug is recognized but upstream emits nothing for OpenAI-shaped requests regardless of reasoning config. Router reports the variant accepts the slug but returns no content. | ❌ Needs ModelScope-specific request schema (not OpenAI-completions OpenAI-shape). Worker dispatch not yet attempted via subagent harness.                       |
+
+Full evidence + trace + analysis per route:
+
+- `tmp/bench-validate/zenmux-z-ai-glm-4.6v-flash-free/REPORT.md` (main-lane authored, worker failed to call `write`)
+- `tmp/bench-validate/cloudflare-kimi-k2.6/REPORT.md` (main-lane authored, both attempts `Connection error`)
+- `tmp/bench-validate/modelscope-hy3/REPORT.md` (TBD — modelscope emitted empty body for all 3 reasoning config variants via curl; subagent dispatch not yet attempted via worker harness; listed as a future bench slot to verify)
+
+### Lesson — curl smoke ≠ subagent readiness
+
+A route returning `200` from a one-shot curl probe (`POST /<provider>/v1/chat/completions` with a `messages` body, no streaming) only validates the HTTP-level response shape. The subagent dispatch layer (Pi's `api:openai-completions` adapter, streaming mode, with tool schema) exercises a DIFFERENT code path that can fail in two ways curl never sees:
+
+1. **`write` tool hallucination** (zenmux case) — model emits "I wrote REPORT.md" + "DONE" purely as **text** without ever calling the `write` tool. Same pattern as `north-mini-code-free` (Lane A, 2026-07-23).
+2. **Streaming `Connection error.`** (cloudflare case) — model route works for non-streaming HTTP, but emits `stopReason:"error", errorMessage:"Connection error."` consistently for streaming SDK calls. Even Pi's auto_retry can't recover because the bun supervisor terminates the tree on `agent_end` before the retry attempt dispatches.
+
+**Bench-validate = required to validate a new route.** This revises the curl-era "Top-Tier Routes Verified" section above: it was curl-only and pre-bench; all 3 of those routes have now been bench-dispatched and failed at the dispatch layer. The curl-era table still has value as an HTTP-shape inspection — but NOT as a subagent-readiness signal.
 
 ## Harness Updates — 2026-07-24 ~17:00 UTC
 
@@ -244,3 +269,52 @@ One harness change landed after Lane A's doc edits + Lane D2 postmortem:
 - **`C:/Users/HP/harness/servers/external-subagents/src/mmx.ts`** `FREE_OPENCODE_MODELS` allowlist: **REMOVED** `"nemotron-3-super-free"` — confirmed STALE (401 ModelError from OpenCode Zen upstream). The route was listed in `external_subagents_external_subagent_free_models` despite upstream rejections; all such launches were wasted dispatch budget.
 - `"nemotron-3-ultra-free"` **retained** in `FREE_OPENCODE_MODELS` (smoke passes; long-context stream-hang pattern is task-soft-delete per Lane D2 postmortem; workers may still opt-in for short tasks but should cap launch budget).
 - MCP server process may require restart for the change to take effect (bun caches the const array literal at startup).
+
+## Goose-hunt wave 2026-07-24 17:36Z — `agnes`-followup-unlock discovery + W4c false-positive audit
+
+Tactics retested: (a) `external_subagent_followup` on stalled-deep-work to recover the context + trigger only the write; (b) followup-retry of a stalled worker after a transient `Connection error.`; (c) honest source-trace audit of `agnes`'s W4c complex-reactivity findings.
+
+### Free goose: `agnes-2.0-flash` — refined verdict
+
+| Tactic                                          | Slice                               | Result                                                                                     | Notes                                                                                                                                                                              |
+| ----------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fresh dispatch (small slice)                    | W2c dangling lint vars              | ✅ completed → 12.7 KB report — **10/10** (main-lane cross-verified)                       | citation-grade evidence + extracting-commit cites; `agnes` reliably completes small/observable slices.                                                                             |
+| Followup-recover stalled                        | W4c Svelte-5 snapshot/gate footguns | ✅ completed in ~4 min from followup dispatch (118 new output tokens, $0) → 13.3 KB report | **GOOSE-UNLOCK MECHANISM WORKS** for stalled `agnes` deep-work: `external_subagent_followup({worker_id})` resumes via the recorded `session_id` and finishes only the write step. |
+| Followup-retry on transient `Connection error.` | W3c lifecycle                       | ✅ completed in ~2.3 min from re-dispatch → 9.6 KB report                                  | Re-followup on the same `worker_id` (same `session_id`) recovers from transient route blips fast. ⚠️ BUT the W3c resulting report's #1 finding was a fabricated false-positive (see 2nd caveat + ledger below).                                                                                  |
+
+**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: *"Reading it inside $derived registers reactivity directly — no mirror needed."*
+
+Report honest-stamped 4/10 + caution footer in `tmp/bugsweep-2026-07-24/worker4-reactivity-footguns-report.md`; do NOT action the 9 findings.
+
+**Second caveat (added 17:47Z): `agnes` ALSO fabricates evidence in audit-finding mode.** Its W3c lifecycle report claimed `rg "removeEventListener" src/lib/data-loader.ts` returned "zero matches for the worker" — but main-lane rg against HEAD `b5c3c39b` (file unmodified) returns THREE worker `removeEventListener` calls at lines 131-133 inside `settle()` plus `signal.removeEventListener` at 130, plus `worker.terminate()` at 134. The cited data-loader listener-leak finding is 0/1 real. Both families of false-positives (W4c reactive-inference + W3c audit-truthiness) confirm: `agnes` writes well-structured reports, BUT every per-finding claim of evidence MUST be main-lane source-traced before stamping — it can hallucinate rg output, not just abstract inference.
+
+→ **Recommended use for `agnes-2.0-flash`**: execution-bound slices — lint-var/cleanup tails, DOM-id enumeration, smoke audits, ref-name pattern sweeps, simple file:line mapping. **Avoid for Svelte-5-reactivity inference**; use a model that traces signals natively (or main-lane).
+
+### Paid goose: `nvidia/z-ai/glm-5.2` — refined verdict
+
+| Tactic                       | Slice               | Result                                                                                                                                                                                                                                                                                                                        |
+| ---------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fresh dispatch (large slice) | G1 z-index/DOM      | ❌ stalled pre-write (92 MB stdout, no report file). Connects reliably during outage (no rate-limit) + deep thinking (caught a real a11y focus-in-aria-hidden violation in thinking), but stalls at the WRITE step on large slices.                                                                                           |
+| Followup-recover stalled     | same G1 `worker_id` | ❌ stalled pre-write AGAIN — even with explicit "writing the report now" instruction, `agent_settled` exit0 stop_reason `stop` with `tool_calls:[]` + 0 output. `glm-5.2` *says* it's writing but does NOT emit the `write` tool call. The followup-unlock that rescues `agnes` does NOT rescue `glm-5.2` for the write step. |
+
+→ **`glm-5.2` = paid connect-goose**: reliable transport + good a11y thinking, but **unreliable for substantive deliverables on large slices** (fails the WRITE step; followup can't recover it). Use for slice investigation; host the deliverable-write on main-lane from the bounded stream-summary dump, OR spawn an `agnes-2.0-flash` followup to make the WRITE on the discovered findings.
+
+### Cross-cutting goose-hunt tactics unlocked today
+
+1. **`external_subagent_followup({worker_id})` (inherited `session_id`)** is the universal unlock for stalled `agnes` deep-work — finishes only the write step in minutes (~2–4 min, ~100 new tokens, $0). Rescues both LSP-wedge stalls and pre-write-step stalls on the `agnes` lane.
+2. **Provider outage does not block the goose-hunt**: independent upstreams (e.g. `agnes`'s `pi:router-agnes`) keep working through `opencode-zen` / `nvidia` / `kilo` / `openrouter` downtimes — use route-independence as a meta-cue; geese surviving an outage are stronger picks.
+3. **Parallel-session churn-mid-audit risk**: on a shared machine with an in-flight bugsweep-fix wave, workers read half-applied trees. The parallel session here committed `b5c3c39b` ("close AbortSignal dedup race + startDemo guard lock") and was actively extending `app.svelte.ts`/`search/*`/`state/*` during worker audits (one `glm-5.2` worker literally watched `css/base.css` change between two reads). My read-only workers left **0 src edits + 0 git commits** (verified). For worker findings on churned files, mark NEEDS-RE-VERIFICATION against stable HEAD before actioning.
+
+### Updated rating perspective — 2026-07-24 outage-day (revised)
+
+- `agnes-2.0-flash`: **✅ Reliable for execution-bound slices** + ⚠️ avoid for complex-reactive inference; followup-rescues stalled perimeter work.
+- `nvidia/z-ai/glm-5.2`: **⚠️ Conditional** — reliable connect+think, but does NOT emit writes on large slices & followup doesn't recover; pair with a writer model or rest big slices.
+
+### Deliverable ledger — worker reports written today (2026-07-24 17:36Z)
+
+| Worker                          | Slice                      | Bytes | ~UTC  | Q                    | Action                                                                                                                                                                 |
+| ------------------------------- | -------------------------- | ----- | ----- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W2c `agnes` (fresh)             | dangling lint vars         | 12674 | 16:48 | **10/10** ✅         | None — all 5 verified HARMLESS, main-lane cross-validate footer added.                                                                                                 |
+| W4c `agnes` (followup)          | Svelte-5 snapshot footguns | 15585 | 17:31 | 4/10 — premise WRONG | Skip — 9/9 findings false-positive; honest-stamp footer + decisive-trace footer added.                                                                                 |
+| W3c `agnes` (followup-retry)    | lifecycle                  | 9553  | 17:33 | **4/10 — #1 fabricates evidence** | Skip — #1 false-positive (`settle()` removes all worker listeners at lines 131-133 + `worker.terminate()` at 134); footer added to report file.                                                                                                                                                 |
+| G1 `glm-5.2` (fresh + followup) | z-index/DOM (→ a11y)       | 0     | n/a   | ❌ no report written | Possibly abandon; `glm-5.2` stalls pre-write on large slices even with followup. Retrievable insights in the 86 MB stdout (a11y focus-in-aria-hidden violation found). |
