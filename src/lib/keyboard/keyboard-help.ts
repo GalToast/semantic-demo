@@ -288,6 +288,12 @@ export function initKeyboardShortcutsHint(): void {
     closeBtn.addEventListener('click', closePanel)
 
     function openPanel(returnFocusEl?: HTMLElement | null): void {
+        // Re-attach panel if a prior closePanel() removed it from the DOM.
+        // closePanel() calls panel.remove() to prevent the panel + its
+        // listener closure from leaking as a dead subtree across re-mount
+        // cycles; this re-append completes the cycle so the help button
+        // can re-open the panel indefinitely.
+        if (!document.body.contains(panel)) document.body.appendChild(panel)
         if (panel._autoDismissTimer) {
             clearTimeout(panel._autoDismissTimer)
             panel._autoDismissTimer = null
