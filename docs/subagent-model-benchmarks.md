@@ -218,3 +218,29 @@ The earlier 2026-07-24 'laguna-s.2.1 / ling-3.0-flash' Avoid rows from today wer
 | kilo/inclusionai/ling-3.0-flash:free (upstream Novita) | AVOID / Connection error                                                         | curl 200+SMOKE_PASS direct output (1.70 s, no reasoning warmup)                                                                                                                                                                                              | Reliable for short bash-y subagent work - fastest reliable ling route today                                                                    |
 | opencode-zen/mimo-v2.5-free                            | AVOID / 500 across all 6 keys                                                    | STILL 500 today (14:02 UTC via /catalog recentFailures + worker ocw_5d48cb69 crash mid-task); seen as recently as the 'show all routes' check                                                                                                                | AVOID (unchanged)                                                                                                                              |
 | opencode-zen/nemotron-3-ultra-free                     | AVOID / Streaming response failed (cold-start 0-token, 2026-07-23 sweep L5 att2) | MIXED: today worker ocw_ac71331b (pid 7528) on same route produced ~25K useful tokens (8-TODO plan + 2 bash + reasoning content) over 14:21-14:34 UTC before going silent at 14:34 (pid died; cause unknown - possibly post-settle 'the' turn wedge pattern) | Conditional (cold-start flaky on some dispatches but real subagent output achievable)                                                          |
+
+## New Top-Tier Routes Verified — 2026-07-24 ~17:00 UTC post-campaign reprobe
+
+After the 5-lane campaign `semantic-explorer-pivot-2026-07-24` concluded, two NEW high-value free/shadow routes were verified via router-direct curl probes (not via worker dispatch yet):
+
+| Route                                  | Smoke                     | Notes                                                                                                                              |
+| -------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `zenmux/z-ai/glm-4.6v-flash-free`      | ✅ 200 / 6.9 s / 162 tok  | Vision-capable GLM exposed via ZenMux free lane. Already captured by Lane B health sweep (200 / 5946 ms). Bench dispatch still needed. |
+| `cloudflare/@cf/moonshotai/kimi-k2.6`  | ✅ 200 / 3.18 s / 85 tok  | Cloudflare route works directly via workers-ai — does NOT require the `agree` warmup noted for sibling `@cf/meta/llama-3.2-11b-vision`. Faster TTFT than most opencode-zen routes today. Bench dispatch still needed. |
+| `modelscope/Tencent-Hunyuan/Hy3`        | ⚠️ 200 / empty body        | Enumerated in `/catalog` (canonical_id `Hy3`); route forwards the request but upstream returns `choices:null, usage.total_tokens:0`. Likely needs `reasoning:{effort:"max"}` extra-body. Bench dispatch must include reasoning config. |
+
+### Recommended next bench inclusions
+- `zenmux/z-ai/glm-4.6v-flash-free` — bench validate as a new top-tier free subagent route (vision-capable)
+- `cloudflare/@cf/moonshotai/kimi-k2.6` — bench validate; faster TTFT (3.18 s) than opencode-zen routes today — strong new candidate
+- `modelscope/Tencent-Hunyuan/Hy3` — bench validate with `reasoning:{effort:"max"}` extra-body configured (router recognizes the slug but returns nothing without it)
+
+### Caveat
+Router-direct curl ≠ external_subagent dispatch validation. These are HTTP-layer smoke successes — subagent workers must be bench-launched on these routes before listing them in the `## Free / Shadow Routes` main table as ✅ Reliable.
+
+## Harness Updates — 2026-07-24 ~17:00 UTC
+
+One harness change landed after Lane A's doc edits + Lane D2 postmortem:
+
+- **`C:/Users/HP/harness/servers/external-subagents/src/mmx.ts`** `FREE_OPENCODE_MODELS` allowlist: **REMOVED** `"nemotron-3-super-free"` — confirmed STALE (401 ModelError from OpenCode Zen upstream). The route was listed in `external_subagents_external_subagent_free_models` despite upstream rejections; all such launches were wasted dispatch budget.
+- `"nemotron-3-ultra-free"` **retained** in `FREE_OPENCODE_MODELS` (smoke passes; long-context stream-hang pattern is task-soft-delete per Lane D2 postmortem; workers may still opt-in for short tasks but should cap launch budget).
+- MCP server process may require restart for the change to take effect (bun caches the const array literal at startup).
