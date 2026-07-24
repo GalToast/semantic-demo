@@ -73,6 +73,9 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         const isFormField =
             tag === 'input' || tag === 'textarea' || tag === 'select' || target?.isContentEditable === true
 
+        // Guard against IME composition keystrokes corrupting the composed text.
+        if (e.isComposing) return
+
         // Ctrl/Cmd+1-6: mode switching (A2-4). Fires before all other
         // handlers so shortcuts are never masked by component-level
         // listeners that also handle keydown.

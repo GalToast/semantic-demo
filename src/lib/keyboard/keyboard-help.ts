@@ -257,6 +257,9 @@ export function initKeyboardShortcutsHint(): void {
             _previouslyFocused = null
         }
         document.removeEventListener('keydown', _onPanelKeydown)
+        if (panel.parentNode) {
+            panel.remove()
+        }
     }
 
     function _onPanelKeydown(e: KeyboardEvent): void {
