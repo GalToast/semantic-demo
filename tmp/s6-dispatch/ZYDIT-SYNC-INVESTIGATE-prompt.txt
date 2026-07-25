@@ -1,0 +1,101 @@
+# Sprint-6 ZYDIT-SYNC-INVESTIGATE — Diagnose why zydit is missing from Pi CLI model registry
+
+You are a ZYDIT-SYNC-INVESTIGATE worker. The key-router catalog HAS /zydit/v1
+and /zydit/v4 routes (2 keys each, /zydit/v4 has recentFailures: [] healthy).
+But the Pi CLI model registry cannot resolve any `router-zydit/<model>` IDs.
+
+This means there's a gate in the `pi-model-providers` sync script that drops
+zydit routes. A backup file `bak-2026-07-15-zydit-effort-lane-fix` suggests
+prior zydit work. Your job: investigate why zydit routes are dropped.
+
+## Files
+
+- TARGET: `C:/Users/HP/.pi/agent/local-packages/pi-model-providers/index.ts`
+  (47KB) — transforms router catalog (sys output of `pi models`) into Pi CLI's
+  model ID list. Has backup suggesting prior zydit work.
+- BACKUP (may help reference prior fix attempts): same dir,
+  filename contains `bak-2026-07-15-zydit-effort-lane-fix`
+- Truth reference: `curl http://127.0.0.1:8788/health` shows `/zydit/v1` and
+  `/zydit/v4` routes exist with 2 keys each (the router catalog).
+
+## Investigation methodology
+
+Use `rg` (ripgrep) and `read` to find every line in `index.ts` that filters,
+keeps, drops, or otherwise transforms carrier-route IDs. Specifically search
+for:
+
+1. **Route-id allowlist / denylist**: any code path that has an explicit list
+   of allowed or forbidden provider keys (e.g., `nvidia`, `openrouter`, etc.)
+   — does zydit appear? Is it excluded?
+2. **`/v4` exclusion**: zydit has `/zydit/v4` (different version path than
+   other routes which use `/v1`). Look for version-path filters that drop
+   non-`/v1` routes.
+3. **Catalog fetch filter**: when the sync fetches the upstream catalog (e.g.,
+   GET `/zydit/v1/models`), it may filter available models. Look for any
+   upstream-side filter that drops zydit's response entirely.
+4. **Provider-name mapping**: look for a mapping table from router provider
+   keys to Pi CLI model prefixes. Zydit may need explicit registration.
+5. **Recent failure handling**: zydit/v4 had recent 401 errors earlier today.
+   If the sync runs fail-soft on broken upstream, zydit may be temporarily
+   dropped. If sync fails on `recentFailures`, it'd drop the route entirely.
+6. **Zydit disk-loadable**: does `curl http://127.0.0.1:8788/zydit/v1/models`
+   (which the sync may run) return a non-empty list? Or does it return an
+   error that the sync then skips?
+
+## Verification commands
+
+Run these:
+
+```bash
+ls -la C:/Users/HP/.pi/agent/local-packages/pi-model-providers/
+# shows backup files in local-packages
+
+rg -n "zydit|/v4|providerKey|carrier|provider name|denylist|allowlist" \
+  C:/Users/HP/.pi/agent/local-packages/pi-model-providers/index.ts | head -30
+
+# Probe upstream catalog directly:
+curl -s http://127.0.0.1:8788/zydit/v1/models -H "Authorization: Bearer sk-default" 2>&1 | head -50
+curl -s http://127.0.0.1:8788/zydit/v4/models -H "Authorization: Bearer sk-default" 2>&1 | head -50
+
+# Probe Pi CLI's registered models for zydit entries:
+# (you can grep pi's known-models dump OR run a pi ls-models command if available)
+```
+
+## Output
+
+Write your report to:
+`C:/Users/HP/repos/semantic-explorer/tmp/s6-dispatch/zydit-sync-investigate-report.md`
+
+Format:
+
+## Investigation findings
+
+- **Step 1: route-id allowlist presence** — found/not found, excerpts
+- **Step 2: /v4 filter** — found/not found, excerpts
+- **Step 3: zydit catalog response** — what `/zydit/v1/models` returned
+- **Step 4: provider-name mapping** — confirm zydit in/out
+- **Step 5: recent failure handling** — does sync skip broken providers?
+- **Step 6: zydit-specific filter** — found/not found
+
+## Root cause hypothesis
+
+[One or more root-cause candidates with file:line citations]
+
+## Recommended fix specs
+
+[Concrete fix suggestions — what code to add/remove in index.ts, OR a config
+flag, OR a runtime override. List at least 2 fix approaches with pros/cons]
+
+## Constraints
+
+- READ-ONLY. DO NOT edit `index.ts` (VITAL infrastructure — belongs to Pi
+  harness; another session may be working on this file in parallel).
+- DO NOT kill processes.
+- DO NOT touch router source code.
+- Final report under 80 lines (use focused, file:line-referenced format).
+
+End with "ZYDIT-SYNC-INVESTIGATE WORKER — FINAL REPORT" summary:
+- Probability estimate (HIGH/MEDIUM/LOW) for each root-cause candidate
+- Easiest-to-land fix recommendation (one line)
+- Time taken
+- Cost: agnes-2.0-flash = $0

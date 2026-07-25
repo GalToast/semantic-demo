@@ -1,0 +1,185 @@
+[
+  {
+    "modelId": "agnes-2.0-flash",
+    "routeId": "agnes",
+    "carrierType": "auto",
+    "contextWindowLimit": 128000,
+    "qualityPerCapability": {
+      "vision": 0,
+      "toolUse": 1,
+      "code": 2,
+      "default": 2
+    },
+    "streamingSmooth": true,
+    "toolExecutionReliability": "HIGH",
+    "routingTier": "T0",
+    "canVision": false,
+    "canToolUse": true,
+    "canCode": true,
+    "longContext": true,
+    "streamingSafe": true,
+    "qualified": "agnes-2.0-flash",
+    "status": "GOLDEN_GOOSE_#1"
+  },
+  {
+    "modelId": "north-mini-code:free",
+    "routeId": "openrouter",
+    "carrierType": "openrouter",
+    "contextWindowLimit": 128000,
+    "qualityPerCapability": {
+      "vision": 0,
+      "toolUse": 1,
+      "code": 2,
+      "default": 2
+    },
+    "streamingSmooth": true,
+    "toolExecutionReliability": "HIGH",
+    "routingTier": "T0",
+    "canVision": false,
+    "canToolUse": true,
+    "canCode": true,
+    "longContext": true,
+    "streamingSafe": true,
+    "qualified": "cohere/north-mini-code:free",
+    "status": "GOLDEN_GOOSE_#2_FASTEST"
+  },
+  {
+    "modelId": "minimax-m3",
+    "routeId": "nvidia",
+    "carrierType": "nvidia",
+    "contextWindowLimit": 128000,
+    "qualityPerCapability": {
+      "vision": 1,
+      "toolUse": 1,
+      "code": 2,
+      "default": 2
+    },
+    "streamingSmooth": true,
+    "toolExecutionReliability": "HIGH",
+    "routingTier": "T0",
+    "canVision": true,
+    "canToolUse": true,
+    "canCode": true,
+    "longContext": true,
+    "streamingSafe": true,
+    "qualified": "minimaxai/minimax-m3",
+    "status": "FREE_WITH_REASONING_AND_CONTENT"
+  },
+  {
+    "modelId": "kilo-step-3.7-flash:free",
+    "routeId": "kilo",
+    "carrierType": "kilo",
+    "contextWindowLimit": 128000,
+    "qualityPerCapability": {
+      "vision": 0,
+      "toolUse": 1,
+      "code": 2,
+      "default": 2
+    },
+    "streamingSmooth": true,
+    "toolExecutionReliability": "MEDIUM",
+    "routingTier": "CONDITIONAL",
+    "canVision": false,
+    "canToolUse": true,
+    "canCode": true,
+    "longContext": true,
+    "streamingSafe": true,
+    "qualified": "stepfun/step-3.7-flash:free",
+    "status": "CONDITIONAL_LENGTH_LIMITED",
+    "failMode": "content_truncated"
+  },
+  {
+    "modelId": "cloudflare",
+    "routeId": "cloudflare",
+    "carrierType": "cloudflare",
+    "contextWindowLimit": 128000,
+    "qualityPerCapability": {
+      "vision": 0,
+      "toolUse": 1,
+      "code": 2,
+      "default": 2
+    },
+    "streamingSmooth": true,
+    "toolExecutionReliability": "MEDIUM",
+    "routingTier": "CONDITIONAL",
+    "canVision": false,
+    "canToolUse": true,
+    "canCode": true,
+    "longContext": true,
+    "streamingSafe": true,
+    "status": "CONDITIONAL",
+    "failMode": "partial_compatibility"
+  },
+  {
+    "modelId": "nvidia-minimax-m3",
+    "routeId": "nvidia",
+    "carrierType": "nvidia",
+    "contextWindowLimit": 128000,
+    "qualityPerCapability": {
+      "vision": 0,
+      "toolUse": 1,
+      "code": 2,
+      "default": 2
+    },
+    "streamingSmooth": true,
+    "toolExecutionReliability": "MEDIUM",
+    "routingTier": "CONDITIONAL",
+    "canVision": false,
+    "canToolUse": true,
+    "canCode": true,
+    "longContext": true,
+    "streamingSafe": true,
+    "qualified": "minimaxai/minimax-m3",
+    "status": "CONDITIONAL_SLOW_THROUGHPUT",
+    "failMode": "slow_throughput"
+  },
+  {
+    "modelId": "opencode-zen",
+    "routeId": "opencode-zen",
+    "carrierType": "opencode-zen",
+    "contextWindowLimit": 128000,
+    "qualityPerCapability": {
+      "vision": 0,
+      "toolUse": 1,
+      "code": 2,
+      "default": 2
+    },
+    "streamingSmooth": true,
+    "toolExecutionReliability": "MEDIUM",
+    "routingTier": "CONDITIONAL",
+    "canVision": false,
+    "canToolUse": true,
+    "canCode": true,
+    "longContext": true,
+    "streamingSafe": true,
+    "status": "CONDITIONAL_RATE_LIMITED",
+    "failMode": "rate_limited"
+  },
+  {
+    "modelId": "logfare-kimi-k2.6",
+    "routeId": "logfare",
+    "carrierType": "logfare",
+    "contextWindowLimit": 128000,
+    "qualityPerCapability": {
+      "vision": 0,
+      "toolUse": 1,
+      "code": 2,
+      "default": 2
+    },
+    "streamingSmooth": true,
+    "toolExecutionReliability": "MEDIUM",
+    "routingTier": "SEASONAL",
+    "canVision": false,
+    "canToolUse": true,
+    "canCode": true,
+    "longContext": true,
+    "streamingSafe": true,
+    "qualified": "kimi-k2.6",
+    "status": "SEASONAL_HEALTHY",
+    "seasonalStatus": {
+      "golden": "2026-07-24",
+      "cold": "2026-07-25",
+      "note": "Golden-proven in W47 session but not re-verified on 7/25 sprint-4/5 probe. Carrier-golden-ness appears session-specific rather than stable. Flux-state pending re-verification."
+    }
+  }
+]

@@ -1,0 +1,105 @@
+# Sprint-6 W5: PHASE-5C-OVERLAY-HEADER-PATCH — Preserve v2Result.headers on overlay failure
+
+You are a PHASE-5C-OVERLAY-HEADER-PATCH worker. There's a known gap in the
+P5B integration: when `v2FailoverDispatch` returns `{success:false, headers:{
+X-Router-Diagnostic:...}}`, the key-router's V2 block DIscards v2Result.headers
+because the success-path check (`if (v2Result.success)`) fails — and falls
+through to V1 tryFailover (which doesn't include diagnostic headers). This
+means overlay-failure-mode diagnostic info is LOST in HTTP responses.
+
+Your job: patch the 2 V2 overlay integration sites in
+`C:/Users/HP/harness/servers/key-router/src/opencode-key-router.mjs`
+to PRESERVE v2Result.headers even when `v2Result.success === false`.
+
+## File
+
+- PATCH: `C:/Users/HP/harness/servers/key-router/src/opencode-key-router.mjs`
+- BACKUP FIRST: save the current file to
+  `C:/Users/HP/harness/servers/key-router/src/opencode-key-router.mjs.bak-pre-p5c-2026-07-25`
+  BEFORE editing.
+
+## Sites to patch
+
+Two V2 overlay blocks (one site A at line ~3527, one site B at line ~4138).
+Each currently has this pattern:
+
+```javascript
+if (v2Flag === '1') {
+  try {
+    const v2Module = await import('./v2-failover-overlay.mjs');
+    // ... matrix setup ...
+    const v2Result = await v2Module.v2FailoverDispatch({ ... }, { ... });
+    if (v2Result && v2Result.success) {
+      res.writeHead(v2Result.status || 200, v2Result.headers || {});
+      res.end(v2Result.body || '');
+      return true;
+    }
+    // else fall through to V1 tryFailover  <-- v2Result.headers DISCARDED HERE
+  } catch (v2Err) {
+    console.error('[V2-overlay] dispatch failed:', v2Err && v2Err.message);
+  }
+}
+```
+
+## Patch strategy
+
+Inject a `v2ResultHeaders` variable BEFORE the `try` block, set it inside
+on `v2Result` return, and write those headers to the response when the
+flow ends up at the bottom-of-function error response.
+
+Minimal-diff approach (do ONE of these, not both):
+**Option 1 (smaller diff)**: When v2Result.success is false but v2Result.headers
+is non-empty, append them to a per-request `v2FallbackHeaders` object that the
+bottom-of-function error response writes via `res.writeHead(status, {
+...defaultHeaders, ...v2FallbackHeaders})` BEFORE `res.end(errorBodyJSON)`.
+**Option 2 (more local)**: After the V1 tryFailover also fails, in the
+bottom-of-function error response construction, attach v2Result.headers if
+they exist.
+
+Either is fine. PREFER Option 1 for continuity with the existing style.
+
+## Implementation steps
+
+1. Read `C:/Users/HP/harness/servers/key-router/src/opencode-key-router.mjs`
+   lines 3500-3580 (site A) + 4120-4200 (site B). Confirm the structure.
+2. Save a backup copy:
+   `cp opencode-key-router.mjs opencode-key-router.mjs.bak-pre-p5c-2026-07-25`
+3. Use `edit` tool with minimal-diff edits to add the preserve-headers logic
+   at both sites. Keep edits small (~3-5 lines per site).
+4. Run `node --check C:/Users/HP/harness/servers/key-router/src/opencode-key-router.mjs`
+   and confirm exit 0.
+5. Run `bun build C:/Users/HP/harness/servers/key-router/src/opencode-key-router.mjs --outdir /tmp/p5c-check` (or similar) — confirm no errors.
+
+## Strict constraints
+
+- ONLY edit opencode-key-router.mjs. Touch NO OTHER FILES.
+- Do not kill any processes. Do NOT restart key-router (main-lane does
+  that).
+- After patching, do NOT commit anything (main-lane stages + commits at
+  its convenience with strict selective-staging discipline).
+- Save backup BEFORE patching.
+- Run `node --check` after patching. If it fails, REVERT to backup
+  (`cp opencode-key-router.mjs.bak-pre-p5c-2026-07-25 opencode-key-router.mjs`)
+  and report FAIL.
+
+## Output
+
+Write your final report to:
+`C:/Users/HP/repos/semantic-explorer/tmp/s6-dispatch/p5c-overlay-header-patch-report.md`
+
+Format:
+- Backup created at: opencode-key-router.mjs.bak-pre-p5c-2026-07-25
+- Sites patched: A (line ~XXXX) + B (line ~XXXX)
+- Patch approach: Option 1 / 2 (whichever used)
+- Lines added: 3-5 per site
+- node --check exit code: 0
+- bun build exit code: 0
+- Diffstat: net +X lines
+- Restoration status: not restored (patch held) / reverted due to syntax error
+
+End with "PHASE-5C-OVERLAY-HEADER-PATCH WORKER — FINAL REPORT":
+- PATCH LANDED: ✓/✗
+- Backup file: opencode-key-router.mjs.bak-pre-p5c-2026-07-25
+- (note: main-lane will restart key-router after this point to pick up patch
+  and run live verification)
+- Time taken / Cost: agnes-2.0-flash = $0

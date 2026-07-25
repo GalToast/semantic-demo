@@ -1,0 +1,64 @@
+# Sprint-6 TIER-MATRIX-DEEP-VERIFY — Validate tmp/model-tier-matrix.json structure
+
+You are a TIER-MATRIX-DEEP-VERIFY worker. The TIER-MATRIX-UPDATE worker
+claimed to write a 19-entry matrix (3 T0 golden + 11 WARM_CADAVER + 4
+CONDITIONAL + 1 SEASONAL) to `tmp/model-tier-matrix.json` (215KB).
+
+Your job: deep-validate the actual file structure. Verify the 19 entries exist,
+are distributed across the claimed classes, and the `_meta` field is correctly
+populated.
+
+## Files
+
+- SOURCE: `C:/Users/HP/repos/semantic-explorer/tmp/model-tier-matrix.json` (215659B)
+
+## Verification tasks
+
+Use `Node` (or `ctx_execute language: javascript`) for JSON parsing — this is
+JSON-heavy work where parsing/inspection matters:
+
+1. **JSON validity**: parse without errors
+2. **Top-level keys**: confirm exact key names (`generatedAt`, `snapshot`,
+   `families`, `reverse`, `unknown`, `_meta` — these were visible earlier)
+3. **Entry count**: count entries across all top-level arrays/objects.
+   The worker claimed 19 total distributed as 3+11+4+1. Account for each.
+4. **T0 entries**: identify which 3 entries are T0 golden
+   (claim: agnes-2.0-flash, openrouter/north-mini-code:free, nvidia/minimax-m3).
+   Confirm `routingTier === 'T0'` is set on each.
+5. **WARM_CADAVER entries**: identify the 11.
+6. **CONDITIONAL entries**: identify the 4.
+7. **SEASONAL entries**: identify the 1 (logfare-kimi-k2.6).
+8. **`_meta` field**: confirm `_meta.updated === '2026-07-25'`,
+   `_meta.generatedBy === 'TIER-MATRIX-UPDATE worker on agnes-2.0-flash'`,
+   and inspect `_meta.sourceReports` + `_meta.routesProbed` fields.
+9. **Likely missing field note**: the matrix may require `qualityPerCapability`
+   per entry (vision, toolUse, code, default axis scores) per the V2 spec.
+   Report whether each entry has this field or not.
+10. **Empty-field count**: count entries missing any one of (modelId, routeId,
+    capability, routingTier, qualityScores). Report.
+
+## Output
+
+Write your report to:
+`C:/Users/HP/repos/semantic-explorer/tmp/s6-dispatch/tier-matrix-deep-verify-report.md`
+
+Format:
+- File: `tmp/model-tier-matrix.json` (215659B)
+- JSON validity: ✓/✗
+- Top-level keys (count): N
+- Entries by tier (T0/WARM/COND/SEASONAL): 3/11/4/1 ✓/✗
+- List of T0 entries (modelId, routeId)
+- List of WARM_CADAVER entries (modelId, routeId, fail-mode)
+- ... etc
+- `_meta` field schema summary
+- Missing fields per entry (count + types missing)
+- Verification outcome: PASS / PASS-WITH-CAVEATS / FAIL
+
+## Constraints
+
+- READ-ONLY. DO NOT edit `tmp/model-tier-matrix.json`.
+- DO NOT touch any other source file.
+- DO NOT batch commands — work via Node scripts or simple bash.
+- Final report under 30 lines (use tabular format).
+
+End with "TIER-MATRIX-DEEP-VERIFY WORKER — FINAL REPORT" summary.

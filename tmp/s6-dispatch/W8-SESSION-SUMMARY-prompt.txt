@@ -1,0 +1,199 @@
+# Sprint-6 W8: SESSION-SUMMARY-REPORT — Final session summary covering Sprint-1 through Sprint-6
+
+You are a SESSION-SUMMARY-REPORT worker. Write a comprehensive
+session-summary report covering everything delivered in this V2-failover
+session (Sprint-1 through Sprint-6 work).
+
+## Files
+
+- READ-MANY:
+  - `docs/v2-failover/spec.md` (canonical V2 spec, 205 lines, gap #11 + 7 new shapes)
+  - `docs/v2-failover/cross-model-review.md` (CR3 review, 436 lines)
+  - `docs/v2-failover/scout-report-2026-07-25.md` (golden-goose scout report)
+  - `docs/v2-failover/sprint-3-fixed/` (4 fixed TS files)
+  - `docs/v2-failover/integration/v2-failover-overlay.mjs` (45591B/1245L)
+  - `docs/v2-failover/integration/v2-integration-report-2026-07-25.md`
+  - `docs/subagent-model-benchmarks.md` (updated bench doc, 768 lines)
+  - `tmp/model-tier-matrix.json` (215KB / 19 entries)
+  - `tmp/spec-failover-v2.md` (worker's spec update)
+  - `tmp/v2-sprint3-fx/polish/item3-diff-audit.md` (+497/-292 diff audit)
+  - `tmp/v2-sprint3-fx/polish/p5b-integration-patch-report.md`
+  - `tmp/v2-sprint3-fx/polish/p5b-live-activation.jsonl` (live smoke results)
+  - `tmp/v2-adversarial/server.mjs`, `test-driver.mjs`, `shapes-table.mjs`
+  - `tmp/v2-sprint1/*.ts`, `tmp/v2-sprint2/*.ts`, `tmp/v2-sprint3/*.ts`
+  - git log summary via `git log --oneline | head -10`
+
+- WRITE:
+  - `tmp/s6-dispatch/session-summary-2026-07-25.md` (final summary report)
+
+## Required structure
+
+```
+# V2 Failover Session Summary (2026-07-25)
+
+## Executive summary
+- One-paragraph "what we set out to do, what got delivered, what's the state".
+
+## Original goal
+- 3-axis failover V2 design + impl + golden-goose + cross-model review +
+  hardened retry.
+
+## Sprints executed (with file counts + line totals)
+
+### Sprint 1: matrix type declarations + skeleton
+- ~812 lines across 6 TS files (RouterMatrixEntry, dispatchFailover,
+  circuit-breaker two-realm, telemetry-jsonl, error-shape sniffer scaffold).
+- Files: tmp/v2-sprint1/*.ts, tmp/v2-sprint2/*.ts, tmp/v2-sprint3/*.ts.
+
+### Sprint 2/3: descent logic, full sniffer, telemetry headers, key_affinity
+- ~894 lines across 5 SA workers (SA1-SA4 + many helpers).
+- Files: tmp/v2-sprint3/{key-affinity-map.ts, x-router-diagnostic.ts,
+  stream-quality-meter.ts, carrier-matchers-extended.ts}.
+
+### Cross-model review (CR3): agnes-2.0-flash wrote cross-model-review.md
+- 436 lines, real bugs identified in types.ts, breaker-registry.ts,
+  carrier-error-sniffer.ts, telemetry-jsonl.ts, headers.ts,
+  ascent-ladder.ts, per-key-acquire.ts.
+
+### Phase-4 adversarial test harness: ALL 7 PASS
+- Files: tmp/v2-adversarial/{server.mjs, shapes-table.mjs, test-driver.mjs}.
+- Mock server injects 404/422/402/garbage/broken-key shapes.
+
+### Sprint-4 fix-wave: 6/6 fixes landed + audited
+- FIX-A2 types-fixed.ts: Object.freeze factory + ForceModelValue
+- FIX-B breaker-registry-fixed.ts: sync tryAcquire + double-release guard
+- FIX-C2 carrier-error-sniffer-fixed.ts: SniffedShapeClass + sci-notation
+- FIX-D telemetry-jsonl-fixed.ts: OUTPUT_PATH fixed, attempted_chains
+- SCOUT-E: golden-goose report agnes-2.0-flash + north-mini-code + minimax-m3
+- FIX-INT3 v2-failover-overlay.mjs: 1245 lines, 3 exports, all checks pass
+- Aggregate cost ~$0.0141 (logfare-only); agnes-2.0-flash = $0.
+
+### Sprint-5 spec + integration: spec gap #11 + Phase-5B activation
+- SPEC-UPDATE worker: 7 new shape entries appended to tmp/spec-failover-v2.md
+- SPEC-MERGE worker: merged 7 shapes into canonical spec.md (205 lines)
+- P5B-INTEGRATION worker: V2 dispatch block wired at lines 3527 + 4138
+- TIER-MATRIX-UPDATE worker: 19 entries (3 T0 + 11 WARM + 4 COND + 1 SEAS)
+- BENCH-DOCS-UPDATE worker: bench docs updated with Sprint-4/5 results
+- Key-router restarted (PID 14408), V2 overlay live on opt-in header
+
+### Sprint-6 investigations + final proof (in flight at this report's time)
+- TIER-MATRIX-VERIFY (worker ocw_d2602d70) — deep validation of matrix
+- ZYDIT-SYNC-INVESTIGATE (worker ocw_423eb0e3) — root-cause analysis
+- TIER-MATRIX-MERGE, PHASE-5B-SUCCESS-PATH, PHASE-5C-PATCH,
+  ADVERSARIAL-RE-RUN, BENCH-LOG-APPEND, SESSION-SUMMARY
+  (this report)
+
+## V2 failover design (two-axis)
+
+Two axes:
+1. Horizontal = same model, switch CARRIER (kimi-k2.6 on logfare/kilo/nvidia/etc.)
+   when logfare 502s — quality band preserved.
+2. Vertical = next model DOWN the tier ladder per capability
+   (vision-capable → next-vision-capable).
+
+Don'ts:
+- Router never UP-levels (only descends)
+- Passive re-elevation on retries
+- Breaker for perf only, NOT cross-tier promotion
+- Quality bands cross-family (descend to equivalent-quality cross-family)
+
+## Golden-goose lattice (locked 2026-07-25)
+
+### T0 (golden — CONTENT + LOW LATENCY + $0)
+1. agnes / agnes-2.0-flash — ~5165ms, ag-2.0 content
+2. openrouter / cohere/north-mini-code:free — ~1204ms (FASTEST)
+3. nvidia / minimaxai/minimax-m3 — ~13.8s reasoning-rich
+
+### WARM_CADAVER (dead-on-touch 2026-07-25)
+- zydit (119 catalog but 404 on dispatch — catalog dishonesty)
+- zydit-v4 (401 unauth after 401s)
+- neuralwatt / llm7 (402 insufficient_credits)
+- openprovider (502 fetch failed all day)
+- freemodel (401)
+- gemini (warmup empty)
+- mistral (no V2 models)
+- cloudflare / @cf/kimi-k2.6 (400 No such model)
+- modelscope (null content for free)
+- zenmux (free models don't deliver content)
+
+### CONDITIONAL 200 + partial-delivery
+- kilo / step-3.7-flash:free — 200 but `finish_reason:length` truncated
+- cloudflare catalog scan — some CF models may work beyond kimi
+- nvidia / minimax-m3 — reasoningOnlyForTrivialPrompts on ping probes
+- opencode-zen — auto-shard hot-a/hot-b
+
+### SEASONAL
+- logfare / kimi-k2.6 — golden 2026-07-24, TOXIC 18:10-18:32 UTC 2026-07-25
+
+## Failure modes documented (11 in failures.md + 4 NEW THIS SESSION)
+1-7: earlier-session failures (transient_unknown_connection,
+   toolReliability_drift, retry_logged_but_process_died, ...)
+8: reasoning_output_overflow_at_200mb (forced max-reasoning 200MB cap kill)
+9: worker_starts_up_then_exits_zero_with_zero_tool_calls (FIX-C original)
+10: logfare_502_upstream_stream_failed_before_output_storm (FIX-A original)
+11: session_init_glitch_no_project_session_found (FIX-INT2)
+
+## Salvage-pattern meta-finding
+agnes-2.0-flash proven as the salvage-foundation carrier. 3/3 fix-wave
+workers recovered (FIX-A2, FIX-C2, FIX-INT3) from logfare 502 storm,
+silent no-tool exit, session-init glitch. Recommended Pi-core should
+bake agnes-2.0-flash as `subagentDefaultModelFallback` carrier.
+
+## Final committed artifacts
+- c3cd2f99 (earlier commit): 21 files, 3532 insertions — V2 spec + Sprint-1/2/3
+  impl + adversarial test + cross-model review + AGENTS.md websearch rule.
+- 271fe111 (just landed): 22 files, 11562 insertions — V2 spec finalized
+  + Sprint-3 fixed files + V2 overlay integration + scout report +
+  tier matrix + bench docs update.
+
+## Known gaps / deferred
+
+1. Phase-5C: V2 overlay failure-path diagnostic headers are DISCARDED
+   when v2Result.success=false — falls to V1 tryFailover (no headers).
+   Sprint-6 W5 worker patches this.
+2. TIER-MATRIX-MERGE: load 19-entry matrix into overlay (currently minimal
+   1-entry for Phase-5B validation).
+3. zydit Pi CLI registration: sync script gate not yet identified (Sprint-6
+   W2 worker investigates).
+4. Phase-5B live HTTP success-path proof needs multi-entry matrix (Sprint-6
+   W4 worker on it).
+5. key-router stderr shows no `[V2-overlay]` entries — since V2 overlay block
+   only triggers on failure-to-cross-provider scenario (site A + site B),
+   success-path requests don't exercise the overlay. Diagnostic headers
+   will only appear when overlay FAILS over (and Site B preserves them
+   post-Phase-5C).
+
+## Bench-log totals
+
+- Total worker dispatches: ~17 across 5 sprints (this session)
+- Total cost: $0.0141 (logfare-only); agnes-2.0-flash aggregate = $0
+- Highest reasoning tier HARD-CODED for all subagents (USER.md) — no
+  downgrades ever.
+
+## Future-state recommendations
+
+1. Bake `agnes-2.0-flash` as default `subagentModelFallback` carrier
+2. Hot-toggle breaker registry enabled (Q6 locked)
+3. Sprint-7+: monitor auto-evolved matrix quality scores
+   (post JSONL telemetry rollup at UTC midnight).
+4. `pi update` does NOT touch mmx.ts (verified) — reasoning-tier patch
+   persists; document at `~/.pi/agent/patches/mmx-force-reasoning-default.md`.
+```
+
+## Output
+
+The above structure should be PRODUCED. Write to:
+`C:/Users/HP/repos/semantic-explorer/tmp/s6-dispatch/session-summary-2026-07-25.md`
+
+## Constraints
+
+- Read-only. DO NOT edit source files.
+- DO NOT kill processes, restart services, or run live smokes.
+- Final report length: 250-500 lines (moderately comprehensive, command-friendly).
+
+End with "SESSION-SUMMARY-REPORT WORKER — FINAL REPORT":
+- Report written: tmp/s6-dispatch/session-summary-2026-07-25.md
+- Total lines: N
+- Total commits covered: 2 (c3cd2f99 + 271fe111)
+- Sprint count: 6 (Sprint-1/2, Sprint-3, Sprint-4, Sprint-5, Sprint-6)
+- Time taken / Cost: agnes-2.0-flash = $0
