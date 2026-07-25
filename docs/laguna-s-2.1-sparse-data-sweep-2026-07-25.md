@@ -154,9 +154,29 @@ The takeaway: the prior "laguna INCONCLUSIVE" verdict was scope + budget misconf
 5. **Re-probe the openrouter-free `-free`-suffix slug** — the `poolside/laguna-s-2.1-free` slug returned HTTP 400. Check if it's listed on OpenRouter's `/models` endpoint. Most likely the canonical slug on OpenRouter is just `poolside/laguna-s-2.1` (and the openrouter router auto-appends `:free` per the Poolside behavior seen in route #5's error). So the `-free` suffix is a non-existent route on OpenRouter — the canonical slug IS the one route #5 used.
 6. **Replicate on a different sparse slice** — choose another independent ~100-LOC file (e.g., `src/lib/utils/seeded-random.ts`) and run the same 5-route campaign to confirm opencode-zen findings are reproducible and the route failures aren't slice-specific.
 
-## Memory updates pending
+## Main-lane takeover update (2026-07-25 ~14:50 UTC)
 
-After worker #1 followup completes, save a categorized failure-memory entry:
+Worker #1 followup (`ocw_9344e91b`) restarted the session_id `cd48eaa5-...` + made better progress than the initial attempt — 7 min of work, 18 bash tool calls returning rg evidence with confirmed bug line numbers + the caller graph (`src/lib/focus/focus-coordinator.ts:182` is the single caller of `setupFocusTrap` via `trapFocusIn`). However it died AGAIN with `429: Provider rate limit exceeded` — this time AFTER verification completed, mid-write step.
 
-- **target: failure, category: insight** — "laguna-s-2.1-viable-via-opencode-zen-sparse-data-with-followup-finalize" pattern
-- **target: failure, category: tool-quirk** — "OpenRouter-laguna-s-2.1-shared-Poolside-bucket-BYOK-truth" (user's enhanced OR key doesn't escape shared 429; BYOK to Poolside requires their own Poolside account registered in OR Integrations)
+Since the worker had produced 9 MiB of recoverable analysis (4 candidate bugs verified against rg + the caller chain) and the remaining work was the mechanical write of `REPORT.md`, the main lane took over via the `worker-timeout-on-disk-edits-takeover` pattern and authored `tmp/laguna-sparse-find/opencode-zen-laguna-s-2.1-free/REPORT.md` directly.
+
+The main-lane audit, leveraging the worker's rg evidence, ALSO discovered a new HIGH-severity bug not in the worker's 4 candidates:
+
+- **Bug #5 [HIGH] 🆕** — `bindFocusTrapObserver()` is exported but NEVER CALLED anywhere in `src/`. The MutationObserver-driven focus-trap mechanism is dead code → the focus trap is silently non-functional at runtime. Contract test `tests/focus-trap-contract.mjs` (registered `tests/contracts.manifest.json:215`) PASSES only because the 3D `<canvas>` element isn't `tabindex="0"` (no native focusability), not because the trap actually limits focus. Unit test `tests/unit-active/thread-inspector-focus-trap.test.ts` only statically regex-matches the source file — never exercises the binding lifecycle. Fix: invoke `bindFocusTrapObserver()` from `main.ts` app-init (pair with `disposeFocusTrapBindings()` in `beforeunload` + Vite HMR `import.meta.hot.dispose`). Once wired up, the contract test's "no leak" verdict becomes a positive assertion instead of a negative one.
+
+Worker's instinct on Bug #2 (DOM leak “key listener left after unmount”) was a tell pointing toward this structural dead-code issue — the worker's analysis quality was genuinely high.
+
+Full REPORT.md at `tmp/laguna-sparse-find/opencode-zen-laguna-s-2.1-free/REPORT.md` (gitignored — preserved as removable artifact). The 5 verified bug verdicts:
+
+1. **[MED]** State pollution — `setupFocusTrap` overwrites `activeTrapContainers` without guard
+2. **[MED]** DOM leak — listener never auto-disposed (MOOT given #5)
+3. **[WEAK/INTENTIONAL]** `activeIndex === -1` forces `first` (standard trap behavior — NOT A BUG)
+4. **[LOW]** tabindex selector matches positive values (selector wider than necessary; inert in current code — no positive tabindex in repo)
+5. **[HIGH]** 🆕 Focus trap is dead code — `bindFocusTrapObserver` never invoked
+
+## Memory updates saved (post-takeover)
+
+Two memory entries saved via `pi_tool memory_write`:
+
+- **[insight]** `laguna-viable-sparse-data-via-opencode-zen-followup-finalize-2026-07-25` — confirmed via 5-route sweep that opencode-zen/laguna-s-2.1-free is the ONLY viable free route for laguna bugsweep work; mitigation = followup-finalize pattern + main-lane takeover when followup also dies at 429.
+- **[tool-quirk]** `OpenRouter-laguna-is_byok-false-shared-Poolside-bucket-2026-07-25` — the user's OpenRouter "enhanced" account (`is_free_tier: false`, unlimited rate-limit, $10 deposit) does NOT escape the `is_byok: false` shared Poolside bucket for laguna-s-2.1 — OpenRouter uses their own shared Poolside upstream, separate from the user's OR account. To accumulate your own Poolside limits you'd need to add a personal Poolside API key via OpenRouter's Integrations tab (<https://openrouter.ai/settings/integrations>), separate from your OR account API key.
