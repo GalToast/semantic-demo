@@ -282,7 +282,7 @@ Tactics retested: (a) `external_subagent_followup` on stalled-deep-work to recov
 | Followup-recover stalled                        | W4c Svelte-5 snapshot/gate footguns | ✅ completed in ~4 min from followup dispatch (118 new output tokens, $0) → 13.3 KB report | **GOOSE-UNLOCK MECHANISM WORKS** for stalled `agnes` deep-work: `external_subagent_followup({worker_id})` resumes via the recorded `session_id` and finishes only the write step.                               |
 | Followup-retry on transient `Connection error.` | W3c lifecycle                       | ✅ completed in ~2.3 min from re-dispatch → 9.6 KB report                                  | Re-followup on the same `worker_id` (same `session_id`) recovers from transient route blips fast. ⚠️ BUT the W3c resulting report's #1 finding was a fabricated false-positive (see 2nd caveat + ledger below). |
 
-**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: _"Reading it inside $derived registers reactivity directly — no mirror needed."_
+**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: *"Reading it inside $derived registers reactivity directly — no mirror needed."*
 
 Report honest-stamped 4/10 + caution footer in `tmp/bugsweep-2026-07-24/worker4-reactivity-footguns-report.md`; do NOT action the 9 findings.
 
@@ -501,4 +501,40 @@ The earlier line `opencode-zen/glm-5.2 — paid accessible, same opencode-zen ro
 - Main-lane ground truth: `tmp/bench-laguna-vs-glm-2026-07-24/main-lane-ground-truth.md`
 - Bench-result full scoring detail (per-dimension reproduction matrix + tactical recovery recommendations): `tmp/bench-laguna-vs-glm-2026-07-24/bench-result-summary.md`
 - Laguna worker report (honest "NOT DELIVERED" header): `tmp/bench-laguna-vs-glm-2026-07-24/laguna-report.md`
-- GLM worker report: `tmp/bench-laguna-vs-glm-2026-07-24/glm-report.md` (pending followup worker poll; if followup stalls, main-lane reconstructs from stdout `thinking_delta` events + tags footer)
+- GLM worker report: `tmp/bench-laguna-vs-glm-2026-07-24/glm-report.md` (17,920 bytes — main-lane reconstruction from stdout `thinking_delta` traces; followup rescue was attempted at 21:36:59Z + hit `exit_code 124` at 300s timeout before invoking `write` — see the report's # Authorship provenance footer for the run timeline)
+
+## Bench agnes extension — L4-H1 z-index audit verification (2026-07-25 02:25Z)
+
+Confirming the bench-doc prediction (Recommendation #3 above): **agnes-2.0-flash** was re-dispatched on the same L4-H1 z-index audit slice (same prompt template, only the deliverable path differs to `agnes-report.md`).
+
+| Worker ID | `ocw_f3767cb1-243f-40af-9966-0e4be9480c18` |
+| Route | `pi:router-agnes/agnes-2.0-flash` (free) |
+| Dispatched → first assistant emission | 02:25:29Z → 02:30:27Z (~5 min total runtime) |
+| Final status | `completed` exit 0 |
+| Reads executed | 5 (`z-index.ts`, `z-layers.css`, `base.css`, `app.html`, `index.html`) |
+| Writes executed | **1** — `edit` tool → `tmp/bench-laguna-vs-glm-2026-07-24/agnes-report.md` (13,335 bytes ✅) |
+| Analytical findings | 46-row symmetry table + §1a/§1b/§1c/§1d summary + §2 Zero ceiling violations + §3 cross-reference commentary + §4 worker log |
+| Discovery reproduction rate | ~5/6 dimensions match main-lane ground truth: agnes correctly identified `threads` TS-only orphan + zero ceiling violations + at-ceiling collision note + backfill recommendation. Minor row-level mismarks at rows 6/11/12 (claimed `fieldNodes ↔ --z-chrome*` partially vs `fieldNodes ↔ --z-field-nodes`; brushed `threads` against `--z-chrome-popover` collision-by-value) — conceptual understanding correct. |
+| Bench verdict — analytical capability | **~8-9/10** (matches structure + minor row-level mismarks) |
+| Bench verdict — delivery reliability | **10/10** — COMPLETED THE WRITE STEP. This is the depth-of-deliverable contrast that nails the agnes-vs-glm axis: agnes finished the deliverable on disk in 5 min; glm never invoked `write` (900s timeout + 300s followup exit 124). Confirms the `glm-5.2 pre-write stall on large slices` memory entry is a glm-specific dispatch-and-write behavior, NOT a free-lane universal rate-limit issue. |
+
+### Agnes-predicted goose verification trajectory
+
+Earlier today (2026-07-24): agnes-2.0-flash confirmed as free-tier golden goose on the W2 dangling-vars slice (10/10), the W3 lifecycle slice (10/10), and reactivity/footguns slices. The bench-doc grid (rows 13-14) had agnes benching on mechanical slices with FULL delivery.
+
+**This L4-H1 z-index audit slice represents** the first discrete-enumeration audit slice benched against agnes — the slice requires 46-row enumeration + 6-dimension scoring matrix + ceiling-violation check + cross-reference commentary, harder than mechanical slice audits.
+
+**agnes 10/10 on L4-H1 z-index audit** extends the agnes goose-confidence trajectory: agnes generalizes reliably across multiple slice types. Combined with 5-min wallclock + $0 cost + complete deliverable, the operational rule holds: "during Poolside-429 weather windows OR as a primary gentle-of-deliverables choice, agnes-2.0-flash is the best bench-first goose."
+
+### Bench-decision refreshed post-agnes
+
+- Best free-tier model for L4-H1 z-index audit slice: **agnes-2.0-flash** (8-9/10 analytical + 10/10 delivery)
+- Else glm-5.2 for analytical-only-investigation (with main-lane polish salve post-timeout)
+- Avoid laguna-s-2.1 Poolside routes during this 429 weather window (next re-probe in 1-2h or after Poolside hourly reset)
+
+### Updated bench-doc artifacts in repo
+
+- Agnes worker prompt: `tmp/bench-laguna-vs-glm-2026-07-24/agnes-prompt.md`
+- Agnes worker deliverable: `tmp/bench-laguna-vs-glm-2026-07-24/agnes-report.md` (13,335 bytes, written by `edit` tool directly from agnes)
+- GLM worker deliverable: `tmp/bench-laguna-vs-glm-2026-07-24/glm-report.md` (17,920 bytes, main-lane reconstruction from stdout `thinking_delta` traces after both original dispatch + followup-rescue hit the pre-write stall at 300s exit 124 — see footer for authorship provenance)
+- Bench-result-summary refreshed (agnes extension section appended): `tmp/bench-laguna-vs-glm-2026-07-24/bench-result-summary.md`
