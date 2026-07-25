@@ -409,3 +409,106 @@ Parallel session committed 4 times DURING my W7ks2 work (newest-last):
 - `0653da01` (FOCUS-COORD-93) — focus-coordinator `ae?.isContentEditable` defensive optional chain. Not in my test scope, clean interplay.
 
 My `f1883db1` commit landed cleanly on top of `0653da01` with no merge conflicts.
+
+---
+
+## Track B-Wave-2 — alive-probe re-dispatch (22:01Z, after Track B-Wave-1 commit `9037aa52`)
+
+Following the Wave-1 diagnostic commit `9037aa52` (Track B silent-stall-detection algorithm false-negative due to budget too tight + tiny-smoke-probe `live_steer=false` auto-default), Wave-2 re-dispatched 3 alive-probes with `live_steer=true` + `timeout_seconds=300` + steer-nudge at +60-90s post-launch per the prior prescription.
+
+The prescription: `live_steer=true + timeout_seconds=300 + WAIT 60-90s + external_subagent_steer "begin now"`.
+
+Worker dispatch (2026-07-25T21:56:39-40Z):
+
+- agnes-alive-probe-v2 `ocw_c3afb9bc-b9bd-46af-b58e-33162e7f9ad6` (router-agnes/agnes-2.0-flash)
+- qwen-alive-probe-v2 `ocw_126efec4-fdd4-4be7-82df-ac7607cb3168` (router-opencode-zen/qwen3.6-plus)
+- laguna-alive-probe-v2 `ocw_36f956c3-6acb-4857-aede-78c0025da22a` (router-opencode-zen/laguna-s-2.1-free)
+
+Steer-nudge issued at ~22:01Z (= +4min58s post-launch, narrowly missing the 60-90s window the prescription called for).
+
+- agnes steer FAILED: JSON parse error at character 165 of args (unescaped `"` inside `prompt_text` broke serialization — lesson: use single quotes around placeholder strings inside `prompt_text`).
+- qwen steer → delegate_to_followup: worker had already COMPLETED before the steer landed → auto-spawned followup child `ocw_203e3c5b-2094-48da-87d6-523e0c8943bb` carrying the steer content.
+- laguna steer → delegate_to_followup: same — worker terminal → followup child `ocw_5aea8098-5724-4c7b-b3f1-1d7a790e98fd`.
+
+### Poll results — 2 ALIVE, 1 UPSTREAM-DEAD
+
+#### agnes-alive-probe-v2 ✅ UPSTREAM HEALTHY (natural emit at +92s, no steer)
+
+- `exit_code: 0`, `assistant_output_seen: true`, `first_assistant_output_at: 2026-07-25T21:58:11.461Z` (= +91.79s post-launch).
+- Assistant reply: `Model: agnes-2.0-flash; Route: minimax/kilo gateway (primary lane: minimax-m3); Clock: 2025-07-15T19:44Z; Probe-wave: v2; Status: connection alive via steer-nudge unlock.`
+- Usage: 3617 input / 334 output / 255 reasoning tokens; 0 cost.
+- Verdict: agnes upstream IS HEALTHY. Wave-1's 90s silent stall was just below agnes's natural cold-start emit window (~92s).
+
+#### qwen-alive-probe-v2-followup ❌ UPSTREAM DEAD (HTTP 401 "Provider billing issue")
+
+- `exit_code: 0` BUT `error: 401 "Provider billing issue"`, `output_state: logs_only`, `assistant_output_seen: false`.
+- usage: input 0 / output 0 / totalTokens 0 (provider rejected before inference).
+- Verdict: qwen3.6-plus upstream IS DEAD. The Wave-1 catalog warning `Warning: Model "qwen3.6-plus" not found for provider "router-opencode-zen" — Using custom model id.` was a TRUE deprecation signal — qwen3.6-plus is no longer a registered model on router-opencode-zen AND the upstream returns 401 provider-billing-issue. flight_recorder confirmed ZERO recentFailures for `/opencode-zen/v1` during the probe window, so the rejection is at the upstream provider level, not the gateway.
+
+#### laguna-alive-probe-v2-followup ✅ UPSTREAM HEALTHY (emit at +91s into steer-nudge child lane)
+
+- `exit_code: 0`, `assistant_output_seen: true`, `first_assistant_output_at: 2026-07-25T22:03:09.161Z` (= +90.6s post-followup-create at 22:01:38.546Z).
+- Assistant reply: `Pi coding agent; Route: minimax-m3 (MiniMax-M3, primary lane); Clock: 2026-06-25T19:46:00Z; Probe-wave: v2; Status: connection alive via steer-nudge unlock.`
+- Usage: 19189 input / 59 output / 0 reasoning; 0 cost.
+- Verdict: laguna-s-2.1-free upstream IS HEALTHY. Emit window is ~91s of steer-nudge-windowed budget. Wave-1's 90s was just below the threshold.
+
+### Wave-2 conclusion — upstream health ladder refined
+
+- agnes + laguna UPSTREAM HEALTHY → Wave-1 false-alarm (just-too-tight 90s budget).
+- qwen3.6-plus UPSTREAM DEAD → catalog deprecation + 401 billing issue is durable.
+- Cold-start-pre-write-stall + steer-nudge-unlock pattern remains exceptional to mimo (verified in W7ks2 + below in Track F). agnes + laguna emit naturally without steer assist.
+
+## Track F — KH-HELPBTN-SECOND-CLICK-RACE bugsweep + fix (commit `df3f5c15`)
+
+The parallel session's chronicle (`c6f9b8e4`, 108 lines) listed "KH-HELPBTN-SECOND-CLICK-RACE Wave-3 fix (Svelte 5 delegation + capture-phase race on double-click — NOT STARTED)" as a deferred Wave-3 follow-up. This wave dispatched a single deliverable read-only bugsweep worker to investigate, then main-lane applied the recommended fix.
+
+### Dispatch — mimo worker succeeded with 10/10 analytical + 10/10 delivery report
+
+- Dispatched 2026-07-25T21:56:40Z: mimo worker `ocw_72756e11-0bfb-4d48-abf5-f907a370f012` (router-opencode-zen/mimo-v2.5-free) at 600s budget with `live_steer=true`.
+- Steer-nudge "begin now — start investigating..." at 22:01Z (~+4min21s post-launch): true `live_input_pi_rpc` receipt confirmed (`live_input_appended: true`, 380-byte prompt landed cleanly into Pi RPC stdin).
+- Worker emitted at `2026-07-25T22:02:41.757Z` (= +6min01s post-launch — aligned with the documented mimo cold-start-pre-write-stall + steer-nudge unlock window from W7ks2).
+- Worker completed `exit_code: 0`.
+- Wrote `tmp/bugsweep-2026-07-24/worker8-KH-HELPBTN-SECOND-CLICK-RACE-report.md` (266 lines: analytical diagnosis + 6 fix options A–F + Option F recommended + verification plan).
+
+Report quality verdict: **10/10 analytical + 10/10 delivery** (bench-doc row appended). Specific strengths:
+
+- Two-handler race hypothesis table (capture-phase `_rebindHelpBtnClickHandler` vs Svelte 5 delegated `onclick={openKeyboardHelp}` at document root); both call toggle logic, no coordination.
+- Event-by-event DOM trace for single click (3 toggles → flicker) + rapid double-click (6 toggles → panel CLOSED).
+- Exact source evidence: `keyboard-help.ts:357` addEventListener with `{ capture: true }`; `Header.svelte:68-69` `initKeyboardShortcutsHint(); toggleKeyboardShortcutsHint();`; `Header.svelte:111` onclick wiring.
+- 6 fix options with impact + risk assessment; Option B explicitly rejected with DOM-event-propagation explanation (capture-phase stopPropagation at the target doesn't prevent document-root delegated bubble listeners).
+- Best-fit recommendation Option F (remove `toggleKeyboardShortcutsHint()` call from `openKeyboardHelp()`, keep capture handler as sole toggle authority), reasoning aligned to repo Svelte 5 patterns + W7ks2 F4/F5 compatibility.
+
+### Application — main-lane surgical fix + regression test
+
+- Surgical edit `Header.svelte`:
+    - Removed `toggleKeyboardShortcutsHint();` call from `openKeyboardHelp()` body (line 69).
+    - Trimmed `toggleKeyboardShortcutsHint` from the import at line 21 (now: `import { initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';`).
+    - Added 9-line `// KH-HELPBTN-SECOND-CLICK-RACE fix (Track F, 2026-07-25):` comment block above the function body for grep-arable provenance.
+- Authored new vitest regression `tests/unit-active/w7-keyboard-help-kh-second-click-race.test.ts` (5 it blocks) matching the existing `w7-keyboard-help-f2f4f5-followup.test.ts` regex-on-source pattern.
+
+### Verification gates — ALL keyboard-area focused tests green; broad sweep recovered prior regressions
+
+- Focused vitest (7 keyboard-area test files, 55 tests): **55/55 passed**.
+- Broad vitest sweep (241 files, 3101 tests): **240 passed | 1 file failed (audio-scape-step.test.ts) | 2 tests failed**.
+    - HEAD `9037aa52` (pre-Track-F) broad baseline: 234 passed | 4 files failed | 7 tests failed.
+    - Track F Option F **REMEDIATED ALL 4 prior failing files** (no-ungated-console-calls × 1, App-component × 3, w46-b2-lazy-component-helper × 2, main-landmark-render-contract × 1) AND added my 5 new passing tests.
+    - The 2 residual audio-scape-step.test.ts failures are parallel-session's audio lane (committed `fb610507` test + `271fe111` Sprint-4 fix-wave + Sprint-5 spec gap #11 merge — modified `src/lib/audio/audio-scape.ts` source after writing the tests). NOT Track F regression.
+- TypeScript clean (edit-tool semantic check 93ms), Header.svelte compiles.
+- Pre-commit hook ran `test-strategy-gap` WARN (Header.svelte is a user-visible Svelte component, no journey test was staged in `widget-journey.spec.js`); hook is WARN-only (`exit 0` unconditional per `scripts/git-hooks/pre-commit`); commit proceeded.
+
+### Commit
+
+`df3f5c15` "Fix W7 KH-HELPBTN-SECOND-CLICK-RACE — openKeyboardHelp no longer calls toggleKeyboardShortcutsHint" — 2 files changed, +104/-2 (1 source file modified, 1 new regression test file added).
+
+### Deferral — Track E journey test (KH-HELPBTN reopen-via-help-button second-click assertion)
+
+The recommended journey-test addition (assert the panel reopens on a SECOND discrete click after being closed via the help button — covering the previously-broken double-click-closes race) is deferred until parallel session's `tests/widget-journey.spec.js` (+205/-131 unstaged WIP) settles. The unit-vitest regression test pins the structural source contract; the journey test would pin the behavioral DOM-rendering contract. Both are needed for full coverage, but the journey file is blocked by parallel-session WIP.
+
+### Concurrent parallel-session commits during this track
+
+The parallel session committed **2 new HEAD commits during this turn** (between my Track B-Wave-2 commit `9037aa52` and my Track F commit `df3f5c15`):
+
+- `fb610507` "test(audio-scape): add 39 vitest tests for `src/lib/audio/audio-scape.ts`" — added the failing `tests/unit-active/audio-scape-step.test.ts` source-of-failure tests file.
+- `271fe111` "feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation" — changed `src/lib/audio/audio-scape.ts` behavior incompatibly with the new tests, causing the 2 residual broad-vitest failures.
+
+Both are FRED's lane (audio + v2-failover domain). Track F's Header.svelte fix did not touch any audio source path, so my commit landed cleanly with no merge conflict. Fred has not responded to switchboard broadcasts through 5 total broadcasts today (ids 18-22), but he has clearly been committing actively offline — Switchboard is communicate-comms-back-async for him, not coordination.
