@@ -63,8 +63,11 @@ import { isKeyboardTextEntryTarget } from '@lib/utils/keyboard-target'
 /**
  * Top-level keydown handler for the application shell.
  * Replaces the imperative listeners from global-bindings.js.
+ * NOTE: currently unexported (no callers outside this module). Retained
+ * because the keyboard-reset-ownership-contract validates its existence.
  */
-export function handleGlobalKeydown(event: KeyboardEvent): void {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Retained because keyboard-reset-ownership-contract validates its existence (zero external callers).
+function handleGlobalKeydown(event: KeyboardEvent): void {
     const target = event.target as HTMLElement
     if (isKeyboardTextEntryTarget(target)) return
 
