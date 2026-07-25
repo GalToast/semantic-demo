@@ -35,6 +35,11 @@ import { getInitialRenderKind, isDeepLinkParams } from '@lib/orchestration/respo
 import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte'
 import './lib/css/biofield.css'
 import { debugError, debugWarn } from '@lib/utils/debug'
+// Laguna-FT-1 fix (2026-07-25): the MutationObserver-driven focus trap
+// was exported but NEVER INVOKED — the entire a11y binding was dead code
+// at runtime. main.ts is the install site, paired with the same-teardown
+// pattern as registerUrlStateEventListeners above.
+import { bindFocusTrapObserver, disposeFocusTrapBindings } from '@lib/utils'
 
 // ── Global error sink (ring buffer) ────────────────────────────────────────
 // Top-level catch for otherwise-uncaught errors / unhandled promise
@@ -205,11 +210,18 @@ window.addEventListener('beforeunload', () => teardownGestureMonitor(), { once: 
 // resolve to the same teardown.
 const teardownUrlStateListeners = registerUrlStateEventListeners()
 const teardownClusterFilterListeners = registerClusterFilterEventListeners()
+// Laguna-FT-1 fix: install the focus-trap MutationObserver so the trap
+// actually activates on panelSurface changes ('search' | 'focus' |
+// 'focus-search' | 'semantic-dive'). Without this call, the contract
+// test tests/focus-trap-contract.mjs passed only because the 3D canvas
+// isn't natively focusable — it never actually exercised the trap.
+bindFocusTrapObserver()
 window.addEventListener(
     'beforeunload',
     () => {
         teardownUrlStateListeners()
         teardownClusterFilterListeners()
+        disposeFocusTrapBindings()
     },
     { once: true }
 )
@@ -477,6 +489,7 @@ function disposeAppListeners(): void {
     unsubTestState()
     cleanupWindowActions()
     disposeJourneyWebglPreload()
+    disposeFocusTrapBindings()
     appInitCleanup?.()
     if (app) unmount(app)
 }
@@ -499,6 +512,7 @@ if (import.meta.hot) {
         disposeAppListeners()
         // { once: true } on the beforeunload listener handles auto-removal;
         // no explicit removeEventListener needed.
+        // disposeFocusTrapBindings is called via disposeAppListeners above.
         teardownGestureMonitor()
         appInitCleanup?.()
         if (app) unmount(app)
