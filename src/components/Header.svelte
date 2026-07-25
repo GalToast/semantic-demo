@@ -18,7 +18,7 @@
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
-  import { initKeyboardShortcutsHint, toggleKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
+  import { initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
   import { debugWarn } from '@lib/utils/debug'
   import { modes } from '@lib/components/header/mode-constants';
   import { getActiveDescription, selectMode as applyModeSelect, type SelectModeContext } from '@lib/components/header/mode-nav';
@@ -63,10 +63,18 @@
     }
   }
 
+  // KH-HELPBTN-SECOND-CLICK-RACE fix (Track F, 2026-07-25):
+  // The prior body called initKeyboardShortcutsHint() *and*
+  // toggleKeyboardShortcutsHint(). The capture-phase listener bound by
+  // _rebindHelpBtnClickHandler (inside init) ALREADY toggles the panel on
+  // click, so the Svelte-delegated toggle() racing alongside it produced a
+  // 3-toggle sequence per click (open → close → reopen) — single clicks
+  // flickered and rapid double-clicks left the panel CLOSED.
+  // Fix: let the capture-phase handler be the sole toggle authority; this
+  // handler now only ensures init so the button works on the very first click.
   function openKeyboardHelp(): void {
     try {
       initKeyboardShortcutsHint();
-      toggleKeyboardShortcutsHint();
     } catch (error) {
       debugWarn('Header.openKeyboardHelp: keyboard help unavailable', error);
     }
