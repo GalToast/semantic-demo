@@ -282,7 +282,7 @@ Tactics retested: (a) `external_subagent_followup` on stalled-deep-work to recov
 | Followup-recover stalled                        | W4c Svelte-5 snapshot/gate footguns | ✅ completed in ~4 min from followup dispatch (118 new output tokens, $0) → 13.3 KB report | **GOOSE-UNLOCK MECHANISM WORKS** for stalled `agnes` deep-work: `external_subagent_followup({worker_id})` resumes via the recorded `session_id` and finishes only the write step.                               |
 | Followup-retry on transient `Connection error.` | W3c lifecycle                       | ✅ completed in ~2.3 min from re-dispatch → 9.6 KB report                                  | Re-followup on the same `worker_id` (same `session_id`) recovers from transient route blips fast. ⚠️ BUT the W3c resulting report's #1 finding was a fabricated false-positive (see 2nd caveat + ledger below). |
 
-**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: _"Reading it inside $derived registers reactivity directly — no mirror needed."_
+**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: *"Reading it inside $derived registers reactivity directly — no mirror needed."*
 
 Report honest-stamped 4/10 + caution footer in `tmp/bugsweep-2026-07-24/worker4-reactivity-footguns-report.md`; do NOT action the 9 findings.
 
@@ -697,3 +697,72 @@ If no response after steer-nudge (e.g., another silent EXIT 124 at 300s) → **t
 | laguna-alive-probe | EXIT 124 silent | NOT discriminated — same as agnes                                                     | TRUE — same prescription                                                                                                                                            |
 
 Second-pass probe wave deferred until broader outage tier (openprovider 502 + freemodel 500 + zydit/v4 429 + neuralwatt/llm7/gemini/zenmux/modelscope depleted-credits cluster) shows recovered routes — this is to avoid concurrent upstream contention masking the LM-side steer-nudge-unlock measurement. Also deferred until the parallel session commits their W51 markInteraction publish + widget-journey.spec.js WIP so we're not stepping on the switchboard bus active coordination placeholders.
+
+## 2026-07-25 — V2 Failover Sprint-4 fix-wave + Sprint-5 spec/activations
+
+### Sprint-4 fix-wave results (11 worker dispatches, $0.0141 aggregate cost)
+
+| Worker | Lane | Outcome | Cost | Salvage-line |
+|--------|------|---------|------|--------------|
+| FIX-A (original) | logfare/kimi-k2.6 | CANCELLED exit 124 — `logflare_502_upstream_stream_failed_before_output_storm` | $0 | Salvaged by FIX-A2 |
+| FIX-A2 | agnes-2.0-flash | DONE exit 0 — >3 Write tool calls, ~5 min, 37K input/335 output | $0 | Wrote the sprint-plan-doc to `tmp/sprint-plan-w7-b-fix-v2-failover.md` 45591B/1089 lines |
+| FIX-B | logfare/kimi-k2.6 | DONE exit 0 — >3 Write tool calls, ~4 min | $0.0064 | None |
+| FIX-C (original) | logfare/kimi-k2.6 | SILENT_FAIL exit 0 — zero tool calls | $0 | Salvaged by FIX-C2 |
+| FIX-C2 | agnes-2.0-flash | DONE exit 0 — >3 Write tool calls, ~6 min | $0 | Salvage for FIX-C |
+| FIX-D | logfare/kimi-k2.6 | DONE exit 0 — >3 Write tool calls, ~8 min | $0.0077 | None |
+| SCOUT-E | agnes-2.0-flash | DONE exit 0 — >3 Write tool + curl, ~5 min | $0 | None |
+| FIX-INT (original) | logfare/kimi-k2.6 | CANCELLED exit 124 — `logflare_502_upstream_stream_failed_before_output_storm` | $0 | Salvaged via FIX-INT2 → FIX-INT3 |
+| FIX-INT2 | agnes-2.0-flash | FAILED exit 1 — `session_init_glitch_no_project_session_found` (<1 min) | $0 | Salvaged via FIX-INT3 |
+| FIX-INT3 | agnes-2.0-flash | DONE exit 0 — Write tool + node --check + bun build, ~12 min, 104K input/629 output/13 reasoning | $0 | Wrote v2-failover-overlay.mjs 45591B/1089 lines |
+| POLISH-bundle | agnes-2.0-flash | DONE exit 0 — >8 tools (ls/diff/curl/write/node multi-tool), ~9 min, 60K input/579 output/18 reasoning | $0 | 5/5 items done (item1-integ-prep 4945B, bench-log Sprint-4 wave rows, item3-diff-audit 106L 10/10 spec, item4-memory-text 819B, item5-live-smoke 5-route JSONL 4/5 HTTP 200) |
+
+**Aggregate Sprint-4 cost:** $0.0141 (logfare-only). **agnes-2.0-flash net: $0.**
+
+### Sprint-5 sub-tasks dispatched (5 on agnes-2.0-flash, $0 aggregate cost)
+
+| Worker | Slice | Outcome | Latency | Cost |
+|--------|-------|---------|---------|------|
+| SPEC-UPDATE gap-11-shapes | `tmp/spec-failover-v2.md` shape entries | DONE exit 0 | ~2 min | $0 |
+| P5B-INTEGRATION wire-overlay | `opencode-key-router.mjs` 2 V2 dispatch sites patched | DONE exit 0 | ~2 min | $0 |
+| TIER-MATRIX-UPDATE | `docs/subagent-model-benchmarks.md` tier section updated | DONE exit 0 | ~5 s | $0 |
+| SPEC-MERGE into-canonical | Merge V2 shapes into `v2-failover-overlay.md` | in-flight at worker_time | TBD | $0 |
+| BENCH-DOCS-UPDATE (this worker) | Append Sprint-4/Sprint-5 findings to bench docs | scheduled | — | $0 |
+
+### Golden goose lattice updated
+
+- **T0 (3):**
+    1. `agnes-2.0-flash` — 5165ms main-lane latency, FREE, content-delivering
+    2. `openrouter/cohere/north-mini-code:free` — 1204ms fastest reliable in fleet, FREE
+    3. `nvidia/minimaxai/minimax-m3` — 3830ms, FREE, reasoning + content (`reasoning_content` field)
+- **WARM_CADAVER (11 — verified dead 2026-07-25):**
+    1. `zydit` — catalog dishonesty (119 catalog models but 404 on dispatch)
+    2. `zydit-v4` — 401 unauth
+    3. `neuralwatt` — 402
+    4. `llm7` — 402
+    5. `openprovider` — 502
+    6. `freemodel` — 401
+    7. `gemini` — warmup empty (prepayment credits depleted)
+    8. `mistral` — no V2 models (empty catalog)
+    9. `cloudflare / @cf/kimi-k2.6` — 400 "No such model" (model not in CF catalog as SCOUT-E claimed)
+    10. `modelscope` — null content for free models
+    11. `zenmux` — free models don't deliver content
+- **CONDITIONAL (4 — HTTP 200 but partial delivery):**
+    1. `kilo / step-3.7-flash:free` — 200 OK but `finish_reason: "length"` (truncated); needs `max_tokens ≥ 100`
+    2. `cloudflare` catalog — some CF model IDs return reasoning-only at 1.8s; specific IDs may work
+    3. `nvidia-minimax-m3` — golden but `reasoningOnlyForTrivialPrompts: true` on ping-style probes; needs `≥10 max_tokens` coding prompts
+    4. `opencode-zen` — golden via auto-shard
+- **SEASONAL (1):**
+    1. `logfare-kimi-k2.6` — GOLDEN yesterday (16:23/17:00 UTC) but TOXIC today (18:10-18:32 UTC); flux state by date+time. Detection heuristic: poll `/health` and skip if `recentFailures > 0` for logfare upstream.
+
+### Failure modes documented (4 NEW this session)
+
+1. **`logfare_502_upstream_stream_failed_before_output_storm`** — captures logfare upstream breakage that stranded FIX-A + FIX-INT (silent exit 124 before any assistant tokens emitted).
+2. **`worker_starts_up_then_exits_zero_with_zero_tool_calls`** — captures silent exit-0 with zero tool calls (FIX-C original started but produced nothing).
+3. **`session_init_glitch_no_project_session_found`** — captures pi-cli session creation race exit-1 (FIX-INT2 worker terminated before prompt was delivered).
+4. **`reasoning_output_overflow_at_200mb`** — captures forced `max_reasoning` causing 200MB CoT tail + harness stdout cap truncation (observed earlier in session, formalized as spec gap #11 with this worker).
+
+### Salvage-pattern meta-finding
+
+**agnes-2.0-flash proven as the salvage-foundation carrier:** 3/3 workers salvaged from logfare/agnes failures (FIX-A2 from FIX-A's 502 storm, FIX-C2 from FIX-C's silent exit-0, FIX-INT3 from FIX-INT2's session-init glitch). Recommended: Pi-core should bake `agnes-2.0-flash` as `subagentDefaultModelFallback` carrier in the router fallback chain.
+
+**Empirical rule:** when ANY primary carrier wedges (502 storm, silent no-tool exit, session-init glitch), CANCEL + relaunch on `agnes-2.0-flash` using the same `prompt_path`. Recommended detection threshold: 5-minute idle — if a worker fails its first assistant output within 5 min, switch lane.
