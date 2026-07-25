@@ -14,7 +14,7 @@ export const FOCUSABLE_SELECTORS = [
   'textarea:not([disabled])',
   'input:not([disabled])',
   'select:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
+  '[tabindex="0"]',
 ].join(', ');
 
 let activeTrapContainers: string[] = [];
