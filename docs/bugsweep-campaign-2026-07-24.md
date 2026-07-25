@@ -322,3 +322,50 @@ The initial commit attempt (`090c7923`, pre-amend) accidentally swept in `src/li
 Recovery: `git reset --soft HEAD~` + `git restore --staged src/lib/utils/focus-trap.ts` + `git commit -F <msg>` produced new HEAD `e1785420` which contains only the 4 keyboard files (+166, -9). The focus-trap.ts WIP stays unstaged in the working tree (`M src/lib/utils/focus-trap.ts` in `git status --short`) for the parallel session to commit as their own work later — no WIP loss.
 
 Per AGENTS.md "Surface parallel-session conflict in chat rather than silently picking a side" — this provenance note documents that the focus-trap.ts sweep-in was incidental (the `e1785420` amend happens immediately after detecting it) and the parallel session's cleanup work is preserved unscathed.
+
+## W7ks2 fix-wave (commit `7163dc64`)
+
+Composed of the deferred W7ks2 findings F2/F4/F5/F6 from the W7 bugsweep worker7-ks-keyboard-help-report — applied once parallel-session activity abated (no session-lock, last focuses was pi-harness launcher willRetry-aware kill + key-router mid-drop failover OUTSIDE this repo).
+
+### Worker dispatch + main-lane takeover (kind-1 per worker-timeout-on-disk-edits-takeover skill)
+
+Two parallel workers dispatched on `mimo-v2.5-free` (`router-opencode-zen`):
+
+- `ocw_aeb016d1` — F2/F4/F5 in `keyboard-help.ts` + F2 ack in `DemoChoreography.svelte` (line ~247 replayListener body)
+- `ocw_e6c685e3` — F6 extract shared util `src/lib/utils/keyboard-target.ts` + refactor imports in `keyboard-help.ts:13-32` + `triggers.ts:59-69`
+
+BOTH hit the same cold-start pre-write-stall pattern (silent ~6 min from launch before first assistant output even with `flight_recorder action=sample` showing opencode-zen route had 6 active keys, zero Milo upstream failures — Layer 0 healthy). Layer 2 LSP daemon signature `[pi-lens-shared-lsp] Daemon already running` matched spawn-wedge-3-layer diagnostic. Main-lane live-steer nudge at +3min-ish post-launch triggered first-assistant-output within ~25-90s of steer landing — reproducible (F2F4F5 unlocked cleanly; F6 steer came too close to the timeout pivot). Both workers then produced substantial `edit`-tool surgery on disk before exit 124 (600s timeout) — F2F4F5 landed all 4 fixes + F2 DemoChoreography ack; F6 landed all 3 refactoring steps (new util + 2 imports + 2 def-deletes). Neither authored their regression test file or final REPORT before timeout.
+
+Per the `worker-timeout-on-disk-edits-takeover` skill (kind-1 = edits landed but REPORT/TEST missing), main lane took over both waves — authored:
+
+- `tests/unit-active/w7-keyboard-help-f2f4f5-followup.test.ts` (176 lines, 3 describe blocks: F2 ack event sequence + F4 toggle-close + F5 rebind helper)
+- `tests/unit-active/w7-keyboard-target-extracted.test.ts` (118 lines, 4 describe blocks: extracted util source contract + keyboard-help refactor conventions + triggers refactor conventions + util purity structural sanity)
+- `tmp/w7-f2f4f5-REPORT.md` + `tmp/w7-f6-REPORT.md` (worker-provenance + main-lane-authorship footer)
+- Polished the F2 500ms setTimeout with `eslint-disable-next-line no-restricted-syntax` annotation matching the line-412 sibling pattern for consistency.
+
+### Commit `7163dc64` shape: 5 files, +395/-51
+
+- `src/lib/keyboard/keyboard-help.ts` (+112 lines net deltas in the F2 ack + F4 toggle + F5 helper + F6 import + def delete + eslint annotation all staged together — worker + main-lane polish merged).
+- `src/lib/orchestration/triggers.ts` (+12 lines: F6 import + inline-def deletion of lines 62-69 original — net delta).
+- `src/lib/utils/keyboard-target.ts` (NEW, 28 lines: canonical type-predicate form extracted from keyboard-help.ts:16-32).
+- `tests/unit-active/w7-keyboard-help-f2f4f5-followup.test.ts` (NEW, 176 lines).
+- `tests/unit-active/w7-keyboard-target-extracted.test.ts` (NEW, 118 lines).
+
+### DemoChoreography.svelte F2 ack dispatch — DEFERRED
+
+The working tree has `M src/components/DemoChoreography.svelte` reflecting parallel session's pre-existing "W51 fix" WIP (in `markInteraction()` lines ~54-94) + my worker's `demo-replay-acknowledged` dispatch at line 247. Per the focus-trap.ts cross-staging sweep-in lesson captured earlier today (same repo-session documented in the previous "W7ks1-F1 followup fix-wave" section above), the W7ks2 commit intentionally does NOT stage DemoChoreography.svelte — the parallel session's W51 WIP stays unstaged for them to commit cleanly when they publish. The F2 ack dispatch will land in a follow-up commit (or parallel-session handoff) once the parallel session publishes their W51 work.
+
+### Verification gates (run by main lane post-takeover)
+
+- `npx vitest run tests/unit-active/w7-keyboard-help-f2f4f5-followup.test.ts tests/unit-active/w7-keyboard-target-extracted.test.ts tests/unit-active/w7-keyboard-help-ime-guard.test.ts tests/unit-active/w7-global-shortcuts-isformfield-split.test.ts tests/unit-active/t1-keyboard-help-replay-no-stack.test.ts tests/unit-active/w46-b3-global-shortcuts-helper.test.ts` → **Test Files 6 passed (6) | Tests 50 passed (50)** | Duration 6.72s (includes the 2 new test files verifying both wave's landed edits).
+- `npx svelte-check --workspace src` → 0 errors, 32 warnings (baseline unchanged — W47-era Header.svelte unused CSSselector warnings pre-exist at lines 168, 173).
+- `npx eslint src/lib/utils/keyboard-target.ts src/lib/keyboard/keyboard-help.ts src/lib/orchestration/triggers.ts` → 0 errors, 0 warnings post-eslint-disable-next-line polish (ealier run yielded 1 warning `no-restricted-syntax` for raw setTimeout at line 177:13 — the F2 timeout-fallback — now annotated).
+- `rg -n "isKeyboardTextEntryTarget" src/` → exactly 4 caller occurrences (2 in keyboard-help.ts: line 13 import + line 47 handleGalaxyKeydown callsite; 2 in triggers.ts: line 59 import + line 69 handleGlobalKeydown callsite) + 1 def in the new util keyboard-target.ts line 12 — no orphans, no remaining inline `function isKeyboardTextEntryTarget(` duplicates
+
+### Benches captured in `docs/subagent-model-benchmarks.md`
+
+The two novel bench observations for `mimo-v2.5-free` from this wave (cold-start pre-write-stall + steer-nudge unlock + 600s timeout clips multi-step tasks mid-plain-edit) are captured in the bench-doc at the section "W7ks2 fix-wave — mimo-v2.5-free cold-start pre-write-stall + 600s timeout clip".
+
+### Cross-staging sweep-in lesson — positively avoided in this wave
+
+Demonstrated the discipline learned earlier today (the `e1785420` amend cycle incident). In this wave, the parallel-session's DemoChoreography W51 WIP (~140 lines in `markInteraction()`) was preserved unstaged by NOT staging their file. The W7ks2 commit included only my own worker + main-lane work. Session coordination was broadcast via switchboard (`pi-main-glm-5.2`, channel `general`) at 16:31:14Z BEFORE the worker dispatch — post-operation message documented the W7ks2 completion + DemoChoreography deferral notice to the parallel session.
