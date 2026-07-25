@@ -209,7 +209,13 @@
   let replayListener: ((_e: Event) => void) | null = null
 
   onMount(() => {
-    replayListener = () => requestReplay()
+    replayListener = () => {
+      requestReplay()
+      // W7 F2 fix: ack the canonical replay path so the keyboard-help side
+      // knows the replay actually started (avoids the 500ms no-ack fallback
+      // toast that previously fired on every demo-cancelled during replay).
+      document.dispatchEvent(new CustomEvent('demo-replay-acknowledged'))
+    }
     document.addEventListener('demo-replay-requested', replayListener as EventListener)
 
     if (suppress || (!force && !shouldRunDemo())) {
