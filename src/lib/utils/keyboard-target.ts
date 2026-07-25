@@ -22,7 +22,7 @@ export function isKeyboardTextEntryTarget(target: EventTarget | null): target is
         return true
     }
     if (tagName === 'textarea') return true
-    if (el.isContentEditable) return true
+    if (el?.isContentEditable) return true
 
     return false
 }
