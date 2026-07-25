@@ -315,7 +315,12 @@ export function initLegendKeyboardShortcut(): () => void {
     const handler = (e: KeyboardEvent) => {
         if (e.key === 'l' && !e.metaKey && !e.ctrlKey && !e.altKey) {
             const target = e.target as HTMLElement | null
-            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+            if (
+                target &&
+                (target.tagName.toLowerCase() === 'input' ||
+                    target.tagName.toLowerCase() === 'textarea' ||
+                    target.isContentEditable)
+            ) {
                 return
             }
             e.preventDefault()
