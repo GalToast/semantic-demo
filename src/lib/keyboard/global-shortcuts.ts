@@ -159,6 +159,7 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         // browser's default back-nav fires AFTER the handler and
         // overwrites the page to about:blank (Visual QA Round 3 finding).
         if (e.key === 'Escape') {
+            if (isFormField) return
             // W47-c: If a <dialog open> is on screen, let the browser's
             // native cancel handler close it. Without this early return,
             // our preventDefault() below would suppress the dialog's
