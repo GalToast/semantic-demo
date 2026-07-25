@@ -6,34 +6,34 @@ Follow-on session to the W7 keyboard bugsweep campaign recorded in `docs/bugswee
 
 ## Session commit chain (oldest → newest)
 
-| UTC commit time | SHA | Subject | Lane |
-| --- | --- | --- | --- |
-| 10:24:12 | `61cbc415` | fix(keyboard): apply W7 bugsweep findings to keyboard-help.ts | parallel (Fred) |
-| 10:30:44 | `d5ae46c0` | fix(a11y): wire bindFocusTrapObserver at app-init (LAGUNA-FT-1) | main |
-| 10:34:48 | `e6c5c11e` | docs(bench): record W7 surgical fix-wave completion | parallel (Fred) |
-| 11:01:55 | `e1785420` | fix(keyboard): split predicate per W7ks1-F1 — amended from `090c7923` | parallel (Fred) |
-| 11:05:05 | `62e6af09` | docs(bench): record W7ks1-F1 followup fix-wave completion | parallel (Fred) |
-| 11:18:53 | `38c1b9ff` | fix(a11y): scope focus-trap selector to tabindex="0" only (LAGUNA-FT-4) | main |
-| 12:14:52 | `7163dc64` | fix(keyboard): apply W7ks2 fixwave F2/F4/F5/F6 | parallel (Fred) |
-| 12:22:13 | `ea95a1e3` | docs(bench): record W7ks2 fix-wave | parallel (Fred) |
-| 12:36:55 | `c3cd2f99` | feat(router-v2): land V2 two-axis failover spec + Sprint-1/2/3 impl + adversarial test harness (7/7 PASS); AGENTS.md +1 line "Knowledge-gap default → websearch" | parallel (Fred) |
-| 12:49:49 | `eb823521` | fix(keyboard-target): guard `el?.isContentEditable` optional chain (TRIGGERS-69) | agnesia worker (Fix #1) |
-| 13:06:26 | `497cbbd2` | fix(triggers): unexport handleGlobalKeydown (TRIGGERS-DEAD-EXPORT) — main-lane takeover | main |
-| 13:14:46 | `2b70b8f8` | fix(legend-panel): lowercase tagName comparison (LEGEND-318) | main |
-| 13:14:51 | `0653da01` | fix(focus-coordinator): defensive optional chain on `ae?.isContentEditable` (FOCUS-COORD-93) | main |
-| (this turn) | (TBD) | test(focus-trap): add installed-contract test pinning LAGUNA-FT-1 | main |
+| UTC commit time | SHA        | Subject                                                                                                                                                          | Lane                    |
+| --------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| 10:24:12        | `61cbc415` | fix(keyboard): apply W7 bugsweep findings to keyboard-help.ts                                                                                                    | parallel (Fred)         |
+| 10:30:44        | `d5ae46c0` | fix(a11y): wire bindFocusTrapObserver at app-init (LAGUNA-FT-1)                                                                                                  | main                    |
+| 10:34:48        | `e6c5c11e` | docs(bench): record W7 surgical fix-wave completion                                                                                                              | parallel (Fred)         |
+| 11:01:55        | `e1785420` | fix(keyboard): split predicate per W7ks1-F1 — amended from `090c7923`                                                                                            | parallel (Fred)         |
+| 11:05:05        | `62e6af09` | docs(bench): record W7ks1-F1 followup fix-wave completion                                                                                                        | parallel (Fred)         |
+| 11:18:53        | `38c1b9ff` | fix(a11y): scope focus-trap selector to tabindex="0" only (LAGUNA-FT-4)                                                                                          | main                    |
+| 12:14:52        | `7163dc64` | fix(keyboard): apply W7ks2 fixwave F2/F4/F5/F6                                                                                                                   | parallel (Fred)         |
+| 12:22:13        | `ea95a1e3` | docs(bench): record W7ks2 fix-wave                                                                                                                               | parallel (Fred)         |
+| 12:36:55        | `c3cd2f99` | feat(router-v2): land V2 two-axis failover spec + Sprint-1/2/3 impl + adversarial test harness (7/7 PASS); AGENTS.md +1 line "Knowledge-gap default → websearch" | parallel (Fred)         |
+| 12:49:49        | `eb823521` | fix(keyboard-target): guard `el?.isContentEditable` optional chain (TRIGGERS-69)                                                                                 | agnesia worker (Fix #1) |
+| 13:06:26        | `497cbbd2` | fix(triggers): unexport handleGlobalKeydown (TRIGGERS-DEAD-EXPORT) — main-lane takeover                                                                          | main                    |
+| 13:14:46        | `2b70b8f8` | fix(legend-panel): lowercase tagName comparison (LEGEND-318)                                                                                                     | main                    |
+| 13:14:51        | `0653da01` | fix(focus-coordinator): defensive optional chain on `ae?.isContentEditable` (FOCUS-COORD-93)                                                                     | main                    |
+| (this turn)     | (TBD)      | test(focus-trap): add installed-contract test pinning LAGUNA-FT-1                                                                                                | main                    |
 
 ## Off-slice keyboard fix batch — final verdicts
 
-| # | Ticket | Verdict | Commit | Author |
-| --- | --- | --- | --- | --- |
-| 1 | TRIGGERS-69 | REAL FIXED | `eb823521` | agnesia worker (keyboard-target.ts `el?.isContentEditable`) |
-| 2 | TRIGGERS-DEAD-EXPORT | REAL FIXED | `497cbbd2` | main-lane takeover (triggers.ts unexport + eslint-disable) |
-| 3 | TRIGGERS-GS-COLLIDE | DROPPED — false-positive (no export collision existed) | (none) | main-lane verdict |
-| 4 | LEGEND-318 | REAL FIXED | `2b70b8f8` | main-lane (legend-panel.svelte.ts `.toLowerCase()`) |
-| 5 | FOCUS-COORD-93 | REAL FIXED | `0653da01` | main-lane (focus-coordinator.ts `ae?.isContentEditable`) |
+| #   | Ticket               | Verdict                                                | Commit     | Author                                                      |
+| --- | -------------------- | ------------------------------------------------------ | ---------- | ----------------------------------------------------------- |
+| 1   | TRIGGERS-69          | REAL FIXED                                             | `eb823521` | agnesia worker (keyboard-target.ts `el?.isContentEditable`) |
+| 2   | TRIGGERS-DEAD-EXPORT | REAL FIXED                                             | `497cbbd2` | main-lane takeover (triggers.ts unexport + eslint-disable)  |
+| 3   | TRIGGERS-GS-COLLIDE  | DROPPED — false-positive (no export collision existed) | (none)     | main-lane verdict                                           |
+| 4   | LEGEND-318           | REAL FIXED                                             | `2b70b8f8` | main-lane (legend-panel.svelte.ts `.toLowerCase()`)         |
+| 5   | FOCUS-COORD-93       | REAL FIXED                                             | `0653da01` | main-lane (focus-coordinator.ts `ae?.isContentEditable`)    |
 
-Net: 4 real fixes landed, 1 dropped false positive. Lessons: bug-list labels must distinguish "duplicate *symbol* name" from "duplicate *export* name collision" — add export-keyword detection + rg import-check before labeling a collision.
+Net: 4 real fixes landed, 1 dropped false positive. Lessons: bug-list labels must distinguish "duplicate _symbol_ name" from "duplicate _export_ name collision" — add export-keyword detection + rg import-check before labeling a collision.
 
 ## Harness-retry resilience investigation (D) — verified findings
 
@@ -90,7 +90,7 @@ Five contract points (no DOM / no Playwright):
 4. `src/main.ts` wires `disposeFocusTrapBindings()` into a teardown handler (`beforeunload` / `disposeAppListeners` / `import.meta.hot.dispose`) — bidirectional lifecycle, no MutationObserver leak.
 5. `bindFocusTrapObserver` body has the idempotent re-entry guard (`if (_focusTrapObserver) return`), the real `MutationObserver` `.observe(document.body, {attributeFilter:['data-panel-surface']})`, and the surface branch calling `trapFocusIn([...])` / `releaseFocusTrapNow()`.
 
-Registered in `tests/run-all-contracts.js` PINNED_FILES and `tests/contracts.manifest.json` groups `full` (exact-match invariant preserved) and `lifecycle` (thematic). `--validate` shows no FULL_GROUP_*_MISMATCH and no orphan warning for the new file. `--single` execution: 5/5 PASS through the official ts-resolve-loader runner in 1.72s.
+Registered in `tests/run-all-contracts.js` PINNED*FILES and `tests/contracts.manifest.json` groups `full` (exact-match invariant preserved) and `lifecycle` (thematic). `--validate` shows no FULL_GROUP*\*\_MISMATCH and no orphan warning for the new file. `--single` execution: 5/5 PASS through the official ts-resolve-loader runner in 1.72s.
 
 ## Discovered facts (durable — captured in failures.md memory)
 
@@ -98,11 +98,11 @@ Registered in `tests/run-all-contracts.js` PINNED_FILES and `tests/contracts.man
 - `hy3-free` bare ref is NOT in the Zen free catalog. Canonical Hy3 routes are `modelscope/Tencent-Hunyuan/Hy3` and `kilo/tencent/hy3`. Verify via `external_subagent_free_models` before dispatching.
 - agnes-2.0-flash worker warmup pattern: ANTHROPIC lanes hit `Connection error` on first attempt and need ~4-5 min warmup via auto_retry; but can die SILENTLY mid-tool-result dispatch after ~5-7 min of stable production (no `tool_execution_end`, no `agent_end`, no `auto_retry_start`). Main-lane takeover threshold: ~240 sec of quiet.
 - pi-lens eager-LSP daemon auto-formats files to 4-space + no-semi on read, opposite of the project canonical 2-space + semicolon (eslint-config-prettier). Revert with `git checkout HEAD -- <churn-files>`. Pre-commit hook catches drift.
-- Bug-list labels must distinguish "duplicate symbol name" from "duplicate *export* name collision" — bugsweep pipeline should include export-keyword detection + rg import-check before labeling collision (the TRIGGERS-GS-COLLIDE false positive).
+- Bug-list labels must distinguish "duplicate symbol name" from "duplicate _export_ name collision" — bugsweep pipeline should include export-keyword detection + rg import-check before labeling collision (the TRIGGERS-GS-COLLIDE false positive).
 
 ## Pending / follow-up
 
 - **Upstream PR to `@earendil-works/pi-ai`** — propose adding `"streaming.?response.?failed"` to `RETRYABLE_PROVIDER_ERROR_PATTERN` so the dist-patch tradeoff goes away. Reversible until then via the recorded `.bak` snapshot.
-- **B (Wave-3 race fix)** — KH-HELPBTN-SECOND-CLICK-RACE Svelte 5 delegation + capture-phase race when `btn-keyboard-help` is double-clicked rapidly. Not started in this session; deferred.
+- **B (Wave-3 race fix) — COMPLETED 23:45Z (commit `c4201964`)**. KH-HELPBTN-SECOND-CLICK-RACE root cause: two click handlers on the SAME element `#btn-keyboard-help` — capture-phase listener (bound by `_rebindHelpBtnClickHandler` inside `initKeyboardShortcutsHint()`) AND Svelte 5 bubble-phase `onclick={openKeyboardHelp}` (which called `initKeyboardShortcutsHint()` + `toggleKeyboardShortcutsHint()`). Per W3C DOM spec, `e.stopPropagation()` does NOT block same-element bubble listeners — only `e.stopImmediatePropagation()` does. Parallel Track F's `df3f5c15` tried removing `toggleKeyboardShortcutsHint()` to make the capture handler sole authority, but DOM dispatch rules forbid a listener added DURING the current event from firing for that same event → first-click never opened the panel. Main-lane Approach A: restore `toggleKeyboardShortcutsHint()` in Header.svelte AND add `e.stopImmediatePropagation()` to the capture handler (silent on second+ clicks only — early-returns `if (!panel)` so first-click + post-close reopen paths bypass). PHASE 4-6 regression guards appended to `tests/keyboard-hint-panel-journey.spec.js`. Journey test 1/1 PASS (1.3m) — switched closeBtn lookup from `getByRole('button', {…}).waitFor('attached')` to CSS locator `#keyboard-hint-panel .kh-close` to bypass Playwright AX-tree refresh cache lag during CSS transition (saved to memory as tool-quirk). B worker (mimo-v2.5-free, 1200s) consumed entire budget on diagnostics, applied wrong `stopPropagation()` fix, left debug console.logs + prettier churn — main-lane takeover was faster.
 - **V2 failover (Fred)** — `docs/v2-failover/spec.md` Sprint-1/2/3 blueprint. Pending material implementation that would obsolete the laguna `FAILOVER_CHAINS` tactical shim.
 - **Pre-existing manifest orphans** (Fred-era, NOT this session): `mycelium-logic-contract.mjs` listed in `scene` group but missing from disk; `svelte-style-token-contract.mjs` orphan; 25 spec.js orphans. `--validate` reports these as warnings without exiting non-zero.
