@@ -71,7 +71,12 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         const target = e.target as HTMLElement | null
         const tag = target?.tagName?.toLowerCase()
         const isFormField =
-            tag === 'input' || tag === 'textarea' || tag === 'select' || target?.isContentEditable === true
+            tag === 'input' ||
+            tag === 'textarea' ||
+            tag === 'select' ||
+            tag === 'button' ||
+            tag === 'a' ||
+            target?.isContentEditable === true
 
         // Guard against IME composition keystrokes corrupting the composed text.
         if (e.isComposing) return
