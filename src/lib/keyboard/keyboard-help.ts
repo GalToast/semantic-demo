@@ -102,7 +102,7 @@ export function initKeyboardShortcutsHint(): void {
         { key: '/', desc: 'Focus search input' },
         { key: 'w', desc: 'Toggle weather widget' },
         { key: 'm', desc: 'Toggle audio mute' },
-        { key: 'Ctrl+1-6', desc: 'Switch view mode' },
+        { key: 'Ctrl/Cmd+1-6', desc: 'Switch view mode' },
         { key: 'Esc', desc: 'Return to overview' },
         { key: '?', desc: 'Open this help panel' }
     ]
