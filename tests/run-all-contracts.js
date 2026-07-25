@@ -291,6 +291,7 @@ const PINNED_FILES = [
     'state-mutator-ownership-contract.mjs',
     'filter-ownership-contract.mjs',
     'keyboard-reset-ownership-contract.mjs',
+    'focus-trap-installed-contract.mjs',
     'search-state-ui-adapter-contract.mjs',
     'search-panel-adapter-contract.mjs',
     'exploration-modes-contract.mjs',
