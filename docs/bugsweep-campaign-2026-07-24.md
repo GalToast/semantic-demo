@@ -369,3 +369,43 @@ The two novel bench observations for `mimo-v2.5-free` from this wave (cold-start
 ### Cross-staging sweep-in lesson — positively avoided in this wave
 
 Demonstrated the discipline learned earlier today (the `e1785420` amend cycle incident). In this wave, the parallel-session's DemoChoreography W51 WIP (~140 lines in `markInteraction()`) was preserved unstaged by NOT staging their file. The W7ks2 commit included only my own worker + main-lane work. Session coordination was broadcast via switchboard (`pi-main-glm-5.2`, channel `general`) at 16:31:14Z BEFORE the worker dispatch — post-operation message documented the W7ks2 completion + DemoChoreography deferral notice to the parallel session.
+
+## W7ks2 test-fix wave (commit `f1883db1`, +126/-48, 5 files)
+
+The W7ks1-F1 split-predicate fix (`e1785420`) + W7ks2-F2 event-name migration (`7163dc64`) LEFT 4 pre-existing contract tests + 2 of my own W7 test files broken because I never ran the broader vitest at W7ks1 time — only the focused 4-6 keyboard test files. Caught the breakage later when running a broader vitest sweep to verify HEAD `0653da01`.
+
+Wave shape (failure mode + fix):
+
+- **`choreography-start-race-contract.test.ts`** — the W48 `demo-cancelled` listener contract test asserted the OLD event-name shape. Fixed: migrated the W48 contract to the F2 shape (`demo-replay-acknowledged` + 500ms setTimeout-fallback showToast assertion preserves the W48 UX guarantee — silent replay failure still surfaces user feedback).
+- **`mode-chip-keyboard-shortcuts.test.ts`** — 3 F1-split-predicate regressions fixed: regex `if (isFormField) return` → `if (isTextInputField) return` (the F1 narrow form); rewrote `prevents default browser behavior on shortcut match` to use `indexOf('e.preventDefault()')` + `switch (e.key)` anchor (F1 made the FIRST `return` inside the Ctrl+1-6 branch an early-return BEFORE preventDefault); Ctrl+2 slice widened 1200→2500 to match sibling case '3'-'6' tests.
+- **`no-ungated-console-calls.test.ts`** — the F1 + F2 catch-block `console.warn` in `keyboard-help.ts:191` was un-gated. Fixed: routed through `debugWarn` from `@lib/utils/debug` per the test's own docstring preference. (Parallel session's unstaged `lazy-component.svelte.ts:132` `console.error` is also un-gated but is THEIR WIP — broadcast informs them.)
+- **`w7-keyboard-help-ime-guard.test.ts`** — the F1 catch-block test was strict regex `console.warn(`. Fixed: regex `/(?:console\.warn|debugWarn)\(/` + added 2 assertions `toContain('debugWarn(')` + `not.toContain('console.warn')` enforcing W47 production-hygiene contract as regression pin.
+- **`w7-keyboard-target-extracted.test.ts`** — the F6 util source at `keyboard-target.ts:24` had `el.isContentEditable` (my W7ks2 worker wrote this); parallel-session commit `eb823521` (TRIGGERS-69) refactored to `el?.isContentEditable`. My strict-substring F6 assertion missed the optional chain. Fixed: relaxed to `toContain('isContentEditable')` — forward-compatible with BOTH the W7ks2 original form AND the optional-chained variant.
+
+### Verification gates (HEAD `f1883db1`)
+
+- Focused vitest: 7 keyboard-area test files I touched → `Test Files 1 failed | 6 passed (7) | Tests 1 failed | 60 passed (61)`. The 1 residual is `no-ungated-console-calls.test.ts` (parallel-session WIP — `lazy-component.svelte.ts:132` ungated `console.error`).
+- Broad vitest run (238 test files): `Test Files 4 failed | 234 passed (238) | Tests 7 failed | 3008 passed | 4 todo (3019)`. **Net recovery of 4 tests + 2 files** vs. the pre-fix HEAD `0653da01` (Test Files 6 failed | 232 passed | Tests 11 failed | 3004 passed).
+- `eslint` + `svelte-check` baseline unchanged (the `debugWarn` import is identity-equivalent + same signature as `console.warn`).
+
+### Remaining failures at HEAD `f1883db1` — 7 tests in 4 files (ALL parallel-session WIP)
+
+All 7 failures trace to PARALLEL-SESSION unstaged working tree changes in `App.svelte` + `lazy-component.svelte.ts` (verified by stashing their WIP + re-running focused vitest — the same 4 files continue to fail but my fixes recovered 4 tests inside those failures):
+
+- `no-ungated-console-calls.test.ts` × 1 — parallel session's `lazy-component.svelte.ts:131` made the `console.error` gate PROD-mode (DEV→PROD swap); W47 contract requires `import.meta.env.DEV` gating only.
+- `App-component.test.ts` × 3 — parallel session's `App.svelte` InfoPanel lazy-refactor mid-flight: count dropped 11→6 + `infoPanelLazy =` ref removed.
+- `w46-b2-lazy-component-helper.test.ts` × 2 — tied to parallel session's `lazy-component.svelte.ts:131` DEV→PROD gate swap.
+- `main-landmark-render-contract.test.ts` × 1 — parallel session's `App.svelte` InfoPanel removal broke the contract body-inside-main assertion.
+
+Switchboard broadcast message ID 20 (2026-07-25T18:39Z) requested parallel session gate `lazy-component.svelte.ts:131` (route through `debugError` from `@lib/utils/debug` for PROD-mode error visibility) + update `App-component.test.ts` + `main-landmark-render-contract.test.ts` to match the App.svelte composition-root change.
+
+### Coexistence with parallel session's intervening commits
+
+Parallel session committed 4 times DURING my W7ks2 work (newest-last):
+
+- `eb823521` (TRIGGERS-69) — guarded `el?.isContentEditable` optional chain in `keyboard-target.ts:24`. 1-line change (`if (el.isContentEditable)` → `if (el?.isContentEditable)`) — broke my strict F6 assertion; my `f1883db1` relaxed it.
+- `497cbbd2` (TRIGGERS-DEAD-EXPORT) — unexported `handleGlobalKeydown` in `triggers.ts`. My F6 test still matches `function handleGlobalKeydown` (no `export` prefix required).
+- `2b70b8f8` (LEGEND-318) — Legend.svelte INPUT/TEXTAREA tagName case. Not in my test scope, clean interplay.
+- `0653da01` (FOCUS-COORD-93) — focus-coordinator `ae?.isContentEditable` defensive optional chain. Not in my test scope, clean interplay.
+
+My `f1883db1` commit landed cleanly on top of `0653da01` with no merge conflicts.
