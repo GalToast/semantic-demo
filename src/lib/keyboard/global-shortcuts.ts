@@ -70,13 +70,26 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
     function handleGlobalKeydown(e: KeyboardEvent): void {
         const target = e.target as HTMLElement | null
         const tag = target?.tagName?.toLowerCase()
-        const isFormField =
+        // W7ks1-F1 fix: split predicate into a narrow `isTextInputField`
+        // and a widened `isFormField`. Ctrl/Cmd+1-6 mode-switching + Escape
+        // return-to-overview use the narrow form so focused buttons/anchors
+        // do NOT block these navigation shortcuts (regression introduced in
+        // commit 4c5f84a4 — it widened `isFormField` to include button+a, but
+        // unintentionally also blocked Ctrl+1-6 mode-switch AND Escape
+        // return-to-overview whenever focus sat on the chip-rail buttons the
+        // user had just clicked).
+        const isTextInputField =
             tag === 'input' ||
             tag === 'textarea' ||
             tag === 'select' ||
-            tag === 'button' ||
-            tag === 'a' ||
             target?.isContentEditable === true
+        // Single-char shortcuts (`/`, `?`, `w`, `m`) still suppress on focused
+        // buttons/anchors — pressing `/` while focus sits on the help button
+        // could otherwise interleave with browser-quick-find overlays.
+        const isFormField =
+            isTextInputField ||
+            tag === 'button' ||
+            tag === 'a'
 
         // Guard against IME composition keystrokes corrupting the composed text.
         if (e.isComposing) return
@@ -85,7 +98,8 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         // handlers so shortcuts are never masked by component-level
         // listeners that also handle keydown.
         if ((e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)) {
-            if (isFormField) return
+            // W7ks1-F1: narrow form — Ctrl/Cmd+1-6 fires from focused buttons/anchors.
+            if (isTextInputField) return
             e.preventDefault()
             const modeId = KEY_TO_MODE[e.key]
             if (!modeId) return
@@ -164,7 +178,9 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         // browser's default back-nav fires AFTER the handler and
         // overwrites the page to about:blank (Visual QA Round 3 finding).
         if (e.key === 'Escape') {
-            if (isFormField) return
+            // W7ks1-F1: narrow form — Escape return-to-overview fires from
+            // focused buttons/anchors (regression fix).
+            if (isTextInputField) return
             // W47-c: If a <dialog open> is on screen, let the browser's
             // native cancel handler close it. Without this early return,
             // our preventDefault() below would suppress the dialog's

@@ -59,8 +59,10 @@ describe('W7: replayBtn click handler preserves the M15 invariant (F1 fix)', () 
         // The catch block now logs the failure reason via console.warn — guards future debugging
         // while preserving the M15 invariant (no stacked demos from a catch fallback).
         // The catch block lives inside the replayBtn click handler `addEventListener('click', ...)`.
-        const catchMatch = src.match(/} catch \(e\) \{\s*console\.warn\(['"][\s\S]{0,400}?\}\)/)
+        // Multi-line catch: `} catch (e) {\n    console.warn(\n        '...',\n        e\n    )\n}`.
+        const catchMatch = src.match(/}\s*catch\s*\(\s*e\s*\)\s*\{[\s\S]{0,800}?\n\s*\}/)
         expect(catchMatch).not.toBeNull()
+        expect(catchMatch![0]).toMatch(/console\.warn\(/)
         expect(catchMatch![0]).toMatch(/M15|M15 invariant/i)
     })
 })

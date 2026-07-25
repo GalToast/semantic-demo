@@ -128,11 +128,23 @@ describe('W46-B3: form-field guard preserved (suppresses shortcuts in inputs)', 
         // The original App.svelte used two patterns:
         //   - Ctrl+1-6: `if (isFormField) return` (positive form, early return)
         //   - `/`, `?`, `w`: `&& !isFormField` (negative form in condition)
-        // We preserve both for behavioral parity. Count guards (either form):
-        const positiveGuardCount = (src.match(/if\s*\(\s*isFormField\s*\)\s*return/g) || []).length
+        // We preserve both for behavioral parity. Count guards (either form).
+        //
+        // W7ks1-F1 (commit after the 4c5f84a4 regression): the predicate was split so
+        // Ctrl/Cmd+1-6 mode-switching + Escape return-to-overview use the narrow
+        // `isTextInputField` (original pre-4c5f84a4 shape — input|textarea|select|
+        // contentEditable only) so focused buttons/anchors do NOT block these
+        // navigation shortcuts. Single-char shortcuts (`/`, `?`, `w`, `m`) keep
+        // the broader `isFormField` (narrow || button || a). Both forms satisfy the
+        // 'shortcuts suppress in form fields' invariant since `isTextInputField`
+        // already covers all the native input elements.
+        const positiveGuardCount =
+            (src.match(/if\s*\(\s*isFormField\s*\)\s*return/g) || []).length +
+            (src.match(/if\s*\(\s*isTextInputField\s*\)\s*return/g) || []).length
         const negativeGuardCount = (src.match(/!\s*isFormField/g) || []).length
         expect(positiveGuardCount + negativeGuardCount).toBeGreaterThanOrEqual(4)
-        // Specifically: 1 positive (Ctrl+1-6) + 3 negative (`/`, `?`, `w`)
+        // Specifically: 2 positive (Ctrl+1-6 + Escape, both W7ks1-F1 narrow form)
+        //   + 4 negative (`/`, `?`, `w`, `m`, all keep broad `isFormField`).
         expect(positiveGuardCount).toBeGreaterThanOrEqual(1)
         expect(negativeGuardCount).toBeGreaterThanOrEqual(3)
     })
