@@ -149,6 +149,7 @@ Use narrower checks when validating a scoped change.
 - **Constantly improve** the Pi harness, key-router (`opencode-key-router.mjs`), environment, skills, system prompts, memory stores, and tools — when friction presents OR when an observation warrants it (not a per-turn mandate; don't manufacture work where there's no surfaced opportunity). Look for safe, scoped upgrades that grow model performance, intelligence, memory, and helpfulness across sessions. Capture coding gains as skills (`skill_manage`) + repo docs; route user-preference / life-side gains to `pi_tool memory_write target:"user"` so they persist. Long-term compound goal: an amazing coding AND life assistant.
 - Keep reusable Pi harness rules in global Pi docs/skills where appropriate, not in this repo file unless they are repo-specific.
 - For JavaScript scratch work, prefer the `js-repl` skill/tool when available instead of embedding REPL rules here.
+- **Knowledge-gap default → `websearch`** (MCP `websearch_*` via `mcp`). When local files, memory, and `ctx` don't give a confident answer (current model release dates, current API syntax, current docs, current router/provider health, time-sensitive facts) — search instead of speculate. Always available any turn; treat as always-on external memory.
 
 ## Key Product Invariants (W47 hot-path)
 
