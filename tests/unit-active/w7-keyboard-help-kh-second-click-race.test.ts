@@ -1,32 +1,40 @@
 /**
  * @file w7-keyboard-help-kh-second-click-race.test.ts
  *
- * Regression + structural contract for the KH-HELPBTN-SECOND-CLICK-RACE fix
- * applied 2026-07-25 to `src/components/Header.svelte`:
+ * Regression + structural contract for the KH-HELPBTN-SECOND-CLICK-RACE fix.
  *
- *   Root cause: TWO independent click handlers toggled the keyboard-hint panel
- *   on every click — `_rebindHelpBtnClickHandler` (capture-phase listener bound
- *   by initKeyboardShortcutsHint in keyboard-help.ts:354) AND Svelte 5's
- *   delegated bubble-phase `onclick={openKeyboardHelp}` at Header.svelte:111.
- *   openKeyboardHelp called BOTH `initKeyboardShortcutsHint()` AND
- *   `toggleKeyboardShortcutsHint()`, racing the capture listener's toggle.
- *   Net: 3 DOM mutations per click (capture open → bubble-capture close →
- *   Svelte-delegated reopen). Single clicks flickered; rapid double-clicks
- *   left the panel CLOSED (opened then immediately closed).
+ * ## Wave-3 supersession (2026-07-25)
+ * The original Track F "Option F" fix at commit `df3f5c15` REMOVED
+ * `toggleKeyboardShortcutsHint()` from `openKeyboardHelp()` and trimmed the
+ * import — leaving the capture-phase handler (bound by `initKeyboardShortcutsHint`'s
+ * `_rebindHelpBtnClickHandler`) as the sole toggle authority. But DOM dispatch
+ * rules forbid *newly-bound listeners* from firing during the SAME current event,
+ * so the capture handler created on first click could not fire on the same
+ * click → first-click FAILED to OPEN the panel (PHASE-1 timing issue surfaced
+ * by `tests/keyboard-hint-panel-journey.spec.js`).
  *
- *   Fix (Option F from Track F bugsweep report by mimo worker): remove the
- *   duplicate `toggleKeyboardShortcutsHint()` call from openKeyboardHelp() so
- *   the capture-phase handler is the sole toggle authority. openKeyboardHelp
- *   now only ensures init so the button works on the very first click.
+ * Wave-3 (parallel-session supersession, uncommitted as of 2026-07-25T23:Z)
+ * revised the contract:
+ *   - `Header.svelte:openKeyboardHelp()` KEEPS `initKeyboardShortcutsHint()` AND
+ *     `toggleKeyboardShortcutsHint()` — bubble-phase toggle handles the first
+ *     click (panel created + opened in one tick) and the post-close case where
+ *     the capture handler at-target early-returns when `panel == null`.
+ *   - `keyboard-help.ts:_rebindHelpBtnClickHandler` capture-phase handler now calls
+ *     `e.stopImmediatePropagation()` (line ~388) AFTER the early-return guard so
+ *     it silences Svelte 5's compiled-bubble-phase `onclick={openKeyboardHelp}` on
+ *     2nd+ clicks. Per W3C DOM spec, `stopPropagation()` does NOT block
+ *     same-element bubble listeners; only `stopImmediatePropagation()` does.
+ *     Capture handler remains the sole toggle authority on second+ clicks →
+ *     single-toggle wins → no race.
  *
- * Worker dispatch context: dispatched to mimo-v2.5-free worker `ocw_72756e11`
- * via router-opencode-zen. Worker COMPLETED at exit 0 (~6min wallclock, aligning
- * with the documented cold-start-pre-write-stall + steer-nudge unlock pattern
- * prescribed in the W7ks2 bench-doc). Report at
- * `tmp/bugsweep-2026-07-24/worker8-KH-HELPBTN-SECOND-CLICK-RACE-report.md`.
- *
- * Same regex-on-source + readFileSync-in-isolation style as
+ * This regression test asserts the Wave-3 contract — that openKeyboardHelp keeps
+ * init + toggle AND that the capture-phase handler has the stopImmediatePropagation
+ * shield. Same regex-on-source + readFileSync-in-isolation style as
  * `w7-keyboard-help-f2f4f5-followup.test.ts` — avoids runtime DOM/Svelte imports.
+ *
+ * History: the prior Option F assertions ("body lacks toggle" / "import trimmed")
+ * were the Option F contract. After Wave-3 they would FAIL by design — see git
+ * history at `df3f5c15` for the Option F contract that was superseded.
  */
 import { describe, it, expect } from 'vitest'
 // @ts-ignore
@@ -35,60 +43,67 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const HEADER_PATH = resolve(import.meta.dirname, '../../src/components/Header.svelte')
+const KEYBOARD_HELP_PATH = resolve(import.meta.dirname, '../../src/lib/keyboard/keyboard-help.ts')
 const headerSrc = readFileSync(HEADER_PATH, 'utf-8')
+const keyboardHelpSrc = readFileSync(KEYBOARD_HELP_PATH, 'utf-8')
 
-describe('W7: KH-HELPBTN-SECOND-CLICK-RACE — openKeyboardHelp no longer calls toggleKeyboardShortcutsHint', () => {
-    it('Header.svelte openKeyboardHelp body does NOT contain toggleKeyboardShortcutsHint', () => {
-        // The race was caused by openKeyboardHelp calling BOTH init + toggle: the toggle call
-        // raced the capture-phase listener bound by init. Fix (Option F): remove the toggle
-        // call so the capture handler is the sole toggle authority.
-        const fnIdx = headerSrc.indexOf('function openKeyboardHelp(): void {')
-        expect(fnIdx).toBeGreaterThan(-1)
-        const body = headerSrc.slice(fnIdx, fnIdx + 300)
-        expect(body).not.toContain('toggleKeyboardShortcutsHint')
-    })
-
-    it('Header.svelte openKeyboardHelp still calls initKeyboardShortcutsHint', () => {
-        // The init call is REQUIRED for the first-click path — it creates the panel + binds the
-        // capture-phase listener (F5 re-bind helper). On the very first click, the capture
-        // listener added by _rebindHelpBtnClickHandler fires synchronously during the same event
-        // and opens the panel (panel not-yet-visible → openPanel called).
+describe('W7: KH-HELPBTN-SECOND-CLICK-RACE — Wave-3 fix (capture stopImmediatePropagation + openKeyboardHelp init+toggle)', () => {
+    it('Header.svelte openKeyboardHelp body calls initKeyboardShortcutsHint (first-click path)', () => {
+        // The init call is REQUIRED for the first-click path — it creates the panel + binds
+        // the capture-phase _rebindHelpBtnClickHandler listener. openKeyboardHelp MUST call
+        // init so the very first click after page load binds the capture handler.
         const fnIdx = headerSrc.indexOf('function openKeyboardHelp(): void {')
         expect(fnIdx).toBeGreaterThan(-1)
         const body = headerSrc.slice(fnIdx, fnIdx + 300)
         expect(body).toContain('initKeyboardShortcutsHint')
     })
 
-    it('Header.svelte import line no longer references toggleKeyboardShortcutsHint (dead-import cleanup)', () => {
-        // Removing the only call site from this file means the import also must be trimmed, or
-        // eslint/prettier would flag the unused identifier. This assertion catches a future
-        // mechanical "re-add the call but forget to re-add the import" OR "re-add the import but
-        // forget to re-add the call" regression — both produce a working tree where the toggle
-        // path silently re-enters near Header.
-        const importIdx = headerSrc.indexOf("from '@lib/keyboard/keyboard-help'")
-        expect(importIdx).toBeGreaterThan(-1)
-        const importLine = headerSrc.slice(Math.max(0, importIdx - 200), importIdx + 40)
-        expect(importLine).not.toContain('toggleKeyboardShortcutsHint')
-        // Sanity: the initKeyboardShortcutsHint identifier must remain in the import line.
-        expect(importLine).toContain('initKeyboardShortcutsHint')
+    it('Header.svelte openKeyboardHelp body ALSO calls toggleKeyboardShortcutsHint (first-click open + post-close reopen)', () => {
+        // Wave-3 (NOT Option F): openKeyboardHelp keeps BOTH init and toggle. The bubble-phase
+        // toggle runs on the first click (panel created + opened in one tick) and handles the
+        // post-close case where the capture handler at-target early-returns because the panel
+        // was closed + null. The capture handler then only takes authority on 2nd+ clicks
+        // through stopImmediatePropagation (next assertion).
+        const fnIdx = headerSrc.indexOf('function openKeyboardHelp(): void {')
+        expect(fnIdx).toBeGreaterThan(-1)
+        const body = headerSrc.slice(fnIdx, fnIdx + 300)
+        expect(body).toContain('toggleKeyboardShortcutsHint')
     })
 
     it('Header.svelte still wires onclick={openKeyboardHelp} on #btn-keyboard-help', () => {
-        // The button keeps its idiomatic Svelte 5 onclick handler — the fix only changes what
-        // openKeyboardHelp does (init-only, no toggle), not the wiring at the call site.
+        // The button keeps its idiomatic Svelte 5 onclick handler. The Wave-3 fix only
+        // changes what the capture handler does (stopImmediatePropagation); it does NOT
+        // change the call-site wiring.
         const btnIdx = headerSrc.indexOf('id="btn-keyboard-help"')
         expect(btnIdx).toBeGreaterThan(-1)
         const btnBlock = headerSrc.slice(btnIdx, btnIdx + 400)
         expect(btnBlock).toContain('onclick={openKeyboardHelp}')
     })
 
-    it('Header.svelte annotates the fix with a grep-arable W7 marker comment', () => {
-        // Convention from the F4/F5 wave: surgical fixes carry a `KH-HELPBTN-SECOND-CLICK-RACE`
-        // marker comment immediately above the function body so future grep audits surface them.
+    it('keyboard-help.ts capture-phase handler calls e.stopImmediatePropagation() (root-cause Wave-3 fix)', () => {
+        // This is the heart of the Wave-3 fix. Without this call, Svelte 5's compiled
+        // bubble-phase openKeyboardHelp races the capture handler on 2nd+ clicks because
+        // e.stopPropagation() does NOT block same-element bubble listeners (W3C DOM spec).
+        // Only stopImmediatePropagation does. Removing this call re-introduces the race
+        // silently — the journey test in keyboard-hint-panel-journey.spec.js PHASE 4-6 catches
+        // it at runtime; this assertion catches it at the source-string level too so grep
+        // audits get an audit-trail signal.
+        expect(keyboardHelpSrc).toContain('e.stopImmediatePropagation()')
+        // The Wave-3 marker comment above the stopImmediatePropagation call makes the fix
+        // grep-arable for future audits. Without the marker, the call could be removed
+        // silently + re-introduce the race.
+        expect(keyboardHelpSrc).toContain('Wave-3 (KH-HELPBTN-SECOND-CLICK-RACE)')
+    })
+
+    it('Header.svelte annotates the fix with a grep-arable W7 marker comment above openKeyboardHelp', () => {
+        // Convention from the F4/F5 wave + Wave-3: surgical fixes carry a
+        // `KH-HELPBTN-SECOND-CLICK-RACE fix` marker immediately above the function body so
+        // future grep audits (e.g. `rg -n "KH-HELPBTN-SECOND-CLICK-RACE"`) surface them.
         const markerIdx = headerSrc.indexOf('KH-HELPBTN-SECOND-CLICK-RACE fix')
         expect(markerIdx).toBeGreaterThan(-1)
         // The marker must appear BEFORE the openKeyboardHelp function definition.
         const fnIdx = headerSrc.indexOf('function openKeyboardHelp(): void {')
+        expect(fnIdx).toBeGreaterThan(-1)
         expect(markerIdx).toBeLessThan(fnIdx)
     })
 })
