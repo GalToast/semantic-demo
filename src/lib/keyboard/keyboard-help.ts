@@ -10,6 +10,7 @@
 
 import { cancelMicroDemo } from '@lib/demo/choreography'
 import { showToast } from '@lib/stores/toast.svelte'
+import { debugWarn } from '@lib/utils/debug'
 import { isKeyboardTextEntryTarget } from '@lib/utils/keyboard-target'
 
 // ── Pure utilities (native, no legacy deps) ─────────────────────────────────
@@ -188,7 +189,12 @@ export function initKeyboardShortcutsHint(): void {
             // sceneReady (M15 — prevents stacked veils). No legacy setTimeout
             // fallback: it could start a second demo on top of an active one.
         } catch (e) {
-            console.warn(
+            // W7ks1-F1: W47 production-hygiene contract requires the catch log
+            // be gated (no un-gated console.* in src/ — see tests/unit-active/no-ungated-console-calls.test.ts).
+            // `debugWarn` from @lib/utils/debug routes through the canonical gated
+            // dev-only logger so production builds emit zero output here, while
+            // dev + test runs still get visibility into replay-dispatch failures.
+            debugWarn(
                 '[keyboard-help] demo-replay-requested dispatch failed (M15 invariant preserved — no legacy startMicroDemo fallback):',
                 e
             )
@@ -346,8 +352,7 @@ export function initKeyboardShortcutsHint(): void {
  * both the early-return path + the fresh-init path of `initKeyboardShortcutsHint`.
  */
 function _rebindHelpBtnClickHandler(): void {
-    const helpBtn = document.getElementById('btn-keyboard-help') as (
-        HTMLElement & { _khClickBound?: boolean }) | null
+    const helpBtn = document.getElementById('btn-keyboard-help') as (HTMLElement & { _khClickBound?: boolean }) | null
     if (!helpBtn || helpBtn._khClickBound) return
     helpBtn.addEventListener(
         'click',
@@ -356,10 +361,17 @@ function _rebindHelpBtnClickHandler(): void {
             if (!panel) return
             if (panel.classList.contains('visible')) {
                 if (typeof panel._closeKeyboardHintPanel === 'function') panel._closeKeyboardHintPanel()
-                else { panel.classList.remove('visible'); panel.setAttribute('aria-hidden', 'true') }
+                else {
+                    panel.classList.remove('visible')
+                    panel.setAttribute('aria-hidden', 'true')
+                }
             } else {
-                if (typeof panel._openKeyboardHintPanel === 'function') panel._openKeyboardHintPanel(document.getElementById('btn-keyboard-help'))
-                else { panel.classList.add('visible'); panel.setAttribute('aria-hidden', 'false') }
+                if (typeof panel._openKeyboardHintPanel === 'function')
+                    panel._openKeyboardHintPanel(document.getElementById('btn-keyboard-help'))
+                else {
+                    panel.classList.add('visible')
+                    panel.setAttribute('aria-hidden', 'false')
+                }
             }
         },
         { capture: true }

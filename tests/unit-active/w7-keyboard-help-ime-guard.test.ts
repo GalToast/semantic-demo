@@ -56,14 +56,22 @@ describe('W7: replayBtn click handler preserves the M15 invariant (F1 fix)', () 
     })
 
     it('replayBtn catch-block logs an informative warning when dispatch fails', () => {
-        // The catch block now logs the failure reason via console.warn — guards future debugging
-        // while preserving the M15 invariant (no stacked demos from a catch fallback).
+        // The catch block now logs the failure reason via `debugWarn` (from @lib/utils/debug) —
+        // guards future debugging while preserving the M15 invariant (no stacked demos from
+        // a catch fallback). The W7ks1-F1 fix originally used a raw `console.warn`, but the
+        // W47 production-hygiene contract (tests/unit-active/no-ungated-console-calls.test.ts)
+        // requires the call go through `debugWarn` / `debugLog` / `debugError` so production
+        // builds emit zero log output. Both shapes satisfy the F1 catch-block logging contract.
         // The catch block lives inside the replayBtn click handler `addEventListener('click', ...)`.
-        // Multi-line catch: `} catch (e) {\n    console.warn(\n        '...',\n        e\n    )\n}`.
+        // Multi-line catch: `} catch (e) {\n    debugWarn(\n        '...',\n        e\n    )\n}`.
         const catchMatch = src.match(/}\s*catch\s*\(\s*e\s*\)\s*\{[\s\S]{0,800}?\n\s*\}/)
         expect(catchMatch).not.toBeNull()
-        expect(catchMatch![0]).toMatch(/console\.warn\(/)
+        expect(catchMatch![0]).toMatch(/(?:console\.warn|debugWarn)\(/)
         expect(catchMatch![0]).toMatch(/M15|M15 invariant/i)
+        // W47 production-hygiene invariant: the call must be `debugWarn`, NOT raw `console.warn`
+        // (no un-gated console.* in src/ — see no-ungated-console-calls.test.ts).
+        expect(catchMatch![0], 'catch-block log must go through debugWarn (W47 production-hygiene contract)').toContain('debugWarn(')
+        expect(catchMatch![0], 'catch-block must NOT have a raw console.warn — W47 contract forbids un-gated console.* in src/').not.toContain('console.warn')
     })
 })
 

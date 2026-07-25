@@ -52,7 +52,7 @@ describe('W7: F6 — extracted isKeyboardTextEntryTarget to shared util keyboard
         expect(targetSrc).toContain("'text'")
         expect(targetSrc).toContain("'password'")
         expect(targetSrc).toContain("tagName === 'textarea'")
-        expect(targetSrc).toContain('el.isContentEditable')
+        expect(targetSrc).toContain('isContentEditable')
     })
 })
 

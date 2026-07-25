@@ -211,24 +211,37 @@ describe('choreography.ts — start-race re-entrancy contract (W47)', () => {
 })
 
 /**
- * keyboard-help.ts — 'demo-cancelled' event consumer contract (W48)
+ * keyboard-help.ts — 'demo-replay-acknowledged' event contract (W48 + W7ks2 F2)
  *
- * Lock-in: prevents the W48 silent-replay-tour bug from returning.
- * `notifyDemoUnableToStart()` in src/lib/demo/guards.ts dispatches a
- * `demo-cancelled` CustomEvent on the document. The only reachable
- * caller of the path that fires it is the "Replay tour" button in
- * src/lib/keyboard/keyboard-help.ts (which calls startMicroDemo() →
- * _startMicroDemo() → notifyDemoUnableToStart()).
+ * W48 history: the original silent-replay-tour bug was fixed by adding a
+ * one-shot `demo-cancelled` listener in the Replay button's click handler
+ * — when `notifyDemoUnableToStart()` (lib/demo/guards.ts:80) fired the
+ * `demo-cancelled` CustomEvent, the listener collapsed + `showToast` surfaced.
  *
- * Without a listener for `demo-cancelled`, a replay that fails after
- * 100 retries leaves the user with zero feedback. This contract locks
- * in the structural invariant: the replay button's click handler must
+ * W7ks2-F2 event-name migration: the W48 `demo-cancelled` listener was
+ * firing on EVERY active-demo replay (because cancelMicroDemo('replay')
+ * dispatches `demo-cancelled` as part of its cancel-cascade, which
+ * synchronously fires the once-listener) — "Replay unavailable" toast
+ * appeared even when the canonical replay path started cleanly. F2
+ * replaced this with a `demo-replay-acknowledged` event sequence: keyboard-help.ts
+ * registers a one-shot `demo-replay-acknowledged` listener BEFORE dispatching
+ * `demo-replay-requested`, then DemoChoreography.svelte's `replayListener`
+ * synchronously dispatches `demo-replay-acknowledged` after `requestReplay()`.
+ * A 500ms setTimeout-fallback still calls `showToast` if no ack arrives, so
+ * the W48 UX guarantee (silent replay failure surfaces user feedback) is
+ * preserved — only the event-name + dispatch shape changed.
+ *
+ * This contract locks in the structural invariant: the replay button's
+ * click handler must
  *   1. import a toast helper
- *   2. register a one-shot 'demo-cancelled' listener
- *   3. call showToast (or showErrorToast / showExperienceToast) so the
- *      user sees feedback when the replay silently fails.
+ *   2. register a one-shot `demo-replay-acknowledged` listener
+ *   3. dispatch `demo-replay-requested` to DemoChoreography's listener
+ *   4. land a 500ms setTimeout fallback calling showToast so the user
+ *      still sees "Replay unavailable" feedback if DemoChoreography
+ *      is not mounted (M15 invariant — both paths converge on the
+ *      canonical replay path via event).
  */
-describe('keyboard-help.ts — demo-cancelled replay-tour listener (W48)', () => {
+describe('keyboard-help.ts — demo-replay-acknowledged replay-tour listener (W48 + W7ks2 F2)', () => {
     // @ts-ignore
     const HELP_SRC_PATH = resolve(__dirname, '../../src/lib/keyboard/keyboard-help.ts')
 
@@ -240,13 +253,12 @@ describe('keyboard-help.ts — demo-cancelled replay-tour listener (W48)', () =>
         const src = readHelpSource()
         // Accept any of the toast helpers used across the codebase. The
         // intent is: a feedback surface is imported, not silently absent.
-        expect(
-            src,
-            'keyboard-help.ts must import a toast helper for replay feedback'
-        ).toMatch(/import\s+\{[^}]*(?:showToast|showErrorToast|showExperienceToast)[^}]*\}\s+from\s+['"]@lib\/(?:stores\/toast\.svelte|orchestration\/toast)['"]/)
+        expect(src, 'keyboard-help.ts must import a toast helper for replay feedback').toMatch(
+            /import\s+\{[^}]*(?:showToast|showErrorToast|showExperienceToast)[^}]*\}\s+from\s+['"]@lib\/(?:stores\/toast\.svelte|orchestration\/toast)['"]/
+        )
     })
 
-    it('the Replay tour button click handler registers a demo-cancelled listener', () => {
+    it('the Replay tour button click handler registers a demo-replay-acknowledged listener', () => {
         const src = readHelpSource()
         // Slice from the replay button click handler to the end of the
         // handler (find the matching close-paren of addEventListener('click', ...)).
@@ -264,14 +276,31 @@ describe('keyboard-help.ts — demo-cancelled replay-tour listener (W48)', () =>
             i++
         }
         const handler = src.slice(clickIdx, i)
-        expect(
-            handler,
-            'replay click handler must register a demo-cancelled listener'
-        ).toMatch(/addEventListener\(\s*['"]demo-cancelled['"]/)
-        expect(
-            handler,
-            'listener should use { once: true } so it auto-removes on fire'
-        ).toMatch(/\{\s*once:\s*true\s*\}/)
+        // W7ks2-F2: the listener was renamed from `demo-cancelled` to
+        // `demo-replay-acknowledged` (the false-positive-firing root cause
+        // was that cancelMicroDemo('replay') synchronously dispatched
+        // `demo-cancelled` during the cancel-cascade). The new event is
+        // dispatched by DemoChoreography.svelte::replayListener AFTER
+        // requestReplay() runs — a synchronous ack of the canonical path.
+        expect(handler, 'replay click handler must register a demo-replay-acknowledged listener').toMatch(
+            /addEventListener\(\s*['"]demo-replay-acknowledged['"]/
+        )
+        expect(handler, 'listener should use { once: true } so it auto-removes on fire').toMatch(
+            /\{\s*once:\s*true\s*\}/
+        )
+        // W48 preservation: the click handler must ALSO dispatch
+        // `demo-replay-requested` (DemoChoreography consumes it) so the
+        // canonical replay path kicks off — without this dispatch the
+        // 500ms setTimeout-fallback toast would ALWAYS fire.
+        expect(handler, 'click handler must dispatch demo-replay-requested to start the canonical replay').toContain(
+            "new CustomEvent('demo-replay-requested')"
+        )
+        // W48 UX guarantee: a 500ms setTimeout fallback must call showToast
+        // so silent replay failure (DemoChoreography unmounted OR ack never
+        // arrives) still surfaces user feedback.
+        expect(handler, 'click handler must land a 500ms setTimeout fallback calling showToast').toMatch(
+            /setTimeout\(\(\)\s*=>\s*\{[\s\S]{0,500}?showToast\s*\(/
+        )
     })
 
     it('the demo-cancelled listener calls a toast helper to surface feedback', () => {
@@ -289,9 +318,8 @@ describe('keyboard-help.ts — demo-cancelled replay-tour listener (W48)', () =>
         const handler = src.slice(clickIdx, i)
         // The listener body must invoke one of the toast helpers so the
         // user sees feedback. Without this, the replay silently fails.
-        expect(
-            handler,
-            'demo-cancelled listener must call a toast helper'
-        ).toMatch(/showToast\s*\(|showErrorToast\s*\(|showExperienceToast\s*\(/)
+        expect(handler, 'demo-cancelled listener must call a toast helper').toMatch(
+            /showToast\s*\(|showErrorToast\s*\(|showExperienceToast\s*\(/
+        )
     })
 })

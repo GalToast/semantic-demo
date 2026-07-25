@@ -32,8 +32,17 @@ describe('A2-4: Ctrl+1-6 keyboard shortcuts for mode switching', () => {
     })
 
     it('skips shortcuts when user is typing in an input/textarea/select', () => {
-        // The handler checks isFormField before dispatching
-        expect(appSrc).toMatch(/if\s*\(\s*isFormField\s*\)\s*return/)
+        // W7ks1-F1 fix: split the predicate per-shortcut-class. Ctrl/Cmd+1-6
+        // mode-switch + Escape return-to-overview use the NARROW form
+        // `isTextInputField` (input/textarea/select/contentEditable) so focused
+        // buttons/anchors fire repeat shortcuts too — the broad-form `isFormField`
+        // from the regression-inducing commit `4c5f84a4` was blocking Mode-switch
+        // when focus sat on the chip-rail button the user just clicked.
+        //
+        // The test now anchors to the narrow-form gate the F1 fix lands inside
+        // the Ctrl+1-6 branch directly (tests/unit-active/w7-global-shortcuts-
+        // isformfield-split.test.ts locks the broader split-predicate contract).
+        expect(appSrc).toMatch(/if\s*\(\s*isTextInputField\s*\)\s*return/)
     })
 
     it('skips shortcuts when target is contentEditable', () => {
@@ -42,10 +51,25 @@ describe('A2-4: Ctrl+1-6 keyboard shortcuts for mode switching', () => {
     })
 
     it('prevents default browser behavior on shortcut match', () => {
-        // The handler ends with `return` (no semicolon) so search without semicolon.
+        // W7ks1-F1 fix: `if (isTextInputField) return` now lands BEFORE
+        // `e.preventDefault()` in the Ctrl+1-6 branch (narrow form). The
+        // previous slice `shortcutIdx → first-return-after-shortcutIdx+100`
+        // captured only the F1 early-return line + comment, so the block
+        // ran out before `e.preventDefault()`. The pre-existing `return`
+        // approach is now midpoint-of-branch; switch to locating
+        // `e.preventDefault()` directly inside the Ctrl+1-6 branch span by
+        // anchoring it to the upcoming `switch (e.key)` dispatch block.
         const shortcutIdx = appSrc.indexOf('(e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)')
-        const returnIdx = appSrc.indexOf('return', shortcutIdx + 100)
-        const block = appSrc.slice(shortcutIdx, returnIdx)
+        const preventIdx = appSrc.indexOf('e.preventDefault()', shortcutIdx)
+        expect(preventIdx, 'e.preventDefault() must follow the Ctrl+1-6 shortcut condition').toBeGreaterThan(
+            shortcutIdx
+        )
+        const switchIdx = appSrc.indexOf('switch (e.key)', preventIdx)
+        expect(
+            switchIdx,
+            'switch (e.key) dispatch must follow preventDefault() inside the Ctrl+1-6 branch'
+        ).toBeGreaterThan(preventIdx)
+        const block = appSrc.slice(shortcutIdx, switchIdx)
         expect(block).toContain('e.preventDefault()')
     })
 
@@ -57,8 +81,14 @@ describe('A2-4: Ctrl+1-6 keyboard shortcuts for mode switching', () => {
     })
 
     it('maps Ctrl+2 to SET_SURFACE with search', () => {
+        // W7ks1-F1 widened the Ctrl+1-6 branch body by ~100 chars (narrow-form
+        // `if (isTextInputField) return` guard + the 6-line W7ks1-F1 comment)
+        // pushing `surface: 'search'` to ~char 1201 from shortcutIdx — right
+        // at the prior 1200-char slice boundary. Widened to 2500 to match the
+        // sibling case '3'-'6' tests (which already had 2500 for the same
+        // reason: more leading comments than the original orchestrator had).
         const shortcutIdx = appSrc.indexOf('(e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)')
-        const block = appSrc.slice(shortcutIdx, shortcutIdx + 1200)
+        const block = appSrc.slice(shortcutIdx, shortcutIdx + 2500)
         expect(block).toContain("case '2'")
         expect(block).toContain("surface: 'search'")
         expect(block).toContain('NAV_TRANSITION_ACTIONS.SET_SURFACE')
