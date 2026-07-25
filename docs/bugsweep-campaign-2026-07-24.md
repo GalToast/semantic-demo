@@ -137,3 +137,77 @@ After wave-2 (Laguna + Inkling) all stalled, pivoted to confirm golden geese tha
 2. Wait for parallel-session commit graph to settle (≥10 min quiet) → re-baseline `npm run lint` + `npm run check:svelte` at clean HEAD.
 3. Execute the fix wave from "Recommended fix wave" above (start with the NEW `InfoPanel.svelte:345` `inert={!panelOpen}` 1-liner + the journey test).
 4. Run `npm run qa:journey:headless` to verify the new InfoPanel mobile-idle test.
+
+## Worker wave 7 — 2026-07-25 13:54Z (keyboard bugsweep + bench-extension)
+
+Fresh wave triggered by user's "sounds good to me! Let's keep going" — pivoting from the W6 bench lane (laguna vs glm vs agnes after poolside 429 churn had bottlenecked laguna + glm pre-write stall had bottlenecked delivery comparison) to a productive bugsweep+bench multi-wave: audit the parallel session's recently-landed `src/lib/keyboard/*` modules for regressions + extend the bench lane ranking with `qwen3.6-plus` + `mimo-v2.5-free`.
+
+### Pre-dispatch observations from main-lane independent read (2026-07-25 13:42Z)
+
+After reading both `src/lib/keyboard/global-shortcuts.ts` (196 lines) + `src/lib/keyboard/keyboard-help.ts` (393 lines) at current HEAD, main-lane flagged several audit angles (NOT yet asserted — to be cross-verified against agnes/qwen/mimo worker-ground-truth):
+
+- **`isFormField` extension regression surface (commit `4c5f84a4`)** — adding `button` + `a` to `isFormField` SUPPRESSES Ctrl+1-6 + `w` + `m` + `?` + `/` when focus is on a `<button>` or `<a>` (typical state when user has tabbed to the chip rail; many users press `Ctrl+1` to navigate from there — silent no-op now).
+- **M15 replay-stack-defense leak (commit `553fb145`)** — `replayBtn` click handler catch block falls back to `startMicroDemo()` which is the LEGACY 6-phase path. That contradicts the comment-block-within same-line above ("Replay must NOT stack demos").
+- **IME guard divergence (commit `6ad96301`)** — `global-shortcuts.ts` `handleGlobalKeydown` has `if (e.isComposing) return`, but `keyboard-help.ts` `handleGalaxyKeydown` + `_onPanelKeydown` do NOT. CJK IME-composition-phase keystrokes could fire Home/Escape/`?` prematurely inside keyboard-help's two handlers.
+- **Panel re-render handler-loss edge case** — `initKeyboardShortcutsHint()` early `if (document.getElementById('keyboard-hint-panel')) return` short-circuits the `helpBtn.addEventListener('click', ..., { capture: true })` re-bind; if Header.svelte re-renders a NEW `btn-keyboard-help` element (e.g., after live-region changes the parent), the click handler is lost.
+- **`showKeyboardShortcutsHint` vs `toggleKeyboardShortcutsHint` semantic divergence** — `?` key (global-shortcuts) opens with 5s auto-dismiss; header `?` button calls toggle (no auto-dismiss). Pressing `?` while panel open re-arms timer; pressing `?` button while open closes. UX-inconsistency hazard.
+
+### Wave 7 dispatched workers (3 parallel)
+
+| Worker  | Slice                                  | Model                                | Worker ID                      | Started UTC | Timeout | Verdict |
+| ------- | -------------------------------------- | ------------------------------------ | ------------------------------ | ----------- | ------- | ------- |
+| W7ks1   | `src/lib/keyboard/global-shortcuts.ts` | `router-agnes/agnes-2.0-flash`       | `ocw_cd54430d-...` (PID 9500)  | 13:54:52Z   | 600s    | PENDING |
+| W7ks2   | `src/lib/keyboard/keyboard-help.ts`    | `router-opencode-zen/qwen3.6-plus`   | `ocw_720752e6-...` (PID 25080) | 13:54:52Z   | 600s    | PENDING |
+| W7bench | L4-H1 z-index audit slice (bench-ext)  | `router-opencode-zen/mimo-v2.5-free` | `ocw_0287cd36-...` (PID 10500) | 13:55:54Z   | 600s    | PENDING |
+
+### Worker prompts
+
+- `tmp/bugsweep-2026-07-24/worker7-ks-global-shortcuts-prompt.md` (4893 bytes)
+- `tmp/bugsweep-2026-07-24/worker7-ks-keyboard-help-prompt.md` (7571 bytes)
+- `tmp/bench-laguna-vs-glm-2026-07-24/bench-extra-prompt.md` (bench-extra generic template)
+
+### Verification discipline (per AGENTS.md)
+
+- Workers will write reports to `tmp/bugsweep-2026-07-24/worker7-ks-global-shortcuts-report.md` + `tmp/bugsweep-2026-07-24/worker7-ks-keyboard-help-report.md` + `tmp/bench-laguna-vs-glm-2026-07-24/bench-extra-report.md` respectively
+- Main-lane will independently diff each worker's findings vs the independent observation above + score per-dimension
+- Main-lane will run `check:svelte` + lint at HEAD before any fix wave + audit the fix wave delta
+
+### Next action (post-worker-completion)
+
+Poll workers (~5-10 min wallclock expected based on agnes W6 ~5 min + glm W6 ~10 min benchmarks) → fetch reports → main-lane cross-verification → scoring → fix wave OR bench summary update
+
+### Wave 7 results (2026-07-25 14:00Z — 4-min post-dispatch update)
+
+| Worker       | Slice                                 | Route                                | Started UTC | Final status                                                           | Tool calls                                        | Bytes delivered                                     | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------ | ------------------------------------- | ------------------------------------ | ----------- | ---------------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W7ks1 agnes  | bugsweep `global-shortcuts.ts`        | `router-agnes/agnes-2.0-flash`       | 13:54:52Z   | **FAILED** exit 0 terminal; `stop_reason: "error"` "Connection error." | 0 (harness control only)                          | 0 (no report)                                       | Main-lane takeover (per `worker-timeout-on-disk-edits-takeover` skill) authored `tmp/bugsweep-2026-07-24/worker7-ks-global-shortcuts-report.md` (9004 bytes — 5 findings: 1 HIGH real F1 isFormField-extension regression surfacing Ctrl/Cmd+1-6 suppression on focused buttons/anchors + 1 MED isComposing divergence + 3 LOW code-quality)                                                                                                                                                          |
+| W7ks2 qwen   | bugsweep `keyboard-help.ts`           | `router-opencode-zen/qwen3.6-plus`   | 13:54:52Z   | **FAILED** exit 0 terminal; `stop_reason: "error"` "Connection error." | 0 (harness control only)                          | 0 (no report)                                       | Same Connection-error onset pattern as agnes; ~13:59Z. Main-lane takeover authored `tmp/bugsweep-2026-07-24/worker7-ks-keyboard-help-report.md` (18383 bytes — 6 findings: 2 HIGH F1 M15 catch-block re-enters legacy startMicroDemo + F2 demo-cancelled once-listener race fires "Replay unavailable" toast on every active-demo replay; 2 MED F3 isComposing + F4 show-vs-toggle UX divergence; 1 LOW/MED F5 helpBtn re-render; 1 LOW F6 duplicate isKeyboardTextEntryTarget def in triggers.ts:62) |
+| W7bench mimo | L4-H1 z-index slice (bench-extension) | `router-opencode-zen/mimo-v2.5-free` | 13:55:54Z   | **✅ COMPLETED** exit 0, `stop_reason: "stop"`, `agent_settled`        | 5 reads + 3 grep + 1 bash + **1 write tool call** | **11,495 bytes ✅ on disk** `bench-extra-report.md` | mimo is BENCH-CONFIRMED 10/10 analytical + 10/10 delivery in 90s wallclock; 36,944 total tokens; 12 reasoning tokens; 28.9MB stdout (massively smaller than GLM's 133MB for the same slice — mimo wrote directly to file via `write` not via thinking-stream)                                                                                                                                                                                                                                         |
+
+### Cross-cutting outage observation (2026-07-25 13:54-13:59Z)
+
+There was a transient Connection-error outage wave on `router-agnes` AND `router-opencode-zen/(qwen3.6-plus)` SIMULTANEOUSLY — both workers connected + produced initial harness control calls (`set_steering_mode`, `set_follow_up_mode`, `prompt`) + then hit `Connection error.` on their FIRST assistant emission. Both went to `auto_retry_start` with `willRetry: true`, exhausted retries over ~3 min wallclock, terminated `status: completed` exit_code 0 (the "completed" semantically means terminal-not-success). Same Connection-error pattern as Wave-2 W1 (inkling) earlier today.
+
+Notable: `mimo-v2.5-free` (also routed via `router-opencode-zen`) SUCCEEDED in the same window — dispatched just 1 min later + wrote an 11,495-byte deliverable via the `write` tool in 90s wallclock. **The Connection-error pattern is per-MODEL-route, NOT per-provider-gateway**: `qwen3.6-plus` + `agnes-2.0-flash` (different upstream backends) hit backend-specific connectivity blips while `mimo-v2.5-free`'s upstream stayed reachable.
+
+### Bench-decision updated for L4-H1 z-index audit slice (post-W7)
+
+| Rank | Lane                                       | Analytical                                         | Delivery                                                   | Wallclock                | Status                                                                                                   |
+| ---- | ------------------------------------------ | -------------------------------------------------- | ---------------------------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------- |
+| 1    | **mimo-v2.5-free** (`router-opencode-zen`) | 10/10                                              | **10/10 ✅** — used `write` tool                           | ~90s                     | NEW W7 bench-confirmed best goose — lifts today's ranking past agnes-2.0-flash on analytical + wallclock |
+| 2    | agnes-2.0-flash (`router-agnes`)           | 8-9/10                                             | 10/10                                                      | ~5 min                   | W6 confirmed goose; re-probe today pending Connection-error outage receding                              |
+| 3    | glm-5.2 (`router-nvidia`)                  | 10/10                                              | 0/10 (write-step stalls — main-lane polish salve required) | ~10 min                  | Best analytical lane IF main-lane-reconstruction is acceptable                                           |
+| 4    | laguna-s-2.1 Poolside                      | UNBENCHABLE (429 weather)                          | UNBENCHABLE                                                | ~31s timeout             | Avoid Poolside 429 weather window (5th wave today)                                                       |
+| 5    | qwen3.6-plus (`router-opencode-zen`)       | UNBENCHABLE today — Connection error outage 13:59Z | UNBENCHABLE                                                | ~3 min no first emission | Re-probe later today — outage wave may clear                                                             |
+
+### Fix-wave plan (W7 — keyboard bugsweep — DEFERRED to post-parallel-session settle)
+
+9 main-lane-confirmed findings across two main-lane-authored reports (2 HIGH, 3 MED, 4 LOW). All surgical and fix-wave-ready BUT the parallel session is actively editing `src/lib/keyboard/*` (their `.session-lock` heartbeat was 02:42Z with intent "bugsweep continuation: test sweep, F7/5i fix, cleanup"). Per AGENTS.md "Don't silently pick a side" + "surface parallel-session conflict":
+
+- DEFER fix wave until parallel session settles OR until `git log --since="30 min ago" -- src/lib/keyboard/` returns ZERO new commits from parallel session (clean-slate baseline).
+- OR (if user authorizes in-session): apply ONLY the W7ks1 Finding 1 fix (HIGH isFormField Ctrl+1-6 regression — ~30 lines surgical edit + 1 regression test) + W7ks2 Finding 1 (1-line catch-block swap to `console.warn`) — both unlikely to conflict with parallel-session's recent commits which didn't touch the same code adjacency.
+
+### Verification discipline notes (post-W7)
+
+- Main-lane-authored reports carry a "MAIN-LANE TAKEOVER" provenance footer per the `worker-timeout-on-disk-edits-takeover` skill: the prompt was drafted by main-lane enumerating audit angles, the workers' Rx-only deliverable failed at first assistant emission with Connection error before any work began, so the main-lane became the executor-of-record.
+- `git log --since="3 hours ago" -- src/lib/keyboard/` returned 7 commits in last 3 hours by parallel session (the parallel session is actively working — fix wave deferred for safety).
