@@ -356,7 +356,7 @@ function _rebindHelpBtnClickHandler(): void {
     if (!helpBtn || helpBtn._khClickBound) return
     helpBtn.addEventListener(
         'click',
-        () => {
+        (e: Event) => {
             const panel = document.getElementById('keyboard-hint-panel') as KeyboardHintPanelElement | null
             if (!panel) return
             if (panel.classList.contains('visible')) {
@@ -373,6 +373,19 @@ function _rebindHelpBtnClickHandler(): void {
                     panel.setAttribute('aria-hidden', 'false')
                 }
             }
+            // Wave-3 (KH-HELPBTN-SECOND-CLICK-RACE) — Svelte 5 compiles
+            // onclick={openKeyboardHelp} into a direct addEventListener('click', fn)
+            // ON THIS SAME button element, not document-level delegation (verified:
+            // dist/svelte/assets/index-*.js has addEventListener('click',l), NO
+            // delegate() runtime). So both the capture-phase handler here AND
+            // Svelte 5's bubble-phase openKeyboardHelp sit on #btn-keyboard-help.
+            // Per W3C DOM spec, e.stopPropagation() does NOT block same-element
+            // bubble listeners — only e.stopImmediatePropagation() does. Without
+            // it the capture-phase close + Svelte's init+toggles cancel out →
+            // panel ends OPEN (race). stopImmediatePropagation silences Svelte's
+            // bubble handler so the single capture-phase toggle wins. First-click
+            // + post-close paths (early return above) bypass this line untouched.
+            e.stopImmediatePropagation()
         },
         { capture: true }
     )

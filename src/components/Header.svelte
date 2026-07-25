@@ -18,7 +18,7 @@
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
-  import { initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
+  import { initKeyboardShortcutsHint, toggleKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
   import { debugWarn } from '@lib/utils/debug'
   import { modes } from '@lib/components/header/mode-constants';
   import { getActiveDescription, selectMode as applyModeSelect, type SelectModeContext } from '@lib/components/header/mode-nav';
@@ -63,18 +63,35 @@
     }
   }
 
-  // KH-HELPBTN-SECOND-CLICK-RACE fix (Track F, 2026-07-25):
-  // The prior body called initKeyboardShortcutsHint() *and*
-  // toggleKeyboardShortcutsHint(). The capture-phase listener bound by
-  // _rebindHelpBtnClickHandler (inside init) ALREADY toggles the panel on
-  // click, so the Svelte-delegated toggle() racing alongside it produced a
-  // 3-toggle sequence per click (open → close → reopen) — single clicks
-  // flickered and rapid double-clicks left the panel CLOSED.
-  // Fix: let the capture-phase handler be the sole toggle authority; this
-  // handler now only ensures init so the button works on the very first click.
+  // KH-HELPBTN-SECOND-CLICK-RACE fix (Track F, 2026-07-25, completed by Wave-3):
+  // Old race: two click handlers toggled the panel on a single click —
+  // (1) the capture-phase listener bound by _rebindHelpBtnClickHandler
+  // (keyboard-help.ts) and (2) Svelte 5's compiled-bubble-phase
+  // onclick={openKeyboardHelp} which called initKeyboardShortcutsHint() AND
+  // toggleKeyboardShortcutsHint(). Both fire on the same `#btn-keyboard-help`
+  // element on second+ clicks → capture + bubble toggles cancel each other
+  // (per W3C spec e.stopPropagation() does NOT block same-element bubble
+  // listeners) → panel ends up OPEN instead of toggling closed.
+  //
+  // Track F commit df3f5c15 removed toggleKeyboardShortcutsHint() from here,
+  // expecting the capture-phase listener (bound during the first click's
+  // dispatch) to OPEN the panel on first click. But DOM dispatch rules forbid
+  // newly-bound listeners from firing during the SAME current event — so the
+  // panel was created but never opened on first click (PHASE 1 timeout).
+  //
+  // Completed fix: keep openKeyboardHelp = init + toggle (preserves
+  // first-click open + post-close reopen via `toggle`) AND add
+  // `e.stopImmediatePropagation()` to the capture-phase handler in
+  // keyboard-help.ts. That prevents Svelte's bubble-phase openKeyboardHelp
+  // from firing on second+ clicks once the capture handler has toggled —
+  // single-toggle wins, no race. First-click + post-close paths bypass
+  // stopImmediatePropagation (capture handler at-target early-returns when
+  // panel==null), so Svelte's openKeyboardHelp still opens via toggle.
+  // Journey test PHASE 4-6 (tests/keyboard-hint-panel-journey.spec.js) covers this.
   function openKeyboardHelp(): void {
     try {
       initKeyboardShortcutsHint();
+      toggleKeyboardShortcutsHint();
     } catch (error) {
       debugWarn('Header.openKeyboardHelp: keyboard help unavailable', error);
     }

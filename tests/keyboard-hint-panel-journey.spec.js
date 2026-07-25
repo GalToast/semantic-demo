@@ -52,7 +52,7 @@ test.describe('Keyboard hint panel journey', () => {
         // Desktop viewport — `?nodemo=1` bypasses the auto demo choreography.
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, {
-            waitUntil: 'domcontentloaded',
+            waitUntil: 'domcontentloaded'
         })
 
         // Spy on console messages so a swallowed openKeyboardHelp try/catch
@@ -63,15 +63,13 @@ test.describe('Keyboard hint panel journey', () => {
         page.on('pageerror', (err) => consoleMessages.push(`pageerror: ${err.message}`))
 
         // Splash dismissal (mirrors the existing journey-test setup pattern).
-        const explore = page.locator(
-            '[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]'
-        ).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
         // Wait for the canvas bootloader to mount points + weather widget.
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-            timeout: 15000,
+            timeout: 15000
         })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(800)
@@ -116,7 +114,7 @@ test.describe('Keyboard hint panel journey', () => {
                 panelAriaHidden: p?.getAttribute('aria-hidden'),
                 bodyChildIds: Array.from(document.body.children)
                     .map((c) => c.id || c.tagName)
-                    .filter((s) => typeof s === 'string' && s.length > 0),
+                    .filter((s) => typeof s === 'string' && s.length > 0)
             }
         })
         if (!afterClickState.panelExistsById) {
@@ -129,11 +127,7 @@ test.describe('Keyboard hint panel journey', () => {
         await page.waitForFunction(
             () => {
                 const p = document.getElementById('keyboard-hint-panel')
-                return (
-                    !!p &&
-                    p.classList.contains('visible') &&
-                    p.getAttribute('aria-hidden') === 'false'
-                )
+                return !!p && p.classList.contains('visible') && p.getAttribute('aria-hidden') === 'false'
             },
             null,
             { timeout: 10000 }
@@ -145,7 +139,7 @@ test.describe('Keyboard hint panel journey', () => {
                 inDom: p ? document.body.contains(p) : false,
                 visible: p?.classList.contains('visible') ?? false,
                 ariaHidden: p?.getAttribute('aria-hidden') ?? null,
-                text: p?.textContent ?? '',
+                text: p?.textContent ?? ''
             }
         })
         expect(phase1.inDom, 'panel must be attached to document.body after open').toBe(true)
@@ -155,10 +149,9 @@ test.describe('Keyboard hint panel journey', () => {
         // ─── PHASE 2: KH-MAC-LABEL regression. The panel text must now ────$
         // display "Ctrl/Cmd+1-6" (not "Ctrl+1-6" alone) so Mac users see the
         // binding that already works per `global-shortcuts.ts:78`.
-        expect(
-            phase1.text,
-            'panel must now show "Ctrl/Cmd+1-6" so Mac users see the right binding'
-        ).toContain('Ctrl/Cmd+1-6')
+        expect(phase1.text, 'panel must now show "Ctrl/Cmd+1-6" so Mac users see the right binding').toContain(
+            'Ctrl/Cmd+1-6'
+        )
         expect(
             phase1.text.includes('Ctrl+1-6') && !phase1.text.includes('Ctrl/Cmd+1-6'),
             'panel must NOT show the legacy "Ctrl+1-6"-only label that misled Mac users'
@@ -171,9 +164,12 @@ test.describe('Keyboard hint panel journey', () => {
         // inside `initKeyboardShortcutsHint` (keyboard-help.ts:130), so its
         // click handler is a single `addEventListener('click', closePanel)`
         // at keyboard-help.ts:288 — no Svelte 5 delegation race here.
-        // Use the accessible-name locator with `state='attached'` (lenient
-        // about visibility during the panel's 0.24s CSS transition).
-        const closeBtn = page.getByRole('button', { name: 'Dismiss shortcuts panel' })
+        // Use a CSS selector for the closeBtn since earlier `getByRole('button', …)`
+        // polling at this transition moment had AX-tree refresh latency before
+        // the element surfaced in Playwright's accessibility snapshot even when
+        // the panel itself was reported `visible` by `getByRole`. CSS selector
+        // resolves directly off the DOM, sidestepping the role/AX cache layer.
+        const closeBtn = page.locator('#keyboard-hint-panel .kh-close')
         await closeBtn.waitFor({ state: 'attached', timeout: 5000 })
         await closeBtn.click()
 
@@ -185,7 +181,7 @@ test.describe('Keyboard hint panel journey', () => {
                 existsById: !!p,
                 inDom: p ? document.body.contains(p) : false,
                 visible: p?.classList.contains('visible') ?? false,
-                parentNodeName: p?.parentNode ? p.parentNode.nodeName : null,
+                parentNodeName: p?.parentNode ? p.parentNode.nodeName : null
             }
         })
         expect(phase2.visible, 'panel must drop the .visible class after close').toBe(false)
@@ -197,5 +193,77 @@ test.describe('Keyboard hint panel journey', () => {
         // once closePanel() calls panel.remove(), document.getElementById()
         // returns null so reading the attribute is N/A. The teardown removal
         // itself is the regression-guard being asserted above.
+
+        // ─── PHASE 4 (Wave-3 regression guard KH-HELPBTN-SECOND-CLICK-RACE) ─
+        // Second click of `#btn-keyboard-help` after closePanel must RE-OPEN
+        // the panel. Pre-fix: capture-phase toggle + Svelte 5 delegated
+        // onclick={openKeyboardHelp} double-toggle cancels itself → net no-op
+        // → panel remains closed. Post-fix: capture-phase toggle wins via
+        // e.stopImmediatePropagation() — Svelte same-element bubble listener is
+        // silenced → single toggle → panel reopens.
+        // Edge case coverage: FIRST reopen (panel removed by PHASE 3 close) is
+        // the post-close path where capture handler early-returns → bubble-phase
+        // openKeyboardHelp runs init + toggle to recreate AND open the panel.
+        await helpBtn.click()
+        // Wait for the panel to be reattached + visible (race-fix path runs
+        // synchronous init + openPanel closure, but waitForTimeout allows the
+        // microtask to deliver DOM mutation).
+        await page.waitForTimeout(300)
+        await page.waitForFunction(
+            () => {
+                const p = document.getElementById('keyboard-hint-panel')
+                return !!p && p.classList.contains('visible') && p.getAttribute('aria-hidden') === 'false'
+            },
+            null,
+            { timeout: 10000 }
+        )
+        const phase4 = await page.evaluate(() => {
+            const p = document.getElementById('keyboard-hint-panel')
+            return {
+                inDom: p ? document.body.contains(p) : false,
+                visible: p?.classList.contains('visible') ?? false,
+                ariaHidden: p?.getAttribute('aria-hidden') ?? null
+            }
+        })
+        expect(phase4.inDom, 'phase4: panel reattached to document.body after reopen').toBe(true)
+        expect(phase4.visible, 'phase4: panel must have the .visible class after second-click reopen').toBe(true)
+        expect(phase4.ariaHidden, 'phase4: panel aria-hidden must be "false" after second-click reopen').toBe('false')
+
+        // Click #3 — verify toggle cycle continues to work post-fix. The panel
+        // was just opened by phase4; a third click must CLOSE it deterministically
+        // (capture-phase wins via stopImmediatePropagation, panel.remove() runs, no
+        // Svelte bubble reopen).
+        await helpBtn.click()
+        await page.waitForTimeout(300)
+        const phase5 = await page.evaluate(() => {
+            const p = document.getElementById('keyboard-hint-panel')
+            return {
+                exists: !!p,
+                visible: p?.classList.contains('visible') ?? false
+            }
+        })
+        // After closePanel(), panel.remove() detaches — phase5.exists is false.
+        expect(phase5.exists, 'phase5: third click must close (detach) the panel').toBe(false)
+
+        // Click #4 — verify third-click reopen also works (single toggle cycle).
+        await helpBtn.click()
+        await page.waitForTimeout(300)
+        await page.waitForFunction(
+            () => {
+                const p = document.getElementById('keyboard-hint-panel')
+                return !!p && p.classList.contains('visible')
+            },
+            null,
+            { timeout: 10000 }
+        )
+        const phase6 = await page.evaluate(() => {
+            const p = document.getElementById('keyboard-hint-panel')
+            return {
+                inDom: p ? document.body.contains(p) : false,
+                visible: p?.classList.contains('visible') ?? false
+            }
+        })
+        expect(phase6.inDom, 'phase6: panel reattached again after third-close + fourth-reopen').toBe(true)
+        expect(phase6.visible, 'phase6: panel visible after fourth-click reopen').toBe(true)
     })
 })
