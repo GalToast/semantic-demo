@@ -2648,7 +2648,9 @@ test.describe('Widget journey', () => {
     // lag) can leave the panel closed while children remain focusable. The W54 fix adds `inert={!panelOpen}` adjacent
     // to `aria-hidden={!panelOpen}` so the closed panel neutralizes ALL focusable descendants regardless of when the
     // snippet content flushes the markup. See `docs/bugsweep-campaign-2026-07-24.md` (wave-3 fix plan).
-    test('5h. InfoPanel inert tracks aria-hidden across focus/overview transitions — W54 a11y fix', async ({ page }) => {
+    test('5h. InfoPanel inert tracks aria-hidden across focus/overview transitions — W54 a11y fix', async ({
+        page
+    }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
@@ -2669,10 +2671,33 @@ test.describe('Widget journey', () => {
         const infoPanel = page.locator('#info-panel')
         await infoPanel.waitFor({ state: 'attached', timeout: 15000 })
 
-        // Force-close any open panel (desktop idle starts panel open via App.svelte:236-241 infoPanelOpen gate).
+        // Force-CLOSE the InfoPanel by setting surface='semantic-dive' (desktop
+        // non-compact). Anterior attempt "switchView('map')" was wrong: the
+        // InfoPanel's App.svelte render gate is `{#if !mapModeActive}` (App.svelte:413),
+        // so map-mode action UNMOUNTs #info-panel entirely rather than rendering it
+        // `aria-hidden=true` + `inert`. Likewise `returnToOverview()` does NOT close
+        // the panel — it returns to 'galaxy' view where the desktop-idle gate
+        // `idleSurfaceActive=true` keeps `infoPanelOpen=true`.
+        //
+        // `setSurface('semantic-dive')` produces a closed-but-mounted state:
+        // - nav.surface -> 'semantic-dive', nav.mode stays 'overview', nav.focusedIndex
+        //   stays null (setSurface only touches {surface, previousSurface, mode});
+        // - parity mirror writes parity.panelSurface='semantic-dive' so App.svelte's
+        //   `focusActive` derive flips true via the `parity.panelSurface === 'semantic-dive'`
+        //   clause — BUT at desktop non-compact the `infoPanelOpen` derive collapses:
+        //   `(false || false || (true && parity.compact-false)) && !mapModeActive = false`;
+        // - inside InfoPanel, the `panelOpen` derive (`panelVisible && (open || isFocused ||
+        //   currentActiveResult!=null || testPanelSurface-cond)`):
+        //     - open=false (infoPanelOpen deriver above);
+        //     - isFocused=false (nav.mode='overview' + focusedIndex=null);
+        //     - currentActiveResult=null (no search active);
+        //     - testPanelSurface-cond falsehoody (no body.dataset override at runtime);
+        //   `panelOpen=panelVisible-true && false=false` → `aria-hidden='true'` + `inert`
+        //   present (W54 invariant) with InfoPanel STILL MOUNTED (mapModeActive=false).
         await page.evaluate(() => {
             const a = window.__navActions__
-            if (a?.returnToOverview) a.returnToOverview()
+            if (!a?.setSurface) throw new Error('__navActions__.setSurface missing')
+            a.setSurface('semantic-dive')
         })
 
         await page.waitForFunction(
@@ -2711,13 +2736,18 @@ test.describe('Widget journey', () => {
             'W54 invariant CLOSED: inert present => NO focusable descendant captures document.activeElement (null=panel/inert absent)'
         ).toBe(false)
 
-        // OPEN via focus surface — inert removed so users can interact with `#search-input` inside the panel.
+        // OPEN the InfoPanel back by returning to overview — `returnToOverview()` clears
+        // mapModeActive (switches view back to 'galaxy' + resets nav.surface='idle' +
+        // nav.focusedIndex=null via `resetExperienceState`), which routes back through
+        // the desktop `idleSurfaceActive=true` gate so `infoPanelOpen=true` again.
+        // Note: at desktop non-compact, `setSurface('focus')` alone would keep the
+        // panel closed since `infoPanelOpen` requires `($viewport.isCompact || parity.compact)`
+        // for the focus-active branch — desktop non-compact focus doesn't open the
+        // InfoPanel via that branch (the FocusCard takes the focus-content UI slot).
         await page.evaluate(() => {
             const a = window.__navActions__
-            if (!a?.setFocusedIndex) throw new Error('__navActions__.setFocusedIndex missing')
-            if (!a?.setSurface) throw new Error('__navActions__.setSurface missing')
-            a.setFocusedIndex(0)
-            a.setSurface('focus')
+            if (!a?.returnToOverview) throw new Error('__navActions__.returnToOverview missing')
+            a.returnToOverview()
         })
 
         await page.waitForFunction(
