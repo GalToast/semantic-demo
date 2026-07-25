@@ -192,14 +192,14 @@ Notable: `mimo-v2.5-free` (also routed via `router-opencode-zen`) SUCCEEDED in t
 
 ### Bench-decision updated for L4-H1 z-index audit slice (post-W7)
 
-| Rank | Lane                                       | Analytical                                         | Delivery                                                   | Wallclock                | Status                                                                                                   |
-| ---- | ------------------------------------------ | -------------------------------------------------- | ---------------------------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------- |
-| 1    | **mimo-v2.5-free** (`router-opencode-zen`) | 10/10                                              | **10/10 ✅** — used `write` tool                           | ~90s                     | NEW W7 bench-confirmed best goose — lifts today's ranking past agnes-2.0-flash on analytical + wallclock |
-| 2    | agnes-2.0-flash (`router-agnes`)           | 8-9/10                                             | 10/10                                                      | ~5 min                   | W6 confirmed goose; re-probe today pending Connection-error outage receding                              |
-| 3    | glm-5.2 (`router-nvidia`)                  | 10/10                                              | 0/10 (write-step stalls — main-lane polish salve required) | ~10 min                  | Best analytical lane IF main-lane-reconstruction is acceptable                                           |
-| 4    | laguna-s-2.1 Poolside                      | UNBENCHABLE (429 weather)                          | UNBENCHABLE                                                | ~31s timeout             | Avoid Poolside 429 weather window (5th wave today)                                                       |
-| 5    | qwen3.6-plus (`router-opencode-zen`)       | UNBENCHABLE today — Connection error outage 13:59Z | UNBENCHABLE                                                | ~3 min no first emission | Re-probe later today — outage wave may clear                                                             |
-| 6    | **north-mini-code-free** (`router-opencode-zen`) | 0/10 (no emission)                          | 0/10 (no deliverable; pre-write stall)                    | ~10 min (600s exit-124 timeout)        | **FAILED** — pre-write stall pattern: received prompt at 14:46:54Z, never emitted assistant text or any tool call, 600s timeout hit, exit 124. NOT a goose on this slice today. See W7 bench-extension section below. |
+| Rank | Lane                                             | Analytical                                         | Delivery                                                   | Wallclock                       | Status                                                                                                                                                                                                                |
+| ---- | ------------------------------------------------ | -------------------------------------------------- | ---------------------------------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | **mimo-v2.5-free** (`router-opencode-zen`)       | 10/10                                              | **10/10 ✅** — used `write` tool                           | ~90s                            | NEW W7 bench-confirmed best goose — lifts today's ranking past agnes-2.0-flash on analytical + wallclock                                                                                                              |
+| 2    | agnes-2.0-flash (`router-agnes`)                 | 8-9/10                                             | 10/10                                                      | ~5 min                          | W6 confirmed goose; re-probe today pending Connection-error outage receding                                                                                                                                           |
+| 3    | glm-5.2 (`router-nvidia`)                        | 10/10                                              | 0/10 (write-step stalls — main-lane polish salve required) | ~10 min                         | Best analytical lane IF main-lane-reconstruction is acceptable                                                                                                                                                        |
+| 4    | laguna-s-2.1 Poolside                            | UNBENCHABLE (429 weather)                          | UNBENCHABLE                                                | ~31s timeout                    | Avoid Poolside 429 weather window (5th wave today)                                                                                                                                                                    |
+| 5    | qwen3.6-plus (`router-opencode-zen`)             | UNBENCHABLE today — Connection error outage 13:59Z | UNBENCHABLE                                                | ~3 min no first emission        | Re-probe later today — outage wave may clear                                                                                                                                                                          |
+| 6    | **north-mini-code-free** (`router-opencode-zen`) | 0/10 (no emission)                                 | 0/10 (no deliverable; pre-write stall)                     | ~10 min (600s exit-124 timeout) | **FAILED** — pre-write stall pattern: received prompt at 14:46:54Z, never emitted assistant text or any tool call, 600s timeout hit, exit 124. NOT a goose on this slice today. See W7 bench-extension section below. |
 
 ### Fix-wave plan (W7 — keyboard bugsweep — DEFERRED to post-parallel-session settle)
 
@@ -268,7 +268,7 @@ Deferral: The journey test is DEFERRED to a separate commit because:
 
 ### Deferred findings (deferred due to parallel-session conflict-surface)
 
-- **W7ks1-F1 (HIGH — global-shortcuts.ts isFormField Ctrl+1-6 button+a regression): ~30-line split-predicate surgery.** Touches `isFormField` in `global-shortcuts.ts` which the parallel session just modified in commit `4c5f84a4` (their isFormField extension commit). Deferring until parallel-session settle so the fix isn't immediately re-mangled.
+- **W7ks1-F1 (HIGH — global-shortcuts.ts isFormField Ctrl+1-6 button+a regression): ~30-line split-predicate surgery.** Touches `isFormField` in `global-shortcuts.ts` which the parallel session just modified in commit `4c5f84a4` (their isFormField extension commit). Deferring until parallel-session settle so the fix isn't immediately re-mangled. **→ RESOLVED post-deferral** (commit `e1785420`): once the parallel session's intent shifted to pi-harness launcher work (no new keyboard commits in the prior 30 min), the F1 surgery was safe + landed. See the "W7ks1-F1 followup fix-wave" section below.
 - **W7ks2-F2 (HIGH — demo-cancelled → demo-replay-acknowledged event sequence).** Touches the canonical demo orchestration flow which is in mid-refactor by parallel session. Deferred.
 - **W7ks2-F4 (MED — show/toggle UX alignment).** UI touch which would benefit from journey-test coverage that's currently unsafe to author. Deferred.
 - **W7ks2-F5 (LOW/MED — helpBtn re-render handler-loss edge case).** Needs the journey test or DOM-isolated unit test. Deferred.
@@ -279,9 +279,9 @@ Deferral: The journey test is DEFERRED to a separate commit because:
 
 Dispatched as bench-extension on the same L4-H1 z-index slice (matching the W7bench-mimo prompt template) to extend the cross-model ranking with a code-tuned model.
 
-| Worker                       | Slice                                 | Route                                   | Started UTC | Final status                                 | Tool calls                | Bytes delivered       | Bench-decision          |
-| ---------------------------- | ------------------------------------- | --------------------------------------- | ----------- | -------------------------------------------- | ------------------------- | --------------------- | ----------------------- |
-| W7bench-north-mini-l4zindex  | L4-H1 z-index slice (bench-extension) | `router-opencode-zen/north-mini-code-free` | 14:36:10Z   | **FAILED** exit 124, 600s timeout; logs_only | 0 (only harness control)  | 0 (no deliverable)    | Analytical: 0/10 Delivery: 0/10 — NOT a goose |
+| Worker                      | Slice                                 | Route                                      | Started UTC | Final status                                 | Tool calls               | Bytes delivered    | Bench-decision                                |
+| --------------------------- | ------------------------------------- | ------------------------------------------ | ----------- | -------------------------------------------- | ------------------------ | ------------------ | --------------------------------------------- |
+| W7bench-north-mini-l4zindex | L4-H1 z-index slice (bench-extension) | `router-opencode-zen/north-mini-code-free` | 14:36:10Z   | **FAILED** exit 124, 600s timeout; logs_only | 0 (only harness control) | 0 (no deliverable) | Analytical: 0/10 Delivery: 0/10 — NOT a goose |
 
 ### Failure mode refinement
 
@@ -292,3 +292,33 @@ The deliverable file `tmp/bench-laguna-vs-glm-2026-07-24/bench-extra-report.md` 
 ### Why bench-doc was NOT modified
 
 The bench-doc (`docs/subagent-model-benchmarks.md`) currently has a 30-line uncommitted diff (15+/15-) from the parallel session's formatting normalization (table column width unification + 1 quote-style conversion). To prevent rolling their work into my commit, the north-mini failure data is recorded HERE in the campaign-doc and the bench-doc is left un-edited. The bench-doc's cross-model refresh table (at line ~558) still shows Rank 5 (qwen3.6-plus) as the last entry. When the parallel session settles `docs/subagent-model-benchmarks.md` and commits it, the main-lane will fold the north-mini failure as Rank 6 into the canonical bench-doc at that point.
+
+## W7ks1-F1 followup fix-wave (commit `e1785420`)
+
+After the parallel session's initial demo+keyboard waves settled (their session-lock intent shifted to pi-harness launcher work — `HP@LAPTOP-2QK2TQAP / pi-harness launcher willRetry-aware kill + key-router mid-drop failover`, heartbeat was 15:19:33Z), the W7ks1 Finding 1 (HIGH regression — `isFormField` Ctrl+1-6 + Escape over-reach in commit `4c5f84a4`) was safe to apply: no new keyboard commits in the prior 30 min at edit time.
+
+### Commit summary
+
+`e1785420` "fix(keyboard): split predicate per W7ks1-F1 — Ctrl+1-6/Escape narrow, single-char broad" — 4 files changed (+166, -9):
+
+- `src/lib/keyboard/global-shortcuts.ts` (+21, -5): split the single `isFormField` predicate into two:
+    - `isTextInputField` (narrow pre-`4c5f84a4` form — `tag in {input, textarea, select} || target.isContentEditable === true`)
+    - `isFormField` (now compositionally `isTextInputField || tag === 'button' || tag === 'a'` — the broadened shape preserved for single-char shortcuts)
+- Ctrl/Cmd+1-6 + Escape branches switched to `if (isTextInputField) return` (regression fixed — mode-switch + return-to-overview fire from focused buttons/links; previous `if (isFormField) return` over-blocked chip-rail button focus from triggering mode-switch).
+- Single-char shortcuts (`/`, `?`, `w`, `m`) KEEP the broad `isFormField` (original `4c5f84a4` intent preserved — `/` does not interleave with browser-quick-find overlays when focused on the help button).
+- New regression test `tests/unit-active/w7-global-shortcuts-isformfield-split.test.ts` (+127): 7 substring-extraction contract tests verifying narrow-pred declaration, broad-pred composition, Ctrl+1-6 inner guard swapped to `isTextInputField`, Escape inner guard swapped to `isTextInputField`, and all single-char handlers (`/`, `?`, `w`, `m`) keep `isFormField`.
+- `tests/unit-active/w46-b3-global-shortcuts-helper.test.ts` (+15, -3): updated the positive-guard count assertion to accept BOTH `isFormField` AND the new `isTextInputField` as valid positive guard forms; updated stale doc-comment from "1 positive (Ctrl+1-6) + 3 negative (`/`, `?`, `w`)" to "2 positive (Ctrl+1-6 + Escape, both W7ks1-F1 narrow form) + 4 negative (`/`, `?`, `w`, `m`, all keep broad `isFormField`)".
+- `tests/unit-active/w7-keyboard-help-ime-guard.test.ts` (+3, -1): hardened the catch-block regex assertion to be pattern-agnostic about multi-line `console.warn(` formatting (the actual catch block at `keyboard-help.ts:181-191` is multi-line: `} catch (e) {\n console.warn(\n        '[...]'\n e)\n }`).
+
+### Verification
+
+- vitest: 4 keyboard test files all green — Test Files 4 passed (4) | Tests 31 passed (31) | Duration 3.55s (single run).
+- svelte-check on `src/lib/keyboard/global-shortcuts.ts`: 0 errors, 32 warnings (warnings identical vs HEAD — the W47-era `Header.svelte` unused-locator warnings pre-exist + the F1 fix-wave delta doesn't touch them).
+
+### Session-coordination note — accidental focus-trap.ts staging → amended out
+
+The initial commit attempt (`090c7923`, pre-amend) accidentally swept in `src/lib/utils/focus-trap.ts` — the parallel session's unstaged WIP cleanup from their `d5ae46c0` a11y `bindFocusTrapObserver` work (2-space → 4-space indent + semicolon removal + `[tabindex]:not([tabindex="-1")]` → `[tabindex="0"]` rule narrowing — totals 127 lines / 62 insertions / 65 deletions, balanced refactor). The first attempt's `git add` sequence staged 4 keyboard files explicitly, but the staged area apparently included the parallel session's existing focus-trap.ts modifications via prior uncommitted state.
+
+Recovery: `git reset --soft HEAD~` + `git restore --staged src/lib/utils/focus-trap.ts` + `git commit -F <msg>` produced new HEAD `e1785420` which contains only the 4 keyboard files (+166, -9). The focus-trap.ts WIP stays unstaged in the working tree (`M src/lib/utils/focus-trap.ts` in `git status --short`) for the parallel session to commit as their own work later — no WIP loss.
+
+Per AGENTS.md "Surface parallel-session conflict in chat rather than silently picking a side" — this provenance note documents that the focus-trap.ts sweep-in was incidental (the `e1785420` amend happens immediately after detecting it) and the parallel session's cleanup work is preserved unscathed.
