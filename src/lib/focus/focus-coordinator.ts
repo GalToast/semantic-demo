@@ -90,7 +90,7 @@ export function isMeaningfulActiveElement(): boolean {
         ae.tagName === 'TEXTAREA' ||
         ae.tagName === 'BUTTON' ||
         ae.tagName === 'SELECT' ||
-        ae.isContentEditable
+        ae?.isContentEditable
     ) {
         return true
     }
