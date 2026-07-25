@@ -8,7 +8,7 @@
  * until the panel is ported to a Svelte component.
  */
 
-import { startMicroDemo, cancelMicroDemo } from '@lib/demo/choreography'
+import { cancelMicroDemo } from '@lib/demo/choreography'
 import { showToast } from '@lib/stores/toast.svelte'
 
 // ── Pure utilities (native, no legacy deps) ─────────────────────────────────
@@ -58,6 +58,9 @@ export function initKeyboardResetOwnership({
 }
 
 export function handleGalaxyKeydown(e: KeyboardEvent): void {
+    // W7 keyboard-help audit finding (F3): guard IME-composition-phase keystrokes (CJK editing) before any galaxy-shortcut navigation fires
+    // — symmetric with global-shortcuts.ts:65 (commit 6ad96301 added the guard there but not here).
+    if (e.isComposing) return
     if (isKeyboardTextEntryTarget(e.target) || isKeyboardControlTarget(e.target)) return
 
     if (e.key === 'Home') {
@@ -137,7 +140,7 @@ export function initKeyboardShortcutsHint(): void {
     // W47-T2 #2.3: a "Replay tour" button at the bottom of the panel so
     // users who closed the first-visit demo (or whose session expired)
     // can re-trigger it. Clears the choreography session-storage gate and
-    // fires startMicroDemo() to start a fresh demo.
+    // dispatches demo-replay-requested so the canonical DemoChoreography restarts a fresh demo (M15 invariant — never stack the legacy 6-phase micro-demo).
     const replayBtn = document.createElement('button')
     replayBtn.id = 'btn-replay-tour'
     replayBtn.className = 'kh-replay-btn'
@@ -178,8 +181,11 @@ export function initKeyboardShortcutsHint(): void {
             // which DemoChoreography consumes and re-runs attemptStart after
             // sceneReady (M15 — prevents stacked veils). No legacy setTimeout
             // fallback: it could start a second demo on top of an active one.
-        } catch {
-            startMicroDemo()
+        } catch (e) {
+            console.warn(
+                '[keyboard-help] demo-replay-requested dispatch failed (M15 invariant preserved — no legacy startMicroDemo fallback):',
+                e
+            )
         }
     })
     panel.appendChild(replayBtn)
@@ -263,6 +269,8 @@ export function initKeyboardShortcutsHint(): void {
     }
 
     function _onPanelKeydown(e: KeyboardEvent): void {
+        // W7 keyboard-help audit finding (F3): same IME-composition guard pattern — preserve user CJK mid-composition keystrokes aren't repurposed as panel close / Tab-focus-trap.
+        if (e.isComposing) return
         if (e.key === 'Escape') {
             e.stopPropagation()
             closePanel()
