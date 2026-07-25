@@ -10,26 +10,9 @@
 
 import { cancelMicroDemo } from '@lib/demo/choreography'
 import { showToast } from '@lib/stores/toast.svelte'
+import { isKeyboardTextEntryTarget } from '@lib/utils/keyboard-target'
 
 // ── Pure utilities (native, no legacy deps) ─────────────────────────────────
-
-export function isKeyboardTextEntryTarget(target: EventTarget | null): target is HTMLElement {
-    if (!target || typeof (target as HTMLElement).tagName !== 'string') return false
-    const el = target as HTMLElement
-    const tagName = el.tagName.toLowerCase()
-    const type = typeof (el as HTMLInputElement).type === 'string' ? (el as HTMLInputElement).type.toLowerCase() : ''
-
-    if (
-        tagName === 'input' &&
-        (type === 'text' || type === 'search' || type === 'email' || type === 'url' || type === 'password')
-    ) {
-        return true
-    }
-    if (tagName === 'textarea') return true
-    if (el.isContentEditable) return true
-
-    return false
-}
 
 export function isKeyboardControlTarget(target: EventTarget | null): target is HTMLElement {
     if (!target || typeof (target as HTMLElement).tagName !== 'string') return false
@@ -84,7 +67,15 @@ export function handleGalaxyKeydown(e: KeyboardEvent): void {
 let _previouslyFocused: HTMLElement | null = null
 
 export function initKeyboardShortcutsHint(): void {
-    if (document.getElementById('keyboard-hint-panel')) return
+    const existing = document.getElementById('keyboard-hint-panel') as KeyboardHintPanelElement | null
+    if (existing) {
+        // W7 F5 fix: panel already exists; re-bind the helpBtn click handler
+        // in case Header has re-rendered with a fresh `btn-keyboard-help` element
+        // (this happens on desktop<->mobile renderKind pivot — Header's mounted
+        // subtree is recreated while the panel survives on document.body).
+        _rebindHelpBtnClickHandler()
+        return
+    }
 
     const panel = document.createElement('div') as KeyboardHintPanelElement
     panel.id = 'keyboard-hint-panel'
@@ -165,18 +156,33 @@ export function initKeyboardShortcutsHint(): void {
         // demo-replay-requested so the canonical DemoChoreography does
         // store reset + attemptStart after sceneReady (one veil, one writer).
         // Keep micro-demo fallback for when DemoChoreography hasn't mounted.
-        const onCancelled = (): void => {
-            showToast(
-                'Replay unavailable',
-                'Search for a business type above, or click any dot to explore connections.'
-            )
-        }
-        document.addEventListener('demo-cancelled', onCancelled, { once: true })
         try {
             cancelMicroDemo('replay')
+            // W7 F2 fix: listen for the canonical-path ack BEFORE dispatching.
+            // If DemoChoreography picks up demo-replay-requested, it dispatches
+            // demo-replay-acknowledged synchronously after calling requestReplay().
+            // If no ack arrives within 500ms, surface a friendly fallback message.
+            let acked = false
+            const onAck = (): void => {
+                acked = true
+                document.removeEventListener('demo-replay-acknowledged', onAck)
+            }
+            document.addEventListener('demo-replay-acknowledged', onAck, { once: true })
             // Prefer canonical path via event (M15)
             const evt = new CustomEvent('demo-replay-requested')
             document.dispatchEvent(evt)
+            // Fallback: if DemoChoreography didn't ack within 500ms, show the
+            // "Replay unavailable" toast. Previously this was wired to
+            // demo-cancelled which false-positived on every active-demo cancel.
+            // eslint-disable-next-line no-restricted-syntax -- one-shot 500ms timer for demo-replay no-ack fallback; self-breaks via acked early-return OR no-ack removeEventListener + showToast.
+            setTimeout(() => {
+                if (acked) return
+                document.removeEventListener('demo-replay-acknowledged', onAck)
+                showToast(
+                    'Replay unavailable',
+                    'Search for a business type above, or click any dot to explore connections.'
+                )
+            }, 500)
             // Replay is handled by the canonical `demo-replay-requested` event,
             // which DemoChoreography consumes and re-runs attemptStart after
             // sceneReady (M15 — prevents stacked veils). No legacy setTimeout
@@ -328,26 +334,52 @@ export function initKeyboardShortcutsHint(): void {
         helpBtn.setAttribute('aria-controls', 'keyboard-hint-panel')
         helpBtn.setAttribute('aria-expanded', 'false')
         helpBtn.setAttribute('aria-pressed', 'false')
-
-        helpBtn.onclick = null
-
-        helpBtn.addEventListener(
-            'click',
-            () => {
-                if (panel.classList.contains('visible')) {
-                    closePanel()
-                } else {
-                    openPanel((document.activeElement as HTMLElement) || helpBtn)
-                }
-            },
-            { capture: true }
-        )
     }
+    // W7 F5 fix: bind via the shared helper so the same logic runs on both
+    // the fresh-init path AND the early-return re-mount path.
+    _rebindHelpBtnClickHandler()
+}
+
+/**
+ * W7 F5 fix extracted helper — binds a fresh helpBtn click handler if not
+ * already bound (idempotent across prior + current bindings). Called from
+ * both the early-return path + the fresh-init path of `initKeyboardShortcutsHint`.
+ */
+function _rebindHelpBtnClickHandler(): void {
+    const helpBtn = document.getElementById('btn-keyboard-help') as (
+        HTMLElement & { _khClickBound?: boolean }) | null
+    if (!helpBtn || helpBtn._khClickBound) return
+    helpBtn.addEventListener(
+        'click',
+        () => {
+            const panel = document.getElementById('keyboard-hint-panel') as KeyboardHintPanelElement | null
+            if (!panel) return
+            if (panel.classList.contains('visible')) {
+                if (typeof panel._closeKeyboardHintPanel === 'function') panel._closeKeyboardHintPanel()
+                else { panel.classList.remove('visible'); panel.setAttribute('aria-hidden', 'true') }
+            } else {
+                if (typeof panel._openKeyboardHintPanel === 'function') panel._openKeyboardHintPanel(document.getElementById('btn-keyboard-help'))
+                else { panel.classList.add('visible'); panel.setAttribute('aria-hidden', 'false') }
+            }
+        },
+        { capture: true }
+    )
+    helpBtn._khClickBound = true
 }
 
 export function showKeyboardShortcutsHint(): void {
     const panel = document.getElementById('keyboard-hint-panel') as KeyboardHintPanelElement | null
     if (!panel) return
+    // W7 F4 fix: if already visible, toggle-close instead of re-opening.
+    if (panel.classList.contains('visible')) {
+        if (typeof panel._closeKeyboardHintPanel === 'function') {
+            panel._closeKeyboardHintPanel()
+        } else {
+            panel.classList.remove('visible')
+            panel.setAttribute('aria-hidden', 'true')
+        }
+        return
+    }
     if (typeof panel._openKeyboardHintPanel === 'function') {
         panel._openKeyboardHintPanel(document.getElementById('btn-keyboard-help'))
     } else {

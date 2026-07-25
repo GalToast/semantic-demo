@@ -56,19 +56,9 @@ import type { Point } from '@lib/state/state-types'
 import type { SearchResult } from '@lib/types/state'
 import type { SearchContext } from '@lib/search/state'
 import { get } from 'svelte/store'
+import { isKeyboardTextEntryTarget } from '@lib/utils/keyboard-target'
 
 // ── Keyboard Support ──────────────────────────────────────────────────────────
-
-function isKeyboardTextEntryTarget(target: HTMLElement): boolean {
-    if (!target || typeof target.tagName !== 'string') return false
-    const tagName = target.tagName.toLowerCase()
-    const type = (target as HTMLInputElement).type?.toLowerCase() ?? ''
-    return (
-        (tagName === 'input' && ['text', 'search', 'email', 'url', 'password'].includes(type)) ||
-        tagName === 'textarea' ||
-        target.isContentEditable
-    )
-}
 
 /**
  * Top-level keydown handler for the application shell.
