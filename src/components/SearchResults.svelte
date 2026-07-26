@@ -364,7 +364,7 @@
 
 {#if visible}
   <!-- Screen reader live region for announcing active result during keyboard navigation (WCAG 4.1.3).
-       aria-live="polite": this announces selection/navigiation position, not an error,
+       aria-live="polite": this announces selection/navigation position, not an error,
        so it must not interrupt (assertive is reserved for critical alerts/errors). -->
   <div class="sr-only" aria-live="polite" aria-atomic="true" role="status">
     {liveAnnouncement}
