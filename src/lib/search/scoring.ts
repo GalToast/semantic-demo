@@ -123,6 +123,10 @@ export function buildDatasetBackedMockResults(
 
     const naicsPrefix = matchedTerm ? MOCK_QUERY_NAICS_PREFIX[matchedTerm] : null
     const naicsDenyList = matchedTerm ? MOCK_QUERY_NAICS_DENY[matchedTerm] : null
+    // Sort deny prefixes longest-first so a more specific prefix is checked
+    // before a shorter one that would also match. M is tiny (<=5 entries per
+    // category), so the sort cost is negligible and done once per call.
+    const sortedDenyList = naicsDenyList ? [...naicsDenyList].sort((a, b) => b.length - a.length) : null
     const pointNaicsPrefix = (point: Point): string | null => {
         const n = point?.naics
         if (!n) return null
@@ -136,7 +140,7 @@ export function buildDatasetBackedMockResults(
             const fields = getMockPointSearchFields(point, dataset)
             let score = 0
             const pNaicsPrefix = pointNaicsPrefix(point)
-            if (naicsDenyList && pNaicsPrefix && naicsDenyList.some((deny) => pNaicsPrefix.startsWith(deny))) {
+            if (sortedDenyList && pNaicsPrefix && sortedDenyList.some((deny) => pNaicsPrefix.startsWith(deny))) {
                 return null
             }
             if (naicsPrefix && pNaicsPrefix && pNaicsPrefix.startsWith(naicsPrefix)) {
