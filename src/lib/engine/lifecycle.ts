@@ -207,7 +207,7 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
     setEngineStatus('loading')
 
     try {
-        const _perf = typeof performance !== 'undefined'
+        const _perf = typeof performance?.mark === 'function'
         if (_perf) performance.mark('engine-init-start')
 
         if (_perf) performance.mark('engine-init-sync-done')
@@ -237,7 +237,7 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
         })
         await heavyInit
     } catch (err) {
-        if (typeof performance !== 'undefined') performance.mark('engine-init-failed')
+        if (typeof performance?.mark === 'function') performance.mark('engine-init-failed')
         debugError('[engine/lifecycle] initEngine: setup failed', err)
         unbindEventBridge()
         setEngineStatus('degraded')
@@ -289,7 +289,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
     }
 
     try {
-        const _perf = typeof performance !== 'undefined'
+        const _perf = typeof performance?.mark === 'function'
         if (_perf) performance.mark('engine-init-gpu-start')
         // 3b. Initialise the Three.js scene (renderer + scene + camera + lights)
         // This is the largest single CPU+GPU step on cold load (~300-500 ms).
@@ -402,7 +402,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         //     on the new path dispatches it. We fire both the direct callback
         //     and the window event so both in-process callers and legacy
         //     listeners receive the signal.
-        if (typeof performance !== 'undefined') {
+        if (typeof performance?.mark === 'function') {
             performance.mark('engine-init-ready')
             try {
                 performance.measure('engine-init-total', 'engine-init-start', 'engine-init-ready')
@@ -416,7 +416,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             window.dispatchEvent(new Event('scene-ready'))
         }
     } catch (err) {
-        if (typeof performance !== 'undefined') performance.mark('engine-init-failed')
+        if (typeof performance?.mark === 'function') performance.mark('engine-init-failed')
         debugError('[engine/lifecycle] initEngineHeavy: initialization failed', err)
         unbindEventBridge()
         setEngineStatus('degraded')

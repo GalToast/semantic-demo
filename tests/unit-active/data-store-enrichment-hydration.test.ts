@@ -50,6 +50,6 @@ describe('lead enrichment hydration seam', () => {
 
         await expect(Promise.all([first, second])).resolves.toEqual([enrichment, enrichment])
         expect(fetchMock).toHaveBeenCalledTimes(1)
-        expect(getLeadEnrichment()).toStrictEqual(enrichment)
+        expect(getLeadEnrichment()).toEqual(enrichment)
     })
 })

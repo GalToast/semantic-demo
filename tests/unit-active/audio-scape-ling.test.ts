@@ -148,13 +148,12 @@ describe('initAudio', () => {
     beforeEach(() => {
         disposeAudio()
         resetNodeTracking()
-        vi.stubGlobal('window', {
-            ...window,
-            AudioContext: MockAudioContext,
-            webkitAudioContext: MockAudioContext,
-            requestAnimationFrame: mockRaf,
-            cancelAnimationFrame: vi.fn()
-        } as any)
+        Object.defineProperty(window, 'AudioContext', { value: MockAudioContext, configurable: true, writable: true })
+        Object.defineProperty(window, 'webkitAudioContext', {
+            value: MockAudioContext,
+            configurable: true,
+            writable: true
+        })
         Object.defineProperty(navigator, 'webdriver', { value: false, configurable: true, writable: true })
     })
     afterEach(() => {
@@ -193,13 +192,12 @@ describe('startAudioContext via mousedown', () => {
         disposeAudio()
         resetNodeTracking()
         resetMockState()
-        vi.stubGlobal('window', {
-            ...window,
-            AudioContext: MockAudioContext,
-            webkitAudioContext: MockAudioContext,
-            requestAnimationFrame: mockRaf,
-            cancelAnimationFrame: vi.fn()
-        } as any)
+        Object.defineProperty(window, 'AudioContext', { value: MockAudioContext, configurable: true, writable: true })
+        Object.defineProperty(window, 'webkitAudioContext', {
+            value: MockAudioContext,
+            configurable: true,
+            writable: true
+        })
         Object.defineProperty(navigator, 'webdriver', { value: false, configurable: true, writable: true })
         mockState.camera = null
     })
@@ -239,13 +237,12 @@ describe('updateAudio', () => {
         resetNodeTracking()
         resetMockState()
         setCam(0, 0, 0)
-        vi.stubGlobal('window', {
-            ...window,
-            AudioContext: MockAudioContext,
-            webkitAudioContext: MockAudioContext,
-            requestAnimationFrame: mockRaf,
-            cancelAnimationFrame: vi.fn()
-        } as any)
+        Object.defineProperty(window, 'AudioContext', { value: MockAudioContext, configurable: true, writable: true })
+        Object.defineProperty(window, 'webkitAudioContext', {
+            value: MockAudioContext,
+            configurable: true,
+            writable: true
+        })
         Object.defineProperty(navigator, 'webdriver', { value: false, configurable: true, writable: true })
         initAudio()
         fire('mousedown') // establish ctx
@@ -327,13 +324,12 @@ describe('setAudioMuted', () => {
     beforeEach(() => {
         disposeAudio()
         resetNodeTracking()
-        vi.stubGlobal('window', {
-            ...window,
-            AudioContext: MockAudioContext,
-            webkitAudioContext: MockAudioContext,
-            requestAnimationFrame: mockRaf,
-            cancelAnimationFrame: vi.fn()
-        } as any)
+        Object.defineProperty(window, 'AudioContext', { value: MockAudioContext, configurable: true, writable: true })
+        Object.defineProperty(window, 'webkitAudioContext', {
+            value: MockAudioContext,
+            configurable: true,
+            writable: true
+        })
         Object.defineProperty(navigator, 'webdriver', { value: false, configurable: true, writable: true })
         initAudio()
         fire('mousedown')
@@ -362,13 +358,12 @@ describe('isAudioMuted', () => {
     beforeEach(() => {
         disposeAudio()
         resetNodeTracking()
-        vi.stubGlobal('window', {
-            ...window,
-            AudioContext: MockAudioContext,
-            webkitAudioContext: MockAudioContext,
-            requestAnimationFrame: mockRaf,
-            cancelAnimationFrame: vi.fn()
-        } as any)
+        Object.defineProperty(window, 'AudioContext', { value: MockAudioContext, configurable: true, writable: true })
+        Object.defineProperty(window, 'webkitAudioContext', {
+            value: MockAudioContext,
+            configurable: true,
+            writable: true
+        })
         Object.defineProperty(navigator, 'webdriver', { value: false, configurable: true, writable: true })
     })
     afterEach(() => {
@@ -400,13 +395,12 @@ describe('triggerCorridorBloom', () => {
     beforeEach(() => {
         disposeAudio()
         resetNodeTracking()
-        vi.stubGlobal('window', {
-            ...window,
-            AudioContext: MockAudioContext,
-            webkitAudioContext: MockAudioContext,
-            requestAnimationFrame: mockRaf,
-            cancelAnimationFrame: vi.fn()
-        } as any)
+        Object.defineProperty(window, 'AudioContext', { value: MockAudioContext, configurable: true, writable: true })
+        Object.defineProperty(window, 'webkitAudioContext', {
+            value: MockAudioContext,
+            configurable: true,
+            writable: true
+        })
         Object.defineProperty(navigator, 'webdriver', { value: false, configurable: true, writable: true })
         initAudio()
         fire('mousedown')
@@ -474,13 +468,12 @@ describe('trigger / play', () => {
     beforeEach(() => {
         disposeAudio()
         resetNodeTracking()
-        vi.stubGlobal('window', {
-            ...window,
-            AudioContext: MockAudioContext,
-            webkitAudioContext: MockAudioContext,
-            requestAnimationFrame: mockRaf,
-            cancelAnimationFrame: vi.fn()
-        } as any)
+        Object.defineProperty(window, 'AudioContext', { value: MockAudioContext, configurable: true, writable: true })
+        Object.defineProperty(window, 'webkitAudioContext', {
+            value: MockAudioContext,
+            configurable: true,
+            writable: true
+        })
         Object.defineProperty(navigator, 'webdriver', { value: false, configurable: true, writable: true })
         initAudio()
         fire('mousedown')
@@ -510,13 +503,12 @@ describe('disposeAudio', () => {
     beforeEach(() => {
         disposeAudio()
         resetNodeTracking()
-        vi.stubGlobal('window', {
-            ...window,
-            AudioContext: MockAudioContext,
-            webkitAudioContext: MockAudioContext,
-            requestAnimationFrame: mockRaf,
-            cancelAnimationFrame: vi.fn()
-        } as any)
+        Object.defineProperty(window, 'AudioContext', { value: MockAudioContext, configurable: true, writable: true })
+        Object.defineProperty(window, 'webkitAudioContext', {
+            value: MockAudioContext,
+            configurable: true,
+            writable: true
+        })
         Object.defineProperty(navigator, 'webdriver', { value: false, configurable: true, writable: true })
         initAudio()
         fire('mousedown')

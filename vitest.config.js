@@ -33,6 +33,16 @@ export default defineConfig({
         testTimeout: 20000,
         include: ['tests/unit-active/**/*.{test,spec}.{js,mjs,ts}', 'tests/scripts/**/*.{test,spec}.{js,mjs,ts}'],
         globals: true,
+        // Use vmThreads pool to avoid process-fork hangs with large Svelte/JSDOM
+        // suites while keeping test isolation via VM modules.
+        pool: 'vmThreads',
+        // Inline the Svelte package so its ESM internals resolve correctly inside
+        // the vmThreads runner (avoids "Cannot use import statement outside a module").
+        server: {
+            deps: {
+                inline: ['svelte']
+            }
+        },
         // setupFiles runs before any test file. Store tests import modules that
         // call window.matchMedia during module initialization.
         setupFiles: ['tests/unit-active/vitest.setup.js'],
