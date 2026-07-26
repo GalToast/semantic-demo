@@ -512,3 +512,59 @@ The parallel session committed **2 new HEAD commits during this turn** (between 
 - `271fe111` "feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation" — changed `src/lib/audio/audio-scape.ts` behavior incompatibly with the new tests, causing the 2 residual broad-vitest failures.
 
 Both are FRED's lane (audio + v2-failover domain). Track F's Header.svelte fix did not touch any audio source path, so my commit landed cleanly with no merge conflict. Fred has not responded to switchboard broadcasts through 5 total broadcasts today (ids 18-22), but he has clearly been committing actively offline — Switchboard is communicate-comms-back-async for him, not coordination.
+
+## Post-Wave-3 followup — Track A F2 lands + Wave-3 supersedes Track F Option F + doc de-rot + Playwright config friction
+
+Following Track F Option F (`df3f5c15`), the parallel ("Fred") session surfaced a stronger root-cause fix in Wave-3 (`c4201964` "fix(keyboard): close second-click help-button race"). Per AGENTS.md "good changes should stick", Wave-3 was KEPT (Option F is implicitly reverted: Wave-3 restored `toggleKeyboardShortcutsHint()` into `openKeyboardHelp()` AND added `e.stopImmediatePropagation()` in `keyboard-help.ts:~388` AFTER a `panel == null` early-return guard).
+
+Wave-3 root-cause rationale (Fred's chronicle `c6f5bdd4` for full detail):
+
+- `stopPropagation()` does NOT block same-element bubble listeners per W3C DOM spec; only `stopImmediatePropagation()` does.
+- Capture handler early-returns when `panel == null` (first-click + post-close-reopen cases) — Svelte 5's bubble-phase `openKeyboardHelp` runs `init() + toggleKeyboardShortcutsHint()` to create + open the panel.
+- On 2nd+ clicks when `panel != null`, capture handler wins via `stopImmediatePropagation()`, silencing Svelte's bubble listener → single toggle → deterministic close/reopen cycle.
+- PHASE 4-6 in `tests/keyboard-hint-panel-journey.spec.js` (extended by Fred in Wave-3) assert the 4-click open→close→reopen→close→reopen cycle behaviorally.
+
+Main-lane alignment work after Wave-3:
+
+- Regression test `tests/unit-active/w7-keyboard-help-kh-second-click-race.test.ts` aligned to Wave-3 contract (commit `c9b9db4b`): asserts `init() + toggleKeyboardShortcutsHint()` retained + `stopImmediatePropagation()` at line 388 + marker comments preserved. 5/5 focused vitest green.
+
+Track A F2 ack dispatch (main-lane surgical commit):
+
+- `90d62c3f` "feat(W7 Track A): F2 — dispatch demo-replay-acknowledged in replayListener" — surgical 7-line edit to DemoChoreography.svelte:263-266. Fred's W51 markInteraction WIP preserved: backed up WIP working tree → restored HEAD → applied surgical F2 edit → restored WIP backup (W51 untouched).
+- `3dc0c995` "test(W7 Track A F2): add producer-side demo-replay-acknowledged contract test" — `tests/unit-active/w7-tracka-f2-ack-dispatch-contract.test.ts` (5 producer-side dispatch tests).
+- F2 ack dispatch verified intact in working tree at DemoChoreography.svelte:263-266 alongside Fred's W51 WIP additions.
+
+Doc de-rot (commit `93721ce2`):
+
+- `tests/keyboard-hint-panel-journey.spec.js` carried a stale pre-Wave-3 narrative at lines 22-37: `"NOT COVERED HERE (deliberately — filed as wave-3 ticket): ... this test does NOT assert reopen-via-help-button because asserting the broken state would mask a real regression once fixed."` Fred extended the spec with PHASE 4-6 but did not update the header doc — OBSOLETE.
+- Refreshed the narrative (+20/-7) to retain the pre-Wave-3 history for context while noting Wave-3 fix landed (`c4201964`) + the W3C rationale + PHASE 4-6 pointer.
+
+Playwright config Windows-shell friction (out of scope to fix as main lane — playwright.config.js is shared parallel-session infra):
+
+- `npx playwright test tests/keyboard-hint-panel-journey.spec.js` fails on Windows because `webServer.command` uses POSIX env-prefix syntax: `'VITE_API_BASE_URL=http://127.0.0.1:8795 npm run build && node scripts/test-server.mjs'`. Windows cmd.exe rejects this: `'VITE_API_BASE_URL' is not recognized as an internal or external command`, webServer startup fails: `Process from config.webServer was not able to start. Exit code: 1`.
+- Suggested fix: install `cross-env` and rewrite as `cross-env VITE_API_BASE_URL=http://127.0.0.1:8795 npm run build && node scripts/test-server.mjs` OR drop the env-prefix (if test-server.mjs doesn't need `VITE_API_BASE_URL`) OR use Playwright's `webServer.env` config object instead of env-prefix in the command string.
+- Also: playwright.config.js lacks a `projects:` block, so `--project=chromium` returns `Project(s) "chromium" not found. Available projects: ""`.
+- Deferring PHASE 4-6 journey validation to Fred's normalized workflow.
+
+Internal main-lane model lane drift noted:
+
+- Session began with main-lane `z-ai/glm-5.2` (NVIDIA NIM) per prior session memory; flight_recorder shows current session drifted to `kimi-k2.7-code` (direct-freeinference provider) mid-session. Switchboard sender identity preserved as `pi-main-glm-5.2` for cross-session continuity.
+
+Final verification (broad vitest):
+
+- 243/243 test files passed (243) | 3122 tests passed | 4 todo | 0 failures | 83.41s.
+- `npm run build` green (~14s).
+- Track A / Wave-3 focused suites: F2 producer-side contract (5/5) + Wave-3 regression (5/5) + choreography-start-race (13/13) + f2f4f5-followup (10/10) = 48/48 passed.
+
+Stray file cleanup:
+
+- Deleted `-X` (569-byte HTTP response capture artifact) + `nul` (152KB Windows stdout redirect accident) from repo root.
+
+Main-lane session-final lineage (post-failure-freeze):
+
+- `93721ce2` docs(journey): refresh Wave-3 narrative (this turn)
+- `3dc0c995` test(W7 Track A F2): producer-side contract test (this turn)
+- `90d62c3f` feat(W7 Track A): F2 dispatch (this turn)
+- `c9b9db4b` test(w7): align KH-HELPBTN-SECOND-CLICK-RACE regression to Wave-3
+- `055e62b5` docs(bench+campaign): Track B-Wave-2 + Track F
+- `df3f5c15` Track F Option F (SUPERSEDED by c4201964)
