@@ -28,10 +28,13 @@ import { BASE_URL } from './helpers/3d-interaction-helpers.js'
  *     focused form field + Ctrl+Digit hotkey dispatch which has its own
  *     journey concern; the unit-test contract still covers them.
  *
- * NOT COVERED HERE (deliberately — filed as wave-3 ticket):
+ * COVERED HERE SINCE Wave-3 fix commit `c4201964` (KH-HELPBTN-SECOND-
+ * CLICK-RACE): the pre-Wave-3 narrative below is retained for context.
+ * Originally filed not-covered-because-broken; the race symptom below is
+ * now FIXED + ASSERTED via PHASE 4-6 (lines ~188-268 below).
  *
- *   The re-attach fix from commit 2de47f08 + the second-click reopen
- *   flow双双 fail via a Svelte-5-event-delegation + capture-phase
+ *   Pre-fix history: the re-attach from commit 2de47f08 + the second-click
+ *   reopen flow双双 fail via a Svelte-5-event-delegation + capture-phase
  *   addEventListener race: on the SECOND click of `#btn-keyboard-help`,
  *   the capture-phase handler added by `initKeyboardShortcutsHint`
  *   (keyboard-help.ts:326) fires first and `openPanel()`s the panel,
@@ -39,10 +42,20 @@ import { BASE_URL } from './helpers/3d-interaction-helpers.js'
  *   Header.svelte fires at the document level, calls `init` (no-op) +
  *   `toggleKeyboardShortcutsHint()`, which sees the panel as `visible`
  *   (just-added `.visible` by the capture-phase listener) and calls
- *   `closePanel()` — concluding the click on a CLOSED panel. This is a
- *   real bug + should be fixed in a separate wave-3 ticket; this test
- *   does NOT assert reopen-via-help-button because asserting the broken
- *   state would mask a real regression once fixed.
+ *   `closePanel()` — concluding the click on a CLOSED panel. This was
+ *   the original KH-HELPBTN-SECOND-CLICK-RACE symptom.
+ *
+ *   Wave-3 (commit `c4201964`): added `e.stopImmediatePropagation()` in
+ *   keyboard-help.ts:~388 AFTER the capture handler's `panel == null`
+ *   early-return guard. Per W3C DOM spec, `stopPropagation()` does NOT
+ *   block same-element bubble listeners; only `stopImmediatePropagation`
+ *   does. First-click + post-close paths bypass the call (early-return on
+ *   panel==null) so Svelte 5's bubble `openKeyboardHelp` runs init+toggle.
+ *   On 2nd+ clicks the capture handler wins, silencing Svelte's bubble
+ *   listener → single toggle → panel reopens/closes deterministically.
+ *   PHASE 4 asserts second-click REOPEN, PHASE 5 asserts third-click
+ *   CLOSE, PHASE 6 asserts fourth-click REOPEN — full 4-click cycle.
+ *   Focused contract: `tests/unit-active/w7-keyboard-help-kh-second-click-race.test.ts` (commit c9b9db4b).
  *
  * See `docs/subagent-bench-phase-b-findings-2026-07-24.md` for the bug
  * tickets + `tmp/bugsweep-find/_MASTER_BUG_LIST.md` for verification status.
