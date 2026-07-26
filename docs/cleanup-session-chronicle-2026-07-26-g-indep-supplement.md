@@ -5,9 +5,18 @@ This supplement file is a SEPARATE doc from `docs/cleanup-session-chronicle-2026
 capture can land in-tree without colliding with the parallel edit lane.
 
 Surface covers three parallel-track events: (1) Subagent G-indep Phase-B cleanup
-commit, (2) NVIDIA NIM provider diagnosis — **CORRECTED**: NIM IS UP, the bench
-failures were a harness-id-format bug, NOT an outage, (3) `logfare/kiro-auto`
-golden-goose lane re-confirmation.
+commit, (2) NVIDIA NIM provider diagnosis — **FINAL**: NIM IS UP, root cause =
+key-router capacity (5-key pool, ~30s cooldown to 429), NOT an outage, (3)
+`logfare/kiro-auto` golden-goose lane re-confirmation.
+
+> **SECOND CORRECTION**: The "id-format bug" described in the CORRECTION section
+> below was ITSELF a misdiagnosis. The harness DOES strip the leading `nvidia/`
+> prefix correctly before sending the bare catalog ID to NIM upstream. Proof:
+> `nvidia/poolside/laguna-xs-2.1` subagent dispatch completed exit 0 with real tool
+> use (REPORT.md on disk, cost $0.0017, commit `681b4c77`). The 429 from the
+> glm-5.2 dispatch test confirms the request reached NIM upstream (rate-limited,
+> not 404 format error). See `docs/nim-provider-investigation-2026-07-26.md` for
+> the definitive diagnosis with the full 8-LIVE-model classification.
 
 ## CORRECTION (during writing this doc): NIM provider IS UP — bench fails were ID-format bug
 
