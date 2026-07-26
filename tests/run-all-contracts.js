@@ -79,7 +79,8 @@ const SERVER_GROUPS = new Set([
     '3d-smoke',
     '3d-regression',
     '3d-slow',
-    '3d-full'
+    '3d-full',
+    'journey'
 ])
 
 /**
@@ -356,7 +357,7 @@ function discoverUnlistedContracts() {
     // Playwright *.spec.js files that are not helper utilities.
     // These use real browser automation and are discoverable contract entries.
     const allSpec = readdirSync(TESTS_DIR).filter((f) => f.endsWith('.spec.js'))
-    const specExclusions = new Set() // formerly inspect_element.js, wave62-diag.spec.js — deleted
+    const specExclusions = new Set(['tmp-diag-focus.spec.js', 'w51-diag.spec.js']) // temp/diagnostic files, not intended for manifest grouping
     const specContracts = allSpec.filter((f) => !specExclusions.has(f))
 
     return { mjsContracts, specContracts }

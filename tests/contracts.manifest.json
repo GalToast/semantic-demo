@@ -49,7 +49,6 @@
                 "reduced-motion-interruption-contract.mjs",
                 "reduced-motion-coverage-contract.mjs",
                 "js-reduced-motion-animation-guard-contract.mjs",
-                "mycelium-logic-contract.mjs",
                 "node-interaction-contract.spec.js",
                 "dynamic-lighting-contract.spec.js",
                 "focus-transition-contract.mjs",
@@ -206,6 +205,7 @@
                 "css-minification-build-output-contract.mjs",
                 "design-token-doc-contract.mjs",
                 "surface-style-matrix-contract.mjs",
+                "svelte-style-token-contract.mjs",
                 "focus-stage-css-ownership-contract.mjs",
                 "css-transient-state-ownership-contract.mjs",
                 "mobile-chrome-ownership-contract.mjs",
@@ -536,6 +536,34 @@
                 "semantic-guide-fetch-fallback-contract.spec.js",
                 "semantic-guide-edge-contract.mjs",
                 "short-landscape-contract.spec.js"
+            ]
+        },
+        "journey": {
+            "description": "Playwright journey tests — widget, keyboard, focus, splash, trail, weather, and accessibility interaction proofs across desktop and mobile viewports.",
+            "contracts": [
+                "a11y-round2-journey.spec.js",
+                "canvas-picking-perf.spec.js",
+                "capture-phase2.spec.js",
+                "data-loader-abort.spec.js",
+                "H1-canvas-keyboard-journey.spec.js",
+                "H3H4-hover-focus-journey.spec.js",
+                "H5-deeplink-journey.spec.js",
+                "journey-video-capture.spec.js",
+                "keyboard-hint-panel-journey.spec.js",
+                "keyboard-lock.spec.js",
+                "loading-overlay-error-state-journey.spec.js",
+                "map-empty-state-journey.spec.js",
+                "mapview-placeholder-journey.spec.js",
+                "mobile-chip-aaa.spec.js",
+                "record-url-focus-restore-journey.spec.js",
+                "search-input-escape-cancel-journey.spec.js",
+                "splash-welcome-aaa-journey.spec.js",
+                "thread-inspector-a11y-journey.spec.js",
+                "trail-controls-aaa-journey.spec.js",
+                "w53-fixes-journey.spec.js",
+                "wcag-contrast-journey.spec.js",
+                "weather-widget-context-journey.spec.js",
+                "widget-journey.spec.js"
             ]
         },
         "manual-risk": {
