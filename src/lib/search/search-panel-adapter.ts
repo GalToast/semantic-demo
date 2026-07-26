@@ -31,8 +31,8 @@ interface SetupMobileSearchSheetToggleOptions {
 
 // ── Functions ──────────────────────────────────────────────────────────────
 
-export function getSearchContainer(): Element | null {
-    return document.querySelector('.search-container')
+export function getSearchContainer(): HTMLElement | null {
+    return document.querySelector('.search-container') as HTMLElement | null
 }
 
 export function setSearchContainerState({

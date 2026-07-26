@@ -68,15 +68,15 @@ interface MockSearchDataset {
 
 function getMockPointSearchFields(point: Point, dataset: MockSearchDataset): MockPointSearchFields {
     const enrichment =
-        point?.lead_id !== null && point?.lead_id !== undefined
+        point.lead_id !== null && point.lead_id !== undefined
             ? (dataset.leadEnrichment?.[String(point.lead_id)] ?? null)
             : null
     return {
-        name: normalizeMockSearchText(point?.name),
-        what: normalizeMockSearchText(point?.what),
-        city: normalizeMockSearchText(point?.city),
-        naics_prefix: point?.naics ? (String(point.naics).match(/^(\d{2,6})/)?.[1] ?? null) : null,
-        address: normalizeMockSearchText(enrichment?.address || point?.address),
+        name: normalizeMockSearchText(point.name),
+        what: normalizeMockSearchText(point.what),
+        city: normalizeMockSearchText(point.city),
+        naics_prefix: point.naics ? (String(point.naics).match(/^(\d{2,6})/)?.[1] ?? null) : null,
+        address: normalizeMockSearchText(enrichment?.address || point.address),
         snapshot: normalizeMockSearchText(enrichment?.snapshot),
         snapshot_alt: normalizeMockSearchText(enrichment?.snapshot_alt),
         business_overview: normalizeMockSearchText(enrichment?.business_overview),

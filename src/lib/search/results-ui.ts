@@ -18,6 +18,9 @@ import { appState } from '@lib/state/app.svelte'
 import type { SemanticState, SearchErrorData, SearchResult, SearchResultPoint } from '@lib/state/state-types'
 import { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
 
+// appState (AppState class instance) structurally matches SemanticState at runtime;
+// the Svelte 5 $state type marker prevents a direct cast, so the intermediate
+// `unknown` bridges the disjoint type hierarchies.
 const state = appState as unknown as SemanticState
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -47,30 +50,6 @@ interface SearchSummaryState {
     resultIndices?: number[]
     dedupedResultCount?: number
     visibleMatches?: number
-}
-
-// ── HELPERS ────────────────────────────────────────────────────────────────
-
-function syncSearchResultsA11y(resultsEl: HTMLElement | null): void {
-    if (!resultsEl) return
-    const hasContent = resultsEl.children.length > 0
-    resultsEl.setAttribute('aria-hidden', hasContent ? 'false' : 'true')
-}
-
-// ── Legacy DOM rendering ───────────────────────────────────────────────────
-
-function clearLegacySearchResultsDom(resultsEl: HTMLElement): void {
-    if (!resultsEl) return
-    if (resultsEl.dataset.legacyResultsSource === 'legacy') {
-        resultsEl.replaceChildren()
-    } else {
-        const own = resultsEl.querySelectorAll('[data-legacy-search-results="1"], [data-legacy-search-error-state="1"]')
-        own.forEach((el) => el.remove())
-    }
-    resultsEl.dataset.legacyResultsSource = ''
-    resultsEl.removeAttribute('data-legacy-results-count')
-    resultsEl.removeAttribute('data-legacy-results-anchor')
-    resultsEl.removeAttribute('data-legacy-results-mode')
 }
 
 // ── Search State Namespace Registry (replaces DOM property mutation) ────
@@ -111,6 +90,10 @@ function appendQueryInQuotes(parent: HTMLElement, query: string): void {
 }
 
 function buildLegacySearchErrorStateDom(errorData: SearchErrorData): HTMLElement {
+    // Sanitize query for safe HTML-attribute use (aria-label, dataset).
+    // The query is never injected via innerHTML, so textContent-level escaping
+    // (appendChild/textContent) is already safe; setAttribute needs quote escaping.
+    const safeQuery = errorData.query.replace(/"/g, '&quot;')
     const errorEl = document.createElement('div')
     errorEl.className = errorData.type === 'inline' ? 'search-error-inline-retry' : 'search-error-state'
     errorEl.dataset.legacySearchErrorState = '1'
@@ -130,7 +113,7 @@ function buildLegacySearchErrorStateDom(errorData: SearchErrorData): HTMLElement
         const retry = document.createElement('button')
         retry.type = 'button'
         retry.className = 'search-error-retry-btn compact'
-        retry.setAttribute('aria-label', `Retry search for ${errorData.query}`)
+        retry.setAttribute('aria-label', `Retry search for ${safeQuery}`)
         retry.textContent = 'Retry'
 
         errorEl.append(message, retry)
@@ -155,7 +138,7 @@ function buildLegacySearchErrorStateDom(errorData: SearchErrorData): HTMLElement
     const retry = document.createElement('button')
     retry.type = 'button'
     retry.className = 'search-error-retry-btn'
-    retry.setAttribute('aria-label', `Retry search for ${errorData.query}`)
+    retry.setAttribute('aria-label', `Retry search for ${safeQuery}`)
     retry.textContent = 'Retry'
 
     const dismiss = document.createElement('button')
@@ -199,7 +182,7 @@ function renderLegacySearchErrorStateDom(resultsEl: HTMLElement | null, errorDat
     resultsEl.hidden = false
     resultsEl.classList.add('active')
     resultsEl.setAttribute('aria-describedby', errorData.type === 'inline' ? 'search-status' : 'search-error-state')
-    syncSearchResultsA11y(resultsEl)
+    resultsEl.setAttribute('aria-hidden', resultsEl.children.length > 0 ? 'false' : 'true')
 }
 
 // ── EXPORTS ────────────────────────────────────────────────────────────────
@@ -274,7 +257,7 @@ export function renderSearchResultItems(
     // Legacy imperative DOM render RETIRED — SearchResults.svelte + SearchResultItem.svelte
     // now own #search-results declaratively (fed via searchState.results ← setSearchSummary/
     // resultIndices). The former renderLegacySearchResultsDom() call clobbered Svelte's DOM
-    // via clearLegacySearchResultsDom()'s replaceChildren(), wiping the declarative rows,
+    // via replaceChildren(), wiping the declarative rows,
     // keyboard nav, and a11y live-region. The served shell DOES mount the Svelte root
     // (SearchBar.svelte dynamically imports + renders <SearchResultsComponent>), so the
     // legacy "shell never mounts Svelte" premise is stale.
@@ -300,7 +283,7 @@ export function applySemanticSearchLoadingState(resultsEl: HTMLElement | null): 
         resultsEl.classList.add('is-searching-skeleton')
         resultsEl.setAttribute('aria-busy', 'true')
         resultsEl.scrollTop = 0
-        syncSearchResultsA11y(resultsEl)
+        resultsEl.setAttribute('aria-hidden', resultsEl.children.length > 0 ? 'false' : 'true')
         resultsEl.hidden = false
     }
     clearSearchGlow()
@@ -328,7 +311,17 @@ export function applySemanticSearchErrorState(
     if (resultsEl) {
         resultsEl.classList.remove('is-searching-skeleton')
         resultsEl.setAttribute('aria-busy', 'false')
-        clearLegacySearchResultsDom(resultsEl)
+        if (resultsEl.dataset.legacyResultsSource === 'legacy') {
+            resultsEl.replaceChildren()
+        } else {
+            resultsEl
+                .querySelectorAll('[data-legacy-search-results="1"], [data-legacy-search-error-state="1"]')
+                .forEach((el) => el.remove())
+        }
+        resultsEl.dataset.legacyResultsSource = ''
+        resultsEl.removeAttribute('data-legacy-results-count')
+        resultsEl.removeAttribute('data-legacy-results-anchor')
+        resultsEl.removeAttribute('data-legacy-results-mode')
         renderLegacySearchErrorStateDom(resultsEl, errorData)
     }
 
@@ -353,7 +346,7 @@ export function finishSemanticSearchSuccessState(
         resultsEl.classList.remove('searching')
         resultsEl.classList.remove('is-searching-skeleton')
         resultsEl.setAttribute('aria-busy', 'false')
-        syncSearchResultsA11y(resultsEl)
+        resultsEl.setAttribute('aria-hidden', resultsEl.children.length > 0 ? 'false' : 'true')
     }
     setSearchPanelState({ searching: false, resultsRendered: true, hasResults: true, hasQuery: true })
     if (cacheSource === 'network') recordSemanticLaneSnapshot({ state: 'healthy', query: trimmedQuery })
@@ -377,8 +370,18 @@ export function clearSearchState(_resultsEl: HTMLElement | null, _statusEl: HTML
         _resultsEl.classList.remove('searching')
         _resultsEl.classList.remove('is-searching-skeleton')
         _resultsEl.setAttribute('aria-busy', 'false')
-        clearLegacySearchResultsDom(_resultsEl)
-        syncSearchResultsA11y(_resultsEl)
+        if (_resultsEl.dataset.legacyResultsSource === 'legacy') {
+            _resultsEl.replaceChildren()
+        } else {
+            _resultsEl
+                .querySelectorAll('[data-legacy-search-results="1"], [data-legacy-search-error-state="1"]')
+                .forEach((el) => el.remove())
+        }
+        _resultsEl.dataset.legacyResultsSource = ''
+        _resultsEl.removeAttribute('data-legacy-results-count')
+        _resultsEl.removeAttribute('data-legacy-results-anchor')
+        _resultsEl.removeAttribute('data-legacy-results-mode')
+        _resultsEl.setAttribute('aria-hidden', _resultsEl.children.length > 0 ? 'false' : 'true')
     }
     if (_resultsEl) {
         _searchStateRegistry.delete(_resultsEl)
@@ -442,8 +445,18 @@ export function applyEmptySemanticSearchState(
         resultsEl.classList.remove('searching')
         resultsEl.classList.remove('is-searching-skeleton')
         resultsEl.setAttribute('aria-busy', 'false')
-        clearLegacySearchResultsDom(resultsEl)
-        syncSearchResultsA11y(resultsEl)
+        if (resultsEl.dataset.legacyResultsSource === 'legacy') {
+            resultsEl.replaceChildren()
+        } else {
+            resultsEl
+                .querySelectorAll('[data-legacy-search-results="1"], [data-legacy-search-error-state="1"]')
+                .forEach((el) => el.remove())
+        }
+        resultsEl.dataset.legacyResultsSource = ''
+        resultsEl.removeAttribute('data-legacy-results-count')
+        resultsEl.removeAttribute('data-legacy-results-anchor')
+        resultsEl.removeAttribute('data-legacy-results-mode')
+        resultsEl.setAttribute('aria-hidden', resultsEl.children.length > 0 ? 'false' : 'true')
     }
     if (statusEl) {
         statusEl.textContent = `No matches found for "${trimmedQuery}".`

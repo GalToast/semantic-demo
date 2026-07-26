@@ -20,6 +20,13 @@ export interface TokenMatchResult {
     prefix: number
 }
 
+/** English-only stop words.
+ *
+ * Intentionally monolingual until i18n support is required. The current dataset
+ * (Montgomery County TX businesses) is US-English dominant, and adding per-locale
+ * stop-word lists would be scope-creep without a concrete i18n requirement.
+ * When i18n is added, this set should become a locale-keyed map and
+ * `tokenizeSearchText` should accept an optional locale parameter. */
 export const SEARCH_STOP_WORDS: ReadonlySet<string> = new Set([
     'a',
     'an',
@@ -113,6 +120,12 @@ export const SEARCH_INTENT_EXPANSIONS: readonly IntentExpansion[] = [
     }
 ] as const
 
+// Detect-once flag: Intl.Segmenter is not available in all environments
+// (older browsers, some jsdom/test runners).  A single check at module init
+// avoids re-evaluating the condition on each call, ensuring the chosen
+// word-segmentation path is deterministic for the lifetime of the module.
+const _hasIntlSegmenter = typeof Intl !== 'undefined' && !!Intl.Segmenter
+
 export function tokenizeSearchText(text: unknown, stopWords: ReadonlySet<string> = SEARCH_STOP_WORDS): string[] {
     // Pre-process special chars BEFORE word segmentation so they don't
     // become part of tokens (e.g., "O'Brien" → "obrien", "AT&T" → "att",
@@ -134,8 +147,10 @@ export function tokenizeSearchText(text: unknown, stopWords: ReadonlySet<string>
     // Word-level segmentation via Intl.Segmenter when available — respects
     // grapheme boundaries so multi-code-point characters (NFC or NFD) stay
     // as single tokens. Falls back to the Unicode-aware regex path.
+    // The detect-once flag (`_hasIntlSegmenter`) is set at module init so the
+    // chosen path is stable for the module's lifetime.
     let words: string[]
-    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+    if (_hasIntlSegmenter) {
         const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' })
         words = Array.from(segmenter.segment(input) as Iterable<{ segment: string; isWordLike: boolean }>)
             .filter((s) => s.isWordLike)
