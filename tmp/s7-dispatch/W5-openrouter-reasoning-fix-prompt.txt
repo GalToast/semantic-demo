@@ -1,0 +1,46 @@
+# W5 — OpenRouter Reasoning Format Fix
+
+## Task
+Fix the OpenRouter reasoning field format mismatch in the key-router.
+
+## Bug Description
+OpenRouter expects the `reasoning` parameter as an OBJECT (e.g. `{type: "reasoning"}`),
+but the key-router sends `reasoning: true` (boolean). This causes HTTP 400 errors:
+`{"error":{"message":"reasoning: Invalid input: expected object, received boolean","code":400}}`
+
+This affects reasoning-capable models like `poolside/laguna-s-2.1:free` on OpenRouter.
+
+## Root Cause
+- key-router line 2740: `...(model.reasoning ? ["reasoning", "include_reasoning"] : [])`
+  This adds `reasoning` and `include_reasoning` as field names to the request body,
+  but the VALUE of `reasoning` remains `true` (boolean) from the incoming request.
+- OpenRouter's API expects `reasoning` to be an object: `{type: "reasoning", summary: "concise"}`
+  or similar, NOT a boolean.
+
+## Fix Location
+File: `C:/Users/HP/harness/servers/key-router/src/opencode-key-router.mjs`
+
+The fix should be in the OpenRouter-specific request body transformation. Look for:
+1. Line 2740 area — where `reasoning`/`include_reasoning` fields are added to the body
+2. Line 4338 area — `acceptedIncomingKey` + `forward()` function for openrouter provider
+3. Any per-provider request body transformation hook (search for `providerKey === "openrouter"`)
+
+## Fix
+In the OpenRouter request body transformation, convert:
+- `reasoning: true` → `reasoning: {type: "reasoning"}`
+- `include_reasoning: true` → remove (OpenRouter uses `reasoning` object instead)
+- `reasoning_effort: "max"` → keep (OpenRouter accepts this)
+
+## Constraints
+- Do NOT restart the key-router (main-lane coordinates restarts)
+- Run `node --check src/opencode-key-router.mjs` to verify syntax
+- Create a backup: `src/opencode-key-router.mjs.bak-pre-openrouter-reasoning-fix-<timestamp>`
+- Write report to `tmp/s7-dispatch/W5-openrouter-reasoning-fix-report.md`
+
+## Verification
+1. `node --check` passes
+2. Grep confirms `reasoning: {type:` exists in the openrouter adapter
+3. Backup file created
+
+## Lane
+logfare/kiro-auto (Gemini-backed reasoning model, $0.00 per dispatch)

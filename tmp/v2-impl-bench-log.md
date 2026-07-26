@@ -292,3 +292,137 @@ User clarification: "kiro/auto" = the `kiro-auto` model id (display_name "Kiro A
   "first_assistant_output_at": "2026-07-26T19:55:28.151Z"
 }
 ```
+
+### ZYDIT V4 CATALOG ASSESSMENT (2026-07-26T21:47 UTC)
+
+User-clarified: zydit (routePrefix /zydit/v1) and zyditv4 (routePrefix /zydit/v4) BOTH share
+the SAME ZYDIT_API_KEY env var and the SAME configFile `zydit-keys.json` — confirmed by reading
+C:/Users/HP/harness/servers/key-router/src/opencode-key-router.mjs lines 177-199.
+**/health status (post key-router restart 2026-07-26T21:40 UTC):**
+
+- `/zydit/v1`: keys=2, activeKeys=2, coolingRecords=0 — HEALTHY
+- `/zydit/v4`: keys=2, activeKeys=2, coolingRecords=0 — HEALTHY
+- Both have stale `recentFailures` from earlier today's pre-restart state (now cooled)
+**V4 catalog at `curl /zydit/v4/models` returns 37 models, all `owned_by: zydit.infra`:**
+
+| Family | Models |
+|---|---|
+| **Kimi (14)** — newest+reasoning+search variants | kimi-k2, kimi-k2-search, kimi-k2-thinking, kimi-k2-thinking-search, kimi-2.6-fast, kimi-2.6-search, kimi-2.6-thinking, kimi-2.6-thinking-search, kimi-k2.5, kimi-k2.5-search, kimi-k2.5-thinking, kimi-k2.5-thinking-search, **kimi-k3** (newest), kimi-search, kimi-thinking, kimi-thinking-search |
+| Mistral Coders | devstral-2:123b, devstral-small-2:24b, ministral-3:3b/8b/14b |
+| Google Gemma | gemma-4-31b-it, gemma3:27b/12b/4b, gemma4:31b |
+| GLM | glm-4.7 (newer than glm-5.2 we've been using) |
+| GPT-OSS (OpenAI open source) | gpt-oss:20b, gpt-oss:120b |
+| MiniMax | minimax-m2.1, minimax-m2.5, minimax-m3 |
+| Nvidia Nemotron (reasoning) | nemotron-3-nano:30b, nemotron-3-super, nemotron-3-ultra |
+| Qwen Coders | qwen3-coder-next, qwen3-coder:480b |
+
+**Special note** (opencode-key-router.mjs line 3507): Kimi models on zydit/v4 reject `stream:true` — must use `stream:false`. Pi harness defaults send `stream:true` — workers on Kimi v4 need stream:false override.
+**Live probes (POST `/zydit/v4/chat/completions` stream=false):**
+
+| Model | Status | Result |
+|---|---|---|
+| ⭐ `kimi-k3` | **200 SUCCESS** (SSE stream) | content="Pong! 🏓\n\n[Pong game code snippet]" + completion chunks, finish_reason="stop", prompt=3/completion=51/total=54 tokens. **PROVEN ALIVE!** Newest Moonshot Kimi gen works clean on user's shared ZYDIT_API_KEY. |
+| `qwen3-coder-next` | 401 | `"Ollama Cloud error: Unauthorized"` api_error provider_upstream_error — upstream routed through Ollama Cloud with unauthorized account |
+| `minimax-m3` | 402 | `"Paid Model - Credits Required, balance=-0.00002, buyCreditsUrl=https://app.kilo.ai/profile"` — minimax-m3 query routed through kilo upstream (paid lane, no credits) — pre-existing bug |
+| `kimi-k2.5-thinking` | 404 | `"Function '23d4f03a-...' not found for account '2A_iKCS-w...'"` — Anthropic-style function lookup route → 404 |
+
+CONCLUSION: zydit/v4 lane itself is alive and provider shares keys with v1, but only **kimi-k3** among the 4 probed v4 models returned useful content. Others fail with auth/credits/function-not-found — their zydit/v4 upstream routing appears broken (Ollama Cloud / kilo / Anthropic reroutes are stale).
+
+**ACTION**: kimi-k3 is the strongest zydit/v4 subagent dispatch candidate — verified LIVE ALIVE through user's existing ZYDIT_API_KEY with shared zydit-keys.json config (same as v1).
+### Worker Status Snapshot 2026-07-26T21:48-21:50 UTC
+
+```
+KIRO-AUTO-SMOKE (ocw_44398b97):        exit_code=0 SUCCESS — 18-line kiro-auto-SMOKE-REPORT.md; $0 cost; first-ever kiro-auto dispatch verified working
+KIRO-AUTO-W2-MATRIX-LOAD (ocw_61a84077): exit=pending but MISSION ACCOMPLISHED — patched Site A (line 4577+) + Site B (line 5406+) of opencode-key-router.mjs; v2-overlay-matrix.json (4725B); matrix-load-report.md (5361B); ESM __dirname derived via fileURLToPath athlete patch; node --check exit 0
+KIRO-AUTO-W4-E2E (ocw_69a56e0f):       retry-looping on kiro-auto 429 (attempt 4/10, delayMs 16000) — no file on disk yet (tmp/s7-dispatch/v2-success-path-e2e.mjs NOT FOUND). Worker reasoning shows insightful X-Router-Failover-Applied analysis (true only when attempts.length>1) but hasn't issued write tool yet to deliver.
+```
+
+### W-D Option C Safest Variant Applied by Main-Lane
+
+Main-lane patch landed at `~/.pi/agent/local-packages/pi-model-providers/index.ts` lines 880-895:
+Replaced W-D worker's literal proposal `return { ...route, disabled: true };` with typed-safe variant:
+```ts
+if (activeKeys !== undefined && Number(activeKeys || 0) <= 0) {
+    return { route: { ...route, disabled: true }, catalogBaseUrl: route.baseUrl, models: [] };
+}
+if (activeKeys === undefined && Number(route.status?.keys || 0) <= 0) {
+    return { route: { ...route, disabled: true }, catalogBaseUrl: route.baseUrl, models: [] };
+}
+```
+Reason for safer variant: worker's literal proposal would crash the downstream consumer at `for (const model of item.models)` because the spread route has no `models` field (TypeError: undefined is not iterable). The safer variant returns same shape as success path, `models: []` means consumer `for...of` exits cleanly, AND the `disabled: true` flag still attached to the route sub-object so a downstream catalog renderer can decide to render greyed-out vs silently drop. Per memory: requires Pi restart to take effect (package reads at startup only).
+
+## Kimi-K3 Salvage Assessment — 2026-07-26T22:19:39.409Z
+
+### Hypothesis: zydit/v4/kimi-k3 alive via raw curl — fails subagent dispatch?
+
+**Verified broken**: 3 independent probes today (2026-07-26) on `/zydit/v4/chat/completions` with model=kimi-k3:
+- (stream=false, max=200) -> 404 Not Found
+- (stream=true, max=50) -> 404 Not Found
+- (max=1000, no stream) -> 404 Not Found
+
+All three return identical upstream body:
+```
+{"status":404,"title":"Not Found","detail":"Function '23d4f03a-b8a6-4adb-a183-7daa083a09cc': Not found for account '<account_id>'"}
+```
+
+Three separate Cloudflare account IDs probed (2A_iKCS-w..., CiBlb-6h..., Cw4iOx3T...) — meaning zydit/v4 rotates its pool, but the function binding `23d4f03a-...` is decommissioned across ALL accounts.
+
+### ROOT CAUSE
+
+Our own key-router at line 1614 hosts `addKimiK3ToZyditV4ModelsListing(text)` which **synthetically injects** `{id:'kimi-k3', owned_by:'zydit.infra'}` into the v4 models catalog listing (line 5129 caller). This is purely cosmetic listing patch — does NOT configure upstream binding. The zydit/v4 upstream Cloudflare worker function ID `23d4f03a-...` was decommissioned.
+
+Earlier today (21:47 UTC) kimi-k3 worked via curl on zydit/v4 -> SSE 200 with content 'Pong! Park...' + tokens 3/51/54. By 21:51 UTC the Cloudflare binding expired (W-K4 subagent dispatch died 404 immediately). By 21:52 UTC batch-smoke confirmed same 404. **Ephemeral upstream binding decommissioned**, not carrier-wide failure.
+
+### SALVAGE — Kimi K3 IS REAL (websearch)
+
+Moonshot AI released Kimi K3 on July 16, 2026 (10 days ago) — 2.8T params, 1M context window, native multimodal. Officially carried by:
+
+| Carrier | Status | Route we have? | Notes |
+|---|---|---|---|
+| SiliconFlow | AVAILABLE | YES `/siliconflow/v1` (welfare, no key yet) | siliconflow.com/blog/kimi-k3-siliconflow-api confirms $1 free credit |
+| Together AI | AVAILABLE | YES `/together/v1` (welfare, no key yet) | together.ai/models/kimi-k3 page confirms |
+| Novita AI | AVAILABLE | YES `/novita/v1` (welfare, no key yet) | blogs.novita.ai/kimi-k3-on-novita-ai confirms 1M context |
+| AI/ML API | AVAILABLE | YES `/aimlapi/v1` (welfare, no key yet) | cometapi.com compare deepseek-chat vs kimi-k3 confirms |
+| OpenRouter | AVAILABLE | YES `/openrouter/v1` (existing) | moonshotai/kimi-k3 at $3/$15 per million tokens |
+| Moonshot Platform | AVAILABLE | NO (would need new route) | platform.kimi.ai first-party API |
+
+**Salvage action**: Once user signs up at any of {SiliconFlow, Together, Novita, AI/ML API} and sets `{SILICONFLOW,TOGETHER,NOVITA,AIMLAPI}_API_KEY` env var + key-router restart, kimi-k3 dispatchable via the welfare provider prefix corresponding to their key.
+
+## W4-RD3 (mistral/codestral-latest) SUCCESS — 2026-07-26T22:19:39.411Z
+
+Re-dispatched W4 e2e script worker on `mistral/codestral-latest` AFTER W4-rd2 zydit/v4/kimi-k3 died at first inference with 404, AND W4-rd1 logfare/kiro-auto was retrying 429 rate-limit.
+
+| Field | Value |
+|---|---|
+| worker_id | `ocw_155f909c-abff-4026-b9d9-7a37f234ffd0` |
+| name | s7-mistral-codestral-w4-e2e-rd3 |
+| route | `pi:router-mistral/codestral-latest` |
+| exit | 0 PASS |
+| output | 1.06 MB stdout |
+| lifecycle | assistant_output_seen, stopReason=stop |
+| tokens | input=138 output=143 cacheRead=40320 total=40601 |
+| cost | $0.0014 |
+| deliverables | `tmp/s7-dispatch/v2-success-path-e2e.mjs` (561 lines) + `tmp/s7-dispatch/v2-success-path-e2e-REPORT.md` (113 lines) |
+
+Note: stopReason 'stop' (clean) — successfully wrote both files. Main-lane to RELINK-test script.
+
+## Welfare probe — ALL 9 routes registered but no keys set
+
+Curl `GET /<carrier>/v1/models` returned 503 'no conf' across all 9 welfare providers (Groq, DeepSeek, SiliconFlow, Together, Cerebras, Cohere, Hyperbolic, Novita, AI/ML API). EXPECTED — routes registered in router but no API keys supplied yet (waiting on user signup). Once user signs up + sets env vars + key-router restart, the 503s will become 200 catalog responses.
+
+## Zydit/v4 full 37-model batch-smoke (37.3s)
+
+- SUCCESS (200): 1/37 = glm-4.7 (returned HTML 171 tokens — model interpreted 'Pong' as Pong game snippet)
+- FAIL (non-200): 36/37 = 97.3%
+  - 429 key-cooldown (router gate): devstral-2:123b, devstral-small-2:24b, gemma-4-31b-it, gemma3:12b/27b/4b, gemma4:31b, gpt-oss:120b/20b, ministral-3:14b/3b/8b, nemotron-3-nano/super/ultra
+  - 404 Not Found (upstream): 14 Kimi models + qwen3-coder-next + qwen3-coder:480b (function binding gone)
+  - 402 Credits Required: minimax-m2.1 (kilo upstream) + minimax-m2.5 (openrouter upstream)
+  - Timeout (25s): minimax-m3 (retrying/live pending — possibly alive but slow)
+
+Reports:
+- `tmp/s7-dispatch/zydit-v4-batch-smoke-report.tsv`
+- `tmp/s7-dispatch/zydit-v4-batch-smoke-summary.txt`
+
+Note: ZYDIT_API_KEY activeKeys=2 -> 0 (cooling) at moment of batch-smoke — pre-sweep probes (kimi-k3 at 21:47) + W-K2 worker + test probes consumed quota -> router went 'no-active-keys' cooldown phase. Reset period = ~5-10 min.
+
+---

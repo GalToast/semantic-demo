@@ -1,0 +1,40 @@
+# W7 — Commit W-K2 + W4-rd3 Deliverables
+
+## Task
+Commit the W-K2 (matrix-load) + W4-rd3 (e2e script) deliverables to BOTH repos with selective staging.
+
+## Repos
+1. **semantic-explorer** (`C:/Users/HP/repos/semantic-explorer`, branch `master`):
+   - `tmp/s7-dispatch/v2-success-path-e2e.mjs` (W4-rd3 deliverable)
+   - `tmp/s7-dispatch/v2-success-path-e2e-REPORT.md` (W4-rd3 deliverable)
+   - `tmp/s7-dispatch/matrix-load-report.md` (W-K2 deliverable)
+   - `tmp/s7-dispatch/zydit-v4-batch-smoke-report.tsv`
+   - `tmp/s7-dispatch/zydit-v4-batch-smoke-summary.txt`
+   - `tmp/s7-dispatch/zydit-v4-batch-smoke.mjs`
+   - `tmp/s7-dispatch/bench-append-kimi-k3-salvage.mjs`
+   - `tmp/s7-dispatch/W5-openrouter-reasoning-fix-prompt.txt`
+   - `tmp/s7-dispatch/W6-e2e-run-prompt.txt`
+   - `tmp/s7-dispatch/W7-commit-prompt.txt`
+   - `tmp/s7-dispatch/W8-cleanup-prompt.txt`
+   - `tmp/v2-impl-bench-log.md` (bench-log, 429 lines)
+
+2. **harness** (`C:/Users/HP/harness` symlink → `C:/Users/HP/Desktop/Temp while my comp is at the shop/harness`, branch `phase3-restoration-clean`):
+   - W1 slotHandle fix already committed in f606359
+   - W2 matrix-load already committed in f606359
+   - W-C Option C fix already applied to pi-model-providers/index.ts
+   - Check for any NEW uncommitted changes from W5 (openrouter fix) — if W5 worker landed a patch, commit it
+
+## Constraints
+- **SELECTIVE STAGING ONLY** — never `git add -A`
+- `tmp/` is gitignored — use `git add -f` for tmp/ artifacts
+- Do NOT include parallel-session drift (AGENTS.md, README.md, package*.json, etc.)
+- Commit message format: `feat(sprint7): W-K2 + W4-rd3 deliverables` with body listing files
+
+## Deliverables
+1. Commit to semantic-explorer repo with selective staging
+2. Commit to harness repo (if W5 patch landed)
+3. Write commit hashes + verification to `tmp/s7-dispatch/W7-commit-report.md`
+4. Run `git log --oneline -3` to verify
+
+## Lane
+logfare/kiro-auto (Gemini-backed reasoning model, $0.00 per dispatch)
