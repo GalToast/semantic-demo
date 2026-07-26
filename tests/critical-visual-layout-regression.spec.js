@@ -16,7 +16,6 @@
  */
 /* eslint-disable no-unused-vars */
 
-
 import { test, expect } from '@playwright/test'
 import { setTrailDepth } from '@lib/stores/journey.svelte'
 import { focusOnNode } from '@lib/orchestration/lifecycle'
@@ -52,9 +51,7 @@ test.describe('Critical Visual Layout Regression', () => {
 
         // Wait for app ready
         await page.waitForFunction(
-            () =>
-                typeof focusOnNode === 'function' &&
-                Boolean(window.__TEST_STATE__?.points?.length),
+            () => typeof focusOnNode === 'function' && Boolean(window.__TEST_STATE__?.points?.length),
             { timeout: 30000 }
         )
 

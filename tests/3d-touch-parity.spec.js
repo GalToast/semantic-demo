@@ -1,146 +1,167 @@
-import { test, expect } from '@playwright/test';
-import { BASE_URL, probe, isValidNodeIndex } from './helpers/3d-interaction-helpers.js';
+import { test, expect } from '@playwright/test'
+import { BASE_URL, probe, isValidNodeIndex } from './helpers/3d-interaction-helpers.js'
 
 const HEALTH_OK = {
-  ok: true,
-  state: 'healthy',
-  provenance: { label: 'Search ready', detail: 'Semantic search is ready.' }
-};
+    ok: true,
+    state: 'healthy',
+    provenance: { label: 'Search ready', detail: 'Semantic search is ready.' }
+}
 
 async function openTouchPage(browser, viewport) {
-  const context = await browser.newContext({
-    viewport,
-    isMobile: true,
-    hasTouch: true,
-    deviceScaleFactor: 2
-  });
-  const page = await context.newPage();
-  await page.route('**/api.php?action=semantic_lane_health**', route =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(HEALTH_OK) })
-  );
-  await page.goto(`${BASE_URL}/index.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => {
-    const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    return (
-      Array.isArray(s?.nodePositions) &&
-      s.nodePositions.length > 0 &&
-      s?.renderer?.domElement &&
-      s?.camera &&
-      s?.pointsMesh
-    );
-  }, { timeout: 25000 });
-  await page.waitForFunction(() => {
-    const overlay = document.getElementById('loading-overlay');
-    if (!overlay) return true;
-    const styles = getComputedStyle(overlay);
-    return overlay.classList.contains('hidden') ||
-      styles.display === 'none' ||
-      styles.visibility === 'hidden' ||
-      styles.pointerEvents === 'none';
-  }, { timeout: 20000 });
-  // preceding waitForFunction handles settlement
-  return { page, context };
+    const context = await browser.newContext({
+        viewport,
+        isMobile: true,
+        hasTouch: true,
+        deviceScaleFactor: 2
+    })
+    const page = await context.newPage()
+    await page.route('**/api.php?action=semantic_lane_health**', (route) =>
+        route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(HEALTH_OK) })
+    )
+    await page.goto(`${BASE_URL}/index.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(
+        () => {
+            const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+            return (
+                Array.isArray(s?.nodePositions) &&
+                s.nodePositions.length > 0 &&
+                s?.renderer?.domElement &&
+                s?.camera &&
+                s?.pointsMesh
+            )
+        },
+        { timeout: 25000 }
+    )
+    await page.waitForFunction(
+        () => {
+            const overlay = document.getElementById('loading-overlay')
+            if (!overlay) return true
+            const styles = getComputedStyle(overlay)
+            return (
+                overlay.classList.contains('hidden') ||
+                styles.display === 'none' ||
+                styles.visibility === 'hidden' ||
+                styles.pointerEvents === 'none'
+            )
+        },
+        { timeout: 20000 }
+    )
+    // preceding waitForFunction handles settlement
+    return { page, context }
 }
 
 async function projectedTouchTargets(page) {
-  return page.evaluate(() => {
-    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    const canvas = state?.renderer?.domElement;
-    if (!canvas || !state?.camera || !state?.pointsMesh || !Array.isArray(state.nodePositions)) return [];
+    return page.evaluate(() => {
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+        const canvas = state?.renderer?.domElement
+        if (!canvas || !state?.camera || !state?.pointsMesh || !Array.isArray(state.nodePositions)) return []
 
-    const rect = canvas.getBoundingClientRect();
-    const margin = Math.max(36, Math.min(rect.width, rect.height) * 0.09);
-    const step = Math.max(1, Math.floor(state.nodePositions.length / 160));
-    const targets = [];
+        const rect = canvas.getBoundingClientRect()
+        const margin = Math.max(36, Math.min(rect.width, rect.height) * 0.09)
+        const step = Math.max(1, Math.floor(state.nodePositions.length / 160))
+        const targets = []
 
-    for (let i = 0; i < state.nodePositions.length; i += step) {
-      const pos = state.nodePositions[i];
-      if (!pos) continue;
-      const vector = new window.THREE.Vector3(pos.x, pos.y, pos.z);
-      if (state.pointsMesh.localToWorld) state.pointsMesh.localToWorld(vector);
-      const projected = vector.clone().project(state.camera);
-      if (projected.z < -1 || projected.z > 1) continue;
-      const screenX = ((projected.x + 1) / 2) * rect.width + rect.left;
-      const screenY = ((-projected.y + 1) / 2) * rect.height + rect.top;
-      if (screenX < rect.left + margin || screenX > rect.right - margin) continue;
-      if (screenY < rect.top + margin || screenY > rect.bottom - margin) continue;
+        for (let i = 0; i < state.nodePositions.length; i += step) {
+            const pos = state.nodePositions[i]
+            if (!pos) continue
+            const vector = new window.THREE.Vector3(pos.x, pos.y, pos.z)
+            if (state.pointsMesh.localToWorld) state.pointsMesh.localToWorld(vector)
+            const projected = vector.clone().project(state.camera)
+            if (projected.z < -1 || projected.z > 1) continue
+            const screenX = ((projected.x + 1) / 2) * rect.width + rect.left
+            const screenY = ((-projected.y + 1) / 2) * rect.height + rect.top
+            if (screenX < rect.left + margin || screenX > rect.right - margin) continue
+            if (screenY < rect.top + margin || screenY > rect.bottom - margin) continue
 
-      const stack = document.elementsFromPoint(screenX, screenY);
-      if (!stack.includes(canvas)) continue;
-      const blocked = stack.some(el => el?.closest?.([
-        'button',
-        'a',
-        'input',
-        'textarea',
-        'select',
-        '.info-panel',
-        '.focus-stage-card',
-        '.summary-card',
-        '.controls',
-        '.view-toggle',
-        '.journey-compass',
-        '.legend-panel',
-        '.weather-widget',
-        '.share-toggle'
-      ].join(',')) && getComputedStyle(el).pointerEvents !== 'none');
-      if (blocked) continue;
+            const stack = document.elementsFromPoint(screenX, screenY)
+            if (!stack.includes(canvas)) continue
+            const blocked = stack.some(
+                (el) =>
+                    el?.closest?.(
+                        [
+                            'button',
+                            'a',
+                            'input',
+                            'textarea',
+                            'select',
+                            '.info-panel',
+                            '.focus-stage-card',
+                            '.summary-card',
+                            '.controls',
+                            '.view-toggle',
+                            '.journey-compass',
+                            '.legend-panel',
+                            '.weather-widget',
+                            '.share-toggle'
+                        ].join(',')
+                    ) && getComputedStyle(el).pointerEvents !== 'none'
+            )
+            if (blocked) continue
 
-      targets.push({ sampledIndex: i, screenX, screenY });
-      if (targets.length >= 24) break;
-    }
+            targets.push({ sampledIndex: i, screenX, screenY })
+            if (targets.length >= 24) break
+        }
 
-    return targets;
-  });
+        return targets
+    })
 }
 
 async function tapFirstValidTarget(page) {
-  const targets = await projectedTouchTargets(page);
-  expect(targets.length, 'touch viewport should expose at least one projected canvas target').toBeGreaterThan(0);
+    const targets = await projectedTouchTargets(page)
+    expect(targets.length, 'touch viewport should expose at least one projected canvas target').toBeGreaterThan(0)
 
-  for (const target of targets) {
-    await page.touchscreen.tap(target.screenX, target.screenY);
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
-    const after = await probe(page);
-    if (isValidNodeIndex(after.focusedNode, after.pointCount)) {
-      return { target, after };
+    for (const target of targets) {
+        await page.touchscreen.tap(target.screenX, target.screenY)
+        await page
+            .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 5000 })
+            .catch(() => {})
+        const after = await probe(page)
+        if (isValidNodeIndex(after.focusedNode, after.pointCount)) {
+            return { target, after }
+        }
     }
-  }
 
-  const finalState = await probe(page);
-  throw new Error(`No projected touch target focused a valid node; state=${JSON.stringify(finalState)}`);
+    const finalState = await probe(page)
+    throw new Error(`No projected touch target focused a valid node; state=${JSON.stringify(finalState)}`)
 }
 
 test.describe('3D touch parity', () => {
-  test('mobile portrait: real tap on projected canvas node enters focus', async ({ browser }) => {
-    test.setTimeout(70000);
-    let page;
-    let context;
-    try {
-      ({ page, context } = await openTouchPage(browser, { width: 390, height: 844 }));
-      const { after } = await tapFirstValidTarget(page);
-      expect(after.navMode, 'touch node tap should enter focus mode').toBe('focus');
-      expect(after.lastCanvasNodeFocusPick || after.lastCanvasNodePick, 'touch tap should record canvas pick evidence').not.toBeNull();
-    } finally {
-      if (context) await context.close().catch(() => {});
-    }
-  });
+    test('mobile portrait: real tap on projected canvas node enters focus', async ({ browser }) => {
+        test.setTimeout(70000)
+        let page
+        let context
+        try {
+            ;({ page, context } = await openTouchPage(browser, { width: 390, height: 844 }))
+            const { after } = await tapFirstValidTarget(page)
+            expect(after.navMode, 'touch node tap should enter focus mode').toBe('focus')
+            expect(
+                after.lastCanvasNodeFocusPick || after.lastCanvasNodePick,
+                'touch tap should record canvas pick evidence'
+            ).not.toBeNull()
+        } finally {
+            if (context) await context.close().catch(() => {})
+        }
+    })
 
-  test('short landscape: tap and drag paths do not corrupt focus state', async ({ browser }) => {
-    test.setTimeout(70000);
-    let page;
-    let context;
-    try {
-      ({ page, context } = await openTouchPage(browser, { width: 844, height: 390 }));
-      const { target } = await tapFirstValidTarget(page);
+    test('short landscape: tap and drag paths do not corrupt focus state', async ({ browser }) => {
+        test.setTimeout(70000)
+        let page
+        let context
+        try {
+            ;({ page, context } = await openTouchPage(browser, { width: 844, height: 390 }))
+            const { target } = await tapFirstValidTarget(page)
 
-      await page.touchscreen.tap(Math.max(12, target.screenX - 160), Math.max(12, target.screenY - 90));
-      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
+            await page.touchscreen.tap(Math.max(12, target.screenX - 160), Math.max(12, target.screenY - 90))
+            await page
+                .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
+                .catch(() => {})
 
-      const afterAwayTap = await probe(page);
-      const nullOrValid = afterAwayTap.focusedNode === null || isValidNodeIndex(afterAwayTap.focusedNode, afterAwayTap.pointCount);
-      expect(nullOrValid, 'tap away must leave focusedNode null or valid').toBe(true);
-    } finally {
-      if (context) await context.close().catch(() => {});
-    }
-  });
-});
+            const afterAwayTap = await probe(page)
+            const nullOrValid =
+                afterAwayTap.focusedNode === null || isValidNodeIndex(afterAwayTap.focusedNode, afterAwayTap.pointCount)
+            expect(nullOrValid, 'tap away must leave focusedNode null or valid').toBe(true)
+        } finally {
+            if (context) await context.close().catch(() => {})
+        }
+    })
+})

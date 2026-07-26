@@ -50,7 +50,10 @@ test.describe('H1 canvas keyboard journey', () => {
             const app = window.__APP_STATE__
             return app && app.navState ? app.navState.focusedIndex : null
         })
-        expect(typeof afterIdx === 'number' && Number.isFinite(afterIdx), 'focusedIndex must remain finite after ArrowRight').toBe(true)
+        expect(
+            typeof afterIdx === 'number' && Number.isFinite(afterIdx),
+            'focusedIndex must remain finite after ArrowRight'
+        ).toBe(true)
 
         const handlerCheck = await page.evaluate(() => {
             const detached = document.getElementById('engine-canvas')

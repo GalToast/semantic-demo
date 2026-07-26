@@ -12,245 +12,280 @@
  */
 /* eslint-disable no-unused-vars */
 
-
-import { test, expect } from '@playwright/test';
-import { openApp } from './helpers/3d-interaction-helpers.js';
+import { test, expect } from '@playwright/test'
+import { openApp } from './helpers/3d-interaction-helpers.js'
 import { focusOnNode, refreshCompositionState } from '@lib/orchestration/lifecycle'
 import { setTrailDepth } from '@lib/stores/journey.svelte'
 
 const ROLE_CASES = [
-  { role: 'upstream', label: 'Support', reasonPattern: /support provider/i },
-  { role: 'downstream', label: 'Served by', reasonPattern: /customer|beneficiary|demand-side|served by this trail/i },
-  { role: 'bridge', label: 'Bridge', reasonPattern: /cross-market bridge/i },
-];
+    { role: 'upstream', label: 'Support', reasonPattern: /support provider/i },
+    { role: 'downstream', label: 'Served by', reasonPattern: /customer|beneficiary|demand-side|served by this trail/i },
+    { role: 'bridge', label: 'Bridge', reasonPattern: /cross-market bridge/i }
+]
 
-const MOBILE_VISIBLE_RAIL_LIMIT = 1;
+const MOBILE_VISIBLE_RAIL_LIMIT = 1
 
-const VALID_ROLES = new Set([
-  'core_peer',
-  'upstream',
-  'downstream',
-  'complement',
-  'same_market',
-  'geo_echo',
-  'bridge',
-]);
+const VALID_ROLES = new Set(['core_peer', 'upstream', 'downstream', 'complement', 'same_market', 'geo_echo', 'bridge'])
 
 async function waitForSemanticThreads(page) {
-  await page.waitForFunction(() => {
-    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    return state.semanticNeighborMapByLeadId instanceof Map &&
-      state.semanticNeighborMapByLeadId.size > 0 &&
-      state.pointIndexByLeadId instanceof Map &&
-      state.pointIndexByLeadId.size > 0;
-  }, { timeout: 20000 });
+    await page.waitForFunction(
+        () => {
+            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+            return (
+                state.semanticNeighborMapByLeadId instanceof Map &&
+                state.semanticNeighborMapByLeadId.size > 0 &&
+                state.pointIndexByLeadId instanceof Map &&
+                state.pointIndexByLeadId.size > 0
+            )
+        },
+        { timeout: 20000 }
+    )
 }
 
 async function findSeedCandidatesForRole(page, relationshipRole) {
-  return page.evaluate(({ role, visibleRailLimit }) => {
-    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    const leadToIndex = state.pointIndexByLeadId;
-    const neighborMap = state.semanticNeighborMapByLeadId;
-    const points = state.points || [];
-    const paths = [];
-    const lookupIndex = (leadId) => (
-      leadToIndex.get(String(leadId)) ??
-      leadToIndex.get(Number(leadId)) ??
-      leadToIndex.get(leadId)
-    );
+    return page.evaluate(
+        ({ role, visibleRailLimit }) => {
+            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+            const leadToIndex = state.pointIndexByLeadId
+            const neighborMap = state.semanticNeighborMapByLeadId
+            const points = state.points || []
+            const paths = []
+            const lookupIndex = (leadId) =>
+                leadToIndex.get(String(leadId)) ?? leadToIndex.get(Number(leadId)) ?? leadToIndex.get(leadId)
 
-    for (let seedIndex = 0; seedIndex < points.length; seedIndex += 1) {
-      const point = points[seedIndex];
-      const leadId = String(point?.lead_id ?? point?.leadId ?? '');
-      if (!leadId) continue;
-      const node = neighborMap.get(leadId) || neighborMap.get(Number(leadId));
-      const neighbors = (node?.neighbors || []).slice(0, visibleRailLimit);
-      const match = neighbors.find((candidate) => {
-        const targetIndex = lookupIndex(candidate.leadId);
-        const targetNode = neighborMap.get(String(candidate.leadId)) || neighborMap.get(Number(candidate.leadId));
-        return candidate.relationshipRole === role &&
-          Number.isFinite(targetIndex) &&
-          targetIndex !== seedIndex &&
-          Array.isArray(targetNode?.neighbors) &&
-          targetNode.neighbors.length > 0;
-      });
-      if (!match) continue;
-      const targetIndex = lookupIndex(match.leadId);
-      paths.push({
-        seedIndex,
-        seedLeadId: leadId,
-        seedName: point?.name || '',
-        targetIndex,
-        targetLeadId: String(match.leadId),
-        role: match.relationshipRole,
-        axis: match.relationshipAxis || '',
-        reason: match.roleReason || match.reason || '',
-      });
-      if (paths.length >= 80) break;
-    }
-    return paths;
-  }, { role: relationshipRole, visibleRailLimit: MOBILE_VISIBLE_RAIL_LIMIT });
+            for (let seedIndex = 0; seedIndex < points.length; seedIndex += 1) {
+                const point = points[seedIndex]
+                const leadId = String(point?.lead_id ?? point?.leadId ?? '')
+                if (!leadId) continue
+                const node = neighborMap.get(leadId) || neighborMap.get(Number(leadId))
+                const neighbors = (node?.neighbors || []).slice(0, visibleRailLimit)
+                const match = neighbors.find((candidate) => {
+                    const targetIndex = lookupIndex(candidate.leadId)
+                    const targetNode =
+                        neighborMap.get(String(candidate.leadId)) || neighborMap.get(Number(candidate.leadId))
+                    return (
+                        candidate.relationshipRole === role &&
+                        Number.isFinite(targetIndex) &&
+                        targetIndex !== seedIndex &&
+                        Array.isArray(targetNode?.neighbors) &&
+                        targetNode.neighbors.length > 0
+                    )
+                })
+                if (!match) continue
+                const targetIndex = lookupIndex(match.leadId)
+                paths.push({
+                    seedIndex,
+                    seedLeadId: leadId,
+                    seedName: point?.name || '',
+                    targetIndex,
+                    targetLeadId: String(match.leadId),
+                    role: match.relationshipRole,
+                    axis: match.relationshipAxis || '',
+                    reason: match.roleReason || match.reason || ''
+                })
+                if (paths.length >= 80) break
+            }
+            return paths
+        },
+        { role: relationshipRole, visibleRailLimit: MOBILE_VISIBLE_RAIL_LIMIT }
+    )
 }
 
 async function findAndEnterVisibleRolePath(page, relationshipRole) {
-  const seedCandidates = await findSeedCandidatesForRole(page, relationshipRole);
-  expect(seedCandidates.length, `expected candidate seeds for ${relationshipRole}`).toBeGreaterThan(0);
+    const seedCandidates = await findSeedCandidatesForRole(page, relationshipRole)
+    expect(seedCandidates.length, `expected candidate seeds for ${relationshipRole}`).toBeGreaterThan(0)
 
-  const path = await page.evaluate(({ seeds, role, visibleRailLimit }) => {
-    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    const valueArray = (value) => {
-      if (Array.isArray(value)) return value;
-      if (value instanceof Map) return [...value.values()];
-      if (value && typeof value === 'object') return Object.values(value);
-      return [];
-    };
-    const focusOnNode = focusOnNode;
-    const setTrailDepth = setTrailDepth;
-    const refreshCompositionState = refreshCompositionState;
-    if (typeof focusOnNode !== 'function') return null;
+    const path = await page.evaluate(
+        ({ seeds, role, visibleRailLimit }) => {
+            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+            const valueArray = (value) => {
+                if (Array.isArray(value)) return value
+                if (value instanceof Map) return [...value.values()]
+                if (value && typeof value === 'object') return Object.values(value)
+                return []
+            }
+            const focusOnNode = focusOnNode
+            const setTrailDepth = setTrailDepth
+            const refreshCompositionState = refreshCompositionState
+            if (typeof focusOnNode !== 'function') return null
 
-    for (const seed of seeds.slice(0, 80)) {
-      focusOnNode(seed.seedIndex, { fromSearchResult: true, skipUrlSync: true });
-      setTrailDepth?.(1, { skipUrlSync: true });
-      refreshCompositionState?.();
+            for (const seed of seeds.slice(0, 80)) {
+                focusOnNode(seed.seedIndex, { fromSearchResult: true, skipUrlSync: true })
+                setTrailDepth?.(1, { skipUrlSync: true })
+                refreshCompositionState?.()
 
-      const visibleCandidates = valueArray(state.navState?.threadCandidates)
-        .filter((candidate) => candidate && candidate.index !== state.navState?.focusedIndex)
-        .slice(0, visibleRailLimit);
-      const match = visibleCandidates.find((candidate) =>
-        candidate.relationshipRole === role &&
-        Number.isFinite(candidate.index)
-      );
-      if (!match) continue;
+                const visibleCandidates = valueArray(state.navState?.threadCandidates)
+                    .filter((candidate) => candidate && candidate.index !== state.navState?.focusedIndex)
+                    .slice(0, visibleRailLimit)
+                const match = visibleCandidates.find(
+                    (candidate) => candidate.relationshipRole === role && Number.isFinite(candidate.index)
+                )
+                if (!match) continue
 
-      return {
-        ...seed,
-        targetIndex: match.index,
-        targetLeadId: String(match.leadId || seed.targetLeadId || ''),
-        role: match.relationshipRole,
-        axis: match.relationshipAxis || seed.axis || '',
-        reason: match.roleReason || match.reason || seed.reason || '',
-      };
-    }
+                return {
+                    ...seed,
+                    targetIndex: match.index,
+                    targetLeadId: String(match.leadId || seed.targetLeadId || ''),
+                    role: match.relationshipRole,
+                    axis: match.relationshipAxis || seed.axis || '',
+                    reason: match.roleReason || match.reason || seed.reason || ''
+                }
+            }
 
-    return null;
-  }, {
-    seeds: seedCandidates,
-    role: relationshipRole,
-    visibleRailLimit: MOBILE_VISIBLE_RAIL_LIMIT,
-  });
+            return null
+        },
+        {
+            seeds: seedCandidates,
+            role: relationshipRole,
+            visibleRailLimit: MOBILE_VISIBLE_RAIL_LIMIT
+        }
+    )
 
-  if (!path) return null;
+    if (!path) return null
 
-  await page.waitForFunction(({ seedIndex, targetIndex, role }) => {
-    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    const pill = document.querySelector(`.focus-stage-neighbor-pill[data-index="${targetIndex}"][data-relationship-role="${role}"]`);
-    const pillVisible = !!pill && !!(pill.offsetWidth || pill.offsetHeight || pill.getClientRects().length);
-    return state.navState?.focusedIndex === seedIndex &&
-      state.navState?.threadSource === 'semantic' &&
-      pillVisible;
-  }, path, { timeout: 5000 });
+    await page.waitForFunction(
+        ({ seedIndex, targetIndex, role }) => {
+            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+            const pill = document.querySelector(
+                `.focus-stage-neighbor-pill[data-index="${targetIndex}"][data-relationship-role="${role}"]`
+            )
+            const pillVisible = !!pill && !!(pill.offsetWidth || pill.offsetHeight || pill.getClientRects().length)
+            return (
+                state.navState?.focusedIndex === seedIndex && state.navState?.threadSource === 'semantic' && pillVisible
+            )
+        },
+        path,
+        { timeout: 5000 }
+    )
 
-  return path;
+    return path
 }
 
 async function snapshotRoleTraversalState(page, role, targetIndex) {
-  return page.evaluate(({ role: expectedRole, targetIndex: expectedTarget }) => {
-    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    const valueArray = (value) => {
-      if (Array.isArray(value)) return value;
-      if (value instanceof Map) return [...value.values()];
-      if (value && typeof value === 'object') return Object.values(value);
-      return [];
-    };
-    const finiteIndexList = (value) => valueArray(value)
-      .map((index) => Number(index))
-      .filter((index) => Number.isFinite(index));
-    const focusedIndex = state.navState?.focusedIndex ?? null;
-    const focusedPoint = Number.isFinite(focusedIndex) ? state.points?.[focusedIndex] : null;
-    const threadCandidates = valueArray(state.navState?.threadCandidates);
-    const roleCounts = {};
-    threadCandidates.forEach((candidate) => {
-      if (!candidate?.relationshipRole) return;
-      roleCounts[candidate.relationshipRole] = (roleCounts[candidate.relationshipRole] || 0) + 1;
-    });
-    const railPills = [...document.querySelectorAll('.focus-stage-neighbor-pill[data-relationship-role]')].map((pill) => ({
-      index: Number(pill.dataset.index),
-      relationshipRole: pill.dataset.relationshipRole || '',
-      label: pill.querySelector('.focus-stage-neighbor-role')?.textContent?.trim() || '',
-      inspected: pill.classList.contains('is-inspected'),
-      pinned: pill.classList.contains('is-pinned'),
-      exploring: pill.classList.contains('is-exploring'),
-      visible: !!(pill.offsetWidth || pill.offsetHeight || pill.getClientRects().length),
-    }));
-    const targetRail = railPills.find((pill) => pill.index === expectedTarget && pill.relationshipRole === expectedRole && pill.visible) || null;
-    const inspector = document.querySelector('#focus-thread-inspector');
-    return {
-      focusedIndex,
-      focusedName: focusedPoint?.name || '',
-      navMode: state.navState?.mode || '',
-      panelSurface: document.body.dataset.panelSurface || '',
-      strandPhase: state.strandContinuityState?.phase || '',
-      strandTarget: state.strandContinuityState?.targetIndex ?? null,
-      strandFrom: state.strandContinuityState?.fromIndex ?? null,
-      walkHistory: finiteIndexList(state.navState?.walkHistoryIndices),
-      lastTraversalReason: state.navState?.lastTraversalReason || '',
-      threadSource: state.navState?.threadSource || '',
-      candidateCount: threadCandidates.length,
-      roleCounts,
-      activeRoleCount: Object.keys(roleCounts).length,
-      railPills,
-      targetRail,
-      inspectorActive: inspector?.classList.contains('active') || false,
-      inspectorRole: inspector?.dataset.relationshipRole || '',
-      inspectorText: inspector?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 240) || '',
-    };
-  }, { role, targetIndex });
+    return page.evaluate(
+        ({ role: expectedRole, targetIndex: expectedTarget }) => {
+            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+            const valueArray = (value) => {
+                if (Array.isArray(value)) return value
+                if (value instanceof Map) return [...value.values()]
+                if (value && typeof value === 'object') return Object.values(value)
+                return []
+            }
+            const finiteIndexList = (value) =>
+                valueArray(value)
+                    .map((index) => Number(index))
+                    .filter((index) => Number.isFinite(index))
+            const focusedIndex = state.navState?.focusedIndex ?? null
+            const focusedPoint = Number.isFinite(focusedIndex) ? state.points?.[focusedIndex] : null
+            const threadCandidates = valueArray(state.navState?.threadCandidates)
+            const roleCounts = {}
+            threadCandidates.forEach((candidate) => {
+                if (!candidate?.relationshipRole) return
+                roleCounts[candidate.relationshipRole] = (roleCounts[candidate.relationshipRole] || 0) + 1
+            })
+            const railPills = [...document.querySelectorAll('.focus-stage-neighbor-pill[data-relationship-role]')].map(
+                (pill) => ({
+                    index: Number(pill.dataset.index),
+                    relationshipRole: pill.dataset.relationshipRole || '',
+                    label: pill.querySelector('.focus-stage-neighbor-role')?.textContent?.trim() || '',
+                    inspected: pill.classList.contains('is-inspected'),
+                    pinned: pill.classList.contains('is-pinned'),
+                    exploring: pill.classList.contains('is-exploring'),
+                    visible: !!(pill.offsetWidth || pill.offsetHeight || pill.getClientRects().length)
+                })
+            )
+            const targetRail =
+                railPills.find(
+                    (pill) => pill.index === expectedTarget && pill.relationshipRole === expectedRole && pill.visible
+                ) || null
+            const inspector = document.querySelector('#focus-thread-inspector')
+            return {
+                focusedIndex,
+                focusedName: focusedPoint?.name || '',
+                navMode: state.navState?.mode || '',
+                panelSurface: document.body.dataset.panelSurface || '',
+                strandPhase: state.strandContinuityState?.phase || '',
+                strandTarget: state.strandContinuityState?.targetIndex ?? null,
+                strandFrom: state.strandContinuityState?.fromIndex ?? null,
+                walkHistory: finiteIndexList(state.navState?.walkHistoryIndices),
+                lastTraversalReason: state.navState?.lastTraversalReason || '',
+                threadSource: state.navState?.threadSource || '',
+                candidateCount: threadCandidates.length,
+                roleCounts,
+                activeRoleCount: Object.keys(roleCounts).length,
+                railPills,
+                targetRail,
+                inspectorActive: inspector?.classList.contains('active') || false,
+                inspectorRole: inspector?.dataset.relationshipRole || '',
+                inspectorText: inspector?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 240) || ''
+            }
+        },
+        { role, targetIndex }
+    )
 }
 
 test.describe('semantic role traversal', () => {
-  for (const roleCase of ROLE_CASES) {
-    test(`following a visible ${roleCase.label} role preserves role context`, async ({ page }) => {
-      test.setTimeout(90000);
-      await openApp(page, { width: 390, height: 844 }, { appPath: '/dist/svelte/index.html' });
-      await waitForSemanticThreads(page);
+    for (const roleCase of ROLE_CASES) {
+        test(`following a visible ${roleCase.label} role preserves role context`, async ({ page }) => {
+            test.setTimeout(90000)
+            await openApp(page, { width: 390, height: 844 }, { appPath: '/dist/svelte/index.html' })
+            await waitForSemanticThreads(page)
 
-      const path = await findAndEnterVisibleRolePath(page, roleCase.role);
-      expect(path, `expected a visible ${roleCase.role} path in the semantic thread payload`).not.toBeNull();
+            const path = await findAndEnterVisibleRolePath(page, roleCase.role)
+            expect(path, `expected a visible ${roleCase.role} path in the semantic thread payload`).not.toBeNull()
 
-      const before = await snapshotRoleTraversalState(page, roleCase.role, path.targetIndex);
-      expect(before.targetRail, `${roleCase.role} rail pill should be visible before traversal`).not.toBeNull();
-      expect(before.targetRail.label, `${roleCase.role} rail pill should display human role label`).toContain(roleCase.label);
+            const before = await snapshotRoleTraversalState(page, roleCase.role, path.targetIndex)
+            expect(before.targetRail, `${roleCase.role} rail pill should be visible before traversal`).not.toBeNull()
+            expect(before.targetRail.label, `${roleCase.role} rail pill should display human role label`).toContain(
+                roleCase.label
+            )
 
-      const targetPill = page.locator(`.focus-stage-neighbor-pill[data-index="${path.targetIndex}"][data-relationship-role="${roleCase.role}"]:visible`).first();
-      await expect(targetPill, `${roleCase.role} role pill should be clickable`).toBeVisible({ timeout: 5000 });
-      await targetPill.scrollIntoViewIfNeeded();
-      await targetPill.click({ position: { x: 24, y: 24 } });
+            const targetPill = page
+                .locator(
+                    `.focus-stage-neighbor-pill[data-index="${path.targetIndex}"][data-relationship-role="${roleCase.role}"]:visible`
+                )
+                .first()
+            await expect(targetPill, `${roleCase.role} role pill should be clickable`).toBeVisible({ timeout: 5000 })
+            await targetPill.scrollIntoViewIfNeeded()
+            await targetPill.click({ position: { x: 24, y: 24 } })
 
-      await page.waitForFunction((targetIndex) => {
-        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-        const candidateValue = state.navState?.threadCandidates;
-        const candidateCount = Array.isArray(candidateValue)
-          ? candidateValue.length
-          : candidateValue instanceof Map
-            ? candidateValue.size
-            : candidateValue && typeof candidateValue === 'object'
-              ? Object.values(candidateValue).length
-              : 0;
-        return state.navState?.focusedIndex === targetIndex &&
-          state.focusedNode === targetIndex &&
-          candidateCount > 0;
-      }, path.targetIndex, { timeout: 15000 });
+            await page.waitForFunction(
+                (targetIndex) => {
+                    const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+                    const candidateValue = state.navState?.threadCandidates
+                    const candidateCount = Array.isArray(candidateValue)
+                        ? candidateValue.length
+                        : candidateValue instanceof Map
+                          ? candidateValue.size
+                          : candidateValue && typeof candidateValue === 'object'
+                            ? Object.values(candidateValue).length
+                            : 0
+                    return (
+                        state.navState?.focusedIndex === targetIndex &&
+                        state.focusedNode === targetIndex &&
+                        candidateCount > 0
+                    )
+                },
+                path.targetIndex,
+                { timeout: 15000 }
+            )
 
-      const after = await snapshotRoleTraversalState(page, roleCase.role, path.targetIndex);
-      expect(after.focusedIndex, 'focused index should become clicked role target').toBe(path.targetIndex);
-      expect(after.navMode, 'walking a role connection should enter trail mode').toBe('trail');
-      expect(after.walkHistory, 'walk history should keep seed and target').toEqual(expect.arrayContaining([before.focusedIndex, path.targetIndex]));
-      expect(after.lastTraversalReason, 'traversal reason should retain human role context').toMatch(roleCase.reasonPattern);
-      expect(after.candidateCount, 'next neighborhood should expose fresh candidates').toBeGreaterThan(0);
-      expect(after.threadSource, 'next neighborhood should stay semantic-backed').toBe('semantic');
-      expect(after.activeRoleCount, 'next neighborhood should retain role diversity').toBeGreaterThanOrEqual(2);
-      expect(Object.keys(after.roleCounts).every((nextRole) => VALID_ROLES.has(nextRole)), 'next roles should stay inside taxonomy').toBe(true);
-    });
-  }
-});
+            const after = await snapshotRoleTraversalState(page, roleCase.role, path.targetIndex)
+            expect(after.focusedIndex, 'focused index should become clicked role target').toBe(path.targetIndex)
+            expect(after.navMode, 'walking a role connection should enter trail mode').toBe('trail')
+            expect(after.walkHistory, 'walk history should keep seed and target').toEqual(
+                expect.arrayContaining([before.focusedIndex, path.targetIndex])
+            )
+            expect(after.lastTraversalReason, 'traversal reason should retain human role context').toMatch(
+                roleCase.reasonPattern
+            )
+            expect(after.candidateCount, 'next neighborhood should expose fresh candidates').toBeGreaterThan(0)
+            expect(after.threadSource, 'next neighborhood should stay semantic-backed').toBe('semantic')
+            expect(after.activeRoleCount, 'next neighborhood should retain role diversity').toBeGreaterThanOrEqual(2)
+            expect(
+                Object.keys(after.roleCounts).every((nextRole) => VALID_ROLES.has(nextRole)),
+                'next roles should stay inside taxonomy'
+            ).toBe(true)
+        })
+    }
+})

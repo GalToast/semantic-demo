@@ -10,7 +10,6 @@ import { BASE_URL } from './helpers/3d-interaction-helpers.js'
  */
 
 test.describe('H5 deeplink demo suppression journey', () => {
-
     test('H5 ?record suppresses demo on first visit', async ({ page }) => {
         // Use the demo store's exported helper logic via URL parsing — we cannot
         // easily import TS module in playwright without vite; so we re-implement
@@ -49,7 +48,8 @@ test.describe('H5 deeplink demo suppression journey', () => {
     test('H5 ?story is NOT deep-link (story fires post-splash)', async ({ page }) => {
         const res = await page.evaluate(() => {
             const p = new URLSearchParams('story=welcome')
-            const isDeep = p.has('anchor') || p.has('record') || p.get('view') === 'map' || (p.get('q')?.trim().length ?? 0) >= 2
+            const isDeep =
+                p.has('anchor') || p.has('record') || p.get('view') === 'map' || (p.get('q')?.trim().length ?? 0) >= 2
             return { isDeep }
         })
         expect(res.isDeep, '?story must NOT be deep-link per AGENTS').toBe(false)

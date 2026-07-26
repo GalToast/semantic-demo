@@ -462,10 +462,9 @@ test.describe('3D thread orchestration quality', () => {
             }
             return { targetIndex: targetIndex ?? 0 }
         })
-        await p.evaluate(
-            ({ idx }) => focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
-            { idx: focusResult.targetIndex }
-        )
+        await p.evaluate(({ idx }) => focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }), {
+            idx: focusResult.targetIndex
+        })
         await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 })
         // Set trailDepth=1 via harness — documents this is fixture setup, not the
         // official setTrailDepth() API being tested (that comes in step-inside).
@@ -740,10 +739,9 @@ test.describe('3D thread orchestration quality', () => {
             }
             return { targetIndex: 0 }
         })
-        await p.evaluate(
-            ({ idx }) => focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
-            { idx: focusResult.targetIndex }
-        )
+        await p.evaluate(({ idx }) => focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }), {
+            idx: focusResult.targetIndex
+        })
         await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 })
         // Set trailDepth=1 via harness — documents this is fixture setup, not the
         // official setTrailDepth() API being tested.

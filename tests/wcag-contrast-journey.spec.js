@@ -17,13 +17,19 @@ import { BASE_URL } from './helpers/3d-interaction-helpers.js'
 test.describe('WCAG AA contrast regression guard (W53 V4 refutation)', () => {
     const cases = [
         // search-input placeholder "Search (press /)" — live probe 16.32:1
-        { name: 'search-input placeholder', selector: '#search-input', pseudo: '::placeholder', url: '?q=coffee&nodemo=1', min: 4.5 },
+        {
+            name: 'search-input placeholder',
+            selector: '#search-input',
+            pseudo: '::placeholder',
+            url: '?q=coffee&nodemo=1',
+            min: 4.5
+        },
         // map empty-state note uses --color-text-muted — live probe 16.44:1
         { name: 'map-empty-state-note', selector: '.map-empty-state-note', url: '?view=map&nodemo=1', min: 4.5 },
         // "Tip" callout (discovery-tag) — black-on-yellow, live probe 15.08:1
         { name: 'discovery-tag (Tip callout)', selector: '.discovery-tag', url: '?q=zzz&nodemo=1', min: 4.5 },
         // trail hint — dimmest candidate, live probe 7.98:1 (1.77× AA)
-        { name: 'trail-hint', selector: '.trail-hint', url: '?q=coffee&nodemo=1', min: 4.5 },
+        { name: 'trail-hint', selector: '.trail-hint', url: '?q=coffee&nodemo=1', min: 4.5 }
     ]
 
     for (const c of cases) {
@@ -39,8 +45,7 @@ test.describe('WCAG AA contrast regression guard (W53 V4 refutation)', () => {
                         const n = c / 255
                         return n <= 0.03928 ? n / 12.92 : Math.pow((n + 0.055) / 1.055, 2.4)
                     }
-                    const luminance = ({ r, g, b }) =>
-                        0.2126 * srgbLin(r) + 0.7152 * srgbLin(g) + 0.0722 * srgbLin(b)
+                    const luminance = ({ r, g, b }) => 0.2126 * srgbLin(r) + 0.7152 * srgbLin(g) + 0.0722 * srgbLin(b)
                     const composite = (fg, bg) => {
                         const a = fg.a
                         return {
