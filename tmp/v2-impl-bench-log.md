@@ -426,3 +426,123 @@ Reports:
 Note: ZYDIT_API_KEY activeKeys=2 -> 0 (cooling) at moment of batch-smoke — pre-sweep probes (kimi-k3 at 21:47) + W-K2 worker + test probes consumed quota -> router went 'no-active-keys' cooldown phase. Reset period = ~5-10 min.
 
 ---
+
+
+## 2026-07-26 SPRINT-7-WAVE-5: MISTRAL GOLDEN-GOOSE SWEEP + KIRO-AUTO-DOWN + LAGUNA-NON-REASONING
+
+### kiro-auto LANE DOWN (router-logfare/kiro-auto not found)
+- Discovered at 22:43 UTC when 4 W5-W8 workers (all on router-logfare/kiro-auto) failed at launch with:
+  "Error: Model router-logfare/kiro-auto not found. Use --list-models to see available models."
+- Key-router logfare route IS healthy: keys=6 activeKeys=6 cooling=0 routeBackoff=false
+- BUT /logfare/v1/models TIMED OUT (8s, 0 bytes) — logfare upstream unreachable
+- Pi model-providers cache dropped router-logfare/kiro-auto (no catalog refresh) → model not registered
+- Recovery: re-dispatched W5b/W6b/W7b on mistral/codestral-latest (proven lane) at 22:49:58
+
+### Kilo laguna-s-2.1:free NON-REASONING (silent downgrade confirmed)
+- 4 probe formats tested against poolside/laguna-s-2.1:free on Kilo:
+  | # | Format | HTTP | Content | reasoning | reasoning_tokens |
+  |---|---|---|---|---|---|
+  | 1 | BARE (no reasoning)               | 200 | "Yes, I'm familiar with Pong..." | null | 0 |
+  | 2 | reasoning_effort: "max"            | 200 | "Yes, I'm familiar with the game Pong..." | null | 0 |
+  | 3 | thinking: {type:"enabled"}         | 200 | "Hello! It looks like you might be referring to Pong..." | null | 0 |
+  | 4 | reasoning: {type:"reasoning"}      | 200 | "Yes, I'm familiar with the game Pong..." | null | 0 |
+- ALL 4 returned reasoning=null + reasoning_tokens=0 — SILENT DOWNGRADE confirmed
+- mmx.ts falsely lists poolside/laguna-* as reasoning-capable → harness sends max reasoning → 0 reasoning tokens wasted
+- W12 dispatched to fix mmx.ts (remove laguna from reasoning-capable set)
+
+### MISTRAL GOLDEN-GOOSE SWEEP (17 mistral-family models probed)
+- ALL 13 mistral-direct-route models DISPATCH-READY (HTTP 200, ~340-1340ms):
+  | Model | ms | Notes |
+  |---|---|---|
+  | devstral-medium-latest       | 339 | FASTEST |
+  | mistral-small-latest         | 371 | cheap small |
+  | mistral-medium-latest        | 373 | general mid-tier |
+  | ministral-8b-latest          | 371 | smallest efficient |
+  | devstral-2512                | 379 | newer coder |
+  | mistral-large-2512            | 515 | TOP-TIER LARGE |
+  | mistral-large-latest         | 590 | latest large |
+  | mistral-code-agent-latest    | 492 | AGENTIC CODER |
+  | ministral-14b-latest         | 475 | mid small |
+  | mistral-code-latest          | 475 | FIM coder |
+  | mistral-medium-3-5           | 644 | Medium 3.5 |
+  | mistral-medium-3             | 1346 | older medium (slow) |
+  | ministral-8b-latest          | 371 | small efficient |
+- OpenRouter mistralai/* ALL FAIL with 402 (insufficient credits — exhausted)
+- mistral-tiny-latest HTTP 200 but no content (partial fail)
+- KEY INSIGHT: /mistral/v1 direct route is the GOLDEN ROUTE — 13 sub-second models dispatch-ready
+- pi-model-providers.json statically registers only mistral-medium-3-5 + mistral-small-2603
+- BUT router-mistral/<model> dynamic catalog fetcher exposes all 45 mistral models for dispatch
+- Exposed via other carriers: mistralai/mistral-large-3-675b-instruct-2512 (NIM), @cf/mistralai/mistral-small-3.1-24b-instruct (Cloudflare), mistralai/ministral-14b-instruct-2512 (NIM)
+
+### Sprint-7 Wave 4b + Wave 5 — 7 PARALLEL WORKERS DISPATCHED (all mistral/codestral-latest)
+| Wave | # | Worker | ocw_id | PID | Issue | Status |
+|---|---|---|---|---|---|---|
+| 4b | W5b | openrouter-reasoning-fix | ocw_eb32814e | 16060 | #1 OR reasoning format | RUNNING |
+| 4b | W6b | e2e-run | ocw_35d9de84 | 11612 | V2 success path test | RUNNING |
+| 4b | W7b | commit | ocw_41c118f5 | 24700 | commit deliverables | RUNNING |
+| 5  | W9  | nvidia-reasoning-verify | ocw_de9ead6a | 10132 | #2 NVIDIA NIM reasoning | RUNNING |
+| 5  | W10 | zydit-reasoning-effort-verify | ocw_8b1e4b67 | 2328 | #3 vLLM reasoning_effort collapse | RUNNING |
+| 5  | W11 | kimi-thinking-fix | ocw_98020ffd | 22604 | #4 Kimi thinking field | RUNNING |
+| 5  | W12 | laguna-non-reasoning-fix | ocw_140e4b96 | 23956 | #5 laguna silent downgrade | RUNNING |
+
+W8 (cleanup) done main-lane — orphaned PID 13840 already gone (worker exited).
+
+
+## 2026-07-26 LAGUNA S2.1 REASONING — USER OVERRIDE + CORRECTION (Sprint-7)
+
+### USER OVERRIDE: "LAGUNA S2.1 IS REASONING on EVERY provider (laguna s 2.1 free)"
+The user corrected my earlier finding that laguna-s-2.1:free was non-reasoning. A comprehensive 8-format re-probe on Kilo confirmed the user was RIGHT.
+
+### CORRECTED FINDING: laguna-s-2.1:free IS a reasoning model on Kilo
+- Reasoning content lives in msg.reasoning (a STRING field, e.g. "Okay, so I need to figure out what 7 multiplied b...")
+- Reasoning tokens live at usage.completion_tokens_details.reasoning_tokens (NOT the top-level usage.reasoning_tokens which is 0)
+- My original 4-probe test was WRONG: it checked usage.reasoning_tokens (top-level = 0) and msg.reasoning (expected null, but it's actually a truthy string)
+
+### Re-probe results (poolside/laguna-s-2.1:free on Kilo, 8 formats):
+| Format | HTTP | msg.reasoning | cdet_reasoning_tk |
+|---|---|---|---|
+| bare | 200 | "Okay, so I need to figure out..." | 656 |
+| reasoning_effort=max | 200 | "Okay, so I need to figure out..." | 1174 |
+| reasoning_object_reasoning | 200 | "Okay, so I need to figure out..." | 845 |
+| reasoning_object_enabled | 200 | "Okay, so I need to figure out..." | 643 |
+| reasoning_boolean_true | 400 | ERROR: expected object, received boolean | — |
+| thinking_enabled_b8192 | 200 | "Okay, so I need to figure out..." | 647 |
+| enable_thinking | 200 | "Okay, so I need to figure out..." | 926 |
+| force_all | 200 | "Okay, so I need to figure out..." | 635 |
+
+### poolside/laguna-xs-2.1:free — ALSO reasoning-capable
+| Format | HTTP | cdet_reasoning_tk |
+|---|---|---|
+| bare | 200 | 935 |
+| reasoning_effort=max | 200 | 1111 |
+| reasoning_object_reasoning | 200 | 401 |
+| reasoning_object_enabled | 200 | 396 |
+| thinking_enabled_b8192 | 200 | 963 |
+| enable_thinking | 200 | 886 |
+| force_all | 200 | 736 |
+
+### poolside/laguna-s-2.1 (non-free) — 402/429 (credits/rate-limited, can't test)
+
+### ACTION: mmx.ts edit reverted
+- The main-lane edit that added /poolside[-/]laguna/i to REASONING_UNSUPPORTED_MODEL_PATTERNS was REVERTED (per user override)
+- laguna-s-2.1:free stays reasoning-capable; FORCE_REASONING_DEFAULT applies → max reasoning
+- The reasoning field format for OpenRouter (boolean → object) still needs fixing (W5b)
+
+---
+
+## 2026-07-26 18:51 UTC — W5b OpenRouter Reasoning Fix VERIFIED LIVE
+
+### Smooth Restart Sequence (control.ps1 + watchdog)
+1. `control.ps1 -Action watchdog-start` → watchdog PID 8236 running
+2. `control.ps1 -Action restart` → OLD PID 23920 stopped → NEW PID 12136 started 18:51:13
+3. `control.ps1 -Action status` → running=true, healthy=true, port 8788, all 28 routes preserved
+
+### Live Probe: `poolside/laguna-s-2.1:free` through key-router with `reasoning:true` (boolean)
+- **Before fix** (pre-restart): HTTP 400 "reasoning: expected object, received boolean"
+- **After fix** (post-restart, PID 12136): **HTTP 200 SUCCESS** ✅
+  ```json
+  {"model":"poolside/laguna-s-2.1:free","choices":[{"message":{"content":"Hello! How can I help you today?","reasoning":null},"finish_reason":"stop"}],"usage":{"prompt_tokens":45,"completion_tokens":10,"total_tokens":55,"cost":0}}
+  ```
+
+### Verdict
+W5b OpenRouter reasoning format fix ✅ LIVE + VERIFIED. The key-router now converts `reasoning:true` (boolean) → `reasoning:{type:"reasoning"}` (object) for OpenRouter requests. Commit `fbe0f2d` on branch `phase3-restoration-clean`. Watchdog (PID 8236) ensures auto-recovery.

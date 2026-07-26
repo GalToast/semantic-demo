@@ -11,14 +11,19 @@ export function hasFiniteNodeIndex(value: unknown): boolean {
     return typeof value === 'number' && Number.isFinite(value) && value >= 0
 }
 
-export function sceneNeedsContinuousFrame(now: number, state: AppState | null): boolean {
+export function sceneNeedsContinuousFrame(
+    now: number,
+    state: AppState | null,
+    autoRotateResumeDueAt: number | null = null
+): boolean {
     if (!state) return true
     const focusPocketMotion = state.focusState.pocketMotionByIndex as unknown
     const focusPocketMoving = Array.isArray(focusPocketMotion)
         ? focusPocketMotion.length > 0
         : (focusPocketMotion as Map<unknown, unknown>)?.size > 0
     const autoRotateActive = Boolean(state.navState.autoRotate && !state.navState.autoRotateSuspended)
-    const autoRotateResumePending = typeof state.autoRotateResumeDueAt === 'number' && state.autoRotateResumeDueAt > now
+    const autoRotateResumePending =
+        typeof autoRotateResumeDueAt === 'number' && autoRotateResumeDueAt > now
     const routeTraceActive = Boolean(state.routeTraceLines)
     return Boolean(
         state.sceneRevealActive ||

@@ -20,6 +20,7 @@ import {
     exposeDevEngineBridge
 } from './three-engine-init-helpers'
 import { sceneNeedsContinuousFrame } from './three-engine-helpers'
+import { cameraControlsRestore } from '@lib/engine/camera-controls-restore.svelte.ts'
 import { webglContext } from '@lib/engine/webgl-context'
 import { disposeEventListeners } from '@lib/ui/global-bindings'
 import { cancelOverviewCameraAnimation } from '@lib/demo/camera'
@@ -433,7 +434,7 @@ export function animate() {
     try {
         const frameStart = performance.now()
         const frameNow = frameStart
-        const sceneNeedsContinuous = sceneNeedsContinuousFrame(frameNow, engineState.state)
+        const sceneNeedsContinuous = sceneNeedsContinuousFrame(frameNow, engineState.state, cameraControlsRestore.autoRotateResumeDueAt)
         scheduleNextAnimationFrame(sceneNeedsContinuous)
         const sceneFrameMs = engineState.state?.scenePerformanceDiagnostics?.lastFrameAt
             ? Math.min(250, Math.max(0, frameNow - engineState.state.scenePerformanceDiagnostics.lastFrameAt))

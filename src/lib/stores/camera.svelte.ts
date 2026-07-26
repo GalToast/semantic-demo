@@ -10,6 +10,7 @@
 import type { Readable } from 'svelte/store'
 import type { CameraState, CameraTransition, FocusOrbitSlackState } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte.ts'
+import { cameraControlsRestore } from '@lib/engine/camera-controls-restore.svelte.ts'
 import { debugError } from '@lib/utils/debug'
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
@@ -250,18 +251,18 @@ class CameraStoreControl {
     }
 
     get autoResumeDueAt() {
-        return appState.autoRotateResumeDueAt
+        return cameraControlsRestore.autoRotateResumeDueAt
     }
     set autoResumeDueAt(v) {
-        appState.autoRotateResumeDueAt = v
+        cameraControlsRestore.autoRotateResumeDueAt = v
         this.notify()
     }
 
     get softResumeStartedAt() {
-        return appState.autoRotateSoftResumeStartedAt
+        return cameraControlsRestore.autoRotateSoftResumeStartedAt
     }
     set softResumeStartedAt(v) {
-        appState.autoRotateSoftResumeStartedAt = v
+        cameraControlsRestore.autoRotateSoftResumeStartedAt = v
         this.notify()
     }
 
@@ -329,8 +330,8 @@ class CameraStoreControl {
 
         appState.autoRotate = next.autoRotate
         appState.autoRotateSuspended = next.autoRotateSuspended
-        appState.autoRotateResumeDueAt = next.autoResumeDueAt
-        appState.autoRotateSoftResumeStartedAt = next.softResumeStartedAt
+        cameraControlsRestore.autoRotateResumeDueAt = next.autoResumeDueAt
+        cameraControlsRestore.autoRotateSoftResumeStartedAt = next.softResumeStartedAt
 
         this.notify()
     }

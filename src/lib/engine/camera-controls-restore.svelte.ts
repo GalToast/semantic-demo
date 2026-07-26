@@ -10,6 +10,10 @@
  *   autoRotate, autoRotateSuspended, autoRotateSoftResumeStartedAt,
  *   autoRotateResumeTimer, autoRotateResumeDueAt.
  *
+ * These fields are the canonical source — they are NOT mirrored into
+ * appState. Consumers that need resume timing read from this class
+ * (or from cameraStore, which proxies through cameraControlsRestore).
+ *
  * Three.js object mutations (controls.autoRotate, controls.autoRotateSpeed)
  * stay imperative — they're not Svelte state.
  */
@@ -102,14 +106,11 @@ class CameraControlsRestore {
     setAutoRotateSuspended(suspended: boolean): void {
         if (this.autoRotateSuspended === suspended) return
         this.autoRotateSuspended = suspended
-        // Legacy mirror
         appState.autoRotateSuspended = suspended
         if (suspended) {
             this.autoRotateSoftResumeStartedAt = 0
-            appState.autoRotateSoftResumeStartedAt = 0
         } else {
             this.autoRotateSoftResumeStartedAt = performance.now()
-            appState.autoRotateSoftResumeStartedAt = this.autoRotateSoftResumeStartedAt
         }
         this.syncOrbitAutoRotate()
     }
@@ -119,9 +120,6 @@ class CameraControlsRestore {
         clearTimeout(this.autoRotateResumeTimer)
         this.autoRotateResumeTimer = null
         this.autoRotateResumeDueAt = 0
-        // Legacy mirror
-        appState.autoRotateResumeTimer = null
-        appState.autoRotateResumeDueAt = 0
     }
 
     scheduleAutoRotateResume(delay: number = AUTO_ROTATE_IDLE_MS): void {
@@ -145,13 +143,10 @@ class CameraControlsRestore {
         )
             return
         this.autoRotateResumeDueAt = performance.now() + delay
-        appState.autoRotateResumeDueAt = this.autoRotateResumeDueAt
         // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         this.autoRotateResumeTimer = setTimeout(() => {
             this.autoRotateResumeTimer = null
             this.autoRotateResumeDueAt = 0
-            appState.autoRotateResumeTimer = null
-            appState.autoRotateResumeDueAt = 0
             if (
                 this.autoRotate &&
                 appState.currentView === 'galaxy' &&
