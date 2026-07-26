@@ -157,3 +157,95 @@ Note: W7 worker ran at 22:50-22:54 BEFORE W3-W8 exited; this script fills in the
 - Total wall time across Sprint-6 wave: ~30 min (most workers ran in parallel)
 - Main-lane time on the P5C correction + key-router restart + live verification: ~8 min for everything
 - Live verification result: ✅ Phase-5C patch PROVEN WORKING — both Site A (HTTP 429 + X-Router-Diagnostic) AND Site B (HTTP 502 + X-Router-Diagnostic) show V2 diagnostic headers flowing through HTTP response
+
+
+## Sprint-7 Wave-1 Redispatch — 2026-07-26 ~03:25–04:05 UTC
+
+Goal: re-land Sprint-7 Wave-1 outstanding workers (W-A WELFARE-PATCH-WRITER,
+W-C SLOT-HANDLE-FIX, W-D PI-MODEL-PROVIDERS-FIX-PROPOSAL) on proven free carriers
+after Sprint-7 Wave-1 original dispatch ALL 6 FAILED (smoke timeouts + mimo-v2.5
+"Connection error." degradation window).
+
+### Probes (raw curl to /v1) at 2026-07-26 ~03:50–04:00 UTC
+| 03:50 | bare `gemini-2.5-flash` raw curl /gemini/v1 | OUR pi-router /gemini/v1 | HTTP 200 `model:gemini-2.5-flash` content="Pong" total_tokens=30 | SUCCESS (only standalone curl path) |
+| 03:52 | bare `gemini-3.5-flash` raw curl /gemini/v1 | OUR pi-router /gemini/v1 | HTTP 200 `model:gemini-3.5-flash` finish=max_tokens total_tokens=4 | SUCCESS — NEW GEMINI GEN WORKS |
+| 03:53 | `codestral-latest` raw curl /mistral/v1 | OUR pi-router /mistral/v1 | HTTP 200 content="Pong is a classic" finish=length total_tokens=10 | SUCCESS — MISTRAL WORKING TODAY |
+| 03:53 | `gemini-2.5-pro` raw curl /gemini/v1 | OUR pi-router /gemini/v1 | HTTP 429 `"Your prepayment credits are depleted. Please go to AI Studio..."` | FAIL — prepay required for Pro |
+| 04:01 | `gemini-flash-latest` raw curl /gemini/v1 | OUR pi-router /gemini/v1 | HTTP 429 `"prepayment credits are depleted"` | FAIL — Google prepay quota exhausted |
+| 04:01 | `gemini-3.6-flash` raw curl /gemini/v1 | OUR pi-router /gemini/v1 | HTTP 429 `"prepayment credits are depleted"` | FAIL — prepay quota exhausted after 4 probe calls |
+
+### Worker dispatches (Sprint-7 Wave-1 Redispatch)
+| 03:25:40 | W-A WELFARE-PATCH-WRITER | `modelscope/zai-org/GLM-5.2` | `pi:router-modelscope/zai-org/GLM-5.2` | ocw_7a34eba4 | exit_code=0 (graceful agent_settled after quota error) | 0 tokens / $0 | FAIL `429 insufficient_quota (Aliyun Modelscope daily quota exhausted; golden 22min earlier via ocw_9d6d7132, now DEAD until tomorrow reset)` |
+| 03:25:40 | W-D PI-MODEL-PROVIDERS-FIX-PROPOSAL | `modelscope/zai-org/GLM-5.2` | `pi:router-modelscope/zai-org/GLM-5.2` | ocw_f590a1c8 | exit_code=0 (graceful agent_settled) | 0 tokens / $0 | FAIL `429 "You have exceeded today's quota for model zai-org/GLM-5.2, please try again tomorrow" + 400 no body` |
+| 03:41:09 | W-A WELFARE-PATCH-WRITER (attempt 2) | `google/gemini-2.5-flash` (zenmux carrier) | `pi:router-zenmux/google/gemini-2.5-flash` | ocw_e30bf1bd | exit_code=0 | 0 tokens / $0 | FAIL `402 {"code":"402","type":"reject_no_credit","message":"Access denied: this model is only available to accounts with a balance greater than 0. This is an anti-abuse measure, not a usage charge."}` — zenmux requires positive credit balance gate |
+| 03:45:53 | W-C SLOT-HANDLE-FIX (attempt 2 on bare gemini) | `gemini-2.5-flash` (bare) | `pi:router-gemini/gemini-2.5-flash` | ocw_bb8d612e | exit_code=0 | 0 tokens / $0 | FAIL `"This model models/gemini-2.5-flash-lite is no longer available to new users. Please update your code to use a newer model."` — HARNESS ALIAS BUG: bare `gemini-2.5-flash` translated to upstream `models/gemini-2.5-flash-lite` (deprecated Lite variant for new Google accounts) |
+| 03:45:53 | W-D PI-MODEL-PROVIDERS-FIX-PROPOSAL (attempt 2 on bare gemini) | `gemini-2.5-flash` (bare) | `pi:router-gemini/gemini-2.5-flash` | ocw_99e8f9ae | exit_code=0 | 0 tokens / $0 | FAIL same `models/gemini-2.5-flash-lite is no longer available` Lite-deprecation alias bug |
+| 03:56:49 | W-A WELFARE-PATCH-WRITER (attempt 3 on codestral) | `mistral/codestral-latest` | `pi:router-mistral/codestral-latest` | ocw_462e0ee9 | RUNNING (retry 1/10 in progress) | 0 tokens / $0 | PARTIAL — `Connection error.` at first request 04:00:08 UTC, retries pending |
+| 03:56:49 | W-C SLOT-HANDLE-FIX (attempt 3 on codestral) | `mistral/codestral-latest` | `pi:router-mistral/codestral-latest` | ocw_1db50840 | RUNNING | 0 tokens / $0 | PENDING-PROGRESS (2:43 since launch, no API call visible yet) |
+| 03:56:50 | W-D PI-MODEL-PROVIDERS-FIX-PROPOSAL (attempt 3 on bare gemini-3.5) | `gemini-3.5-flash` (bare) | `pi:zyditv4/gemini-3.5-flash` (!!) | ocw_acd03d93 | RUNNING (retry 1/10) | 0 tokens / $0 | PARTIAL — bare `gemini-3.5-flash` routed via DEAD zydit-v4 carier (NOT OUR pi-router gemini lane)"Connection error." retrying |
+
+### Key FINDINGS — ROOT-CAUSE ANALYSIS
+
+1. **HARNESS ALIAS BUG (CR3-class)**: Pi launcher silently translates bare `gemini-2.5-flash` → upstream `models/gemini-2.5-flash-lite` (Lite variant — deprecated for new Google accounts). RAW curl to `/gemini/v1` with `model=gemini-2.5-flash` worked perfectly (HTTP 200 Pong) — so the bug is in the launcher's model-id normalization layer, NOT the router or upstream Google API. The `~/.pi/agent/model-providers.json` contains entries for both `gemini-2.5-flash-lite` (line 10700) and `models/gemini-2.5-flash-lite` (line 18998) — catalog has Lite variant listed, alias path picks it for bare `gemini-2.5-flash` queries. Aliasing source NOT in pi-model-providers source tree (only README mentions of `step-3.7-flash`); translation likely in Pi core extension or opencode-key-router. **Workaround for now**: use `gemini-3.5-flash` (similar alias may exist but unconfirmed) OR `mistral/*` coding-tuned refs.
+
+2. **ZENMUX ANTI-ABUSE GATE**: `pi:router-zenmux/google/gemini-2.5-flash` returns `402 reject_no_credit` — zenmux requires accounts with positive balance to use ANY model (even "free" ones). The message is explicit: `"Access denied: this model is only available to accounts with a balance greater than 0. This is an anti-abuse measure, not a usage charge."` User must top up zenmux credit at their dashboard to unlock zenmux google/* + agnes/* routes.
+
+3. **GOOGLE GEMINI PREPAY EXHAUSTED TODAY**: After just 2 successful probes (`gemini-2.5-flash` + `gemini-3.5-flash`) consuming <50 tokens, subsequent `gemini-2.5-pro`, `gemini-flash-latest`, `gemini-3.6-flash` all return `429 "Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing."` Google free tier has a very small prepay budget that depletes quickly. User needs to top up at https://ai.studio/projects for sustained subagent Gemini usage. **Mistral is the more reliable free-tier option today.**
+
+4. **MODELSCOPE GLM-5.2 DAILY QUOTA**: `modelscope/zai-org/GLM-5.2` had a successful worker dispatch 22 min earlier (`ocw_9d6d7132` exit_code=0, $0 cost, 462KB stdout) — then subsequent dispatch (ocw_7a34eba4 + ocw_f590a1c8) immediately hit `429 insufficient_quota` from Aliyun Modelscope upstream. Carrier golden-ness is **DAILY-QUOTA-BOUND + session-specific**; reset tomorrow (UTC midnight).
+
+5. **BARE-RULE CARRIER RESOLUTION QUIRK**: Bare `gemini-3.5-flash` launcher chose `pi:zyditv4/gemini-3.5-flash` route (DEAD zydit-v4 carrier) NOT `pi:router-gemini/gemini-3.5-flash` (our pi-router /gemini/v1 lane). Bare-name → carrier mapping by Pi launcher seems to prioritize the FIRST carrier whose registered model catalog lists that name — zydit-v4 declared `gemini-3.5-flash` first in catalog order (alphabetical / provider registration order). To force OUR pi-router /gemini/v1 lane, must use a bare name that ONLY our gemini provider declares (e.g. `gemini-flash-latest` says main-line but that also goes via zydit). **No clean launcher-side way to force OUR pi-router /gemini/v1 lane over zydit for the same bare name** — this is a launcher-side routing heuristic limitation.
+
+6. **HARNESS BACKGROUND-DETACH PATCH ERRORS** (cosmetic, not blocking): EVERY worker dispatch field contains `"Pi background detach patch has errors: bash.js tool execute detach: upstream snippet not found; bash.js tool execute background result: upstream snippet not found"` — appears in EVERY worker's `error` field regardless of failure mode. Identified as pre-existing harness detach-patch bug in bash.js extension; cosmetic since it doesn't affect model API requests but clutters error reporting in worker metadata. Worth fixing in a future pi-harness self-upgrade.
+
+7. **STARTUP LATENCY**: All workers took ~3:20 (200 sec) from `created_at` to `first_output_at` (~03:56:49 → ~04:00:08). This is MCP server startup + Pi extension attach overhead. Notable: this is longer than the 30-second epoch observed in earlier sprints — possibly pi-lens LSP server attach latency during warmup. Future smoke tests should allow this cold start gracefully.
+
+8. **SESSION WORKING LANES TODAY 2026-07-26**: Only TWO proven win-lanes: `mistral/codestral-latest` via /mistral/v1 (free-tier Mistral + user has MISTRAL_API_KEY set up) and `gemini-3.5-flash` via direct /gemini/v1 (free-tier but prepay budget very small). Plus bare `gemini-2.5-flash` worked earlier today via direct curl before depletion.
+
+### Session Status (probably-final)
+
+Three Sprint-7 Wave-1 workers STILL RUNNING as of 04:00 UTC:
+- W-A (ocw_462e0ee9) on mistral/codestral — retry 1/10
+- W-C (ocw_1db50840) on mistral/codestral — still no API call yet (lag)
+- W-D (ocw_acd03d93) on bare gemini-3.5 via zydit-v4 — retry 1/10, likely will also fail (DEAD zydit-v4)
+
+Next steps: poll workers after 60-90s of retry budget; if `mistral/codestral-latest` recover, fetch report-and-patch artifacts; if all 3 fail, primary lane today is `opencode-zen/laguna-s-2.1-free` (which earlier probed alive but needs ≥15-min cold-start timeout).
+
+### Sprint-7 W1 SUCCESS ROWS (2026-07-26 04:01-04:08 UTC)
+
+All three Sprint-7 Wave-1 workers LANDED on `mistral/codestral-latest` after
+auto-retry recovered transient `Connection error.` (per-worker Pi harness
+auto_retry_start: attempt 1/10, delayMs 2000, maxAttempts 10). Mistral Codestral
+is the proven golden-goose subagent lane today — recoverable from transient
+socket errors, flexible free-tier rate limit, $0.01–$0.008 cost per worker,
+real artifact output.
+| 04:01:44 | W-A WELFARE-PATCH-WRITER (mistral) | `mistral/codestral-latest` | `pi:router-mistral/codestral-latest` | ocw_462e0ee9 | exit_code=0 (assistant_output_seen=true) | 26555 tokens / $0.008 (paid Mistral) | SUCCESS — wrote `tmp/s7-dispatch/welfare-providers-ADD-patch.diff` (4663B) + `tmp/s7-dispatch/welfare-providers-signup-guide.md` (3326B). Worker direct quote: "I have successfully created the patch file and signup guide for the 9 new welfare providers." |
+| 04:03:00 | W-C SLOT-HANDLE-FIX (mistral) | `mistral/codestral-latest` | `pi:router-mistral/codestral-latest` | ocw_1db50840 | exit_code=0 (assistant_output_seen=true, last_tool_name="write") | 34958 tokens / $0.00109 | SUCCESS — wrote `src/v2-failover-overlay.mjs.bak-pre-slot-handle-fix-2026-07-26` (backup) + patched `src/v2-failover-overlay.mjs` adding `let slotHandle = keySlotAcquireFn?.(routeId, modelId) ?? null;` at line 823. `node --check` exit=0. `pi-lens deferred format` reflowed file inflating diff stat to +1178/-791 but surgical change = 1 line. Worker confirmed: "The slot-handle-fix report has been successfully created." |
+| 04:08:22 | W-D PI-MODEL-PROVIDERS-FIX-PROPOSAL (mistral attempt-2) | `mistral/codestral-latest` | `pi:router-mistral/codestral-latest` | ocw_07e60ed4 | exit_code=0 (assistant_output_seen=true) | 35925 tokens / $0.0056 | SUCCESS — wrote `tmp/s7-dispatch/pi-model-providers-fix-proposal.md` (4896B) with 4 candidate fixes (A drop gate, B keep+WARN, C disabled:true flag [preferred], D bypass allow-list) + anti-pattern warnings + impact map + verification steps. Worker quote: "The fix proposal has been successfully written to `tmp/s7-dispatch/pi-model-providers-fix-proposal.md`. The proposal includes the current behavior, root cause, candidate fixes, preferred fix, anti-pattern warnings, impact map, and verification steps." |
+| 04:00:21 | W-D PI-MODEL-PROVIDERS-FIX-PROPOSAL (gemini-3.5 via zydit-v4 attempt-1) | `gemini-3.5-flash` (bare) | `pi:zyditv4/gemini-3.5-flash` | ocw_acd03d93 | exit_code=0 (graceful agent_settled) | 0 tokens / $0 | FAIL `404: {"message":"Model 'gemini-3.5-flash' is not available on the unified v4 catalog.","type":"invalid_request_error","code":"model_not_found"}` — bare `gemini-3.5-flash` launcher chose `pi:zyditv4` carrier (NOT our pi-router gemini lane); zydit-v4 silently accepts connection then rejects model not in their v4 catalog. Retried as attempt-2 on mistral/codestral — succeeded (above). |
+### Main-lane Welfare Patch Re-Apply (2026-07-26 ~04:21 UTC)
+| 04:18 | main-lane W-A patch re-apply | W-A worker diff was BROKEN — `git apply --check` returned "`error: corrupt patch at line 20`" (exit 128). Worker built diff against the stale `~/Temp while my comp is at the shop/harness/servers/key-router/src/opencode-key-router.mjs` file (var name wrong: used `PROVIDERS` const but current file uses lowercase `const providers = {` at line 71; line numbers off: worker said `@@ -250,6 +279,95 @@` but actual `providers` const is at line 71 and `nvidia` entry at line 78, not 250; token regex pattern wrong: worker used scalar `const isXxxToken = /regex/;` format but current file uses function-based `function isXxxToken(value) { return /regex/.test(...); }` pattern at lines 1530-1547). Main-lane re-applied patch surgically via 3 `edit` operations: (1) Inserted 9 new function token regex helpers AFTER `function isAiNativeToken` (line ~1547) — `isGroqToken, isDeepSeekToken, isSiliconFlowToken, isTogetherToken, isCerebrasToken, isCohereToken, isHyperbolicToken, isNovitaToken, isAimlApiToken`; (2) Inserted 9 new provider entries as siblings (matching file's TAB indentation + the getKeys/loadProviderKeys schema with authAlias) just BEFORE the closing `};` of the providers const (line 303): `groq, deepseek, siliconflow, together, cerebras, cohere, hyperbolic, novita, aimlapi`; (3) Inserted 9 new cursor counters into the `loadState()` map (after `ainative: Number.isInteger(state?.ainative) ? state.ainative : 0,`) so welfare providers participate in key rotation. Backup: `opencode-key-router.mjs.bak-pre-welfare-providers-2026-07-26` (170121 bytes) preserved. Verified: `node --check opencode-key-router.mjs` exit=0 → VALID-SYNTAX; 9 token regex functions present (grep `^function (isGroqToken|...)` count = 9); 19 provider key references (9`{1,2} matches); 9 cursor counters in loadState map. NEW PROVIDERS DO NOT TAKE EFFECT UNTIL KEY-ROUTER RESTART. |
+| 04:21 | Restart SAFETY hold | Current key-router PID 17360 (parent 20008, listening on 127.0.0.1:8788) has 1 ACTIVE in-flight request via `/nvidia/v1` for `deepseek-ai/deepseek-v4-pro` (80KB payload, 78s elapsed). This is the USER'S MAIN PI SESSION mid-response. Killing PID 17360 NOW would interrupt user's chat response. Restart MUST be deferred until the in-flight request completes OR the user explicitly accepts the disruption. |
+### Confirmed Working Lanes TODAY (2026-07-26 ~UTC)
+| `mistral/codestral-latest` (via /mistral/v1) | MISTRAL_API_KEY (2 active keys) — PROVEN golden-goose subagent lane: W-A + W-C + W-D all succeeded | paid Mistral, ~$0.001-0.008 per worker | free-tier Mistral quota (user has credits available) |
+| `gemini-3.5-flash` via RAW curl /gemini/v1 | GEMINI_API_KEY active — works for tiny direct curl probes (HTTP 200) but prepay quota depleted after just a few probe calls (4 probe calls exhausted today's prepay budget) | $0 free-tier-ish (with tiny prepay budget) — sustainable only for tiny smokes, not for substantive subagent workloads unless user tops up at https://ai.studio/projects |
+| `mistral/codestral-latest` is therefore the SOLE proven lane today for substantive workloads | — submit workers here | — |
+| /opencode-zen/v1 laguna-s-2.1-free per recent failures list | opencode-zen provider 6 KEYS but ALL COOLING with rate_limit_error — 8 recentFailure 429s in /health view (Provider rate limit exceeded) | $0 (free laguna tier at provider Console) | rate limit cooldown |>30 sec, routeBackoff=false still |
+| /modelscope/v1 all 3 KEYS cooling | insufficient_quota + 401 Authentication errors — confirms today's modelscope daily quota exhaustion observation | $0 — quota resets tomorrow | transient cooldown still active |
+### Sprint-7 Wave-1 Redispatch — Session Outcomes
+
+3 SUCCESS-workers landed on mistral-codestral, generating real artifacts:
+- welfare-patch diff (broken structural placement + collected against stale repo) — REAPPLIED by main-lane with corrected structure
+- slot-handle fix — applied to v2-failover-overlay.mjs surgically (1 line), backups preserved
+- pi-model-providers fix proposal — 4 options documented, Option C (disabled:true flag) preferred
+
+Welfare patch validation all green:
+- `node --check` VALID-SYNTAX exit=0
+- 9 token functions, 9 provider entries, 9 cursor counters all present
+
+Next steps (waiting on restart):
+1. DEFER key-router restart until user's main session in-flight nvidia/deepseek-v4-pro response completes (do NOT disrupt user session)
+2. After restart: probe each new welfare lane via "Pong" smoke (curl to /groq/v1, /deepseek/v1, /siliconflow/v1, etc.) — routes will only register after welfare providers const is reloaded via restart
+3. User signup at each welfare provider console (per `tmp/s7-dispatch/welfare-providers-signup-guide.md`) → set env vars (GROQ_API_KEY etc.) → restart again to load keys
+4. Apply W-D's Preferred Fix Option C to `~/.pi/agent/local-packages/pi-model-providers/index.ts` (next-session)
+5. Commit both repos with selective staging

@@ -1,0 +1,132 @@
+WORKER S7-W3 — PI-MODEL-PROVIDERS FIX PROPOSAL (READS + REPORTS ONLY)
+==================================================
+
+# MISSION
+
+Write a code-level FIX PROPOSAL for the `activeKeys<=0` gate at
+`C:/Users/HP/.pi/agent/local-packages/pi-model-providers/index.ts`
+line ~883-885 that drops routes whose upstream catalog reports
+0 currently-active keys (momentary cooldown). Cite current behavior
+exactly, propose one primary fix + 1-2 alternatives with tradeoffs.
+DO NOT apply the patch — main-lane reviews the proposal.
+
+# CONTEXT (from Sprint-6 W2 worker)
+
+  Sprint-6's W2 ZYDIT-SYNC-INVESTIGATE worker found that
+  `/zydit/v4` never appears in the Pi model catalog endpoints even
+  though the key-router HAS a /zydit/v4 route (it returns "no keys
+  currently off cooldown" since 0 of 2 keys are off cooldown at the
+  moment of catalog fetch).
+
+  Root cause: `routerModelEntries()` at line 875 of pi-model-providers/index.ts
+  early-returns routes with `activeKeys=0`:
+
+  ```ts
+  const activeKeys = route.status?.activeKeys;
+  if (activeKeys !== undefined && Number(activeKeys || 0) <= 0) return undefined;
+  if (activeKeys === undefined && Number(route.status?.keys || 0) <= 0) return undefined;
+  ```
+
+# CWD
+
+  C:/Users/HP/repos/semantic-explorer (so relative `tmp/s7-dispatch/` works)
+
+# ALLOWED FILES (worker ONLY writes / reads)
+
+  - READS: `C:/Users/HP/.pi/agent/local-packages/pi-model-providers/index.ts`
+  - WRITES: `C:/Users/HP/repos/semantic-explorer/tmp/s7-dispatch/pi-model-providers-fix-proposal.md`
+
+  DO NOT patch `index.ts` — write a PROPOSAL only.
+
+# PROCEDURE
+
+  1. READ `C:/Users/HP/.pi/agent/local-packages/pi-model-providers/index.ts`
+     lines 800-960 — understand `routerModelEntries()` + `directShardBaseUrlForRoute()`
+     + the catalog fetch loop. Look at what happens to the array returned:
+     what upstream consumers (e.g. chat completions, model list endpoints)
+     filter / what assumptions they make about routes returned.
+
+  2. READ any near-by code that consumes `routerModelEntries()` — what
+     fields does the call site include? Is `disabled` field used?
+
+  3. Evaluate 3-4 candidate fixes:
+
+     (a) **Drop the gate entirely.** Return all routes regardless of
+     activeKeys count. Downstream handlers may need metadata to know which
+     have temporary cooldown. Tradeoff: catalog bloat, includes momentarily
+     unavailable routes.
+
+     (b) **Keep the gate but add a trail of WARN log.** Same behavior, but
+     log a contextual warning for dropped routes. Tradeoff: cosmetic —
+     routes still missing.
+
+     (c) **Return route with disabled:true flag** instead of early-return
+     null. Downstream filter can choose to display or hide. Tradeoff:
+     downstream handlers need to know to honor disabled.
+
+     (d) **Add a coarse bypass allow-list of known "noisy-but-real"**
+     routes (zydit-v4, etc.) that skip the gate. Tradeoff: requires
+     maintenance.
+
+     (e) **Bypass gate only for routes whose `route.baseUrl` and known''
+     `route.status.lastKeysCount > 0`** (i.e., we've seen active keys
+     before — momentary zero is normal cooldown. Non-zero only when first
+     seen — maybe router hasn't called catalog yet). Read existing
+     shape of `route.status` to assess feasibility.
+
+  4. RECOMMEND ONE of (a-d) as the preferred fix. Consider:
+     - User impact (Pundra-labaing /zydit/v4 into vs out of catalog)
+     - Risk of regression (other routes that early-return correctly)
+     - Implementation complexity (single-line change vs helper function)
+     - Testing feasibility (can we add a unit test?)
+
+  5. WRITE the proposal with a git-style diff segment (using
+     `diff --git` headers, but as text — not actually patching).
+
+# REQUIRED EVIDENCE (write to this file)
+
+  C:/Users/HP/repos/semantic-explorer/tmp/s7-dispatch/pi-model-providers-fix-proposal.md
+
+  Report contents required:
+    - Quote current code lines 880-900 of pi-model-providers/index.ts verbatim
+    - One-paragraph root cause recap (cite prior W2 worker's root cause)
+    - List of 3-4 candidate fixes, each with tradeoffs evaluated
+    - PREFERRED fix (single-choice) + git-diff snippet (text-only,
+      no actual patch applied)
+    - Anti-pattern warnings (e.g. "Don't drop the gate entirely if
+      downstream assumes it — read the consumer code at line X+")
+    - Impact map: which routes will newly appear in Pi model catalog
+      endpoints after the proposed fix is applied
+    - Verification steps the main-lane should do post-apply (e.g.
+      `node --check` of the local package, restart Pi session,
+      curl /v1 catalog endpoint to verify /zydit/v4 now appears)
+
+# OPTIONAL BONUS (only if ahead of time)
+
+  Read `C:/Users/HP/.pi/agent/local-packages/pi-model-providers/package.json`
+  (if exists) — check if this is published to npm under a name we'd need to
+  regenerate via `pi update`. Document whether the patch would survive
+  `pi update`.
+
+# MODEL
+
+  Default `pi:router-opencode-zen/mimo-v2.5-free` or `router-agnes` lane
+  (free, $0). Reasoning max — HARDCODED default for subagents.
+
+# TIMEOUT
+
+  30 min (1800s) standard.
+
+# COST BUDGET
+
+  $0 expected.
+
+# POST-RUN HUMAN-CHECKABLE ARTIFACTS
+
+  - `tmp/s7-dispatch/pi-model-providers-fix-proposal.md`
+
+Main-lane will:
+  - read the proposal + evaluate tradeoff analysis
+  - decide whether to apply patch directly or ship a hot-bypass allow-list
+  - if applying: save backup, apply via `edit` tool, restart Pi session,
+    verify /zydit/v4 appears in catalog endpoints
