@@ -35,6 +35,7 @@ import {
 } from '@lib/orchestration/url-params'
 import { setMobileSearchSheetMode } from '@lib/search/search-panel-adapter'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
+import { isSearchInFlight } from '@lib/search/search-abort'
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -207,6 +208,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
     })
 
     const params = getSearchParams()
+    const restoredQuery = params.get('q')
 
     try {
         resetStateBeforeUrlRestore()
@@ -237,7 +239,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         if (story) {
             writeNavStateMirror({ activeStoryPrompt: story })
             if (!options.fromHistory) {
-                updateUrlState({}, { reason: 'apply-url-story', force: true })
+                updateUrlState({ q: restoredQuery || null }, { reason: 'apply-url-story', force: true })
             }
             return
         }
@@ -290,9 +292,11 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
 
         preserveDomForcedFocusSearchSurface()
 
-        // URL sync after apply
+        // URL sync after apply — preserve the original ?q= value even when the
+        // search-input DOM hasn't mounted yet, so shared search deep-links stay
+        // shareable and browser history doesn't silently drop the query.
         if (!options.fromHistory) {
-            updateUrlState({}, { reason: 'apply-url', force: true })
+            updateUrlState({ q: restoredQuery || null }, { reason: 'apply-url', force: true })
         }
     } catch (err) {
         // Non-fatal: a deep-link restore failure must never crash boot or
@@ -821,6 +825,12 @@ async function _restoreSearchFromParams(
         // but data-mobile-search-sheet='' -> .search-results-wrapper display:none).
         if (isCompactSearchViewport() && !document.body.dataset.mobileSearchSheet) {
             setMobileSearchSheetMode('peek')
+        }
+
+        // If the same query is already in flight from the typed-input path,
+        // piggyback on it instead of issuing a duplicate API request.
+        if (isSearchInFlight(query)) {
+            return
         }
 
         await runSearch(query, searchSignal)

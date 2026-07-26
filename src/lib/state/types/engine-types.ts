@@ -266,7 +266,6 @@ export interface SemanticState extends StateConfig {
     focusTargetVector: unknown
     desiredCameraVector: unknown
     searchTimeout: ReturnType<typeof setTimeout> | null
-    searchAbortController: AbortController | null
     searchState: {
         currentSearchSummary: SearchSummary | null
         currentEmptyQuery: string | null
@@ -339,9 +338,6 @@ export interface SemanticState extends StateConfig {
      */
     currentSemanticGuide: string | null
     summaryCardTypeToken: number
-    autoRotateResumeTimer: ReturnType<typeof setTimeout> | null
-    autoRotateResumeDueAt: number
-    autoRotateSoftResumeStartedAt: number
     sceneRevealActive: boolean
     sceneRevealStartedAt: number
     sceneRevealCameraStart: unknown

@@ -9,6 +9,8 @@ import { SearchDebounce } from '@lib/search/search-debounce'
 import { setMobileSearchSheetMode } from '@lib/search/search-panel-adapter'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 
+import { startSearch, cancelSearch } from '@lib/search/search-abort'
+
 export interface SearchDispatchOptions {
     /** Called when the controller sets a new active query (e.g. splash fulfillment). */
     onQuerySet?: (query: string) => void
@@ -28,7 +30,6 @@ export interface SearchDispatchOptions {
  */
 export class SearchDispatch {
     private searchDebounce = new SearchDebounce()
-    private searchAbortController: AbortController | null = null
     private searchStartTime = 0
     private surfaceSwitchedToSearch = false
     private onQuerySet: (query: string) => void
@@ -66,11 +67,6 @@ export class SearchDispatch {
     }
 
     dispatchSearch(query: string): void {
-        if (this.searchAbortController) {
-            this.searchAbortController.abort()
-            this.searchAbortController = null
-        }
-
         const trimmed = query.trim()
 
         if (trimmed.length === 0) {
@@ -88,9 +84,12 @@ export class SearchDispatch {
             return
         }
 
-        this.searchAbortController = new AbortController()
+        // startSearch handles abort + dedup atomically: if the same query is
+        // already in flight the existing signal is returned (no re-abort);
+        // otherwise the previous search is aborted and a fresh controller is
+        // created. No separate cancelSearch + isSearchInFlight preamble needed.
         this.searchStartTime = performance.now()
-        const signal = this.searchAbortController.signal
+        const signal = startSearch(trimmed)
         setSearchStatus('searching')
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
         this.surfaceSwitchedToSearch = true
@@ -105,15 +104,16 @@ export class SearchDispatch {
             // dispatch chain. The intent here is to keep the Svelte store's
             // status updated by runSearch's own error path.
             if (err instanceof DOMException && err.name === 'AbortError') return
+            // Fallback: some environments may reject with a plain Error whose
+            // name is 'AbortError', or the signal may be aborted without a
+            // proper DOMException. Suppress the warning in those cases too.
+            if (signal.aborted) return
             debugWarn('SearchInput.dispatchSearch runSearch failed:', err)
         })
     }
 
     cancel(cancelledQuery: string): void {
-        if (this.searchAbortController) {
-            this.searchAbortController.abort()
-            this.searchAbortController = null
-        }
+        cancelSearch()
         this.searchDebounce.cancel()
         const durationMs = this.searchStartTime > 0 ? Math.round(performance.now() - this.searchStartTime) : 0
         setSearchStatus('idle')
@@ -129,26 +129,24 @@ export class SearchDispatch {
 
     clear(): void {
         this.searchDebounce.cancel()
-        if (this.searchAbortController) {
-            this.searchAbortController.abort()
-            this.searchAbortController = null
-        }
+        cancelSearch()
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)
         this.surfaceSwitchedToSearch = false
     }
 
     clearQuery(): void {
         this.searchDebounce.cancel()
-        if (this.searchAbortController) {
-            this.searchAbortController.abort()
-            this.searchAbortController = null
-        }
+        cancelSearch()
         setSearchStatus('idle')
     }
 
     dispose(): void {
         this.searchDebounce.cancel()
-        this.searchAbortController?.abort()
-        this.searchAbortController = null
+        // NOTE: do NOT cancel the in-flight search here. Search is a global
+        // async operation (owned by the shared search-abort controller) and the
+        // SearchInput/SearchBar instances can remount during the idle→search
+        // surface transition. Cancelling on unmount would abort a user-initiated
+        // search right after it was dispatched, leaving the results panel empty.
+        // Explicit cancellation is handled by cancel()/clear() instead.
     }
 }

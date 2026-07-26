@@ -58,7 +58,7 @@ import {
 } from './results-ui'
 import { setupMobileSearchSheetToggle } from './search-panel-adapter'
 import { setActiveSearchResultRow } from './result-renderer'
-import { appState } from '@lib/state/app.svelte'
+import { isSearchInFlight, startSearch } from './search-abort'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -132,19 +132,10 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     incrementFocusTransitionToken()
     if (typeof clearSearchPreviewHoverTimer === 'function') clearSearchPreviewHoverTimer()
 
-    // Abort any in-flight search and store the new controller on appState.
-    // Only abort when the new query differs from the one currently in flight;
-    // re-entrant calls for the SAME query (deep-link re-parse, re-render) must
-    // NOT cancel the live request, or the UI gets stuck on "Searching…".
-    const prevController = appState.searchAbortController as (AbortController & { query?: string }) | null
-    if (prevController && prevController.query === trimmedQuery && !prevController.signal.aborted) {
-        // Same query already in flight — reuse it; don't restart or abort.
+    // Avoid redundant work when the same query is already in flight.
+    if (isSearchInFlight(trimmedQuery)) {
         return
     }
-    prevController?.abort()
-    const currentController = new AbortController() as AbortController & { query?: string }
-    currentController.query = trimmedQuery
-    appState.searchAbortController = currentController
 
     if (!trimmedQuery || trimmedQuery.length < 2) {
         stopSearchVectorScramble()
@@ -184,6 +175,8 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     // Clear exploration focus if needed
     publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, { preserveSearch: true, skipUrlSync: true })
 
+    const signal = startSearch(trimmedQuery)
+
     const requestId = incrementRequestSequence()
     setSearchStatus('searching')
 
@@ -192,9 +185,9 @@ export async function search(query: string, options: SearchOptions = {}): Promis
 
     let searchResults: SearchResult[]
     try {
-        searchResults = await performSearch(trimmedQuery, currentController.signal, 0, options.offset ?? 0)
+        searchResults = await performSearch(trimmedQuery, signal, 0, options.offset ?? 0)
     } catch (error: unknown) {
-        if (currentController.signal.aborted || !isRequestCurrent(requestId)) return
+        if (signal.aborted || !isRequestCurrent(requestId)) return
         stopSearchVectorScramble()
         publish(EVENTS.SEARCH_DEGRADED, { resultsEl, statusEl, query: trimmedQuery, error })
         applySemanticSearchDegradedState(

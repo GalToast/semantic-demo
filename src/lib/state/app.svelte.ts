@@ -152,7 +152,6 @@ export class AppState {
         showStory: false
     })
     searchTimeout = $state<ReturnType<typeof setTimeout> | null>(null)
-    searchAbortController = $state<AbortController | null>(null)
     searchGlowRenderStateKey = $state<string>('')
     searchPreviewHoverTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     searchVectorScrambleInterval = $state<ReturnType<typeof setInterval> | null>(null)
@@ -568,9 +567,6 @@ export class AppState {
     semanticThreadArtifactName = $state<string | null>(null)
 
     // ==== CAMERA / ANIMATION STATE ====
-    autoRotateResumeTimer = $state<ReturnType<typeof setTimeout> | null>(null)
-    autoRotateResumeDueAt = $state<number>(0)
-    autoRotateSoftResumeStartedAt = $state<number>(0)
     sceneRevealActive = $state<boolean>(false)
     sceneRevealStartedAt = $state<number>(0)
     sceneRevealCameraStart = $state<Vector3Like | null>(null)

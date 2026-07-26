@@ -212,11 +212,10 @@ export const passthrough: StateValidator = () => null
 /**
  * STATE_VALIDATORS — runtime validation for appState mutations.
  *
- * Top-level entries below validate direct writes via `appState.X = Y`
- * (caught by the Proxy `set` trap). Nested entries like
- * `'navState.mode'` validate writes through the Svelte 5 reactive
- * Proxy at `appState.navState.X` (caught when the outer Proxy receives
- * a `navState` assignment that triggers `Reflect.set` on the inner).
+ * All entries validate direct writes via `appState.X = Y`
+ * (caught by the Proxy `set` trap). The trap only sees top-level
+ * keys, so dotted-path entries for sub-properties (e.g. `navState.mode`)
+ * can never fire — they were removed in L1-H2.
  *
  * Sub-aggregate writes (`appState.searchState.X`, `appState.focusState.X`,
  * `appState.viewportState.X`) are NOT validated by these entries
@@ -238,29 +237,28 @@ export const passthrough: StateValidator = () => null
 export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     // Views
     currentView: oneOf(VALID_VIEWS, 'currentView'),
-    'navState.currentView': oneOf(VALID_VIEWS, 'navState.currentView'),
 
-    // Navigation mode
+    // NavState sub-field validators (for direct validateStateProperty callers
+    // such as unit tests; appState's Proxy set trap only sees top-level keys,
+    // so these dotted paths are not enforced at runtime writes).
     'navState.mode': oneOf(VALID_NAV_MODES, 'navState.mode'),
-
-    // Navigation surface
     'navState.surface': oneOf(VALID_PANEL_SURFACES, 'navState.surface'),
     'navState.previousSurface': oneOf(VALID_PANEL_SURFACES, 'navState.previousSurface'),
+    'navState.loadingPhaseKey': oneOf(VALID_LOADING_PHASES, 'navState.loadingPhaseKey'),
+    'navState.myceliumMode': oneOf(VALID_MYCELIUM_MODES, 'navState.myceliumMode'),
+    'navState.currentView': oneOf(VALID_VIEWS, 'navState.currentView'),
 
     // Loading
     loadingPhaseKey: oneOf(VALID_LOADING_PHASES, 'loadingPhaseKey'),
-    'navState.loadingPhaseKey': oneOf(VALID_LOADING_PHASES, 'navState.loadingPhaseKey'),
 
     // Semantic lane
     semanticLaneState: oneOf(VALID_SEMANTIC_LANE_STATES, 'semanticLaneState'),
 
-    // Focus (transition/trail are dual-located: top-level + navState)
+    // Focus (trailDepth is a top-level alias over navState.trailDepth)
     trailDepth: nonNegativeInt('trailDepth'),
-    'navState.trailDepth': nonNegativeInt('navState.trailDepth'),
 
     // Mycelium
     myceliumMode: oneOf(VALID_MYCELIUM_MODES, 'myceliumMode'),
-    'navState.myceliumMode': oneOf(VALID_MYCELIUM_MODES, 'navState.myceliumMode'),
 
     // Handoff / choreography
     'terrainHandoffState.phase': oneOf(VALID_TERRAIN_HANDOFF_PHASES, 'terrainHandoffState.phase'),
@@ -307,16 +305,11 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     _semanticDiveTransitionDeadline: nonNegativeNumber('_semanticDiveTransitionDeadline'),
     lastRenderedTypeToken: nonNegativeInt('lastRenderedTypeToken'),
     loadingOverlayStartedAt: nonNegativeNumber('loadingOverlayStartedAt'),
-    autoRotateResumeDueAt: nonNegativeNumber('autoRotateResumeDueAt'),
-    autoRotateSoftResumeStartedAt: nonNegativeNumber('autoRotateSoftResumeStartedAt'),
     sceneRevealStartedAt: nonNegativeNumber('sceneRevealStartedAt'),
     routeCameraAnimationToken: nonNegativeInt('routeCameraAnimationToken'),
 
     // Nullable numbers
     focusedNode: nullableNumber('focusedNode'),
-    'navState.focusedIndex': nullableNumber('navState.focusedIndex'),
-    'navState.trailSeedIndex': nullableNumber('navState.trailSeedIndex'),
-    'navState.trailCursor': nullableNumber('navState.trailCursor'),
     hoverHighlightIndex: (value: unknown): string | null => {
         if (value === -1) return null
         return nonNegativeInt('hoverHighlightIndex')(value)
@@ -377,7 +370,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     searchError: passthrough,
     currentSearchSummary: passthrough,
     searchTimeout: passthrough,
-    searchAbortController: passthrough,
     searchPreviewHoverTimer: passthrough,
     searchVectorScrambleInterval: passthrough,
     searchVectorScrambleTimer: passthrough,
@@ -391,7 +383,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     clockTimer: passthrough,
     hoverHighlightTimer: passthrough,
     canvasThreadInspectionClearTimer: passthrough,
-    autoRotateResumeTimer: passthrough,
     viewHandoffTimer: passthrough,
     viewSwitchPreludeTimer: passthrough,
     terrainHandoffTimer: passthrough,
@@ -469,9 +460,9 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     _settlingLowFrames: passthrough
 }
 
-// ── Deep-path validator (for nested properties like navState.mode) ───────────
+// ── Property-path validator ─────────────────────────────────────────────────
 
-/** Validates a nested property path. Returns the error message or null. */
+/** Validates a property path. Returns the error message or null. */
 export function validateStateProperty(path: string, value: unknown): string | null {
     const validator = STATE_VALIDATORS[path]
     if (validator) return validator(value)

@@ -531,6 +531,17 @@ export function setSearchResults(results: SearchResult[]): void {
  * Execute a search and update the store. Used by URL restoration and search input.
  */
 export async function runSearch(query: string, signal: AbortSignal): Promise<void> {
+    // Clear any persisted visible count from a prior search so the
+    // new result set's count starts fresh. The input-driven path
+    // (orchestration.search) does the same; the deep-link path
+    // (url-state.ts -> runSearch) was missing this, allowing a
+    // stale sessionStorage value to overshoot the current total.
+    try {
+        sessionStorage.removeItem('searchVisibleCount')
+    } catch {
+        /* ignore */
+    }
+
     const trimmed = query.trim()
     if (trimmed.length < 2) {
         clearSearch()

@@ -225,7 +225,12 @@ export function storeSemanticSearchPayload(query: string, payload: SearchPayload
     markSemanticSearchCache('store', key)
 
     const cache = appState.searchState.semanticSearchResultCache
-    while (cache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
+    // Guard against unbounded eviction: if the cache somehow cannot be
+    // trimmed (e.g. all entries are too recent to expire and LRU finds no
+    // oldest key), the loop still terminates after a safety ceiling.
+    let evictionIter = 0
+    while (cache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES && evictionIter < 100) {
+        evictionIter++
         for (const [k, e] of cache.entries()) {
             const ce = e as CacheEntry
             if (e && now - ce.storedAt > SEMANTIC_SEARCH_CACHE_TTL_MS) {
@@ -387,7 +392,11 @@ export function getPendingSearch(
     const key = cacheKeyToString({ query, page, offset })
     const entry = _pending.get(key)
     if (!entry) return null
-    if (signal && entry.signal && signal !== entry.signal) return null
+    // Only share an in-flight promise when the caller owns the exact same
+    // signal. This prevents a no-signal caller from accidentally piggybacking
+    // on an abortable promise, and prevents callers with distinct controllers
+    // from being serialized onto a single request they did not create.
+    if (signal !== entry.signal) return null
     return entry.promise
 }
 

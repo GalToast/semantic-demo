@@ -27,6 +27,7 @@
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { pendingSearch } from '@lib/stores/pending-search.svelte';
   import { SearchDispatch } from '@lib/search/search-dispatch';
+import { isSearchInFlight } from '@lib/search/search-abort';
   import SearchInputChrome from '@lib/components/search/SearchInputChrome.svelte';
 
   interface Props {
@@ -222,6 +223,10 @@
     }
     const query = new URLSearchParams(window.location.search || '').get('q')?.trim();
     if (!query || query.length < 2) return;
+    if (isSearchInFlight(query)) {
+      queryInput = query;
+      return;
+    }
     const storeQuery = ($searchState.query ?? '').trim();
     if (storeQuery === query && ['searching', 'results', 'error'].includes($searchState.status)) {
       queryInput = query;
