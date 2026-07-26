@@ -115,7 +115,7 @@
       aria-label="Toggle weather details — current conditions for Montgomery County"
       title="Current conditions for Montgomery County"
       aria-expanded={expanded}
-      aria-controls="weather-details"
+      aria-controls={expanded && loaded ? 'weather-details' : undefined}
       type="button"
     >
       <span class="weather-icon">{@render iconSvg(iconKey)}</span>
