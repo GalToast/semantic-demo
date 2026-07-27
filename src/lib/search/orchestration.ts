@@ -185,7 +185,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
 
     let searchResults: SearchResult[]
     try {
-        searchResults = await performSearch(trimmedQuery, signal, 0, options.offset ?? 0)
+        searchResults = await performSearch(trimmedQuery, signal, 0, options.offset ?? 0, options.preferCachedResults)
     } catch (error: unknown) {
         if (signal.aborted || !isRequestCurrent(requestId)) return
         stopSearchVectorScramble()

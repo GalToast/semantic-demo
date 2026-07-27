@@ -43,7 +43,8 @@ import {
     shouldSurfaceApiFailures,
     shouldBypassApiSearch,
     markApiUnreachable,
-    clearApiUnreachable
+    clearApiUnreachable,
+    readApiUnreachable
 } from '@lib/search/mock-search-fallback'
 import { retryWithBackoff } from '@lib/utils/retry-with-backoff'
 import { debugLog } from '@lib/utils/debug'
@@ -99,6 +100,12 @@ async function fetchSemanticSearchResultsDirect(
     // Use retryWithBackoff for the API call: retries transient failures
     // (429, 502-504, connection errors) with exponential backoff + jitter.
     // Permanent failures (400, 404, 422) throw immediately.
+    // Bug #5 (bugsweep): if the API bypass flag is active, don't waste
+    // retry budget — throw immediately so retryWithBackoff classifies it
+    // as a permanent error and skips retries.
+    if (readApiUnreachable()) {
+        throw new Error('API bypass flag is active — skipping retry')
+    }
     const responseText = await retryWithBackoff(
         async () => {
             const controller = new AbortController()
@@ -204,7 +211,7 @@ export async function initSearchEngine(): Promise<void> {
  * @param signal  AbortSignal for cancellation.
  * @returns A promise resolving to a ranked array of SearchResult objects.
  */
-export async function performSearch(query: string, signal: AbortSignal, page = 0, offset = 0): Promise<SearchResult[]> {
+export async function performSearch(query: string, signal: AbortSignal, page = 0, offset = 0, preferCachedResults?: boolean): Promise<SearchResult[]> {
     const trimmed = query.trim()
 
     if (signal.aborted) {
@@ -222,11 +229,12 @@ export async function performSearch(query: string, signal: AbortSignal, page = 0
     // ── Cache check ──────────────────────────────────────────────────────────
     // Cache key is composite: {query, page, offset}.  This prevents page 2
     // from overwriting page 1 in the cache, and keeps pagination isolated.
-    if (!forceApiFailureSurface) {
+    // Bug #4 (bugsweep): honor preferCachedResults. When false, skip the
+    // cache check so callers (e.g. retry button) always get fresh results.
+    if (!forceApiFailureSurface && preferCachedResults !== false) {
         const cached = getCachedSearch(trimmed, normalizedPage, effectiveOffset)
         if (cached) return cached
     }
-
     // Advisory deduplication: if an identical key is already in-flight
     // and the caller shares the same AbortSignal, piggyback on that promise
     // instead of issuing a duplicate fetch. Callers with different signals
