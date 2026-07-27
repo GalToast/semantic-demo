@@ -73,13 +73,13 @@ function targets() {
             { id: '@cf/aisingapore/gemma-sea-lion-v4-27b-it', note: 'untested' }
         ],
         groq: [
-            { id: 'meta-llama/llama-4-scout-17b-16e-instruct', note: 'untested' },
-            { id: 'meta-llama/llama-3.3-70b-versatile', note: 'untested' },
-            { id: 'meta-llama/llama-3.1-8b-instant', note: 'untested' },
-            { id: 'gemma2-9b-it', note: 'untested' },
-            { id: 'deepseek-r1-distill-llama-70b', note: 'untested' },
-            { id: 'meta-llama/llama-prompt-guard-2-22m', note: 'untested' },
-            { id: 'allam-2-7b', note: 'untested' }
+            { id: 'llama-3.3-70b-versatile', note: 'untested' },
+            { id: 'llama-3.1-8b-instant', note: 'untested' },
+            { id: 'openai/gpt-oss-20b', note: 'untested' },
+            { id: 'openai/gpt-oss-120b', note: 'untested' },
+            { id: 'groq/compound', note: 'untested' },
+            { id: 'groq/compound-mini', note: 'untested' },
+            { id: 'qwen/qwen3.6-27b', note: 'untested' }
         ],
         openrouter: [
             { id: 'google/gemini-3.5-flash', note: 'untested' },
