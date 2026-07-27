@@ -130,6 +130,27 @@ function targets() {
             { id: 'gemma-4-31b', note: '402 insufficient credits' },
             { id: 'qwen3.5-397b', note: '410 model retired (qwen3.5-397b-a17b removed)' },
             { id: 'kimi-k2.6-fast', note: '404 model not found' }
+        ],
+        siliconflow: [
+            { id: 'deepseek-ai/deepseek-r1', note: '503 router has no configured keys' }
+        ],
+        together: [
+            { id: 'deepseek-ai/deepseek-v3', note: '503 router has no configured keys' }
+        ],
+        cerebras: [
+            { id: 'llama3.3-70b', note: '503 router has no configured keys' }
+        ],
+        cohere: [
+            { id: 'command-r-plus', note: '503 router has no configured keys' }
+        ],
+        hyperbolic: [
+            { id: 'meta-llama/Llama-3.1-70B-Instruct', note: '503 router has no configured keys' }
+        ],
+        novita: [
+            { id: 'meta-llama/llama-3.1-8b-instruct', note: '503 router has no configured keys' }
+        ],
+        aimlapi: [
+            { id: 'gpt-4o', note: '503 router has no configured keys' }
         ]
     }
     // filter logfare glm entry (typo guard) — rebuild clean
