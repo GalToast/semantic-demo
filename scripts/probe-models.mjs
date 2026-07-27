@@ -89,22 +89,17 @@ function targets() {
             { id: 'openai/gpt-oss-20b', note: 'untested' }
         ],
         nvidia: [
-            { id: 'minimaxai/minimax-m3', note: 'baseline' },
-            { id: 'deepseek-ai/deepseek-v4-pro', note: 'untested' },
-            { id: 'qwen/qwen3.5-397b-a17b', note: 'untested' },
-            { id: 'nvidia/nemotron-3-super-120b-a12b', note: 'untested' },
-            { id: 'nvidia/nemotron-3-ultra-550b-a55b', note: 'untested' },
-            { id: 'nvidia/nemotron-3-nano-30b-a3b', note: 'untested' }
+            { id: 'minimaxai/minimax-m3', note: 'ok NS14941_ST11906' },
+            { id: 'deepseek-ai/deepseek-v4-pro', note: 'ok NS5575_ST6747' }
+            // removed qwen/qwen3.5-397b-a17b (410 retired), nvidia/nemotron-3-{super,ultra,nano}* (404 not found) — 2026-07-27 probe
         ],
         modelscope: [
-            { id: 'Qwen-Ambassador/Qwen3.7-Max', note: 'untested' },
-            { id: 'MiniMax/MiniMax-M2.7', note: 'untested' },
-            { id: 'Qwen/Qwen3-235B-A22B-Thinking-2507', note: 'untested' },
-            { id: 'deepseek-ai/DeepSeek-V4-Pro', note: 'untested' },
-            { id: 'Qwen/Qwen3-235B-A22B-Instruct-2507', note: 'untested' },
-            { id: 'Qwen/Qwen3-VL-235B-A22B-Instruct', note: 'untested' },
-            { id: 'Qwen/Qwen3-VL-8B-Instruct', note: 'untested' },
-            { id: 'MiniMax/MiniMax-M3', note: 'untested' }
+            { id: 'Qwen/Qwen3-235B-A22B-Thinking-2507', note: 'ok NS1442_ST1710' },
+            { id: 'deepseek-ai/DeepSeek-V4-Pro', note: 'ok' },
+            { id: 'Qwen/Qwen3-235B-A22B-Instruct-2507', note: 'ok NS1046_ST1739' },
+            { id: 'Qwen/Qwen3-VL-235B-A22B-Instruct', note: 'ok NS3150_ST3308' },
+            { id: 'Qwen/Qwen3-VL-8B-Instruct', note: 'ok NS1031_ST1213' }
+            // removed Qwen-Ambassador/Qwen3.7-Max (403 no access), MiniMax/MiniMax-{M2.7,M3} (400 no provider) — 2026-07-27 probe
         ]
     }
     // filter logfare glm entry (typo guard) — rebuild clean
