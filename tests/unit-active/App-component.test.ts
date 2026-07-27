@@ -59,8 +59,6 @@ function matchingLines(src: string, re: RegExp): string[] {
 
 describe('App.svelte — lazy component surface', () => {
     it('every createLazyComponent import resolves to an existing src/components/*.svelte', () => {
-        // Matches: createLazyComponent(\n  () => import('@components/Foo.svelte')
-        // and single-line variants.
         const lazyRe =
             /createLazyComponent\s*\(\s*\(\s*\)\s*=>\s*import\(\s*['"]@components\/([A-Za-z0-9_-]+)\.svelte['"]/g
         const names: string[] = []
@@ -68,8 +66,8 @@ describe('App.svelte — lazy component surface', () => {
         while ((m = lazyRe.exec(appSrc)) !== null) {
             names.push(m[1])
         }
-        // At least the 10 documented lazy handles must exist.
-        expect(names.length).toBeGreaterThanOrEqual(10)
+        // At least the documented lazy handles must exist (currently 6).
+        expect(names.length).toBeGreaterThanOrEqual(6)
 
         const missing = names.filter((n) => {
             const p = resolve(SRC_DIR, 'components', `${n}.svelte`)
@@ -78,13 +76,13 @@ describe('App.svelte — lazy component surface', () => {
         expect(missing, `missing component files: ${missing.join(', ')}`).toEqual([])
     })
 
-    it('declares exactly 11 lazy component handles (no silent additions/removals)', () => {
+    it('declares exactly the expected lazy component handles (no silent additions/removals)', () => {
         const lazyRe =
             /createLazyComponent\s*\(\s*\(\s*\)\s*=>\s*import\(\s*['"]@components\/([A-Za-z0-9_-]+)\.svelte['"]/g
         const names = new Set<string>()
         let m: RegExpExecArray | null
         while ((m = lazyRe.exec(appSrc)) !== null) names.add(m[1])
-        expect(names.size).toBe(10)
+        expect(names.size).toBe(6)
     })
 })
 
@@ -232,7 +230,7 @@ describe('App.svelte — composition root shape', () => {
     it.each(requiredChildren)('template contains <%s', (name) => {
         // Match <ComponentName or <Cmp (lazy) — for lazy ones we check the
         // lazy handle + {@const Cmp = nameLazy.current} pattern.
-        if (name === 'Canvas' || name === 'InfoPanel') {
+        if (name === 'Canvas') {
             // Lazy: verify the lazy handle exists and is used in an {@const}
             const handleRe = new RegExp(`${name.charAt(0).toLowerCase() + name.slice(1)}Lazy\\s*=`)
             expect(appSrc).toMatch(handleRe)

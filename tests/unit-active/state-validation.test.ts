@@ -81,8 +81,6 @@ const _appState = vi.hoisted(() => ({
     _semanticDiveTransitionDeadline: 0,
     lastRenderedTypeToken: 0,
     loadingOverlayStartedAt: 0,
-    autoRotateResumeDueAt: 0,
-    autoRotateSoftResumeStartedAt: 0,
     sceneRevealStartedAt: 0,
     routeCameraAnimationToken: 0,
     rippleStartTime: 0,

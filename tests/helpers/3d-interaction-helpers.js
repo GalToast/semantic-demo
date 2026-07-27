@@ -1,4 +1,4 @@
-export const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
+export const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8796').replace(/\/$/, '')
 
 import { SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch } from './mock-semantic-search.js'
 export { SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch }

@@ -20,9 +20,7 @@ const _compassState = vi.hoisted(() => ({
 
 const _cameraState = vi.hoisted(() => ({
     autoRotate: false,
-    autoRotateSuspended: false,
-    autoRotateResumeDueAt: 0,
-    autoRotateSoftResumeStartedAt: 0
+    autoRotateSuspended: false
 }))
 
 const _legendState = vi.hoisted(() => ({
@@ -109,18 +107,6 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
         },
         set autoRotateSuspended(v: boolean) {
             _cameraState.autoRotateSuspended = v
-        },
-        get autoRotateResumeDueAt() {
-            return _cameraState.autoRotateResumeDueAt
-        },
-        set autoRotateResumeDueAt(v: number) {
-            _cameraState.autoRotateResumeDueAt = v
-        },
-        get autoRotateSoftResumeStartedAt() {
-            return _cameraState.autoRotateSoftResumeStartedAt
-        },
-        set autoRotateSoftResumeStartedAt(v: number) {
-            _cameraState.autoRotateSoftResumeStartedAt = v
         },
         // Legend mock shape
         get legendOpen() {
@@ -417,8 +403,6 @@ describe('camera store — T4 writable + withCameraNotify migration', () => {
         resetCamera()
         _cameraState.autoRotate = false
         _cameraState.autoRotateSuspended = false
-        _cameraState.autoRotateResumeDueAt = 0
-        _cameraState.autoRotateSoftResumeStartedAt = 0
     })
 
     it('cameraStore is readable and has property accessors', () => {
@@ -511,8 +495,7 @@ describe('camera store — T4 writable + withCameraNotify migration', () => {
         resetCamera()
         expect(_cameraState.autoRotate).toBe(false)
         expect(_cameraState.autoRotateSuspended).toBe(false)
-        expect(_cameraState.autoRotateResumeDueAt).toBe(0)
-        expect(_cameraState.autoRotateSoftResumeStartedAt).toBe(0)
+
     })
 
     it('CAMERA_CONFIG exposes numeric constants', () => {

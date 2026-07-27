@@ -29,7 +29,7 @@ describe('DisposableRegistry supplemental coverage', () => {
         beforeEach(() => {
             registry = new DisposableRegistry({
                 label: 'supplemental',
-                warnAfterDispose: true,
+                warnAfterDispose: true
             })
         })
 
@@ -154,7 +154,7 @@ describe('DisposableRegistry supplemental coverage', () => {
             it('does NOT warn when warnAfterDispose is false on the registry', () => {
                 const silentReg = new DisposableRegistry({
                     label: 'silent',
-                    warnAfterDispose: false,
+                    warnAfterDispose: false
                 })
                 const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
                 silentReg.disposeAll()
@@ -178,7 +178,7 @@ describe('DisposableRegistry supplemental coverage', () => {
             vi.useFakeTimers()
             registry = new DisposableRegistry({
                 label: 'schedule',
-                warnAfterDispose: false,
+                warnAfterDispose: false
             })
         })
 

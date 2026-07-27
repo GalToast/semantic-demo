@@ -57,13 +57,16 @@ describe('search-cache pending-request dedup', () => {
         expect(getSearchCacheDiagnostics().pending).toBe(1)
     })
 
-    it('still returns the shared promise when one caller has no signal', () => {
+    it('isolates pending requests by AbortSignal identity (no-signal lookup does not share a signal-bound promise)', () => {
         const controller = new AbortController()
         const pending = Promise.resolve([])
 
         setPendingSearch('coffee', 0, 0, pending, controller.signal)
 
-        expect(getPendingSearch('coffee', 0, 0)).toBe(pending)
+        // A no-signal lookup must NOT reuse a promise tied to a specific
+        // AbortSignal, otherwise the caller would lose abort propagation.
+        expect(getPendingSearch('coffee', 0, 0)).toBeNull()
+        // Re-using the exact same signal is still allowed.
         expect(getPendingSearch('coffee', 0, 0, controller.signal)).toBe(pending)
         expect(getSearchCacheDiagnostics().pending).toBe(1)
     })

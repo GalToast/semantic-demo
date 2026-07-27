@@ -85,8 +85,7 @@ describe('A2-1 + A2-2: main#main-content landmark', () => {
         const mainStart = appSrc.indexOf('<main id="main-content"')
         const mainEnd = appSrc.indexOf('</main>', mainStart)
         const mainContent = appSrc.substring(mainStart, mainEnd)
-        // W46-B2b: see Canvas test above. Same rationale. The
-        // orchestrator-driven l.infoPanel.current form was retired in W47.
-        expect(mainContent.includes('infoPanelLazy.current')).toBe(true)
+        // InfoPanel is now statically imported and rendered directly.
+        expect(mainContent).toContain('<InfoPanel')
     })
 })

@@ -28,8 +28,6 @@ const mockState = vi.hoisted(() => ({
     // AppState-mirrored fields that camera-store reads/writes
     autoRotate: false,
     autoRotateSuspended: false,
-    autoRotateResumeDueAt: 0,
-    autoRotateSoftResumeStartedAt: 0,
     // Other fields referenced indirectly (read-only in camera-store)
     currentView: 'galaxy',
     focusedNode: null as number | null,
@@ -51,18 +49,6 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
         },
         set autoRotateSuspended(v) {
             mockState.autoRotateSuspended = v
-        },
-        get autoRotateResumeDueAt() {
-            return mockState.autoRotateResumeDueAt
-        },
-        set autoRotateResumeDueAt(v) {
-            mockState.autoRotateResumeDueAt = v
-        },
-        get autoRotateSoftResumeStartedAt() {
-            return mockState.autoRotateSoftResumeStartedAt
-        },
-        set autoRotateSoftResumeStartedAt(v) {
-            mockState.autoRotateSoftResumeStartedAt = v
         },
         currentView: mockState.currentView,
         focusedNode: mockState.focusedNode,
@@ -166,8 +152,6 @@ describe('camera.svelte.ts — Svelte 5 rune mock harness (Phase 6d)', () => {
         // Reset mock state between tests
         mockState.autoRotate = false
         mockState.autoRotateSuspended = false
-        mockState.autoRotateResumeDueAt = 0
-        mockState.autoRotateSoftResumeStartedAt = 0
         // Reset camera store to defaults
         resetCamera()
     })

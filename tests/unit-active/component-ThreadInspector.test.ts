@@ -20,75 +20,83 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
-const THREAD_INSPECTOR_PATH = resolve(__dirname, '../../src/components/ThreadInspector.svelte')
+const THREAD_INSPECTOR_PARENT_PATH = resolve(__dirname, '../../src/components/ThreadInspector.svelte')
+const THREAD_INSPECTOR_PANEL_PATH = resolve(__dirname, '../../src/lib/components/journey/ThreadInspectorPanel.svelte')
 
-function readSource(): string {
-    return readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
+function readParentSource(): string {
+    return readFileSync(THREAD_INSPECTOR_PARENT_PATH, 'utf-8')
+}
+
+function readPanelSource(): string {
+    return readFileSync(THREAD_INSPECTOR_PANEL_PATH, 'utf-8')
 }
 
 describe('ThreadInspector component', () => {
-    let source: string
+    let parentSource: string
+    let panelSource: string
 
     beforeAll(() => {
-        source = readSource()
+        parentSource = readParentSource()
+        panelSource = readPanelSource()
     })
 
     it('root .thread-inspector with id="thread-inspector" and role="complementary"', () => {
-        expect(source).toContain('class="thread-inspector"')
-        expect(source).toContain('id="thread-inspector"')
-        expect(source).toContain('role="complementary"')
+        expect(parentSource).toContain('class="thread-inspector"')
+        expect(parentSource).toContain('id="thread-inspector"')
+        expect(parentSource).toContain('role="complementary"')
     })
 
     it('root has aria-label="Connection inspector"', () => {
-        expect(source).toContain('aria-label="Connection inspector"')
+        expect(parentSource).toContain('aria-label="Connection inspector"')
     })
 
     it('clear action button (#btn-thread-clear) is labelled "Close" (UX-2 Clear→Close rename)', () => {
-        expect(source).toContain('id="btn-thread-clear"')
+        expect(panelSource).toContain('id="btn-thread-clear"')
         // The visible action label changed from "Clear" to "Close" (the button
         // keeps its id; only the user-facing text was renamed).
-        expect(source).toMatch(/>\s*Close\s*</)
-        expect(source).not.toMatch(/>\s*Clear\s*</)
+        expect(panelSource).toMatch(/>\s*Close\s*</)
+        expect(panelSource).not.toMatch(/>\s*Clear\s*</)
     })
 
     it('section .focus-thread-inspector with aria-labelledby', () => {
-        expect(source).toContain('class="focus-thread-inspector active"')
-        expect(source).toContain('id="focus-thread-inspector"')
-        expect(source).toContain('aria-labelledby="focus-thread-inspector-title"')
+        expect(panelSource).toContain('class="focus-thread-inspector"')
+        expect(panelSource).toContain('class:active={active}')
+        expect(panelSource).toContain('id="focus-thread-inspector"')
+        expect(panelSource).toContain('aria-labelledby="focus-thread-inspector-title"')
     })
 
     it('header .inspector-header with kicker text and close button', () => {
-        expect(source).toContain('class="inspector-header"')
-        expect(source).toContain('Connection Preview')
-        expect(source).toContain('aria-label="Close inspector"')
+        expect(panelSource).toContain('class="inspector-header"')
+        expect(panelSource).toContain('Connection Preview')
+        expect(panelSource).toContain('aria-label="Close inspector"')
         // PR-T1 changed the close button from &times; text to a CSS ::before pseudo-element
-        expect(source).toContain('.inspector-close::before')
+        expect(panelSource).toContain('.inspector-close::before')
     })
 
     it('h2 .focus-thread-inspector-title with id', () => {
-        expect(source).toContain('id="focus-thread-inspector-title"')
-        expect(source).toMatch(/class="[^"]*\bfocus-thread-inspector-title\b[^"]*"/)
+        expect(panelSource).toContain('id="focus-thread-inspector-title"')
+        expect(panelSource).toMatch(/class="[^"]*\bfocus-thread-inspector-title\b[^"]*"/)
     })
 
     it('copy paragraph .focus-thread-inspector-copy with id', () => {
-        expect(source).toContain('id="focus-thread-inspector-copy"')
-        expect(source).toMatch(/class="[^"]*\bfocus-thread-inspector-copy\b[^"]*"/)
-        expect(source).toContain('Previewing the connection')
+        expect(panelSource).toContain('id="focus-thread-inspector-copy"')
+        expect(panelSource).toMatch(/class="[^"]*\bfocus-thread-inspector-copy\b[^"]*"/)
+        expect(panelSource).toContain('Previewing the connection')
     })
 
     it('meta stats .focus-thread-inspector-meta for stops/overlapping paths/destinations', () => {
-        expect(source).toContain('id="focus-thread-inspector-meta"')
-        expect(source).toMatch(/class="[^"]*\bfocus-thread-inspector-meta\b[^"]*"/)
-        expect(source).toContain('stops')
-        expect(source).toContain('overlapping paths')
-        expect(source).toContain('destinations')
+        expect(panelSource).toContain('id="focus-thread-inspector-meta"')
+        expect(panelSource).toMatch(/class="[^"]*\bfocus-thread-inspector-meta\b[^"]*"/)
+        expect(panelSource).toContain('stops')
+        expect(panelSource).toContain('overlapping paths')
+        expect(panelSource).toContain('destinations')
     })
 
     it('action buttons: #btn-thread-pin, #btn-thread-follow, #btn-thread-clear', () => {
-        expect(source).toContain('id="btn-thread-pin"')
-        expect(source).toContain('class="thread-action primary"')
-        expect(source).toContain('id="btn-thread-follow"')
-        expect(source).toContain('id="btn-thread-clear"')
-        expect(source).toContain('aria-label="Connection actions"')
+        expect(panelSource).toContain('id="btn-thread-pin"')
+        expect(panelSource).toContain('class="thread-action primary"')
+        expect(panelSource).toContain('id="btn-thread-follow"')
+        expect(panelSource).toContain('id="btn-thread-clear"')
+        expect(panelSource).toContain('aria-label="Connection actions"')
     })
 })

@@ -33,7 +33,7 @@ describe('sceneNeedsContinuousFrame', () => {
     // Null-state baseline
     // -----------------------------------------------------------------------
     it('returns true when state is null', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), null)).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), null, null)).toBe(true)
     })
 
     // -----------------------------------------------------------------------
@@ -59,6 +59,10 @@ describe('sceneNeedsContinuousFrame', () => {
         ) => boolean
             ? S
             : never
+    }
+
+    function mockRestore(dueAt: number | null = null) {
+        return dueAt
     }
 
     // -----------------------------------------------------------------------
@@ -130,19 +134,23 @@ describe('sceneNeedsContinuousFrame', () => {
     })
 
     it('returns true when autoRotateResumeDueAt is in the future', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotateResumeDueAt: Date.now() + 60_000 }))).toBe(
-            true
-        )
+        expect(
+            sceneNeedsContinuousFrame(Date.now(), mockState({}), Date.now() + 60_000)
+        ).toBe(true)
     })
 
     it('returns false when autoRotateResumeDueAt is in the past', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotateResumeDueAt: Date.now() - 60_000 }))).toBe(
-            false
-        )
+        expect(
+            sceneNeedsContinuousFrame(Date.now(), mockState({}), Date.now() - 60_000)
+        ).toBe(false)
     })
 
     it('returns false when autoRotateResumeDueAt is not a number', () => {
-        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotateResumeDueAt: 'soon' }))).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({}), NaN)).toBe(false)
+    })
+
+    it('returns false when autoRotateResumeDueAt is null (no dueAt set)', () => {
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({}), null)).toBe(false)
     })
 
     it('returns true when searchState.searchGlowActive is true', () => {
@@ -214,11 +222,11 @@ describe('sceneNeedsContinuousFrame', () => {
                         autoRotate: false,
                         autoRotateSuspended: false
                     },
-                    autoRotateResumeDueAt: undefined,
                     searchState: { searchGlowActive: false },
                     hoverHighlightIndex: NaN,
                     focusedNode: null
-                })
+                }),
+                null
             )
         ).toBe(false)
     })

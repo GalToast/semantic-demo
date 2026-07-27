@@ -49,6 +49,7 @@ const STAGE_RENDERER = 'src/lib/focus/stage-renderer.ts'
 const JOURNEY_STAGE_RENDERER = 'src/lib/journey/focus-stage-renderer.ts'
 const HTML_SHELL = 'vector-explorer-polished.html'
 const SELECTED_BUSINESS_DETAILS = 'src/components/SelectedBusinessDetails.svelte'
+const SELECTED_MATCH_NARRATIVE = 'src/lib/components/focus/SelectedMatchNarrative.svelte'
 
 // ── InfoPanel surface IDs (must ALL be owned by InfoPanel.svelte) ─────────────
 
@@ -65,8 +66,6 @@ const SELECTED_BUSINESS_DETAILS_CHILD_IDS = [
     'selected-meta-strip',
     'selected-badges',
     'selected-facts',
-    'selected-match-panel',
-    'selected-match-copy',
     'selected-action-row',
     'btn-selected-map',
     'selected-theme',
@@ -79,12 +78,13 @@ const SELECTED_BUSINESS_DETAILS_CHILD_IDS = [
     'selected-trivia'
 ]
 
+// Child IDs extracted into SelectedMatchNarrative.svelte during the W54 big-components
+// cleanup (commit 3cccf53b). They must still be Svelte-owned, but by the new component.
+const SELECTED_MATCH_NARRATIVE_IDS = ['selected-match-panel', 'selected-match-copy']
+
 // ── Classes (not IDs) that InfoPanel.svelte must own ──────────────────────────
 
-const INFO_PANEL_STRUCTURAL_CLASSES = [
-    'selected-empty-headline',
-    'selected-empty-sub'
-]
+const INFO_PANEL_STRUCTURAL_CLASSES = ['selected-empty-headline', 'selected-empty-sub']
 
 // Child classes owned by SelectedBusinessDetails.svelte (extracted from InfoPanel during the
 // chrome migration). Asserted against that component, not InfoPanel.svelte.
@@ -143,6 +143,13 @@ function testInfoPanelOwnsAllSurfaceIds() {
 
     for (const id of SELECTED_BUSINESS_DETAILS_CHILD_IDS) {
         assert(sbdSrc.includes(`id="{idPrefix}${id}"`), `SelectedBusinessDetails.svelte must own prefixed #${id}`)
+    }
+
+    // Match-narrative surfaces were extracted into SelectedMatchNarrative.svelte during
+    // the W54 big-components cleanup; assert ownership against the new component.
+    const smnSrc = read(SELECTED_MATCH_NARRATIVE)
+    for (const id of SELECTED_MATCH_NARRATIVE_IDS) {
+        assert(smnSrc.includes(`id="{idPrefix}${id}"`), `SelectedMatchNarrative.svelte must own prefixed #${id}`)
     }
 
     // Verify structural class-based surfaces owned by InfoPanel.svelte
@@ -292,7 +299,9 @@ function testStageRendererRespectsSvelteOwnership() {
 
 function testHtmlShellNoStaleSlots() {
     if (!exists(HTML_SHELL)) {
-        console.log('  SKIP - legacy HTML shell (vector-explorer-polished.html) removed during Svelte migration; nothing to verify')
+        console.log(
+            '  SKIP - legacy HTML shell (vector-explorer-polished.html) removed during Svelte migration; nothing to verify'
+        )
         return
     }
     const html = read(HTML_SHELL)

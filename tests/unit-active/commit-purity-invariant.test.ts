@@ -96,6 +96,11 @@ const EXEMPTED_SHAS = new Set<string>([
     // with the parity-attrs-derivation test retirement. Both files are parity-hygiene
     // related. Landed on master; grandfathered to avoid rewriting shared history.
     'af18236b0e3ac99ff193c365af73dc42bff5fc15',
+    // 9259810 — docs(sprint7): W5b OpenRouter reasoning fix verified LIVE report.
+    // Bundled camera-controls-restore + three-engine code changes with a docs
+    // prefix. Landed on master from a parallel lane; grandfathered to avoid
+    // rewriting shared history.
+    '9259810c6f7ec75065e74a34cf1f9c089c0a268b',
     // b185ad7 — chore(docs+css): ... — compound prefix, legitimately
     // touches both docs and css files. The compound scope `docs+css`
     // accurately describes the contents.
@@ -283,6 +288,12 @@ const EXEMPTED_SHAS = new Set<string>([
     // docs/css-ownership.md ownership fix + a deprecated-banner header on
     // css/demo_ui.css. All authored as one shipment unit. Grandfathered.
     'ab9bea718d04f0186cda18b9a56838f6b787eb60',
+    // e1d5aba — docs(tools): add subagent model health + benchmark artifacts
+    // Non-doc files (scripts/benchmark-all-models.mjs, scripts/benchmark-models.mjs,
+    // scripts/benchmark-subagent-models.mjs, scripts/model-health-check.mjs) are
+    // benchmark/model-health scripts co-located with the docs artifacts they
+    // document. Splitting historical commits would require a rebase.
+    'e1d5aba2c4030d2794a80feaad98bdf6b3b15481',
     // f82d1c14 — test(playwright): expose window.THREE and trim openApp waits.
     // Bundled src/lib/orchestration/test-globals.ts (installed the
     // window.THREE = THREE affordance for Playwright page.evaluate blocks)
@@ -290,7 +301,13 @@ const EXEMPTED_SHAS = new Set<string>([
     // are Playwright infra from the same coverage push; the test-globals.ts
     // insert is test-only affordance consumed by specs that need window.THREE
     // access. Grandfathered.
-    'f82d1c14c7988f3e8711936828f4bb8ac34a2cda'
+    'f82d1c14c7988f3e8711936828f4bb8ac34a2cda',
+    // 93721ce — docs(journey): refresh KH-HELPBTN-SECOND-CLICK-RACE narrative to Wave-3
+    // landed. Bundled tests/keyboard-hint-panel-journey.spec.js under a docs prefix.
+    // The test file is the accompanying regression spec for the documented race;
+    // splitting would orphan the doc from the test coverage that validates it.
+    // Grandfathered.
+    '93721ce2877e8b7d80bc0fe22126d199a6f84918'
 ])
 
 // Conventional-commit prefix regex. Captures:

@@ -302,11 +302,17 @@ describe('state-app-class — validateStateProperty (enum paths)', () => {
         expect(validateStateProperty('rippleStartTime', Infinity)).toContain('finite')
     })
 
+    it('points requires array', () => {
+        expect(validateStateProperty('points', [])).toBeNull()
+        expect(validateStateProperty('points', { x: 1 })).toContain('array')
+        expect(validateStateProperty('points', null)).toContain('array')
+    })
+
     // passthrough paths — from STATE_VALIDATORS passthrough list
     it('passthrough paths accept any value', () => {
-        expect(validateStateProperty('points', [])).toBeNull()
-        expect(validateStateProperty('points', { x: 1 })).toBeNull()
-        expect(validateStateProperty('points', null)).toBeNull()
+        expect(validateStateProperty('map', [])).toBeNull()
+        expect(validateStateProperty('map', { x: 1 })).toBeNull()
+        expect(validateStateProperty('map', null)).toBeNull()
         expect(validateStateProperty('scene', 'anything')).toBeNull()
         expect(validateStateProperty('camera', 42)).toBeNull()
         expect(validateStateProperty('renderer', null)).toBeNull()

@@ -69,7 +69,7 @@ describe('W7ks1-F1: isFormField split predicate — Ctrl+1-6/Escape get narrow f
         // Match the Ctrl+1-6 block — indexOf anchored at `((e.ctrlKey || e.metaKey) && /^[1-6]$/`.
         // The block-of-interest (predicate-guard + dispatch) is the first 500 chars
         // from the block-opener.
-        const ctrlOpenIdx = src.indexOf("((e.ctrlKey || e.metaKey) && /^[1-6]$/")
+        const ctrlOpenIdx = src.indexOf('((e.ctrlKey || e.metaKey) && /^[1-6]$/')
         expect(ctrlOpenIdx).toBeGreaterThan(-1)
 
         const block = src.slice(ctrlOpenIdx, ctrlOpenIdx + 500)
@@ -92,7 +92,7 @@ describe('W7ks1-F1: isFormField split predicate — Ctrl+1-6/Escape get narrow f
         expect(block).not.toMatch(/if\s*\(\s*isFormField\s*\)\s*return/)
     })
 
-    it("single-char `/` shortcut KEEPs the broad `isFormField` (preserves 4c5f84a4 intent)", () => {
+    it('single-char `/` shortcut KEEPs the broad `isFormField` (preserves 4c5f84a4 intent)', () => {
         const slashIdx = src.indexOf("if (e.key === '/' && !e.metaKey")
         expect(slashIdx).toBeGreaterThan(-1)
         const block = src.slice(slashIdx, slashIdx + 200)
@@ -102,7 +102,7 @@ describe('W7ks1-F1: isFormField split predicate — Ctrl+1-6/Escape get narrow f
         expect(block).not.toMatch(/&& !isTextInputField\)/)
     })
 
-    it("single-char `?` shortcut KEEPs the broad `isFormField` (preserves 4c5f84a4 intent)", () => {
+    it('single-char `?` shortcut KEEPs the broad `isFormField` (preserves 4c5f84a4 intent)', () => {
         // The `?` handler combines `?` AND `Shift+/` cases in one block.
         // Anchored at: `if ((e.key === '?' || (e.key === '/' && e.shiftKey))`
         const qIdx = src.indexOf("if ((e.key === '?' || (e.key === '/' && e.shiftKey))")
@@ -113,7 +113,7 @@ describe('W7ks1-F1: isFormField split predicate — Ctrl+1-6/Escape get narrow f
         expect(block).not.toMatch(/&& !isTextInputField\)/)
     })
 
-    it("single-char `w` + `m` shortcuts KEEP the broad `isFormField` (preserves 4c5f84a4 intent)", () => {
+    it('single-char `w` + `m` shortcuts KEEP the broad `isFormField` (preserves 4c5f84a4 intent)', () => {
         const wIdx = src.indexOf("if (e.key === 'w' && !e.metaKey")
         expect(wIdx).toBeGreaterThan(-1)
         const wBlock = src.slice(wIdx, wIdx + 200)

@@ -151,6 +151,7 @@ globalThis.$derived = Object.assign((value) => value, {
 // Imports
 // ---------------------------------------------------------------------------
 const { state, withStateMutation } = await import('./helpers/canonical-state.mjs')
+const { cameraControlsRestore } = await import('../src/lib/engine/camera-controls-restore.svelte.ts')
 const {
     setAutoRotateSuspended,
     scheduleAutoRotateResume,
@@ -174,9 +175,12 @@ function resetState() {
     withStateMutation(() => {
         state.autoRotate = true
         state.autoRotateSuspended = false
-        state.autoRotateSoftResumeStartedAt = 0
-        state.autoRotateResumeTimer = null
-        state.autoRotateResumeDueAt = 0
+    })
+    //Resume-timing fields live on cameraControlsRestore, not appState.
+    cameraControlsRestore.autoRotateSoftResumeStartedAt = 0
+    cameraControlsRestore.autoRotateResumeTimer = null
+    cameraControlsRestore.autoRotateResumeDueAt = 0
+    withStateMutation(() => {
         state.focusCameraAssistActive = false
         state.focusCameraAssistUntil = 0
         state.focusCameraAssistReason = 'idle'
@@ -292,7 +296,7 @@ withStateMutation(() => {
 // Suspend sets the flag and clears soft-resume timestamp
 setAutoRotateSuspended(true)
 assert(state.autoRotateSuspended === true, 'setAutoRotateSuspended(true) sets flag')
-assert(state.autoRotateSoftResumeStartedAt === 0, 'suspend clears soft-resume timestamp')
+assert(cameraControlsRestore.autoRotateSoftResumeStartedAt === 0, 'suspend clears soft-resume timestamp')
 
 // Unsuspend sets soft-resume timestamp
 globalThis._now = 100
@@ -300,7 +304,7 @@ const before = globalThis._now
 setAutoRotateSuspended(false)
 assert(state.autoRotateSuspended === false, 'setAutoRotateSuspended(false) clears flag')
 assert(
-    state.autoRotateSoftResumeStartedAt >= before && state.autoRotateSoftResumeStartedAt <= before + 5,
+    cameraControlsRestore.autoRotateSoftResumeStartedAt >= before && cameraControlsRestore.autoRotateSoftResumeStartedAt <= before + 5,
     'unsuspend stamps soft-resume timestamp (performance.now)'
 )
 
@@ -388,7 +392,7 @@ withStateMutation(() => {
 scheduleAutoRotateResume(2000)
 assert(timers.size === 1, 'scheduleAutoRotateResume: timer set when all gates pass')
 const resumeTimerId = Array.from(timers.keys())[0]
-assert(state.autoRotateResumeDueAt > globalThis._now, 'scheduleAutoRotateResume: dueAt is in the future')
+assert(cameraControlsRestore.autoRotateResumeDueAt > globalThis._now, 'scheduleAutoRotateResume: dueAt is in the future')
 
 // timer callback rechecks overview/focus-pocket/trail-depth gates before unsuspending
 withStateMutation(() => {
@@ -400,7 +404,7 @@ assert(
     state.autoRotateSuspended === true,
     'scheduleAutoRotateResume: callback keeps suspension while focus pocket active'
 )
-assert(state.autoRotateResumeTimer === null, 'scheduleAutoRotateResume: callback clears consumed timer id')
+assert(cameraControlsRestore.autoRotateResumeTimer === null, 'scheduleAutoRotateResume: callback clears consumed timer id')
 
 // clearAutoRotateResumeTimer: clears and nulls
 resetState()
@@ -408,8 +412,8 @@ ensureIdleAutoRotateEnabled()
 scheduleAutoRotateResume(500)
 assert(timers.size === 1, 'clearAutoRotateResumeTimer: precondition schedules timer')
 clearAutoRotateResumeTimer()
-assert(state.autoRotateResumeTimer === null, 'clearAutoRotateResumeTimer: timer nulled')
-assert(state.autoRotateResumeDueAt === 0, 'clearAutoRotateResumeTimer: dueAt zeroed')
+assert(cameraControlsRestore.autoRotateResumeTimer === null, 'clearAutoRotateResumeTimer: timer nulled')
+assert(cameraControlsRestore.autoRotateResumeDueAt === 0, 'clearAutoRotateResumeTimer: dueAt zeroed')
 
 // ---------------------------------------------------------------------------
 // TEST: focus transition body dataset/phase lifecycle
@@ -560,7 +564,7 @@ ensureIdleAutoRotateEnabled()
 globalThis._now = 250
 noteSceneInteraction(1234)
 assert(state.autoRotateSuspended === true, 'noteSceneInteraction: suspends auto-rotate')
-assert(state.autoRotateResumeDueAt === 1484, 'noteSceneInteraction: sets resume due time from delay')
+assert(cameraControlsRestore.autoRotateResumeDueAt === 1484, 'noteSceneInteraction: sets resume due time from delay')
 assert(timers.size === 1, 'noteSceneInteraction: schedules resume timer')
 const scheduledResume = timers.get(Array.from(timers.keys())[0])
 assert(scheduledResume?.delay === 1234, 'noteSceneInteraction: schedules timer with requested delay')

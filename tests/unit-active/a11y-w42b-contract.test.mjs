@@ -12,7 +12,8 @@ import { join, resolve } from 'node:path'
 
 const ROOT = resolve(import.meta.dirname, '../..')
 const CANVAS = join(ROOT, 'src/components/Canvas.svelte')
-const THREAD_INSPECTOR = join(ROOT, 'src/components/ThreadInspector.svelte')
+const THREAD_INSPECTOR_PARENT = join(ROOT, 'src/components/ThreadInspector.svelte')
+const THREAD_INSPECTOR_PANEL = join(ROOT, 'src/lib/components/journey/ThreadInspectorPanel.svelte')
 const SEARCH_RESULTS = join(ROOT, 'src/components/SearchResults.svelte')
 const SEARCH_RESULT_LIST = join(ROOT, 'src/lib/components/search/SearchResultList.svelte')
 const SEARCH_RESULT_ITEM = join(ROOT, 'src/components/SearchResultItem.svelte')
@@ -58,7 +59,7 @@ describe('A11y W42-B: Thread inspector screen reader labels', () => {
     let src
 
     beforeAll(() => {
-        src = read(THREAD_INSPECTOR)
+        src = read(THREAD_INSPECTOR_PARENT) + read(THREAD_INSPECTOR_PANEL)
     })
 
     it('inspector wrapper has aria-live="polite" for dynamic updates', () => {
@@ -70,9 +71,10 @@ describe('A11y W42-B: Thread inspector screen reader labels', () => {
     })
 
     it('meta stats div has role="list" with descriptive aria-label', () => {
-        expect(src).toMatch(
-            /id="focus-thread-inspector-meta"[\s\S]*?role="list"[\s\S]*?aria-label="Connection statistics:/
-        )
+        expect(src).toContain('id="focus-thread-inspector-meta"')
+        expect(src).toMatch(/id="focus-thread-inspector-meta"[\s\S]*?role="list"[\s\S]*?aria-label=\{metaAriaLabel\}/)
+        // The literal descriptive phrase is generated in the metaAriaLabel derived value.
+        expect(src).toContain('Connection statistics:')
     })
 
     it('meta stat items have role="listitem"', () => {

@@ -37,7 +37,6 @@ const DEMO_CHOREOGRAPHY_PATH = resolve(import.meta.dirname, '../../src/component
 const demoSrc = readFileSync(DEMO_CHOREOGRAPHY_PATH, 'utf-8')
 
 describe('W7 Track A — F2 ack dispatch contract (DemoChoreography.svelte replayListener producer side)', () => {
-
     it('replayListener body contains a CustomEvent dispatch for demo-replay-acknowledged', () => {
         // Producer side: DemoChoreography dispatches the ack so the keyboard-help
         // consumer's 500ms timeout-fallback does NOT fire on a clean replay.

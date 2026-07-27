@@ -85,8 +85,8 @@ try {
     'triggers.ts must import returnToOverview and resetExplorationFocus from orchestration lifecycle'
   );
   assert(
-    /export\s+function\s+handleGlobalKeydown\s*\(/.test(triggersSrc),
-    'triggers.ts must export handleGlobalKeydown as the app-level key handler'
+    /\bfunction\s+handleGlobalKeydown\s*\(/.test(triggersSrc),
+    'triggers.ts must define handleGlobalKeydown as the app-level key handler (module-local, no external callers)'
   );
   assert(
     /key\s*===\s*['"]Escape['"][\s\S]{0,420}returnToOverview\s*\(/.test(triggersSrc),

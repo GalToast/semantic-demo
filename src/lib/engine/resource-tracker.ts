@@ -1,3 +1,5 @@
+import { debugWarn } from '@lib/utils/debug'
+
 import type { Material, Scene, Texture } from 'three'
 
 interface Disposable {
@@ -78,13 +80,25 @@ export class ResourceTracker {
         this.resources.delete(resource)
     }
 
+    /** Number of currently tracked resources. */
+    get size(): number {
+        return this.resources.size
+    }
+
     dispose(): void {
-        for (const resource of this.resources) {
+        // Iterate over a snapshot so a dispose callback that re-enters or
+        // throws cannot corrupt the set or cause a double-dispose.
+        const toDispose = Array.from(this.resources)
+        this.resources.clear()
+        for (const resource of toDispose) {
             if (resource && typeof resource.dispose === 'function') {
-                resource.dispose()
+                try {
+                    resource.dispose()
+                } catch (err) {
+                    debugWarn('[ResourceTracker] dispose callback threw:', err)
+                }
             }
         }
-        this.resources.clear()
     }
 
     /** Dispose a single object and all of its GPU resources without keeping a tracker instance. */

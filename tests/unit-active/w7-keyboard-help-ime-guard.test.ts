@@ -70,8 +70,13 @@ describe('W7: replayBtn click handler preserves the M15 invariant (F1 fix)', () 
         expect(catchMatch![0]).toMatch(/M15|M15 invariant/i)
         // W47 production-hygiene invariant: the call must be `debugWarn`, NOT raw `console.warn`
         // (no un-gated console.* in src/ — see no-ungated-console-calls.test.ts).
-        expect(catchMatch![0], 'catch-block log must go through debugWarn (W47 production-hygiene contract)').toContain('debugWarn(')
-        expect(catchMatch![0], 'catch-block must NOT have a raw console.warn — W47 contract forbids un-gated console.* in src/').not.toContain('console.warn')
+        expect(catchMatch![0], 'catch-block log must go through debugWarn (W47 production-hygiene contract)').toContain(
+            'debugWarn('
+        )
+        expect(
+            catchMatch![0],
+            'catch-block must NOT have a raw console.warn — W47 contract forbids un-gated console.* in src/'
+        ).not.toContain('console.warn')
     })
 })
 

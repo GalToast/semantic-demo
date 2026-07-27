@@ -211,6 +211,22 @@ async function buildSemanticMyceliumEdges(): Promise<MyceliumEdgeSets | null> {
 
 let _cachedBezierViewVector: Vector3 | null = null
 
+/**
+ * Disposer for the OrbitControls change listener that refreshes
+ * _cachedBezierViewVector on camera movement. Kept so disposeMycelium
+ * can deregister the listener portably.
+ */
+let _disposeBezierViewRefresh: (() => void) | null = null
+
+/** Refresh _cachedBezierViewVector from the current camera position. */
+function refreshCachedBezierViewVector(): void {
+    _cachedBezierViewVector = webglContext.camera
+        ? new Vector3()
+              .subVectors(webglContext.camera.position, new Vector3(0.5, 0.5, 0.5))
+              .normalize()
+        : new Vector3(0.28, 0.2, 1).normalize()
+}
+
 function getBezierControlPoint(
     start: { x: number; y: number; z: number },
     end: { x: number; y: number; z: number },
@@ -457,6 +473,13 @@ export function shouldRenderBridgeThreads() {
 }
 
 export function disposeMycelium() {
+    // Deregister the camera-move listener so we don't leak OrbitControls refs.
+    if (_disposeBezierViewRefresh) {
+        _disposeBezierViewRefresh()
+        _disposeBezierViewRefresh = null
+    }
+    _cachedBezierViewVector = null
+
     if (webglContext.myceliumGroup) {
         if (webglContext.pointsMesh) webglContext.pointsMesh.remove(webglContext.myceliumGroup)
         disposeObject3D(webglContext.myceliumGroup)
@@ -474,9 +497,19 @@ export async function createMycelium() {
     disposeMycelium()
 
     state.myceliumDirty = true
-    _cachedBezierViewVector = webglContext.camera
-        ? new Vector3().subVectors(webglContext.camera.position, new Vector3(0.5, 0.5, 0.5)).normalize()
-        : new Vector3(0.28, 0.2, 1).normalize()
+    refreshCachedBezierViewVector()
+
+    // Subscribe to OrbitControls change events so the bezier view vector
+    // stays in sync with the current camera angle after orbit.
+    if (webglContext.controls && !_disposeBezierViewRefresh) {
+        const handler = (): void => {
+            refreshCachedBezierViewVector()
+        }
+        webglContext.controls.addEventListener('change', handler)
+        _disposeBezierViewRefresh = () => {
+            webglContext.controls?.removeEventListener('change', handler)
+        }
+    }
 
     const semanticEdges = await buildSemanticMyceliumEdges()
     let edgeSets: MyceliumEdgeSets | undefined
