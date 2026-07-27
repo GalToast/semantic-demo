@@ -1422,5 +1422,6 @@ Same task as Round 5, but targeting the free-fallback IDs in the lane inventory.
 | --------------------------- | --------------------------------- | ------------------- | --------------------------------------------------------------------------------------------- | ----- |
 | `deepseek-v4-flash-free`    | `router-opencode-zen/deepseek-v4-flash-free` | ✅ completed        | `tmp/subagent-benchmark/reports/openrouter-deepseek-v4-flash-free-threadinspector-dom-audit.md` | Clean read+write in ~90 s; report accurate. First **newly viable** free route of the wave. |
 | `laguna-s-2.1-free`         | `router-opencode-zen/laguna-s-2.1-free`      | ❌ rate-limit / no output | —                                                                                     | OpenCode Zen router returned `429` "no keys currently off cooldown" repeatedly; canceled at ~90 s. Not subagent-viable right now. |
+| `mimo-v2.5-free`            | `router-opencode-zen/mimo-v2.5-free`         | ✅ completed        | `tmp/subagent-benchmark/reports/openrouter-mimo-v2.5-free-threadinspector-dom-audit.md`        | Clean read+write in ~130 s; report accurate. **Second newly viable** free route of the wave. |
 
-**New viable route added:** `deepseek-v4-flash-free` (resolved to `router-opencode-zen/deepseek-v4-flash-free`). HTTP-smoke ✅, subagent dispatch ✅, simple tool-use ✅.
+**New viable routes added:** `deepseek-v4-flash-free` and `mimo-v2.5-free` (both resolved via `router-opencode-zen`).
