@@ -53,7 +53,7 @@ See `docs/session-coordination.md` — session lock + parallel-session + switchb
 
 - Primary: `minimax-m3` (MiniMax-M3 — main lane; verified vision-capable 2026-07-15, routes: kilo/minimax, logfare, opencode-zen, minimax-direct). Previous `kilo/openrouter/owl-alpha` is dead (404 on both the kilo gateway and OpenRouter; absent from `/v1/models`) — do not re-add.
 - Registered alt: `agnes-2.0-flash` (bare ref for subagent — no provider prefix)
-- Free fallbacks: `laguna-s-2.1-free` ❌ (OpenCode Zen 429 / cold stall 2026-07-27), `laguna-xs-2.1-free`, `mimo-v2.5-free` ✅ **subagent-viable 2026-07-27** (resolves via `router-opencode-zen`), `deepseek-v4-flash-free` ✅ **subagent-viable 2026-07-27** (resolves via `router-opencode-zen`), `nemotron-3-ultra-free`, `north-mini-code-free` ❌ not subagent-viable 2026-07-27 (OpenCode Zen 429 / cold stall), `hy3-free` / `tencent/hy3`, `qwen3.6-plus`, `qwen3.6-flash`, `qwen3.6-27b`, `qwen3.6-35b-a3b`
+- Free fallbacks: `laguna-s-2.1-free` ❌ (OpenCode Zen 429 / cold stall 2026-07-27), `laguna-xs-2.1-free`, `mimo-v2.5-free` ✅ **subagent-viable 2026-07-27** (resolves via `router-opencode-zen`), `deepseek-v4-flash-free` ✅ **subagent-viable 2026-07-27** (resolves via `router-opencode-zen`), `nemotron-3-ultra-free`, `north-mini-code-free` ❌ not subagent-viable 2026-07-27 (OpenCode Zen 429 / cold stall), `hy3-free` / `tencent/hy3` ❌ not subagent-viable 2026-07-27 (OpenCode Zen 429 / cold stall), `qwen3.6-plus`, `qwen3.6-flash` ❌ `qwen/qwen3.6-flash` is not in the unified v4 catalog via `zyditv4` (2026-07-27), `qwen3.6-27b`, `qwen3.6-35b-a3b`
 
 ## Key Product Invariants
 

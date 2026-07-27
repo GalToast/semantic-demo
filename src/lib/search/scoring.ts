@@ -67,10 +67,7 @@ interface MockSearchDataset {
 }
 
 function getMockPointSearchFields(point: Point, dataset: MockSearchDataset): MockPointSearchFields {
-    const enrichment =
-        point.lead_id != null
-            ? (dataset.leadEnrichment?.[String(point.lead_id)] ?? null)
-            : null
+    const enrichment = point.lead_id != null ? (dataset.leadEnrichment?.[String(point.lead_id)] ?? null) : null
     return {
         name: normalizeMockSearchText(point.name),
         what: normalizeMockSearchText(point.what),
@@ -181,10 +178,7 @@ export function buildDatasetBackedMockResults(
         .sort((a, b) => b.score - a.score || a.index - b.index)
         .slice(0, 5)
         .map(({ point, score }) => {
-            const enrichment =
-                point.lead_id != null
-                    ? (dataset.leadEnrichment?.[String(point.lead_id)] ?? null)
-                    : null
+            const enrichment = point.lead_id != null ? (dataset.leadEnrichment?.[String(point.lead_id)] ?? null) : null
             return {
                 lead_id: String(point.lead_id),
                 name: point.name ?? '',

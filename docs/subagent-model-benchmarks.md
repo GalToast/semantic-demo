@@ -1418,10 +1418,21 @@ Simple read-only task: read `src/components/ThreadInspector.svelte`, list DOM id
 
 Same task as Round 5, but targeting the free-fallback IDs in the lane inventory. Used `live_steer: true`, `timeout_seconds: 300`.
 
-| target route                | resolved route                    | result              | report file                                                                                   | notes |
-| --------------------------- | --------------------------------- | ------------------- | --------------------------------------------------------------------------------------------- | ----- |
-| `deepseek-v4-flash-free`    | `router-opencode-zen/deepseek-v4-flash-free` | ✅ completed        | `tmp/subagent-benchmark/reports/openrouter-deepseek-v4-flash-free-threadinspector-dom-audit.md` | Clean read+write in ~90 s; report accurate. First **newly viable** free route of the wave. |
-| `laguna-s-2.1-free`         | `router-opencode-zen/laguna-s-2.1-free`      | ❌ rate-limit / no output | —                                                                                     | OpenCode Zen router returned `429` "no keys currently off cooldown" repeatedly; canceled at ~90 s. Not subagent-viable right now. |
-| `mimo-v2.5-free`            | `router-opencode-zen/mimo-v2.5-free`         | ✅ completed        | `tmp/subagent-benchmark/reports/openrouter-mimo-v2.5-free-threadinspector-dom-audit.md`        | Clean read+write in ~130 s; report accurate. **Second newly viable** free route of the wave. |
+| target route             | resolved route                               | result                    | report file                                                                                     | notes                                                                                                                             |
+| ------------------------ | -------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `deepseek-v4-flash-free` | `router-opencode-zen/deepseek-v4-flash-free` | ✅ completed              | `tmp/subagent-benchmark/reports/openrouter-deepseek-v4-flash-free-threadinspector-dom-audit.md` | Clean read+write in ~90 s; report accurate. First **newly viable** free route of the wave.                                        |
+| `laguna-s-2.1-free`      | `router-opencode-zen/laguna-s-2.1-free`      | ❌ rate-limit / no output | —                                                                                               | OpenCode Zen router returned `429` "no keys currently off cooldown" repeatedly; canceled at ~90 s. Not subagent-viable right now. |
+| `mimo-v2.5-free`         | `router-opencode-zen/mimo-v2.5-free`         | ✅ completed              | `tmp/subagent-benchmark/reports/openrouter-mimo-v2.5-free-threadinspector-dom-audit.md`         | Clean read+write in ~130 s; report accurate. **Second newly viable** free route of the wave.                                      |
 
 **New viable routes added:** `deepseek-v4-flash-free` and `mimo-v2.5-free` (both resolved via `router-opencode-zen`).
+
+## Round 7 — 2026-07-27 ~04:20 UTC (free-fallback mini DOM-audit bench, continued)
+
+Same task as Round 6. Used `live_steer: true`, `timeout_seconds: 300`.
+
+| target route     | resolved route                    | result              | report file | notes                                                                                                             |
+| ---------------- | --------------------------------- | ------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| `qwen/qwen3.6-flash` | `zyditv4/qwen/qwen3.6-flash`  | ❌ model-not-found  | —           | Direct dispatch: `404` "Model 'qwen/qwen3.6-flash' is not available on the unified v4 catalog." Not subagent-viable via this id. |
+| `hy3-free`       | `router-opencode-zen/hy3-free`    | ❌ 429 rate-limit   | —           | OpenCode Zen router returned `429` "no keys currently off cooldown" repeatedly. Not subagent-viable right now.      |
+
+**No new viable routes added in this round.** The `qwen3.6-flash` ID needs a different catalog prefix; `hy3-free` is blocked by the same OpenCode Zen cooldown rate-limit as `laguna-s-2.1-free`.
