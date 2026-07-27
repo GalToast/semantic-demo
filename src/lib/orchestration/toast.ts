@@ -51,3 +51,14 @@ if (typeof window !== 'undefined') {
         showToastSpec
     }
 }
+
+/**
+ * L1 (bugsweep): tear down the __toastHooks__ window global so HMR re-evaluation
+ * and test isolation don't stack duplicate hook references. Mirrors the cleanup
+ * pattern in window-actions.ts and test-globals.ts.
+ */
+export function teardownToastHooks(): void {
+    if (typeof window !== 'undefined') {
+        delete (window as { __toastHooks__?: unknown }).__toastHooks__
+    }
+}

@@ -312,7 +312,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         }
     } finally {
         const current = get(navStore)
-        if (current.urlStateRestoreToken === restoreToken || restoreToken === current.urlStateRestoreToken) {
+        if (current.urlStateRestoreToken === restoreToken) {
             writeNavStateMirror({
                 applyingUrlState: false,
                 restoringBrowserHistory: priorRestoringBrowserHistory

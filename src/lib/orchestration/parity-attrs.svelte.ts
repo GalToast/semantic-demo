@@ -806,6 +806,14 @@ export function readParityAttributesFromBody(): ParityAttributeMap {
         const v = document.body.dataset[desc.key]
         if (v !== undefined) out[desc.key] = v
     }
+    // L3 (bugsweep): also surface the four bypass attrs that are written by
+    // external code (not via applyParityAttributes) so tests/probes reading
+    // via this function don't miss them.
+    const bypassKeys = ['focusPanelMode', 'insideWalkState', 'renderKind', 'mobileSearchSheet']
+    for (const key of bypassKeys) {
+        const v = document.body.dataset[key]
+        if (v !== undefined) out[key] = v
+    }
     return out
 }
 

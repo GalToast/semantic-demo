@@ -136,11 +136,13 @@ export async function fetchSemanticLaneHealth({
         try {
             payload = JSON.parse(responseText)
         } catch (error) {
-            Object.defineProperty(error as object, 'correlationId', {
-                value: crypto.randomUUID(),
-                writable: false,
-                configurable: true
-            })
+            if (error instanceof Error) {
+                Object.defineProperty(error, 'correlationId', {
+                    value: crypto.randomUUID(),
+                    writable: false,
+                    configurable: true
+                })
+            }
             throw new Error('Semantic search readiness check returned invalid JSON.', { cause: error })
         }
     }
