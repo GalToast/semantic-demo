@@ -26,7 +26,7 @@
         "model:reasoning:logfare": "node scripts/model-health-check.mjs --provider=logfare,nvidia --reasoning-check",
         "probe:model-limits": "node scripts/probe-model-limits.mjs",
         "format": "prettier --write \"{js,tests}/**/*.{js,ts,css}\"",
-        "check:shell": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/shell-contract-check.js",
+        "check:shell": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/shell-contract-check.js && node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-import-linkage-check.mjs",
         "check:manifest": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-manifest-contract.mjs && node --loader ./tests/helpers/ts-resolve-loader.mjs tests/package-script-targets-contract.mjs && node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-self-reference-check.mjs",
         "check:script-targets": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/package-script-targets-contract.mjs",
         "check:no-self-refs": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-self-reference-check.mjs",

@@ -118,19 +118,13 @@ requireIncludes(
     'semantic-demo.css',
     stylesheetShell,
     'CSS module shell',
-    'app stylesheet must remain the import-only module shell'
+    'app stylesheet must remain the shell entry point'
 )
 requireIncludes(
     'semantic-demo.css',
     stylesheetShell,
-    '@import url("./css/base.css',
-    'app stylesheet must import the base module first'
-)
-requireIncludes(
-    'semantic-demo.css',
-    stylesheetShell,
-    '@import url("./css/animations.css',
-    'app stylesheet must import the full module cascade'
+    'LEGACY_CSS_LINKS',
+    'app shell must document the explicit <link> loading mechanism (LEGACY_CSS_LINKS in vite.config.ts) that carries the css/ cascade'
 )
 requireExcludes(
     'semantic-demo.css',
@@ -139,17 +133,20 @@ requireExcludes(
     'app stylesheet must not be replaced by the flattened monolith'
 )
 
+// After the 5a1a7df5 refactor, semantic-demo.css is a shell entry point only:
+// it documents the LEGACY_CSS_LINKS <link> mechanism and holds no real CSS of its
+// own. The css/ cascade coverage is verified by tests/css-import-linkage-check.mjs
+// (wired into `npm run check:shell`). Comment-stripped body must be empty.
 const stylesheetBody = stylesheetShell
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
 
-for (const line of stylesheetBody) {
-    if (!line.startsWith('@import url(')) {
-        failures.push(`semantic-demo.css must be import-only; found non-import declaration ${JSON.stringify(line)}`)
-        break
-    }
+if (stylesheetBody.length > 0) {
+    failures.push(
+        `semantic-demo.css must be a shell only (real CSS now lives in css/ modules loaded via explicit <link> tags); found declarations: ${JSON.stringify(stylesheetBody.slice(0, 3))}`
+    )
 }
 
 if (stylesheetShell === baseStylesheet) {

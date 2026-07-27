@@ -282,7 +282,7 @@ Tactics retested: (a) `external_subagent_followup` on stalled-deep-work to recov
 | Followup-recover stalled                        | W4c Svelte-5 snapshot/gate footguns | ✅ completed in ~4 min from followup dispatch (118 new output tokens, $0) → 13.3 KB report | **GOOSE-UNLOCK MECHANISM WORKS** for stalled `agnes` deep-work: `external_subagent_followup({worker_id})` resumes via the recorded `session_id` and finishes only the write step.                               |
 | Followup-retry on transient `Connection error.` | W3c lifecycle                       | ✅ completed in ~2.3 min from re-dispatch → 9.6 KB report                                  | Re-followup on the same `worker_id` (same `session_id`) recovers from transient route blips fast. ⚠️ BUT the W3c resulting report's #1 finding was a fabricated false-positive (see 2nd caveat + ledger below). |
 
-**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: *"Reading it inside $derived registers reactivity directly — no mirror needed."*
+**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: _"Reading it inside $derived registers reactivity directly — no mirror needed."_
 
 Report honest-stamped 4/10 + caution footer in `tmp/bugsweep-2026-07-24/worker4-reactivity-footguns-report.md`; do NOT action the 9 findings.
 
@@ -702,31 +702,31 @@ Second-pass probe wave deferred until broader outage tier (openprovider 502 + fr
 
 ### Sprint-4 fix-wave results (11 worker dispatches, $0.0141 aggregate cost)
 
-| Worker | Lane | Outcome | Cost | Salvage-line |
-|--------|------|---------|------|--------------|
-| FIX-A (original) | logfare/kimi-k2.6 | CANCELLED exit 124 — `logflare_502_upstream_stream_failed_before_output_storm` | $0 | Salvaged by FIX-A2 |
-| FIX-A2 | agnes-2.0-flash | DONE exit 0 — >3 Write tool calls, ~5 min, 37K input/335 output | $0 | Wrote the sprint-plan-doc to `tmp/sprint-plan-w7-b-fix-v2-failover.md` 45591B/1089 lines |
-| FIX-B | logfare/kimi-k2.6 | DONE exit 0 — >3 Write tool calls, ~4 min | $0.0064 | None |
-| FIX-C (original) | logfare/kimi-k2.6 | SILENT_FAIL exit 0 — zero tool calls | $0 | Salvaged by FIX-C2 |
-| FIX-C2 | agnes-2.0-flash | DONE exit 0 — >3 Write tool calls, ~6 min | $0 | Salvage for FIX-C |
-| FIX-D | logfare/kimi-k2.6 | DONE exit 0 — >3 Write tool calls, ~8 min | $0.0077 | None |
-| SCOUT-E | agnes-2.0-flash | DONE exit 0 — >3 Write tool + curl, ~5 min | $0 | None |
-| FIX-INT (original) | logfare/kimi-k2.6 | CANCELLED exit 124 — `logflare_502_upstream_stream_failed_before_output_storm` | $0 | Salvaged via FIX-INT2 → FIX-INT3 |
-| FIX-INT2 | agnes-2.0-flash | FAILED exit 1 — `session_init_glitch_no_project_session_found` (<1 min) | $0 | Salvaged via FIX-INT3 |
-| FIX-INT3 | agnes-2.0-flash | DONE exit 0 — Write tool + node --check + bun build, ~12 min, 104K input/629 output/13 reasoning | $0 | Wrote v2-failover-overlay.mjs 45591B/1089 lines |
-| POLISH-bundle | agnes-2.0-flash | DONE exit 0 — >8 tools (ls/diff/curl/write/node multi-tool), ~9 min, 60K input/579 output/18 reasoning | $0 | 5/5 items done (item1-integ-prep 4945B, bench-log Sprint-4 wave rows, item3-diff-audit 106L 10/10 spec, item4-memory-text 819B, item5-live-smoke 5-route JSONL 4/5 HTTP 200) |
+| Worker             | Lane              | Outcome                                                                                                | Cost    | Salvage-line                                                                                                                                                                 |
+| ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FIX-A (original)   | logfare/kimi-k2.6 | CANCELLED exit 124 — `logflare_502_upstream_stream_failed_before_output_storm`                         | $0      | Salvaged by FIX-A2                                                                                                                                                           |
+| FIX-A2             | agnes-2.0-flash   | DONE exit 0 — >3 Write tool calls, ~5 min, 37K input/335 output                                        | $0      | Wrote the sprint-plan-doc to `tmp/sprint-plan-w7-b-fix-v2-failover.md` 45591B/1089 lines                                                                                     |
+| FIX-B              | logfare/kimi-k2.6 | DONE exit 0 — >3 Write tool calls, ~4 min                                                              | $0.0064 | None                                                                                                                                                                         |
+| FIX-C (original)   | logfare/kimi-k2.6 | SILENT_FAIL exit 0 — zero tool calls                                                                   | $0      | Salvaged by FIX-C2                                                                                                                                                           |
+| FIX-C2             | agnes-2.0-flash   | DONE exit 0 — >3 Write tool calls, ~6 min                                                              | $0      | Salvage for FIX-C                                                                                                                                                            |
+| FIX-D              | logfare/kimi-k2.6 | DONE exit 0 — >3 Write tool calls, ~8 min                                                              | $0.0077 | None                                                                                                                                                                         |
+| SCOUT-E            | agnes-2.0-flash   | DONE exit 0 — >3 Write tool + curl, ~5 min                                                             | $0      | None                                                                                                                                                                         |
+| FIX-INT (original) | logfare/kimi-k2.6 | CANCELLED exit 124 — `logflare_502_upstream_stream_failed_before_output_storm`                         | $0      | Salvaged via FIX-INT2 → FIX-INT3                                                                                                                                             |
+| FIX-INT2           | agnes-2.0-flash   | FAILED exit 1 — `session_init_glitch_no_project_session_found` (<1 min)                                | $0      | Salvaged via FIX-INT3                                                                                                                                                        |
+| FIX-INT3           | agnes-2.0-flash   | DONE exit 0 — Write tool + node --check + bun build, ~12 min, 104K input/629 output/13 reasoning       | $0      | Wrote v2-failover-overlay.mjs 45591B/1089 lines                                                                                                                              |
+| POLISH-bundle      | agnes-2.0-flash   | DONE exit 0 — >8 tools (ls/diff/curl/write/node multi-tool), ~9 min, 60K input/579 output/18 reasoning | $0      | 5/5 items done (item1-integ-prep 4945B, bench-log Sprint-4 wave rows, item3-diff-audit 106L 10/10 spec, item4-memory-text 819B, item5-live-smoke 5-route JSONL 4/5 HTTP 200) |
 
 **Aggregate Sprint-4 cost:** $0.0141 (logfare-only). **agnes-2.0-flash net: $0.**
 
 ### Sprint-5 sub-tasks dispatched (5 on agnes-2.0-flash, $0 aggregate cost)
 
-| Worker | Slice | Outcome | Latency | Cost |
-|--------|-------|---------|---------|------|
-| SPEC-UPDATE gap-11-shapes | `tmp/spec-failover-v2.md` shape entries | DONE exit 0 | ~2 min | $0 |
-| P5B-INTEGRATION wire-overlay | `opencode-key-router.mjs` 2 V2 dispatch sites patched | DONE exit 0 | ~2 min | $0 |
-| TIER-MATRIX-UPDATE | `docs/subagent-model-benchmarks.md` tier section updated | DONE exit 0 | ~5 s | $0 |
-| SPEC-MERGE into-canonical | Merge V2 shapes into `v2-failover-overlay.md` | in-flight at worker_time | TBD | $0 |
-| BENCH-DOCS-UPDATE (this worker) | Append Sprint-4/Sprint-5 findings to bench docs | scheduled | — | $0 |
+| Worker                          | Slice                                                    | Outcome                  | Latency | Cost |
+| ------------------------------- | -------------------------------------------------------- | ------------------------ | ------- | ---- |
+| SPEC-UPDATE gap-11-shapes       | `tmp/spec-failover-v2.md` shape entries                  | DONE exit 0              | ~2 min  | $0   |
+| P5B-INTEGRATION wire-overlay    | `opencode-key-router.mjs` 2 V2 dispatch sites patched    | DONE exit 0              | ~2 min  | $0   |
+| TIER-MATRIX-UPDATE              | `docs/subagent-model-benchmarks.md` tier section updated | DONE exit 0              | ~5 s    | $0   |
+| SPEC-MERGE into-canonical       | Merge V2 shapes into `v2-failover-overlay.md`            | in-flight at worker_time | TBD     | $0   |
+| BENCH-DOCS-UPDATE (this worker) | Append Sprint-4/Sprint-5 findings to bench docs          | scheduled                | —       | $0   |
 
 ### Golden goose lattice updated
 
@@ -813,11 +813,11 @@ Poll results (after followup children landed):
 
 ### Wave-2 conclusion — upstream health ladder refined
 
-| Model | Provider Route | Wave-1 verdict | Wave-2 verdict | Recommended dispatch budget |
-|---|---|---|---|---|
-| agnes-2.0-flash | router-agnes | UPSTREAM-DEAD (90s silent stall) | UPSTREAM HEALTHY (natural emit at +92s, no steer needed) | 300s minimum |
-| laguna-s-2.1-free | router-opencode-zen | UPSTREAM-DEAD (90s silent stall) | UPSTREAM HEALTHY (emit at +91s into steer-nudge followup lane) | 300s minimum + steer-nudge at +60-90s |
-| qwen3.6-plus | router-opencode-zen | indistinguishable (90s silent stall) | UPSTREAM DEAD (401 Provider billing issue, catalog demoted) | not dispatchable |
+| Model             | Provider Route      | Wave-1 verdict                       | Wave-2 verdict                                                 | Recommended dispatch budget           |
+| ----------------- | ------------------- | ------------------------------------ | -------------------------------------------------------------- | ------------------------------------- |
+| agnes-2.0-flash   | router-agnes        | UPSTREAM-DEAD (90s silent stall)     | UPSTREAM HEALTHY (natural emit at +92s, no steer needed)       | 300s minimum                          |
+| laguna-s-2.1-free | router-opencode-zen | UPSTREAM-DEAD (90s silent stall)     | UPSTREAM HEALTHY (emit at +91s into steer-nudge followup lane) | 300s minimum + steer-nudge at +60-90s |
+| qwen3.6-plus      | router-opencode-zen | indistinguishable (90s silent stall) | UPSTREAM DEAD (401 Provider billing issue, catalog demoted)    | not dispatchable                      |
 
 Wave-1 prescription validation:
 
@@ -878,3 +878,275 @@ Commit: **`df3f5c15`** "Fix W7 KH-HELPBTN-SECOND-CLICK-RACE — openKeyboardHelp
 ### Deferral: Track E journey test (KH-HELPBTN reopen-via-help-button second-click assertion)
 
 The recommended journey-test addition (assert that the panel reopens on a SECOND discrete click after being closed via the same help button — covering the previously-broken double-click-closes race) is deferred until parallel session's `tests/widget-journey.spec.js` (+205/-131 unstaged WIP) settles. The unit-vitest regression test pins the structural source contract; the journey test would pin the behavioral DOM-rendering contract. Both are needed for full coverage, but the journey file is blocked by parallel-session WIP.
+
+---
+
+## Diverse catalog benchmark 2026-07-26
+
+Run: `node scripts/benchmark-subagent-models.mjs --models=tmp/subagent-benchmark/models-diverse-2026-07-26.txt --concurrency=3 --timeout=300000`
+
+Task: read `src/components/ThreadInspector.svelte` header and write DOM contract ids/classes to `tmp/subagent-benchmark/reports/<model>.md`.
+
+Models tested: 14 across free, Logfare, NVIDIA, Mistral, ModelScope, and Kilo lanes.
+
+### Summary
+
+- **Working:** 9/14
+- **Failed:** 5/14
+- **Fastest working:** `mimo-v2.5-free` (81 s)
+- **Slowest working:** `kilo/kilo-auto/free` (288 s)
+- **Full results:** `tmp/subagent-benchmark/subagent-benchmark-2026-07-26T04-22-07-774Z.json` and `.md`
+
+### Working models
+
+| Model                                        | Provider     | Elapsed (ms) | Notes                                                                                   |
+| -------------------------------------------- | ------------ | ------------ | --------------------------------------------------------------------------------------- |
+| `mimo-v2.5-free`                             | opencode-zen | 81,141       | Fastest, completed the simple DOM-contract task.                                        |
+| `nvidia/mistralai/mistral-small-4-119b-2603` | nvidia       | 87,024       | Reliable for this read-only task.                                                       |
+| `nemotron-3-ultra-free`                      | opencode-zen | 100,896      | Completed despite earlier sweep failures.                                               |
+| `ling-3.0-flash-free`                        | opencode-zen | 106,567      | Completed.                                                                              |
+| `north-mini-code-free`                       | opencode-zen | 111,159      | Completed this read-only task (contrast with earlier multi-step hallucination pattern). |
+| `logfare/kimi-k2.6`                          | logfare      | 141,150      | Completed.                                                                              |
+| `logfare/deepseek-v4-pro`                    | logfare      | 146,704      | Completed.                                                                              |
+| `nvidia/deepseek-ai/deepseek-v4-flash`       | nvidia       | 244,774      | Slow but completed.                                                                     |
+| `kilo/kilo-auto/free`                        | kilo         | 288,768      | Slowest success, but completed.                                                         |
+
+### Failed models
+
+| Model                                      | Provider     | Error                                                | Notes                                                            |
+| ------------------------------------------ | ------------ | ---------------------------------------------------- | ---------------------------------------------------------------- |
+| `deepseek-v4-flash-free`                   | opencode-zen | terminal (no output)                                 | Earlier sweep success; today failed to produce assistant output. |
+| `laguna-s-2.1-free`                        | opencode-zen | 300,000 ms timeout                                   | Hung with no completion.                                         |
+| `logfare/minimax-m3`                       | logfare      | 429 "Logfare upstream rate-limited model minimax-m3" | Upstream rate limit.                                             |
+| `mistral/mistral-small-latest`             | mistral      | terminal                                             | Model returned terminal status without writing output.           |
+| `modelscope/deepseek-ai/DeepSeek-V4-Flash` | modelscope   | 429 insufficient quota                               | Upstream quota exhausted.                                        |
+
+### Observations
+
+1. **Free-route stability is volatile day-to-day.** `deepseek-v4-flash-free` was a reliable sweep goose on 2026-07-24 but failed to emit output in this run; `mimo-v2.5-free` was previously a churn/stream-failure model but completed fastest here. Treat every free route as conditional and benchmark before a long campaign.
+2. **Logfare pro models are consistent but can be rate-limited.** `logfare/deepseek-v4-pro` and `logfare/kimi-k2.6` completed; `logfare/minimax-m3` hit a 429.
+3. **NVIDIA route is slow but viable.** `nvidia/deepseek-ai/deepseek-v4-flash` took ~245 s but produced a correct report; `nvidia/mistralai/mistrist-small-4-119b-2603` was faster at ~87 s.
+4. **ModelScope and Mistral are currently quota/terminal failures.** Avoid until the provider account has quota or the model ref is re-verified.
+5. **Kilo free auto route works but is slow (~289 s).** Useful fallback when opencode-zen free routes are down, but not for latency-sensitive tasks.
+
+### Addendum: `logfare/kiro-auto` single-model benchmark
+
+Run: `node scripts/benchmark-subagent-models.mjs --models=tmp/subagent-benchmark/models-kiro-auto.txt --concurrency=1 --timeout=300000`
+
+Result: **❌ timeout** (300,000 ms, full budget). The worker never produced the report or reached terminal completion within the 5-minute window. Full result: `tmp/subagent-benchmark/subagent-benchmark-2026-07-26T19-42-54-328Z.json` and `.md`.
+
+Verdict: `logfare/kiro-auto` is **not viable for this 5-minute subagent task** right now; it may be a slow cold-start model or currently backlogged. Retry with a longer timeout or a simpler one-shot prompt before concluding.
+
+**Pivot / root cause (after retry):** A 120 s one-sentence smoke test also failed with no assistant output. A subsequent `node scripts/model-health-check.mjs --models=logfare/kiro-auto` showed the live Logfare catalog contains **8 models** but `kiro-auto` is **not among the 6 smoke candidates** because the health-check script filters to notable models and a per-provider limit of 6; it was skipped, not absent. Deeper investigation below shows `kiro-auto` is present in the catalog but is a reasoning-only model that does not emit visible content or tool calls, and is rate-limited/anomalous on Logfare upstream.
+
+Updated verdict: **See the deeper `logfare/kiro-auto` dispatchability section below.** The other Logfare routes (`deepseek-v4-pro`, `kimi-k2.6`, `deepseek-v4-flash`, `minimax-m3`, `glm-5.2`, `kimi-k2.7-code`) remain available.
+
+---
+
+## Broader free/shadow route sweep 2026-07-26
+
+Run: `node scripts/benchmark-subagent-models.mjs --models=tmp/subagent-benchmark/models-free-shadow-sweep-2026-07-26.txt --concurrency=3 --timeout=300000`
+
+Task: same DOM-contract read as the diverse benchmark — read `src/components/ThreadInspector.svelte` header and write DOM contract ids/classes to `tmp/subagent-benchmark/reports/<model>.md`.
+
+Models tested: 12 from NVIDIA NIM, ModelScope, and Cloudflare Workers AI.
+
+### Summary
+
+- **Working:** 2/12
+- **Failed:** 10/12
+- **Full results:** `tmp/subagent-benchmark/subagent-benchmark-2026-07-26T20-13-51-243Z.json` and `.md`
+
+### Working models
+
+| Model                               | Provider   | Elapsed (ms) | Notes                                              |
+| ----------------------------------- | ---------- | -----------: | -------------------------------------------------- |
+| `nvidia/meta/llama-3.1-8b-instruct` | nvidia     |      132,828 | Fastest success in this sweep; completed the task. |
+| `modelscope/zai-org/GLM-5.2`        | modelscope |      202,005 | Slow but completed.                                |
+
+### Failed models
+
+| Model                                        | Provider   | Error / Phase | Notes                                                                           |
+| -------------------------------------------- | ---------- | ------------- | ------------------------------------------------------------------------------- |
+| `nvidia/deepseek-ai/deepseek-v4-pro`         | nvidia     | timeout       | 300 s timeout; no assistant output.                                             |
+| `nvidia/moonshotai/kimi-k2.6`                | nvidia     | timeout       | 300 s timeout.                                                                  |
+| `nvidia/minimaxai/minimax-m3`                | nvidia     | timeout       | 300 s timeout.                                                                  |
+| `nvidia/z-ai/glm-5.2`                        | nvidia     | timeout       | 300 s timeout.                                                                  |
+| `nvidia/thinkingmachines/inkling`            | nvidia     | timeout       | 300 s timeout.                                                                  |
+| `nvidia/ibm/granite-8b-code-instruct`        | nvidia     | timeout       | 300 s timeout.                                                                  |
+| `nvidia/google/gemma-2-2b-it`                | nvidia     | 422 terminal  | Schema rejection: `tools` extra inputs not permitted, `max_tokens > 4096`, etc. |
+| `nvidia/poolside/laguna-xs-2.1`              | nvidia     | timeout       | 300 s timeout.                                                                  |
+| `modelscope/deepseek-ai/DeepSeek-V4-Pro`     | modelscope | 429 terminal  | `insufficient_quota` from ModelScope.                                           |
+| `cloudflare/@cf/nvidia/nemotron-3-120b-a12b` | cloudflare | timeout       | 300 s timeout.                                                                  |
+
+### Observations
+
+1. **NVIDIA NIM is largely non-viable for subagent dispatch right now.** Only `meta/llama-3.1-8b-instruct` completed; every other NVIDIA model hit the 300 s wall. The route may be healthy for curl smokes but too slow/cold for the Pi harness's 5-minute subagent budget.
+2. **`nvidia/google/gemma-2-2b-it` rejects the Pi tool-calling schema.** Same 422 family seen earlier (`tools` extra inputs not permitted, `max_tokens` too high, `stream_options` forbidden). Endpoint is not compatible with the harness.
+3. **ModelScope GLM-5.2 works; DeepSeek-V4-Pro is quota-blocked.** Quota state is account-specific and may recover.
+4. **Cloudflare Workers AI remains unvalidated for subagents.** `nemotron-3-120b-a12b` timed out without output; earlier `gpt-oss-20b` and `kimi-k2.6` failed with connection errors. Treat Cloudflare as not yet proven for real subagent work.
+
+## `logfare/kiro-auto` dispatchability — under investigation 2026-07-26
+
+Direct investigation after the sweep showed the question is more nuanced than a simple "stale ref".
+
+### What is established
+
+- **`logfare/kiro-auto` IS present in the live router catalog.** `GET /logfare/v1/models` lists it with `"id":"kiro-auto"`.
+- **It is not a free model.** Logfare metadata lists `"tier":2`, `"requires_training_optin":true`, `"premium_unlocked":false`. It is correctly omitted from `external_subagent_free_models`.
+- **Simple curl returns content-null + reasoning tokens.** `POST /logfare/v1/chat/completions` returns HTTP 200 with `choices[0].message.content: null` and `completion_tokens_details.reasoning_tokens` > 0. It does not expose `message.reasoning_content` (unlike `logfare/kimi-k2.6`, which does expose `reasoning_content`).
+- **Subagent attempts time out.** Two `external_subagent_start` runs with 300 s timeouts ended without completion.
+
+### What changed the picture
+
+A **full Logfare-only benchmark** of all 8 models showed that Logfare upstream is broadly unstable right now, and that a model with the same content-null signature as `kiro-auto` can still complete a subagent task:
+
+| Model                       | Subagent result (same task, 300 s, concurrency 2) | Direct-curl content signature     |
+| --------------------------- | ------------------------------------------------- | --------------------------------- |
+| `logfare/deepseek-v4-pro`   | ❌ failed fast (~25 s)                            | content:null, hidden reasoning    |
+| `logfare/kimi-k2.6`         | ❌ failed fast (~25 s)                            | content:null, `reasoning_content` |
+| `logfare/minimax-m3`        | ❌ failed fast (~25 s)                            | content:null/empty                |
+| `logfare/kimi-k2.7-code`    | ✅ completed (~86 s)                              | 429 on direct curl                |
+| `logfare/deepseek-v4-flash` | ✅ completed + wrote report (~167 s)              | content:null, hidden reasoning    |
+| `logfare/glm-5.2`           | ❌ 300 s timeout                                  | 429 on direct curl                |
+| `logfare/qwen-3.8-max`      | ❌ 300 s timeout                                  | direct curl hung                  |
+| `logfare/kiro-auto`         | ❌ 300 s timeout                                  | content:null, hidden reasoning    |
+
+The crucial observation: **`logfare/deepseek-v4-flash` has the exact same content-null / hidden-reasoning signature as `kiro-auto`, yet it completed the subagent task and wrote a correct report.** This means content-null in a simple curl does **not** prove a model cannot work as a Pi subagent.
+
+### Key-router failure modes for `kiro-auto`
+
+`GET http://127.0.0.1:8788/catalog` recent failures for `logfare/kiro-auto`:
+
+| Time (UTC)              | Status | Phase                        | Message                                                                                           |
+| ----------------------- | ------ | ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| 2026-07-26T21:49:49.973 | 403    | `http-upstream-rotate`       | `invalid_request_error: Model 'kiro-auto' is a premium model that requires model-training opt-in` |
+| 2026-07-26T21:49:52.113 | 429    | `pre-output-stream`          | `Service temporarily unavailable`                                                                 |
+| 2026-07-26T21:50:17.670 | 200    | `stream-anomaly`             | `Stream ended after reasoning without content/tool output`                                        |
+| 2026-07-26T21:51:03.003 | 429    | `shared-upstream-rate-limit` | `server_error: Service temporarily unavailable`                                                   |
+
+These are the same three modes seen for other Logfare tier-2 models: some keys lack opt-in (403), upstream rate-limits (429), and accepted requests sometimes emit only reasoning (200 stream-anomaly).
+
+### Verdict (revised — still provisional)
+
+**`logfare/kiro-auto` cannot be declared viable or non-viable yet.**
+
+- It is reachable and not a stale ref.
+- It is a reasoning-only model from the HTTP response perspective.
+- It has **not** completed a subagent task in the limited attempts so far, but the same is true for `deepseek-v4-pro` and `kimi-k2.6` in this run, while `deepseek-v4-flash` (same signature) succeeded.
+- Logfare upstream instability (403/429/stream-anomaly) confounds the result: failures may be transient, not model-specific.
+
+### Controlled comparison results
+
+Run: `node scripts/benchmark-subagent-models.mjs --models=tmp/subagent-benchmark/models-kiro-auto-vs-flash.txt --concurrency=1 --timeout=300000`
+
+Same DOM-contract task as the broader sweep, alternating `logfare/deepseek-v4-flash` and `logfare/kiro-auto`. The benchmark script was updated to require the report file to actually exist for a run to count as successful.
+
+| Attempt | Model                       | Result                            |     Elapsed | Notes                                                                                    |
+| ------- | --------------------------- | --------------------------------- | ----------: | ---------------------------------------------------------------------------------------- |
+| 1       | `logfare/deepseek-v4-flash` | ❌ timeout                        |  302,811 ms | No report written.                                                                       |
+| 2       | `logfare/kiro-auto`         | ❌ timeout                        |  302,364 ms | No report written.                                                                       |
+| 3       | `logfare/deepseek-v4-flash` | ✅ success                        |  133,858 ms | Correct report written to `tmp/subagent-benchmark/reports/logfare-deepseek-v4-flash.md`. |
+| 4       | `logfare/kiro-auto`         | ❌ fast fail                      |   25,580 ms | Worker terminated before producing output (likely 403/429 from Logfare upstream).        |
+| 5       | `logfare/deepseek-v4-flash` | ❌ fast fail                      |   25,585 ms | Same fast-failure mode as attempt 4.                                                     |
+| 6       | `logfare/kiro-auto`         | ❌ timeout (job killed at ~5 min) | ~300,000 ms | Did not complete within timeout.                                                         |
+
+**Totals:** `deepseek-v4-flash` 1/3 successful; `kiro-auto` 0/3 successful (with a 4th attempt killed mid-timeout).
+
+### What the comparison shows
+
+- `deepseek-v4-flash` can complete the task, but it is unreliable: 1 success and 2 failures in 3 attempts.
+- `kiro-auto` could not complete the task in 3 attempts: 2 timeouts and 1 fast failure.
+- The failures are a mix of Logfare upstream instability (fast 403/429-style failures) and long stalls that never produce output.
+- Because `deepseek-v4-flash` succeeded once, the issue is not that the Pi harness cannot handle hidden-reasoning models in principle. The difference appears to be model-specific or request-specific on Logfare's side.
+
+### Verdict (with controlled data)
+
+**`logfare/kiro-auto` is currently less reliable than `logfare/deepseek-v4-flash` for Pi subagent work.**
+
+- It is reachable and not a stale ref.
+- It is a reasoning-only model from the HTTP response perspective (`content: null`, hidden `reasoning_tokens`).
+- In a small controlled comparison it failed every attempt while a sibling hidden-reasoning model (`deepseek-v4-flash`) succeeded once.
+- Logfare upstream instability makes any single attempt noisy, so a larger sample could shift the picture, but the current evidence points away from `kiro-auto` as a dependable subagent.
+
+**Practical recommendation:** do not dispatch `logfare/kiro-auto` for subagent coding tasks right now. Prefer `logfare/deepseek-v4-pro` or `logfare/kimi-k2.7-code` when Logfare is stable, or `logfare/deepseek-v4-flash` as a conditional fallback. Re-test `kiro-auto` only after Logfare upstream stability improves or after the Pi harness adds explicit support for reasoning-only output.
+
+### Caveats / remaining uncertainty
+
+- Sample size is small (3 attempts per model). A 10-attempt run at a different time could reveal `kiro-auto` succeeding intermittently.
+- The benchmark script hung on cleanup after the 6th attempt and had to be killed; this did not affect the logged attempt results but suggests the script still needs cleanup hardening.
+
+## Round 2 — 2026-07-26 (free-lane polish+debug side-by-side)
+
+Four workers dispatched in parallel on an identical scope (WeatherWidget + CompassRail + FocusPocket copy audit + one bug fix), using `tmp/worker-prompt-bench-round2.txt`, `live_steer=true`, 300 s timeout.
+
+| Worker (model)                       | Route        | Result                                          | Runtime                                                                            | Auth              | Analytical                                                                                     | Delivery                                                                                                                       | Verification                                                                         | Self-score (claimed → honest)    |
+| ------------------------------------ | ------------ | ----------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | -------------------------------- |
+| `opencode-zen/nemotron-3-ultra-free` | opencode-zen | ❌ analysis paralysis → canceled                | 19+ min (209 MB stdout)                                                            | ✅                | 6/10 (decoded CSS class matching, journey phase semantics, $state-backed store wiring)         | 0/10 (ZERO tool calls, ZERO edits across 19 min of continuous thinking despite 2 steer nudges)                                 | 0/10 (never reached lint)                                                            | n/a → 0/10                       |
+| `opencode-zen/north-mini-code-free`  | opencode-zen | ❌ harness failure (×2 attempts)                | each timed out at 300 s (exit 124), never produced assistant output either attempt | —                 | n/a                                                                                            | n/a                                                                                                                            | n/a                                                                                  | n/a                              |
+| `opencode-zen/ling-3.0-flash-free`   | opencode-zen | ⚠️ completed (exit 0) but hallucinated delivery | ~16 min (156 MB stdout)                                                            | ✅                | 7/10 (read all 3 files, decoded $dataLoadState store semantics, correct 0-offender conclusion) | 0/10 (summary claimed 2 CompassRail edits — ZERO landed on disk; report echoed a previous minimax-m3 worker's hand-off report) | 4/10 (ran `npm run lint` via detached bg job; vitest skipped)                        | (10/10 ×3 claimed → 3/10 honest) |
+| `mistral/codestral-2508`             | mistral      | ✅ completed (exit 0) but bug fix was a no-op   | ~3 min (1.28 MB stdout)                                                            | ✅ bash.js worked | 6/10 (honest 0-offender audit; confabulated aria-label bug description)                        | 3/10 (lean + fast + bash works, but 0 NET edits — git diff unchanged; claimed credit for a fix it did not apply)               | 2/10 (ran lint but left template placeholder "PASS/FAIL with tail excerpt" unfilled) | 10/10 ×3 claimed → 3/10 honest   |
+
+### Round 2 verdict by lane
+
+- **`nemotron-3-ultra-free`**: Strong analytical reader, ZERO executor. Never transitioned from thinking to acting despite 2 steer nudges. Use only for read-only analysis, never for edit/delivery.
+- **`north-mini-code-free`**: HARNESS-BLOCKED twice in a row with `bash.js tool execute detach: upstream snippet not found` (zero assistant output both attempts; nemotron + ling on the same provider survived — strongly suggests this is model-specific, not provider-wide).
+- **`ling-3.0-flash-free`**: Like `glm-5.2` — strong analytical reader, ZERO delivery. Honest jargon audit (0 offenders, correct), but summary claimed CompassRail edits that never landed on disk; report echoed a prior minimax-m3 worker's hand-off report. Treat post-run summaries as untrustworthy.
+- **`mistral/codestral-2508`**: The fastest + leanest worker of the round, and the **first positive result for the mistral provider** — `bash.js` works, 2.5 min cold-start, 1.28 MB stdout. But delivery was at best a no-op: `git diff WeatherWidget.svelte` was unchanged after codestral ran (it confabulated credit for aria-label changes a previous worker had left on disk) and the verification template was never filled in. **Viable fast audit/recon lane; NOT a reliable edit lane.**
+
+### Round 2 takeaway
+
+No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably _read + analyze_ but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
+
+Two tool-quirks persisted to `failures.md`:
+
+- **`bash.js` detach patch is north-mini-specific, not provider-wide.** `nemotron` + `ling` on the same `opencode-zen` provider ran bash successfully; `north-mini-code-free` failed twice with the identical `upstream snippet not found` error. Do NOT retry `north-mini` until the harness fix lands; other opencode-zen models are unaffected.
+- **Worker summaries can hallucinate disk edits.** `ling`'s final turn confidently described 2 CompassRail edits it never applied (`git status --porcelain` showed `CompassRail.svelte` unchanged). Always verify claims with `git diff` before judging a worker.
+
+One durable gain landed regardless: the main lane independently identified a genuine orphan `aria-controls` bug a prior minimax-m3 worker had left on the working tree, reverted two unrelated aria-label rewordings (which had created an `aria-label` ↔ `title` inconsistency without fixing a bug), and committed `fix(weather-widget): conditionalize aria-controls to avoid orphan ARIA reference` (`6c250e01`).
+
+## Round 3 — 2026-07-26 (cross-provider dispatch + `bash.js` patch-marker fix)
+
+### Round 3 dispatch (3 workers, 3 NEW providers)
+
+To probe providers not yet tested in this campaign, three workers went out in parallel at 22:57-58 UTC on the round-2 prompt scope (`tmp/worker-prompt-bench-round2.txt` → `tmp/bench-round3-report.md`):
+
+| Worker (model)                         | Route                                          | Result              | Failure mode (authoritative, from post-mortem poll)                                     |
+| -------------------------------------- | ---------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------- |
+| `kilo/qwen/qwen3.6-flash`              | pi:router-kilo/qwen/qwen3.6-flash              | ❌ exit 124         | `bash.js tool execute detach: upstream snippet not found` (harness patch banner)        |
+| `nvidia/deepseek-ai/deepseek-v4-flash` | pi:router-nvidia/deepseek-ai/deepseek-v4-flash | ⚠️ exit 0 logs_only | `Connection error.` from nvidia provider (auto-retry attempt 1/10, never recovered)     |
+| `modelscope/Tencent-Hunyuan/Hy3`       | pi:router-modelscope/Tencent-Hunyuan/Hy3       | ⚠️ exit 0 logs_only | `Connection error.` from modelscope provider (auto-retry attempt 1/10, never recovered) |
+
+All three workers stayed in `output_state: logs_only` without producing assistant output; none delivered a report file. Two went `completed` exit 0 but with zero assistant tokens because the provider connection died on the first turn and the retry loop never produced visible content before the worker gave up.
+
+### Key correction to the working-tree narrative
+
+A first read (recorded as a working-tree finding during the round) claimed all three round-3 workers were blocked by the `bash.js` detach patch error. The **post-mortem poll contradicts this**: only the **kilo/qwen3.6-flash** lane recorded the `bash.js` patch error in its `metadata.error` field. The **nvidia/deepseek** and **modelscope/Hy3** workers had `error: null` and died on `"Connection error."` from their respective providers — a provider-availability issue, NOT a harness block. So round 3 had **two distinct failure modes** (one harness banner issue, two provider downtimes), not one universal harness regression. This is the same correction pattern failures.md entry 1748 made earlier; it remains overbroad.
+
+### The `bash.js` detach patch-marker fix (verified live)
+
+The persistent `bash.js tool execute detach: upstream snippet not found` banner message had a clean structural root cause: the `pi-background-detach` local package's `patch-core.js` kept inline patch needles/markers referencing the `_ctx?.detachSignal,` parameter name, but Pi core (`dist/core/tools/bash.js:309 + :401`) had been updated to drop the leading underscore (`_ctx` → `ctx`) AND had landed the `background`/`detachSignal` logic upstream. The patcher's check loop (`patch-core.js:1023`) skipped only if `targetText.includes(patch.marker)`; the stale marker was absent from the current core, so it fell through to the needle check and pushed `"upstream snippet not found"` even though the patches were genuinely already-applied.
+
+Fix applied: synced all five stale `_ctx` references in `~/.pi/agent/local-packages/pi-background-detach/scripts/patch-core.js` to `ctx` (two markers, one needle, two replacements across the two bash.js inline patches). Verification script `scripts/verify-patch-status.mjs` returns `ok: true, installed: true, errors: []` from both `checkBackgroundDetachPatch()` and `ensureBackgroundDetachPatch()`. Durable record lives at `~/.pi/agent/patches/pi-background-detach-ctx-marker-fix.md`.
+
+Live confirmation came from dispatching a fresh `kilo/qwen/qwen3.6-flash` smoke worker (`ocw_366bbfb8`, 180 s one-shot). Its stderr contains NO `Pi background detach patch has errors` line and its poll metadata has NO `error` field — whereas the failed round-3 kilo/qwen worker's metadata had the full `bash.js tool execute detach: upstream snippet not found` string. The patch-status banner now reads `"Pi background detach patch is installed."` (not `"has errors"`), so cautious/literal reader models no longer stall on it. **No MCP server restart was required** — the patch-status check runs inside the fresh spawned Pi worker node process (which freshly imports `patch-core.js` off disk), not in the cached bun external-subagents MCP server (PID unchanged across the fix).
+
+The smoke worker itself still failed (exit 124) but in a NEW way: it stalled in cold-start and was clipped by the 180 s timeout before producing assistant output. The 180 s budget is too short for a cold-start reasoner (per memory 1627 the analogous pattern needs ~6 min + a `live_steer` nudge at +60-90 s). So the smoke **proves the harness banner is fixed** but does not yet prove `qwen3.6-flash` produces output; a 900 s + `live_steer=true` re-test re-dispatch is in flight (`ocw_ff1cebab`) to settle it.
+
+### Effect onинация-cautious vs confident models
+
+The `bash.js` banner only stalls models that read `"has errors"` literally and refuse to proceed: confirmed cases are `opencode-zen/north-mini-code-free` and `kilo/qwen/qwen3.6-flash` (both exit 124, zero assistant output). Confident models that proceed through the warning include `mistral/codestral-2508`, `opencode-zen/ling-3.0-flash-free`, `opencode-zen/nemotron-3-ultra-free`, and `agnes-2.0-flash` (all completed). Removing the banner clears the caution-induced stall; it does not change behavior for the confident lane.
+
+### Parallel session discovery
+
+A sibling session (owner `kickoff-2026-07-26-probe`, campaign `model-catalog-coverage-2026-07-26`, different MCP launcher PID) is concurrently probing provider coverage and its `probe-msc-qwen-thinking` worker (`ocw_8c5bf2d5`, `modelscope/Qwen/Qwen3-235B-A22B-Thinking-2507`) **completed** and wrote a real test file — proving `modelscope/Qwen3-235B-A22B-Thinking-2507` is a deliverable lane even though `modelscope/Tencent-Hunyuan/Hy3` connection-errored in this round (Hy3 endpoint specifically down, not modelscope-wide). Workers invoked by unrelated campaigns are not main-lane deliverables; only their existence (as provider-availability evidence) is reusable.
+
+### Round 3 verdict by lane
+
+- **`kilo/qwen/qwen3.6-flash`**: banner-stalled before fix; harness fix clears banner. Capability (real code output) untested — 900 s re-test in flight.\u0ca8
+- **`nvidia/deepseek-ai/deepseek-v4-flash`**: provider `Connection error.` at call 1; never produced any model output. Re-test with a different nvidia free model (nvidia catalog lists 118 free) before declaring the nvidia lane unusable.
+- **`modelscope/Tencent-Hunyuan/Hy3`**: provider `Connection error.` at call 1 — Hy3 endpoint specifically down, since the same `modelscope` provider accepted a sibling-session worker for `Qwen3-235B-A22B-Thinking-2507`. Re-test Hy3 later; do not generalize "modelscope down" from a single Hy3 attempt.
+
+### Round 3 takeaway
+
+Two durable harness gains landed this round regardless of model-delivery: (1) the `_ctx` → `ctx` marker/needle sync fix in `patch-core.js` (validated by `verify-patch-status.mjs` + live smoke); (2) the correction of the overbroad "bash.js error blocks all dispatches" memory note into the precise "only stalls cautious models; confident lanes unaffected; round-3 nvidia/modelscope failures were provider downtime, not this harness issue" — persisted to failures.md under `pi-background-detach-ctx-marker-fix-resolved-2026-07-26`. The deliverable re-runs (qwen 900 s with live steer + nvidia retry with a different NIM model + a parallel Track B mmx.ts browser-profile analysis on the parallel-session-proven `modelscope/Qwen3-235B-A22B-Thinking-2507`) are in flight and judged in the next round.

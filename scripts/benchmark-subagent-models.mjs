@@ -91,7 +91,7 @@ function safeModelName(model) {
 }
 
 function providerQualifiedName(providerKey, modelId) {
-    return `${providerKey}/${modelId}`
+    return modelId ? `${providerKey}/${modelId}` : providerKey
 }
 
 async function fetchJson(url) {
@@ -136,7 +136,7 @@ function loadModelsFromFile(filePath) {
     return text
         .split('\n')
         .map((l) => l.trim())
-        .filter(Boolean)
+        .filter((l) => l && !l.startsWith('#'))
         .map((l) => {
             const [providerKey, ...rest] = l.split('/')
             const id = rest.join('/')
@@ -198,6 +198,7 @@ class McpStdioClient {
             name: 'external_subagent_start',
             arguments: {
                 model,
+                name: model,
                 prompt_text: promptText,
                 cwd: REPO_ROOT,
                 report_to_file: false,
@@ -311,7 +312,9 @@ async function runTask(client, model, outputPath) {
             }
         }
         if (poll?.status && poll.status !== 'running' && poll.status !== 'starting') {
-            const ok = poll.status === 'completed' && !poll.error
+            const terminalOk = poll.status === 'completed' && !poll.error
+            const fileExists = terminalOk && fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0
+            const ok = terminalOk && fileExists
             return {
                 model,
                 ok,
@@ -322,7 +325,8 @@ async function runTask(client, model, outputPath) {
                 elapsedMs: Date.now() - started,
                 workerId,
                 stdoutBytes: poll.stdout_bytes ?? null,
-                stderrBytes: poll.stderr_bytes ?? null
+                stderrBytes: poll.stderr_bytes ?? null,
+                reportWritten: fileExists
             }
         }
         await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS))

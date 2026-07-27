@@ -56,14 +56,14 @@
 
 1. **Critical — `acquireBreakerLock` promise-based signature contradicts "return null immediately" contract.** The function is `async` but the comment says callers who get `null` shouldn't queue. The implementation has no `await` between the lock check and the lock installation:
 
-   ```ts
-   const existingHolder = this.currentLockHolders.get(lockKey);
-   if (existingHolder !== undefined && existingHolder !== null) {
-     return null;  // ← this await-return bubbles to caller
-   }
-   ```
+    ```ts
+    const existingHolder = this.currentLockHolders.get(lockKey)
+    if (existingHolder !== undefined && existingHolder !== null) {
+        return null // ← this await-return bubbles to caller
+    }
+    ```
 
-   In a truly async context, two concurrent callers will both read `undefined`, both install holders, and **both** succeed — violating spec gap #14's "exactly ONE breaker transition" requirement. The "return-null-immediately" behavior is impossible without sync lock primitives.
+    In a truly async context, two concurrent callers will both read `undefined`, both install holders, and **both** succeed — violating spec gap #14's "exactly ONE breaker transition" requirement. The "return-null-immediately" behavior is impossible without sync lock primitives.
 
 2. **`tripPermanentBreaker` and `markTransientCooldown` claim lock-held precondition in comments but do not enforce it.** The JSDoc says "caller MUST await acquireBreakerLock first" but the functions proceed regardless. This makes gap #14 purely contractual, not structural.
 
@@ -164,11 +164,11 @@
 1. **O(n²) post-filter:** `applyDegradedAndCapabilityFilter` iterates candidates and for each does `matrix.find(e => e.modelId === c.modelId)` — linear scan over the entire matrix per candidate. Materialize a `Map<modelId, RouterMatrixEntry>` first.
 
 2. **Gap in T2/T3 boundary (band overlap):** `bandDropBelow(matrix, baseQuality - 15, cap_axis)` filters entries where `q >= baseQuality - 15 && q < baseQuality - 5`. Combined with `equivalentQualityBank`'s `Math.abs(q - baseQuality) <= 5`, the ranges are:
-   - T2: `[base-5, base+5]`
-   - T3: `[base-15, base-5)` ← note: exactly abuts T2 but leaves no gap
-   - T4: `[base-25, base-15)` ← `baseQuality - 10 - 15` = `base - 25`, exclusive lower = `base - 15`
+    - T2: `[base-5, base+5]`
+    - T3: `[base-15, base-5)` ← note: exactly abuts T2 but leaves no gap
+    - T4: `[base-25, base-15)` ← `baseQuality - 10 - 15` = `base - 25`, exclusive lower = `base - 15`
 
-   These abut cleanly; no elements are missed. However, there's also **no ceiling** on T2 — models above base+5 are excluded from T2, which means very slightly-better cross-family models don't appear. Whether this is a bug depends on interpretation; the spec says "equivalent-quality" which supports the ±5 band.
+    These abut cleanly; no elements are missed. However, there's also **no ceiling** on T2 — models above base+5 are excluded from T2, which means very slightly-better cross-family models don't appear. Whether this is a bug depends on interpretation; the spec says "equivalent-quality" which supports the ±5 band.
 
 3. **`primaryRouteIdForModel` falls back to any matching entry if no capability-matched row exists:** The spec says T0 is always the original requested model, so finding ANY entry with `modelId === m_id` is correct behavior — it ensures R1 compliance.
 
@@ -258,26 +258,26 @@ This matches the spec's R4 requirement verbatim. `filterByContextWindow` correct
 
 ### (A) Gap-File Coverage Matrix
 
-| Gap | Title                     | Covering File(s)                              | Status |
-|-----|---------------------------|-----------------------------------------------|--------|
-| #1  | Per-capability sub-scores | `types.ts`                                    | ✅ Covered |
-| #3  | toolExecutionReliability  | `types.ts`                                    | ✅ Covered |
-| #4  | Context-window budget     | `types.ts` (field), `capability-gate.ts` (filter) | ✅ Covered |
-| #5  | Per-key concurrency       | `per-key-acquire.ts`                          | ✅ Covered |
-| #6  | firstByteTimeoutMs        | `first-byte-timeout.ts`                       | ✅ Covered |
-| #7  | Two-realm breaker         | `breaker-registry.ts`                         | ✅ Covered |
-| #8  | X-Router-Diagnostic hdr   | `headers.ts`, `first-byte-timeout.ts`         | ✅ Partial (selected_index missing) |
-| #9  | Carrier affinity          | `capability-gate.ts` (static rank only)       | ⚠️ Partial (Sprint-2 placeholder) |
-| #10 | JSONL telemetry           | `telemetry-jsonl.ts`                          | ⚠️ Covered (path/format divergence) |
-| #11 | Carrier shape sniffing    | `carrier-error-sniffer.ts`                    | ✅ Covered |
-| #12 | Degraded variant opt-in   | `barrier-filter.ts`, `descent-ladder.ts`      | ✅ Covered |
-| #13 | Force-pin header          | `barrier-filter.ts`                           | ✅ Covered |
-| #14 | Breaker atomicity         | `breaker-registry.ts`, `per-key-acquire.ts`   | ❌ BROKEN (race in single-flight) |
-| #15 | StreamingSmooth meter     | —                                             | ⏭ Deferred (Sprint-3) |
-| R1  | Honor original model id   | `descent-ladder.ts` (T0 always first)         | ✅ Covered |
-| R3  | Cross-family T2 first     | `descent-ladder.ts` (tier2 before tier3)      | ✅ Covered |
-| R4  | Capability gating         | `capability-gate.ts`, `descent-ladder.ts`     | ✅ Covered (duplicate impl) |
-| R6  | No mid-stream recovery    | `first-byte-timeout.ts` (doc only)            | ⚠️ Assumed (no explicit check in compose chain) |
+| Gap | Title                     | Covering File(s)                                  | Status                                          |
+| --- | ------------------------- | ------------------------------------------------- | ----------------------------------------------- |
+| #1  | Per-capability sub-scores | `types.ts`                                        | ✅ Covered                                      |
+| #3  | toolExecutionReliability  | `types.ts`                                        | ✅ Covered                                      |
+| #4  | Context-window budget     | `types.ts` (field), `capability-gate.ts` (filter) | ✅ Covered                                      |
+| #5  | Per-key concurrency       | `per-key-acquire.ts`                              | ✅ Covered                                      |
+| #6  | firstByteTimeoutMs        | `first-byte-timeout.ts`                           | ✅ Covered                                      |
+| #7  | Two-realm breaker         | `breaker-registry.ts`                             | ✅ Covered                                      |
+| #8  | X-Router-Diagnostic hdr   | `headers.ts`, `first-byte-timeout.ts`             | ✅ Partial (selected_index missing)             |
+| #9  | Carrier affinity          | `capability-gate.ts` (static rank only)           | ⚠️ Partial (Sprint-2 placeholder)               |
+| #10 | JSONL telemetry           | `telemetry-jsonl.ts`                              | ⚠️ Covered (path/format divergence)             |
+| #11 | Carrier shape sniffing    | `carrier-error-sniffer.ts`                        | ✅ Covered                                      |
+| #12 | Degraded variant opt-in   | `barrier-filter.ts`, `descent-ladder.ts`          | ✅ Covered                                      |
+| #13 | Force-pin header          | `barrier-filter.ts`                               | ✅ Covered                                      |
+| #14 | Breaker atomicity         | `breaker-registry.ts`, `per-key-acquire.ts`       | ❌ BROKEN (race in single-flight)               |
+| #15 | StreamingSmooth meter     | —                                                 | ⏭ Deferred (Sprint-3)                          |
+| R1  | Honor original model id   | `descent-ladder.ts` (T0 always first)             | ✅ Covered                                      |
+| R3  | Cross-family T2 first     | `descent-ladder.ts` (tier2 before tier3)          | ✅ Covered                                      |
+| R4  | Capability gating         | `capability-gate.ts`, `descent-ladder.ts`         | ✅ Covered (duplicate impl)                     |
+| R6  | No mid-stream recovery    | `first-byte-timeout.ts` (doc only)                | ⚠️ Assumed (no explicit check in compose chain) |
 
 **Missing/delayed:** Gap #15 (Sprint-3, by design). Gap #9 partially deferred. Gap #14 race must be fixed.
 
@@ -324,12 +324,12 @@ Both files implement the same invariant correctly. **Duplicate implementation** 
 **`descent-ladder.ts:45-52`:**
 
 ```ts
-chain.push(...tier0(matrix, m_id, cap_axis));
-chain.push(...tier1(matrix, m_id, cap_axis));
+chain.push(...tier0(matrix, m_id, cap_axis))
+chain.push(...tier1(matrix, m_id, cap_axis))
 if (!force_pin) {
-  chain.push(...tier2(matrix, m_id, cap_axis));
-  chain.push(...tier3(matrix, m_id, cap_axis));
-  chain.push(...tier4(matrix, m_id, cap_axis));
+    chain.push(...tier2(matrix, m_id, cap_axis))
+    chain.push(...tier3(matrix, m_id, cap_axis))
+    chain.push(...tier4(matrix, m_id, cap_axis))
 }
 ```
 
@@ -399,25 +399,25 @@ if (!force_pin) {
 
 ## Verdict Summary
 
-| Metric | Count |
-|--------|-------|
-| Total files audited | 10 |
-| Files OK | 2 (spec-extract.md, barrier-filter.ts) |
-| Files NEEDS_FIX_BUT_SHIPS | 7 (types.ts, carrier-error-sniffer.ts, headers.ts, telemetry-jsonl.ts, descent-ladder.ts, per-key-acquire.ts, capability-gate.ts, first-byte-timeout.ts) |
-| Files NEEDS_FIX_BEFORE_SPRINT_3 | 1 (breaker-registry.ts — gap #14 atomicity broken) |
+| Metric                          | Count                                                                                                                                                    |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Total files audited             | 10                                                                                                                                                       |
+| Files OK                        | 2 (spec-extract.md, barrier-filter.ts)                                                                                                                   |
+| Files NEEDS_FIX_BUT_SHIPS       | 7 (types.ts, carrier-error-sniffer.ts, headers.ts, telemetry-jsonl.ts, descent-ladder.ts, per-key-acquire.ts, capability-gate.ts, first-byte-timeout.ts) |
+| Files NEEDS_FIX_BEFORE_SPRINT_3 | 1 (breaker-registry.ts — gap #14 atomicity broken)                                                                                                       |
 
 ### Cross-Cutting Issues
 
-| Letter | Area | Verdict |
-|--------|------|---------|
-| A | Gap-File coverage | ✅ All gaps covered except #15 (deferred to S3) |
-| B | Import-graph integrity | ✅ No mismatches |
-| C | Capability-gate invariant | ✅ Both impls enforce correctly |
-| D | Descent-chain tiers | ✅ Order correct; bands brittle |
-| E | Breaker atomicity (#14) | ❌ Async lock is racy; scope is over-broad |
-| F | First-byte timeout | ✅ Config and classification correct |
-| G | Barrier filter (#12) | ✅ Field-based approach superior |
-| H | Telemetry JSONL (#10) | ⚠️ Path + shape divergence from spec |
+| Letter | Area                      | Verdict                                         |
+| ------ | ------------------------- | ----------------------------------------------- |
+| A      | Gap-File coverage         | ✅ All gaps covered except #15 (deferred to S3) |
+| B      | Import-graph integrity    | ✅ No mismatches                                |
+| C      | Capability-gate invariant | ✅ Both impls enforce correctly                 |
+| D      | Descent-chain tiers       | ✅ Order correct; bands brittle                 |
+| E      | Breaker atomicity (#14)   | ❌ Async lock is racy; scope is over-broad      |
+| F      | First-byte timeout        | ✅ Config and classification correct            |
+| G      | Barrier filter (#12)      | ✅ Field-based approach superior                |
+| H      | Telemetry JSONL (#10)     | ⚠️ Path + shape divergence from spec            |
 
 ### Reviewer Confidence: HIGH
 

@@ -86,12 +86,12 @@ declaring failure.** (Memory saved as `subagent-poll-preview-misleading-200mb-st
 Audited recent parallel commits for Svelte/UI touches per AGENTS.md hot rule
 ("user-visible features require a journey test before merge").
 
-| Commit | Svelte/UI touch? | Journey test? |
-|--------|------------------|---------------|
-| `90d62c3f` (Track A demo-replay F2) | YES — `DemoChoreography.svelte` (7 lines) | **GAP** |
-| `7b158883` (v2-failover Sprint-6) | NO (tmp/ + harness only) | N/A |
-| `3dc0c995`, `c9b9db4b`, `93721ce2` | NO (test/docs only) | N/A |
-| `c4201964` (main-lane Wave-3) | YES — journey test ADDED | ✓ covered |
+| Commit                              | Svelte/UI touch?                          | Journey test? |
+| ----------------------------------- | ----------------------------------------- | ------------- |
+| `90d62c3f` (Track A demo-replay F2) | YES — `DemoChoreography.svelte` (7 lines) | **GAP**       |
+| `7b158883` (v2-failover Sprint-6)   | NO (tmp/ + harness only)                  | N/A           |
+| `3dc0c995`, `c9b9db4b`, `93721ce2`  | NO (test/docs only)                       | N/A           |
+| `c4201964` (main-lane Wave-3)       | YES — journey test ADDED                  | ✓ covered     |
 
 **Gap**: `90d62c3f` adds `demo-replay-acknowledged` event dispatch to
 `DemoChoreography.svelte`'s `replayListener`. Zero matches for "demo-replay" in ANY
