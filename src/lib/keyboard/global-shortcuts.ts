@@ -28,6 +28,7 @@ import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from './keyboard
 import { updateUrlState } from '@lib/orchestration/url-state'
 import { isModeLocked } from '@lib/navigation/mode-affordances'
 import { showExperienceToast } from '@lib/orchestration/toast'
+import { setSearchQuery } from '@lib/stores/search.svelte.ts'
 import type { NavMode } from '@lib/types/state'
 
 /**
@@ -141,7 +142,7 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         }
 
         // `/` focuses the search input (P1).
-        if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
+        if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField && !e.repeat) {
             e.preventDefault()
             document.getElementById('search-input')?.focus()
             return
@@ -149,7 +150,7 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
 
         // `?` or Shift+/ opens the keyboard shortcuts overlay (A2-7).
         // Was missing from the Svelte port — Round 2/3 QA flagged it.
-        if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
+        if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField && !e.repeat) {
             e.preventDefault()
             initKeyboardShortcutsHint()
             showKeyboardShortcutsHint()
@@ -157,14 +158,14 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         }
 
         // `w` toggles weather widget visibility.
-        if (e.key === 'w' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
+        if (e.key === 'w' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField && !e.repeat) {
             e.preventDefault()
             options.toggleWeather()
             return
         }
 
         // `m` toggles audio mute (optional — caller may omit it).
-        if (e.key === 'm' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
+        if (e.key === 'm' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField && !e.repeat) {
             if (options.toggleAudioMute) {
                 e.preventDefault()
                 options.toggleAudioMute()
@@ -191,11 +192,9 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
                 return
             }
             e.preventDefault()
-            const searchInput = document.getElementById('search-input') as HTMLInputElement | null
-            if (searchInput) {
-                searchInput.value = ''
-                searchInput.dispatchEvent(new Event('input', { bubbles: true }))
-            }
+            // H-4 (bugsweep): clear the search query through the store, not
+            // direct DOM mutation, so the Svelte $state and the DOM stay in sync.
+            setSearchQuery('')
             const { mode, surface } = navStore()
             if (mode !== 'overview' || surface !== 'idle') {
                 dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)

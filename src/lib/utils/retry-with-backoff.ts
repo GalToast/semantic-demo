@@ -86,7 +86,7 @@ export function computeBackoffDelay(attempt: number, baseDelay = DEFAULT_BASE_DE
     const exponential = baseDelay * Math.pow(2, attempt)
     const capped = Math.min(exponential, maxDelay)
     // Full jitter: random between 50% and 150% of the capped exponential delay.
-    return Math.round(capped * (0.5 + Math.random() * 0.5))
+    return Math.round(capped * (0.5 + Math.random()))
 }
 
 // ── Error Classification ──────────────────────────────────────────────────────
@@ -136,8 +136,10 @@ export function isTransientError(err: unknown): boolean {
     // TypeErrors from fetch failing to connect are transient.
     if (err instanceof TypeError) return true
 
-    // AbortError due to timeout is transient (but not user-initiated abort).
-    if (err instanceof DOMException && err.name === 'TimeoutError') return true
+// DOMException TimeoutError is transient (rare in fetch context — timeout
+// aborts usually surface as AbortError, which the generic Error message-match
+// check below already classifies; this catch keeps the rare TimeoutError name).
+if (err instanceof DOMException && err.name === 'TimeoutError') return true
 
     // Generic Error with a timeout-related message
     if (err instanceof Error && (lower.includes('timeout') || lower.includes('timed out'))) return true

@@ -17,8 +17,14 @@ import { isKeyboardTextEntryTarget } from '@lib/utils/keyboard-target'
 
 export function isKeyboardControlTarget(target: EventTarget | null): target is HTMLElement {
     if (!target || typeof (target as HTMLElement).tagName !== 'string') return false
-    const tagName = (target as HTMLElement).tagName.toLowerCase()
+    const el = target as HTMLElement
+    const tagName = el.tagName.toLowerCase()
     if (tagName === 'button' || tagName === 'select' || tagName === 'a') return true
+    // M-7 (bugsweep): cover ARIA widget roles on custom Svelte components
+    // (role="button", "link", "menuitem", "tab") so galaxy shortcuts don't
+    // fire while focus is inside interactive custom elements.
+    const role = el.getAttribute('role')
+    if (role === 'button' || role === 'link' || role === 'menuitem' || role === 'tab') return true
     return false
 }
 

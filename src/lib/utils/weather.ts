@@ -82,8 +82,8 @@ export async function fetchWeather(): Promise<void> {
     try {
         const payload = await fetchWeatherPayload()
         const normalized = normalizeWeatherPayload(payload)
-        state.weather = normalized
         if (!normalized) throw new Error('weather payload incomplete')
+        state.weather = normalized
         const lastSuccessfulFetch = Date.now()
 
         appState.weatherState = {

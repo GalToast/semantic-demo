@@ -4,7 +4,7 @@
  * Constrains Tab key cycling within a set of container selectors
  * so modal/overlay UIs remain keyboard-accessible.
  *
- * Port of
+ * (ported from the original focus-trap utility — see git history for provenance)
  */
 
 /** CSS selector string matching all standard focusable elements. */
@@ -12,7 +12,7 @@ export const FOCUSABLE_SELECTORS = [
     'a[href]',
     'button:not([disabled])',
     'textarea:not([disabled])',
-    'input:not([disabled])',
+    'input:not([disabled]):not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"])',
     'select:not([disabled])',
     '[tabindex="0"]'
 ].join(', ')
