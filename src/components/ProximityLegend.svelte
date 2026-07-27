@@ -122,10 +122,21 @@
   // search the card competes with the search cue and result panels for the
   // same bottom-left / bottom-center space on mobile. Dismiss it immediately
   // and mark onboarding as seen so it doesn't reappear.
+  //
+  // L1-H1 fix: appState is a custom Proxy (not a Svelte $state), so direct
+  // reads inside $effect are not tracked by Svelte's reactivity system. We
+  // wrap each appState field read in $derived to establish a reactive
+  // dependency chain: $derived reads the $state-backed property (tracked),
+  // and $effect reads the $derived (tracked), so the effect re-runs when
+  // search state changes.
+  let searchSummary = $derived(appState.searchState.currentSearchSummary);
+  let cueLastRendered = $derived(appState.searchTrailCueLastRenderedAt);
+  let searchStatus = $derived(appState.searchState.searchStatus);
+
   $effect(() => {
-    const summary = appState.searchState.currentSearchSummary;
-    const cueActive = appState.searchTrailCueLastRenderedAt > 0;
-    const searchStarted = appState.searchState.searchStatus === 'searching' || !!(summary && ('query' in summary));
+    const summary = searchSummary;
+    const cueActive = cueLastRendered > 0;
+    const searchStarted = searchStatus === 'searching' || !!(summary && ('query' in summary));
     if ((searchStarted || cueActive) && !dismissed) {
       handleDismiss();
     }
