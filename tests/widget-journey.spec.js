@@ -3793,4 +3793,34 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         const boxCount = await page.locator('#demo-choreography').count()
         expect(boxCount, 'M15 invariant: exactly one demo choreography box (no stacking)').toBe(1)
     })
+
+    test('T1-4: keyboard shortcuts 1-6 sync the URL', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1000)
+
+        // Dismiss help dialog if present
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Shortcut '2' -> search surface
+        await page.keyboard.press('2')
+        await page.waitForTimeout(300)
+        expect(page.url(), 'shortcut 2 syncs surface=search to URL').toContain('surface=search')
+
+        // Shortcut '6' -> map view
+        await page.keyboard.press('6')
+        await page.waitForTimeout(300)
+        expect(page.url(), 'shortcut 6 syncs view=map to URL').toContain('view=map')
+    })
 })
