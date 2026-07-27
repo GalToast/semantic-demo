@@ -195,7 +195,7 @@
     if (active) {
       const pt = active.point ?? getBusinessRecords()[Number(active.index)] ?? null;
       const name = pt?.name ?? active.name ?? 'Unknown';
-      const snippet = pt?.what ?? active.snippet ?? active.snippet ?? '';
+      const snippet = pt?.what ?? active.snippet ?? '';
       const context = pt?.city ?? active.category ?? '';
       const rank = idx === 0 ? 'Top match' : `Match ${idx + 1}`;
       liveAnnouncement = `Focus ${name}. ${rank}. ${snippet} ${context}. (${idx + 1} of ${resultSlice.length})`;

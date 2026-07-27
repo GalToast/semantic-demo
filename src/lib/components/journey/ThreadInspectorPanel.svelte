@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { focusStore, clearThreadInspector, pinThread, unpinThread } from '@lib/stores/focus.svelte';
+  import { clearThreadInspector, pinThread, unpinThread } from '@lib/stores/focus.svelte';
   import type { FocusStoreState } from '@lib/stores/focus.svelte';
   import { dispatchNavTransition, focusedIndex, NAV_TRANSITION_ACTIONS, updateNavState } from '@lib/stores/navigation.svelte.ts';
   import { appState } from '@lib/state/app.svelte';
@@ -19,7 +19,7 @@
 
   /** Fallback: read inspectedThreadIndex from focusStore (body.dataset was a legacy mirror). */
   function bodyInspectedIndex(): number | null {
-    const snap = focusStore();
+    const snap = focusSnapshot;
     const idx = snap.threadInspector.inspectedIndex ?? snap.inspectedStrandIndex;
     return idx != null && Number.isFinite(idx) ? idx : null;
   }
@@ -94,7 +94,6 @@
       surface: 'thread-inspector',
       reason: 'thread-inspector-follow'
     });
-    actions?.clearThreadInspection?.({ force: true, preserveJourney: false });
     updateNavState({
       focusedIndex: inspectedIndex,
       mode: 'trail',

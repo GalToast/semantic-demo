@@ -79,7 +79,7 @@
       for "<strong>{searchError?.query}</strong>".
       {#if friendlyError?.detail}<span class="search-error-inline-detail">{friendlyError.detail}</span>{/if}
     </span>
-    <button class="search-error-retry-btn compact" type="button" aria-label={`Retry search for ${searchError?.query}`} onclick={onRetry}>Retry</button>
+    <button class="search-error-retry-btn compact" type="button" aria-label={`Retry search for ${searchError?.query ?? ''}`} onclick={onRetry}>Retry</button>
   </div>
 {/if}
 

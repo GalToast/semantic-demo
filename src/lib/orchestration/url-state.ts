@@ -216,7 +216,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         // View restoration
         const view = params.get('view')
         const targetView: ViewName = view === 'map' ? 'map' : 'galaxy'
-        writeNavStateMirror({ currentView: targetView })
+        writeNavStateMirror({ currentView: targetView, surface: targetView === 'map' ? 'map' : 'idle' })
 
         // Filter restoration (status, city, website, email, geocoded)
         _restoreFiltersFromParams(params)
@@ -692,7 +692,7 @@ async function _applyFocusPocketForAnchor(
         // ImportCallOptions.signal is supported at runtime (Node 17+, all modern browsers)
         // but isn't in @types/node ImportCallOptions in this TS version. `as never`
         // bridges the type-only gap; the runtime call is well-defined.
-        const _focusPocketMod = (await import('@lib/focus/pocket')) as {
+        const _focusPocketMod = (await import('@lib/focus/pocket', { signal: _signal } as never)) as {
             applyLocalNeighborhoodFocus: (index: number) => void
         }
         const applyLocalNeighborhoodFocus = _focusPocketMod.applyLocalNeighborhoodFocus

@@ -50,6 +50,7 @@ export function releaseFocusTrap(): void {
 }
 
 function handleKeydown(e: KeyboardEvent): void {
+    if (e.isComposing) return
     if (e.key !== 'Tab') return
     if (activeTrapContainers.length === 0) return
 

@@ -39,7 +39,7 @@
   detail={friendlyError?.detail}
   technical={friendlyError?.technical}
   retryLabel="Retry"
-  retryAriaLabel={`Retry search for ${searchError?.query}`}
+  retryAriaLabel={`Retry search for ${searchError?.query ?? ''}`}
   {onRetry}
   dismissLabel="Clear"
   dismissAriaLabel="Clear search and dismiss"

@@ -80,9 +80,6 @@
   let currentActiveResult = $derived(activeResult());
   // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
   // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
-  let isFocused = $derived(
-    nav.mode === 'focus' || nav.mode === 'inside' || currentFocusedIdx != null
-  );
   let surface = $derived(nav.surface ?? 'idle');
 
   // ── Derived state from appState.navState (replaces body.dataset reads) ────
@@ -100,8 +97,7 @@
   let isFocusedReactive = $derived(
     currentFocusedIdx != null ||
     nav.mode === 'focus' ||
-    nav.mode === 'inside' ||
-    isFocused
+    nav.mode === 'inside'
   );
 
   // ── Test-contract bypass: NOT redundant with parityMap ─────────────────

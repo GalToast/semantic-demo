@@ -171,6 +171,7 @@
     // this handler can complete before the #demo-choreography element is
     // removed from the DOM. Without this, Playwright's click action may see
     // the target detach mid-gesture and report a timeout.
+    cancelAllDemoTimers();
     requestAnimationFrame(() => cancelDemo());
   }
 

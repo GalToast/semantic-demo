@@ -245,64 +245,8 @@
     // props live on every selection. selectedRecord carries the same record
     // selectedPointStore() resolved for the focus case (and the active search
     // result otherwise).
-    const point = selectedRecord as BusinessPoint | null;
-    if (!point) {
-      // Fallback: build view-model from selectedRecord (no 3D point available)
-      const rawName = selectedRecord.name ?? '';
-      const namePresentation = getBusinessNamePresentation(rawName);
-      const name = namePresentation.display || COPY.selectedEmptyName;
-      const filedAs = '';
-      const showFiledAs = false;
-      const what = sanitizePublicFacingNote(selectedRecord.what ?? '');
-      const theme = describeCluster(selectedRecord.cluster);
-      const status = formatStatus(selectedRecord.status ?? 'active');
-      const role = 'Business';
-      const trivia = (getInterestingBusinessNote(selectedRecord) as string) || '';
-      const showTrivia = Boolean(trivia);
-      const summary = searchSummary();
-      const matchNarrative = selectionSource === 'search' && currentActiveResult !== null && summary // audit-ok: inside $derived.by — previously audited as SAFE
-        ? buildSearchMatchNarrative(selectedRecord)
-        : '';
-      const showMatchPanel = Boolean(matchNarrative);
-      const facts: Record<string, unknown>[] = [];
-      if (selectedRecord.website) {
-        facts.push({ type: 'link', label: 'Website', href: selectedRecord.website, isExternal: true });
-      }
-      if (selectedRecord.email) {
-        facts.push({ type: 'link', label: 'Email', href: `mailto:${selectedRecord.email}`, isExternal: false });
-      }
-      if (selectedRecord.phone) {
-        facts.push({ value: `Phone: ${selectedRecord.phone}` });
-      }
-      // No point data → sensitivity badges always empty
-      const sensitivityBadges: Record<string, unknown>[] = [];
-      const mapText = (selectedRecord.lat != null && selectedRecord.lng != null)
-        ? `${selectedRecord.lat.toFixed(4)}, ${selectedRecord.lng.toFixed(4)}`
-        : COPY.selectedEmptyMap;
-      const threadText = '';
-
-      return {
-        name,
-        filedAs,
-        showFiledAs,
-        what,
-        role,
-        theme,
-        status,
-        trivia,
-        showTrivia,
-        matchNarrative,
-        showMatchPanel,
-        facts,
-        sensitivityBadges,
-        mapText,
-        threadText,
-        isPopulated: true
-      };
-    }
-
     // Point data available — delegate to shared view-model
-    return buildSelectedBusinessProps(point, {}, selectedDetailsAdapter as SelectedCardAdapter | undefined, {
+    return buildSelectedBusinessProps(selectedRecord as BusinessPoint, {}, selectedDetailsAdapter as SelectedCardAdapter | undefined, {
       getBusinessNamePresentation,
       sanitizePublicFacingNote,
       describeCluster,

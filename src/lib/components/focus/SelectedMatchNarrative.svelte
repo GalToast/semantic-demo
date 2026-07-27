@@ -27,7 +27,6 @@
   <div
     class="selected-match-panel"
     id="{idPrefix}selected-match-panel"
-    hidden={!showMatchPanel}
   >
     <div class="selected-match-label" id="{idPrefix}selected-match-label">Why this record</div>
     <div class="selected-match-copy" id="{idPrefix}selected-match-copy">{matchNarrative}</div>

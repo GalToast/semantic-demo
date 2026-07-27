@@ -110,25 +110,31 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
             switch (e.key) {
                 case '1':
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)
+                    updateUrlState({}, { reason: 'keyboard-shortcut-1' })
                     break
                 case '2':
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
+                    updateUrlState({ surface: 'search' }, { reason: 'keyboard-shortcut-2' })
                     break
                 case '3':
                     // surface enum is currently loose; `trail` is
                     // intentionally narrow-typed as `any` here until
                     // the navigation surface union is tightened.
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' })
+                    updateUrlState({ surface: 'trail' }, { reason: 'keyboard-shortcut-3' })
                     break
                 case '4':
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' })
+                    updateUrlState({ surface: 'focus' }, { reason: 'keyboard-shortcut-4' })
                     break
                 case '5':
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' })
+                    updateUrlState({ surface: 'inside' }, { reason: 'keyboard-shortcut-5' })
                     break
                 case '6':
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' })
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' })
+                    updateUrlState({ view: 'map', surface: 'map' }, { reason: 'keyboard-shortcut-6' })
                     break
             }
             return
