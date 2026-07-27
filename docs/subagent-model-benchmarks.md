@@ -77,6 +77,25 @@ Live tracker of which provider/model routes work reliably for subagent coding ta
 7. **Use long timeouts.** First assistant output can take 30–60 s for some routes; set `timeout_seconds` ≥ 900 for real tasks.
 8. **Provider-qualified refs bypass OpenCode Zen.** Bare free IDs like `mimo-v2.5-free` route to `router-opencode-zen`; use `logfare/...`, `kilo/...`, `nvidia/...`, etc.
 
+## Health-Check Wave 2026-07-27 — Subagent DOM Audit Bench (ThreadInspector.svelte)
+
+Task: dispatch subagent on each route to read `src/components/ThreadInspector.svelte`, list DOM ids and CSS classes, and write a report to `tmp/subagent-benchmark/reports/{slug}-threadinspector-dom-audit.md`. All dispatches used `live_steer: true`, `timeout_seconds: 120`, and steer nudges at ~60s and ~82s.
+
+| # | Route | Provider | Status | Live Steer | Report Written | Notes |
+|---|-------|----------|--------|------------|----------------|-------|
+| 1 | `kilo/poolside/laguna-xs-2.1:free` | kilo | TIMEOUT | Yes | No | Worker exited 124 at 120s. No assistant output. Startup + LSP daemon handshake visible, then silent. |
+| 2 | `kilo/cohere/north-mini-code:free` | kilo | TIMEOUT | Yes | No | Worker exited 124 at 120s. Same pattern — no assistant tokens produced. |
+| 3 | `modelscope/Qwen/Qwen3.5-35B-A3B` | modelscope | TIMEOUT | Yes | No | Worker exited 124 at 120s. Modelscope/Qwen routes appear to stall after model selection.
+| 4 | `modelscope/stepfun-ai/Step-3.5-Flash` | modelscope | TIMEOUT | Yes | No | Worker exited 124 at 120s. Same Modelscope stalling pattern. |
+| 5 | `logfare/minimax-m3` | logfare | TIMEOUT | Yes | No | Worker exited 124 at 120s. Logfare route did not produce assistant output despite prior main-lane use. |
+| 6 | `nvidia/deepseek-ai/deepseek-v4-flash` | nvidia | TIMEOUT | Yes | No | Worker exited 124 at 120s. NVidia route hangs after model dispatch; prior wave also showed 120s timeout for nvida deepseek-v4-flash. |
+
+**Summary:** 0/6 routes produced a completed report. All 6 passed HTTP smoke in the health check but failed subagent dispatch with 120s timeouts. No new routes added to `models-2026-07-27-http-viable.txt`. All routes confirmed as HTTP-viable (connectivity OK) but NOT subagent-dispatch-viable at the current timeout budget.
+
+**Connection errors:** None — all 6 routes connected and initiated worker sessions successfully.
+
+**Recommendation:** Re-test these routes with longer timeouts (≥300s) in a future wave, especially for the larger models (Qwen 35B, nvidia deepseek-v4-flash). Consider adding `reasoning:{effort:"max"}` body config for Modelscope routes.
+
 ## Open Questions
 
 - Does `zenmux/z-ai/glm-4.7-flash-free` complete a real subagent coding task and pass verification?
@@ -1376,4 +1395,6 @@ The parallel session's "5 viable routes" finding (`f08598a3`, ~00:38 UTC) had **
 | `mistral/devstral-latest` (router-mistral) | **6/10** | ❌ phantom (no edit op in stdout; git diff empty) | ❌ claimed pre-existing fix `6c250e01` as own | ✅ clean | $0.0042 | hallucinated `model: minimax-m3`; mischaracterized "signal" hit (comment not CSS class) |
 | `kilo/stepfun/step-3.7-flash:free` (router-kilo) | **7/10** | ✅ persisted (CompassRail aria-label) — **but unjustified false positive** ("journey" not forbidden) → reverted | ✅ "reported honestly rather than inventing one" | ✅ clean | $0.0023 | hallucinated `model: minimax-m3`; 47 MB stdout (excessive reasoning for flash); cheaper + more honest than devstral |
 
-**Bottom line**: step-3.7-flash > devstral-latest for real-task subagent work (honest reporting, real edits, cheaper) — but both need main-lane verification of edits against the forbidden jargon list. The kilo `:free` route held (contradicting the earlier 402-only-for-kilo assumption — the `:free` suffix routes are genuinely free).
+| `kilo/inclusionai/ling-3.0-flash:free` (router-kilo) | **3/10** | ❌ ZERO tool calls (cancelled) | N/A (never acted) | N/A | $0 (free) | **Analysis paralysis**: 200 MB stdout (hit cap), 6 min of reasoning, zero tool calls. Hard nudge didn't break the loop. Good reasoning content (found dead `primary` class in CompassRail) but couldn't act. Also hallucinated the forbidden list. Ling family has tool-use issues on BOTH routes (opencode-zen = hallucinated delivery in round 2, kilo = paralysis now). |
+
+**Bottom line**: step-3.7-flash (7/10) > devstral-latest (6/10) > ling-3.0-flash (3/10, analysis paralysis). For real-task subagent work: step-3.7-flash is the best free lane (honest, cheap, real edits — but verify against the forbidden list). devstral is analytically OK but phantom-fixes. ling-3.0-flash is unreliable for tool-use tasks on either route. The kilo `:free` route held for step but ling paralyzed on the same route — model behavior varies more than route availability. All 3 workers hallucinated `model: minimax-m3` (systemic Pi system prompt issue).
