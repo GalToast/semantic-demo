@@ -404,8 +404,7 @@ export function scheduleSemanticLaneMonitor(): void {
 
     state.semanticLaneMonitorTimer =
         typeof win?.setInterval === 'function'
-            ? setInterval(() => {
-                  // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneMonitorTimer
+            ? setInterval(() => { // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneMonitorTimer
                   if (isStaticDevLaneFallbackActive()) return
                   probeSemanticLane({
                       warm: shouldWarmSemanticLane('interval'),
@@ -538,8 +537,7 @@ export function setSemanticLaneOpsMode(enabled: boolean): void {
         return
     }
     if (!state.semanticLaneOpsRefreshTimer && typeof win?.setInterval === 'function') {
-        state.semanticLaneOpsRefreshTimer = setInterval(() => {
-            // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneOpsRefreshTimer
+        state.semanticLaneOpsRefreshTimer = setInterval(() => { // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneOpsRefreshTimer
             refreshSemanticLaneOpsSummary()
         }, 60000)
     }
