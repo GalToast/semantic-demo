@@ -1436,3 +1436,14 @@ Same task as Round 6. Used `live_steer: true`, `timeout_seconds: 300`.
 | `hy3-free`       | `router-opencode-zen/hy3-free`    | ❌ 429 rate-limit   | —           | OpenCode Zen router returned `429` "no keys currently off cooldown" repeatedly. Not subagent-viable right now.      |
 
 **No new viable routes added in this round.** The `qwen3.6-flash` ID needs a different catalog prefix; `hy3-free` is blocked by the same OpenCode Zen cooldown rate-limit as `laguna-s-2.1-free`.
+
+## Round 8 — 2026-07-27 ~12:35 UTC (registered alt + zenmux qwen)
+
+Same task. Used `live_steer: true`, `timeout_seconds: 300`.
+
+| target route       | resolved route              | result    | report file                                                                               | notes                                                                                                                                                                                                               |
+| ------------------ | --------------------------- | --------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agnes-2.0-flash`  | `router-agnes/agnes-2.0-flash` | ✅ completed | `tmp/subagent-benchmark/reports/agnes-2.0-flash-threadinspector-dom-audit.md`              | Tool-use + write succeeded in ~150 s. Report is usable but over-reaches into child `ThreadInspectorPanel` DOM and includes some classes not emitted by the parent component; verify its output in production tasks. |
+| `zenmux/qwen/qwen3.6-flash` | `router-zenmux/qwen/qwen3.6-flash` | ❌ 402 no-credit | —                                                                                   | Direct dispatch: `402` "Access denied: this model is only available to accounts with a balance greater than 0." Not a free route; not subagent-viable without credit.                                               |
+
+**New viable route added:** `agnes-2.0-flash` (resolves via `router-agnes`).
