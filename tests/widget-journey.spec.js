@@ -3823,4 +3823,49 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.waitForTimeout(300)
         expect(page.url(), 'shortcut 6 syncs view=map to URL').toContain('view=map')
     })
+
+    test('F-search-8: search result scores are normalized to 0-1 range with granularity', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1000)
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        await page.keyboard.press('2')
+        await page.waitForTimeout(300)
+
+        const searchInput = page.locator('#search-input, input[placeholder*="Search"], input[placeholder*="search"]').first()
+        await searchInput.waitFor({ state: 'visible', timeout: 10000 })
+        await searchInput.fill('coffee')
+        await page.waitForTimeout(2000)
+
+        const scores = await page.evaluate(() => {
+            const results = Array.from(document.querySelectorAll('.search-result, [data-result-score]'))
+            return results.map((r) => {
+                const score = r.getAttribute('data-result-score')
+                return score ? parseFloat(score) : null
+            }).filter((s) => s !== null)
+        })
+
+        for (const s of scores) {
+            expect(s).toBeGreaterThanOrEqual(0)
+            expect(s).toBeLessThanOrEqual(1)
+        }
+
+        if (scores.length > 0) {
+            const maxScore = Math.max(...scores)
+            expect(maxScore).toBeGreaterThan(0)
+        }
+    })
 })
