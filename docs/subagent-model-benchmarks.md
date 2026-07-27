@@ -1430,10 +1430,10 @@ Same task as Round 5, but targeting the free-fallback IDs in the lane inventory.
 
 Same task as Round 6. Used `live_steer: true`, `timeout_seconds: 300`.
 
-| target route     | resolved route                    | result              | report file | notes                                                                                                             |
-| ---------------- | --------------------------------- | ------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------- |
-| `qwen/qwen3.6-flash` | `zyditv4/qwen/qwen3.6-flash`  | ❌ model-not-found  | —           | Direct dispatch: `404` "Model 'qwen/qwen3.6-flash' is not available on the unified v4 catalog." Not subagent-viable via this id. |
-| `hy3-free`       | `router-opencode-zen/hy3-free`    | ❌ 429 rate-limit   | —           | OpenCode Zen router returned `429` "no keys currently off cooldown" repeatedly. Not subagent-viable right now.      |
+| target route         | resolved route                 | result             | report file | notes                                                                                                                            |
+| -------------------- | ------------------------------ | ------------------ | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `qwen/qwen3.6-flash` | `zyditv4/qwen/qwen3.6-flash`   | ❌ model-not-found | —           | Direct dispatch: `404` "Model 'qwen/qwen3.6-flash' is not available on the unified v4 catalog." Not subagent-viable via this id. |
+| `hy3-free`           | `router-opencode-zen/hy3-free` | ❌ 429 rate-limit  | —           | OpenCode Zen router returned `429` "no keys currently off cooldown" repeatedly. Not subagent-viable right now.                   |
 
 **No new viable routes added in this round.** The `qwen3.6-flash` ID needs a different catalog prefix; `hy3-free` is blocked by the same OpenCode Zen cooldown rate-limit as `laguna-s-2.1-free`.
 
@@ -1441,9 +1441,20 @@ Same task as Round 6. Used `live_steer: true`, `timeout_seconds: 300`.
 
 Same task. Used `live_steer: true`, `timeout_seconds: 300`.
 
-| target route       | resolved route              | result    | report file                                                                               | notes                                                                                                                                                                                                               |
-| ------------------ | --------------------------- | --------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `agnes-2.0-flash`  | `router-agnes/agnes-2.0-flash` | ✅ completed | `tmp/subagent-benchmark/reports/agnes-2.0-flash-threadinspector-dom-audit.md`              | Tool-use + write succeeded in ~150 s. Report is usable but over-reaches into child `ThreadInspectorPanel` DOM and includes some classes not emitted by the parent component; verify its output in production tasks. |
-| `zenmux/qwen/qwen3.6-flash` | `router-zenmux/qwen/qwen3.6-flash` | ❌ 402 no-credit | —                                                                                   | Direct dispatch: `402` "Access denied: this model is only available to accounts with a balance greater than 0." Not a free route; not subagent-viable without credit.                                               |
+| target route                | resolved route                     | result           | report file                                                                   | notes                                                                                                                                                                                                               |
+| --------------------------- | ---------------------------------- | ---------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agnes-2.0-flash`           | `router-agnes/agnes-2.0-flash`     | ✅ completed     | `tmp/subagent-benchmark/reports/agnes-2.0-flash-threadinspector-dom-audit.md` | Tool-use + write succeeded in ~150 s. Report is usable but over-reaches into child `ThreadInspectorPanel` DOM and includes some classes not emitted by the parent component; verify its output in production tasks. |
+| `zenmux/qwen/qwen3.6-flash` | `router-zenmux/qwen/qwen3.6-flash` | ❌ 402 no-credit | —                                                                             | Direct dispatch: `402` "Access denied: this model is only available to accounts with a balance greater than 0." Not a free route; not subagent-viable without credit.                                               |
 
 **New viable route added:** `agnes-2.0-flash` (resolves via `router-agnes`).
+
+## Round 9 — 2026-07-27 ~12:45 UTC (remaining OpenCode Zen free fallbacks)
+
+Same task. Used `live_steer: true`, `timeout_seconds: 300`.
+
+| target route                 | resolved route                                   | result       | report file                                                                                  | notes                                                                                          |
+| ---------------------------- | ------------------------------------------------ | ------------ | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `openrouter/poolside/laguna-xs-2.1:free` | `direct-openrouter/poolside/laguna-xs-2.1:free` | ✅ completed | `tmp/subagent-benchmark/reports/laguna-xs-2.1-free-threadinspector-dom-audit.md`             | Clean read+write in ~220 s; report accurate. **Third newly viable** free route of the wave.    |
+| `opencode/nemotron-3-ultra-free` | `router-opencode-zen/nemotron-3-ultra-free`      | ✅ completed | `tmp/subagent-benchmark/reports/nemotron-3-ultra-free-threadinspector-dom-audit.md`         | Clean read+write in ~190 s; report accurate. **Fourth newly viable** free route of the wave.   |
+
+**New viable routes added:** `openrouter/poolside/laguna-xs-2.1:free` and `opencode/nemotron-3-ultra-free`.
