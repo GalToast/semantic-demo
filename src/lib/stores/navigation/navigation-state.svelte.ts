@@ -219,8 +219,8 @@ export const hasFocus = () => {
     return SELECTION_DEPENDENT_MODES.has(local.mode) || local.focusedIndex !== null
 }
 export const hasTrail = () => _readNavSnapshot().trailDepth > 0
-export const currentMode = (): string => _readNavSnapshot().mode || 'overview'
-export const currentSurface = (): string => _readNavSnapshot().surface || 'overview'
+export const currentMode = (): string => _readNavSnapshot().mode ?? 'overview'
+export const currentSurface = (): string => _readNavSnapshot().surface ?? 'overview'
 export const focusedIndex = () => {
     const local = _readNavSnapshot().focusedIndex
     return local != null && Number.isFinite(local) ? local : null
