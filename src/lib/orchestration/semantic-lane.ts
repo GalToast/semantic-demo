@@ -13,6 +13,7 @@ import { withStateMutation } from '@lib/state/with-state-mutation'
 const state = _state
 import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback } from '@lib/utils/ui-presentation'
 import { debugWarn } from '@lib/utils/debug'
+import { apiUrl } from '@lib/utils/api-url'
 
 // ── Window augmentation (semantic-lane helpers attached by lifecycle.js) ────
 
@@ -93,7 +94,7 @@ export async function fetchSemanticLaneHealth({
     warm = false,
     signal = null
 }: { warm?: boolean; signal?: AbortSignal | null } = {}): Promise<LaneHealthPayload> {
-    const response = await fetch(`api.php?action=semantic_lane_health&warm=${warm ? '1' : '0'}`, {
+    const response = await fetch(apiUrl(`api.php?action=semantic_lane_health&warm=${warm ? '1' : '0'}`), {
         method: 'GET',
         headers: { Accept: 'application/json' },
         cache: 'no-store',

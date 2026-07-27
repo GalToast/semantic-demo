@@ -13,6 +13,7 @@ import type {
 } from '@lib/types/business'
 import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
+import { retryWithBackoff } from '@lib/utils/retry-with-backoff'
 import { workerUrl } from '@lib/workers/data-worker-url'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ const COL = {
     NAICS: 15
 } as const
 
+/** Max retries for the main-thread fetch fallback. Each is exponential backoff with jitter. */
 const MAX_BUSINESS_RETRIES = 3
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -273,7 +275,16 @@ async function loadBusinessDataMainThread(
     dataUrl: string,
     enrichment: Record<string, LeadEnrichment> | null
 ): Promise<BusinessDataResult> {
-    const raw = await fetchWithRetries(dataUrl, MAX_BUSINESS_RETRIES)
+    const raw = await retryWithBackoff(
+        async () => {
+            const response = await fetch(dataUrl)
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`)
+            }
+            return await response.json()
+        },
+        { maxRetries: MAX_BUSINESS_RETRIES, label: 'data-loader.main-thread' }
+    )
 
     if (!raw || !Array.isArray(raw) || raw.length === 0) {
         throw new Error(`[data-loader] data.dat returned no records (got ${typeof raw})`)
@@ -401,35 +412,6 @@ function replaceInvalidPositionsWithBoundsCenter(
 
 // ── Internal Helpers ─────────────────────────────────────────────────────────
 
-async function fetchWithRetries(url: string, maxAttempts: number): Promise<unknown> {
-    let lastError: Error | null = null
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-            const response = await fetch(url)
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`)
-            }
-            try {
-                return await response.json()
-            } catch (jsonErr) {
-                throw new Error(`Invalid JSON: ${jsonErr instanceof Error ? jsonErr.message : String(jsonErr)}`, {
-                    cause: jsonErr
-                })
-            }
-        } catch (err) {
-            lastError = err instanceof Error ? err : new Error(String(err))
-            debugWarn(`[data-loader] Fetch attempt ${attempt}/${maxAttempts} failed for ${url}:`, lastError.message)
-            if (attempt < maxAttempts) {
-                await delay(500 * attempt)
-            }
-        }
-    }
-    throw new Error(
-        `[data-loader] Failed to fetch ${url} after ${maxAttempts} attempts` +
-            (lastError ? `: ${lastError.message}` : '')
-    )
-}
-
 async function fetchEnrichment(url: string): Promise<Record<string, LeadEnrichment> | null> {
     try {
         const response = await fetch(url)
@@ -485,7 +467,4 @@ function checkDataBounds(buffer: Float32Array): void {
     }
 }
 
-function delay(ms: number): Promise<void> {
-    // eslint-disable-next-line no-restricted-syntax -- fire-and-forget Promise resolution
-    return new Promise((resolve) => setTimeout(resolve, ms))
-}
+

@@ -24,6 +24,7 @@ import { escapeHtml } from '@lib/utils/dom-formatters'
 import { buildSemanticGuideRequestPayload, type SemanticGuideRequestPayload } from '@lib/journey/semantic-guide-payload'
 import { updateLegendGuideState } from '@lib/stores/legend-panel.svelte.ts'
 import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
+import { apiUrl } from '@lib/utils/api-url'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -243,7 +244,7 @@ async function fetchSemanticGuide(
 
     let response: Response
     try {
-        response = await fetch('api.php?action=semantic_guide', {
+        response = await fetch(apiUrl('api.php?action=semantic_guide'), {
             method: 'POST',
             headers: {
                 Accept: 'application/json',

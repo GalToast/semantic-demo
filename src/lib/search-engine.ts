@@ -22,6 +22,7 @@ import type { SearchResult } from '@lib/types/state'
 import { rerankResults } from '@lib/utils/rerank'
 import { searchUseRerank } from '@lib/stores/search.svelte'
 import { get } from 'svelte/store'
+import { apiUrl } from '@lib/utils/api-url'
 import { shouldLogStaticDevFallback } from '@lib/utils/ui-presentation'
 import { debugWarn } from '@lib/utils/debug'
 import { getCachedSearch, setCachedSearch, getPendingSearch, setPendingSearch } from '@lib/search/cache'
@@ -44,6 +45,7 @@ import {
     markApiUnreachable,
     clearApiUnreachable
 } from '@lib/search/mock-search-fallback'
+import { retryWithBackoff, isPermanentError, isTransientError } from '@lib/utils/retry-with-backoff'
 import { debugLog } from '@lib/utils/debug'
 import {
     performLocalIndexSearch,
@@ -93,74 +95,91 @@ async function fetchSemanticSearchResultsDirect(
     }
     const safeOffset = Math.max(0, Math.floor(offset))
     const safeLimit = normalizeSearchLimit(limit)
-    const controller = new AbortController()
-    let timedOut = false
-    const timeoutId = window.setTimeout(() => {
-        timedOut = true
-        controller.abort()
-    }, timeoutMs)
-    const onAbort = (): void => controller.abort()
-    signal?.addEventListener('abort', onAbort, { once: true })
 
-    try {
-        const response = await fetch(
-            `/api.php?action=semantic_search&q=${encodeURIComponent(query)}&limit=${safeLimit}&offset=${safeOffset}`,
-            {
-                method: 'GET',
-                headers: { Accept: 'application/json' },
-                cache: 'no-store',
-                signal: controller.signal
+    // Use retryWithBackoff for the API call: retries transient failures
+    // (429, 502-504, connection errors) with exponential backoff + jitter.
+    // Permanent failures (400, 404, 422) throw immediately.
+    const responseText = await retryWithBackoff(
+        async () => {
+            const controller = new AbortController()
+            let timedOut = false
+            const timeoutId = window.setTimeout(() => {
+                timedOut = true
+                controller.abort()
+            }, timeoutMs)
+            const onAbort = (): void => controller.abort()
+            signal?.addEventListener('abort', onAbort, { once: true })
+
+            try {
+                const response = await fetch(
+                    `${apiUrl(`api.php?action=semantic_search&q=${encodeURIComponent(query)}&limit=${safeLimit}&offset=${safeOffset}`)}`,
+                    {
+                        method: 'GET',
+                        headers: { Accept: 'application/json' },
+                        cache: 'no-store',
+                        signal: controller.signal
+                    }
+                )
+
+                if (!response.ok) {
+                    // Attach status code so isTransientError / isPermanentError
+                    // can classify it via the `.status` property.
+                    const httpErr = new Error(`Semantic search returned HTTP status ${response.status}`) as Error & { status: number }
+                    httpErr.status = response.status
+                    throw httpErr
+                }
+
+                const text = await response.text()
+                const trimmedText = text.trim()
+                if (trimmedText.startsWith('<?php') || (trimmedText.includes('<?php') && trimmedText.indexOf('<?php') < 100)) {
+                    throw new Error('Semantic search returned raw PHP source.')
+                }
+
+                return text
+            } catch (err) {
+                if (canUseStaticDevFallback()) {
+                    const reason = err instanceof Error ? err.message : 'unknown'
+                    markApiUnreachable(reason)
+                }
+                if (timedOut && err instanceof DOMException && err.name === 'AbortError') {
+                    throw new Error(`Semantic search timed out after ${timeoutMs}ms.`, { cause: err })
+                }
+                // re-throw so retryWithBackoff can classify and decide whether to retry
+                throw err
+            } finally {
+                window.clearTimeout(timeoutId)
+                signal?.removeEventListener('abort', onAbort)
             }
-        )
+        },
+        {
+            maxRetries: 2,
+            label: 'search-engine.api',
+            baseDelayMs: 400,
+            maxDelayMs: 4000,
+            signal
+        }
+    )
 
-        if (!response.ok) {
-            throw new Error(`Semantic search returned HTTP status ${response.status}`)
-        }
-
-        const responseText = await response.text()
-        const trimmedText = responseText.trim()
-        if (trimmedText.startsWith('<?php') || (trimmedText.includes('<?php') && trimmedText.indexOf('<?php') < 100)) {
-            throw new Error('Semantic search returned raw PHP source.')
-        }
-
-        let payload: SemanticSearchPayload
-        try {
-            payload = JSON.parse(responseText) as SemanticSearchPayload
-        } catch (jsonErr) {
-            throw new Error('Semantic search returned invalid JSON.', { cause: jsonErr })
-        }
-
-        if (!payload?.ok) {
-            throw new Error(payload?.error || 'Semantic search is unavailable right now.')
-        }
-
-        const rawRows = getPayloadResults(payload)
-        // PR-M: a successful API response clears the time-bounded bypass
-        // flag so the tab immediately returns to live data without
-        // requiring a manual sessionStorage.clear() or page reload.
-        // This pairs with markApiUnreachable in the catch block below
-        // (60s expiry) to make transient dev-server restarts self-healing.
-        clearApiUnreachable()
-        return rawRows
-            .map((row: RawServiceRow, idx: number) => mapServiceRow(row, idx))
-            .filter((r): r is SearchResult => r !== null)
-            .slice(0, safeLimit)
-    } catch (err) {
-        if (canUseStaticDevFallback()) {
-            // PR-M: time-bounded sticky bypass. Replaces the previous
-            // permanent '1' flag so dev-server restarts don't lock the
-            // tab into mock mode for the rest of the session.
-            const reason = err instanceof Error ? err.message : 'unknown'
-            markApiUnreachable(reason)
-        }
-        if (timedOut && err instanceof DOMException && err.name === 'AbortError') {
-            throw new Error(`Semantic search timed out after ${timeoutMs}ms.`, { cause: err })
-        }
-        throw err
-    } finally {
-        window.clearTimeout(timeoutId)
-        signal?.removeEventListener('abort', onAbort)
+    let payload: SemanticSearchPayload
+    try {
+        payload = JSON.parse(responseText) as SemanticSearchPayload
+    } catch (jsonErr) {
+        throw new Error('Semantic search returned invalid JSON.', { cause: jsonErr })
     }
+
+    if (!payload?.ok) {
+        throw new Error(payload?.error || 'Semantic search is unavailable right now.')
+    }
+
+    const rawRows = getPayloadResults(payload)
+    // PR-M: a successful API response clears the time-bounded bypass
+    // flag so the tab immediately returns to live data without
+    // requiring a manual sessionStorage.clear() or page reload.
+    clearApiUnreachable()
+    return rawRows
+        .map((row: RawServiceRow, idx: number) => mapServiceRow(row, idx))
+        .filter((r): r is SearchResult => r !== null)
+        .slice(0, safeLimit)
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -187,6 +206,10 @@ export async function initSearchEngine(): Promise<void> {
  */
 export async function performSearch(query: string, signal: AbortSignal, page = 0, offset = 0): Promise<SearchResult[]> {
     const trimmed = query.trim()
+
+    if (signal.aborted) {
+        throw new DOMException('Search aborted', 'AbortError')
+    }
 
     if (trimmed.length < 2) {
         return []
@@ -268,7 +291,7 @@ async function _executeSearch(
             // Dev / static-dev path: still attempt the API for parity, but on any
             // error (502, raw PHP, network) skip directly to the local index.
             try {
-                const apiTimeoutMs = canUseStaticDevFallback() ? 1200 : 8000
+                const apiTimeoutMs = canUseStaticDevFallback() ? 500 : 8000
                 const apiResults = await fetchSemanticSearchResultsDirect(trimmed, signal, apiTimeoutMs, offset, limit)
                 if (apiResults && apiResults.length > 0) {
                     results = apiResults

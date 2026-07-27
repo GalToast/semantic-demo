@@ -571,6 +571,7 @@ export default defineConfig({
                     // transitive closure into its own chunk so the dispatcher stays lean and
                     // the heavy deps live in a clearly separated, cacheable artifact.
                     if (
+                        id.includes('/src/lib/stores/navigation.svelte.ts') ||
                         id.includes('/src/lib/stores/navigation/') ||
                         id.includes('/src/lib/stores/search.svelte') ||
                         id.includes('/src/lib/stores/focus.svelte') ||

@@ -6,6 +6,7 @@
  */
 
 import { appState } from '@lib/state/app.svelte'
+import { apiUrl } from '@lib/utils/api-url'
 import {
     applyWeatherEffects as applyWeatherEffectsForWeather,
     clearWeatherEffects,
@@ -161,7 +162,7 @@ function shouldPreferBackendWeather(): boolean {
 }
 
 async function fetchBackendWeather(): Promise<Record<string, unknown>> {
-    const response = await fetch('api.php?action=weather', {
+    const response = await fetch(apiUrl('api.php?action=weather'), {
         method: 'GET',
         headers: { Accept: 'application/json' },
         cache: 'no-store'

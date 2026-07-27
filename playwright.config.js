@@ -2,16 +2,16 @@
 
 import { defineConfig } from '@playwright/test'
 
-const baseURL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795'
+const baseURL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8796'
 const headed =
     process.env.CONTRACT_HEADED === '1' || process.env.PLAYWRIGHT_HEADED === '1' || process.env.PWDEBUG === '1'
 const webServer = process.env.TEST_BASE_URL
     ? undefined
     : {
-          command: 'python -m http.server 8795 --directory . --bind 127.0.0.1',
-          port: 8795,
+          command: 'VITE_API_BASE_URL=http://127.0.0.1:8795 npm run build && node scripts/test-server.mjs',
+          port: 8796,
           reuseExistingServer: true,
-          timeout: 120_000
+          timeout: 180_000
       }
 
 export default defineConfig({

@@ -11,6 +11,7 @@
  */
 
 import { appState } from '@lib/state/app.svelte'
+import { apiUrl } from '@lib/utils/api-url'
 import { buildSemanticGuidePayloadResult, buildSemanticGuideRequestPayload } from './semantic-guide-payload'
 
 // ── Local boundary types ────────────────────────────────────────────────────
@@ -116,7 +117,7 @@ export function showSemanticThreadsDetail(): Promise<void> {
         setStoryLoading()
 
         try {
-            const response = await fetch('api.php?action=semantic_trail_story', {
+            const response = await fetch(apiUrl('api.php?action=semantic_trail_story'), {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',

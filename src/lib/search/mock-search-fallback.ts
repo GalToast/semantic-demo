@@ -297,6 +297,10 @@ interface ApiUnreachableRecord {
  */
 export function markApiUnreachable(reason: string): void {
     if (typeof window === 'undefined' || !window.sessionStorage) return
+    // Don't refresh an already-active flag — preserves the intended 60s
+    // expiry so transient dev restarts aren't accidentally prolonged by
+    // repeated API failures during an active search session.
+    if (readApiUnreachable() !== null) return
     try {
         const record: ApiUnreachableRecord = { setAt: Date.now(), reason }
         window.sessionStorage.setItem('api_unreachable', JSON.stringify(record))
