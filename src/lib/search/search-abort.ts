@@ -25,17 +25,17 @@ let currentQuery = ''
  * until clean). Until then, this body keeps the abort→create sequence in one
  * synchronous block so no intermediate state is observable between mutations.
  */
-export function startSearch(query: string): AbortSignal {
+export function startSearch(query: string): { signal: AbortSignal; isNew: boolean } {
     const trimmed = query.trim()
     if (currentController && currentQuery === trimmed && !currentController.signal.aborted) {
-        return currentController.signal
+        return { signal: currentController.signal, isNew: false }
     }
     // Single synchronous block: abort previous, create fresh, set query — no
     // window between mutations where another observer can see torn state.
     currentController?.abort()
     currentController = new AbortController()
     currentQuery = trimmed
-    return currentController.signal
+    return { signal: currentController.signal, isNew: true }
 }
 
 /**

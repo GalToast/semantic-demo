@@ -27,7 +27,7 @@
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { pendingSearch } from '@lib/stores/pending-search.svelte';
   import { SearchDispatch } from '@lib/search/search-dispatch';
-import { isSearchInFlight } from '@lib/search/search-abort';
+import { startSearch } from '@lib/search/search-abort';
   import SearchInputChrome from '@lib/components/search/SearchInputChrome.svelte';
 
   interface Props {
@@ -223,7 +223,8 @@ import { isSearchInFlight } from '@lib/search/search-abort';
     }
     const query = new URLSearchParams(window.location.search || '').get('q')?.trim();
     if (!query || query.length < 2) return;
-    if (isSearchInFlight(query)) {
+    const { isNew } = startSearch(query);
+    if (!isNew) {
       queryInput = query;
       return;
     }

@@ -223,7 +223,8 @@ async function main() {
   // Save results
   const outDir = join(process.cwd(), 'tmp');
   mkdirSync(outDir, { recursive: true });
-  const outFile = join(outDir, `probe-${opts.model}-${ts}.json`);
+  const safeModel = opts.model.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const outFile = join(outDir, `probe-${safeModel}-${ts}.json`);
 
   const output = {
     model: opts.model,

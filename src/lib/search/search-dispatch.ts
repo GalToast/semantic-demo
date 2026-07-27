@@ -89,7 +89,7 @@ export class SearchDispatch {
         // otherwise the previous search is aborted and a fresh controller is
         // created. No separate cancelSearch + isSearchInFlight preamble needed.
         this.searchStartTime = performance.now()
-        const signal = startSearch(trimmed)
+        const { signal } = startSearch(trimmed)
         setSearchStatus('searching')
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
         this.surfaceSwitchedToSearch = true

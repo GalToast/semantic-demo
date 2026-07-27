@@ -65,6 +65,23 @@ function targets() {
             { id: 'MiniMax/MiniMax-M2.7', note: 'untested' },
             { id: 'Qwen/Qwen3-235B-A22B-Thinking-2507', note: 'untested' },
             { id: 'deepseek-ai/DeepSeek-V4-Pro', note: 'untested' }
+        ],
+        cloudflare: [
+            { id: '@cf/openai/gpt-oss-20b', note: 'just-fixed' },
+            { id: '@cf/openai/gpt-oss-120b', note: 'untested' },
+            { id: '@cf/moonshotai/kimi-k2.6', note: 'just-fixed' },
+            { id: '@cf/zai-org/glm-4.7-flash', note: 'untested' },
+            { id: '@cf/nvidia/nemotron-3-120b-a12b', note: 'untested' },
+            { id: '@cf/google/gemma-4-26b-a4b-it', note: 'untested' },
+            { id: '@cf/mistralai/mistral-small-3.1-24b-instruct', note: 'untested' },
+            { id: '@cf/meta/llama-4-scout-17b-16e-instruct', note: 'untested' },
+            { id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', note: 'untested' },
+            { id: '@cf/qwen/qwen3-30b-a3b-fp8', note: 'untested' },
+            { id: '@cf/qwen/qwq-32b', note: 'untested' },
+            { id: '@cf/qwen/qwen2.5-coder-32b-instruct', note: 'untested' },
+            { id: '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b', note: 'untested' },
+            { id: '@cf/ibm-granite/granite-4.0-h-micro', note: 'untested' },
+            { id: '@cf/aisingapore/gemma-sea-lion-v4-27b-it', note: 'untested' }
         ]
     }
     // filter logfare glm entry (typo guard) — rebuild clean

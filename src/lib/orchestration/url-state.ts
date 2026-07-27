@@ -35,7 +35,7 @@ import {
 } from '@lib/orchestration/url-params'
 import { setMobileSearchSheetMode } from '@lib/search/search-panel-adapter'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
-import { isSearchInFlight } from '@lib/search/search-abort'
+import { startSearch } from '@lib/search/search-abort'
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -829,9 +829,8 @@ async function _restoreSearchFromParams(
 
         // If the same query is already in flight from the typed-input path,
         // piggyback on it instead of issuing a duplicate API request.
-        if (isSearchInFlight(query)) {
-            return
-        }
+        const { isNew } = startSearch(query)
+        if (!isNew) return
 
         await runSearch(query, searchSignal)
         // Token-abort: bail before post-runSearch writes (DOM mutation,

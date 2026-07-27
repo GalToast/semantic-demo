@@ -58,7 +58,7 @@ import {
 } from './results-ui'
 import { setupMobileSearchSheetToggle } from './search-panel-adapter'
 import { setActiveSearchResultRow } from './result-renderer'
-import { isSearchInFlight, startSearch } from './search-abort'
+import { startSearch } from './search-abort'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -132,10 +132,8 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     incrementFocusTransitionToken()
     if (typeof clearSearchPreviewHoverTimer === 'function') clearSearchPreviewHoverTimer()
 
-    // Avoid redundant work when the same query is already in flight.
-    if (isSearchInFlight(trimmedQuery)) {
-        return
-    }
+    // startSearch (below) handles dedup atomically via isNew — no separate
+    // isSearchInFlight check needed (fixes BUG-002 check-then-start race).
 
     if (!trimmedQuery || trimmedQuery.length < 2) {
         stopSearchVectorScramble()
@@ -175,7 +173,8 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     // Clear exploration focus if needed
     publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, { preserveSearch: true, skipUrlSync: true })
 
-    const signal = startSearch(trimmedQuery)
+    const { signal, isNew } = startSearch(trimmedQuery)
+    if (!isNew) return
 
     const requestId = incrementRequestSequence()
     setSearchStatus('searching')
