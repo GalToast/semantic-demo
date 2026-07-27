@@ -23,7 +23,7 @@
 
 <div class="selected-hero">
   <div class="selected-hero-main">
-    <h3 id="{idPrefix}selected-name" title={viewModel.name} aria-label={viewModel.name}>{viewModel.name}</h3>
+    <h3 id="{idPrefix}selected-name" title={viewModel.name ?? ''} aria-label={viewModel.name ?? ''}>{viewModel.name ?? ''}</h3>
     {#if viewModel.showFiledAs}
       <div class="selected-filed-as" id="{idPrefix}selected-filed-as">{viewModel.filedAs}</div>
     {/if}

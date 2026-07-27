@@ -15,7 +15,7 @@
   let { onClick, label = 'Overview', ariaLabel }: Props = $props()
 </script>
 
-<button class="map-back-btn" type="button" onclick={onClick} aria-label={ariaLabel}>
+<button class="map-back-btn" type="button" onclick={onClick} aria-label={ariaLabel ?? label}>
   {label}
 </button>
 

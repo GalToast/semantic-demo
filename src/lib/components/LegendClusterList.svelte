@@ -118,7 +118,7 @@
     <button
       bind:this={buttons[i]}
       class="legend-item"
-      class:inactive={activeClusterFilter != null && Number(activeClusterFilter) === entry.index}
+      class:inactive={activeClusterFilter != null && Number(activeClusterFilter) !== entry.index}
       onclick={() => onSelect(entry.name, entry.index)}
       onfocus={() => { activeButtonIndex = i; }}
       onkeydown={(event) => handleKeydown(event, i)}

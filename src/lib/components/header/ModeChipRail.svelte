@@ -100,7 +100,7 @@
         ? `${mode.label}: ${mode.description} Select a business to unlock.`
         : mode.description}
       data-mode={mode.id}
-      onclick={() => requestAnimationFrame(() => selectMode(mode.id))}
+      onclick={() => selectMode(mode.id)}
     >
       <svg class="chip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{mode.iconId}"/></svg>
       <span class="chip-label">{mode.label}</span>

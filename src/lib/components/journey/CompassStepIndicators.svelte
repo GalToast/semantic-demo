@@ -16,6 +16,8 @@
   }
 
   let { phase, order, descriptions }: Props = $props();
+
+  const currentPhaseIndex = $derived(order.indexOf(phase));
 </script>
 
 {#each order as stepPhase, stepIndex (stepPhase)}
@@ -23,7 +25,7 @@
     data-journey-step={stepPhase}
     class="journey-compass-step"
     class:current={stepPhase === phase}
-    class:done={order.indexOf(phase) > stepIndex}
+    class:done={currentPhaseIndex > stepIndex}
     aria-label={`${stepIndex + 1}. ${stepPhase}: ${descriptions[stepPhase] || stepPhase}`}
     title={descriptions[stepPhase] || stepPhase}
   >{stepPhase}</span>

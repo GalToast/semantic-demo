@@ -65,14 +65,10 @@
   // grouping), so the transient dup was real at the capture instant.
   let diveButton: HTMLButtonElement | null = $state(null);
 
-  onMount(() => {
-    const all = Array.from(document.querySelectorAll('#btn-focus-dive'));
-    if (all.length > 1 && diveButton) {
-      for (const o of all) {
-        if (o !== diveButton) o.removeAttribute('id');
-      }
-    }
-  });
+  // Document-level id-uniqueness guard removed: Svelte reconciliation handles
+  // id uniqueness through component lifecycle. The previous onMount mutation
+  // stripped ids from DOM nodes outside this component's subtree, which could
+  // break getElementById for parent/consumer code during HMR remounts.
 </script>
 
 <div

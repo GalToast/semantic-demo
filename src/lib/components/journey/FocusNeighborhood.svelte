@@ -36,9 +36,9 @@
   // ── Candidate limit (responsive) ───────────────────────────────────────
 
   const candidateLimit = $derived.by(() => {
-    if ($viewport.isCompact && !$viewport.isUltraCompactPortrait) return 1;
-    if ($viewport.isCompactLandscape || $viewport.isUltraCompactPortrait) return 2;
     if ($viewport.isMobile && $viewport.isCompact) return 4;
+    if ($viewport.isCompactLandscape || $viewport.isUltraCompactPortrait) return 2;
+    if ($viewport.isCompact) return 1;
     return 5;
   });
 
