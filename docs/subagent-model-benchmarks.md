@@ -1248,3 +1248,30 @@ Direct HTTP tool-calling probe via `scripts/probe-models.mjs` (status-only mode)
 3. Compare subagent outcomes against the current golden geese (`agnes-2.0-flash`, `logfare/deepseek-v4-pro`, `logfare/kimi-k2.7-code`) using identical small tasks.
 
 Raw log: `tmp/probe-all-status-2026-07-26.log`.
+
+## Subagent bench wave — 2026-07-27 ~00:38 UTC
+
+Real `external_subagent_start` bench on a tiny DOM-audit task: read `src/components/ThreadInspector.svelte`, list rendered DOM ids/classes, write a markdown report. Dispatched with `live_steer: true` and a steer nudge at ~60–75 s to break cold-start stalls (this proved necessary for every route).
+
+| Route | Result | Report file | Notes |
+| ----- | ------ | ----------- | ----- |
+| `kilo/inclusionai/ling-3.0-flash:free` | ✅ completed exit 0 | `ling-3.0-flash-free-threadinspector-dom-audit.md` | Correct concise report. ~$0 cost. |
+| `modelscope/Qwen/Qwen3-235B-A22B-Thinking-2507` | ✅ completed exit 0 | `modelscope-qwen3-235b-thinking-threadinspector-dom-audit.md` | Correct report; cost ~$0.0075. |
+| `logfare/kiro-auto` | ✅ completed exit 0 | `logfare-kiro-auto-threadinspector-dom-audit.md` | Wrote correct report, then hit Logfare 429 on retry loop. Free. |
+| `kilo/stepfun/step-3.7-flash:free` | ✅ completed exit 0 | `kilo-step-3.7-flash-free-threadinspector-dom-audit.md` | Correct concise report. ~$0.001 cost. |
+| `logfare/glm-5.2` | ✅ completed exit 0 | `logfare-glm-5.2-threadinspector-dom-audit.md` | Detailed correct report (noted `focus-thread-inspector` query vs emitted). Required 2 steer nudges. Free. |
+| `modelscope/deepseek-ai/DeepSeek-V4-Pro` | ❌ failed | — | 429 insufficient_quota from ModelScope; no report. |
+
+### Verdict updates
+
+- **`logfare/kiro-auto` is viable for small subagent tasks** when launched with `live_steer=true` + a nudge. The earlier 0/3 timeout verdict appears to have been confounded by the cold-start stall pattern and/or Logfare upstream weather.
+- **`logfare/glm-5.2` is viable** and produces analytically detailed output; it needs a steer nudge to wake from cold-start.
+- **`kilo/inclusionai/ling-3.0-flash:free` and `kilo/stepfun/step-3.7-flash:free` are viable** — fast, cheap, accurate for small read+write tasks.
+- **`modelscope/Qwen/Qwen3-235B-A22B-Thinking-2507` is viable** for small tasks, corroborating the parallel-session `ocw_8c5bf2d5` observation.
+- **`modelscope/deepseek-ai/DeepSeek-V4-Pro` is currently blocked by quota** at ModelScope, not by the harness.
+
+### Operational prescription
+
+For all of these routes, **always dispatch with `live_steer: true`** and send a short steer nudge (`"BEGIN NOW ..."`) at ~60–75 s if no assistant output has appeared. Without the nudge the workers stall in cold-start and time out. This pattern is consistent across `logfare/glm-5.2`, `logfare/kiro-auto`, `kilo/ling-3.0-flash:free`, `kilo/step-3.7-flash:free`, and `modelscope/Qwen3-235B-A22B-Thinking-2507`.
+
+Report files: `tmp/subagent-benchmark/reports/*-threadinspector-dom-audit.md`.
