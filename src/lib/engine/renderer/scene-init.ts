@@ -26,6 +26,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CONFIG } from '@lib/engine/config'
 import { SCENE_ATMOSPHERE } from '@lib/engine/node-manager'
 import { SCENE_PALETTE } from '@lib/utils/design-tokens'
+import { debugWarn } from '@lib/utils/debug'
 import { detectWebGLSupport, type WebGLSupportDetail } from './webgl-fallback'
 
 export interface SceneSetup {
@@ -100,6 +101,24 @@ export async function buildThreeScene(
     renderer.domElement.setAttribute('tabindex', '0')
     renderer.domElement.setAttribute('role', 'application')
     container.appendChild(renderer.domElement)
+
+    // T3-1 (bugsweep): WebGL context loss handling. Without these handlers,
+    // a GPU context loss (system sleep, driver crash) leaves the canvas
+    // blank with no recovery path. preventDefault() on 'webglcontextlost'
+    // allows the browser to attempt restoration; the restored handler
+    // reinitializes the renderer state.
+    renderer.domElement.addEventListener('webglcontextlost', (event: Event) => {
+        event.preventDefault()
+        debugWarn('[three-engine] WebGL context lost — rendering paused')
+    }, false)
+    renderer.domElement.addEventListener('webglcontextrestored', () => {
+        debugWarn('[three-engine] WebGL context restored — reinitializing renderer')
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+        renderer.setClearColor(SCENE_ATMOSPHERE.fogColor ?? 0x0d2024, SCENE_ATMOSPHERE.clearAlpha ?? 0.96)
+        renderer.toneMapping = ACESFilmicToneMapping
+        renderer.toneMappingExposure = SCENE_ATMOSPHERE.toneExposure ?? 1.0
+        renderer.outputColorSpace = SRGBColorSpace
+    }, false)
 
     // ── Controls ────────────────────────────────────────────────────────────
     const controls = new OrbitControls(camera, renderer.domElement)
