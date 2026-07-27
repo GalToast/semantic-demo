@@ -100,6 +100,16 @@ function targets() {
             { id: 'Qwen/Qwen3-VL-235B-A22B-Instruct', note: 'ok NS3150_ST3308' },
             { id: 'Qwen/Qwen3-VL-8B-Instruct', note: 'ok NS1031_ST1213' }
             // removed Qwen-Ambassador/Qwen3.7-Max (403 no access), MiniMax/MiniMax-{M2.7,M3} (400 no provider) — 2026-07-27 probe
+        ],
+        gemini: [
+            { id: 'gemini-2.5-pro', note: 'ok ST2230 (NS quota 429)' },
+            { id: 'gemini-2.5-flash', note: 'ok ST2534 (NS quota 429)' },
+            { id: 'gemini-3-flash-preview', note: 'ok ST1897 (NS quota 429)' }
+        ],
+        'opencode-zen': [
+            { id: 'mimo-v2.5-free', note: 'ok NS4846_ST2629' },
+            { id: 'deepseek-v4-flash-free', note: 'ok NS1659_ST1804' },
+            { id: 'nemotron-3-ultra-free', note: 'ok NS2624 (ST failed)' }
         ]
     }
     // filter logfare glm entry (typo guard) — rebuild clean
