@@ -21,39 +21,31 @@ const __dirname = dirname(__filename)
 const PROJECT_ROOT = pathResolve(__dirname, '..', '..')
 const PROJECT_ROOT_URL = pathToFileURL(PROJECT_ROOT + sep).href
 
-// Svelte 5 rune stubs for Node-side test imports. The real Svelte runtime runs
-// in the browser; these just let the test module import project utilities
-// without crashing on rune syntax at the Node level.
-if (typeof globalThis !== 'undefined') {
-    globalThis.$state = (initial) => (typeof initial === 'function' ? initial() : (initial ?? null))
-    globalThis.$derived = (source) => (typeof source === 'function' ? source() : source)
-    globalThis.$effect = () => {}
-    globalThis.$effect.pre = () => {}
-    globalThis.$effect.root = (fn) => fn()
-    globalThis.$inspect = () => ({ with: () => {} })
-    globalThis.$props = () => ({})
-    globalThis.$bindable = () => undefined
-}
-
 // Vite-style env polyfill for Node test runs that import src/ files.
 // `import.meta.env` is a per-module ESM object, so it cannot be redefined on
 // globalThis for imported modules. Instead, this loader transforms every
-// `import.meta.env` reference in project source into a global object lookup.
-const __importMetaEnv = {
-    DEV: false,
-    MODE: 'production',
-    PROD: true,
-    SSR: false,
-    BASE_URL: '/',
-    get(key) {
-        return process.env[key] ?? undefined
-    }
-}
-if (typeof globalThis !== 'undefined') {
-    globalThis.__importMetaEnv = __importMetaEnv
-}
+// `import.meta.env` reference in project source into a global object lookup
+// (`globalThis.__importMetaEnv`) that is installed by the Svelte rune stubs
+// module imported at the top of each transformed module.
+const SVELTE_RUNE_STUBS_URL = pathToFileURL(pathResolve(__dirname, 'svelte-runes-stubs.mjs')).href
+const LOADER_URL = pathToFileURL(__filename).href
 
 const VITE_ENV_RE = /import\.meta\.env\b/g
+
+// Svelte 5 runes are compile-time constructs in the browser bundle. When Node
+// loads project source directly for contract/audit scripts, the bare rune
+// identifiers are undefined. This loader prepends an import of the rune-stubs
+// module to source files that use Svelte 5 runes or import.meta.env, so the
+// module evaluates safely under Node. The browser build still gets the real
+// Svelte 5 runtime.
+const RUNE_NAMES = ['$state.snapshot', '$state.frozen', '$state.raw', '$state', '$derived.by', '$derived', '$effect.pre', '$effect.root', '$effect', '$inspect', '$props', '$bindable']
+
+function usesRune(source) {
+    for (const name of RUNE_NAMES) {
+        if (source.includes(name)) return true
+    }
+    return false
+}
 
 // Mirror tsconfig.json path mappings so contract tests can use the same
 // @ / @lib / @components specifiers that src/ code uses.
@@ -156,6 +148,7 @@ export async function resolve(specifier, context, nextResolve) {
 }
 
 export async function load(url, context, nextLoad) {
+    if (process.env.TS_RESOLVE_DEBUG) console.error(`[ts-resolve] load ${url}`)
     if (url.includes('?worker&url')) {
         return {
             format: 'module',
@@ -165,17 +158,53 @@ export async function load(url, context, nextLoad) {
     }
 
     const result = await nextLoad(url, context)
+    if (result.format !== 'module' && result.format !== 'module-typescript') {
+        if (process.env.TS_RESOLVE_DEBUG) console.error(`[ts-resolve] load ${url} format=${result.format}`)
+        return result
+    }
+    if (result.source != null && typeof result.source !== 'string') {
+        result.source = Buffer.isBuffer(result.source)
+            ? result.source.toString('utf8')
+            : String(result.source)
+    }
+    if (process.env.TS_RESOLVE_DEBUG) {
+        console.error(`[ts-resolve] load ${url} sourceType=${typeof result.source} hasState=${typeof result.source === 'string' && result.source.includes('$state')}`)
+    }
+    if (typeof result.source !== 'string') {
+        return result
+    }
     if (
-        result.format === 'module' &&
-        typeof result.source === 'string' &&
-        url.startsWith(PROJECT_ROOT_URL) &&
-        !url.includes('/node_modules/') &&
-        result.source.includes('import.meta.env')
+        !url.startsWith(PROJECT_ROOT_URL) ||
+        url.includes('/node_modules/') ||
+        url === LOADER_URL ||
+        url === SVELTE_RUNE_STUBS_URL
     ) {
-        return {
-            ...result,
-            source: result.source.replace(VITE_ENV_RE, 'globalThis.__importMetaEnv')
+        return result
+    }
+
+    let source = result.source
+    const parts = []
+
+    if (source.includes('import.meta.env')) {
+        source = source.replace(VITE_ENV_RE, 'globalThis.__importMetaEnv')
+        // The stubs module installs globalThis.__importMetaEnv as a side effect.
+        parts.push(`import '${SVELTE_RUNE_STUBS_URL}';`)
+    }
+
+    if (usesRune(source)) {
+        parts.push(`import { $state, $derived, $effect, $inspect, $props, $bindable } from '${SVELTE_RUNE_STUBS_URL}';`)
+        if (process.env.TS_RESOLVE_DEBUG) console.error(`[ts-resolve] rune-import ${url}`)
+    }
+
+    if (parts.length > 0) {
+        const prefix = parts.join('\n') + '\n'
+        if (process.env.TS_RESOLVE_DEBUG) {
+            const fs = await import('node:fs')
+            const path = await import('node:path')
+            const name = path.basename(new URL(url).pathname) || 'unknown'
+            fs.writeFileSync(pathResolve(PROJECT_ROOT, 'tmp', `transformed-${name}`), prefix + source)
         }
+        return { ...result, source: prefix + source }
     }
 
     return result
