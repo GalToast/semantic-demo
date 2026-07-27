@@ -76,6 +76,128 @@ interface AttemptConfig {
     cache?: string
 }
 
+// ── Inline retry helpers (self-contained; workers can't import from Vite aliases) ────
+
+/** HTTP status codes considered transient (retryable). */
+const TRANSIENT_HTTP_STATUSES: ReadonlySet<number> = new Set([429, 502, 503, 504])
+
+/** HTTP status codes considered permanent (not worth retrying). */
+const PERMANENT_HTTP_STATUSES: ReadonlySet<number> = new Set([400, 401, 402, 403, 404, 405, 410, 422])
+
+/** Error message substrings that indicate transient network failures. */
+const TRANSIENT_MESSAGE_PATTERNS: readonly string[] = [
+    'econnrefused',
+    'etimedout',
+    'esockettimedout',
+    'econnreset',
+    'enetunreach',
+    'ehostunreach',
+    'fetch failed',
+    'networkerror',
+    'network error',
+    'socket hang up',
+    'socket hangup',
+    'connection reset',
+    'connection refused',
+    'connection timeout',
+    'timeout of',
+    'timed out',
+    'read econnreset',
+    'write econnreset'
+]
+
+function isTransientError(err: unknown): boolean {
+    const status = extractStatusCode(err)
+    if (status !== null && TRANSIENT_HTTP_STATUSES.has(status)) return true
+    if (status !== null && PERMANENT_HTTP_STATUSES.has(status)) return false
+
+    const message = err instanceof Error ? err.message : String(err ?? '')
+    const lower = message.toLowerCase()
+    for (const pattern of TRANSIENT_MESSAGE_PATTERNS) {
+        if (lower.includes(pattern)) return true
+    }
+
+    if (err instanceof TypeError) return true
+    if (err instanceof DOMException && err.name === 'TimeoutError') return true
+
+    return false
+}
+
+function isPermanentError(err: unknown): boolean {
+    const status = extractStatusCode(err)
+    if (status !== null) return PERMANENT_HTTP_STATUSES.has(status)
+
+    const message = err instanceof Error ? err.message : String(err ?? '')
+    const lower = message.toLowerCase()
+    const fourxxMatch = lower.match(/\b(4\d\d)\b/)
+    if (fourxxMatch) {
+        const code = parseInt(fourxxMatch[1]!, 10)
+        if (code >= 400 && code < 500 && code !== 429) return true
+    }
+
+    return false
+}
+
+function extractStatusCode(err: unknown): number | null {
+    if (!err) return null
+    if (err instanceof TypeError || err instanceof DOMException) return null
+    const e = err as Record<string, unknown>
+    if (typeof e.status === 'number') return e.status
+    const msg = typeof e.message === 'string' ? e.message : String(err)
+    const httpMatch = msg.match(/\b(?:HTTP\s*)?(4\d\d|5\d\d)\b/)
+    if (httpMatch) return parseInt(httpMatch[1]!, 10)
+    return null
+}
+
+function computeBackoffDelay(attempt: number, baseDelay = 500): number {
+    const exponential = baseDelay * Math.pow(2, attempt)
+    const capped = Math.min(exponential, 8000)
+    return Math.round(capped * (0.5 + Math.random() * 0.5))
+}
+
+function delayInWorker(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function retryFetch(url: string, options?: RequestInit, maxRetries = 3, label = 'fetch'): Promise<Response> {
+    let lastError: Error | null = null
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await fetch(url, options)
+            if (!response.ok) {
+                // Attach status code to the error so isTransientError / isPermanentError
+                // can classify it via the `.status` property.
+                const httpErr = new Error(`HTTP ${response.status}`) as Error & { status: number }
+                httpErr.status = response.status
+                throw httpErr
+            }
+            return response
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err))
+            lastError = error
+
+            if (isPermanentError(err)) {
+                throw error
+            }
+
+            if (attempt >= maxRetries) {
+                // Last attempt exhausted
+                throw error
+            }
+
+            const backoffMs = computeBackoffDelay(attempt)
+            if (import.meta.env.DEV) {
+                console.warn(
+                    `[worker:${label}] attempt ${attempt + 1}/${maxRetries + 1} failed, retrying in ${backoffMs}ms:`,
+                    error.message
+                )
+            }
+            await delayInWorker(backoffMs)
+        }
+    }
+    throw lastError ?? new Error(`${label}: all retries exhausted`)
+}
+
 // ── Worker body ─────────────────────────────────────────────────────────────
 
 let _activeRequestId = 0
@@ -105,13 +227,14 @@ self.onmessage = async (event: MessageEvent) => {
         return
     }
 
-    // Use the requestId sent by the main thread so that responses match
-    // the caller's expectation. If the caller didn't send one (legacy path),
-    // fall back to the worker's own counter. Keep _activeRequestId in sync so
-    // that in-flight handlers can detect superseded requests.
-    const requestId: number = incomingRequestId ?? ++_activeRequestId
-    if (incomingRequestId !== undefined) {
-        _activeRequestId = requestId
+    // Always assign a strictly monotonic requestId so supersede checks
+    // (requestId !== _activeRequestId) can never match stale responses.
+    // The incomingRequestId from the main thread, if provided, is used
+    // only for logging/tracing — never for counter assignment.
+    const requestId = ++_activeRequestId
+    if (incomingRequestId !== undefined && incomingRequestId <= _activeRequestId) {
+        // Stale or duplicate requestId from main thread — reject silently.
+        // The worker's own monotonic counter already advanced past it.
     }
 
     try {
@@ -157,8 +280,7 @@ self.onmessage = async (event: MessageEvent) => {
 }
 
 async function handleLoadRecords({ url }: { url: string }): Promise<LoadRecordsResult> {
-    const response = await fetch(url)
-    if (!response.ok) throw new Error(`Failed to fetch records: ${response.status}`)
+    const response = await retryFetch(url, undefined, 3, 'load-records')
 
     let raw: unknown
     try {
@@ -249,7 +371,12 @@ async function handleLoadThreads(
         for (const config of attemptConfigs) {
             try {
                 const cacheMode = typeof config === 'string' ? config : (config as AttemptConfig)?.cache
-                const response = await fetch(url, cacheMode ? { cache: cacheMode as RequestCache } : undefined)
+                const response = await retryFetch(
+                    url,
+                    cacheMode ? { cache: cacheMode as RequestCache } : undefined,
+                    2,
+                    'load-threads'
+                )
                 if (requestId !== _activeRequestId) throw new Error('Request superseded by newer request')
                 if (!response.ok) throw new Error(`Thread artifact unavailable (${response.status})`)
                 const parsed = await response.json()
@@ -365,8 +492,7 @@ async function handleLoadLeadEnrichment(
     { url }: { url: string },
     requestId: number
 ): Promise<LoadLeadEnrichmentResult> {
-    const response = await fetch(url)
-    if (!response.ok) throw new Error(`Failed to fetch enrichment: ${response.status}`)
+    const response = await retryFetch(url, undefined, 2, 'load-enrichment')
     if (requestId !== _activeRequestId) return { enrichment: null }
 
     const text = await response.text()
