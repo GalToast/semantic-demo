@@ -112,7 +112,7 @@ function copyRuntimeAssetsPlugin(): Plugin {
     return {
         name: 'copy-runtime-assets',
         apply: 'build',
-        async writeBundle() {
+        async writeBundle(bundle) {
             await Promise.all([
                 ...Array.from(ROOT_ASSETS.values()).map(async (relativePath) => {
                     const sourcePath = normalize(resolve(PROJECT_ROOT, relativePath))
@@ -186,6 +186,29 @@ function copyRuntimeAssetsPlugin(): Plugin {
                     }
                 })
             ])
+
+            // Mirror the emitted hashed web-worker entry to a stable filename so
+            // the runtime fallback URL (`./assets/data-worker.js`) resolves
+            // correctly before the dynamic worker URL promise settles.
+            try {
+                const assetsDir = resolve(SVELTE_OUT_DIR, 'assets')
+                const entries = await readdir(assetsDir)
+                const workerFiles = entries.filter((name) => /^data-worker-[A-Za-z0-9_-]+\.js$/.test(name))
+                let actualWorker = ''
+                for (const name of workerFiles) {
+                    const code = await readFile(resolve(assetsDir, name), 'utf8')
+                    const match = code.match(/new URL\("(data-worker-[A-Za-z0-9_-]+\.js)",import\.meta\.url\)/)
+                    if (match?.[1]) {
+                        actualWorker = match[1]
+                        break
+                    }
+                }
+                if (actualWorker) {
+                    await copyFile(resolve(assetsDir, actualWorker), resolve(assetsDir, 'data-worker.js'))
+                }
+            } catch {
+                // Non-fatal: the dynamic worker URL is the primary path.
+            }
         }
     }
 }

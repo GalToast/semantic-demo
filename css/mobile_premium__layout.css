@@ -487,18 +487,18 @@
     body:not(.surface-idle)[data-panel-surface] .legend-toggle {
         top: 112px;
     }
-    body:not(.surface-idle)[data-panel-surface] .help-toggle {
+    body:not(.surface-idle)[data-panel-surface] #btn-keyboard-help {
         top: 164px;
+    }
+    body:not(.surface-idle)[data-panel-surface] #btn-app-help {
+        top: 216px;
     }
 
-    body.surface-idle[data-panel-surface='idle'] .share-toggle {
-        top: 60px;
-    }
-    body.surface-idle[data-panel-surface='idle'] .legend-toggle {
-        top: 112px;
-    }
-    body.surface-idle[data-panel-surface='idle'] .help-toggle {
+    body.surface-idle[data-panel-surface='idle'] #btn-keyboard-help {
         top: 164px;
+    }
+    body.surface-idle[data-panel-surface='idle'] #btn-app-help {
+        top: 216px;
     }
 
     body:not(.surface-idle)[data-panel-surface] #btn-share-view [class~='share-toggle-label'] {

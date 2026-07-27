@@ -451,8 +451,11 @@ body:has(.info-panel.active) .panel-toggle {
     .legend-toggle {
         top: 117px;
     }
-    .help-toggle {
+    #btn-keyboard-help {
         top: 169px;
+    }
+    #btn-app-help {
+        top: 221px;
     }
 }
 

@@ -5,10 +5,8 @@ import path from 'node:path'
 import { inflateSync } from 'node:zlib'
 import { chromium } from 'playwright'
 import { VISUAL_STATE_ID_SET } from './visual-state-registry.mjs'
-import { setTrailDepth } from '@lib/stores/journey.svelte'
-import { setSemanticDiveMode, refreshCompositionState, focusOnNode } from '@lib/orchestration/lifecycle'
+// Note: page-side helpers are read from window.__APP_ACTIONS__ inside page.evaluate callbacks
 import { search } from '@lib/search/state'
-import { setTrailFromSeed } from '@lib/journey/neighborhood'
 
 // Local vector-explorer-polished.html is preserved as a legacy rollback shell.
 // Deploy publishes dist/svelte/index.html to vector-explorer-polished.html, so
@@ -406,9 +404,9 @@ async function waitForGraphVisualSettle(page, label = 'unknown') {
 
 async function applySemanticDiveVisualState(page) {
     await page.evaluate(() => {
-        const setTrailDepth = setTrailDepth
-        const setSemanticDiveMode = setSemanticDiveMode
-        const refreshCompositionState = refreshCompositionState
+        const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth
+        const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode
+        const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState
         if (typeof setTrailDepth === 'function') {
             setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true })
         }
@@ -445,7 +443,7 @@ async function applySemanticDiveVisualState(page) {
         }
 
         forceCanonicalDiveState()
-        refreshCompositionState?.()
+        window.__APP_ACTIONS__?.refreshCompositionState?.()
         window.updateJourneyCompass?.()
         forceCanonicalDiveState()
         document.body.dataset.activeView = 'galaxy'
@@ -683,8 +681,8 @@ async function captureState(page, name) {
             document.body.dataset.panelSurfaceDetail = document.body.dataset.mobileSearchSheet || 'peek'
             document.body.dataset.activeView = 'galaxy'
             document.body.dataset.fieldStepSync = 'active'
-            if (typeof refreshCompositionState === 'function')
-                (refreshCompositionState)()
+            if (typeof window.__APP_ACTIONS__?.refreshCompositionState === 'function')
+                window.__APP_ACTIONS__?.refreshCompositionState?.()
             const focusStage = document.querySelector('#focus-stage')
             if (focusStage) {
                 focusStage.hidden = false
@@ -1487,7 +1485,7 @@ async function enterFocusFromSearch(page, targetIndexOverride = null) {
             () => {
                 const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
                 return (
-                    typeof focusOnNode === 'function' &&
+                    typeof window.__APP_ACTIONS__?.focusOnNode === 'function' &&
                     Array.isArray(appState.points) &&
                     appState.points.length > 0
                 )
@@ -1544,9 +1542,9 @@ async function enterFocusFromSearch(page, targetIndexOverride = null) {
             : Number.isFinite(summaryAnchor)
               ? summaryAnchor
               : rowIndex
-        const focusNode = focusOnNode
-        const setTrailDepth = setTrailDepth
-        const refreshCompositionState = refreshCompositionState
+        const focusNode = window.__APP_ACTIONS__?.focusOnNode
+        const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth
+        const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState
 
         if (!Number.isFinite(targetIndex)) {
             throw new Error('visual audit could not resolve a search result index to focus')
@@ -1562,7 +1560,7 @@ async function enterFocusFromSearch(page, targetIndexOverride = null) {
         if (typeof setTrailDepth === 'function') {
             setTrailDepth(1, { skipUrlSync: true })
         }
-        refreshCompositionState?.()
+        window.__APP_ACTIONS__?.refreshCompositionState?.()
         window.updateJourneyCompass?.()
     }, targetIndexOverride)
     await markVisualRouteEvidence(page, 'app-action', 'APP_ACTIONS.focusOnNode plus setTrailDepth')
@@ -1631,10 +1629,10 @@ async function runVisibleSearch(page, query) {
         await page.evaluate((nextQuery) => {
             const input = document.querySelector('#search-input')
             // @ts-ignore
-            if (!(input instanceof HTMLInputElement)) throw new Error('visible search input was not an input element')
+            if (!(input instanceof window.HTMLInputElement)) throw new Error('visible search input was not an input element')
             input.value = nextQuery
             // @ts-ignore
-            input.dispatchEvent(new InputEvent('input', { bubbles: true, data: nextQuery, inputType: 'insertText' }))
+            input.dispatchEvent(new window.InputEvent('input', { bubbles: true, data: nextQuery, inputType: 'insertText' }))
             // @ts-ignore
             input.dispatchEvent(new Event('change', { bubbles: true }))
         }, query)
@@ -2011,9 +2009,9 @@ async function enterRouteTraceByRealRoute(page) {
                     : Number.isFinite(resultIndex)
                       ? resultIndex
                       : 519
-                focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true })
-                setTrailFromSeed?.(index)
-                refreshCompositionState?.()
+                window.__APP_ACTIONS__?.focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true })
+                window.__APP_ACTIONS__?.setTrailFromSeed?.(index)
+                window.__APP_ACTIONS__?.refreshCompositionState?.()
             })
             await markVisualRouteEvidence(page, 'app-action', 'focused route trace via APP_ACTIONS fallback')
             return false
@@ -2140,9 +2138,9 @@ async function enterSemanticDive(page) {
 
     if (!naturalDive) {
         await page.evaluate(() => {
-            const setSemanticDiveMode = setSemanticDiveMode
-            const setTrailDepth = setTrailDepth
-            const refreshCompositionState = refreshCompositionState
+            const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode
+            const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth
+            const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState
             if (typeof setTrailDepth === 'function') {
                 setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true })
             }
@@ -2176,7 +2174,7 @@ async function enterSemanticDive(page) {
                 }
             }
 
-            refreshCompositionState?.()
+            window.__APP_ACTIONS__?.refreshCompositionState?.()
             window.updateJourneyCompass?.()
             document.body.dataset.activeView = 'galaxy'
             document.body.dataset.graphContext = 'focus'
@@ -2220,7 +2218,7 @@ async function applyPopulatedInfoPanelState(page) {
         () => {
             const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
             return (
-                typeof focusOnNode === 'function' &&
+                typeof window.__APP_ACTIONS__?.focusOnNode === 'function' &&
                 Array.isArray(appState.points) &&
                 appState.points.length > 0
             )
@@ -2230,9 +2228,9 @@ async function applyPopulatedInfoPanelState(page) {
     )
 
     await page.evaluate(() => {
-        const focusNode = focusOnNode
-        const setTrailDepth = setTrailDepth
-        const refreshCompositionState = refreshCompositionState
+        const focusNode = window.__APP_ACTIONS__?.focusOnNode
+        const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth
+        const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState
         if (typeof focusNode !== 'function') {
             throw new Error('visual audit could not find APP_ACTIONS.focusOnNode for populated focus panel')
         }
@@ -2243,7 +2241,7 @@ async function applyPopulatedInfoPanelState(page) {
         if (typeof setTrailDepth === 'function') {
             setTrailDepth(1, { skipUrlSync: true })
         }
-        refreshCompositionState?.()
+        window.__APP_ACTIONS__?.refreshCompositionState?.()
         window.updateJourneyCompass?.()
 
         document.body.dataset.activeView = 'galaxy'
@@ -2588,8 +2586,8 @@ async function run() {
                             document.body.dataset.panelSurfaceDetail = document.body.dataset.mobileSearchSheet || 'peek'
                             document.body.dataset.activeView = 'galaxy'
                             document.body.dataset.fieldStepSync = 'active'
-                            if (typeof refreshCompositionState === 'function')
-                                (refreshCompositionState)()
+                            if (typeof window.__APP_ACTIONS__?.refreshCompositionState === 'function')
+                                window.__APP_ACTIONS__?.refreshCompositionState?.()
                             const focusStage = document.querySelector('#focus-stage')
                             if (focusStage) {
                                 focusStage.hidden = false
@@ -5597,7 +5595,7 @@ async function run() {
 
     // ---- State diagnostics: desktop-search-error ----
     if (shouldAssert('14-desktop-search-error')) {
-        const errorState = requireState('14-desktop-search-error')
+        const _errorState = requireState('14-desktop-search-error')
         for (const selector of [
             '.search-error-state',
             '.search-error-kicker',
