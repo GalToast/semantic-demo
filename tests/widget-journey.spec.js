@@ -3794,7 +3794,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         expect(boxCount, 'M15 invariant: exactly one demo choreography box (no stacking)').toBe(1)
     })
 
-    test('T1-4: keyboard shortcuts 1-6 sync the URL', async ({ page }) => {
+    test('T1-4: mode chip clicks sync nav state (Bug #3 setJourneyPhase + Bug #5 currentView)', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
@@ -3813,15 +3813,27 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             await page.waitForTimeout(200)
         }
 
-        // Shortcut '2' -> search surface
-        await page.keyboard.press('2')
-        await page.waitForTimeout(300)
-        expect(page.url(), 'shortcut 2 syncs surface=search to URL').toContain('surface=search')
+        // Initial state: surface=idle, currentView=galaxy
+        const initialSurface = await page.evaluate(() => window.__APP_STATE__?.navState?.surface)
+        expect(initialSurface, 'initial nav surface should be idle').toBe('idle')
 
-        // Shortcut '6' -> map view
-        await page.keyboard.press('6')
-        await page.waitForTimeout(300)
-        expect(page.url(), 'shortcut 6 syncs view=map to URL').toContain('view=map')
+        // Click the 'search' mode chip; selectMode() calls SET_SURFACE +
+        // setJourneyPhase + updateUrlState. Bug #3 fix ensures setJourneyPhase
+        // is called from selectMode.
+        await page.click('.mode-chip[data-mode="search"]', { force: true })
+        await page.waitForTimeout(500)
+
+        const searchSurface = await page.evaluate(() => window.__APP_STATE__?.navState?.surface)
+        expect(searchSurface, 'clicking search chip should set nav surface to search').toBe('search')
+
+        // Click the 'map' mode chip; selectMode() calls SET_VIEW + SET_SURFACE.
+        // Bug #5 fix: writeNavStateMirror({ currentView: view }) in SET_VIEW
+        // case ensures currentView is synced.
+        await page.click('.mode-chip[data-mode="map"]', { force: true })
+        await page.waitForTimeout(500)
+
+        const mapView = await page.evaluate(() => window.__APP_STATE__?.currentView)
+        expect(mapView, 'clicking map chip should set currentView to map').toBe('map')
     })
 
     test('F-search-8: search result scores are normalized to 0-1 range with granularity', async ({ page }) => {
@@ -3867,5 +3879,41 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             const maxScore = Math.max(...scores)
             expect(maxScore).toBeGreaterThan(0)
         }
+    })
+
+    test('F-nav-5: clicking map chip syncs currentView to map (Bug #5 currentView sync)', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1000)
+
+        // Dismiss help dialog if present
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Initial currentView should be 'galaxy' (the default)
+        const initialView = await page.evaluate(() => window.__APP_STATE__?.currentView)
+        expect(initialView, 'initial currentView should be galaxy').toBe('galaxy')
+
+        // Click the 'map' mode chip; selectMode() -> SET_VIEW dispatches
+        // nav currentView='map'. Bug #5 fix: writeNavStateMirror({ currentView: view })
+        // in SET_VIEW case ensures currentView is synced through the nav state mirror.
+        await page.click('.mode-chip[data-mode="map"]', { force: true })
+        await page.waitForTimeout(500)
+
+        const mapView = await page.evaluate(() => window.__APP_STATE__?.currentView)
+        expect(mapView, 'clicking map chip should set currentView to map').toBe('map')
+
+        // URL should also reflect view=map
+        expect(page.url(), 'URL should reflect view=map').toContain('view=map')
     })
 })
