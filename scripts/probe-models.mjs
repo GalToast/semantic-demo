@@ -43,11 +43,6 @@ function targets() {
             { id: 'kimi-k2.6', note: 'tested-slow' },
             { id: 'deepseek-v4-flash', note: 'untested' }
         ],
-        nvidia: [
-            { id: 'minimaxai/minimax-m3', note: 'baseline' },
-            { id: 'deepseek-ai/deepseek-v4-pro', note: 'untested' },
-            { id: 'qwen/qwen3.5-397b-a17b', note: 'untested' }
-        ],
         kilo: [
             { id: 'meta/muse-spark-1.1', note: 'UNTESTED target' },
             { id: 'moonshotai/kimi-k3', note: 'untested' },
@@ -59,12 +54,6 @@ function targets() {
             { id: 'stepfun/step-3.7-flash:free', note: 'untested' },
             { id: 'inclusionai/ling-3.0-flash:free', note: 'untested' },
             { id: 'minimax/minimax-m3', note: 'untested-on-kilo' }
-        ],
-        modelscope: [
-            { id: 'Qwen-Ambassador/Qwen3.7-Max', note: 'untested' },
-            { id: 'MiniMax/MiniMax-M2.7', note: 'untested' },
-            { id: 'Qwen/Qwen3-235B-A22B-Thinking-2507', note: 'untested' },
-            { id: 'deepseek-ai/DeepSeek-V4-Pro', note: 'untested' }
         ],
         cloudflare: [
             { id: '@cf/openai/gpt-oss-20b', note: 'just-fixed' },
@@ -82,6 +71,40 @@ function targets() {
             { id: '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b', note: 'untested' },
             { id: '@cf/ibm-granite/granite-4.0-h-micro', note: 'untested' },
             { id: '@cf/aisingapore/gemma-sea-lion-v4-27b-it', note: 'untested' }
+        ],
+        groq: [
+            { id: 'meta-llama/llama-4-scout-17b-16e-instruct', note: 'untested' },
+            { id: 'meta-llama/llama-3.3-70b-versatile', note: 'untested' },
+            { id: 'meta-llama/llama-3.1-8b-instant', note: 'untested' },
+            { id: 'gemma2-9b-it', note: 'untested' },
+            { id: 'deepseek-r1-distill-llama-70b', note: 'untested' },
+            { id: 'meta-llama/llama-prompt-guard-2-22m', note: 'untested' },
+            { id: 'allam-2-7b', note: 'untested' }
+        ],
+        openrouter: [
+            { id: 'google/gemini-3.5-flash', note: 'untested' },
+            { id: 'google/gemini-3.1-pro-preview', note: 'untested' },
+            { id: 'google/gemma-4-31b-it', note: 'untested' },
+            { id: 'openai/gpt-oss-120b', note: 'untested' },
+            { id: 'openai/gpt-oss-20b', note: 'untested' }
+        ],
+        nvidia: [
+            { id: 'minimaxai/minimax-m3', note: 'baseline' },
+            { id: 'deepseek-ai/deepseek-v4-pro', note: 'untested' },
+            { id: 'qwen/qwen3.5-397b-a17b', note: 'untested' },
+            { id: 'nvidia/nemotron-3-super-120b-a12b', note: 'untested' },
+            { id: 'nvidia/nemotron-3-ultra-550b-a55b', note: 'untested' },
+            { id: 'nvidia/nemotron-3-nano-30b-a3b', note: 'untested' }
+        ],
+        modelscope: [
+            { id: 'Qwen-Ambassador/Qwen3.7-Max', note: 'untested' },
+            { id: 'MiniMax/MiniMax-M2.7', note: 'untested' },
+            { id: 'Qwen/Qwen3-235B-A22B-Thinking-2507', note: 'untested' },
+            { id: 'deepseek-ai/DeepSeek-V4-Pro', note: 'untested' },
+            { id: 'Qwen/Qwen3-235B-A22B-Instruct-2507', note: 'untested' },
+            { id: 'Qwen/Qwen3-VL-235B-A22B-Instruct', note: 'untested' },
+            { id: 'Qwen/Qwen3-VL-8B-Instruct', note: 'untested' },
+            { id: 'MiniMax/MiniMax-M3', note: 'untested' }
         ]
     }
     // filter logfare glm entry (typo guard) — rebuild clean

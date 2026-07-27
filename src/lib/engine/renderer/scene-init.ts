@@ -107,18 +107,26 @@ export async function buildThreeScene(
     // blank with no recovery path. preventDefault() on 'webglcontextlost'
     // allows the browser to attempt restoration; the restored handler
     // reinitializes the renderer state.
-    renderer.domElement.addEventListener('webglcontextlost', (event: Event) => {
-        event.preventDefault()
-        debugWarn('[three-engine] WebGL context lost — rendering paused')
-    }, false)
-    renderer.domElement.addEventListener('webglcontextrestored', () => {
-        debugWarn('[three-engine] WebGL context restored — reinitializing renderer')
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-        renderer.setClearColor(SCENE_ATMOSPHERE.fogColor ?? 0x0d2024, SCENE_ATMOSPHERE.clearAlpha ?? 0.96)
-        renderer.toneMapping = ACESFilmicToneMapping
-        renderer.toneMappingExposure = SCENE_ATMOSPHERE.toneExposure ?? 1.0
-        renderer.outputColorSpace = SRGBColorSpace
-    }, false)
+    renderer.domElement.addEventListener(
+        'webglcontextlost',
+        (event: Event) => {
+            event.preventDefault()
+            debugWarn('[three-engine] WebGL context lost — rendering paused')
+        },
+        false
+    )
+    renderer.domElement.addEventListener(
+        'webglcontextrestored',
+        () => {
+            debugWarn('[three-engine] WebGL context restored — reinitializing renderer')
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+            renderer.setClearColor(SCENE_ATMOSPHERE.fogColor ?? 0x0d2024, SCENE_ATMOSPHERE.clearAlpha ?? 0.96)
+            renderer.toneMapping = ACESFilmicToneMapping
+            renderer.toneMappingExposure = SCENE_ATMOSPHERE.toneExposure ?? 1.0
+            renderer.outputColorSpace = SRGBColorSpace
+        },
+        false
+    )
 
     // ── Controls ────────────────────────────────────────────────────────────
     const controls = new OrbitControls(camera, renderer.domElement)

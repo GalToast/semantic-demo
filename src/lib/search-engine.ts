@@ -131,14 +131,19 @@ async function fetchSemanticSearchResultsDirect(
                 if (!response.ok) {
                     // Attach status code so isTransientError / isPermanentError
                     // can classify it via the `.status` property.
-                    const httpErr = new Error(`Semantic search returned HTTP status ${response.status}`) as Error & { status: number }
+                    const httpErr = new Error(`Semantic search returned HTTP status ${response.status}`) as Error & {
+                        status: number
+                    }
                     httpErr.status = response.status
                     throw httpErr
                 }
 
                 const text = await response.text()
                 const trimmedText = text.trim()
-                if (trimmedText.startsWith('<?php') || (trimmedText.includes('<?php') && trimmedText.indexOf('<?php') < 100)) {
+                if (
+                    trimmedText.startsWith('<?php') ||
+                    (trimmedText.includes('<?php') && trimmedText.indexOf('<?php') < 100)
+                ) {
                     throw new Error('Semantic search returned raw PHP source.')
                 }
 
@@ -211,7 +216,13 @@ export async function initSearchEngine(): Promise<void> {
  * @param signal  AbortSignal for cancellation.
  * @returns A promise resolving to a ranked array of SearchResult objects.
  */
-export async function performSearch(query: string, signal: AbortSignal, page = 0, offset = 0, preferCachedResults?: boolean): Promise<SearchResult[]> {
+export async function performSearch(
+    query: string,
+    signal: AbortSignal,
+    page = 0,
+    offset = 0,
+    preferCachedResults?: boolean
+): Promise<SearchResult[]> {
     const trimmed = query.trim()
 
     if (signal.aborted) {

@@ -67,14 +67,10 @@ export function getActiveDescription(activeMode: NavMode, activeView: string): s
  * wrapping around. Lifted verbatim from the prior inline implementation
  * in Header.svelte so the ARIA contract is preserved.
  */
-export function nextEnabledIndex(
-    from: number,
-    dir: 1 | -1,
-    isLocked: (id: ModeOption['id']) => boolean
-): number {
+export function nextEnabledIndex(from: number, dir: 1 | -1, isLocked: (id: ModeOption['id']) => boolean): number {
     const n = modes.length
     for (let step = 1; step <= n; step += 1) {
-        const candidate = ((from + dir * step) % n + n) % n
+        const candidate = (((from + dir * step) % n) + n) % n
         const m = modes[candidate]
         if (m && !isLocked(m.id)) return candidate
     }
@@ -142,11 +138,7 @@ export function indexForModeId(modeId: string | null | undefined): number {
  * through the injected context. Returns the chip's index (so callers
  * can update roving tabindex) or -1 if the mode is locked.
  */
-export function selectMode(
-    modeId: NavMode | 'map',
-    hasSelection: boolean,
-    ctx: SelectModeContext
-): number {
+export function selectMode(modeId: NavMode | 'map', hasSelection: boolean, ctx: SelectModeContext): number {
     if (isModeLocked(modeId, hasSelection)) return -1
 
     const { navActions } = ctx
