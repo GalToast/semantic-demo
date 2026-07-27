@@ -216,29 +216,14 @@ export const isExploration = () => {
 }
 export const hasFocus = () => {
     const local = _readNavSnapshot()
-    if (SELECTION_DEPENDENT_MODES.has(local.mode) || local.focusedIndex !== null) {
-        return true
-    }
-    const mirror = appState.navState
-    if (SELECTION_DEPENDENT_MODES.has(mirror.mode)) return true
-    if (mirror.focusedIndex != null && Number.isFinite(mirror.focusedIndex)) return true
-    return false
+    return SELECTION_DEPENDENT_MODES.has(local.mode) || local.focusedIndex !== null
 }
 export const hasTrail = () => _readNavSnapshot().trailDepth > 0
-export const currentMode = (): string => {
-    const local = _readNavSnapshot().mode
-    if (local) return local
-    return appState.navState.mode ?? local
-}
-export const currentSurface = (): string => {
-    const local = _readNavSnapshot().surface
-    if (local) return local
-    return appState.navState.surface ?? local
-}
+export const currentMode = (): string => _readNavSnapshot().mode || 'overview'
+export const currentSurface = (): string => _readNavSnapshot().surface || 'overview'
 export const focusedIndex = () => {
     const local = _readNavSnapshot().focusedIndex
-    if (local != null && Number.isFinite(local)) return local
-    return appState.navState.focusedIndex ?? local
+    return local != null && Number.isFinite(local) ? local : null
 }
 export const currentView = (): string => _readNavSnapshot().currentView
 export const myceliumMode = () => _readNavSnapshot().myceliumMode

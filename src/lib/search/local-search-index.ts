@@ -126,7 +126,6 @@ export function levenshteinCapped(a: string, b: string, max: number): number {
 }
 
 interface ScoredHit {
-    recordIndex: number
     score: number
     fieldBoost: number
 }
@@ -206,7 +205,6 @@ export function scoreRecord(record: BusinessRecord, query: string, queryTokens: 
     const nameLength = nameLower.length || 1
     const lengthPenalty = Math.min(1.0, 18 / Math.max(18, nameLength))
     return {
-        recordIndex: -1, // set by caller
         score: total * lengthPenalty,
         fieldBoost: 1
     }
@@ -374,7 +372,7 @@ export function localHitsToResults(hits: LocalSearchHit[]): SearchResult[] {
             id: record.lead_id || record.id || `record-${hit.recordIndex}`,
             name,
             index: hit.recordIndex,
-            score: Math.min(1, hit.score / 4.5), // normalize to a 0-1 confidence
+            score: Math.min(1, hit.score / 3.0), // normalize to a 0-1 confidence
             category: record.category || '',
             snippet: record.what || ''
         })
