@@ -28,7 +28,7 @@
     chromeHasFocus: boolean;
     threadCandidates: CandidateItem[];
     focusedIndex: number | null;
-    getPointForIndex: (idx: number) => BusinessRecord | null;
+    getPointForIndex: (_idx: number) => BusinessRecord | null;
   }
 
   let { chromeHasFocus, threadCandidates, focusedIndex, getPointForIndex }: Props = $props();

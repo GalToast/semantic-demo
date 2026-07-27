@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { focusStore, threadInspector, clearThreadInspector, pinThread, unpinThread } from '@lib/stores/focus.svelte';
+  import { focusStore, clearThreadInspector, pinThread, unpinThread } from '@lib/stores/focus.svelte';
   import type { FocusStoreState } from '@lib/stores/focus.svelte';
   import { dispatchNavTransition, focusedIndex, NAV_TRANSITION_ACTIONS, updateNavState } from '@lib/stores/navigation.svelte.ts';
   import { appState } from '@lib/state/app.svelte';
@@ -13,7 +13,7 @@
     bodyStrandJourney?: string;
   }
 
-  let { visible = false, focusSnapshot, bodyThreadInspectSurface = 'idle', bodyStrandJourney = 'idle' }: Props = $props();
+  let { _visible = false, focusSnapshot, bodyThreadInspectSurface = 'idle', bodyStrandJourney = 'idle' }: Props = $props();
 
   const inspector = $derived(focusSnapshot.threadInspector);
   const active = $derived(inspector.active);

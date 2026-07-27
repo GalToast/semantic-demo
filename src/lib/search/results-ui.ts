@@ -409,20 +409,6 @@ export function beginSemanticSearchUiState(
     updateSearchTrailCue({ stage: 'query' })
 }
 
-export function updateSemanticSearchRetryState(params: {
-    statusEl: HTMLElement | null
-    trimmedQuery: string
-    nextAttempt: number
-    delayMs: number
-}): void {
-    const { statusEl, trimmedQuery, nextAttempt, delayMs } = params
-    const retryDelayLabel = delayMs >= 1000 ? `${Math.round((delayMs / 1000) * 10) / 10}s` : `${delayMs}ms`
-    if (statusEl) {
-        statusEl.textContent = `Semantic search is reconnecting for "${trimmedQuery}"... retry ${nextAttempt} starts in ${retryDelayLabel}.`
-    }
-    recordSemanticLaneSnapshot({ state: 'reconnecting', query: trimmedQuery })
-}
-
 export function applySemanticSearchDegradedState(
     resultsEl: HTMLElement | null,
     statusEl: HTMLElement | null,
@@ -512,11 +498,6 @@ export function isMobileRouteFieldPeekActive(): boolean {
 export function clearSearchPreviewHoverTimer(): void {
     if (state.searchPreviewHoverTimer) clearTimeout(state.searchPreviewHoverTimer)
     state.searchPreviewHoverTimer = null
-}
-
-export function focusSearchInputForReplacement(): void {
-    const input = document.getElementById('search-input') as HTMLInputElement | null
-    if (input && typeof input.focus === 'function') input.focus()
 }
 
 export function updateSearchStatusMessage(matchCount: number | null = null): void {

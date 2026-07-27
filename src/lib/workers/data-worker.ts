@@ -78,50 +78,8 @@ interface AttemptConfig {
 
 // ── Inline retry helpers (self-contained; workers can't import from Vite aliases) ────
 
-/** HTTP status codes considered transient (retryable). */
-const TRANSIENT_HTTP_STATUSES: ReadonlySet<number> = new Set([429, 502, 503, 504])
-
 /** HTTP status codes considered permanent (not worth retrying). */
 const PERMANENT_HTTP_STATUSES: ReadonlySet<number> = new Set([400, 401, 402, 403, 404, 405, 410, 422])
-
-/** Error message substrings that indicate transient network failures. */
-const TRANSIENT_MESSAGE_PATTERNS: readonly string[] = [
-    'econnrefused',
-    'etimedout',
-    'esockettimedout',
-    'econnreset',
-    'enetunreach',
-    'ehostunreach',
-    'fetch failed',
-    'networkerror',
-    'network error',
-    'socket hang up',
-    'socket hangup',
-    'connection reset',
-    'connection refused',
-    'connection timeout',
-    'timeout of',
-    'timed out',
-    'read econnreset',
-    'write econnreset'
-]
-
-function isTransientError(err: unknown): boolean {
-    const status = extractStatusCode(err)
-    if (status !== null && TRANSIENT_HTTP_STATUSES.has(status)) return true
-    if (status !== null && PERMANENT_HTTP_STATUSES.has(status)) return false
-
-    const message = err instanceof Error ? err.message : String(err ?? '')
-    const lower = message.toLowerCase()
-    for (const pattern of TRANSIENT_MESSAGE_PATTERNS) {
-        if (lower.includes(pattern)) return true
-    }
-
-    if (err instanceof TypeError) return true
-    if (err instanceof DOMException && err.name === 'TimeoutError') return true
-
-    return false
-}
 
 function isPermanentError(err: unknown): boolean {
     const status = extractStatusCode(err)
@@ -156,6 +114,7 @@ function computeBackoffDelay(attempt: number, baseDelay = 500): number {
 }
 
 function delayInWorker(ms: number): Promise<void> {
+    // eslint-disable-next-line no-restricted-syntax
     return new Promise((resolve) => setTimeout(resolve, ms))
 }
 

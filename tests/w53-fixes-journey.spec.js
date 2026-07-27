@@ -79,7 +79,7 @@ test.describe('W53 corrective fixes (V8/V9/V2gap/WeatherWidget)', () => {
         const title = page.locator('#selected-name, #fc-selected-name, .selected-card h3').first()
         await expect(title).toBeVisible()
         const clip = await title.evaluate((el) => {
-            const cs = getComputedStyle(el)
+            const _cs = getComputedStyle(el)
             return { scrollH: el.scrollHeight, clientH: el.clientHeight }
         })
         expect(clip.scrollH, 'title must not be vertically clipped').toBe(clip.clientH)

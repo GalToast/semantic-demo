@@ -33,7 +33,7 @@
     /** Whether non-cluster filters are active (shows the "filtered" badge). */
     filtered: boolean;
     /** Called when a cluster button is clicked. */
-    onSelect: (name: string, index: number) => void;
+    onSelect: (_name: string, _index: number) => void;
     /** Called when the "All" or "Reset" button is clicked. */
     onReset: () => void;
   }

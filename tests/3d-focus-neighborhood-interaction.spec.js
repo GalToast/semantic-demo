@@ -21,7 +21,6 @@
  *   npx playwright test tests/3d-focus-neighborhood-interaction.spec.js --browser=chromium --headed
  * Or via manifest — group: 3d-focus-neighborhood
  */
-/* eslint-disable no-unused-vars */
 
 import { test, expect } from '@playwright/test'
 import fs from 'fs'

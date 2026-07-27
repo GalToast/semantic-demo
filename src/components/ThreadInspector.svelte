@@ -5,7 +5,6 @@
   import { onMount, tick } from 'svelte';
   import {
     focusStore,
-    threadInspector,
     clearThreadInspector
   } from '@lib/stores/focus.svelte';
   import type { FocusStoreState } from '@lib/stores/focus.svelte';

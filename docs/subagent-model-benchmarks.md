@@ -1276,36 +1276,35 @@ For all of these routes, **always dispatch with `live_steer: true`** and send a 
 
 Report files: `tmp/subagent-benchmark/reports/*-threadinspector-dom-audit.md`.
 
-
 ## Sprint-7 — 2026-07-27 (Mistral golden-goose sweep + reasoning-format fixes + key-router failover evidence)
 
 ### Reasoning-format fixes landed (key-router + mmx.ts)
 
 Five reasoning-channel issues were diagnosed and fixed across the key-router and `mmx.ts` this sprint. Together they unblock reasoning-capable models on `openrouter`, `mistral` (Kimi-style thinking), `nvidia` (NIM), and the subagent launch layer.
 
-| Fix | Location | Commit | What changed |
-| --- | -------- | ------ | ------------ |
-| W5b — OpenRouter reasoning boolean→object | `opencode-key-router.mjs:4518-4531` | `fbe0f2d` | Converts `reasoning: true` (boolean) → `reasoning: { type: "reasoning" }` (object) for the `openrouter` providerKey. **Verified LIVE**: `poolside/laguna-s-2.1:free` with `reasoning:true` went from HTTP 400 "expected object, received boolean" → HTTP 200. |
-| W11b — Kimi thinking-field | `opencode-key-router.mjs:2984` | (uncommitted, `node --check` passed) | `openAiReasoningToKimiThinking()` maps OpenAI reasoning content into Kimi's `thinking` field. |
-| W12 — mmx.ts max-reasoning infra | `harness/servers/external-subagents/src/mmx.ts` | `3f562c3` (+535) | `FORCE_REASONING_DEFAULT=true`, `REASONING_UNSUPPORTED_MODEL_PATTERNS`, `forceReasoningForModel()`, `generationConfig` with `reasoning.effort` + `include_reasoning` + `thinking:adaptive` + `enable_thinking`, `toolExecFallback`, willRetry-aware deferred kill. Hardcodes the highest reasoning tier as the subagent default. |
-| W9 — NVIDIA NIM reasoning adapter (verification) | `opencode-key-router.mjs:3430-3530` | (report only) | Verified the adapter strips `reasoning`/`include_reasoning`/`reasoning_effort`/`thinking`/`enable_thinking` for non-DeepSeek NVIDIA NIM models and preserves them for `deepseek-v4-pro`. Working correctly. |
-| vLLM/zydit reasoning collapse | `opencode-key-router.mjs:3560-3561` | (confirmed existing) | Reasoning collapse for vLLM/zydit providers confirmed in place. |
+| Fix                                              | Location                                        | Commit                               | What changed                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------ | ----------------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W5b — OpenRouter reasoning boolean→object        | `opencode-key-router.mjs:4518-4531`             | `fbe0f2d`                            | Converts `reasoning: true` (boolean) → `reasoning: { type: "reasoning" }` (object) for the `openrouter` providerKey. **Verified LIVE**: `poolside/laguna-s-2.1:free` with `reasoning:true` went from HTTP 400 "expected object, received boolean" → HTTP 200.                                                                    |
+| W11b — Kimi thinking-field                       | `opencode-key-router.mjs:2984`                  | (uncommitted, `node --check` passed) | `openAiReasoningToKimiThinking()` maps OpenAI reasoning content into Kimi's `thinking` field.                                                                                                                                                                                                                                    |
+| W12 — mmx.ts max-reasoning infra                 | `harness/servers/external-subagents/src/mmx.ts` | `3f562c3` (+535)                     | `FORCE_REASONING_DEFAULT=true`, `REASONING_UNSUPPORTED_MODEL_PATTERNS`, `forceReasoningForModel()`, `generationConfig` with `reasoning.effort` + `include_reasoning` + `thinking:adaptive` + `enable_thinking`, `toolExecFallback`, willRetry-aware deferred kill. Hardcodes the highest reasoning tier as the subagent default. |
+| W9 — NVIDIA NIM reasoning adapter (verification) | `opencode-key-router.mjs:3430-3530`             | (report only)                        | Verified the adapter strips `reasoning`/`include_reasoning`/`reasoning_effort`/`thinking`/`enable_thinking` for non-DeepSeek NVIDIA NIM models and preserves them for `deepseek-v4-pro`. Working correctly.                                                                                                                      |
+| vLLM/zydit reasoning collapse                    | `opencode-key-router.mjs:3560-3561`             | (confirmed existing)                 | Reasoning collapse for vLLM/zydit providers confirmed in place.                                                                                                                                                                                                                                                                  |
 
 ### Mistral golden-goose self-smoke — 9/9 PASS
 
 Real `external_subagent_start` dispatches on the `mistral` route (`/mistral/v1`, 2 active keys, 61-model catalog). Task: read `README.md`, write a report containing model id + route + tools + 3-sentence project summary + `golden-goose-smoke: PASS`. Every model is confirmed dispatch-capable end-to-end (tool schema load + multi-turn execution + disk write).
 
-| Worker | model | stdout | tool calls | report | verdict |
-| ------ | ----- | ------ | ---------- | ------ | ------- |
-| W-S1 | `mistral/mistral-small-latest` | 83 KB | 14 | `W-S1-small-selfsmoke-report.md` | ✅ PASS |
-| W-S2 | `mistral/mistral-medium-latest` | 115 KB | 17 | `W-S2-medium-selfsmoke-report.md` | ✅ PASS |
-| W-S3 | `mistral/ministral-8b-latest` | 91 KB | 11 | `W-S3-ministral8b-selfsmoke-report.md` | ✅ PASS |
-| W-S4 | `mistral/ministral-14b-latest` | 257 KB | 11 | `W-S4-ministral14b-selfsmoke-report.md` | ✅ PASS |
-| W-S5 | `mistral/devstral-2512` | 51 KB | 11 | `W-S5-devstral2512-selfsmoke-report.md` | ✅ PASS |
-| W-S6 | `mistral/devstral-latest` | 51 KB | 11 | `W-S6-devstral-latest-selfsmoke-report.md` | ✅ PASS |
-| W-S7 | `mistral/codestral-2508` | 163 KB | 11 | `W-S7-codestral2508-selfsmoke-report.md` | ✅ PASS |
-| W-S8 | `mistral/mistral-large-2512` | 112 KB | 6 | `W-S8-large2512-selfsmoke-report.md` | ✅ PASS |
-| W-S9 | `mistral/mistral-medium-3` | 168 KB | 16 | `W-S9-medium3-selfsmoke-report.md` | ✅ PASS |
+| Worker | model                           | stdout | tool calls | report                                     | verdict |
+| ------ | ------------------------------- | ------ | ---------- | ------------------------------------------ | ------- |
+| W-S1   | `mistral/mistral-small-latest`  | 83 KB  | 14         | `W-S1-small-selfsmoke-report.md`           | ✅ PASS |
+| W-S2   | `mistral/mistral-medium-latest` | 115 KB | 17         | `W-S2-medium-selfsmoke-report.md`          | ✅ PASS |
+| W-S3   | `mistral/ministral-8b-latest`   | 91 KB  | 11         | `W-S3-ministral8b-selfsmoke-report.md`     | ✅ PASS |
+| W-S4   | `mistral/ministral-14b-latest`  | 257 KB | 11         | `W-S4-ministral14b-selfsmoke-report.md`    | ✅ PASS |
+| W-S5   | `mistral/devstral-2512`         | 51 KB  | 11         | `W-S5-devstral2512-selfsmoke-report.md`    | ✅ PASS |
+| W-S6   | `mistral/devstral-latest`       | 51 KB  | 11         | `W-S6-devstral-latest-selfsmoke-report.md` | ✅ PASS |
+| W-S7   | `mistral/codestral-2508`        | 163 KB | 11         | `W-S7-codestral2508-selfsmoke-report.md`   | ✅ PASS |
+| W-S8   | `mistral/mistral-large-2512`    | 112 KB | 6          | `W-S8-large2512-selfsmoke-report.md`       | ✅ PASS |
+| W-S9   | `mistral/mistral-medium-3`      | 168 KB | 16         | `W-S9-medium3-selfsmoke-report.md`         | ✅ PASS |
 
 **Verdict**: Mistral direct `/mistral/v1` is the GOLDEN ROUTE — 61 models in the catalog, 2 keys, 2 active, `routeBackoff=false`, and every tested family dispatches cleanly. `codestral-latest` remains the proven fallback lane; all 9 verified models are now available as future worker lanes.
 
@@ -1345,3 +1344,24 @@ The first Wave-8 dispatch (9 self-smokes + W-Doc + W-Debug, launched simultaneou
 - **logfare/kiro-auto lane**: still DOWN — upstream `/logfare/v1/models` timed out; dropped from the Pi model registry. The key-router logfare route is healthy (6 keys); recovery requires the logfare upstream to come back.
 
 Report files: `tmp/s7-dispatch/W-S*-selfsmoke-report.md`, `tmp/s7-dispatch/W-Debug-devstral-investigation-report.md`, `tmp/s7-dispatch/W5-openrouter-reasoning-fix-report.md`, `tmp/s7-dispatch/W9-nvidia-reasoning-verify-report.md`. Bench-log: `tmp/v2-impl-bench-log.md`.
+
+## Round 4 — 2026-07-27 ~01:11 UTC (real-task bench across 4 routes; mistral the only survivor)
+
+The parallel session's "5 viable routes" finding (`f08598a3`, ~00:38 UTC) had **degraded by ~01:11 UTC**: only the `mistral` route remained reliably UP. This round tested confirmed/allowed routes on the REAL round-4 task (audit `WeatherWidget.svelte` + `CompassRail` + `FocusPocket` for UX jargon, fix one genuine bug, `npm run lint`, write report) — i.e. beyond the parallel session's trivial read-README self-smoke.
+
+### Per-model results
+
+| route                      | model requested | route resolved                           | result        | tokens | failure mode                                                                                                                                                                                                                           |
+| -------------------------- | --------------- | ---------------------------------------- | ------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `opencode/minimax-m3-free` | ok              | `pi:router-opencode-zen/minimax-m3-free` | ❌ exit 0     | 0      | `401: ModelError "Model minimax-m3-free is not supported"` — **stale `allowed_models` entry** (router catalog lists it but upstream rejects it)                                                                                        |
+| `qwen/qwen3.6-27b`         | ok              | `pi:zyditv4/qwen/qwen3.6-27b`            | ❌ exit 0     | 0      | `410 status code (no body)` — provider-side Gone; `willRetry:false`                                                                                                                                                                    |
+| `opencode-zen/qwen3.6-27b` | —               | —                                        | ❌ pre-launch | —      | `Unsupported external subagent model` — **NOT in live `allowed_models`** (the catalog uses `opencode/` + `opencode-go/` prefixes; a Qwen Code safety check refused the launch).                                                        |
+| `logfare/glm-5.2`          | ok              | `pi:router-logfare/glm-5.2`              | ❌ exit 1     | —      | `Error: Model "router-logfare/glm-5.2" not found` — **logfare dropped from the Pi model registry** (parallel-session note: upstream `/logfare/v1/models` timed out → `logfare/*` purged; 6 keys in key-router are healthy but unused). |
+| `mistral/devstral-latest`  | ok              | `pi:router-mistral/devstral-latest`      | 🔄 in-flight  | —      | Coding-focused model on the ONE route the parallel session confirmed reliable (9/9 self-smoke PASS, 2 verified keys). Tests completion on a real code-audit task.                                                                      |
+
+### Takeaways
+
+1. **Stale `allowed_models`** is a real failure mode now: the router's catalog lists `opencode/minimax-m3-free` but the upstream returns 401 "not supported." Catalog→upstream drift means `allowed !== healthy`. Corroborates the parallel session's `model-config-sync` warning.
+2. **The parallel session's viable-route list is time-sensitive.** `logfare/kiro-auto` + `logfare/glm-5.2` were viable at ~00:38 UTC but the logfare upstream went down again by ~01:11 UTC, purging the models from the registry. Mistral held. **Treat the subagent model registry as a moving target; re-probe the route before trusting an old "viable" verdict.**
+3. **`live_steer: true` + a nudge at ~60–75 s** remains the correct operational pattern for cold-starts (per sprint-7 operational prescription); a worker that goes quiet past ~75 s with `output_state: no_logs` benefits from a `BEGIN NOW …` steer.
+4. **Only mistral is a safe default lane tonight.** A dispatch that needs >80% success-rate should target the `mistral/*` models; everything else (opencode-zen paid + several `*-free` entries, zyditv4, logfare, kilo paid, modelscope, nvidia) is in a degraded/intermittent window.

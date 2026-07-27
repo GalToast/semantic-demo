@@ -191,7 +191,7 @@
   let idleSurfaceActive = $derived(nav.surface === 'idle' && !searchSurfaceActive);
 
   // Search only shows when explicitly in search AND has content
-  let idleSearchVisible = $derived(idleSurfaceActive);
+  let _idleSearchVisible = $derived(idleSurfaceActive);
 
   // Focus stage: only when in focus/inside/trail or a node is explicitly focused
   // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug

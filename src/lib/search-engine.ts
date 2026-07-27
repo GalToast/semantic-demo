@@ -45,7 +45,7 @@ import {
     markApiUnreachable,
     clearApiUnreachable
 } from '@lib/search/mock-search-fallback'
-import { retryWithBackoff, isPermanentError, isTransientError } from '@lib/utils/retry-with-backoff'
+import { retryWithBackoff } from '@lib/utils/retry-with-backoff'
 import { debugLog } from '@lib/utils/debug'
 import {
     performLocalIndexSearch,

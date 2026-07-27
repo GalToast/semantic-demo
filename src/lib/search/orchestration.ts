@@ -370,7 +370,6 @@ export {
     setSearchPanelState,
     renderSearchResultItems,
     beginSemanticSearchUiState,
-    updateSemanticSearchRetryState,
     applySemanticSearchDegradedState,
     finishSemanticSearchSuccessState,
     applyEmptySemanticSearchState,
@@ -385,7 +384,6 @@ export {
     clearSearchPreviewHoverTimer,
     clearMobileRouteFieldPeek,
     isMobileRouteFieldPeekActive,
-    focusSearchInputForReplacement,
     updateSearchStatusMessage
 } from './results-ui'
 

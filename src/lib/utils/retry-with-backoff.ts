@@ -358,7 +358,7 @@ export async function callWithFailover<T, TProviderMeta = string>(
 
         try {
             const result = await retryWithBackoff(
-                (state: RetryState) => executor(provider),
+                (_state: RetryState) => executor(provider),
                 {
                     maxRetries: provider.retryOptions?.maxRetries ?? maxRetries,
                     baseDelayMs: provider.retryOptions?.baseDelayMs ?? baseDelayMs,

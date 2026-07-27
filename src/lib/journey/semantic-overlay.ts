@@ -411,8 +411,8 @@ function _buildOverlayEdgeArrays(pairs: readonly FocusConnectionSegment[]): {
     const lane: number[] = []
     const semanticScore: number[] = []
     for (const segmentEdge of pairs) {
-        const t0 = segmentEdge.t0
-        const t1 = segmentEdge.t1
+        const _t0 = segmentEdge.t0
+        const _t1 = segmentEdge.t1
         const p0 = getFocusCurvePointLocal(segmentEdge, segmentEdge.t0!)
         const p1 = getFocusCurvePointLocal(segmentEdge, segmentEdge.t1!)
         const a = segmentEdge.a

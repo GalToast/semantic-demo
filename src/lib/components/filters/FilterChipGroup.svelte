@@ -12,9 +12,9 @@
     /** Data attribute name for chips (e.g., 'status-filter', 'contact-filter') */
     dataAttr: string;
     /** Check if a given filter id is currently active */
-    isActive: (id: string) => boolean;
+    isActive: (_id: string) => boolean;
     /** Callback when a filter chip is toggled */
-    onToggle: (id: string) => void;
+    onToggle: (_id: string) => void;
   }
 
   let { title, options, dataAttr, isActive, onToggle }: Props = $props();
