@@ -1319,12 +1319,6 @@ body.searching .search-container.has-query .search-clear-btn {
     }
 }
 
-/* polish285: hide decorative vector cascade lines that were leaking as visible float tuples
-   when vector-cascade-bg becomes active */
-.vector-cascade-line {
-    display: none;
-}
-
 /* polish286: semantic error/alert CSS for lifecycle.js and semantic-search-api-cache.js error states */
 .error-message,
 .semantic-error {

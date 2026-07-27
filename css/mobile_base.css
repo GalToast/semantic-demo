@@ -146,15 +146,6 @@ body[data-panel-surface] .control-btn {
     color: var(--color-white-warm);
 }
 
-.control-hint {
-    position: fixed;
-    right: 68px;
-    bottom: 26px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.85);
-    z-index: var(--z-overlay);
-}
-
 /* Animations */
 .fade-in {
     animation: fadeIn 0.5s ease forwards;
@@ -253,56 +244,6 @@ body:has(.info-panel.active) .panel-toggle,
     display: none;
 }
 
-/* Onboarding hint */
-.onboarding-hint {
-    position: fixed;
-    bottom: 50%;
-    left: 50%;
-    transform: translate(-50%, 50%);
-    z-index: var(--z-tooltips);
-    text-align: center;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 1s ease;
-    background: rgba(8, 10, 18, 0.56);
-    border: 1px solid var(--glass-reflection);
-    border-radius: 16px;
-    padding: 14px 18px;
-    max-width: min(420px, calc(100vw - 40px));
-}
-
-.onboarding-hint.visible {
-    opacity: 1;
-}
-
-body.surface-search .onboarding-hint,
-body.surface-focus .onboarding-hint,
-body.surface-focus-search .onboarding-hint,
-body.surface-semantic-dive .onboarding-hint,
-body.view-map .onboarding-hint {
-    opacity: 0;
-}
-
-.onboarding-hint p {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.85);
-    margin: 4px 0;
-    line-height: 1.5;
-}
-
-.onboarding-hint .key {
-    display: inline-block;
-    background: var(--glass-reflection);
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    margin: 0 2px;
-    color: rgba(255, 255, 255, 0.88);
-}
-
-/* Keyboard shortcuts hint panel */
-.keyboard-hint-panel {
     position: fixed;
     bottom: 24px;
     /* Clear the right rail (44px button + 16px margin + 20px gap = 80px)
