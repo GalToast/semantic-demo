@@ -56,7 +56,9 @@ describe('A2-4: Escape returns to Overview mode', () => {
         const escapeIdx = src.indexOf("e.key === 'Escape'")
         const returnIdx = src.indexOf('NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW', escapeIdx)
         const escapeBlock = src.slice(escapeIdx, returnIdx)
-        expect(escapeBlock).toContain('searchInput')
-        expect(escapeBlock).toContain("searchInput.value = ''")
+        // H-4 (bugsweep): clear via setSearchQuery('') through the store,
+        // replacing the old direct-DOM-mutation approach.
+        expect(escapeBlock).toContain('setSearchQuery')
+        expect(escapeBlock).toMatch(/setSearchQuery\(\s*['"]['"]\s*\)/)
     })
 })

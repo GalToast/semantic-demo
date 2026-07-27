@@ -98,30 +98,35 @@ describe('W7ks1-F1: isFormField split predicate — Ctrl+1-6/Escape get narrow f
         const block = src.slice(slashIdx, slashIdx + 200)
 
         // `/` handler must still suppress on focused buttons/anchors via `isFormField`.
-        expect(block).toMatch(/&& !isFormField\)/)
-        expect(block).not.toMatch(/&& !isTextInputField\)/)
+        // (M-4 bugsweep adds `&& !e.repeat` — asserted separately below.)
+        expect(block).toMatch(/&& !isFormField/)
+        expect(block).not.toMatch(/&& !isTextInputField/)
+        expect(block).toMatch(/&& !e\.repeat/)
     })
 
     it('single-char `?` shortcut KEEPs the broad `isFormField` (preserves 4c5f84a4 intent)', () => {
         // The `?` handler combines `?` AND `Shift+/` cases in one block.
         // Anchored at: `if ((e.key === '?' || (e.key === '/' && e.shiftKey))`
-        const qIdx = src.indexOf("if ((e.key === '?' || (e.key === '/' && e.shiftKey))")
+        const qIdx = src.indexOf("(e.key === '?' || (e.key === '/' && e.shiftKey))")
         expect(qIdx).toBeGreaterThan(-1)
         const block = src.slice(qIdx, qIdx + 300)
 
-        expect(block).toMatch(/&& !isFormField\)/)
-        expect(block).not.toMatch(/&& !isTextInputField\)/)
+        expect(block).toMatch(/!isFormField/)
+        expect(block).not.toMatch(/!isTextInputField/)
+        expect(block).toMatch(/!e\.repeat/)
     })
 
     it('single-char `w` + `m` shortcuts KEEP the broad `isFormField` (preserves 4c5f84a4 intent)', () => {
         const wIdx = src.indexOf("if (e.key === 'w' && !e.metaKey")
         expect(wIdx).toBeGreaterThan(-1)
         const wBlock = src.slice(wIdx, wIdx + 200)
-        expect(wBlock).toMatch(/&& !isFormField\)/)
+        expect(wBlock).toMatch(/&& !isFormField/)
+        expect(wBlock).toMatch(/&& !e\.repeat/)
 
         const mIdx = src.indexOf("if (e.key === 'm' && !e.metaKey")
         expect(mIdx).toBeGreaterThan(-1)
         const mBlock = src.slice(mIdx, mIdx + 200)
-        expect(mBlock).toMatch(/&& !isFormField\)/)
+        expect(mBlock).toMatch(/&& !isFormField/)
+        expect(mBlock).toMatch(/&& !e\.repeat/)
     })
 })

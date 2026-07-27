@@ -35,10 +35,11 @@ describe('P1 quick-jump search shortcut', () => {
     it('global-shortcuts.ts handles Esc to clear the search input', () => {
         // Must handle 'Escape' key
         expect(keyboardSource).toContain("e.key === 'Escape'")
-        // Must set the value to empty
-        expect(keyboardSource).toContain("searchInput.value = ''")
-        // Must dispatch an input event so the store updates
-        expect(keyboardSource).toContain("new Event('input'")
+        // H-4 (bugsweep): clear the search query through the store via
+        // setSearchQuery('') instead of direct DOM mutation, so the Svelte
+        // $state and the DOM stay in sync.
+        expect(keyboardSource).toMatch(/setSearchQuery\(\s*['"]['"]\s*\)/)
+        expect(keyboardSource).toMatch(/import[\s\S]{0,80}setSearchQuery[\s\S]{0,40}from\s+['"]@lib\/stores\/search\.svelte\.ts['"]/)
     })
 
     it('global-shortcuts.ts skips the / shortcut when a form field is focused', () => {

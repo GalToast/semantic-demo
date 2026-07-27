@@ -108,8 +108,8 @@ describe('W46-B3: all 5 shortcut branches are preserved from the original App.sv
 
     it('handles `Escape` returning to overview + clearing search input', () => {
         expect(src).toMatch(/e\.key\s*===\s*['"]Escape['"]/)
-        // Search input clear + dispatch RETURN_OVERVIEW + URL sync
-        expect(src).toMatch(/searchInput\.value\s*=\s*['"]['"]/)
+        // H-4 (bugsweep): clear search via setSearchQuery('') through the store.
+        expect(src).toMatch(/setSearchQuery\(\s*['"]['"]\s*\)/)
         expect(src).toContain('NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW')
         expect(src).toContain("updateUrlState({}, { reason: 'return-overview' })")
     })
