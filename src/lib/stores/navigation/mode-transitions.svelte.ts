@@ -98,7 +98,7 @@ export function setSurface(surface: PanelSurface): void {
                   : surface === 'idle'
                     ? 'overview'
                     : cur.mode
-    writeNavStateMirror({ previousSurface: cur.surface, surface, mode })
+    writeNavStateMirror({ previousSurface: cur.surface, surface, mode, currentView: surface === 'map' ? 'map' : 'galaxy' })
 }
 
 /** Backward-compatible alias for migrated orchestration imports. */

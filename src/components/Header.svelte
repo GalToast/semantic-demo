@@ -26,6 +26,7 @@
   import ModeChipRail from '@lib/components/header/ModeChipRail.svelte';
   import HelpDialog from '@lib/components/header/HelpDialog.svelte';
   import { JOURNEY_ACTIONS } from '@lib/journey/compass-state';
+  import { setJourneyPhase } from '@lib/stores/journey.svelte.ts';
 
   interface Props {
     /** Whether the header is visible */
@@ -52,6 +53,7 @@
       dispatchNavTransition,
       updateUrlState,
       debugWarn,
+      setJourneyPhase,
     } as SelectModeContext);
     // Bug 2 fix: selecting "Inside" must also engage the semantic-dive surface
     // (ENTRY_INSIDE). On desktop the journey-compass "Step Inside" button is

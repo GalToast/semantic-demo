@@ -29,6 +29,7 @@ export interface SelectModeContext {
     dispatchNavTransition: (action: unknown, payload?: Record<string, unknown>) => unknown
     updateUrlState: (...args: unknown[]) => void
     debugWarn: (...args: unknown[]) => void
+    setJourneyPhase?: (phase: NavMode) => void
 }
 
 // Re-export from the shared navigation module so existing imports of these
@@ -166,6 +167,11 @@ export function selectMode(
         ctx.dispatchNavTransition(navActions.SET_VIEW, { view: 'map' })
         ctx.dispatchNavTransition(navActions.SET_SURFACE, { surface: 'map' })
     }
+
+    // Advance the journey phase to match the selected mode so that
+    // journeyStore().phase stays in sync with navState.mode (Bug #3).
+    // Map view is a view of the overview phase.
+    ctx.setJourneyPhase?.(modeId === 'map' ? 'overview' : modeId)
 
     // Sync URL after mode change so the browser bar reflects the new state.
     try {
