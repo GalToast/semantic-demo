@@ -282,7 +282,7 @@ Tactics retested: (a) `external_subagent_followup` on stalled-deep-work to recov
 | Followup-recover stalled                        | W4c Svelte-5 snapshot/gate footguns | ✅ completed in ~4 min from followup dispatch (118 new output tokens, $0) → 13.3 KB report | **GOOSE-UNLOCK MECHANISM WORKS** for stalled `agnes` deep-work: `external_subagent_followup({worker_id})` resumes via the recorded `session_id` and finishes only the write step.                               |
 | Followup-retry on transient `Connection error.` | W3c lifecycle                       | ✅ completed in ~2.3 min from re-dispatch → 9.6 KB report                                  | Re-followup on the same `worker_id` (same `session_id`) recovers from transient route blips fast. ⚠️ BUT the W3c resulting report's #1 finding was a fabricated false-positive (see 2nd caveat + ledger below). |
 
-**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: _"Reading it inside $derived registers reactivity directly — no mirror needed."_
+**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: *"Reading it inside $derived registers reactivity directly — no mirror needed."*
 
 Report honest-stamped 4/10 + caution footer in `tmp/bugsweep-2026-07-24/worker4-reactivity-footguns-report.md`; do NOT action the 9 findings.
 
@@ -1096,7 +1096,7 @@ Four workers dispatched in parallel on an identical scope (WeatherWidget + Compa
 
 ### Round 2 takeaway
 
-No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably _read + analyze_ but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
+No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably *read + analyze* but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
 
 Two tool-quirks persisted to `failures.md`:
 
@@ -1150,3 +1150,101 @@ A sibling session (owner `kickoff-2026-07-26-probe`, campaign `model-catalog-cov
 ### Round 3 takeaway
 
 Two durable harness gains landed this round regardless of model-delivery: (1) the `_ctx` → `ctx` marker/needle sync fix in `patch-core.js` (validated by `verify-patch-status.mjs` + live smoke); (2) the correction of the overbroad "bash.js error blocks all dispatches" memory note into the precise "only stalls cautious models; confident lanes unaffected; round-3 nvidia/modelscope failures were provider downtime, not this harness issue" — persisted to failures.md under `pi-background-detach-ctx-marker-fix-resolved-2026-07-26`. The deliverable re-runs (qwen 900 s with live steer + nvidia retry with a different NIM model + a parallel Track B mmx.ts browser-profile analysis on the parallel-session-proven `modelscope/Qwen3-235B-A22B-Thinking-2507`) are in flight and judged in the next round.
+
+## Track B — 2026-07-26 (Pi harness: mmx.ts browser-profile / pi-mcp-adapter extension gap)
+
+### Outcome
+
+The read-only analysis worker (`modelscope/Qwen3-235B-A22B-Thinking-2507`, `ocw_c9dbd45b`) was dispatched but **failed at the provider gate** — `modelscope` returned `Connection error.` (0 tokens consumed; retry loop did not recover within 600 s). The same provider outage also killed the round-3 `modelscope/Tencent-Hunyuan/Hy3` worker. Since `modelscope` was unreachable, the main lane performed the analysis + fix directly.
+
+### The gap (confirmed)
+
+`piHarnessArgs` in `harness/servers/external-subagents/src/mmx.ts` never pushed `--extension` for either `pi-model-providers` or `pi-mcp-adapter`. The `verify-browser-profile.mjs` script asserts 5 cases:
+
+1. **browser profile** (no mcpConfigPath): expects `pi-mcp-adapter` + `pi-model-providers` extensions, no bare `--mcp-config`.
+2. **subagent profile**: expects `pi-model-providers` only (no adapter).
+3. **default profile**: expects `pi-model-providers` only (no adapter).
+4. **no profile**: expects `pi-model-providers` only (no adapter).
+5. **browser + explicit mcpConfigPath**: expects `pi-model-providers` only (no auto-adapter), `--mcp-config <path>` attached.
+
+Before the fix: all 5 cases FAILED (both `hasAdapter` and `hasModelProviders` were always `false`).
+
+### The fix
+
+Added two `--extension` pushes to `piHarnessArgs` (after the `PI_COMPAT_TOOLS` block):
+
+```typescript
+// All profiles load the pi-model-providers extension (registers model provider routes).
+base.push('--extension', 'C:/Users/HP/.pi/agent/local-packages/pi-model-providers/index.ts')
+// Browser profile without an explicit mcp config also loads the pi-mcp-adapter extension,
+// which registers the --mcp-config flag AND loads ~/.pi/agent/mcp.json itself.
+if (options.mcpProfile === 'browser' && !(options.mcpConfigPath && options.mcpConfigPath !== 'none')) {
+    base.push('--extension', 'C:/Users/HP/.pi/agent/npm/node_modules/pi-mcp-adapter/index.ts')
+}
+```
+
+### Verification
+
+`bun run scripts/verify-browser-profile.mjs` → **5 pass / 0 fail** (all cases green). The extension file paths were confirmed to exist on disk before writing them into the code.
+
+### Impact
+
+All subagent dispatches now load `pi-model-providers` (registers model provider routes). Browser-profile workers additionally load `pi-mcp-adapter` (registers `--mcp-config` flag + loads `~/.pi/agent/mcp.json`). Workers that explicitly set `mcpConfigPath` remain self-managing (no auto-adapter).
+
+## Tool-calling probe wave — 2026-07-26 ~23:55 UTC
+
+Direct HTTP tool-calling probe via `scripts/probe-models.mjs` (status-only mode). Test: ask for Tokyo weather with one `get_weather` function tool; record non-streaming + streaming HTTP status, finish reason, tool-call emission, latency. Timeout 25 s per call.
+
+### Provider summary
+
+| Provider   | Models tested | Tool-capable | Notes |
+| ---------- | ------------- | ------------ | ----- |
+| `logfare`  | 7             | 5/7          | `qwen-3.8-max` rate-limited/timeout; others mostly reliable. `glm-5.2` slow streaming (~12 s). |
+| `nvidia`   | 3             | 1/3          | `deepseek-ai/deepseek-v4-pro` works. `minimaxai/minimax-m3` times out. `qwen/qwen3.5-397b-a17b` removed upstream (410). |
+| `kilo`     | 10            | 2/10         | Free step/ling routes work. All paid routes return 402; several rate-limited/cooling. |
+| `modelscope` | 4           | 2/4          | `Qwen/Qwen3-235B-A22B-Thinking-2507` and `deepseek-ai/DeepSeek-V4-Pro` work. `Qwen-Ambassador/Qwen3.7-Max` 403; `MiniMax/MiniMax-M2.7` no provider. |
+
+### Per-model results
+
+| Provider   | Model                                    | Non-stream | Stream | Tool-call | Latency (typical) | Verdict |
+| ---------- | ---------------------------------------- | ---------- | ------ | --------- | ----------------- | ------- |
+| logfare    | `kiro-auto`                              | ok         | ok     | ✅        | ~3.4 s            | Works |
+| logfare    | `minimax-m3`                             | ok (text)  | ok     | ⚠️ ST only | ~1.2–2.5 s        | Streaming emits tool; non-stream emits text only |
+| logfare    | `glm-5.2`                                | ok         | ok     | ✅        | ~3 s / ~12 s ST   | Works; streaming slow but completes |
+| logfare    | `qwen-3.8-max`                           | TIMEOUT    | 429    | ❌        | —                 | Avoid — rate-limited |
+| logfare    | `kimi-k2.7-code`                         | TIMEOUT    | ok     | ✅        | ~4.2 s ST         | Use streaming only; NS hangs |
+| logfare    | `kimi-k2.6`                              | ok         | ok     | ✅        | ~3–4 s            | Works |
+| logfare    | `deepseek-v4-flash`                      | ok         | ok     | ✅        | ~3–5 s            | Works |
+| nvidia     | `minimaxai/minimax-m3`                   | TIMEOUT    | TIMEOUT | ❌       | —                 | Avoid — no response |
+| nvidia     | `deepseek-ai/deepseek-v4-pro`            | ok         | ok     | ✅        | ~1.4–8 s          | Works |
+| nvidia     | `qwen/qwen3.5-397b-a17b`                 | 410 Gone   | 410 Gone | ❌     | —                 | Avoid — model removed |
+| kilo       | `meta/muse-spark-1.1`                    | 402        | 429    | ❌        | —                 | Paid / no credits |
+| kilo       | `moonshotai/kimi-k3`                     | 402        | 404    | ❌        | —                 | Paid / no credits; route missing |
+| kilo       | `thinkingmachines/inkling`                 | 402        | 429    | ❌        | —                 | Paid / no credits |
+| kilo       | `poolside/laguna-s-2.1`                  | 402        | 429    | ❌        | —                 | Paid / no credits / rate-limited |
+| kilo       | `google/gemini-3.6-flash`                | 402        | 429    | ❌        | —                 | Paid / no credits |
+| kilo       | `google/gemini-3.5-flash-lite`           | 402        | 429    | ❌        | —                 | Paid / no credits |
+| kilo       | `anthropic/claude-opus-5-fast`           | 402        | 429    | ❌        | —                 | Paid / no credits |
+| kilo       | `stepfun/step-3.7-flash:free`            | ok         | ok     | ✅        | ~2.2 s            | Works |
+| kilo       | `inclusionai/ling-3.0-flash:free`        | ok         | ok     | ✅        | ~1.1–1.5 s        | Works; fastest reliable ling route |
+| kilo       | `minimax/minimax-m3`                     | 402        | 402    | ❌        | —                 | Paid / no credits |
+| modelscope | `Qwen-Ambassador/Qwen3.7-Max`            | 403        | 410    | ❌        | —                 | No account access |
+| modelscope | `MiniMax/MiniMax-M2.7`                   | 400        | 400    | ❌        | —                 | No provider supported |
+| modelscope | `Qwen/Qwen3-235B-A22B-Thinking-2507`     | ok         | ok     | ✅        | ~1.5–2.4 s        | Works |
+| modelscope | `deepseek-ai/DeepSeek-V4-Pro`           | ok         | ok     | ✅        | ~3 s              | Works |
+
+### Implications
+
+- **Logfare `kiro-auto` is reachable and tool-capable at the HTTP layer**, contradicting the earlier tentative verdict. However, the direct tool probe does not exercise the Pi subagent harness (streaming + tool schema + multi-step edits). It should be re-tested with a real `external_subagent_start` task before upgrading its subagent rating.
+- **`logfare/glm-5.2` works at HTTP but our earlier subagent attempt wedged at the harness layer** (`ocw_6c9d3c9d` produced no assistant output). This confirms the distinction between router-direct HTTP capability and subagent harness reliability.
+- **`nvidia/z-ai/glm-5.2` is not in the probe target list** because the `nvidia` targets were drawn from the NVIDIA catalog and the earlier working route was `pi:router-nvidia/z-ai/glm-5.2`. The catalog-exposed `minimaxai/minimax-m3` under `nvidia` does not respond, but that does not invalidate the separate `z-ai/glm-5.2` route observed earlier.
+- **`kilo/stepfun/step-3.7-flash:free` and `kilo/inclusionai/ling-3.0-flash:free` are viable HTTP routes**, consistent with earlier observations. Bench-dispatch with real subagent tasks is still needed.
+- **`modelscope/Qwen/Qwen3-235B-A22B-Thinking-2507` and `modelscope/deepseek-ai/DeepSeek-V4-Pro` are viable**, corroborating the parallel-session worker `ocw_8c5bf2d5` finding.
+
+### Next steps
+
+1. Run full (non-status) `probe-models.mjs` to capture reasoning-content/content-null signatures and verify the tool-call payloads are well-formed.
+2. Bench-dispatch real subagent tasks on the newly HTTP-viable routes: `logfare/kiro-auto`, `logfare/glm-5.2`, `kilo/stepfun/step-3.7-flash:free`, `kilo/inclusionai/ling-3.0-flash:free`, `modelscope/Qwen/Qwen3-235B-A22B-Thinking-2507`, `modelscope/deepseek-ai/DeepSeek-V4-Pro`.
+3. Compare subagent outcomes against the current golden geese (`agnes-2.0-flash`, `logfare/deepseek-v4-pro`, `logfare/kimi-k2.7-code`) using identical small tasks.
+
+Raw log: `tmp/probe-all-status-2026-07-26.log`.
