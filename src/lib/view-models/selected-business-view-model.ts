@@ -158,7 +158,7 @@ export function buildSelectedBusinessProps(
     const role =
         adapter && typeof adapter.getSelectedBusinessRoleLabel === 'function'
             ? adapter.getSelectedBusinessRoleLabel(point)
-            : COPY.selectedEmptyRole || 'Record'
+            : COPY.selectedEmptyRole || 'Business'
 
     const theme = describeCluster ? describeCluster(point.cluster) : ''
     const status = getPublicRecordStatusLabel ? getPublicRecordStatusLabel(point.status ?? '') : ''

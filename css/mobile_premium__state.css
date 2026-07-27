@@ -312,8 +312,6 @@
         pointer-events: none;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-results-count,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-results-count,
     body.surface-search[data-panel-surface-detail='peek'] .search-result-what,
     body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-what,
     body.surface-search[data-panel-surface-detail='peek'] .search-result-meta,

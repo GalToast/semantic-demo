@@ -121,8 +121,8 @@
     /* Dev telemetry / inspector HUD — above toasts, below loading */
     --z-devtools: 9000;
 
-    /* Canvas hover-preview overlay — above the 9999 loading veil */
-    --z-canvas-hover: 10000;
+    /* Canvas hover-preview overlay — at the --z-max ceiling, same as loading */
+    --z-canvas-hover: 9999;
 
     /* Maximum */
     --z-max: 9999;

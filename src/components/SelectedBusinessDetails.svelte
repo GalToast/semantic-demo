@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
-import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
+import { navStore } from '@lib/stores/navigation.svelte.ts';
+import { switchView } from '@lib/orchestration/view-controller';
 import type { BusinessRecord } from '@lib/types/business';
 import SelectedMatchNarrative from '@lib/components/focus/SelectedMatchNarrative.svelte';
 
@@ -30,10 +31,12 @@ import SelectedMatchNarrative from '@lib/components/focus/SelectedMatchNarrative
   });
 
   function handleMapClick(): void {
-    // VIEW_CHANGE_REQUESTED has no subscriber, so this button was a dead-end.
-    // Switch the view directly, matching the header "Map" chip behaviour.
-    dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' });
-    dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
+    // Bug 3b fix: route through the view-controller's switchView so the
+    // mutation lands in the same module instance as the rest of the app.
+    // Importing setCurrentView/setSurface from the navigation barrel in this
+    // component resolved to a duplicated state instance after the build split,
+    // so the button was a dead end.
+    switchView('map', { skipTerrainPrelude: true, skipUrlSync: true, silentHandoff: true });
   }
 </script>
 
@@ -217,7 +220,7 @@ import SelectedMatchNarrative from '@lib/components/focus/SelectedMatchNarrative
        --color-text-teal-light, the SAME hue as the sibling Email/Phone
        labels, so 'Website' didn't stand out as a link (only its underline
        did, + some jurors missed even that). Use --color-primary-alt
-       (teal #4ECDC4) so the link text reads as a clearly distinct clickable
+       (the primary-alt teal) so the link text reads as a clearly distinct clickable
        hyperlink alongside the plain white labels. */
     color: var(--color-primary-alt);
     text-decoration: underline;

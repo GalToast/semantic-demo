@@ -236,7 +236,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(78, 205, 196, 0.12);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.12);
     transition: color 0.2s, background 0.2s, border-color 0.2s;
   }
 

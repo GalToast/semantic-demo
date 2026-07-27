@@ -107,9 +107,9 @@
     border-radius: 5px;
     background: linear-gradient(
       90deg,
-      rgba(78, 205, 196, 0.04) 0%,
-      rgba(78, 205, 196, 0.12) 40%,
-      rgba(78, 205, 196, 0.04) 80%
+      rgba(var(--color-primary-alt-rgb), 0.04) 0%,
+      rgba(var(--color-primary-alt-rgb), 0.12) 40%,
+      rgba(var(--color-primary-alt-rgb), 0.04) 80%
     );
     background-size: 200% 100%;
     animation: shimmerSlide 1.6s ease-in-out infinite;

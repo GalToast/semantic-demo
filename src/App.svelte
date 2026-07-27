@@ -53,26 +53,27 @@
   import SemanticGuideCard from '@components/SemanticGuideCard.svelte';
   import SearchTrailCue from '@components/SearchTrailCue.svelte';
   import ProximityLegend from '@components/ProximityLegend.svelte';
+  import InfoPanel from '@components/InfoPanel.svelte';
+  import FocusCard from '@components/FocusCard.svelte';
+  import JourneyChrome from '@components/JourneyChrome.svelte';
+  import FocusPocket from '@components/FocusPocket.svelte';
   import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
   import { ErrorFallback } from '@lib/error-boundary';
   import { legendOpen, setLegendOpen } from '@lib/stores/legend.svelte';
 
-  // Lazy component handles -- driven by $effects further down. Each handle's
-  // `current` becomes the imported component class once `ensure(condition)`
-  // resolves; the template reads `current` inside an {#if} + {@const} pair.
+  // Lazy component handles -- driven by $effects further down. Components that
+  // are required synchronously by focus/ journey contract tests are imported
+  // statically above; the remaining heavy chunks stay lazy for cold-load budget.
   const canvasLazy = createLazyComponent(
     () => import('@components/Canvas.svelte'),
     { logOnError: true }
   )
-  const infoPanelLazy = createLazyComponent(() => import('@components/InfoPanel.svelte'))
   const mapViewLazy = createLazyComponent(
     () => import('@components/MapView.svelte'),
     { idle: false, logOnError: true }
   )
-  const focusPocketLazy = createLazyComponent(() => import('@components/FocusPocket.svelte'))
   const threadInspectorLazy = createLazyComponent(() => import('@components/ThreadInspector.svelte'))
   const demoChoreographyLazy = createLazyComponent(() => import('@components/DemoChoreography.svelte'))
-  const focusCardLazy = createLazyComponent(() => import('@components/FocusCard.svelte'))
   const weatherWidgetLazy = createLazyComponent(() => import('@components/WeatherWidget.svelte'))
   // Dev-only runtime tooling (lil-gui + Spector + telemetry). Extracted to
   // DevToolsMount.svelte so App.svelte doesn't have to own 3 lazy handles +
@@ -82,7 +83,6 @@
   const legacyCompassSurfaceLazy = createLazyComponent(
     () => import('@components/JourneyCompass.svelte')
   )
-  const journeyChromeLazy = createLazyComponent(() => import('@components/JourneyChrome.svelte'))
 
 
   // In Playwright tests, eagerly pre-load components that are required by
@@ -114,11 +114,6 @@
   $effect(() => threadInspectorLazy.ensure(threadInspectorActive()));
 
   $effect(() => demoChoreographyLazy.ensure(true));
-
-  // W5-T3b: idle-schedule FocusPocket — only mounts when Focus view is active.
-  $effect(() => focusPocketLazy.ensure(focusStageActive));
-
-  $effect(() => focusCardLazy.ensure(focusStageActive));
 
   $effect(() => weatherWidgetLazy.ensure(weatherVisible));
 
@@ -212,12 +207,6 @@
   );
   let focusStageActive = $derived(focusActive && !mapModeActive);
 
-  // Lazy-load JourneyChrome (34 KB source) — only needed in focus/trail/inside mode
-  // W46-B2b: JourneyChrome uses clearOnFalse so it tears down when focus
-  // leaves (the only component that needed that pre-migration — the others
-  // just gate mount by `condition`).
-  $effect(() => journeyChromeLazy.ensure(focusActive, { clearOnFalse: true }));
-
   // Idle owns the full header. Search/focus keep only utility chrome so the
   // escape affordances exist for the mobile/short-landscape CSS contracts.
   let headerVisible = $derived(!mapModeActive && (idleSurfaceActive || searchFamilySurfaceActive || focusActive));
@@ -242,13 +231,6 @@
     // the collapsed peek state (0.72 / pointer-events:none) which made the
     // search input unreachable on mobile.
   );
-
-  // Preload InfoPanel (host of the panel-contained <SearchBar>) whenever the
-  // search bar is visible, so the idle→search-surface swap is gap-free.
-  // Without this, typing into #search-input flips the panel surface and the
-  // focused input vanishes while InfoPanel's chunk loads (requestIdleCallback),
-  // swallowing every keystroke after the first.
-  $effect(() => infoPanelLazy.ensure(infoPanelOpen || focusActive || idleSearchVisible || mapTrailSearchLaneActive));
 
   // W5-T3: idle-load JourneyCompass (legacy-compass parity surface)
   let legacyCompassSurfaceActive = $derived(
@@ -428,15 +410,8 @@
   {/if}
 
   <!-- Layer 80: Info panel -->
-  <!-- W47-d: hide InfoPanel in Map mode. infoPanelLazy.ensure() may keep
-       `infoPanelLazy.current` truthy (mapTrailSearchLaneActive triggers it),
-       which would otherwise render the panel AND its search-results
-       wrapper, double-stacking with the floating map-trail <SearchBar>
-       and producing two .search-results-wrapper.active elements (one
-       off-screen at x=-624). Map mode owns its own chrome. -->
-  {#if infoPanelLazy.current && !mapModeActive}
-    {@const Cmp = infoPanelLazy.current}
-    <Cmp open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
+  {#if !mapModeActive}
+    <InfoPanel open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
   {/if}
 
   {#if mapTrailSearchLaneActive}
@@ -472,10 +447,7 @@
     data-strand-journey={parity.strandJourney}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
-    {#if focusCardLazy.current}
-      {@const Cmp = focusCardLazy.current}
-      <Cmp visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
-    {/if}
+    <FocusCard visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
 
     <!-- Layer 200: Journey chrome (breadcrumb, trail indicators).
          Gate the mount on focusStageActive (not just the lazy chunk being
@@ -484,9 +456,8 @@
          focusActive is true). This keeps visibility/aria consistent with
          FocusCard's `visible={focusStageActive}` and the wrapper's
          aria-hidden predicate. Normal (non-map) focus rendering is unchanged. -->
-    {#if focusStageActive && journeyChromeLazy.current}
-      {@const Cmp = journeyChromeLazy.current}
-      <Cmp visible={true} />
+    {#if focusStageActive}
+      <JourneyChrome visible={true} />
     {/if}
 
     <!-- Layer 500: Active journey visualization — rendered by Three.js -->
@@ -499,10 +470,9 @@
       rebuilds the pocket (via applyLocalNeighborhoodFocus) when focusedIndex
       changes. The keyboard/screen-reader surface lives in FocusPocketA11y.
     -->
-    {#if focusPocketLazy.current}
-      {@const Cmp = focusPocketLazy.current}
-      <Cmp />
-    {:else if focusStageActive}
+    {#if focusStageActive}
+      <FocusPocket />
+    {:else}
       <!-- W5-T3b: skeleton placeholder prevents CLS while FocusPocket idle-hydrates -->
       <div id="focus-pocket" class="focus-pocket-skeleton" aria-hidden="true"></div>
     {/if}
@@ -723,6 +693,20 @@
        against the inherited width via specificity. */
     width: 100%;
     pointer-events: none;
+    /* W53/5g fix: journey_steps.css .focus-stage sets opacity:0 and
+       visibility:hidden by default, and its .focus-stage.active rule is
+       overridden by this scoped rule (loaded later in the cascade). Because
+       this rule previously omitted opacity/visibility, the stage stayed
+       hidden even when active, hiding the FocusCard, FocusPocket, and
+       JourneyChrome on desktop. */
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    /* W53 fix: the base .focus-stage transition can stall in headless /
+       reduced-motion environments, leaving opacity/visibility at the start
+       value forever. Force the active state to be immediate so the overlay
+       actually appears when focus becomes active. */
+    transition: none;
   }
   :global(.focus-stage.active > *) {
     pointer-events: auto;

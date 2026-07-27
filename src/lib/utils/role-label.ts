@@ -37,5 +37,5 @@ export function _getSelectedBusinessRoleLabel(point: Point): string {
         return 'Trail Step'
     }
 
-    return 'Record'
+    return 'Business'
 }

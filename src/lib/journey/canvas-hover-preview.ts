@@ -205,13 +205,13 @@ function buildPreviewContent(record: BusinessRecord | null, index: number, conta
     signal.className = 'preview-signal'
     const signalLabel = document.createElement('span')
     signalLabel.className = 'signal-label'
-    signalLabel.textContent = 'Signal'
+    signalLabel.textContent = 'Match strength'
     signal.appendChild(signalLabel)
     const bars = document.createElement('span')
     bars.className = 'signal-bars'
     const barCount = Math.min(5, Math.max(1, Math.round(signalScore)))
     bars.textContent = '▪'.repeat(barCount) + '▫'.repeat(5 - barCount)
-    bars.setAttribute('aria-label', `Signal strength ${barCount} of 5`)
+    bars.setAttribute('aria-label', `Match strength ${barCount} of 5`)
     signal.appendChild(bars)
     body.appendChild(signal)
     container.appendChild(body)

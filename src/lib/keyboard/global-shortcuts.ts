@@ -79,17 +79,11 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         // return-to-overview whenever focus sat on the chip-rail buttons the
         // user had just clicked).
         const isTextInputField =
-            tag === 'input' ||
-            tag === 'textarea' ||
-            tag === 'select' ||
-            target?.isContentEditable === true
+            tag === 'input' || tag === 'textarea' || tag === 'select' || target?.isContentEditable === true
         // Single-char shortcuts (`/`, `?`, `w`, `m`) still suppress on focused
         // buttons/anchors — pressing `/` while focus sits on the help button
         // could otherwise interleave with browser-quick-find overlays.
-        const isFormField =
-            isTextInputField ||
-            tag === 'button' ||
-            tag === 'a'
+        const isFormField = isTextInputField || tag === 'button' || tag === 'a'
 
         // Guard against IME composition keystrokes corrupting the composed text.
         if (e.isComposing) return

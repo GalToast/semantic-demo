@@ -193,7 +193,7 @@
   }
 
   .legend-item:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
     outline-offset: 2px;
     border-radius: 0.25rem;
   }
@@ -224,8 +224,8 @@
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.6rem;
     color: var(--color-text-teal-muted);
-    background: rgba(78, 205, 196, 0.1);
-    border: 1px solid rgba(78, 205, 196, 0.2);
+    background: rgba(var(--color-primary-alt-rgb), 0.1);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
     border-radius: 0.25rem;
     padding: 0.1rem 0.45rem;
     cursor: pointer;
@@ -237,13 +237,13 @@
 
   .legend-control-btn:hover,
   .legend-control-btn:focus-visible {
-    background: rgba(78, 205, 196, 0.2);
+    background: rgba(var(--color-primary-alt-rgb), 0.2);
     color: var(--color-primary-alt);
   }
 
   .legend-control-btn.active {
-    background: rgba(78, 205, 196, 0.25);
+    background: rgba(var(--color-primary-alt-rgb), 0.25);
     color: var(--color-primary-alt);
-    border-color: rgba(78, 205, 196, 0.4);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.4);
   }
 </style>

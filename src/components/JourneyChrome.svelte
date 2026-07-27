@@ -331,6 +331,13 @@
       focusedIndex={currentFocusedIndex}
       getPointForIndex={getPointForIndex}
     />
+
+    {#if chromeHasFocus && currentThreadCandidates.length === 0}
+      <div class="empty-state journey-empty-state" role="status" aria-live="polite">
+        <p class="journey-empty-title">No neighboring stops</p>
+        <p class="journey-empty-note">Pick a business with visible connections to explore.</p>
+      </div>
+    {/if}
     </div><!-- /focus-stage-journey -->
   </div>
 {/if}

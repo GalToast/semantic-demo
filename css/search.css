@@ -1789,10 +1789,6 @@ body.surface-map-focus-search .semantic-lane-assist-meta {
         padding: 7px 9px;
     }
 
-    body.surface-search .search-result-item:not(:first-child) {
-        display: none;
-    }
-
     body.surface-search .search-result-name {
         font-size: 12px;
         line-height: 1.1;

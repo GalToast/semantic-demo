@@ -25,16 +25,11 @@ const STYLE_BLOCK_RE = /<style[^>]*>([\s\S]*?)<\/style>/gi
 
 // Grandfathered files (still contain hardcoded primary-alt). Remove on migration.
 const ALLOWLIST = new Set([
-    'src/App.svelte',
     'src/components/Canvas.svelte',
     'src/components/CompassRail.svelte',
     'src/components/Controls.svelte',
     'src/components/FocusPocket.svelte',
-    'src/components/Legend.svelte',
-    'src/components/MapView.svelte',
-    'src/components/SearchResults.svelte',
-    'src/components/Splash.svelte',
-    'src/components/ThreadInspector.svelte'
+    'src/components/Splash.svelte'
 ])
 
 function listSvelteFiles(dir, out = []) {

@@ -198,7 +198,7 @@
   onwheel={(e) => e.stopPropagation()}
   ondblclick={(e) => e.stopPropagation()}
 >
-  <h3 class="legend-title">Categories</h3>
+  <h3 class="legend-title" aria-label="The 12 categories are color-coded in the legend.">Categories</h3>
   <LegendClusterList
       {clusterEntries}
       activeClusterFilter={$activeClusterFilter}
