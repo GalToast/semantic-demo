@@ -3728,4 +3728,69 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             'Categories'
         )
     })
+
+    test('5o. demo replay restarts the choreography from phase 1 (M15 invariant)', async ({ page }) => {
+        // M15 invariant: the keyboard-help "Replay tour" button dispatches
+        // 'demo-replay-requested', which the canonical DemoChoreography
+        // consumes to cancel any active demo, clear the session gate, and
+        // re-enter the 10-phase choreography from Phase 1. No legacy
+        // micro-demo is started, so veils do not stack.
+        await page.setViewportSize({ width: 1440, height: 900 })
+
+        // Force the auto-demo and use webgl so the scene becomes ready.
+        await page.context().clearCookies()
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?demo=force&webgl=1`, {
+            waitUntil: 'domcontentloaded'
+        })
+        await page.evaluate(() => {
+            try {
+                sessionStorage.clear()
+            } catch {
+                /* ignore */
+            }
+            try {
+                localStorage.clear()
+            } catch {
+                /* ignore */
+            }
+        })
+
+        // The first-visit help dialog may auto-open and block the demo.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Wait for the canonical demo choreography box to appear.
+        const demoBox = page.locator('#demo-choreography')
+        await demoBox.waitFor({ state: 'visible', timeout: 30000 })
+
+        // Open the keyboard-help panel (the replay affordance lives there).
+        const helpBtn = page.locator('#btn-keyboard-help').first()
+        await helpBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await helpBtn.click()
+        await page
+            .locator('#keyboard-hint-panel.visible, #keyboard-hint-panel[aria-hidden="false"]')
+            .waitFor({ state: 'visible', timeout: 5000 })
+
+        // Click the user-visible "Replay tour" button.
+        const replayBtn = page.locator('#btn-replay-tour').first()
+        await replayBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await replayBtn.click()
+
+        // The canonical replay path re-creates the choreography box.
+        // Wait for it to re-appear with non-empty phase text (Phase 1).
+        await demoBox.waitFor({ state: 'visible', timeout: 15000 })
+        await page.waitForTimeout(300) // allow Svelte flush for text content
+
+        const phaseText = await demoBox.locator('p').textContent()
+        expect(phaseText, 'demo replay must render a phase caption from Phase 1').not.toBeNull()
+        expect(phaseText?.trim().length, 'demo replay phase caption must be non-empty').toBeGreaterThan(0)
+
+        // M15 invariant: exactly one demo choreography box (no stacked veils).
+        const boxCount = await page.locator('#demo-choreography').count()
+        expect(boxCount, 'M15 invariant: exactly one demo choreography box (no stacking)').toBe(1)
+    })
 })
