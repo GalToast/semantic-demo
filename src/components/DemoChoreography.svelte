@@ -51,7 +51,7 @@
   let unmounted = false;
 
   const FORCED_START_DELAY_MS = 800;
-  const RETRY_START_DELAY_MS = 250;
+  const RETRY_START_DELAY_MS = 500;
   /** Delay before the fallback onboarding toast appears after splash dismissal. */
   const FALLBACK_HINT_DELAY_MS = 2500;
   /** Maximum time to wait for the 3D scene to become ready before falling back. */
@@ -62,11 +62,31 @@
    * fallback toast is suppressed — showing a "click any dot to explore"
    * hint on top of someone already exploring is noise, not help.
    * Closes the Phase 2 welcome-sequence pile-up (Scout B Rec #4).
+   *
+   * W51 fix: also cancel the auto-demo so user exploration interrupts the
+   * choreography immediately (timers cleared, phase set to CANCELLED,
+   * overlay removed). Without this, clicking a 3D dot during the demo was
+   * silently swallowed and the 10-phase tour continued running.
    */
   let userInteractedSinceMount = false;
   let interactionDismissed = false;
+  let markInteractionFired = false; // gate: 1st-interaction fires before demo starts
   const interactionAbortController = new AbortController();
-  function markInteraction(): void {
+  function markInteraction(e: Event): void {
+    // Ignore interactions that originate inside an open modal dialog (e.g.
+    // the first-visit help dialog). Those events should be consumed by the
+    // dialog itself — closing the dialog must not be treated as an
+    // exploration interaction that cancels the auto-demo.
+    const target = e.target
+    if (target instanceof Node) {
+      const openDialog = document.querySelector('dialog[open]')
+      if (openDialog && openDialog.contains(target)) return
+      // The demo's own dismiss button and other chrome handle themselves;
+      // don't let the document-level capture listener tear the demo down
+      // before the button's onclick can complete the click gesture.
+      const demoChrome = document.getElementById('demo-choreography')
+      if (demoChrome && demoChrome.contains(target)) return
+    }
     userInteractedSinceMount = true;
     // Dismiss the fallback toast on the first user interaction so it
     // doesn't linger over the map (M3).
@@ -74,7 +94,24 @@
       dismissToast();
       interactionDismissed = true;
     }
-    interactionAbortController.abort();
+    // W51: cancel the auto-demo so user exploration wins.
+    // Only cancel on genuine gestures (click/tap/key) — hover/mouse-move
+    // events must NOT cancel the demo, because Playwright's click action
+    // performs a hover pointermove before the actual click, which would
+    // tear down the demo and make the dismiss button target disappear.
+    const cancelDemoEventTypes = new Set(['pointerdown', 'click', 'touchstart', 'keydown'])
+    if (isDemoActive() && cancelDemoEventTypes.has(e.type)) {
+      dismissDemo();
+    }
+    // First interaction fires BEFORE the demo has started (splash/placeholder
+    // CTA). Don't abort the controller on that call — leave it alive so
+    // attachInteractionListeners can successfully register capture-phase
+    // handlers for post-start exploration clicks.
+    if (markInteractionFired) {
+      interactionAbortController.abort();
+    } else {
+      markInteractionFired = true;
+    }
   }
 
   /**
@@ -130,7 +167,11 @@
 
   function dismissDemo() {
     markDemoSessionSkipped('dismissed');
-    cancelDemo();
+    // Defer cancellation one frame so the real click event that triggered
+    // this handler can complete before the #demo-choreography element is
+    // removed from the DOM. Without this, Playwright's click action may see
+    // the target detach mid-gesture and report a timeout.
+    requestAnimationFrame(() => cancelDemo());
   }
 
   function runDemoSequence() {
@@ -169,8 +210,15 @@
   }
 
   function attemptStart(remainingAttempts = MAX_START_RETRIES) {
-    const nodeIndex = findDemoNode(getBusinessRecords());
+    const records = getBusinessRecords();
+    const nodeIndex = findDemoNode(records);
     if (nodeIndex === null) {
+      // Records may not be hydrated yet (data-worker loads asynchronously).
+      // Keep polling without burning a retry while the corpus is empty.
+      if (records.length === 0 && remainingAttempts > 0) {
+        scheduleDemoTimer(() => attemptStart(remainingAttempts), RETRY_START_DELAY_MS);
+        return;
+      }
       if (remainingAttempts <= 0) {
         eligible = false;
         // W6 audit: Demo couldn't find a valid node — show fallback hint.

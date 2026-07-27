@@ -274,20 +274,22 @@ test.describe(`Micro-demo system (${TEST_SERVER})`, () => {
       test.setTimeout(30000);
       await page.goto(`${APP_URL}${DEMO_FORCE}`, { waitUntil: 'domcontentloaded' });
 
-      // Wait for demo to start
+      // Wait for demo to start (first phase is OVERVIEW)
       await page.waitForFunction(
-        () => document.body?.dataset?.demoPhase === 'GLIDING',
+        () => document.body?.dataset?.demoPhase === 'OVERVIEW',
         { timeout: 15000 }
       );
 
       const phase = await getDemoPhase(page);
-      expect(phase).toBe('GLIDING');
+      expect(phase).toBe('OVERVIEW');
 
-      // Wait for it to progress past GLIDING
+      // Wait for it to progress past OVERVIEW to the next phase (SEARCH or beyond, or terminal)
       await page.waitForFunction(
         () => {
           const p = document.body?.dataset?.demoPhase;
-          return p === 'ARRIVED' || p === 'CARD_VISIBLE' || p === 'COMPLETE' || p === 'CANCELLED';
+          // Current demo sequence: OVERVIEW → SEARCH → FOCUS → THREADS → NEIGHBORS →
+          // TRAIL → DIVE → FILTER → MAP → RETURN → COMPLETE
+          return p && p !== 'IDLE' && p !== 'OVERVIEW';
         },
         { timeout: 5000 }
       );

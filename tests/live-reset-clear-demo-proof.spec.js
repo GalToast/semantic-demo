@@ -7,6 +7,12 @@ import { resetExplorationFocus } from '@lib/orchestration/lifecycle'
  * Live Interaction Reset Proof - wave for real keyboard/Escape path
  * through mocked semantic search responses.
  *
+ * ⚠️ LEGACY SHELL TEST — targets `vector-explorer-polished.html` (legacy static HTML shell).
+ * This test validates the legacy app's reset flow, NOT the Svelte build
+ * (which lives at `dist/svelte/index.html` or is served by Vite on :5173).
+ * Every page.goto() call uses the legacy shell path; selector references and
+ * __TEST_STATE__ globals are legacy-specific.
+ *
  * Validates the real event path:
  *   keyboard(Escape) -> handleGlobalKeydown -> clearSearch + resetExplorationFocus
  *

@@ -2,6 +2,13 @@
 /**
  * Micro-demo Visual QA Test Runner
  *
+ * ⚠️ LEGACY-ONLY TEST RUNNER — targets `index.html` (legacy static HTML shell).
+ * This entire runner is specific to the legacy micro-demo (`micro-demo.js` in
+ * the static HTML) and checks legacy DOM elements (#micro-demo-veil),
+ * window globals (window.isMicroDemoRunning, window.cancelMicroDemo), and
+ * body attributes ([data-demo-active]) that do not exist in the Svelte build.
+ * No equivalent test targets the Svelte DemoChoreography component.
+ *
  * Run: node tests/micro-demo-verify.js
  * Default URL: http://127.0.0.1:8795/index.html
  *

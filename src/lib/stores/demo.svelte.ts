@@ -76,7 +76,7 @@ export const DEMO_TOTAL_DURATION_MS =
     DEMO_TIMING.RETURN_MS
 export const DEMO_LIFETIME_KEY = 'moco_mycelium_demo_v1'
 export const DEMO_SESSION_KEY = 'moco_mycelium_demo_session_v1'
-export const MAX_START_RETRIES = 3
+export const MAX_START_RETRIES = 20
 const SHOWCASE_POOL: readonly number[] = [50, 707, 1525, 2908, 3899, 4102, 6684, 7938]
 const timers = new Map<ReturnType<typeof setTimeout>, number>()
 

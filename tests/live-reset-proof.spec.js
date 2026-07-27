@@ -6,6 +6,13 @@ import { search } from '@lib/search/state'
 /**
  * Live reset interaction proof — Wave 2
  *
+ * ⚠️ LEGACY SHELL TEST — targets `index.html` (legacy static HTML shell).
+ * This test validates the legacy app's reset flow, NOT the Svelte build
+ * (which lives at `dist/svelte/index.html` or is served by Vite on :5173).
+ * The page.goto() calls use the legacy shell path; selector references
+ * (#search-input, #search-results, #btn-focus-overview) and __TEST_STATE__
+ * globals are legacy-specific.
+ *
  * Flow: mock search → focus/exploration state → Escape → clearSearch + resetExplorationFocus
  *
  * Validates:
