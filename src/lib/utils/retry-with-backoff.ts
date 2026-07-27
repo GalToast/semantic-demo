@@ -82,7 +82,11 @@ function delay(ms: number): Promise<void> {
  * @param baseDelay - base delay in ms (default 400)
  * @param maxDelay - max delay in ms (default 8000)
  */
-export function computeBackoffDelay(attempt: number, baseDelay = DEFAULT_BASE_DELAY_MS, maxDelay = DEFAULT_MAX_DELAY_MS): number {
+export function computeBackoffDelay(
+    attempt: number,
+    baseDelay = DEFAULT_BASE_DELAY_MS,
+    maxDelay = DEFAULT_MAX_DELAY_MS
+): number {
     const exponential = baseDelay * Math.pow(2, attempt)
     const capped = Math.min(exponential, maxDelay)
     // Full jitter: random between 50% and 150% of the capped exponential delay.
@@ -136,10 +140,10 @@ export function isTransientError(err: unknown): boolean {
     // TypeErrors from fetch failing to connect are transient.
     if (err instanceof TypeError) return true
 
-// DOMException TimeoutError is transient (rare in fetch context — timeout
-// aborts usually surface as AbortError, which the generic Error message-match
-// check below already classifies; this catch keeps the rare TimeoutError name).
-if (err instanceof DOMException && err.name === 'TimeoutError') return true
+    // DOMException TimeoutError is transient (rare in fetch context — timeout
+    // aborts usually surface as AbortError, which the generic Error message-match
+    // check below already classifies; this catch keeps the rare TimeoutError name).
+    if (err instanceof DOMException && err.name === 'TimeoutError') return true
 
     // Generic Error with a timeout-related message
     if (err instanceof Error && (lower.includes('timeout') || lower.includes('timed out'))) return true
@@ -236,7 +240,10 @@ export async function retryWithBackoff<T>(
         // Check for timeout
         if (elapsedMs >= timeoutMs) {
             const timeoutErr = lastError ?? new Error(`${label} timed out after ${timeoutMs}ms and ${attempt} attempts`)
-            debugWarn(`[retry] ${label} timeout after ${attempt} attempts (${Math.round(elapsedMs)}ms):`, timeoutErr.message)
+            debugWarn(
+                `[retry] ${label} timeout after ${attempt} attempts (${Math.round(elapsedMs)}ms):`,
+                timeoutErr.message
+            )
             throw timeoutErr
         }
 
@@ -346,7 +353,12 @@ export async function callWithFailover<T, TProviderMeta = string>(
     executor: (provider: ProviderConfig<TProviderMeta>) => Promise<T>,
     options: RetryOptions = {}
 ): Promise<T> {
-    const { maxRetries = DEFAULT_MAX_RETRIES, baseDelayMs = DEFAULT_BASE_DELAY_MS, maxDelayMs = DEFAULT_MAX_DELAY_MS, label = 'failover' } = options
+    const {
+        maxRetries = DEFAULT_MAX_RETRIES,
+        baseDelayMs = DEFAULT_BASE_DELAY_MS,
+        maxDelayMs = DEFAULT_MAX_DELAY_MS,
+        label = 'failover'
+    } = options
 
     if (chain.length === 0) {
         throw new Error(`${label}: failover chain is empty`)
@@ -359,17 +371,14 @@ export async function callWithFailover<T, TProviderMeta = string>(
         debugWarn(`[failover] ${label}: trying provider ${i + 1}/${chain.length} "${provider.name}"`)
 
         try {
-            const result = await retryWithBackoff(
-                (_state: RetryState) => executor(provider),
-                {
-                    maxRetries: provider.retryOptions?.maxRetries ?? maxRetries,
-                    baseDelayMs: provider.retryOptions?.baseDelayMs ?? baseDelayMs,
-                    maxDelayMs: provider.retryOptions?.maxDelayMs ?? maxDelayMs,
-                    timeoutMs: provider.retryOptions?.timeoutMs ?? options.timeoutMs ?? DEFAULT_PER_PROVIDER_TIMEOUT_MS,
-                    label: `${label}.${provider.name}`,
-                    signal: options.signal
-                }
-            )
+            const result = await retryWithBackoff((_state: RetryState) => executor(provider), {
+                maxRetries: provider.retryOptions?.maxRetries ?? maxRetries,
+                baseDelayMs: provider.retryOptions?.baseDelayMs ?? baseDelayMs,
+                maxDelayMs: provider.retryOptions?.maxDelayMs ?? maxDelayMs,
+                timeoutMs: provider.retryOptions?.timeoutMs ?? options.timeoutMs ?? DEFAULT_PER_PROVIDER_TIMEOUT_MS,
+                label: `${label}.${provider.name}`,
+                signal: options.signal
+            })
             return result
         } catch (err) {
             const error = err instanceof Error ? err : new Error(String(err))

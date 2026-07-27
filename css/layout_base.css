@@ -234,7 +234,7 @@
 
 .stat-caption {
     margin: -4px 0 13px;
-    color: rgba(219, 238, 236, 0.70);
+    color: rgba(219, 238, 236, 0.7);
     font-size: 9px;
     line-height: 1.35;
     letter-spacing: 0.06em;
@@ -1299,20 +1299,20 @@ body.render-kind-placeholder2d .info-panel {
    mode chips, legend panel). Visual state still changes; only the motion is
    removed so users who prefer reduced motion are not subjected to it. */
 @media (prefers-reduced-motion: reduce) {
-  .info-panel,
-  .info-header,
-  .info-toggle-icon,
-  .info-toggle-icon .ui-icon,
-  .launch-btn,
-  .mode-grid .mode-chip,
-  .mode-grid .mode-caption,
-  .info-panel.collapsed,
-  .panel-toggle,
-  .share-toggle,
-  .legend-toggle,
-  .help-toggle,
-  .legend-panel {
-    transition: none !important;
-    animation: none !important;
-  }
+    .info-panel,
+    .info-header,
+    .info-toggle-icon,
+    .info-toggle-icon .ui-icon,
+    .launch-btn,
+    .mode-grid .mode-chip,
+    .mode-grid .mode-caption,
+    .info-panel.collapsed,
+    .panel-toggle,
+    .share-toggle,
+    .legend-toggle,
+    .help-toggle,
+    .legend-panel {
+        transition: none !important;
+        animation: none !important;
+    }
 }

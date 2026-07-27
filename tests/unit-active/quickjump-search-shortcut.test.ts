@@ -39,7 +39,9 @@ describe('P1 quick-jump search shortcut', () => {
         // setSearchQuery('') instead of direct DOM mutation, so the Svelte
         // $state and the DOM stay in sync.
         expect(keyboardSource).toMatch(/setSearchQuery\(\s*['"]['"]\s*\)/)
-        expect(keyboardSource).toMatch(/import[\s\S]{0,80}setSearchQuery[\s\S]{0,40}from\s+['"]@lib\/stores\/search\.svelte\.ts['"]/)
+        expect(keyboardSource).toMatch(
+            /import[\s\S]{0,80}setSearchQuery[\s\S]{0,40}from\s+['"]@lib\/stores\/search\.svelte\.ts['"]/
+        )
     })
 
     it('global-shortcuts.ts skips the / shortcut when a form field is focused', () => {

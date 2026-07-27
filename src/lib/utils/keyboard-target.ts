@@ -17,7 +17,17 @@ export function isKeyboardTextEntryTarget(target: EventTarget | null): target is
 
     if (
         tagName === 'input' &&
-        (type === 'text' || type === 'search' || type === 'email' || type === 'url' || type === 'password' || type === 'number' || type === 'date' || type === 'time' || type === 'tel' || type === 'range' || type === 'color')
+        (type === 'text' ||
+            type === 'search' ||
+            type === 'email' ||
+            type === 'url' ||
+            type === 'password' ||
+            type === 'number' ||
+            type === 'date' ||
+            type === 'time' ||
+            type === 'tel' ||
+            type === 'range' ||
+            type === 'color')
     ) {
         return true
     }

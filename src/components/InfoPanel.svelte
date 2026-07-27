@@ -24,7 +24,7 @@
   import { getBusinessRecords, getIsDataReady } from '@lib/stores/index.svelte.ts';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, getPublicRecordStatusLabel } from '@lib/utils';
   import { describeCluster } from '@lib/utils';
-  import { buildSelectedMatchNarrative as buildSearchMatchNarrative, getInterestingBusinessNote } from '@lib/ui/renderers';
+  import { getInterestingBusinessNote } from '@lib/ui/renderers';
   import { describeThreadLensForPoint } from '@lib/journey/point-color';
   import { buildSelectedMatchNarrative as buildPointMatchNarrative } from '@lib/orchestration/lifecycle';
   import { buildSelectedBusinessProps, type SelectedCardAdapter, type BusinessPoint } from '@lib/view-models/selected-business-view-model';
@@ -182,22 +182,6 @@
     return null;
   });
 
-  let selectionSource = $derived.by(() => {
-    if (effectiveSurface === 'search' && currentActiveResult != null && selectedRecord != null) {
-      return 'search';
-    }
-
-    if (
-      effectiveFocusedIdx != null
-      && effectiveFocusedIdx >= 0
-      && selectedRecord != null
-    ) {
-      return 'field';
-    }
-
-    return null;
-  });
-
   /** Whether the panel should visually appear open */
   // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
   // inverts `!==` to `===`. Use `!= null` (Pattern 3) + positive equality (Pattern 2).
@@ -262,15 +246,6 @@
 
 
   // ── Display helpers ───────────────────────────────────────────────────────────
-
-  function formatStatus(status: string): string {
-    switch (status) {
-      case 'active': return 'Active';
-      case 'inactive': return 'Inactive';
-      case 'disqualified': return 'Disqualified';
-      default: return status;
-    }
-  }
 
   // ── Helpers
 

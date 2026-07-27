@@ -1629,10 +1629,13 @@ async function runVisibleSearch(page, query) {
         await page.evaluate((nextQuery) => {
             const input = document.querySelector('#search-input')
             // @ts-ignore
-            if (!(input instanceof window.HTMLInputElement)) throw new Error('visible search input was not an input element')
+            if (!(input instanceof window.HTMLInputElement))
+                throw new Error('visible search input was not an input element')
             input.value = nextQuery
             // @ts-ignore
-            input.dispatchEvent(new window.InputEvent('input', { bubbles: true, data: nextQuery, inputType: 'insertText' }))
+            input.dispatchEvent(
+                new window.InputEvent('input', { bubbles: true, data: nextQuery, inputType: 'insertText' })
+            )
             // @ts-ignore
             input.dispatchEvent(new Event('change', { bubbles: true }))
         }, query)
@@ -4268,8 +4271,9 @@ async function run() {
             '.demo-starter-chip',
             '#btn-launch',
             '#mode-grid',
-            '#cluster-section',
-            '#filters-section'
+            '#cluster-section'
+            // NOTE: #filters-section is intentionally left visible on idle as a
+            // collapsed <details> summary toggle (see progressive_disclosure.css).
         ]
         const staleIdleSurfaces = staleIdleSelectors
             .map((selector) => ({ selector, targetBox: box(desktopState, selector) }))

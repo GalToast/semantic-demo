@@ -927,7 +927,6 @@ body.surface-semantic-dive .launch-btn {
     display: none;
 }
 
-
 /* Fix: ensure .search-clear-btn sits above .controls rail at 768x1024
    so real clicks reach the clear button instead of being intercepted.
    The .controls rail is at z-index 1000; search-clear-btn must exceed it. */

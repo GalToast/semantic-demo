@@ -150,7 +150,14 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
 
         // `?` or Shift+/ opens the keyboard shortcuts overlay (A2-7).
         // Was missing from the Svelte port — Round 2/3 QA flagged it.
-        if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField && !e.repeat) {
+        if (
+            (e.key === '?' || (e.key === '/' && e.shiftKey)) &&
+            !e.metaKey &&
+            !e.ctrlKey &&
+            !e.altKey &&
+            !isFormField &&
+            !e.repeat
+        ) {
             e.preventDefault()
             initKeyboardShortcutsHint()
             showKeyboardShortcutsHint()
