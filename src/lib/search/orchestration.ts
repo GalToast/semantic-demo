@@ -201,8 +201,12 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         // Controller cleanup handled by search engine
     }
 
-    if (!isRequestCurrent(requestId)) return
+    // Bug #1 (bugsweep): always stop the scramble animation, even when the
+    // request was superseded by a newer search. Previously the early return
+    // below skipped stopSearchVectorScramble(), leaving .search-vector-scramble
+    // on <body> indefinitely.
     stopSearchVectorScramble()
+    if (!isRequestCurrent(requestId)) return
 
     const results = searchResults
 

@@ -260,6 +260,9 @@ export function performLocalIndexSearch(query: string, offset = 0, limit = 18): 
     // Aggregate score per record: name exact/prefix first, then whole-word,
     // then substring. Fuzzy fallback for any token with zero literal hits.
     const scored = new Map<number, LocalSearchHit>()
+    // Bug #2 (bugsweep): track name-field records scored in step 1 so step 2
+    // doesn't double-count them for single-token queries.
+    const scoredNameRecords = new Set<number>()
 
     // 1. Exact name + name prefix (single-token query only — otherwise the
     //    whole-word / substring paths handle it cleanly).
@@ -268,6 +271,7 @@ export function performLocalIndexSearch(query: string, offset = 0, limit = 18): 
         if (exact) {
             for (const hit of exact) {
                 if (hit.field !== 'name') continue
+                scoredNameRecords.add(hit.recordIndex)
                 const existing = scored.get(hit.recordIndex)
                 const boost = existing ? existing.score : 0
                 scored.set(hit.recordIndex, {
@@ -285,6 +289,9 @@ export function performLocalIndexSearch(query: string, offset = 0, limit = 18): 
         const literal = index.get(token)
         if (literal && literal.length > 0) {
             for (const hit of literal) {
+                // Bug #2 (bugsweep): skip name-field hits already scored in step 1
+                // to avoid double-counting for single-token queries.
+                if (queryTokens.length === 1 && hit.field === 'name' && scoredNameRecords.has(hit.recordIndex)) continue
                 const fieldBoost =
                     hit.field === 'name' ? 3.0 : hit.field === 'what' ? 1.6 : hit.field === 'category' ? 1.2 : 0.9
                 const weight = 0.62 * fieldBoost
@@ -302,9 +309,14 @@ export function performLocalIndexSearch(query: string, offset = 0, limit = 18): 
         } else {
             // Fuzzy fallback
             const fuzzyMatches = expandFuzzyMatches(index, token)
-            // Cap fuzzy results so a noisy expansion doesn't dominate. Take the
-            // top 5 closest by edit distance.
-            fuzzyMatches.sort((a, b) => a.fuzzyToken.length - b.fuzzyToken.length)
+            // Bug #3 (bugsweep): sort by Levenshtein distance, not token length.
+            // The comment above said 'closest by edit distance' but the sort
+            // used .length, which could discard closer matches for shorter ones.
+            fuzzyMatches.sort((a, b) => {
+                const da = levenshteinCapped(token, a.fuzzyToken, 2)
+                const db = levenshteinCapped(token, b.fuzzyToken, 2)
+                return (Number.isFinite(da) ? da : Infinity) - (Number.isFinite(db) ? db : Infinity)
+            })
             const cap = fuzzyMatches.slice(0, 5)
             for (const fuzzy of cap) {
                 for (const hit of fuzzy.hits) {
