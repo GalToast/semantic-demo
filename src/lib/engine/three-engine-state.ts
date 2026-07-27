@@ -79,6 +79,10 @@ export interface ThreeEngineState {
     rafId: number | null
     idleFrameTimerId: number | null
     webglContextLost: boolean
+    /** T3-1: set true by the C6 (webglcontextrestored) handler so the
+     *  orchestration layer knows a full GPU resource re-init is needed
+     *  after a context loss event. Checked at the top of initThreeJS(). */
+    webglNeedsRestoreReinit: boolean
     circuitBreakerTripped: boolean
     webglRestoreTimer: number | null
     lastHoveredNode: number | null
@@ -127,6 +131,7 @@ export const engineState: ThreeEngineState = {
     rafId: null,
     idleFrameTimerId: null,
     webglContextLost: false,
+    webglNeedsRestoreReinit: false,
     circuitBreakerTripped: false,
     webglRestoreTimer: null,
     lastHoveredNode: null,

@@ -110,6 +110,14 @@ export function updateCameraViewportOffset() {
 
 export async function initThreeJS() {
     ensureModules()
+    // T3-1: If the WebGL context was lost and restored, a full GPU resource
+    // re-creation is needed. The C6 handler sets this flag; we log and
+    // proceed with the full re-init (cancelAnimate disposes stale refs,
+    // buildThreeScene creates a fresh renderer/context).
+    if (engineState.webglNeedsRestoreReinit) {
+        engineState.webglNeedsRestoreReinit = false
+        debugWarn('[three-engine] WebGL context restored — triggering full re-init')
+    }
     cancelAnimate()
 
     // Reset circuit breaker so a fresh init can start the loop even if a
@@ -434,7 +442,11 @@ export function animate() {
     try {
         const frameStart = performance.now()
         const frameNow = frameStart
-        const sceneNeedsContinuous = sceneNeedsContinuousFrame(frameNow, engineState.state, cameraControlsRestore.autoRotateResumeDueAt)
+        const sceneNeedsContinuous = sceneNeedsContinuousFrame(
+            frameNow,
+            engineState.state,
+            cameraControlsRestore.autoRotateResumeDueAt
+        )
         scheduleNextAnimationFrame(sceneNeedsContinuous)
         const sceneFrameMs = engineState.state?.scenePerformanceDiagnostics?.lastFrameAt
             ? Math.min(250, Math.max(0, frameNow - engineState.state.scenePerformanceDiagnostics.lastFrameAt))

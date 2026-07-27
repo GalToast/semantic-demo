@@ -206,6 +206,11 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
     _destroyed = false
     setEngineStatus('loading')
 
+    // T3-9: Clear any stale event-bus subscriptions from a previous init
+    // so that calling initEngine() twice (without destroy in between) does
+    // not register duplicate 'scene-ready' listeners.
+    unbindEventBridge()
+
     try {
         const _perf = typeof performance?.mark === 'function'
         if (_perf) performance.mark('engine-init-start')

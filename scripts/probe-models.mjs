@@ -110,6 +110,26 @@ function targets() {
             { id: 'mimo-v2.5-free', note: 'ok NS4846_ST2629' },
             { id: 'deepseek-v4-flash-free', note: 'ok NS1659_ST1804' },
             { id: 'nemotron-3-ultra-free', note: 'ok NS2624 (ST failed)' }
+        ],
+        mistral: [
+            { id: 'mistral-medium-2508', note: 'ok NS732_ST452' },
+            { id: 'codestral-latest', note: 'ok NS394_ST663' },
+            { id: 'open-mistral-nemo', note: 'ok NS704_ST1037' }
+        ],
+        agnes: [
+            { id: 'agnes-2.0-flash', note: 'ok ST7148 (NS timeout)' },
+            { id: 'agnes-2.5-flash', note: 'ok ST10492 (NS timeout)' },
+            { id: 'agnes-2.5-pro-alpha', note: 'ok NS1826_ST1997 (think+)' }
+        ],
+        zenmux: [
+            { id: 'anthropic/claude-opus-5', note: '402/429 router keys on cooldown' },
+            { id: 'openai/gpt-5.6-luna', note: '402/429 router keys on cooldown' },
+            { id: 'x-ai/grok-4.5', note: '402/429 router keys on cooldown' }
+        ],
+        neuralwatt: [
+            { id: 'gemma-4-31b', note: '402 insufficient credits' },
+            { id: 'qwen3.5-397b', note: '410 model retired (qwen3.5-397b-a17b removed)' },
+            { id: 'kimi-k2.6-fast', note: '404 model not found' }
         ]
     }
     // filter logfare glm entry (typo guard) — rebuild clean

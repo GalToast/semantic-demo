@@ -34,6 +34,7 @@ export interface RegisterContextListenersSinks {
     engineState: Pick<
         ThreeEngineState,
         | 'webglContextLost'
+        | 'webglNeedsRestoreReinit'
         | 'webglRestoreTimer'
         | 'webglRestore'
         | 'rafId'
@@ -106,6 +107,13 @@ export function registerContextListeners(
         // init guard (_initCalled) prevents double-init. We log here for
         // visibility and let app-init's async restore run if needed.
         sinks.engineState.webglContextLost = false
+        // T3-1: Signal that a full GPU resource re-creation is needed.
+        // WebGL context loss invalidates ALL GPU resources (buffers,
+        // textures, shader programs). Resetting the flag alone leaves the
+        // scene blank. The orchestration layer (initThreeJS) checks this
+        // flag and triggers a full re-init.
+        sinks.engineState.webglNeedsRestoreReinit = true
+        sinks.debugError('[three-engine] WebGL context restored — full re-initialization required')
         // The app-init layer also re-runs appInit() on restore (its cleanup
         // removes stale listeners). This direct listener ensures the flag
         // resets even when app-init is torn down.
