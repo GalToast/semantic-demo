@@ -114,6 +114,13 @@ export function registerContextListeners(
         // flag and triggers a full re-init.
         sinks.engineState.webglNeedsRestoreReinit = true
         sinks.debugError('[three-engine] WebGL context restored — full re-initialization required')
+        // T3-1: Wake the render loop so animate() can check the flag
+        // and call initThreeJS() for the full re-init. The C5 handler
+        // paused the loop via pauseRenderLoopTimers(); restartLoop() (which
+        // is animate) runs once and checks webglNeedsRestoreReinit BEFORE
+        // _shouldSkipFrame(), so the re-init fires even though the loop was
+        // paused.
+        restartLoop()
         // The app-init layer also re-runs appInit() on restore (its cleanup
         // removes stale listeners). This direct listener ensures the flag
         // resets even when app-init is torn down.

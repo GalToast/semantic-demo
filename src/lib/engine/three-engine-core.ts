@@ -431,6 +431,18 @@ export function animate() {
     // callback would see engineState.rafId != null and exit, killing the loop.
     engineState.rafId = null
 
+    // T3-1: If the WebGL context was lost and restored, trigger a full
+    // GPU resource re-creation. This check runs BEFORE _shouldSkipFrame()
+    // because the C5 handler pauses the render loop (webglContextLost=true)
+    // and the C6 handler calls restartLoop() to wake it. Without this early
+    // check, _shouldSkipFrame() would return true (webglContextLost may still
+    // be set) and the re-init would never fire.
+    if (engineState.webglNeedsRestoreReinit) {
+        engineState.webglNeedsRestoreReinit = false
+        void initThreeJS()
+        return
+    }
+
     if (_shouldSkipFrame()) {
         return
     }
