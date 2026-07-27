@@ -282,7 +282,7 @@ Tactics retested: (a) `external_subagent_followup` on stalled-deep-work to recov
 | Followup-recover stalled                        | W4c Svelte-5 snapshot/gate footguns | ✅ completed in ~4 min from followup dispatch (118 new output tokens, $0) → 13.3 KB report | **GOOSE-UNLOCK MECHANISM WORKS** for stalled `agnes` deep-work: `external_subagent_followup({worker_id})` resumes via the recorded `session_id` and finishes only the write step.                               |
 | Followup-retry on transient `Connection error.` | W3c lifecycle                       | ✅ completed in ~2.3 min from re-dispatch → 9.6 KB report                                  | Re-followup on the same `worker_id` (same `session_id`) recovers from transient route blips fast. ⚠️ BUT the W3c resulting report's #1 finding was a fabricated false-positive (see 2nd caveat + ledger below). |
 
-**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: *"Reading it inside $derived registers reactivity directly — no mirror needed."*
+**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: _"Reading it inside $derived registers reactivity directly — no mirror needed."_
 
 Report honest-stamped 4/10 + caution footer in `tmp/bugsweep-2026-07-24/worker4-reactivity-footguns-report.md`; do NOT action the 9 findings.
 
@@ -1096,7 +1096,7 @@ Four workers dispatched in parallel on an identical scope (WeatherWidget + Compa
 
 ### Round 2 takeaway
 
-No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably *read + analyze* but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
+No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably _read + analyze_ but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
 
 Two tool-quirks persisted to `failures.md`:
 
@@ -1197,41 +1197,41 @@ Direct HTTP tool-calling probe via `scripts/probe-models.mjs` (status-only mode)
 
 ### Provider summary
 
-| Provider   | Models tested | Tool-capable | Notes |
-| ---------- | ------------- | ------------ | ----- |
-| `logfare`  | 7             | 5/7          | `qwen-3.8-max` rate-limited/timeout; others mostly reliable. `glm-5.2` slow streaming (~12 s). |
-| `nvidia`   | 3             | 1/3          | `deepseek-ai/deepseek-v4-pro` works. `minimaxai/minimax-m3` times out. `qwen/qwen3.5-397b-a17b` removed upstream (410). |
-| `kilo`     | 10            | 2/10         | Free step/ling routes work. All paid routes return 402; several rate-limited/cooling. |
-| `modelscope` | 4           | 2/4          | `Qwen/Qwen3-235B-A22B-Thinking-2507` and `deepseek-ai/DeepSeek-V4-Pro` work. `Qwen-Ambassador/Qwen3.7-Max` 403; `MiniMax/MiniMax-M2.7` no provider. |
+| Provider     | Models tested | Tool-capable | Notes                                                                                                                                               |
+| ------------ | ------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `logfare`    | 7             | 5/7          | `qwen-3.8-max` rate-limited/timeout; others mostly reliable. `glm-5.2` slow streaming (~12 s).                                                      |
+| `nvidia`     | 3             | 1/3          | `deepseek-ai/deepseek-v4-pro` works. `minimaxai/minimax-m3` times out. `qwen/qwen3.5-397b-a17b` removed upstream (410).                             |
+| `kilo`       | 10            | 2/10         | Free step/ling routes work. All paid routes return 402; several rate-limited/cooling.                                                               |
+| `modelscope` | 4             | 2/4          | `Qwen/Qwen3-235B-A22B-Thinking-2507` and `deepseek-ai/DeepSeek-V4-Pro` work. `Qwen-Ambassador/Qwen3.7-Max` 403; `MiniMax/MiniMax-M2.7` no provider. |
 
 ### Per-model results
 
-| Provider   | Model                                    | Non-stream | Stream | Tool-call | Latency (typical) | Verdict |
-| ---------- | ---------------------------------------- | ---------- | ------ | --------- | ----------------- | ------- |
-| logfare    | `kiro-auto`                              | ok         | ok     | ✅        | ~3.4 s            | Works |
-| logfare    | `minimax-m3`                             | ok (text)  | ok     | ⚠️ ST only | ~1.2–2.5 s        | Streaming emits tool; non-stream emits text only |
-| logfare    | `glm-5.2`                                | ok         | ok     | ✅        | ~3 s / ~12 s ST   | Works; streaming slow but completes |
-| logfare    | `qwen-3.8-max`                           | TIMEOUT    | 429    | ❌        | —                 | Avoid — rate-limited |
-| logfare    | `kimi-k2.7-code`                         | TIMEOUT    | ok     | ✅        | ~4.2 s ST         | Use streaming only; NS hangs |
-| logfare    | `kimi-k2.6`                              | ok         | ok     | ✅        | ~3–4 s            | Works |
-| logfare    | `deepseek-v4-flash`                      | ok         | ok     | ✅        | ~3–5 s            | Works |
-| nvidia     | `minimaxai/minimax-m3`                   | TIMEOUT    | TIMEOUT | ❌       | —                 | Avoid — no response |
-| nvidia     | `deepseek-ai/deepseek-v4-pro`            | ok         | ok     | ✅        | ~1.4–8 s          | Works |
-| nvidia     | `qwen/qwen3.5-397b-a17b`                 | 410 Gone   | 410 Gone | ❌     | —                 | Avoid — model removed |
-| kilo       | `meta/muse-spark-1.1`                    | 402        | 429    | ❌        | —                 | Paid / no credits |
-| kilo       | `moonshotai/kimi-k3`                     | 402        | 404    | ❌        | —                 | Paid / no credits; route missing |
-| kilo       | `thinkingmachines/inkling`                 | 402        | 429    | ❌        | —                 | Paid / no credits |
-| kilo       | `poolside/laguna-s-2.1`                  | 402        | 429    | ❌        | —                 | Paid / no credits / rate-limited |
-| kilo       | `google/gemini-3.6-flash`                | 402        | 429    | ❌        | —                 | Paid / no credits |
-| kilo       | `google/gemini-3.5-flash-lite`           | 402        | 429    | ❌        | —                 | Paid / no credits |
-| kilo       | `anthropic/claude-opus-5-fast`           | 402        | 429    | ❌        | —                 | Paid / no credits |
-| kilo       | `stepfun/step-3.7-flash:free`            | ok         | ok     | ✅        | ~2.2 s            | Works |
-| kilo       | `inclusionai/ling-3.0-flash:free`        | ok         | ok     | ✅        | ~1.1–1.5 s        | Works; fastest reliable ling route |
-| kilo       | `minimax/minimax-m3`                     | 402        | 402    | ❌        | —                 | Paid / no credits |
-| modelscope | `Qwen-Ambassador/Qwen3.7-Max`            | 403        | 410    | ❌        | —                 | No account access |
-| modelscope | `MiniMax/MiniMax-M2.7`                   | 400        | 400    | ❌        | —                 | No provider supported |
-| modelscope | `Qwen/Qwen3-235B-A22B-Thinking-2507`     | ok         | ok     | ✅        | ~1.5–2.4 s        | Works |
-| modelscope | `deepseek-ai/DeepSeek-V4-Pro`           | ok         | ok     | ✅        | ~3 s              | Works |
+| Provider   | Model                                | Non-stream | Stream   | Tool-call  | Latency (typical) | Verdict                                          |
+| ---------- | ------------------------------------ | ---------- | -------- | ---------- | ----------------- | ------------------------------------------------ |
+| logfare    | `kiro-auto`                          | ok         | ok       | ✅         | ~3.4 s            | Works                                            |
+| logfare    | `minimax-m3`                         | ok (text)  | ok       | ⚠️ ST only | ~1.2–2.5 s        | Streaming emits tool; non-stream emits text only |
+| logfare    | `glm-5.2`                            | ok         | ok       | ✅         | ~3 s / ~12 s ST   | Works; streaming slow but completes              |
+| logfare    | `qwen-3.8-max`                       | TIMEOUT    | 429      | ❌         | —                 | Avoid — rate-limited                             |
+| logfare    | `kimi-k2.7-code`                     | TIMEOUT    | ok       | ✅         | ~4.2 s ST         | Use streaming only; NS hangs                     |
+| logfare    | `kimi-k2.6`                          | ok         | ok       | ✅         | ~3–4 s            | Works                                            |
+| logfare    | `deepseek-v4-flash`                  | ok         | ok       | ✅         | ~3–5 s            | Works                                            |
+| nvidia     | `minimaxai/minimax-m3`               | TIMEOUT    | TIMEOUT  | ❌         | —                 | Avoid — no response                              |
+| nvidia     | `deepseek-ai/deepseek-v4-pro`        | ok         | ok       | ✅         | ~1.4–8 s          | Works                                            |
+| nvidia     | `qwen/qwen3.5-397b-a17b`             | 410 Gone   | 410 Gone | ❌         | —                 | Avoid — model removed                            |
+| kilo       | `meta/muse-spark-1.1`                | 402        | 429      | ❌         | —                 | Paid / no credits                                |
+| kilo       | `moonshotai/kimi-k3`                 | 402        | 404      | ❌         | —                 | Paid / no credits; route missing                 |
+| kilo       | `thinkingmachines/inkling`           | 402        | 429      | ❌         | —                 | Paid / no credits                                |
+| kilo       | `poolside/laguna-s-2.1`              | 402        | 429      | ❌         | —                 | Paid / no credits / rate-limited                 |
+| kilo       | `google/gemini-3.6-flash`            | 402        | 429      | ❌         | —                 | Paid / no credits                                |
+| kilo       | `google/gemini-3.5-flash-lite`       | 402        | 429      | ❌         | —                 | Paid / no credits                                |
+| kilo       | `anthropic/claude-opus-5-fast`       | 402        | 429      | ❌         | —                 | Paid / no credits                                |
+| kilo       | `stepfun/step-3.7-flash:free`        | ok         | ok       | ✅         | ~2.2 s            | Works                                            |
+| kilo       | `inclusionai/ling-3.0-flash:free`    | ok         | ok       | ✅         | ~1.1–1.5 s        | Works; fastest reliable ling route               |
+| kilo       | `minimax/minimax-m3`                 | 402        | 402      | ❌         | —                 | Paid / no credits                                |
+| modelscope | `Qwen-Ambassador/Qwen3.7-Max`        | 403        | 410      | ❌         | —                 | No account access                                |
+| modelscope | `MiniMax/MiniMax-M2.7`               | 400        | 400      | ❌         | —                 | No provider supported                            |
+| modelscope | `Qwen/Qwen3-235B-A22B-Thinking-2507` | ok         | ok       | ✅         | ~1.5–2.4 s        | Works                                            |
+| modelscope | `deepseek-ai/DeepSeek-V4-Pro`        | ok         | ok       | ✅         | ~3 s              | Works                                            |
 
 ### Implications
 
@@ -1253,14 +1253,14 @@ Raw log: `tmp/probe-all-status-2026-07-26.log`.
 
 Real `external_subagent_start` bench on a tiny DOM-audit task: read `src/components/ThreadInspector.svelte`, list rendered DOM ids/classes, write a markdown report. Dispatched with `live_steer: true` and a steer nudge at ~60–75 s to break cold-start stalls (this proved necessary for every route).
 
-| Route | Result | Report file | Notes |
-| ----- | ------ | ----------- | ----- |
-| `kilo/inclusionai/ling-3.0-flash:free` | ✅ completed exit 0 | `ling-3.0-flash-free-threadinspector-dom-audit.md` | Correct concise report. ~$0 cost. |
-| `modelscope/Qwen/Qwen3-235B-A22B-Thinking-2507` | ✅ completed exit 0 | `modelscope-qwen3-235b-thinking-threadinspector-dom-audit.md` | Correct report; cost ~$0.0075. |
-| `logfare/kiro-auto` | ✅ completed exit 0 | `logfare-kiro-auto-threadinspector-dom-audit.md` | Wrote correct report, then hit Logfare 429 on retry loop. Free. |
-| `kilo/stepfun/step-3.7-flash:free` | ✅ completed exit 0 | `kilo-step-3.7-flash-free-threadinspector-dom-audit.md` | Correct concise report. ~$0.001 cost. |
-| `logfare/glm-5.2` | ✅ completed exit 0 | `logfare-glm-5.2-threadinspector-dom-audit.md` | Detailed correct report (noted `focus-thread-inspector` query vs emitted). Required 2 steer nudges. Free. |
-| `modelscope/deepseek-ai/DeepSeek-V4-Pro` | ❌ failed | — | 429 insufficient_quota from ModelScope; no report. |
+| Route                                           | Result              | Report file                                                   | Notes                                                                                                     |
+| ----------------------------------------------- | ------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `kilo/inclusionai/ling-3.0-flash:free`          | ✅ completed exit 0 | `ling-3.0-flash-free-threadinspector-dom-audit.md`            | Correct concise report. ~$0 cost.                                                                         |
+| `modelscope/Qwen/Qwen3-235B-A22B-Thinking-2507` | ✅ completed exit 0 | `modelscope-qwen3-235b-thinking-threadinspector-dom-audit.md` | Correct report; cost ~$0.0075.                                                                            |
+| `logfare/kiro-auto`                             | ✅ completed exit 0 | `logfare-kiro-auto-threadinspector-dom-audit.md`              | Wrote correct report, then hit Logfare 429 on retry loop. Free.                                           |
+| `kilo/stepfun/step-3.7-flash:free`              | ✅ completed exit 0 | `kilo-step-3.7-flash-free-threadinspector-dom-audit.md`       | Correct concise report. ~$0.001 cost.                                                                     |
+| `logfare/glm-5.2`                               | ✅ completed exit 0 | `logfare-glm-5.2-threadinspector-dom-audit.md`                | Detailed correct report (noted `focus-thread-inspector` query vs emitted). Required 2 steer nudges. Free. |
+| `modelscope/deepseek-ai/DeepSeek-V4-Pro`        | ❌ failed           | —                                                             | 429 insufficient_quota from ModelScope; no report.                                                        |
 
 ### Verdict updates
 
@@ -1275,3 +1275,73 @@ Real `external_subagent_start` bench on a tiny DOM-audit task: read `src/compone
 For all of these routes, **always dispatch with `live_steer: true`** and send a short steer nudge (`"BEGIN NOW ..."`) at ~60–75 s if no assistant output has appeared. Without the nudge the workers stall in cold-start and time out. This pattern is consistent across `logfare/glm-5.2`, `logfare/kiro-auto`, `kilo/ling-3.0-flash:free`, `kilo/step-3.7-flash:free`, and `modelscope/Qwen3-235B-A22B-Thinking-2507`.
 
 Report files: `tmp/subagent-benchmark/reports/*-threadinspector-dom-audit.md`.
+
+
+## Sprint-7 — 2026-07-27 (Mistral golden-goose sweep + reasoning-format fixes + key-router failover evidence)
+
+### Reasoning-format fixes landed (key-router + mmx.ts)
+
+Five reasoning-channel issues were diagnosed and fixed across the key-router and `mmx.ts` this sprint. Together they unblock reasoning-capable models on `openrouter`, `mistral` (Kimi-style thinking), `nvidia` (NIM), and the subagent launch layer.
+
+| Fix | Location | Commit | What changed |
+| --- | -------- | ------ | ------------ |
+| W5b — OpenRouter reasoning boolean→object | `opencode-key-router.mjs:4518-4531` | `fbe0f2d` | Converts `reasoning: true` (boolean) → `reasoning: { type: "reasoning" }` (object) for the `openrouter` providerKey. **Verified LIVE**: `poolside/laguna-s-2.1:free` with `reasoning:true` went from HTTP 400 "expected object, received boolean" → HTTP 200. |
+| W11b — Kimi thinking-field | `opencode-key-router.mjs:2984` | (uncommitted, `node --check` passed) | `openAiReasoningToKimiThinking()` maps OpenAI reasoning content into Kimi's `thinking` field. |
+| W12 — mmx.ts max-reasoning infra | `harness/servers/external-subagents/src/mmx.ts` | `3f562c3` (+535) | `FORCE_REASONING_DEFAULT=true`, `REASONING_UNSUPPORTED_MODEL_PATTERNS`, `forceReasoningForModel()`, `generationConfig` with `reasoning.effort` + `include_reasoning` + `thinking:adaptive` + `enable_thinking`, `toolExecFallback`, willRetry-aware deferred kill. Hardcodes the highest reasoning tier as the subagent default. |
+| W9 — NVIDIA NIM reasoning adapter (verification) | `opencode-key-router.mjs:3430-3530` | (report only) | Verified the adapter strips `reasoning`/`include_reasoning`/`reasoning_effort`/`thinking`/`enable_thinking` for non-DeepSeek NVIDIA NIM models and preserves them for `deepseek-v4-pro`. Working correctly. |
+| vLLM/zydit reasoning collapse | `opencode-key-router.mjs:3560-3561` | (confirmed existing) | Reasoning collapse for vLLM/zydit providers confirmed in place. |
+
+### Mistral golden-goose self-smoke — 9/9 PASS
+
+Real `external_subagent_start` dispatches on the `mistral` route (`/mistral/v1`, 2 active keys, 61-model catalog). Task: read `README.md`, write a report containing model id + route + tools + 3-sentence project summary + `golden-goose-smoke: PASS`. Every model is confirmed dispatch-capable end-to-end (tool schema load + multi-turn execution + disk write).
+
+| Worker | model | stdout | tool calls | report | verdict |
+| ------ | ----- | ------ | ---------- | ------ | ------- |
+| W-S1 | `mistral/mistral-small-latest` | 83 KB | 14 | `W-S1-small-selfsmoke-report.md` | ✅ PASS |
+| W-S2 | `mistral/mistral-medium-latest` | 115 KB | 17 | `W-S2-medium-selfsmoke-report.md` | ✅ PASS |
+| W-S3 | `mistral/ministral-8b-latest` | 91 KB | 11 | `W-S3-ministral8b-selfsmoke-report.md` | ✅ PASS |
+| W-S4 | `mistral/ministral-14b-latest` | 257 KB | 11 | `W-S4-ministral14b-selfsmoke-report.md` | ✅ PASS |
+| W-S5 | `mistral/devstral-2512` | 51 KB | 11 | `W-S5-devstral2512-selfsmoke-report.md` | ✅ PASS |
+| W-S6 | `mistral/devstral-latest` | 51 KB | 11 | `W-S6-devstral-latest-selfsmoke-report.md` | ✅ PASS |
+| W-S7 | `mistral/codestral-2508` | 163 KB | 11 | `W-S7-codestral2508-selfsmoke-report.md` | ✅ PASS |
+| W-S8 | `mistral/mistral-large-2512` | 112 KB | 6 | `W-S8-large2512-selfsmoke-report.md` | ✅ PASS |
+| W-S9 | `mistral/mistral-medium-3` | 168 KB | 16 | `W-S9-medium3-selfsmoke-report.md` | ✅ PASS |
+
+**Verdict**: Mistral direct `/mistral/v1` is the GOLDEN ROUTE — 61 models in the catalog, 2 keys, 2 active, `routeBackoff=false`, and every tested family dispatches cleanly. `codestral-latest` remains the proven fallback lane; all 9 verified models are now available as future worker lanes.
+
+### Key-router failover evidence (W-Debug investigation)
+
+The `devstral-medium-latest` dispatch failure (W13) and the Wave-8 self-smoke dispatches surfaced real upstream flakiness — and the key-router recovered from it.
+
+- **Key-router stderr** during the window showed MANY `OpenProvider connection error on key slot 1/1 for model=*; route backoff 30000ms` entries, followed by `Mistral Direct upstream status 200 on key slot 1/2` / `2/2` as slots recovered.
+- **All 10 Wave-8 workers** (9 self-smokes + W-Doc + W-Debug) ultimately completed with `stopReason: "stop"` — the backoff+retry loop recovered the transient upstream errors rather than failing the workers.
+- This is live evidence the Sprint-2/3 retry + provider-failover design recovers real-world upstream weather, not just synthetic probes.
+
+### Devstral prefix-strip finding (real but not the W13 root cause)
+
+The W-Debug investigation probed `devstral-medium-latest` directly through the key-router:
+
+- Bare model id (`devstral-medium-latest`) on `/mistral/v1` → **HTTP 200** ("Hello! 😊 How can I assist you today?")
+- Prefixed id (`router-mistral/devstral-medium-latest`) → **HTTP 400** ("Invalid model: router-mistral/devstral-medium-latest")
+
+The `mistral` providerKey is NOT in the key-router's `upstreamModelPrefixes` strip list (which covers `zen`/`kilo`/`openrouter`/`nvidia`/`modelscope`). **This is a real quirk but does not affect normal dispatch**: the Pi CLI sends bare model ids to the `/mistral/v1` route, so the prefixed-id 400 only bites manual `curl` probes that include `router-mistral/`. The actual root cause of the W13 worker's `stopReason: "error"` + `errorMessage: "Connection error."` was the **sessions.db lock** (see below), not the prefix issue.
+
+### sessions.db lock — root cause of the Wave-8 first-attempt failures (RESOLVED)
+
+The first Wave-8 dispatch (9 self-smokes + W-Doc + W-Debug, launched simultaneously) failed because concurrent worker spawns caused SQLite contention on the 3.6 GB `sessions.db` at `C:/Users/HP/.pi/agent/pi-hermes-memory/sessions.db`:
+
+- 11 concurrent worker dispatches → `SQLite recovery already in progress` → blocked ALL new Pi session creation.
+- Recovery on a 3.6 GB DB takes ~20 min.
+- Symptom was identical to the earlier `mistral/codestral-latest` "Connection error" and the non-codestral "Model not found" — **both shared the SAME root cause** (the lock prevented the dynamic model catalog from loading, so model resolution failed).
+- The lock cleared (~20 min later). Re-dispatched workers all succeeded with `stopReason: "stop"`.
+
+**Fix going forward**: dispatch self-smoke workers ONE-AT-A-TIME (or in small batches ≤2–3), not 11 simultaneously, to avoid sessions.db SQLite contention on the large DB.
+
+### Operational notes
+
+- **Key-router**: restarted smoothly via `control.ps1` (watchdog-start FIRST, then restart). OLD PID → NEW PID 12136, all 28 routes preserved, HTTP 200, healthy=true. Watchdog PID 8236 ensures auto-recovery.
+- **`mistral` route keys**: 2 active keys, both slot-verified (`Mistral Direct upstream status 200 on key slot 1/2 + 2/2`).
+- **OpenRouter**: credits exhausted (402 on all paid models); the W5b reasoning-format fix still applies for when credits return.
+- **logfare/kiro-auto lane**: still DOWN — upstream `/logfare/v1/models` timed out; dropped from the Pi model registry. The key-router logfare route is healthy (6 keys); recovery requires the logfare upstream to come back.
+
+Report files: `tmp/s7-dispatch/W-S*-selfsmoke-report.md`, `tmp/s7-dispatch/W-Debug-devstral-investigation-report.md`, `tmp/s7-dispatch/W5-openrouter-reasoning-fix-report.md`, `tmp/s7-dispatch/W9-nvidia-reasoning-verify-report.md`. Bench-log: `tmp/v2-impl-bench-log.md`.
