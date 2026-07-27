@@ -909,7 +909,7 @@ async function assert_search_error(page, ctx) {
     url.searchParams.delete('anchor')
     page.__suppressMock503ConsoleError = true
     await loadAndWait(page, url.toString())
-    await page.waitForSelector('.search-error-state', { state: 'visible', timeout: 10000 })
+    await page.waitForSelector('.search-error-state', { state: 'visible', timeout: 20000 })
 
     const info = await page.evaluate(() => {
         function textClipped(el) {

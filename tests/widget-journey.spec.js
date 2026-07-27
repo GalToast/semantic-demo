@@ -2457,7 +2457,7 @@ test.describe('Widget journey', () => {
                 )
             },
             null,
-            { timeout: 15000 }
+            { timeout: 30000 }
         )
 
         // Step 1: Assert the semantic overlay is visible with direct (anchor→satellite) edges

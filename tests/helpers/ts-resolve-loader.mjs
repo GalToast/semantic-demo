@@ -19,6 +19,41 @@ import { resolve as pathResolve, dirname, sep } from 'node:path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const PROJECT_ROOT = pathResolve(__dirname, '..', '..')
+const PROJECT_ROOT_URL = pathToFileURL(PROJECT_ROOT + sep).href
+
+// Svelte 5 rune stubs for Node-side test imports. The real Svelte runtime runs
+// in the browser; these just let the test module import project utilities
+// without crashing on rune syntax at the Node level.
+if (typeof globalThis !== 'undefined') {
+    globalThis.$state = (initial) => (typeof initial === 'function' ? initial() : (initial ?? null))
+    globalThis.$derived = (source) => (typeof source === 'function' ? source() : source)
+    globalThis.$effect = () => {}
+    globalThis.$effect.pre = () => {}
+    globalThis.$effect.root = (fn) => fn()
+    globalThis.$inspect = () => ({ with: () => {} })
+    globalThis.$props = () => ({})
+    globalThis.$bindable = () => undefined
+}
+
+// Vite-style env polyfill for Node test runs that import src/ files.
+// `import.meta.env` is a per-module ESM object, so it cannot be redefined on
+// globalThis for imported modules. Instead, this loader transforms every
+// `import.meta.env` reference in project source into a global object lookup.
+const __importMetaEnv = {
+    DEV: false,
+    MODE: 'production',
+    PROD: true,
+    SSR: false,
+    BASE_URL: '/',
+    get(key) {
+        return process.env[key] ?? undefined
+    }
+}
+if (typeof globalThis !== 'undefined') {
+    globalThis.__importMetaEnv = __importMetaEnv
+}
+
+const VITE_ENV_RE = /import\.meta\.env\b/g
 
 // Mirror tsconfig.json path mappings so contract tests can use the same
 // @ / @lib / @components specifiers that src/ code uses.
@@ -129,5 +164,19 @@ export async function load(url, context, nextLoad) {
         }
     }
 
-    return nextLoad(url, context)
+    const result = await nextLoad(url, context)
+    if (
+        result.format === 'module' &&
+        typeof result.source === 'string' &&
+        url.startsWith(PROJECT_ROOT_URL) &&
+        !url.includes('/node_modules/') &&
+        result.source.includes('import.meta.env')
+    ) {
+        return {
+            ...result,
+            source: result.source.replace(VITE_ENV_RE, 'globalThis.__importMetaEnv')
+        }
+    }
+
+    return result
 }

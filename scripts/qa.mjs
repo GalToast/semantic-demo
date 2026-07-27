@@ -54,7 +54,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -164,7 +164,8 @@ async function runSurfaceContract() {
 async function runVisualAudit() {
     const node = process.execPath
     const script = join(root, 'tests', 'visual-state-audit.mjs')
-    const spawnArgs = [script, ...rest]
+    const loader = join(root, 'tests/helpers/ts-resolve-loader.mjs')
+    const spawnArgs = ['--loader', pathToFileURL(loader).href, script, ...rest]
     if (headed && !rest.some((a) => a === '--headed')) {
         spawnArgs.push('--headed')
     }

@@ -691,7 +691,8 @@ function getAppState(): AppState {
             // (validateStateProperty at the proxy setter) is fatal.
             try {
                 const result = validateAppStateEnumFields(_appStateInstance)
-                if (result.errors.length > 0 && typeof console !== 'undefined' && import.meta.env.DEV) {
+                const IS_DEV = typeof import.meta.env !== 'undefined' && import.meta.env.DEV
+                if (result.errors.length > 0 && typeof console !== 'undefined' && IS_DEV) {
                     console.warn(
                         `[appState] Phase 6a enum validation found ${result.errors.length} invalid value(s) (${result.checked} checked): ${result.errors.join('; ')}`
                     )
@@ -769,14 +770,16 @@ async function _runNestedAudit() {
     try {
         const { auditNestedStateMutations } = await import('./state-validation')
         const errors = auditNestedStateMutations(getAppState() as unknown as Record<string, unknown>)
-        if (errors.length > 0 && import.meta.env.DEV) {
+        const IS_DEV = typeof import.meta.env !== 'undefined' && import.meta.env.DEV
+        if (errors.length > 0 && IS_DEV) {
             console.warn('[appState] nested mutation audit:', errors.join('; '))
         }
     } catch {
         // Defensive: audit must never block appState init.
     }
 }
-if (import.meta.env.DEV && typeof window !== 'undefined') {
+const IS_DEV = typeof import.meta.env !== 'undefined' && import.meta.env.DEV
+if (IS_DEV && typeof window !== 'undefined') {
     // Use DisposableRegistry.scheduleInterval to satisfy the no-restricted-syntax
     // lint rule and ensure the timer is cleared on teardown.
     const _nestedAuditReg = new DisposableRegistry({ label: 'appState-nested-audit', warnAfterDispose: false })

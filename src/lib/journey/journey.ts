@@ -135,7 +135,22 @@ subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
             }
         })
         updateTrailIndices(index)
-        applyLocalNeighborhoodFocus(index)
+        const built = applyLocalNeighborhoodFocus(index)
+        // F15 determinism: headless tests may fire focus before the data-worker
+        // has populated originalPositions. If the synchronous build fails, retry
+        // a bounded number of times so the focus pocket is never left empty.
+        if (!built) {
+            let attempts = 0
+            const tryBuild = (): void => {
+                attempts += 1
+                if (attempts > 10) return
+                if (state.navState.focusedIndex !== index) return
+                if ((state.navState.focusPocketIndices || []).length > 0) return
+                if (applyLocalNeighborhoodFocus(index)) return
+                journeyFocusTimerRegistry.schedule(200, tryBuild)
+            }
+            journeyFocusTimerRegistry.schedule(200, tryBuild)
+        }
     }
 })
 

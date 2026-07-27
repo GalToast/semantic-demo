@@ -620,7 +620,14 @@ export function updateFocusSemanticOverlayPositions(now: number = performance.no
         const currentPocketCount = (state.navState.focusPocketIndices || []).length
         const builtPocketCount =
             typeof line.userData?.pocketIndexCount === 'number' ? line.userData.pocketIndexCount : -1
-        if (currentPocketCount !== builtPocketCount) {
+        const needsPocketCountRebuild = currentPocketCount !== builtPocketCount
+        // F15 position-settle: the first build may run while pocket node positions
+        // are still being staged, producing a line with zero segments. Rebuild once
+        // the pocket has settled and positions exist, even if the pocket count has
+        // not changed.
+        const builtSegmentCount = line.userData?.segmentCount ?? 0
+        const needsPositionSettleRebuild = builtSegmentCount === 0 && currentPocketCount > 0 && builtPocketCount > 0
+        if (needsPocketCountRebuild || needsPositionSettleRebuild) {
             refreshFocusSemanticOverlay()
             return
         }
