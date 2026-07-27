@@ -88,17 +88,7 @@ const mockSearchState = vi.hoisted(() => {
         semanticGuideRequestSequence: 0,
         currentSemanticGuide: null,
         summaryCardTypeToken: 0,
-        semanticSearchCacheDiagnostics: {
-            hits: 0,
-            misses: 0,
-            stores: 0,
-            evictions: 0,
-            lastKey: null,
-            lastSource: null,
-            lastAgeMs: null
-        },
-        semanticSearchResultCache: new Map(),
-        searchVisibleCount: 5,
+searchVisibleCount: 5,
         searchGlowIndices: new Set(),
         searchStatus: 'idle',
         currentSearchSummary: null,

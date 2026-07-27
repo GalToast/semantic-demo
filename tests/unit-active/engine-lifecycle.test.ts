@@ -217,17 +217,7 @@ vi.mock('@lib/state/app.svelte', () => ({
             semanticGuideRequestSequence: 0,
             currentSemanticGuide: null,
             summaryCardTypeToken: 0,
-            semanticSearchCacheDiagnostics: {
-                hits: 0,
-                misses: 0,
-                stores: 0,
-                evictions: 0,
-                lastKey: null,
-                lastSource: null,
-                lastAgeMs: null
-            },
-            semanticSearchResultCache: new Map(),
-            searchVisibleCount: 5
+searchVisibleCount: 5
         },
         viewportState: {
             viewportWidth: 1280,

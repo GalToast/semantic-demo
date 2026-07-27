@@ -22,7 +22,6 @@ import type {
     Vector3Like,
     SearchResult,
     LaneHealthPayload,
-    CacheEntry,
     SemanticGuideState
     // SemanticNode — unused import; removed to satisfy lint
 } from './state-types'
@@ -91,17 +90,7 @@ export class AppState {
         semanticTrailCue: 'idle',
         isSearching: false,
         searchError: null,
-        searchVisibleCount: 5,
-        semanticSearchResultCache: new Map<string, CacheEntry>(),
-        semanticSearchCacheDiagnostics: {
-            hits: 0,
-            misses: 0,
-            stores: 0,
-            evictions: 0,
-            lastKey: null,
-            lastSource: null,
-            lastAgeMs: null
-        }
+        searchVisibleCount: 5
     })
 
     // ==== FOCUS SUB-AGGREGATE (Phase 6c) ====

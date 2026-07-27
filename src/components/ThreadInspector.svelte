@@ -122,7 +122,6 @@
     ondblclick={(e) => e.stopPropagation()}
   >
     <ThreadInspectorPanel
-      {visible}
       {focusSnapshot}
       {bodyThreadInspectSurface}
       {bodyStrandJourney}

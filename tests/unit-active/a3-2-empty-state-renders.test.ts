@@ -91,17 +91,7 @@ const mockSearchState = vi.hoisted(() => {
     const obj: Record<string, unknown> = {
         searchError: null,
         isSearching: false,
-        semanticSearchCacheDiagnostics: {
-            hits: 0,
-            misses: 0,
-            stores: 0,
-            evictions: 0,
-            lastKey: null,
-            lastSource: null,
-            lastAgeMs: null
-        },
-        semanticSearchResultCache: new Map(),
-        searchVisibleCount: 5
+searchVisibleCount: 5
     }
     for (const field of tracked) {
         Object.defineProperty(obj, field, {

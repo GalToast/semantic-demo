@@ -64,8 +64,6 @@ export const DEFAULT_SEARCH_STATE: SearchAppState = {
     semanticGuideRequestSequence: 0,
     currentSemanticGuide: null,
     summaryCardTypeToken: 0,
-    semanticSearchCacheDiagnostics: searchCacheDiagnostics,
-    semanticSearchResultCache: new Map(),
     searchVisibleCount: 5
 }
 

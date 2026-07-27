@@ -7,13 +7,12 @@
   import { addWalkHistoryIndex, setTrailDepth, trailDepth, walkHistoryIndices } from '@lib/stores/journey.svelte.ts';
 
   interface Props {
-    visible?: boolean;
     focusSnapshot: FocusStoreState;
     bodyThreadInspectSurface?: string;
     bodyStrandJourney?: string;
   }
 
-  let { _visible = false, focusSnapshot, bodyThreadInspectSurface = 'idle', bodyStrandJourney = 'idle' }: Props = $props();
+  let { focusSnapshot, bodyThreadInspectSurface = 'idle', bodyStrandJourney = 'idle' }: Props = $props();
 
   const inspector = $derived(focusSnapshot.threadInspector);
   const active = $derived(inspector.active);

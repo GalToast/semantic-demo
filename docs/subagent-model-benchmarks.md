@@ -81,14 +81,14 @@ Live tracker of which provider/model routes work reliably for subagent coding ta
 
 Task: dispatch subagent on each route to read `src/components/ThreadInspector.svelte`, list DOM ids and CSS classes, and write a report to `tmp/subagent-benchmark/reports/{slug}-threadinspector-dom-audit.md`. All dispatches used `live_steer: true`, `timeout_seconds: 120`, and steer nudges at ~60s and ~82s.
 
-| # | Route | Provider | Status | Live Steer | Report Written | Notes |
-|---|-------|----------|--------|------------|----------------|-------|
-| 1 | `kilo/poolside/laguna-xs-2.1:free` | kilo | TIMEOUT | Yes | No | Worker exited 124 at 120s. No assistant output. Startup + LSP daemon handshake visible, then silent. |
-| 2 | `kilo/cohere/north-mini-code:free` | kilo | TIMEOUT | Yes | No | Worker exited 124 at 120s. Same pattern — no assistant tokens produced. |
-| 3 | `modelscope/Qwen/Qwen3.5-35B-A3B` | modelscope | TIMEOUT | Yes | No | Worker exited 124 at 120s. Modelscope/Qwen routes appear to stall after model selection.
-| 4 | `modelscope/stepfun-ai/Step-3.5-Flash` | modelscope | TIMEOUT | Yes | No | Worker exited 124 at 120s. Same Modelscope stalling pattern. |
-| 5 | `logfare/minimax-m3` | logfare | TIMEOUT | Yes | No | Worker exited 124 at 120s. Logfare route did not produce assistant output despite prior main-lane use. |
-| 6 | `nvidia/deepseek-ai/deepseek-v4-flash` | nvidia | TIMEOUT | Yes | No | Worker exited 124 at 120s. NVidia route hangs after model dispatch; prior wave also showed 120s timeout for nvida deepseek-v4-flash. |
+| #   | Route                                  | Provider   | Status  | Live Steer | Report Written | Notes                                                                                                                                |
+| --- | -------------------------------------- | ---------- | ------- | ---------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `kilo/poolside/laguna-xs-2.1:free`     | kilo       | TIMEOUT | Yes        | No             | Worker exited 124 at 120s. No assistant output. Startup + LSP daemon handshake visible, then silent.                                 |
+| 2   | `kilo/cohere/north-mini-code:free`     | kilo       | TIMEOUT | Yes        | No             | Worker exited 124 at 120s. Same pattern — no assistant tokens produced.                                                              |
+| 3   | `modelscope/Qwen/Qwen3.5-35B-A3B`      | modelscope | TIMEOUT | Yes        | No             | Worker exited 124 at 120s. Modelscope/Qwen routes appear to stall after model selection.                                             |
+| 4   | `modelscope/stepfun-ai/Step-3.5-Flash` | modelscope | TIMEOUT | Yes        | No             | Worker exited 124 at 120s. Same Modelscope stalling pattern.                                                                         |
+| 5   | `logfare/minimax-m3`                   | logfare    | TIMEOUT | Yes        | No             | Worker exited 124 at 120s. Logfare route did not produce assistant output despite prior main-lane use.                               |
+| 6   | `nvidia/deepseek-ai/deepseek-v4-flash` | nvidia     | TIMEOUT | Yes        | No             | Worker exited 124 at 120s. NVidia route hangs after model dispatch; prior wave also showed 120s timeout for nvida deepseek-v4-flash. |
 
 **Summary:** 0/6 routes produced a completed report. All 6 passed HTTP smoke in the health check but failed subagent dispatch with 120s timeouts. No new routes added to `models-2026-07-27-http-viable.txt`. All routes confirmed as HTTP-viable (connectivity OK) but NOT subagent-dispatch-viable at the current timeout budget.
 
@@ -301,7 +301,7 @@ Tactics retested: (a) `external_subagent_followup` on stalled-deep-work to recov
 | Followup-recover stalled                        | W4c Svelte-5 snapshot/gate footguns | ✅ completed in ~4 min from followup dispatch (118 new output tokens, $0) → 13.3 KB report | **GOOSE-UNLOCK MECHANISM WORKS** for stalled `agnes` deep-work: `external_subagent_followup({worker_id})` resumes via the recorded `session_id` and finishes only the write step.                               |
 | Followup-retry on transient `Connection error.` | W3c lifecycle                       | ✅ completed in ~2.3 min from re-dispatch → 9.6 KB report                                  | Re-followup on the same `worker_id` (same `session_id`) recovers from transient route blips fast. ⚠️ BUT the W3c resulting report's #1 finding was a fabricated false-positive (see 2nd caveat + ledger below). |
 
-**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: *"Reading it inside $derived registers reactivity directly — no mirror needed."*
+**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: _"Reading it inside $derived registers reactivity directly — no mirror needed."_
 
 Report honest-stamped 4/10 + caution footer in `tmp/bugsweep-2026-07-24/worker4-reactivity-footguns-report.md`; do NOT action the 9 findings.
 
@@ -1115,7 +1115,7 @@ Four workers dispatched in parallel on an identical scope (WeatherWidget + Compa
 
 ### Round 2 takeaway
 
-No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably *read + analyze* but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
+No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably _read + analyze_ but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
 
 Two tool-quirks persisted to `failures.md`:
 
@@ -1390,9 +1390,9 @@ The parallel session's "5 viable routes" finding (`f08598a3`, ~00:38 UTC) had **
 
 ### Round 4 final verdicts
 
-| model (route) | score | real edit? | honest bug report? | lint | cost | key issue |
-| --- | --- | --- | --- | --- | --- | --- |
-| `mistral/devstral-latest` (router-mistral) | **6/10** | ❌ phantom (no edit op in stdout; git diff empty) | ❌ claimed pre-existing fix `6c250e01` as own | ✅ clean | $0.0042 | hallucinated `model: minimax-m3`; mischaracterized "signal" hit (comment not CSS class) |
+| model (route)                                    | score    | real edit?                                                                                                      | honest bug report?                               | lint     | cost    | key issue                                                                                                           |
+| ------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| `mistral/devstral-latest` (router-mistral)       | **6/10** | ❌ phantom (no edit op in stdout; git diff empty)                                                               | ❌ claimed pre-existing fix `6c250e01` as own    | ✅ clean | $0.0042 | hallucinated `model: minimax-m3`; mischaracterized "signal" hit (comment not CSS class)                             |
 | `kilo/stepfun/step-3.7-flash:free` (router-kilo) | **7/10** | ✅ persisted (CompassRail aria-label) — **but unjustified false positive** ("journey" not forbidden) → reverted | ✅ "reported honestly rather than inventing one" | ✅ clean | $0.0023 | hallucinated `model: minimax-m3`; 47 MB stdout (excessive reasoning for flash); cheaper + more honest than devstral |
 
 | `kilo/inclusionai/ling-3.0-flash:free` (router-kilo) | **3/10** | ❌ ZERO tool calls (cancelled) | N/A (never acted) | N/A | $0 (free) | **Analysis paralysis**: 200 MB stdout (hit cap), 6 min of reasoning, zero tool calls. Hard nudge didn't break the loop. Good reasoning content (found dead `primary` class in CompassRail) but couldn't act. Also hallucinated the forbidden list. Ling family has tool-use issues on BOTH routes (opencode-zen = hallucinated delivery in round 2, kilo = paralysis now). |

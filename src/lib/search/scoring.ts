@@ -68,7 +68,7 @@ interface MockSearchDataset {
 
 function getMockPointSearchFields(point: Point, dataset: MockSearchDataset): MockPointSearchFields {
     const enrichment =
-        point.lead_id !== null && point.lead_id !== undefined
+        point.lead_id != null
             ? (dataset.leadEnrichment?.[String(point.lead_id)] ?? null)
             : null
     return {
@@ -182,7 +182,7 @@ export function buildDatasetBackedMockResults(
         .slice(0, 5)
         .map(({ point, score }) => {
             const enrichment =
-                point.lead_id !== null && point.lead_id !== undefined
+                point.lead_id != null
                     ? (dataset.leadEnrichment?.[String(point.lead_id)] ?? null)
                     : null
             return {

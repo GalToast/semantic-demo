@@ -43,7 +43,6 @@ export type {
     SearchErrorData,
     SearchResultPoint,
     SearchResult,
-    SemanticSearchCacheDiagnostics,
     SearchAppState
 } from './types/search-types'
 
@@ -77,4 +76,3 @@ export type { FocusAppState, ViewportAppState } from './types/navigation-types'
 
 // ── Cross-file re-exports ────────────────────────────────────────────────────
 export type { LaneHealthPayload } from '../orchestration/semantic-lane'
-export type { CacheEntry } from '../search/cache'

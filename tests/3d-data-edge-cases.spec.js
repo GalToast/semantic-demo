@@ -115,7 +115,6 @@ function probe(page) {
             navMode: s.navState?.mode ?? '',
             hasCamera: !!(s.camera && s.renderer?.domElement),
             hasMesh: !!s.pointsMesh,
-            cacheDiag: s.semanticSearchCacheDiagnostics ?? null,
             semanticGuideAbortController: !!s.semanticGuideAbortController,
             searchAbortController: !!s.searchAbortController
         }

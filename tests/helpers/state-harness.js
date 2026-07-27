@@ -32,8 +32,7 @@
  *   SNAPSHOT_FIELDS.focusTrail  — focusedNode, selectedPoint, trailDepth,
  *                                navState.focusedIndex, navState.mode,
  *                                navState.walkHistoryIndices
- *   SNAPSHOT_FIELDS.search      — currentSearchSummary, semanticSearchResultCache,
- *                                semanticLaneState
+ *   SNAPSHOT_FIELDS.search      — currentSearchSummary, semanticLaneState
  *   SNAPSHOT_FIELDS.all         — everything above
  */
 
@@ -58,7 +57,7 @@ export const SNAPSHOT_FIELDS = {
     ],
 
     /** Semantic search and lane state. */
-    search: ['currentSearchSummary', 'semanticSearchResultCache', 'semanticLaneState', 'semanticSearchCacheDiagnostics']
+    search: ['currentSearchSummary', 'semanticLaneState']
 }
 
 /**
@@ -128,8 +127,8 @@ export async function stateField(page, path) {
  *     WHY: Edge-case fixture — simulates missing vector data.
  *
  *   'injectMalformedSearchCache'
- *     Seeds semanticSearchResultCache with a deliberately corrupt entry.
- *     WHY: Edge-case fixture — no official API for cache corruption.
+ *     DEPRECATED: the semanticSearchResultCache was removed. Kept as a no-op
+ *     so existing tests that invoke it do not break.
  *
  *   'setFocusedNode'
  *     Directly writes focusedNode (and optionally navState.focusedIndex).
@@ -208,21 +207,8 @@ export async function mutate(page, operation, extra = {}) {
                 }
 
                 case 'injectMalformedSearchCache': {
-                    // Edge-case fixture: corrupt cache entry.
-                    // No official API for cache corruption; this simulates a malformed response.
-                    if (!s.semanticSearchResultCache) s.semanticSearchResultCache = new Map()
-                    if (!s.semanticSearchCacheDiagnostics) {
-                        s.semanticSearchCacheDiagnostics = { hits: 0, misses: 0 }
-                    }
-                    s.semanticSearchResultCache.set('coffee', {
-                        ok: true,
-                        count: 2,
-                        results: [
-                            { lead_id: null, score: NaN, semantic_score: NaN, public_note: undefined },
-                            { score: 'not-a-number' }
-                        ],
-                        cachedAt: Date.now() - 1000
-                    })
+                    // DEPRECATED: the semanticSearchResultCache was removed.
+                    // Kept as a no-op so existing tests that invoke it do not break.
                     break
                 }
 

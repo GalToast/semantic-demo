@@ -28,7 +28,6 @@ export const TRACKED_SUB_KEYS = [
   'arrivalHandoffDiagnostics',
   'routeTraceDiagnostics',
   'scenePerformanceDiagnostics',
-  'semanticSearchCacheDiagnostics',
   'activeFilters',
 ] as const;
 

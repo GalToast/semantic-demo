@@ -13,7 +13,7 @@ import type { SpatialGrid } from '@lib/journey/thread-model'
 import type { PocketMotionWithFrame } from '@lib/types/state'
 import type { NavState, ActiveFilters } from '@lib/types/state'
 import type { Vector3Like, NodePosition, Point, StateConfig, LoadingPhaseKey } from './core-types'
-import type { SearchSummary, SearchErrorData, SemanticSearchCacheDiagnostics } from './search-types'
+import type { SearchSummary, SearchErrorData } from './search-types'
 
 export interface ScenePerformanceDiagnostics {
     active: boolean
@@ -319,8 +319,6 @@ export interface SemanticState extends StateConfig {
     semanticLanePendingWarm: boolean
     semanticLaneState: string
     semanticLaneSnapshot: unknown
-    semanticSearchResultCache: Map<string, unknown>
-    semanticSearchCacheDiagnostics: SemanticSearchCacheDiagnostics
     semanticResultContextByLeadId: Map<string, unknown>
     semanticGuideAbortController: AbortController | null
     semanticGuideRequestSequence: number

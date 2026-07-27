@@ -5,7 +5,6 @@
  * Contains search summaries, results, errors, guides, and the SearchAppState aggregate.
  */
 
-import type { CacheEntry } from '@lib/search/cache'
 import type { SearchStatus } from '@lib/types/state'
 
 /** Shape of state.searchState.currentSearchSummary — set by search-state.ts, consumed by map-state, semantic-guide-ui, etc. */
@@ -97,16 +96,6 @@ export interface SearchResult {
     [key: string]: unknown
 }
 
-export interface SemanticSearchCacheDiagnostics {
-    hits: number
-    misses: number
-    stores: number
-    evictions: number
-    lastKey: string | null
-    lastSource: string | null
-    lastAgeMs: number | null
-}
-
 /**
  * @lib/state/types/search-types.ts — SearchAppState sub-aggregate (Phase 6b)
  *
@@ -132,8 +121,6 @@ export interface SemanticSearchCacheDiagnostics {
  *   - semanticGuideRequestSequence: monotonic counter for guide rebuilds
  *   - currentSemanticGuide: latest semantic-guide text
  *   - summaryCardTypeToken: type-token for summary card renders
- *   - semanticSearchCacheDiagnostics: cache health telemetry
- *   - semanticSearchResultCache: cached search results by lead-id
  *   - searchVisibleCount: pagination size
  */
 export interface SearchAppState {
@@ -154,7 +141,5 @@ export interface SearchAppState {
     semanticGuideRequestSequence: number
     currentSemanticGuide: string | null
     summaryCardTypeToken: number
-    semanticSearchCacheDiagnostics: SemanticSearchCacheDiagnostics
-    semanticSearchResultCache: Map<string, CacheEntry>
     searchVisibleCount: number
 }
