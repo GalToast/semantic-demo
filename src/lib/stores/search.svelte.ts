@@ -211,7 +211,7 @@ function _createSearchStore(): SearchStoreApi {
 
     fn.subscribe = searchMirror.subscribe
     fn.update = searchMirror.update
-    fn.set = searchMirror.set
+    fn.set = (value: SearchStoreState) => withSearchNotify(() => value)
 
     return fn
 }

@@ -469,35 +469,7 @@ function _createFocusStore(): FocusStoreApi {
 
     fn.subscribe = focusMirror.subscribe
     fn.update = (updater: (_s: FocusStoreState) => FocusStoreState) => withFocusNotify(updater)
-    fn.set = (value: FocusStoreState) => {
-        focusMirror.set(value)
-        // Mirror bridge for focusStore.set (same as withFocusNotify bridge tail)
-        writeNavStateMirror({
-            focusPocketIndices: value.pocketNodes.map((n) => n.index),
-            focusPocketRoleByIndex: value.pocketRoleByIndex,
-            focusPocketMeta: value.pocketMeta
-        })
-        appState.focusState.selectedPoint = narrowToPoint(value.selectedBusiness)
-        const inspectedThreadIndex = value.threadInspector.active
-            ? value.threadInspector.inspectedIndex
-            : value.inspectedStrandIndex
-        appState.focusState.inspectedThreadIndex = inspectedThreadIndex
-        appState.focusState.pinnedThreadIndex = value.pinnedThreadIndex
-        appState.focusState.nodesAreSettling = value.nodesAreSettling
-        appState.focusState.pocketMotionByIndex = value.pocketMotionByIndex
-        appState.focusState.pocketTransitionStartedAt = value.pocketTransitionStartedAt
-        appState.focusState.infoPanelOpen = value.infoPanelOpen
-        appState.focusState.pocketListVisible = value.pocketListVisible
-        appState.focusState.pocketRoleFilter = value.pocketRoleFilter
-        appState.focusState.focusTransitionMode = value.transitionMode
-        appState.focusState.focusTransitionStartedAt = value.transitionStartedAt
-        appState.focusState.inspectedStrandDiagnostics.active = value.threadInspector.active
-        appState.focusState.inspectedStrandDiagnostics.source = value.threadInspector.source
-        appState.focusState.inspectedStrandDiagnostics.segmentCount = value.threadInspector.segmentCount
-        appState.focusState.inspectedStrandDiagnostics.braidCount = value.threadInspector.braidCount
-        appState.focusState.inspectedStrandDiagnostics.endpointCount = value.threadInspector.endpointCount
-        appState.focusState.threadInspectorPointerInside = value.threadInspector.pointerInside
-    }
+    fn.set = (value: FocusStoreState) => withFocusNotify(() => value)
 
     return fn
 }

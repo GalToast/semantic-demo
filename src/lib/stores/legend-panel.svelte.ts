@@ -33,12 +33,11 @@ export function openLegendPanel(): void {
     if (get(legendOpen)) return
     setLegendOpen(true)
 
+    const legendPanel = document.getElementById('legend-panel')
+    if (!legendPanel) return
     if (typeof document !== 'undefined' && document.documentElement) {
         document.documentElement.classList.add('legend-panel-open')
     }
-
-    const legendPanel = document.getElementById('legend-panel')
-    if (!legendPanel) return
     legendPanel.classList.add('open')
     legendPanel.removeAttribute('hidden')
     legendPanel.setAttribute('aria-hidden', 'false')
@@ -56,12 +55,11 @@ export function closeLegendPanel(): void {
     if (!get(legendOpen)) return
     setLegendOpen(false)
 
+    const legendPanel = document.getElementById('legend-panel')
+    if (!legendPanel) return
     if (typeof document !== 'undefined' && document.documentElement) {
         document.documentElement.classList.remove('legend-panel-open')
     }
-
-    const legendPanel = document.getElementById('legend-panel')
-    if (!legendPanel) return
     legendPanel.classList.remove('open')
     legendPanel.setAttribute('hidden', '')
     legendPanel.setAttribute('aria-hidden', 'true')
