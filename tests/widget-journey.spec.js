@@ -3854,8 +3854,10 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             await page.waitForTimeout(200)
         }
 
-        await page.keyboard.press('2')
-        await page.waitForTimeout(300)
+        // Click the 'search' mode chip (keyboard handler requires Ctrl+1-6;
+        // mode chip clicks exercise selectMode directly).
+        await page.click('.mode-chip[data-mode="search"]', { force: true })
+        await page.waitForTimeout(500)
 
         const searchInput = page.locator('#search-input, input[placeholder*="Search"], input[placeholder*="search"]').first()
         await searchInput.waitFor({ state: 'visible', timeout: 10000 })
