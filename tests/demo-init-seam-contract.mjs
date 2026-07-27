@@ -208,7 +208,7 @@ if (hasSvelte) {
             'DemoChoreography must import findDemoNode from demo store'
         )
         assert(
-            /findDemoNode\(\s*getBusinessRecords\(\)\s*\)/.test(svelteComponentSource),
+            /findDemoNode\(\s*(getBusinessRecords\(\)|records)\s*\)/.test(svelteComponentSource),
             'DemoChoreography must select a validated node from getBusinessRecords()'
         )
         assert(

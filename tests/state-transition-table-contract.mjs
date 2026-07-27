@@ -413,7 +413,8 @@ console.log('CONTRACT 32: semantic search state fields')
 assert(stateSrc.includes('semanticLaneState'), 'state must have semanticLaneState')
 assert(stateSrc.includes('semanticLaneSnapshot'), 'state must have semanticLaneSnapshot')
 assert(stateSrc.includes('semanticLaneProbePromise'), 'state must have semanticLaneProbePromise')
-assert(stateSrc.includes('semanticSearchResultCache'), 'state must have semanticSearchResultCache')
+// semanticSearchResultCache was removed as dead IDB-backed payload cache (c6712701).
+// Only the live in-memory result cache remains; no dead-field assertion needed.
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------

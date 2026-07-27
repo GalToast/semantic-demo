@@ -182,6 +182,16 @@ export async function load(url, context, nextLoad) {
         return result
     }
 
+    // Idempotency guard: Node's ESM loader may invoke load() multiple times for
+    // the same URL. Without this guard, a second call sees the $state from the
+    // first call's prepended rune import, re-detects "runes" via usesRune(),
+    // and prepends a DUPLICATE import — causing "Identifier '$state' has already
+    // been declared" in source-text-module mode. If the source already contains
+    // the stubs URL, it was transformed by a prior call; return unchanged.
+    if (result.source.includes(SVELTE_RUNE_STUBS_URL)) {
+        return result
+    }
+
     let source = result.source
     const parts = []
 
