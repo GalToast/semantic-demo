@@ -3859,11 +3859,23 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
         // Open the keyboard-help panel (the replay affordance lives there).
         const helpBtn = page.locator('#btn-keyboard-help').first()
-        await helpBtn.waitFor({ state: 'visible', timeout: 5000 })
+        // `#btn-keyboard-help` lives inside <Header>, which App.svelte mounts only
+        // when headerVisible holds (App.svelte ~L212: !mapModeActive &&
+        // (idle | search-family | focus surface)). Under ?demo=force the 10-phase
+        // choreography drives surface/phase transitions (OVERVIEW→SEARCH→FOCUS→…
+        // map); the header does not mount until the demo reaches a headerVisible
+        // surface. That lands ~3s after #demo-choreography appears on an idle
+        // machine, but phase progression + headless/CI contention can push it past
+        // 5s — wait generously for the header to mount.
+        await helpBtn.waitFor({ state: 'visible', timeout: 30000 })
+        // Settle one frame so Svelte 5's onclick={openKeyboardHelp} binding flushes
+        // before the click dispatches (guards a freshly-mounted-button race where
+        // the rect is visible but the listener is not yet attached).
+        await page.waitForTimeout(150)
         await helpBtn.click()
         await page
             .locator('#keyboard-hint-panel.visible, #keyboard-hint-panel[aria-hidden="false"]')
-            .waitFor({ state: 'visible', timeout: 5000 })
+            .waitFor({ state: 'visible', timeout: 10000 })
 
         // Click the user-visible "Replay tour" button.
         const replayBtn = page.locator('#btn-replay-tour').first()
