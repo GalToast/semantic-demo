@@ -51,6 +51,11 @@
   let canvasError = $state(false);
   let canvasErrorMessage = $state('');
 
+  // W52: Overlay timeout — 10s in dev (slow engine init on HMR/hot reload),
+  // 5s in prod.  Override via data-overlay-timeout on #canvas-container
+  // (e.g. <div data-overlay-timeout="12000">) or via window.__OVERLAY_TIMEOUT_MS.
+  let overlayTimeoutMs = $state(import.meta.env.DEV ? 10000 : 5000);
+
   const callbacks: EngineCallbacks = {
     onNodePicked: (index) => {
       // W15+ parity-attrs fix: preserve the current surface (especially
@@ -153,7 +158,26 @@
       (typeof document !== 'undefined' ? (document.querySelector('#canvas-container canvas') as HTMLCanvasElement | null) : null)
     if (liveNow && liveNow !== canvasEl) bindKeysToLiveCanvas(liveNow, keyHandler)
 
-    // Fallback: hide overlay after 5 seconds if engine hasn't signalled ready.
+    // Check for data-overlay-timeout override on the canvas container
+    if (containerEl) {
+      const dataVal = containerEl.getAttribute('data-overlay-timeout');
+      if (dataVal !== null) {
+        const parsed = parseInt(dataVal, 10);
+        if (!isNaN(parsed) && parsed > 0) {
+          overlayTimeoutMs = parsed;
+        }
+      }
+    }
+
+    // Set CSS custom property so the overlay-fade-out animation stays in sync
+    // with the JS timeout (animation delay = timeout - animation duration 400ms).
+    const fadeDelayMs = Math.max(0, overlayTimeoutMs - 400);
+    const overlayEl = document.querySelector('.canvas-loading-overlay') as HTMLElement | null;
+    if (overlayEl) {
+      overlayEl.style.setProperty('--overlay-fade-delay', `${fadeDelayMs}ms`);
+    }
+
+    // Fallback: hide overlay after timeout if engine hasn't signalled ready.
     // Gate on !canvasReady so a fast scene-ready path (onLoadingPhase →
     // hideOverlay) that already cleared the timeout is never retroactively
     // warned about.
@@ -166,7 +190,7 @@
         }
         hideOverlay();
       }
-    }, 5000);
+    }, overlayTimeoutMs);
 
     const initLifecycle = async (): Promise<void> => {
       try {
@@ -305,7 +329,6 @@
     aria-hidden="true"
     data-active-view="idle"
   ></div>
-  <!-- svelte-ignore a11y_no_interactive_element_to_noninteractive_role -->
   <div
     bind:this={containerEl}
     id="canvas-container"
@@ -393,7 +416,7 @@
     justify-content: center;
     background: rgba(0, 0, 0, 0.6);
     pointer-events: none;
-    animation: overlay-fade-out 0.4s ease-in 4.6s forwards;
+    animation: overlay-fade-out 0.4s ease-in var(--overlay-fade-delay, 4600ms) forwards;
   }
 
   .loading-pulse {
