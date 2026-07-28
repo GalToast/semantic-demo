@@ -2840,6 +2840,15 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 375, height: 667 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
+        // Dismiss the first-visit help dialog if it auto-opens; it blocks taps
+        // on the mode-chip rail on mobile just like it blocks search input.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
         // The header/mode chips are visible above the 2D placeholder CTA.
         const searchChip = page.locator('.mode-chip[data-mode="search"]')
         await searchChip.waitFor({ state: 'visible', timeout: 10000 })
@@ -2855,8 +2864,12 @@ test.describe('Widget journey', () => {
                 const ir = input?.getBoundingClientRect()
                 return (
                     document.body.classList.contains('surface-search') &&
-                    r != null && r.width > 0 && r.height > 0 &&
-                    ir != null && ir.width > 0 && ir.height > 0
+                    r != null &&
+                    r.width > 0 &&
+                    r.height > 0 &&
+                    ir != null &&
+                    ir.width > 0 &&
+                    ir.height > 0
                 )
             },
             null,
