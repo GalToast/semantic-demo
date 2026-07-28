@@ -305,8 +305,16 @@
 }
 
 @media (max-width: 768px) {
-    .app-header {
-        padding: 0.35rem 0.5rem;
+    /* B-S7: override .app-header.compact as well so the right-side utility
+       rail never gets covered by the chip rail, regardless of CSS bundling
+       order. Doubling the class bumps specificity above the base
+       .app-header.compact rule (0,3,0 vs 0,2,0) without relying on the
+       `body` ancestor that Svelte's CSS analyzer cannot verify. */
+    .app-header.app-header,
+    .app-header.app-header.compact {
+        /* extra right padding to avoid overlap with the fixed-position
+           utility toggles (legend/help at right:14px, 44px wide). */
+        padding: 0.35rem 3.75rem 0.35rem 0.5rem;
         gap: 0.4rem;
         flex-wrap: wrap; /* PR-B: allow description to wrap to its own row on mobile */
     }
@@ -314,6 +322,16 @@
        On mobile, wrap to its own row below the chip rail so it doesn't
        push the chip rail off-screen. The description spans the full
        header width via `flex-basis: 100%`. */
+    /* B-S7: force the chip rail to its own flex line at full container
+       width so it wraps below header-brand and cannot extend under the
+       fixed legend/help toggles (right:14px, 44px wide). The previous
+       padding-only fix on .app-header didn't work because the rail's
+       min-content fit alongside the narrow brand on row 1, but its
+       rendered box overflowed the content area due to the interplay
+       of overflow-x:auto and flex min-content sizing. */
+    :global(.mode-chips) {
+        flex: 0 0 100%;
+    }
     .header-description {
         flex-basis: 100%;
         font-size: 0.65rem;

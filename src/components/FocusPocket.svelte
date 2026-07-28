@@ -56,9 +56,44 @@
   let lastFocusIndex: number | null = null;
   let lastCandidateSignature: string | null = null;
 
-  $effect(() => {
+  // Build the pocket as soon as the DATA is ready — do NOT hard-block on
+  // engineStatus === 'ready'. The WebGL engine init is scheduled via
+  // requestIdleCallback and initThreeJS can take 20+ s in headless/test
+  // environments; hard-blocking leaves a deep-link ?anchor=N with a BLANK
+  // focus pocket for that whole window even though the data has loaded and
+  // the scene appears ready (the body.sceneReady flag comes from the data
+  // loading phase, separately from the engine lifecycle). The pocket indices +
+  // compressed positions are a pure-data operation — applyLocalNeighborhoodFocus
+  // only touches navState + targetPositions derived from originalPositions and
+  // does not require the WebGL renderer/scene/camera.
+  // initThreeJS → createPoints() RESETS targetPositions to the original
+  // positions the instant the engine becomes ready, wiping any compressed
+  // pocket positions we applied pre-ready. We force exactly one rebuild once
+  // the engine flips ready (after createPoints resets positions) so the
+  // compressed pocket positions are re-applied. Reset the flag if the engine
+  // returns to a non-ready state (re-init / context-loss reinit) so a future
+  // ready transition re-triggers.
+  let engineReadyRebuildDone = false;
+
+  $effect((): void => {
     if (!($dataLoadState.status === 'ready')) return;
-    if (!(engineStatus === 'ready')) return;
+
+    const engineNowReady = engineStatus === 'ready';
+    if (engineNowReady) {
+      if (!engineReadyRebuildDone) {
+        engineReadyRebuildDone = true;
+        // createPoints just reset positions; if we built pre-ready, force a rebuild
+        // to re-apply the compressed pocket positions.
+        if (lastFocusIndex != null) {
+          lastFocusIndex = null;
+          lastCandidateSignature = null;
+        }
+      }
+    } else {
+      // engine left ready (re-init / context loss): allow a future ready to re-trigger
+      engineReadyRebuildDone = false;
+    }
+
     const idx = focusedIndex_;
     const signature = threadCandidates_.map((c: { index?: number }) => c.index).join(',') || '';
     if (

@@ -244,6 +244,7 @@ body:has(.info-panel.active) .panel-toggle,
     display: none;
 }
 
+.keyboard-hint-panel {
     position: fixed;
     bottom: 24px;
     /* Clear the right rail (44px button + 16px margin + 20px gap = 80px)
