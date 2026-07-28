@@ -23,11 +23,11 @@ This file is loaded into every Pi model call. Keep it concise. Detailed referenc
 - Evaluate unfamiliar changes on their merits — good changes should stick, bad ones should be fixed. Don't reflexively revert a parallel-lane change just because it doesn't match your mental model; if it improves the code, keep it. Don't preserve bad code silently because authorship is murky either — if a change introduces an error or breaks an invariant, fix it (or revert it with a brief explanation, not as a stealth revert). When parallel sessions land conflicting changes, surface the conflict in chat rather than silently picking a side.
 - If durable repo behavior changes, update the appropriate repo doc in the same turn.
 - Before presenting work as finished, verify against the real success criteria and state what was run.
-- **Always consider whether delegation would improve throughput or end-result quality** — if yes, delegate (a subagent, deeper search, or external verification). Main-lane speedup is only a win when the alternative blocks the user; default to delegating when it is reasonable.
-- **Don't stop at the "high-ROI part" when the rest is mechanical.** When a cleanup establishes a pattern (state refactor, codemod, mirror migration) and the same pattern applies to N sites, finish all N sites before stopping — even if the biggest win is already landed. Partial fixes create drift: new consumers can't use the established pattern if half the existing consumers still bypass it, and the next reader will be confused about which sites follow the new pattern. Exceptions: the user explicitly asks to stop, or the remaining work is genuinely risky / unclear (warrants a plan/decision checkpoint). The "almost done" point is not "done" when follow-through is bounded and the same pattern.
-- **User-visible features require a journey test before merge.** Contract tests do not catch click-eating z-index layers, missing callbacks, or `Math.random()` stubs dressed as data. For any feature that touches a Svelte component, the desktop/mobile mount branches, or any DOM the user interacts with, add at least one test in `tests/widget-journey.spec.js` and run `npm run qa:journey:headless`. See `docs/session-coordination.md` → "The test-strategy gap" for the full rule and the W46 weather-widget case study. The pre-commit hook (`scripts/git-hooks/pre-commit` + PowerShell shim) **warns** when `src/components/*.svelte`, `src/App.svelte`, `src/lib/ui/*.ts`, or `src/lib/keyboard/*.ts` is staged without a journey test staged alongside. Override with `--SkipTestStrategyGapCheck` for pure internal refactors.
-- **Always audit for logic flaws in our thinking AND in our systems before claiming done.** When we fix something, the fix is rarely complete: enumerate the data sources (which files, which fields, which code paths in the same file), verify each one with rg/git, and only then declare done. The "missed anything?" prompt almost always uncovers a missed file, a missed field (`generationConfig` sibling of `entry.X`), or a missed code path (`routerModelEntries` runs `parseCatalogModels` separately from `modelFromProviderEntry`). Cheap to audit; expensive to ship partial fixes.
-- **You own the work — polish to 10/10.** Owning a deliverable means seeing it through to a verified 10/10 state, not 'good enough to delegate'. Delegation transfers parts of the work, not ownership: when you dispatch subagents, their plans AND their executor outputs must both be polished by the main lane to 10/10 against the real success criteria before the deliverable is called done. 'Good enough to delegate' is not a finish line; 'good enough to ship' is.
+- **Default to delegating when it improves throughput/quality.** Main-lane speedup only wins when the alternative blocks the user.
+- **Finish all N sites of an established pattern, not just the high-ROI one.** Partial pattern fixes create drift — new consumers can't rely on it if half the old sites bypass it. Stop only on user request or genuine risk.
+- **User-visible features need a journey test.** Svelte/DOM-touching features → add a test in `tests/widget-journey.spec.js` + run `npm run qa:journey:headless`. Contract tests miss click-eating z-index / missing-callback / `Math.random()`-as-data bugs. Pre-commit hook warns on unstaged-journey-test for `*.svelte`/`App.svelte`/`lib/ui`/`lib/keyboard`; `--SkipTestStrategyGapCheck` for pure refactors. Full rule: `docs/session-coordination.md` § test-strategy gap.
+- **Audit before "done".** Enumerate every data source (files/fields/code paths), verify each with rg/git. Partial fixes miss siblings (`generationConfig` next to `entry.X`) or parallel code paths (`routerModelEntries` runs `parseCatalogModels` separately from `modelFromProviderEntry`). Cheap to audit, expensive to ship half.
+- **Polish to 10/10; delegating parts doesn't delegate ownership.** Subagent plans AND outputs must both be main-lane-polished to the real success criteria before done. "Good enough to delegate" ≠ done.
 
 ## Session Lock Protocol
 
@@ -49,11 +49,7 @@ See `docs/session-coordination.md` — session lock + parallel-session + switchb
 
 **Delegation rules:** Full lifecycle, rate/polish, parallel divide-and-conquer, visual verification, and vision capability matrix are in `docs/subagent-delegation.md`.
 
-**Lane inventory (from `model-providers.json`):**
-
-- Primary: `minimax-m3` (MiniMax-M3 — main lane; verified vision-capable 2026-07-15, routes: kilo/minimax, logfare, opencode-zen, minimax-direct). Previous `kilo/openrouter/owl-alpha` is dead (404 on both the kilo gateway and OpenRouter; absent from `/v1/models`) — do not re-add.
-- Registered alt: `agnes-2.0-flash` ✅ **subagent-viable 2026-07-27** (resolves via `router-agnes`; tool-use + write succeed; verify output against parent-component scope, as it tends to over-reach into child components).
-- Free fallbacks: `laguna-s-2.1-free` ❌ (OpenCode Zen 429 / cold stall 2026-07-27), `laguna-xs-2.1-free` ✅ **subagent-viable 2026-07-27** (via `openrouter/poolside/laguna-xs-2.1:free`), `mimo-v2.5-free` ✅ **subagent-viable 2026-07-27** (resolves via `router-opencode-zen`), `deepseek-v4-flash-free` ✅ **subagent-viable 2026-07-27** (resolves via `router-opencode-zen`), `nemotron-3-ultra-free` ✅ **subagent-viable 2026-07-27** (via `opencode/nemotron-3-ultra-free` → `router-opencode-zen`), `north-mini-code-free` ❌ not subagent-viable 2026-07-27 (OpenCode Zen 429 / cold stall), `hy3-free` / `tencent/hy3` ❌ not subagent-viable 2026-07-27 (OpenCode Zen 429 / cold stall), `qwen3.6-plus`, `qwen3.6-flash` ❌ `qwen/qwen3.6-flash` is not in the unified v4 catalog via `zyditv4` (2026-07-27), `qwen3.6-27b`, `qwen3.6-35b-a3b`
+**Lane inventory:** per-model ✅/❌ viability + route strings live in `docs/subagent-lane-inventory.md` (probed 2026-07-27). Critical: `kilo/openrouter/owl-alpha` is dead (404 on both gateways, absent from `/v1/models`) — do not re-add.
 
 ## Key Product Invariants
 
@@ -75,33 +71,32 @@ See `docs/session-coordination.md` — session lock + parallel-session + switchb
 
 ## Conventions (search fallback)
 
-- **The yellow "Showing demo data" banner now only fires on the genuine 20-business mock fallback (M10), not the 8,406-record local index.** `SEARCH_MOCK_FALLBACK` event (search-engine emits it only when `performMockSearch` returns rows) drives the banner; `SEARCH_DEGRADED` (local index fallback) does NOT show it. When live `/api.php` is unreachable in dev against a static server, the engine first tries the real local 8,406 index (no banner); only on total miss does it fall back to 20 mock + banner. Don't suppress; if noisy, lower trigger frequency, don't silence.
-- **`sessionStorage.api_unreachable` is a time-bounded sticky bypass (PR-M), not a permanent lock.** The record is `{setAt: Date.now(), reason: string}` and expires after `API_BYPASS_STICKY_MS` (60s) on the read path. It also clears on the next successful API response. Legacy `'1'` strings are treated as expired so old tabs recover automatically. Helpers: `markApiUnreachable(reason)`, `clearApiUnreachable()`, `readApiUnreachable()` in `@lib/search/mock-search-fallback`. Never call `sessionStorage.setItem('api_unreachable', ...)` directly — go through `markApiUnreachable` so the timestamp is recorded.
-- **`?staticDev=0` forces live API and surfaces failures as errors.** Used by contract tests; do not use in normal dev flows.
-- **Vite dev proxies `/api*` to `127.0.0.1:8795`.** The system expects a PHP backend there (see `docs/ops/DEPLOY_STATUS.md` and `docs/ops/walkthrough-r7-findings.md`). For dev with live data: stop whatever's on 8795 (`python -m http.server` from `npm run serve` is the legacy JS track — see `memory/environment.md`, deleted 2026-06-07) and run `php -S 127.0.0.1:8795 -t .` from the repo root. PHP CLI server executes `/api.php` AND serves static files (replaces Python for both roles). PR-N makes `api.php` fall back to `src/data.dat` when no root-level `data.dat` exists, so a fresh checkout Just Works without copying.
-- **The "Showing demo data" banner means either (a) the API on 8795 returned an error or raw PHP source, or (b) no PHP is listening at all.** With PR-N + PHP CLI on 8795 the banner stays hidden. To debug, curl `/api.php?action=semantic_search&q=coffee&limit=1&offset=0` with a `Referer: http://127.0.0.1:5173/` header — should return JSON `{ok: true, ...}`.
+Live data needs PHP on 8795 (`php -S 127.0.0.1:8795 -t .`); Vite proxies `/api*` there. `?staticDev=0` forces live + surfaces errors (contract tests only). The yellow "demo data" banner = API errored / not listening, NOT the local 8,406 index. Full detail (banner events, `api_unreachable` sticky-bypass expiry, curl recipe): `docs/search-fallback.md`.
 
 ## Reference Docs
 
-Read these only when relevant:
+Read only when relevant (full module inventory: `docs/important-files.md`):
 
-- CSS ownership: `docs/css-ownership.md`
-- Cleanup plans (Wave 1): `docs/cleanup-plans/` — three investigation-and-execution plans for the project's worst three areas (search layer, CSS surface, big components), each with verified `file:line` cites (audited against current HEAD `5222e684`), topic-pure commit order, and per-commit verification gates. Wave 2 executors should treat these as the source-of-truth work list.
-- State transitions: `docs/semantic-demo-state-transition-table.md`
-- Design tokens: `docs/semantic-demo-design-tokens.md`
-- Surface style matrix: `docs/semantic-demo-surface-style-matrix.md`
-- Window/global policy: `docs/window-global-allowlist.md`
-- Migration plan: `docs/migration-plan.md`
-- Performance: `docs/performance-budget.md`, `docs/w44-performance-attack-plan.md`
-- Type discipline: `docs/typing-contract.md` — global `as any` budget, typing-contract tests, and file-specific tightening rules.
-- Session coordination: `docs/session-coordination.md` — session lock, parallel-session rules, test-strategy gap.
-- Subagent delegation: `docs/subagent-delegation.md` — delegation lifecycle, rate/polish, vision matrix, lane inventory.
-- Important files: `docs/important-files.md` — canonical file inventory by module.
-- UX copy rules: `docs/ux-copy-rules.md` — forbidden jargon in user-facing strings, friendly copy patterns, label conventions. For any change that touches strings the user sees (`.svelte` template text, copy returned by helpers, status messages), check against this list.
-- Tool routing + switchboard: `docs/tool-guide.md` — Pi-harness tool selection, native-vs-MCP routing, profile switching, switchboard coordination recipe.
-- Historical full agent reference: `docs/archive/agents-full-reference-2026-06-19.md`
+- `docs/css-ownership.md` — CSS module ownership
+- `docs/cleanup-plans/` — Wave 1 source-of-truth work list (file:line cites, commit order, gates; audited at HEAD `5222e684`)
+- `docs/semantic-demo-state-transition-table.md` — state transitions
+- `docs/semantic-demo-design-tokens.md` — design tokens
+- `docs/semantic-demo-surface-style-matrix.md` — surface style matrix
+- `docs/window-global-allowlist.md` — window/global policy
+- `docs/migration-plan.md` — migration plan
+- `docs/performance-budget.md`, `docs/w44-performance-attack-plan.md` — performance
+- `docs/typing-contract.md` — `as any` budget, typing-contract tests
+- `docs/session-coordination.md` — session lock, parallel sessions, test-strategy gap
+- `docs/subagent-delegation.md` — delegation lifecycle, rate/polish, vision matrix
+- `docs/subagent-lane-inventory.md` — per-model subagent viability + routes
+- `docs/search-fallback.md` — API/banner fallback detail
+- `docs/dev-commands.md` — full script list + a11y flags
+- `docs/important-files.md` — canonical file inventory by module
+- `docs/ux-copy-rules.md` — forbidden jargon + friendly copy (check any user-visible string)
+- `docs/tool-guide.md` — tool routing + switchboard recipe
+- `docs/archive/agents-full-reference-2026-06-19.md` — historical full reference
 
-If a referenced doc is missing, use the archived full reference as fallback and consider restoring a concise dedicated doc.
+If a referenced doc is missing, use the archived full reference as fallback.
 
 ## Important Files
 
@@ -109,25 +104,7 @@ See `docs/important-files.md` for the canonical file inventory by module (Engine
 
 ## Dev Commands
 
-```bash
-npm run build
-npm run lint
-npm run test
-npm run test:unit
-npm run test:contract
-npm run qa:contract                            # all surface-contract checks (desktop + mobile)
-npm run qa:contract:mobile-critical             # 12 mobile-critical surfaces (includes mobile-idle)
-# single-surface: node scripts/qa.mjs contract --surface=mobile-idle --headed
-npm run test:microdemo
-npm run serve
-npm run audit:a11y           # a11y lint for src/components/*.svelte (tabulated)
-npm run audit:a11y:strict    # same, exit 1 on any HIGH finding
-npm run audit:a11y:json      # same, machine-readable JSON
-```
-
-`scripts/audit-a11y.mjs` checks 8 rules: button type, button aria-label, form input id/aria, interactive non-semantic containers, image alt, low-alpha colors, outline suppression, aria-hidden wrapping focusable children. Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter.
-
-Use narrower checks when validating a scoped change.
+Core: `npm run build` · `npm run lint` · `npm run test:unit` · `npm run qa:contract`. Full script list + `audit-a11y` flags + single-surface example: `docs/dev-commands.md`.
 
 ## Surface Tests
 
@@ -151,16 +128,8 @@ Use narrower checks when validating a scoped change.
 - For JavaScript scratch work, prefer the `js-repl` skill/tool when available instead of embedding REPL rules here.
 - **Knowledge-gap default → `websearch`** (MCP `websearch_*` via `mcp`). When local files, memory, and `ctx` don't give a confident answer (current model release dates, current API syntax, current docs, current router/provider health, time-sensitive facts) — search instead of speculate. Always available any turn; treat as always-on external memory.
 
-## Key Product Invariants (W47 hot-path)
+## Hot-Path Patterns (Svelte 5)
 
-- **Svelte 5 reactivity fix pattern (PR-2 / 3-bug stack, see `346891d8`):**
-    - **One-time-snapshot state reads `const renderKind = getInitialRenderKind()`** is the foot-gun. Switch to `$state: $derived(getBypassAttr('renderKind') ?? getInitialRenderKind())" so body class flips react to gate flips.
-    - **Order matters:** `setRenderKind(getInitialRenderKind())` MUST run before `mount(App)` so the Playwright auto-signal from `__PLAYWRIGHT__` wins cleanly when the test wants webgl, instead of being overwrote by the later placeholder-path setRenderKind.
-    - **First-visit help dialog** can sit on top of the search input on mobile; dismiss it in any test that types into the input (fills dialog + 1 .fill() line).
-    - All three land together in one fix. Same pattern recurs wherever a module has `const foo = getInitial*()` at the top.
-
-- **W49-c asymmetric widening pattern (W53 trail-button fix `671af64c`):**
-    - When you WIDEN a parent `$derived` gate (`App.svelte:211` `focusActive`) with new parity predicates, mirror those SAME predicates into child `$derived` gates that gate visible DOM on the same reactive state (`JourneyChrome.svelte:131` `chromeHasFocus`). Asymmetric gating produces silent inter-component race timeouts that only e2e Playwright contract tests surface — `check:svelte + lint` won't catch them. Symptom: parent mounts the child (parent gate true via new parity predicate) but child's stricter gate stays false (e.g., `navSnapshot.focusedIndex == null` from a bridge race) → child's `{:else}` idle branch mounts WITHOUT the expected DOM node (e.g., `#btn-focus-path`) → `waitForSelector` times out at 30s, even though gate looks correct in code review.
-    - Turn-key predicate set for `focusActive` (App.svelte) + `chromeHasFocus` (JourneyChrome) MUST stay lockstep: `parity.focusPanelMode === 'field-node' || parity.panelSurface in {focus,inside,trail,focus-search,semantic-dive} || parity.focusSearchForced`. Both gates now import `useParityAttrs()` so a parity change immediately flips both via reactive getters in `$derived`.
-
-## Pi Harness Notes
+- **`const x = getInitial*()` snapshot foot-gun** (PR-2 3-bug stack, `346891d8`): top-of-module one-time reads miss gate flips. Use `$state: $derived(getBypassAttr('x') ?? getInitial*())`. `setRenderKind(getInitialRenderKind())` MUST run before `mount(App)` so the `__PLAYWRIGHT__` auto-signal wins. Mobile first-visit help dialog sits over the search input — dismiss it in tests that `.fill()` the input.
+- **Asymmetric `$derived` gate widening** (W53 trail-button `671af64c`): widening a parent gate (`App.svelte:211` `focusActive`) MUST mirror the same predicates into child gates gating DOM (`JourneyChrome.svelte:131` `chromeHasFocus`). Asymmetric gating causes silent 30s e2e timeouts (parent mounts child, child's stricter gate stays false -> `#btn-focus-path` never mounts). `check:svelte`/lint won't catch it.
+- **Lockstep predicate set** for `focusActive` (App) + `chromeHasFocus` (JourneyChrome): `parity.focusPanelMode === 'field-node' || parity.panelSurface in {focus,inside,trail,focus-search,semantic-dive} || parity.focusSearchForced`. Both import `useParityAttrs()` so parity flips roll through.
