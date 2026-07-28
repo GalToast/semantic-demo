@@ -84,6 +84,12 @@
     () => import('@components/JourneyCompass.svelte')
   )
 
+  // Pre-warm the engine module tree during splash so Vite's dev server
+  // compiles the heavy Three.js + engine dependency graph in the background.
+  // The import() result is cached by Vite; when Canvas.svelte later calls
+  // import('@lib/engine/lifecycle') in initLifecycle, it resolves instantly.
+  import('@lib/engine/lifecycle').catch(() => {})
+
 
   // In Playwright tests, eagerly pre-load components that are required by
   // contract tests but now lazy-loaded in production for performance.

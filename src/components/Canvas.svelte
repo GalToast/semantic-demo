@@ -232,15 +232,15 @@
           void initLifecycle();
           return;
         }
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-          window.requestIdleCallback(
-            () => {
-              if (!engineHasInit && !componentDestroyed) {
-                void initLifecycle();
-              }
-            },
-            { timeout: 300 }
-          );
+        if (typeof window !== 'undefined') {
+          // Use rAF instead of rIC — the user just clicked Explore; don't
+          // wait for browser idle. One frame (~16ms) gives the DOM time to
+          // settle without the up-to-300ms rIC timeout penalty.
+          requestAnimationFrame(() => {
+            if (!engineHasInit && !componentDestroyed) {
+              void initLifecycle();
+            }
+          });
         } else {
           setTimeout(() => {
             if (!engineHasInit && !componentDestroyed) {
