@@ -47,8 +47,20 @@ export interface SearchContextResult {
 }
 
 export function resolveSearchContext(ctx: ParityContext): SearchContextResult {
+    // W47-5g fix: searchStore.summary is always a non-null object (default
+    // values with resultCount=0, query='') even when no search is active.
+    // A bare `!!summary` would always be true, causing hasSearchContext to
+    // flip on for a plain focus call and surface to 'focus-search' instead
+    // of 'focus', which suppresses #selected-facts in InfoPanel. Guard on
+    // actual search data: a non-empty query string or visible results.
+    const summary = ctx.search.summary
+    const hasSearchSummary =
+        summary != null &&
+        ((typeof summary.query === 'string' && summary.query.trim().length > 0) ||
+            (typeof summary.resultCount === 'number' && summary.resultCount > 0) ||
+            (typeof summary.visibleMatches === 'number' && summary.visibleMatches > 0))
     const hasSearchContext =
-        !!ctx.search.summary ||
+        hasSearchSummary ||
         (typeof ctx.search.query === 'string' && ctx.search.query.trim().length >= 2) ||
         ctx.nav.surface === 'focus-search' ||
         ctx.nav.surface === 'search'
