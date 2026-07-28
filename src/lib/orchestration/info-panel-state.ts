@@ -57,7 +57,7 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         emptyHeadline: 'Select a business to see details',
         emptySubtext: 'Click a search result or business to explore.',
         panelVisible: true,
-        selectionSuppressed: true
+        selectionSuppressed: false
     },
     search: {
         headerText: 'Search',

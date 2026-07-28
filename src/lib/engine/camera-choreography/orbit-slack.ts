@@ -11,7 +11,6 @@
 
 import { Vector3, Box3, PerspectiveCamera } from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import type { NodePosition } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
 import { CONFIG } from '@lib/engine/config'
@@ -152,7 +151,7 @@ export function applyFocusOrbitSlack(reason: string = 'user-control'): boolean {
     controls.panSpeed = CONFIG.ORBIT_PAN_SPEED_FREE
     controls.update()
 
-    withStateMutation(() => {
+    {
         appState.focusOrbitSlackState = {
             phase: 'free-pivot',
             reason,
@@ -165,7 +164,7 @@ export function applyFocusOrbitSlack(reason: string = 'user-control'): boolean {
             rotateSpeed: Number((controls.rotateSpeed || CONFIG.ORBIT_ROTATE_SPEED_FREE).toFixed(2)),
             panSpeed: Number((controls.panSpeed || CONFIG.ORBIT_PAN_SPEED_FREE).toFixed(2))
         }
-    })
+    }
     // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync
     // from cameraStore.orbitSlack (which mirrors appState.focusOrbitSlackState).
     return true
@@ -179,7 +178,7 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
     const controls = getTypedControls()
     const safeTarget = controls?.target ?? camera?.position ?? null
     if (safeTarget === null || !camera) {
-        withStateMutation(() => {
+        {
             appState.focusOrbitSlackState = {
                 phase: 'idle',
                 reason,
@@ -192,12 +191,12 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
                 rotateSpeed: CONFIG.ORBIT_ROTATE_SPEED_DEFAULT,
                 panSpeed: CONFIG.ORBIT_PAN_SPEED_DEFAULT
             }
-        })
+        }
         // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
         return
     }
     const dist = camera.position.distanceTo(safeTarget)
-    withStateMutation(() => {
+    {
         appState.focusOrbitSlackState = {
             phase: 'idle',
             reason,
@@ -210,7 +209,7 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
             rotateSpeed: CONFIG.ORBIT_ROTATE_SPEED_DEFAULT,
             panSpeed: CONFIG.ORBIT_PAN_SPEED_DEFAULT
         }
-    })
+    }
     // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
     if (controls && !appState.semanticDiveMode) {
         controls.maxDistance = CONFIG.ORBIT_MAX_DISTANCE_DEFAULT

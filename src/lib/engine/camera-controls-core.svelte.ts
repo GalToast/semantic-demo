@@ -15,7 +15,6 @@
  */
 
 import { appState } from '@lib/state/app.svelte'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-choreography/orbit-slack'
 import { setRouteExplorationPhase } from '@lib/stores/journey.svelte'
 
@@ -175,13 +174,13 @@ class CameraControlsCore {
             startedAt: performance.now()
         }
         // Legacy mirror — routeExplorationState is a tracked sub-object
-        withStateMutation(() => {
+        {
             appState.routeExplorationState = {
                 phase: normalizedPhase,
                 reason: normalizedReason,
                 startedAt: performance.now()
             }
-        })
+        }
         // Wires routeExplorationPhase into the journey store so parity-attrs
         // (which reads journey.routeExplorationPhase) produces the right
         // data-route-exploration value.

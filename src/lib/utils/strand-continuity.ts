@@ -22,7 +22,6 @@
  * shell until full W16 retirement.
  */
 import { appState as state } from '@lib/state/app.svelte'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from '@lib/engine/journey-webgl-lazy'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import type { StrandContinuityState } from '@lib/state/state-types'
@@ -219,7 +218,7 @@ function getWrapperManager(): StrandContinuityManager {
             // Mirror to the legacy `state.strandContinuityState` global so kernel
             // consumers that read `state.strandContinuityState.phase` etc.
             // (4 files in js/modules plus src/lib/journey/journey.ts) stay correct.
-            withStateMutation(() => {
+            {
                 state.strandContinuityState = {
                     phase: managerState.phase,
                     targetIndex: managerState.targetIndex,
@@ -233,7 +232,7 @@ function getWrapperManager(): StrandContinuityManager {
                     arrivalTimeoutId: undefined,
                     settleTimeoutId: undefined
                 }
-            })
+            }
         },
         onBodySync: (_managerState) => {
             // NOTE: body.dataset writes removed.

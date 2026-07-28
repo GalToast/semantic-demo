@@ -9,7 +9,6 @@ import type { NavState, NavMode } from '@lib/types/state'
 import { get, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { createStateMirror } from '@lib/state/create-state-mirror'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { SELECTION_DEPENDENT_MODES } from '@lib/navigation/mode-affordances'
 
@@ -253,7 +252,7 @@ export function writeNavStateMirror(patch: Partial<NavState>): void {
     const previousView = current.currentView
 
     navMirror.update((current) => {
-        withStateMutation(() => {
+        {
             Object.assign(appState.navState, patch)
             if (typeof patch.trailDepth === 'number') {
                 appState.trailDepth = patch.trailDepth
@@ -261,7 +260,7 @@ export function writeNavStateMirror(patch: Partial<NavState>): void {
             if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
                 appState.currentView = patch.currentView
             }
-        })
+        }
         return { ...current, ...patch }
     })
 

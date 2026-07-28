@@ -1,35 +1,39 @@
 /**
  * with-state-mutation-invariant.test.ts
  *
- * Invariant test: every direct mutation of a CRITICAL_KEY or
- * TRACKED_SUB_KEY on the `state` proxy MUST be wrapped in a
- * withStateMutation(() => { ... }) call.
+ * Invariant test: the dead `withStateMutation(() => { ... })` wrapper has
+ * been fully removed from every call site and must not be reintroduced.
  *
- * Per AGENTS.md "durable code invariants":
- *   "withStateMutation() required for tracked sub-objects — _makeProdProxy
- *    throws in production when !_isMutating. All mutations to navState,
- *    strandContinuityState, and other TRACKED_SUB_KEYS in state.js MUST
- *    be wrapped in withStateMutation(). Failure to do so causes a
- *    production throw."
+ * Why the wrapper is dead (all data sources agree):
+ *   - `withStateMutation(fn)` just sets `_isMutatingRef.value = true`, runs
+ *     `fn()`, and restores — a functional no-op. It returns `fn()`'s result.
+ *   - `isMutating()` (the reader of `_isMutatingRef`) is referenced NOWHERE
+ *     outside `with-state-mutation.ts` — not by `js/state.js`, `src/lib/state/
+ *     state.ts`, or the new `src/lib/state/app.svelte.ts` Proxy.
+ *   - The new `app.svelte.ts` Proxy does NOT read `_isMutatingRef`; its
+ *     `validateStateProperty` checks `STATE_VALIDATORS` independently (see
+ *     `src/lib/state/state-validation.ts`). So a mutation outside the wrapper
+ *     cannot throw at runtime.
+ *   - `with-state-mutation.ts` is flagged DEPRECATED (2026-07-27) and the
+ *     deprecation note says wrappers are "no-op-correct" and "should not be
+ *     added in new code."
+ *
+ * So this test is the INVERSE of the old convention ("mutations must be
+ * wrapped in withStateMutation"): it asserts there are ZERO remaining
+ * direct `withStateMutation(() =>` wrapper calls, acting as a regression
+ * guard against silently re-adding the dead wrapper.
+ *
+ * Preserved sites that are intentionally NOT violations:
+ *   - `engineState.withStateMutation?.()` — the engine keeps its own
+ *     mutator binding (src/lib/engine/three-engine-*.ts). The `?.` form
+ *     does not match the direct-call regex below.
+ *   - `window.withStateMutation = withStateMutation` (src/main.ts) — an
+ *     assignment of the function reference, not a wrapper call.
+ *   - `modules?.withStateMutation` in window-actions.ts — destructured
+ *     reference, `?.` form.
+ *   - The definition in src/lib/state/with-state-mutation.ts (skipped).
  *
  * Active Vitest suite (tests/unit-active/).
- *
- * The test reads the canonical CRITICAL_KEYS + TRACKED_SUB_KEYS lists
- * from src/lib/state/with-state-mutation.ts (the same lists the proxy
- * traps use at runtime) and scans the codebase for direct mutations
- * of those keys outside a withStateMutation block.
- *
- * What counts as a direct mutation:
- *   - `state.<KEY> = ...` assignment
- *   - `state.<KEY>.<subkey> = ...` (deeper) — illegal if KEY is in
- *     TRACKED_SUB_KEYS (parent wrapped in nested Proxy)
- *   - `state.<KEY> ??= ...` (nullish)
- *   - `state.<KEY>.<subkey> ??= ...` (subkey nullish)
- *
- * What's a "withStateMutation block":
- *   - The mutation is between an opening `withStateMutation(...)`
- *     and the matching `})` of that call. The block can span
- *     multiple lines OR be single-line `withStateMutation(() => { ... })`.
  *
  * Run: npx vitest run tests/unit-active/with-state-mutation-invariant.test.ts
  */
@@ -46,37 +50,43 @@ import {
 // Vitest runs from the worktree root, so process.cwd() is the repo root.
 const repoRoot = process.cwd();
 
-// All keys whose direct mutation requires withStateMutation. Union of
-// the two lists since TRACKED_SUB_KEYS includes some that are also
-// CRITICAL (e.g. 'navState').
-const PROTECTED_KEYS = new Set<string>([...CRITICAL_KEYS, ...TRACKED_SUB_KEYS]);
+// Directories to scan recursively for remaining direct wrapper calls.
+// 'src' covers src/lib, src/components, src/main.ts (all 22 unwrap sites);
+// 'js' covers js/modules + the js/state.js backward-compat shim.
+const SCAN_DIRS = ['src', 'js'];
 
-// Directories to scan.
-const SCAN_DIRS = ['js/modules', 'src/lib', 'src/app.d.ts'];
-
-// Skip these — they are type declarations, test fixtures, or
-// known-safe special cases.
+// Skip these — they are the definition, type-only files, tests, or build
+// artifacts where the symbol is legitimately referenced without being
+// called as a dead wrapper.
 const SKIP_PATTERNS = [
     /node_modules/,
     /dist\//,
-    /tests\//,            // tests may stub mutations
-    /\.d\.ts$/,           // type-only files
-    /state-mutators\.ts/, // canonical wrappers, all good
-    /state\.ts$/,         // the proxy itself
-    /state\.js$/,         // the proxy itself
-    /with-state-mutation\.ts$/, // the wrapper definition
+    /tests\//,                       // test stubs may reference the symbol
+    /\.d\.ts$/,                      // type-only files
+    /with-state-mutation\.ts$/,     // the wrapper definition itself
 ];
 
-interface Violation {
+interface WrapperCall {
     file: string;
     line: number;
-    column: number;
     matchedLine: string;
-    key: string;
 }
 
 /**
- * Recursively collect all .ts and .js files under the given path.
+ * Match a DIRECT wrapper call: the symbol followed by `(` then `(` (the
+ * arrow-function paren). `withStateMutation\(\s*\(` does NOT match:
+ *   - `engineState.withStateMutation?.(`  — intervening `?.`
+ *   - `window.withStateMutation =`        — no call paren at all
+ *   - `function withStateMutation<T>(`    — `<` (generic) before the paren
+ *   - `import { withStateMutation }` / `export { withStateMutation }` — no `(`
+ * `withMutation` covers the historical local alias (formerly destructured in
+ * demo-choreography.ts); it is a distinct symbol (w-i-t-h-M, not preceded by
+ * `State`) so it does not collide with `withStateMutation`.
+ */
+const WRAPPER_CALL_RE = /(?:withStateMutation|withMutation)\(\s*\(/;
+
+/**
+ * Recursively collect all source files (.ts/.js/.svelte) under `root`.
  * Symlinks are NOT followed (cycle hazard).
  */
 function collectFiles(root: string): string[] {
@@ -100,7 +110,10 @@ function collectFiles(root: string): string[] {
             }
             if (st.isDirectory()) {
                 stack.push(full);
-            } else if (st.isFile() && (name.endsWith('.ts') || name.endsWith('.js'))) {
+            } else if (
+                st.isFile() &&
+                (name.endsWith('.ts') || name.endsWith('.js') || name.endsWith('.svelte'))
+            ) {
                 out.push(full);
             }
         }
@@ -109,24 +122,89 @@ function collectFiles(root: string): string[] {
 }
 
 /**
- * For a single file, find direct mutations of state.<KEY> and check
- * whether each is inside a withStateMutation block.
- *
- * Heuristic for "inside a withStateMutation block":
- *   - Track the withStateMutation call stack as we scan line by line.
- *   - On `withStateMutation(...)` opening, push to the stack.
- *   - On `{` opens at indent >= wsm-indent, increment depth for the wsm.
- *   - On `}` closes, decrement depth; pop when depth returns to 0.
- *   - A direct mutation line is "inside" if there's >= 1 wsm
- *     call open at that point.
- *
- * KEY INSIGHT: the mutation check must happen BEFORE applying this
- * line's brace delta. Otherwise, a single-line wsm call
- * (`withStateMutation(() => { state.X = ... })`) would have its
- * wsm popped before we check the mutation, producing a false
- * positive for the very pattern the test is meant to verify.
+ * Strip JS/TS comments from `src`, replacing comment characters with
+ * nothing but PRESERVING newlines so line numbers stay aligned with the
+ * original text. Tracks single/double/template literals so `//` and `/*`
+ * inside strings are not mistaken for comments. This prevents a doc
+ * comment that happens to mention `withStateMutation(() => { ... })`
+ * from producing a false positive.
  */
-function scanFile(filePath: string): Violation[] {
+function stripComments(src: string): string {
+    let out = '';
+    let i = 0;
+    const n = src.length;
+    let inSingle = false;
+    let inDouble = false;
+    let inTemplate = false;
+    while (i < n) {
+        const c = src[i];
+        const prev = i > 0 ? src[i - 1] : '';
+        if (inSingle) {
+            out += c;
+            if (c === "'" && prev !== '\\') inSingle = false;
+            i++;
+            continue;
+        }
+        if (inDouble) {
+            out += c;
+            if (c === '"' && prev !== '\\') inDouble = false;
+            i++;
+            continue;
+        }
+        if (inTemplate) {
+            out += c;
+            if (c === '`' && prev !== '\\') inTemplate = false;
+            i++;
+            continue;
+        }
+        const next = src[i + 1];
+        if (c === '/' && next === '/') {
+            // Line comment — drop through to end of line, keep the newline.
+            while (i < n && src[i] !== '\n') i++;
+            continue;
+        }
+        if (c === '/' && next === '*') {
+            // Block comment — drop through to `*/`, keep any newlines inside.
+            i += 2;
+            while (i < n && !(src[i] === '*' && src[i + 1] === '/')) {
+                if (src[i] === '\n') out += '\n';
+                i++;
+            }
+            i += 2; // consume */
+            continue;
+        }
+        if (c === "'") {
+            inSingle = true;
+            out += c;
+            i++;
+            continue;
+        }
+        if (c === '"') {
+            inDouble = true;
+            out += c;
+            i++;
+            continue;
+        }
+        if (c === '`') {
+            inTemplate = true;
+            out += c;
+            i++;
+            continue;
+        }
+        out += c;
+        i++;
+    }
+    return out;
+}
+
+/**
+ * For a single file, find any remaining direct `withStateMutation(() =>`
+ * (or `withMutation(() =>`) wrapper calls. Comment text is excluded via
+ * stripComments so docstrings mentioning the old pattern don't false-fire.
+ * The reported `matchedLine` is the ORIGINAL (un-stripped) line so the
+ * failure message is useful for review.
+ */
+function scanFile(filePath: string): WrapperCall[] {
     const rel = relative(repoRoot, filePath);
     if (SKIP_PATTERNS.some((re) => re.test(rel))) return [];
 
@@ -136,141 +214,24 @@ function scanFile(filePath: string): Violation[] {
     } catch {
         return [];
     }
-    const lines = text.split(/\r?\n/);
-    const violations: Violation[] = [];
-
-    // Stack of withStateMutation open indent + brace depth. Each
-    // entry is {indent, depth}. The wsm call's body must be more
-    // indented than `indent` (children).
-    const wsmStack: Array<{ indent: number; depth: number }> = [];
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const lineNum = i + 1;
-
-        // 1. Check for withStateMutation opening; push to stack.
-        //    The codebase has 2 names for the same function:
-        //    `withStateMutation` (canonical) and `withMutation` (a
-        //    local alias used in src/lib/engine/demo-choreography.ts
-        //    where the file destructures getWithStateMutation() as
-        //    `withMutation` for terseness). Both open a wsm block.
-        //    Optional chaining (`withStateMutation?.(...)`) is also a
-        //    valid guard — used in three-engine-core where the engine
-        //    state may not have the mutator wired in unit contexts.
-        const wsmOpen = /\b(?:withStateMutation|withMutation)(?:\?\.)?\s*\(/.exec(line);
-        if (wsmOpen) {
-            const indent = line.search(/\S/);
-            wsmStack.push({ indent: indent < 0 ? 0 : indent, depth: 0 });
-        }
-
-        // 2. CHECK MUTATIONS — BEFORE applying this line's brace
-        //    delta. This handles single-line wsm patterns correctly.
-        for (const key of PROTECTED_KEYS) {
-            // Match an assignment to `state.<KEY>` (with optional
-            // `.subkey` chain). Allowed assignment operators:
-            //   - simple: `state.X = ...`
-            //   - subkey: `state.X.subkey = ...`
-            //   - nullish: `state.X ??= ...`
-            //   - nullish subkey: `state.X.subkey ??= ...`
-            // The `=` MUST be preceded by either whitespace (simple)
-            // or `?` (nullish), and MUST NOT be followed by another
-            // `=` (filters out `==` and `===`).
-            // This filters out:
-            //   - reads: `(state.X as any).threadCandidates`
-            //   - comparisons: `state.X === 'foo'`
-            //   - ternary: `state.X ? a : b`
-            //   - method calls: `state.X.toString()`
-            const re = new RegExp(
-                `\\bstate\\.${key}\\b(?:\\.[A-Za-z_][A-Za-z0-9_]*)*(?:\\s*=(?!=)|\\?=(?!=))`
-            );
-            const match = re.exec(line);
-            if (!match) continue;
-
-            const column = match.index + 1;
-
-            // Inside a withStateMutation block?
-            if (wsmStack.length > 0) continue;
-
-            violations.push({
+    const originalLines = text.split(/\r?\n/);
+    const strippedLines = stripComments(text).split(/\r?\n/);
+    const hits: WrapperCall[] = [];
+    for (let i = 0; i < strippedLines.length; i++) {
+        if (WRAPPER_CALL_RE.test(strippedLines[i])) {
+            hits.push({
                 file: rel,
-                line: lineNum,
-                column,
-                matchedLine: line.trim(),
-                key,
+                line: i + 1,
+                matchedLine: (originalLines[i] || '').trim(),
             });
         }
-
-        // 3. Count brace balance for this line. The wsm call's
-        //    body is between the opening `{` (or `=> {` of the
-        //    arrow function) and the matching `}`. We track the
-        //    depth of the wsm call's body braces; the call is
-        //    "open" while depth > 0.
-        let depthDelta = 0;
-        let inSingle = false;
-        let inDouble = false;
-        let inTemplate = false;
-        for (let j = 0; j < line.length; j++) {
-            const c = line[j];
-            const prev = j > 0 ? line[j - 1] : '';
-            if (inSingle) {
-                if (c === "'" && prev !== '\\') inSingle = false;
-                continue;
-            }
-            if (inDouble) {
-                if (c === '"' && prev !== '\\') inDouble = false;
-                continue;
-            }
-            if (inTemplate) {
-                if (c === '`' && prev !== '\\') inTemplate = false;
-                continue;
-            }
-            if (c === '/' && line[j + 1] === '/') {
-                // Line comment — skip the rest of the line.
-                break;
-            }
-            if (c === '/' && line[j + 1] === '*') {
-                // Block comment — skip the comment span.
-                j += 2;
-                while (j < line.length) {
-                    if (line[j] === '*' && line[j + 1] === '/') {
-                        j++;
-                        break;
-                    }
-                    j++;
-                }
-                continue;
-            }
-            if (c === "'") {
-                inSingle = true;
-                continue;
-            }
-            if (c === '"') {
-                inDouble = true;
-                continue;
-            }
-            if (c === '`') {
-                inTemplate = true;
-                continue;
-            }
-            if (c === '{') depthDelta++;
-            else if (c === '}') depthDelta--;
-        }
-        // Apply depth delta to the topmost withStateMutation if any.
-        for (let k = wsmStack.length - 1; k >= 0; k--) {
-            wsmStack[k].depth += depthDelta;
-            // Pop when depth returns to 0 (matching close).
-            if (wsmStack[k].depth <= 0) {
-                wsmStack.splice(k, 1);
-                break; // only one close per line
-            }
-        }
     }
-    return violations;
+    return hits;
 }
 
 describe('withStateMutation invariant', () => {
-    it('no direct mutations of CRITICAL_KEYS or TRACKED_SUB_KEYS outside withStateMutation', () => {
-        const allViolations: Violation[] = [];
+    it('no remaining direct withStateMutation(() => wrapper calls (unwrap is complete)', () => {
+        const allHits: WrapperCall[] = [];
         for (const dir of SCAN_DIRS) {
             const fullPath = join(repoRoot, dir);
             let st;
@@ -281,29 +242,34 @@ describe('withStateMutation invariant', () => {
             }
             const files = st.isDirectory() ? collectFiles(fullPath) : [fullPath];
             for (const f of files) {
-                allViolations.push(...scanFile(f));
+                allHits.push(...scanFile(f));
             }
         }
-        if (allViolations.length > 0) {
-            const lines = allViolations.map(
-                (v) =>
-                    `  ${v.file}:${v.line}:${v.column} — state.${v.key} assignment outside withStateMutation\n    > ${v.matchedLine}`
+        if (allHits.length > 0) {
+            const lines = allHits.map(
+                (h) =>
+                    `  ${h.file}:${h.line} — direct withStateMutation(() => call\n    > ${h.matchedLine}`
             );
             throw new Error(
-                `Found ${allViolations.length} direct mutation(s) of CRITICAL/TRACKED state keys outside withStateMutation:\n${lines.join('\n')}\n\n` +
-                    `Per AGENTS.md, all mutations to state.<CRITICAL_KEY|TRACKED_SUB_KEY> must be wrapped in withStateMutation(() => { ... }). ` +
-                    `Wrap each in a withStateMutation block, or move the mutation into src/lib/state-mutators.ts (which provides canonical wrappers).`
+                `Found ${allHits.length} remaining direct withStateMutation(() => wrapper call(s):\n${lines.join('\n')}\n\n` +
+                    `withStateMutation() is a dead no-op (see the DEPRECATED note in ` +
+                    `src/lib/state/with-state-mutation.ts): the new app.svelte.ts Proxy reads ` +
+                    `STATE_VALIDATORS, not _isMutatingRef, and isMutating() is called nowhere at ` +
+                    `runtime. Do not reintroduce the wrapper. If you need a grouped mutation, use a ` +
+                    `plain block { ... } or the canonical wrappers in src/lib/state-mutators.ts.`
             );
         }
-        expect(allViolations).toHaveLength(0);
+        expect(allHits).toHaveLength(0);
     }, 30000);
 
     it('protected key lists are non-empty', () => {
-        // Sanity check: the lists we test against must have content.
+        // Sanity check: the lists we still re-export from with-state-mutation.ts
+        // (js/state.js backward-compat consumers + state-mutators.ts) remain
+        // non-empty even though the mutation-guard wrapper itself is dead.
         expect(CRITICAL_KEYS.length).toBeGreaterThan(0);
         expect(TRACKED_SUB_KEYS.length).toBeGreaterThan(0);
-        // navState appears in both lists (it's CRITICAL and has nested
-        // tracked sub-keys). Just verify the set construction works.
-        expect(PROTECTED_KEYS.has('navState')).toBe(true);
+        // navState appears in both lists (it's CRITICAL and has nested tracked
+        // sub-keys). Verify the set construction still works.
+        expect(new Set<string>([...CRITICAL_KEYS, ...TRACKED_SUB_KEYS]).has('navState')).toBe(true);
     }, 30000);
 });

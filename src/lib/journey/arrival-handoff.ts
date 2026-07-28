@@ -7,7 +7,6 @@
  */
 import { appState } from '@lib/state/app.svelte'
 const state = appState
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import {
     Group,
     Color,
@@ -37,7 +36,7 @@ export function removeArrivalHandoffOverlay(): void {
     const group = state.arrivalHandoffGroup as { traverse?: (cb: (child: Object3D) => void) => void }
     group.traverse?.((child: Object3D) => disposeThreeLineObject(child))
     state.arrivalHandoffGroup = null
-    withStateMutation(() => {
+    {
         state.arrivalHandoffDiagnostics = {
             active: false,
             fromIndex: null,
@@ -47,7 +46,7 @@ export function removeArrivalHandoffOverlay(): void {
             endpointCount: 0,
             opacity: 0
         }
-    })
+    }
 }
 
 export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: number): void {
@@ -83,7 +82,7 @@ export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: numbe
     group.add(new LineSegments(geometry, material))
     scene.add(group)
     state.arrivalHandoffGroup = group
-    withStateMutation(() => {
+    {
         state.arrivalHandoffDiagnostics = {
             active: true,
             fromIndex,
@@ -93,7 +92,7 @@ export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: numbe
             endpointCount: 2,
             opacity: material.opacity
         }
-    })
+    }
 }
 
 export function disposeArrivalHandoffOverlay(): void {
@@ -150,7 +149,7 @@ export function updateArrivalHandoffOverlay(): void {
     const age = Math.max(0, performance.now() - (state.strandContinuityState.startedAt || performance.now()))
     const opacity = phase === 'exploring' ? 0.5 : MathUtils.clamp(0.5 - Math.max(0, age - 650) / 6200, 0.12, 0.5)
     line.material.opacity = opacity
-    withStateMutation(() => {
+    {
         state.arrivalHandoffDiagnostics = {
             active: true,
             fromIndex,
@@ -160,5 +159,5 @@ export function updateArrivalHandoffOverlay(): void {
             endpointCount: 2,
             opacity
         }
-    })
+    }
 }

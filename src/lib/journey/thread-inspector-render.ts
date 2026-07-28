@@ -15,7 +15,6 @@ import {
     updateInspectedStrandOverlay,
     setInspectedStrandOverlayUpdater
 } from '@lib/engine/journey-webgl-lazy'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 
 // Circular import — resolved at call time in ESM; state functions call
 // renderThreadInspection back.
@@ -81,9 +80,9 @@ export function renderThreadInspection(
             const clearTimerId = appState.canvasThreadInspectionClearTimer
             if (clearTimerId) {
                 window.clearTimeout(clearTimerId)
-                withStateMutation(() => {
+                {
                     appState.canvasThreadInspectionClearTimer = null
-                })
+                }
                 appState.canvasThreadInspectionClearTimer = null
             }
         }
@@ -124,9 +123,9 @@ export function renderThreadInspection(
 
     if (inspectionState?.active && appState.canvasThreadInspectionClearTimer) {
         window.clearTimeout(appState.canvasThreadInspectionClearTimer)
-        withStateMutation(() => {
+        {
             appState.canvasThreadInspectionClearTimer = null
-        })
+        }
         appState.canvasThreadInspectionClearTimer = null
     }
 

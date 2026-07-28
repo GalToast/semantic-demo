@@ -5,7 +5,6 @@
  * Route trace overlay rendering, subscriptions, and frame updates.
  */
 import { appState as state } from '@lib/state/app.svelte'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { ShaderMaterial, AdditiveBlending, Color, BufferGeometry, Float32BufferAttribute, LineSegments } from 'three'
@@ -83,7 +82,7 @@ function buildRouteTraceMaterial(): ShaderMaterial {
 }
 
 export function resetRouteTraceDiagnostics(reason: string = 'inactive'): void {
-    withStateMutation(() => {
+    {
         state.routeTraceDiagnostics = {
             active: false,
             reason,
@@ -95,7 +94,7 @@ export function resetRouteTraceDiagnostics(reason: string = 'inactive'): void {
             mapPointCount: state.routeTraceDiagnostics?.mapPointCount || 0,
             mapPathActive: !!state.routeTraceDiagnostics?.mapPathActive
         }
-    })
+    }
 }
 
 export function removeRouteTraceOverlay(): void {
@@ -133,7 +132,7 @@ export interface RouteChoreographyPayload {
 }
 
 export function setRouteChoreographyPhase(phase: string = 'overview', details: RouteChoreographyDetails = {}): void {
-    withStateMutation(() => {
+    {
         state.routeChoreographyState = {
             ...(state.routeChoreographyState || {}),
             ...details,
@@ -141,7 +140,7 @@ export function setRouteChoreographyPhase(phase: string = 'overview', details: R
             reason: details.reason || state.routeChoreographyState?.reason || 'state',
             startedAt: performance.now()
         }
-    })
+    }
     const canvasContainer = document.getElementById('canvas-container')
     if (canvasContainer) {
         canvasContainer.dataset.routeMotion = state.currentView === 'galaxy' ? phase : 'inactive'
@@ -224,7 +223,7 @@ function _refreshRouteTraceOverlayRaw(options: RouteChoreographyDetails = {}): v
         .filter((index: number) => index !== anchorIndex)
         .map((index: number, order: number) => ({ a: anchorIndex, b: index, side: (order % 3) - 1 }))
     state.myceliumGroup!.add(state.routeTraceLines)
-    withStateMutation(() => {
+    {
         state.routeTraceDiagnostics = {
             active: true,
             reason: String(options.reason || state.routeChoreographyState?.reason || 'route'),
@@ -236,7 +235,7 @@ function _refreshRouteTraceOverlayRaw(options: RouteChoreographyDetails = {}): v
             mapPointCount: state.routeTraceDiagnostics?.mapPointCount || 0,
             mapPathActive: !!state.routeTraceDiagnostics?.mapPathActive
         }
-    })
+    }
     const canvasContainer = document.getElementById('canvas-container')
     if (canvasContainer) {
         canvasContainer.dataset.routeMotion = state.currentView === 'galaxy' ? 'focus' : 'inactive'
@@ -275,9 +274,9 @@ export function updateRouteTraceOverlayPositions(now: number = performance.now()
         material.uniforms.baseOpacity!.value = targetOpacity
         material.uniforms.opacity!.value = targetOpacity
     }
-    withStateMutation(() => {
+    {
         state.routeTraceDiagnostics.segmentCount = getLineSegmentCount(line)
-    })
+    }
 }
 
 export const refreshRouteTraceOverlay = debounceRAF(_refreshRouteTraceOverlayRaw as (...args: unknown[]) => void)

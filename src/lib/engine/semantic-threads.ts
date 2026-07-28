@@ -11,7 +11,6 @@
  * so that production Proxy traps on CRITICAL_KEYS are satisfied.
  */
 
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import { workerUrl } from '@lib/workers/data-worker-url'
 import type { NeighborEntry } from '@lib/workers/data-worker'
 import type {
@@ -358,11 +357,11 @@ async function _guardSemanticSpaceLayout(
     const manifest = rawManifest
     const summary = _validateSemanticSpaceLayoutManifest(manifest, bundle, artifactName)
     const state = getState()
-    withStateMutation(() => {
+    {
         state.semanticSpaceLayoutManifest = manifest
         state.semanticSpaceLayoutStatus = 'ready'
         state.semanticSpaceLayoutError = null
-    })
+    }
     _recordSemanticLaneSnapshot({
         semantic_space_layout_status: 'ready',
         semantic_space_layout_rows: summary.rows,
@@ -523,12 +522,12 @@ function _syncSemanticThreadFailureToStores(errMessage: string): void {
 
 function _clearSemanticThreadsRetryTimer(): void {
     const state = getState()
-    withStateMutation(() => {
+    {
         if (state.semanticThreadsRetryTimer) {
             window.clearTimeout(state.semanticThreadsRetryTimer)
             state.semanticThreadsRetryTimer = null
         }
-    })
+    }
 }
 
 function _scheduleSemanticThreadsRetry(reason = 'artifact-retry'): void {
@@ -537,9 +536,9 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry'): void {
         return
 
     if (typeof state.semanticThreadsRetryAttempt !== 'number') {
-        withStateMutation(() => {
+        {
             state.semanticThreadsRetryAttempt = 0
-        })
+        }
     }
 
     const MAX_RETRIES = 5
@@ -563,26 +562,26 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry'): void {
         thread_retry_wait_until: new Date(Date.now() + delayMs).toISOString()
     })
 
-    withStateMutation(() => {
+    {
         state.semanticThreadsRetryAttempt += 1
         state.semanticThreadsRetryTimer = globalThis.setTimeout(() => {
-            withStateMutation(() => {
+            {
                 state.semanticThreadsRetryTimer = null
-            })
+            }
             loadSemanticThreads({ reason }).catch((err: unknown) => {
                 debugWarn('loadSemanticThreads retry failed:', err)
             })
         }, delayMs)
-    })
+    }
 }
 
 // ── Status mutator ────────────────────────────────────────────────────────────
 
 function _updateSemanticThreadsStatus(status: 'idle' | 'loading' | 'ready' | 'failed'): void {
     const state = getState()
-    withStateMutation(() => {
+    {
         state.semanticThreadsStatus = status
-    })
+    }
 }
 
 // ── Finalize ──────────────────────────────────────────────────────────────────
@@ -609,14 +608,14 @@ function finalizeThreadLoad(): void {
     })
 
     if (state.semanticThreadsStatus !== 'ready') {
-        withStateMutation(() => {
+        {
             state.semanticThreadsLoadPromise = null
-        })
+        }
         _scheduleSemanticThreadsRetry('empty-artifact')
     } else {
-        withStateMutation(() => {
+        {
             state.semanticThreadsRetryAttempt = 0
-        })
+        }
     }
 
     _refreshFocusedSemanticState()
@@ -711,11 +710,11 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
                 })
                 const { manifest } = await _guardSemanticSpaceLayout(bundle, artifactName, cacheBust)
                 const neighborMap = new Map(normalizeSemanticNeighborEntries(neighborEntries))
-                withStateMutation(() => {
+                {
                     state.semanticThreadBundle = bundle
                     state.semanticThreadArtifactName = artifactName
                     state.semanticNeighborMapByLeadId = neighborMap
-                })
+                }
                 _syncSemanticThreadDataToStores(bundle, artifactName, neighborMap, manifest)
                 finalizeThreadLoad()
                 return true
@@ -729,14 +728,14 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
         } catch (error) {
             debugWarn('Failed to load semantic thread artifact; using geometric fallback.', error)
             const errMessage = error instanceof Error ? error.message : String(error)
-            withStateMutation(() => {
+            {
                 state.semanticThreadBundle = null
                 state.semanticThreadArtifactName = null
                 state.semanticSpaceLayoutManifest = null
                 state.semanticSpaceLayoutStatus = 'failed'
                 state.semanticSpaceLayoutError = errMessage
                 state.semanticNeighborMapByLeadId = new Map()
-            })
+            }
             _updateSemanticThreadsStatus('failed')
             state.semanticThreadsLoadPromise = null
             _recordSemanticLaneSnapshot({
@@ -754,9 +753,9 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
         }
     })()
 
-    withStateMutation(() => {
+    {
         state.semanticThreadsLoadPromise = loadPromise
-    })
+    }
 
     return loadPromise
 }

@@ -36,7 +36,6 @@ import { CONFIG, FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config'
 import { appState } from '@lib/state/app.svelte'
 import type { NodePosition, ConstellationMotifName, ConstellationMotif } from '@lib/state/state-types'
 const state = appState
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import { webglContext } from '@lib/engine/webgl-context'
 
 // ── Local selectors (replacing js/state/selectors/index.ts imports) ─────────
@@ -321,7 +320,7 @@ export function syncInspectedStrandOverlay(
         })
     }
     updateInspectedStrandEndpointSprites()
-    withStateMutation(() => {
+    {
         state.focusState.inspectedStrandDiagnostics = {
             active: true,
             source:
@@ -335,7 +334,7 @@ export function syncInspectedStrandOverlay(
             endpointCount: 2,
             pinned: getPinnedThreadIndex() === inspectionState.index
         }
-    })
+    }
 }
 
 export function updateInspectedStrandOverlay(now: number = performance.now()): void {
@@ -372,7 +371,7 @@ export function updateInspectedStrandOverlay(now: number = performance.now()): v
 export function disposeInspectedStrandOverlay(): void {
     const strandGroup = getInspectedStrandGroup()
     if (!strandGroup) {
-        withStateMutation(() => {
+        {
             state.focusState.inspectedStrandDiagnostics = {
                 active: false,
                 source: 'none',
@@ -382,7 +381,7 @@ export function disposeInspectedStrandOverlay(): void {
                 braidCount: 0,
                 endpointCount: 0
             }
-        })
+        }
         return
     }
     const scene = getScene()
@@ -396,7 +395,7 @@ export function disposeInspectedStrandOverlay(): void {
         if (obj.material) obj.material.dispose()
     })
     setInspectedStrandGroup(null)
-    withStateMutation(() => {
+    {
         state.focusState.inspectedStrandDiagnostics = {
             active: false,
             source: 'none',
@@ -406,5 +405,5 @@ export function disposeInspectedStrandOverlay(): void {
             braidCount: 0,
             endpointCount: 0
         }
-    })
+    }
 }

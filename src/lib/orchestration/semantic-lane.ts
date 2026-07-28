@@ -9,7 +9,6 @@
  * Ported from (Wave H, W15).
  */
 import { appState as _state } from '@lib/state/app.svelte'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 const state = _state
 import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback } from '@lib/utils/ui-presentation'
 import { debugWarn } from '@lib/utils/debug'
@@ -83,9 +82,9 @@ function getDocument(): Document | null {
 // ── Inline state-mutator (only consumer of updateSemanticLaneState) ────────
 
 function updateSemanticLaneState(newState: string): void {
-    withStateMutation(() => {
+    {
         state.semanticLaneState = newState
-    })
+    }
 }
 
 // ── Health Fetch ───────────────────────────────────────────────────────────

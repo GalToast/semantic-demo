@@ -7,7 +7,6 @@
 
 import { get } from 'svelte/store'
 import { appState as state } from '@lib/state/app.svelte'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 
 import { engineStatusStore } from '@lib/stores/engine.svelte.ts'
 
@@ -155,7 +154,7 @@ subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
 })
 
 export function initJourneyState(): void {
-    withStateMutation(() => {
+    {
         state.trailIndices = state.trailIndices ?? new Set<number>()
         state.focusState.inspectedThreadIndex ??= null
         state.focusState.pinnedThreadIndex ??= null
@@ -201,7 +200,7 @@ export function initJourneyState(): void {
         state.semanticDiveMode ??= false
         state.focusState.pocketTransitionStartedAt ??= 0
         state.focusState.pocketMotionByIndex ??= new Map()
-    })
+    }
 }
 
 globalThis.queueMicrotask(() => {
@@ -242,9 +241,9 @@ function restoreFocusTrailState(priorFocused: number | null = state.focusedNode)
 
     publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused! })
 
-    withStateMutation(() => {
+    {
         state.navState.lastTraversalReason = state.navState?.lastTraversalReason || null
-    })
+    }
     updateTrailIndices(priorFocused!)
     refreshFocusSemanticOverlay()
     applyLocalNeighborhoodFocus(priorFocused!)

@@ -14,7 +14,6 @@
 import { Vector3 } from 'three'
 import type { PocketMotion, PocketMotionWithFrame, FocusPocketMeta } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { focusStore, writeFocusPocketMirror } from '@lib/stores/focus.svelte'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
@@ -570,7 +569,7 @@ export function syncRuntimeState(snapshot: Record<string, unknown>): void {
         nodesAreSettling: boolean
         autoRotate: boolean
     }>
-    withStateMutation(() => {
+    {
         if (s.navState !== undefined) appState.navState = s.navState
         if (s.targetPositions !== undefined) appState.targetPositions = s.targetPositions
         if (s.pocketMotionByIndex !== undefined) appState.focusState.pocketMotionByIndex = s.pocketMotionByIndex
@@ -578,7 +577,7 @@ export function syncRuntimeState(snapshot: Record<string, unknown>): void {
             appState.focusState.pocketTransitionStartedAt = s.pocketTransitionStartedAt
         if (s.nodesAreSettling !== undefined) appState.focusState.nodesAreSettling = s.nodesAreSettling
         if (s.autoRotate !== undefined) appState.autoRotate = s.autoRotate
-    })
+    }
 }
 
 // ── Pocket Node Sync ─────────────────────────────────────────────────────────

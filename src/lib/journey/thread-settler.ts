@@ -17,7 +17,6 @@ import { navStore, dispatchNavTransition, writeNavStateMirror } from '@lib/store
 import { appState } from '@lib/state/app.svelte.ts'
 import { getBusinessRecords } from '@lib/data-store'
 
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import {
     getCurrentTrailFocusIndex,
     isBoundedNeighborhoodActive,
@@ -241,7 +240,7 @@ export class ThreadSettler {
             (candidate && typeof candidate === 'object' ? candidate.reason : null) ||
             'nearby business relationship'
 
-        withStateMutation(() => {
+        {
             appState.focusState.pinnedThreadIndex = null
             appState.focusState.inspectedThreadIndex = null
             // H4 fix (Jul-10 bugsweep): suppress logic was inverted — it set
@@ -253,7 +252,7 @@ export class ThreadSettler {
                 appState.suppressCanvasFocusUntil =
                     typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200
             }
-        })
+        }
 
         appState.focusState.pinnedThreadIndex = null
         appState.focusState.inspectedThreadIndex = null
@@ -302,12 +301,12 @@ export class ThreadSettler {
             walkHistoryIndices: nextHistory,
             lastTraversalReason: reason
         })
-        withStateMutation(() => {
+        {
             appState.focusedNode = index
             appState.trailDepth = Math.max(1, Number(appState.trailDepth) || 0)
             appState.focusState.inspectedThreadIndex = null
             appState.focusState.pinnedThreadIndex = null
-        })
+        }
 
         const reassertThreadTarget = (): void => {
             const point = index >= 0 && index < records.length ? records[index] : null
@@ -324,7 +323,7 @@ export class ThreadSettler {
                 walkHistoryIndices: reassertHistory,
                 lastTraversalReason: reason
             })
-            withStateMutation(() => {
+            {
                 appState.focusedNode = index
                 appState.focusState.selectedPoint = (point ||
                     appState.focusState.selectedPoint ||
@@ -332,7 +331,7 @@ export class ThreadSettler {
                 appState.trailDepth = Math.max(1, Number(appState.trailDepth) || 0)
                 appState.focusState.inspectedThreadIndex = null
                 appState.focusState.pinnedThreadIndex = null
-            })
+            }
             syncFocusStage(point || appState.focusState.selectedPoint || null)
             syncSemanticDiveUi()
             updateJourneyCompass()

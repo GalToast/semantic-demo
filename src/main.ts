@@ -394,7 +394,7 @@ function createTestCompatProxy(): Record<string, unknown> {
                 // Also write to Svelte appState so tests that target the
                 // Svelte build see their mutations reflected in the UI.
                 if (appState) {
-                    withStateMutation(() => {
+                    {
                         if (prop === 'weatherState') {
                             appState.weatherState = value as {
                                 weather: WeatherData | null
@@ -436,7 +436,7 @@ function createTestCompatProxy(): Record<string, unknown> {
                         } else if (prop === 'searchState' && value && typeof value === 'object') {
                             Object.assign(appState.searchState, value)
                         }
-                    })
+                    }
                 }
                 return true
             },

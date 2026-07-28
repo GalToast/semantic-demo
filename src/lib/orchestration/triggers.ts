@@ -46,7 +46,6 @@ import { addTrailStop, setThreadCandidates, setTrailDepth, setTrailNeighborIndic
 import { getBusinessRecords } from '@lib/data-store'
 import { appState, legacyState } from '@lib/state/app.svelte.ts'
 import { buildNeighborhoodManifest, getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import {
     bindSearchResultInteractions,
     getPendingFocusTransitionToken,
@@ -223,7 +222,7 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
         threadReasonByIndex,
         threadSource
     })
-    withStateMutation(() => {
+    {
         // legacyState.navState is `NavState | null`; withStateMutation guarantees
         // the state is initialized, so the structural cast is safe. We only write
         // 5 fields here; the inline shape uses a loose threadCandidates element
@@ -246,7 +245,7 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
         }))
         nav.threadReasonByIndex = threadReasonByIndex
         nav.threadSource = threadSource
-    })
+    }
     // Add the focused node as the first trail stop so MapSummary
     // (which gates on hasTrail() && trail.length > 0) renders.
     // Guard against duplicate trail stops when SEARCH_FOCUS_REQUESTED re-fires

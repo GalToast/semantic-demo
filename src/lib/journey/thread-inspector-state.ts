@@ -29,7 +29,6 @@ import {
     cancelAllThreadTimers
 } from '@lib/journey/thread-settler'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 
 // Circular import — resolved at call time in ESM; render calls
 // scheduleCanvasThreadInspectionClear and getThreadInspectionState back.
@@ -271,9 +270,9 @@ export function pinThreadNeighbor(index: number, options: ThreadInspectionOption
 
     if (appState.canvasThreadInspectionClearTimer) {
         window.clearTimeout(appState.canvasThreadInspectionClearTimer)
-        withStateMutation(() => {
+        {
             appState.canvasThreadInspectionClearTimer = null
-        })
+        }
         appState.canvasThreadInspectionClearTimer = null
     }
 
@@ -343,9 +342,9 @@ export function pinFirstAvailableNeighbor(options: ThreadInspectionOptions = {})
 export function unpinThreadInspection(): ThreadInspectionState | null {
     if (appState.canvasThreadInspectionClearTimer) {
         window.clearTimeout(appState.canvasThreadInspectionClearTimer)
-        withStateMutation(() => {
+        {
             appState.canvasThreadInspectionClearTimer = null
-        })
+        }
         appState.canvasThreadInspectionClearTimer = null
     }
     appState.focusState.pinnedThreadIndex = null
@@ -396,9 +395,9 @@ export function clearThreadInspection(options: ThreadInspectionOptions = {}): Th
     try {
         if (options.force && appState.canvasThreadInspectionClearTimer) {
             window.clearTimeout(appState.canvasThreadInspectionClearTimer)
-            withStateMutation(() => {
+            {
                 appState.canvasThreadInspectionClearTimer = null
-            })
+            }
             appState.canvasThreadInspectionClearTimer = null
         }
         if (options.force) {

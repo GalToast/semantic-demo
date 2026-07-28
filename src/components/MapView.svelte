@@ -12,7 +12,6 @@
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { updateUrlState } from '@lib/orchestration/url-state';
   import { appState } from '@lib/state/app.svelte';
-  import { withStateMutation } from '@lib/state/with-state-mutation';
   import { debugWarn } from '@lib/utils/debug'
   import { DisposableRegistry } from '@lib/utils/disposable-registry'
   import { friendlyErrorMessage } from '@lib/utils/error-messages'
@@ -98,7 +97,7 @@
    * type contract and bypassing the `withStateMutation()` guard semantics.
    */
   function setLegacyView(view: 'galaxy' | 'map'): void {
-    withStateMutation(() => {
+    {
       // W49-F: capture the previous view BEFORE the mutation so the
       // VIEW_CHANGED payload can carry it. writeNavStateMirror takes
       // the same shape; see src/lib/stores/navigation.svelte.ts.
@@ -113,7 +112,7 @@
           myceliumMode: appState.myceliumMode || undefined
         })
       }
-    });
+    }
   }
 
   function deactivateMapShell(): void {

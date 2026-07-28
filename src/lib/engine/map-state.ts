@@ -6,7 +6,6 @@
  * terrain handoff, and route director state synchronization.
  */
 import { appState } from '@lib/state/app.svelte.ts'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import type { Point, ActiveFilters } from '@lib/state/state-types'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data'
@@ -633,7 +632,7 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
     const normalizedPhase = String(phase || 'idle').replace(/[^a-z0-9-]/gi, '') || 'idle'
     const routeCount = Number.isFinite(options.routeCount) ? options.routeCount : getRouteEmbodimentIndices().length
 
-    withStateMutation(() => {
+    {
         appState.terrainHandoffState = {
             phase: normalizedPhase,
             from: options.from || appState.terrainHandoffState?.from || 'overview',
@@ -641,7 +640,7 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
             routeCount: routeCount!,
             startedAt: performance.now()
         }
-    })
+    }
 
     // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles terrainHandoff sync.
     // The additional terrainHandoffFrom/To/RouteCount attrs are not used by CSS or JS readers.

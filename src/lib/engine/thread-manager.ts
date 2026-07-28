@@ -16,7 +16,6 @@ import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeome
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { appState as state } from '@lib/state/app.svelte'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 import { CONFIG } from './config'
 import { disposeObject3D } from './resource-tracker'
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
@@ -591,11 +590,11 @@ export async function createMycelium() {
     if (!webglContext.scene) return
     webglContext.pointsMesh.add(webglContext.myceliumGroup)
 
-    withStateMutation(() => {
+    {
         state.scenePerformanceDiagnostics.myceliumCoreSegments = coreConnections.length / 6
         state.scenePerformanceDiagnostics.myceliumWispySegments = wispyConnections.length / 6
         state.scenePerformanceDiagnostics.myceliumBridgeSegments = bridgeConnections.length / 6
-    })
+    }
 
     // LineMaterial.resolution must match the drawing buffer size or the
     // screen-space linewidth shader (offset /= resolution.y) produces lines
