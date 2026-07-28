@@ -558,7 +558,7 @@ export function getRuntimeStateSnapshot(): Record<string, unknown> {
 /**
  * Restore runtime state from a snapshot produced by getRuntimeStateSnapshot().
  * Only fields present in the snapshot are restored — callers control partial
- * restoration. Writes go through withStateMutation so dependents update.
+ * restoration. Writes are direct; dependents update via appState's Proxy reactivity.
  */
 export function syncRuntimeState(snapshot: Record<string, unknown>): void {
     const s = snapshot as Partial<{

@@ -94,7 +94,7 @@
    * accepts the write without any cast. The previous `as unknown as RuntimeState`
    * cast was dishonest — it widened `currentView` from a 5-value union to
    * `string` via a locally-fabricated `RuntimeState` interface, hiding the
-   * type contract and bypassing the `withStateMutation()` guard semantics.
+   * type contract.
    */
   function setLegacyView(view: 'galaxy' | 'map'): void {
     {

@@ -7,8 +7,9 @@
  * populating state.semanticNeighborMapByLeadId.  Uses a Web Worker for parsing when
  * available, falling back to main-thread fetch+JSON.
  *
- * All state writes are wrapped in withStateMutation() from the extracted TS guard
- * so that production Proxy traps on CRITICAL_KEYS are satisfied.
+ * State writes are direct, not wrapped in withStateMutation() — that legacy wrapper
+ * was a runtime no-op (_isMutatingRef is read nowhere; app.svelte.ts's Proxy validates
+ * via STATE_VALIDATORS, not the old CRITICAL_KEYS traps). See src/lib/state/with-state-mutation.ts.
  */
 
 import { workerUrl } from '@lib/workers/data-worker-url'

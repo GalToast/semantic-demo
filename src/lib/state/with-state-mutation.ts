@@ -3,9 +3,12 @@
 //
 // DEPRECATED (2026-07-27): The new app.svelte.ts Proxy does NOT read _isMutatingRef —
 // its validateStateProperty function checks STATE_VALIDATORS independently.
-// withStateMutation() provides zero functional benefit in the new system.
-// All call sites have been unwrapped. This module is kept for backward compat
-// (js/state.js re-exports from here) but should not be used in new code.
+// withStateMutation() provides zero functional benefit in the new system: the
+// wrapper just invokes its callback and returns the result (see implementation at
+// the bottom of this file). Existing call sites still work — they are no-op-correct —
+// but should not be added in new code. ~17 non-engine files still call it and are
+// being unwrapped incrementally; src/lib/engine/* keeps its engineState.withStateMutation
+// binding intentionally. js/state.js still re-exports from here for backward compat.
 
 // ── Key Sets ─────────────────────────────────────────────────────────────────
 // CRITICAL_KEYS: top-level properties that throw on direct mutation outside withStateMutation().
