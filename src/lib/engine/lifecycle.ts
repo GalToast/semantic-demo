@@ -81,7 +81,6 @@ function getLegacyWindow(): Record<string, unknown> {
 // ── Module-scoped State ──────────────────────────────────────────────────────
 
 let _eventUnsubs: Array<() => void> = []
-let _sceneReadyHandler: (() => void) | null = null
 let _canvasInteractionBound = false
 let _destroyed = false
 let _dataReadyUnsub: (() => void) | null = null
@@ -162,10 +161,14 @@ function bindEventBridge(callbacks: EngineCallbacks): void {
         debugWarn('[engine/lifecycle] Event bus subscription failed:', busErr)
     }
 
-    _sceneReadyHandler = (): void => {
-        callbacks.onLoadingPhase?.('launch', 1)
-    }
-    window.addEventListener('scene-ready', _sceneReadyHandler as EventListener)
+    // lifecycle no longer self-listens for the 'scene-ready' window event. The
+    // direct `callbacks.onLoadingPhase?.('launch', 1)` call at the end of
+    // initEngineHeavy is the single in-process scene-ready signal (Canvas.svelte
+    // reads it via the callbacks object, not the window event). The window event
+    // is still dispatched for legacy/external window-level listeners only;
+    // converting it back into onLoadingPhase here caused a duplicate 'launch'
+    // fire (two "Canvas: Scene ready" logs at the same ms) and a double
+    // signalSceneReady() — which re-triggers DemoChoreography attemptStart.
 }
 
 /** Tear down all event-bus and DOM event subscriptions. */
@@ -178,11 +181,6 @@ function unbindEventBridge(): void {
         }
     }
     _eventUnsubs = []
-
-    if (_sceneReadyHandler) {
-        window.removeEventListener('scene-ready', _sceneReadyHandler as EventListener)
-        _sceneReadyHandler = null
-    }
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -402,11 +400,12 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         // 12. Mark ready
         setEngineStatus('ready')
 
-        // 13. Notify Canvas.svelte and other consumers that the scene is ready.
-        //     bindEventBridge wires a listener for 'scene-ready', but nothing
-        //     on the new path dispatches it. We fire both the direct callback
-        //     and the window event so both in-process callers and legacy
-        //     listeners receive the signal.
+        // 13. Notify Canvas.svelte (and other consumers) that the scene is ready.
+        //     The direct onLoadingPhase('launch') call below is the SINGLE source
+        //     of the in-process signal — lifecycle no longer self-listens for the
+        //     'scene-ready' window event (that caused a duplicate 'launch' fire
+        //     and double signalSceneReady()). The window event dispatched just
+        //     below is retained for any legacy/external window-level listeners only.
         if (typeof performance?.mark === 'function') {
             performance.mark('engine-init-ready')
             try {
