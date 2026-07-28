@@ -13,80 +13,85 @@
  *   z-index: var(--z-search);
  */
 export const Z_LAYERS = {
-  /** Three.js WebGL canvas and base scene */
-  canvas: 0,
+    /** Three.js WebGL canvas and base scene */
+    canvas: 0,
 
-  /** Field nodes (point instanced mesh) */
-  fieldNodes: 10,
+    /** Field nodes (point instanced mesh) */
+    fieldNodes: 10,
 
-  /** Thread/mycelium lines */
-  threads: 20,
+    /** Thread/mycelium lines */
+    threads: 20,
 
-  /** Semantic manifold and lens overlays */
-  overlays: 30,
+    /** Semantic manifold and lens overlays */
+    overlays: 30,
 
-  /** Legend panel */
-  legend: 50,
+    /** Legend panel */
+    legend: 50,
 
-  /** Search trail cue (mobile) — above canvas/threads, below interactive chrome */
-  trailCue: 50,
+    /** Search trail cue (mobile) — above canvas/threads, below interactive chrome */
+    trailCue: 50,
 
-  /** Mobile focus bottom-sheet card — below panels so the a11y toggle wins */
-  focusStageCard: 70,
+    /** Mobile focus bottom-sheet card — below panels so the a11y toggle wins */
+    focusStageCard: 70,
 
-  /** Info panel and side panels */
-  panels: 80,
+    /** Info panel and side panels */
+    panels: 80,
 
-  /** Elevated panels (popovers, dropdowns) */
-  panelsElevated: 90,
+    /** Elevated panels (popovers, dropdowns) */
+    panelsElevated: 90,
 
-  /** Search input and results */
-  search: 100,
+    /** Search input and results */
+    search: 100,
 
-  /** Focus neighbor rail — above search, below journey chrome */
-  neighborRail: 110,
+    /** Focus neighbor rail — above search, below journey chrome */
+    neighborRail: 110,
 
-  /** Journey chrome (compass, breadcrumb, step indicators) */
-  journeyChrome: 200,
+    /** Journey chrome (compass, breadcrumb, step indicators) */
+    journeyChrome: 200,
 
-  /** Active journey trail visualization */
-  journeyActive: 500,
+    /** Active journey trail visualization */
+    journeyActive: 500,
 
-  /** Focus pocket card */
-  focusCard: 600,
+    /** Focus pocket card */
+    focusCard: 600,
 
-  /** Compass rail */
-  compass: 700,
+    /** Compass rail */
+    compass: 700,
 
-  /** Camera/interaction controls */
-  controls: 800,
+    /** Camera/interaction controls */
+    controls: 800,
 
-  /** Journey blocking overlay (prevents interaction during transitions) */
-  journeyBlock: 900,
+    /** Journey blocking overlay (prevents interaction during transitions) */
+    journeyBlock: 900,
 
-  /** Generic blocker (modal backdrop, loading gate) */
-  blocker: 1000,
+    /** Generic blocker (modal backdrop, loading gate) */
+    blocker: 1000,
 
-  /** Inside-walk HUD bars (status/controls) — above blocker, below toasts */
-  insideWalk: 1100,
+    /** Inside-walk HUD bars (status/controls) — above blocker, below toasts */
+    insideWalk: 1100,
 
-  /** Journey modal (trail review, etc.) */
-  journeyModal: 2000,
+    /** Journey modal (trail review, etc.) */
+    journeyModal: 2000,
 
-  /** Loading overlay (highest priority — on top of everything; matches --z-max ceiling) */
-  loading: 9999,
+    /** Loading overlay (highest priority — on top of everything; matches --z-max ceiling) */
+    loading: 9999,
 
-  /** Click-pulse interaction ring — just below the max tooltip layer */
-  canvasInteraction: 9998
-} as const;
+    /** Click-pulse interaction ring — just below the max tooltip layer */
+    canvasInteraction: 9998
+
+    // NOTE: ~23 additional CSS-only z-index layers exist in @lib/css/z-layers.css
+    // (e.g., --z-base, --z-chrome, --z-overlay-*, --z-toast, --z-devtools,
+    // --z-canvas-hover). This TS object covers layers used in TypeScript; CSS-only
+    // layers are documented in z-layers.css :root. Keep both in sync.
+} as const
 
 /** Z-index layer key type for type-safe access */
-export type ZLayerKey = keyof typeof Z_LAYERS;
+export type ZLayerKey = keyof typeof Z_LAYERS
 
 /**
  * Get a z-index value by layer name.
  * Useful when the layer name is dynamic (e.g., from a config).
  */
 export function getZIndex(layer: ZLayerKey): number {
-  return Z_LAYERS[layer];
+    return Z_LAYERS[layer]
 }

@@ -36,6 +36,9 @@
     /* Field nodes */
     --z-field-nodes: 10;
 
+    /* Thread/mycelium lines — mirrors Z_LAYERS.threads */
+    --z-threads: 20;
+
     /* Semantic manifold and lens overlays */
     --z-overlays: 30;
 

@@ -224,7 +224,7 @@
       filedAs: '',
       showFiledAs: false,
       what: 'Click a business on the map to explore.',
-      role: 'Record',
+      role: 'Listing',
       theme: 'Theme',
       status: 'Record status',
       trivia: '',

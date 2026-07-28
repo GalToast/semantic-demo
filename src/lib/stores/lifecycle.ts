@@ -233,11 +233,15 @@ export function resetExplorationFocus(options?: {
         legacyState.semanticDiveMode = false
         legacyState.focusedNode = null
         if (legacyState.navState) {
-            legacyState.navState.trailDepth = 0
-            legacyState.navState.walkHistoryIndices = []
-            legacyState.navState.threadCandidates = []
-            legacyState.navState.trailNeighborIndices = []
-            writeNavStateMirror({ focusedIndex: null, surface: 'idle', mode: 'overview' })
+            writeNavStateMirror({
+                focusedIndex: null,
+                surface: 'idle',
+                mode: 'overview',
+                trailDepth: 0,
+                walkHistoryIndices: [],
+                threadCandidates: [],
+                trailNeighborIndices: []
+            })
         }
     }
 

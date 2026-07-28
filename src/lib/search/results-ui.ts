@@ -514,7 +514,7 @@ export function updateSearchStatusMessage(matchCount: number | null = null): voi
 
 function dedupeNearDuplicateResults(results: SearchResult[]): SearchResult[] {
     if (!Array.isArray(results) || results.length < 2) return results
-    const seen = new Map<string, SearchResult>()
+    const seen = new Map<string, { result: SearchResult; index: number }>()
     const out: SearchResult[] = []
     for (const result of results) {
         if (!result?.point) {
@@ -528,14 +528,15 @@ function dedupeNearDuplicateResults(results: SearchResult[]): SearchResult[] {
         }
 
         if (seen.has(key)) {
-            const existing = seen.get(key)!
-            if (result.score > existing.score) {
-                out[out.indexOf(existing)] = result
-                seen.set(key, result)
+            const entry = seen.get(key)!
+            if (result.score > entry.result.score) {
+                out[entry.index] = result
+                seen.set(key, { result, index: entry.index })
             }
         } else {
+            const index = out.length
             out.push(result)
-            seen.set(key, result)
+            seen.set(key, { result, index })
         }
     }
     return out

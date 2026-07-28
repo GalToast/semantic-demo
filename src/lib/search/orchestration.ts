@@ -34,7 +34,8 @@ import {
     isRequestCurrent,
     incrementFocusTransitionToken,
     clearSearch,
-    setActiveResult
+    setActiveResult,
+    withSearchNotify
 } from '@lib/stores/search.svelte'
 import { performSearch } from '@lib/search-engine'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
@@ -165,9 +166,11 @@ export async function search(query: string, options: SearchOptions = {}): Promis
 
     const replacingPriorQuery = searchStore().summary?.query && searchStore().summary!.query !== trimmedQuery
     if (replacingPriorQuery) {
-        setSearchSummary(null)
-        setAnchorIndex(null)
-        setPreviewIndex(null)
+        withSearchNotify(() => {
+            setSearchSummary(null)
+            setAnchorIndex(null)
+            setPreviewIndex(null)
+        })
     }
 
     // Clear exploration focus if needed
@@ -257,7 +260,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
             publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point: results[0]!.point, index: soleIndex })
         }
         statusEl.textContent = `1 match for "${trimmedQuery}" — ${soleName} is the only record.`
-        setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false })
+        setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true })
         return
     }
 

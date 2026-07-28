@@ -2,7 +2,7 @@
   /**
    * @lib/components/focus/SelectedMatchNarrative.svelte — Selected match narrative panel
    *
-   * Renders the "Why this record" narrative shown when a business is selected via
+   * Renders the "Why this listing" narrative shown when a business is selected via
    * search or focus. Extracted from SelectedBusinessDetails.svelte for component
    * separation and contract-test ownership boundaries.
    *
@@ -28,7 +28,7 @@
     class="selected-match-panel"
     id="{idPrefix}selected-match-panel"
   >
-    <div class="selected-match-label" id="{idPrefix}selected-match-label">Why this record</div>
+    <div class="selected-match-label" id="{idPrefix}selected-match-label">Why this listing</div>
     <div class="selected-match-copy" id="{idPrefix}selected-match-copy">{matchNarrative}</div>
   </div>
 {/if}

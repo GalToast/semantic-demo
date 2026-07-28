@@ -186,7 +186,7 @@ function _readJourneyFromAppState(): JourneyStoreState {
     const walkIndices = finiteIndexList(navState.walkHistoryIndices)
     return {
         ...INITIAL_JOURNEY,
-        ...$state.snapshot(navState),
+        ...navState,
         phase: navState.mode,
         trail: walkIndices.map((index) => ({ index }) as TrailStop),
         cursor: navState.trailCursor,

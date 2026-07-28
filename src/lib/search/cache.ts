@@ -25,7 +25,10 @@ export interface SearchCacheKey {
 
 /** String form of the cache key for Map lookup. */
 function cacheKeyToString(key: SearchCacheKey): string {
-    return `${key.query}\0${key.page}\0${key.offset}`
+    // Bug #4 (bugsweep): use only effective offset in the cache key.
+    // Different (page, offset) pairs that normalize to the same offset
+    // produce the same API call, so the cache key must not distinguish them.
+    return `${key.query}\0${key.offset}`
 }
 
 // ── Hash Helper ──────────────────────────────────────────────────────────────

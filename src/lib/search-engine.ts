@@ -289,7 +289,17 @@ async function _executeSearch(
             if (err instanceof DOMException && err.name === 'AbortError') {
                 throw err
             }
-            throw err
+            // Bug #6 (bugsweep): fall through to local index instead of
+            // propagating an uncaught error. Contract tests with ?staticDev=0
+            // now get meaningful local-index results instead of empty arrays.
+            debugWarn('[search-engine] staticDev=0 API failure, falling back to local index:', err)
+        }
+        // Local index fallback (shared by both staticDev=0 and normal paths)
+        if (results.length === 0) {
+            const localHits = performLocalIndexSearch(trimmed, offset, limit)
+            if (localHits && localHits.length > 0) {
+                results = localHitsToResults(localHits)
+            }
         }
     } else {
         // Try the live API first. If `VITE_USE_LIVE_SEARCH` is enabled, the API
