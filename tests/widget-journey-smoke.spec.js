@@ -13,16 +13,18 @@ import { BASE_URL } from './helpers/3d-interaction-helpers.js'
 
 test.afterEach(async ({ page }) => {
     try {
-        await page.evaluate(() => {
-            const canvas = document.querySelector('canvas')
-            if (canvas) {
-                const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
-                if (gl && !gl.isContextLost()) {
-                    const ext = gl.getExtension('WEBGL_lose_context')
-                    if (ext) ext.loseContext()
+        await page
+            .evaluate(() => {
+                const canvas = document.querySelector('canvas')
+                if (canvas) {
+                    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+                    if (gl && !gl.isContextLost()) {
+                        const ext = gl.getExtension('WEBGL_lose_context')
+                        if (ext) ext.loseContext()
+                    }
                 }
-            }
-        }).catch(() => {})
+            })
+            .catch(() => {})
         await page.waitForTimeout(150)
     } catch {
         /* best-effort cleanup */
