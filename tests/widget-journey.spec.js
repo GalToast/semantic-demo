@@ -3859,17 +3859,21 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.click('.mode-chip[data-mode="search"]', { force: true })
         await page.waitForTimeout(500)
 
-        const searchInput = page.locator('#search-input, input[placeholder*="Search"], input[placeholder*="search"]').first()
+        const searchInput = page
+            .locator('#search-input, input[placeholder*="Search"], input[placeholder*="search"]')
+            .first()
         await searchInput.waitFor({ state: 'visible', timeout: 10000 })
         await searchInput.fill('coffee')
         await page.waitForTimeout(2000)
 
         const scores = await page.evaluate(() => {
             const results = Array.from(document.querySelectorAll('.search-result, [data-result-score]'))
-            return results.map((r) => {
-                const score = r.getAttribute('data-result-score')
-                return score ? parseFloat(score) : null
-            }).filter((s) => s !== null)
+            return results
+                .map((r) => {
+                    const score = r.getAttribute('data-result-score')
+                    return score ? parseFloat(score) : null
+                })
+                .filter((s) => s !== null)
         })
 
         for (const s of scores) {

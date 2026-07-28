@@ -138,8 +138,6 @@ export function setPremiumMode(enabled: boolean): void {
         initPostProcessing(_rendererRef, _sceneRef, _cameraRef)
     }
 
-
-
     // Enable/disable all passes in the composer
     if (_composer) {
         for (const pass of _composer.passes) {
@@ -167,13 +165,17 @@ export function initPostProcessing(renderer: WebGLRenderer, scene: Scene, camera
     // Expose API on window for DevGui bridge even when the heavy composer is
     // deferred. The composer is created lazily by setPremiumMode(true).
     if (typeof window !== 'undefined') {
-        window.__semanticPostprocessing = {
-            setPremiumMode,
-            updateBloomParams,
-            updateVignetteParams,
-            updateChromaticAberrationParams,
-            setDofEnabled,
-            isPremiumMode
+        try {
+            window.__semanticPostprocessing = {
+                setPremiumMode,
+                updateBloomParams,
+                updateVignetteParams,
+                updateChromaticAberrationParams,
+                setDofEnabled,
+                isPremiumMode
+            }
+        } catch (err) {
+            debugWarn('[postprocessing] window.__semanticPostprocessing assignment failed:', err)
         }
     }
 
@@ -237,18 +239,6 @@ export function initPostProcessing(renderer: WebGLRenderer, scene: Scene, camera
         _composer.addPass(ditherPass)
 
         _initialized = true
-
-        // Expose API on window for DevGui bridge
-        if (typeof window !== 'undefined') {
-            window.__semanticPostprocessing = {
-                setPremiumMode,
-                updateBloomParams,
-                updateVignetteParams,
-                updateChromaticAberrationParams,
-                setDofEnabled,
-                isPremiumMode
-            }
-        }
 
         debugInfo('[postprocessing] initialized — vignette + CA + bloom + DOF ready')
     } catch (err) {

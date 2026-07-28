@@ -1,5 +1,11 @@
 // with-state-mutation.ts — typed extraction of the state mutation guard and key sets.
 // Extracted from js/state.js for TS migration. The JS shim re-exports from here.
+//
+// DEPRECATED (2026-07-27): The new app.svelte.ts Proxy does NOT read _isMutatingRef —
+// its validateStateProperty function checks STATE_VALIDATORS independently.
+// withStateMutation() provides zero functional benefit in the new system.
+// All call sites have been unwrapped. This module is kept for backward compat
+// (js/state.js re-exports from here) but should not be used in new code.
 
 // ── Key Sets ─────────────────────────────────────────────────────────────────
 // CRITICAL_KEYS: top-level properties that throw on direct mutation outside withStateMutation().
