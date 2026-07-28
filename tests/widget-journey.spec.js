@@ -1,6 +1,31 @@
 import { test, expect } from '@playwright/test'
 import { BASE_URL } from './helpers/3d-interaction-helpers.js'
 
+// GPU cleanup between tests: close the entire browser context to force-release
+// the WebGL rendering context and GPU memory from the prior test's engine init.
+// Navigating to about:blank alone does not release GPU allocations because the
+// browser's GPU process retains them. Closing the context destroys the page and
+// its associated GPU resources, giving the next test a clean canvas.
+test.afterEach(async ({ page }) => {
+    try {
+        // Force-destroy the WebGL context so the GPU process can reclaim memory.
+        await page.evaluate(() => {
+            const canvas = document.querySelector('canvas')
+            if (canvas) {
+                const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+                if (gl && !gl.isContextLost()) {
+                    const ext = gl.getExtension('WEBGL_lose_context')
+                    if (ext) ext.loseContext()
+                }
+            }
+        }).catch(() => {})
+        // Brief settle for the GPU process to reclaim resources.
+        await page.waitForTimeout(200)
+    } catch {
+        // Cleanup is best-effort — don't mask the real test failure.
+    }
+})
+
 test.describe('Widget journey', () => {
     test('5g. Focus-panel facts separator is aria-hidden (W47 audit #2)', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
@@ -3724,6 +3749,16 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 0, null, { timeout: 15000 })
         await page.waitForFunction(() => document.body.dataset?.sceneReady === 'true', null, { timeout: 10000 })
         await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'focus', null, { timeout: 10000 })
+
+        // mode === 'focus' is set SYNCHRONOUSLY by _restoreFocusStateForAnchor (url-state.ts),
+        // but the focus pocket is populated one async chunk-load LATER via
+        // `_applyFocusPocketForAnchor → await import('@lib/focus/pocket') → applyLocalNeighborhoodFocus`
+        // (the dynamic import is an intentional W44-S5 perf split). The mode wait resolves at the
+        // synchronous step; reading focusPocketIndices one-shot there catches the in-flight `[]`.
+        // Wait for the pocket indices to actually land before reading them.
+        await page.waitForFunction(() => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0, null, {
+            timeout: 15000
+        })
 
         const pocket = await page.evaluate(() => {
             const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
