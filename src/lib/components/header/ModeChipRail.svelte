@@ -266,6 +266,9 @@
           width: 44px;
           height: 44px;
           background: transparent;
+          /* W54: pass pointer events through the oversized tap-target overlay so
+             Playwright/MCP real clicks reach the actual <button> consistently. */
+          pointer-events: none;
       }
   }
 

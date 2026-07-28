@@ -315,7 +315,13 @@ import { startSearch } from '@lib/search/search-abort';
     color: var(--color-text-teal-light);
     font-family: inherit;
     font-size: 0.875rem;
-    min-width: 0;
+    /* W54-fix: override global `body .search-input { min-width: 44px; }` with
+       at least 44px so the input can never shrink to zero in a flex context.
+       The previous `min-width: 0` allowed the flex container to collapse the
+       input to zero width when the parent container had dimensions under
+       certain layout conditions (panel-contained search in info panel).
+       This ensures the input stays above touch-target minimum. */
+    min-width: 44px;
   }
   .search-input:focus-visible {
     outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);

@@ -1289,8 +1289,10 @@ body:has(.info-panel.active) .panel-toggle {
     }
 }
 
-/* ── Placeholder2D: suppress info-panel until user loads the 3D scene ── */
-body.render-kind-placeholder2d .info-panel {
+/* ── Placeholder2D: suppress info-panel while the 2D placeholder is idle
+   so the CTA/hero isn't covered. Once the user selects a surface (search,
+   focus, map, etc.) the panel must be visible even before they enter WebGL. ── */
+body.render-kind-placeholder2d.surface-idle .info-panel {
     display: none !important;
 }
 

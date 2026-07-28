@@ -2835,6 +2835,48 @@ test.describe('Widget journey', () => {
             'W54 invariant OPEN: #info-panel[inert] ABSENT so child content is focusable'
         ).toBe(false)
     })
+
+    test('W54 visual audit: placeholder2d Search chip reveals #info-panel + #search-input', async ({ page }) => {
+        await page.setViewportSize({ width: 375, height: 667 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        // The header/mode chips are visible above the 2D placeholder CTA.
+        const searchChip = page.locator('.mode-chip[data-mode="search"]')
+        await searchChip.waitFor({ state: 'visible', timeout: 10000 })
+        await searchChip.click()
+
+        // Regression: body.render-kind-placeholder2d .info-panel used display:none
+        // unconditionally, hiding the search panel in the 2D placeholder path.
+        await page.waitForFunction(
+            () => {
+                const info = document.querySelector('#info-panel')
+                const input = document.querySelector('#search-input')
+                const r = info?.getBoundingClientRect()
+                const ir = input?.getBoundingClientRect()
+                return (
+                    document.body.classList.contains('surface-search') &&
+                    r != null && r.width > 0 && r.height > 0 &&
+                    ir != null && ir.width > 0 && ir.height > 0
+                )
+            },
+            null,
+            { timeout: 5000 }
+        )
+    })
+
+    test('W54 visual audit: map back button returns to overview from ?view=map deep-link', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map`, { waitUntil: 'domcontentloaded' })
+
+        await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'map', null, { timeout: 10000 })
+
+        const backBtn = page.locator('.map-back-btn')
+        await backBtn.waitFor({ state: 'visible', timeout: 10000 })
+        await backBtn.click()
+
+        await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'galaxy', null, { timeout: 5000 })
+        expect(page.url(), 'URL should drop view=map after returning to overview').not.toContain('view=map')
+    })
 })
 
 test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investigation.md)', () => {

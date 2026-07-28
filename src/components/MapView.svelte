@@ -10,7 +10,7 @@
   import { onMount, tick } from 'svelte';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
-  import { switchView } from '@lib/orchestration/view-controller';
+  import { updateUrlState } from '@lib/orchestration/url-state';
   import { appState } from '@lib/state/app.svelte';
   import { withStateMutation } from '@lib/state/with-state-mutation';
   import { debugWarn } from '@lib/utils/debug'
@@ -198,12 +198,19 @@
 
   function returnToOverview(): void {
     activationToken += 1;
-    switchView('galaxy', {
-      skipUrlSync: true,
-      silentHandoff: true,
-    });
+    // W-fix: do NOT call switchView() here — dispatchNavTransition(RETURN_OVERVIEW)
+    // already sets mode/overview + surface/idle + currentView/galaxy via
+    // returnToOverviewState(). Calling switchView() first would pre-set
+    // currentView to galaxy, then returnToOverviewState's writeNavStateMirror
+    // could noop on the already-set currentView, and on desktop (no record)
+    // the surface transit from 'map' to 'idle' might not propagate correctly.
+    // The Escape-key handler (global-shortcuts.ts) uses this same pattern and
+    // works correctly for both desktop and mobile.
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' });
+    // Sync the URL to remove ?view=map so the URL matches the galaxy state.
+    // This matches the Escape handler pattern (global-shortcuts.ts).
+    updateUrlState({}, { reason: 'return-overview' });
   }
 
   onMount(() => {
