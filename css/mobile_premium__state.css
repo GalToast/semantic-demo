@@ -1695,7 +1695,9 @@
     body.surface-semantic-dive #focus-stage {
         display: block;
         opacity: 1;
+        visibility: visible;
         pointer-events: auto;
+        transform: none;
     }
 
     /* Legacy focus fragments stay hidden by default; premium focus owns state-specific suppression. */

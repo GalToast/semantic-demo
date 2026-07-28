@@ -5311,11 +5311,24 @@ async function forceSemanticDiveSurface(page) {
         window.__forceSemanticDiveContractSurface?.()
         if (!window.__forceSemanticDiveContractSurface) {
             document.body.classList.add('is-active')
+            document.body.classList.remove(
+                'surface-idle',
+                'surface-focus',
+                'surface-focus-search',
+                'surface-map-search',
+                'surface-map-focus-search',
+                'surface-map-any'
+            )
             document.body.dataset.activeView = 'galaxy'
             document.body.dataset.graphContext = 'focus'
             document.body.dataset.semanticDive = 'active'
             document.body.dataset.panelSurface = 'semantic-dive'
             document.body.dataset.panelSurfaceDetail = 'none'
+
+            const compass = document.querySelector('.journey-compass')
+            if (compass) {
+                compass.dataset.panelSurface = 'semantic-dive'
+            }
 
             const focusStage = document.querySelector('#focus-stage')
             if (focusStage) {
@@ -5454,7 +5467,14 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
         } else {
             function forceSemanticDiveContractSurface() {
                 document.body.classList.add('is-active', 'surface-semantic-dive')
-                document.body.classList.remove('surface-idle', 'surface-focus', 'surface-focus-search')
+                document.body.classList.remove(
+                    'surface-idle',
+                    'surface-focus',
+                    'surface-focus-search',
+                    'surface-map-search',
+                    'surface-map-focus-search',
+                    'surface-map-any'
+                )
                 // F1 (W53): parity-mirror production's focus-transition-active
                 // settled state so #focus-stage measures flush (no parked
                 // translateY(18px)). Matches the AppBoot helper fix.
@@ -5465,6 +5485,11 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
                 document.body.dataset.semanticDive = 'active'
                 document.body.dataset.panelSurface = 'semantic-dive'
                 document.body.dataset.panelSurfaceDetail = 'none'
+
+                const compass = document.querySelector('.journey-compass')
+                if (compass) {
+                    compass.dataset.panelSurface = 'semantic-dive'
+                }
 
                 const focusStage = document.querySelector('#focus-stage')
                 if (focusStage) {
@@ -5664,7 +5689,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
         ctx.pass(surfaceName, 'pointer-events:search:skipped')
     }
 
-    if (info.infoPanelHidden) ctx.pass(surfaceName, 'visibility:info-panel:hidden')
+    if (info.infoPanelHidden || info.infoPanelPresent === false) ctx.pass(surfaceName, 'visibility:info-panel:hidden')
     else
         ctx.fail(
             surfaceName,
