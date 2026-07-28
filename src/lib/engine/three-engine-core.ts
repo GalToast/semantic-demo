@@ -189,7 +189,14 @@ export async function initThreeJS() {
     // tasks under 200ms. createMycelium() uploads 100k+ edge line segments.
     await yieldToBrowser()
 
-    createMyceliumPort()
+    // Await createMyceliumPort() so the 5 mycelium handles are populated in
+    // webglContext BEFORE syncMyceliumHandles mirrors them into appState. This
+    // was fire-and-forget; syncMyceliumHandles then read NULL, permanently
+    // staling appState.myceliumGroup / Core/Wispy/BridgeLines even though the
+    // lines rendered (the scene got them; the state mirror did not). createMycelium
+    // is async (thread-manager.ts) and yields during buildSemanticMyceliumEdges —
+    // a one-time init cost for a correct handle mirror at scene-ready.
+    await createMyceliumPort()
 
     // C12 — mycelium handle mirror (webglContext → appState + legacyState + engineState.state)
     syncMyceliumHandles({
