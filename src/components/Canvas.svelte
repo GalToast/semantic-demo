@@ -48,6 +48,16 @@
   // re-mount after the engine already warmed up.
   // W6-T5: Track the last overlay log to prevent spam on rapid remounts.
   let lastOverlayLogAt = 0;
+  // Bug-1: When the engine-ready gate flips (deep-link boot or user gesture),
+  // hide the loading overlay immediately so the info panel — which may already
+  // be populated with business details — is not obscured by "Loading the map…"
+  // during engine init. Without this, deep-link users see the overlay for the
+  // full engine-init duration while the info panel already shows content.
+  $effect(() => {
+    if (engineReadyStore.value && overlayVisible) {
+      hideOverlay();
+    }
+  });
   let canvasError = $state(false);
   let canvasErrorMessage = $state('');
 

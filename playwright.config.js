@@ -8,7 +8,7 @@ const headed =
 const webServer = process.env.TEST_BASE_URL
     ? undefined
     : {
-          command: 'VITE_API_BASE_URL=http://127.0.0.1:8795 npm run build && node scripts/test-server.mjs',
+          command: 'node scripts/playwright-web-server.mjs',
           port: 8796,
           reuseExistingServer: true,
           timeout: 180_000

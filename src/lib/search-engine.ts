@@ -289,6 +289,13 @@ async function _executeSearch(
             if (err instanceof DOMException && err.name === 'AbortError') {
                 throw err
             }
+            if (shouldSurfaceApiFailures()) {
+                // Bug-3: when staticDev=0, surface the API failure as an error
+                // state so contract tests can verify .search-error-state appears.
+                // Without this, the catch swallows 503s and falls through to the
+                // local index, defeating the test's intent.
+                throw err instanceof Error ? err : new Error(String(err))
+            }
             // Bug #6 (bugsweep): fall through to local index instead of
             // propagating an uncaught error. Contract tests with ?staticDev=0
             // now get meaningful local-index results instead of empty arrays.

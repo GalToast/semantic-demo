@@ -298,8 +298,8 @@
     font-size: 0.55em;
     font-weight: 600;
     letter-spacing: 0.12em;
-    color: rgba(var(--color-primary-alt-rgb), 0.95);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.45);
+    color: rgba(var(--color-primary-alt-rgb), 1);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.6);
     border-radius: 4px;
     vertical-align: middle;
     text-transform: uppercase;

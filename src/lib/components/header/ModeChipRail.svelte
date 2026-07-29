@@ -298,9 +298,19 @@
       }
       .mode-chip {
           flex: 0 0 auto;
-          min-width: 40px;
-          min-height: 40px;
+          min-width: 44px;
+          min-height: 44px;
           padding: 0.5rem;
+      }
+  }
+
+  /* W-fix: ensure all mode-chips meet the 44px touch-target minimum
+     on mobile (≤768px). The ≤360px tier above sets min-size, but the
+     768px tier only sets padding which yields ~30-33px. */
+  @media (max-width: 768px) {
+      .mode-chip {
+          min-width: 44px;
+          min-height: 44px;
       }
       .mode-chip.active {
           padding: 0.35rem 0.6rem;

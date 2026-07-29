@@ -32,7 +32,7 @@
   const PHASE_ORDER: readonly LoadingPhase[] = ['records', 'scene', 'restore', 'launch'];
 
   const phaseMeta: Record<LoadingPhase, LoadingPhaseMeta> = {
-    records: { progress: 0.2, note: 'Gathering records...', foot: 'County records are arriving first.' },
+    records: { progress: 0.2, note: 'Loading businesses...', foot: 'County businesses are loading first.' },
     scene: { progress: 0.48, note: 'Raising the cloud...', foot: 'Shaping the scene.' },
     restore: { progress: 0.76, note: 'Restoring view...', foot: 'Restoring last known path.' },
     launch: { progress: 1, note: 'Awake.', foot: 'Threads are live.' }
@@ -101,7 +101,7 @@
         <div class="loading-kicker">Semantic Explorer</div>
 
         <!-- Title -->
-        <div class="loading-title">Loading business records…</div>
+        <div class="loading-title">Loading businesses…</div>
 
         <!-- SVG logo -->
         <div class="loading-logo">

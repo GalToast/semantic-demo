@@ -283,6 +283,11 @@ import SelectedMatchNarrative from '@lib/components/focus/SelectedMatchNarrative
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: rgba(224, 240, 240, 0.85);
+    /* Defensive overflow guard: the all-caps "SIMILAR BUSINESSES" label
+       (16 chars + letter-spacing) could overflow at narrow viewports. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .selected-relationship-role {

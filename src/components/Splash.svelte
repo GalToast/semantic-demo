@@ -150,7 +150,7 @@
   hidden={engineReady.value}
 >
   <div class="splash-frame">
-    <h2 class="splash-title" id="splash-title">Semantic Explorer</h2>
+    <h2 class="splash-title" id="splash-title">Business Explorer</h2>
     <p class="splash-tag">
       Explore Montgomery County businesses through an interactive 3D network. Search, click, and discover connections.
     </p>

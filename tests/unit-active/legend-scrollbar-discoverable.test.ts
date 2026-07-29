@@ -29,13 +29,13 @@ function readLayoutBase(): string {
 describe('PR-T4: Legend scrollbar discoverable', () => {
     it('legend-panel scrollbar width is bumped from 6px to 8px', () => {
         const css = readLayoutBase()
-        // The legend-specific .legend-panel::-webkit-scrollbar block
+        // The legend-specific .legend::-webkit-scrollbar block
         // (with ` {` after, not `,`) is the unique one. The shared
         // block ends with `, .journey-compass::-webkit-scrollbar`.
         const t4Idx = css.indexOf('/* PR-T4:')
         const afterT4 = css.slice(t4Idx)
-        // The legend-specific block has `.legend-panel::-webkit-scrollbar {`
-        const blockIdx = afterT4.indexOf('.legend-panel::-webkit-scrollbar {')
+        // The legend-specific block has `.legend::-webkit-scrollbar {`
+        const blockIdx = afterT4.indexOf('.legend::-webkit-scrollbar {')
         const blockEnd = afterT4.indexOf('}', blockIdx)
         const block = afterT4.slice(blockIdx, blockEnd)
         expect(block).toMatch(/width:\s*8px/)
@@ -46,7 +46,7 @@ describe('PR-T4: Legend scrollbar discoverable', () => {
         // Same pattern: look after PR-T4 comment
         const t4Idx = css.indexOf('/* PR-T4:')
         const afterT4 = css.slice(t4Idx)
-        const blockIdx = afterT4.indexOf('.legend-panel::-webkit-scrollbar-thumb {')
+        const blockIdx = afterT4.indexOf('.legend::-webkit-scrollbar-thumb {')
         const blockEnd = afterT4.indexOf('}', blockIdx)
         const block = afterT4.slice(blockIdx, blockEnd)
         expect(block).toMatch(/background:\s*rgba\(var\(--color-primary-rgb\),\s*0\.5\)/)
@@ -56,7 +56,7 @@ describe('PR-T4: Legend scrollbar discoverable', () => {
         const css = readLayoutBase()
         const t4Idx = css.indexOf('/* PR-T4:')
         const afterT4 = css.slice(t4Idx)
-        const blockIdx = afterT4.indexOf('.legend-panel::-webkit-scrollbar-track {')
+        const blockIdx = afterT4.indexOf('.legend::-webkit-scrollbar-track {')
         const blockEnd = afterT4.indexOf('}', blockIdx)
         const block = afterT4.slice(blockIdx, blockEnd)
         expect(block).toMatch(/background:\s*rgba\(var\(--color-primary-rgb\),\s*0\.08\)/)
@@ -67,7 +67,9 @@ describe('PR-T4: Legend scrollbar discoverable', () => {
         const css = readLayoutBase()
         const t4Idx = css.indexOf('/* PR-T4:')
         const afterT4 = css.slice(t4Idx)
-        expect(afterT4).toMatch(/scrollbar-color:\s*rgba\(var\(--color-primary-rgb\),\s*0\.5\)\s*rgba\(var\(--color-primary-rgb\),\s*0\.08\)/)
+        expect(afterT4).toMatch(
+            /scrollbar-color:\s*rgba\(var\(--color-primary-rgb\),\s*0\.5\)\s*rgba\(var\(--color-primary-rgb\),\s*0\.08\)/
+        )
     })
 
     it('does NOT modify the shared rule for .search-results, .journey-compass, .info-panel', () => {
@@ -86,4 +88,4 @@ describe('PR-T4: Legend scrollbar discoverable', () => {
         const css = readLayoutBase()
         expect(css).toMatch(/\/\* PR-T4:.*legend.*scrollbar/s)
     })
-});
+})

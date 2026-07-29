@@ -110,7 +110,7 @@
   >
     <div class="header-brand" class:utility-only={utilityOnly}>
       {#if !utilityOnly}
-        <span class="brand-mark">SE</span>
+        <span class="brand-mark" title="Semantic Explorer">SE</span>
         {#if !$viewport.isCompact}
           <span class="brand-label">Semantic Explorer</span>
         {/if}
