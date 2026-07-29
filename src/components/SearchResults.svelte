@@ -337,7 +337,7 @@
       // why the click had no effect and can retry.
       showErrorToast(
         'Selection unavailable',
-        'This result is missing its detail record. Please retry the search.'
+        'This result is missing its details. Please retry the search.'
       );
     }
   }

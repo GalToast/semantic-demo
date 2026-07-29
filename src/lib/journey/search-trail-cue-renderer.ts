@@ -70,7 +70,7 @@ export function updateSearchTrailCue(nextCue: SearchTrailCue = {}): void {
               : nextCue.stage === 'empty'
                 ? 'Try a different term or filter to discover a trail.'
                 : nextCue.stage === 'explore'
-                  ? 'Enter the neighborhood to explore related businesses and discover record-backed connections.'
+                  ? 'Enter the neighborhood to explore related businesses and discover how they connect.'
                   : 'The first strong match becomes the anchor; from there you can center it and continue through related businesses.')
 
     kickerEl.textContent = kicker

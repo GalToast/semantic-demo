@@ -300,6 +300,10 @@
     letter-spacing: 0.12em;
     color: rgba(var(--color-primary-alt-rgb), 1);
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.6);
+    /* Subtle filled tint so the small "Preview" tag reads as a real pill badge
+       on the dark placeholder card (not just a thin teal outline). Mirrors the
+       --color-primary-alt tint used by .loading-phase-chip.is-active (~0.14). */
+    background: rgba(var(--color-primary-alt-rgb), 0.16);
     border-radius: 4px;
     vertical-align: middle;
     text-transform: uppercase;

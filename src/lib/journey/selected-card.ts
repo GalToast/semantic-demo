@@ -254,7 +254,7 @@ export function syncFocusStage(point: BusinessRecord | Point | null): void {
     const pageTitle = `Focus: ${presentation.display} | Semantic Explorer`
     const pageDesc =
         sanitizePublicFacingNote(effectivePoint.what) ||
-        'Exploring Montgomery County business records through semantic search and visualization.'
+        'Exploring Montgomery County businesses and their connections through search and visualization.'
 
     if (document.title !== pageTitle) {
         updateDocumentMeta(pageTitle, pageDesc)
@@ -321,7 +321,7 @@ export function updateSelectedBusiness(
 
     const namePresentation: BusinessNamePresentation = getBusinessNamePresentation(point.name)
     const pageTitle = `${namePresentation.display} | Semantic Explorer`
-    const pageDesc = sanitizePublicFacingNote(point.what) || 'Montgomery County business record details.'
+    const pageDesc = sanitizePublicFacingNote(point.what) || 'Montgomery County business details.'
     updateDocumentMeta(pageTitle, pageDesc)
 
     if (options.revealCard !== false) {

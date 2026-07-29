@@ -107,7 +107,9 @@ export const CONFIG = {
     // private COPY in src/lib/ui/loading.ts is kept for backwards-compat
     // reads inside the loading module; new code should import CONFIG.
     LOADING_PHASE_META: {
-        records: { progress: 0.2, note: 'Gathering records...', foot: 'County records are arriving first.' },
+        // De-jargon per docs/ux-copy-rules.md: `record` -> `listing`/`businesses`.
+        // Matches the live copy in src/components/LoadingOverlay.svelte byte-for-byte.
+        records: { progress: 0.2, note: 'Loading businesses...', foot: 'County businesses are loading first.' },
         scene: { progress: 0.48, note: 'Raising the cloud...', foot: 'Shaping the scene.' },
         restore: { progress: 0.76, note: 'Restoring view...', foot: 'Restoring last known path.' },
         launch: { progress: 1, note: 'Awake.', foot: 'Threads are live.' }

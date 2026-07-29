@@ -30,7 +30,10 @@ export interface LoadingOverrides {
 const LOADING_MIN_VISIBLE_MS = 1320
 
 const LOADING_PHASE_META: Record<string, LoadingPhaseMeta> = {
-    records: { progress: 0.2, note: 'Gathering records...', foot: 'County records are arriving first.' },
+    // De-jargon per docs/ux-copy-rules.md: `record` -> `listing`/`businesses`.
+    // Kept byte-identical to the live copy in src/components/LoadingOverlay.svelte + CONFIG
+    // so the legacy setLoadingPhase() path can never reintroduce jargon if re-wired.
+    records: { progress: 0.2, note: 'Loading businesses...', foot: 'County businesses are loading first.' },
     scene: { progress: 0.48, note: 'Raising the cloud...', foot: 'Shaping the scene.' },
     restore: { progress: 0.76, note: 'Restoring view...', foot: 'Restoring last known path.' },
     launch: { progress: 1, note: 'Awake.', foot: 'Threads are live.' }
@@ -228,7 +231,7 @@ export function applyLoadingErrorState(error: Error): void {
 
     const title = document.createElement('div')
     title.className = 'loading-title'
-    title.textContent = 'Failed to load county records'
+    title.textContent = 'Failed to load'
 
     const note = document.createElement('div')
     note.className = 'loading-note'

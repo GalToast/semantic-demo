@@ -98,7 +98,7 @@ export function showWebGLFallback(
 
     const body = document.createElement('p')
     body.textContent =
-        'The county records still load. Use the map view while graphics acceleration is blocked or unavailable.'
+        'The county businesses still load. Use the map view while graphics acceleration is blocked or unavailable.'
 
     const mapButton = document.createElement('button')
     mapButton.type = 'button'
