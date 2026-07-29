@@ -147,13 +147,10 @@ export function renderWeatherFallback(state: WeatherStateValue): void {
     const tempEl = document.getElementById('weather-temp')
     const descEl = document.getElementById('weather-desc')
     const windSpeedEl = document.getElementById('wind-speed')
-    const weatherIconEl = document.getElementById('weather-icon')
-    const conditionUseEl = weatherIconEl?.querySelector('.weather-condition-icon use') as SVGSVGElement | null
 
     if (tempEl) tempEl.textContent = '--°F'
     if (descEl) descEl.textContent = state.stalenessMsg || 'Weather unavailable'
     if (windSpeedEl) windSpeedEl.textContent = '-- mph'
-    if (conditionUseEl) conditionUseEl.setAttribute('xlink:href', '#weather-icon-unknown')
 }
 
 export function applyWeatherEffects(weather: WeatherData): void {
