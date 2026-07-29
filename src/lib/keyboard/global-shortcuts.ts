@@ -29,6 +29,8 @@ import { updateUrlState } from '@lib/orchestration/url-state'
 import { isModeLocked } from '@lib/navigation/mode-affordances'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { setSearchQuery } from '@lib/stores/search.svelte.ts'
+import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller'
+import { JOURNEY_ACTIONS } from '@lib/journey/compass-state'
 import type { NavMode } from '@lib/types/state'
 
 /**
@@ -131,6 +133,12 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
                 case '5':
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' })
                     updateUrlState({ surface: 'inside' }, { reason: 'keyboard-shortcut-5' })
+                    // KH-INSIDE-SHORTCUT-FIX (2026-07-29): Ctrl+5 must also
+                    // activate the semantic-dive surface, matching the Header
+                    // chip click path (Header.svelte L64). Without this call
+                    // setSemanticDiveMode(true) + journeySetTrailDepth(2) are
+                    // never reached and the inside/pocket view stays inert.
+                    executeJourneyCompassAction(JOURNEY_ACTIONS.ENTER_INSIDE)
                     break
                 case '6':
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' })
