@@ -70,7 +70,7 @@ export function getCanvasUnobstructedRegion(): CanvasRegion {
         '#thread-inspector-panel, .thread-inspector-panel, [data-panel="thread"]',
         '#info-panel, .info-panel, .detail-panel, .side-panel',
         '#journey-compass, .journey-compass',
-        '#legend-panel, .legend-panel',
+        '#legend-panel',
         '.weather-widget, #weather',
         '.controls, .canvas-controls, #controls, .panel-toggle, .legend-toggle, .help-toggle'
     ]
