@@ -36,8 +36,10 @@ interface KeyboardHintPanelElement extends HTMLElement {
     _autoDismissTimer?: ReturnType<typeof setTimeout> | null
 }
 
-let _returnToOverview: () => void = () => {}
-let _resetExplorationFocus: () => void = () => {}
+const _defaultNoOp = () => {}
+
+let _returnToOverview: () => void = _defaultNoOp
+let _resetExplorationFocus: () => void = _defaultNoOp
 
 export function initKeyboardResetOwnership({
     returnToOverview,
@@ -55,6 +57,12 @@ export function handleGalaxyKeydown(e: KeyboardEvent): void {
 
     if (e.key === 'Home') {
         e.preventDefault()
+        // W7 H-3: warn if ownership was never registered — catches the case
+        // where initKeyboardResetOwnership() isn't called (test environments
+        // or setup-order changes). debugWarn is no-op in production.
+        if (_returnToOverview === _defaultNoOp) {
+            debugWarn('[keyboard-help] handleGalaxyKeydown: Home key ignored — ownership not registered')
+        }
         _returnToOverview()
         return
     }
@@ -67,6 +75,10 @@ export function handleGalaxyKeydown(e: KeyboardEvent): void {
 
     if (e.key === 'Escape') {
         e.preventDefault()
+        // W7 H-3: warn if ownership was never registered.
+        if (_resetExplorationFocus === _defaultNoOp) {
+            debugWarn('[keyboard-help] handleGalaxyKeydown: Escape key ignored — ownership not registered')
+        }
         _resetExplorationFocus()
     }
 }

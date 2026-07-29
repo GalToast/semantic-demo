@@ -51,10 +51,11 @@
   let canvasError = $state(false);
   let canvasErrorMessage = $state('');
 
-  // W52: Overlay timeout — 10s in dev (slow engine init on HMR/hot reload),
-  // 5s in prod.  Override via data-overlay-timeout on #canvas-container
-  // (e.g. <div data-overlay-timeout="12000">) or via window.__OVERLAY_TIMEOUT_MS.
-  let overlayTimeoutMs = $state(import.meta.env.DEV ? 10000 : 5000);
+  // W52: Overlay timeout — 15s in dev (slow engine init on HMR/hot reload +
+  // slower devices), 5s in prod.  Override via data-overlay-timeout on
+  // #canvas-container (e.g. <div data-overlay-timeout="12000">) or via
+  // window.__OVERLAY_TIMEOUT_MS.
+  let overlayTimeoutMs = $state(import.meta.env.DEV ? 15000 : 5000);
 
   const callbacks: EngineCallbacks = {
     onNodePicked: (index) => {
@@ -171,6 +172,7 @@
 
     // Set CSS custom property so the overlay-fade-out animation stays in sync
     // with the JS timeout (animation delay = timeout - animation duration 400ms).
+    // Dev timeout is 15s to accommodate slow engine init on HMR/hot reload.
     const fadeDelayMs = Math.max(0, overlayTimeoutMs - 400);
     const overlayEl = document.querySelector('.canvas-loading-overlay') as HTMLElement | null;
     if (overlayEl) {
@@ -350,7 +352,7 @@
     ></canvas>
   </div>
 
-  <!-- Loading overlay: visible during engine init, hides on scene-ready or 5s timeout -->
+  <!-- Loading overlay: visible during engine init, hides on scene-ready or 15s timeout (dev) / 5s (prod) -->
   {#if overlayVisible}
     <div class="canvas-loading-overlay" aria-live="polite">
       <span class="loading-pulse">Loading the map…</span>

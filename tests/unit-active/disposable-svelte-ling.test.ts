@@ -10,8 +10,7 @@ import { DisposableRegistry, createDisposableRegistry, assertDisposed } from '..
  *
  * The `disposable()` factory wraps DisposableRegistry with defaults
  * (label: 'SvelteDisposable', warnAfterDispose: true).  It does NOT
- * require a Svelte runtime — the returned object is a plain DisposableRegistry,
- * so all registry methods can be exercised directly here.
+ * auto-dispose — the caller must wire cleanup via $effect.
  *
  * The SvelteDisposable type export is type-only and untestable at runtime;
  * it is documented in the report instead.
@@ -313,6 +312,52 @@ describe('disposable (Svelte wrapper — ling regression)', () => {
             // The type exists in the module and is used by consumers
             // for explicit Svelte-runbook annotations, but it is not
             // a separate runtime class or factory target.
+        })
+    })
+
+    // ── Lifecycle behavior (H2 clarification) ──
+    describe('lifecycle behavior (H2 clarification)', () => {
+        it('does NOT auto-dispose - caller must wire cleanup', () => {
+            const disposeSpy = vi.fn()
+            const reg = disposable('manualTest')
+            reg.add(disposeSpy)
+            
+            // Should NOT auto-dispose - cleanup is caller's responsibility
+            expect(reg.size).toBe(1)
+            expect(reg.isDisposed).toBe(false)
+            expect(disposeSpy).not.toHaveBeenCalled()
+            
+            // Manual dispose works as expected
+            reg.disposeAll()
+            expect(disposeSpy).toHaveBeenCalledTimes(1)
+            expect(reg.isDisposed).toBe(true)
+        })
+
+        it('handles multiple disposable instances independently', () => {
+            const disposeSpy1 = vi.fn()
+            const disposeSpy2 = vi.fn()
+            
+            const reg1 = disposable('instance1')
+            const reg2 = disposable('instance2')
+            
+            reg1.add(disposeSpy1)
+            reg2.add(disposeSpy2)
+            
+            // Both instances require manual cleanup
+            expect(reg1.isDisposed).toBe(false)
+            expect(reg2.isDisposed).toBe(false)
+            
+            // Dispose first instance
+            reg1.disposeAll()
+            expect(disposeSpy1).toHaveBeenCalledTimes(1)
+            expect(disposeSpy2).not.toHaveBeenCalled()
+            expect(reg1.isDisposed).toBe(true)
+            expect(reg2.isDisposed).toBe(false)
+            
+            // Dispose second instance
+            reg2.disposeAll()
+            expect(disposeSpy2).toHaveBeenCalledTimes(1)
+            expect(reg2.isDisposed).toBe(true)
         })
     })
 })

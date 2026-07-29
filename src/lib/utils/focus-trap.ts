@@ -17,33 +17,36 @@ export const FOCUSABLE_SELECTORS = [
     '[tabindex="0"]'
 ].join(', ')
 
-let activeTrapContainers: string[] = []
+const trapStack: string[][] = []
 let isTrapping = false
 
 /**
- * Initializes a focus trap constrained to the given DOM selectors.
- * When active, pressing Tab will loop focus within the first visible
- * focusable element and the last visible focusable element inside the selectors.
+ * Pushes a new focus-trap layer onto the stack. When active,
+ * pressing Tab will loop focus within visible focusable elements
+ * across all active trap layers.
  */
 export function setupFocusTrap(containerSelectors: string | string[]): void {
     if (!Array.isArray(containerSelectors)) {
         containerSelectors = [containerSelectors]
     }
 
-    activeTrapContainers = containerSelectors
+    trapStack.push(containerSelectors)
 
-    if (!isTrapping) {
+    if (trapStack.length === 1) {
+        // First trap layer — install the document-level listener
         document.addEventListener('keydown', handleKeydown)
         isTrapping = true
     }
 }
 
 /**
- * Releases the active focus trap, restoring natural tab order.
+ * Pops the most recent focus-trap layer from the stack. When the
+ * stack becomes empty, the document-level keydown listener is removed.
  */
 export function releaseFocusTrap(): void {
-    activeTrapContainers = []
-    if (isTrapping) {
+    trapStack.pop()
+
+    if (trapStack.length === 0 && isTrapping) {
         document.removeEventListener('keydown', handleKeydown)
         isTrapping = false
     }
@@ -52,27 +55,29 @@ export function releaseFocusTrap(): void {
 function handleKeydown(e: KeyboardEvent): void {
     if (e.isComposing) return
     if (e.key !== 'Tab') return
-    if (activeTrapContainers.length === 0) return
+    if (trapStack.length === 0) return
 
     const focusableEls: Element[] = []
 
-    for (const selector of activeTrapContainers) {
-        const containers = document.querySelectorAll(selector)
-        for (const container of containers) {
-            if (container.hasAttribute('hidden') || window.getComputedStyle(container).display === 'none') {
-                continue
-            }
+    for (const selectors of trapStack) {
+        for (const selector of selectors) {
+            const containers = document.querySelectorAll(selector)
+            for (const container of containers) {
+                if (container.hasAttribute('hidden') || window.getComputedStyle(container).display === 'none') {
+                    continue
+                }
 
-            const els = Array.from(container.querySelectorAll(FOCUSABLE_SELECTORS))
-            for (const el of els) {
-                const rect = el.getBoundingClientRect()
-                if (
-                    rect.width > 0 &&
-                    rect.height > 0 &&
-                    !el.hasAttribute('hidden') &&
-                    window.getComputedStyle(el).visibility !== 'hidden'
-                ) {
-                    focusableEls.push(el)
+                const els = Array.from(container.querySelectorAll(FOCUSABLE_SELECTORS))
+                for (const el of els) {
+                    const rect = el.getBoundingClientRect()
+                    if (
+                        rect.width > 0 &&
+                        rect.height > 0 &&
+                        !el.hasAttribute('hidden') &&
+                        window.getComputedStyle(el).visibility !== 'hidden'
+                    ) {
+                        focusableEls.push(el)
+                    }
                 }
             }
         }

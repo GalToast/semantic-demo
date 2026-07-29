@@ -33,7 +33,7 @@ describe('W7: keyboard-help IME-composition guard parity with global-shortcuts.t
         // The guard must be present in handleGalaxyKeydown — symmetric with global-shortcuts.ts:65
         // introduced by commit 6ad96301 (which only added the guard to global-shortcuts.ts).
         // Match the export function body — keep the slice narrow so the guard assertion is scoped.
-        const handleFnMatch = src.match(/export\s+function\s+handleGalaxyKeydown[\s\S]{0,800}?\n\}/)
+        const handleFnMatch = src.match(/export\s+function\s+handleGalaxyKeydown[\s\S]{0,2000}?\n\}/)
         expect(handleFnMatch).not.toBeNull()
         expect(handleFnMatch![0]).toMatch(/if\s*\(\s*e\.isComposing\s*\)\s*return/)
     })
