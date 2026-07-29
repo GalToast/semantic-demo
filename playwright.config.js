@@ -28,5 +28,8 @@ export default defineConfig({
             args: ['--ignore-gpu-blocklist']
         }
     },
-    webServer
+    webServer,
+    // Opt-in strict-freshness guard (no-op unless PLAYWRIGHT_STRICT_FRESH=1).
+    // See scripts/playwright-global-setup.mjs.
+    globalSetup: './scripts/playwright-global-setup.mjs'
 })

@@ -46,5 +46,13 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
     ```
 
 - **Force-fresh:** run `npm run build` immediately before `npx playwright test …`; a running
-  8796 then serves the just-rebuilt dist live. (Once the planned `qa:journey:fresh*` scripts
-  land, prefer those — they bake the pre-build in.)
+  8796 then serves the just-rebuilt dist live. The `qa:journey:fresh*` scripts bake the
+  pre-build in (`npm run build && npm run qa:journey*`).
+
+- **Strict-freshness guard (opt-in):** `playwright.config.js` registers
+  `scripts/playwright-global-setup.mjs` as `globalSetup`. By default it is a **no-op** (never
+  disrupts parallel sessions). Set `PLAYWRIGHT_STRICT_FRESH=1` to make it **fail fast** with a
+  clear message if `dist/svelte/index.html` is missing or stale (a build input newer than dist),
+  pointing you at `npm run qa:journey:fresh`. Useful in CI or when chasing stale-dist regressions
+  (e.g. the 5o keyboard-hint-panel z-index bug, caused by a stale dist missing `mobile_base.css`).
+  It never rebuilds — use `:fresh` for that.
