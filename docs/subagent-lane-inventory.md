@@ -6,41 +6,45 @@ Probed 2026-07-27. Updated 2026-07-29.
 
 ## Lane inventory (from `model-providers.json`)
 
-- **Primary:** `minimax-m3` (MiniMax-M3 — main lane; verified vision-capable 2026-07-15, routes: kilo/minimax, logfare, opencode-zen, minimax-direct). Previous `kilo/openrouter/owl-alpha` is dead (404 on both the kilo gateway and OpenRouter; absent from `/v1/models`) — do not re-add.
-- **Registered alt:** `agnes-2.0-flash` ✅ **subagent-viable 2026-07-27** (resolves via `router-agnes`; tool-use + write succeed; verify output against parent-component scope, as it tends to over-reach into child components).
-- **Free fallbacks:**
-    - `ling-3.0-flash-free` ✅ **subagent-viable 2026-07-29** (via `opencode-zen/ling-3.0-flash-free` → `router-opencode-zen`) — passed a real find-and-fix graduation trial removing an unused `onMount` import; lint + 3380 unit tests passed.
-    - `laguna-s-2.1-free` **route-dependent** — ❌ on OpenCode Zen (2026-07-29: subagent tasks stuck in long reasoning loops and hit 200MB+ stdout cap), ✅ via `/poolside` `poolside/laguna-s-2.1` and `/openrouter` `poolside/laguna-s-2.1:free` for direct completion probes. **Subagent benchmark 2026-07-29 (Pi harness, poolside route):** ❌ NOT subagent-viable — launched with `--thinking max`, spun in reasoning loops producing zero output for 41–88s on both a complex audit task and a trivial one-sentence prompt. Root cause: Pi harness defaults to `--thinking max` for reasoning-capable models; laguna-s-2.1 supports reasoning but loops indefinitely at max thinking. The `external_subagent_start` API does not expose a thinking-level override. Avoid for subagent coding tasks until a `--thinking low/off` option is available.
-    - `laguna-xs-2.1-free` ✅ **subagent-viable 2026-07-27** (via `openrouter/poolside/laguna-xs-2.1:free`)
-    - `mimo-v2.5-free` ✅ **subagent-viable 2026-07-28** (resolves via `router-opencode-zen`) — strong for UI code edits but emits very long reasoning traces; use conciseness steering.
-    - `deepseek-v4-flash-free` ✅ **subagent-viable 2026-07-28** (resolves via `router-opencode-zen`) — reliable for multi-step coding and read-only audits.
-    - `nemotron-3-ultra-free` ✅ **subagent-viable 2026-07-28** (via `opencode/nemotron-3-ultra-free` → `router-opencode-zen`) — reliable but counts against the ~3–4 worker OpenCode Zen concurrency limit.
-    - `north-mini-code-free` ≈ **FIND scout only; NOT a trusted fix subagent** (reconfirmed 2026-07-29 via `opencode-zen/north-mini-code-free` on the **qwen harness**).
-        - **Earlier "36 MB reasoning / 0 edits" verdict was a harness wedge, not the model**: `shouldSpawnThroughShell()` shelled spaced `.exe` paths → cmd.exe mangled `--prompt`/`--mcp-config` → worker died before editing. Fixed this session (patch `mmx.ts`: only shell `.cmd`/`.bat`; `shell:false` for `.exe`).
-        - **Post-fix graduation (2026-07-29):** FIND ✅ — found the real `.legend-panel` dead-CSS bug with cross-referenced `file:line` evidence (34 `read_file`, 24 `grep_search`); find-grade ~7/10 (dinged for duplicate findings + weak "device check" reasoning). FIX ❌ — on a bounded 7-site removal it removed only **3/7 sites** (missed 1082/1150 in the same file + the entire `mobile_premium__state.css` comma-list), left a **stray 4-space line**, and **skipped the required `npm run build:svelte`** step (0 `run_shell_command` calls). fix-grade ~3/10.
-        - **Use:** read-only bugsweep FIND/report scouting (feed its findings to main lane or a stronger fixer). Do NOT assign it multi-site edits or rely on its self-reported "done".
-        - Also ⚠️ viable for read-only audits via `openrouter/cohere/north-mini-code:free`.
-    - `freemodel/gpt-5.6-luna` ✅ **subagent-viable 2026-07-29** (qwen harness).
-        - **Round 1:** Found and correctly fixed dead `window.refreshSearchResultHierarchy` guard in `src/lib/search/result-renderer.ts`.
-        - **Round 2:** Found and correctly fixed stale `layer` → `side` field name in `SemanticState.routeTraceConnectionPairs` (`src/lib/state/types/engine-types.ts:375`). Runtime sites in `app.svelte.ts` and `route-trace.ts` already use `side`; the interface was the only stale reference. Build + tsc passed; main-lane applied and committed (`340ca34b`).
-        - **Note:** First attempt in `w57-freemodel-luna-r2` hit a corrupted/pre-deleted worktree (missing `src/`, files staged as `D`). Luna tried to recover via `git checkout HEAD -- src` and removing a stale `index.lock`, but failed. Fresh worktree `w57-freemodel-luna-r2b` was created and Luna completed successfully.
-        - **Round 3 (2026-07-29, qwen harness, isolated worktrees with separate `node_modules`):** Two bounded fixes from Sol's findings.
-            - **Weather fallback (`src/lib/ui/weather-ui.ts`):** Correctly identified `renderWeatherFallback` queries `.weather-condition-icon use` (cast `SVGSVGElement`) which never exists in the DOM (`WeatherWidget.svelte` renders inline svg via `iconSvg` snippet). Removed the dead `weatherIconEl` + `conditionUseEl` queries and the unreachable `setAttribute` line; kept the live text-fallback assignments. Build + tsc passed.
-            - **Dead semantic-lane bindings (`src/lib/ui/semantic-lane-bindings.ts`):** Correctly found `bindSemanticLaneControls()` is never called and references a nonexistent `#btn-semantic-lane-retry`. **Judgment call:** the module is NOT fully dead — `global-bindings.ts:11` imports `handleSemanticLaneWindowFocus` + `handleSemanticLaneVisibilityChange`. Luna removed only the dead function + dead imports (`loadSemanticThreads`, `handleError`) + 2 unused type aliases, kept the 2 live exports (rather than blindly deleting the whole module as the prompt suggested, which would have broken the build). Build + tsc passed.
-            - **Result: 3/3 real bugs found and correctly fixed across 3 distinct slices (search, engine/state, UI).** Luna is fully **subagent-viable** for bounded fix tasks.
-    - `freemodel/gpt-5.6-sol` ❌ **not subagent-viable 2026-07-29** (qwen harness).
-        - **Round 1:** Correctly identified `appState.searchResults` bypass bug but asked for confirmation instead of fixing it; zero edits.
-        - **Round 2 (UI/chrome slice):** Found several real bugs (weather UI `SVGSVGElement`/`SVGUseElement` type mismatch, dead `btn-semantic-lane-retry` reference, missing `#search-status` element referenced in `orchestration.ts`) but completed without applying any fix; zero edits, no `FIX_REPORT_READY`.
-    - `freemodel/gpt-5.6-terra` ❌ **not subagent-viable 2026-07-29** (qwen harness).
-        - **Round 1:** False-positive dead export (`areAdaptersInitialized`) — missed active regression test `tests/unit-active/w11-t7-adapters-init.test.ts`.
-        - **Round 2 (journey slice):** Submitted a weak cosmetic-only fix — removed redundant bare `{ }` blocks around `canvasThreadInspectionClearTimer = null` assignments in thread-inspector files. Build passes, but no real bug was found.
-    - `openai/gpt-oss-20b:free` ❌ **not subagent-viable** (qwen harness, 2026-07-29): provider returns `422 Provider returned error`. Lane dead for subagent work.
-    - `qwen/qwen3-14b` ❌ **not subagent-viable** (qwen harness, 2026-07-29): provider returns `410 status code (no body)`. Lane dead for subagent work.
-    - `hy3-free` / `tencent/hy3` ❌ not subagent-viable 2026-07-27 (OpenCode Zen 429 / cold stall)
-    - `qwen3.6-plus` (untested recently)
-    - `qwen3.6-flash` ❌ `qwen/qwen3.6-flash` is not in the unified v4 catalog via `zyditv4` (2026-07-27)
-    - `qwen3.6-27b` (untested recently)
-    - `qwen-3.6-35b-a3b` ✅ **subagent-viable 2026-07-29** (via `logfare/qwen-3.6-35b-a3b` → `router-logfare`) — passed a real UX-copy audit + fix graduation trial (Splash.svelte jargon fix); all tools (read, edit, bash, write) worked; cold start ~1-2s, subsequent calls near-instant; 24K tokens, $0 cost. Only logfare model besides deepseek-v4-pro confirmed healthy.
+-   **Primary:** `minimax-m3` (MiniMax-M3 — main lane; verified vision-capable 2026-07-15, routes: kilo/minimax, logfare, opencode-zen, minimax-direct). Previous `kilo/openrouter/owl-alpha` is dead (404 on both the kilo gateway and OpenRouter; absent from `/v1/models`) — do not re-add.
+-   **Registered alt:** `agnes-2.0-flash` ✅ **subagent-viable 2026-07-27** (resolves via `router-agnes`; tool-use + write succeed; verify output against parent-component scope, as it tends to over-reach into child components).
+-   **Free fallbacks:**
+    -   `ling-3.0-flash-free` ✅ **subagent-viable 2026-07-29** (via `opencode-zen/ling-3.0-flash-free` → `router-opencode-zen`) — passed a real find-and-fix graduation trial removing an unused `onMount` import; lint + 3380 unit tests passed.
+    -   `laguna-s-2.1-free` **route-dependent** — ❌ on OpenCode Zen (2026-07-29: subagent tasks stuck in long reasoning loops and hit 200MB+ stdout cap), ✅ via `/poolside` `poolside/laguna-s-2.1` and `/openrouter` `poolside/laguna-s-2.1:free` for direct completion probes. **Subagent benchmark 2026-07-29 (Pi harness, poolside route):** ❌ NOT subagent-viable — launched with `--thinking max`, spun in reasoning loops producing zero output for 41–88s on both a complex audit task and a trivial one-sentence prompt. Root cause: Pi harness defaults to `--thinking max` for reasoning-capable models; laguna-s-2.1 supports reasoning but loops indefinitely at max thinking. The `external_subagent_start` API does not expose a thinking-level override. Avoid for subagent coding tasks until a `--thinking low/off` option is available.
+    -   `laguna-xs-2.1-free` ✅ **subagent-viable 2026-07-27** (via `openrouter/poolside/laguna-xs-2.1:free`)
+    -   `mimo-v2.5-free` ✅ **subagent-viable 2026-07-28** (resolves via `router-opencode-zen`) — strong for UI code edits but emits very long reasoning traces; use conciseness steering.
+    -   `deepseek-v4-flash-free` ✅ **subagent-viable 2026-07-28** (resolves via `router-opencode-zen`) — reliable for multi-step coding and read-only audits.
+    -   `nemotron-3-ultra-free` ✅ **subagent-viable 2026-07-28** (via `opencode/nemotron-3-ultra-free` → `router-opencode-zen`) — reliable but counts against the ~3–4 worker OpenCode Zen concurrency limit.
+    -   `north-mini-code-free` ≈ **FIND scout only; NOT a trusted fix subagent** (reconfirmed 2026-07-29 via `opencode-zen/north-mini-code-free` on the **qwen harness**).
+        -   **Earlier "36 MB reasoning / 0 edits" verdict was a harness wedge, not the model**: `shouldSpawnThroughShell()` shelled spaced `.exe` paths → cmd.exe mangled `--prompt`/`--mcp-config` → worker died before editing. Fixed this session (patch `mmx.ts`: only shell `.cmd`/`.bat`; `shell:false` for `.exe`).
+        -   **Post-fix graduation (2026-07-29):** FIND ✅ — found the real `.legend-panel` dead-CSS bug with cross-referenced `file:line` evidence (34 `read_file`, 24 `grep_search`); find-grade ~7/10 (dinged for duplicate findings + weak "device check" reasoning). FIX ❌ — on a bounded 7-site removal it removed only **3/7 sites** (missed 1082/1150 in the same file + the entire `mobile_premium__state.css` comma-list), left a **stray 4-space line**, and **skipped the required `npm run build:svelte`** step (0 `run_shell_command` calls). fix-grade ~3/10.
+        -   **Use:** read-only bugsweep FIND/report scouting (feed its findings to main lane or a stronger fixer). Do NOT assign it multi-site edits or rely on its self-reported "done".
+        -   Also ⚠️ viable for read-only audits via `openrouter/cohere/north-mini-code:free`.
+    -   `freemodel/gpt-5.6-luna` ✅ **subagent-viable 2026-07-29** (qwen harness).
+        -   **Round 1:** Found and correctly fixed dead `window.refreshSearchResultHierarchy` guard in `src/lib/search/result-renderer.ts`.
+        -   **Round 2:** Found and correctly fixed stale `layer` → `side` field name in `SemanticState.routeTraceConnectionPairs` (`src/lib/state/types/engine-types.ts:375`). Runtime sites in `app.svelte.ts` and `route-trace.ts` already use `side`; the interface was the only stale reference. Build + tsc passed; main-lane applied and committed (`340ca34b`).
+        -   **Note:** First attempt in `w57-freemodel-luna-r2` hit a corrupted/pre-deleted worktree (missing `src/`, files staged as `D`). Luna tried to recover via `git checkout HEAD -- src` and removing a stale `index.lock`, but failed. Fresh worktree `w57-freemodel-luna-r2b` was created and Luna completed successfully.
+        -   **Round 3 (2026-07-29, qwen harness, isolated worktrees with separate `node_modules`):** Two bounded fixes from Sol's findings.
+            -   **Weather fallback (`src/lib/ui/weather-ui.ts`):** Correctly identified `renderWeatherFallback` queries `.weather-condition-icon use` (cast `SVGSVGElement`) which never exists in the DOM (`WeatherWidget.svelte` renders inline svg via `iconSvg` snippet). Removed the dead `weatherIconEl` + `conditionUseEl` queries and the unreachable `setAttribute` line; kept the live text-fallback assignments. Build + tsc passed.
+            -   **Dead semantic-lane bindings (`src/lib/ui/semantic-lane-bindings.ts`):** Correctly found `bindSemanticLaneControls()` is never called and references a nonexistent `#btn-semantic-lane-retry`. **Judgment call:** the module is NOT fully dead — `global-bindings.ts:11` imports `handleSemanticLaneWindowFocus` + `handleSemanticLaneVisibilityChange`. Luna removed only the dead function + dead imports (`loadSemanticThreads`, `handleError`) + 2 unused type aliases, kept the 2 live exports (rather than blindly deleting the whole module as the prompt suggested, which would have broken the build). Build + tsc passed.
+            -   **Result: 3/3 real bugs found and correctly fixed across 3 distinct slices (search, engine/state, UI).** Luna is fully **subagent-viable** for bounded fix tasks.
+    -   `freemodel/gpt-5.6-sol` ❌ **not subagent-viable 2026-07-29** (qwen harness).
+        -   **Round 1:** Correctly identified `appState.searchResults` bypass bug but asked for confirmation instead of fixing it; zero edits.
+        -   **Round 2 (UI/chrome slice):** Found several real bugs (weather UI `SVGSVGElement`/`SVGUseElement` type mismatch, dead `btn-semantic-lane-retry` reference, missing `#search-status` element referenced in `orchestration.ts`) but completed without applying any fix; zero edits, no `FIX_REPORT_READY`.
+    -   `freemodel/gpt-5.6-terra` ❌ **not subagent-viable 2026-07-29** (qwen harness).
+        -   **Round 1:** False-positive dead export (`areAdaptersInitialized`) — missed active regression test `tests/unit-active/w11-t7-adapters-init.test.ts`.
+        -   **Round 2 (journey slice):** Submitted a weak cosmetic-only fix — removed redundant bare `{ }` blocks around `canvasThreadInspectionClearTimer = null` assignments in thread-inspector files. Build passes, but no real bug was found.
+    -   `nvidia/mistralai/mistral-nemotron` ✅ **subagent-viable 2026-07-29** (qwen harness, free NVIDIA API tier → route `qwen:openai:nvidia/mistralai/mistral-nemotron`).
+        -   **Graduation trial (controls/keyboard slice, isolated worktree `w57-grad`):** Found a HIGH-severity real functional bug and fixed it correctly. `Ctrl+5` in `src/lib/keyboard/global-shortcuts.ts` dispatched the nav transition + updated the URL but never called `executeJourneyCompassAction(JOURNEY_ACTIONS.ENTER_INSIDE)` — the only path that runs `setSemanticDiveMode(true)` + `journeySetTrailDepth(2)` to activate the semantic-dive inside/pocket surface. The Header chip path (`Header.svelte:64`) already made the call; the keyboard path was the only one that skipped it → Ctrl+5 left the inside view inert. Fix added the missing call (mirrors `Header.svelte:64`; idempotent setters, no double-fire). Build + tsc + `vitest tests/unit-active/` (3361 passed) all green.
+        -   **Judgment:** Did NOT fall for the `bindGlobalEvents` "never-called = wiring-broken" false-positive trap (listeners were migrated to `triggers.ts` / `setupGlobalShortcuts`); investigated and correctly identified the *different* real bug instead. Strong skepticism — correctly dismissed a "missing `setJourneyPhase`" candidate by tracing the parity-attrs resolver derives phase from `nav.mode`. ~7 min, 45 turns, exit 0.
+        -   Main-lane applied + verified + committed (`a13ab982`).
+    -   `openai/gpt-oss-20b:free` ❌ **not subagent-viable** (qwen harness, 2026-07-29): provider returns `422 Provider returned error`. Lane dead for subagent work.
+    -   `qwen/qwen3-14b` ❌ **not subagent-viable** (qwen harness, 2026-07-29): provider returns `410 status code (no body)`. Lane dead for subagent work.
+    -   `hy3-free` / `tencent/hy3` ❌ not subagent-viable 2026-07-27 (OpenCode Zen 429 / cold stall)
+    -   `qwen3.6-plus` (untested recently)
+    -   `qwen3.6-flash` ❌ `qwen/qwen3.6-flash` is not in the unified v4 catalog via `zyditv4` (2026-07-27)
+    -   `qwen3.6-27b` (untested recently)
+    -   `qwen-3.6-35b-a3b` ✅ **subagent-viable 2026-07-29** (via `logfare/qwen-3.6-35b-a3b` → `router-logfare`) — passed a real UX-copy audit + fix graduation trial (Splash.svelte jargon fix); all tools (read, edit, bash, write) worked; cold start ~1-2s, subsequent calls near-instant; 24K tokens, $0 cost. Only logfare model besides deepseek-v4-pro confirmed healthy.
 
 ### Strong free/shadow routes for coding
 
@@ -72,11 +76,11 @@ Probed from main lane via `/v1/models` and completion calls.
 
 ### Changes from 2026-07-27
 
-- **`laguna-s-2.1-free`**: flipped from ❌ to route-dependent — still ❌ on OpenCode Zen for subagent work (reasoning-loop / 200MB cap, 2026-07-29), but ✅ via `/openrouter` and `/poolside` for direct completion probes.
-- **`north-mini-code-free`**: route-dependent — ❌ via OpenCode Zen (hallucination), ⚠️ via `/openrouter` for read-only audits.
-- **`minimax-m3`** (main lane): `content: null` on `/logfare` suggests Logfare is degraded for this model; other routes (kilo/minimax, minimax-direct) may be unaffected — probe those before assuming main-lane blockage.
-- **OpenCode Zen free routes**: all reconfirmed viable; cap concurrency at ~3–4 workers to avoid stuck stores (observed 8 workers → 192MB+ stdout and 600s timeouts).
-- **New dead entries**: `kimi-k2.7-code` (logfare 429), `/openprovider` 502 — both new to inventory.
+-   **`laguna-s-2.1-free`**: flipped from ❌ to route-dependent — still ❌ on OpenCode Zen for subagent work (reasoning-loop / 200MB cap, 2026-07-29), but ✅ via `/openrouter` and `/poolside` for direct completion probes.
+-   **`north-mini-code-free`**: route-dependent — ❌ via OpenCode Zen (hallucination), ⚠️ via `/openrouter` for read-only audits.
+-   **`minimax-m3`** (main lane): `content: null` on `/logfare` suggests Logfare is degraded for this model; other routes (kilo/minimax, minimax-direct) may be unaffected — probe those before assuming main-lane blockage.
+-   **OpenCode Zen free routes**: all reconfirmed viable; cap concurrency at ~3–4 workers to avoid stuck stores (observed 8 workers → 192MB+ stdout and 600s timeouts).
+-   **New dead entries**: `kimi-k2.7-code` (logfare 429), `/openprovider` 502 — both new to inventory.
 
 ### 2026-07-29 UI cleanup dispatch plan
 
@@ -108,10 +112,10 @@ Goal: trial untrialed free-catalogue models (max reasoning where supported) on a
 
 Cross-cutting:
 
-- `--thinking max` is applied to ALL subagent workers regardless of model reasoning support (gemma got it too); no override exposed by `external_subagent_start`. User confirmed: keep it.
-- NVIDIA `nvidia/*` free nemotron models are NOT exposed via OpenRouter in this subagent catalogue — they only reach the broken nvidia key-router lane.
-- The one model that produced output (ModelScope Qwen3-30B) went off-task — a prompt-discipline problem surfaced, not just a route problem; PROMPT-v3 (ordered read→find→report, forbid project-wide grep) fixed on-task-ness but the model still didn't deliver the report artifact.
-- 2026-07-27 bench ground truth (`docs/bugsweep-bench-2026-07-27.md`) had no orchestration entries → all main-lane findings are NEW.
+-   `--thinking max` is applied to ALL subagent workers regardless of model reasoning support (gemma got it too); no override exposed by `external_subagent_start`. User confirmed: keep it.
+-   NVIDIA `nvidia/*` free nemotron models are NOT exposed via OpenRouter in this subagent catalogue — they only reach the broken nvidia key-router lane.
+-   The one model that produced output (ModelScope Qwen3-30B) went off-task — a prompt-discipline problem surfaced, not just a route problem; PROMPT-v3 (ordered read→find→report, forbid project-wide grep) fixed on-task-ness but the model still didn't deliver the report artifact.
+-   2026-07-27 bench ground truth (`docs/bugsweep-bench-2026-07-27.md`) had no orchestration entries → all main-lane findings are NEW.
 
 Next lane to trial (not yet done): freeinference.org as a direct Pi harness provider — alive, fast, has reasoning-capable models; only untested piece remaining.
 
@@ -133,9 +137,9 @@ Probed all alternate free providers for Macaron-V1-Venti subagent access. Findin
 
 Follow-up to the earlier "Orchestration bugsweep trial" openrouter/nvidia/cloudflare/groq "exit 124 / 0 assistant output" verdicts. Direct key-router probes that **mimic the harness** (`stream:true + tools + reasoning_effort:max`) pinpoint three distinct causes — most "model not viable" verdicts were **harness/adapter bugs**, not model failures:
 
-- **Cause 1 — `reasoning_effort: "max"` rejected.** The harness hardcodes `--thinking max`. **Groq** returns HTTP 400 (`allowed values ['none','default','low','medium','high']` — `max` not allowed). **ModelScope `deepseek-ai/DeepSeek-V3.2`** returns `choices: null` / empty. Harness swallows the error → logs-only forever. Fix: harness should send `high`/omit for these providers.
-- **Cause 2 — streaming `tool_calls` deltas not parsed.** `google/gemma-4-26b-a4b-it:free` (openrouter) and `mistralai/mistral-nemotron` (nvidia) emit **textbook-correct OpenAI tool_call streams** (`function.name:"read"`, correct path arg, `finish_reason:"tool_calls"`) in 1–5 s, yet the harness shows `tool_calls: []` / `assistant_output_seen: false` indefinitely. Routes that work (`router-opencode-zen`, `router-logfare`, `router-modelscope` DeepSeek-V4-Flash) normalize streaming tool_calls; `direct-openrouter`/`router-nvidia`/`router-groq`/`router-cloudflare` do not. Fix site: Pi core OpenAI-completions stream parser (compiled dist) — file a harness issue, not a local patch.
-- **Cause 3 — genuinely flaky model.** `@cf/meta/llama-3.3-70b-instruct-fp8-fast` under _no_ thinking returned pure gibberish (`ξηξη ． Velerik...`). Avoid.
+-   **Cause 1 — `reasoning_effort: "max"` rejected.** The harness hardcodes `--thinking max`. **Groq** returns HTTP 400 (`allowed values ['none','default','low','medium','high']` — `max` not allowed). **ModelScope `deepseek-ai/DeepSeek-V3.2`** returns `choices: null` / empty. Harness swallows the error → logs-only forever. Fix: harness should send `high`/omit for these providers.
+-   **Cause 2 — streaming `tool_calls` deltas not parsed.** `google/gemma-4-26b-a4b-it:free` (openrouter) and `mistralai/mistral-nemotron` (nvidia) emit **textbook-correct OpenAI tool_call streams** (`function.name:"read"`, correct path arg, `finish_reason:"tool_calls"`) in 1–5 s, yet the harness shows `tool_calls: []` / `assistant_output_seen: false` indefinitely. Routes that work (`router-opencode-zen`, `router-logfare`, `router-modelscope` DeepSeek-V4-Flash) normalize streaming tool_calls; `direct-openrouter`/`router-nvidia`/`router-groq`/`router-cloudflare` do not. Fix site: Pi core OpenAI-completions stream parser (compiled dist) — file a harness issue, not a local patch.
+-   **Cause 3 — genuinely flaky model.** `@cf/meta/llama-3.3-70b-instruct-fp8-fast` under _no_ thinking returned pure gibberish (`ξηξη ． Velerik...`). Avoid.
 
 **Bottom line:** `google/gemma-4-26b-a4b-it:free` and `mistralai/mistral-nemotron` are **likely subagent-viable once the streaming-tool_call adapter is fixed** — both streamed correct tool calls today. Until then, restrict subagent dispatch to `router-opencode-zen`, `router-logfare`, and `router-modelscope`. Full breakdown: `tmp/w57-root-cause-breakthrough-2026-07-29.md`.
 
@@ -161,9 +165,9 @@ User steer: "those models don't support max reasoning flag? We should still laun
 
 Clean signal on 4 of 10 (rest 429 rate-limited this run): `kiro-auto`, `minimax-m3`, `kimi-k2.7-code`, `glm-5.2`.
 
-- **All 4 accept `max` → HTTP 200 with content or tool_calls.** None 400-reject `max`/`xhigh`. No `xhigh`-only-higher tier to chase.
-- **`minimax-m3`** returned tool calls at `max`/`xhigh`/`default` but EMPTY at `high`/`medium`/`low` → so for the workhorse, sending `max` is materially correct; `high` would produce nothing.
-- **Conclusion: for logfare we ARE using the max the models accept. Not misconfigured.** Rate-limited logfare models (deepseek-v4-pro/flash, kimi-k2.6/k3, qwen-3.8-max, qwen-3.6-35b-a3b) to re-probe after upstream quota resets.
+-   **All 4 accept `max` → HTTP 200 with content or tool_calls.** None 400-reject `max`/`xhigh`. No `xhigh`-only-higher tier to chase.
+-   **`minimax-m3`** returned tool calls at `max`/`xhigh`/`default` but EMPTY at `high`/`medium`/`low` → so for the workhorse, sending `max` is materially correct; `high` would produce nothing.
+-   **Conclusion: for logfare we ARE using the max the models accept. Not misconfigured.** Rate-limited logfare models (deepseek-v4-pro/flash, kimi-k2.6/k3, qwen-3.8-max, qwen-3.6-35b-a3b) to re-probe after upstream quota resets.
 
 ### Actionable levers
 
