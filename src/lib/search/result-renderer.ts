@@ -191,9 +191,7 @@ export function setActiveSearchResultRow(
         }
     })
 
-    if (typeof window.refreshSearchResultHierarchy === 'function') {
-        window.refreshSearchResultHierarchy(resultsEl)
-    }
+    refreshSearchResultHierarchy(resultsEl)
 
     if (reveal && activeRow) {
         const searchState = getSearchStateNamespace(resultsEl)

@@ -146,12 +146,6 @@ declare global {
         __spectorStatus?: Record<string, unknown>
 
         /**
-         * Test-only function hook set by search/result-renderer so Playwright
-         * can force a layout refresh after mutating the result DOM externally.
-         */
-        refreshSearchResultHierarchy?: (el: HTMLElement) => void
-
-        /**
          * Test-only function hook set by stores/test-compat so Playwright can
          * force the body-attribute → test-state store sync after manipulating
          * data-attributes externally.
