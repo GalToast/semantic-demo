@@ -605,7 +605,6 @@ export function refreshFocusSemanticOverlay(): void {
         avgFrameMs: 0,
         maxFrameMs: 0
     }
-    focusLineParent.add(state.focusSemanticLines)
 }
 
 export function updateFocusSemanticOverlayPositions(now: number = performance.now()): void {

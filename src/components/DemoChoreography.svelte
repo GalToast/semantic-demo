@@ -217,7 +217,9 @@
       // Records may not be hydrated yet (data-worker loads asynchronously).
       // Keep polling without burning a retry while the corpus is empty.
       if (records.length === 0 && remainingAttempts > 0) {
-        scheduleDemoTimer(() => attemptStart(remainingAttempts), RETRY_START_DELAY_MS);
+        // W53 fix: decrement even on empty records — previously reused the same
+        // remainingAttempts, causing an infinite poll if the data worker never hydrates.
+        scheduleDemoTimer(() => attemptStart(remainingAttempts - 1), RETRY_START_DELAY_MS);
         return;
       }
       if (remainingAttempts <= 0) {
@@ -250,9 +252,11 @@
       if (unmounted) return
       if (sceneReady.value) { attemptStart(); return }
       if (performance.now() - replayStart > SCENE_READY_TIMEOUT_MS) { attemptStart(); return }
-      setTimeout(wait, 200)
+      // W53 fix: route through scheduleDemoTimer so cancelAllDemoTimers() can
+      // cancel the replay poll (previously bare setTimeout IDs were untracked).
+      scheduleDemoTimer(() => wait(), 200)
     }
-    setTimeout(wait, 300)
+    scheduleDemoTimer(() => wait(), 300)
   }
 
   let replayListener: ((_e: Event) => void) | null = null

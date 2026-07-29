@@ -167,7 +167,7 @@
     const liveNow =
       (_canvasAppState.renderer?.domElement as HTMLCanvasElement | null) ??
       (typeof document !== 'undefined' ? (document.querySelector('#canvas-container canvas') as HTMLCanvasElement | null) : null)
-    if (liveNow && liveNow !== canvasEl) bindKeysToLiveCanvas(liveNow, keyHandler)
+    if (liveNow && liveNow !== canvasEl) { canvasEl.removeEventListener('keydown', keyHandler); bindKeysToLiveCanvas(liveNow, keyHandler); }
 
     // Check for data-overlay-timeout override on the canvas container
     if (containerEl) {
@@ -221,6 +221,9 @@
           (_canvasAppState.renderer?.domElement as HTMLCanvasElement | null) ??
           (typeof document !== 'undefined' ? (document.querySelector('#canvas-container canvas') as HTMLCanvasElement | null) : null)
         if (liveAfterInit && liveAfterInit !== canvasEl) {
+          // W53 fix: remove the placeholder keydown binding before binding the
+          // live canvas (previously left a dead listener on the detached placeholder).
+          canvasEl.removeEventListener('keydown', keyHandler)
           bindKeysToLiveCanvas(liveAfterInit, keyHandler)
         }
         lifecycle.resizeEngine(viewportWidth(), viewportHeight());
@@ -268,7 +271,9 @@
         // W6-T5: Declare unsub before subscribe to avoid TDZ if the callback
         // fires synchronously (store already true).
         let unsub: (() => void) | null = null;
-        const cleanup = () => { unsub?.(); unsub = null; };
+        // W53 fix: also null engineReadyUnsub so onDestroy's engineReadyUnsub?.()
+        // is a no-op after cleanup runs (prevents double-unsubscribe).
+        const cleanup = () => { unsub?.(); unsub = null; engineReadyUnsub = null; };
         unsub = engineReadyStore.subscribe((ready) => {
           if (ready && !engineHasInit && !componentDestroyed) {
             cleanup();

@@ -263,11 +263,15 @@ function pushBezierLinePair(
     const start = state.nodePositions[pair.a]
     const end = state.nodePositions[pair.b]
     if (!start || !end) return
+    const rise = (() => {
+        const v = (((pair.a + pair.b) % 5) - 2) / 2
+        return Number.isFinite(v) ? v : 0.3
+    })()
     const control = getBezierControlPoint(
         start,
         end,
         (pair.a * 31 + pair.b * 17) % 2 === 0 ? 1 : -1,
-        (((pair.a + pair.b) % 5) - 2) / 2 || 0.3
+        rise
     )
     const startColor = getThreadCategoryColor(state.points[pair.a]?.cluster || 0, CONFIG.COLORS)
     const endColor = getThreadCategoryColor(state.points[pair.b]?.cluster || 0, CONFIG.COLORS)
@@ -733,7 +737,11 @@ function rebuildDirtyPairsInLayer(
 // ── Orchestrator ────────────────────────────────────────────────────────────
 
 export function updateMyceliumThreads(): void {
-    if (!webglContext.myceliumConnectionPairs?.length) return
+    if (!webglContext.myceliumConnectionPairs?.length) {
+        dirtyNodeIndices.clear()
+        state.myceliumDirty = false
+        return
+    }
 
     // Fast path: no nodes moved this frame — skip the entire rebuild.
     // H2 fix (Jul-10 bugsweep): the previous code had a comment above

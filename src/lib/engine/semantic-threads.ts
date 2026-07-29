@@ -721,7 +721,7 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
                 return true
             } catch (err) {
                 // Worker failed — do not fall back to main thread for >40 MB files.
-                _dataWorker = null
+                resetSemanticThreadWorker()
                 throw new Error('Worker-based thread loading failed (artifacts exceed main-thread budget).', {
                     cause: err
                 })

@@ -50,9 +50,15 @@
   let loaded = $derived(hasWeather());
 
   onMount(() => {
-    fetchWeather().catch(() => {
+    // W53 fix: wrap in try/catch — fetchWeather() may throw synchronously
+    // before returning a promise (e.g. guard clause), which .catch() misses.
+    try {
+      fetchWeather().catch(() => {
+        // Weather is non-critical; silently degrade
+      });
+    } catch {
       // Weather is non-critical; silently degrade
-    });
+    }
   });
 
   function toggleExpanded(): void {
