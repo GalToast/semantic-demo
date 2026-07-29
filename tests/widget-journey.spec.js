@@ -9,16 +9,18 @@ import { BASE_URL } from './helpers/3d-interaction-helpers.js'
 test.afterEach(async ({ page }) => {
     try {
         // Force-destroy the WebGL context so the GPU process can reclaim memory.
-        await page.evaluate(() => {
-            const canvas = document.querySelector('canvas')
-            if (canvas) {
-                const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
-                if (gl && !gl.isContextLost()) {
-                    const ext = gl.getExtension('WEBGL_lose_context')
-                    if (ext) ext.loseContext()
+        await page
+            .evaluate(() => {
+                const canvas = document.querySelector('canvas')
+                if (canvas) {
+                    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+                    if (gl && !gl.isContextLost()) {
+                        const ext = gl.getExtension('WEBGL_lose_context')
+                        if (ext) ext.loseContext()
+                    }
                 }
-            }
-        }).catch(() => {})
+            })
+            .catch(() => {})
         // Brief settle for the GPU process to reclaim resources.
         await page.waitForTimeout(200)
     } catch {
@@ -1116,7 +1118,13 @@ test.describe('Widget journey', () => {
         // Wait for the focus-pocket A11y list to populate. W1's F1-2 replaced
         // the <li role="button"> anti-pattern with a real <button>, so list
         // items are now <li><button class="focus-pocket-item-btn">…</button></li>.
-        await page.waitForSelector('#focus-pocket-a11y .focus-pocket-item-btn', { timeout: 5000 })
+        // Use waitForFunction — the A11y list is intentionally off-screen (sr-only
+        // pattern) unless the user opts in via the toggle button. The buttons exist
+        // in the DOM for screen readers regardless of visual visibility.
+        await page.waitForFunction(
+            () => document.querySelectorAll('#focus-pocket-a11y .focus-pocket-item-btn').length > 0,
+            { timeout: 5000 }
+        )
 
         const items = await page.$$eval('#focus-pocket-a11y .focus-pocket-item-btn', (btns) =>
             btns.map((b) => ({
@@ -1247,9 +1255,12 @@ test.describe('Widget journey', () => {
         await page.waitForTimeout(1000)
 
         // Get the trail/focus/inside chips' aria-labels (locked state)
+        // 20s timeout accommodates WebGL GPU-stall delays during initial
+        // scene setup that block Svelte's reactivity flush — see the W55
+        // timeline diagnosis (state transitions land 7-11s after click).
         for (const mode of ['trail', 'focus', 'inside']) {
             const chip = page.locator(`#mode-chips [data-mode="${mode}"]`)
-            await chip.waitFor({ state: 'attached', timeout: 5000 })
+            await chip.waitFor({ state: 'attached', timeout: 20000 })
             const ariaLabel = await chip.getAttribute('aria-label')
             expect(ariaLabel, `${mode} chip aria-label`).not.toBeNull()
             expect(ariaLabel.toLowerCase(), `${mode} chip aria-label must mention "lock"`).toContain('lock')
@@ -1957,11 +1968,13 @@ test.describe('Widget journey', () => {
 
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, { waitUntil: 'domcontentloaded' })
 
-        // Wait for the selected-business detail panel to attach. The name
-        // element id is `{idPrefix}selected-name`; FocusCard mounts it with
-        // idPrefix="fc-" (so the id is `fc-selected-name`), while InfoPanel
-        // mounts it without a prefix. Match either via a suffix selector.
-        const selectedName = page.locator('[id$="selected-name"]')
+        // Wait for the selected-business detail panel to attach. At 390px mobile,
+        // the InfoPanel is hidden (surface-focus.is-compact-body.has-focused-node)
+        // and only the FocusCard bottom-sheet is visible, which renders
+        // #fc-selected-name (FocusCard passes idPrefix="fc-"). The suffix selector
+        // [id$="selected-name"] is ambiguous (matches both #selected-name and
+        // #fc-selected-name), so target the FocusCard element explicitly.
+        const selectedName = page.locator('#fc-selected-name')
         await selectedName.waitFor({ state: 'attached', timeout: 60000 })
         await page.waitForTimeout(500) // allow layout + $derived effects to flush
 
@@ -2339,7 +2352,7 @@ test.describe('Widget journey', () => {
         // compass rail is eagerly pre-loaded in __PLAYWRIGHT__ mode (App.svelte),
         // so the transform assertion below reads its computed style.
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, { waitUntil: 'domcontentloaded' })
-        const selectedName = page.locator('[id$="selected-name"]')
+        const selectedName = page.locator('#selected-name')
         await selectedName.waitFor({ state: 'attached', timeout: 30000 })
         await page
             .waitForFunction(() => document.body.classList.contains('surface-focus'), null, { timeout: 30000 })

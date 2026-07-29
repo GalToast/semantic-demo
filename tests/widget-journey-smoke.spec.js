@@ -196,7 +196,10 @@ test.describe('Journey smoke (no WebGL engine)', () => {
         //  - The mode-chip rail is the top interactive surface
         await page.keyboard.press('Escape')
         await helpDialog.waitFor({ state: 'hidden', timeout: 5000 })
-        await page.waitForTimeout(200)
+        // Wait for the dialog's showModal() top-layer to fully clear
+        // before issuing further UI interactions.
+        await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 })
+        await page.waitForTimeout(300)
 
         // Post-dismiss verification: clicking the Search chip now
         // switches navState.mode to 'search' AND surfaces #info-panel +
@@ -206,11 +209,19 @@ test.describe('Journey smoke (no WebGL engine)', () => {
         const searchChip = page.locator('.mode-chip[data-mode="search"]')
         await searchChip.waitFor({ state: 'visible', timeout: 5000 })
         await searchChip.click()
-        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'search', null, { timeout: 5000 })
+        // The chip click fires selectMode('search') → writeNavStateMirror,
+        // but during initial WebGL scene setup the main thread is blocked
+        // by GPU stall warnings ("GL_CLOSE_PATH_NV ... GPU stall due to
+        // ReadPixels"), delaying Svelte's reactivity flush. Timeline tests
+        // observed the state transition landing anywhere from +7s to +11s
+        // after the click — 5s timeouts flake near-constantly.
+        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'search', null, {
+            timeout: 20000
+        })
         // The .surface-search body class is the visual surface-mode
         // contract that downstream panels (info-panel, search-results)
         // read. Verify it transitions in lockstep with navState.mode.
-        await page.waitForFunction(() => document.body.classList.contains('surface-search'), null, { timeout: 3000 })
+        await page.waitForFunction(() => document.body.classList.contains('surface-search'), null, { timeout: 20000 })
 
         // Regression in the OTHER direction: if the help dialog is still
         // [open] after a successful Escape (e.g. someone wired up a
@@ -257,16 +268,31 @@ test.describe('Journey smoke (no WebGL engine)', () => {
                     if (/\.legend[^{}]{0,40}::-webkit-scrollbar/i.test(txt) && /width:\s*8px/i.test(txt)) {
                         result.legendScrollbar8px = true
                     }
-                    if (r.cssRules) try { visit(r.cssRules) } catch { /* cross-origin */ }
+                    if (r.cssRules)
+                        try {
+                            visit(r.cssRules)
+                        } catch {
+                            /* cross-origin */
+                        }
                 }
             }
             for (const ss of Array.from(document.styleSheets)) {
-                try { visit(ss.cssRules || []) } catch { /* cross-origin skip */ }
+                try {
+                    visit(ss.cssRules || [])
+                } catch {
+                    /* cross-origin skip */
+                }
             }
             return result
         })
 
-        expect(found.srOnlyMapTitle, 'W56: body.surface-map .app-title sr-only rule must be bundled (header overlap fix)').toBe(true)
-        expect(found.legendScrollbar8px, 'W56: .legend::-webkit-scrollbar 8px rule must be bundled (native-scrollbar fix)').toBe(true)
+        expect(
+            found.srOnlyMapTitle,
+            'W56: body.surface-map .app-title sr-only rule must be bundled (header overlap fix)'
+        ).toBe(true)
+        expect(
+            found.legendScrollbar8px,
+            'W56: .legend::-webkit-scrollbar 8px rule must be bundled (native-scrollbar fix)'
+        ).toBe(true)
     })
 })
