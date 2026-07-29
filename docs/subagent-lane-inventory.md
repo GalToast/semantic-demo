@@ -2,24 +2,29 @@
 
 Moved out of `AGENTS.md` (Prompt Budget: no large reference tables in the hot-path file). `docs/subagent-delegation.md` remains the source for lifecycle/rate/vision rules; this doc is just the live per-model viability table.
 
-Probed 2026-07-27. Updated 2026-07-28.
+Probed 2026-07-27. Updated 2026-07-29.
 
 ## Lane inventory (from `model-providers.json`)
 
 - **Primary:** `minimax-m3` (MiniMax-M3 — main lane; verified vision-capable 2026-07-15, routes: kilo/minimax, logfare, opencode-zen, minimax-direct). Previous `kilo/openrouter/owl-alpha` is dead (404 on both the kilo gateway and OpenRouter; absent from `/v1/models`) — do not re-add.
 - **Registered alt:** `agnes-2.0-flash` ✅ **subagent-viable 2026-07-27** (resolves via `router-agnes`; tool-use + write succeed; verify output against parent-component scope, as it tends to over-reach into child components).
 - **Free fallbacks:**
+    - `ling-3.0-flash-free` ✅ **subagent-viable 2026-07-29** (via `opencode-zen/ling-3.0-flash-free` → `router-opencode-zen`) — passed a real find-and-fix graduation trial removing an unused `onMount` import; lint + 3380 unit tests passed.
     - `laguna-s-2.1-free` **route-dependent** — ❌ on OpenCode Zen (2026-07-29: subagent tasks stuck in long reasoning loops and hit 200MB+ stdout cap), ✅ via `/poolside` `poolside/laguna-s-2.1` and `/openrouter` `poolside/laguna-s-2.1:free` for direct completion probes. **Subagent benchmark 2026-07-29 (Pi harness, poolside route):** ❌ NOT subagent-viable — launched with `--thinking max`, spun in reasoning loops producing zero output for 41–88s on both a complex audit task and a trivial one-sentence prompt. Root cause: Pi harness defaults to `--thinking max` for reasoning-capable models; laguna-s-2.1 supports reasoning but loops indefinitely at max thinking. The `external_subagent_start` API does not expose a thinking-level override. Avoid for subagent coding tasks until a `--thinking low/off` option is available.
     - `laguna-xs-2.1-free` ✅ **subagent-viable 2026-07-27** (via `openrouter/poolside/laguna-xs-2.1:free`)
     - `mimo-v2.5-free` ✅ **subagent-viable 2026-07-28** (resolves via `router-opencode-zen`) — strong for UI code edits but emits very long reasoning traces; use conciseness steering.
     - `deepseek-v4-flash-free` ✅ **subagent-viable 2026-07-28** (resolves via `router-opencode-zen`) — reliable for multi-step coding and read-only audits.
     - `nemotron-3-ultra-free` ✅ **subagent-viable 2026-07-28** (via `opencode/nemotron-3-ultra-free` → `router-opencode-zen`) — reliable but counts against the ~3–4 worker OpenCode Zen concurrency limit.
-    - `north-mini-code-free` **route-dependent** — ❌ on OpenCode Zen (hallucinates `"DONE: <path>"` text without writing files, 2026-07-26), ⚠️ via `openrouter/cohere/north-mini-code:free` completed a read-only DOM audit 2026-07-23; avoid for code edits unless retested.
+    - `north-mini-code-free` ≈ **FIND scout only; NOT a trusted fix subagent** (reconfirmed 2026-07-29 via `opencode-zen/north-mini-code-free` on the **qwen harness**).
+        - **Earlier "36 MB reasoning / 0 edits" verdict was a harness wedge, not the model**: `shouldSpawnThroughShell()` shelled spaced `.exe` paths → cmd.exe mangled `--prompt`/`--mcp-config` → worker died before editing. Fixed this session (patch `mmx.ts`: only shell `.cmd`/`.bat`; `shell:false` for `.exe`).
+        - **Post-fix graduation (2026-07-29):** FIND ✅ — found the real `.legend-panel` dead-CSS bug with cross-referenced `file:line` evidence (34 `read_file`, 24 `grep_search`); find-grade ~7/10 (dinged for duplicate findings + weak "device check" reasoning). FIX ❌ — on a bounded 7-site removal it removed only **3/7 sites** (missed 1082/1150 in the same file + the entire `mobile_premium__state.css` comma-list), left a **stray 4-space line**, and **skipped the required `npm run build:svelte`** step (0 `run_shell_command` calls). fix-grade ~3/10.
+        - **Use:** read-only bugsweep FIND/report scouting (feed its findings to main lane or a stronger fixer). Do NOT assign it multi-site edits or rely on its self-reported "done".
+        - Also ⚠️ viable for read-only audits via `openrouter/cohere/north-mini-code:free`.
     - `hy3-free` / `tencent/hy3` ❌ not subagent-viable 2026-07-27 (OpenCode Zen 429 / cold stall)
     - `qwen3.6-plus` (untested recently)
     - `qwen3.6-flash` ❌ `qwen/qwen3.6-flash` is not in the unified v4 catalog via `zyditv4` (2026-07-27)
     - `qwen3.6-27b` (untested recently)
-    - `qwen3.6-35b-a3b` (untested recently)
+    - `qwen-3.6-35b-a3b` ✅ **subagent-viable 2026-07-29** (via `logfare/qwen-3.6-35b-a3b` → `router-logfare`) — passed a real UX-copy audit + fix graduation trial (Splash.svelte jargon fix); all tools (read, edit, bash, write) worked; cold start ~1-2s, subsequent calls near-instant; 24K tokens, $0 cost. Only logfare model besides deepseek-v4-pro confirmed healthy.
 
 ### Strong free/shadow routes for coding
 
@@ -28,8 +33,10 @@ Probed 2026-07-27. Updated 2026-07-28.
 | `mimo-v2.5-free`         | `router-opencode-zen` | UI code edits, component extractions          | Long reasoning; set tight scope and steer for conciseness.      |
 | `deepseek-v4-flash-free` | `router-opencode-zen` | Multi-step coding, bugsweep, read-only audits | Proven on L1/L2/L4/L5 sweep tasks.                              |
 | `deepseek-v4-pro`        | `router-logfare`      | Complex UI refactor / extraction              | Reliable workhorse; 900s timeout may be needed for large tasks. |
+| `qwen-3.6-35b-a3b`       | `router-logfare`      | Audits, copy fixes, small scoped edits        | Graduated 2026-07-29; cold start ~1-2s, fast tools, $0 cost.    |
+| `deepseek-v4-flash`      | `router-modelscope`   | **Focused bug fixes, scoped engine edits**   | ✅ **VIABLE 2026-07-29**: fixed 4 engine bugs (CRITICAL+HIGH+2×MEDIUM), build+lint passed, clean report, $0.005 cost, ~6 min, 22 thinking blocks. 49 models, 3 keys, no balance/credit issues. Launch ref: `modelscope/deepseek-ai/DeepSeek-V4-Flash`. Note: earlier bugsweep trial (open-ended) went off-task — best for well-scoped fix tasks with precise instructions, not open-ended exploration. |
 
-## Provider health snapshot — 2026-07-28
+## Provider health snapshot — 2026-07-29
 
 Probed from main lane via `/v1/models` and completion calls.
 
@@ -37,9 +44,9 @@ Probed from main lane via `/v1/models` and completion calls.
 | ---------------- | --------------------------------------------------------------------------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------- |
 | `/poolside`      | `poolside/laguna-s-2.1`                                                           | ✅      | ~0.5 s   | Direct Poolside endpoint; 200 OK                                                                           |
 | `/openrouter`    | `poolside/laguna-s-2.1:free`                                                      | ✅      | ~0.4–1 s | OpenRouter free tier; 200 OK                                                                               |
-| `/logfare`       | `kiro-auto`                                                                       | ❌ 429  | —        | `Logfare upstream rate-limited model kiro-auto`                                                            |
+| `/logfare`       | `qwen-3.6-35b-a3b`                                                                | ✅      | ~1.1 s   | Subagent-viable; passed coding trial 2026-07-29 (Splash.svelte jargon fix)                                 |
 | `/logfare`       | `kimi-k2.7-code`                                                                  | ❌ 429  | —        | Rate-limited upstream                                                                                      |
-| `/logfare`       | `minimax-m3`                                                                      | ⚠️      | —        | 200 OK but `content: null` — usable for routing probe only, not reliable for production completions        |
+| `/logfare`       | `minimax-m3`                                                                      | ❌ 429  | —        | Rate-limited upstream (was `content: null` — confirmed 429 throttle, not a model bug)                      |
 | `/kilo`          | `kilo-auto/frontier`                                                              | ❌ 402  | —        | Paid model; credits required                                                                               |
 | `/kilo`          | `openrouter/auto`                                                                 | ❌ 402  | —        | Paid model; credits required                                                                               |
 | `/kilo`          | `openrouter/auto-beta`                                                            | ❌ 402  | —        | Paid model; credits required                                                                               |
@@ -91,3 +98,17 @@ Cross-cutting:
 - 2026-07-27 bench ground truth (`docs/bugsweep-bench-2026-07-27.md`) had no orchestration entries → all main-lane findings are NEW.
 
 Next lane to trial (not yet done): freeinference.org as a direct Pi harness provider — alive, fast, has reasoning-capable models; only untested piece remaining.
+
+## Free-lane billing investigation — 2026-07-29
+
+Probed all alternate free providers for Macaron-V1-Venti subagent access. Findings:
+
+| Provider | Free models? | Verdict | Details |
+| -------- | ------------ | ------- | ------- |
+| **Modelscope** | 49 models, 3 keys | ✅ **best free lane** | No balance/credit/rate-limit issues. DeepSeek-V4-Flash returns `reasoning_content`, Qwen3-Coder-30B clean responses. 75 entries seeded in settings.json. Launch-ready. |
+| **Novita** | 0 of 143 models free | ❌ dead end | All 143 models have pricing; `403 NOT_ENOUGH_BALANCE` on $0 account. "Free" Macaron listing was misleading — Novita requires balance for every model. |
+| **Infron** | `:free` models exist but need $5+ | ❌ dead end | `:free`-suffixed models (kimi-k2.6:free, macaron-v1-venti:free, etc.) require account balance > $4.999999. Not truly free. Also `insufficient_user_quota` (credits exhausted). |
+| **Zenmux** | 5 genuinely free (`-free` suffix) | ⚠️ rate-limited | `z-ai/glm-4.7-flash-free`, `z-ai/glm-4.6v-flash-free`, `x-ai/grok-4.5-free`, `moonshotai/kimi-k3-free`, `stepfun/step-3.7-flash-free`. Usage-capped (429 "usage limit reached"), NOT balance-required — resets periodically. 152 entries seeded. Infra ready when caps reset. |
+| **Macaron-V1-Venti** | infra fixed, upstream blocked | ⚠️ pending billing | Routing pipeline fixed (mmx.js piModelRef + extension providerIdForBaseUrl patched for novita/infron). Both Infron ($5 balance) and Novita (balance) need account top-up. When billing clears, re-launch with `infron/mindai/macaron-v1-venti:free` or `novita/mindai/macaron-v1-venti`. |
+
+**Recommendation:** Use **Modelscope** (49 models, no billing wall) + **Logfare** (3 confirmed viable) for free subagents. Avoid Novita/Infron until accounts are topped up. Zenmux free models are a secondary option when rate caps reset.
