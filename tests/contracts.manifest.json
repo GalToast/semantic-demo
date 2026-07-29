@@ -15,7 +15,8 @@
                 "exploration-modes-contract.mjs",
                 "focus-selection-owner-contract.mjs",
                 "journey-event-bindings-contract.mjs",
-                "state-store-sync-contract.mjs"
+                "state-store-sync-contract.mjs",
+                "semantic-demo-css-contract.mjs"
             ]
         },
         "navigation": {
@@ -113,7 +114,8 @@
                 "loading-ui-contract.mjs",
                 "motion-state-contract.mjs",
                 "map-flattening-raw-buffer-contract.mjs",
-                "production-preview-parity-contract.mjs"
+                "production-preview-parity-contract.mjs",
+                "semantic-demo-css-contract.mjs"
             ]
         },
         "mobile-critical": {

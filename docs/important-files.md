@@ -4,6 +4,10 @@ Moved from `AGENTS.md` (2026-06-26) to keep the hot-path context file lean.
 
 This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "Important Files".
 
+## Build artifacts
+
+- `dist/svelte/semantic-demo.css` is intentionally 0 bytes: the root `./semantic-demo.css` source is a comment-only reserved shell hook (see its own header), and `vite.config.ts` minifies root CSS in-place via lightningcss (`transform({ minify: true })`), stripping the comment to nothing. It's still linked by `dist/svelte/index.html` as an empty stylesheet (harmless). Guarded by the source-driven build-contract check `tests/semantic-demo-css-contract.mjs` (registered in the `core` + `smoke` contract groups) — re-minifies the source and asserts the dist bytes match, so a future silent drop-to-0 is caught while a real-rule addition stays green.
+
 ## Engine
 
 - `src/lib/engine/three-engine.ts` — top-level engine orchestrator.
