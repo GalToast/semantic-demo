@@ -17,6 +17,7 @@
   import { resetSemanticThreadWorker } from '@lib/engine/semantic-threads';
   import { teardownAppShell } from '@lib/orchestration/app-init';
   import { setupGlobalShortcuts } from '@lib/keyboard/global-shortcuts';
+  import { setupWindowStateBindings } from '@lib/ui/global-bindings';
   import { installErrorHandlers } from '@lib/error-boundary';
   import { disposeWeatherUi } from '@lib/ui/weather-ui';
   import { debugError } from '@lib/utils/debug';
@@ -147,6 +148,15 @@
       toggleAudioMute
     })
   );
+
+  // ── Browser history + window-state bindings ───────────────────────────────
+  // Restores the popstate/focus/visibility wiring that was orphaned when
+  // keyboard handling migrated to setupGlobalShortcuts (see global-bindings.ts).
+  // Without this, browser back/forward changes the URL but never restores the
+  // prior view. Idempotent; disposed via disposeEventListeners() in teardown.
+  $effect(() => {
+    setupWindowStateBindings();
+  });
 </script>
 
 <!-- Pure side-effect component; no DOM output -->

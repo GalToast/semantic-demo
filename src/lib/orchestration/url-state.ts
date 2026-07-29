@@ -158,8 +158,8 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
  *
  * When a newer applyUrlState() bumps `navState.urlStateRestoreToken`, any
  * earlier in-flight restore should bail out before writing stale state.
- * `bindGlobalEvents` registers the active popstate listener and does NOT
- * guard on `applyingUrlState`, so a rapid back/forward can re-enter
+ * `setupWindowStateBindings` (global-bindings.ts) registers the active popstate
+ * listener and does NOT guard on `applyingUrlState`, so a rapid back/forward can re-enter
  * applyUrlState mid-await. The token check below short-circuits the stale
  * restore at each await point.
  *
