@@ -372,7 +372,7 @@ export interface SemanticState extends StateConfig {
     semanticManifold: WebGLContextState['semanticManifold']
     routeTraceLines: WebGLContextState['routeTraceLines']
     arrivalHandoffGroup: WebGLContextState['arrivalHandoffGroup']
-    routeTraceConnectionPairs: Array<{ a: number; b: number; layer: number }>
+    routeTraceConnectionPairs: Array<{ a: number; b: number; side: number }>
     routeTraceRenderStateKey: string
     routeTraceDiagnostics: RouteTraceDiagnostics
     inspectedStrandGroup: WebGLContextState['inspectedStrandGroup']
