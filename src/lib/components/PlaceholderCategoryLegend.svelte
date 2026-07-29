@@ -63,7 +63,7 @@
     .placeholder-legend {
       grid-template-columns: 1fr;
       max-width: 16rem;
-      gap: 0.25rem 0.6rem;
+      gap: 0.45rem 0.6rem;
     }
     .placeholder-legend-item {
       font-size: 0.65rem;

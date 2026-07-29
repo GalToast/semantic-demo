@@ -245,7 +245,7 @@
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(225, 240, 237, 0.85);
+    color: var(--color-text-quiet, rgba(225, 240, 237, 0.92));
     background: var(--glass-reflection-fade);
     border: 1px solid var(--glass-reflection-muted);
     transition:
