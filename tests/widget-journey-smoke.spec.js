@@ -145,7 +145,9 @@ test.describe('Journey smoke (no WebGL engine)', () => {
      *  - engineReady has fired so the `$effect` runs and `showModal()`
      *    is called.
      */
-    test('W55 help-dialog: auto-opens on first visit; Escape dismisses; chip click then registers', async ({ page }) => {
+    test('W55 help-dialog: auto-opens on first visit; Escape dismisses; chip click then registers', async ({
+        page
+    }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
 
         // Make sure ONBOARDING_STORAGE_KEY is not set so the dialog auto-opens.
@@ -204,24 +206,67 @@ test.describe('Journey smoke (no WebGL engine)', () => {
         const searchChip = page.locator('.mode-chip[data-mode="search"]')
         await searchChip.waitFor({ state: 'visible', timeout: 5000 })
         await searchChip.click()
-        await page.waitForFunction(
-            () => window.__APP_STATE__?.navState?.mode === 'search',
-            null,
-            { timeout: 5000 }
-        )
+        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'search', null, { timeout: 5000 })
         // The .surface-search body class is the visual surface-mode
         // contract that downstream panels (info-panel, search-results)
         // read. Verify it transitions in lockstep with navState.mode.
-        await page.waitForFunction(
-            () => document.body.classList.contains('surface-search'),
-            null,
-            { timeout: 3000 }
-        )
+        await page.waitForFunction(() => document.body.classList.contains('surface-search'), null, { timeout: 3000 })
 
         // Regression in the OTHER direction: if the help dialog is still
         // [open] after a successful Escape (e.g. someone wired up a
         // competing dialog-open path), this assertion catches it.
         const stillOpen = await page.locator('dialog.help-dialog[open]').count()
         expect(stillOpen, 'W55 post-condition: Escape must close the help dialog and keep it closed').toBe(0)
+    })
+
+    /**
+     * W56 regression (reports/w56-vision-faceoff-2026-07-29.md): two pre-existing
+     * map-mode layout bugs fixed in commit 66445d0d —
+     *   (1) h1.app-title leaked a fragment behind .map-view-header in map mode
+     *       → fixed by a `body.surface-map .app-title` sr-only rule in
+     *       css/journey_active.css (clip:rect(0,0,0,0), 1px box).
+     *   (2) the legend (Categories aside, id=legend-panel + class=legend) showed
+     *       a NATIVE unstyled scrollbar because css/layout_base.css targets the
+     *       CLASS .legend-panel but the element only carries the ID — fixed by
+     *       mirroring the styled scrollbar (8px width) on the .legend class in
+     *       src/components/Legend.svelte.
+     * Both fixes only manifest visually in the full WebGL map surface (the
+     * sr-only needs renderKind=webgl for body.surface-map; the legend is
+     * display:none in placeholder2d), so this smoke test guards the RULES'
+     * PRESENCE in the loaded stylesheet instead — catching future reverts
+     * (css/journey_active.css has build-reversion history) without needing
+     * WebGL. The visual behavior is pinned by the W56 vision faceoff
+     * (inkling + minimax-m3 nvidia both confirmed the pixels).
+     */
+    test('W56 map-mode: header sr-only rule + legend styled-scrollbar rule are bundled', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map`, { waitUntil: 'domcontentloaded' })
+
+        // Scan every loaded same-origin stylesheet for the two fix rules.
+        // Regexes are loose on purpose: Svelte scopes .legend -> .legend.svelte-XXXX,
+        // and browsers re-serialize clip:rect(0,0,0,0) -> clip: rect(0px,0px,0px,0px)
+        // in cssText, so exact-match patterns would flake.
+        const found = await page.evaluate(() => {
+            const result = { srOnlyMapTitle: false, legendScrollbar8px: false }
+            const visit = (rules) => {
+                for (const r of rules) {
+                    const txt = (r.cssText || '').replace(/\s+/g, ' ')
+                    if (/surface-map[^{}]*\.app-title/i.test(txt) && /clip:\s*rect\(/i.test(txt)) {
+                        result.srOnlyMapTitle = true
+                    }
+                    if (/\.legend[^{}]{0,40}::-webkit-scrollbar/i.test(txt) && /width:\s*8px/i.test(txt)) {
+                        result.legendScrollbar8px = true
+                    }
+                    if (r.cssRules) try { visit(r.cssRules) } catch { /* cross-origin */ }
+                }
+            }
+            for (const ss of Array.from(document.styleSheets)) {
+                try { visit(ss.cssRules || []) } catch { /* cross-origin skip */ }
+            }
+            return result
+        })
+
+        expect(found.srOnlyMapTitle, 'W56: body.surface-map .app-title sr-only rule must be bundled (header overlap fix)').toBe(true)
+        expect(found.legendScrollbar8px, 'W56: .legend::-webkit-scrollbar 8px rule must be bundled (native-scrollbar fix)').toBe(true)
     })
 })
