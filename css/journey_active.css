@@ -137,6 +137,27 @@ body.surface-map-idle .map-view-title {
     display: none;
 }
 
+/* W56: suppress the a11y h1.app-title in the map surface. The
+ * .map-view-header (z-index 800, absolute top:24) provides the
+ * visible identity ("MAP | MONTGOMERY COUNTY" + "County terrain"),
+ * and the h1.app-title (12.48px, z-index 50, margin-top:56) leaks a
+ * fragment behind the map header at the left edge. The W50-UX
+ * margin-top:56 was calibrated for the app-header banner (height 56)
+ * but the map-view-header extends to y~83, overlapping the h1.
+ * Visually hide via the sr-only pattern (SR/SEO still read it),
+ * mirroring the mobile <=768px sr-only rule in App.svelte. */
+body.surface-map .app-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 @media (min-width: 769px) {
     .journey-compass {
         left: calc(360px + (100vw - 360px) / 2);
