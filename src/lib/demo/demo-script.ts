@@ -9,7 +9,7 @@
  */
 import type { DemoPhase } from '@lib/stores/demo.svelte.ts'
 import { toggleAutoRotate, exploreInsideToNextStop, returnToCountyView } from '@lib/orchestration/lifecycle'
-import { search } from '@lib/search/orchestration'
+import { search, getFirstSearchHit } from '@lib/search/state'
 import { focusOnNode } from '@lib/engine/camera-choreography/cursor'
 import { traverseNeighbor } from '@lib/journey/thread-settler'
 import { setClusterFilter, clearClusterFilter } from '@lib/orchestration/cluster-filter-controller'
@@ -25,17 +25,11 @@ export type DemoStep = {
 }
 
 /**
- * Read the first search hit's point index from appState.searchResults.
- * Returns null if no results are available (FOCUS phase will be skipped
- * by the driver which checks this before calling focusOnNode).
+ * Read the first search hit's point index from the canonical search-state facade.
+ * Re-exported here for the few demo files that haven't migrated to @lib/search/state.
+ * @deprecated Prefer `import { getFirstSearchHit } from '@lib/search/state'`.
  */
-export function getFirstSearchHit(): number | null {
-    const results = appState.searchResults
-    if (!results || results.length === 0) return null
-    const first = results[0]
-    if (!first || typeof first.index !== 'number') return null
-    return first.index
-}
+export { getFirstSearchHit } from '@lib/search/state'
 
 export const DEMO_SCRIPT: DemoStep[] = [
     {

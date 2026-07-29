@@ -7,6 +7,8 @@
 
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { clearSearch as storeClearSearch } from '@lib/stores/search.svelte'
+import { appState } from '@lib/state/app.svelte'
+import type { SearchResult } from './result-presentation'
 
 export interface SearchOptions {
     preferCachedResults?: boolean
@@ -32,6 +34,23 @@ export function clearSearch(options: SearchOptions = {}): void {
             preservedSearch: !!options.preserveSearch
         })
     }
+}
+
+/**
+ * Read one search result by index from the canonical search-state facade.
+ * Returns null if results are empty or the index is out of range.
+ */
+export function getSearchResult(index: number): SearchResult | null {
+    const results = appState.searchResults
+    if (!Array.isArray(results) || index < 0 || index >= results.length) return null
+    const result = results[index]
+    if (!result || typeof result.index !== 'number') return null
+    return result as SearchResult
+}
+
+export function getFirstSearchHit(): number | null {
+    const first = getSearchResult(0)
+    return first ? first.index : null
 }
 
 export { search, bindSearchResultInteractions, beginSearchFocusTransition, type SearchContext } from './orchestration'
