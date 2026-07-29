@@ -302,7 +302,7 @@ Tactics retested: (a) `external_subagent_followup` on stalled-deep-work to recov
 | Followup-recover stalled                        | W4c Svelte-5 snapshot/gate footguns | ✅ completed in ~4 min from followup dispatch (118 new output tokens, $0) → 13.3 KB report | **GOOSE-UNLOCK MECHANISM WORKS** for stalled `agnes` deep-work: `external_subagent_followup({worker_id})` resumes via the recorded `session_id` and finishes only the write step.                               |
 | Followup-retry on transient `Connection error.` | W3c lifecycle                       | ✅ completed in ~2.3 min from re-dispatch → 9.6 KB report                                  | Re-followup on the same `worker_id` (same `session_id`) recovers from transient route blips fast. ⚠️ BUT the W3c resulting report's #1 finding was a fabricated false-positive (see 2nd caveat + ledger below). |
 
-**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: _"Reading it inside $derived registers reactivity directly — no mirror needed."_
+**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: *"Reading it inside $derived registers reactivity directly — no mirror needed."*
 
 Report honest-stamped 4/10 + caution footer in `tmp/bugsweep-2026-07-24/worker4-reactivity-footguns-report.md`; do NOT action the 9 findings.
 
@@ -1116,7 +1116,7 @@ Four workers dispatched in parallel on an identical scope (WeatherWidget + Compa
 
 ### Round 2 takeaway
 
-No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably _read + analyze_ but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
+No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably *read + analyze* but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
 
 Two tool-quirks persisted to `failures.md`:
 
@@ -1480,3 +1480,23 @@ Goal: land five focused fixes (desktop Search-mode input, mode-chip click reliab
 - `poolside/laguna-s-2.1` connects but is too verbose/reasoning-heavy for the 200 MB stdout cap; not suitable for open-ended diagnosis.
 - `modelscope/zai-org/GLM-5` is not actually dispatchable despite being in the allowlist.
 - `mistral/devstral-latest` makes useful edits but can stall before final verification/report.
+
+### W55 mode-chip clicks root-cause finding (audit closeout 2026-07-29)
+
+The Round 10 task "Mode-chip click reliability (initial)" on `poolside/laguna-s-2.1` was closed as a test-setup issue, not a code defect. **The mode-chip radiogroup, `selectMode()` funnel, and roving tabindex in `src/lib/components/header/ModeChipRail.svelte` + `src/lib/components/header/mode-nav.ts` are correct.** What the MCP audit script was reporting as "Chrome DevTools click did not register" is the first-visit help dialog (`dialog.help-dialog[open]`, opened via `helpDialog.showModal()` in `src/lib/components/header/HelpDialog.svelte:127`) sitting in the browser top-layer above the header rail and absorbing every pointer event.
+
+The dialog auto-opens on first visit when all five conditions are satisfied: `engineReady.value`, `!helpDialogAutoOpened`, `!$viewport.isCompact`, `!isDeepLink`, and localStorage has no `ONBOARDING_STORAGE_KEY` entry. This is the canonical state of every clean `?nodemo=1` Playwright / MCP run. Real users dismiss it with `Escape`, the **Got it** button, or the W49 document-level `pointerdown` outside handler (`HelpDialog.svelte:99-110`). The pre-W55 journey tests already follow the explicit `Escape` pattern (canonical site: `tests/widget-journey.spec.js:33-40`); the MCP audit script and any future visual-audit callers must do the same before clicking the chip rail.
+
+Full report: `reports/visual-audit-continued-2026-07-28.md` § "Root-Cause Finding — Mode-chip clicks blocked by first-visit help dialog". W55 decision: **no mode-chip code change**; close Round 10 chip-click task as a test-setup issue. Product-side UX improvement deferred — the dialog already exposes **Got it**, `Escape`, and `pointerdown`-outside dismissal; a backdrop-click handler would be redundant with the existing pointerdown handler.
+
+### W55 closeout status (2026-07-29)
+
+- ✅ **Desktop Search-mode input visibility** — fixed in `98b4cae6` (`css/search.css` regression).
+- ✅ **Mode-chip click reliability** — closed as test-setup issue (see above); no code change required.
+- ✅ **Canvas overlay timeout dev-aware** — fixed in `98b4cae6` (`src/components/Canvas.svelte` 5s→15s in dev mode).
+- ✅ **Keyboard focus-trap + IME** — fixed in `98b4cae6` (`src/lib/utils/focus-trap.ts` + `src/lib/keyboard/keyboard-help.ts`); covered by `focus-trap-stack.test.ts` + `w7-keyboard-help-ime-guard.test.ts`.
+- ✅ **Utils bugsweep (camera-math + disposable)** — fixed in `98b4cae6` (`src/lib/utils/disposable.svelte.ts`); new `camera-math-utils.test.ts` + updated `disposable-svelte-ling.test.ts`.
+- ⚠️ **MapBackButton no-record desktop return** — not reproduced in W55; defer to next wave.
+- ⚠️ **`recruiter-assets/` screenshots** — deferred per user; UI not picture-ready yet.
+
+**New viable routes confirmed during W55**: none beyond Round 9; the W55 fixes were small-scoped edits on known-good lanes (`opencode/ling-3.0-flash-free`, `kilo/inclusionai/ling-3.0-flash:free`).

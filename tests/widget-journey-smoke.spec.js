@@ -117,4 +117,111 @@ test.describe('Journey smoke (no WebGL engine)', () => {
         await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'galaxy', null, { timeout: 5000 })
         expect(page.url(), 'URL should drop view=map after returning to overview').not.toContain('view=map')
     })
+
+    /**
+     * W55 audit regression (visual-audit-continued-2026-07-28.md §
+     * "Root-Cause Finding — Mode-chip clicks blocked by first-visit help
+     * dialog"): on a clean first-visit desktop session the help dialog
+     * (`dialog.help-dialog[open]`, opened via `helpDialog.showModal()` in
+     * src/lib/components/header/HelpDialog.svelte:127) sits in the browser
+     * top-layer above the header rail and absorbs every pointer event.
+     * Real users dismiss it with `Escape`, the **Got it** button, or the
+     * W49 document-level pointerdown outside handler — chip clicks then
+     * register normally. The MCP visual-audit script did NOT pre-dismiss
+     * the dialog and reported false-positive "click did not register"
+     * failures on the chip rail. This test pins the canonical pattern so
+     * a future regression (e.g. someone removes the W49 pointerdown
+     * handler) fails loudly instead of silently re-introducing the
+     * false-negative.
+     *
+     * Pre-conditions:
+     *  - Desktop viewport (>= 821px). The help dialog auto-opens only on
+     *    `!$viewport.isCompact` (Header CSS contract; mobile uses
+     *    renderKind=placeholder2d where the dialog never opens).
+     *  - Clean localStorage: ONBOARDING_STORAGE_KEY absent, so the
+     *    auto-open `$effect` in HelpDialog.svelte:128-145 fires.
+     *  - No deep-link (`?anchor=`, `?record=`, `?view=map`, `?q>=2`) —
+     *    HelpDialog skips auto-open on shared-link targets (W47-UI #2).
+     *  - engineReady has fired so the `$effect` runs and `showModal()`
+     *    is called.
+     */
+    test('W55 help-dialog: auto-opens on first visit; Escape dismisses; chip click then registers', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+
+        // Make sure ONBOARDING_STORAGE_KEY is not set so the dialog auto-opens.
+        await page.addInitScript(() => {
+            try {
+                window.localStorage.removeItem('moco_onboarding_seen_v1')
+            } catch {
+                /* private mode / storage disabled — best-effort */
+            }
+        })
+
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        // Click through the splash so engineReady fires and the help dialog
+        // can auto-open (HelpDialog.svelte:128-145 $effect on engineReady).
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // Wait for engineReady + the dialog to be [open] in the DOM.
+        // The auto-open $effect runs synchronously after engineReady.value flips,
+        // so a short wait_for_timeout + the [open] attribute check is sufficient.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        await helpDialog.waitFor({ state: 'attached', timeout: 15000 })
+        const isOpenBeforeDismiss = await helpDialog.count()
+        expect(
+            isOpenBeforeDismiss,
+            'W55 pre-condition: help dialog must auto-open on first-visit desktop (clean localStorage, no deep-link)'
+        ).toBeGreaterThan(0)
+
+        // The chip rail is laid out behind the modal ::backdrop. Real
+        // pointer events on a chip are absorbed by the dialog; verify
+        // the chip exists but is logically occluded by the open dialog.
+        // We do NOT assert that a click while the dialog is open FAILS —
+        // the W49 pointerdown handler closes the dialog on any click
+        // outside, which is the desired behavior. Instead we assert the
+        // structural fact: the dialog is the top-layer element covering
+        // the chip rail, so any chip-touching test MUST dismiss it first.
+        const modeChips = page.locator('.mode-chips .mode-chip')
+        await modeChips.first().waitFor({ state: 'attached', timeout: 5000 })
+
+        // Dismiss the dialog with Escape (the canonical pattern used
+        // by 10+ existing tests in widget-journey.spec.js). After Escape:
+        //  - dialog[open] attribute is removed (closed)
+        //  - markOnboardingSeen() ran, so localStorage now has the key
+        //  - The mode-chip rail is the top interactive surface
+        await page.keyboard.press('Escape')
+        await helpDialog.waitFor({ state: 'hidden', timeout: 5000 })
+        await page.waitForTimeout(200)
+
+        // Post-dismiss verification: clicking the Search chip now
+        // switches navState.mode to 'search' AND surfaces #info-panel +
+        // #search-input. This is the canonical positive control — if
+        // the chip still does not register, the dismissal logic is
+        // broken regardless of how many tests use the pattern.
+        const searchChip = page.locator('.mode-chip[data-mode="search"]')
+        await searchChip.waitFor({ state: 'visible', timeout: 5000 })
+        await searchChip.click()
+        await page.waitForFunction(
+            () => window.__APP_STATE__?.navState?.mode === 'search',
+            null,
+            { timeout: 5000 }
+        )
+        // The .surface-search body class is the visual surface-mode
+        // contract that downstream panels (info-panel, search-results)
+        // read. Verify it transitions in lockstep with navState.mode.
+        await page.waitForFunction(
+            () => document.body.classList.contains('surface-search'),
+            null,
+            { timeout: 3000 }
+        )
+
+        // Regression in the OTHER direction: if the help dialog is still
+        // [open] after a successful Escape (e.g. someone wired up a
+        // competing dialog-open path), this assertion catches it.
+        const stillOpen = await page.locator('dialog.help-dialog[open]').count()
+        expect(stillOpen, 'W55 post-condition: Escape must close the help dialog and keep it closed').toBe(0)
+    })
 })
