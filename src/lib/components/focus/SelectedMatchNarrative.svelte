@@ -12,7 +12,7 @@
    */
 
   interface Props {
-    /** Narrative text explaining why this record matched the search/focus */
+    /** Narrative text explaining why this listing matched the search/focus */
     matchNarrative: string;
     /** Whether to show the panel (hidden when empty) */
     showMatchPanel: boolean;
