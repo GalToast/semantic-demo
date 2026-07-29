@@ -71,8 +71,10 @@ describe('A11y W42-B: Thread inspector screen reader labels', () => {
     })
 
     it('meta stats div has role="list" with descriptive aria-label', () => {
-        expect(src).toContain('id="focus-thread-inspector-meta"')
-        expect(src).toMatch(/id="focus-thread-inspector-meta"[\s\S]*?role="list"[\s\S]*?aria-label=\{metaAriaLabel\}/)
+        expect(src).toMatch(/id="focus-thread-inspector-meta-(populated|empty)"/)
+        expect(src).toMatch(
+            /id="focus-thread-inspector-meta-(populated|empty)"[\s\S]*?role="list"[\s\S]*?aria-label=\{metaAriaLabel\}/
+        )
         // The literal descriptive phrase is generated in the metaAriaLabel derived value.
         expect(src).toContain('Connection statistics:')
     })

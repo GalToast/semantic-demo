@@ -85,7 +85,7 @@ describe('ThreadInspector component', () => {
     })
 
     it('meta stats .focus-thread-inspector-meta for stops/overlapping paths/destinations', () => {
-        expect(panelSource).toContain('id="focus-thread-inspector-meta"')
+        expect(panelSource).toMatch(/id="focus-thread-inspector-meta-(populated|empty)"/)
         expect(panelSource).toMatch(/class="[^"]*\bfocus-thread-inspector-meta\b[^"]*"/)
         expect(panelSource).toContain('stops')
         expect(panelSource).toContain('overlapping paths')

@@ -94,7 +94,7 @@
 -->
 <div
   role="region"
-  aria-label="Semantic explorer preview"
+  aria-label="Business network preview"
   class="placeholder-2d"
   data-testid="placeholder-2d"
 >
@@ -251,7 +251,7 @@
 
   .placeholder-overlay {
     position: relative;
-    z-index: 1;
+    z-index: var(--z-base);
     text-align: center;
     padding: 2rem;
     max-width: 32rem;

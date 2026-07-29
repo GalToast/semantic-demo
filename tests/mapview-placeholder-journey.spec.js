@@ -161,7 +161,7 @@ test.describe('Placeholder2D journey', () => {
         await placeholder.waitFor({ state: 'visible', timeout: 15000 })
 
         await expect(placeholder).toHaveAttribute('role', 'region')
-        await expect(placeholder).toHaveAttribute('aria-label', 'Semantic explorer preview')
+        await expect(placeholder).toHaveAttribute('aria-label', 'Business network preview')
 
         // Title + badge + subtitle copy (W47-C "Preview" framing).
         await expect(placeholder.locator('.placeholder-title')).toContainText('Semantic Explorer')

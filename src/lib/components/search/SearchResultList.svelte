@@ -152,7 +152,7 @@
        results surface and is always reachable when results remain. */
     position: sticky;
     bottom: 0;
-    z-index: 1;
+    z-index: var(--z-base);
     background: rgba(var(--color-surface-chrome-rgb), 0.96);
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
     border-radius: 0.4rem;

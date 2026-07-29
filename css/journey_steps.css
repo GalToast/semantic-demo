@@ -377,6 +377,11 @@ body.surface-focus-search #btn-focus-next:not(:disabled) {
 body.surface-focus .focus-stage-neighbors.active,
 body.surface-focus-search .focus-stage-neighbors.active {
     display: block;
+    /* L4-H1/W56 followup: the journey grid's first track is only 42px, so the
+       neighbor rail must span the center column or its count text gets clipped
+       to a truncated "5 visi!". See AGENTS.md § Key Product Invariants. */
+    width: 100%;
+    grid-column: 2 / 3;
     margin-top: 12px;
     padding-top: 12px;
     border-top: 1px solid rgba(var(--color-primary-tint-rgb), 0.12);

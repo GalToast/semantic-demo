@@ -86,6 +86,14 @@ Classification: `live-product`.
 
 Migration: `window.focusOnNode` and `window.setTrailFromSeed` are retired as bare globals. The namespace is the intended target for test/dev harness calls.
 
+## `__LEGACY_APP_STATE__`
+
+Classification: `live-product`.
+
+**Owner:** `src/main.ts`
+
+**Purpose:** Compatibility state bridge. `src/lib/engine/semantic-threads.ts` falls back to `window.__APP_STATE__`; `__LEGACY_APP_STATE__` is published at boot so that fallback points at the real `AppState` object rather than an empty placeholder during the legacy-state migration.
+
 ## Debug-Probe Globals
 
 Classification: `debug-probe`. These are devtools, Playwright, or visual-audit inspection surfaces.
@@ -102,6 +110,27 @@ Classification: `debug-probe`. These are devtools, Playwright, or visual-audit i
 | `window.__semanticFocusCueProbe` | — | Debug probe (exposed via journey-webgl.js). |
 | `window.__semanticJourneyProbe` | — | Debug probe. **Retired 2026-05-28.** |
 | `window.__semanticThreadInspectorProbe` | — | Debug probe. **Retired from journey.js shim 2026-05-28.** |
+
+### `src/`-tree debug-probe globals (enforced by contract)
+
+These are assigned in the modern `src/lib/**` tree and classified `debug-probe` by `tests/window-global-allowlist-contract.mjs` (each is gated behind a `__DEV_TOOLS__` / environment / build-flag check).
+
+| Global | Owner |
+|---|---|
+| `window.__semanticPostprocessing` | `src/lib/engine/*` post-processing tuning hook |
+| `window.__toastHooks__` | `src/lib/orchestration/toast*` test/dev hooks |
+| `window.__SEMANTIC_GUIDE_TIMEOUT_MS__` | `src/lib/orchestration/*` guide timeout probe |
+| `window.__telemetry_devtoolsVisible` | `src/lib/*` telemetry devtools-visibility flag |
+| `window.__spector` | dev inspection (SpectorJS) |
+| `window.__navStore__` | `src/lib/navigation/*` store probe |
+| `window.__focusStore__` | `src/lib/stores/focus*` store probe |
+| `window.__journeyStore__` | `src/lib/stores/*` journey store probe |
+| `window.__searchStore__` | `src/lib/stores/search*` store probe |
+| `window.__navActions__` | `src/lib/navigation/*` action probe |
+| `window.__dataLoadState__` | `src/lib/state/*` data-load probe |
+| `window.__publishCameraNodeFocused__` | camera-focus publish probe |
+| `window.__semanticExplorerSessionSeed` | session-seed probe |
+| `window.syncTestStateFromBody` / `window.__refreshTestCompatState__` | test-compat state sync (Playwright/test harness) |
 
 ## Migration-Debt Globals
 

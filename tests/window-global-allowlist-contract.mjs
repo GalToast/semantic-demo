@@ -10,10 +10,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const ROOT = path.resolve(process.cwd())
-const JS_ROOT = path.join(ROOT, 'js')
+const JS_ROOT = path.join(ROOT, 'src')
 
 const liveProduct = new Set([
     '__APP_ACTIONS__',
+    '__LEGACY_APP_STATE__',
     'THREE',
     'animateCameraToSearchCorridor',
     'applyFocusOrbitSlack',
@@ -89,6 +90,21 @@ const debugProbe = new Set([
     '__semanticCanvasThreadProbe',
     '__semanticFocusCueProbe',
     '__semanticThreadInspectorProbe',
+    '__semanticPostprocessing',
+    '__toastHooks__',
+    '__SEMANTIC_GUIDE_TIMEOUT_MS__',
+    '__telemetry_devtoolsVisible',
+    '__spector',
+    '__navStore__',
+    '__focusStore__',
+    '__journeyStore__',
+    '__searchStore__',
+    '__navActions__',
+    '__dataLoadState__',
+    '__publishCameraNodeFocused__',
+    '__semanticExplorerSessionSeed',
+    'syncTestStateFromBody',
+    '__refreshTestCompatState__',
     '_getSelectedBusinessRoleLabel',
     '_ti'
 ])
@@ -106,7 +122,7 @@ function collectJsFiles(dir) {
         const fullPath = path.join(dir, entry.name)
         if (entry.isDirectory()) {
             files.push(...collectJsFiles(fullPath))
-        } else if (entry.isFile() && entry.name.endsWith('.ts')) {
+        } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.svelte'))) {
             files.push(fullPath)
         }
     }

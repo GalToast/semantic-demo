@@ -129,13 +129,13 @@
     {copy}
   </p>
   {#if metaVisible}
-    <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta inspector-stats" role="list" aria-label={metaAriaLabel}>
+    <div id="focus-thread-inspector-meta-populated" class="focus-thread-inspector-meta inspector-stats" role="list" aria-label={metaAriaLabel}>
       <span role="listitem">{inspector.segmentCount} stops</span>
       <span role="listitem">{inspector.braidCount} overlapping paths</span>
       <span role="listitem">{inspector.endpointCount} destinations</span>
     </div>
   {:else if emptyMetaVisible}
-    <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta inspector-stats" role="list" aria-label={metaAriaLabel}>
+    <div id="focus-thread-inspector-meta-empty" class="focus-thread-inspector-meta inspector-stats" role="list" aria-label={metaAriaLabel}>
       <span role="listitem">Preview connection</span>
     </div>
   {/if}

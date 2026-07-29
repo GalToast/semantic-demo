@@ -347,7 +347,7 @@
     <h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
   </div>
 {/if}
-<main id="main-content" class="semantic-main" class:surface-semantic-dive={parity.panelSurface === 'semantic-dive'} tabindex="-1" aria-label="Semantic explorer application">
+<main id="main-content" class="semantic-main" class:surface-semantic-dive={parity.panelSurface === 'semantic-dive'} tabindex="-1" aria-label="Business network explorer">
 <!-- Screen-reader-only live region for dynamic announcements.
      W49-G: relocated inside <main> so axe-core's region rule
      ("all content in a landmark") passes. Page content like this

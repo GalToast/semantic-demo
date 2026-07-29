@@ -45,7 +45,6 @@
     class="semantic-overlay"
     id="semantic-overlay"
     aria-label="Relationship overlay"
-    role="presentation"
   >
     <!-- Overlay indicator badge -->
     <div class="overlay-badge" class:thread={overlayMode === 'thread'} title={overlayMode === 'thread' ? 'Connected businesses showing the strongest match.' : overlayMode === 'lens' ? 'Deep exploration lens focused on a single neighborhood.' : 'Nearby businesses are highlighted.'}>
