@@ -210,6 +210,7 @@
        These are defined here as the single source of truth for
        breakpoint values. @media rules in other files reference these
        values via inline comments. When updating a breakpoint, update
+       this comment and all referencing @media blocks. */
     --top-chrome-mobile: 82px;
     --compass-top: 78px;
     --view-toggle-right-mobile: 108px;
