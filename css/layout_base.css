@@ -135,14 +135,14 @@
 }
 
 .search-results,
-.legend-panel,
+.legend,
 .journey-compass {
     scrollbar-width: thin;
     scrollbar-color: rgba(var(--color-primary-rgb), 0.25) transparent;
 }
 
 .search-results::-webkit-scrollbar,
-.legend-panel::-webkit-scrollbar,
+.legend::-webkit-scrollbar,
 .journey-compass::-webkit-scrollbar,
 .info-panel::-webkit-scrollbar {
     width: 6px;
@@ -150,14 +150,14 @@
 }
 
 .search-results::-webkit-scrollbar-track,
-.legend-panel::-webkit-scrollbar-track,
+.legend::-webkit-scrollbar-track,
 .journey-compass::-webkit-scrollbar-track,
 .info-panel::-webkit-scrollbar-track {
     background: transparent;
 }
 
 .search-results::-webkit-scrollbar-thumb,
-.legend-panel::-webkit-scrollbar-thumb,
+.legend::-webkit-scrollbar-thumb,
 .journey-compass::-webkit-scrollbar-thumb,
 .info-panel::-webkit-scrollbar-thumb {
     background: rgba(var(--color-primary-rgb), 0.28);
@@ -176,23 +176,23 @@
  * 0.5 thumb opacity, and 0.08 track tint so the track and thumb
  * are both visible during scroll.
  */
-.legend-panel::-webkit-scrollbar {
+.legend::-webkit-scrollbar {
     width: 8px;
 }
 
-.legend-panel::-webkit-scrollbar-track {
+.legend::-webkit-scrollbar-track {
     background: rgba(var(--color-primary-rgb), 0.08);
     border-radius: 999px;
 }
 
-.legend-panel::-webkit-scrollbar-thumb {
+.legend::-webkit-scrollbar-thumb {
     background: rgba(var(--color-primary-rgb), 0.5);
     border-radius: 999px;
     border: 1px solid transparent;
     background-clip: padding-box;
 }
 
-.legend-panel {
+.legend {
     scrollbar-width: thin;
     scrollbar-color: rgba(var(--color-primary-rgb), 0.5) rgba(var(--color-primary-rgb), 0.08);
 }
@@ -511,20 +511,6 @@ body:has(.info-panel.active) .panel-toggle {
     opacity: 0.3;
     pointer-events: none;
     border-radius: inherit;
-}
-
-.legend-panel.active {
-    visibility: visible;
-    pointer-events: auto;
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    transition-delay: 0s;
-}
-
-.legend-panel[aria-hidden='true']:not(.active) {
-    visibility: hidden;
-    pointer-events: none;
-    opacity: 0;
 }
 
 .legend-guide {
@@ -1313,7 +1299,7 @@ body.render-kind-placeholder2d.surface-idle .info-panel {
     .share-toggle,
     .legend-toggle,
     .help-toggle,
-    .legend-panel {
+    .legend {
         transition: none !important;
         animation: none !important;
     }

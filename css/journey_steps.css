@@ -75,7 +75,6 @@
 }
 
 /* Hide focus-stage lens truth when field guide/legend panel is visible; info lives in legend now. */
-.legend-panel.active ~ .focus-stage .focus-lens-truth,
 html[data-legend-active='true'] .focus-lens-truth {
     display: none;
 }

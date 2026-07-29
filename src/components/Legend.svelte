@@ -234,32 +234,11 @@
     transform: translateX(-120%);
     transition: transform 0.3s ease;
   }
-  /* W56: styled scrollbar for the categories panel. The global
-   * `.legend-panel` scrollbar rules in css/layout_base.css target the
-   * class selector `.legend-panel`, but this element carries `id`
-   * (not class) `legend-panel` + class `legend` — so the global rules
-   * never matched and a native unstyled scrollbar rendered. Mirror the
-   * intended `.legend-panel` styling (8px width, 0.5 thumb, 0.08 track,
-   * rounded) here on the actual `.legend` class. See W56 vision report. */
-  .legend {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(var(--color-primary-rgb), 0.5)
-      rgba(var(--color-primary-rgb), 0.08);
-  }
-  .legend::-webkit-scrollbar {
-    width: 8px;
-    height: 0;
-  }
-  .legend::-webkit-scrollbar-track {
-    background: rgba(var(--color-primary-rgb), 0.08);
-    border-radius: 999px;
-  }
-  .legend::-webkit-scrollbar-thumb {
-    background: rgba(var(--color-primary-rgb), 0.5);
-    border-radius: 999px;
-    border: 1px solid transparent;
-    background-clip: padding-box;
-  }
+  /* W56: styled scrollbar for the categories panel now lives in
+   * css/layout_base.css (retargeted from the legacy `.legend-panel`
+   * class to the actual `.legend` class). The scoped rules were
+   * removed to keep a single source of truth for the shared panel
+   * scrollbar system. */
   .legend.map-view {
     left: auto;
     right: 1rem;
