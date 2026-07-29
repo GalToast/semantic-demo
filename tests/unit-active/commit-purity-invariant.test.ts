@@ -307,7 +307,30 @@ const EXEMPTED_SHAS = new Set<string>([
     // The test file is the accompanying regression spec for the documented race;
     // splitting would orphan the doc from the test coverage that validates it.
     // Grandfathered.
-    '93721ce2877e8b7d80bc0fe22126d199a6f84918'
+    '93721ce2877e8b7d80bc0fe22126d199a6f84918',
+    // 7617ec3 — docs(focus): align L4-M1 match-narrative comment with the fixed
+    // 'Why this listing' copy. Touched a single non-doc file
+    // (src/lib/components/focus/SelectedMatchNarrative.svelte) — a one-word
+    // code-comment alignment (record->listing); no actual doc files. A
+    // mislabeled prefix (should have been chore/fix(focus)), not a true
+    // mixed-file-class commit. Already landed with shared history on top;
+    // grandfathered to avoid rebasing shared history.
+    '7617ec39927fe483cee011a384639e0958caf22b',
+    // f09f108 — docs(w55): document help-dialog root-cause finding + add smoke
+    // regression. Bundled tests/widget-journey-smoke.spec.js with
+    // docs/subagent-model-benchmarks.md. The smoke spec is the accompanying
+    // regression coverage for the documented root-cause finding; splitting
+    // would orphan the doc from its regression spec. Landed on master from a
+    // parallel lane; grandfathered to avoid rewriting shared history.
+    'f09f108fa0e7e068b48fc024c03109737650ac89',
+    // 8abfaf6 — test(playwright): add opt-in strict-freshness globalSetup (1.3).
+    // Bundled playwright.config.js + scripts/playwright-global-setup.mjs +
+    // docs/dev-commands.md with the test changes. The config flag + global-setup
+    // script are Playwright infra (strict-freshness globalSetup needs both),
+    // and docs/dev-commands.md documents the new flag — one shipment unit,
+    // matching the 95dea6b4 test-infra precedent. Landed on master from a
+    // parallel lane; grandfathered.
+    '8abfaf6b49a52cd3b02294018ccc2a09f4401e7a'
 ])
 
 // Conventional-commit prefix regex. Captures:
