@@ -53,7 +53,7 @@ export const VALID_MYCELIUM_MODES = new Set<string>([
 
 export const VALID_TERRAIN_HANDOFF_PHASES = new Set<string>(['idle', 'prelude', 'transition', 'settle'])
 
-export const VALID_ROUTE_EXPLORATION_PHASES = new Set<string>(['idle', 'searching', 'focusing'])
+export const VALID_ROUTE_EXPLORATION_PHASES = new Set<string>(['idle', 'searching', 'focusing', 'free'])
 
 export const VALID_ROUTE_CHOREOGRAPHY_PHASES = new Set<string>([
     'overview',
