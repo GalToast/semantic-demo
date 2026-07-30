@@ -27,6 +27,7 @@ import '@lib/state/session.svelte'
 import type { ViewName, SearchSummary, Point } from '@lib/state/state-types'
 import type { BusinessRecord } from '@lib/types/business'
 import { appInit } from '@lib/orchestration/app-init'
+import { teardownToastHooks } from '@lib/orchestration/toast'
 import { registerUrlStateEventListeners } from '@lib/orchestration/url-state'
 import { registerClusterFilterEventListeners } from '@lib/orchestration/cluster-filter-controller'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
@@ -490,6 +491,7 @@ function disposeAppListeners(): void {
     cleanupWindowActions()
     disposeJourneyWebglPreload()
     disposeFocusTrapBindings()
+    teardownToastHooks()
     appInitCleanup?.()
     if (app) unmount(app)
 }
