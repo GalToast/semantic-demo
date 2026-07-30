@@ -51,7 +51,13 @@ export function mapServiceRow(row: RawServiceRow, order: number): SearchResult |
             city: row.city ? String(row.city) : undefined,
             website: row.website ? String(row.website) : undefined,
             email: row.email ? String(row.email) : undefined,
-            phone: row.phone ? String(row.phone) : undefined
+            phone: row.phone ? String(row.phone) : undefined,
+            cluster:
+                typeof row.cluster === 'number'
+                    ? (Number.isInteger(row.cluster) ? row.cluster : undefined)
+                    : typeof row.cluster === 'string' && row.cluster.trim() !== '' && Number.isInteger(Number(row.cluster))
+                    ? Number(row.cluster)
+                    : undefined
         }
     }
 }

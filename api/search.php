@@ -244,6 +244,7 @@ function buildLocalSemanticSearchPayload(array $points, array $clusterNames, str
             'public_note' => $point['public_note'] ?? ($point['what'] ?? ''),
             'public_detail' => $point['public_note'] ?? '',
             'address' => '',
+            'cluster' => (int)($point['cluster'] ?? -1),
             'naics' => $naicsValue,
             'score' => round($score, 6),
             'semantic_score' => null,
