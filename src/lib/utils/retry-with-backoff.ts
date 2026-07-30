@@ -73,10 +73,15 @@ function delay(ms: number): Promise<void> {
 }
 
 /**
- * Exponential backoff delay with full jitter.
- * Returns `base * 2^attempt * (0.5 + Math.random() * 0.5)` clamped to `maxDelay`.
- * This gives mean delay = `base * 2^attempt` but varies by ±50% to spread
+ * Exponential backoff delay with equal jitter.
+ * Returns an equal-jittered delay in `[0.5, 1.5) × min(base * 2^attempt, maxDelay)]`,
+ * then clamped to `maxDelay` so the result never exceeds the configured ceiling.
+ * This gives mean delay = `base * 2^attempt` (capped) but varies to spread
  * retries across concurrent clients.
+ *
+ * Note: the second `min(jittered, maxDelay)` clamp is load-bearing — without it
+ * the [0.5, 1.5) multiplier alone could return up to 1.5x maxDelay whenever
+ * exponential >= maxDelay, violating the maxDelay contract.
  *
  * @param attempt - zero-based retry attempt number (0 = first retry)
  * @param baseDelay - base delay in ms (default 400)
@@ -89,8 +94,10 @@ export function computeBackoffDelay(
 ): number {
     const exponential = baseDelay * Math.pow(2, attempt)
     const capped = Math.min(exponential, maxDelay)
-    // Full jitter: random between 50% and 150% of the capped exponential delay.
-    return Math.round(capped * (0.5 + Math.random()))
+    // Equal jitter: random between 50% and 150% of the capped exponential delay,
+    // then clamp again so the result never exceeds maxDelay.
+    const jittered = capped * (0.5 + Math.random())
+    return Math.round(Math.min(jittered, maxDelay))
 }
 
 // ── Error Classification ──────────────────────────────────────────────────────

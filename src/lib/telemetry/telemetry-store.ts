@@ -60,7 +60,17 @@ class TelemetryStore {
         const timestamp = Date.now()
         const payloadKeys =
             payload && typeof payload === 'object' ? summarizePayload(payload as Record<string, unknown>) : []
-        const payloadBytes = payload === undefined ? 0 : JSON.stringify(payload).length
+        let payloadBytes = 0
+        if (payload !== undefined) {
+            // recordTelemetry runs inside event-bus subscriber callbacks; a
+            // circular / non-serializable payload would throw here and crash the
+            // subscriber (event lost). Fall back to 0 bytes instead.
+            try {
+                payloadBytes = JSON.stringify(payload).length
+            } catch {
+                payloadBytes = 0
+            }
+        }
 
         const event: TelemetryEvent = {
             seq,

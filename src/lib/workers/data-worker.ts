@@ -255,7 +255,30 @@ async function handleLoadRecords({ url }: { url: string }): Promise<LoadRecordsR
     const clustersBuffer = new Uint16Array(count)
     const invalidPositionIndices: number[] = []
 
-    const points: PointRecord[] = raw.map((p: unknown[], i: number) => {
+    const points: PointRecord[] = raw.map((p: unknown, i: number) => {
+        // Guard each row: the outer `raw` was Array.isArray-checked, but a
+        // single null/undefined/non-array row in data.dat would throw on
+        // `p.length` and crash the WHOLE records load (blank app). Skip the row
+        // with a zero-position sentinel so indices stay aligned with the
+        // pre-allocated position/cluster buffers.
+        if (!Array.isArray(p)) {
+            invalidPositionIndices.push(i)
+            return {
+                cluster: 0,
+                name: null,
+                what: 'Montgomery County business',
+                city: 'Montgomery County',
+                lead_id: null,
+                lat: null,
+                lng: null,
+                website: null,
+                email: null,
+                phone: null,
+                trivia: null,
+                status: 'active',
+                naics: null
+            }
+        }
         const xVal = p.length > 0 ? parseFiniteNumber(p[0]) : null
         const yVal = p.length > 1 ? parseFiniteNumber(p[1]) : null
         const zVal = p.length > 2 ? parseFiniteNumber(p[2]) : null
