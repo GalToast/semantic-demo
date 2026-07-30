@@ -37,7 +37,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(1500)
 
@@ -90,7 +92,9 @@ test.describe('Widget journey', () => {
         // wait for attachment rather than strict visibility, then assert on the
         // focused panel's rendered facts.
         const facts = page.locator('#selected-facts')
-        await facts.waitFor({ state: 'attached', timeout: 5000 })
+        await facts.waitFor({ state: 'attached', timeout: 20000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
         await page.waitForTimeout(150) // allow $derived effects to flush
 
         const anchorCount = await facts.locator('a').count()
@@ -150,7 +154,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(1500)
 
@@ -191,7 +197,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(1500)
 
@@ -317,7 +325,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(1500)
 
@@ -349,7 +359,9 @@ test.describe('Widget journey', () => {
 
         // Trigger a search so SearchResults loads.
         const searchInput = page.locator('#search-input')
-        await searchInput.waitFor({ state: 'attached', timeout: 10000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await searchInput.waitFor({ state: 'attached', timeout: 20000 })
         await searchInput.fill('coffee')
         await page.keyboard.press('Enter')
         // W52 flake fix: the old wait only waited for the wrapper to attach
@@ -442,7 +454,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(1500)
 
@@ -489,7 +503,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.waitForTimeout(1200)
 
         // Dismiss first-visit help dialog if auto-opened.
@@ -642,7 +658,9 @@ test.describe('Widget journey', () => {
             await explore.click()
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-                timeout: 15000
+                // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+                // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+                timeout: 20000
             })
             await page.waitForTimeout(1200)
 
@@ -668,13 +686,15 @@ test.describe('Widget journey', () => {
 
             // Wait for the badge text to update (it may be hidden by CSS but still
             // in the DOM — we validate the content, not presentation).
+            // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
             await page.waitForFunction(
                 () => {
                     const el = document.querySelector('#selected-role-badge')
                     return !!el && el.textContent?.trim() === 'Business view'
                 },
                 null,
-                { timeout: 10000 }
+                { timeout: 20000 }
             )
 
             // Also assert no stale "Field Node" string remains anywhere in the
@@ -714,7 +734,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.waitForTimeout(500) // allow rAF + focus effect to settle
 
         // Dismiss the first-visit help dialog if it auto-opened (it can
@@ -780,7 +802,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.waitForTimeout(500)
 
         // Dismiss first-visit help dialog if auto-opened (steals focus on mobile)
@@ -856,7 +880,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.waitForTimeout(800)
 
         // Open the filters panel by toggling its <details> (the <summary> is the
@@ -964,7 +990,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         // Poll for the help dialog or help button to appear after Svelte
         // derived effects flush — replaces a fixed 1500ms sleep.
         await page
@@ -1037,7 +1065,9 @@ test.describe('Widget journey', () => {
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.waitForTimeout(1500)
 
         // Dismiss first-visit help dialog if auto-opened (steals focus).
@@ -1071,7 +1101,14 @@ test.describe('Widget journey', () => {
                 b.getAttribute('aria-label')
             )
         )
-        await page.focus('#camera-controls button.control-btn:first-child')
+
+        // Wait for the first toolbar button to be rendered and visible before
+        // focusing. Under WebGL GPU stall the toolbar can stay non-visible until
+        // Svelte flushes, and a bare page.focus() on a hidden element falls through
+        // to the next focusable element (often #search-input).
+        const firstToolbarBtn = page.locator('#camera-controls button.control-btn').first()
+        await firstToolbarBtn.waitFor({ state: 'visible', timeout: 20000 })
+        await firstToolbarBtn.focus()
         await expect(page.locator('*:focus')).toHaveAttribute('aria-label', labels[0])
 
         // ArrowRight should move focus to the next button.
@@ -1104,7 +1141,9 @@ test.describe('Widget journey', () => {
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-            timeout: 15000
+            // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+            timeout: 20000
         })
         await page.waitForTimeout(700)
 
@@ -1121,9 +1160,11 @@ test.describe('Widget journey', () => {
         // Use waitForFunction — the A11y list is intentionally off-screen (sr-only
         // pattern) unless the user opts in via the toggle button. The buttons exist
         // in the DOM for screen readers regardless of visual visibility.
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
         await page.waitForFunction(
             () => document.querySelectorAll('#focus-pocket-a11y .focus-pocket-item-btn').length > 0,
-            { timeout: 5000 }
+            { timeout: 20000 }
         )
 
         const items = await page.$$eval('#focus-pocket-a11y .focus-pocket-item-btn', (btns) =>
@@ -1162,7 +1203,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.waitForTimeout(1500)
 
         const citySelect = page.locator('#city-filter')
@@ -1377,7 +1420,9 @@ test.describe('Widget journey', () => {
             // for "I'm done watching, let me explore." Verifying the dismiss
             // works confirms the demo's reactive state machine is wired correctly.
             const dismissBtn = page.locator('#demo-choreography .demo-dismiss')
-            await dismissBtn.waitFor({ state: 'visible', timeout: 5000 })
+            // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+            await dismissBtn.waitFor({ state: 'visible', timeout: 20000 })
             await page.evaluate(() => {
                 const btn = document.querySelector('#demo-choreography .demo-dismiss')
                 if (btn && 'click' in btn) btn.click()
@@ -1470,7 +1515,9 @@ test.describe('Widget journey', () => {
             await explore.click()
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-                timeout: 15000
+                // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+                // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+                timeout: 20000
             })
             await page.waitForTimeout(1000)
 
@@ -1560,7 +1607,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         // Poll for the help dialog or mode chips rail to appear after Svelte
         // derived effects flush — replaces a fixed 1200ms sleep.
         await page
@@ -1602,7 +1651,9 @@ test.describe('Widget journey', () => {
         await page.waitForFunction(() => document.body.classList.contains('surface-focus'), null, { timeout: 8000 })
 
         const insideChip = page.locator('#mode-chips [data-mode="inside"]')
-        await insideChip.waitFor({ state: 'attached', timeout: 5000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await insideChip.waitFor({ state: 'attached', timeout: 20000 })
         const insideLabel = await insideChip.getAttribute('aria-label')
         expect(insideLabel?.toLowerCase(), 'Inside chip must be unlocked after a node is focused').not.toContain('lock')
 
@@ -1651,7 +1702,9 @@ test.describe('Widget journey', () => {
             await explore.click()
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-                timeout: 15000
+                // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+                // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+                timeout: 20000
             })
             await page.waitForTimeout(1200)
 
@@ -1692,7 +1745,9 @@ test.describe('Widget journey', () => {
             await explore.click()
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-                timeout: 15000
+                // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+                // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+                timeout: 20000
             })
             await page.waitForTimeout(1200)
 
@@ -1747,7 +1802,9 @@ test.describe('Widget journey', () => {
             await explore.click()
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-                timeout: 15000
+                // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+                // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+                timeout: 20000
             })
             await page.waitForTimeout(1200)
 
@@ -1848,7 +1905,9 @@ test.describe('Widget journey', () => {
             await explore.click()
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-                timeout: 15000
+                // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+                // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+                timeout: 20000
             })
 
             // Dismiss first-visit help dialog if it auto-opened (can intercept typing).
@@ -1861,7 +1920,9 @@ test.describe('Widget journey', () => {
 
             // Trigger a multi-result search using the existing pattern (fill + Enter).
             const searchInput = page.locator('#search-input')
-            await searchInput.waitFor({ state: 'attached', timeout: 10000 })
+            // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+            await searchInput.waitFor({ state: 'attached', timeout: 20000 })
             await searchInput.fill('coffee')
             await page.keyboard.press('Enter')
 
@@ -2054,7 +2115,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
 
         // Focus a known-good anchor (array index 518 -> lead_id 519; verified to
         // build a ~21-satellite pocket against the bundled local index).
@@ -2169,7 +2232,9 @@ test.describe('Widget journey', () => {
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-            timeout: 15000
+            // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+            timeout: 20000
         })
         // Wait for WebGL geometry color attribute to be populated (engine init).
         await page.waitForFunction(
@@ -2441,7 +2506,9 @@ test.describe('Widget journey', () => {
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-            timeout: 15000
+            // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+            timeout: 20000
         })
         // Wait for WebGL geometry color attribute to be populated (engine init).
         await page.waitForFunction(
@@ -2713,7 +2780,9 @@ test.describe('Widget journey', () => {
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-            timeout: 15000
+            // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+            timeout: 20000
         })
 
         await page.evaluate(() => {
@@ -2773,7 +2842,9 @@ test.describe('Widget journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.waitForTimeout(1500)
 
         const helpDialog = page.locator('dialog.help-dialog[open]')
@@ -2815,10 +2886,12 @@ test.describe('Widget journey', () => {
             a.setSurface('semantic-dive')
         })
 
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
         await page.waitForFunction(
             () => document.querySelector('#info-panel')?.getAttribute('aria-hidden') === 'true',
             null,
-            { timeout: 5000 }
+            { timeout: 20000 }
         )
 
         // CLOSED invariant — W54 fix: inert must mirror aria-hidden (both derive from `panelOpen`).
@@ -3248,7 +3321,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.waitForTimeout(1200)
 
         // Dismiss first-visit help dialog if auto-opened (mirrors B-S7).
@@ -3338,7 +3413,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-            timeout: 15000
+            // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+            timeout: 20000
         })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForFunction(() => document.body?.dataset?.sceneReady === 'true', null, { timeout: 15000 })
@@ -3355,7 +3432,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // Trigger a search so the .search-container gains .info-panel-contained
         // (the class is applied when a search result is shown in the panel).
         const searchInput = page.locator('#search-input')
-        await searchInput.waitFor({ state: 'attached', timeout: 10000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await searchInput.waitFor({ state: 'attached', timeout: 20000 })
         await searchInput.fill('coffee')
         await page.keyboard.press('Enter')
 
@@ -3404,7 +3483,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-            timeout: 15000
+            // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+            timeout: 20000
         })
         await page.waitForTimeout(700)
 
@@ -3441,7 +3522,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         )
 
         const toggleBtn = page.locator('#focus-pocket-list-toggle')
-        await toggleBtn.waitFor({ state: 'attached', timeout: 10000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await toggleBtn.waitFor({ state: 'attached', timeout: 20000 })
         await toggleBtn.click({ force: true })
 
         await page.waitForFunction(
@@ -3691,7 +3774,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(1500)
 
@@ -3729,7 +3814,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
         // FocusCard is lazy-loaded; wait for the populated card + dismiss button.
         const card = page.locator('.focus-card').first()
-        await card.waitFor({ state: 'visible', timeout: 10000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await card.waitFor({ state: 'visible', timeout: 20000 })
 
         const closeBtn = page.locator('[data-test-id="focus-card-close"]')
         await expect(closeBtn).toBeVisible()
@@ -3750,12 +3837,14 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // false so the FocusCard unmounts.
         await closeBtn.click()
 
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
         await page.waitForFunction(
             () =>
                 document.querySelectorAll('.focus-card').length === 0 &&
                 window.__APP_STATE__?.navState?.focusedIndex == null,
             null,
-            { timeout: 5000 }
+            { timeout: 20000 }
         )
         const focusedAfter = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex)
         expect(focusedAfter, 'dismiss must clear the focused business (focusedIndex === null)').toBeNull()
@@ -3810,7 +3899,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(800)
 
@@ -3830,7 +3921,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
         // Legend auto-hides after 10s; assert within a few seconds of opening.
         const legendTitle = page.locator('#legend-panel .legend-title').first()
-        await legendTitle.waitFor({ state: 'attached', timeout: 5000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await legendTitle.waitFor({ state: 'attached', timeout: 20000 })
 
         const ariaLabel = await legendTitle.getAttribute('aria-label')
         expect(ariaLabel, 'legend title must have a descriptive aria-label').toBeTruthy()
@@ -3894,13 +3987,17 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // the rect is visible but the listener is not yet attached).
         await page.waitForTimeout(150)
         await helpBtn.click()
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
         await page
             .locator('#keyboard-hint-panel.visible, #keyboard-hint-panel[aria-hidden="false"]')
-            .waitFor({ state: 'visible', timeout: 10000 })
+            .waitFor({ state: 'visible', timeout: 20000 })
 
         // Click the user-visible "Replay tour" button.
         const replayBtn = page.locator('#btn-replay-tour').first()
-        await replayBtn.waitFor({ state: 'visible', timeout: 5000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await replayBtn.waitFor({ state: 'visible', timeout: 20000 })
         await replayBtn.click()
 
         // The canonical replay path re-creates the choreography box.
@@ -3925,7 +4022,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.waitForTimeout(1000)
 
         // Dismiss help dialog if present
@@ -3967,7 +4066,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.waitForTimeout(1000)
 
         const helpDialog = page.locator('dialog.help-dialog[open]')
@@ -3985,7 +4086,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         const searchInput = page
             .locator('#search-input, input[placeholder*="Search"], input[placeholder*="search"]')
             .first()
-        await searchInput.waitFor({ state: 'visible', timeout: 10000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await searchInput.waitFor({ state: 'visible', timeout: 20000 })
         await searchInput.fill('coffee')
         await page.waitForTimeout(2000)
 
@@ -4018,7 +4121,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
         await page.waitForTimeout(1000)
 
         // Dismiss help dialog if present
