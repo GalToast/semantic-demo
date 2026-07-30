@@ -151,6 +151,53 @@
     margin-top: 0.3rem;
 }
 
+/* loading + error + spinner styles apply at all viewport widths (moved out of @media max-width:768px — desktop needs them too) */
+/* ── Loading spinner ─────────────────────────────────────────────────────────── */
+/* ── Error state ────────────────────────────────────────────────────────────── */
+.info-panel-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    gap: 0.35rem;
+    color: rgba(255, 107, 107, 0.8);
+}
+.info-panel-error .error-headline {
+    font-size: 0.85rem;
+    color: var(--color-text-teal-light);
+    margin: 0;
+}
+.info-panel-error .error-sub {
+    font-size: 0.75rem;
+    color: rgba(224, 240, 240, 0.85);
+    margin: 0;
+}
+
+.info-panel-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    color: rgba(224, 240, 240, 0.85);
+    font-size: 0.8rem;
+}
+.info-panel-loading svg {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .info-panel-loading svg {
+        animation: none;
+    }
+}
+
 /* ── Mobile: bottom sheet ────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .info-panel {
@@ -179,52 +226,6 @@
     .info-panel.surface-idle.is-compact-body .selected-card {
         display: none;
     }
-    /* ── Loading spinner ─────────────────────────────────────────────────────────── */
-    /* ── Error state ────────────────────────────────────────────────────────────── */
-    .info-panel-error {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: 1.5rem 1rem;
-        gap: 0.35rem;
-        color: rgba(255, 107, 107, 0.8);
-    }
-    .info-panel-error .error-headline {
-        font-size: 0.85rem;
-        color: var(--color-text-teal-light);
-        margin: 0;
-    }
-    .info-panel-error .error-sub {
-        font-size: 0.75rem;
-        color: rgba(224, 240, 240, 0.85);
-        margin: 0;
-    }
-
-    .info-panel-loading {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 1.5rem;
-        color: rgba(224, 240, 240, 0.85);
-        font-size: 0.8rem;
-    }
-    .info-panel-loading svg {
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .info-panel-loading svg {
-            animation: none;
-        }
-    }
-
     .info-panel-content {
         padding-top: 1rem;
     }
