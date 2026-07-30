@@ -901,14 +901,19 @@ async function assert_search_error(page, ctx) {
         }
     )
 
-    const url = new URL(positionalUrl)
-    url.searchParams.set('nodemo', '1')
-    url.searchParams.set('view', 'galaxy')
-    url.searchParams.set('staticDev', '0')
-    url.searchParams.set('q', 'forced-surface-contract-search-error')
-    url.searchParams.delete('anchor')
     page.__suppressMock503ConsoleError = true
-    await loadAndWait(page, url.toString())
+    // The `search-error` surface is mobile (VIEWPORTS['search-error'] isMobile).
+    // On the static dist build the deep-link `?q=` route does NOT auto-fire a
+    // search — `searchStatus` stays "idle" and `.search-error-state` never mounts
+    // (renderKind resolves to `webgl`, not `placeholder2d`, on WebGL-capable
+    // chromium; the W61 investigation's "splash/placeholder2d hides the error"
+    // hypothesis was empirically disproven — see tmp/probe-search-error.mjs,
+    // 2026-07-30). Mirror the proven `search-no-results` pattern instead: TYPE the
+    // query so the app's search handler fires the request, which the `page.route`
+    // mocks above intercept as 503 → setSearchError → `.search-error-state`
+    // renders visibly. `loadIdleAndTypeSearch` already sets nodemo=1 + view=galaxy,
+    // dismisses the mobile CTA + first-visit help dialog, and fills #search-input.
+    await loadIdleAndTypeSearch(page, 'forced-surface-contract-search-error', { staticDev: '0' })
     await page.waitForSelector('.search-error-state', { state: 'visible', timeout: 20000 })
 
     const info = await page.evaluate(() => {
