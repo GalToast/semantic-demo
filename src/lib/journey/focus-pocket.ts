@@ -114,6 +114,12 @@ export function setFocusPocketMotionForIndex(index: number, motion: unknown): vo
 
 export function clearFocusPocketMotionByIndex(): void {
     appState.focusState.pocketMotionByIndex = new Map()
+    // Fix A (tmp/search-bugsweep-W60-REPORT.md): propagate the clear to the focusStore
+    // Svelte mirror so subscribers reading focusStore.pocketMotionByIndex see the
+    // empty state immediately. Symmetric with setFocusPocketMotionByIndex /
+    // setFocusPocketMotionForIndex above. Also seals the P3 stale-mirror edge at
+    // applyLocalNeighborhoodFocus `!focusPos` early-return path.
+    focusStore.update((s) => ({ ...s, pocketMotionByIndex: new Map() }))
 }
 
 export function clearFocusPocketIndices(): void {
@@ -316,7 +322,17 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     // 40 MB semantic-thread artifact loads, so threadCandidates is empty and the
     // pocket would render blank. Fall back to a topological k-NN neighborhood so
     // the focus pocket is never empty; the deferred semantic refire upgrades it.
-    if (neighborhoodCandidates.length === 0 && originalPositions && points) {
+    // Fix B.1 (tmp/search-bugsweep-W60-REPORT.md): also trigger topoKnn fallback when
+    // threadCandidates contains ONLY the anchor index (self-loop) — otherwise
+    // primaryIndices=[index] → localIndices.size===1 → manual-build return-true
+    // path would emit an empty pocket (P1). every() is vacuously true on empty so
+    // this also covers the original length===0 case.
+    if (
+        (neighborhoodCandidates.length === 0 ||
+            neighborhoodCandidates.every((candidate) => candidate.index === index)) &&
+        originalPositions &&
+        points
+    ) {
         neighborhoodCandidates = topoKnnCandidates(
             index,
             originalPositions as Array<{ x: number; y: number; z: number } | undefined>,
@@ -387,6 +403,18 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
         appState.focusState.nodesAreSettling = true
         appState.autoRotate = false
         return true
+    }
+
+    // Fix B.2 (tmp/search-bugsweep-W60-REPORT.md): empty-pocket guard. When no
+    // neighborhood candidates were gathered (localIndices contains only the anchor
+    // itself, e.g. threadCandidates self-loop AND topoKnn returned empty), the
+    // manual-build branch below would `return true` with setFocusPocketMeta active=false
+    // + setFocusPocketIndices([]). That was P1 — applyLocalNeighborhoodFocus would
+    // claim success while no pocket was built. Honestly fail instead.
+    if (localIndices.size <= 1) {
+        appState.focusState.nodesAreSettling = false
+        appState.autoRotate = true
+        return false
     }
 
     const roleMap = new Map<number, string>([[index, 'anchor']])
