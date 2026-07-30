@@ -1166,7 +1166,11 @@ test.describe('Widget journey', () => {
         await page.waitForTimeout(1500)
 
         const citySelect = page.locator('#city-filter')
-        await citySelect.waitFor({ state: 'attached', timeout: 5000 })
+        // 20s timeout accommodates WebGL GPU-stall delays during initial
+        // scene setup that block Svelte's reactivity flush (~7-11s) — see
+        // W55 timeline diagnosis. The city filter is rendered by a reactive
+        // component that flushes only after the main thread is unblocked.
+        await citySelect.waitFor({ state: 'attached', timeout: 20000 })
 
         // First option must say "All Cities (8406)" — the full record count
         await expect(citySelect).toBeEnabled()
@@ -1380,7 +1384,11 @@ test.describe('Widget journey', () => {
             })
 
             // The choreography box should disappear within a couple of frames
-            await demo.waitFor({ state: 'detached', timeout: 5000 })
+            // 20s timeout accommodates WebGL GPU-stall delays during scene
+            // activity that block Svelte's reactive flush. The choreography
+            // element detaches only after cancelDemo() (deferred via rAF) and
+            // Svelte's {#if} re-eval — under stall that flush can take ~7-11s.
+            await demo.waitFor({ state: 'detached', timeout: 20000 })
         }
     )
 
