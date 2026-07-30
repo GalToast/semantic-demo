@@ -241,6 +241,10 @@
 
   // Replay helper: canonical path that prevents stacked veils (M15)
   function requestReplay(): void {
+    // W58: replay must respect the explicit suppress (?nodemo=1) guard.
+    // Without this check, keyboard-help "Replay tour" can start the demo
+    // even when the user explicitly opted out via URL param.
+    if (suppress) return
     cancelAllDemoTimers()
     if (isDemoActive()) cancelDemo()
     try { resetDemo() } catch { /* no-op: teardown race */ }
