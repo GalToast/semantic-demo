@@ -87,6 +87,15 @@ const checks = [
     {
         name: 'cancelAnimate disposes scene resources before renderer disposal',
         pass: /disposeObject3D\s*\(\s*scene[\s\S]{0,400}?renderer\.dispose\s*\(\s*\)/.test(threeSetupSrc)
+    },
+    {
+        // M9: cancelAnimate must cancel the focus-camera rAF, not only route
+        // animations. focus.ts tracks its rAF via a module-level _focusCameraRafId
+        // that is otherwise only cancelled in deinit(); a standalone cancelAnimate
+        // (initThreeJS re-init, or lifecycle.ts) would leave a pending focus step()
+        // to fire against stale camera+controls — the M4/M7 hazard.
+        name: 'cancelAnimate cancels focus-camera rAF (M9)',
+        pass: /cancelRouteAnimations\s*\(\s*\)[\s\S]{0,600}?cancelFocusCameraAnimation\s*\(\s*\)/.test(threeSetupSrc)
     }
 ]
 

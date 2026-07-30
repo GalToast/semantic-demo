@@ -292,6 +292,14 @@ export function cancelAnimate() {
     // M4/M7: cancel any pending route animation rAFs before the renderer/canvas
     // are torn down, so a pending step() won't fire against nulled camera/controls.
     cancelRouteAnimations()
+    // M9: also cancel any pending focus-camera animation rAF. The route
+    // registry above only tracks route animations; focus.ts manages its rAF
+    // via a module-level _focusCameraRafId that is otherwise only cancelled
+    // in deinit() (:421). A standalone cancelAnimate() — e.g. initThreeJS
+    // re-init at :121, or lifecycle.ts:474 — would leave a pending focus
+    // step() to fire against the stale/about-to-be-replaced camera+controls,
+    // the exact M4/M7 hazard. Wiring it here covers both teardown paths.
+    engineState.cameraControls?.cancelFocusCameraAnimation()
     // M8: abort canvas pointer listeners before the renderer/canvas are torn
     // down, so stale AbortController listeners don't survive across re-init.
     disposeCanvasNodeInteractionBindings()

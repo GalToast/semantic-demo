@@ -241,6 +241,15 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
         // M4/M7: cancel any prior route rAF and create a fresh registry.
         cancelRouteAnimations()
         _routeRafRegistry = new DisposableRegistry({ label: 'camera-route-terrain-prelude' })
+        // M9: restore controls.enabled if this registry is disposed by an
+        // external cancelRouteAnimations() (e.g. cancelAnimate teardown) before
+        // the rAF step can run. The token-mismatch + completion branches below
+        // restore enabled, but the external-cancel path cancels the rAF so
+        // step() never fires — leaving controls disabled on the captured
+        // instance and the 'map-prelude' phase unreleased. Matches M4/M7 intent.
+        _routeRafRegistry.add(() => {
+            activeControls.enabled = priorControlsEnabled
+        })
 
         function step(now: number) {
             if (animationToken !== appState.focusCameraAnimationToken) {
