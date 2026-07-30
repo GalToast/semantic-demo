@@ -208,7 +208,11 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
     try {
         const camera = appState.camera
         const controls = appState.controls
-        if (!camera || !controls) return
+        if (!camera || !controls) {
+            // No animation possible — release the 'map-prelude' phase we just announced.
+            publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
+            return
+        }
         const activeCamera: ChoreographyCamera = camera
         const activeControls: ChoreographyControls = controls
         const startPos = activeCamera.position.clone()
@@ -221,6 +225,8 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
         if (reducedMotion) {
             activeCamera.position.copy(desiredPos)
             activeControls.update()
+            // Reduced-motion arrival is instantaneous, so signal it now.
+            publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
             return
         }
 
@@ -250,12 +256,22 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
                 _routeRafRegistry!.raf(requestAnimationFrame(step))
             } else {
                 activeControls.enabled = priorControlsEnabled
+                // Signal arrival WHEN the prelude animation actually completes.
+                // A previous try/finally here published 'idle' synchronously the
+                // instant the rAF was queued, which (a) stomped the 'map-prelude'
+                // phase announced just above and (b) prematurely fired
+                // onCameraArrived → completeCameraTransition, snapping the camera
+                // store position/target to a stale transition.to before a single
+                // prelude frame had run. The token-mismatch cancel branch
+                // intentionally does NOT publish 'idle': the superseding
+                // animation owns the arrival signal.
+                publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
             }
         }
         _routeRafRegistry.raf(requestAnimationFrame(step))
     } catch (_err) {
         debugError('animateCameraToTerrainPrelude failed:', _err)
-    } finally {
+        // Error path: release the announced phase so subscribers aren't stuck.
         publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
     }
 }
