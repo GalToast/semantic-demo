@@ -60,6 +60,8 @@ describe('semantic-search-mapper: mapServiceRow', () => {
         expect(r!.id).toBe('9')
         expect(r!.name).toBe('Acme')
         expect(r!.point.name).toBe('Acme')
+        // lead_id flows into point so deep-link anchor restore by lead_id works
+        expect(r!.point.lead_id).toBe('9')
     })
 
     it('picks score from score then semantic_score, defaulting to 0', () => {

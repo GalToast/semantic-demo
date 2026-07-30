@@ -42,6 +42,7 @@ export function mapServiceRow(row: RawServiceRow, order: number): SearchResult |
         category: String(row.category ?? ''),
         snippet: String(row.public_note ?? row.public_detail ?? row.address ?? ''),
         point: {
+            lead_id: row.lead_id ? String(row.lead_id) : undefined,
             name: row.name ? String(row.name) : undefined,
             what:
                 row.public_note || row.public_detail || row.address

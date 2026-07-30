@@ -374,7 +374,23 @@ export function localHitsToResults(hits: LocalSearchHit[]): SearchResult[] {
             index: hit.recordIndex,
             score: Math.min(1, hit.score / 3.0), // normalize to a 0-1 confidence
             category: record.category || '',
-            snippet: record.what || ''
+            snippet: record.what || '',
+            // Populate `point` so the local-index fallback path behaves like the
+            // API path: clicking a result transitions to focus (orchestration's
+            // beginSearchFocusTransition early-returns when point is undefined),
+            // deep-link anchor restore by lead_id works, and trail cues show the
+            // business name. Without this, API-down/staticDev search results are
+            // rendered but unclickable.
+            point: {
+                lead_id: record.lead_id,
+                name: record.name?.trim() || undefined,
+                what: record.what?.trim() || undefined,
+                cluster: record.cluster,
+                city: record.city?.trim() || undefined,
+                website: record.website ?? undefined,
+                email: record.email ?? undefined,
+                phone: record.phone ?? undefined
+            }
         })
     }
     return out

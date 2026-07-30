@@ -226,7 +226,7 @@ describe('local-search-index: getLocalIndex / performLocalIndexSearch / localHit
         expect(hits2![0].recordIndex).not.toBe(hits![0].recordIndex)
     })
 
-    it('localHitsToResults maps hits to SearchResult with normalized score', () => {
+    it('localHitsToResults maps hits to SearchResult with normalized score + point payload', () => {
         const hits = performLocalIndexSearch('coffee', 0, 18)!
         const results = localHitsToResults(hits)
         expect(results.length).toBeGreaterThan(0)
@@ -236,7 +236,18 @@ describe('local-search-index: getLocalIndex / performLocalIndexSearch / localHit
             expect(typeof r.score).toBe('number')
             expect(r.score).toBeGreaterThanOrEqual(0)
             expect(r.score).toBeLessThanOrEqual(1)
+            // point must be populated so the local-index fallback path is clickable
+            // (beginSearchFocusTransition early-returns when point is undefined) and
+            // deep-link anchor restore by lead_id works.
+            expect(r.point).toBeDefined()
+            expect(typeof r.point!.lead_id).toBe('string')
+            expect(typeof r.point!.name).toBe('string')
         }
+        // Coffee Shop (recordIndex 0) → lead_id L0, city Conroe
+        const coffee = results.find((r) => r.index === 0)!
+        expect(coffee.point!.lead_id).toBe('L0')
+        expect(coffee.point!.name).toBe('Coffee Shop')
+        expect(coffee.point!.city).toBe('Conroe')
     })
 })
 
