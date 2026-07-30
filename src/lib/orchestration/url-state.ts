@@ -626,7 +626,7 @@ function _restoreFocusStateForAnchor(numericId: number): void {
  * place. Also guarantees the anchor→satellite rays are (re)built for this pocket even
  * if the focus-ui effect hasn't fired yet on a deep-link boot.
  */
-function _frameCameraOnAnchor(index: number): void {
+function _frameCameraOnAnchor(index: number, restoreToken: number): void {
     if (!Number.isFinite(index)) return
 
     // PR-B4 follow-up: applyUrlState() runs as soon as data is ready, but the
@@ -639,6 +639,15 @@ function _frameCameraOnAnchor(index: number): void {
     let attempts = 0
     const maxAttempts = 200
     const tryFrame = () => {
+        // M10 stale-restore liveness guard: a newer applyUrlState may have
+        // bumped urlStateRestoreToken while we polled for camera/controls. If
+        // so, bail before animating — otherwise animateCameraToNode(index)
+        // yanks the camera back to a now-stale anchor the user navigated away
+        // from. Matches the F3 postprocessing liveness-guard pattern (f907e0f5).
+        if (_isRestoreStale(restoreToken)) {
+            reg.disposeAll()
+            return
+        }
         attempts += 1
         if (!appState.camera || !appState.controls) {
             if (attempts <= maxAttempts) {
@@ -654,6 +663,9 @@ function _frameCameraOnAnchor(index: number): void {
         // overview framing. Wait 500ms before animating so the camera move sticks.
         reg.schedule(500, () => {
             reg.disposeAll()
+            // M10: re-check staleness after the 500ms settle — the user may
+            // have navigated between camera-ready and this callback firing.
+            if (_isRestoreStale(restoreToken)) return
             try {
                 animateCameraToNode(index, { transitionStyle: 'focus' })
             } catch (e) {
@@ -700,7 +712,7 @@ async function _applyFocusPocketForAnchor(
         // applyUrlState bumped the token while the dynamic import resolved.
         if (_isRestoreStale(restoreToken)) return false
         applyLocalNeighborhoodFocus(numericId)
-        _frameCameraOnAnchor(numericId)
+        _frameCameraOnAnchor(numericId, restoreToken)
     } catch (e) {
         debugWarn('[url-state] applyLocalNeighborhoodFocus failed for anchor', numericId, e)
     }
@@ -759,7 +771,7 @@ function _setupDeferredNeighborRefire(numericId: number, restoreToken: number): 
                 if (appState.navState.focusedIndex !== numericId) return
                 if (_isRestoreStale(restoreToken)) return
                 _focusPocketMod.applyLocalNeighborhoodFocus(numericId)
-                _frameCameraOnAnchor(numericId)
+                _frameCameraOnAnchor(numericId, restoreToken)
             } catch (e) {
                 debugWarn('[url-state] deferred constellation rebuild failed for anchor', numericId, e)
             }
@@ -889,7 +901,7 @@ async function _restoreSearchFromParams(
                 }
                 if (_isRestoreStale(restoreToken)) return
                 _focusPocketMod.applyLocalNeighborhoodFocus(rebuildIndex)
-                _frameCameraOnAnchor(rebuildIndex)
+                _frameCameraOnAnchor(rebuildIndex, restoreToken)
             } catch (e) {
                 debugWarn('[url-state] applyLocalNeighborhoodFocus re-build failed after search restore', e)
             }
