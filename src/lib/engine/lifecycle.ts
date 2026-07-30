@@ -447,10 +447,18 @@ export function resizeEngine(width: number, height: number): void {
     // FIX #1: Resize postprocessing composer (was missing in bridge resize)
     // Lazy-load to keep postprocessing out of the main chunk.
     if (!_ppResize) {
-        import('@lib/engine/three-postprocessing').then((m) => {
-            _ppResize = m.resizePostProcessing
-            _ppResize?.(width, height)
-        })
+        // Convert a lazy postprocessing-chunk load failure (transient network / broken
+        // build) into a logged warning so resizeEngine never converts the unhandled
+        // promise rejection into a page crash. The next resizeEngine call will
+        // retry the dynamic import once the chunk is available.
+        import('@lib/engine/three-postprocessing')
+            .then((m) => {
+                _ppResize = m.resizePostProcessing
+                _ppResize?.(width, height)
+            })
+            .catch((e: unknown) => {
+                console.warn('[lifecycle] postprocessing lazy-load failed during resize:', e)
+            })
     } else {
         _ppResize(width, height)
     }
