@@ -9,6 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { SearchDispatch } from '@lib/search/search-dispatch'
+import { resetSearchAbort } from '@lib/search/search-abort'
 
 const mocks = vi.hoisted(() => ({
     runSearch: vi.fn(),
@@ -68,6 +69,12 @@ describe('SearchDispatch', () => {
     const onQuerySet = vi.fn()
 
     beforeEach(() => {
+        // search-abort holds a module-level AbortController singleton
+        // (currentController / currentQuery). clearAllMocks() does not reset it,
+        // so without this the previous test's in-flight controller leaks in
+        // and startSearch() returns isNew:false — which dispatchSearch now
+        // honors (the BUG-002 consolidate-on-isNew fix). Reset per test.
+        resetSearchAbort()
         vi.clearAllMocks()
         mocks.pendingSearch.value = null
         dispatch = new SearchDispatch({
@@ -115,6 +122,25 @@ describe('SearchDispatch', () => {
         dispatch.dispatchSearch('tea')
         expect(firstCall.aborted).toBe(true)
         expect(mocks.runSearch).toHaveBeenCalledTimes(2)
+    })
+
+    it('does not re-fire runSearch when the same query is already in flight (BUG-002 isNew gate)', () => {
+        // The consolidate-on-isNew fix: a duplicate same-query dispatch bails
+        // before re-firing setSearchStatus / nav transition / runSearch,
+        // matching orchestration.search and _restoreSearchFromParams.
+        mocks.runSearch.mockResolvedValue(undefined)
+        dispatch.dispatchSearch('coffee')
+        expect(mocks.runSearch).toHaveBeenCalledTimes(1)
+        expect(mocks.setSearchStatus).toHaveBeenCalledWith('searching')
+        expect(mocks.dispatchNavTransition).toHaveBeenCalledWith('SET_SURFACE', { surface: 'search' })
+
+        // Second dispatch with the SAME query — startSearch returns isNew:false,
+        // so dispatchSearch bails and does not re-fire the side effects.
+        vi.clearAllMocks()
+        dispatch.dispatchSearch('coffee')
+        expect(mocks.runSearch).not.toHaveBeenCalled()
+        expect(mocks.setSearchStatus).not.toHaveBeenCalled()
+        expect(mocks.dispatchNavTransition).not.toHaveBeenCalled()
     })
 
     it('cancels in-flight search and emits SEARCH_CANCELLED', () => {

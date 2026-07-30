@@ -87,9 +87,14 @@ export class SearchDispatch {
         // startSearch handles abort + dedup atomically: if the same query is
         // already in flight the existing signal is returned (no re-abort);
         // otherwise the previous search is aborted and a fresh controller is
-        // created. No separate cancelSearch + isSearchInFlight preamble needed.
+        // created. dispatchSearch now gates on the returned `isNew` flag,
+        // matching orchestration.search and _restoreSearchFromParams, so a
+        // duplicate same-query event does not re-fire setSearchStatus / nav
+        // transition / runSearch. The duration timer is captured AFTER the
+        // bail so a duplicate event does not reset it.
+        const { signal, isNew } = startSearch(trimmed)
+        if (!isNew) return
         this.searchStartTime = performance.now()
-        const { signal } = startSearch(trimmed)
         setSearchStatus('searching')
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
         this.surfaceSwitchedToSearch = true

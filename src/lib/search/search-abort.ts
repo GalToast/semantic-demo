@@ -20,10 +20,15 @@ let currentQuery = ''
  * mid-body. The race arises when callers perform an `isSearchInFlight(trimmed)`
  * lookup BEFORE calling `startSearch` — that lookup-then-mutate window is
  * non-atomic. The canonical fix is to consolidate lookup + mutation here so
- * callers do a single `startSearch` call instead of check-then-start; that
- * consolidation also lives in `search-dispatch.ts` (parallel WIP — deferred
- * until clean). Until then, this body keeps the abort→create sequence in one
- * synchronous block so no intermediate state is observable between mutations.
+ * callers do a single `startSearch` call instead of check-then-start. That
+ * consolidation is now complete: all THREE call sites gate on the returned
+ * `isNew` flag — `orchestration.search` (`src/lib/search/orchestration.ts`),
+ * `_restoreSearchFromParams` (`src/lib/orchestration/url-state.ts`), AND
+ * `SearchDispatch.dispatchSearch` (`src/lib/search/search-dispatch.ts`) —
+ * so duplicate same-query events bail before re-firing setSearchStatus,
+ * nav transition, or runSearch. This body keeps the abort→create sequence
+ * in one synchronous block so no intermediate state is observable between
+ * mutations.
  */
 export function startSearch(query: string): { signal: AbortSignal; isNew: boolean } {
     const trimmed = query.trim()
