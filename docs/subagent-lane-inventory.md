@@ -10,7 +10,7 @@ Probed 2026-07-27. Updated 2026-07-29.
 - **Registered alt:** `agnes-2.0-flash` ✅ **subagent-viable 2026-07-27** (resolves via `router-agnes`; tool-use + write succeed; verify output against parent-component scope, as it tends to over-reach into child components).
 - **Free fallbacks:**
     - `ling-3.0-flash-free` ✅ **subagent-viable 2026-07-29** (via `opencode-zen/ling-3.0-flash-free` → `router-opencode-zen`) — passed a real find-and-fix graduation trial removing an unused `onMount` import; lint + 3380 unit tests passed. **W58 reconfirm (UI/chrome+demo slice, qwen harness):** found real UI bug where `DemoChoreography.requestReplay()` ignored the `?nodemo=1` suppress guard; main-lane fix committed `2b6821fb` (tmp/w58-findui-REPORT.md).
-    - `laguna-s-2.1-free` **route-dependent** — ❌ on OpenCode Zen (2026-07-29: subagent tasks stuck in long reasoning loops and hit 200MB+ stdout cap), ✅ via `/poolside` `poolside/laguna-s-2.1` and `/openrouter` `poolside/laguna-s-2.1:free` for direct completion probes. **Subagent benchmark 2026-07-29 (Pi harness, poolside route):** ❌ NOT subagent-viable — launched with `--thinking max`, spun in reasoning loops producing zero output for 41–88s on both a complex audit task and a trivial one-sentence prompt. Root cause: Pi harness defaults to `--thinking max` for reasoning-capable models; laguna-s-2.1 supports reasoning but loops indefinitely at max thinking. The `external_subagent_start` API does not expose a thinking-level override. Avoid for subagent coding tasks until a `--thinking low/off` option is available.
+    - `laguna-s-2.1-free` **route-dependent** — ❌ on OpenCode Zen (2026-07-29: subagent tasks stuck in long reasoning loops and hit 200MB+ stdout cap), ✅ via `/poolside` `poolside/laguna-s-2.1` and `/openrouter` `poolside/laguna-s-2.1:free` for direct completion probes. **Subagent benchmark 2026-07-29 (Pi harness, poolside route):** ❌ NOT subagent-viable — launched with `--thinking max`, spun in reasoning loops producing zero output for 41–88s on both a complex audit task and a trivial one-sentence prompt. Root cause: Pi harness defaults to `--thinking max` for reasoning-capable models; laguna-s-2.1 supports reasoning but loops indefinitely at max thinking. The `external_subagent_start` API does not expose a thinking-level override. Avoid for subagent coding tasks until a `--thinking low/off` option is available. **W58 re-verify 2026-07-30 (post hermes session_start hang fix):** `poolside/laguna-s-2.1` via `router-poolside` SUCCEEDED exit-0 on a same-scope UI components+css jargon audit (sentinel `UI AUDIT DONE POOLSIDE-LAGUNA`, `provider_health: ok`, `stop_reason: stop`, clean report `tmp/jargon-audit-ui-poolside-laguna.md`, ~$0.003 paid). The 2026-07-29 "reasoning loops / 41-88s zero output" was the hermes `session_start` DB contention (4.5GB sessions.db) misattributed to laguna — now fixed by `apply-hermes-session-start-defer-patch.mjs` (full-defer via `setImmediate`). **`poolside/laguna-s-2.1` IS subagent-viable for audit tasks via `router-poolside`** (provider-qualified model ref); the `--thinking max` concern stands for heavy coding tasks until a thinking-override is exposed.
     - `laguna-xs-2.1-free` ✅ **subagent-viable 2026-07-27** (via `openrouter/poolside/laguna-xs-2.1:free`)
     - `mimo-v2.5-free` ✅ **subagent-viable 2026-07-28** (resolves via `router-opencode-zen`) — strong for UI code edits but emits very long reasoning traces; use conciseness steering.
     - `deepseek-v4-flash-free` ✅ **subagent-viable 2026-07-28** (resolves via `router-opencode-zen`) — reliable for multi-step coding and read-only audits.
@@ -65,6 +65,47 @@ Continued the same bugsweep wave after the main W58 summary:
 - `nemotron-3-ultra-free` engine deep sweep found and fixed 3 real engine issues (RAF loop continuity, `ResourceTracker` double-dispose, teardown GC leaks); main-lane took over after worker wedged post-edit → committed `e33d0364`.
 
 Both sets passed `npm run build:svelte`, `npx tsc --noEmit`, and `npx vitest run tests/unit-active/` (3363 passed).
+
+### W58 harness-audit + untested-model qualification campaign — 2026-07-30
+
+Goal: graduate untested models to the subagent allowlist by having them find/fix real harness issues while the main lane verifies.
+
+**Graduated in this campaign:**
+
+- `nvidia/z-ai/glm-5.2` ✅ **FIX subagent** — bounded search-bug fix in `global-shortcuts.ts` + `search.svelte.ts`; zero scope creep; main-lane verified + committed (`a3a0a5bd`).
+- `nvidia/minimaxai/minimax-m3` ✅ **AUDIT subagent** — deep `mmx.ts` analysis; found the real no-hard-cancel wedge (`quiet_for_seconds` is informational, only 30-min timeout or manual cancel terminates stuck workers). Did not persist its report file (stdout-only), but findings were captured.
+- `nvidia/google/gemma-4-31b-it` ✅ **AUDIT subagent** — wrote a 4-finding key-router report with file:line citations (blocking auto-shard health checks, no exponential backoff, sync `writeFileSync`, linear provider scan). Function names/behavior verified against source; line numbers drifted slightly. Model self-identified as "gpt-4o" in report header, but route metadata confirms it was `nvidia/google/gemma-4-31b-it`.
+
+**Dead lanes / not subagent-viable on tested routes:**
+
+- `nvidia/moonshotai/kimi-k2.6` ❌ 404 on chat completions
+- `nvidia/ibm/granite-34b-code-instruct` ❌ Pi model resolver "Model not found"
+- `nvidia/deepseek-ai/deepseek-v4-pro` ❌ 502 "Upstream stream failed"
+- `nvidia/deepseek-ai/deepseek-v4-flash` ❌ 529 upstream overloaded
+- `nvidia/google/gemma-3-12b-it` ❌ 404
+- `nvidia/ibm/granite-3.0-8b-instruct` ❌ 404
+- `nvidia/ibm/granite-3.0-3b-a800m-instruct` ❌ 404
+- `nvidia/zyphra/zamba2-7b-instruct` ❌ 404
+- `nvidia/mistralai/mistral-nemotron` ❌ EngineCore crash before output
+
+**Zydit provider diagnosis:**
+
+- `zydit/z-ai/glm-5.2` is the **only** reliably working subagent model on zydit; all other zydit-routed candidates hit upstream instability:
+    - `zydit/google/gemma-4-31b-it` — resolves, 500 inference connection errors
+    - `zydit/deepseek-ai/deepseek-v4-pro/flash` — 502 "Upstream stream failed before output"
+    - `zydit/moonshotai/kimi-k2.6` — 404 (catalog lists it, upstream doesn't serve that exact ID)
+    - `zydit/mistralai/mistral-nemotron` — resolves, produced a plan but did not complete the patch
+- Key-router recent failure signature for `zydit` v1: `z-ai/glm-5.2` occasionally returns status 200 with message `"Stream ended after reasoning without content/tool output"` (provider streams reasoning then stops before content/tools). glm-5.2 usually retries through this; other models do not.
+- Root cause: upstream Zydit capacity/backoff/flakiness, not our key-router config. All tested model IDs are listed in `/zydit/v1/models` or `/zydit/v4/models`.
+
+**Harness issues found (verified):**
+
+1. **key-router HIGH**: `chooseAutoShard` blocks every sharded request on `await Promise.all(candidates.map(fetchAutoShardHealth...))` (~1.2s/request).
+2. **key-router MEDIUM**: `saveState()` uses sync `fs.writeFileSync`/`fs.renameSync` on the hot path.
+3. **mmx HIGH**: No hard cancel for stuck workers — only 30-min timeout or manual cancel.
+4. **Pi 0.83.0 race**: `_wrapDetachableTool` inline patch can be missing when external-subagent Pi workers spawn after a `pi update`.
+
+**In-flight:** proven-model backups (`nvidia/minimaxai/minimax-m3`, `nvidia/z-ai/glm-5.2`) re-delegated to produce unified-diff patches for the four harness fixes; main lane will review + apply + verify.
 
 ### Strong free/shadow routes for coding
 
@@ -138,6 +179,19 @@ Cross-cutting:
 - 2026-07-27 bench ground truth (`docs/bugsweep-bench-2026-07-27.md`) had no orchestration entries → all main-lane findings are NEW.
 
 Next lane to trial (not yet done): freeinference.org as a direct Pi harness provider — alive, fast, has reasoning-capable models; only untested piece remaining.
+
+### 2026-07-30 late qualification (Pi harness 0.83.0)
+
+Goal: graduate `nvidia/z-ai/glm-5.2`, `nvidia/minimaxai/minimax-m3`, `logfare/minimaxai/minimax-m3`, and `zydit/*` routes.
+
+| Model / route                  | Smoke / task                                                     | Verdict                | Notes                                                                                                                                                                                                           |
+| ------------------------------ | ---------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nvidia/z-ai/glm-5.2`          | bounded FIX: `global-shortcuts.ts` + `search.svelte.ts`          | ✅ **FIX subagent**    | Zero scope creep; main-lane verified + committed (`a3a0a5bd`).                                                                                                                                                  |
+| `nvidia/minimaxai/minimax-m3`  | AUDIT of `mmx.ts`                                                | ✅ **AUDIT subagent**  | Found real no-hard-cancel wedge; stdout-only report.                                                                                                                                                            |
+| `nvidia/google/gemma-4-31b-it` | key-router audit                                                 | ✅ **AUDIT subagent**  | Wrote 4-finding report with file:line citations; line numbers drifted slightly.                                                                                                                                 |
+| `logfare/minimaxai/minimax-m3` | read-only smoke + 600s focus bugsweep                            | ✅ **subagent-viable (slow; budget 900s+)** | Smoke exit 0, wrote report, ~14K cache-read tokens, $0. Focus bugsweep timed out at 600s but was actively working (14 text blocks + bash tool calls, reading `AGENTS.md`/`docs/important-files.md`). Produces a `Model 'minimaxai/minimax-m3' not found for provider 'router-logfare'` warning at boot but falls back to a custom model id and succeeds. For substantive sweeps budget 900s and narrow scope, or run on the main lane. |
+| `zydit/z-ai/glm-5.2`           | read-only smoke                                                  | ❌ **flaky**           | Chat completions work, but subagent stream terminates with `"Upstream stream ended before a completion terminator was received"`. Root cause: upstream Zydit capacity/backoff/flakiness, not key-router config. |
+| `zydit/minimaxai/minimax-m3`   | read-only smoke                                                  | ❌ **NOT subagent-viable** | Same stream-termination as `zydit/z-ai/glm-5.2` (`Upstream stream ended before a completion terminator was received`). The stream-hang wedge is **zydit-wide, not model-specific** — chat completions work but the subagent streaming tool loop dies after the first reasoning block. Do not retry zydit models for subagent work until the upstream stream-hang fix (stream-idle timeout + SSE teardown on worker kill) lands. |
 
 ## Free-lane billing investigation — 2026-07-29
 

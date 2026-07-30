@@ -270,9 +270,6 @@ export function pinThreadNeighbor(index: number, options: ThreadInspectionOption
 
     if (appState.canvasThreadInspectionClearTimer) {
         window.clearTimeout(appState.canvasThreadInspectionClearTimer)
-        {
-            appState.canvasThreadInspectionClearTimer = null
-        }
         appState.canvasThreadInspectionClearTimer = null
     }
 
@@ -342,9 +339,6 @@ export function pinFirstAvailableNeighbor(options: ThreadInspectionOptions = {})
 export function unpinThreadInspection(): ThreadInspectionState | null {
     if (appState.canvasThreadInspectionClearTimer) {
         window.clearTimeout(appState.canvasThreadInspectionClearTimer)
-        {
-            appState.canvasThreadInspectionClearTimer = null
-        }
         appState.canvasThreadInspectionClearTimer = null
     }
     appState.focusState.pinnedThreadIndex = null
@@ -395,9 +389,6 @@ export function clearThreadInspection(options: ThreadInspectionOptions = {}): Th
     try {
         if (options.force && appState.canvasThreadInspectionClearTimer) {
             window.clearTimeout(appState.canvasThreadInspectionClearTimer)
-            {
-                appState.canvasThreadInspectionClearTimer = null
-            }
             appState.canvasThreadInspectionClearTimer = null
         }
         if (options.force) {

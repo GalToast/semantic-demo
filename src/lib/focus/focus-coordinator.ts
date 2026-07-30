@@ -102,8 +102,16 @@ export function isMeaningfulActiveElement(): boolean {
     return false
 }
 
-/**
- * Move DOM focus to a primary entry-point target.
+/** Cancel any pending entry-focus attempt. Call this before a focus change to
+ *  prevent the old rAF chain from stealing focus after the new target mounts. */
+export function cancelEntryFocus(): void {
+    if (_pendingFocusRegistry) {
+        _pendingFocusRegistry.disposeAll()
+        _pendingFocusRegistry = null
+    }
+}
+
+/** Move DOM focus to a primary entry-point target.
  *
  * @param target Either a CSS selector (resolved at focus time, so it works
  *   even if the target is not yet mounted) or a thunk returning the element.
@@ -114,15 +122,6 @@ export function isMeaningfulActiveElement(): boolean {
  * after a surface swap or splash removal, and retries a few frames if the
  * element is still absent (surface still swapping).
  */
-/** Cancel any pending entry-focus attempt. Call this before a focus change to
- *  prevent the old rAF chain from stealing focus after the new target mounts. */
-export function cancelEntryFocus(): void {
-    if (_pendingFocusRegistry) {
-        _pendingFocusRegistry.disposeAll()
-        _pendingFocusRegistry = null
-    }
-}
-
 export function requestEntryFocus(
     target: string | (() => HTMLElement | null | undefined),
     opts: RequestEntryFocusOptions = {}
