@@ -95,7 +95,7 @@ const ROLE_COPY: Record<RelationshipRole, { label: string; title: string; reason
     same_owner: {
         label: 'Same owner',
         title: 'Common ownership',
-        reason: 'Shared principal or ownership structure detected in public records.'
+        reason: 'Shared principal or ownership structure identified in public filings.'
     },
     shared_principal: {
         label: 'Shared principal',

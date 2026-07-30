@@ -92,7 +92,7 @@ export function buildLegend(): void {
     const guideTitle = guide ? getSemanticGuideTitle(guide) : 'Read the scene'
     const guideNote: string =
         (guide?.text as string) ||
-        'Neighborhood colors group records by shared language, trade, civic role, and business texture.'
+        'Neighborhood colors group businesses by shared language, trade, civic role, and business texture.'
     const activeCluster = getActiveClusterFilter()
 
     // Clear and rebuild with DOM API (avoids innerHTML slop warning)

@@ -267,7 +267,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
                 anchorId = String(recordIndex)
             } else {
                 debugWarn('[url-state] record', recordId, 'not found in dataset; ignoring')
-                showExperienceToast('Record not found', `Record ${recordId} isn't available in this dataset.`)
+                showExperienceToast('Listing not found', `Listing ${recordId} isn't available in this dataset.`)
             }
         }
 

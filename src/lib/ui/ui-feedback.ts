@@ -89,9 +89,9 @@ export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatus
         statusEl.textContent = `${pointName} is focused outside ${queryLabel}. The ranked stack remains available as the current search trail.`
         updateSearchTrailCue({
             beat: 'focus',
-            kicker: 'Focused record',
+            kicker: 'Focused listing',
             title: `${pointName} is focused`,
-            note: `The ranked stack still shows ${queryLabel}; no result row is marked current because this record is outside that trail.`
+            note: `The ranked stack still shows ${queryLabel}; no result row is marked current because this listing is outside that trail.`
         })
         return
     }

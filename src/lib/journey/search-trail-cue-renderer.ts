@@ -53,7 +53,7 @@ export function updateSearchTrailCue(nextCue: SearchTrailCue = {}): void {
     const title =
         nextCue.title ||
         (nextCue.stage === 'query'
-            ? `Sifting 8,406 records for '${query}' patterns.`
+            ? `Sifting 8,406 businesses for '${query}' patterns.`
             : nextCue.stage === 'anchor'
               ? 'Anchor identified. Trail initialized.'
               : nextCue.stage === 'empty'

@@ -39,15 +39,15 @@ function getShortConnectionCue(reason: string | unknown): string {
     const reasonText = (cleanOptionalValue(reason) || '')
         .replace(/\bgrounded in\b/gi, 'from')
         .replace(/\bsame-city relationship\b/gi, 'same-city link')
-        .replace(/\bdeep record relationship\b/gi, 'record link')
+        .replace(/\bdeep record relationship\b/gi, 'direct link')
         .replace(/\s+/g, ' ')
         .trim()
     if (!reasonText) return ''
     if (/same-city\s+[^.]+?\s+link/i.test(reasonText)) return reasonText.match(/same-city\s+[^.]+?\s+link/i)![0]
     if (/same-city\s+link/i.test(reasonText)) return 'same-city link'
-    if (/matching record layer/i.test(reasonText)) return 'matching record layer'
-    if (/contactable public record/i.test(reasonText)) return 'contactable public record'
-    if (/record link/i.test(reasonText)) return 'record link'
+    if (/matching record layer/i.test(reasonText)) return 'matching trade'
+    if (/contactable public record/i.test(reasonText)) return 'public listing'
+    if (/record link|direct link/i.test(reasonText)) return 'direct link'
     return truncateDiveStatusCopy(reasonText, isCompactFocusStageViewport() ? 24 : 32).replace(/\.\.\.$/, '')
 }
 

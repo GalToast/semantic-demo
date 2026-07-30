@@ -253,13 +253,13 @@ export async function search(query: string, options: SearchOptions = {}): Promis
             beat: 'focus',
             kicker: 'Single result',
             title: `${soleName} — only match for "${trimmedQuery}"`,
-            note: 'Only one record matches. Click it to inspect, or search again for a broader result.',
+            note: 'Only one listing matches. Click it to inspect, or search again for a broader result.',
             immediate: isCompactSearchViewport()
         })
         if (typeof soleIndex === 'number' && Number.isFinite(soleIndex)) {
             publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point: results[0]!.point, index: soleIndex })
         }
-        statusEl.textContent = `1 match for "${trimmedQuery}" — ${soleName} is the only record.`
+        statusEl.textContent = `1 match for "${trimmedQuery}" — ${soleName} is the only listing.`
         setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true })
         return
     }

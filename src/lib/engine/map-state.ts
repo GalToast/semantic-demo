@@ -393,7 +393,7 @@ export function refreshMapRouteEmbodiment(): void {
                 const note = document.createElement('div')
                 note.className = 'map-empty-state-note'
                 note.textContent =
-                    'Search or select a business in the mycelium view, then open Map to see its nearby records here.'
+                    'Search or select a business in the scene, then open Map to see its nearby businesses here.'
                 emptyEl.appendChild(note)
 
                 // V2 (W53): jurors flagged this centered empty-state obscuring

@@ -180,7 +180,7 @@ export function getPublicRecordStatusLabel(status: unknown): string {
         .trim()
         .toLowerCase()
     if (normalized === 'disqualified') return 'Archive layer'
-    return 'County record'
+    return 'County listing'
 }
 
 /**
