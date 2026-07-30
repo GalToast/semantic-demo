@@ -6,7 +6,11 @@
         position: fixed;
         top: 0;
         left: 0;
-        width: 100vw;
+        /* H5 mobile overflow: 100% (of the fixed viewport containing block)
+           instead of 100vw. Aligns with the base rule in shell.css and
+           sidesteps the iOS 100vw rounding/gutter edge case that can push the
+           fixed canvas a few px past the viewport edge on notched devices. */
+        width: 100%;
         height: 100dvh;
         z-index: var(--z-base);
         overflow: hidden;
