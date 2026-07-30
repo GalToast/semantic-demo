@@ -441,12 +441,13 @@ export function createPoints() {
     // See tmp/outstanding-cleanup-audit-2026-06-29.md Item 2.
     const rawPositionsBuffer = state.rawPositionsBuffer
     const rawClustersBuffer = state.rawClustersBuffer
-    // `!` asserts non-null per the same runtime invariant as in getPointBoundsCenter (PR-A cherry-picked as 432bee1c):
-    // createPoints()'s early-return guard ensures state.points.length > 0,
-    // and setBusinessData populates the buffer alongside the points.
-    const scatterOffsets = computeOverviewScatterOffsets(state.points, rawPositionsBuffer!)
-    // Same invariant applies for the bounds read.
-    const bounds = getPointBoundsCenter(state.points, rawPositionsBuffer!)
+    // Defensive guard: setBusinessData populates the buffer alongside the
+    // points, but if createPoints() is ever called before the data worker
+    // finishes (test/edge-case), bail rather than crash on the reads below
+    // (W58 F5). Past this guard rawPositionsBuffer is non-null, so no `!` is needed.
+    if (!rawPositionsBuffer) return
+    const scatterOffsets = computeOverviewScatterOffsets(state.points, rawPositionsBuffer)
+    const bounds = getPointBoundsCenter(state.points, rawPositionsBuffer)
     const renderCenter = bounds.center
     state.overviewBounds = {
         sourceMin: { x: bounds.min.x, y: bounds.min.y, z: bounds.min.z },
@@ -473,10 +474,16 @@ export function createPoints() {
             pz = rawPositionsBuffer[i * 3 + 2] ?? 0
             cluster = rawClustersBuffer[i] ?? 0
         } else {
-            px = Number.isFinite(point.x) ? (point.x ?? 0) : 0
-            py = Number.isFinite(point.y) ? (point.y ?? 0) : 0
-            pz = Number.isFinite(point.z) ? (point.z ?? 0) : 0
-            cluster = point.cluster ?? 0
+            // No raw clusters buffer (or length mismatch) — use zero defaults
+            // instead of the dead `point.x/y/z` reads. `state.points` is
+            // `BusinessRecord[]` and never carries those fields (getPointBoundsCenter
+            // already removed this fallback — see its comment). This path
+            // should never fire in production; warn if it does (W58 F4).
+            debugWarn('[node-manager] createPoints hit the no-raw-buffer branch; using zero defaults')
+            px = 0
+            py = 0
+            pz = 0
+            cluster = 0
         }
 
         const fx = (px - renderCenter.x + scatter.x) * MYCELIUM_FIELD_SCALE.x

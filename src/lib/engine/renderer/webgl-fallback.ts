@@ -25,12 +25,19 @@ export function detectWebGLSupport(): WebGLSupportDetail {
             canvas.getContext('experimental-webgl', contextAttributes)) as WebGLRenderingContext | null
         if (!context) return { supported: false, reason: 'context-unavailable' }
         const debugInfo = context.getExtension?.('WEBGL_debug_renderer_info')
-        return {
+        const result: WebGLSupportDetail = {
             supported: true,
             reason: 'available',
             renderer: debugInfo ? context.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : null,
             vendor: debugInfo ? context.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : null
         }
+        // Release the probe context so it doesn't count against the browser's
+        // ~16 active WebGL context limit. Journey tests mount/unmount the
+        // engine repeatedly; a leaked probe per call accelerates context
+        // exhaustion (W58 F1).
+        const loseExt = context.getExtension?.('WEBGL_lose_context')
+        loseExt?.loseContext()
+        return result
     } catch (error) {
         return { supported: false, reason: (error as Error)?.message || 'context-probe-threw' }
     }

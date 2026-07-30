@@ -446,7 +446,12 @@ export function animate() {
     // be set) and the re-init would never fire.
     if (engineState.webglNeedsRestoreReinit) {
         engineState.webglNeedsRestoreReinit = false
-        void initThreeJS()
+        // Fire-and-forget, but DON'T swallow the rejection: if re-init fails the
+        // engine is left half-torn-down (cancelAnimate already ran). Log it so
+        // the failure surfaces instead of silently deadlocking (W58 F2).
+        void initThreeJS().catch((err) => {
+            debugError('[three-engine] WebGL restore re-init failed:', err)
+        })
         return
     }
 
