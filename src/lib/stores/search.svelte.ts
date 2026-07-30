@@ -435,6 +435,7 @@ export function bumpSummaryCardTypeToken(): number {
 
 export function clearSearch(): void {
     withSearchNotify(() => {
+        appState.searchResults = []
         appState.searchState.currentSearchSummary = null
         appState.searchState.searchStatus = 'idle'
         appState.searchState.searchError = null

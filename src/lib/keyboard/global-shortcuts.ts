@@ -210,13 +210,10 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
             // H-4 (bugsweep): clear the search query through the store, not
             // direct DOM mutation, so the Svelte $state and the DOM stay in sync.
             setSearchQuery('')
+            updateUrlState({ q: null, offset: null }, { reason: 'escape-clear' })
             const { mode, surface } = navStore()
             if (mode !== 'overview' || surface !== 'idle') {
                 dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)
-                // A2-7: after returning to overview, sync the URL to
-                // reflect the galaxy view so the back button works
-                // correctly.
-                updateUrlState({}, { reason: 'return-overview' })
             }
         }
     }
