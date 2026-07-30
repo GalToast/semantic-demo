@@ -173,6 +173,18 @@ async function main() {
         const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
         await context.addInitScript(() => {
             window.__PLAYWRIGHT__ = true
+            // Suppress the W52 first-visit help dialog so it doesn't intercept the
+            // .weather-toggle click used to expand detail rows. The literal key
+            // is inlined because addInitScript serializes the function source and a
+            // TS const cannot be captured here. Mirrors capture-phase2's pattern.
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* localStorage may be unavailable pre-navigation */
+            }
         })
 
         // Intercept Open-Meteo API so the widget never fetches real weather
@@ -218,7 +230,14 @@ async function main() {
         )
         assert(state.humidity !== null && state.humidity.includes('%'), 'live weather should render humidity', state)
         assert(state.wind !== null && state.wind.includes('mph'), 'live weather should render wind', state)
-        assert(state.toggleAriaLabel === 'Toggle weather details', 'toggle should have accessible label', state)
+        // aria-label expanded in W46-D4 to name the toggle + the context it
+        // controls (current conditions for Montgomery County). Matches the
+        // weather-widget-context-journey contract.
+        assert(
+            state.toggleAriaLabel === 'Toggle weather details — current conditions for Montgomery County',
+            'toggle should have accessible label',
+            state
+        )
 
         // ── Fallback weather ───────────────────────────────────────────────────────
         await injectFallbackWeather(page)
