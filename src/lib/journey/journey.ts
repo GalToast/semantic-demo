@@ -127,6 +127,12 @@ subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
         // headless tests that call __navActions__.focusOnNode without mounting
         // the scene), we still need to populate the pocket here.
         journeyFocusTimerRegistry.schedule(0, () => {
+            // M12: liveness guard — a superseding CAMERA_NODE_FOCUSED in the
+            // same publish block (or a navigation/mode-switch in this tick)
+            // would leave this deferred callback to rebuild the trail seed +
+            // focus pocket for a stale index. Re-check focusedIndex matches,
+            // mirroring the sibling tryBuild retry at :146.
+            if (state.navState.focusedIndex !== index) return
             setTrailFromSeed(index)
             const engineIsReady = get(engineStatusStore) === 'ready'
             if (!engineIsReady) {
