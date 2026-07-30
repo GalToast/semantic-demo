@@ -2,6 +2,7 @@
 
 /* ─── STATE-MACHINE STYLES ─────────────────────────── */
 @media (max-width: 640px) {
+    body.surface-idle #canvas-container,
     body:not(.surface-idle) #canvas-container {
         position: fixed;
         top: 0;
@@ -13,15 +14,26 @@
         width: 100%;
         height: 100dvh;
         z-index: var(--z-base);
-        overflow: hidden;
+        overflow: clip;
         overscroll-behavior: none;
         scrollbar-width: none;
+        /* Keep scaled pseudo-elements and the high-DPR canvas from expanding
+           the scrollable overflow rectangle on Chromium. */
+        contain: paint;
     }
 
+    body.surface-idle #canvas-container::-webkit-scrollbar,
     body:not(.surface-idle) #canvas-container::-webkit-scrollbar {
         width: 0;
         height: 0;
         display: none;
+    }
+
+    /* Suppress the 1.02x vignette scale on mobile so it cannot push
+       scrollWidth past clientWidth on high-DPR viewports. */
+    body.surface-idle #canvas-container::after,
+    body:not(.surface-idle) #canvas-container::after {
+        transform: none;
     }
 
     body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='map-focus-search'])
@@ -1311,7 +1323,9 @@
         background:
             linear-gradient(180deg, rgba(3, 7, 11, 0.1) 0%, rgba(3, 7, 11, 0.22) 46%, rgba(3, 7, 11, 0.72) 100%),
             radial-gradient(circle at 50% 44%, transparent 0 30%, rgba(3, 7, 11, 0.24) 70%, rgba(3, 7, 11, 0.64) 100%);
-        transform: scale(1.015);
+        /* Mobile overflow guard: any pseudo-element scale expands the fixed
+           canvas scrollWidth past clientWidth on high-DPR viewports. */
+        transform: none;
     }
 
     /* Sheet Handle */

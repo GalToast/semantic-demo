@@ -4375,6 +4375,55 @@ const SURFACES = {
 }
 
 // ---------------------------------------------------------------------------
+// Cross-surface mobile guard: the #canvas-container is a fixed, full-viewport
+// WebGL surface. A width unit mismatch (e.g. 100vw on a notched device) can
+// push it a few pixels past the layout viewport and clip the edges without
+// creating document-level scroll overflow. Every mobile surface asserts that
+// the container's own scrollWidth does not exceed its clientWidth.
+// ---------------------------------------------------------------------------
+async function assertCanvasContainerNoOverflow(page, ctx, surfaceName) {
+    const info = await page.evaluate(() => {
+        const canvas = document.querySelector('#canvas-container')
+        if (!canvas) return { canvasPresent: false }
+        return {
+            canvasPresent: true,
+            scrollWidth: canvas.scrollWidth,
+            clientWidth: canvas.clientWidth,
+            widthStyle: canvas.style.width,
+            computedWidth: getComputedStyle(canvas).width
+        }
+    })
+
+    if (!info.canvasPresent) {
+        // Mobile placeholder2d path intentionally has no WebGL canvas.
+        // The presence check is handled by each surface's existing dom:canvas-container assertion.
+        ctx.pass(surfaceName, 'viewport-crowding:canvas-no-overflow')
+        return
+    }
+
+    const overflow = info.scrollWidth > info.clientWidth + 1
+    if (overflow) {
+        ctx.fail(
+            surfaceName,
+            'viewport-crowding:canvas-overflow',
+            `#canvas-container overflow: scrollWidth=${info.scrollWidth} > clientWidth=${info.clientWidth} (style:${info.widthStyle}, computed:${info.computedWidth})`
+        )
+    } else {
+        ctx.pass(surfaceName, 'viewport-crowding:canvas-no-overflow')
+    }
+}
+
+// Wrap all mobile surfaces with the canvas overflow guard.
+for (const [surfaceName, fn] of Object.entries(SURFACES)) {
+    if (VIEWPORTS[surfaceName]?.isMobile) {
+        SURFACES[surfaceName] = async (page, ctx) => {
+            await fn(page, ctx)
+            await assertCanvasContainerNoOverflow(page, ctx, surfaceName)
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // global-spacing — fast, chunked CSS spacing health check.
 // Run at mobile 390px without entering a focused state — touches only global
 // elements that are present on every meaningful surface.
