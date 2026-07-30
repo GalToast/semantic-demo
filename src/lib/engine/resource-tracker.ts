@@ -56,17 +56,23 @@ export class ResourceTracker {
         }
 
         if (holder.material) {
-            const mat: Material | undefined = Array.isArray(holder.material) ? holder.material[0] : holder.material
-            if (!mat) return resource
-            this.track(asDisposable(mat))
+            // Multi-material meshes carry an array; track every material and its
+            // texture maps, not just [0] (which would leak materials[1..n]).
+            const materials: Material[] = Array.isArray(holder.material)
+                ? (holder.material as Material[]).filter((m): m is Material => Boolean(m))
+                : [holder.material].filter((m): m is Material => Boolean(m))
+            if (materials.length === 0) return resource
+            for (const mat of materials) {
+                this.track(asDisposable(mat))
 
-            if (mat && 'map' in mat && mat.map) this.track(asDisposable(mat.map))
-            if (mat && 'alphaMap' in mat && (mat as Record<string, unknown>).alphaMap)
-                this.track((mat as Record<string, unknown>).alphaMap as Disposable)
-            if (mat && 'envMap' in mat && (mat as Record<string, unknown>).envMap)
-                this.track((mat as Record<string, unknown>).envMap as Disposable)
-            if (mat && 'normalMap' in mat && (mat as Record<string, unknown>).normalMap)
-                this.track((mat as Record<string, unknown>).normalMap as Disposable)
+                if ('map' in mat && mat.map) this.track(asDisposable(mat.map))
+                if ('alphaMap' in mat && (mat as Record<string, unknown>).alphaMap)
+                    this.track((mat as Record<string, unknown>).alphaMap as Disposable)
+                if ('envMap' in mat && (mat as Record<string, unknown>).envMap)
+                    this.track((mat as Record<string, unknown>).envMap as Disposable)
+                if ('normalMap' in mat && (mat as Record<string, unknown>).normalMap)
+                    this.track((mat as Record<string, unknown>).normalMap as Disposable)
+            }
         }
 
         if (holder.children && Array.isArray(holder.children)) {

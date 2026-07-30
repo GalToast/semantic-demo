@@ -105,7 +105,7 @@ export type ClusterName =
 
 export type ViewName = 'galaxy' | 'map'
 
-export type CompassPhase = 'overview' | 'search' | 'focus' | 'inside' | 'map'
+export type CompassPhase = 'overview' | 'search' | 'focus' | 'trail' | 'inside' | 'map'
 
 export type ThreadSource = 'geometric-fallback' | string | null
 
