@@ -2669,6 +2669,23 @@ test.describe('Widget journey', () => {
         'B-A1: search count never overshoots total + Show-more reachable (visual-qa-handoff B-A1)',
         { timeout: 120000 },
         async ({ page }) => {
+            // Probe live search API reachability before any page interaction.
+            // If the PHP search server on :8795 is absent, this test exercises
+            // static data only — skip it so a missing API doesn't mask a
+            // real regression with a timeout failure.
+            const liveApiReachable = await page.evaluate(async () => {
+                try {
+                    const r = await fetch('http://127.0.0.1:8795/api.php?action=semantic_search&q=coffee')
+                    if (!r.ok) return false
+                    // A 2xx with parseable JSON confirms the live API is serving.
+                    await r.json()
+                    return true
+                } catch {
+                    return false
+                }
+            })
+            test.skip(!liveApiReachable, 'live search API unavailable on :8795 — static data not exercised')
+
             // Regression for visual-qa-handoff B-A1 (HIGH). searchVisibleCountFn() reads
             // sessionStorage; the deep-link runSearch path (url-state.ts) does NOT clear it
             // (unlike the input-driven orchestration.search()), so a stale stored count
