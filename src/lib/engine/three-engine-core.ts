@@ -236,6 +236,16 @@ export async function initThreeJS() {
     // is used instead.
     if (!isMobileViewport()) {
         ensurePostProcessing(engineState).then((pp) => {
+            // W58-F3 liveness guard: the dynamic import (~150-200 kB) can
+            // resolve across a context-loss/teardown/re-init window. The
+            // `renderer`/`scene`/`camera` captured here are the locals for THIS
+            // init; if a re-init has swapped them out, `engineState.state.renderer`
+            // points at the new (live) renderer and the captured one is disposed
+            // or about to be. Wrapping a disposed renderer in an EffectComposer
+            // corrupts the next render, so bail and fall through to vanilla
+            // renderer.render(). Each buildThreeScene creates a distinct
+            // renderer object, so identity compare is a valid liveness signal.
+            if (engineState.state?.renderer !== renderer) return
             try {
                 pp.initPostProcessing(renderer, scene, camera)
             } catch (ppErr) {
