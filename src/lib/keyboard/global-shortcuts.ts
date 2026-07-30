@@ -24,6 +24,7 @@
  */
 
 import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts'
+import { setJourneyPhase } from '@lib/stores/journey.svelte.ts'
 import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from './keyboard-help'
 import { updateUrlState } from '@lib/orchestration/url-state'
 import { isModeLocked } from '@lib/navigation/mode-affordances'
@@ -146,6 +147,18 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
                     updateUrlState({ view: 'map', surface: 'map' }, { reason: 'keyboard-shortcut-6' })
                     break
             }
+
+            // Keep journeyStore().phase in lockstep with the new mode, mirroring
+            // the selectMode() funnel in mode-nav.ts (`ctx.setJourneyPhase?.(modeId
+            // === 'map' ? 'overview' : modeId)`). The keyboard path previously
+            // dispatched only the nav transition + URL sync, so a Ctrl/Cmd+1-6
+            // switch advanced navState.mode/surface while leaving journeyStore().phase
+            // stale. That divergence leaked into parity-resolvers.ts (ctx.journey.phase
+            // — see GlobalParityProvider) and the JourneyChrome idle/overview gate
+            // (JourneyChrome.svelte), so the chip path and keyboard path rendered
+            // the chrome/parity differently for the same mode.
+            setJourneyPhase(modeId === 'map' ? 'overview' : modeId)
+
             return
         }
 
