@@ -1326,7 +1326,7 @@ body #mode-chips .mode-chip.is-locked::after {
 
 body .mode-grid .mode-chip.is-locked .chip-icon,
 body #mode-chips .mode-chip.is-locked .chip-icon {
-    opacity: 0.45;
+    opacity: 0.7;
     filter: grayscale(0.6);
 }
 
@@ -1348,7 +1348,7 @@ body #mode-chips .mode-chip.is-locked .chip-icon {
 body .mode-grid .mode-chip:disabled,
 body #mode-chips .mode-chip:disabled {
     cursor: not-allowed;
-    opacity: 0.45;
+    opacity: 0.7;
     pointer-events: none;
 }
 

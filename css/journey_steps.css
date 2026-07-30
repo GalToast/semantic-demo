@@ -241,19 +241,16 @@ body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .
     animation: focusPanelArrival 0.68s cubic-bezier(0.2, 0.72, 0.22, 1) both;
 }
 
-body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
-    .focus-stage-journey.active {
+body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .focus-stage-journey.active {
     border-color: rgba(var(--color-primary-tint-rgb), 0.15);
     animation: focusJourneyArrival 0.62s cubic-bezier(0.2, 0.72, 0.22, 1) 0.06s both;
 }
 
-body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
-    .focus-stage-neighbors.active {
+body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .focus-stage-neighbors.active {
     animation: focusNeighborsArrival 0.58s cubic-bezier(0.2, 0.72, 0.22, 1) 0.12s both;
 }
 
-body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
-    .focus-stage-route-line {
+body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .focus-stage-route-line {
     transform-origin: left center;
     animation: focusRouteArrival 0.82s ease-out both;
 }
@@ -308,19 +305,15 @@ body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
     }
 
     /* Broaden coverage per #950: major state animations */
-    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
-        .focus-stage-card,
-    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
-        .focus-stage-journey.active,
-    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
-        .focus-stage-neighbors.active {
+    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .focus-stage-card,
+    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .focus-stage-journey.active,
+    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .focus-stage-neighbors.active {
         transform: none;
         opacity: 1;
         animation: none;
     }
 
-    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
-        .focus-stage-route-line,
+    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .focus-stage-route-line,
     .focus-stage-route[data-state='walking'] .focus-stage-route-line {
         animation: none;
     }
@@ -473,33 +466,27 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill[data-r
 }
 
 /* Specific semantic relationship role treatments */
-body[data-panel-surface]:not(.surface-map-any)
-    .focus-stage-neighbor-pill[data-relationship-role='core_peer'] {
+body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill[data-relationship-role='core_peer'] {
     border-color: rgba(var(--color-primary-tint-rgb), 0.26);
 }
 
-body[data-panel-surface]:not(.surface-map-any)
-    .focus-stage-neighbor-pill[data-relationship-role='upstream'] {
+body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill[data-relationship-role='upstream'] {
     border-color: rgba(255, 226, 132, 0.22);
 }
 
-body[data-panel-surface]:not(.surface-map-any)
-    .focus-stage-neighbor-pill[data-relationship-role='downstream'] {
+body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill[data-relationship-role='downstream'] {
     border-color: rgba(185, 255, 242, 0.22);
 }
 
-body[data-panel-surface]:not(.surface-map-any)
-    .focus-stage-neighbor-pill[data-relationship-role='complement'] {
+body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill[data-relationship-role='complement'] {
     border-color: rgba(220, 200, 255, 0.22);
 }
 
-body[data-panel-surface]:not(.surface-map-any)
-    .focus-stage-neighbor-pill[data-relationship-role='same_market'] {
+body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill[data-relationship-role='same_market'] {
     border-color: rgba(150, 220, 255, 0.22);
 }
 
-body[data-panel-surface]:not(.surface-map-any)
-    .focus-stage-neighbor-pill[data-relationship-role='geo_echo'] {
+body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill[data-relationship-role='geo_echo'] {
     border-color: rgba(200, 255, 180, 0.22);
 }
 
@@ -507,8 +494,7 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill[data-r
     border-color: rgba(255, 180, 180, 0.22);
 }
 
-body[data-panel-surface]:not(.surface-map-any)
-    .focus-stage-neighbor-pill[data-relationship-role='unclassified'] {
+body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill[data-relationship-role='unclassified'] {
     border-color: rgba(180, 180, 180, 0.22);
 }
 
@@ -878,7 +864,7 @@ body[data-panel-surface]:not(.surface-map-any)[data-strand-journey='exploring']
 
 .focus-thread-inspector-btn:disabled {
     cursor: default;
-    opacity: 0.42;
+    opacity: 0.7;
 }
 
 .focus-thread-inspector-kicker,

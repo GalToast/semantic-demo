@@ -238,7 +238,7 @@
 /* Use aria-disabled (not the native disabled attribute) so the title
    tooltip is still discoverable on hover; click handler no-ops instead. */
 .focus-stage-action-btn[aria-disabled='true'] {
-    opacity: 0.45;
+    opacity: 0.7;
     cursor: not-allowed;
     pointer-events: auto;
 }
@@ -281,7 +281,7 @@
 }
 
 .focus-stage-dive-btn:disabled {
-    opacity: 0.42;
+    opacity: 0.7;
     cursor: default;
 }
 
@@ -389,7 +389,7 @@
 
 .focus-stage-inside-btn:disabled {
     cursor: default;
-    opacity: 0.58;
+    opacity: 0.7;
     color: rgba(255, 240, 184, 1);
     border-color: rgba(255, 226, 132, 0.12);
     background: linear-gradient(180deg, rgba(255, 226, 132, 0.055), rgba(255, 255, 255, 0.018));
