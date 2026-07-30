@@ -457,7 +457,7 @@ export function resizeEngine(width: number, height: number): void {
                 _ppResize?.(width, height)
             })
             .catch((e: unknown) => {
-                console.warn('[lifecycle] postprocessing lazy-load failed during resize:', e)
+                debugWarn('[lifecycle] postprocessing lazy-load failed during resize:', e)
             })
     } else {
         _ppResize(width, height)

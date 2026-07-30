@@ -10,6 +10,7 @@
  */
 
 import type { ThreeEngineState, PostProcessingModule } from './three-engine-state'
+import { debugWarn } from '@lib/utils/debug'
 
 /**
  * Lazily import and cache the postprocessing module.
@@ -38,7 +39,7 @@ export async function ensurePostProcessing(engineState: ThreeEngineState): Promi
             // permanently returning a rejected promise (which would wedge postproc
             // for the rest of the session). Rethrow so callers can react; the render
             // loop degrades gracefully when engineState.ppModule stays null.
-            console.warn('[three-pp-init] postprocessing lazy-load failed:', e)
+            debugWarn('[three-pp-init] postprocessing lazy-load failed:', e)
             engineState.ppLoading = null
             throw e
         })
