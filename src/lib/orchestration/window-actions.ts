@@ -218,7 +218,7 @@ export function syncSvelteNavFromLegacy(): void {
         phase: (navState.mode as typeof state.phase | undefined) ?? state.phase,
         depth: asFiniteNumber(navState.trailDepth) ?? state.depth,
         trailDepth: asFiniteNumber(navState.trailDepth) ?? state.trailDepth,
-        trailSeedIndex: asFiniteNumber(navState.trailSeedIndex),
+        trailSeedIndex: asFiniteNumber(navState.trailSeedIndex) ?? state.trailSeedIndex,
         trail: finiteIndexList(navState.walkHistoryIndices).map((index) => ({ index })),
         cursor: asFiniteNumber(navState.trailCursor) ?? state.cursor,
         walkHistoryIndices: finiteIndexList(navState.walkHistoryIndices),
