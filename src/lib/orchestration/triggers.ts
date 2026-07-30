@@ -166,7 +166,13 @@ subscribeKeyed(
                     focusedIndex: index,
                     mode: 'focus',
                     surface: $nav.surface === 'focus-search' ? $nav.surface : 'focus',
-                    trailDepth: Math.max(1, $nav.trailDepth ?? 0)
+                    trailDepth: Math.max(1, $nav.trailDepth ?? 0),
+                    // Write trailSeedIndex on the canvas-click focus path too, mirroring
+                    // the SEARCH_FOCUS_REQUESTED subscriber (line ~211). Without this,
+                    // navState.trailSeedIndex stays stale until setTrailFromSeed fires
+                    // via setTimeout(0), and any syncSvelteNavFromLegacy in that window
+                    // propagates the stale value to the Svelte store (W58 F1).
+                    trailSeedIndex: index
                 })
             }
         }
