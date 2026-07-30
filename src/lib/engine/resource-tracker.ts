@@ -43,7 +43,16 @@ export class ResourceTracker {
         }
 
         if ('dispose' in resource && typeof resource.dispose === 'function') {
-            this.resources.add(resource as Disposable)
+            // Only add to resources if it's a standalone Disposable (not a
+            // GPUResourceHolder). Holders carry geometry/material/children which
+            // we track recursively; adding the holder itself would cause
+            // double-dispose when dispose() is called on both the holder and
+            // its components. Three.js dispose() is idempotent but custom
+            // disposables may not be.
+            const holder = resource as GPUResourceHolder
+            if (!holder.geometry && !holder.material && !holder.children) {
+                this.resources.add(resource as Disposable)
+            }
         }
 
         // After the dispose-branch check, narrow the union to GPUResourceHolder.

@@ -423,6 +423,14 @@ export function deinit() {
     engineState.threeInteractionVisuals?.disposeInteractionVisuals()
     engineState.audioScape?.disposeAudio()
     disposeEventListeners()
+    // Clean up dev-only window globals so stale getters aren't retained.
+    if (typeof window !== 'undefined') {
+        try {
+            delete (window as unknown as { __semanticEngine?: unknown }).__semanticEngine
+        } catch {
+            // ignore
+        }
+    }
     // Reset module-cache flag so ensureModules() re-reads fresh references on
     // subsequent initThreeJS() calls (W1-M1).
     engineState.loaded = false
@@ -455,6 +463,16 @@ export function animate() {
         return
     }
 
+    // Schedule next frame FIRST so the RAF loop stays alive even when
+    // _shouldSkipFrame() returns true (document hidden, view switched away
+    // from 'galaxy', etc.). The skip check still gates the actual frame work.
+    const sceneNeedsContinuous = sceneNeedsContinuousFrame(
+        performance.now(),
+        engineState.state,
+        cameraControlsRestore.autoRotateResumeDueAt
+    )
+    scheduleNextAnimationFrame(sceneNeedsContinuous)
+
     if (_shouldSkipFrame()) {
         return
     }
@@ -466,12 +484,6 @@ export function animate() {
     try {
         const frameStart = performance.now()
         const frameNow = frameStart
-        const sceneNeedsContinuous = sceneNeedsContinuousFrame(
-            frameNow,
-            engineState.state,
-            cameraControlsRestore.autoRotateResumeDueAt
-        )
-        scheduleNextAnimationFrame(sceneNeedsContinuous)
         const sceneFrameMs = engineState.state?.scenePerformanceDiagnostics?.lastFrameAt
             ? Math.min(250, Math.max(0, frameNow - engineState.state.scenePerformanceDiagnostics.lastFrameAt))
             : 0

@@ -306,6 +306,20 @@ export function disposePostProcessing(): void {
     _ditherEffect = null
     _renderPass = null
     _initialized = false
+
+    // Null module-level refs to allow GC of Three.js objects after teardown.
+    _rendererRef = null
+    _sceneRef = null
+    _cameraRef = null
+
+    // Clean up DevGui bridge on window so stale effect functions aren't retained.
+    if (typeof window !== 'undefined') {
+        try {
+            delete window.__semanticPostprocessing
+        } catch {
+            // ignore
+        }
+    }
 }
 
 /**
