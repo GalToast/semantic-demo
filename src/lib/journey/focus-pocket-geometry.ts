@@ -16,6 +16,7 @@ import {
     type SemanticCandidate
 } from '@lib/journey/focus-pocket-personality'
 import { getFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
+import { debugWarn } from '@lib/utils/debug'
 import type { PocketMotionWithFrame } from '@lib/types/state'
 
 // === Pure geometry/easing utilities ===
@@ -922,6 +923,13 @@ export function buildFocusedSemanticPocket(index: number): SemanticPocketResult 
                 reason: 'outer semantic echo'
             })
         })
+
+    const missingRoleCount = [...pocketEntries.values()].filter((entry) => !entry.relationshipRole).length
+    if (missingRoleCount > 0) {
+        debugWarn(
+            `focus-pocket-geometry: ${missingRoleCount}/${pocketEntries.size} semantic pocket entries lack relationshipRole (geometric placement fallback used)`
+        )
+    }
 
     const pocketIndices = [index, ...[...pocketEntries.keys()]]
     if (pocketIndices.length < 2) return null
