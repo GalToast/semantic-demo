@@ -58,9 +58,22 @@
 
   $effect(() => {
     if (showResults || showLoading || isError || isStoreError || isEmpty) {
+      // M13: liveness guard — if the condition flips false (user clears the
+      // query) while the dynamic import is in-flight, the `.then` would
+      // overwrite the `null` set by the else-branch and leave a stale
+      // <SearchResultsComponent /> mounted off-search (the render guard at
+      // :124 is `{#if SearchResultsComponent}`, not the show conditions, so a
+      // stale non-null renders persistently). Return a cleanup that cancels
+      // the `.then` when the $effect is invalidated (condition change or
+      // unmount) — Svelte 5 runs the prior cleanup before the next body, so
+      // `cancelled` is set before the else-branch null.
+      let cancelled = false;
       import('./SearchResults.svelte').then(mod => {
-        SearchResultsComponent = mod.default;
+        if (!cancelled) SearchResultsComponent = mod.default;
       });
+      return () => {
+        cancelled = true;
+      };
     } else {
       SearchResultsComponent = null;
     }
