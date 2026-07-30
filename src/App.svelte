@@ -289,14 +289,19 @@
     if (!engineReady.value) return
     const start = performance.now()
     let tries = 0
+    let rafId = 0
     const retry = (): void => {
       focusSearchInput()
       tries++
       if (performance.now() - start < 1500 && tries < 90) {
-        requestAnimationFrame(retry)
+        rafId = requestAnimationFrame(retry)
       }
     }
-    requestAnimationFrame(retry)
+    rafId = requestAnimationFrame(retry)
+    // M11: cancel the focus-retry rAF on effect cleanup / unmount so it
+    // cannot keep firing (idempotent no-op, but wasteful) after the
+    // component is gone. Matches the M9/M10 stale-cleanup hardening.
+    return () => cancelAnimationFrame(rafId)
   });
 
   $effect(() => legacyCompassSurfaceLazy.ensure(legacyCompassSurfaceActive));
