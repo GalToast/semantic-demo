@@ -30,6 +30,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const ROUTER = process.env.KEY_ROUTER_URL || 'http://127.0.0.1:8788'
+function imageMime(p) {
+    return p.toLowerCase().endsWith('.jpg') || p.toLowerCase().endsWith('.jpeg') ? 'image/jpeg' : 'image/png'
+}
+function imageDataUrl(p) {
+    const buf = fs.readFileSync(p)
+    return `data:${imageMime(p)};base64,${buf.toString('base64')}`
+}
 const PROVIDER_PREFIX = {
     nvidia: '/nvidia/v1',
     modelscope: '/modelscope/v1',
@@ -43,31 +50,34 @@ const PROVIDER_PREFIX = {
     freemodel: '/freemodel/v1'
 }
 
-const IMAGES = [
+// Image set is resolved at runtime via IMAGES_DIR / IMAGES_SUFFIX so the grader can
+// consume either the full-res captures (DEFAULT, lossless — no W53 V4 downscale
+// hallucinations) or a prepared set from scripts/prepare-vision-images.mjs.
+//   VISION_IMAGES_DIR     base dir for image files (default 'tmp')
+//   VISION_IMAGES_SUFFIX  filename suffix (default '' = full-res .png; '.small' = legacy 50% downscale)
+const VISION_IMAGES_DIR = process.env.VISION_IMAGES_DIR || 'tmp'
+const VISION_IMAGES_SUFFIX = process.env.VISION_IMAGES_SUFFIX || ''
+function imgPath(stem) {
+    return path.join(VISION_IMAGES_DIR, `${stem}${VISION_IMAGES_SUFFIX}.png`)
+}
+const IMAGE_DEFS = [
     {
-        path: 'tmp/phase2-desktop-overview-1280.small.png',
+        stem: 'phase2-desktop-overview-1280',
         name: 'Desktop overview @1280px',
         desc: 'header brand + 6 mode-chip rail + search over 3D mycelium canvas'
     },
     {
-        path: 'tmp/phase2-search-coffee-1280.small.png',
+        stem: 'phase2-search-coffee-1280',
         name: "Search 'coffee' @1280px",
         desc: 'results panel with count + result list + Show more button'
     },
-    {
-        path: 'tmp/phase2-focus-1280.small.png',
-        name: 'Focus panel @1280px',
-        desc: 'selected-business detail card + 3D canvas'
-    },
-    { path: 'tmp/phase2-map-1280.small.png', name: 'Map mode @1280px', desc: '2D map surface + filters + attribution' },
-    { path: 'tmp/phase2-chips-820.small.png', name: 'Narrow desktop @820px', desc: 'header mode-chip rail' },
-    {
-        path: 'tmp/phase2-chips-768.small.png',
-        name: '@768px header (icon-only chips)',
-        desc: 'header icon-only-chip breakpoint'
-    },
-    { path: 'tmp/phase2-mobile-idle-375.small.png', name: 'Mobile idle @375px', desc: '2D placeholder path' }
+    { stem: 'phase2-focus-1280', name: 'Focus panel @1280px', desc: 'selected-business detail card + 3D canvas' },
+    { stem: 'phase2-map-1280', name: 'Map mode @1280px', desc: '2D map surface + filters + attribution' },
+    { stem: 'phase2-chips-820', name: 'Narrow desktop @820px', desc: 'header mode-chip rail' },
+    { stem: 'phase2-chips-768', name: '@768px header (icon-only chips)', desc: 'header icon-only-chip breakpoint' },
+    { stem: 'phase2-mobile-idle-375', name: 'Mobile idle @375px', desc: '2D placeholder path' }
 ]
+const IMAGES = IMAGE_DEFS.map((d) => ({ path: imgPath(d.stem), name: d.name, desc: d.desc }))
 
 const GRADER_SYSTEM = 'You are a senior UI/UX visual QA grader. You output only findings — no preamble.'
 
@@ -197,11 +207,10 @@ async function gradeOne(modelRef, timeoutMs, mode) {
     if (mode === 'multi') {
         const userContent = [{ type: 'text', text: multiImgPrompt }]
         for (let i = 0; i < IMAGES.length; i++) {
-            const buf = fs.readFileSync(IMAGES[i].path)
             userContent.push({ type: 'text', text: `--- Screenshot ${i + 1}: ${IMAGES[i].name} ---` })
             userContent.push({
                 type: 'image_url',
-                image_url: { url: `data:image/png;base64,${buf.toString('base64')}` }
+                image_url: { url: imageDataUrl(IMAGES[i].path) }
             })
         }
         const body = {
@@ -236,10 +245,9 @@ async function gradeOne(modelRef, timeoutMs, mode) {
     let perImageErrors = 0
     for (let i = 0; i < IMAGES.length; i++) {
         const im = IMAGES[i]
-        const buf = fs.readFileSync(im.path)
         const userContent = [
             { type: 'text', text: singleImgPrompt(im, i) },
-            { type: 'image_url', image_url: { url: `data:image/png;base64,${buf.toString('base64')}` } }
+            { type: 'image_url', image_url: { url: imageDataUrl(im.path) } }
         ]
         const body = {
             model: bareModel,
