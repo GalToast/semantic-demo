@@ -61,6 +61,31 @@ export function initViewControllerAdapter(opts: { refreshCompositionState?: () =
 }
 
 /**
+ * Tear down the view controller. Clears all pending timers, resets handoff
+ * state, removes the transitioning body class, and drops the composition
+ * callback so HMR / unmount cannot fire orphaned timers.
+ */
+export function teardownViewController(): void {
+    if (_handoffDismissTimer !== null) {
+        clearTimeout(_handoffDismissTimer)
+        _handoffDismissTimer = null
+    }
+    if (_viewTransitionTimer !== null) {
+        clearTimeout(_viewTransitionTimer)
+        _viewTransitionTimer = null
+    }
+    if (_preludeTimer !== null) {
+        clearTimeout(_preludeTimer)
+        _preludeTimer = null
+    }
+
+    _refreshCompositionState = () => {}
+
+    document.body.classList.remove('view-transitioning')
+    hideViewHandoff()
+}
+
+/**
  * Hide the view handoff overlay immediately.
  */
 export function hideViewHandoff(): void {
