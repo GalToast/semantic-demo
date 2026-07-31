@@ -55,6 +55,7 @@ import type {
     ThreadInspectorState,
     PocketMotionWithFrame
 } from '@lib/types/state'
+import type { NodePosition } from '@lib/state/types/core-types'
 import type { BusinessRecord } from '@lib/types/business'
 import type { Point } from '@lib/state/state-types'
 import { type Readable, get } from 'svelte/store'
@@ -213,9 +214,9 @@ function narrowToPoint(business: BusinessRecord | null): Point | null {
 function _buildPocketNode(
     idx: number,
     anchorIndex: number | null,
-    targetPositions: any,
-    nodePositions: any,
-    originalPositions: any,
+    targetPositions: NodePosition[] | undefined,
+    nodePositions: NodePosition[] | undefined,
+    originalPositions: NodePosition[] | undefined,
     roles: Map<number, string>,
     records: readonly BusinessRecord[]
 ): FocusPocketNode | null {
