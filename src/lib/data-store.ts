@@ -348,6 +348,12 @@ export function setBusinessData(result: BusinessDataResult): void {
                 appState.originalPositions = derived
                 appState.nodePositions = derived.slice()
             }
+            // W67: positions replaced -> invalidate the projected-neighbor grid +
+            // candidate cache. thread-model's buildProjectedNeighborGrid /
+            // getProjectedNeighborCandidates memoize forever and are never rebuilt
+            // otherwise, so post-load proximity queries would use stale cell buckets.
+            appState.projectedNeighborGrid = null
+            appState.projectedNeighborCache = new Map()
         }
     } catch (e) {
         debugWarn('[data-store] Legacy state sync failed:', e)

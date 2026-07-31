@@ -430,6 +430,13 @@ export function createPoints() {
     state.nodePositions = []
     state.targetPositions = []
     state.originalPositions = []
+    // W67: originalPositions is rebuilt in a TRANSFORMED coordinate space
+    // (scatter + MYCELIUM_FIELD_SCALE + render-center offset) below, so the
+    // projected-neighbor grid + cache (thread-model memos built from the
+    // pre-rebuild space, never invalidated) must be reset here or every
+    // geometric-fallback proximity query silently misses after a rebuild.
+    state.projectedNeighborGrid = null
+    state.projectedNeighborCache = new Map()
     state.pointBaseColors = new Float32Array(state.points.length * 3)
     const pointBaseColors = state.pointBaseColors
     state.pointColorStateVersion += 1
