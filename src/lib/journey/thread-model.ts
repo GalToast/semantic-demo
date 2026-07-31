@@ -143,11 +143,30 @@ export function buildSpatialGrid(arg1?: number | readonly Point3D[], arg2?: numb
 
 /* ── buildProjectedNeighborGrid ─────────────────────────────────────────── */
 
+// W67: self-validating memo -- the grid is rebuilt (and the candidate cache
+// cleared) whenever the source arrays are REPLACED (data load, createPoints
+// rebuild in a transformed space, compat-proxy writes, future writers), so
+// stale proximity queries cannot persist regardless of which writer replaces
+// the data. Reference comparison is sound: every known writer assigns a new
+// array (data-store derives a fresh array; createPoints clears to [] then
+// pushes; no in-place mutation sites exist).
+let _gridSourcePositions: readonly Point3D[] | null = null
+let _gridSourcePoints: readonly BusinessRecord[] | null = null
+
 export function buildProjectedNeighborGrid(): SpatialGrid {
-    if (state.projectedNeighborGrid) {
+    const positions = getOriginalPositions()
+    const points = getPoints()
+    if (
+        state.projectedNeighborGrid &&
+        _gridSourcePositions === positions &&
+        _gridSourcePoints === points
+    ) {
         return state.projectedNeighborGrid
     }
     state.projectedNeighborGrid = buildSpatialGrid(0.12)
+    state.projectedNeighborCache = new Map()
+    _gridSourcePositions = positions
+    _gridSourcePoints = points
     return state.projectedNeighborGrid
 }
 
