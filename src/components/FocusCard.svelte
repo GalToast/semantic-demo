@@ -226,14 +226,14 @@
       what: 'Click a business on the map to explore.',
       role: 'Listing',
       theme: 'Theme',
-      status: 'Record status',
+      status: 'Business status',
       trivia: '',
       showTrivia: false,
       matchNarrative: '',
       showMatchPanel: false,
       facts: [],
       sensitivityBadges: [],
-      mapText: 'No geocoded point yet',
+      mapText: 'No map location yet',
       threadText: 'Waiting for a related path.',
       isPopulated: false
     };
@@ -270,7 +270,7 @@
     const sensitivityBadges: Record<string, unknown>[] = [];
     const mapText = (selectedRecord.lat != null && selectedRecord.lng != null)
       ? `${selectedRecord.lat.toFixed(4)}, ${selectedRecord.lng.toFixed(4)}`
-      : 'No geocoded point yet';
+      : 'No map location yet';
     const threadText = '';
     const relationshipContext = relationshipContextFor(nav.threadCandidates);
 

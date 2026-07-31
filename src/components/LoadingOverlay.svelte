@@ -35,7 +35,7 @@
     records: { progress: 0.2, note: 'Loading businesses...', foot: 'County businesses are loading first.' },
     scene: { progress: 0.48, note: 'Raising the cloud...', foot: 'Shaping the scene.' },
     restore: { progress: 0.76, note: 'Restoring view...', foot: 'Restoring last known path.' },
-    launch: { progress: 1, note: 'Awake.', foot: 'Threads are live.' }
+    launch: { progress: 1, note: 'Awake.', foot: 'Connections are live.' }
   };
 
   // Read directly from the loadingPhase store — the 4-phase progression

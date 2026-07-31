@@ -108,7 +108,7 @@
       if (count > 0) {
         entries.push({
           index: i,
-          name: CLUSTER_NAMES[i] ?? `Cluster ${i}`,
+          name: CLUSTER_NAMES[i] ?? `Category ${i}`,
           count,
           color: CLUSTER_COLORS[i] ?? '#888',
         });

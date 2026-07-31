@@ -76,7 +76,7 @@ describe('MapSummary component', () => {
     })
 
     it('SVG has a <title> + <desc> describing the trail', () => {
-        expect(source).toContain('<title id="map-trail-svg-title">Journey trail</title>')
+        expect(source).toContain('<title id="map-trail-svg-title">Journey path</title>')
         expect(source).toContain('<desc id="map-trail-desc">')
         // The desc block reports total stops and (when focused) the current
         // step. The exact text is templated, so we look for the substrings.
@@ -91,7 +91,7 @@ describe('MapSummary component', () => {
     })
 
     it('stops are now a proper <ol>, not a <div>', () => {
-        expect(source).toMatch(/<ol[^>]*class="map-stops"[^>]*aria-label="Trail stops"/)
+        expect(source).toMatch(/<ol[^>]*class="map-stops"[^>]*aria-label="Journey stops"/)
     })
 
     it('each <li class="map-stop"> gets aria-current="step" when current', () => {

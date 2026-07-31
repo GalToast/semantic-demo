@@ -40,8 +40,8 @@
   let currentIdx = $derived(focusedIndex());
 
   function getStopName(idx: number): string {
-    if (!getIsDataReady() || getBusinessRecords().length === 0) return `Node ${idx}`;
-    return getBusinessRecords()[idx]?.name ?? `Node ${idx}`;
+    if (!getIsDataReady() || getBusinessRecords().length === 0) return `Stop ${idx}`;
+    return getBusinessRecords()[idx]?.name ?? `Stop ${idx}`;
   }
 </script>
 
@@ -61,9 +61,9 @@
       aria-labelledby="map-trail-svg-title"
       aria-describedby="map-trail-desc"
     >
-      <title id="map-trail-svg-title">Journey trail</title>
+      <title id="map-trail-svg-title">Journey path</title>
       <desc id="map-trail-desc">
-        {trail.length} stop{trail.length === 1 ? '' : 's'} on the current trail.
+        {trail.length} stop{trail.length === 1 ? '' : 's'} on the current route.
         {#if currentIdx != null}Currently focused: stop {trail.findIndex((s) => s.index === currentIdx) + 1} of {trail.length}.{/if}
       </desc>
 
@@ -111,7 +111,7 @@
         Now on step {trail.findIndex((s) => s.index === currentIdx) + 1} of {trail.length}: {getStopName(currentIdx)}.
       {/if}
     </p>
-    <ol class="map-stops" aria-label="Trail stops">
+    <ol class="map-stops" aria-label="Journey stops">
       {#each trail as stop, i}
         {@const isCurrent = currentIdx === stop.index}
         <li
