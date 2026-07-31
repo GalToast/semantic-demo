@@ -211,9 +211,9 @@ function _renderNeighborPill(candidate: ThreadCandidateRef, order: number, nav: 
 }
 
 export function updateFocusNeighborRail(): void {
-    const rail = document.getElementById('focus-stage-neighbors')
-    const list = document.getElementById('focus-stage-neighbor-list')
-    const countEl = document.getElementById('focus-stage-neighbor-count')
+    const rail = document.getElementById('focus-stage-neighbors-aux')
+    const list = document.getElementById('focus-stage-neighbor-list-aux')
+    const countEl = document.getElementById('focus-stage-neighbor-count-aux')
     if (!rail || !list) return
 
     // F1 (W61): cancel any pending hover-intent from the previous rail

@@ -52,7 +52,7 @@ function makeElement(
 
 function appendFocusNeighborRail(root: HTMLElement): void {
     const rail = makeElement('div', {
-        id: 'focus-stage-neighbors',
+        id: 'focus-stage-neighbors-aux',
         className: 'focus-stage-neighbors',
         attributes: { 'aria-live': 'off' }
     })
@@ -60,7 +60,7 @@ function appendFocusNeighborRail(root: HTMLElement): void {
     header.append(
         makeElement('div', { className: 'focus-stage-neighbor-kicker', text: 'Nearby Stops' }),
         makeElement('div', {
-            id: 'focus-stage-neighbor-count',
+            id: 'focus-stage-neighbor-count-aux',
             className: 'focus-stage-neighbor-count',
             text: '0 visible neighbors'
         })
@@ -68,7 +68,7 @@ function appendFocusNeighborRail(root: HTMLElement): void {
     rail.append(
         header,
         makeElement('div', {
-            id: 'focus-stage-neighbor-list',
+            id: 'focus-stage-neighbor-list-aux',
             className: 'focus-stage-neighbor-list'
         })
     )
@@ -251,7 +251,7 @@ export function ensureFocusStageAuxiliaryDom(): boolean {
         card.appendChild(root)
     }
 
-    if (!document.getElementById('focus-stage-neighbors')) appendFocusNeighborRail(root)
+    if (!document.getElementById('focus-stage-neighbors-aux')) appendFocusNeighborRail(root)
     if (
         !document.getElementById('focus-stage-inside-status') ||
         !document.getElementById('focus-stage-inside-controls')
