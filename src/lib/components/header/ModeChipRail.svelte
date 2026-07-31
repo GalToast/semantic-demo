@@ -249,6 +249,8 @@
       .mode-chip {
           padding: 0.6rem;
           justify-content: center;
+          min-width: 48px;
+          min-height: 48px;
       }
       .mode-chip.active {
           padding: 0.4rem 0.7rem;
@@ -263,8 +265,8 @@
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 44px;
-          height: 44px;
+          width: 48px;
+          height: 48px;
           background: transparent;
           /* W54: pass pointer events through the oversized tap-target overlay so
              Playwright/MCP real clicks reach the actual <button> consistently. */
@@ -298,19 +300,19 @@
       }
       .mode-chip {
           flex: 0 0 auto;
-          min-width: 44px;
-          min-height: 44px;
+          min-width: 48px;
+          min-height: 48px;
           padding: 0.5rem;
       }
   }
 
-  /* W-fix: ensure all mode-chips meet the 44px touch-target minimum
+  /* W-fix: ensure all mode-chips meet the 48px touch-target minimum
      on mobile (≤768px). The ≤360px tier above sets min-size, but the
      768px tier only sets padding which yields ~30-33px. */
   @media (max-width: 768px) {
       .mode-chip {
-          min-width: 44px;
-          min-height: 44px;
+          min-width: 48px;
+          min-height: 48px;
       }
       .mode-chip.active {
           padding: 0.35rem 0.6rem;

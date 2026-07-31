@@ -310,14 +310,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
+    min-height: 48px;
     margin-top: 1.25rem;
     background: transparent;
     border: none;
     color: rgba(231, 240, 240, 0.85);
     font-size: 0.95rem;
     font-family: inherit;
-    padding: 0.5rem 1rem;
+    padding: 0.9rem 1rem;
     cursor: pointer;
     letter-spacing: 0.08em;
     text-decoration: underline;

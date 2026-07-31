@@ -227,6 +227,8 @@
     background: rgba(var(--color-primary-alt-rgb), 0.1);
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
     border-radius: 0.25rem;
+    min-width: 48px;
+    min-height: 48px;
     padding: 0.1rem 0.45rem;
     cursor: pointer;
     text-transform: uppercase;
