@@ -78,7 +78,8 @@ export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatus
         )
     }
 
-    const displayPoint = focusedPointOutsideResults && appState.focusState.selectedPoint ? appState.focusState.selectedPoint : point
+    const displayPoint =
+        focusedPointOutsideResults && appState.focusState.selectedPoint ? appState.focusState.selectedPoint : point
     const pointName = formatBusinessName(displayPoint!.name)
     const searchSummary = getCurrentSearchSummarySnapshot()
     const queryLabel = searchSummary?.query ? `"${searchSummary.query}"` : 'this connection path'
@@ -107,10 +108,10 @@ export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatus
             kicker: 'Anchor locked',
             title: `${pointName} is now centered`,
             note: compactMapCopy
-                ? 'Search opens a trail. Preview nearby matches in the stack or use Prev / Next to explore.'
+                ? 'Search found related businesses. Preview nearby matches in the stack or use Prev / Next to explore.'
                 : compactGalaxyCopy
-                  ? 'Search opens a trail. Enter the mycelium, inspect connections, or explore the nearby stops below.'
-                  : 'Search opens a trail. Preview ranked matches in the stack, or use Prev / Next to explore outward from this neighborhood.'
+                  ? 'Search found related businesses. Inspect connections, or explore the nearby stops below.'
+                  : 'Search found related businesses. Preview ranked matches in the stack, or use Prev / Next to explore outward from this neighborhood.'
         })
         return
     }
@@ -121,11 +122,11 @@ export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatus
             : `${pointName} is now centered in ${queryLabel}. Use Prev / Next to explore nearby businesses, or the result stack to jump back into ranked matches.`
         updateSearchTrailCue({
             beat: 'walk',
-            kicker: 'Semantic exploration in progress',
+            kicker: 'Exploration in progress',
             title: `Exploring from ${pointName}`,
             note: compactMapCopy
-                ? 'Prev / Next keeps stepping through this nearby business trail.'
-                : 'The trail is live now. Use Prev / Next to explore further, or jump sideways from the ranked stack.'
+                ? 'Prev / Next keeps stepping through nearby businesses.'
+                : 'The path is live now. Use Prev / Next to explore further, or jump sideways from the ranked stack.'
         })
         return
     }
@@ -135,8 +136,8 @@ export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatus
         : `${pointName} is centered in ${queryLabel}. Use the result stack to preview or jump, or Prev / Next to explore nearby businesses.`
     updateSearchTrailCue({
         beat: 'focus',
-        kicker: 'Search opens a trail.',
-        title: `${pointName} anchors this trail`,
+        kicker: 'Search found related businesses.',
+        title: `${pointName} is the starting point`,
         note: compactMapCopy
             ? 'Preview another match in the stack, or walk forward from this anchor.'
             : 'The ranked stack still shows the broader query, while this focus keeps the active anchor.'

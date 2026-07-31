@@ -146,7 +146,7 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
 
         // 2. #summary-card-title-text matches client-side fallback value (uppercase with anchors this trail)
         const titleEl = page.locator('#summary-card-title-text')
-        const expectedTitle = `${anchorName} anchors this trail`.toUpperCase()
+        const expectedTitle = `${anchorName} is the starting point`.toUpperCase()
         await expect(titleEl).toHaveText(expectedTitle, { timeout: 10000 })
 
         // 3. #summary-text is populated by the fallback summary generator

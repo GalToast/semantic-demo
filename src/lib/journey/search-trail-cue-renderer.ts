@@ -35,7 +35,7 @@ export function updateSearchTrailCue(nextCue: SearchTrailCue = {}): void {
     }
 
     // W48-UX: hide the search-trail-cue when the user has reached focus
-    // mode. The cue is a search-stage narrative ("Search opens a trail.")
+    // mode. The cue is a search-stage narrative ("Search found related businesses.")
     // that loses relevance once the focus card + trail controls render
     // at the same anchor: 5rem. The two stack on each other in the
     // focus state, which is the user-visible overlap bug the W47
@@ -55,20 +55,20 @@ export function updateSearchTrailCue(nextCue: SearchTrailCue = {}): void {
         (nextCue.stage === 'query'
             ? `Sifting 8,406 businesses for '${query}' patterns.`
             : nextCue.stage === 'anchor'
-              ? 'Anchor identified. Trail initialized.'
+              ? 'Anchor identified. Path ready.'
               : nextCue.stage === 'empty'
                 ? 'No matching anchor found.'
                 : nextCue.stage === 'explore'
-                  ? 'Search opens a trail.'
-                  : 'Search opens a trail.')
+                  ? 'Search found related businesses.'
+                  : 'Search found related businesses.')
     const note =
         nextCue.note ||
         (nextCue.stage === 'query'
-            ? 'High-fidelity semantic analysis is aligning relevant business clusters.'
+            ? 'Finding the businesses that best match your search.'
             : nextCue.stage === 'anchor'
               ? 'The strongest match has become the anchor. You can now center it and explore its neighborhood.'
               : nextCue.stage === 'empty'
-                ? 'Try a different term or filter to discover a trail.'
+                ? 'Try a different term or filter to discover a path.'
                 : nextCue.stage === 'explore'
                   ? 'Enter the neighborhood to explore related businesses and discover how they connect.'
                   : 'The first strong match becomes the anchor; from there you can center it and continue through related businesses.')

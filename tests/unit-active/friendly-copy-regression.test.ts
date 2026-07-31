@@ -8,11 +8,14 @@ const FILES = [
     '../../src/lib/journey/canvas-keyboard-nav.ts',
     '../../src/lib/journey/focus-ui.ts',
     '../../src/lib/journey/semantic-guide.ts',
+    '../../src/lib/journey/search-trail-cue-renderer.ts',
     '../../src/lib/ui/cluster-labels.ts',
+    '../../src/lib/ui/ui-feedback.ts',
     '../../src/components/FocusCard.svelte',
     '../../src/components/Legend.svelte',
     '../../src/components/LoadingOverlay.svelte',
     '../../src/components/MapSummary.svelte',
+    '../../src/components/SearchTrailCue.svelte',
 ].map((p) => resolve(__dirname, p))
 
 const FORBIDDEN = ['semantic', 'mycelium', 'signal']
@@ -26,6 +29,7 @@ const EXCLUDE_LITERALS = new Set([
     '@lib/journey/semantic-guide-payload',
     'Semantic Explorer',
     'obscure SIGNAL indicator',
+    'Follow the trail back to its source…',
 ])
 
 function readAll(): string {
@@ -91,5 +95,10 @@ describe('friendly-copy regression guard (journey + chrome surfaces)', () => {
         expect(stripped).toContain('No map location yet')
         expect(stripped).toContain('Journey path')
         expect(stripped).toContain('Journey stops')
+        expect(stripped).toContain('Search found related businesses')
+        expect(stripped).toContain('Anchor identified. Path ready.')
+        expect(stripped).toContain('is the starting point')
+        expect(stripped).toContain('Exploration in progress')
+        expect(stripped).toContain('discover a path')
     })
 })

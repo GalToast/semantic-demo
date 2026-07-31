@@ -11,7 +11,7 @@
   hidden
 >
   <div id="search-trail-cue-kicker" class="search-trail-cue-kicker">Connection cue</div>
-  <div id="search-trail-cue-title" class="search-trail-cue-title">Search opens a trail.</div>
+  <div id="search-trail-cue-title" class="search-trail-cue-title">Search found related businesses.</div>
   <div class="search-trail-cue-stage" aria-hidden="true">
     <span class="search-trail-cue-step" data-cue-stage="query">Query</span>
     <span class="search-trail-cue-step" data-cue-stage="anchor">Anchor</span>

@@ -107,7 +107,7 @@ async function testGenerateLogicalSynthesisHandlesEmptyResults() {
   const src = readFileSync(MODULE_PATH, 'utf-8');
 
   // The function must return the exact fallback string when results is empty
-  const emptyResultDefault = 'Search opens a trail — explore the neighborhood below.';
+  const emptyResultDefault = 'Search shows related businesses — explore the neighborhood below.';
   assert(
     src.includes(emptyResultDefault),
     'empty results path returns the correct default string'
