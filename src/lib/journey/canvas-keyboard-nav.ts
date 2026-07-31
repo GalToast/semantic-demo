@@ -166,8 +166,8 @@ function dispatchClusterAction(step: 1 | -1, focusedIndex: number): void {
     if (nextPos < 0 || nextPos >= siblings.length) {
         const records = get(businessRecords)
         const focused = records[focusedIndex]
-        const clusterName = focused ? describeCluster(focused.cluster ?? 0) : 'this cluster'
-        showExperienceToast('End of cluster', `No ${step > 0 ? 'next' : 'previous'} sibling in ${clusterName}.`)
+        const clusterName = focused ? describeCluster(focused.cluster ?? 0) : 'this group'
+        showExperienceToast('End of this group', `No ${step > 0 ? 'next' : 'previous'} business in ${clusterName}.`)
         return
     }
     const targetIndex = siblings[nextPos]

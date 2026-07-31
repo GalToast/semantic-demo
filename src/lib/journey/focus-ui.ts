@@ -521,14 +521,14 @@ function _renderColdDegradedContext(params: {
     const { contextEl, focusProgressEl, focusNextEl, prevBtn, nextBtn, focusPrevBtn, focusNextBtn, currentName } = params;
     const queryLabel = appState.semanticLaneSnapshot?.query
         ? `"${appState.semanticLaneSnapshot.query}"`
-        : 'this trail';
+        : 'this search';
     prevBtn.disabled = true;
     nextBtn.disabled = true;
     focusPrevBtn.disabled = true;
     focusNextBtn.disabled = true;
-    contextEl.textContent = `${currentName} restored from this shared link, but the ${queryLabel} did not restore while the data is degraded. Retry now to rebuild it, or use Overview to step back to the county.`;
-    focusProgressEl.textContent = `Trail unavailable for ${queryLabel} while the data is degraded.`;
-    if (focusNextEl) focusNextEl.textContent = 'Retry loading before continuing this trail.';
+    contextEl.textContent = `${currentName} restored from this shared link, but the results for ${queryLabel} did not restore while the data is degraded. Retry now to rebuild them, or use Overview to step back to the county.`;
+    focusProgressEl.textContent = `Results unavailable for ${queryLabel} while the data is degraded.`;
+    if (focusNextEl) focusNextEl.textContent = 'Retry loading before continuing.';
     updateWalkBreadcrumb(false);
     updateFocusNeighborRail();
     removeFocusSemanticOverlay();
@@ -581,11 +581,11 @@ function _renderTraversalContext(params: {
         const fallbackLeadIn =
             appState.semanticThreadsStatus === 'loading'
                 ? 'Related businesses are still loading. Showing nearby businesses by category until they finish.'
-                : 'No relationship data found for this trail. Showing nearby businesses based on shared category.';
+                : 'No relationship data found here. Showing nearby businesses based on shared category.';
         const focusPocketMeta = nav.focusPocketMeta;
         const pocketNote =
             nav.threadSource === 'semantic' && focusPocketMeta?.active
-                ? ` Arranging ${focusPocketMeta.nodeCount} related businesses as a ${focusPocketMeta.motifLabel || 'group'} for readability; the links still come from the trail.`
+                ? ` Arranging ${focusPocketMeta.nodeCount} related businesses as a ${focusPocketMeta.motifLabel || 'group'} for readability; the links are unchanged.`
                 : '';
         contextEl.textContent = `${neighborCount} nearby stops around ${currentName}. ${nav.threadSource === 'semantic' ? 'These come from matched relationships, and the connecting lines show the same links even when spacing stays approximate.' : fallbackLeadIn}${pocketNote} Use Prev / Next to continue.`;
         focusProgressEl.textContent = neighborCount

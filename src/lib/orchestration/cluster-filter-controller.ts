@@ -184,7 +184,7 @@ export async function updateClusterList(): Promise<void> {
                 el(
                     'span',
                     { class: 'cluster-caption' },
-                    active ? 'Active neighborhood filter' : 'Filter the graph to this semantic neighborhood'
+                    active ? 'Active neighborhood filter' : 'Filter the graph to this neighborhood'
                 )
             ),
             active

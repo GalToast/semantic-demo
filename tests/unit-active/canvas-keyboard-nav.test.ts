@@ -194,7 +194,7 @@ describe('canvas-keyboard-nav', () => {
             expect(mocks.focusOnNode).toHaveBeenCalledWith(0, { fromCanvasNode: true })
         })
 
-        it('ArrowDown at last sibling → toast End of cluster, no focusOnNode', () => {
+        it('ArrowDown at last sibling → toast End of this group, no focusOnNode', () => {
             businessRecords.set([
                 makeRecord({ lead_id: '0', index: 0, cluster: 1 }),
                 makeRecord({ lead_id: '1', index: 1, cluster: 1 })
@@ -203,10 +203,10 @@ describe('canvas-keyboard-nav', () => {
             handleCanvasKeydown(makeEvent('ArrowDown'))
             expect(mocks.focusOnNode).not.toHaveBeenCalled()
             expect(mocks.showExperienceToast).toHaveBeenCalledTimes(1)
-            expect(mocks.showExperienceToast.mock.calls[0]?.[0]).toBe('End of cluster')
+            expect(mocks.showExperienceToast.mock.calls[0]?.[0]).toBe('End of this group')
         })
 
-        it('ArrowUp at first sibling → toast End of cluster, no focusOnNode', () => {
+        it('ArrowUp at first sibling → toast End of this group, no focusOnNode', () => {
             businessRecords.set([
                 makeRecord({ lead_id: '0', index: 0, cluster: 1 }),
                 makeRecord({ lead_id: '1', index: 1, cluster: 1 })
@@ -215,7 +215,7 @@ describe('canvas-keyboard-nav', () => {
             handleCanvasKeydown(makeEvent('ArrowUp'))
             expect(mocks.focusOnNode).not.toHaveBeenCalled()
             expect(mocks.showExperienceToast).toHaveBeenCalledTimes(1)
-            expect(mocks.showExperienceToast.mock.calls[0]?.[0]).toBe('End of cluster')
+            expect(mocks.showExperienceToast.mock.calls[0]?.[0]).toBe('End of this group')
         })
     })
 

@@ -79,7 +79,7 @@ function getMostFrequent(values: Array<string | undefined | null>): string | nul
 
 function generateLogicalSynthesis(payload: SemanticGuidePayload): string {
     const results = Array.isArray(payload?.results) ? payload.results : []
-    if (!results.length) return 'Search opens a trail — explore the neighborhood below.'
+    if (!results.length) return 'Search shows related businesses — explore the neighborhood below.'
 
     const query = payload.query || 'this search'
     const clusters = results.map((row: SemanticGuidePayloadRow) => row.cluster_label).filter(Boolean)
@@ -90,7 +90,7 @@ function generateLogicalSynthesis(payload: SemanticGuidePayload): string {
             ? `${cities.length} cities including ${cities.slice(0, 2).join(' and ')}`
             : cities[0] || 'Montgomery County'
 
-    return `Logical mapping of ${payload.visible_matches || results.length} matches for "${query}". Strongest thematic overlap in ${topCluster} with signal across ${citySummary}. Trail anchored by ${results[0]?.name || 'the primary match'}.`
+    return `${payload.visible_matches || results.length} businesses match "${query}". Most fall under ${topCluster}, with matches across ${citySummary}. Starting with ${results[0]?.name || 'the top match'}.`
 }
 
 function buildClientSemanticGuideFallback(payload: SemanticGuidePayload): GuideConfig {
@@ -102,20 +102,20 @@ function buildClientSemanticGuideFallback(payload: SemanticGuidePayload): GuideC
     const suggestions = results.slice(0, 3).map(
         (row: SemanticGuidePayloadRow, index: number): SemanticGuideSuggestion => ({
             lead_id: row.lead_id,
-            label: index === 0 ? 'Trail anchor' : index === 1 ? 'Next stop' : 'Side trail',
+            label: index === 0 ? 'Starting point' : index === 1 ? 'Next stop' : 'Side stop',
             name: row.name,
             city: row.city || '',
             reason:
                 index === 0
-                    ? 'Start with the strongest semantic anchor.'
+                    ? 'Start with the strongest match.'
                     : row.cluster_label
-                      ? `Follow the ${row.cluster_label} trail.`
-                      : 'Keep exploring the current semantic neighborhood.'
+                      ? `See more ${row.cluster_label} businesses.`
+                      : 'Keep exploring the current neighborhood.'
         })
     )
 
     return {
-        title: anchor?.name ? `${anchor.name} anchors this trail` : `Guide for "${payload?.query || 'this trail'}"`,
+        title: anchor?.name ? `${anchor.name} is the starting point` : `Guide for "${payload?.query || 'this search'}"`,
         summary: generateLogicalSynthesis(payload),
         suggestions,
         degraded: true,
@@ -138,9 +138,9 @@ export function setSemanticGuideButtonState(mode = 'ready', options: Record<stri
 function getSemanticGuideLoadingCardConfig(): GuideConfig {
     return {
         title: 'READING CONNECTIONS',
-        text: 'The semantic guide is reading this neighborhood and preparing the next three strongest stops.',
+        text: 'The guide is reading this neighborhood and preparing the next three strongest stops.',
         suggestions: [],
-        laneStatus: 'Preparing trail',
+        laneStatus: 'Preparing stops',
         instant: true
     }
 }
@@ -169,7 +169,7 @@ function buildSemanticGuideCardConfig(guide: GuideConfig = {}): GuideConfig {
 function buildSemanticGuideFallbackCardConfig(fallback: GuideConfig = {}): GuideConfig {
     return {
         title: (fallback.title || 'FAST FALLBACK').toUpperCase(),
-        text: fallback.summary || 'Search opens a trail — explore the neighborhood below.',
+        text: fallback.summary || 'Search shows related businesses — explore the neighborhood below.',
         suggestions: fallback.suggestions || [],
         laneStatus: 'Deterministic fallback active',
         instant: true

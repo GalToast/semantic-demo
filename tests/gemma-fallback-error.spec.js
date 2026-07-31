@@ -151,7 +151,7 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
 
         // 3. #summary-text is populated by the fallback summary generator
         const textEl = page.locator('#summary-text')
-        await expect(textEl).toContainText(/Logical mapping of 4 matches for "coffee"/i, { timeout: 10000 })
+        await expect(textEl).toContainText(/4 businesses match "coffee"/i, { timeout: 10000 })
 
         // 4. #summary-suggestions has populated suggestion buttons with correct data attributes
         const suggestionsEl = page.locator('#summary-suggestions')

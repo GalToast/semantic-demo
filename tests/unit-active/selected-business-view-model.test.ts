@@ -14,7 +14,7 @@ describe('buildSelectedBusinessProps', () => {
       return { display: name, raw: name, showRaw: false }
     },
     sanitizePublicFacingNote: (what: string) => what || '',
-    describeCluster: (c: number | undefined) => `Cluster ${c}`,
+    describeCluster: (c: number | undefined) => `Category ${c}`,
     getPublicRecordStatusLabel: (s: string) => (s === 'active' ? 'Active' : 'Unknown Status'),
     COPY: {
       selectedEmptyName: 'Empty Name',

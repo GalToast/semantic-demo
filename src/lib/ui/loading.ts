@@ -258,7 +258,7 @@ export function applyLoadingErrorState(error: Error): void {
 export function showTerrainPreludeOverlay(): void {
     setLoadingPhase('restore', {
         note: 'Preparing terrain...',
-        foot: 'Synchronizing semantic space to geographic map.'
+        foot: 'Synchronizing the business map...'
     })
 }
 
