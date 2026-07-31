@@ -156,11 +156,7 @@ let _gridSourcePoints: readonly BusinessRecord[] | null = null
 export function buildProjectedNeighborGrid(): SpatialGrid {
     const positions = getOriginalPositions()
     const points = getPoints()
-    if (
-        state.projectedNeighborGrid &&
-        _gridSourcePositions === positions &&
-        _gridSourcePoints === points
-    ) {
+    if (state.projectedNeighborGrid && _gridSourcePositions === positions && _gridSourcePoints === points) {
         return state.projectedNeighborGrid
     }
     state.projectedNeighborGrid = buildSpatialGrid(0.12)

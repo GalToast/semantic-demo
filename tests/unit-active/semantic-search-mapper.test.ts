@@ -80,10 +80,7 @@ describe('semantic-search-mapper: mapServiceRow', () => {
     })
 
     it('passes through optional point contact fields only when present', () => {
-        const r = mapServiceRow(
-            { name: 'B', city: 'Conroe', website: 'w', email: 'e', phone: 'p' },
-            0
-        )
+        const r = mapServiceRow({ name: 'B', city: 'Conroe', website: 'w', email: 'e', phone: 'p' }, 0)
         expect(r!.point.city).toBe('Conroe')
         expect(r!.point.website).toBe('w')
         expect(r!.point.email).toBe('e')
@@ -92,10 +89,7 @@ describe('semantic-search-mapper: mapServiceRow', () => {
     })
 
     it('coerces every exposed field to a string and number', () => {
-        const r = mapServiceRow(
-            { name: 123 as unknown as string, lead_id: 7 as unknown as string, category: null },
-            0
-        )
+        const r = mapServiceRow({ name: 123 as unknown as string, lead_id: 7 as unknown as string, category: null }, 0)
         expect(typeof r!.id).toBe('string')
         expect(typeof r!.name).toBe('string')
         expect(typeof r!.category).toBe('string')

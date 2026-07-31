@@ -11,12 +11,7 @@
  * size estimate falls back to 0.
  */
 import { describe, it, expect, beforeEach } from 'vitest'
-import {
-    configureTelemetry,
-    clearTelemetry,
-    getSnapshot,
-    recordTelemetry,
-} from '@lib/telemetry/telemetry-store'
+import { configureTelemetry, clearTelemetry, getSnapshot, recordTelemetry } from '@lib/telemetry/telemetry-store'
 import { uninstallTelemetry } from '@lib/telemetry/telemetry-subscriber'
 
 describe('telemetryStore — circular payload (W60 fix)', () => {

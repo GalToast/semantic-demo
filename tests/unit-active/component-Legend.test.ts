@@ -16,69 +16,69 @@
  * number, so adding a new category to the canonical list automatically keeps
  * this test in sync.
  */
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/svelte';
-import Legend from '../../src/components/Legend.svelte';
-import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
+import { describe, it, expect } from 'vitest'
+import { render } from '@testing-library/svelte'
+import Legend from '../../src/components/Legend.svelte'
+import { CLUSTER_NAMES } from '@lib/utils/ui-presentation'
 
 describe('Legend component', () => {
     it('renders aside#legend-panel with aria-label="Business category legend"', () => {
-        const { container } = render(Legend);
-        const panel = container.querySelector('#legend-panel');
-        expect(panel).toBeTruthy();
-        expect(panel!.tagName).toBe('ASIDE');
-        expect(panel!.getAttribute('aria-label')).toBe('Business category legend');
-    });
+        const { container } = render(Legend)
+        const panel = container.querySelector('#legend-panel')
+        expect(panel).toBeTruthy()
+        expect(panel!.tagName).toBe('ASIDE')
+        expect(panel!.getAttribute('aria-label')).toBe('Business category legend')
+    })
 
     it('panel has aria-hidden="true" when open=false (default)', () => {
-        const { container } = render(Legend);
-        const panel = container.querySelector('#legend-panel');
-        expect(panel!.getAttribute('aria-hidden')).toBe('true');
-    });
+        const { container } = render(Legend)
+        const panel = container.querySelector('#legend-panel')
+        expect(panel!.getAttribute('aria-hidden')).toBe('true')
+    })
 
     it('panel gets aria-hidden="false" when open=true', () => {
-        const { container } = render(Legend, { props: { open: true } });
-        const panel = container.querySelector('#legend-panel');
-        expect(panel!.getAttribute('aria-hidden')).toBe('false');
-    });
+        const { container } = render(Legend, { props: { open: true } })
+        const panel = container.querySelector('#legend-panel')
+        expect(panel!.getAttribute('aria-hidden')).toBe('false')
+    })
 
     it('renders h2.legend-title with text "Categories"', () => {
-        const { container } = render(Legend);
-        const title = container.querySelector('h2.legend-title');
-        expect(title).toBeTruthy();
-        expect(title!.textContent).toContain('Categories');
-    });
+        const { container } = render(Legend)
+        const title = container.querySelector('h2.legend-title')
+        expect(title).toBeTruthy()
+        expect(title!.textContent).toContain('Categories')
+    })
 
     it('renders .legend-list with role="group" and descriptive aria-label', () => {
-        const { container } = render(Legend);
-        const list = container.querySelector('.legend-list');
-        expect(list).toBeTruthy();
-        expect(list!.getAttribute('role')).toBe('group');
-        expect(list!.getAttribute('aria-label')).toContain('Business categories');
-    });
+        const { container } = render(Legend)
+        const list = container.querySelector('.legend-list')
+        expect(list).toBeTruthy()
+        expect(list!.getAttribute('role')).toBe('group')
+        expect(list!.getAttribute('aria-label')).toContain('Business categories')
+    })
 
     it('renders one legend-item button per canonical cluster', () => {
-        const { container } = render(Legend);
-        const items = container.querySelectorAll('button.legend-item');
-        expect(items.length).toBe(CLUSTER_NAMES.length);
-    });
+        const { container } = render(Legend)
+        const items = container.querySelectorAll('button.legend-item')
+        expect(items.length).toBe(CLUSTER_NAMES.length)
+    })
 
     it('each button has type="button" and aria-pressed attribute', () => {
-        const { container } = render(Legend);
-        const items = container.querySelectorAll('button.legend-item');
+        const { container } = render(Legend)
+        const items = container.querySelectorAll('button.legend-item')
         items.forEach((btn) => {
-            expect(btn.getAttribute('type')).toBe('button');
-            expect(btn.getAttribute('aria-pressed')).not.toBeNull();
-        });
-    });
+            expect(btn.getAttribute('type')).toBe('button')
+            expect(btn.getAttribute('aria-pressed')).not.toBeNull()
+        })
+    })
 
     it('each button contains .legend-swatch, .legend-label, and .legend-count spans', () => {
-        const { container } = render(Legend);
-        const items = container.querySelectorAll('button.legend-item');
+        const { container } = render(Legend)
+        const items = container.querySelectorAll('button.legend-item')
         items.forEach((btn) => {
-            expect(btn.querySelector('.legend-swatch')).toBeTruthy();
-            expect(btn.querySelector('.legend-label')).toBeTruthy();
-            expect(btn.querySelector('.legend-count')).toBeTruthy();
-        });
-    });
-});
+            expect(btn.querySelector('.legend-swatch')).toBeTruthy()
+            expect(btn.querySelector('.legend-label')).toBeTruthy()
+            expect(btn.querySelector('.legend-count')).toBeTruthy()
+        })
+    })
+})

@@ -98,7 +98,6 @@ const LEGACY_CSS_LINKS = [
     '<link rel="stylesheet" href="css/modules/focus_stage.css">'
 ]
 
-
 function legacyRootAssetPlugin(): Plugin {
     return {
         name: 'legacy-root-assets',

@@ -196,7 +196,11 @@ function setupWebglContextRestore(): () => void {
     const { appState: _appState } = (() => {
         try {
             // Dynamic to avoid circular
-            return { appState: (globalThis as unknown as { __APP_STATE__?: { renderer?: { domElement?: HTMLCanvasElement } } }).__APP_STATE__ }
+            return {
+                appState: (
+                    globalThis as unknown as { __APP_STATE__?: { renderer?: { domElement?: HTMLCanvasElement } } }
+                ).__APP_STATE__
+            }
         } catch {
             return { appState: undefined }
         }
@@ -204,7 +208,9 @@ function setupWebglContextRestore(): () => void {
     // Try to resolve live canvas without importing appState statically (keeps module acyclic).
     // The registry path is now primary; this fallback ensures restore still re-inits if registry torn down.
     const liveCanvasFromDom =
-        (typeof document !== 'undefined' ? document.querySelector<HTMLCanvasElement>('#canvas-container canvas') : null) ??
+        (typeof document !== 'undefined'
+            ? document.querySelector<HTMLCanvasElement>('#canvas-container canvas')
+            : null) ??
         document?.querySelector<HTMLCanvasElement>('#engine-canvas') ??
         null
     const canvas = liveCanvasFromDom

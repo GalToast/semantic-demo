@@ -10,7 +10,7 @@ import {
     teardownViewController,
     showViewHandoff,
     switchView,
-    initViewControllerAdapter,
+    initViewControllerAdapter
 } from '@lib/orchestration/view-controller'
 
 const mockRefresh = vi.fn()
@@ -29,23 +29,23 @@ vi.mock('@lib/stores/navigation.svelte.ts', () => {
         set(value: 'galaxy' | 'map') {
             currentView = value
             subs.forEach((fn) => fn({ currentView }))
-        },
+        }
     }
     return {
         navStore: store,
         updateNavState(patch: { currentView?: 'galaxy' | 'map' }) {
             if (patch.currentView) store.set(patch.currentView)
         },
-        get: (s: typeof store) => ({ currentView: s === store ? currentView : undefined }),
+        get: (s: typeof store) => ({ currentView: s === store ? currentView : undefined })
     }
 })
 
 vi.mock('@lib/engine/camera-controls', () => ({
-    animateCameraToTerrainPrelude: vi.fn(),
+    animateCameraToTerrainPrelude: vi.fn()
 }))
 
 vi.mock('@lib/utils/map-flattening-layout', () => ({
-    applyMapFlatteningLayout: vi.fn(),
+    applyMapFlatteningLayout: vi.fn()
 }))
 
 // Ensure a handoff element exists for showViewHandoff / hideViewHandoff.

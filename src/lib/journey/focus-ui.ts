@@ -523,52 +523,62 @@ function updateWalkBreadcrumb(hasFocus: boolean = false): void {
 }
 
 function _renderColdDegradedContext(params: {
-    contextEl: HTMLElement;
-    focusProgressEl: HTMLElement;
-    focusNextEl: HTMLElement | null;
-    prevBtn: HTMLButtonElement;
-    nextBtn: HTMLButtonElement;
-    focusPrevBtn: HTMLButtonElement;
-    focusNextBtn: HTMLButtonElement;
-    currentName: string;
+    contextEl: HTMLElement
+    focusProgressEl: HTMLElement
+    focusNextEl: HTMLElement | null
+    prevBtn: HTMLButtonElement
+    nextBtn: HTMLButtonElement
+    focusPrevBtn: HTMLButtonElement
+    focusNextBtn: HTMLButtonElement
+    currentName: string
 }): boolean {
-    if (!hasColdDegradedSemanticFallback()) return false;
-    const { contextEl, focusProgressEl, focusNextEl, prevBtn, nextBtn, focusPrevBtn, focusNextBtn, currentName } = params;
-    const queryLabel = appState.semanticLaneSnapshot?.query
-        ? `"${appState.semanticLaneSnapshot.query}"`
-        : 'this search';
-    prevBtn.disabled = true;
-    nextBtn.disabled = true;
-    focusPrevBtn.disabled = true;
-    focusNextBtn.disabled = true;
-    contextEl.textContent = `${currentName} restored from this shared link, but the results for ${queryLabel} did not restore while the data is degraded. Retry now to rebuild them, or use Overview to step back to the county.`;
-    focusProgressEl.textContent = `Results unavailable for ${queryLabel} while the data is degraded.`;
-    if (focusNextEl) focusNextEl.textContent = 'Retry loading before continuing.';
-    updateWalkBreadcrumb(false);
-    updateFocusNeighborRail();
-    removeFocusSemanticOverlay();
-    resetFocusThreadDiagnostics('cold-degraded');
-    return true;
+    if (!hasColdDegradedSemanticFallback()) return false
+    const { contextEl, focusProgressEl, focusNextEl, prevBtn, nextBtn, focusPrevBtn, focusNextBtn, currentName } =
+        params
+    const queryLabel = appState.semanticLaneSnapshot?.query ? `"${appState.semanticLaneSnapshot.query}"` : 'this search'
+    prevBtn.disabled = true
+    nextBtn.disabled = true
+    focusPrevBtn.disabled = true
+    focusNextBtn.disabled = true
+    contextEl.textContent = `${currentName} restored from this shared link, but the results for ${queryLabel} did not restore while the data is degraded. Retry now to rebuild them, or use Overview to step back to the county.`
+    focusProgressEl.textContent = `Results unavailable for ${queryLabel} while the data is degraded.`
+    if (focusNextEl) focusNextEl.textContent = 'Retry loading before continuing.'
+    updateWalkBreadcrumb(false)
+    updateFocusNeighborRail()
+    removeFocusSemanticOverlay()
+    resetFocusThreadDiagnostics('cold-degraded')
+    return true
 }
 
 function _renderTraversalContext(params: {
-    contextEl: HTMLElement;
-    focusProgressEl: HTMLElement;
-    focusNextEl: HTMLElement | null;
-    currentName: string;
-    neighborCount: number;
-    nav: NavState;
-    currentCandidate: ThreadCandidateRef | null | undefined;
-    sourceLabel: string;
-    nextWalkName: string | null;
-    nextWalkReason: string;
+    contextEl: HTMLElement
+    focusProgressEl: HTMLElement
+    focusNextEl: HTMLElement | null
+    currentName: string
+    neighborCount: number
+    nav: NavState
+    currentCandidate: ThreadCandidateRef | null | undefined
+    sourceLabel: string
+    nextWalkName: string | null
+    nextWalkReason: string
 }): void {
-    const { contextEl, focusProgressEl, focusNextEl, currentName, neighborCount, nav, currentCandidate, sourceLabel, nextWalkName, nextWalkReason } = params;
+    const {
+        contextEl,
+        focusProgressEl,
+        focusNextEl,
+        currentName,
+        neighborCount,
+        nav,
+        currentCandidate,
+        sourceLabel,
+        nextWalkName,
+        nextWalkReason
+    } = params
 
     if ((appState.trailDepth ?? 0) >= 1 && (nav.walkHistoryIndices || []).length >= 0) {
-        const reason = nav.lastTraversalReason || currentCandidate?.reason || 'nearby business relationship';
-        const walkLength = (nav.walkHistoryIndices || []).length;
-        const stepNumber = walkLength;
+        const reason = nav.lastTraversalReason || currentCandidate?.reason || 'nearby business relationship'
+        const walkLength = (nav.walkHistoryIndices || []).length
+        const stepNumber = walkLength
         // W48 audit fix (PR-W47-g): the branch-A guard `(nav.walkHistoryIndices || []).length >= 0`
         // is a tautology (always true), so this branch fired even when neighborCount was 0 and
         // shadowed the dedicated empty-neighbor branch below, producing the documented
@@ -576,42 +586,42 @@ function _renderTraversalContext(params: {
         // total smaller than the current stop, and drop the "Use Next" cue when Next is disabled.
         contextEl.textContent = `Stop ${stepNumber}: ${currentName}. Why here: ${reason}. Matched by ${sourceLabel}. Use Prev to go back${
             neighborCount > 0 ? ' or Next to continue' : ', then return to Overview to find more connections'
-        }.`;
+        }.`
         focusProgressEl.textContent =
             neighborCount > 0
                 ? `Stop ${stepNumber} of ${neighborCount}`
-                : `Stop ${stepNumber}. No more visible stops with these filters.`;
+                : `Stop ${stepNumber}. No more visible stops with these filters.`
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
                 ? `Next: ${nextWalkName} - ${nextWalkReason}.`
-                : 'No more stops to explore with these filters.';
-            if (nextWalkName) focusNextEl.title = focusNextEl.textContent!;
-            else focusNextEl.removeAttribute('title');
+                : 'No more stops to explore with these filters.'
+            if (nextWalkName) focusNextEl.title = focusNextEl.textContent!
+            else focusNextEl.removeAttribute('title')
         }
     } else if (neighborCount === 0 && nav.threadSource === 'semantic') {
-        contextEl.textContent = `Related businesses are near ${currentName}, but none are visible with the current filters. Broaden the view to see them.`;
-        focusProgressEl.textContent = `No visible nearby businesses from ${currentName} with these filters.`;
-        if (focusNextEl) focusNextEl.textContent = 'No visible next stop with these filters.';
+        contextEl.textContent = `Related businesses are near ${currentName}, but none are visible with the current filters. Broaden the view to see them.`
+        focusProgressEl.textContent = `No visible nearby businesses from ${currentName} with these filters.`
+        if (focusNextEl) focusNextEl.textContent = 'No visible next stop with these filters.'
     } else {
         const fallbackLeadIn =
             appState.semanticThreadsStatus === 'loading'
                 ? 'Related businesses are still loading. Showing nearby businesses by category until they finish.'
-                : 'No relationship data found here. Showing nearby businesses based on shared category.';
-        const focusPocketMeta = nav.focusPocketMeta;
+                : 'No relationship data found here. Showing nearby businesses based on shared category.'
+        const focusPocketMeta = nav.focusPocketMeta
         const pocketNote =
             nav.threadSource === 'semantic' && focusPocketMeta?.active
                 ? ` Arranging ${focusPocketMeta.nodeCount} related businesses as a ${focusPocketMeta.motifLabel || 'group'} for readability; the links are unchanged.`
-                : '';
-        contextEl.textContent = `${neighborCount} nearby stops around ${currentName}. ${nav.threadSource === 'semantic' ? 'These come from matched relationships, and the connecting lines show the same links even when spacing stays approximate.' : fallbackLeadIn}${pocketNote} Use Prev / Next to continue.`;
+                : ''
+        contextEl.textContent = `${neighborCount} nearby stops around ${currentName}. ${nav.threadSource === 'semantic' ? 'These come from matched relationships, and the connecting lines show the same links even when spacing stays approximate.' : fallbackLeadIn}${pocketNote} Use Prev / Next to continue.`
         focusProgressEl.textContent = neighborCount
             ? `${neighborCount} nearby to explore from ${currentName}`
-            : `Start with ${currentName}, then explore the neighborhood.`;
+            : `Start with ${currentName}, then explore the neighborhood.`
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
                 ? `Next: ${nextWalkName} - ${nextWalkReason}.`
-                : 'Choose a nearby business to continue.';
-            if (nextWalkName) focusNextEl.title = focusNextEl.textContent!;
-            else focusNextEl.removeAttribute('title');
+                : 'Choose a nearby business to continue.'
+            if (nextWalkName) focusNextEl.title = focusNextEl.textContent!
+            else focusNextEl.removeAttribute('title')
         }
     }
 }
@@ -705,9 +715,32 @@ export function updateTraversalUi(): void {
     if (focusRouteEl)
         focusRouteEl.dataset.state = neighborCount ? (nav.mode === 'trail' ? 'walking' : 'ready') : 'empty'
 
-    if (_renderColdDegradedContext({ contextEl, focusProgressEl, focusNextEl, prevBtn, nextBtn, focusPrevBtn, focusNextBtn, currentName })) return;
+    if (
+        _renderColdDegradedContext({
+            contextEl,
+            focusProgressEl,
+            focusNextEl,
+            prevBtn,
+            nextBtn,
+            focusPrevBtn,
+            focusNextBtn,
+            currentName
+        })
+    )
+        return
 
-    _renderTraversalContext({ contextEl, focusProgressEl, focusNextEl, currentName, neighborCount, nav, currentCandidate, sourceLabel, nextWalkName, nextWalkReason });
+    _renderTraversalContext({
+        contextEl,
+        focusProgressEl,
+        focusNextEl,
+        currentName,
+        neighborCount,
+        nav,
+        currentCandidate,
+        sourceLabel,
+        nextWalkName,
+        nextWalkReason
+    })
 
     updateFocusNeighborRail()
     updateWalkBreadcrumb(hasFocus)

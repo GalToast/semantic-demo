@@ -54,10 +54,14 @@ export function mapServiceRow(row: RawServiceRow, order: number): SearchResult |
             phone: row.phone ? String(row.phone) : undefined,
             cluster:
                 typeof row.cluster === 'number'
-                    ? (Number.isInteger(row.cluster) ? row.cluster : undefined)
-                    : typeof row.cluster === 'string' && row.cluster.trim() !== '' && Number.isInteger(Number(row.cluster))
-                    ? Number(row.cluster)
-                    : undefined
+                    ? Number.isInteger(row.cluster)
+                        ? row.cluster
+                        : undefined
+                    : typeof row.cluster === 'string' &&
+                        row.cluster.trim() !== '' &&
+                        Number.isInteger(Number(row.cluster))
+                      ? Number(row.cluster)
+                      : undefined
         }
     }
 }

@@ -73,9 +73,7 @@ describe('local-search-index: buildLocalIndex', () => {
     })
 
     it('indexes name/what/category/city tokens with field tags', () => {
-        const idx = buildLocalIndex([
-            rec({ name: 'Coffee Shop', what: 'beans', category: 'Food', city: 'Conroe' })
-        ])
+        const idx = buildLocalIndex([rec({ name: 'Coffee Shop', what: 'beans', category: 'Food', city: 'Conroe' })])
         expect(idx.get('coffee')).toEqual([{ recordIndex: 0, field: 'name' }])
         expect(idx.get('shop')).toEqual([{ recordIndex: 0, field: 'name' }])
         expect(idx.get('beans')).toEqual([{ recordIndex: 0, field: 'what' }])

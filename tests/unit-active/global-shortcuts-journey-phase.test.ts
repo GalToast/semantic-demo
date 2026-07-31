@@ -94,7 +94,7 @@ describe('Keyboard Ctrl/Cmd+1-6 closes the setJourneyPhase drift with selectMode
         expect(block).toContain("NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' }")
         expect(block).toContain("NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' }")
         expect(block).toContain("NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' }")
-        expect(block).toContain('NAV_TRANSITION_ACTIONS.SET_VIEW, { view: \'map\' }')
+        expect(block).toContain("NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' }")
         // KH-INSIDE-SHORTCUT-FIX: Ctrl+5 still activates the semantic-dive surface.
         expect(block).toContain('executeJourneyCompassAction(JOURNEY_ACTIONS.ENTER_INSIDE)')
     })
