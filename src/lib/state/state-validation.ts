@@ -51,7 +51,7 @@ export const VALID_MYCELIUM_MODES = new Set<string>([
     'bridge'
 ])
 
-export const VALID_TERRAIN_HANDOFF_PHASES = new Set<string>(['idle', 'prelude', 'transition', 'settle'])
+export const VALID_TERRAIN_HANDOFF_PHASES = new Set<string>(['idle', 'prelude', 'transition', 'settle', 'settled'])
 
 export const VALID_ROUTE_EXPLORATION_PHASES = new Set<string>(['idle', 'searching', 'focusing', 'free'])
 
@@ -73,7 +73,7 @@ export const VALID_STRAND_CONTINUITY_PHASES = new Set<string>([
     'returning'
 ])
 
-export const VALID_FOCUS_ORBIT_SLACK_PHASES = new Set<string>(['idle', 'active', 'settling'])
+export const VALID_FOCUS_ORBIT_SLACK_PHASES = new Set<string>(['idle', 'active', 'settling', 'free-pivot'])
 
 export const VALID_ARRIVAL_HANDOFF_PHASES = new Set<string>(['idle', 'prelude', 'flying', 'arriving', 'settling'])
 
