@@ -522,13 +522,16 @@ export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): Vec3 {
         .addScaledVector(upVector, bend * (0.34 * (edge.rise as number) + longArc * 0.42))
         .addScaledVector(viewVector, bend * ((edge.depth as number) + longArc * 0.72))
 
+    let stem: Vec3 | null = null
+    let anchorPullFactor = 0
     if (anchorPull > 0 && Number.isFinite(state.navState.focusedIndex)) {
         const focusedIndex = state.navState.focusedIndex!
         const anchor = state.nodePositions[focusedIndex]
         if (anchor) {
             const anchorVector = new Vec3(anchor.x, anchor.y, anchor.z)
-            const stem = anchorVector.lerp(mid, 0.42 + motifBraid * 0.16)
-            control.lerp(stem, Math.min(0.44, anchorPull * (1 - longArc * 0.68)))
+            stem = anchorVector.lerp(mid, 0.42 + motifBraid * 0.16)
+            anchorPullFactor = Math.min(0.44, anchorPull * (1 - longArc * 0.68))
+            control.lerp(stem, anchorPullFactor)
         }
     }
 
@@ -547,6 +550,19 @@ export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): Vec3 {
             .addScaledVector(rightVector, arcBias * (edge.side as number) * (1.04 + motifBraid * 0.34))
             .addScaledVector(upVector, arcBias * (0.46 + longArc * 0.24))
             .addScaledVector(viewVector, arcBias * (0.82 + longArc * 0.3))
+        // Carry the anchor pull into the long-arc cubic branch. The quadratic
+        // branch above mutates `control` via control.lerp(stem, factor); the
+        // long-arc cubic control points (controlA/controlB) are built from
+        // start/end/curveCenter + the unit vectors, never referencing
+        // `control` or `stem`. So the diminishing factor (1 - longArc * 0.68)
+        // -- which encodes the intent to pull long field-node-walk direct
+        // edges toward the focused anchor -- was silently dropped by the
+        // quadratic->cubic upgrade. Restore it by lerping both cubic control
+        // points toward the same anchor stem by the same bounded factor.
+        if (stem && anchorPullFactor > 0) {
+            controlA.lerp(stem, anchorPullFactor)
+            controlB.lerp(stem, anchorPullFactor)
+        }
         const inv = 1 - t
         return start
             .multiplyScalar(inv * inv * inv)
