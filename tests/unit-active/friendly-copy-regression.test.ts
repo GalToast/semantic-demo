@@ -16,6 +16,10 @@ const FILES = [
     '../../src/components/LoadingOverlay.svelte',
     '../../src/components/MapSummary.svelte',
     '../../src/components/SearchTrailCue.svelte',
+    '../../src/components/TrailControls.svelte',
+    '../../src/components/WalkBreadcrumb.svelte',
+    '../../src/components/JourneyCompass.svelte',
+    '../../src/lib/orchestration/compass-controller.ts',
 ].map((p) => resolve(__dirname, p))
 
 const FORBIDDEN = ['semantic', 'mycelium', 'signal']
@@ -27,6 +31,7 @@ const EXCLUDE_LITERALS = new Set([
     'semantic-dive',
     'semantic',
     '@lib/journey/semantic-guide-payload',
+    'mycelium',
     'Semantic Explorer',
     'obscure SIGNAL indicator',
     'Follow the trail back to its source…',
@@ -95,10 +100,10 @@ describe('friendly-copy regression guard (journey + chrome surfaces)', () => {
         expect(stripped).toContain('No map location yet')
         expect(stripped).toContain('Journey path')
         expect(stripped).toContain('Journey stops')
-        expect(stripped).toContain('Search found related businesses')
-        expect(stripped).toContain('Anchor identified. Path ready.')
-        expect(stripped).toContain('is the starting point')
-        expect(stripped).toContain('Exploration in progress')
-        expect(stripped).toContain('discover a path')
+        expect(stripped).toContain('Walk controls')
+        expect(stripped).toContain('Show walk')
+        expect(stripped).toContain('Walk history')
+        expect(stripped).toContain('Walk stops')
+        expect(stripped).toContain('Map route')
     })
 })

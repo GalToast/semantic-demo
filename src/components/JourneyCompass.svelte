@@ -282,7 +282,7 @@
     return () => window.cancelAnimationFrame(frame);
   });
 
-  // ── Map trail strip ─────────────────────────────────────────────────────
+  // ── Map route strip ─────────────────────────────────────────────────────
 
   let showMapTrailStrip = $derived.by(() => {
     return navState.currentView === 'map' && (
@@ -296,7 +296,7 @@
   // The strip carries the connection-trail label. Action buttons duplicate
   // the right panel chip rail and global view-toggle, so we render the
   // title only.
-  let stripTitle = $derived(compass.title || 'Map trail');
+  let stripTitle = $derived(compass.title || 'Map route');
   let compactStripTitle = $derived(stripTitle.replace(/\s+pinned to map$/i, ''));
   let stripAccessibleTitle = $derived(compactStripTitle || stripTitle);
 

@@ -265,7 +265,7 @@ export function syncMapTrailStrip(
 
     if (!shouldShow) return
 
-    const stripTitle = compassState.title || 'Map trail'
+    const stripTitle = compassState.title || 'Map route'
     const compactStripTitle = stripTitle.replace(/\s+pinned to map$/i, '')
     const accessibleTitle = compactStripTitle || stripTitle
 

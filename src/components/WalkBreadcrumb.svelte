@@ -55,10 +55,10 @@
   }
 </script>
 
-<div class="walk-breadcrumb" id="walk-breadcrumb" role="navigation" aria-label="Trail history">
-  <span class="walk-breadcrumb-label">Trail</span>
+<div class="walk-breadcrumb" id="walk-breadcrumb" role="navigation" aria-label="Walk history">
+  <span class="walk-breadcrumb-label">Walk</span>
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <ul class="walk-breadcrumb-list" role="list" aria-label="Trail stops" tabindex="-1" onkeydown={handleKeydown} onfocusin={syncActiveFromFocus}>
+  <ul class="walk-breadcrumb-list" role="list" aria-label="Walk stops" tabindex="-1" onkeydown={handleKeydown} onfocusin={syncActiveFromFocus}>
     {#each history as idx, i}
       {@const point = getPointForIndex(idx)}
       {@const name = point?.name ?? 'Stop'}

@@ -19,19 +19,19 @@
     id="trail-controls"
     class:active={active}
     role="toolbar"
-    aria-label="Trail navigation"
+    aria-label="Walk controls"
   >
     <button
       id="btn-focus-path"
       class="focus-stage-action-btn"
       type="button"
-      aria-label="Show trail"
+      aria-label="Show walk"
       onclick={() => {
         const overlay = document.getElementById('trail-review-overlay');
         if (overlay) overlay.hidden = !overlay.hidden;
       }}
     >
-      Show trail
+      Show walk
     </button>
 
     <button
@@ -102,7 +102,7 @@
     opacity: 0.6;
   }
 
-  /* W53 vision-refresh issue #9: "Show trail" (#btn-focus-path) carries only
+  /* W53 vision-refresh issue #9: "Show walk" (#btn-focus-path) carries only
      .focus-stage-action-btn and inherited the faint global styling, reading
      as a low-contrast outline (~3.2:1) on the 0.92-alpha chrome panel. Give
      it the same visible-button treatment as Prev/Next: a 0.1 fill, 0.45
