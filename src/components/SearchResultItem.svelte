@@ -3,6 +3,12 @@
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { formatBusinessName } from '@lib/utils/dom-formatters';
   import { humanizeBusinessName } from '@lib/business/humanize';
+  // W62-B fix: wire real impls from @lib/search/result-presentation instead
+  // of inline mock stubs. Mock shadow dropped the [14..100] strength
+  // normalization and the top-result / is-anchor / is-secondary class
+  // discrimination, muting CSS selectors targeting these classes at runtime
+  // and rendering the strength bar with raw r.score (often <1% width).
+  import { getSearchResultStrength, getSearchResultCardClasses } from '@lib/search/result-presentation';
   import type { SearchResult } from '@lib/types/state';
 
   // ── Types (re-exported from canonical SearchResult in @lib/types/state) ──────
@@ -41,10 +47,14 @@
     order: number;
     active: boolean;
     trimmedQuery: string;
+    /** Top match score (from renderContext.topScore) — used to normalize strength into the [14..100] band. */
+    topScore: number;
+    /** Whether this result is the anchor (matches renderContext.anchorIndex). Drives the `is-anchor` class. */
+    isAnchor: boolean;
     onClick: () => void;
   }
 
-  let { result, order, active, trimmedQuery, onClick }: Props = $props();
+  let { result, order, active, trimmedQuery, topScore, isAnchor, onClick }: Props = $props();
 
   // ── Helpers (ported from SearchResults.svelte) ───────────────────────────────
 
@@ -85,18 +95,21 @@
       city: resultItem.category ?? ''
     };
 
+    // W62-B fix: real impls live in @lib/search/result-presentation — the deps
+    // object below keeps only the label/snippet/cluster/name helpers that were
+    // NOT mock-shadowed (W62-B scope); strength and cardClasses route via the
+    // imported real impls so DOM responses (strength-bar width, top-result /
+    // is-anchor / is-secondary class discrimination) match @lib/search/ intent.
     const deps = {
-      getSearchResultStrength: (r: SearchResult) => r.score || 0,
       buildSearchRankLabel: (order: number) => order === 0 ? 'Top match' : `Match ${order + 1}`,
-      getSearchResultCardClasses: () => 'search-result',
       buildSearchResultSnippet: () => point.what || resultItem.snippet || '',
       describeCluster,
       formatBusinessName
     };
 
-    const strength = deps.getSearchResultStrength(resultItem);
+    const strength = getSearchResultStrength(resultItem, topScore);
     const rankLabel = deps.buildSearchRankLabel(orderIdx);
-    const cardClasses = `${deps.getSearchResultCardClasses()} search-result-item`;
+    const cardClasses = getSearchResultCardClasses(orderIdx, isAnchor);
     const snippetText = deps.buildSearchResultSnippet();
     const contextText = point.city || resultItem.category || '';
     // Humanize via the full BusinessRecord lookup so the Legal name from

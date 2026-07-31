@@ -25,8 +25,8 @@
     resultSlice: SearchResult[];
     /** Index within resultSlice of the currently active (tabbable) result. */
     activeIndex: number;
-    /** Render context with trimmedQuery for highlight. */
-    renderContext: { trimmedQuery: string };
+    /** Render context: trimmedQuery for highlight, topScore for strength normalization, anchorIndex for `is-anchor` class wiring. */
+    renderContext: { trimmedQuery: string; topScore?: number; anchorIndex?: number | null };
     /** Total number of results. */
     total: number;
     /** Number of currently visible results. */
@@ -116,6 +116,8 @@
       {result}
       {order}
       active={order === activeIndex}
+      topScore={renderContext.topScore ?? 0}
+      isAnchor={result.index === renderContext.anchorIndex}
       trimmedQuery={renderContext.trimmedQuery}
       onClick={() => onResultClick(result.index)}
     />
