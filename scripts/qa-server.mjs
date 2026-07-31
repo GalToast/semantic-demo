@@ -192,9 +192,9 @@ function serveFile(req, res, filePath, stat, serverStartTime) {
     if (stat.mtimeMs > serverStartTime) {
         console.error(
             `[qa-server] WARNING: "${path.basename(filePath)}" was modified ` +
-            `after server start (mtime ${new Date(stat.mtimeMs).toISOString()} > ` +
-            `start ${new Date(serverStartTime).toISOString()}). ` +
-            `The file may not reflect the latest build.`
+                `after server start (mtime ${new Date(stat.mtimeMs).toISOString()} > ` +
+                `start ${new Date(serverStartTime).toISOString()}). ` +
+                `The file may not reflect the latest build.`
         )
     }
     const ext = path.extname(filePath).toLowerCase()
@@ -204,10 +204,9 @@ function serveFile(req, res, filePath, stat, serverStartTime) {
     // W63: replicate the cache policy from w44PreviewCacheHeadersPlugin so the
     // Lighthouse QA server rewards hashed assets and data files with long-lived
     // caching, instead of reporting cacheLifetimeMs = 0 for everything.
-    const hashed =
-        /[-][A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json|wasm)(\.gz|\.br)?$/.test(
-            urlPath
-        )
+    const hashed = /[-][A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json|wasm)(\.gz|\.br)?$/.test(
+        urlPath
+    )
     const dataAsset = /\.(dat|json)(\.gz|\.br)?$/.test(urlPath)
     const precompressed = urlPath.endsWith('.br') || urlPath.endsWith('.gz')
     const acceptsBrotli = String(req.headers['accept-encoding'] ?? '').includes('br')
@@ -237,14 +236,18 @@ function serveFile(req, res, filePath, stat, serverStartTime) {
         const precompressed = await tryPrecompressed()
         const finalPath = precompressed?.filePath ?? filePath
         const finalStat = precompressed?.stat ?? stat
-        const finalExt = path.extname(finalPath).toLowerCase()
-        const finalMime = MIME[finalExt] || 'application/octet-stream'
+        // Content-Type describes the DECOMPRESSED payload, so it must come from the
+        // original path (e.g. .css/.js), NOT the .br/.gz transport suffix that
+        // tryPrecompressed appends. Using finalExt here yields
+        // 'application/octet-stream' for every precompressed asset, so browsers
+        // reject the stylesheet (cssRules==0) and the page renders unstyled.
+        const contentType = MIME[ext] || 'application/octet-stream'
 
         const headers = {
-            'Content-Type': finalMime,
+            'Content-Type': contentType,
             'Content-Length': finalStat.size,
             'Access-Control-Allow-Origin': '*',
-            'Vary': 'Accept-Encoding'
+            Vary: 'Accept-Encoding'
         }
         if (precompressed?.encoding === 'br') {
             headers['Content-Encoding'] = 'br'
@@ -271,7 +274,6 @@ function serveFile(req, res, filePath, stat, serverStartTime) {
         res.end('Internal server error')
     })
 }
-
 
 async function cmdStart() {
     // 1. Check pidfile

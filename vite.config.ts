@@ -75,43 +75,29 @@ type RootAssetMiddlewareStack = {
 }
 
 const LEGACY_CSS_LINKS = [
-    'semantic-demo.css',
-    'css/base.css',
-    'css/loading.css',
-    'css/shell.css',
-    'css/time_weather.css',
-    'css/synthesis.css',
-    'css/controls.css',
-    'css/layout_base.css',
-    'css/search.css',
-    'css/mobile_base.css',
-    'css/journey_steps.css',
-    'css/journey_active.css',
-    'css/clusters.css',
-    'css/progressive_disclosure.css',
-    'css/strands.css',
-    'css/animations.css',
-    'vector-explorer-pandora.css',
-    'css/mobile_premium__components.css',
-    'css/mobile_premium__layout.css',
-    'css/mobile_premium__state.css',
-    'css/modules/focus_stage.css'
+    '<link rel="stylesheet" href="semantic-demo.css">',
+    '<link rel="stylesheet" href="css/base.css">',
+    '<link rel="stylesheet" href="css/loading.css">',
+    '<link rel="stylesheet" href="css/shell.css">',
+    '<link rel="stylesheet" href="css/time_weather.css">',
+    '<link rel="stylesheet" href="css/synthesis.css">',
+    '<link rel="stylesheet" href="css/controls.css">',
+    '<link rel="stylesheet" href="css/layout_base.css">',
+    '<link rel="stylesheet" href="css/search.css">',
+    '<link rel="stylesheet" href="css/mobile_base.css">',
+    '<link rel="stylesheet" href="css/journey_steps.css">',
+    '<link rel="stylesheet" href="css/journey_active.css">',
+    '<link rel="stylesheet" href="css/clusters.css">',
+    '<link rel="stylesheet" href="css/progressive_disclosure.css">',
+    '<link rel="stylesheet" href="css/strands.css">',
+    '<link rel="stylesheet" href="css/animations.css">',
+    '<link rel="stylesheet" href="vector-explorer-pandora.css">',
+    '<link rel="stylesheet" href="css/mobile_premium__components.css">',
+    '<link rel="stylesheet" href="css/mobile_premium__layout.css">',
+    '<link rel="stylesheet" href="css/mobile_premium__state.css">',
+    '<link rel="stylesheet" href="css/modules/focus_stage.css">'
 ]
 
-/**
- * Emit non-render-blocking links for legacy root CSS files.
- * `media="print"` prevents first-render blocking; `onload` swaps to `media="all"`
- * once the stylesheet is available. A `<noscript>` fallback keeps the page
- * styled for users without JS. This matches the critical inline CSS already in
- * src/index.html; the splash/app-shell renders immediately while surface CSS
- * streams in.
- */
-function renderBlockingCssToAsync(href: string): string {
-    return (
-        `<link rel="stylesheet" href="${href}" media="print" onload="this.media='all'; this.onload=null;">\n` +
-        `  <noscript><link rel="stylesheet" href="${href}"></noscript>`
-    )
-}
 
 function legacyRootAssetPlugin(): Plugin {
     return {
@@ -126,9 +112,7 @@ function legacyRootAssetPlugin(): Plugin {
             // Inject legacy CSS <link> tags into the HTML. These files live at the
             // project root (outside Vite's src/ root), so they cannot be static
             // <link> tags in src/index.html — Vite would warn they don't exist.
-            // W63: load them asynchronously via media="print" onload swap so they
-            // do not block first paint. Critical app-shell styles are inline.
-            const legacyBlock = LEGACY_CSS_LINKS.map(renderBlockingCssToAsync).join('\n  ')
+            const legacyBlock = LEGACY_CSS_LINKS.join('\n  ')
             return html.replace(
                 '<!--\n    Legacy CSS links (semantic-demo.css, vector-explorer-pandora.css,',
                 `${legacyBlock}\n  <!--\n    Legacy CSS links (semantic-demo.css, vector-explorer-pandora.css,`
