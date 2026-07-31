@@ -268,20 +268,31 @@ export function computeSafeAreaCameraTargetOffset(
     rightVec.normalize()
     const upVec = new Vector3().crossVectors(viewDir, rightVec).normalize()
 
-    const pixelsPerUnit = focusDistance * 0.0013
+    // World-units-per-pixel at the focus plane. `normX`/`normY` are fractions
+    // of the region half-extent (dimensionless), so the excess beyond the
+    // margin must be multiplied back by halfW/halfH (px) to reach world
+    // units — otherwise the correction is ~halfW× too small (≈0.0003 world
+    // units ≈ a third of a pixel) and the safe-area nudge never fires.
+    const unitsPerPixel = focusDistance * 0.0013
 
     const offset = new Vector3()
 
     if (isConstrainedX && Math.abs(normX) > 0.1) {
-        const correction = Math.max(0, (Math.abs(normX) - (1 - marginFraction)) * pixelsPerUnit * 1.4)
-        const maxCorrectionX = pixelsPerUnit * canvasRegion.width * 0.2
-        offset.addScaledVector(rightVec, -Math.sign(normX) * Math.min(correction, maxCorrectionX))
+        const excessFraction = Math.max(0, Math.abs(normX) - (1 - marginFraction))
+        const correction = excessFraction * halfW * unitsPerPixel * 1.4
+        const maxCorrectionX = unitsPerPixel * canvasRegion.width * 0.2
+        // +sign(normX): move the frame TOWARD the pocket (rightVec = screen-right).
+        // The pre-fix -sign flipped this, pushing the pocket further off-center.
+        offset.addScaledVector(rightVec, Math.sign(normX) * Math.min(correction, maxCorrectionX))
     }
 
     if (isConstrainedY && Math.abs(normY) > 0.1) {
-        const correction = Math.max(0, (Math.abs(normY) - (1 - marginFraction)) * pixelsPerUnit * 1.4)
-        const maxCorrectionY = pixelsPerUnit * canvasRegion.height * 0.2
-        offset.addScaledVector(upVec, Math.sign(normY) * Math.min(correction, maxCorrectionY))
+        const excessFraction = Math.max(0, Math.abs(normY) - (1 - marginFraction))
+        const correction = excessFraction * halfH * unitsPerPixel * 1.4
+        const maxCorrectionY = unitsPerPixel * canvasRegion.height * 0.2
+        // -sign(normY): move the frame TOWARD the pocket (upVec = screen-up).
+        // Pocket above center has normY < 0 → +upVec. Pre-fix sign pushed away.
+        offset.addScaledVector(upVec, -Math.sign(normY) * Math.min(correction, maxCorrectionY))
     }
 
     return offset.lengthSq() > 0.000001 ? offset : null

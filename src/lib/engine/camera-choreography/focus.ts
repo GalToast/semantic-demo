@@ -197,24 +197,11 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
     const prefersReducedCameraMotion = prefersReducedMotion()
     const duration = prefersReducedCameraMotion ? 1 : baseDuration
 
-    const animationToken = ++appState.focusCameraAnimationToken
-    appState.focusCameraOffset = desiredCamPos.clone().sub(focusTarget)
-    if (!appState.focusCameraTargetOffset || typeof appState.focusCameraTargetOffset.copy !== 'function') {
-        appState.focusCameraTargetOffset = new Vector3()
-    }
-    if (appState.focusCameraTargetOffset) {
-        appState.focusCameraTargetOffset?.copy?.(focusTarget.clone().sub(nodePos))
-    }
-    setFocusTransitionMode(transitionStyle, { duration })
-    if (prefersReducedCameraMotion) {
-        controls.target.copy(focusTarget)
-        camera.position.copy(desiredCamPos)
-        controls.update()
-        return
-    }
-
-    startFocusCameraAssist(duration + 100, transitionStyle)
-    const startTime = performance.now()
+    // W61 #7: validate the full numeric state BEFORE mutating appState or
+    // starting the assist. The previous placement ran after
+    // focusCameraOffset/focusCameraTargetOffset writes, setFocusTransitionMode
+    // and startFocusCameraAssist, so a degenerate camera/target state could
+    // leave a NaN focusCameraOffset and an assist with no animation behind.
     if (
         !Number.isFinite(
             startTarget.x +
@@ -232,6 +219,29 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
         )
     )
         return
+
+    const animationToken = ++appState.focusCameraAnimationToken
+    appState.focusCameraOffset = desiredCamPos.clone().sub(focusTarget)
+    if (!appState.focusCameraTargetOffset || typeof appState.focusCameraTargetOffset.copy !== 'function') {
+        appState.focusCameraTargetOffset = new Vector3()
+    }
+    if (appState.focusCameraTargetOffset) {
+        appState.focusCameraTargetOffset?.copy?.(focusTarget.clone().sub(nodePos))
+    }
+    setFocusTransitionMode(transitionStyle, { duration })
+    if (prefersReducedCameraMotion) {
+        controls.target.copy(focusTarget)
+        camera.position.copy(desiredCamPos)
+        controls.update()
+        // F4 (W61): the reduced-motion path skips the rAF completion step
+        // where focusCameraOffset is normally nulled; clear it here so the
+        // stale offset can't mis-trigger releaseFocusCameraAssist later.
+        appState.focusCameraOffset = null
+        return
+    }
+
+    startFocusCameraAssist(duration + 100, transitionStyle)
+    const startTime = performance.now()
 
     const stageArcActive =
         isSemanticPocketFocus &&

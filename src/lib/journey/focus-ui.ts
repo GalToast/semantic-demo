@@ -40,6 +40,20 @@ function supportsHoverPreview(): boolean {
     )
 }
 
+// F1 (W61): module-scoped hover-intent timer for the neighbor rail. A rail
+// rebuild (FILTER_CHANGED, search cleared, state reset, …) orphans the
+// previous invocation's per-call timer: its buttons are removed from the DOM
+// via list.textContent = '' but the pending 80ms timeout would still fire
+// inspectThreadNeighbor on a stale index. Cancelling at the top of every rail
+// update closes that window.
+let _neighborHoverIntentTimer: ReturnType<typeof setTimeout> | null = null
+function cancelNeighborHoverIntent(): void {
+    if (_neighborHoverIntentTimer !== null) {
+        clearTimeout(_neighborHoverIntentTimer)
+        _neighborHoverIntentTimer = null
+    }
+}
+
 function shouldUseSingleNeighborFocusRail(): boolean {
     if (typeof window === 'undefined' || typeof document === 'undefined') return false
     const surface = document.body?.dataset?.panelSurface
@@ -94,10 +108,15 @@ function hideNeighborRail(rail: HTMLElement, list: HTMLElement, countEl: HTMLEle
 
 function _collectNeighborCandidates(candidateLimit: number): ThreadCandidateRef[] {
     const nav = appState.navState
+    const points = appState.points
+    // #28 (W61): points! is only safe once data has loaded; guard the
+    // degenerate window so a null points array can't throw inside the
+    // event handler.
+    if (!points) return []
     return (nav.threadCandidates || [])
         .filter((candidate: ThreadCandidateRef) => candidate && candidate.index !== nav.focusedIndex)
         .filter((candidate: ThreadCandidateRef) =>
-            isPointVisible(candidate.index, appState.points!, null, appState.activeFilters)
+            isPointVisible(candidate.index, points, null, appState.activeFilters)
         )
         .slice(0, candidateLimit)
 }
@@ -197,6 +216,10 @@ export function updateFocusNeighborRail(): void {
     const countEl = document.getElementById('focus-stage-neighbor-count')
     if (!rail || !list) return
 
+    // F1 (W61): cancel any pending hover-intent from the previous rail
+    // generation before the list is rebuilt/cleared below.
+    cancelNeighborHoverIntent()
+
     const threadInspectSurface = document.body?.dataset?.threadInspectSurface
     const threadInspectorOwnsSurface = !!threadInspectSurface && threadInspectSurface !== 'idle'
     if (threadInspectorOwnsSurface) {
@@ -259,14 +282,6 @@ export function updateFocusNeighborRail(): void {
         list.appendChild(button)
     })
 
-    let hoverIntentTimer: ReturnType<typeof setTimeout> | null = null
-    const cancelHoverIntent = () => {
-        if (hoverIntentTimer) {
-            clearTimeout(hoverIntentTimer)
-            hoverIntentTimer = null
-        }
-    }
-
     list.querySelectorAll('[data-index]').forEach((button: Element) => {
         const btn = button as HTMLButtonElement
         const prefersExplicitPreview = (): boolean => {
@@ -277,9 +292,9 @@ export function updateFocusNeighborRail(): void {
             }
         }
         const scheduleInspect = () => {
-            cancelHoverIntent()
+            cancelNeighborHoverIntent()
             // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-            hoverIntentTimer = setTimeout(() => {
+            _neighborHoverIntentTimer = setTimeout(() => {
                 const nextIndex = Number(btn.dataset.index)
                 if (!Number.isFinite(nextIndex)) return
                 inspectThreadNeighbor(nextIndex)
@@ -287,7 +302,7 @@ export function updateFocusNeighborRail(): void {
         }
 
         const walkToIndex = () => {
-            cancelHoverIntent()
+            cancelNeighborHoverIntent()
             const nextIndex = Number(btn.dataset.index)
             if (!Number.isFinite(nextIndex)) return
             walkThreadNeighbor(nextIndex, {
@@ -296,7 +311,7 @@ export function updateFocusNeighborRail(): void {
             })
         }
         const inspectIndex = () => {
-            cancelHoverIntent()
+            cancelNeighborHoverIntent()
             const nextIndex = Number(btn.dataset.index)
             if (!Number.isFinite(nextIndex)) return
             setStrandContinuityState('preview', {
@@ -320,13 +335,13 @@ export function updateFocusNeighborRail(): void {
         })
 
         btn.addEventListener('mouseleave', () => {
-            cancelHoverIntent()
+            cancelNeighborHoverIntent()
             if (!supportsHoverPreview()) return
             clearThreadInspection()
         })
 
         btn.addEventListener('blur', () => {
-            cancelHoverIntent()
+            cancelNeighborHoverIntent()
             if (!supportsHoverPreview()) return
             clearThreadInspection()
         })

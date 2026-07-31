@@ -274,7 +274,13 @@ export function ensureFocusStageAuxiliaryDom(): boolean {
  */
 export function ensureDiveButton(): void {
     if (typeof document === 'undefined' || typeof document.createElement !== 'function') return
+    // F3 (W61): guard on BOTH ids. This module creates #btn-focus-dive-legacy,
+    // while the canonical #btn-focus-dive belongs to CompassDiveSurface.svelte
+    // (W53 F5) and JourneyCompass.svelte also renders a hidden legacy button.
+    // syncSemanticDiveUi calls ensureDiveButton() on every focus event — without
+    // the legacy guard, each call appended another duplicate legacy button.
     const existing = document.getElementById('btn-focus-dive')
+    const existingLegacy = document.getElementById('btn-focus-dive-legacy')
 
     // Prefer the focus-pocket card or its auxiliary surfaces root
     const card = document.getElementById('focus-pocket') || document.querySelector?.('.focus-stage-card')
@@ -287,6 +293,7 @@ export function ensureDiveButton(): void {
             })
             card.appendChild(root)
         }
+        if (existingLegacy) return
         if (existing) {
             if (!root.contains(existing)) root.appendChild(existing)
             return
@@ -295,7 +302,7 @@ export function ensureDiveButton(): void {
         return
     }
 
-    if (existing) return
+    if (existing || existingLegacy) return
 
     // Fallback: create inside #selected-details or #info-panel
     const target =
