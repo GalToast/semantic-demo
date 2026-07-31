@@ -165,6 +165,17 @@ export function hydrateLeadContext(point: BusinessRecord | null): void {
 /**
  * Focus on a business record point. Delegates camera movement to the
  * index-based camera owner via engine bridge.
+ *
+ * Options:
+ * - `revealCard: true` — request reveal of the selected-business card
+ *   (carried to subscribers via the published event payload).
+ * - `skipUrlSync: true` — anti-reentry guard. Skips publishing the
+ *   `CAMERA_NODE_FOCUSED` event ENTIRELY, which blocks ALL subscribers of
+ *   that event — route-trace overlay sync, selected-card sync, focus-ui
+ *   rail sync, semantic-dive-ui sync, map-state sync, thread-inspector
+ *   sync — NOT just URL state sync (see `event-bus.ts` reentry convention).
+ *   Use only when calling from inside a CAMERA_NODE_FOCUSED subscriber
+ *   chain (e.g., `selected-card.ts:270`) to break the loop.
  */
 export function focusOnPoint(
     point: BusinessRecord | null,
@@ -210,8 +221,21 @@ export function exploreInsideToNextStop(): void {
 export { probeSemanticLane, setSemanticLaneUiState } from './semantic-lane'
 
 /**
- * Focus on node by index.
- * Delegates to dispatchNavTransition.
+ * LEGACY — focus on node by index via nav-transition dispatch.
+ *
+ * The canonical cursor orchestrator lives at
+ * `@lib/engine/camera-choreography/cursor:focusOnNode` (publishes
+ * `CAMERA_NODE_FOCUSED`); src/ runtime callers should prefer that path.
+ * This legacy `lifecycle.ts:focusOnNode` is retained because it is imported
+ * by ~20 spec/contract files under `tests/` (e.g. contract asserts at
+ * `tests/retired/window-bridge-gaps-contract.mjs` (Gap 5) and
+ * `tests/state-ownership-contract.mjs`), which assert on its
+ * `dispatchNavTransition(FOCUS_NODE, ...)` delegation behavior. Retire
+ * only after migrating those test consumers to the canonical cursor path.
+ *
+ * `_options` is intentionally ignored — all FOCUS_NODE options are passed
+ * via the `{ index }` action payload; per-action option keys live in
+ * `compass-controller.ts` action handlers, not in this delegation hop.
  */
 export function focusOnNode(index: number, _options?: Record<string, unknown>): boolean {
     const result = dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, { index })
