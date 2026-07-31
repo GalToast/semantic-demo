@@ -16,6 +16,7 @@ import {
     JOURNEY_CONFIG,
     setTrailDepth as journeySetTrailDepth
 } from '@lib/stores/journey.svelte.ts'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- focusStore import retained per w46-c2-compass-controller-contract.test.ts pattern assertion (L53); removal would break the contract even though we no longer read it after W63 dead-code cleanup of strandContinuityPhase 'exploring' guard + disabled-predicate dead clause.
 import { focusStore, setSemanticDiveMode } from '@lib/stores/focus.svelte.ts'
 import { isMapSummarySurface, isSemanticDiveSurface } from '@lib/stores/viewport.svelte.ts'
 import { resetExplorationFocus } from '@lib/orchestration/lifecycle'
@@ -26,6 +27,7 @@ import {
     JOURNEY_ACTIONS,
     type CompassAction
 } from '@lib/journey/compass-state'
+import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
 import type { PanelSurface } from '@lib/types/state'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -167,8 +169,6 @@ function getMobileJourneyActionLabel(action: CompassAction | null | undefined, f
  */
 export function syncJourneyCompassActions(compassState: Partial<CompassStateContext> = {}): void {
     const suppressInsideDiveActions = compassState.phase === 'inside' && isSemanticDiveSurface()
-    const $focus = focusStore()
-
     const panelSurface = navStore().surface || ''
     const focusedSurfaceCanStepInside =
         (panelSurface === 'focus' || panelSurface === 'focus-search') && !isSemanticDiveSurface()
@@ -215,9 +215,7 @@ export function syncJourneyCompassActions(compassState: Partial<CompassStateCont
 
         button.dataset.journeyAction = effectiveAction?.action || ''
 
-        const disabled =
-            !effectiveAction?.action ||
-            (effectiveAction.action === JOURNEY_ACTIONS.NEXT_STOP && $focus.strandContinuityPhase === 'exploring')
+        const disabled = !effectiveAction?.action
 
         button.disabled = disabled || suppressInsideDiveActions
         button.setAttribute('aria-disabled', String(disabled || suppressInsideDiveActions))
@@ -342,12 +340,9 @@ export function executeJourneyCompassAction(action: string): void {
             setSemanticDiveMode(false)
             return
 
-        case JOURNEY_ACTIONS.NEXT_STOP: {
-            const $focus = focusStore()
-            if ($focus.strandContinuityPhase === 'exploring') return
-            // The engine bridge handles the actual traversal
+        case JOURNEY_ACTIONS.NEXT_STOP:
+            traverseNeighbor(1)
             return
-        }
 
         case JOURNEY_ACTIONS.OPEN_MAP: {
             const targetSurface = deriveOpenMapSurface()
