@@ -307,8 +307,10 @@ function auditFile(filePath) {
             }
         }
 
-        // rule_7: outline: none / 0 — only flag if no :focus-visible fallback exists
-        if (line.includes('outline: none') || line.includes('outline: 0')) {
+        // rule_7: outline: none / 0 — only flag if no :focus-visible fallback exists.
+        // Opt-out: /* a11y-ok: <reason> */ on the same line (e.g. fallback lives in
+        // a sibling selector the block parser cannot currently resolve).
+        if ((line.includes('outline: none') || line.includes('outline: 0')) && !/\ba11y-ok\b/.test(line)) {
             const selector = blockByLine.get(lineNum)
             const hasFallback = selector ? hasFocusVisibleOutline(selector) : false
             if (!hasFallback) {

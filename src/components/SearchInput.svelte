@@ -311,7 +311,7 @@ import { startSearch } from '@lib/search/search-abort';
     min-height: 44px;
     background: none;
     border: none;
-    outline: none;
+    outline: none; /* a11y-ok: focus-visible fallback provided below */
     color: var(--color-text-teal-light);
     font-family: inherit;
     font-size: 0.875rem;
