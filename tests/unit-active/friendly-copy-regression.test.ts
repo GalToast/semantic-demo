@@ -14,6 +14,7 @@ const FILES = [
     '../../src/components/FocusCard.svelte',
     '../../src/components/Legend.svelte',
     '../../src/components/LoadingOverlay.svelte',
+    '../../src/components/Placeholder2D.svelte',
     '../../src/components/MapSummary.svelte',
     '../../src/components/SearchTrailCue.svelte',
     '../../src/components/TrailControls.svelte',
@@ -98,6 +99,8 @@ describe('friendly-copy regression guard (journey + chrome surfaces)', () => {
         expect(stripped).toContain('Business status')
         expect(stripped).toContain('Business view')
         expect(stripped).toContain('No map location yet')
+        expect(stripped).toContain('Preview')
+        expect(stripped).toContain('Enter 3D Scene')
         expect(stripped).toContain('Journey path')
         expect(stripped).toContain('Journey stops')
         expect(stripped).toContain('Walk controls')
