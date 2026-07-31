@@ -611,6 +611,15 @@ export default defineConfig({
                     // cluster (the 212KB `mode-transitions.svelte-*.js` balloon). Route that
                     // transitive closure into its own chunk so the dispatcher stays lean and
                     // the heavy deps live in a clearly separated, cacheable artifact.
+                    //
+                    // W61 perf note: splitting this cluster further (boot-core vs
+                    // journey/search) does NOT defer bytes — the boot orchestration layer
+                    // (triggers.ts, url-state.ts, adapters.ts, compass-controller.ts,
+                    // lifecycle.ts) statically subscribes into journey/search at startup,
+                    // so any journey/search chunk is modulepreloaded with the entry
+                    // regardless. Real deflation needs a designed lazification pass
+                    // (convert orchestrator imports to dynamic), which collides with
+                    // active orchestration work — deferred.
                     if (
                         id.includes('/src/lib/stores/navigation.svelte.ts') ||
                         id.includes('/src/lib/stores/navigation/') ||
