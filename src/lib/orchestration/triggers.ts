@@ -200,80 +200,90 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
     if (typeof index !== 'number' || !Number.isFinite(index)) return
     if (appState.searchState.searchError) return // Don't focus if there's a search error
     const focusIndex = index
-    const searchSummary = appState.searchState.currentSearchSummary
-    const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || []
-    const manifest = buildNeighborhoodManifest(focusIndex, resultIndices, {
-        displayLimit: getSemanticThreadDisplayLimit()
-    })
-    const candidateIndices: number[] = [...(manifest?.candidateIndices ?? [])]
-    const threadSource = manifest && manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback'
-    const threadReasonByIndex = new Map<number, string>(
-        candidateIndices.map((candidateIndex: number) => [
-            candidateIndex,
-            threadSource === 'semantic' ? 'semantic neighbor' : 'geometric proximity'
-        ])
-    )
-    writeNavStateMirror({
-        focusedIndex: focusIndex,
-        mode: 'focus',
-        surface: 'focus-search',
-        trailDepth: 1,
-        trailSeedIndex: focusIndex,
-        trailNeighborIndices: candidateIndices,
-        threadCandidates: candidateIndices.map((idx) => ({
-            index: idx,
-            source: threadSource,
-            reason: threadReasonByIndex.get(idx) ?? ''
-        })),
-        threadReasonByIndex,
-        threadSource
-    })
-    {
-        // legacyState.navState is `NavState | null`; withStateMutation guarantees
-        // the state is initialized, so the structural cast is safe. We only write
-        // 5 fields here; the inline shape uses a loose threadCandidates element
-        // type (only `index`, `source`, `reason`) rather than the strict
-        // `ThreadCandidateLike` because we don't compute the scoring fields
-        // (`score`, `semanticScore`, `sameCity`, `sameStatus`) at this layer.
-        const nav = legacyState.navState as unknown as {
-            trailSeedIndex?: number | null
-            trailNeighborIndices?: number[]
-            threadCandidates?: Array<{ index: number; source: string; reason: string }>
-            threadReasonByIndex?: Map<number, string>
-            threadSource?: string
-        }
-        nav.trailSeedIndex = index
-        nav.trailNeighborIndices = [...candidateIndices]
-        nav.threadCandidates = candidateIndices.map((candidateIndex: number) => ({
-            index: candidateIndex,
-            source: threadSource,
-            reason: threadReasonByIndex.get(candidateIndex) ?? 'nearby business relationship'
-        }))
-        nav.threadReasonByIndex = threadReasonByIndex
-        nav.threadSource = threadSource
-    }
-    // Add the focused node as the first trail stop so MapSummary
-    // (which gates on hasTrail() && trail.length > 0) renders.
-    // Guard against duplicate trail stops when SEARCH_FOCUS_REQUESTED re-fires
-    // (e.g. the url-state post-search re-publish for numeric anchors — see
-    // docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md).
-    const records = getBusinessRecords()
-    const record = records[Number(index)]
-    const walkHist = appState.navState.walkHistoryIndices ?? []
-    const lastTrailIndex = walkHist.length > 0 ? walkHist[walkHist.length - 1] : null
-    if (lastTrailIndex !== Number(index)) {
-        addTrailStop({
-            index: Number(index),
-            name: record?.name ?? `Node ${index}`,
-            reason: 'search-focus',
-            visitedAt: Date.now()
+    // W68 H3: same-index re-publishes (url-state anchor sync at url-state.ts:617/764/884/888,
+    // search-result re-click at SearchResults.svelte:331, search/orchestration.ts:260/354)
+    // re-ran the full cascade below -- the exact W15-T1 redundant-reactivity class the
+    // sibling CAMERA_NODE_FOCUSED subscriber guards against. Re-fires also forcibly reset
+    // trailDepth to 1 even when the user advanced deeper. Skip the mirror/manifest/setters
+    // when the index is already current; the idempotent refreshCompositionState +
+    // updateJourneyCompass still run below the guard.
+    const currentFocus = get(navStore) as { focusedIndex?: number | null }
+    if (currentFocus.focusedIndex !== focusIndex) {
+        const searchSummary = appState.searchState.currentSearchSummary
+        const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || []
+        const manifest = buildNeighborhoodManifest(focusIndex, resultIndices, {
+            displayLimit: getSemanticThreadDisplayLimit()
         })
+        const candidateIndices: number[] = [...(manifest?.candidateIndices ?? [])]
+        const threadSource = manifest && manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback'
+        const threadReasonByIndex = new Map<number, string>(
+            candidateIndices.map((candidateIndex: number) => [
+                candidateIndex,
+                threadSource === 'semantic' ? 'semantic neighbor' : 'geometric proximity'
+            ])
+        )
+        writeNavStateMirror({
+            focusedIndex: focusIndex,
+            mode: 'focus',
+            surface: 'focus-search',
+            trailDepth: 1,
+            trailSeedIndex: focusIndex,
+            trailNeighborIndices: candidateIndices,
+            threadCandidates: candidateIndices.map((idx) => ({
+                index: idx,
+                source: threadSource,
+                reason: threadReasonByIndex.get(idx) ?? ''
+            })),
+            threadReasonByIndex,
+            threadSource
+        })
+        {
+            // legacyState.navState is `NavState | null`; withStateMutation guarantees
+            // the state is initialized, so the structural cast is safe. We only write
+            // 5 fields here; the inline shape uses a loose threadCandidates element
+            // type (only `index`, `source`, `reason`) rather than the strict
+            // `ThreadCandidateLike` because we don't compute the scoring fields
+            // (`score`, `semanticScore`, `sameCity`, `sameStatus`) at this layer.
+            const nav = legacyState.navState as unknown as {
+                trailSeedIndex?: number | null
+                trailNeighborIndices?: number[]
+                threadCandidates?: Array<{ index: number; source: string; reason: string }>
+                threadReasonByIndex?: Map<number, string>
+                threadSource?: string
+            }
+            nav.trailSeedIndex = index
+            nav.trailNeighborIndices = [...candidateIndices]
+            nav.threadCandidates = candidateIndices.map((candidateIndex: number) => ({
+                index: candidateIndex,
+                source: threadSource,
+                reason: threadReasonByIndex.get(candidateIndex) ?? 'nearby business relationship'
+            }))
+            nav.threadReasonByIndex = threadReasonByIndex
+            nav.threadSource = threadSource
+        }
+        // Add the focused node as the first trail stop so MapSummary
+        // (which gates on hasTrail() && trail.length > 0) renders.
+        // Guard against duplicate trail stops when SEARCH_FOCUS_REQUESTED re-fires
+        // (e.g. the url-state post-search re-publish for numeric anchors — see
+        // docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md).
+        const records = getBusinessRecords()
+        const record = records[Number(index)]
+        const walkHist = appState.navState.walkHistoryIndices ?? []
+        const lastTrailIndex = walkHist.length > 0 ? walkHist[walkHist.length - 1] : null
+        if (lastTrailIndex !== Number(index)) {
+            addTrailStop({
+                index: Number(index),
+                name: record?.name ?? `Node ${index}`,
+                reason: 'search-focus',
+                visitedAt: Date.now()
+            })
+        }
+        setTrailNeighborIndices(candidateIndices)
+        setThreadCandidates(candidateIndices)
+        setTrailDepth(1)
+        setActiveResult(String(index))
+        setSearchStatus('focusing')
     }
-    setTrailNeighborIndices(candidateIndices)
-    setThreadCandidates(candidateIndices)
-    setTrailDepth(1)
-    setActiveResult(String(index))
-    setSearchStatus('focusing')
     refreshCompositionState()
     updateJourneyCompass()
 })
