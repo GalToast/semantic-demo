@@ -3,6 +3,7 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import { createReadStream } from 'node:fs'
 import { copyFile, cp, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'url'
 import { dirname, extname, join, normalize, resolve } from 'path'
 import { promisify } from 'node:util'
@@ -20,6 +21,17 @@ const brotliCompressAsync = promisify(brotliCompress)
 const gzipAsync = promisify(gzip)
 const BROTLI_QUALITY = Number(process.env.VITE_BROTLI_QUALITY || 5)
 const GZIP_LEVEL = Number(process.env.VITE_GZIP_LEVEL || 6)
+
+// Stable per-build identifier used for cache-busting static data assets.
+// Git hash is preferred so repeat builds with no code change share a cache key;
+// fallback to a base36 timestamp when git is unavailable (e.g. shallow CI).
+const BUILD_ID = (() => {
+    try {
+        return execSync('git rev-parse --short HEAD', { cwd: __dirname, encoding: 'utf8' }).trim()
+    } catch {
+        return Date.now().toString(36)
+    }
+})()
 
 // W44 Phase F: list of large runtime-data assets that benefit from precompression.
 // Keep this allowlist explicit so we never accidentally compress chunk-manifest JSON.
@@ -63,28 +75,43 @@ type RootAssetMiddlewareStack = {
 }
 
 const LEGACY_CSS_LINKS = [
-    '<link rel="stylesheet" href="semantic-demo.css">',
-    '<link rel="stylesheet" href="css/base.css">',
-    '<link rel="stylesheet" href="css/loading.css">',
-    '<link rel="stylesheet" href="css/shell.css">',
-    '<link rel="stylesheet" href="css/time_weather.css">',
-    '<link rel="stylesheet" href="css/synthesis.css">',
-    '<link rel="stylesheet" href="css/controls.css">',
-    '<link rel="stylesheet" href="css/layout_base.css">',
-    '<link rel="stylesheet" href="css/search.css">',
-    '<link rel="stylesheet" href="css/mobile_base.css">',
-    '<link rel="stylesheet" href="css/journey_steps.css">',
-    '<link rel="stylesheet" href="css/journey_active.css">',
-    '<link rel="stylesheet" href="css/clusters.css">',
-    '<link rel="stylesheet" href="css/progressive_disclosure.css">',
-    '<link rel="stylesheet" href="css/strands.css">',
-    '<link rel="stylesheet" href="css/animations.css">',
-    '<link rel="stylesheet" href="vector-explorer-pandora.css">',
-    '<link rel="stylesheet" href="css/mobile_premium__components.css">',
-    '<link rel="stylesheet" href="css/mobile_premium__layout.css">',
-    '<link rel="stylesheet" href="css/mobile_premium__state.css">',
-    '<link rel="stylesheet" href="css/modules/focus_stage.css">'
+    'semantic-demo.css',
+    'css/base.css',
+    'css/loading.css',
+    'css/shell.css',
+    'css/time_weather.css',
+    'css/synthesis.css',
+    'css/controls.css',
+    'css/layout_base.css',
+    'css/search.css',
+    'css/mobile_base.css',
+    'css/journey_steps.css',
+    'css/journey_active.css',
+    'css/clusters.css',
+    'css/progressive_disclosure.css',
+    'css/strands.css',
+    'css/animations.css',
+    'vector-explorer-pandora.css',
+    'css/mobile_premium__components.css',
+    'css/mobile_premium__layout.css',
+    'css/mobile_premium__state.css',
+    'css/modules/focus_stage.css'
 ]
+
+/**
+ * Emit non-render-blocking links for legacy root CSS files.
+ * `media="print"` prevents first-render blocking; `onload` swaps to `media="all"`
+ * once the stylesheet is available. A `<noscript>` fallback keeps the page
+ * styled for users without JS. This matches the critical inline CSS already in
+ * src/index.html; the splash/app-shell renders immediately while surface CSS
+ * streams in.
+ */
+function renderBlockingCssToAsync(href: string): string {
+    return (
+        `<link rel="stylesheet" href="${href}" media="print" onload="this.media='all'; this.onload=null;">\n` +
+        `  <noscript><link rel="stylesheet" href="${href}"></noscript>`
+    )
+}
 
 function legacyRootAssetPlugin(): Plugin {
     return {
@@ -99,7 +126,9 @@ function legacyRootAssetPlugin(): Plugin {
             // Inject legacy CSS <link> tags into the HTML. These files live at the
             // project root (outside Vite's src/ root), so they cannot be static
             // <link> tags in src/index.html — Vite would warn they don't exist.
-            const legacyBlock = LEGACY_CSS_LINKS.join('\n  ')
+            // W63: load them asynchronously via media="print" onload swap so they
+            // do not block first paint. Critical app-shell styles are inline.
+            const legacyBlock = LEGACY_CSS_LINKS.map(renderBlockingCssToAsync).join('\n  ')
             return html.replace(
                 '<!--\n    Legacy CSS links (semantic-demo.css, vector-explorer-pandora.css,',
                 `${legacyBlock}\n  <!--\n    Legacy CSS links (semantic-demo.css, vector-explorer-pandora.css,`
@@ -481,6 +510,11 @@ function chunkGraphAnalyzerPlugin(): Plugin {
 export default defineConfig({
     root: SRC_DIR,
     base: './',
+    define: {
+        // Expose a per-build identifier so data assets can be cache-busted by
+        // deployment rather than by the wall clock (which defeats browser caches).
+        'import.meta.env.VITE_BUILD_ID': JSON.stringify(BUILD_ID)
+    },
     plugins: [
         chunkGraphAnalyzerPlugin(),
         legacyRootAssetPlugin(),

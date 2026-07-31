@@ -88,7 +88,11 @@
   // compiles the heavy Three.js + engine dependency graph in the background.
   // The import() result is cached by Vite; when Canvas.svelte later calls
   // import('@lib/engine/lifecycle') in initLifecycle, it resolves instantly.
-  import('@lib/engine/lifecycle').catch(() => {})
+  // W63: in production there is no compile benefit, and eagerly fetching the
+  // engine pulls Three.js onto the cold-load path. Gate this to DEV only.
+  if (import.meta.env.DEV) {
+    import('@lib/engine/lifecycle').catch(() => {})
+  }
 
 
   // In Playwright tests, eagerly pre-load components that are required by

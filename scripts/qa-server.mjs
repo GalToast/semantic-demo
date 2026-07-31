@@ -199,12 +199,77 @@ function serveFile(req, res, filePath, stat, serverStartTime) {
     }
     const ext = path.extname(filePath).toLowerCase()
     const mime = MIME[ext] || 'application/octet-stream'
-    res.writeHead(200, {
-        'Content-Type': mime,
-        'Content-Length': stat.size,
-        'Access-Control-Allow-Origin': '*'
+    const urlPath = new URL(req.url ?? '/', `http://${HOST}:${PORT}`).pathname
+
+    // W63: replicate the cache policy from w44PreviewCacheHeadersPlugin so the
+    // Lighthouse QA server rewards hashed assets and data files with long-lived
+    // caching, instead of reporting cacheLifetimeMs = 0 for everything.
+    const hashed =
+        /[-][A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json|wasm)(\.gz|\.br)?$/.test(
+            urlPath
+        )
+    const dataAsset = /\.(dat|json)(\.gz|\.br)?$/.test(urlPath)
+    const precompressed = urlPath.endsWith('.br') || urlPath.endsWith('.gz')
+    const acceptsBrotli = String(req.headers['accept-encoding'] ?? '').includes('br')
+    const acceptsGzip = String(req.headers['accept-encoding'] ?? '').includes('gzip')
+
+    // Serve precompressed .br/.gz assets when the client accepts the encoding and
+    // the compressed file exists. This is the same logic used by Vite preview for
+    // dist/svelte/data.dat.br, etc.
+    const tryPrecompressed = async () => {
+        if (!precompressed) {
+            const encoding = acceptsBrotli ? 'br' : acceptsGzip ? 'gzip' : null
+            if (!encoding) return null
+            const compressedPath = `${filePath}.${encoding === 'br' ? 'br' : 'gz'}`
+            try {
+                const compressedStat = fs.statSync(compressedPath)
+                if (compressedStat.isFile()) {
+                    return { filePath: compressedPath, stat: compressedStat, encoding }
+                }
+            } catch {
+                // compressed variant not available; fall back to raw stream
+            }
+        }
+        return null
+    }
+
+    const send = async () => {
+        const precompressed = await tryPrecompressed()
+        const finalPath = precompressed?.filePath ?? filePath
+        const finalStat = precompressed?.stat ?? stat
+        const finalExt = path.extname(finalPath).toLowerCase()
+        const finalMime = MIME[finalExt] || 'application/octet-stream'
+
+        const headers = {
+            'Content-Type': finalMime,
+            'Content-Length': finalStat.size,
+            'Access-Control-Allow-Origin': '*',
+            'Vary': 'Accept-Encoding'
+        }
+        if (precompressed?.encoding === 'br') {
+            headers['Content-Encoding'] = 'br'
+        } else if (precompressed?.encoding === 'gzip') {
+            headers['Content-Encoding'] = 'gzip'
+        }
+        if (hashed) {
+            headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        } else if (dataAsset) {
+            headers['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=86400'
+        } else if (!precompressed && !urlPath.endsWith('.html')) {
+            // Reasonable default for unhashed static assets (fonts, root CSS,
+            // favicon, etc.) so repeat contract-test runs are not uncached.
+            headers['Cache-Control'] = 'public, max-age=3600'
+        }
+
+        res.writeHead(200, headers)
+        fs.createReadStream(finalPath).pipe(res)
+    }
+
+    send().catch((err) => {
+        console.error(`[qa-server] serveFile error for ${filePath}:`, err)
+        res.writeHead(500, { 'Content-Type': 'text/plain' })
+        res.end('Internal server error')
     })
-    fs.createReadStream(filePath).pipe(res)
 }
 
 

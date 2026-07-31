@@ -68,7 +68,13 @@ function normalizeSlugName(name: string | null): string | null {
 }
 
 function cacheBustParam(): string {
-    return `v=${Math.floor(Date.now() / (1000 * 60 * 60))}`
+    // W63: use the per-build id instead of an hourly wall-clock value so the
+    // data asset URL is stable across a release and can be cached effectively.
+    const buildId =
+        typeof import.meta.env !== 'undefined' && typeof import.meta.env.VITE_BUILD_ID === 'string'
+            ? import.meta.env.VITE_BUILD_ID
+            : 'dev'
+    return `v=${buildId}`
 }
 
 // ── Web Worker helpers ──────────────────────────────────────────────────────

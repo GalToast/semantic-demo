@@ -10,7 +10,7 @@ import path from 'path'
  */
 
 const SRC_DIR = path.resolve(process.cwd(), 'src')
-const BRIDGE_IMPORT_RE = /@lib\/engine\/([^'"\s.]+)/g
+const BRIDGE_IMPORT_RE = /@lib\/engine\/([^'"\s.:]+)/g
 
 function findTsFiles(dir: string): string[] {
     const results: string[] = []

@@ -195,7 +195,7 @@ describe('lead enrichment worker lifecycle', () => {
         // Verify the URL passed in the postMessage includes cacheBust param.
         const sentPayload = w.lastMessage as { type: string; payload: { url: string } }
         expect(sentPayload.type).toBe('LOAD_LEAD_ENRICHMENT')
-        expect(sentPayload.payload.url).toMatch(/leadEnrichment\.public\.json\?v=\d+/)
+        expect(sentPayload.payload.url).toMatch(/leadEnrichment\.public\.json\?v=[A-Za-z0-9_-]+/)
     })
 
     it('returns null when worker returns null enrichment', async () => {
