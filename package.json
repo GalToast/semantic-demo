@@ -63,6 +63,7 @@
         "qa:short-landscape": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/short-landscape-layout-contract.mjs && npx playwright test tests/short-landscape-contract.spec.js --browser=chromium --headed",
         "qa:short-landscape:transition": "npx playwright test tests/short-landscape-transition-ui-paths.spec.js --browser=chromium --workers=1 --headed",
         "qa:short-landscape:release": "npm run qa:short-landscape && npm run qa:short-landscape:transition",
+        "qa:serve": "node scripts/qa-serve.mjs",
         "qa:contract": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-contract-check.mjs --headed",
         "qa:contract:mobile-critical": "node scripts/qa.mjs contract --preset=mobile-critical --headed",
         "qa:contract:phase-a": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-contract-check.mjs --surfaces=info-panel-empty,compass-rail,loading-overlay,mode-grid --headed",
