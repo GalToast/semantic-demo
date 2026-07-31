@@ -92,6 +92,11 @@ export const VALID_COMPOSITION_PANEL_SURFACE_DETAILS = new Set<string>(['peek', 
 
 export const VALID_COMPOSITION_TRAIL_STATES = new Set<string>(['inactive', 'active', 'deep', 'exiting'])
 
+// W66: test-pinned (state-app-class.test.ts asserts size 3) but runtime-dead --
+// the composition field was deleted in W48-F and no src/ consumer references
+// this set. NOTE: values are STRINGS while appState.trailDepth is validated as
+// a numeric nonNegativeInt -- do not wire this set to trailDepth without
+// reconciling the types.
 export const VALID_COMPOSITION_TRAIL_DEPTHS = new Set<string>(['0', '1', '2'])
 
 export const VALID_COMPOSITION_GRAPH_CONTEXTS = new Set<string>([
@@ -215,7 +220,9 @@ export const passthrough: StateValidator = () => null
  * All entries validate direct writes via `appState.X = Y`
  * (caught by the Proxy `set` trap). The trap only sees top-level
  * keys, so dotted-path entries for sub-properties (e.g. `navState.mode`)
- * can never fire — they were removed in L1-H2.
+ * can never fire through the trap — they are kept for direct
+ * validateStateProperty callers (unit tests) and mirrored in
+ * NESTED_STATE_PATHS for the dev nested audit (W66).
  *
  * Sub-aggregate writes (`appState.searchState.X`, `appState.focusState.X`,
  * `appState.viewportState.X`) are NOT validated by these entries
@@ -465,8 +472,12 @@ export function validateStateProperty(path: string, value: unknown): string | nu
     const validator = STATE_VALIDATORS[path]
     if (validator) return validator(value)
 
-    // For top-level properties without explicit validators, allow passthrough
-    // unless the value is obviously wrong (null for non-nullable, wrong type).
+    // For top-level properties without explicit validators, allow passthrough.
+    // (Unregistered keys are intentionally unvalidated -- the registry is the
+    // source of truth; add a validator to STATE_VALIDATORS to guard a property.
+    // W66: the previous comment promised null/type rejection here that was
+    // never implemented and is test-pinned as passthrough in
+    // tests/unit-active/state-validation.test.ts:420-423.)
     return null
 }
 
@@ -486,7 +497,21 @@ export const NESTED_STATE_PATHS: Record<string, StateValidator> = {
     'navState.currentView': oneOf(VALID_VIEWS, 'navState.currentView'),
     'navState.myceliumMode': oneOf(VALID_MYCELIUM_MODES, 'navState.myceliumMode'),
     'searchState.searchStatus': oneOf(VALID_SEARCH_STATUS, 'searchState.searchStatus'),
-    'focusState.focusTransitionMode': oneOf(VALID_FOCUS_TRANSITION_MODES, 'focusState.focusTransitionMode')
+    'focusState.focusTransitionMode': oneOf(VALID_FOCUS_TRANSITION_MODES, 'focusState.focusTransitionMode'),
+    // W66: the 6 phase state machines were validated ONLY via dotted-path
+    // entries in STATE_VALIDATORS that can never fire through the top-level
+    // Proxy set trap (their top-level keys are passthrough). The dev-only 5s
+    // nested audit (app.svelte.ts _runNestedAudit) walks NESTED_STATE_PATHS,
+    // so wiring the phase paths here gives dev-time enforcement of phase
+    // writes. strandContinuityState is additionally manager-guarded (its own
+    // VALID_PHASES set matches VALID_STRAND_CONTINUITY_PHASES); the other five
+    // were entirely unguarded at runtime.
+    'terrainHandoffState.phase': oneOf(VALID_TERRAIN_HANDOFF_PHASES, 'terrainHandoffState.phase'),
+    'routeExplorationState.phase': oneOf(VALID_ROUTE_EXPLORATION_PHASES, 'routeExplorationState.phase'),
+    'routeChoreographyState.phase': oneOf(VALID_ROUTE_CHOREOGRAPHY_PHASES, 'routeChoreographyState.phase'),
+    'strandContinuityState.phase': oneOf(VALID_STRAND_CONTINUITY_PHASES, 'strandContinuityState.phase'),
+    'focusOrbitSlackState.phase': oneOf(VALID_FOCUS_ORBIT_SLACK_PHASES, 'focusOrbitSlackState.phase'),
+    'arrivalHandoffDiagnostics.phase': oneOf(VALID_ARRIVAL_HANDOFF_PHASES, 'arrivalHandoffDiagnostics.phase')
 }
 
 /** Dev-only audit: walks known nested paths on `state` and reports any
@@ -572,7 +597,13 @@ export function validateAppStateEnumFields(state: {
     for (const [name, getter, validSet] of checks) {
         try {
             const value = getter()
-            if (typeof value === 'string') {
+            if (typeof value !== 'string') {
+                // W66: previously non-string values were silently skipped while
+                // still incrementing `checked` -- a garbage-typed or missing
+                // field (shape drift, test fixture, URL param) passed the audit
+                // unnoticed. Report them like oneOf() does.
+                errors.push(`${name} must be a string enum, got ${typeof value}`)
+            } else {
                 assertValidEnum(name, value, validSet)
             }
             checked++
