@@ -3,7 +3,7 @@
  *
  * jsdom lacks a layout engine, so component tests cannot assert computed
  * element sizes. This file reads the component source and verifies the
- * style block declares WCAG AAA 2.5.5 minimum heights (44px) for the
+ * style block declares WCAG AAA 2.5.5 minimum heights (>=44px) for the
  * interactive targets inside the welcome modal.
  */
 import { describe, it, expect } from 'vitest'
@@ -18,7 +18,7 @@ describe('Splash.svelte style block — WCAG AAA touch targets', () => {
         const styleMatch = source.match(/<style[^>]*>([\s\S]*?)<\/style>/i)
         expect(styleMatch).toBeTruthy()
         const styleBlock = styleMatch![1]
-        const rule = styleBlock.match(/\.splash-submit\s*\{[^}]*min-height:\s*44px[^}]*\}/s)
+        const rule = styleBlock.match(/\.splash-submit\s*\{[^}]*min-height:\s*(?:4[4-9]|[5-9]\d)px[^}]*\}/s)
         expect(rule).toBeTruthy()
     })
 
@@ -27,7 +27,7 @@ describe('Splash.svelte style block — WCAG AAA touch targets', () => {
         const styleMatch = source.match(/<style[^>]*>([\s\S]*?)<\/style>/i)
         expect(styleMatch).toBeTruthy()
         const styleBlock = styleMatch![1]
-        const rule = styleBlock.match(/\.splash-cta\s*\{[^}]*min-height:\s*44px[^}]*\}/s)
+        const rule = styleBlock.match(/\.splash-cta\s*\{[^}]*min-height:\s*(?:4[4-9]|[5-9]\d)px[^}]*\}/s)
         expect(rule).toBeTruthy()
     })
 
@@ -36,7 +36,7 @@ describe('Splash.svelte style block — WCAG AAA touch targets', () => {
         const styleMatch = source.match(/<style[^>]*>([\s\S]*?)<\/style>/i)
         expect(styleMatch).toBeTruthy()
         const styleBlock = styleMatch![1]
-        const rule = styleBlock.match(/\.splash-search-input\s*\{[^}]*min-height:\s*44px[^}]*\}/s)
+        const rule = styleBlock.match(/\.splash-search-input\s*\{[^}]*min-height:\s*(?:4[4-9]|[5-9]\d)px[^}]*\}/s)
         expect(rule).toBeTruthy()
     })
 })

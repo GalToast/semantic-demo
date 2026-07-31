@@ -4,7 +4,7 @@
  * Verifies:
  *  1. Renders aside#legend-panel with aria-label="Business category legend"
  *  2. Panel has aria-hidden="true" when open=false (default)
- *  3. Renders h3.legend-title with text "Categories"
+ *  3. Renders h2.legend-title with text "Categories"
  *  4. Renders .legend-list with role="group" and descriptive aria-label
  *  5. Renders one legend-item button per canonical CLUSTER_NAMES entry
  *  6. Each button has type="button" and aria-pressed attribute
@@ -42,9 +42,9 @@ describe('Legend component', () => {
         expect(panel!.getAttribute('aria-hidden')).toBe('false');
     });
 
-    it('renders h3.legend-title with text "Categories"', () => {
+    it('renders h2.legend-title with text "Categories"', () => {
         const { container } = render(Legend);
-        const title = container.querySelector('h3.legend-title');
+        const title = container.querySelector('h2.legend-title');
         expect(title).toBeTruthy();
         expect(title!.textContent).toContain('Categories');
     });

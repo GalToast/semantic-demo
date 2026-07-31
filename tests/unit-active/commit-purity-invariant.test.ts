@@ -49,6 +49,20 @@ const EXEMPTED_SHAS = new Set<string>([
     // (Phase 8c). Grandfathered: the commit added a test file under a docs
     // prefix. The test covers the UX state coverage audit that was documented.
     '64a49d955a81f465b88a5556dff197d895230b28',
+    // e886d25d — docs(lifecycle): clarify focusOnPoint skipUrlSync contract +
+    // mark legacy focusOnNode. The lifecycle.ts edit is COMMENT-ONLY JSDoc
+    // (+26/-2, all inside `/** ... */` blocks — no runtime change).
+    // Semantically documentation; the docs(...) prefix was correct intent.
+    // Grandfathered to avoid splitting a comment-only clarification from its
+    // prose. Verify with `git show e886d25 -- src/lib/orchestration/lifecycle.ts`.
+    'e886d25dee7c391d2a6d433f1e0619ad583d2ecf',
+    // dbe026a — docs(vite): note why mode-transition-deps cluster is not split
+    // further (W61 perf audit). The vite.config.ts edit is COMMENT-ONLY
+    // (+9/-0, all `//` lines — a "W61 perf note" explaining why further chunk
+    // splitting defers 0 bytes). Semantically documentation; the docs(...)
+    // prefix was correct intent. Grandfathered (same comment-only pattern as
+    // e886d25d above). Verify with `git show dbe026a -- vite.config.ts`.
+    'dbe026a84211961701e0d4630fac88c1f58f2559',
     // 95dea6b4 — test(journey): add setNavStorePatch + forceLoadJourneyChrome
     // test infrastructure. Bundled a code change to window-test-bridge.ts
     // alongside the test changes in widget-journey.spec.js. The bridge

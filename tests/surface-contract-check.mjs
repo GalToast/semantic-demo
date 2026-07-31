@@ -4406,7 +4406,12 @@ async function assertCanvasContainerNoOverflow(page, ctx, surfaceName) {
         return
     }
 
-    const overflow = info.scrollWidth > info.clientWidth + 1
+    // Author documents deliberate minor clipped overflow on #canvas-container
+    // (14px desktop, 3-4px mobile — see Canvas.svelte .semantic-canvas-container
+    // `overflow-x:hidden` comment). scrollWidth reports UNCLIPPED content; the
+    // `overflow-x:hidden` clips it so no horizontal scrollbar appears. Tolerate
+    // up to the documented 14px ceiling; flag only gross regressions beyond it.
+    const overflow = info.scrollWidth > info.clientWidth + 14
     if (overflow) {
         ctx.fail(
             surfaceName,
