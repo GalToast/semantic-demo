@@ -297,12 +297,20 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
 // exploration state.
 
 /**
- * EXPLORATION_FOCUS_SYNC is published by the engine after a canvas node
- * pick, a search-result focus, or a thread traversal. The legacy code
- * used it to dispatch a NAV_TRANSITION_ACTIONS.FOCUS_NODE with
- * skipHistory: true so the navigation history isn't pushed twice. The
- * Svelte navStore handles focusedIndex / mode / surface via the FOCUS_NODE
- * branch of dispatchNavTransition, so we mirror that here.
+ * EXPLORATION_FOCUS_SYNC is published on exploration-state restore
+ * (restoreFocusTrailState in journey.ts:248, currently dormant — no live
+ * callers). The legacy code used it to dispatch a
+ * NAV_TRANSITION_ACTIONS.FOCUS_NODE with skipHistory: true so the
+ * navigation history isn't pushed twice. The Svelte navStore handles
+ * focusedIndex / mode / surface via the FOCUS_NODE branch of
+ * dispatchNavTransition, so we mirror that here.
+ *
+ * Guard: mirrors the W68 SEARCH_FOCUS_REQUESTED same-index protection —
+ * FOCUS_NODE dispatch (mode-transitions.svelte.ts:124-149) writes
+ * mode/surface 'focus' unconditionally, so a same-index re-publish would
+ * collapse a deeper surface (inside/trail) back to 'focus'. Skip when the
+ * index is already current AND already on the focus surface; a re-publish
+ * from a deeper surface must still dispatch so the user can return.
  */
 subscribeKeyed(
     'triggers.ts:EXPLORATION_FOCUS_SYNC',
@@ -310,6 +318,8 @@ subscribeKeyed(
     (payload: { index?: number; skipHistory?: boolean } = {}) => {
         const index = Number(payload?.index)
         if (!Number.isFinite(index) || index < 0) return
+        const currentFocus = get(navStore) as { focusedIndex?: number | null; mode?: string; surface?: string }
+        if (currentFocus.focusedIndex === index && currentFocus.mode === 'focus' && currentFocus.surface === 'focus') return
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
             index,
             // The Svelte navStore does not have a skipHistory flag, but
