@@ -170,7 +170,7 @@ describe('auditNestedStateMutations — path-level focusState.focusTransitionMod
 // ── NESTED_STATE_PATHS structure ─────────────────────────────────────────
 
 describe('NESTED_STATE_PATHS — shape and keys', () => {
-    it('contains exactly the 6 documented nested paths', () => {
+    it('contains exactly the 12 documented nested paths', () => {
         const keys = Object.keys(NESTED_STATE_PATHS)
         expect(keys).toEqual([
             'navState.mode',
@@ -178,7 +178,15 @@ describe('NESTED_STATE_PATHS — shape and keys', () => {
             'navState.currentView',
             'navState.myceliumMode',
             'searchState.searchStatus',
-            'focusState.focusTransitionMode'
+            'focusState.focusTransitionMode',
+            // W66: the 6 phase state machines wired into the dev nested audit
+            // (state-validation.ts NESTED_STATE_PATHS).
+            'terrainHandoffState.phase',
+            'routeExplorationState.phase',
+            'routeChoreographyState.phase',
+            'strandContinuityState.phase',
+            'focusOrbitSlackState.phase',
+            'arrivalHandoffDiagnostics.phase'
         ])
     })
 
@@ -189,7 +197,13 @@ describe('NESTED_STATE_PATHS — shape and keys', () => {
             ['navState.currentView', 'galaxy'],
             ['navState.myceliumMode', 'dormant'],
             ['searchState.searchStatus', 'idle'],
-            ['focusState.focusTransitionMode', 'idle']
+            ['focusState.focusTransitionMode', 'idle'],
+            ['terrainHandoffState.phase', 'idle'],
+            ['routeExplorationState.phase', 'idle'],
+            ['routeChoreographyState.phase', 'overview'],
+            ['strandContinuityState.phase', 'idle'],
+            ['focusOrbitSlackState.phase', 'idle'],
+            ['arrivalHandoffDiagnostics.phase', 'idle']
         ]
         for (const [path, value] of validPairs) {
             const validator = NESTED_STATE_PATHS[path]
@@ -205,7 +219,13 @@ describe('NESTED_STATE_PATHS — shape and keys', () => {
             ['navState.currentView', 'bogus-view'],
             ['navState.myceliumMode', 'bogus-mycelium'],
             ['searchState.searchStatus', 'bogus-status'],
-            ['focusState.focusTransitionMode', 'bogus-transition']
+            ['focusState.focusTransitionMode', 'bogus-transition'],
+            ['terrainHandoffState.phase', 'bogus-phase'],
+            ['routeExplorationState.phase', 'bogus-phase'],
+            ['routeChoreographyState.phase', 'bogus-phase'],
+            ['strandContinuityState.phase', 'bogus-phase'],
+            ['focusOrbitSlackState.phase', 'bogus-phase'],
+            ['arrivalHandoffDiagnostics.phase', 'bogus-phase']
         ]
         for (const [path, value] of invalidPairs) {
             const validator = NESTED_STATE_PATHS[path]
