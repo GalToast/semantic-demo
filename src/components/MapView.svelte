@@ -147,6 +147,15 @@
 
       if (!mounted || token !== activationToken) return;
 
+      // W61-F5.4: re-check the token right before the view write. The click
+      // path (returnToOverview) bumps activationToken to cancel an in-flight
+      // activation, and the other checkpoints honor it — but setLegacyView
+      // ('map') sat between checkpoints, so a back-click landing in that gap
+      // flipped currentView to 'galaxy' and was then silently reverted to
+      // 'map' a microtask later (found by the W54 smoke journey test: early
+      // back-clicks were swallowed, late ones worked).
+      if (!mounted || token !== activationToken) return;
+
       setLegacyView('map');
 
       // W49-E: hide the canvas hover preview when the map takes over the
