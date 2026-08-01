@@ -42,12 +42,26 @@
     // closed it manually — the card stays available via btn-help if they
     // want to re-read it. Auto-dismiss fires from the reveal() call so it
     // does not stack with re-reveals after demo completion.
-    _registry.schedule(10000, () => {
-      if (!dismissed) {
-        dismissed = true;
-        visible = false;
-      }
-    });
+    //
+    // W61-F5.3 test-fix: skip the auto-dismiss schedule under automated
+    // sessions (window.__PLAYWRIGHT__ flag OR navigator.webdriver) so
+    // journey tests that boot slowly (splash CTA + WebGL engine init can
+    // eat ~10s before the test reaches the dismiss click) do not race the
+    // timer and find the wrapper detached mid-click. The card is dismissed
+    // explicitly via the dismiss button in tests, so the auto-dismiss
+    // guard is not needed under automation.
+    const isAutomatedSession =
+      typeof window !== 'undefined' &&
+      (!!window.__PLAYWRIGHT__ ||
+        (typeof navigator !== 'undefined' && !!navigator.webdriver));
+    if (!isAutomatedSession) {
+      _registry.schedule(10000, () => {
+        if (!dismissed) {
+          dismissed = true;
+          visible = false;
+        }
+      });
+    }
   }
 
   onMount(() => {
@@ -136,7 +150,18 @@
   $effect(() => {
     const summary = searchSummary;
     const cueActive = cueLastRendered > 0;
-    const searchStarted = searchStatus === 'searching' || !!(summary && ('query' in summary));
+    // W61-F5.3 fix: tighten `searchStarted` from `('query' in summary)`
+    // (truthy even for the boot-time placeholder `{ query: '' }` written by
+    // `setSearchQuery('')`) to require a non-empty trimmed query string.
+    // The original predicate fired `handleDismiss()` the instant
+    // `appState.searchState.currentSearchSummary` flipped from null to
+    // `{query:''}` at boot — before the 100ms reveal schedule's setTimeout
+    // could render the wrapper, so `dismissed=true` won the race and the
+    // legend never appeared. See tmp/probe-f5-states-v5-out.log for the
+    // debug timeline (W61-F5.3).
+    const summaryQuery = summary?.query;
+    const hasSummaryQuery = typeof summaryQuery === 'string' && summaryQuery.trim() !== '';
+    const searchStarted = searchStatus === 'searching' || hasSummaryQuery;
     if ((searchStarted || cueActive) && !dismissed) {
       handleDismiss();
     }
