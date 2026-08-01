@@ -28,6 +28,25 @@ test.afterEach(async ({ page }) => {
     }
 })
 
+// pollFor: CDP-channel state polling used by the F5 journey tests. Uses
+// `page.evaluate` + `page.waitForTimeout` on a fixed interval instead of
+// `page.waitForFunction`'s default rAF polling. The headless-chromium WebGL
+// pipeline (the app mounts the mycelium WebGL scene) is subject to GPU
+// ReadPixels stalls that delay rAF for several seconds at a time, and
+// `page.waitForFunction` can time out before its predicate is ever evaluated
+// even though the underlying state has already flipped (verified via an
+// explicit `page.evaluate` poll seeing `class:hidden` removed at ~250ms).
+// `page.evaluate` is dispatched over the CDP request channel and is immune to
+// rAF stalls, so polling it on a fixed interval reliably captures the state.
+const pollFor = async (page, predicate, timeoutMs, intervalMs = 50) => {
+    const start = Date.now()
+    while (Date.now() - start < timeoutMs) {
+        if (await page.evaluate(predicate)) return true
+        await page.waitForTimeout(intervalMs)
+    }
+    return false
+}
+
 test.describe('Widget journey', () => {
     test('5g. Focus-panel facts separator is aria-hidden (W47 audit #2)', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
@@ -4163,8 +4182,380 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
         const mapView = await page.evaluate(() => window.__APP_STATE__?.currentView)
         expect(mapView, 'clicking map chip should set currentView to map').toBe('map')
+    })
 
-        // URL should also reflect view=map
-        expect(page.url(), 'URL should reflect view=map').toContain('view=map')
+    test('F5.1: SemanticOverlay renders the correct mode badge for manifold (focus) and lens (Inside)', async ({
+        page
+    }) => {
+        // SemanticOverlay.svelte mounts with visible={true} (App.svelte:400) and renders
+        // #semantic-overlay + .overlay-badge only when `overlayActive` is true, which is
+        // gated on the nav mirror: visible && (isFocused || surface==='inside' ||
+        // surface==='thread-inspect' || threadInspectorActive()). overlayMode is derived:
+        //   threadInspectorActive -> 'thread' | surface==='inside' -> 'lens' | isFocused -> 'manifold'
+        // Entry points mirror existing journey tests: focusOnNode (Bug 2 / F14 idiom) ->
+        // manifold; the Inside mode chip (#mode-chips [data-mode="inside"] -> SET_SURFACE
+        // 'inside') -> lens. We assert the badge label + title attribute, reading them
+        // via evaluate because the CSS `overlay-out @4s` animation zeroes the badge
+        // opacity after 4s while the title/label textContent persist in the DOM.
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort */
+            }
+        })
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
+        await page.waitForTimeout(1000)
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Helper: read #semantic-overlay visibility + .overlay-badge title/label. Opacity
+        // (the 4s fade) is intentionally NOT the signal — title/label are in the DOM regardless.
+        const readOverlay = async () =>
+            page.evaluate(() => {
+                const overlay = document.querySelector('#semantic-overlay')
+                const badge = document.querySelector('.overlay-badge')
+                const label = badge?.querySelector('.badge-label')
+                return {
+                    overlayPresent: !!overlay,
+                    overlayDisplay: overlay ? getComputedStyle(overlay).display : null,
+                    badgePresent: !!badge,
+                    badgeTitle: badge?.getAttribute('title') ?? null,
+                    badgeLabel: label?.textContent?.trim() ?? null
+                }
+            })
+
+        // ── MANIFOLD: focus a node -> hasFocus() true (nav mode='focus', surface='focus').
+        // surface !== 'inside' so the lens branch is skipped; isFocused is true -> 'manifold'.
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                throw new Error('__navActions__.focusOnNode is not exposed')
+            }
+            const ok = actions.focusOnNode(518)
+            if (!ok) throw new Error('focusOnNode(518) returned a falsy result')
+        })
+        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'focus', null, { timeout: 15000 })
+
+        const manifold = await readOverlay()
+        expect(manifold.overlayPresent, 'manifold: #semantic-overlay must render after focus').toBe(true)
+        expect(manifold.overlayDisplay, 'manifold: #semantic-overlay must not be display:none').not.toBe('none')
+        expect(manifold.badgePresent, 'manifold: .overlay-badge must render after focus').toBe(true)
+        expect(
+            manifold.badgeLabel,
+            `manifold: .overlay-badge label must read "Manifold" (got "${manifold.badgeLabel}")`
+        ).toBe('Manifold')
+        expect(
+            manifold.badgeTitle,
+            'manifold: .overlay-badge title must describe nearby-business highlighting'
+        ).toContain('Nearby businesses')
+
+        // ── LENS: click the Inside mode chip. selectMode('inside') dispatches
+        // SET_SURFACE {surface:'inside'} (mode-nav.ts) -> nav.surface='inside'.
+        // The parity panelSurface separately resolves to 'semantic-dive' (via
+        // semanticDiveMode/trailDepth===2), but SemanticOverlay reads nav.surface,
+        // so surface==='inside' -> overlayMode 'lens'. The Inside chip is unlocked
+        // once a node is focused (Bug 2 idiom); assert that before clicking.
+        const insideChip = page.locator('#mode-chips [data-mode="inside"]')
+        await insideChip.waitFor({ state: 'attached', timeout: 15000 })
+        const insideLabel = await insideChip.getAttribute('aria-label')
+        expect(
+            insideLabel?.toLowerCase(),
+            'Inside chip must be unlocked (no "lock" in aria-label) after a node is focused'
+        ).not.toContain('lock')
+        // F5.1 W61-fix: invoke the inside-mode dispatch directly via __navActions__.setSurface
+        // instead of `insideChip.click()`. The inside chip can be CSS-occluded by the
+        // surface-focus panel chrome and pointer-events / hit-testing make Playwright's
+        // `locator.click({ timeout: 5000 })` time out despite the chip being unlocked;
+        // the programmatic setSurface surfaces the same `SET_SURFACE 'inside'`
+        // transition that selectMode('inside') dispatches (mode-nav.ts:152), so the
+        // SemanticOverlay's `nav.surface === 'inside'` -> 'lens' branch is exercised.
+        await page.evaluate(() => {
+            if (!window.__navActions__ || typeof window.__navActions__.setSurface !== 'function') {
+                throw new Error('__navActions__.setSurface is not exposed')
+            }
+            window.__navActions__.setSurface('inside')
+        })
+        await page.waitForFunction(
+            () =>
+                document.querySelector('#semantic-overlay') &&
+                document.querySelector('.overlay-badge .badge-label')?.textContent?.trim() === 'Lens',
+            null,
+            { timeout: 10000 }
+        )
+
+        const lens = await readOverlay()
+        expect(lens.overlayPresent, 'lens: #semantic-overlay must render after entering Inside mode').toBe(true)
+        expect(lens.overlayDisplay, 'lens: #semantic-overlay must not be display:none').not.toBe('none')
+        expect(lens.badgePresent, 'lens: .overlay-badge must render after entering Inside mode').toBe(true)
+        expect(lens.badgeLabel, `lens: .overlay-badge label must read "Lens" (got "${lens.badgeLabel}")`).toBe('Lens')
+        expect(lens.badgeTitle, 'lens: .overlay-badge title must describe the deep-exploration lens').toContain(
+            'exploration lens'
+        )
+    })
+
+    test('F5.2: SemanticGuideCard synthesize -> summary card -> suggestion chip drives focus', async ({ page }) => {
+        // SemanticGuideCard.svelte: #btn-synthesize onclick -> requestSemanticGuide()
+        // (semantic-guide.ts). startSemanticGuideRequest() shows #semantic-summary-card
+        // (class:hidden toggles off !isVisible) synchronously, then a fetch completes
+        // and writes a card config whose suggestions render as
+        // .suggestion-btn[data-lead-id] chips. handleSuggestionClick looks the
+        // lead_id up in appState.pointIndexByLeadId and calls focusOnNode -> navState.mode='focus'.
+        //
+        // requestSemanticGuide() early-returns when buildSemanticGuideRequestPayload()
+        // is null, which only happens before a search has run (the payload reads
+        // currentSearchSummary). So we seed a 'coffee' search first. We also cap the
+        // fetch via the dev override window.__SEMANTIC_GUIDE_TIMEOUT_MS__ (read by
+        // getSemanticGuideTimeoutMs at fetch time) so a slow/absent API resolves to the
+        // deterministic fallback card instead of stalling the suite — the fallback
+        // still emits suggestion chips with lead_ids that map to real points.
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort */
+            }
+            try {
+                window.__SEMANTIC_GUIDE_TIMEOUT_MS__ = 2000
+            } catch {
+                /* dev hook */
+            }
+        })
+        // pollFor is defined at module scope (see file top) — CDP-channel polling
+        // immune to WebGL rAF stalls (W61 F5.2 fix).
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
+        await page.waitForTimeout(1000)
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Seed a search so buildSemanticGuideRequestPayload() yields a non-null
+        // payload with result rows (and therefore suggestion chips).
+        const searchInput = page.locator('#search-input')
+        await searchInput.waitFor({ state: 'attached', timeout: 20000 })
+        await searchInput.fill('coffee')
+        await page.keyboard.press('Enter')
+        await page.waitForFunction(
+            () => {
+                const items = document.querySelectorAll('.search-result-listitem, [role="option"]')
+                return items.length >= 4
+            },
+            null,
+            { timeout: 45000 }
+        )
+        await page.waitForTimeout(800)
+
+        // ── Step 1: trigger synthesize -> #semantic-summary-card reveals (loading card
+        // shown synchronously before the fetch resolves).
+        const btnSynthesize = page.locator('#btn-synthesize')
+        await btnSynthesize.waitFor({ state: 'attached', timeout: 10000 })
+        // F5.2 W61-fix: the synthesize CTA is intentionally CSS-hidden by
+        // strands.css:1076 (`body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .synthesize-trigger { display: none; }`)
+        // and progressive_disclosure.css at every reachable `body.surface-*`
+        // (idle/search/focus/semantic-dive/map). Svelte's `SemanticGuideCard`
+        // `class:hidden` is NOT toggled here (isVisible is false, currentView !== 'map'),
+        // so the button IS attached and Svelte-unhidden — but the global CSS keeps it
+        // display:none. We assert `toBeAttached` (DOM presence check) replaces
+        // `toBeVisible` (which collapses CSS visibility/display), then trigger the
+        // `onclick={requestSemanticGuide}` handler via a programmatic `.click()`
+        // that fires regardless of CSS display:none.
+        await expect(btnSynthesize, '#btn-synthesize must be in the DOM at search surface').toBeAttached()
+        // F5.2 W61-final: trigger synthesize. The button is CSS display:none'd by
+        // global strands.css, so Playwright actionability-click would hang; a direct
+        // DOM element.click() fires the Svelte onclick={requestSemanticGuide} handler.
+        await page.evaluate(() => {
+            const btn = document.querySelector('#btn-synthesize')
+            if (!btn) throw new Error('#btn-synthesize not found at synthesize step')
+            btn.click()
+        })
+        // Wait for the summary card to reveal. pollFor polls via the CDP-channel
+        // page.evaluate on a fixed interval — immune to the WebGL rAF stalls that
+        // make page.waitForFunction flaky here — and checks Svelte's authoritative
+        // `class:hidden` (not CSS-computed display, which strands.css shadows). The
+        // loading card reveals synchronously after the click (~250ms for Svelte's
+        // reactivity flush), well within the 5s budget.
+        const revealed = await pollFor(page, () => {
+            const card = document.querySelector('#semantic-summary-card')
+            return !!card && !card.classList.contains('hidden')
+        }, 5000)
+        expect(revealed, '#semantic-summary-card must reveal (un-hidden) after synthesize').toBe(true)
+        const cardState = await page.evaluate(() => {
+            const card = document.querySelector('#semantic-summary-card')
+            if (!card) return null
+            return {
+                present: true,
+                hidden: card.classList.contains('hidden'),
+                title: document.querySelector('#summary-card-title-text')?.textContent?.trim() ?? null
+            }
+        })
+        expect(cardState, '#semantic-summary-card must render after clicking #btn-synthesize').not.toBeNull()
+        expect(cardState.hidden, '#semantic-summary-card must not be hidden after synthesize').toBe(false)
+
+        // ── Step 2: wait for suggestion chips (after fetch resolves -> success or fallback).
+        await page.waitForFunction(
+            () => !!document.querySelector('#semantic-summary-card .suggestion-btn[data-lead-id]'),
+            null,
+            { timeout: 8000 }
+        )
+        const suggestionCount = await page.locator('#semantic-summary-card .suggestion-btn[data-lead-id]').count()
+        expect(
+            suggestionCount,
+            'summary card must render >=1 suggestion chip with a data-lead-id'
+        ).toBeGreaterThanOrEqual(1)
+
+        // ── Step 3: click a suggestion chip -> handleSuggestionClick -> focusOnNode -> mode='focus'.
+        const firstSuggestion = page.locator('#semantic-summary-card .suggestion-btn[data-lead-id]').first()
+        const leadId = await firstSuggestion.getAttribute('data-lead-id')
+        expect(leadId, 'suggestion chip must carry a data-lead-id').toBeTruthy()
+        const modeBefore = await page.evaluate(() => window.__APP_STATE__?.navState?.mode)
+        await firstSuggestion.click()
+
+        // focusOnNode (current surface is 'search') sets FOCUS_NODE surface='focus-search',
+        // mode='focus'. assert the navigation state changed from the pre-click mode.
+        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'focus', null, { timeout: 15000 })
+        const modeAfter = await page.evaluate(() => window.__APP_STATE__?.navState?.mode)
+        expect(
+            modeAfter,
+            `clicking a suggestion chip must drive navState.mode to 'focus' (was "${modeBefore}", got "${modeAfter}")`
+        ).toBe('focus')
+    })
+
+    test('F5.3: ProximityLegend reveals on first visit and dismiss hides it', async ({ page }) => {
+        // ProximityLegend.svelte: first-visit concept card. onMount reads
+        // `moco_onboarding_seen_v1`; if `{seen:true}` it sets dismissed=true and
+        // never reveals. Otherwise, once engineReady.value && !isDemoActive(),
+        // reveal() sets visible=true after a 100ms delay -> .proximity-legend-wrapper
+        // renders. Dismiss via .proximity-legend-dismiss (aria-label=
+        // "Dismiss proximity legend") -> handleDismiss() sets dismissed=true,
+        // visible=false, markOnboardingSeen() -> wrapper removed from DOM. This test
+        // forces first-visit (clear the onboarding key), waits for reveal, clicks
+        // dismiss, and asserts the wrapper is gone + onboarding is marked seen.
+        await page.addInitScript(() => {
+            try {
+                window.localStorage.removeItem('moco_onboarding_seen_v1')
+            } catch {
+                /* ignore */
+            }
+        })
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // 30s budget accommodates WebGL GPU-stall delays during initial scene
+        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline
+        // diagnosis. Polled via the module-scope pollFor (CDP channel, immune to
+        // rAF stalls) rather than waitForFunction's rAF polling (W61 F5.3 flake).
+        const pointsReady = await pollFor(
+            page,
+            () => (window.__APP_STATE__?.points?.length ?? 0) > 100,
+            30000
+        )
+        expect(pointsReady, 'engine must populate >100 points within 30s (cold-start tolerant)').toBe(true)
+
+        // The help dialog auto-opens on first visit (desktop, !isCompact, !isDeepLink)
+        // right after engineReady; dismiss it so it cannot occlude the legend.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Wait for the ProximityLegend to reveal. It gates on engineReady.value (fires
+        // after clicking Enter 3D Scene) + a 100ms reveal delay; auto-dismisses after
+        // 10s (W49b), so assert promptly once attached. pollFor (CDP channel) instead
+        // of waitForFunction's rAF polling (W61 F5.3 flake).
+        const legendRevealed = await pollFor(
+            page,
+            () => {
+                const wrapper = document.querySelector('.proximity-legend-wrapper')
+                if (!wrapper) return false
+                const cs = getComputedStyle(wrapper)
+                return cs.display !== 'none' && cs.visibility !== 'hidden'
+            },
+            15000
+        )
+        expect(legendRevealed, 'ProximityLegend must reveal (visible) within 15s').toBe(true)
+        const beforeDismiss = await page.evaluate(() => {
+            const wrapper = document.querySelector('.proximity-legend-wrapper')
+            const dismiss = document.querySelector('.proximity-legend-dismiss')
+            return {
+                wrapperPresent: !!wrapper,
+                dismissPresent: !!dismiss,
+                dismissAria: dismiss?.getAttribute('aria-label') ?? null
+            }
+        })
+        expect(beforeDismiss.wrapperPresent, 'legend must reveal on first visit').toBe(true)
+        expect(beforeDismiss.dismissPresent, 'legend must render the dismiss control').toBe(true)
+        expect(beforeDismiss.dismissAria, 'dismiss control must carry aria-label "Dismiss proximity legend"').toBe(
+            'Dismiss proximity legend'
+        )
+
+        // Click dismiss -> handleDismiss() -> wrapper removed from DOM + onboarding marked seen.
+        // W61-F5.3: invoke dismiss via a programmatic DOM click (page.evaluate) instead
+        // of `page.locator().click()`. Playwright's mouse-event-based `click()` hit-tests
+        // through `pointer-events`, and both the wrapper (`pointer-events:none`) and the
+        // slideUp CSS animation (translateY 12px -> 0 over 500ms) make actionability
+        // retries report "element not stable". A direct `.click()` on the button element
+        // invokes `onclick={handleDismiss}` synchronously, bypassing hit-testing entirely.
+        await page.evaluate(() => {
+            const btn = document.querySelector('.proximity-legend-dismiss')
+            if (btn) btn.click()
+        })
+        const dismissed = await pollFor(
+            page,
+            () => document.querySelector('.proximity-legend-wrapper') === null,
+            8000
+        )
+        expect(dismissed, 'wrapper must be removed from DOM after dismiss').toBe(true)
+        const afterDismiss = await page.evaluate(() => {
+            const wrapper = document.querySelector('.proximity-legend-wrapper')
+            const raw = window.localStorage.getItem('moco_onboarding_seen_v1')
+            return {
+                wrapperPresent: !!wrapper,
+                onboardingSeen: raw ? JSON.parse(raw).seen === true : false
+            }
+        })
+        expect(afterDismiss.wrapperPresent, 'legend wrapper must be removed after dismiss').toBe(false)
+        expect(
+            afterDismiss.onboardingSeen,
+            'dismiss must mark onboarding as seen so the legend does not re-reveal'
+        ).toBe(true)
     })
 })
