@@ -213,6 +213,17 @@
     color: rgba(231, 240, 240, 0.9);
   }
 
+  /* W61-F5.4: `display: flex` above inerts the UA `[hidden] { display: none }`
+     rule (author rules beat UA rules regardless of specificity), so a
+     hidden-but-mounted splash (deep-link boot: App.svelte mounts <Splash />
+     unconditionally with `hidden={engineReady.value}`) stayed display:flex,
+     covering the viewport at z-index 400 and eating every pointer event
+     (found by the W54 smoke journey test: .map-back-btn unclickable). The
+     explicit attribute selector restores hidden => display:none. */
+  .splash[hidden] {
+    display: none;
+  }
+
   .splash-frame {
     text-align: center;
     padding: 2rem;

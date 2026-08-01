@@ -218,7 +218,11 @@
   }
 
   .proximity-legend-card {
-    pointer-events: auto;
+    /* W61-F5.4: passive info card — must NOT eat pointer events for the UI
+       beneath it (found by the W54 smoke journey test: .map-back-btn was
+       unclickable while the legend overlay the map chrome). The card is
+       informational; only the dismiss control opts back in below. */
+    pointer-events: none;
     background: rgba(7, 16, 24, 0.92);
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
     border-radius: 10px;
@@ -247,6 +251,9 @@
   }
 
   .proximity-legend-dismiss {
+    /* W61-F5.4: the only interactive element in the passive card — opt back
+       in to pointer events so the WCAG 2.5.8 target stays clickable. */
+    pointer-events: auto;
     position: absolute;
     top: 6px;
     right: 8px;
