@@ -153,7 +153,7 @@ async function fetchSemanticSearchResultsDirect(
                     const reason = err instanceof Error ? err.message : 'unknown'
                     markApiUnreachable(reason)
                 }
-                if (timedOut && err instanceof DOMException && err.name === 'AbortError') {
+                if (timedOut && !signal?.aborted && err instanceof DOMException && err.name === 'AbortError') {
                     throw new Error(`Semantic search timed out after ${timeoutMs}ms.`, { cause: err })
                 }
                 // re-throw so retryWithBackoff can classify and decide whether to retry
@@ -243,7 +243,12 @@ export async function performSearch(
     // Bug #4 (bugsweep): honor preferCachedResults. When false, skip the
     // cache check so callers (e.g. retry button) always get fresh results.
     if (!forceApiFailureSurface && preferCachedResults !== false) {
-        const cached = getCachedSearch(trimmed, normalizedPage, effectiveOffset)
+        // W71-H2: fallback-sourced cache entries are valid only while the API
+        // is flagged unreachable; once the flag clears, skip them so the next
+        // search re-hits the live API instead of serving stale fallback data.
+        const cached = getCachedSearch(trimmed, normalizedPage, effectiveOffset, {
+            allowFallbackSource: readApiUnreachable() !== null
+        })
         if (cached) return cached
     }
     // Advisory deduplication: if an identical key is already in-flight
@@ -272,6 +277,9 @@ async function _executeSearch(
     const staticDevFallbackAllowed = canUseStaticDevFallback()
     debugLog('DEBUG - canUseStaticDevFallback():', staticDevFallbackAllowed, 'search:', window.location.search)
     let results: SearchResult[] = []
+    // Track provenance so fallback (local index / mock) results are cached
+    // distinctly from live API results (W71-H2).
+    let resultSource: 'api' | 'fallback' = 'fallback'
     const limit = normalizeSearchLimit(PAGE_SIZE)
 
     // When `staticDev=0` is present, surface API failures instead of silently
@@ -282,6 +290,7 @@ async function _executeSearch(
             const apiResults = await fetchSemanticSearchResultsDirect(trimmed, signal, 8000, offset, limit)
             if (apiResults && apiResults.length > 0) {
                 results = apiResults
+                resultSource = 'api'
             } else {
                 throw new Error('Semantic search returned no results from the live API.')
             }
@@ -315,6 +324,7 @@ async function _executeSearch(
         if (preferLive) {
             try {
                 results = await fetchSemanticSearchResultsDirect(trimmed, signal, 8000, offset, limit)
+                resultSource = 'api'
             } catch (err) {
                 if (err instanceof DOMException && err.name === 'AbortError') {
                     throw err
@@ -331,6 +341,7 @@ async function _executeSearch(
                 const apiResults = await fetchSemanticSearchResultsDirect(trimmed, signal, apiTimeoutMs, offset, limit)
                 if (apiResults && apiResults.length > 0) {
                     results = apiResults
+                    resultSource = 'api'
                 }
             } catch (err) {
                 if (err instanceof DOMException && err.name === 'AbortError') {
@@ -374,7 +385,7 @@ async function _executeSearch(
     // Cache normal results so subsequent requests for the same key are instant.
     // Forced API-failure surfaces must not reuse or poison the normal cache.
     if (!shouldSurfaceApiFailures()) {
-        setCachedSearch(trimmed, page, offset, results)
+        setCachedSearch(trimmed, page, offset, results, resultSource)
     }
     return results
 }

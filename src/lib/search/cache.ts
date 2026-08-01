@@ -50,6 +50,8 @@ export function qHash(query: string): string {
 interface SearchCacheEntry {
     results: SearchResult[]
     timestamp: number
+    /** Provenance: live API results vs local fallback (index/mock) results. */
+    source?: 'api' | 'fallback'
 }
 
 // ── Cache State ──────────────────────────────────────────────────────────────
@@ -92,11 +94,24 @@ function evictIfNeeded(): void {
  * Get cached search results for a given query + page + offset.
  * Returns null on miss or expiry.
  */
-export function getCachedSearch(query: string, page: number, offset: number): SearchResult[] | null {
+export function getCachedSearch(
+    query: string,
+    page: number,
+    offset: number,
+    opts?: { allowFallbackSource?: boolean }
+): SearchResult[] | null {
     const key = cacheKeyToString({ query, page, offset })
     const entry = _cache.get(key)
     if (!entry) return null
     if (Date.now() - entry.timestamp > _ttlMs) {
+        _cache.delete(key)
+        return null
+    }
+    // W71-H2: fallback-sourced entries (local index / mock) are only valid
+    // while the API is known-unreachable. Once the bypass flag clears, drop
+    // them so the next search re-hits the live API instead of serving stale
+    // fallback data cached during the outage window.
+    if (entry.source === 'fallback' && !opts?.allowFallbackSource) {
         _cache.delete(key)
         return null
     }
@@ -106,9 +121,15 @@ export function getCachedSearch(query: string, page: number, offset: number): Se
 /**
  * Store search results in the cache.
  */
-export function setCachedSearch(query: string, page: number, offset: number, results: SearchResult[]): void {
+export function setCachedSearch(
+    query: string,
+    page: number,
+    offset: number,
+    results: SearchResult[],
+    source: 'api' | 'fallback' = 'api'
+): void {
     const key = cacheKeyToString({ query, page, offset })
-    _cache.set(key, { results, timestamp: Date.now() })
+    _cache.set(key, { results, timestamp: Date.now(), source })
     evictIfNeeded()
 }
 
