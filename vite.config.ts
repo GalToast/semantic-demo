@@ -619,6 +619,23 @@ export default defineConfig({
                     // regardless. Real deflation needs a designed lazification pass
                     // (convert orchestrator imports to dynamic), which collides with
                     // active orchestration work — deferred.
+                    //
+                    // W61 update (2026-07-31, audit at HEAD ~5222e684): an empirical
+                    // magistral-small-latest lazify audit (ocw_f376f0a5) confirmed the
+                    // source-level dynamic-import conversion is ALSO boot-unsafe for
+                    // deep-links. The url-state helpers
+                    //   _frameCameraOnAnchor, _restoreFocusStateForAnchor,
+                    //   _restoreSearchFromParams
+                    // run via the PR-B2/B4 splash bypass at COLD BOOT for ?anchor/
+                    // ?record/?q deep-links — so they execute before any user gesture,
+                    // not just inside post-boot handlers as the audit assumed.
+                    // `await import(...)` inside the `:void` reg.schedule(500, () => {...})
+                    // callback those helpers use is a TS compile-break (no async context),
+                    // and accepting a focus-overlay flash on deep-link cold-load would
+                    // be a UX regression. Designed-eager is final unless deep-link-aware
+                    // async gating (overlay-flash tolerance) is intentionally added.
+                    // Audit details: harness failures.md key
+                    //   w61-mode-transition-deps-lazify-rejected.
                     if (
                         id.includes('/src/lib/stores/navigation.svelte.ts') ||
                         id.includes('/src/lib/stores/navigation/') ||
