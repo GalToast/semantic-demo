@@ -203,7 +203,9 @@ export const dataLoadState = getOrCreateWritable<DataLoadState>('__SEMANTIC_EXPL
     error: null
 })
 
-let leadEnrichmentLoadPromise: Promise<Record<string, LeadEnrichment> | null> | null = null
+// W72-H3: the in-flight enrichment promise is window-shared (like the stores)
+// so a duplicated module (Vite code-splitting) cannot fire duplicate fetches.
+const LEAD_ENRICHMENT_PROMISE_SLOT = '__SEMANTIC_EXPLORER_LEAD_ENRICHMENT_PROMISE__' as const
 
 // ── Loading Phase Store ─────────────────────────────────────────────────────
 
@@ -387,27 +389,33 @@ export async function loadLeadEnrichment(): Promise<Record<string, LeadEnrichmen
     const existing = get(leadEnrichment)
     if (existing) return existing
 
-    if (!leadEnrichmentLoadPromise) {
-        leadEnrichmentLoadPromise = loadLeadEnrichmentData()
-            .then((enrichment) => {
-                if (enrichment) {
-                    setLeadEnrichmentData(enrichment)
-                    debugInfo(
-                        `[data-store] Lead enrichment loaded for ${Object.keys(enrichment).length.toLocaleString()} records.`
-                    )
-                }
-                return enrichment
-            })
-            .catch((err: unknown) => {
-                debugWarn('[data-store] Lead enrichment failed; continuing without it.', err)
-                return null
-            })
-            .finally(() => {
-                leadEnrichmentLoadPromise = null
-            })
-    }
+    // Cross-chunk singleton (W72-H3): read the in-flight promise from the
+    // window slot so a duplicated module shares one fetch instead of N.
+    const pending = getWindowSlot(LEAD_ENRICHMENT_PROMISE_SLOT) as
+        | Promise<Record<string, LeadEnrichment> | null>
+        | null
+        | undefined
+    if (pending) return pending
 
-    return leadEnrichmentLoadPromise
+    const promise = loadLeadEnrichmentData()
+        .then((enrichment) => {
+            if (enrichment) {
+                setLeadEnrichmentData(enrichment)
+                debugInfo(
+                    `[data-store] Lead enrichment loaded for ${Object.keys(enrichment).length.toLocaleString()} records.`
+                )
+            }
+            return enrichment
+        })
+        .catch((err: unknown) => {
+            debugWarn('[data-store] Lead enrichment failed; continuing without it.', err)
+            return null
+        })
+        .finally(() => {
+            setWindowSlot(LEAD_ENRICHMENT_PROMISE_SLOT, null)
+        })
+    setWindowSlot(LEAD_ENRICHMENT_PROMISE_SLOT, promise)
+    return promise
 }
 
 /**
@@ -480,7 +488,7 @@ export function setDataLoadError(error: string): void {
  * Reset all data stores to initial state.
  */
 export function resetDataStores(): void {
-    leadEnrichmentLoadPromise = null
+    setWindowSlot(LEAD_ENRICHMENT_PROMISE_SLOT, null)
     businessRecords.set([])
     positionBuffer.set(null)
     clustersBuffer.set(null)
