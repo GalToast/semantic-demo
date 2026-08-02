@@ -10,7 +10,6 @@
   hit-test comment are byte-identical to the original source block.
 -->
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { JOURNEY_ACTIONS } from '@lib/journey/compass-state';
 
   interface Props {

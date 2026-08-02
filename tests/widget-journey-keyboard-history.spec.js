@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { BASE_URL, openApp } from './helpers/3d-interaction-helpers.js'
+import { openApp } from './helpers/3d-interaction-helpers.js'
 
 // GPU cleanup between tests (mirrors widget-journey.spec.js afterEach): force-release
 // the WebGL context so the GPU process reclaims memory across the two engine inits.

@@ -15,7 +15,6 @@ import { traverseNeighbor } from '@lib/journey/thread-settler'
 import { setClusterFilter, clearClusterFilter } from '@lib/orchestration/cluster-filter-controller'
 import { switchView } from '@lib/orchestration/view-controller'
 import { setLegendOpen } from '@lib/stores/legend.svelte'
-import { appState } from '@lib/state/app.svelte.ts'
 
 export type DemoStep = {
     phase: DemoPhase
