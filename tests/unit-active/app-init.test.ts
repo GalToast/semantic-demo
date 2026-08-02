@@ -430,9 +430,90 @@ describe('appInit — double-call idempotency', () => {
     })
 })
 
-describe('appInit — safety valve timers (deferred)', () => {
-    it.todo('slow-progress timer fires after 4s if overlay still visible')
-    it.todo('safety valve timer fires after 15s and shows error state')
-    it.todo('timers are cleared when init completes before they fire')
-    it.todo('timers are cleared by the returned cleanup function')
+describe('appInit — safety valve timers', () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+        vi.useFakeTimers()
+        // Overlay must exist for the safety-valve DOM checks; a canvas is also
+        // needed for the WebGL-restore handler (Phase 5) DOM query.
+        document.body.innerHTML =
+            '<div id="loading-overlay"><div id="loading-note"></div><div id="loading-foot"></div></div><canvas></canvas>'
+    })
+
+    afterEach(() => {
+        vi.useRealTimers()
+        document.body.innerHTML = ''
+        mock.initData.mockResolvedValue(undefined)
+    })
+
+    it('slow-progress timer fires after 4s if overlay still visible', async () => {
+        const { appInit: freshInit } = await freshAppInit()
+
+        // Keep initData pending so init never completes and Phase 6 never
+        // clears the safety timers — the slow-progress timer must fire.
+        mock.initData.mockImplementation(() => new Promise(() => {}))
+        void freshInit({})
+
+        vi.advanceTimersByTime(3999)
+        expect(mock.setLoadingPhase).not.toHaveBeenCalled()
+
+        vi.advanceTimersByTime(1)
+        expect(mock.setLoadingPhase).toHaveBeenCalledWith('restore')
+
+        // DOM overrides pushed by the slow-progress path
+        const noteEl = document.getElementById('loading-note')
+        const footEl = document.getElementById('loading-foot')
+        expect(noteEl?.textContent).toContain('Still preparing the scene')
+        expect(footEl?.textContent).toContain('Taking longer than usual')
+        expect(mock.setDataLoadError).not.toHaveBeenCalled()
+    })
+
+    it('safety valve timer fires after 15s and shows error state', async () => {
+        const { appInit: freshInit } = await freshAppInit()
+
+        mock.initData.mockImplementation(() => new Promise(() => {}))
+        void freshInit({})
+
+        vi.advanceTimersByTime(14_999)
+        expect(mock.setDataLoadError).not.toHaveBeenCalled()
+
+        vi.advanceTimersByTime(1)
+        expect(mock.setDataLoadError).toHaveBeenCalledWith(
+            'Loading timed out after 15 seconds. Refresh after the connection recovers.'
+        )
+
+        // Error-state shell built into the overlay
+        const overlay = document.getElementById('loading-overlay')
+        expect(overlay?.dataset.loadingState).toBe('error')
+        expect(overlay?.querySelector('.loading-title')?.textContent).toBe('Failed to load')
+        expect(overlay?.querySelector('.loading-kicker')?.textContent).toBe('Graph unavailable')
+        expect(overlay?.hasAttribute('aria-hidden')).toBe(false)
+    })
+
+    it('timers are cleared when init completes before they fire', async () => {
+        const { appInit: freshInit } = await freshAppInit()
+
+        // initData resolves immediately → init completes → Phase 6 clears timers
+        const cleanup = await freshInit({})
+        cleanup()
+
+        vi.advanceTimersByTime(20_000)
+
+        expect(mock.setLoadingPhase).not.toHaveBeenCalledWith('restore')
+        expect(mock.setDataLoadError).not.toHaveBeenCalled()
+    })
+
+    it('timers are cleared by the returned cleanup function', async () => {
+        const { appInit: freshInit } = await freshAppInit()
+
+        // Init completes (Phase 6 clears timers), then the returned cleanup
+        // re-runs clearSafetyTimers safely (idempotent) and must not re-arm.
+        const cleanup = await freshInit({})
+        expect(() => cleanup()).not.toThrow()
+
+        vi.advanceTimersByTime(20_000)
+
+        expect(mock.setLoadingPhase).not.toHaveBeenCalledWith('restore')
+        expect(mock.setDataLoadError).not.toHaveBeenCalled()
+    })
 })
