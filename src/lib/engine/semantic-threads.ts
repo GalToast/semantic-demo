@@ -77,6 +77,12 @@ const SEMANTIC_THREAD_MAX_RETRIES = 5
 let _dataWorker: Worker | null = null
 let _semanticThreadRequestId = 0
 
+// Set by the retry-timer callback immediately before it re-invokes
+// loadSemanticThreads(). Used to distinguish a retry-timer-driven load (which
+// must NOT reset the exhausted retry budget, or it would re-arm itself forever)
+// from a genuine external fresh load (which SHOULD reset the budget, W73-H1).
+let _retryTimerArmed = false
+
 // Circuit breaker: tracks consecutive worker failures
 let _workerFailureCount = 0
 const WORKER_MAX_FAILURES = 3
@@ -571,6 +577,10 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry'): void {
             {
                 state.semanticThreadsRetryTimer = null
             }
+            // Mark this invocation as retry-driven so loadSemanticThreads keeps the
+            // exhausted retry budget intact (prevents the W73 reset from re-arming
+            // the retry loop once the counter has reached MAX_RETRIES).
+            _retryTimerArmed = true
             loadSemanticThreads({ reason }).catch((err: unknown) => {
                 debugWarn('loadSemanticThreads retry failed:', err)
             })
@@ -686,13 +696,15 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
     // Promise<boolean>, which the `async` wrapper guarantees anyway).
     if (state.semanticThreadsRetryTimer) return Promise.resolve(false)
 
-    // W73-H1: when the retry budget is exhausted (attempt >= MAX) no retry
-    // timer exists (the give-up path schedules none), so any invocation in
-    // this state is an external fresh load — start a new budget instead of
-    // permanently disabling thread loading for the session. The retry-timer
-    // path can never reach this state (its timer only exists while
-    // attempt < MAX), so the MAX_RETRIES bound is preserved.
-    if (state.semanticThreadsRetryAttempt >= SEMANTIC_THREAD_MAX_RETRIES) {
+    // W73-H1: when the retry budget is exhausted (attempt >= MAX) a genuine
+    // external fresh load (not driven by this module's retry timer) should
+    // start a new budget instead of permanently disabling thread loading for
+    // the session. Retry-timer-driven loads are marked via _retryTimerArmed,
+    // so they keep the budget intact — otherwise the reset would fire once the
+    // counter reaches MAX (mid retry-chain) and re-arm the retry loop forever.
+    const isRetryTimerLoad = _retryTimerArmed
+    _retryTimerArmed = false
+    if (!isRetryTimerLoad && state.semanticThreadsRetryAttempt >= SEMANTIC_THREAD_MAX_RETRIES) {
         state.semanticThreadsRetryAttempt = 0
     }
 
