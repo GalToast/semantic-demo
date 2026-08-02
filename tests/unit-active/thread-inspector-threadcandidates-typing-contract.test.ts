@@ -93,14 +93,18 @@ describe('W47-Bite-Continued / thread-inspector.ts / threadCandidates typing', (
         )
     })
 
-    it('appState.canvasThreadInspectionClearTimer = id (no `as any`)', () => {
+    it('appState.canvasThreadInspectionClearTimer = id (no cast — laneC-dsfree)', () => {
         const source = readSource(STATE_SRC)
         // No `as any` cast on the timer assignment
         expect(source).not.toMatch(/appState\.canvasThreadInspectionClearTimer\s*=\s*id\s+as\s+any\b/)
-        // Plain or typed double-cast (`as unknown as ReturnType<...>`) assignment is acceptable
-        expect(source).toMatch(
+        // laneC-dsfree: the `as unknown as ReturnType<typeof setTimeout>`
+        // double-cast is gone too. The call site now uses
+        // `globalThis.setTimeout` (typed `ReturnType<typeof setTimeout>` in
+        // this config), so the plain assignment already matches the field type.
+        expect(source).not.toMatch(
             /appState\.canvasThreadInspectionClearTimer\s*=\s*id\s+as\s+unknown\s+as\s+ReturnType<typeof\s+setTimeout>/
         )
+        expect(source).toMatch(/appState\.canvasThreadInspectionClearTimer\s*=\s*id\s*$/m)
     })
 
     it('preserved: typeof item === "number" defensive check (legacy numeric entries)', () => {

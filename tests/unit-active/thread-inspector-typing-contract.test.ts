@@ -104,4 +104,14 @@ describe('thread-inspector — typing contract (W47-Bite-D tightening)', () => {
         expect(match, 'function signature not found').toBeTruthy()
         expect(match![1].trim()).toBe('InspectionState | null')
     })
+
+    it('no `as unknown as` casts remain in thread-inspector-state.ts (laneC-dsfree)', () => {
+        // The only double-cast was the setTimeout assignment in
+        // scheduleCanvasThreadInspectionClear (`id as unknown as
+        // ReturnType<typeof setTimeout>`). The call site now uses
+        // `globalThis.setTimeout` so the value is already
+        // `ReturnType<typeof setTimeout>` (Node typing in this config).
+        const castMatches = stripped.match(/as\s+unknown\s+as\b/g) ?? []
+        expect(castMatches.length).toBe(0)
+    })
 })

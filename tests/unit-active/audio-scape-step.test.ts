@@ -8,6 +8,12 @@ import {
     disposeAudio
 } from '../../src/lib/audio/audio-scape'
 // @ts-ignore
+import { readFileSync } from 'node:fs'
+// @ts-ignore
+import { fileURLToPath } from 'node:url'
+// @ts-ignore
+import { dirname, resolve } from 'node:path'
+// @ts-ignore
 const mockAppState = vi.hoisted(() => ({
     camera: null,
     navState: { focusedIndex: null as number | null },
@@ -407,5 +413,32 @@ describe('disposeAudio', () => {
         start()
         disposeAudio()
         expect(isAudioMuted()).toBe(true)
+    })
+})
+
+describe('audio-scape — as unknown as cast lock-in (laneC-dsfree)', () => {
+    const __filename = fileURLToPath(import.meta.url)
+    const __dirname = dirname(__filename)
+    const src = readFileSync(resolve(__dirname, '../../src/lib/audio/audio-scape.ts'), 'utf-8')
+    const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+
+    it('no `as unknown as` casts remain in audio-scape.ts', () => {
+        // The three boundary double-casts (window / camera / navState) were
+        // replaced with typed single-cast or cast-free accessors (laneC-dsfree).
+        const castMatches = stripped.match(/as\s+unknown\s+as\b/g) ?? []
+        expect(castMatches.length).toBe(0)
+    })
+
+    it('window accessor uses the typed single-cast form', () => {
+        expect(stripped).toMatch(/return window as WindowWithAudioContext\b/)
+    })
+
+    it('camera accessor is cast-free (returns the typed camera, null-guarded at call site)', () => {
+        expect(stripped).toMatch(/function getCameraLike\(\): CameraLike \| null \{\s*return state\.camera\s*\}/)
+    })
+
+    it('navState accessor uses the typed single-cast form (NavState extension)', () => {
+        expect(stripped).toMatch(/interface NavStateWithRoute extends NavState\s*\{/)
+        expect(stripped).toMatch(/return state\.navState as NavStateWithRoute\b/)
     })
 })

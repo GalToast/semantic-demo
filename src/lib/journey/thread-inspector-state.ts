@@ -362,14 +362,14 @@ export function scheduleCanvasThreadInspectionClear(delay: number = 1800): void 
         window.clearTimeout(appState.canvasThreadInspectionClearTimer)
     }
 
-    const id = window.setTimeout(() => {
+    const id = globalThis.setTimeout(() => {
         appState.canvasThreadInspectionClearTimer = null
         if (appState.focusState.threadInspectorPointerInside || appState.focusState.pinnedThreadIndex !== null) return
         if (typeof document !== 'undefined' && document.body.dataset.threadInspectSurface === 'canvas') {
             clearThreadInspection()
         }
     }, delay)
-    appState.canvasThreadInspectionClearTimer = id as unknown as ReturnType<typeof setTimeout>
+    appState.canvasThreadInspectionClearTimer = id
 }
 
 export function clearThreadInspection(options: ThreadInspectionOptions = {}): ThreadInspectionState | null {

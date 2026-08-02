@@ -142,9 +142,7 @@ export function scheduleCompactSearchResultReveal(resultsEl: HTMLElement, active
     requestAnimationFrame(() => requestAnimationFrame(reveal))
     if (!appState.compactSearchRevealTimers) appState.compactSearchRevealTimers = []
     ;[80, 240, 520].forEach((delay: number) => {
-        appState.compactSearchRevealTimers.push(
-            window.setTimeout(reveal, delay) as unknown as ReturnType<typeof setTimeout>
-        )
+        appState.compactSearchRevealTimers.push(globalThis.setTimeout(reveal, delay))
     })
 }
 

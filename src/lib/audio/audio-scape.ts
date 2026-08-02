@@ -10,6 +10,7 @@
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
 import { debugWarn } from '@lib/utils/debug'
+import type { NavState } from '@lib/types/state'
 
 // ── Local boundary types ────────────────────────────────────────────────────
 
@@ -28,13 +29,29 @@ interface Vector3Like {
 
 /**
  * Window shape that exposes the Web Audio constructors (standard + legacy
- * webkit fallback). Captured once at the startAudioContext scope, replaced
- * the duplicated `window as unknown as { AudioContext ... }` casts (Phase 16
- * typed-interface pattern).
+ * webkit fallback). Captured once at the startAudioContext scope via the
+ * Phase 16 typed-interface pattern: extends the ambient `Window` so only the
+ * `AudioContext` + legacy `webkitAudioContext` members need declaring (the
+ * DOM lib does not put AudioContext on `Window`).
  */
-interface WindowWithAudioContext {
+interface WindowWithAudioContext extends Window {
+    /** Standard Web Audio constructor (not declared on `Window` in the DOM lib). */
     AudioContext: typeof AudioContext
+    /** Legacy webkit-prefixed fallback — not present in the standard DOM lib. */
     webkitAudioContext?: typeof AudioContext
+}
+
+/** Minimal camera shape used by this module. */
+interface CameraLike {
+    position: { clone(): Vector3Like; distanceTo(v: Vector3Like): number }
+}
+
+/** Minimal 3D vector shape used by this module. */
+interface Vector3Like {
+    x: number
+    y: number
+    z: number
+    distanceTo?(v: Vector3Like): number
 }
 
 /**
@@ -42,20 +59,20 @@ interface WindowWithAudioContext {
  * by route-choreography modules at runtime — not present on the ambient
  * NavState type. Featured as a typed-accessor consolidation (Phase 16).
  */
-interface NavStateWithRoute {
+interface NavStateWithRoute extends NavState {
     activeRoutePath?: Array<string | number> | null
 }
 
 function getAudioWindow(): WindowWithAudioContext {
-    return window as unknown as WindowWithAudioContext
+    return window as WindowWithAudioContext
 }
 
-function getCameraLike(): CameraLike {
-    return state.camera as unknown as CameraLike
+function getCameraLike(): CameraLike | null {
+    return state.camera
 }
 
 function getNavStateWithRoute(): NavStateWithRoute {
-    return state.navState as unknown as NavStateWithRoute
+    return state.navState as NavStateWithRoute
 }
 
 function getAudioPoints(): AudioPoint[] {
@@ -145,13 +162,12 @@ function startAudioContext(): void {
 
 function updateAudio(): void {
     if (!audioState.audioCtx || audioState.audioCtx.state === 'closed') return
-    if (!state.camera) {
+    // 1. Calculate Camera Velocity
+    const camera = getCameraLike()
+    if (!camera) {
         audioState.rafId = requestAnimationFrame(updateAudio)
         return
     }
-
-    // 1. Calculate Camera Velocity
-    const camera = getCameraLike()
     const currentPos: Vector3Like = camera.position.clone()
     if (audioState.lastCameraPos) {
         const dist = camera.position.distanceTo(audioState.lastCameraPos)

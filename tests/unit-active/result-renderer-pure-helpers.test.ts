@@ -19,6 +19,12 @@
  *   - buildSearchRankLabel (rank params → label)
  */
 import { describe, it, expect } from 'vitest'
+// @ts-ignore
+import { readFileSync } from 'node:fs'
+// @ts-ignore
+import { fileURLToPath } from 'node:url'
+// @ts-ignore
+import { dirname, resolve } from 'node:path'
 import {
     renderResultCountLine,
     getSearchResultStrength,
@@ -318,5 +324,26 @@ describe('buildSearchRankLabel', () => {
     it('returns "Result N+1" for non-zero order', () => {
         expect(buildSearchRankLabel({ index: 5, order: 2, topIndex: 0 })).toBe('Result 3')
         expect(buildSearchRankLabel({ index: 5, order: 5, topIndex: 0 })).toBe('Result 6')
+    })
+})
+
+describe('result-renderer — as unknown as cast lock-in (laneC-dsfree)', () => {
+    const __filename = fileURLToPath(import.meta.url)
+    const __dirname = dirname(__filename)
+    const src = readFileSync(resolve(__dirname, '../../src/lib/search/result-renderer.ts'), 'utf-8')
+    const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+
+    it('no `as unknown as` casts remain in result-renderer.ts', () => {
+        // The only double-cast was in scheduleCompactSearchResultReveal
+        // (`window.setTimeout(reveal, delay) as unknown as
+        // ReturnType<typeof setTimeout>`). The call site now uses
+        // `globalThis.setTimeout` so the value is already
+        // `ReturnType<typeof setTimeout>` (Node typing in this config).
+        const castMatches = stripped.match(/as\s+unknown\s+as\b/g) ?? []
+        expect(castMatches.length).toBe(0)
+    })
+
+    it('compact reveal timers are scheduled with the typed globalThis.setTimeout', () => {
+        expect(stripped).toMatch(/compactSearchRevealTimers\.push\(globalThis\.setTimeout\(reveal, delay\)\)/)
     })
 })
