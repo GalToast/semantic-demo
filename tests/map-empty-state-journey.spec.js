@@ -33,7 +33,7 @@ test.describe('Map empty-state dismiss (W53 V2)', () => {
         // Map container + empty-state appear (no business selected → trail inactive).
         await page.locator('#map-container').waitFor({ state: 'attached', timeout: 20000 })
         await page
-            .waitForFunction(() => !!document.querySelector('.map-empty-state'), null, { timeout: 20000 })
+            .waitForFunction(() => !!document.querySelector('.map-empty-state'), null, { timeout: 20000, polling: 100 })
             .catch(() => {})
 
         const empty = page.locator('.map-empty-state')

@@ -42,7 +42,7 @@ test.describe('LoadingOverlay error-state role=alert transition', () => {
                 const w = /** @type {any} */ (window)
                 return typeof w.__dataLoadState__?.error === 'function'
             },
-            { timeout: 15_000 }
+            { timeout: 15_000, polling: 100 }
         )
 
         // Force the boot-time load error so LoadingOverlay's isError branch fires.

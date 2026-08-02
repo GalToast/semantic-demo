@@ -36,7 +36,7 @@ test.describe('WCAG AA contrast regression guard (W53 V4 refutation)', () => {
         test(`V4 — ${c.name} meets WCAG AA (>= ${c.min}:1)`, async ({ page }) => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html${c.url}`, { waitUntil: 'domcontentloaded' })
             await page
-                .waitForFunction(() => document.body.dataset.surfaceSettled === 'true', null, { timeout: 8000 })
+                .waitForFunction(() => document.body.dataset.surfaceSettled === 'true', null, { timeout: 8000, polling: 100 })
                 .catch(() => {})
 
             const measured = await page.evaluate(

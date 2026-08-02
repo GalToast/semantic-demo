@@ -98,7 +98,7 @@ async function bootApp(page, url, { dismissHelp = true, clearOnboarding = false,
     await page.waitForFunction(
         () => window.__APP_STATE__?.points?.length > 100 && document.body?.dataset?.graphicsMode === 'webgl',
         null,
-        { timeout: 20000 }
+        { timeout: 20000, polling: 100 }
     )
 
     // Dismiss the first-visit help dialog if it auto-opened.
@@ -190,9 +190,7 @@ test.describe('Header extracted components — HelpDialog + ModeChipRail', () =>
         // focus/pointer ops in flight. Diagnostics with this settle went 8/8
         // vs ~7/8 without it.
         await page
-            .waitForFunction(() => document.activeElement?.id === 'search-input', null, {
-                timeout: 5000
-            })
+            .waitForFunction(() => document.activeElement?.id === 'search-input', null, { timeout: 5000, polling: 100 })
             .catch(() => {})
         await page.waitForTimeout(120)
 
@@ -274,9 +272,7 @@ test.describe('Header extracted components — HelpDialog + ModeChipRail', () =>
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         // Wait for placeholder2d render path to be active.
-        await page.waitForFunction(() => document.body.classList.contains('render-kind-placeholder2d'), null, {
-            timeout: 10000
-        })
+        await page.waitForFunction(() => document.body.classList.contains('render-kind-placeholder2d'), null, { timeout: 10000, polling: 100 })
         await page.waitForTimeout(300)
 
         // On mobile the chips render but may be visually compact.
@@ -451,7 +447,7 @@ async function bootFocusDeepLink(page, { view = 'galaxy' } = {}) {
     // compass section to mount in either focus/search surface (the deep-link
     // sets surface 'focus-search'; per-test toBeVisible handles the
     // galaxy-vs-map visibility distinction).
-    await page.waitForFunction(() => window.__APP_STATE__?.navState?.focusedIndex === 519, null, { timeout: 30000 })
+    await page.waitForFunction(() => window.__APP_STATE__?.navState?.focusedIndex === 519, null, { timeout: 30000, polling: 100 })
     await page
         .locator('#journey-compass')
         .waitFor({ state: 'attached', timeout: 10000 })
@@ -543,7 +539,7 @@ test.describe('JourneyCompass extracted components — step indicators, header, 
         // (same mechanism as test 2's dialog-open race; harmless here but cheap
         // insurance).
         await page
-            .waitForFunction(() => document.activeElement?.id === 'search-input', null, { timeout: 5000 })
+            .waitForFunction(() => document.activeElement?.id === 'search-input', null, { timeout: 5000, polling: 100 })
             .catch(() => {})
         await page.waitForTimeout(120)
 

@@ -176,7 +176,7 @@ test.beforeEach(async ({ page }) => {
     }
 
     // Wait for the engine to be ready
-    await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 10000 })
+    await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 10000, polling: 100 })
 
     // Defense in depth: if the help dialog still opened (e.g. because
     // a future regression disables the localStorage gate), dismiss it.

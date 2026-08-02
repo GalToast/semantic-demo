@@ -25,7 +25,7 @@ async function bootApp(page) {
     await explore.click()
 
     // Wait for data hydration
-    await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+    await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000, polling: 100 })
 
     // Wait for weather-widget as a proxy that the Svelte app is mounted
     await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
@@ -83,7 +83,7 @@ async function searchAndFocus(page, term) {
 
     await page.locator('.search-result-listitem').first().click()
 
-    await page.waitForFunction(() => (window.__APP_STATE__?.navState?.mode ?? '') === 'focus', null, { timeout: 10000 })
+    await page.waitForFunction(() => (window.__APP_STATE__?.navState?.mode ?? '') === 'focus', null, { timeout: 10000, polling: 100 })
     await page.waitForTimeout(500)
 }
 

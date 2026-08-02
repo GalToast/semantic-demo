@@ -44,7 +44,7 @@ test('?record=519 deep-link restores focus on lead_id=519', async ({ page }) => 
 
     // Wait for engine / data to be ready. A deep-link bypasses the splash,
     // so signalReady() fires automatically; we just need the dataset.
-    await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 10000 })
+    await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 10000, polling: 100 })
 
     // Give applyUrlState() a tick to resolve the record and dispatch focus.
     await page.waitForTimeout(250)

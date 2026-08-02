@@ -10,7 +10,7 @@ test.describe('H1 canvas keyboard journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000, polling: 100 })
         await page.waitForTimeout(1200)
 
         const helpDialog = page.locator('dialog.help-dialog[open]')

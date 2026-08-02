@@ -68,7 +68,7 @@ test.describe('SearchInput Escape→cancel', () => {
                 const w = /** @type {any} */ (window)
                 return w.__APP_STATE__?.points?.length > 100
             },
-            { timeout: 30_000 }
+            { timeout: 30_000, polling: 100 }
         )
 
         // Wait for search input to be rendered and interactable.

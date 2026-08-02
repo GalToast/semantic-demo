@@ -11,7 +11,7 @@ test.describe('H3H4 hover-preview-only journey', () => {
     test('H4 click path not blocked by future suppress (inverted guard fixed)', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000, polling: 100 })
         await page.waitForTimeout(600)
 
         const helpDialog = page.locator('dialog.help-dialog[open]')

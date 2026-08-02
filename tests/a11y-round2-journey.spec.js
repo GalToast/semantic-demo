@@ -13,7 +13,7 @@ test.describe('Round-2 mobile/a11y fixes (M1, M4, M6)', () => {
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000, polling: 100 })
         await page.waitForTimeout(800)
         // First-visit help dialog auto-opens after splash dismissal; Escape closes it.
         const help = page.locator('dialog.help-dialog[open]')

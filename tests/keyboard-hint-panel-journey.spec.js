@@ -81,9 +81,7 @@ test.describe('Keyboard hint panel journey', () => {
         await explore.click()
 
         // Wait for the canvas bootloader to mount points + weather widget.
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-            timeout: 15000
-        })
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000, polling: 100 })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(800)
 
@@ -143,7 +141,7 @@ test.describe('Keyboard hint panel journey', () => {
                 return !!p && p.classList.contains('visible') && p.getAttribute('aria-hidden') === 'false'
             },
             null,
-            { timeout: 10000 }
+            { timeout: 10000, polling: 100 }
         )
 
         const phase1 = await page.evaluate(() => {
@@ -228,7 +226,7 @@ test.describe('Keyboard hint panel journey', () => {
                 return !!p && p.classList.contains('visible') && p.getAttribute('aria-hidden') === 'false'
             },
             null,
-            { timeout: 10000 }
+            { timeout: 10000, polling: 100 }
         )
         const phase4 = await page.evaluate(() => {
             const p = document.getElementById('keyboard-hint-panel')
@@ -267,7 +265,7 @@ test.describe('Keyboard hint panel journey', () => {
                 return !!p && p.classList.contains('visible')
             },
             null,
-            { timeout: 10000 }
+            { timeout: 10000, polling: 100 }
         )
         const phase6 = await page.evaluate(() => {
             const p = document.getElementById('keyboard-hint-panel')
