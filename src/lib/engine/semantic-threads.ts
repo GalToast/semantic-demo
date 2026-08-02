@@ -69,6 +69,9 @@ const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000] as const
 // 60s on a 10 Mbps connection.
 const SEMANTIC_THREAD_WORKER_TIMEOUT_MS = 180_000
 
+/** Max retry-timer cycles before giving up (W73-H1: budget resets on fresh external loads). */
+const SEMANTIC_THREAD_MAX_RETRIES = 5
+
 // ── Worker singleton & hardening ───────────────────────────────────────────────
 
 let _dataWorker: Worker | null = null
@@ -542,9 +545,8 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry'): void {
         }
     }
 
-    const MAX_RETRIES = 5
-    if (state.semanticThreadsRetryAttempt >= MAX_RETRIES) {
-        debugWarn(`loadSemanticThreads: max retries (${MAX_RETRIES}) reached, giving up`)
+    if (state.semanticThreadsRetryAttempt >= SEMANTIC_THREAD_MAX_RETRIES) {
+        debugWarn(`loadSemanticThreads: max retries (${SEMANTIC_THREAD_MAX_RETRIES}) reached, giving up`)
         _updateSemanticThreadsStatus('failed')
         return
     }
@@ -683,6 +685,16 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
     // false so the caller does not double-load (every path still yields a
     // Promise<boolean>, which the `async` wrapper guarantees anyway).
     if (state.semanticThreadsRetryTimer) return Promise.resolve(false)
+
+    // W73-H1: when the retry budget is exhausted (attempt >= MAX) no retry
+    // timer exists (the give-up path schedules none), so any invocation in
+    // this state is an external fresh load — start a new budget instead of
+    // permanently disabling thread loading for the session. The retry-timer
+    // path can never reach this state (its timer only exists while
+    // attempt < MAX), so the MAX_RETRIES bound is preserved.
+    if (state.semanticThreadsRetryAttempt >= SEMANTIC_THREAD_MAX_RETRIES) {
+        state.semanticThreadsRetryAttempt = 0
+    }
 
     const cacheBust = Math.floor(Date.now() / (1000 * 60 * 60))
     const requestUrls = [
