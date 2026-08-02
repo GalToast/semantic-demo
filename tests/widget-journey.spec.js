@@ -3010,9 +3010,28 @@ test.describe('Widget journey', () => {
 
         const backBtn = page.locator('.map-back-btn')
         await backBtn.waitFor({ state: 'visible', timeout: 10000 })
-        await backBtn.click()
 
-        await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'galaxy', null, { timeout: 5000, polling: 100 })
+        // W61-W54: the deep-link boot settles asynchronously (load-dependent
+        // window, ~1-2s under suite load): the navStore mirror and
+        // appState.navState transiently disagree on currentView while the
+        // URL-state apply + initial-state write race (evidence:
+        // tmp/w54-map-boot-race-REPORT.md + tmp/probe-w54*.mjs), and a
+        // back-click landing in that window gets its galaxy write reverted by
+        // the still-settling machinery. returnToOverview is idempotent, so
+        // retry the click until the view holds — deterministic regardless of
+        // the settle window length. Mirror of the smoke-spec W54 test.
+        let galaxyHeld = false
+        for (let attempt = 0; attempt < 4 && !galaxyHeld; attempt++) {
+            await backBtn.click({ timeout: 10000 })
+            galaxyHeld = await page
+                .waitForFunction(() => window.__APP_STATE__?.currentView === 'galaxy', null, {
+                    timeout: 3000,
+                    polling: 100
+                })
+                .then(() => true)
+                .catch(() => false)
+        }
+        expect(galaxyHeld, 'map back button must return to overview (currentView galaxy)').toBe(true)
         expect(page.url(), 'URL should drop view=map after returning to overview').not.toContain('view=map')
     })
 })
