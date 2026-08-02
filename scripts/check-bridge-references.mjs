@@ -35,10 +35,25 @@ function findTsFiles(dir) {
 
 const dangling = [];
 
+function isInsideComment(content, index) {
+  // Line comment: anything on the same line before the match after //
+  const lineStart = content.lastIndexOf('\n', index) + 1;
+  const beforeOnLine = content.slice(lineStart, index);
+  if (beforeOnLine.includes('//')) return true;
+
+  // Block comment: last /* before index is not closed by */
+  const before = content.slice(0, index);
+  const lastOpen = before.lastIndexOf('/*');
+  const lastClose = before.lastIndexOf('*/');
+  return lastOpen > lastClose;
+}
+
 for (const file of findTsFiles(SRC_DIR)) {
   const content = fs.readFileSync(file, 'utf8');
   let match;
   while ((match = BRIDGE_IMPORT_RE.exec(content)) !== null) {
+    if (isInsideComment(content, match.index)) continue;
+
     const importPath = match[1];
     // Resolve relative to src/lib/engine/
     const resolved = path.join(SRC_DIR, 'lib', 'engine', importPath);
