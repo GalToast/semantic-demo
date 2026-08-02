@@ -53,6 +53,7 @@ import {
     hideExploreTrailReview
 } from '@lib/stores/lifecycle'
 import type { BusinessRecord } from '@lib/types/business'
+import type { Point } from '@lib/state/state-types'
 
 // ── Re-exports from sub-modules (store/lifecycle split) ────────────────────────
 
@@ -166,6 +167,12 @@ export function hydrateLeadContext(point: BusinessRecord | null): void {
  * Focus on a business record point. Delegates camera movement to the
  * index-based camera owner via engine bridge.
  *
+ * The parameter is widened to `BusinessRecord | Point | null` because the
+ * map-state marker clicks pass a `Point` (business records at runtime, but
+ * typed as the looser `Point` which has a `[key: string]: unknown` index
+ * signature). Widening here lets those callers drop their `as unknown as`
+ * casts; the single normalization cast lives in the function body.
+ *
  * Options:
  * - `revealCard: true` — request reveal of the selected-business card
  *   (carried to subscribers via the published event payload).
@@ -178,23 +185,29 @@ export function hydrateLeadContext(point: BusinessRecord | null): void {
  *   chain (e.g., `selected-card.ts:270`) to break the loop.
  */
 export function focusOnPoint(
-    point: BusinessRecord | null,
+    point: BusinessRecord | Point | null,
     options: { skipUrlSync?: boolean; revealCard?: boolean } = {}
 ): boolean {
     if (!point) return false
 
+    // The parameter accepts the loosely-typed `Point`, but at runtime the
+    // value is always a concrete BusinessRecord (map markers are the 8,406
+    // business records). Rebuild the concrete shape the body needs in one
+    // place so callers never need their own casts.
+    const record = point as BusinessRecord
+
     setSelectedBusiness({
-        name: point.name,
-        category: point.category,
-        city: point.city,
-        status: point.status,
-        website: point.website,
-        email: point.email,
-        phone: point.phone
+        name: record.name,
+        category: record.category,
+        city: record.city,
+        status: record.status,
+        website: record.website,
+        email: record.email,
+        phone: record.phone
     })
 
     if (!options.skipUrlSync) {
-        publish(EVENTS.CAMERA_NODE_FOCUSED, { point, options })
+        publish(EVENTS.CAMERA_NODE_FOCUSED, { point: record, options })
     }
 
     return true

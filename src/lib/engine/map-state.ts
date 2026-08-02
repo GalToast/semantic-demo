@@ -43,6 +43,19 @@ interface LeafletMapWithFitBounds {
     fitBounds(bounds: unknown, options?: Record<string, unknown>): void
 }
 
+/**
+ * Typed accessor for the runtime Leaflet map instance.
+ * `appState.map` is declared as the loose `LeafletLayer`
+ * (`Record<string, unknown> | null`) because Leaflet is vendored locally and
+ * not npm-imported, so its concrete type isn't available at compile time. At
+ * runtime the value is a real Leaflet `L.Map` with `fitBounds`/`setView`.
+ * This consolidates the single guarded cast here (mirroring the getMapState
+ * pattern) so call sites stay clean of `as unknown as` casts.
+ */
+function getLeafletMap(): LeafletMapWithFitBounds | null {
+    return appState.map ? (appState.map as unknown as LeafletMapWithFitBounds) : null
+}
+
 interface LeafletMarker {
     setStyle(style: Record<string, unknown>): void
     addTo(layer: unknown): LeafletMarker
@@ -95,7 +108,6 @@ interface MapStateShape {
     }
     activeClusterFilter: number | null
     activeFilters: ActiveFilters | null
-    selectedPoint: Point | null
     navState: {
         focusedIndex: number | null
         walkHistoryIndices: readonly number[]
@@ -110,9 +122,17 @@ interface MapStateShape {
  * Typed view of appState restricted to the map subsystem's fields.
  * Replaces inline `state as unknown as MapStateShape` casts at the
  * initMap / refreshMapMarkers / destroyMap call sites.
+ *
+ * `MapStateShape` is a genuine strict subset of AppState's map-related fields
+ * (every field here exists on AppState with a compatible type, so `appState`
+ * is directly assignable — no cast is needed). It returns the live appState
+ * reference, so mutations made through this view (e.g. `map = null` in
+ * destroyMap) propagate back to the singleton. Note: the returned object is
+ * the full AppState, not a picked copy — callers must only touch the fields
+ * declared below.
  */
 function getMapState(): MapStateShape {
-    return appState as unknown as MapStateShape
+    return appState
 }
 
 let leafletAssetsPromise: Promise<unknown> | null = null
@@ -284,12 +304,10 @@ export async function initMap(): Promise<void> {
                     )
                     return
                 }
-                // focusOnPoint expects BusinessRecord | null; point is a Point (which has
-                // [key: string]: unknown index sig). The double-hop through unknown is required
-                // because Point has an index signature that conflicts with BusinessRecord's
-                // explicit fields. Could be fixed by widening focusOnPoint's signature in
-                // orchestration/lifecycle.ts, but that's out of scope for the type-laundering sweep.
-                focusOnPoint(point as unknown as Parameters<typeof focusOnPoint>[0], { revealCard: true })
+                // point is a Point (which has a [key: string]: unknown index sig) while
+                // focusOnPoint's parameter was widened to `BusinessRecord | Point | null` in
+                // orchestration/lifecycle.ts, so this Point passes without a cast.
+                focusOnPoint(point, { revealCard: true })
             })
 
             mapState.pointMarkers.push({ marker, index })
@@ -498,7 +516,7 @@ export function centerMapOnRouteAnchor(): boolean {
     }
     if (routeLatLngs.length >= 2) {
         const bounds = L.latLngBounds(routeLatLngs)
-        ;(appState.map as unknown as LeafletMapWithFitBounds).fitBounds(bounds, {
+        getLeafletMap()?.fitBounds(bounds, {
             animate: true,
             maxZoom: 15,
             paddingTopLeft: [22, isMobileViewport() ? 250 : 96],
