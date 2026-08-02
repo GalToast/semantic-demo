@@ -20,15 +20,31 @@ interface GPUResourceHolder {
 type Trackable = Disposable | GPUResourceHolder | Trackable[] | null | undefined
 
 /**
- * Narrowing helpers — each owns a single `as unknown as` cast so that
- * call sites in `track()` stay type-clean.
+ * Narrowing helpers — each is a runtime-guarded type predicate. `track()`
+ * narrows against these instead of casting, so the Disposable /
+ * GPUResourceHolder classification is checked at runtime, not asserted.
  */
-function asDisposable(value: unknown): Disposable {
-    return value as unknown as Disposable
+function isDisposable(value: unknown): value is Disposable {
+    if (typeof value !== 'object' || value === null) return false
+    if (!('dispose' in value)) return false
+    return typeof value.dispose === 'function'
 }
 
-function asTrackableArray(value: unknown): Trackable[] {
-    return value as unknown as Trackable[]
+function isGpuResourceHolder(value: unknown): value is GPUResourceHolder {
+    if (typeof value !== 'object' || value === null) return false
+    return (
+        ('geometry' in value && Boolean(value.geometry)) ||
+        ('material' in value && Boolean(value.material)) ||
+        ('children' in value && Boolean(value.children))
+    )
+}
+
+function isTrackable(value: unknown): value is Trackable {
+    return value === null || value === undefined || typeof value === 'object'
+}
+
+function isTrackableArray(value: unknown): value is Trackable[] {
+    return Array.isArray(value) && value.every((item) => isTrackable(item))
 }
 
 export class ResourceTracker {
@@ -37,55 +53,53 @@ export class ResourceTracker {
     track<T extends Trackable>(resource: T): T {
         if (!resource) return resource
 
-        if (Array.isArray(resource)) {
-            for (const r of resource) this.track(r)
+        // Narrow against the declared union so the guards below (not casts)
+        // drive the Disposable / holder classification.
+        const r: Trackable = resource
+
+        if (Array.isArray(r)) {
+            for (const item of r) this.track(item)
             return resource
         }
 
-        if ('dispose' in resource && typeof resource.dispose === 'function') {
+        if (isDisposable(r) && !isGpuResourceHolder(r)) {
             // Only add to resources if it's a standalone Disposable (not a
             // GPUResourceHolder). Holders carry geometry/material/children which
             // we track recursively; adding the holder itself would cause
             // double-dispose when dispose() is called on both the holder and
             // its components. Three.js dispose() is idempotent but custom
             // disposables may not be.
-            const holder = resource as GPUResourceHolder
-            if (!holder.geometry && !holder.material && !holder.children) {
-                this.resources.add(resource as Disposable)
+            this.resources.add(r)
+        }
+
+        if (isGpuResourceHolder(r)) {
+            if (r.geometry) {
+                this.track(r.geometry)
             }
-        }
 
-        // After the dispose-branch check, narrow the union to GPUResourceHolder.
-        // The Disposable path doesn't carry geometry/material/children so we
-        // skip those fields; casting here keeps tsc happy and documents intent.
-        const holder = resource as GPUResourceHolder
+            if (r.material) {
+                // Multi-material meshes carry an array; track every material and its
+                // texture maps, not just [0] (which would leak materials[1..n]).
+                const materials: Material[] = Array.isArray(r.material)
+                    ? r.material.filter((m): m is Material => Boolean(m))
+                    : [r.material].filter((m): m is Material => Boolean(m))
+                if (materials.length === 0) return resource
+                for (const mat of materials) {
+                    // `Material` (base type) has dispose(), so it is a Disposable.
+                    this.track(mat)
 
-        if (holder.geometry) {
-            this.track(holder.geometry)
-        }
-
-        if (holder.material) {
-            // Multi-material meshes carry an array; track every material and its
-            // texture maps, not just [0] (which would leak materials[1..n]).
-            const materials: Material[] = Array.isArray(holder.material)
-                ? (holder.material as Material[]).filter((m): m is Material => Boolean(m))
-                : [holder.material].filter((m): m is Material => Boolean(m))
-            if (materials.length === 0) return resource
-            for (const mat of materials) {
-                this.track(asDisposable(mat))
-
-                if ('map' in mat && mat.map) this.track(asDisposable(mat.map))
-                if ('alphaMap' in mat && (mat as Record<string, unknown>).alphaMap)
-                    this.track((mat as Record<string, unknown>).alphaMap as Disposable)
-                if ('envMap' in mat && (mat as Record<string, unknown>).envMap)
-                    this.track((mat as Record<string, unknown>).envMap as Disposable)
-                if ('normalMap' in mat && (mat as Record<string, unknown>).normalMap)
-                    this.track((mat as Record<string, unknown>).normalMap as Disposable)
+                    // The texture-map slots are only declared on concrete material
+                    // subclasses, so narrow them via `in` and verify disposability.
+                    if ('map' in mat && isDisposable(mat.map)) this.track(mat.map)
+                    if ('alphaMap' in mat && isDisposable(mat.alphaMap)) this.track(mat.alphaMap)
+                    if ('envMap' in mat && isDisposable(mat.envMap)) this.track(mat.envMap)
+                    if ('normalMap' in mat && isDisposable(mat.normalMap)) this.track(mat.normalMap)
+                }
             }
-        }
 
-        if (holder.children && Array.isArray(holder.children)) {
-            this.track(asTrackableArray(holder.children))
+            if (isTrackableArray(r.children)) {
+                this.track(r.children)
+            }
         }
 
         return resource
@@ -127,5 +141,5 @@ export class ResourceTracker {
 
 /** Convenience export for one-off disposal. Equivalent to `ResourceTracker.disposeOne(object)`. */
 export function disposeObject3D(object: Trackable | Scene): void {
-    ResourceTracker.disposeOne(object as Trackable)
+    ResourceTracker.disposeOne(object)
 }
