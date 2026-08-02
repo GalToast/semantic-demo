@@ -337,12 +337,27 @@ function getLineSegmentCount(line: LineSegments) {
     return Math.floor(positionCount / 2)
 }
 
+/**
+ * Narrow an `Object3D` child to `LineSegments` via the runtime `isLineSegments`
+ * flag, which three.js core `LineSegments` sets to `true` and the `LineSegments2`
+ * mycelium-layer addon omits. Replaces the prior bare unsafe `LineSegments`
+ * downcast at the call site with an auditable user-defined type predicate;
+ * the runtime check is strict-equality on the flag, matching the prior
+ * `if (child.isLineSegments)` truthiness test for real three.js objects
+ * (flag is always `true` or absent).
+ */
+function isLineSegmentsObject3D(
+    child: Object3D & { isLineSegments?: boolean }
+): child is LineSegments {
+    return child.isLineSegments === true
+}
+
 export function getGroupLineSegmentCount(group: Group) {
     let total = 0
     if (group && group.children) {
         group.children.forEach((child: Object3D & { isLineSegments?: boolean }) => {
-            if (child.isLineSegments) {
-                total += getLineSegmentCount(child as unknown as LineSegments)
+            if (isLineSegmentsObject3D(child)) {
+                total += getLineSegmentCount(child)
             }
         })
     }
@@ -758,9 +773,12 @@ export function updateMyceliumThreads(): void {
 
     const layerIntensity = computeLayerIntensityMap()
 
-    rebuildDirtyPairsInLayer(webglContext.myceliumCoreLines as unknown as LineSegments2, 0, layerIntensity)
-    rebuildDirtyPairsInLayer(webglContext.myceliumWispyLines as unknown as LineSegments2, 1, layerIntensity)
-    rebuildDirtyPairsInLayer(webglContext.myceliumBridgeLines as unknown as LineSegments2, 2, layerIntensity)
+    // webglContext.mycelium*Lines are typed `LineSegments2 | null` and
+    // rebuildDirtyPairsInLayer already accepts (`LineSegments2 | null`) and
+    // early-returns when the geometry helpers are absent, so no cast is needed.
+    rebuildDirtyPairsInLayer(webglContext.myceliumCoreLines, 0, layerIntensity)
+    rebuildDirtyPairsInLayer(webglContext.myceliumWispyLines, 1, layerIntensity)
+    rebuildDirtyPairsInLayer(webglContext.myceliumBridgeLines, 2, layerIntensity)
 
     // Drain the dirty set — consumed for this frame.
     dirtyNodeIndices.clear()
