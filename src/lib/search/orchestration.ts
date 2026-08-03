@@ -185,7 +185,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     // Clear exploration focus if needed
     publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, { preserveSearch: true, skipUrlSync: true })
 
-    const { signal, isNew } = startSearch(trimmedQuery)
+    const { signal, isNew, release } = startSearch(trimmedQuery)
     if (!isNew) return
 
     const requestId = incrementRequestSequence()
@@ -211,7 +211,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         }
         return
     } finally {
-        // Controller cleanup handled by search engine
+        release()
     }
 
     // Bug #1 (bugsweep): always stop the scramble animation, even when the
@@ -278,6 +278,8 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         debugWarn('[search/orchestration] #search-results did not mount; skipping DOM render', trimmedQuery)
         return
     }
+
+    if (!isRequestCurrent(requestId)) return
 
     if (results.length === 1) {
         const soleIndex = anchorIndex

@@ -9,11 +9,19 @@
 let currentController: AbortController | null = null
 let currentQuery = ''
 
+interface SearchLease {
+    signal: AbortSignal
+    isNew: boolean
+    /** Release only this lease; stale completions cannot clear a newer search. */
+    release: () => void
+}
+
 /**
  * Start (or continue) a search for the given query and return the signal to
- * pass to `performSearch`. If the same query is already in flight and not
+ * pass to `performSearch`. If the same query is currently owned and not
  * aborted, the same signal is returned so callers can deduplicate. Otherwise
- * any previous search is aborted and a fresh controller is created.
+ * any previous search is aborted and a fresh controller is created. The owner
+ * must call `release()` when its async work settles.
  *
  * Race note (BUG-002, Phase-A find): This function is synchronous and
  * JavaScript is single-threaded, so two synchronous calls cannot interleave
@@ -30,17 +38,28 @@ let currentQuery = ''
  * in one synchronous block so no intermediate state is observable between
  * mutations.
  */
-export function startSearch(query: string): { signal: AbortSignal; isNew: boolean } {
+export function startSearch(query: string): SearchLease {
     const trimmed = query.trim()
     if (currentController && currentQuery === trimmed && !currentController.signal.aborted) {
-        return { signal: currentController.signal, isNew: false }
+        return { signal: currentController.signal, isNew: false, release: () => {} }
     }
     // Single synchronous block: abort previous, create fresh, set query — no
     // window between mutations where another observer can see torn state.
     currentController?.abort()
-    currentController = new AbortController()
+    const controller = new AbortController()
+    currentController = controller
     currentQuery = trimmed
-    return { signal: currentController.signal, isNew: true }
+    return {
+        signal: controller.signal,
+        isNew: true,
+        release: () => {
+            // A superseded request may settle after a newer request starts.
+            // Only the owner that still matches may clear the singleton.
+            if (currentController !== controller) return
+            currentController = null
+            currentQuery = ''
+        }
+    }
 }
 
 /**

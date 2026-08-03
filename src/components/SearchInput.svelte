@@ -27,7 +27,6 @@
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { pendingSearch } from '@lib/stores/pending-search.svelte';
   import { SearchDispatch } from '@lib/search/search-dispatch';
-import { startSearch } from '@lib/search/search-abort';
   import SearchInputChrome from '@lib/components/search/SearchInputChrome.svelte';
 
   interface Props {
@@ -223,13 +222,14 @@ import { startSearch } from '@lib/search/search-abort';
     }
     const query = new URLSearchParams(window.location.search || '').get('q')?.trim();
     if (!query || query.length < 2) return;
-    const { isNew } = startSearch(query);
-    if (!isNew) {
-      queryInput = query;
-      return;
-    }
     const storeQuery = ($searchState.query ?? '').trim();
-    if (storeQuery === query && ['searching', 'results', 'error'].includes($searchState.status)) {
+    // Guard against re-dispatching a query the URL-restore path already
+    // fulfilled. 'empty' is included: a deep-link search that settled with
+    // zero results must not fire a second API request from this mount.
+    if (
+      storeQuery === query &&
+      ['searching', 'results', 'error', 'empty'].includes($searchState.status)
+    ) {
       queryInput = query;
       return;
     }

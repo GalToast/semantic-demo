@@ -175,10 +175,7 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
  * deep-link anchor focus (W71 shared-link fix). Polls the store every 100ms;
  * never rejects (the caller applies its own restore deadline).
  */
-async function waitForSearchSettle(
-    store: () => { status: string },
-    timeoutMs = 30_000
-): Promise<void> {
+async function waitForSearchSettle(store: () => { status: string }, timeoutMs = 30_000): Promise<void> {
     const deadline = Date.now() + timeoutMs
     while (Date.now() < deadline) {
         const status = store().status
@@ -859,6 +856,7 @@ async function _restoreSearchFromParams(
     const restoreDeadline = new Promise<never>((_, reject) => {
         rejectDeadline = reject
     })
+    let releaseSearch: () => void = () => {}
 
     try {
         const domForcedFocusSearchSurface = isDomForcedFocusSearchSurface()
@@ -880,7 +878,8 @@ async function _restoreSearchFromParams(
         // re-fire, constellation rebuild, camera frame) must still run once the
         // in-flight search settles, or shared links like ?q=coffee&anchor=519
         // silently fail to focus when the typed-input path is mid-flight.
-        const { isNew } = startSearch(query)
+        const { isNew, release } = startSearch(query)
+        releaseSearch = release
         if (isNew) {
             // Race runSearch against the restore deadline. runSearch swallows
             // AbortError internally (silent return, leaving status 'searching'), so
@@ -1007,6 +1006,9 @@ async function _restoreSearchFromParams(
         }
         debugWarn('[url-state] Search restore from URL failed:', err)
     } finally {
+        // Release only the URL-restore owner. A piggybacking restore receives
+        // a no-op release, while an older restore cannot clear a newer query.
+        releaseSearch()
         searchSignal.removeEventListener('abort', onSearchAbort)
     }
 }

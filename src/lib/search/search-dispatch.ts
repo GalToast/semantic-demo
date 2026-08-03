@@ -92,7 +92,7 @@ export class SearchDispatch {
         // duplicate same-query event does not re-fire setSearchStatus / nav
         // transition / runSearch. The duration timer is captured AFTER the
         // bail so a duplicate event does not reset it.
-        const { signal, isNew } = startSearch(trimmed)
+        const { signal, isNew, release } = startSearch(trimmed)
         if (!isNew) return
         this.searchStartTime = performance.now()
         setSearchStatus('searching')
@@ -103,18 +103,20 @@ export class SearchDispatch {
             setMobileSearchSheetMode('peek')
         }
 
-        runSearch(trimmed, signal).catch((err: unknown) => {
-            // runSearch already handles AbortError + setSearchError internally;
-            // only catch non-AbortError so a hung promise doesn't hang the
-            // dispatch chain. The intent here is to keep the Svelte store's
-            // status updated by runSearch's own error path.
-            if (err instanceof DOMException && err.name === 'AbortError') return
-            // Fallback: some environments may reject with a plain Error whose
-            // name is 'AbortError', or the signal may be aborted without a
-            // proper DOMException. Suppress the warning in those cases too.
-            if (signal.aborted) return
-            debugWarn('SearchInput.dispatchSearch runSearch failed:', err)
-        })
+        runSearch(trimmed, signal)
+            .catch((err: unknown) => {
+                // runSearch already handles AbortError + setSearchError internally;
+                // only catch non-AbortError so a hung promise doesn't hang the
+                // dispatch chain. The intent here is to keep the Svelte store's
+                // status updated by runSearch's own error path.
+                if (err instanceof DOMException && err.name === 'AbortError') return
+                // Fallback: some environments may reject with a plain Error whose
+                // name is 'AbortError', or the signal may be aborted without a
+                // proper DOMException. Suppress the warning in those cases too.
+                if (signal.aborted) return
+                debugWarn('SearchInput.dispatchSearch runSearch failed:', err)
+            })
+            .finally(release)
     }
 
     cancel(cancelledQuery: string): void {
