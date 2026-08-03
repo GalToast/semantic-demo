@@ -227,6 +227,14 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
             const { mode, surface } = navStore()
             if (mode !== 'overview' || surface !== 'idle') {
                 dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)
+                // Escape-from-map stale URL fix: the escape-clear write above runs
+                // BEFORE the view flips (currentView is still 'map'), so it leaves
+                // view=map in the URL; RETURN_OVERVIEW flips currentView to galaxy
+                // but does not write the URL. Re-sync after the flip so the URL
+                // drops ?view=map (mirrors MapView.returnToOverview's post-dispatch
+                // updateUrlState; found by the F5.4 journey test — reloading with a
+                // stale view=map booted users back into map).
+                updateUrlState({}, { reason: 'escape-return-overview' })
             }
         }
     }

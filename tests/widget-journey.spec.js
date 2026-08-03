@@ -4722,4 +4722,55 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             'dismiss must mark onboarding as seen so the legend does not re-reveal'
         ).toBe(true)
     })
+
+    test('F5.4: switchView URL sync via the typed event bus (regression d4e0f096)', async ({ page }) => {
+        // Escape in map view routes handleGlobalKeydown -> returnToOverview() ->
+        // switchView('galaxy'), which must publish EVENTS.URL_SYNC_REQUESTED on the
+        // typed event bus (was an orphaned 'semantic:url-sync-requested' window
+        // CustomEvent with zero listeners) so updateUrlState() drops view=map from
+        // the URL. Regression d4e0f096. NOTE: the map-back button and mode chips
+        // sync the URL via dispatchNavTransition / selectMode paths that bypass
+        // switchView._requestUrlSync — Escape is the live user path that exercises
+        // this fix (verified via mutation: reverting _requestUrlSync makes the
+        // drop assertion fail).
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map`, { waitUntil: 'domcontentloaded' })
+
+        // Deep-link boot: currentView must settle to map and the URL must carry view=map.
+        await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'map', null, {
+            timeout: 10000,
+            polling: 100
+        })
+        expect(page.url(), 'deep-linked map view must be recorded in the URL').toContain('view=map')
+
+        // Escape -> returnToOverview() -> switchView('galaxy') -> _requestUrlSync.
+        await page.keyboard.press('Escape')
+
+        await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'galaxy', null, {
+            timeout: 10000,
+            polling: 100
+        })
+
+        // THE fix: the URL must drop view=map through the typed-bus sync.
+        await page.waitForFunction(
+            () => !(location.search.includes('view=map') || location.hash.includes('view=map')),
+            null,
+            { timeout: 10000, polling: 50 }
+        )
+        expect(page.url(), 'URL must drop view=map after switchView(galaxy)').not.toContain('view=map')
+
+        // Round-trip: re-enter map via the mode chip (selectMode path) and confirm
+        // view=map returns to the URL.
+        await page.click('.mode-chip[data-mode="map"]', { force: true })
+        await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'map', null, {
+            timeout: 10000,
+            polling: 100
+        })
+        await page.waitForFunction(
+            () => location.search.includes('view=map') || location.hash.includes('view=map'),
+            null,
+            { timeout: 10000, polling: 50 }
+        )
+        expect(page.url(), 'URL must record view=map after re-entering map view').toContain('view=map')
+    })
 })
