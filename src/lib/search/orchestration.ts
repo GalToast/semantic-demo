@@ -120,16 +120,24 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         debugWarn('[search/orchestration] sessionStorage may be unavailable:', error)
     }
     const trimmedQuery = String(query || '').trim()
-    const resultsEl = document.getElementById('search-results')
-    const statusEl = document.getElementById('search-status')
+    let resultsEl = document.getElementById('search-results')
+    let statusEl = document.getElementById('search-status')
     const searchInput = document.getElementById('search-input') as HTMLInputElement | null
-    if (!resultsEl || !statusEl) return // Self-register for circular dependency handling by UI module
-    setSearchStateNamespace(resultsEl, {
-        search,
-        clearSearch: () => clearSearch(),
-        bindSearchResultInteractions,
-        isMobileRouteFieldPeekActive
-    })
+    // Lazy-mount bridge (task #3, 2026-08-03): SearchBar lazy-loads SearchResults
+    // (#search-results) only once a search state exists (showResults /
+    // testLoadingPhase / isStoreError) — so a fresh idle boot has NO
+    // #search-results and the old hard `return` here silently dropped every
+    // first search (deep-link ?q= and typed input alike). Registration is
+    // best-effort: the UI module also self-registers on its own mount. The
+    // panel is resolved again after results land (see the wait below).
+    if (resultsEl && statusEl) {
+        setSearchStateNamespace(resultsEl, {
+            search,
+            clearSearch: () => clearSearch(),
+            bindSearchResultInteractions,
+            isMobileRouteFieldPeekActive
+        })
+    }
 
     incrementFocusTransitionToken()
     if (typeof clearSearchPreviewHoverTimer === 'function') clearSearchPreviewHoverTimer()
@@ -140,14 +148,14 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     if (!trimmedQuery || trimmedQuery.length < 2) {
         stopSearchVectorScramble()
         if (trimmedQuery && trimmedQuery.length > 0 && trimmedQuery.length < 2) {
-            statusEl.textContent = 'Type at least 2 characters to search'
+            if (statusEl) statusEl.textContent = 'Type at least 2 characters to search'
             // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
             setTimeout(() => {
                 if (statusEl && !searchStore().summary) {
                     statusEl.textContent = 'Type to find businesses by need, place, or trade.'
                 }
             }, 2000)
-            clearShortSemanticSearchState(resultsEl, statusEl)
+            if (resultsEl && statusEl) clearShortSemanticSearchState(resultsEl, statusEl)
         } else {
             clearSearch()
         }
@@ -155,7 +163,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     }
 
     if (trimmedQuery.length > 200) {
-        statusEl.textContent = 'Search query is too long. Try a shorter phrase.'
+        if (statusEl) statusEl.textContent = 'Search query is too long. Try a shorter phrase.'
         if (searchInput) {
             searchInput.value = trimmedQuery.slice(0, 200)
             searchInput.classList.remove('shake-input')
@@ -193,12 +201,14 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         if (signal.aborted || !isRequestCurrent(requestId)) return
         stopSearchVectorScramble()
         publish(EVENTS.SEARCH_DEGRADED, { resultsEl, statusEl, query: trimmedQuery, error })
-        applySemanticSearchDegradedState(
-            resultsEl,
-            statusEl,
-            trimmedQuery,
-            error instanceof Error ? error : new Error(String(error))
-        )
+        if (resultsEl && statusEl) {
+            applySemanticSearchDegradedState(
+                resultsEl,
+                statusEl,
+                trimmedQuery,
+                error instanceof Error ? error : new Error(String(error))
+            )
+        }
         return
     } finally {
         // Controller cleanup handled by search engine
@@ -246,6 +256,28 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         query: trimmedQuery,
         source: 'search-engine'
     })
+
+    // Lazy-mount bridge (task #3, 2026-08-03): #search-results is lazy-loaded
+    // by SearchBar only once a search state exists — it cannot exist when the
+    // search starts from idle, so the entry guard must not require it, and the
+    // render below must wait for the panel that setSearchSummary just mounted
+    // (hasSearchSummary flips -> SearchBar's $effect lazy-imports SearchResults).
+    if (!resultsEl || !statusEl) {
+        const deadline = Date.now() + 2500
+        while (Date.now() < deadline) {
+            resultsEl = document.getElementById('search-results')
+            statusEl = document.getElementById('search-status')
+            if (resultsEl && statusEl) break
+            await new Promise<void>((resolve) => setTimeout(resolve, 40))
+        }
+    }
+    if (!resultsEl || !statusEl) {
+        // Degradation: the panel never mounted. Results/summary are already in
+        // the store, and SearchResults renders from the store reactively, so
+        // only the interaction binding + chrome polish are lost.
+        debugWarn('[search/orchestration] #search-results did not mount; skipping DOM render', trimmedQuery)
+        return
+    }
 
     if (results.length === 1) {
         const soleIndex = anchorIndex
