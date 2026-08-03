@@ -1,16 +1,13 @@
 /**
  * view-bindings.ts
  * Canonical location (ported from — W15).
- * Core click helper, zoom, and view controls.
+ * Core click helper and zoom (view controls were retired 2026-08-03 — the
+ * bound buttons were never rendered; switching flows through mode chips).
  */
 
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
-import { switchView } from '@lib/orchestration/view-controller'
-import { toggleAutoRotate } from '@lib/engine/camera-controls-restore.svelte'
 import { debugWarn } from '@lib/utils/debug'
-import { resetExperienceState, copyCurrentViewLink } from '@lib/orchestration/lifecycle'
-import { showExperienceToast } from '@lib/orchestration/toast'
 import { zoomMap } from '@lib/engine/map-state'
 
 interface BindClickOptions {
@@ -57,46 +54,4 @@ export function zoomCamera(multiplier: number): void {
     const maxDist = state.controls.maxDistance || state.ORBIT_MAX_DISTANCE_DEFAULT
     const clampedDistance = Math.max(minDist, Math.min(maxDist, newDistance))
     state.camera.position.copy(target.clone().add(direction.multiplyScalar(clampedDistance)))
-}
-
-export function bindViewControls(): void {
-    bindClick('btn-galaxy', () => switchView('galaxy'))
-    bindClick('btn-map', () => switchView('map'))
-    bindClick('btn-zoom-in', () => zoomCamera(0.84))
-    bindClick('btn-zoom-out', () => zoomCamera(1.18))
-    bindClick('btn-reset', () => resetExperienceState())
-    bindClick('btn-rotate', () => toggleAutoRotate())
-    bindClick(
-        'btn-share-view',
-        () => {
-            const btn = document.getElementById('btn-share-view')
-            if (!btn) return
-            const originalChildren = Array.from(btn.childNodes)
-            const originalLabel = btn.getAttribute('aria-label') || 'Copy current view link'
-            if (typeof copyCurrentViewLink === 'function') {
-                copyCurrentViewLink()
-                    .then(() => {
-                        btn.textContent = ''
-                        const copiedSpan = document.createElement('span')
-                        copiedSpan.className = 'share-toggle-label'
-                        copiedSpan.setAttribute('aria-hidden', 'true')
-                        copiedSpan.textContent = 'Copied'
-                        btn.appendChild(copiedSpan)
-                        btn.setAttribute('aria-label', 'Link copied to clipboard')
-                        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-                        setTimeout(() => {
-                            btn.textContent = ''
-                            for (const child of originalChildren) {
-                                btn.appendChild(child)
-                            }
-                            btn.setAttribute('aria-label', originalLabel)
-                        }, 2000)
-                    })
-                    .catch(() => {
-                        showExperienceToast('Copy unavailable', 'Use the address bar to copy this current view.')
-                    })
-            }
-        },
-        { optional: true }
-    )
 }

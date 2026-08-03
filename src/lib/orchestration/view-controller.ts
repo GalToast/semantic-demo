@@ -227,9 +227,6 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
         applyMapFlatteningLayout(false)
     }
 
-    // Button state sync
-    _syncButtonState(view)
-
     // Container visibility
     _syncContainerVisibility(view)
 
@@ -271,31 +268,13 @@ function _startTerrainPrelude(_view: ViewName, options: SwitchViewOptions, _nav:
     }, CONFIG.MAP_HANDOFF_PRELUDE_MS)
 }
 
-function _syncButtonState(view: ViewName): void {
-    const btnGalaxy = document.getElementById('btn-galaxy')
-    const btnMap = document.getElementById('btn-map')
-    if (btnGalaxy) {
-        btnGalaxy.classList.toggle('active', view === 'galaxy')
-        btnGalaxy.setAttribute('aria-pressed', String(view === 'galaxy'))
-    }
-    if (btnMap) {
-        btnMap.classList.toggle('active', view === 'map')
-        btnMap.setAttribute('aria-pressed', String(view === 'map'))
-    }
-}
-
 function _syncContainerVisibility(view: ViewName): void {
     const canvasContainer = document.getElementById('canvas-container')
-    const mapContainer = document.getElementById('map-container')
 
     if (view === 'galaxy') {
         if (canvasContainer) canvasContainer.classList.remove('hidden')
-        if (mapContainer) {
-            mapContainer.classList.remove('active', 'arriving')
-        }
     } else {
         if (canvasContainer) canvasContainer.classList.add('hidden')
-        if (mapContainer) mapContainer.classList.add('active')
     }
 }
 

@@ -30,18 +30,16 @@ import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { refreshCompositionState } from '@lib/stores/lifecycle/modes'
 import { recordEmptySearch } from '@lib/stores/lifecycle/search-sync'
 import { setActiveResult, setSearchStatus } from '@lib/stores/search.svelte'
-import { returnToOverview, recenterFocusedNode, resetExplorationFocus, setSemanticLaneUiState } from './lifecycle'
+import { resetExplorationFocus, setSemanticLaneUiState } from './lifecycle'
 import { hideSummaryCard } from '@lib/journey/semantic-guide'
 import { updateUrlState } from '@lib/orchestration/url-state'
 import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
-import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
 import {
     navStore,
     dispatchNavTransition,
     NAV_TRANSITION_ACTIONS,
     writeNavStateMirror
 } from '@lib/stores/navigation.svelte'
-import { activeClusterFilter } from '@lib/stores/filter.svelte'
 import { addTrailStop, setThreadCandidates, setTrailDepth, setTrailNeighborIndices } from '@lib/stores/journey.svelte'
 import { getBusinessRecords } from '@lib/data-store'
 import { appState, legacyState } from '@lib/state/app.svelte.ts'
@@ -55,47 +53,6 @@ import type { Point } from '@lib/state/state-types'
 import type { SearchResult } from '@lib/types/state'
 import type { SearchContext } from '@lib/search/state'
 import { get } from 'svelte/store'
-import { isKeyboardTextEntryTarget } from '@lib/utils/keyboard-target'
-
-// ── Keyboard Support ──────────────────────────────────────────────────────────
-
-/**
- * Top-level keydown handler for the application shell.
- * Replaces the imperative listeners from global-bindings.js.
- * NOTE: currently unexported (no callers outside this module). Retained
- * because the keyboard-reset-ownership-contract validates its existence.
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Retained because keyboard-reset-ownership-contract validates its existence (zero external callers).
-function handleGlobalKeydown(event: KeyboardEvent): void {
-    const target = event.target as HTMLElement
-    if (isKeyboardTextEntryTarget(target)) return
-
-    const key = event.key
-
-    if (key === 'Escape') {
-        // Check if we have anything to reset
-        const nav = get(navStore)
-        if (nav.focusedIndex !== null || nav.currentView !== 'galaxy' || get(activeClusterFilter) !== null) {
-            event.preventDefault()
-            returnToOverview()
-        }
-        return
-    }
-
-    if (key === 'ArrowLeft' || key === 'ArrowUp') {
-        event.preventDefault()
-        traverseNeighbor(-1)
-    } else if (key === 'ArrowRight' || key === 'ArrowDown') {
-        event.preventDefault()
-        traverseNeighbor(1)
-    } else if (key === 'Home') {
-        event.preventDefault()
-        returnToOverview()
-    } else if (key === 'End' || (key === 'c' && !event.ctrlKey && !event.metaKey)) {
-        event.preventDefault()
-        recenterFocusedNode()
-    }
-}
 
 // ── Search → Compass Subscriptions ────────────────────────────────────────────
 //
@@ -319,7 +276,8 @@ subscribeKeyed(
         const index = Number(payload?.index)
         if (!Number.isFinite(index) || index < 0) return
         const currentFocus = get(navStore) as { focusedIndex?: number | null; mode?: string; surface?: string }
-        if (currentFocus.focusedIndex === index && currentFocus.mode === 'focus' && currentFocus.surface === 'focus') return
+        if (currentFocus.focusedIndex === index && currentFocus.mode === 'focus' && currentFocus.surface === 'focus')
+            return
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
             index,
             // The Svelte navStore does not have a skipHistory flag, but
