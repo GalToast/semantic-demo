@@ -166,6 +166,28 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
  * @returns true if THIS applyUrlState's token no longer matches the current
  *   global token (a newer applyUrlState has started). Caller should bail.
  */
+/**
+ * Resolve once the search store leaves the in-flight 'searching' status
+ * (settles to results/empty/error). Used by the piggyback path in
+ * _restoreSearchFromParams: when a same-query search is already in flight
+ * from the typed-input path, we wait for it to settle before running the
+ * anchor-resolution writes, instead of returning early and dropping the
+ * deep-link anchor focus (W71 shared-link fix). Polls the store every 100ms;
+ * never rejects (the caller applies its own restore deadline).
+ */
+async function waitForSearchSettle(
+    store: () => { status: string },
+    timeoutMs = 30_000
+): Promise<void> {
+    const deadline = Date.now() + timeoutMs
+    while (Date.now() < deadline) {
+        const status = store().status
+        if (status !== 'searching' && status !== 'focusing') return
+        // eslint-disable-next-line no-restricted-syntax -- bounded poll loop; timer is awaited, never leaked
+        await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+}
+
 function _isRestoreStale(token: number): boolean {
     return get(navStore).urlStateRestoreToken !== token
 }
@@ -853,21 +875,35 @@ async function _restoreSearchFromParams(
         }
 
         // If the same query is already in flight from the typed-input path,
-        // piggyback on it instead of issuing a duplicate API request.
+        // piggyback on it instead of issuing a duplicate API request. Do NOT
+        // return early here: the anchor resolution below (SEARCH_FOCUS_REQUESTED
+        // re-fire, constellation rebuild, camera frame) must still run once the
+        // in-flight search settles, or shared links like ?q=coffee&anchor=519
+        // silently fail to focus when the typed-input path is mid-flight.
         const { isNew } = startSearch(query)
-        if (!isNew) return
+        if (isNew) {
+            // Race runSearch against the restore deadline. runSearch swallows
+            // AbortError internally (silent return, leaving status 'searching'), so
+            // the await alone cannot distinguish a deadline hit from a normal
+            // settle. The deadline reject below is the source of truth for a
+            // timeout; the post-await searchSignal.aborted check covers the shape
+            // where runSearch settles instead of the deadline losing the race.
+            await Promise.race([runSearch(query, searchSignal), restoreDeadline])
 
-        // Race runSearch against the restore deadline. runSearch swallows
-        // AbortError internally (silent return, leaving status 'searching'), so
-        // the await alone cannot distinguish a deadline hit from a normal
-        // settle. The deadline reject below is the source of truth for a
-        // timeout; the post-await searchSignal.aborted check covers the shape
-        // where runSearch settles instead of the deadline losing the race.
-        await Promise.race([runSearch(query, searchSignal), restoreDeadline])
-
-        if (searchSignal.aborted && !signal.aborted) {
-            // runSearch swallowed the deadline abort and resolved normally.
-            restoreTimedOut = true
+            if (searchSignal.aborted && !signal.aborted) {
+                // runSearch swallowed the deadline abort and resolved normally.
+                restoreTimedOut = true
+            }
+        } else {
+            // In-flight search from the typed-input path: wait for it to settle
+            // (results/error/idle) so the anchor resolution below sees populated
+            // results, then continue. If the restore deadline expires first, bail
+            // like the fresh-search path does.
+            try {
+                await Promise.race([restoreDeadline, waitForSearchSettle(searchStore)])
+            } catch {
+                restoreTimedOut = true
+            }
         }
 
         if (restoreTimedOut) {
@@ -965,11 +1001,7 @@ async function _restoreSearchFromParams(
         // with the deadline reason instead of resolving).
         if (restoreTimedOut) {
             if (searchStore().status === 'searching') {
-                setSearchError(
-                    query,
-                    searchSignal.reason ?? new Error('Search restore timed out'),
-                    'full'
-                )
+                setSearchError(query, searchSignal.reason ?? new Error('Search restore timed out'), 'full')
             }
             return
         }
