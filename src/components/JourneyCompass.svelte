@@ -232,9 +232,16 @@
     (navState.currentView === 'galaxy' && activeTrailDepth >= 2)
   );
   let hasDiveFocus = $derived(focusState.semanticDiveMode || navState.focusedIndex != null || Number.isFinite(bodyFocusedIndex));
-  // LOW3: gate on pocket ready + trailDepth>=1 to prevent <100ms race where focusStore hasn't populated pocketNodes yet
+  // LOW3: require either a built pocket or populated thread candidates before
+  // enabling the action. Candidate data is the canonical readiness signal on
+  // the mobile placeholder route; the pocket can lag while its 3D positions
+  // hydrate, so hiding the action in that window made the real route appear
+  // broken even though the neighborhood was already available.
   let isDataLoading = $derived(!($dataLoadState.status === 'ready'));
-  let pocketReady = $derived((focusState.pocketNodes?.length ?? 0) > 0);
+  let pocketReady = $derived(
+    (focusState.pocketNodes?.length ?? 0) > 0 ||
+    (navState.threadCandidates?.length ?? 0) > 0
+  );
   let hasTrailDepth = $derived(activeTrailDepth >= 1);
   let canDive = $derived(
     navState.currentView === 'galaxy'
@@ -246,7 +253,6 @@
     bodyCanStepInside ||
     (hasTrailDepth
       && hasDiveFocus
-      && pocketReady
       && !semanticDiveActive)
   );
   let primaryCanStepInside = $derived(
@@ -351,9 +357,13 @@
     noDemo && phase === 'overview'
   );
 
-  // Hide compass when search results are active to avoid overlap.
+  // Hide the compass only while the search results surface owns the view.
+  // `focus-search` is the settled focus surface after a result is chosen;
+  // hiding the compass there also hides its real Step Inside action and leaves
+  // the mobile route with no reachable way into the neighborhood.
   let hideCompassForSearch = $derived(
-    searchSurface && !(navState.currentView === 'map')
+    (navSurface === 'search' || bodyPanelSurface === 'search') &&
+    navState.currentView !== 'map'
   );
 
   // Suppress step indicators in focus/inside phase on desktop.
