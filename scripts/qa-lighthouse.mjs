@@ -133,9 +133,15 @@ async function main() {
             .filter((f) => f.startsWith('lighthouse-baseline'))
             .sort()
         const nextNumber = baselineFiles.length + 1
+        // Name baselines with the CURRENT month — the old hardcoded 2026-06
+        // prefix mislabeled every generated baseline as June (e.g. the
+        // Aug-generated docs/lighthouse-baseline-2026-06-03.json).
+        const now = new Date()
+        const year = now.getFullYear()
+        const month = String(now.getMonth() + 1).padStart(2, '0')
         const baselinePath = path.join(
             BASELINE_DIR,
-            `lighthouse-baseline-2026-06-${nextNumber.toString().padStart(2, '0')}.json`
+            `lighthouse-baseline-${year}-${month}-${nextNumber.toString().padStart(2, '0')}.json`
         )
         fs.copyFileSync(reportPath, baselinePath)
         console.log(`\nBaseline updated: ${baselinePath}`)
