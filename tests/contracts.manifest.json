@@ -578,7 +578,7 @@
             ]
         },
         "e2e": {
-            "description": "End-to-end Playwright specs requiring a live server - switchView race condition and full click flow proofs. Requires running dev server on port 9876.",
+            "description": "End-to-end Playwright specs - switchView race condition and full click flow proofs. Repaired 2026-08-03: both specs drive switchView via the __navActions__ test-globals hook (dead #btn-map/#btn-share-view buttons retired in f0bceb84) and run against the standard playwright webServer (port 8796, auto-booted) instead of a manual dev server on 9876.",
             "contracts": ["switchview-race.spec.js", "e2e-click-flow.spec.js"]
         }
     }

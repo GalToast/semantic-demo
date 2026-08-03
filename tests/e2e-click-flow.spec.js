@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
+const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8796').replace(/\/$/, '')
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
 const SEMANTIC_HEALTH_STUB = {
     ok: true,
@@ -14,24 +14,68 @@ const SEARCH_STUB = {
     ok: true,
     count: 3,
     results: [
-        { lead_id: 1, score: 0.99, semantic_score: 0.99, public_note: 'Coffee-relevant local business result.' },
-        { lead_id: 2, score: 0.91, semantic_score: 0.91, public_note: 'Nearby hospitality result.' },
-        { lead_id: 20, score: 0.86, semantic_score: 0.86, public_note: 'Related local service result.' }
+        {
+            lead_id: 1,
+            name: 'Java Junction Coffee',
+            what: 'Coffee roaster and cafe',
+            city: 'Conroe',
+            lat: 30.3119,
+            lng: -95.4561,
+            cluster: 3,
+            status: 'active',
+            website: 'https://example.com/java',
+            email: 'hello@example.com',
+            phone: '(936) 555-0101',
+            score: 0.99,
+            semantic_score: 0.99,
+            public_note: 'Coffee-relevant local business result.'
+        },
+        {
+            lead_id: 2,
+            name: 'The Grind House',
+            what: 'Coffee shop',
+            city: 'The Woodlands',
+            lat: 30.1658,
+            lng: -95.4612,
+            cluster: 3,
+            status: 'active',
+            website: 'https://example.com/grind',
+            email: 'hi@example.com',
+            phone: '(936) 555-0102',
+            score: 0.91,
+            semantic_score: 0.91,
+            public_note: 'Nearby hospitality result.'
+        },
+        {
+            lead_id: 20,
+            name: 'Cafe Mosaic',
+            what: 'Cafe and bakery',
+            city: 'Montgomery',
+            lat: 30.3883,
+            lng: -95.6963,
+            cluster: 5,
+            status: 'active',
+            website: 'https://example.com/mosaic',
+            email: 'cafe@example.com',
+            phone: '(936) 555-0103',
+            score: 0.86,
+            semantic_score: 0.86,
+            public_note: 'Related local service result.'
+        }
     ]
 }
 
 test('E2E Semantic Explorer Click Flow', async ({ page }) => {
     test.setTimeout(60000)
-    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.route('**/api.php?action=semantic_lane_health**', async (route) => {
+    await page.route('**api.php**semantic_lane_health**', async (route) => {
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
             body: JSON.stringify(SEMANTIC_HEALTH_STUB)
         })
     })
-    await page.route('**/api.php?action=semantic_search**', async (route) => {
+    await page.route('**api.php**semantic_search**', async (route) => {
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -50,6 +94,12 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
         .catch(() => {})
 
     // 2. Perform Search
+    // BLOCKER (pre-existing, 2026-08-03): deep-link ?q=coffee does not hydrate the
+    // search input or run a search in the dist app (probe: searchStatus stays idle,
+    // zero api.php requests, 8406-point dataset loads fine — evidence in
+    // tmp/probe-search-output.txt, reproducible at HEAD with search files stashed).
+    // The fill() below re-triggers search, but the result pipeline still needs the
+    // deep-link/search boot defect fixed before this step can pass.
     const searchInput = page.locator('#search-input')
     await searchInput.focus()
     await searchInput.fill('coffee')
@@ -65,29 +115,22 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
     // result click — settlement handled by subsequent waitForFunction
 
     // 4. Switch to Map Mode
-    // The legacy CSS hides .controls on focus + map panel surfaces
-    // (strands.css body[data-panel-surface='focus'] .controls { display: none }
-    // and controls.css body[data-active-view='map']:not([data-panel-surface='map-idle'])
-    // .controls { display: none }), so the buttons are display:none at the
-    // moments we need to click them. page.evaluate(() => element.click())
-    // fires the click handler regardless of CSS visibility — the alternative
-    // would be editing the off-limits CSS. The underlying visibility is a
-    // separate seam tracked in the post-fix findings.
-    await page.evaluate(() => document.getElementById('btn-map')?.click())
-    await page
-        .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), {
-            timeout: 8000
-        })
-        .catch(() => {})
+    // Repaired 2026-08-03: the original drove the dead legacy #btn-map overlay
+    // button (zero render sites since the controls overlay was retired;
+    // f0bceb84 removed the bindings). Drive the real switchView function via
+    // the Playwright test-globals hook and assert the parity dataset, matching
+    // the switchview-race repair.
+    await page.evaluate(() => window.__navActions__?.switchView('map'))
+    await page.waitForFunction(() => document.body.dataset.activeView === 'map', { timeout: 15000, polling: 50 })
 
-    // 5. Share Button (Clipboard)
-    await page.evaluate(() => document.getElementById('btn-share-view')?.click())
-    await page
-        .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 5000 })
-        .catch(() => {})
-    const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
-    expect(clipboardText).toContain('view=map')
-    expect(clipboardText).toContain('q=coffee')
+    // 5. Shareable-state assertion
+    // The share/copy-link button (#btn-share-view) was also retired — it renders
+    // nowhere and copyCurrentViewLink now has zero live callers. Its clipboard
+    // content (view=map + q=coffee) is exactly the URL state the share link
+    // would carry, so assert the URL directly: the map switch must record
+    // view=map (typed-bus URL sync, d4e0f096) and the search query must survive.
+    expect(page.url(), 'map switch must record view=map in the URL').toContain('view=map')
+    expect(page.url(), 'search query must survive the map switch').toContain('q=coffee')
 
     // 6. Reset
     await page.evaluate(() => {
