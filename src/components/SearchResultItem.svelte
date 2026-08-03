@@ -107,7 +107,18 @@
       formatBusinessName
     };
 
-    const strength = getSearchResultStrength(resultItem, topScore);
+    // The presentation helper consumes hydrated results; normalize nullable
+    // contact fields at this adapter boundary without weakening either contract.
+    const presentationResult = {
+      ...resultItem,
+      point: {
+        ...point,
+        website: point.website ?? undefined,
+        email: point.email ?? undefined,
+        phone: point.phone ?? undefined
+      }
+    };
+    const strength = getSearchResultStrength(presentationResult, topScore);
     const rankLabel = deps.buildSearchRankLabel(orderIdx);
     const cardClasses = getSearchResultCardClasses(orderIdx, isAnchor);
     const snippetText = deps.buildSearchResultSnippet();
