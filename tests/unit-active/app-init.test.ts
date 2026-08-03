@@ -35,7 +35,7 @@ const mock = vi.hoisted(() => ({
     applyUrlState: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     debugWarn: vi.fn<() => void>(),
     debugError: vi.fn<(...args: unknown[]) => void>(),
-    initAudio: vi.fn<() => void>(),
+    initAudio: vi.fn<() => void>()
 }))
 
 // ── Module mocks (isolate every downstream consumer) ─────────────────────────
@@ -45,7 +45,7 @@ vi.mock('@lib/data-store', async () => {
         ...actual,
         initData: mock.initData,
         setLoadingPhase: mock.setLoadingPhase,
-        setDataLoadError: mock.setDataLoadError,
+        setDataLoadError: mock.setDataLoadError
     }
 })
 
@@ -53,7 +53,7 @@ vi.mock('@lib/stores/viewport.svelte.ts', async () => {
     const actual = await vi.importActual('@lib/stores/viewport.svelte.ts')
     return {
         ...actual,
-        initViewportListeners: mock.initViewportListeners,
+        initViewportListeners: mock.initViewportListeners
     }
 })
 
@@ -61,7 +61,7 @@ vi.mock('@lib/orchestration/adapters', async () => {
     const actual = await vi.importActual('@lib/orchestration/adapters')
     return {
         ...actual,
-        initAdapters: mock.initAdapters,
+        initAdapters: mock.initAdapters
     }
 })
 
@@ -69,7 +69,7 @@ vi.mock('@lib/orchestration/adapter-deps', async () => {
     const actual = await vi.importActual('@lib/orchestration/adapter-deps')
     return {
         ...actual,
-        buildAdapterDeps: mock.buildAdapterDeps,
+        buildAdapterDeps: mock.buildAdapterDeps
     }
 })
 
@@ -77,7 +77,7 @@ vi.mock('@lib/orchestration/parity-attrs.svelte.ts', async () => {
     const actual = await vi.importActual('@lib/orchestration/parity-attrs.svelte.ts')
     return {
         ...actual,
-        installParityAttributeSync: mock.installParityAttributeSync,
+        installParityAttributeSync: mock.installParityAttributeSync
     }
 })
 
@@ -85,7 +85,7 @@ vi.mock('@lib/orchestration/test-globals', async () => {
     const actual = await vi.importActual('@lib/orchestration/test-globals')
     return {
         ...actual,
-        installTestStoreGlobals: mock.installTestStoreGlobals,
+        installTestStoreGlobals: mock.installTestStoreGlobals
     }
 })
 
@@ -93,17 +93,17 @@ vi.mock('@lib/orchestration/url-state', async () => {
     const actual = await vi.importActual('@lib/orchestration/url-state')
     return {
         ...actual,
-        applyUrlState: mock.applyUrlState,
+        applyUrlState: mock.applyUrlState
     }
 })
 
 vi.mock('@lib/utils/debug', () => ({
     debugWarn: mock.debugWarn,
-    debugError: mock.debugError,
+    debugError: mock.debugError
 }))
 
 vi.mock('@lib/audio/audio-scape', () => ({
-    initAudio: mock.initAudio,
+    initAudio: mock.initAudio
 }))
 
 // ── Import the SUT AFTER all mocks are registered ───────────────────────────
@@ -258,7 +258,7 @@ describe('appInit — call order (phase invariant)', () => {
             'buildAdapterDeps',
             'initAdapters',
             'applyUrlState',
-            'initAudio',
+            'initAudio'
         ])
 
         cleanup()
@@ -306,10 +306,7 @@ describe('appInit — initData rejection path', () => {
         const cleanup = await appInit({})
 
         // debugError should have been called with the rejection
-        expect(mock.debugError).toHaveBeenCalledWith(
-            '[app-init] initData failed:',
-            expect.any(Error)
-        )
+        expect(mock.debugError).toHaveBeenCalledWith('[app-init] initData failed:', expect.any(Error))
 
         // Init still completes — URL state and globals still run
         expect(mock.applyUrlState).toHaveBeenCalledTimes(1)

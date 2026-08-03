@@ -9,75 +9,75 @@
  * Exit 0 = all references resolve. Exit 1 = dangling references found.
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const ROOT = path.resolve(__dirname, '..');
-const SRC_DIR = path.join(ROOT, 'src');
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const ROOT = path.resolve(__dirname, '..')
+const SRC_DIR = path.join(ROOT, 'src')
 
-const BRIDGE_IMPORT_RE = /@lib\/engine\/([^'"\s]+)/g;
+const BRIDGE_IMPORT_RE = /@lib\/engine\/([^'"\s]+)/g
 
 function findTsFiles(dir) {
-  const results = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...findTsFiles(full));
-    } else if (entry.name.endsWith('.ts') || entry.name.endsWith('.svelte.ts')) {
-      results.push(full);
+    const results = []
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name)
+        if (entry.isDirectory()) {
+            results.push(...findTsFiles(full))
+        } else if (entry.name.endsWith('.ts') || entry.name.endsWith('.svelte.ts')) {
+            results.push(full)
+        }
     }
-  }
-  return results;
+    return results
 }
 
-const dangling = [];
+const dangling = []
 
 function isInsideComment(content, index) {
-  // Line comment: anything on the same line before the match after //
-  const lineStart = content.lastIndexOf('\n', index) + 1;
-  const beforeOnLine = content.slice(lineStart, index);
-  if (beforeOnLine.includes('//')) return true;
+    // Line comment: anything on the same line before the match after //
+    const lineStart = content.lastIndexOf('\n', index) + 1
+    const beforeOnLine = content.slice(lineStart, index)
+    if (beforeOnLine.includes('//')) return true
 
-  // Block comment: last /* before index is not closed by */
-  const before = content.slice(0, index);
-  const lastOpen = before.lastIndexOf('/*');
-  const lastClose = before.lastIndexOf('*/');
-  return lastOpen > lastClose;
+    // Block comment: last /* before index is not closed by */
+    const before = content.slice(0, index)
+    const lastOpen = before.lastIndexOf('/*')
+    const lastClose = before.lastIndexOf('*/')
+    return lastOpen > lastClose
 }
 
 for (const file of findTsFiles(SRC_DIR)) {
-  const content = fs.readFileSync(file, 'utf8');
-  let match;
-  while ((match = BRIDGE_IMPORT_RE.exec(content)) !== null) {
-    if (isInsideComment(content, match.index)) continue;
+    const content = fs.readFileSync(file, 'utf8')
+    let match
+    while ((match = BRIDGE_IMPORT_RE.exec(content)) !== null) {
+        if (isInsideComment(content, match.index)) continue
 
-    const importPath = match[1];
-    // Resolve relative to src/lib/engine/
-    const resolved = path.join(SRC_DIR, 'lib', 'engine', importPath);
-    // Try common extensions
-    const exists =
-      fs.existsSync(resolved) ||
-      fs.existsSync(resolved + '.ts') ||
-      fs.existsSync(resolved + '.svelte.ts') ||
-      fs.existsSync(resolved + '.js') ||
-      fs.existsSync(resolved + '.mjs');
+        const importPath = match[1]
+        // Resolve relative to src/lib/engine/
+        const resolved = path.join(SRC_DIR, 'lib', 'engine', importPath)
+        // Try common extensions
+        const exists =
+            fs.existsSync(resolved) ||
+            fs.existsSync(resolved + '.ts') ||
+            fs.existsSync(resolved + '.svelte.ts') ||
+            fs.existsSync(resolved + '.js') ||
+            fs.existsSync(resolved + '.mjs')
 
-    if (!exists) {
-      const relFile = path.relative(ROOT, file);
-      dangling.push(`${relFile}: @lib/engine/${importPath}`);
+        if (!exists) {
+            const relFile = path.relative(ROOT, file)
+            dangling.push(`${relFile}: @lib/engine/${importPath}`)
+        }
     }
-  }
 }
 
 if (dangling.length > 0) {
-  console.error('❌ Dangling bridge references found:');
-  for (const d of dangling) console.error(`  ${d}`);
-  console.error('\nFix: create the missing bridge file or update the import.');
-  process.exit(1);
+    console.error('❌ Dangling bridge references found:')
+    for (const d of dangling) console.error(`  ${d}`)
+    console.error('\nFix: create the missing bridge file or update the import.')
+    process.exit(1)
 } else {
-  console.log('✅ All bridge imports resolve to real files.');
-  process.exit(0);
+    console.log('✅ All bridge imports resolve to real files.')
+    process.exit(0)
 }

@@ -193,11 +193,14 @@ describe('W11-T7: runtime — initAdapters() invokes all 9 adapters', () => {
         // deferring keeps three out of the cold-load modulepreload set). The
         // dynamic import is fire-and-forget inside initAdapters, so we poll
         // for all 9 adapter inits to complete instead of a fixed 50ms wait.
-        await vi.waitFor(() => {
-            for (const name of ADAPTER_INIT_NAMES) {
-                expect(W11_MUTABLE_MOCK_FNS[name]).toHaveBeenCalledTimes(1)
-            }
-        }, { timeout: 2000, interval: 5 })
+        await vi.waitFor(
+            () => {
+                for (const name of ADAPTER_INIT_NAMES) {
+                    expect(W11_MUTABLE_MOCK_FNS[name]).toHaveBeenCalledTimes(1)
+                }
+            },
+            { timeout: 2000, interval: 5 }
+        )
 
         // All 9 should have been called exactly once (redundant with waitFor
         // above but documents the invariant for human readers).

@@ -8,10 +8,7 @@
  */
 import { describe, it, expect } from 'vitest'
 
-import {
-    auditNestedStateMutations,
-    NESTED_STATE_PATHS
-} from '@lib/state/state-validation'
+import { auditNestedStateMutations, NESTED_STATE_PATHS } from '@lib/state/state-validation'
 
 // ── Helper: build a minimal valid state snapshot ────────────────────────────
 

@@ -76,11 +76,9 @@ test.describe('W57 keyboard + browser-history journey', () => {
 
         await page.keyboard.press('Control+5')
 
-        await page.waitForFunction(
-            () => document.body.classList.contains('surface-semantic-dive'),
-            null,
-            { timeout: 8000 }
-        )
+        await page.waitForFunction(() => document.body.classList.contains('surface-semantic-dive'), null, {
+            timeout: 8000
+        })
         const state = await page.evaluate(() => {
             const pocket = document.querySelector('#focus-pocket')
             const cs = pocket ? getComputedStyle(pocket) : null
@@ -90,15 +88,11 @@ test.describe('W57 keyboard + browser-history journey', () => {
                 pocketAriaHidden: pocket?.getAttribute('aria-hidden')
             }
         })
-        expect(
-            state.semanticDive,
-            'Ctrl+5 must engage the semantic-dive surface (matches the Inside chip path)'
-        ).toBe(true)
+        expect(state.semanticDive, 'Ctrl+5 must engage the semantic-dive surface (matches the Inside chip path)').toBe(
+            true
+        )
         expect(state.pocketDisplay, 'focus pocket must be visible in the dive surface').toBe('block')
-        expect(
-            state.pocketAriaHidden,
-            'focus pocket must not be aria-hidden in the dive surface'
-        ).not.toBe('true')
+        expect(state.pocketAriaHidden, 'focus pocket must not be aria-hidden in the dive surface').not.toBe('true')
     })
 
     /**
