@@ -305,12 +305,17 @@ async function delayWithSignal(ms: number, signal: AbortSignal): Promise<void> {
     if (signal.aborted) throw new DOMException('Aborted during retry backoff', 'AbortError')
     return new Promise<void>((resolve, reject) => {
         // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        const timer = setTimeout(resolve, ms)
-        const onAbort = (): void => {
+        const timer = setTimeout(() => {
+            signal.removeEventListener('abort', onAbort)
+            resolve()
+        }, ms)
+
+        function onAbort(): void {
             clearTimeout(timer)
             signal.removeEventListener('abort', onAbort)
             reject(new DOMException('Aborted during retry backoff', 'AbortError'))
         }
+
         signal.addEventListener('abort', onAbort, { once: true })
     })
 }

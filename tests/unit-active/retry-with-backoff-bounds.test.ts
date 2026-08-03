@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { computeBackoffDelay } from '@lib/utils/retry-with-backoff'
+import { describe, it, expect, vi } from 'vitest'
+import { computeBackoffDelay, retryWithBackoff } from '@lib/utils/retry-with-backoff'
 
 /**
  * W60 regression: computeBackoffDelay jitter clamp.
@@ -53,5 +53,34 @@ describe('computeBackoffDelay — maxDelay contract (W60 fix)', () => {
         for (let s = 0; s < 4000; s++) {
             expect(computeBackoffDelay(6, 400, 8000)).toBeLessThanOrEqual(8000)
         }
+    })
+})
+
+describe('retryWithBackoff — abort listener lifecycle', () => {
+    it('removes the abort listener after a retry backoff resolves normally', async () => {
+        const controller = new AbortController()
+        const removeListener = vi.spyOn(controller.signal, 'removeEventListener')
+        let attempts = 0
+
+        await expect(
+            retryWithBackoff(
+                async () => {
+                    attempts += 1
+                    if (attempts < 3) throw new Error('transient failure')
+                    return 'success'
+                },
+                {
+                    signal: controller.signal,
+                    maxRetries: 3,
+                    baseDelayMs: 1,
+                    maxDelayMs: 1,
+                    timeoutMs: 1000
+                }
+            )
+        ).resolves.toBe('success')
+
+        expect(attempts).toBe(3)
+        expect(removeListener).toHaveBeenCalledTimes(2)
+        removeListener.mockRestore()
     })
 })
