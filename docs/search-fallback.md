@@ -14,6 +14,8 @@ Time-bounded sticky bypass, NOT a permanent lock. Record is `{setAt: Date.now(),
 
 Helpers (in `@lib/search/mock-search-fallback`): `markApiUnreachable(reason)`, `clearApiUnreachable()`, `readApiUnreachable()`. Never call `sessionStorage.setItem('api_unreachable', ...)` directly — go through `markApiUnreachable` so the timestamp is recorded.
 
+Caller-initiated search cancellation does not mark the API unreachable; genuine network failures and internal request timeouts still do. This keeps a superseded search from forcing later searches onto the local fallback lane.
+
 ## `?staticDev=0`
 
 Forces live API and surfaces failures as errors. Used by contract tests; do not use in normal dev flows.

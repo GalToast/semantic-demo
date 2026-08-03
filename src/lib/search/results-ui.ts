@@ -15,7 +15,7 @@ import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetTogg
 import { setSearchGlow as storeSetSearchGlow } from '@lib/stores/search.svelte'
 import { recordSemanticLaneSnapshot } from '../orchestration/semantic-lane'
 import { appState } from '@lib/state/app.svelte'
-import type { SemanticState, SearchErrorData, SearchResult, SearchResultPoint } from '@lib/state/state-types'
+import type { SemanticState, SearchErrorData, SearchResult } from '@lib/state/state-types'
 import { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
 
 // appState (AppState class instance) structurally matches SemanticState at runtime;
@@ -512,10 +512,15 @@ export function updateSearchStatusMessage(matchCount: number | null = null): voi
 
 // ── Dedupe near-duplicate results ───────────────────────────────────────────
 
-function dedupeNearDuplicateResults(results: SearchResult[]): SearchResult[] {
+type DedupeResult = {
+    point?: { name?: string; city?: string } | null
+    score: number
+}
+
+export function dedupeNearDuplicateResults<T extends DedupeResult>(results: T[]): T[] {
     if (!Array.isArray(results) || results.length < 2) return results
-    const seen = new Map<string, { result: SearchResult; index: number }>()
-    const out: SearchResult[] = []
+    const seen = new Map<string, { result: T; index: number }>()
+    const out: T[] = []
     for (const result of results) {
         if (!result?.point) {
             out.push(result)
@@ -542,7 +547,7 @@ function dedupeNearDuplicateResults(results: SearchResult[]): SearchResult[] {
     return out
 }
 
-function nearDuplicateKey(point: SearchResultPoint): string | null {
+function nearDuplicateKey(point: { name?: string; city?: string }): string | null {
     if (!point.name || !point.city) return null
     const cleanName = point.name
         .toLowerCase()

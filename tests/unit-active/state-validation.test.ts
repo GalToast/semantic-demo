@@ -403,11 +403,23 @@ describe('state validation — validateStateProperty', () => {
     it('allows valid semanticLaneState values', () => {
         expect(validateStateProperty('semanticLaneState', 'checking')).toBeNull()
         expect(validateStateProperty('semanticLaneState', 'healthy')).toBeNull()
+        expect(validateStateProperty('semanticLaneState', 'stuck')).toBeNull()
+        expect(validateStateProperty('semanticLaneState', 'reconnecting')).toBeNull()
+        expect(validateStateProperty('semanticLaneState', 'unavailable')).toBeNull()
+        expect(validateStateProperty('semanticLaneState', 'degraded')).toBeNull()
+        expect(validateStateProperty('semanticLaneState', 'offline')).toBeNull()
     })
 
     it('rejects invalid semanticLaneState values', () => {
         const error = validateStateProperty('semanticLaneState', 'bogus')
         expect(error).toContain('semanticLaneState')
+        expect(error).toContain('bogus')
+    })
+
+    it('allows runtime-only semanticLaneState values that semantic-lane.ts writes', () => {
+        expect(validateStateProperty('semanticLaneState', 'stuck')).toBeNull()
+        expect(validateStateProperty('semanticLaneState', 'reconnecting')).toBeNull()
+        expect(validateStateProperty('semanticLaneState', 'unavailable')).toBeNull()
     })
 
     // searchStatus, focusTransitionMode, searchVisibleCount, viewportWidth/Height

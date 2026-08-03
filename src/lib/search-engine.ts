@@ -27,6 +27,7 @@ import { shouldLogStaticDevFallback } from '@lib/utils/ui-presentation'
 import { debugWarn } from '@lib/utils/debug'
 import { getCachedSearch, setCachedSearch, getPendingSearch, setPendingSearch } from '@lib/search/cache'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
+import { getPointIndexByLeadId } from '@lib/data-store'
 
 import {
     PAGE_SIZE,
@@ -149,10 +150,15 @@ async function fetchSemanticSearchResultsDirect(
 
                 return text
             } catch (err) {
-                if (canUseStaticDevFallback()) {
+                // A caller abort must not poison the sticky API bypass flag;
+                // an internal timeout is still a genuine API failure.
+                const isCallerAbort = !timedOut && signal?.aborted === true
+
+                if (!isCallerAbort && canUseStaticDevFallback()) {
                     const reason = err instanceof Error ? err.message : 'unknown'
                     markApiUnreachable(reason)
                 }
+
                 if (timedOut && !signal?.aborted && err instanceof DOMException && err.name === 'AbortError') {
                     throw new Error(`Semantic search timed out after ${timeoutMs}ms.`, { cause: err })
                 }
@@ -189,7 +195,7 @@ async function fetchSemanticSearchResultsDirect(
     // requiring a manual sessionStorage.clear() or page reload.
     clearApiUnreachable()
     return rawRows
-        .map((row: RawServiceRow, idx: number) => mapServiceRow(row, idx))
+        .map((row: RawServiceRow, idx: number) => mapServiceRow(row, idx, getPointIndexByLeadId()))
         .filter((r): r is SearchResult => r !== null)
         .slice(0, safeLimit)
 }

@@ -28,16 +28,38 @@ export function getPayloadResults(payload: unknown): RawServiceRow[] {
 
 /**
  * Map a single raw service row to a typed SearchResult.
- * Pure function — reads only the row fields, no state dependency.
+ *
+ * Corpus-index resolution (lead_id → canonical point position):
+ *   When `leadToIndex` is provided, the function looks up `row.lead_id` in
+ *   the map to set `result.index` to the actual corpus position. This is
+ *   necessary because downstream consumers (focus, glow, trail, card, URL)
+ *   use the corpus index, not the API page-order position.
+ *
+ *   The API response order (the `order` parameter) is the **fallback** for
+ *   rows that lack a usable lead_id or have a lead_id not present in the
+ *   canonical corpus map (e.g. name-only or malformed rows). Row-level
+ *   `row.index` from the API is **never** treated as the corpus index — the
+ *   API sends response-order positions, not the corpus index.
+ *
+ *   This is a deliberate, documented fallback so malformed or isolated
+ *   mapper tests do not crash and name-only results survive.
+ *
+ * @param row         Raw service row from the API payload.
+ * @param order       Position of this row in the API response array (fallback index).
+ * @param leadToIndex Optional canonical map from lead_id → corpus point index.
  */
-export function mapServiceRow(row: RawServiceRow, order: number): SearchResult | null {
+export function mapServiceRow(row: RawServiceRow, order: number, leadToIndex?: Map<string, number>): SearchResult | null {
     // Need at least a name or lead_id to produce a result
     if (!row || (!row.name && !row.lead_id)) return null
+
+    // Resolve the corpus index: lead_id lookup in the canonical map first;
+    // fall back to response order for rows without a usable lead_id.
+    const resolvedIndex = resolveCorpusIndex(row, leadToIndex, order)
 
     return {
         id: String(row.lead_id ?? row.name ?? `result-${order}`),
         name: String(row.name || row.lead_id || 'Unknown'),
-        index: order,
+        index: resolvedIndex,
         score: Number(row.score ?? row.semantic_score ?? 0),
         category: String(row.category ?? ''),
         snippet: String(row.public_note ?? row.public_detail ?? row.address ?? ''),
@@ -64,6 +86,26 @@ export function mapServiceRow(row: RawServiceRow, order: number): SearchResult |
                       : undefined
         }
     }
+}
+
+/**
+ * Resolve the corpus index for a raw API row.
+ *
+ * Priority:
+ *   1. lead_id → canonical corpus map (most reliable)
+ *   2. fallback order (API response position)
+ *
+ * The API's `row.index` field is deliberately rejected — the API returns
+ * page-order positions, not corpus indices.
+ */
+function resolveCorpusIndex(row: RawServiceRow, leadToIndex?: Map<string, number>, fallback?: number): number {
+    if (leadToIndex && row.lead_id) {
+        const canonical = leadToIndex.get(String(row.lead_id))
+        if (canonical !== undefined && Number.isFinite(canonical) && canonical >= 0) {
+            return canonical
+        }
+    }
+    return fallback ?? 0
 }
 
 export function normalizeSearchPage(page: number): number {

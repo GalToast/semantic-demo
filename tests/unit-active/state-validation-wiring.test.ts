@@ -192,9 +192,18 @@ describe('Phase 6a — VALID_* sets shape (sanity)', () => {
         expect(VALID_LOADING_PHASES.has('launch')).toBe(true)
     })
 
-    it('VALID_SEMANTIC_LANE_STATES contains 4 states', () => {
-        expect(VALID_SEMANTIC_LANE_STATES.size).toBe(4)
+    it('VALID_SEMANTIC_LANE_STATES contains 7 states', () => {
+        expect(VALID_SEMANTIC_LANE_STATES.size).toBe(7)
         expect(VALID_SEMANTIC_LANE_STATES.has('checking')).toBe(true)
+        expect(VALID_SEMANTIC_LANE_STATES.has('stuck')).toBe(true)
+        expect(VALID_SEMANTIC_LANE_STATES.has('reconnecting')).toBe(true)
+        expect(VALID_SEMANTIC_LANE_STATES.has('unavailable')).toBe(true)
+    })
+
+    it('VALID_SEMANTIC_LANE_STATES accepts all runtime states from semantic-lane.ts', () => {
+        for (const state of ['checking', 'healthy', 'degraded', 'offline', 'stuck', 'reconnecting', 'unavailable']) {
+            expect(VALID_SEMANTIC_LANE_STATES.has(state), `Missing semantic lane state: ${state}`).toBe(true)
+        }
     })
 
     it('VALID_MYCELIUM_MODES is non-empty', () => {

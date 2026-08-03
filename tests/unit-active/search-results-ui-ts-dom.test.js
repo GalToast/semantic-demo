@@ -3,7 +3,8 @@ import {
     applyEmptySemanticSearchState,
     applySemanticSearchErrorState,
     renderSearchResultItems,
-    setSearchStateNamespace
+    setSearchStateNamespace,
+    dedupeNearDuplicateResults
 } from '../../src/lib/search/results-ui.ts'
 
 function makeResult(index, name, city, score = 1, extra = {}) {
@@ -128,5 +129,84 @@ describe('search-results-ui.ts legacy DOM rendering', () => {
         expect(resultsEl.querySelector('.search-error-state')).toBeNull()
         expect(resultsEl.classList.contains('active')).toBe(false)
         expect(resultsEl.getAttribute('aria-hidden')).toBe('true')
+    })
+})
+
+describe('dedupeNearDuplicateResults', () => {
+    it('keeps higher-score row when name+city are near-duplicates and preserves unique rows', () => {
+        const results = [
+            makeResult(10, 'Acme Coffee LLC', 'Conroe', 0.3),
+            makeResult(20, 'Acme Coffee Inc', 'Conroe', 0.9),
+            makeResult(30, 'Unique Bakery', 'Conroe', 0.8)
+        ]
+        const deduped = dedupeNearDuplicateResults(results)
+        // Two rows: higher-score duplicate + unique
+        expect(deduped).toHaveLength(2)
+        // Higher-score row (index 20, score 0.9) retained
+        expect(deduped[0].index).toBe(20)
+        expect(deduped[0].score).toBe(0.9)
+        // Unique row preserved
+        expect(deduped[1].index).toBe(30)
+        expect(deduped[1].score).toBe(0.8)
+    })
+
+    it('deduplicate-only pair collapses to one result', () => {
+        const results = [
+            makeResult(1, 'Best Diner LLC', 'Willis', 0.5),
+            makeResult(2, 'Best Diner Inc', 'Willis', 0.7)
+        ]
+        const deduped = dedupeNearDuplicateResults(results)
+        expect(deduped).toHaveLength(1)
+        // Higher-score (index 2) wins
+        expect(deduped[0].index).toBe(2)
+        expect(deduped[0].score).toBe(0.7)
+    })
+
+    it('returns empty array unchanged', () => {
+        expect(dedupeNearDuplicateResults([])).toEqual([])
+    })
+
+    it('returns single-element array unchanged', () => {
+        const results = [makeResult(5, 'Solo Shop', 'Conroe', 0.6)]
+        expect(dedupeNearDuplicateResults(results)).toHaveLength(1)
+        expect(dedupeNearDuplicateResults(results)[0].index).toBe(5)
+    })
+
+    it('higher-score wins when duplicates appear in reverse order', () => {
+        const results = [
+            makeResult(7, 'Joe Coffee Inc', 'Conroe', 0.2),
+            makeResult(8, 'Joe Coffee LLC', 'Conroe', 0.9),
+            makeResult(9, 'Joe Coffee Co', 'Conroe', 0.5)
+        ]
+        const deduped = dedupeNearDuplicateResults(results)
+        expect(deduped).toHaveLength(1)
+        // Score 0.9 wins (index 8)
+        expect(deduped[0].index).toBe(8)
+        expect(deduped[0].score).toBe(0.9)
+    })
+
+    it('different cities are not deduplicated', () => {
+        const results = [
+            makeResult(1, 'Acme Coffee', 'Conroe', 0.8),
+            makeResult(2, 'Acme Coffee', 'Willis', 0.9)
+        ]
+        const deduped = dedupeNearDuplicateResults(results)
+        expect(deduped).toHaveLength(2)
+    })
+
+    it('preserves stable order of deduped results matching input order', () => {
+        const results = [
+            makeResult(1, 'Bakery', 'Conroe', 0.5),
+            makeResult(2, 'Zebra Cafe', 'Willis', 0.9),
+            makeResult(3, 'Bakery', 'Conroe', 0.8)
+        ]
+        const deduped = dedupeNearDuplicateResults(results)
+        expect(deduped).toHaveLength(2)
+        // First group by input order: Bakery (index 1, then replaced by index 3)
+        expect(deduped[0].index).toBe(3)
+        expect(deduped[0].score).toBe(0.8)
+        // Second group: Zebra Cafe
+        expect(deduped[1].index).toBe(2)
+        expect(deduped[1].score).toBe(0.9)
     })
 })

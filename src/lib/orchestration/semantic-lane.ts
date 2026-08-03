@@ -65,6 +65,49 @@ export interface LaneUiOptions {
 let legendGuideStateUpdater: (() => void) | null = null
 let staticDevFallbackWarningShown = false
 
+type SemanticLaneRetryBinding = {
+    onClick: (event: MouseEvent) => void
+    onKeydown: (event: KeyboardEvent) => void
+}
+
+const semanticLaneRetryBindings = new WeakMap<HTMLElement, SemanticLaneRetryBinding>()
+
+function requestSemanticLaneRetry(pillEl: HTMLElement, event: Event): void {
+    if (pillEl.dataset.state !== 'stuck') return
+    event.preventDefault()
+    void probeSemanticLane({ warm: true, reason: 'manual-retry' }).catch((error: unknown) => {
+        debugWarn('[semantic-lane] Manual retry failed:', error)
+    })
+}
+
+function syncSemanticLaneRetryBinding(pillEl: HTMLElement, enabled: boolean): void {
+    const existing = semanticLaneRetryBindings.get(pillEl)
+    if (enabled) {
+        if (!existing) {
+            const binding: SemanticLaneRetryBinding = {
+                onClick: (event) => requestSemanticLaneRetry(pillEl, event),
+                onKeydown: (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') requestSemanticLaneRetry(pillEl, event)
+                }
+            }
+            pillEl.addEventListener('click', binding.onClick)
+            pillEl.addEventListener('keydown', binding.onKeydown)
+            semanticLaneRetryBindings.set(pillEl, binding)
+        }
+        pillEl.setAttribute('role', 'button')
+        pillEl.setAttribute('tabindex', '0')
+        return
+    }
+
+    if (existing) {
+        pillEl.removeEventListener('click', existing.onClick)
+        pillEl.removeEventListener('keydown', existing.onKeydown)
+        semanticLaneRetryBindings.delete(pillEl)
+    }
+    pillEl.removeAttribute('role')
+    pillEl.removeAttribute('tabindex')
+}
+
 export function initSemanticLaneAdapter({
     updateLegendGuideState
 }: { updateLegendGuideState?: () => void } = {}): void {
@@ -255,8 +298,7 @@ export function applySemanticLaneHealthPayload(
     if (state.semanticLaneWarmingCounter >= 3) {
         setSemanticLaneUiState('stuck', {
             label: options.label || provenanceLabel || 'Service Busy',
-            title:
-                options.title || provenanceDetail || 'Semantic search is taking longer than expected. Click to reload.'
+            title: options.title || provenanceDetail || 'Search is taking longer than expected. Activate to retry.'
         })
         return
     }
@@ -441,11 +483,12 @@ export function setSemanticLaneUiState(laneState: string, options: LaneUiOptions
         title = options.title || 'Search is unavailable. Try again in a moment.'
     } else if (laneState === 'stuck') {
         label = options.label || 'Service Busy'
-        title = options.title || 'Semantic search is taking longer than expected. Click to reload.'
+        title = options.title || 'Search is taking longer than expected. Activate to retry.'
     }
 
     const pillEl = pill as HTMLElement
     pillEl.dataset.state = laneState
+    syncSemanticLaneRetryBinding(pillEl, laneState === 'stuck')
     const assistEl = doc?.getElementById?.('semantic-lane-assist') || null
     if (assistEl) {
         const hasFocusedRecord =
@@ -494,9 +537,8 @@ export function setSemanticLaneUiState(laneState: string, options: LaneUiOptions
         } else if (laneState === 'stuck') {
             pillEl.textContent = label
             pillEl.title = title
-            pillEl.setAttribute('aria-label', title)
+            pillEl.setAttribute('aria-label', `Retry search. ${title}`)
             pillEl.hidden = false
-            pillEl.style.cursor = 'pointer'
         } else {
             pillEl.textContent = label
             pillEl.title = title

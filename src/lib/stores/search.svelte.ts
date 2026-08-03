@@ -551,10 +551,15 @@ export async function runSearch(query: string, signal: AbortSignal): Promise<voi
 
     setSearchQuery(trimmed)
     setSearchStatus('searching')
-    incrementRequestSequence()
+    const requestId = incrementRequestSequence()
 
     try {
         const results = await performSearch(trimmed, signal)
+        // A newer runSearch may have superseded this request while the
+        // search was in flight. Only the latest request may write results
+        // or publish success/empty — a slower superseded request must not
+        // overwrite the newer query's results.
+        if (!isRequestCurrent(requestId)) return
         setSearchResults(results)
         if (results.length > 0) {
             publish(EVENTS.SEARCH_SUCCESS, { query: trimmed, count: results.length })
@@ -563,6 +568,9 @@ export async function runSearch(query: string, signal: AbortSignal): Promise<voi
         }
     } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return
+        // Errors from a superseded request must not create a visible error
+        // state — the newer request owns the status/error fields now.
+        if (!isRequestCurrent(requestId)) return
         setSearchError(trimmed, err)
     }
 }

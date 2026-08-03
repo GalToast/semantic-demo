@@ -112,6 +112,14 @@
      * result list that visually sits below it. */
     pointer-events: none;
   }
+  :global(.semantic-lane-pill[data-state='stuck']) {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  :global(.semantic-lane-pill[data-state='stuck']:focus-visible) {
+    outline: 2px solid var(--color-primary-alt);
+    outline-offset: 2px;
+  }
   .lane-pill-dot {
     width: 6px;
     height: 6px;

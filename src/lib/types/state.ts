@@ -425,7 +425,7 @@ export interface LoadingPhaseMeta {
 
 // ── Semantic Lane State ───────────────────────────────────────────────────────
 
-export type SemanticLaneState = 'checking' | 'healthy' | 'degraded' | 'offline'
+export type SemanticLaneState = 'checking' | 'healthy' | 'degraded' | 'offline' | 'stuck' | 'reconnecting' | 'unavailable'
 
 // ── Derived State Flags ───────────────────────────────────────────────────────
 

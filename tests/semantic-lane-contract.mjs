@@ -30,6 +30,7 @@ class FakeElement {
     this.textContent = '';
     this.title = '';
     this.attributes = new Map();
+    this.listeners = new Map();
   }
   setAttribute(name, value) {
     this.attributes.set(name, value);
@@ -39,6 +40,29 @@ class FakeElement {
   }
   getAttribute(name) {
     return this.attributes.get(name) || null;
+  }
+  addEventListener(type, listener) {
+    const listeners = this.listeners.get(type) || new Set();
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  }
+  removeEventListener(type, listener) {
+    this.listeners.get(type)?.delete(listener);
+  }
+  dispatchEvent(type, init = {}) {
+    let defaultPrevented = false;
+    const event = {
+      type,
+      ...init,
+      preventDefault() {
+        defaultPrevented = true;
+      },
+      get defaultPrevented() {
+        return defaultPrevented;
+      }
+    };
+    for (const listener of this.listeners.get(type) || []) listener(event);
+    return event;
   }
 }
 globalThis.document = {
@@ -52,6 +76,9 @@ globalThis.document = {
 function resetState() {
   withStateMutation(() => {
     state.semanticLaneState = 'checking';
+    state.semanticLaneProbePromise = null;
+    state.semanticLanePendingWarm = false;
+    state.semanticLaneSnapshot = null;
     state.searchState.currentSearchSummary = null;
     state.semanticLaneWarmingCounter = 0;
   });
@@ -114,6 +141,43 @@ try {
   assert(pill.title === 'Using text search while semantic search reconnects.', 'degraded title explains text fallback');
   assert(pill.dataset.state === 'degraded', 'pill state remains degraded');
   console.log('  PASS — Degraded lane copy is truthful');
+
+  // TEST 5: Stuck lane is a real, keyboard-accessible retry affordance
+  resetState();
+  console.log('\n[TEST 5] Stuck lane pill can retry with pointer and keyboard input');
+  const stuckPill = new FakeElement();
+  elementsById.set('semantic-lane-pill', stuckPill);
+  lane.setSemanticLaneUiState('stuck');
+  assert(stuckPill.getAttribute('role') === 'button', 'stuck pill exposes button semantics');
+  assert(stuckPill.getAttribute('tabindex') === '0', 'stuck pill is keyboard focusable');
+  assert(
+    stuckPill.getAttribute('aria-label') ===
+      'Retry search. Search is taking longer than expected. Activate to retry.',
+    'stuck pill names the retry action'
+  );
+
+  const originalFetch = globalThis.fetch;
+  let fetchCount = 0;
+  globalThis.fetch = async () => {
+    fetchCount += 1;
+    return {
+      ok: true,
+      text: async () => JSON.stringify({ ok: true, state: 'healthy' })
+    };
+  };
+  stuckPill.dispatchEvent('keydown', { key: 'Enter' });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert(fetchCount === 1, 'Enter activates one manual retry');
+  assert(state.semanticLaneState === 'healthy', 'successful manual retry restores healthy state');
+  assert(stuckPill.getAttribute('role') === null, 'healthy pill is no longer a button');
+
+  lane.setSemanticLaneUiState('stuck');
+  stuckPill.dispatchEvent('click');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert(fetchCount === 2, 'pointer activation triggers one manual retry');
+  assert(stuckPill.dispatchEvent('click').defaultPrevented === false, 'inactive pill does not intercept clicks');
+  globalThis.fetch = originalFetch;
+  console.log('  PASS — Stuck lane retry is pointer and keyboard accessible');
 
   console.log('\n=================================================================');
   console.log('ALL TESTS PASSED');

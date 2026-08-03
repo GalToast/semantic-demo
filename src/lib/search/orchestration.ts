@@ -55,7 +55,8 @@ import {
     resetSemanticGuideUi,
     clearShortSemanticSearchState,
     clearSearchPreviewHoverTimer,
-    setSearchStateNamespace
+    setSearchStateNamespace,
+    dedupeNearDuplicateResults
 } from './results-ui'
 import { setupMobileSearchSheetToggle } from './search-panel-adapter'
 import { setActiveSearchResultRow } from './result-renderer'
@@ -210,7 +211,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     stopSearchVectorScramble()
     if (!isRequestCurrent(requestId)) return
 
-    const results = searchResults
+    const results = dedupeNearDuplicateResults(searchResults)
 
     if (!isRequestCurrent(requestId)) return
     if (!results.length) {
