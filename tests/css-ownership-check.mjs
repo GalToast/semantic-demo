@@ -114,14 +114,14 @@ const selectorBaselines = {
     '.journey-compass-action.primary': {
         'animations.css': 2,
         'journey_active.css': 6,
-        'mobile_base.css': 4,
-        'mobile_premium__layout.css': 1,
+        'mobile_base.css': 2,
+        'mobile_premium__layout.css': 3,
         'mobile_premium__components.css': 4,
         'mobile_premium__state.css': 4,
         'search.css': 0,
         'strands.css': 5
     }
-};
+}
 
 const mobilePremiumLegacyStatePatterns = [
     'data-active-view="galaxy"',

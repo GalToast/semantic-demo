@@ -803,9 +803,6 @@ body.surface-focus-search .search-container:not(.info-panel-contained) {
     color: rgba(223, 236, 234, 0.85);
 }
 
-.search-input-wrapper {
-    position: relative;
-}
 
 .search-input {
     box-sizing: border-box;
@@ -1056,22 +1053,8 @@ body.searching .search-container.has-query .search-clear-btn {
 }
 
 .rail-section summary .summary-text,
-.exploration-secondary summary .summary-text {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-    min-width: 0;
-    max-width: calc(100% - 22px);
-}
 
 .rail-section summary .summary-title,
-.exploration-secondary summary .summary-title {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.85);
-    text-transform: uppercase;
-    letter-spacing: 0.45px;
-}
 
 .rail-section summary .summary-note,
 .filter-preview {
@@ -1324,11 +1307,6 @@ body.searching .search-container.has-query .search-clear-btn {
 
 /* polish286: semantic error/alert CSS for lifecycle.js and semantic-search-api-cache.js error states */
 .error-message,
-.semantic-error {
-    font-size: 12px;
-    color: rgba(255, 140, 120, 0.96);
-    line-height: 1.45;
-}
 
 .empty-state,
 .no-results,
@@ -1666,14 +1644,6 @@ body.surface-map-focus-search .semantic-lane-assist-meta {
     font-size: 0.72rem;
     line-height: 1.4;
     overflow-wrap: anywhere;
-}
-.search-error-detail-label {
-    color: rgba(255, 200, 200, 0.85);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    font-size: 0.62rem;
-    flex-shrink: 0;
 }
 .search-error-detail-message {
     color: rgba(255, 220, 220, 0.92);

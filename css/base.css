@@ -283,7 +283,6 @@ textarea:focus-visible,
 /* Global Micro-Animations — click feedback */
 button:active,
 a:active,
-[role='button']:active,
-.interactive-element:active {
+[role='button']:active {
     transform: scale(0.98);
 }

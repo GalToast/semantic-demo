@@ -198,181 +198,29 @@
 }
 
 /* polish288: info-panel stats-row base styles — extracted from vector-explorer-polished.html inline style block */
-.stats-row {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 12px;
-}
 
-.stat-box {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 10px;
-    background: var(--glass-reflection-fade);
-    border-radius: 10px;
-}
 
-.stat-number {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 1;
-    color: rgba(255, 255, 255, 0.96);
-}
 
-.stat-label {
-    font-size: 10px;
-    line-height: 1;
-    color: var(--color-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 6px;
-}
 
-.stat-caption {
-    margin: -4px 0 13px;
-    color: rgba(219, 238, 236, 0.7);
-    font-size: 9px;
-    line-height: 1.35;
-    letter-spacing: 0.06em;
-    text-align: center;
-    text-transform: uppercase;
-    /* Default: no wrap, single line. Tighter breakpoints (css/mobile_premium__layout.css
-       @media (max-width: 360px)) allow wrap and reduce tracking so the
-       47-char "Montgomery County records in the semantic field" caption
-       doesn't bleed past a 320px viewport. */
-    max-width: 100%;
-    box-sizing: border-box;
-}
 
 .launch-btn,
-.mode-grid .mode-chip {
-    appearance: none;
-    -webkit-appearance: none;
-    border: 1px solid rgba(var(--color-primary-tint-rgb), 0.15);
-    background:
-        radial-gradient(circle at 15% 0%, rgba(var(--color-primary-tint-rgb), 0.12), transparent 48%),
-        linear-gradient(180deg, rgba(16, 28, 35, 0.72), rgba(7, 13, 19, 0.78));
-    color: rgba(237, 250, 248, 0.88);
-    font-family: var(--font-display, 'Bricolage Grotesque', system-ui, sans-serif);
-    box-shadow:
-        inset 0 1px 0 var(--glass-reflection-muted),
-        0 10px 22px var(--shadow-antumbra);
-    transition:
-        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-        background 0.3s ease,
-        border-color 0.3s ease,
-        box-shadow 0.3s ease;
-}
 
 .launch-btn:active,
-.mode-grid .mode-chip:active {
-    transform: scale(0.97) translateY(0);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
 
 .launch-btn:hover,
-.mode-grid .mode-chip:hover {
-    background:
-        radial-gradient(circle at 15% 0%, rgba(var(--color-primary-tint-rgb), 0.18), transparent 48%),
-        linear-gradient(180deg, rgba(20, 35, 42, 0.8), rgba(10, 18, 25, 0.85));
-    border-color: rgba(var(--color-primary-tint-rgb), 0.25);
-}
 
-.launch-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    min-height: 38px;
-    width: 100%;
-    padding: 0 12px;
-    border-radius: 9px;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.11em;
-    text-transform: uppercase;
-}
 
-.mode-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px;
-}
 
-.mode-grid .mode-chip {
-    display: grid;
-    align-content: start;
-    gap: 3px;
-    min-width: 0;
-    min-height: 44px;
-    padding: 8px 10px;
-    border-radius: 9px;
-    cursor: pointer;
-    text-align: left;
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease;
-}
 
 .launch-btn:hover,
-.mode-grid .mode-chip:hover {
-    border-color: rgba(var(--color-primary-tint-rgb), 0.32);
-    background:
-        radial-gradient(circle at 15% 0%, rgba(var(--color-primary-tint-rgb), 0.2), transparent 50%),
-        linear-gradient(180deg, rgba(18, 37, 43, 0.82), rgba(7, 15, 22, 0.88));
-    color: rgba(249, 255, 253, 0.96);
-    transform: translateY(-1px);
-}
 
 .launch-btn:focus-visible,
-.mode-grid .mode-chip:focus-visible {
-    outline: 2px solid rgba(var(--color-primary-tint-rgb), 0.54);
-    outline-offset: 2px;
-}
 
-.mode-grid .mode-chip.active {
-    border-color: rgba(var(--color-primary-tint-rgb), 0.42);
-    background:
-        radial-gradient(circle at 15% 0%, rgba(var(--color-primary-tint-rgb), 0.24), transparent 50%),
-        linear-gradient(180deg, rgba(17, 45, 48, 0.82), rgba(7, 17, 22, 0.9));
-    color: rgba(219, 255, 251, 0.96);
-}
 
-.mode-grid .mode-name {
-    min-width: 0;
-    color: inherit;
-    font-size: 12px;
-    font-weight: 800;
-    line-height: 1.1;
-}
 
-.mode-grid .mode-caption {
-    min-width: 0;
-    color: rgba(218, 232, 230, 0.66);
-    font-family: var(--font-body, 'Nunito Sans', system-ui, sans-serif);
-    font-size: 10.5px;
-    line-height: 1.25;
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    transition:
-        max-height 0.2s ease,
-        opacity 0.2s ease;
-}
 
 .mode-grid .mode-chip:hover .mode-caption,
 .mode-grid .mode-chip:focus-visible .mode-caption,
-.mode-grid .mode-chip.active .mode-caption {
-    max-height: 4em;
-    opacity: 1;
-}
 
 body.surface-focus .info-panel,
 body.surface-focus-search .info-panel {
@@ -561,35 +409,6 @@ body:has(.info-panel.active) .panel-toggle {
     transform: rotate(18deg);
     opacity: 0.8;
 }
-.legend-chip-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-.legend-chip {
-    border-radius: 999px;
-    padding: 5px 9px;
-    font-size: 10px;
-    line-height: 1;
-    color: var(--color-text-primary);
-    background: var(--glass-reflection-muted);
-    border: 1px solid var(--color-border-muted);
-}
-.legend-chip.lane-healthy {
-    color: rgba(255, 255, 255, 1);
-    border-color: rgba(var(--color-primary-rgb), 0.3);
-    background: rgba(var(--color-primary-rgb), 0.15);
-}
-.legend-chip.lane-reconnecting {
-    color: rgba(255, 240, 191, 1);
-    border-color: rgba(255, 217, 61, 0.3);
-    background: rgba(255, 217, 61, 0.15);
-}
-.legend-chip.lane-degraded {
-    color: rgba(255, 206, 187, 1);
-    border-color: rgba(255, 125, 95, 0.3);
-    background: rgba(255, 125, 95, 0.15);
-}
 .legend-divider {
     height: 1px;
     margin: 12px 0 10px;
@@ -642,43 +461,11 @@ body:has(.info-panel.active) .panel-toggle {
     border-color: rgba(255, 217, 61, 0.25);
     box-shadow: inset 0 0 0 1px rgba(255, 217, 61, 0.08);
 }
-.legend-copy {
-    display: grid;
-    gap: 4px;
-    min-width: 0;
-}
 .legend-label {
     font-size: 11px;
     line-height: 1.25;
     color: rgba(255, 255, 255, 1);
     font-weight: 600;
-}
-.legend-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    min-height: 14px;
-}
-.legend-pill {
-    border-radius: 999px;
-    padding: 2px 6px;
-    font-size: 9px;
-    line-height: 1;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--color-text-primary);
-    background: var(--glass-reflection);
-    border: 1px solid var(--glass-reflection-strong);
-}
-.legend-pill.focus {
-    color: rgba(255, 247, 214, 1);
-    background: rgba(255, 217, 61, 0.15);
-    border-color: rgba(255, 217, 61, 0.3);
-}
-.legend-pill.filter {
-    color: rgba(224, 247, 242, 1);
-    background: rgba(var(--color-primary-rgb), 0.15);
-    border-color: rgba(var(--color-primary-rgb), 0.3);
 }
 .legend-count {
     font-family: 'JetBrains Mono', monospace;
@@ -863,101 +650,22 @@ body:has(.info-panel.active) .panel-toggle {
     }
 
     /* Mode chip base styles */
-    .mode-grid .mode-chip {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
-        padding: 10px 12px;
-        min-height: var(--mobile-touch-min, 44px);
-        box-sizing: border-box;
-        border: 1px solid var(--color-border-muted);
-        border-radius: 8px;
-        background: var(--glass-reflection-muted);
-        color: rgba(246, 247, 232, 1);
-        cursor: pointer;
-        transition:
-            background 0.2s ease,
-            border-color 0.2s ease,
-            color 0.2s ease;
-        font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
-        font-size: 12px;
-        text-align: left;
-    }
 
-    .mode-grid .mode-chip:hover {
-        background: var(--color-border-muted);
-        border-color: var(--glass-reflection-glow);
-        color: rgba(246, 247, 232, 1);
-    }
 
     .mode-grid .mode-chip:focus-visible,
-    .mode-grid .mode-chip:focus {
-        outline: 2px solid var(--color-primary-ring);
-        outline-offset: 2px;
-    }
 
-    .mode-grid .mode-chip.active {
-        background: rgba(120, 200, 255, 0.15);
-        border-color: rgba(120, 200, 255, 0.4);
-        color: rgba(30, 130, 220, 1);
-    }
 
-    .mode-grid .mode-chip.is-waiting {
-        opacity: 0.75;
-        border-style: solid;
-        border-color: rgba(255, 176, 30, 0.5);
-        background: rgba(255, 176, 30, 0.08);
-        color: rgba(255, 210, 130, 0.9);
-        box-shadow: 0 0 0 1px rgba(255, 176, 30, 0.15);
-    }
 
     /* Locked Trail chip — Maya's "locked compass needle" metaphor.
        trailDepth >= 1 means Trail is enabled and actively guiding the user.
        It should feel visually locked-in, not just technically active. */
-    .mode-grid .mode-chip.is-locked {
-        background: rgba(var(--color-primary-rgb), 0.18);
-        border-color: rgba(var(--color-primary-rgb), 0.55);
-        color: rgba(201, 255, 248, 0.98);
-        box-shadow:
-            0 0 0 1px rgba(var(--color-primary-rgb), 0.25),
-            0 0 12px rgba(var(--color-primary-rgb), 0.15);
-    }
 
-    .mode-grid .mode-chip.is-locked .mode-name {
-        color: rgba(201, 255, 248, 1);
-    }
 
-    .mode-grid .mode-chip:disabled {
-        cursor: not-allowed;
-        opacity: 0.7;
-        pointer-events: none;
-    }
 
     /* Story chip active state (mirrors inline style in vector-explorer-polished.html) */
-    .story-chip.active {
-        background: rgba(var(--color-primary-rgb), 0.18);
-        border-color: rgba(var(--color-primary-rgb), 0.55);
-        color: rgba(201, 255, 248, 0.98);
-        box-shadow:
-            0 0 0 1px rgba(var(--color-primary-rgb), 0.2),
-            inset 0 1px 0 var(--glass-reflection-muted);
-    }
 
     /* Mode chip text hierarchy */
-    .mode-grid .mode-chip .mode-name {
-        font-weight: 700;
-        font-size: 12px;
-        line-height: 1.2;
-        letter-spacing: 0.02em;
-    }
 
-    .mode-grid .mode-chip .mode-caption {
-        font-size: 10px;
-        line-height: 1.3;
-        opacity: 0.7;
-        font-weight: 400;
-    }
 
     body.surface-map-any {
         --map-panel-top: calc(clamp(232px, 34vh, 258px) + env(safe-area-inset-top, 0px));

@@ -1029,13 +1029,7 @@
 
     body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .journey-compass[data-density='compact']
-        .journey-compass-copy {
-        min-width: 0;
-        flex: 1 1 0;
-        padding-right: 4px;
-    }
-
-    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
+        body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .journey-compass[data-density='compact']
         .journey-compass-actions {
         flex: 0 0 auto;
@@ -1229,5 +1223,20 @@
     }
     body.surface-semantic-dive .focus-stage-inside-controls {
         grid-template-columns: repeat(3, minmax(44px, 1fr));
+    }
+}
+
+/* Respect reduced motion for journey-compass transitions.
+   Ownership: journey-compass layout lives in the mobile_premium cascade. */
+@media (prefers-reduced-motion: reduce) {
+    .journey-compass,
+    .journey-compass-action {
+        transition: none;
+    }
+
+    .journey-compass-action.primary[data-journey-action='center-anchor']::after,
+    .journey-compass-action.primary[data-journey-action='next-stop']::after {
+        animation: none;
+        opacity: 0;
     }
 }

@@ -450,10 +450,6 @@ body.surface-semantic-dive .selected-card {
 }
 
 /* is-loading state for surprise-btn */
-.surprise-btn.is-loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
 
 /* 10/10 Polish: View Transition Choreography */
 body.view-transitioning #canvas-container,
@@ -736,25 +732,7 @@ body.surface-semantic-dive::after {
 }
 
 /* 10/10 Polish: Glassmorphism Search Input */
-.search-input-wrapper {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    background: rgba(20, 25, 35, 0.7);
-    border: 1px solid var(--color-border-muted);
-    box-shadow: 0 8px 32px var(--shadow-antumbra);
-    transition:
-        background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-        box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
-.search-input-wrapper:focus-within {
-    background: rgba(25, 30, 45, 0.85);
-    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
-    box-shadow:
-        0 0 0 4px rgba(var(--color-primary-alt-rgb), 0.05),
-        0 12px 40px var(--shadow-penumbra);
-}
 
 /* 10/10 Polish: Search Spinner Integration */
 /* 10/10 Polish: Search Result Processing Juice */

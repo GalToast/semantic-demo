@@ -95,39 +95,9 @@
     margin-bottom: 7px;
 }
 
-.focus-stage-name {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 20px;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    color: var(--color-text-strong);
-    margin-bottom: 5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
 
-.focus-stage-filed {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    line-height: 1.35;
-    color: rgba(228, 240, 244, 0.54);
-    margin-bottom: 8px;
-    word-break: break-word;
-}
 
-.focus-stage-what {
-    font-size: 12px;
-    line-height: 1.45;
-    color: rgba(244, 250, 252, 0.82);
-}
 
-.focus-stage-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 7px;
-}
 
 .focus-stage-card .signal-badge {
     display: inline-flex;
@@ -146,19 +116,7 @@
     text-transform: uppercase;
 }
 
-.focus-stage-trivia {
-    margin-top: 9px;
-    color: rgba(231, 242, 244, 0.76);
-    font-size: 12px;
-    line-height: 1.42;
-}
 
-.focus-stage-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 10px;
-}
 
 .focus-stage-chip {
     display: inline-flex;
@@ -175,17 +133,6 @@
     color: rgba(247, 252, 255, 0.8);
 }
 
-.focus-stage-note {
-    margin-top: 10px;
-    padding: 9px 10px;
-    border-radius: 13px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    background: linear-gradient(180deg, var(--glass-reflection-soft), rgba(255, 255, 255, 0.018));
-    font-size: 10px;
-    line-height: 1.48;
-    color: rgba(233, 241, 244, 0.7);
-    box-shadow: inset 0 1px 0 var(--glass-reflection-fade);
-}
 
 /* ── 2. Component Modules ────────────────────────────────────────────────── */
 
@@ -570,30 +517,7 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-nex
     pointer-events: auto;
 }
 
-.focus-stage-journey-btn {
-    border: var(--glass-border);
-    background: var(--glass-reflection-soft);
-    color: var(--color-text-primary);
-    border-radius: var(--glass-radius-action);
-    padding: 8px 12px;
-    font-size: 10.5px;
-    font-weight: 700;
-    font-family: inherit;
-    cursor: pointer;
-    box-shadow: inset 0 1px 0 var(--glass-reflection-soft);
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease;
-}
 
-.focus-stage-journey-btn:hover:not(:disabled) {
-    background: rgba(var(--color-primary-alt-rgb), 0.12);
-    border: var(--glass-border-glow);
-    color: var(--color-text-strong);
-    transform: translateY(-1px);
-}
 
 .focus-stage-actions .action-btn {
     appearance: none;
@@ -610,30 +534,9 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-nex
     text-transform: uppercase;
 }
 
-.focus-stage-journey-btn:disabled {
-    opacity: 0.38;
-    cursor: default;
-}
 
-.focus-stage-journey-meta {
-    flex: 1 1 auto;
-    text-align: center;
-    min-width: 0;
-}
 
-.focus-stage-journey-kicker {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: rgb(var(--cluster-rgb) / 0.78);
-}
 
-.focus-stage-journey-progress {
-    margin-top: 3px;
-    font-size: 12px;
-    line-height: 1.4;
-    color: rgba(247, 252, 255, 0.86);
-}
 
 /* ── 3. State Modifiers ──────────────────────────────────────────────────── */
 
@@ -1108,7 +1011,7 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-nex
     }
 
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
-        :is(.share-toggle, .controls.controls-view, .controls-divider, #btn-share-view, .panel-toggle, .time-display) {
+:is(.share-toggle, .controls.controls-view, #btn-share-view, .panel-toggle, .time-display) {
         display: none;
         visibility: hidden;
         pointer-events: none;

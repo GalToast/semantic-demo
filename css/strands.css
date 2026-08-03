@@ -89,19 +89,11 @@
         min-height: 44px;
     }
 
-    .mode-grid .mode-chip {
-        background: var(--glass-reflection);
-        border-color: var(--glass-reflection-strong);
-    }
 }
 
 @media (forced-colors: active) {
     button:focus-visible,
     .mode-grid .mode-chip:focus-visible,
-    .mode-grid .mode-chip:focus {
-        outline: 2px solid CanvasText;
-        outline-offset: 2px;
-    }
 
     .loading-overlay {
         transition: none;
@@ -1254,9 +1246,6 @@ body.surface-focus-search .controls .control-btn {
         border-radius: 18px;
     }
 
-    .journey-compass-rail {
-        display: none;
-    }
 
     body.view-galaxy[data-panel-surface='idle']
         .journey-compass[data-phase='overview'][data-density='expanded']

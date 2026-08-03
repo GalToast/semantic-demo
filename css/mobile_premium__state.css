@@ -1663,17 +1663,7 @@
         margin-top: 6px;
     }
 
-    .focus-stage-route-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--glass-reflection-glow);
-    }
 
-    .focus-stage-route-dot.is-current {
-        background: var(--color-primary, var(--color-primary-alt));
-        box-shadow: 0 0 10px var(--color-primary, var(--color-primary-alt));
-    }
 
     /* Neighbors/Insights List */
     .focus-stage-neighbors.active {
@@ -1694,19 +1684,6 @@
         gap: 8px;
     }
 
-    .focus-stage-neighbor-card {
-        padding: 12px 14px;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.025);
-        border: 1px solid var(--glass-reflection-muted);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-width: 0;
-        overflow: hidden;
-        color: var(--color-text-secondary);
-        font-size: 13px;
-    }
 
     body.surface-semantic-dive #focus-stage {
         display: block;
@@ -1728,9 +1705,6 @@
         pointer-events: none;
     }
 
-    .focus-stage-meta {
-        display: none;
-    }
 
     /* Map-search final geometry guard: keep map chrome out of the content lane. */
     body.surface-map-any .info-panel {

@@ -56,63 +56,6 @@
     }
 }
 
-.focus-lens-truth {
-    display: flex;
-    align-items: flex-start;
-    gap: 9px;
-    margin-top: 9px;
-    padding: 9px 10px;
-    border: 1px solid rgba(var(--color-primary-tint-rgb), 0.16);
-    border-radius: 14px;
-    background:
-        radial-gradient(circle at 8% 45%, rgba(var(--color-primary-tint-rgb), 0.18), transparent 32%),
-        linear-gradient(135deg, rgba(255, 217, 122, 0.08), rgba(var(--color-primary-tint-rgb), 0.05));
-    color: rgba(222, 241, 240, 0.85);
-    font-size: 10.5px;
-    line-height: 1.35;
-    letter-spacing: 0.01em;
-    box-shadow: inset 0 1px 0 var(--glass-reflection-fade);
-}
-
-/* Hide focus-stage lens truth when field guide/legend panel is visible; info lives in legend now. */
-html[data-legend-active='true'] .focus-lens-truth {
-    display: none;
-}
-
-.focus-lens-truth strong {
-    color: rgba(255, 226, 132, 0.9);
-    font-weight: 700;
-}
-
-.focus-lens-truth-mark {
-    position: relative;
-    flex: 0 0 auto;
-    width: 22px;
-    height: 15px;
-    margin-top: 1px;
-}
-
-.focus-lens-truth-mark::before,
-.focus-lens-truth-mark::after {
-    content: '';
-    position: absolute;
-    inset: 6px 1px auto 1px;
-    height: 1px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, rgba(255, 226, 132, 0.9), rgba(var(--color-primary-tint-rgb), 0.88));
-    box-shadow: 0 0 12px rgba(var(--color-primary-tint-rgb), 0.36);
-    transform-origin: center;
-}
-
-.focus-lens-truth-mark::before {
-    transform: rotate(-17deg);
-}
-
-.focus-lens-truth-mark::after {
-    transform: rotate(18deg);
-    opacity: 0.68;
-}
-
 /* polish152: active journey command-center layer. */
 @media (min-width: 769px) {
     body.surface-focus .focus-stage,
@@ -166,33 +109,6 @@ html[data-legend-active='true'] .focus-lens-truth {
     align-items: center;
     gap: 5px;
     margin: 7px 0 6px;
-}
-
-.focus-stage-route-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    border: 1px solid rgba(var(--color-primary-tint-rgb), 0.34);
-    background: rgba(var(--color-primary-tint-rgb), 0.12);
-    box-shadow: 0 0 10px rgba(var(--color-primary-tint-rgb), 0.16);
-}
-
-.focus-stage-route-dot.is-current {
-    background: rgba(255, 226, 132, 0.92);
-    border-color: rgba(255, 226, 132, 0.96);
-    box-shadow: 0 0 14px rgba(255, 226, 132, 0.36);
-}
-
-.focus-stage-route-dot.is-next {
-    background: rgba(var(--color-primary-tint-rgb), 0.86);
-    border-color: rgba(var(--color-primary-tint-rgb), 0.92);
-    box-shadow: 0 0 14px rgba(var(--color-primary-tint-rgb), 0.34);
-}
-
-.focus-stage-route-line {
-    height: 1px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, rgba(255, 226, 132, 0.44), rgba(var(--color-primary-tint-rgb), 0.26));
 }
 
 .focus-stage-route[data-state='empty'] .focus-stage-route-dot:not(.is-current),
@@ -340,12 +256,7 @@ body[data-panel-surface]:not(.surface-map-any)[data-route-exploration='free'] .f
 
 body[data-panel-surface]:not(.surface-map-any)[data-route-exploration='free']
     .focus-stage-route[data-state='ready']
-    .focus-stage-route-line {
-    background: linear-gradient(90deg, rgba(255, 226, 132, 0.64), rgba(var(--color-primary-tint-rgb), 0.7));
-    box-shadow: 0 0 14px rgba(var(--color-primary-tint-rgb), 0.12);
-}
-
-body[data-panel-surface]:not(.surface-map-any) .focus-stage-next {
+    .focus-stage-next {
     margin-top: 5px;
     font-size: 10px;
     line-height: 1.34;

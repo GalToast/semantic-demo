@@ -185,14 +185,6 @@
     height: 44px;
 }
 
-.close-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    min-width: 44px;
-    margin: -10px;
-}
 
 .trail-btn,
 .focus-stage-journey-btn,
@@ -275,11 +267,6 @@
     filter: drop-shadow(0 0 10px rgba(var(--color-primary-tint-rgb), 0.22));
 }
 
-.view-handoff-copy {
-    min-width: 0;
-    display: grid;
-    gap: 3px;
-}
 
 .view-handoff-kicker {
     color: rgba(174, 238, 231, 0.72);

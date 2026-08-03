@@ -2,43 +2,7 @@
    (mobile_premium__layout.css, mobile_premium__components.css).
    Keep this file limited to base/mobile atoms and reduced-motion support. */
 
-.filter-select {
-    width: 100%;
-    min-height: 44px;
-    border-radius: 10px;
-    padding: 8px 10px;
-    background: rgba(9, 12, 20, 0.9);
-    border: 1px solid var(--glass-reflection);
-    color: rgba(255, 255, 255, 0.88);
-    font-size: 12px;
-    cursor: pointer;
-    transition:
-        border-color 0.2s ease,
-        background 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
 /* help-toggle positioning: desktop handled by layout_base.css, mobile by @media block below */
-
-.filter-select:hover {
-    border-color: rgba(var(--color-primary-alt-rgb), 0.35);
-    background: rgba(9, 12, 20, 0.95);
-}
-
-.filter-select:focus:not(:focus-visible) {
-    outline-style: none;
-}
-
-.filter-select:focus-visible {
-    outline: 2px solid transparent;
-    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
-    box-shadow: 0 0 0 3px rgba(var(--color-primary-alt-rgb), 0.15);
-}
-
-.filter-select option {
-    background: var(--color-ink-deep);
-    color: var(--color-white);
-}
 
 /* Controls - desktop default */
 body[data-panel-surface] .controls {
@@ -162,10 +126,6 @@ body[data-panel-surface] .control-btn {
     }
 }
 
-.slide-in-left {
-    animation: slideInLeft 0.4s ease forwards;
-}
-
 @keyframes slideInLeft {
     from {
         opacity: 0;
@@ -178,14 +138,6 @@ body[data-panel-surface] .control-btn {
 }
 
 /* Selection highlight */
-.selected-highlight {
-    position: fixed;
-    pointer-events: none;
-    z-index: var(--z-blocker);
-    border: 2px solid var(--color-primary-alt);
-    border-radius: 8px;
-    animation: selectPulse 2s ease-in-out infinite;
-}
 
 @keyframes selectPulse {
     0%,
@@ -413,10 +365,6 @@ body:has(.info-panel.active) .panel-toggle,
 }
 
 /* Mode-grid computing state (pulse during heavy recomputation) */
-.mode-grid.computing .mode-chip {
-    opacity: 0.6;
-    pointer-events: none;
-}
 @keyframes modeGridComputing {
     0%,
     100% {
@@ -425,9 +373,6 @@ body:has(.info-panel.active) .panel-toggle,
     50% {
         opacity: 0.35;
     }
-}
-.mode-grid.computing {
-    animation: modeGridComputing 0.9s ease-in-out infinite;
 }
 
 /* Accessibility: respect reduced-motion preference - expanded for #950 */
@@ -442,8 +387,6 @@ body:has(.info-panel.active) .panel-toggle,
     .loading-thread,
     #map-container .leaflet-interactive.semantic-map-route-pulse,
     .summary-card.is-synthesizing,
-    .journey-compass-action.primary[data-journey-action='center-anchor']::after,
-    .journey-compass-action.primary[data-journey-action='next-stop']::after,
     .focus-stage-inside-pulse,
     .action-beacon,
     .ambiguous-hover-indicator,
@@ -455,22 +398,13 @@ body:has(.info-panel.active) .panel-toggle,
     .search-spinner,
     .summary-field-note,
     svg[class*='weather'],
-    .terrain-bridge-veil,
-    .terrain-bridge-halo {
-        animation-name: none;
-    }
+    .terrain-bridge-veil
 
     /* Broaden transition disable for #950 hardening */
     .loading-overlay,
     .loading-phase-chip {
         transform: none;
         transition: none;
-    }
-
-    .journey-compass-action.primary[data-journey-action='center-anchor']::after,
-    .journey-compass-action.primary[data-journey-action='next-stop']::after {
-        animation: none;
-        opacity: 0;
     }
 
     /* Hide animated decorative elements */
@@ -490,8 +424,6 @@ body:has(.info-panel.active) .panel-toggle,
 
     /* Disable transition-based animations - broaden coverage per #950 */
     .search-clear-btn,
-    .journey-compass,
-    .journey-compass-action,
     .search-trail-cue,
     .semantic-lane-pill,
     .search-container,

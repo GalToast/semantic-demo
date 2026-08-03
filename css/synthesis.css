@@ -92,25 +92,7 @@
     letter-spacing: 0.05em;
 }
 
-.close-icon {
-    background: none;
-    border: none;
-    color: var(--color-text-muted);
-    font-size: 20px;
-    cursor: pointer;
-    padding: 4px;
-    line-height: 1;
-    transition: color 0.2s ease;
-    min-width: 44px;
-    min-height: 44px;
-    touch-action: manipulation;
-    align-items: center;
-    justify-content: center;
-}
 
-.close-icon:hover {
-    color: #ff6b6b;
-}
 
 /* Synthesis Trigger Button */
 .synthesize-trigger {

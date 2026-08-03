@@ -102,86 +102,6 @@
     pointer-events: none;
 }
 
-.loading-spores {
-    position: relative;
-    width: 118px;
-    height: 72px;
-    margin-bottom: 2px;
-}
-
-.loading-spore {
-    position: absolute;
-    border-radius: 999px;
-    background: radial-gradient(
-        circle at 34% 34%,
-        var(--color-text-primary),
-        var(--glass-reflection-glow) 36%,
-        rgba(255, 255, 255, 0) 72%
-    );
-    box-shadow: 0 0 18px var(--glass-reflection-strong);
-    animation: loadingSporeFloat 4.4s ease-in-out infinite;
-}
-
-.loading-spore::after {
-    content: '';
-    position: absolute;
-    inset: -9px;
-    border-radius: inherit;
-    border: 1px solid var(--glass-reflection);
-    opacity: 0.45;
-    animation: loadingSporeHalo 3.3s ease-out infinite;
-}
-
-.loading-spore.spore-a {
-    left: 12px;
-    top: 22px;
-    width: 22px;
-    height: 22px;
-    color: rgba(var(--color-primary-alt-rgb), 0.9);
-    background: radial-gradient(
-        circle at 34% 34%,
-        rgba(255, 255, 255, 0.96),
-        rgba(var(--color-primary-alt-rgb), 0.42) 38%,
-        rgba(var(--color-primary-alt-rgb), 0) 76%
-    );
-}
-
-.loading-spore.spore-b {
-    left: 46px;
-    top: 8px;
-    width: 28px;
-    height: 28px;
-    animation-delay: 0.55s;
-    background: radial-gradient(
-        circle at 34% 34%,
-        var(--color-text-strong),
-        rgba(255, 217, 61, 0.44) 38%,
-        rgba(255, 217, 61, 0) 76%
-    );
-}
-
-.loading-spore.spore-c {
-    right: 14px;
-    top: 26px;
-    width: 18px;
-    height: 18px;
-    animation-delay: 1.1s;
-    background: radial-gradient(
-        circle at 34% 34%,
-        var(--color-text-primary),
-        rgba(102, 164, 255, 0.42) 38%,
-        rgba(102, 164, 255, 0) 76%
-    );
-}
-
-.loading-thread {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0.78;
-}
-
 .loading-kicker {
     font-size: 11px;
     letter-spacing: 0.24em;
@@ -346,9 +266,7 @@
     /* Silence loading field drift, aura, and spore animations for users who prefer reduced motion. */
     .loading-overlay::before,
     .loading-overlay::after,
-    .loading-shell::before,
-    .loading-spore,
-    .loading-spore::after {
+    .loading-shell::before {
         animation: none;
     }
 }

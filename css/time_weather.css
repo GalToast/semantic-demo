@@ -64,20 +64,6 @@
     }
 }
 
-.fog-overlay {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        180deg,
-        rgba(100, 100, 120, 0.3) 0%,
-        rgba(80, 80, 100, 0.2) 50%,
-        rgba(100, 100, 120, 0.4) 100%
-    );
-    display: none;
-    animation: fog-drift 20s ease-in-out infinite;
-}
-
 @keyframes fog-drift {
     0%,
     100% {
@@ -88,22 +74,6 @@
         opacity: 0.8;
         transform: translateX(20px);
     }
-}
-
-.sun-rays {
-    position: absolute;
-    top: -50%;
-    right: 0;
-    width: 80%;
-    height: 150%;
-    background: radial-gradient(
-        ellipse at center,
-        rgba(255, 200, 100, 0.15) 0%,
-        rgba(255, 180, 80, 0.05) 40%,
-        transparent 70%
-    );
-    display: none;
-    animation: sun-pulse 8s ease-in-out infinite;
 }
 
 @keyframes sun-pulse {
@@ -266,23 +236,6 @@
     white-space: nowrap;
 }
 
-.weather-wind {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    min-inline-size: 54px;
-    min-block-size: 32px;
-    padding: 0 8px;
-    border: 1px solid rgba(var(--color-primary-tint-rgb), 0.14);
-    border-radius: 999px;
-    color: var(--color-text-primary);
-    background: var(--glass-reflection-muted);
-    font-size: 11px;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
 .weather-staleness {
     position: absolute;
     right: 14px;
@@ -301,47 +254,6 @@
 }
 
 /* polish128: time display and mobile weather/map chrome extraction */
-.time-display {
-    position: fixed;
-    right: 16px;
-    top: 16px;
-    background:
-        radial-gradient(circle at 90% 10%, rgba(var(--color-primary-rgb), 0.18), transparent 45%),
-        linear-gradient(145deg, rgba(12, 20, 30, 0.94), rgba(6, 10, 16, 0.88));
-    color: var(--color-text-strong);
-    border-radius: 14px;
-    padding: 11px 18px;
-    border: 1px solid var(--glass-reflection-strong);
-    font-family: var(--font-mono);
-    font-size: 13px;
-    letter-spacing: 0.04em;
-    z-index: var(--z-overlay);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow:
-        var(--shadow-glass),
-        0 0 28px rgba(var(--color-primary-rgb), 0.04);
-    transition: var(--transition-premium);
-}
-
-.time-display:hover {
-    border-color: var(--color-primary);
-    box-shadow:
-        var(--shadow-glass),
-        0 0 32px rgba(var(--color-primary-rgb), 0.15);
-    transform: translateY(-1px);
-}
-
-.time-display::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    background: var(--color-primary);
-    border-radius: 50%;
-    animation: pulse 2s ease-in-out infinite;
-    box-shadow: 0 0 8px var(--color-primary);
-}
 
 @keyframes pulse {
     0%,
@@ -357,16 +269,6 @@
 
 @media (max-width: 768px) {
     /* .weather-widget { display: none; }  -- removed: Svelte component owns visibility */
-
-    .time-display {
-        top: calc(12px + env(safe-area-inset-top, 0px));
-        right: 12px;
-        min-width: 128px;
-        justify-content: center;
-        padding: 10px 12px;
-        font-size: 12px;
-        border-radius: 16px;
-    }
 
     body.view-galaxy .time-display {
         display: none;
@@ -409,33 +311,7 @@
     }
 }
 
-.glass-light {
-    backdrop-filter: blur(var(--glass-blur-light));
-    -webkit-backdrop-filter: blur(var(--glass-blur-light));
-}
-.glass-medium {
-    backdrop-filter: blur(var(--glass-blur-medium));
-    -webkit-backdrop-filter: blur(var(--glass-blur-medium));
-}
 .glass-heavy {
     backdrop-filter: blur(var(--glass-blur-heavy));
     -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
-}
-.glass-ultra {
-    backdrop-filter: blur(var(--glass-blur-ultra));
-    -webkit-backdrop-filter: blur(var(--glass-blur-ultra));
-}
-
-
-@media (prefers-reduced-motion: reduce) {
-    /* Silence rain, snow, fog, sun, and weather pulse animations for users who prefer reduced motion. */
-    .rain-drop,
-    .snow-flake,
-    .fog-overlay,
-    .sun-rays,
-    .lightning-flash.flash,
-    .weather-icon .weather-seed-base,
-    .time-display::before {
-        animation: none;
-    }
 }

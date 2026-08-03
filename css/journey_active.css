@@ -194,10 +194,6 @@ body.surface-map .app-title {
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
         )
-        .journey-compass-copy {
-        width: 100%;
-        min-width: 0;
-    }
 
     body.view-galaxy:is(
             [data-panel-surface='focus'],
@@ -222,11 +218,6 @@ body.surface-map .app-title {
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
         )
-        .journey-compass-rail {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
 
     /* D39a: In map view, the journey-compass rail (~360px of 5 step buttons)
        squeezes the copy column into ~120px and the title wraps vertically
@@ -361,22 +352,6 @@ body.surface-map .app-title {
     line-height: 18px;
 }
 
-.journey-compass-rail {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    gap: 8px;
-    min-width: 0;
-    padding: 2px 8px;
-    scroll-snap-type: x mandatory;
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12px, #000 calc(100% - 12px), transparent 100%);
-}
-.journey-compass-rail::-webkit-scrollbar {
-    display: none;
-}
 
 .journey-compass-actions {
     display: flex;

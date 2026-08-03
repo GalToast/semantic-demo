@@ -410,20 +410,7 @@ body.view-map .canvas-color-legend {
     display: none;
 }
 
-.canvas-color-legend-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
 
-.canvas-color-legend-swatch {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--swatch-color);
-    box-shadow: 0 0 8px var(--swatch-color);
-    flex-shrink: 0;
-}
 
 @media (max-width: 768px) {
     .canvas-color-legend {
