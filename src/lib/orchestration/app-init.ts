@@ -27,6 +27,7 @@ import { installTestStoreGlobals } from '@lib/orchestration/test-globals'
 import { debugError } from '@lib/utils/debug'
 import { applyUrlState } from '@lib/orchestration/url-state'
 import { teardownViewController } from '@lib/orchestration/view-controller'
+import { teardownTriggers } from '@lib/orchestration/triggers'
 
 // Side-effect: initializes journey state, canvas interaction adapter,
 // and thread-settler bindings. Must load before engine init so that
@@ -376,4 +377,5 @@ export function teardownAppShell(): void {
     _unsubParity?.()
     _unsubParity = null
     teardownViewController()
+    teardownTriggers()
 }

@@ -25,7 +25,43 @@
  * are the new canonical handlers. Once all callers publish to the
  * Svelte bus, the legacy `subscribeKeyed` calls can be retired.
  */
-import { subscribeKeyed, publish, EVENTS } from '@lib/orchestration/event-bus'
+import { subscribeKeyed as _subscribeKeyedRaw, publish, EVENTS, type EventPayloads } from '@lib/orchestration/event-bus'
+
+// ── Teardown support ──────────────────────────────────────────────────────────
+//
+// The 19 subscribeKeyed subscriptions below are installed at module scope when
+// triggers.ts is first imported. subscribeKeyed is idempotent per key (re-import
+// replaces the old callback), so HMR/re-init does not duplicate handlers.
+// However, a full app teardown (teardownAppShell) does NOT re-evaluate the
+// module, so the event-bus `_subscribers` Set entries would persist until
+// clearAllSubscribers() (tests only). Track the unsubscribe handles here so
+// teardownAppShell() can release exactly these subscriptions without nuking
+// other modules' keyed subscribers (canvas-hover-preview, focus-ui, etc.).
+//
+// The local `subscribeKeyed` shadow keeps the call-site spelling identical to
+// the raw event-bus import (w11-t6 structural contract tests regex-match the
+// call-site name) while recording every handle for teardown.
+const _triggerUnsubscribes: Array<() => void> = []
+
+/**
+ * Explicitly release all event-bus subscriptions installed by triggers.ts.
+ * Safe to call more than once (handles are idempotent via Set.delete).
+ */
+export function teardownTriggers(): void {
+    while (_triggerUnsubscribes.length > 0) {
+        _triggerUnsubscribes.pop()?.()
+    }
+}
+
+function subscribeKeyed<K extends keyof EventPayloads>(
+    key: string,
+    eventName: K,
+    callback: (payload: EventPayloads[K]) => void
+): () => void {
+    const unsubscribe = _subscribeKeyedRaw(key, eventName, callback)
+    _triggerUnsubscribes.push(unsubscribe)
+    return unsubscribe
+}
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { refreshCompositionState } from '@lib/stores/lifecycle/modes'
 import { recordEmptySearch } from '@lib/stores/lifecycle/search-sync'

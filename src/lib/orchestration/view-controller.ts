@@ -48,6 +48,11 @@ const CONFIG = {
 let _handoffDismissTimer: ReturnType<typeof setTimeout> | null = null
 let _viewTransitionTimer: ReturnType<typeof setTimeout> | null = null
 let _preludeTimer: ReturnType<typeof setTimeout> | null = null
+// Monotonically-increasing generation for the terrain-prelude timer. Each new
+// _startTerrainPrelude (or any clear of _preludeTimer) bumps it so a timer
+// callback that is ALREADY queued in the event loop cannot fire with stale
+// closure state after the user cancelled or re-triggered the prelude.
+let _preludeGeneration = 0
 let _refreshCompositionState: () => void = () => {}
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -79,6 +84,7 @@ export function teardownViewController(): void {
         clearTimeout(_preludeTimer)
         _preludeTimer = null
     }
+    _preludeGeneration++ // invalidate any queued prelude callback
 
     _refreshCompositionState = () => {}
 
@@ -99,6 +105,7 @@ export function hideViewHandoff(): void {
         clearTimeout(_preludeTimer)
         _preludeTimer = null
     }
+    _preludeGeneration++ // invalidate any queued prelude callback
     // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
     if (!handoff) return
     handoff.classList.remove('active')
@@ -255,9 +262,14 @@ function _startTerrainPrelude(_view: ViewName, options: SwitchViewOptions, _nav:
         clearTimeout(_preludeTimer)
         _preludeTimer = null
     }
+    const generation = ++_preludeGeneration
     // eslint-disable-next-line no-restricted-syntax -- one-shot DOM timers wrapped for cancellation
     _preludeTimer = setTimeout(() => {
         _preludeTimer = null
+        // Guard against a stale callback: if a counter-switch happened after this
+        // timer was armed (or it was cleared and re-armed), the generation moved
+        // on and this closure must not drive a view switch.
+        if (generation !== _preludeGeneration) return
         const current = get(navStore).currentView
         if (current !== 'galaxy') return
         switchView('map', {
