@@ -150,8 +150,9 @@
     min-height: 44px;
     margin-top: 0.5rem;
     padding: 0 1rem;
-    /* Sticky so the control stays in-frame at the bottom of the scrollable
-       results surface and is always reachable when results remain. */
+    /* Keep the footer sticky on the desktop/search-list surface. Compact
+       panel-contained sheets override this below so the footer cannot paint
+       over the last result's hit area. */
     position: sticky;
     bottom: 0;
     z-index: var(--z-base);
@@ -172,9 +173,18 @@
     background: rgba(var(--color-primary-alt-rgb), 0.16);
     border-color: rgba(var(--color-primary-alt-rgb), 0.34);
     color: var(--color-text-teal-light);
-  }
-  .search-show-more-btn:focus-visible {
+  }  .search-show-more-btn:focus-visible {
     outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
     outline-offset: 2px;
   }
+
+  @media (max-width: 768px) {
+    :global(.search-container.info-panel-contained) .search-show-more-btn {
+      /* In the compact info-panel sheet, the sticky footer can paint over
+         the final result while the sheet reflows at the viewport edge. */
+      position: static;
+      z-index: auto;
+    }
+  }
+
 </style>
