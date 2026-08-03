@@ -1,67 +1,28 @@
-// with-state-mutation.ts — typed extraction of the state mutation guard and key sets.
-// Extracted from js/state.js for TS migration. The JS shim re-exports from here.
+// with-state-mutation.ts — typed extraction of the state mutation guard.
+// Extracted from js/state.js for TS migration.
 //
-// DEPRECATED (2026-07-27): The new app.svelte.ts Proxy does NOT read _isMutatingRef —
-// its validateStateProperty function checks STATE_VALIDATORS independently.
-// withStateMutation() provides zero functional benefit in the new system: the
-// wrapper just invokes its callback and returns the result (see implementation at
-// the bottom of this file). Existing call sites still work — they are no-op-correct —
-// but should not be added in new code. ~17 non-engine files still call it and are
-// being unwrapped incrementally; src/lib/engine/* keeps its engineState.withStateMutation
-// binding intentionally. js/state.js still re-exports from here for backward compat.
+// DEPRECATED (2026-07-27): The new app.svelte.ts Proxy does NOT read
+// _isMutatingRef — its STATE_VALIDATORS checks run on every write via
+// validateStateProperty independently. withStateMutation() provides zero
+// functional benefit in the new system: the wrapper just invokes its
+// callback and returns the result. Existing call sites still work —
+// they are no-op-correct — but should not be added in new code.
+// ~17 non-engine files still call it and are being unwrapped incrementally;
+// src/lib/engine/* keeps its engineState.withStateMutation binding
+// intentionally.
 
-// ── Key Sets ─────────────────────────────────────────────────────────────────
-// CRITICAL_KEYS: top-level properties that throw on direct mutation outside withStateMutation().
-export const CRITICAL_KEYS = [
-    'currentView',
-    'navState',
-    'semanticLaneState',
-    'loadingPhaseKey',
-    'semanticThreadsStatus',
-    'rawPositionsBuffer',
-    'rawClustersBuffer'
-] as const
-
-export type CriticalKey = (typeof CRITICAL_KEYS)[number]
-
-// TRACKED_SUB_KEYS: sub-object properties that are wrapped in nested Proxies.
-// Writes outside withStateMutation() warn in dev mode (non-critical) or throw (if parent is CRITICAL).
-export const TRACKED_SUB_KEYS = [
-    'navState',
-    'strandContinuityState',
-    'focusOrbitSlackState',
-    'terrainHandoffState',
-    'routeExplorationState',
-    'routeChoreographyState',
-    'inspectedStrandDiagnostics',
-    'arrivalHandoffDiagnostics',
-    'routeTraceDiagnostics',
-    'scenePerformanceDiagnostics',
-    'activeFilters'
-] as const
-
-export type TrackedSubKey = (typeof TRACKED_SUB_KEYS)[number]
-
-// Runtime Sets for O(1) lookups (used by proxy traps in state.js).
-export const CRITICAL_KEYS_SET = new Set<string>(CRITICAL_KEYS)
-export const TRACKED_SUB_KEYS_SET = new Set<string>(TRACKED_SUB_KEYS)
-
-// ── Mutation Guard ───────────────────────────────────────────────────────────
-// Shared flag wrapped in an object so both this module and state.js's proxy traps
-// reference the same mutable container. A bare `let` import would copy the value.
-export const _isMutatingRef = { value: false }
-
-/** Read the current mutating state (for proxy traps). */
-export function isMutating(): boolean {
-    return _isMutatingRef.value
-}
-
+/**
+ * No-op mutation wrapper retained for backward compatibility.
+ *
+ * The legacy js/state.ts proxy read a shared `_isMutatingRef` flag to decide
+ * whether to allow/silence mutation warnings. The new app.svelte.ts Proxy
+ * validates writes via STATE_VALIDATORS instead, so the flag is no longer
+ * consulted at runtime. This wrapper simply invokes `fn` and returns its
+ * result, preserving call-site compatibility while the ~17 remaining callers
+ * are migrated to plain blocks.
+ *
+ * Do not add new call sites — use a plain block `{ ... }` instead.
+ */
 export function withStateMutation<T>(fn: () => T): T {
-    const prev = _isMutatingRef.value
-    _isMutatingRef.value = true
-    try {
-        return fn()
-    } finally {
-        _isMutatingRef.value = prev
-    }
+    return fn()
 }

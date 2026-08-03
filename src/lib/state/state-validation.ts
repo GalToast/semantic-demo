@@ -37,7 +37,7 @@ export const VALID_SEARCH_STATUS = new Set<string>(['idle', 'searching', 'focusi
 
 export const VALID_LOADING_PHASES = new Set<string>(['records', 'scene', 'restore', 'launch'])
 
-export const VALID_SEMANTIC_LANE_STATES = new Set<string>(['checking', 'healthy', 'degraded', 'offline'])
+export const VALID_SEMANTIC_LANE_STATES = new Set<string>(['checking', 'healthy', 'degraded', 'offline', 'stuck', 'reconnecting', 'unavailable'])
 
 export const VALID_FOCUS_TRANSITION_MODES = new Set<string>(['idle', 'entering', 'settling', 'inside', 'exiting'])
 
@@ -76,43 +76,6 @@ export const VALID_STRAND_CONTINUITY_PHASES = new Set<string>([
 export const VALID_FOCUS_ORBIT_SLACK_PHASES = new Set<string>(['idle', 'active', 'settling', 'free-pivot'])
 
 export const VALID_ARRIVAL_HANDOFF_PHASES = new Set<string>(['idle', 'prelude', 'flying', 'arriving', 'settling'])
-
-export const VALID_COMPOSITION_PANEL_SURFACES = new Set<string>([
-    'idle',
-    'peek',
-    'open',
-    'focus',
-    'map',
-    'search',
-    'trail',
-    'inside'
-])
-
-export const VALID_COMPOSITION_PANEL_SURFACE_DETAILS = new Set<string>(['peek', 'open', 'full'])
-
-export const VALID_COMPOSITION_TRAIL_STATES = new Set<string>(['inactive', 'active', 'deep', 'exiting'])
-
-// W66: test-pinned (state-app-class.test.ts asserts size 3) but runtime-dead --
-// the composition field was deleted in W48-F and no src/ consumer references
-// this set. NOTE: values are STRINGS while appState.trailDepth is validated as
-// a numeric nonNegativeInt -- do not wire this set to trailDepth without
-// reconciling the types.
-export const VALID_COMPOSITION_TRAIL_DEPTHS = new Set<string>(['0', '1', '2'])
-
-export const VALID_COMPOSITION_GRAPH_CONTEXTS = new Set<string>([
-    'idle',
-    'galaxy',
-    'focus',
-    'trail',
-    'semantic',
-    'bridge'
-])
-
-export const VALID_COMPOSITION_MAP_CONTEXTS = new Set<string>(['idle', 'map', 'map-trail', 'map-focus'])
-
-export const VALID_COMPOSITION_SEMANTIC_DIVE_STATES = new Set<string>(['inactive', 'active', 'exiting'])
-
-export const VALID_COMPOSITION_SEARCH_GLOW_STATES = new Set<string>(['inactive', 'active', 'fading'])
 
 export const VALID_DEMO_PHASES = new Set<string>([
     'IDLE',
@@ -292,8 +255,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     focusCameraAssistActive: boolean('focusCameraAssistActive'),
     eventListenersInitialized: boolean('eventListenersInitialized'),
     deferredHydrationStarted: boolean('deferredHydrationStarted'),
-    applyingUrlState: boolean('applyingUrlState'),
-    restoringBrowserHistory: boolean('restoringBrowserHistory'),
 
     // Numbers
     rippleStartTime: nonNegativeNumber('rippleStartTime'),
@@ -373,8 +334,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     routeExplorationState: passthrough,
     routeChoreographyState: passthrough,
     searchSummary: passthrough,
-    searchError: passthrough,
-    currentSearchSummary: passthrough,
     searchTimeout: passthrough,
     searchPreviewHoverTimer: passthrough,
     searchVectorScrambleInterval: passthrough,
@@ -410,7 +369,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     projectedNeighborGrid: passthrough,
     projectedNeighborCache: passthrough,
     pointIndexByLeadId: passthrough,
-    pocketMotionByIndex: passthrough,
     semanticNeighborMapByLeadId: passthrough,
     semanticThreadBundle: passthrough,
     semanticThreadArtifactName: passthrough,
@@ -446,21 +404,10 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     lastSuccessfulFetch: passthrough,
     _deferredUrlState: passthrough,
     _deferredUrlStateHandler: passthrough,
-    currentEmptyQuery: passthrough,
-    semanticTrailCue: passthrough,
     searchGlowRenderStateKey: passthrough,
     semanticLanePendingWarm: passthrough,
     semanticLaneOpsMode: passthrough,
-    searchGlowTopIndex: passthrough,
-    searchGlowIndices: passthrough,
-    searchGlowActive: passthrough,
-    searchAnchorIndex: passthrough,
-    searchPreviewIndex: passthrough,
     semanticResultContextByLeadId: passthrough,
-    searchUseRerank: passthrough,
-    isCompactViewport: passthrough,
-    isSearching: passthrough,
-    searchQuery: passthrough,
     _settlingWatchdogStartedAt: passthrough,
     _settlingLowFrames: passthrough
 }

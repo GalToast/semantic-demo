@@ -79,14 +79,13 @@ describe('engine-boundary refactor / Phase 2-1 / searchError field typing', () =
         expect(body).toMatch(/appState\.searchState\.searchError\s*=\s*\{[\s\S]*query[\s\S]*type[\s\S]*message/)
     })
 
-    it('state-validation.ts treats searchError as passthrough (no narrow validation)', () => {
-        // passthrough is fine — runtime validation shouldn't reject the
-        // typed shape, but tightening the appState field type doesn't
-        // require changing validation. Lock this in to detect accidental
-        // over-validation.
-        // Phase 6b: searchError lives in appState.searchState sub-aggregate
+    it('state-validation.ts does not register dead top-level searchError validator', () => {
+        // Phase 6b: searchError lives in appState.searchState sub-aggregate,
+        // so a top-level STATE_VALIDATORS entry can never fire (the Proxy set
+        // trap only sees top-level keys). The dead `searchError: passthrough`
+        // entry was pruned in W50 cleanup — verify it stays absent.
         const validation = readSource('src/lib/state/state-validation.ts')
-        expect(validation).toMatch(/^\s*searchError:\s*passthrough,/m)
+        expect(validation).not.toMatch(/^\s*searchError:\s*passthrough,/m)
     })
 })
 

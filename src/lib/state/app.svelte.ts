@@ -593,7 +593,7 @@ export class AppState {
         return this.navState.focusedIndex
     }
 
-    set focusedNode(index: number | null | undefined) {
+    set focusedNode(index: number | null) {
         const nextIndex = Number.isFinite(index) ? Number(index) : null
         this.navState.focusedIndex = nextIndex
     }

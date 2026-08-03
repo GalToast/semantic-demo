@@ -42,14 +42,6 @@ import {
     VALID_STRAND_CONTINUITY_PHASES,
     VALID_FOCUS_ORBIT_SLACK_PHASES,
     VALID_ARRIVAL_HANDOFF_PHASES,
-    VALID_COMPOSITION_PANEL_SURFACES,
-    VALID_COMPOSITION_PANEL_SURFACE_DETAILS,
-    VALID_COMPOSITION_TRAIL_STATES,
-    VALID_COMPOSITION_TRAIL_DEPTHS,
-    VALID_COMPOSITION_GRAPH_CONTEXTS,
-    VALID_COMPOSITION_MAP_CONTEXTS,
-    VALID_COMPOSITION_SEMANTIC_DIVE_STATES,
-    VALID_COMPOSITION_SEARCH_GLOW_STATES,
     VALID_DEMO_PHASES,
     VALID_WEATHER_SOURCE_STRINGS
 } from '@lib/state/state-validation'
@@ -57,15 +49,14 @@ import {
 // Snapshot of every documented set and its arity — if a commit adds or drops
 // a member, the length assertion below fails (which is exactly the guard the
 // shittiness audit asked for).
-// Total count: 24 (task spec mentioned ~25; the actual export count in
-// state-validation.ts is 24). Adjust if upstream adds/removes a set.
+// Total count: 16 (after W50 cleanup removed 8 dead VALID_COMPOSITION_* sets).
 const VALID_SET_SNAPSHOTS: ReadonlyArray<readonly [string, ReadonlySet<string>, number]> = [
     ['VALID_VIEWS', VALID_VIEWS, 2],
     ['VALID_NAV_MODES', VALID_NAV_MODES, 7],
     ['VALID_PANEL_SURFACES', VALID_PANEL_SURFACES, 14],
     ['VALID_SEARCH_STATUS', VALID_SEARCH_STATUS, 6],
     ['VALID_LOADING_PHASES', VALID_LOADING_PHASES, 4],
-    ['VALID_SEMANTIC_LANE_STATES', VALID_SEMANTIC_LANE_STATES, 4],
+    ['VALID_SEMANTIC_LANE_STATES', VALID_SEMANTIC_LANE_STATES, 7],
     ['VALID_FOCUS_TRANSITION_MODES', VALID_FOCUS_TRANSITION_MODES, 5],
     ['VALID_MYCELIUM_MODES', VALID_MYCELIUM_MODES, 7],
     ['VALID_TERRAIN_HANDOFF_PHASES', VALID_TERRAIN_HANDOFF_PHASES, 5],
@@ -74,23 +65,15 @@ const VALID_SET_SNAPSHOTS: ReadonlyArray<readonly [string, ReadonlySet<string>, 
     ['VALID_STRAND_CONTINUITY_PHASES', VALID_STRAND_CONTINUITY_PHASES, 6],
     ['VALID_FOCUS_ORBIT_SLACK_PHASES', VALID_FOCUS_ORBIT_SLACK_PHASES, 4],
     ['VALID_ARRIVAL_HANDOFF_PHASES', VALID_ARRIVAL_HANDOFF_PHASES, 5],
-    ['VALID_COMPOSITION_PANEL_SURFACES', VALID_COMPOSITION_PANEL_SURFACES, 8],
-    ['VALID_COMPOSITION_PANEL_SURFACE_DETAILS', VALID_COMPOSITION_PANEL_SURFACE_DETAILS, 3],
-    ['VALID_COMPOSITION_TRAIL_STATES', VALID_COMPOSITION_TRAIL_STATES, 4],
-    ['VALID_COMPOSITION_TRAIL_DEPTHS', VALID_COMPOSITION_TRAIL_DEPTHS, 3],
-    ['VALID_COMPOSITION_GRAPH_CONTEXTS', VALID_COMPOSITION_GRAPH_CONTEXTS, 6],
-    ['VALID_COMPOSITION_MAP_CONTEXTS', VALID_COMPOSITION_MAP_CONTEXTS, 4],
-    ['VALID_COMPOSITION_SEMANTIC_DIVE_STATES', VALID_COMPOSITION_SEMANTIC_DIVE_STATES, 3],
-    ['VALID_COMPOSITION_SEARCH_GLOW_STATES', VALID_COMPOSITION_SEARCH_GLOW_STATES, 3],
     ['VALID_DEMO_PHASES', VALID_DEMO_PHASES, 13],
     ['VALID_WEATHER_SOURCE_STRINGS', VALID_WEATHER_SOURCE_STRINGS, 5]
 ]
 
-describe('state-app-class — VALID_* sets (all 25 documented)', () => {
-    it('all 24 documented VALID_* sets are present in the snapshot', () => {
-        // Source of truth: state-validation.ts emits 24 VALID_* sets. If a
+describe('state-app-class — VALID_* sets (all 16 documented)', () => {
+    it('all 16 documented VALID_* sets are present in the snapshot', () => {
+        // Source of truth: state-validation.ts emits 16 VALID_* sets. If a
         // new set is added or removed, this assertion should be adjusted.
-        expect(VALID_SET_SNAPSHOTS).toHaveLength(24)
+        expect(VALID_SET_SNAPSHOTS).toHaveLength(16)
     })
 
     for (const [label, set, expected] of VALID_SET_SNAPSHOTS) {
@@ -113,7 +96,7 @@ describe('state-app-class — VALID_* sets (all 25 documented)', () => {
         }
     })
 
-    // The 6 highest-traffic sets from the state-validation perf audit.
+    // The 5 highest-traffic sets from the state-validation perf audit.
     // For these we also assert the exact member list is preserved (so a
     // superset-add still fails loudly).
     const TOP_SIX = VALID_SET_SNAPSHOTS.filter(
@@ -122,11 +105,10 @@ describe('state-app-class — VALID_* sets (all 25 documented)', () => {
             label === 'VALID_PANEL_SURFACES' ||
             label === 'VALID_SEARCH_STATUS' ||
             label === 'VALID_LOADING_PHASES' ||
-            label === 'VALID_COMPOSITION_PANEL_SURFACES' ||
             label === 'VALID_DEMO_PHASES'
     )
-    it('all 6 most-trafficked sets are present in the snapshot', () => {
-        expect(TOP_SIX).toHaveLength(6)
+    it('all 5 most-trafficked sets are present in the snapshot', () => {
+        expect(TOP_SIX).toHaveLength(5)
     })
 
     it('most-trafficked sets preserve full membership (IDENTITY)', () => {

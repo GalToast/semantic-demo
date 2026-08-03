@@ -42,8 +42,6 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'fs'
 import { join, relative } from 'path'
 
-import { CRITICAL_KEYS, TRACKED_SUB_KEYS } from '../../src/lib/state/with-state-mutation'
-
 // Vitest runs from the worktree root, so process.cwd() is the repo root.
 const repoRoot = process.cwd()
 
@@ -255,14 +253,4 @@ describe('withStateMutation invariant', () => {
         expect(allHits).toHaveLength(0)
     }, 30000)
 
-    it('protected key lists are non-empty', () => {
-        // Sanity check: the lists we still re-export from with-state-mutation.ts
-        // (js/state.js backward-compat consumers + state-mutators.ts) remain
-        // non-empty even though the mutation-guard wrapper itself is dead.
-        expect(CRITICAL_KEYS.length).toBeGreaterThan(0)
-        expect(TRACKED_SUB_KEYS.length).toBeGreaterThan(0)
-        // navState appears in both lists (it's CRITICAL and has nested tracked
-        // sub-keys). Verify the set construction still works.
-        expect(new Set<string>([...CRITICAL_KEYS, ...TRACKED_SUB_KEYS]).has('navState')).toBe(true)
-    }, 30000)
 })
