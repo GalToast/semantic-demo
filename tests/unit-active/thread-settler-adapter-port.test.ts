@@ -21,11 +21,7 @@ function readFile(relPath: string): string {
 }
 
 describe('traverseNeighbor import routing', () => {
-    const files = [
-        'src/lib/orchestration/triggers.ts',
-        'src/lib/journey/journey.ts',
-        'src/lib/journey/thread-settler.ts'
-    ]
+    const files = ['src/lib/journey/journey.ts', 'src/lib/journey/thread-settler.ts']
 
     for (const file of files) {
         it(`${file} does not import traverseNeighbor from @legacy/modules/journey-thread-settler`, () => {
@@ -37,11 +33,11 @@ describe('traverseNeighbor import routing', () => {
         })
     }
 
-    it('src/lib/orchestration/triggers.ts imports traverseNeighbor from adapter', () => {
+    it('src/lib/orchestration/triggers.ts no longer routes keyboard/thread navigation', () => {
+        // f0bceb84 moved thread-keyboard handling out of triggers.ts (event-bus-only now).
+        // Lock this in so future callers don't accidentally reintroduce a legacy-path import.
         const src = readFile('src/lib/orchestration/triggers.ts')
-        const adapterImport =
-            /import\s*\{[^}]*traverseNeighbor[^}]*\}\s*from\s*['"]@lib\/journey\/thread-settler-adapter['"]/
-        expect(src).toMatch(adapterImport)
+        expect(src).not.toContain('traverseNeighbor')
     })
 
     it('src/lib/orchestration/window-actions.ts imports traverseNeighbor from thread-settler', () => {

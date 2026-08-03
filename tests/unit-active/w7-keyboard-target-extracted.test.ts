@@ -80,26 +80,15 @@ describe('W7: F6 — keyboard-help.ts replaces inline def with import from new s
     })
 })
 
-describe('W7: F6 — triggers.ts replaces inline def with import from new shared util', () => {
-    it('triggers.ts imports isKeyboardTextEntryTarget from @lib/utils/keyboard-target', () => {
-        expect(trigSrc).toContain("import { isKeyboardTextEntryTarget } from '@lib/utils/keyboard-target'")
-    })
-
-    it('triggers.ts no inline boolean-checker def — exactly 1 occurrence of isKeyboardTextEntryTarget outside imports/callsites', () => {
-        // The pre-fix body had `function isKeyboardTextEntryTarget(target: HTMLElement): boolean {`.
-        // Post-fix: must be gone.
-        // Count occurrences — should be exactly 2 (1 in import, 1 in handleGlobalKeydown callsite).
-        const occurrences = (trigSrc.match(/isKeyboardTextEntryTarget/g) || []).length
-        expect(occurrences).toBe(2)
-        // Inline `function isKeyboardTextEntryTarget(target: HTMLElement)` shape must be gone.
-        expect(trigSrc).not.toContain('function isKeyboardTextEntryTarget(target: HTMLElement)')
-    })
-
-    it('triggers.ts handleGlobalKeydown callsite resolves the imported predicate', () => {
-        // The callsite at line ~77-79 of triggers.ts has `const target = event.target as HTMLElement`
-        // then `if (isKeyboardTextEntryTarget(target)) return`. F6 preserves this — predicate
-        // type-narrows target to HTMLElement at the if-branch.
-        expect(trigSrc).toMatch(/isKeyboardTextEntryTarget\(target\)/)
+describe('W7: F6 — triggers.ts key-handler refactor follow-up', () => {
+    it('triggers.ts no longer contains keyboard-handler wiring (moved to keyboard-help.ts / global-shortcuts.ts)', () => {
+        // f0bceb84 retired the dead view-button bindings and key-handler duplicate from
+        // triggers.ts; keyboard handling now lives in keyboard-help.ts and global-shortcuts.ts.
+        // This test locks in that separation so future refactors don't reintroduce a
+        // duplicate isKeyboardTextEntryTarget definition in the event-bus module.
+        expect(trigSrc).not.toContain("import { isKeyboardTextEntryTarget } from '@lib/utils/keyboard-target'")
+        expect(trigSrc).not.toContain('function isKeyboardTextEntryTarget(')
+        expect(trigSrc).not.toContain('handleGlobalKeydown')
     })
 })
 

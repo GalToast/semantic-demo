@@ -80,11 +80,10 @@ describe('engine-boundary refactor / Phase 2-2 / searchResults field typing', ()
         // Local declaration would be `interface SearchResult` (without export)
         expect(resultsUi).not.toMatch(/^\s*interface\s+SearchResultPoint\b/m)
         expect(resultsUi).not.toMatch(/^\s*interface\s+SearchResult\b/m)
-        // Must import the types from state-types.ts
-        expect(resultsUi).toMatch(/import\s+type\s*\{[^}]*\bSearchResult\b[^}]*\}\s+from\s+['"][^'"]*state-types['"]/)
-        expect(resultsUi).toMatch(
-            /import\s+type\s*\{[^}]*\bSearchResultPoint\b[^}]*\}\s+from\s+['"][^'"]*state-types['"]/
-        )
+        // Must import the canonical SearchResult type from state-types.ts.
+        // SearchResultPoint is not currently referenced in results-ui.ts; do not force
+        // an unused import that would violate the repo's no-dead-import convention.
+        expect(resultsUi).toMatch(/import\s+type\s*\{[^}]*\bSearchResult\b[^}]*\}\s+from\s*['"][^'"]*state-types['"]/)
     })
 
     it('search-results field validation only checks array-ness (no narrow validation)', () => {
