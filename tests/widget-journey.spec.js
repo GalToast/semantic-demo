@@ -818,94 +818,48 @@ test.describe('Widget journey', () => {
         )
     })
 
-    test('W71: URL query hydrates and runs search without a second input event', async ({ page }) => {
-        test.setTimeout(60000)
-        let searchRequests = 0
-
+    /**
+     * Stub the semantic-search API (returning `count` rows) plus the
+     * lane-health probe, and count semantic_search requests. Shared by the
+     * W71 deep-link tests so their route wiring cannot drift apart.
+     */
+    async function stubSearchApi(page, count) {
+        const requests = { count: 0 }
         await page.route(
             (url) => {
                 const parsed = new URL(url)
                 return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_search'
             },
             async (route) => {
-                searchRequests += 1
+                requests.count += 1
+                const body =
+                    count > 0
+                        ? {
+                              ok: true,
+                              count,
+                              results: [
+                                  {
+                                      lead_id: 1,
+                                      name: 'Java Junction Coffee',
+                                      what: 'Coffee roaster and cafe',
+                                      city: 'Conroe',
+                                      lat: 30.3119,
+                                      lng: -95.4561,
+                                      cluster: 3,
+                                      status: 'active',
+                                      website: 'https://example.com/java',
+                                      email: 'hello@example.com',
+                                      phone: '(936) 555-0101',
+                                      score: 0.99,
+                                      semantic_score: 0.99
+                                  }
+                              ]
+                          }
+                        : { ok: true, count: 0, results: [] }
                 await route.fulfill({
                     status: 200,
                     contentType: 'application/json',
-                    body: JSON.stringify({
-                        ok: true,
-                        count: 1,
-                        results: [
-                            {
-                                lead_id: 1,
-                                name: 'Java Junction Coffee',
-                                what: 'Coffee roaster and cafe',
-                                city: 'Conroe',
-                                lat: 30.3119,
-                                lng: -95.4561,
-                                cluster: 3,
-                                status: 'active',
-                                website: 'https://example.com/java',
-                                email: 'hello@example.com',
-                                phone: '(936) 555-0101',
-                                score: 0.99,
-                                semantic_score: 0.99
-                            }
-                        ]
-                    })
-                })
-            }
-        )
-        // Stub the lane-health probe too so the search flow never takes a
-        // degraded path that could change how many search requests fire.
-        await page.route(
-            (url) => {
-                const parsed = new URL(url)
-                return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_lane_health'
-            },
-            async (route) => {
-                await route.fulfill({
-                    status: 200,
-                    contentType: 'application/json',
-                    body: JSON.stringify({ ok: true, state: 'healthy' })
-                })
-            }
-        )
-
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=coffee`, {
-            waitUntil: 'domcontentloaded'
-        })
-        await expect(page).toHaveTitle(/Semantic Explorer|MoCo Business Mycelium/)
-        await expect(page.locator('#search-input')).toBeVisible({ timeout: 40000 })
-        await expect(page.locator('#search-input')).toHaveValue('coffee', { timeout: 15000 })
-        await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 30000 })
-        await expect(page.locator('.search-result-item')).toHaveCount(1)
-
-        expect(searchRequests, 'URL restore must dispatch the semantic search request').toBeGreaterThan(0)
-        // Exactly one semantic_search round-trip: the restore and the onMount
-        // ?q= path race through startSearch's isNew gate, and the winner must
-        // dedupe the loser. A second request means the lease release() change
-        // regressed into a double API call.
-        expect(searchRequests, 'same-query dedup must prevent a second semantic search request').toBe(1)
-    })
-
-    test('W71b: deep-link query with zero results renders empty state without a second search request', async ({
-        page
-    }) => {
-        test.setTimeout(60000)
-        let searchRequests = 0
-
-        await page.route(
-            (url) => {
-                const parsed = new URL(url)
-                return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_search'
-            },
-            async (route) => {
-                searchRequests += 1
-                await route.fulfill({
-                    status: 200,
-                    contentType: 'application/json',
-                    body: JSON.stringify({ ok: true, count: 0, results: [] })
+                    body: JSON.stringify(body)
                 })
             }
         )
@@ -924,6 +878,35 @@ test.describe('Widget journey', () => {
                 })
             }
         )
+        return requests
+    }
+
+    test('W71: URL query hydrates and runs search without a second input event', async ({ page }) => {
+        test.setTimeout(60000)
+        const searchRequests = await stubSearchApi(page, 1)
+
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=coffee`, {
+            waitUntil: 'domcontentloaded'
+        })
+        await expect(page).toHaveTitle(/Semantic Explorer|MoCo Business Mycelium/)
+        await expect(page.locator('#search-input')).toBeVisible({ timeout: 40000 })
+        await expect(page.locator('#search-input')).toHaveValue('coffee', { timeout: 15000 })
+        await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 30000 })
+        await expect(page.locator('.search-result-item')).toHaveCount(1)
+
+        expect(searchRequests.count, 'URL restore must dispatch the semantic search request').toBeGreaterThan(0)
+        // Exactly one semantic_search round-trip: the restore and the onMount
+        // ?q= path race through startSearch's isNew gate, and the winner must
+        // dedupe the loser. A second request means the lease release() change
+        // regressed into a double API call.
+        expect(searchRequests.count, 'same-query dedup must prevent a second semantic search request').toBe(1)
+    })
+
+    test('W71b: deep-link query with zero results renders empty state without a second search request', async ({
+        page
+    }) => {
+        test.setTimeout(60000)
+        const searchRequests = await stubSearchApi(page, 0)
 
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=zzzzzznomatch`, {
             waitUntil: 'domcontentloaded'
@@ -938,7 +921,7 @@ test.describe('Widget journey', () => {
 
         // The onMount ?q= guard must not re-dispatch after the restore already
         // fulfilled the empty query — exactly one semantic_search round-trip.
-        expect(searchRequests, 'empty deep-link must dispatch exactly one semantic search request').toBe(1)
+        expect(searchRequests.count, 'empty deep-link must dispatch exactly one semantic search request').toBe(1)
     })
 
     test('W54-A1: mobile search sheet raises on typed input (Bug A — search-dispatch.ts fix)', async ({ page }) => {
