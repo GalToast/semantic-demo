@@ -40,7 +40,20 @@ const mockState = vi.hoisted(() => ({
     applyLocalNeighborhoodFocusCalls: [] as Array<number>,
     // URL ?q= parameter the mocked getSearchParams returns. Tests set this
     // before firing applyUrlState so the search-restore path is exercised.
-    urlSearch: '' as string
+    urlSearch: '' as string,
+    // Search status the mocked searchStore reports. Tests set this to
+    // 'searching' to simulate the stuck state a swallowed AbortError leaves
+    // behind when the 30s restore deadline expires.
+    searchStatus: 'idle' as string,
+    // Records setSearchError calls so tests can assert the deadline settles
+    // the global search state through the established error path.
+    setSearchErrorCalls: [] as Array<{ query: string; err: unknown; type: unknown }>,
+    // When true, the runSearch mock RESOLVES on abort instead of rejecting
+    // (simulating runSearch swallowing the AbortError internally).
+    runSearchSwallowAbort: false,
+    // Records publish calls so tests can assert no post-restore focus writes
+    // happen after a timeout.
+    publishCalls: [] as Array<{ type: string; payload: unknown }>
 }))
 
 // ── Module mocks ─────────────────────────────────────────────────────────────
@@ -104,6 +117,8 @@ vi.mock('@lib/stores/navigation.svelte.ts', async (importOriginal) => {
 // in resetStateBeforeUrlRestore; provide the minimum shape.
 vi.mock('@lib/state/app.svelte', () => ({
     appState: {
+        // Used by the record→anchor mapping and the anchor range check.
+        points: Array.from({ length: 100 }, (_, i) => ({ lead_id: String(i), name: `Biz ${i}` })),
         get navState() {
             return { trailDepth: 0 }
         },
@@ -147,9 +162,15 @@ vi.mock('@lib/stores/search.svelte', () => ({
     runSearch: (query: string, signal: AbortSignal) => {
         mockState.runSearchCalls.push({ query, signal })
         return new Promise((resolve, reject) => {
-            // Reject if the signal aborts (the race we care about).
+            // Reject if the signal aborts (the race we care about) — unless
+            // the test simulates runSearch swallowing the AbortError, in
+            // which case resolve instead.
             signal.addEventListener('abort', () => {
-                reject(new DOMException('aborted', 'AbortError'))
+                if (mockState.runSearchSwallowAbort) {
+                    resolve(undefined)
+                } else {
+                    reject(new DOMException('aborted', 'AbortError'))
+                }
             })
             // Allow the test to drive completion.
             mockState._resolveSearch = () => resolve(undefined)
@@ -157,7 +178,10 @@ vi.mock('@lib/stores/search.svelte', () => ({
         })
     },
     clearSearch: () => {},
-    searchStore: () => ({ query: '', summary: null, results: [] })
+    searchStore: () => ({ status: mockState.searchStatus, query: '', summary: null, results: [] }),
+    setSearchError: (query: string, err: unknown, type: unknown) => {
+        mockState.setSearchErrorCalls.push({ query, err, type })
+    }
 }))
 
 vi.mock('@lib/journey/selected-card', () => ({
@@ -187,11 +211,19 @@ vi.mock('@lib/focus/pocket', () => ({
     }
 }))
 
-// Mock event-bus publish so SEARCH_FOCUS_REQUESTED doesn't fail.
+// Mock event-bus publish so SEARCH_FOCUS_REQUESTED doesn't fail. publish
+// records into mockState.publishCalls so tests can assert the restore does
+// (or does not) dispatch focus events.
 vi.mock('@lib/orchestration/event-bus', () => ({
-    publish: (_type: string, _payload: unknown) => {},
+    publish: (type: string, payload: unknown) => {
+        mockState.publishCalls.push({ type, payload })
+    },
     EVENTS: {
-        SEARCH_FOCUS_REQUESTED: 'search:search-focus-requested'
+        SEARCH_FOCUS_REQUESTED: 'search:search-focus-requested',
+        SEARCH_SUCCESS: 'search:success',
+        SEARCH_EMPTY: 'search:empty',
+        SEARCH_CLEARED: 'search:cleared',
+        STATE_RESET: 'state:reset'
     },
     subscribe: (_type: string, _cb: (...args: unknown[]) => void) => () => {}
 }))
@@ -207,30 +239,46 @@ vi.mock('@lib/orchestration/url-params', () => ({
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
+// Shared reset for every describe in this file (race/abort, restore
+// deadline, and story composition). Module mocks must be reset BEFORE each
+// test; mockState is hoisted so its identity survives vi.resetModules().
+function resetMockState(): void {
+    // Reset modules FIRST so the await import('@lib/orchestration/url-state')
+    // below re-evaluates against THIS test's mocks. Without this, vitest
+    // may serve the cached real module from a prior test file's import,
+    // causing cross-test pollution in the full suite run.
+    vi.resetModules()
+    // Reset mock state (must come AFTER vi.resetModules; mockState is
+    // hoisted so its identity persists across resetModules).
+    mockState.navStore.urlStateRestoreToken = 0
+    mockState.navStore.applyingUrlState = false
+    mockState.navStore.restoringBrowserHistory = false
+    mockState.runSearchCalls = []
+    mockState.runSearchRejectWith = undefined
+    mockState.runSearchResolveWith = undefined
+    mockState.focusPocketImportCalls = 0
+    mockState.applyLocalNeighborhoodFocusCalls = []
+    mockState.urlSearch = ''
+    mockState._resolveSearch = undefined
+    mockState._rejectSearch = undefined
+    mockState.searchStatus = 'idle'
+    mockState.setSearchErrorCalls = []
+    mockState.runSearchSwallowAbort = false
+    mockState.publishCalls = []
+    // Reset URL bar so getSearchParams() reads cleanly between tests.
+    if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', '/')
+    }
+}
+
 describe('url-state — applyUrlState race protection', () => {
     beforeEach(() => {
-        // Reset modules FIRST so the await import('@lib/orchestration/url-state')
-        // below re-evaluates against THIS test's mocks. Without this, vitest
-        // may serve the cached real module from a prior test file's import,
-        // causing cross-test pollution in the full suite run.
-        vi.resetModules()
-        // Reset mock state (must come AFTER vi.resetModules; mockState is
-        // hoisted so its identity persists across resetModules).
-        mockState.navStore.urlStateRestoreToken = 0
-        mockState.navStore.applyingUrlState = false
-        mockState.navStore.restoringBrowserHistory = false
-        mockState.runSearchCalls = []
-        mockState.runSearchRejectWith = undefined
-        mockState.runSearchResolveWith = undefined
-        mockState.focusPocketImportCalls = 0
-        mockState.applyLocalNeighborhoodFocusCalls = []
-        mockState.urlSearch = ''
-        mockState._resolveSearch = undefined
-        mockState._rejectSearch = undefined
-        // Reset URL bar so getSearchParams() reads cleanly between tests.
-        if (typeof window !== 'undefined') {
-            window.history.replaceState({}, '', '/')
-        }
+        resetMockState()
+    })
+
+    afterEach(() => {
+        // Restore AbortSignal.timeout spies created by the deadline tests.
+        vi.restoreAllMocks()
     })
 
     it('aborts the previous runSearch signal when a newer applyUrlState starts', async () => {
@@ -331,5 +379,201 @@ describe('url-state — applyUrlState race protection', () => {
         // post-runSearch writes in this test).
         mockState._rejectSearch?.(new Error('done'))
         await p
+    }, 60000)
+})
+
+describe('url-state — 30s restore deadline settles hung searches (timeout, not supersession)', () => {
+    beforeEach(() => {
+        resetMockState()
+    })
+
+    afterEach(() => {
+        // Restore AbortSignal.timeout spies created by the deadline tests.
+        vi.restoreAllMocks()
+    })
+
+    /**
+     * Fire a ?q= restore whose runSearch never settles, then expire the
+     * 30s deadline by aborting the AbortSignal.timeout() signal the
+     * production code composes. AbortSignal.timeout is replaced with a
+     * controllable controller so the test does not wait 30 real seconds.
+     */
+    async function startHungRestore(): Promise<{ timeoutCtrl: AbortController; p: Promise<void> }> {
+        const timeoutCtrl = new AbortController()
+        vi.spyOn(AbortSignal, 'timeout').mockImplementation((_ms: number) => timeoutCtrl.signal)
+        mockState.urlSearch = '?q=coffee'
+        window.history.replaceState({}, '', '/?q=coffee')
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        const p = applyUrlState({})
+        await new Promise((r) => setTimeout(r, 0))
+        expect(mockState.runSearchCalls).toHaveLength(1)
+        expect(mockState.runSearchCalls[0].query).toBe('coffee')
+        expect(mockState.runSearchCalls[0].signal.aborted).toBe(false)
+        return { timeoutCtrl, p }
+    }
+
+    it('settles the global search state via the error path when the 30s deadline expires (hung runSearch)', async () => {
+        // Simulate runSearch leaving the store stuck at 'searching' (the
+        // state a swallowed AbortError leaves behind).
+        mockState.searchStatus = 'searching'
+        const input = document.createElement('input')
+        input.id = 'search-input'
+        input.value = 'sentinel'
+        document.body.appendChild(input)
+
+        const { timeoutCtrl, p } = await startHungRestore()
+
+        // The restore deadline expires while runSearch is still pending.
+        timeoutCtrl.abort(new DOMException('The operation timed out.', 'TimeoutError'))
+        await p
+
+        // 1. Settled through the established error path — NOT stuck at
+        //    'searching' forever.
+        expect(mockState.setSearchErrorCalls).toHaveLength(1)
+        expect(mockState.setSearchErrorCalls[0].query).toBe('coffee')
+        expect(mockState.setSearchErrorCalls[0].err).toBeInstanceOf(DOMException)
+        expect((mockState.setSearchErrorCalls[0].err as DOMException).name).toBe('TimeoutError')
+        expect(mockState.setSearchErrorCalls[0].type).toBe('full')
+
+        // 2. The restore promise must NOT continue as if results were
+        //    restored: no input hydration, no focus dispatch, no pocket.
+        expect(input.value).toBe('sentinel')
+        expect(mockState.publishCalls.filter((c) => c.type === 'search:search-focus-requested')).toHaveLength(0)
+        expect(mockState.applyLocalNeighborhoodFocusCalls).toHaveLength(0)
+
+        document.body.removeChild(input)
+    }, 60000)
+
+    it('settles the search state even when runSearch swallows the deadline abort and resolves', async () => {
+        // runSearch's real internal catch treats AbortError as a silent
+        // return: it resolves without settling, leaving status 'searching'.
+        mockState.searchStatus = 'searching'
+        mockState.runSearchSwallowAbort = true
+        const input = document.createElement('input')
+        input.id = 'search-input'
+        input.value = 'sentinel'
+        document.body.appendChild(input)
+
+        const { timeoutCtrl, p } = await startHungRestore()
+
+        timeoutCtrl.abort(new DOMException('The operation timed out.', 'TimeoutError'))
+        await p
+
+        expect(mockState.setSearchErrorCalls).toHaveLength(1)
+        expect(mockState.setSearchErrorCalls[0].query).toBe('coffee')
+        expect(input.value).toBe('sentinel')
+        expect(mockState.publishCalls.filter((c) => c.type === 'search:search-focus-requested')).toHaveLength(0)
+        expect(mockState.applyLocalNeighborhoodFocusCalls).toHaveLength(0)
+
+        document.body.removeChild(input)
+    }, 60000)
+
+    it('does NOT clobber a near-miss settle with a timeout error when results already landed', async () => {
+        // Results landed before the deadline: runSearch settled to 'results'.
+        mockState.searchStatus = 'results'
+        const { timeoutCtrl, p } = await startHungRestore()
+
+        timeoutCtrl.abort(new DOMException('The operation timed out.', 'TimeoutError'))
+        await p
+
+        // A settled search must not be overwritten by the timeout error.
+        expect(mockState.setSearchErrorCalls).toHaveLength(0)
+    }, 60000)
+
+    it('caller supersession abort stays silent — no error settle, no restore writes', async () => {
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+
+        mockState.urlSearch = '?q=foo'
+        window.history.replaceState({}, '', '/?q=foo')
+        const p1 = applyUrlState({})
+        await new Promise((r) => setTimeout(r, 0))
+        expect(mockState.runSearchCalls).toHaveLength(1)
+
+        // URL_B supersedes URL_A: URL_A's restore controller aborts.
+        mockState.urlSearch = '?q=bar'
+        window.history.replaceState({}, '', '/?q=bar')
+        const p2 = applyUrlState({})
+        await new Promise((r) => setTimeout(r, 0))
+
+        // URL_A resolves silently via the abort path.
+        await p1
+        expect(mockState.runSearchCalls[0].signal.aborted).toBe(true)
+        // Intentional supersession must NOT surface as a search error.
+        expect(mockState.setSearchErrorCalls).toHaveLength(0)
+
+        mockState._rejectSearch?.(new Error('cleanup-url-b'))
+        await p2
+    }, 60000)
+})
+
+describe('url-state — story param composes with the rest of the URL restore (no early return)', () => {
+    beforeEach(() => {
+        resetMockState()
+    })
+
+    afterEach(() => {
+        // Restore AbortSignal.timeout spies created by the deadline tests.
+        vi.restoreAllMocks()
+    })
+
+    it('?story=...&q=... restores the story AND runs the search restore', async () => {
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+
+        mockState.urlSearch = '?story=welcome&q=coffee'
+        window.history.replaceState({}, '', '/?story=welcome&q=coffee')
+        const p = applyUrlState({})
+        await new Promise((r) => setTimeout(r, 0))
+
+        // Story state applied...
+        expect(mockState.navStore.activeStoryPrompt).toBe('welcome')
+        // ...AND the search restore ran. Before the fix, the story branch
+        // returned early and the ?q= was silently dropped.
+        expect(mockState.runSearchCalls).toHaveLength(1)
+        expect(mockState.runSearchCalls[0].query).toBe('coffee')
+        expect(mockState.runSearchCalls[0].signal.aborted).toBe(false)
+
+        mockState._rejectSearch?.(new Error('done'))
+        await p
+    }, 60000)
+
+    it('?story=...&anchor=... restores the story AND the anchor focus', async () => {
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+
+        mockState.urlSearch = '?story=welcome&anchor=42'
+        window.history.replaceState({}, '', '/?story=welcome&anchor=42')
+        await applyUrlState({})
+
+        expect(mockState.navStore.activeStoryPrompt).toBe('welcome')
+        const focusPublishes = mockState.publishCalls.filter((c) => c.type === 'search:search-focus-requested')
+        expect(focusPublishes.some((c) => (c.payload as { index?: number })?.index === 42)).toBe(true)
+        expect(mockState.applyLocalNeighborhoodFocusCalls).toContain(42)
+    }, 60000)
+
+    it('?story=...&record=...&depth=... restores story, record focus, and depth together', async () => {
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+
+        mockState.urlSearch = '?story=welcome&record=5&depth=2'
+        window.history.replaceState({}, '', '/?story=welcome&record=5&depth=2')
+        await applyUrlState({})
+
+        expect(mockState.navStore.activeStoryPrompt).toBe('welcome')
+        // record=5 maps to the array index whose lead_id === '5'.
+        const focusPublishes = mockState.publishCalls.filter((c) => c.type === 'search:search-focus-requested')
+        expect(focusPublishes.some((c) => (c.payload as { index?: number })?.index === 5)).toBe(true)
+        expect(mockState.navStore.trailDepthFromExploration).toBe(2)
+        // No query in the URL — the search restore must not run.
+        expect(mockState.runSearchCalls).toHaveLength(0)
+    }, 60000)
+
+    it('?story=... alone still restores the story without running a search', async () => {
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+
+        mockState.urlSearch = '?story=welcome'
+        window.history.replaceState({}, '', '/?story=welcome')
+        await applyUrlState({})
+
+        expect(mockState.navStore.activeStoryPrompt).toBe('welcome')
+        expect(mockState.runSearchCalls).toHaveLength(0)
+        expect(mockState.setSearchErrorCalls).toHaveLength(0)
     }, 60000)
 })

@@ -13,7 +13,7 @@ import { navStore, bumpUrlStateRestoreToken, writeNavStateMirror } from '@lib/st
 import { setJourneyPhase, journeyStore } from '@lib/stores/journey.svelte'
 import type { NavState, ViewName } from '@lib/types/state'
 import { debugWarn } from '@lib/utils/debug'
-import { clearSearch, runSearch, searchStore } from '@lib/stores/search.svelte'
+import { clearSearch, runSearch, searchStore, setSearchError } from '@lib/stores/search.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '@lib/stores/filter.svelte'
@@ -234,14 +234,18 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
             _restoreClusterFilter(cluster)
         }
 
-        // Story restoration
+        // Story restoration. NOTE: this must NOT return early — ?story= composes
+        // with the other restore params (?story=welcome&q=coffee,
+        // ?story=welcome&anchor=42, ?story=welcome&record=5&depth=2). The story
+        // prompt is applied first (ordering preserved) but depth/record/anchor/
+        // query restoration still runs below so a story link restores ALL of its
+        // state, not just the prompt.
         const story = params.get('story')
         if (story) {
             writeNavStateMirror({ activeStoryPrompt: story })
             if (!options.fromHistory) {
                 updateUrlState({ q: restoredQuery || null }, { reason: 'apply-url-story', force: true })
             }
-            return
         }
 
         // Depth restoration
@@ -821,12 +825,29 @@ async function _restoreSearchFromParams(
     restoreToken: number,
     signal: AbortSignal
 ): Promise<void> {
+    // Compose the caller's restore signal with a 30s deadline so a hung
+    // runSearch cannot block URL restore forever. The restore signal aborts
+    // when a newer applyUrlState supersedes this restore.
+    const searchSignal = AbortSignal.any([signal, AbortSignal.timeout(30000)])
+    // True only when the 30s deadline fired. A caller supersession aborts
+    // `signal` (not the deadline) and must stay silent below.
+    let restoreTimedOut = false
+    let rejectDeadline: ((reason: unknown) => void) | undefined
+    const onSearchAbort = (): void => {
+        restoreTimedOut = !signal.aborted
+        rejectDeadline?.(
+            searchSignal.reason instanceof Error
+                ? searchSignal.reason
+                : new DOMException('URL search restore timed out', 'TimeoutError')
+        )
+    }
+    searchSignal.addEventListener('abort', onSearchAbort)
+    const restoreDeadline = new Promise<never>((_, reject) => {
+        rejectDeadline = reject
+    })
+
     try {
         const domForcedFocusSearchSurface = isDomForcedFocusSearchSurface()
-        // Compose the caller's restore signal with a 30s timeout so a hung
-        // runSearch still rejects with a timeout reason instead of blocking
-        // forever. The restore signal aborts when a newer applyUrlState starts.
-        const searchSignal = AbortSignal.any([signal, AbortSignal.timeout(30000)])
 
         // W54: raise mobile search sheet for the deep-link / URL-restore path
         // (/?q=coffee). dispatchSearch handles the typed-input path
@@ -844,7 +865,40 @@ async function _restoreSearchFromParams(
         const { isNew } = startSearch(query)
         if (!isNew) return
 
-        await runSearch(query, searchSignal)
+        // Race runSearch against the restore deadline. runSearch swallows
+        // AbortError internally (silent return, leaving status 'searching'), so
+        // the await alone cannot distinguish a deadline hit from a normal
+        // settle. The deadline reject below is the source of truth for a
+        // timeout; the post-await searchSignal.aborted check covers the shape
+        // where runSearch settles instead of the deadline losing the race.
+        await Promise.race([runSearch(query, searchSignal), restoreDeadline])
+
+        if (searchSignal.aborted && !signal.aborted) {
+            // runSearch swallowed the deadline abort and resolved normally.
+            restoreTimedOut = true
+        }
+
+        if (restoreTimedOut) {
+            // The 30s restore deadline expired without results. Never leave the
+            // global search state stuck at 'searching' forever: settle through
+            // the established search-error path (the same one a failed API
+            // search uses), then bail BEFORE the post-restore writes below
+            // (DOM input value, SEARCH_FOCUS_REQUESTED, pocket rebuild) so the
+            // restore never continues as if results were restored.
+            //
+            // Guard: if runSearch already settled to results/error/idle before
+            // the deadline fired (a near-miss where results landed at 29.9s),
+            // do NOT clobber that state with a timeout error.
+            if (searchStore().status === 'searching') {
+                setSearchError(
+                    query,
+                    searchSignal.reason ?? new DOMException('Search restore timed out', 'TimeoutError'),
+                    'full'
+                )
+            }
+            return
+        }
+
         // Token-abort: bail before post-runSearch writes (DOM mutation,
         // SEARCH_FOCUS_REQUESTED publish, preserveDomForcedFocusSearchSurface)
         // if a newer applyUrlState bumped the token while runSearch was in flight.
@@ -909,7 +963,27 @@ async function _restoreSearchFromParams(
 
         preserveDomForcedFocusSearchSurface()
     } catch (err) {
+        // A newer applyUrlState superseded this restore: the caller signal
+        // aborted (and the token was bumped). Stay silent — the newer restore
+        // drives state. This preserves the intentional cancellation semantics:
+        // a supersession abort must NOT surface as a search error.
+        if (signal.aborted) return
+        // The 30s restore deadline expired. Same settle-as-error handling as
+        // the post-await path above (this branch covers runSearch rejecting
+        // with the deadline reason instead of resolving).
+        if (restoreTimedOut) {
+            if (searchStore().status === 'searching') {
+                setSearchError(
+                    query,
+                    searchSignal.reason ?? new Error('Search restore timed out'),
+                    'full'
+                )
+            }
+            return
+        }
         debugWarn('[url-state] Search restore from URL failed:', err)
+    } finally {
+        searchSignal.removeEventListener('abort', onSearchAbort)
     }
 }
 
