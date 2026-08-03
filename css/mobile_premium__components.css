@@ -1099,11 +1099,25 @@
        ---------------------------------------------------------------- */
     body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
         #focus-stage.focus-stage {
+        /* The card and journey chrome are independently positioned on mobile.
+           Keep their shared owner full-viewport so fixed descendants resolve
+           against the viewport instead of a zero-height bottom anchor. */
+        position: fixed;
+        inset: 0;
         display: block;
         visibility: visible;
         opacity: 1;
+        width: 100%;
+        max-width: none;
+        height: 100dvh;
+        max-height: none;
+        pointer-events: none;
+        transform: none;
+    }
+
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
+        #focus-stage.focus-stage > * {
         pointer-events: auto;
-        transform: translateY(0);
     }
 
     body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .focus-stage-card {
