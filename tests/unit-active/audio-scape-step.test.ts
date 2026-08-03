@@ -15,11 +15,11 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 // @ts-ignore
 const mockAppState = vi.hoisted(() => ({
-    camera: null,
-    navState: { focusedIndex: null as number | null },
+    camera: null as any,
+    navState: { focusedIndex: null as number | null } as any,
     semanticDiveMode: false,
     pointIndexByLeadId: new Map(),
-    points: []
+    points: [] as Array<{ cluster: number; position: any }>
 }))
 // @ts-ignore
 vi.mock('@lib/state/app.svelte', () => ({ appState: mockAppState }))
@@ -96,7 +96,9 @@ class MockAudioCtx {
     close = vi.fn(() => Promise.resolve())
 }
 window.AudioContext = MockAudioCtx as any
-window.webkitAudioContext = MockAudioCtx as any
+// @ts-ignore — harness: webkitAudioContext is a browser extension property not in lib.dom.d.ts
+declare const testWindow: typeof window & { webkitAudioContext: any }
+;(window as any).webkitAudioContext = MockAudioCtx as any
 
 const reset = () => {
     mockAppState.camera = null
@@ -127,7 +129,8 @@ afterEach(() => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
     window.AudioContext = MockAudioCtx as any
-    window.webkitAudioContext = MockAudioCtx as any
+    // @ts-ignore — harness: webkitAudioContext is a browser extension property not in lib.dom.d.ts
+    ;(window as any).webkitAudioContext = MockAudioCtx as any
     if (activeCtx?.state === 'closed') activeCtx.state = 'running'
     disposeAudio()
 })
@@ -237,6 +240,7 @@ describe('updateAudio', () => {
     })
     it('boosts density to 0.7 (0.9 with semanticDiveMode)', () => {
         mockAppState.navState.focusedIndex = 5
+        // @ts-ignore — harness: test fixture shape is flexible; source accepts sparse point shapes
         mockAppState.points = Array.from({ length: 6 }, (_, i) => ({ cluster: i }))
         mockAppState.camera = { position: { clone: () => ({ x: 0, y: 0, z: 0 }), distanceTo: () => 0 } }
         start()
@@ -250,6 +254,7 @@ describe('updateAudio', () => {
     })
     it('applies cluster offset (cluster=5 => 60)', () => {
         mockAppState.navState.focusedIndex = 5
+        // @ts-ignore — harness: test fixture shape is flexible; source accepts sparse point shapes
         mockAppState.points = Array.from({ length: 6 }, (_, i) => ({ cluster: i }))
         mockAppState.camera = { position: { clone: () => ({ x: 0, y: 0, z: 0 }), distanceTo: () => 0 } }
         start()
@@ -259,7 +264,8 @@ describe('updateAudio', () => {
     })
     it('honors activeRoutePath + pointIndexByLeadId pathProximity', () => {
         mockAppState.pointIndexByLeadId = new Map([['1', 0]])
-        mockAppState.points = [{ x: 0, y: 0, z: 0 }]
+        // @ts-ignore — harness: test fixture shape is flexible; source accepts sparse point shapes
+        mockAppState.points = [{ x: 0, y: 0, z: 0 } as any]
         mockAppState.navState.activeRoutePath = ['1']
         mockAppState.camera = {
             position: {

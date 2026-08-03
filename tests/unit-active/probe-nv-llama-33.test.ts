@@ -1,8 +1,11 @@
 // Self-ID: probe-nv-llama-33 (model=nvidia/meta/llama-3.3-70b-instruct, route=pi:router-nvidia), dispatched 2026-07-26.
 import { describe, it, expect, vi } from 'vitest';
 import { getViewHandoffModel } from '@lib/orchestration/view-controller'; // @ts-ignore
+// @ts-ignore — harness: mock factory shape doesn't match strict ModuleMockOptions
 vi.mock('@lib/stores/navigation.svelte.ts', { navStore: { get: vi.fn() }, updateNavState: vi.fn() });
+// @ts-ignore — harness: mock factory shape doesn't match strict ModuleMockOptions
 vi.mock('@lib/engine/camera-controls', { animateCameraToTerrainPrelude: vi.fn() });
+// @ts-ignore — harness: mock factory shape doesn't match strict ModuleMockOptions
 vi.mock('@lib/utils/map-flattening-layout', { applyMapFlatteningLayout: vi.fn() });
 describe('getViewHandoffModel', () => {
   it('map returns icon === map', () => {

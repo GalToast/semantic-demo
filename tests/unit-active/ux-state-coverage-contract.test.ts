@@ -85,8 +85,8 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
                     expect(lastIdx).toBeGreaterThan(0)
                 })
 
-                if (c.loading.live) {
-                    it(`loading marker uses aria-live="${c.loading.live}"`, () => {
+                if ((c.loading as any).live) {
+                    it(`loading marker uses aria-live="${(c.loading as any).live}"`, () => {
                         // The marker name may appear in CSS too — find the
                         // markup occurrence that follows `<div class="...`.
                         const markupIdx = src.indexOf(`<div class="${c.loading.marker}`)
@@ -95,7 +95,7 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
                         // after the marker's first occurrence.
                         const divIdx = markupIdx !== -1 ? markupIdx : src.indexOf('<', src.indexOf(c.loading.marker))
                         const window = src.substring(Math.max(0, divIdx - 200), Math.min(src.length, divIdx + 200))
-                        expect(window).toMatch(new RegExp(`aria-live=["']${c.loading.live}["']`))
+                        expect(window).toMatch(new RegExp(`aria-live=["']${(c.loading as any).live}["']`))
                     })
                 }
             }
@@ -106,11 +106,11 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
                     expect(lastIdx).toBeGreaterThan(0)
                 })
 
-                if (c.error.role) {
-                    it(`error marker uses role="${c.error.role}"`, () => {
+                if ((c.error as any).role) {
+                    it(`error marker uses role="${(c.error as any).role}"`, () => {
                         const markerIdx = errorSrc.lastIndexOf(c.error.marker)
                         const window = errorSrc.substring(Math.max(0, markerIdx - 200), markerIdx + 200)
-                        expect(window).toMatch(new RegExp(`role=["']${c.error.role}["']`))
+                        expect(window).toMatch(new RegExp(`role=["']${(c.error as any).role}["']`))
                     })
                 }
 

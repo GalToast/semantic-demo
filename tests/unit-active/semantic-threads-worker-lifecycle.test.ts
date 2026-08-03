@@ -183,6 +183,7 @@ describe('semantic thread worker lifecycle', () => {
         })
 
         state = createState()
+        // @ts-ignore — harness: createState() returns partial shape, not full AppState
         attachLegacyState(state)
     })
 
@@ -350,6 +351,7 @@ describe('semantic thread worker — camelCase worker output (regression: empty-
         vi.stubGlobal('Worker', MockWorker)
         resetDataStores()
         state = createState()
+        // @ts-ignore — harness: createState() returns partial shape, not full AppState
         attachLegacyState(state)
 
         vi.spyOn(globalThis, 'fetch').mockImplementation((input: RequestInfo | URL) => {
@@ -417,7 +419,7 @@ describe('semantic thread worker — camelCase worker output (regression: empty-
             }
         >
 
-        const entry = map.get('519')
+        const entry = map.get('519')!
         expect(entry).toBeDefined()
         expect(entry.leadId).toBe('519')
         expect(entry.neighbors).toHaveLength(2)
@@ -426,18 +428,18 @@ describe('semantic thread worker — camelCase worker output (regression: empty-
         // non-empty leadId. Before the fix, all neighbors had leadId: ''
         // because the transform read snake_case `lead_id` (which was
         // undefined on the worker's camelCase output).
-        for (const neighbor of entry.neighbors) {
+        for (const neighbor of entry!.neighbors) {
             expect(neighbor.leadId).toBeTruthy()
             expect(neighbor.leadId).not.toBe('')
         }
 
-        expect(entry.neighbors[0].leadId).toBe('7070')
-        expect(entry.neighbors[1].leadId).toBe('8812')
+        expect(entry!.neighbors[0].leadId).toBe('7070')
+        expect(entry!.neighbors[1].leadId).toBe('8812')
 
         // Verify that other camelCase fields also propagate (not just leadId).
-        expect(entry.neighbors[0].score).toBe(1.1497)
-        expect(entry.neighbors[0].sameCity).toBe(true)
-        expect(entry.neighbors[0].relationshipRole).toBe('downstream')
-        expect(entry.neighbors[1].relationshipRole).toBe('core_peer')
+        expect(entry!.neighbors[0].score).toBe(1.1497)
+        expect(entry!.neighbors[0].sameCity).toBe(true)
+        expect(entry!.neighbors[0].relationshipRole).toBe('downstream')
+        expect(entry!.neighbors[1].relationshipRole).toBe('core_peer')
     })
 })

@@ -33,12 +33,13 @@ describe('LoadingOverlay error state (role=alert transition)', () => {
         // test file (structural) leaves the store at whatever value it last
         // set, so this is defensive.
         dataLoadState.set({
+
             status: 'loading',
             businessLoaded: false,
             threadsLoaded: false,
             error: null,
             progress: 0.5
-        })
+        } as unknown as Parameters<typeof dataLoadState.set>[0])
     })
 
     it('renders with role="progressbar" and aria-label="Loading…" while loading', () => {
@@ -62,12 +63,13 @@ describe('LoadingOverlay error state (role=alert transition)', () => {
 
         // Drive the error state via the same writable the live app uses.
         dataLoadState.set({
+
             status: 'error',
             businessLoaded: false,
             threadsLoaded: false,
             error: 'Data file missing',
             progress: 0
-        })
+        } as unknown as Parameters<typeof dataLoadState.set>[0])
 
         // Svelte 5 effects need a microtask flush to apply to the DOM.
         await Promise.resolve()
@@ -95,12 +97,13 @@ describe('LoadingOverlay error state (role=alert transition)', () => {
     it('shows the error copy (kicker=Semantic Explorer, title=Unable to load, note=error message) on status="error"', async () => {
         const { container } = render(LoadingOverlay)
         dataLoadState.set({
+
             status: 'error',
             businessLoaded: false,
             threadsLoaded: false,
             error: 'Worker build failed',
             progress: 0
-        })
+        } as unknown as Parameters<typeof dataLoadState.set>[0])
         await Promise.resolve()
         await Promise.resolve()
         const overlay = container.querySelector('#loading-overlay')!

@@ -41,7 +41,7 @@ describe('auditNestedStateMutations — overall contract', () => {
 
     it('returns error for a single invalid nested path (navState.mode)', () => {
         const state = validStateSnapshot()
-        state.navState = { ...state.navState, mode: 'bogus' }
+        state.navState = { ...(state.navState as object), mode: 'bogus' }
         const errors = auditNestedStateMutations(state)
         expect(errors).toHaveLength(1)
         expect(errors[0]).toContain('navState.mode')
@@ -50,8 +50,8 @@ describe('auditNestedStateMutations — overall contract', () => {
 
     it('returns errors for multiple invalid nested paths simultaneously', () => {
         const state = validStateSnapshot()
-        state.navState = { ...state.navState, mode: 'bogus', surface: 'lolnope' }
-        state.searchState = { ...state.searchState, searchStatus: 'invalid' }
+        state.navState = { ...(state.navState as object), mode: 'bogus', surface: 'lolnope' }
+        state.searchState = { ...(state.searchState as object), searchStatus: 'invalid' }
         const errors = auditNestedStateMutations(state)
         // 3 distinct errors: navState.mode + navState.surface + searchState.searchStatus
         expect(errors.length).toBeGreaterThanOrEqual(3)
@@ -106,14 +106,14 @@ describe('auditNestedStateMutations — path-level navState.mode', () => {
     it('accepts valid navState.mode (overview, search, focus, etc.)', () => {
         for (const mode of ['overview', 'search', 'focus', 'inside', 'map', 'trail', 'bridge']) {
             const state = validStateSnapshot()
-            state.navState = { ...state.navState, mode }
+            state.navState = { ...(state.navState as object), mode }
             expect(auditNestedStateMutations(state)).toEqual([])
         }
     })
 
     it('rejects invalid navState.mode', () => {
         const state = validStateSnapshot()
-        state.navState = { ...state.navState, mode: 'not-a-real-mode' }
+        state.navState = { ...(state.navState as object), mode: 'not-a-real-mode' }
         const errors = auditNestedStateMutations(state)
         expect(errors).toHaveLength(1)
         expect(errors[0]).toContain('navState.mode')
@@ -124,14 +124,14 @@ describe('auditNestedStateMutations — path-level searchState.searchStatus', ()
     it('accepts valid searchState.searchStatus (idle, searching, focusing, results, empty, error)', () => {
         for (const status of ['idle', 'searching', 'focusing', 'results', 'empty', 'error']) {
             const state = validStateSnapshot()
-            state.searchState = { ...state.searchState, searchStatus: status }
+            state.searchState = { ...(state.searchState as object), searchStatus: status }
             expect(auditNestedStateMutations(state)).toEqual([])
         }
     })
 
     it('rejects invalid searchState.searchStatus', () => {
         const state = validStateSnapshot()
-        state.searchState = { ...state.searchState, searchStatus: 'bogus-status' }
+        state.searchState = { ...(state.searchState as object), searchStatus: 'bogus-status' }
         const errors = auditNestedStateMutations(state)
         expect(errors).toHaveLength(1)
         expect(errors[0]).toContain('searchState.searchStatus')
@@ -139,7 +139,7 @@ describe('auditNestedStateMutations — path-level searchState.searchStatus', ()
 
     it('rejects non-string searchState.searchStatus', () => {
         const state = validStateSnapshot()
-        state.searchState = { ...state.searchState, searchStatus: 42 as unknown as string }
+        state.searchState = { ...(state.searchState as object), searchStatus: 42 as unknown as string }
         const errors = auditNestedStateMutations(state)
         expect(errors).toHaveLength(1)
         expect(errors[0]).toContain('searchState.searchStatus')
@@ -150,14 +150,14 @@ describe('auditNestedStateMutations — path-level focusState.focusTransitionMod
     it('accepts valid focusState.focusTransitionMode (idle, entering, settling, inside, exiting)', () => {
         for (const mode of ['idle', 'entering', 'settling', 'inside', 'exiting']) {
             const state = validStateSnapshot()
-            state.focusState = { ...state.focusState, focusTransitionMode: mode }
+            state.focusState = { ...(state.focusState as object), focusTransitionMode: mode }
             expect(auditNestedStateMutations(state)).toEqual([])
         }
     })
 
     it('rejects invalid focusState.focusTransitionMode', () => {
         const state = validStateSnapshot()
-        state.focusState = { ...state.focusState, focusTransitionMode: 'bogus-transition' }
+        state.focusState = { ...(state.focusState as object), focusTransitionMode: 'bogus-transition' }
         const errors = auditNestedStateMutations(state)
         expect(errors).toHaveLength(1)
         expect(errors[0]).toContain('focusState.focusTransitionMode')

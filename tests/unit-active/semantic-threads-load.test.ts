@@ -5,7 +5,7 @@
  * src/lib/semantic-threads.ts.
  *
  * The file has 6 named exports:
- *   - attachLegacyState(state) — wires the legacy state singleton
+ *   - attachLegacyState(state as any) — wires the legacy state singleton
  *   - resetSemanticThreadWorker() — tears down the data worker
  *   - getSemanticThreadBundle() → SemanticThreadBundle | null
  *   - getSemanticThreadArtifactName() → string | null
@@ -131,7 +131,7 @@ describe('semantic-threads — attachLegacyState', () => {
 
     it('binds the state singleton', () => {
         const state = createStateFixture()
-        attachLegacyState(state)
+        attachLegacyState(state as any)
         // After attach, getSemanticThreadBundle reads from _state.semanticThreadBundle
         // which starts at null.
         expect(getSemanticThreadBundle()).toBeNull()
@@ -142,7 +142,7 @@ describe('semantic-threads — attachLegacyState', () => {
         const state = createStateFixture()
         const { bundle, artifact, neighborMap } = createBundle()
 
-        attachLegacyState(state)
+        attachLegacyState(state as any)
 
         // Simulate a successful loadSemanticThreads outcome by mutating
         // the bound state directly (loadSemanticThreads is tested elsewhere).
@@ -166,7 +166,7 @@ describe('semantic-threads — attachLegacyState', () => {
         // Real call sites pass the legacy state singleton which is typed
         // loosely; the cast to `unknown` mirrors the production call shape.
         const state = createStateFixture()
-        attachLegacyState(state as unknown as Record<string, unknown>)
+        attachLegacyState(state as unknown as Parameters<typeof attachLegacyState>[0])
         expect(getSemanticThreadBundle()).toBeNull()
     })
 })
@@ -247,7 +247,7 @@ describe('semantic-threads — neighbor-map shape after populate', () => {
     it('Map.keys() returns the populated lead-ids', () => {
         const state = createStateFixture()
         const { neighborMap } = createBundle()
-        attachLegacyState(state)
+        attachLegacyState(state as any)
         ;(state as { semanticNeighborMapByLeadId: Map<string, unknown> }).semanticNeighborMapByLeadId =
             neighborMap
 
@@ -258,7 +258,7 @@ describe('semantic-threads — neighbor-map shape after populate', () => {
     it('neighbor entries expose the inner relationship_role field for tests below', () => {
         const state = createStateFixture()
         const { neighborMap } = createBundle()
-        attachLegacyState(state)
+        attachLegacyState(state as any)
         ;(state as { semanticNeighborMapByLeadId: Map<string, unknown> }).semanticNeighborMapByLeadId =
             neighborMap
 

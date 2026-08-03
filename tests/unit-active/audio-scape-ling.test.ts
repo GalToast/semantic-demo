@@ -38,7 +38,7 @@ const allNodes: { oscs: any[]; gains: any[]; filters: any[] } = { oscs: [], gain
 
 class MockAudioContext {
     currentTime = 0
-    state = 'running' as const
+    state: AudioContextState = 'running'
     destination = {}
     createOscillator() {
         const n = {

@@ -6,7 +6,7 @@
  * Coverage:
  *   1. The app shell has one weather widget and one weather overlay.
  *   2. weather-ui.js reveals the hidden widget when data or fallback copy renders.
- *   3. time_weather.css owns weather widget visuals and visibility policy.
+ *   3. WeatherWidget.svelte owns weather widget visuals; time_weather.css owns legacy overlay/icon hooks.
  *   4. Legacy state/layout stylesheets do not reintroduce weather widget rules.
  *   5. Motion-only weather references stay limited to motion policy files.
  *
@@ -24,6 +24,7 @@ const read = (relativePath) => fs.readFileSync(resolveSource(relativePath, root)
 
 const html = read('docs/archive/vector-explorer-polished-legacy.html')
 const weatherUiJs = read('src/lib/ui/weather-ui.ts')
+const weatherWidgetSvelte = read('src/components/WeatherWidget.svelte')
 const timeWeatherCss = read('css/time_weather.css')
 
 const widgetMatches = html.match(/class="[^"]*\bweather-widget\b[^"]*"/g) ?? []
@@ -57,16 +58,20 @@ assert.match(
     'renderWeatherFallback should reveal the widget for fallback weather state'
 )
 
-for (const marker of [
-    '.weather-widget {',
-    '.weather-temp',
-    '.weather-desc',
-    '.weather-wind',
-    '.weather-staleness',
-    '@media (max-width: 768px)'
-]) {
-    assert.ok(timeWeatherCss.includes(marker), `time_weather.css should contain canonical weather marker: ${marker}`)
+for (const marker of ['.weather-widget {', '.weather-temp', '.weather-details', '.weather-detail-row']) {
+    assert.ok(weatherWidgetSvelte.includes(marker), `WeatherWidget.svelte should contain canonical weather marker: ${marker}`)
 }
+assert.match(
+    weatherWidgetSvelte,
+    /\.weather-icon\b/,
+    'WeatherWidget.svelte should own the weather icon styling'
+)
+assert.match(
+    weatherWidgetSvelte,
+    /<span class="detail-label">Wind<\/span>/,
+    'WeatherWidget.svelte should render wind as a labeled detail row'
+)
+assert.match(timeWeatherCss, /\.weather-icon\b|#weather-overlay\b/, 'time_weather.css should retain only legacy overlay/icon hooks')
 
 assert.doesNotMatch(
     timeWeatherCss,

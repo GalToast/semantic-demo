@@ -54,7 +54,7 @@ describe('installGestureMonitor — basic listener registration', () => {
     it('registers all 4 gesture listeners on window with passive:true', () => {
         const addSpy = vi.spyOn(window, 'addEventListener')
         installGestureMonitor({ onReady: vi.fn() })
-        const captured = addSpy.mock.calls.filter(([type]) => GESTURE_EVENTS.includes(type as string))
+        const captured = addSpy.mock.calls.filter(([type]) => GESTURE_EVENTS.includes(type as (typeof GESTURE_EVENTS)[number]))
         expect(captured).toHaveLength(4)
         captured.forEach(([, , opts]) => {
             expect(opts).toEqual({ passive: true })
@@ -92,7 +92,7 @@ describe('handleReady — gating logic', () => {
         const onReady = vi.fn()
         installGestureMonitor({ onReady })
         for (let i = 0; i < 5; i++) {
-            window.dispatchEvent(new Event('pointerdown'))
+            window.dispatchEvent(new Event('pointerdown' as any))
         }
         expect(onReady).toHaveBeenCalledTimes(1)
     })
@@ -101,7 +101,7 @@ describe('handleReady — gating logic', () => {
         const onReady = vi.fn()
         document.body.dataset.renderKind = 'placeholder2d'
         installGestureMonitor({ onReady })
-        window.dispatchEvent(new Event('pointerdown'))
+        window.dispatchEvent(new Event('pointerdown' as any))
         expect(onReady).not.toHaveBeenCalled()
     })
 
@@ -159,7 +159,7 @@ describe('onReady cooldown / auto-teardown', () => {
         const setTimeoutSpy = vi.spyOn(window, 'setTimeout')
         const onReady = vi.fn()
         installGestureMonitor({ onReady })
-        window.dispatchEvent(new Event('pointerdown'))
+        window.dispatchEvent(new Event('pointerdown' as any))
         const cooldownCalls = setTimeoutSpy.mock.calls.filter(([, delay]) => delay === DEFAULT_COOLDOWN)
         expect(cooldownCalls.length).toBeGreaterThanOrEqual(1)
     })
@@ -168,12 +168,12 @@ describe('onReady cooldown / auto-teardown', () => {
         const removeSpy = vi.spyOn(window, 'removeEventListener')
         const onReady = vi.fn()
         installGestureMonitor({ onReady })
-        window.dispatchEvent(new Event('pointerdown'))
+        window.dispatchEvent(new Event('pointerdown' as any))
         vi.advanceTimersByTime(DEFAULT_COOLDOWN + 1)
         expect(removeSpy).toHaveBeenCalled()
         // at least the 4 gesture listeners were removed
         const gestureTypes = removeSpy.mock.calls
-            .filter(([type]) => GESTURE_EVENTS.includes(type as string))
+            .filter(([type]) => GESTURE_EVENTS.includes(type as (typeof GESTURE_EVENTS)[number]))
             .map(([type]) => type)
         expect(gestureTypes).toHaveLength(4)
     })
@@ -182,7 +182,7 @@ describe('onReady cooldown / auto-teardown', () => {
         const setTimeoutSpy = vi.spyOn(window, 'setTimeout')
         const onReady = vi.fn()
         installGestureMonitor({ onReady, cooldownMs: 1000 })
-        window.dispatchEvent(new Event('pointerdown'))
+        window.dispatchEvent(new Event('pointerdown' as any))
         const customCalls = setTimeoutSpy.mock.calls.filter(([, delay]) => delay === 1000)
         expect(customCalls.length).toBeGreaterThanOrEqual(1)
     })
@@ -221,7 +221,7 @@ describe('onVisibilityChange fallback', () => {
         document.dispatchEvent(new Event('visibilitychange'))
         expect(onReady).not.toHaveBeenCalled()
         // hidden state should not block a subsequent gesture
-        window.dispatchEvent(new Event('pointerdown'))
+        window.dispatchEvent(new Event('pointerdown' as any))
         expect(onReady).toHaveBeenCalledTimes(1)
     })
 
@@ -335,7 +335,7 @@ describe('Teardown', () => {
         teardown()
         expect(removeSpy).toHaveBeenCalled()
         const gestureTypes = removeSpy.mock.calls
-            .filter(([type]) => GESTURE_EVENTS.includes(type as string))
+            .filter(([type]) => GESTURE_EVENTS.includes(type as (typeof GESTURE_EVENTS)[number]))
             .map(([type]) => type)
         expect(gestureTypes).toHaveLength(4)
         expect(docRemoveSpy).toHaveBeenCalled()
@@ -373,7 +373,7 @@ describe('Gate-check edge cases (public-API driven)', () => {
     it('dispatches on non-Element target (window) → gate-check false → onReady fires', () => {
         const onReady = vi.fn()
         installGestureMonitor({ onReady })
-        window.dispatchEvent(new Event('pointerdown'))
+        window.dispatchEvent(new Event('pointerdown' as any))
         expect(onReady).toHaveBeenCalledTimes(1)
     })
 

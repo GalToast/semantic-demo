@@ -13,8 +13,13 @@
  * This is a CSS surface contract test. When exact app flow is flaky, we force body
  * dataset after initial app load and the test reports that it is a CSS surface contract.
  *
+ * Target: the BUILT Svelte app (dist/svelte). The archived legacy shells under
+ * docs/archive drifted out of sync with the Svelte shell and no longer host the
+ * DOM these audits expect. Run `npm run build:svelte` before this contract so
+ * dist/svelte reflects current source (including CSS-only changes).
+ *
  * Usage:
- *   node tests/focus-stage-render-contract.mjs
+ *   node tests/focus-stage-render-contract.mjs [--headless] [url]
  *   node tests/focus-stage-render-contract.mjs http://127.0.0.1:8813/index.html
  */
 
@@ -22,45 +27,71 @@ import http from 'node:http'
 import path from 'node:path'
 import fs from 'node:fs'
 import { chromium } from 'playwright'
-import { setTrailDepth } from '@lib/stores/journey.svelte'
-import { focusOnNode, setSemanticDiveMode, refreshCompositionState } from '@lib/orchestration/lifecycle'
 
 const DEFAULT_URL = 'http://127.0.0.1:8813/index.html'
 const PORT = 8813
-const HTML_FILE = path.resolve(process.cwd(), 'docs/archive/vector-explorer-polished-legacy.html')
+// Built Svelte app — the only DOM that reflects current product state.
+const APP_DIR = path.resolve(process.cwd(), 'dist/svelte')
+
+const MIME_TYPES = {
+    '.html': 'text/html; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.mjs': 'text/javascript; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.svg': 'image/svg+xml',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.webp': 'image/webp',
+    '.wasm': 'application/wasm',
+    '.dat': 'application/octet-stream',
+    '.txt': 'text/plain'
+}
+
+function contentType(filePath) {
+    return MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream'
+}
 
 // ---------------------------------------------------------------------------
-// Embedded HTTP server — serves the HTML file only
+// Embedded HTTP server — serves the built app (dist/svelte) with a repo-root
+// fallback so legacy css/ and js/ paths still resolve for external callers.
 // ---------------------------------------------------------------------------
 
 function startServer(port) {
     return new Promise((resolve, reject) => {
         const server = http.createServer((req, res) => {
             // Strip query string and decode URI; on Windows, path.resolve treats '/foo' as absolute (no drive)
-            // so we strip the leading slash to treat it as a relative path from cwd
+            // so we strip the leading slash to treat it as a relative path from cwd.
             const reqPath = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '')
-            const fp = path.resolve(
-                process.cwd(),
-                reqPath === '' ? 'docs/archive/vector-explorer-polished-legacy.html' : reqPath
-            )
-            try {
-                const data = fs.readFileSync(fp)
-                const ext = path.extname(fp).toLowerCase()
-                const mimeTypes = {
-                    '.html': 'text/html',
-                    '.css': 'text/css',
-                    '.ts': 'application/javascript'
+            const relPath = reqPath === '' || reqPath === 'index.html' ? 'index.html' : reqPath
+            // The Vite build uses base './' so asset URLs are relative to the
+            // page (./assets/*.js, ./css/*.css, ./data/*.dat). Resolve against
+            // dist/svelte first, then fall back to the repo root.
+            const candidates = [path.resolve(APP_DIR, relPath), path.resolve(process.cwd(), relPath)]
+            let fp = null
+            for (const candidate of candidates) {
+                try {
+                    if (fs.statSync(candidate).isFile()) {
+                        fp = candidate
+                        break
+                    }
+                } catch {
+                    // not found here; try the next candidate
                 }
-                res.writeHead(200, {
-                    'Content-Type': mimeTypes[ext] || 'application/octet-stream',
-                    'Cache-Control': 'no-cache'
-                })
-                res.end(data)
-            } catch (e) {
-                console.error(`[server] 404: ${reqPath} → ${fp} — ${e.message}`)
+            }
+            if (!fp) {
+                console.error(`[server] 404: ${reqPath}`)
                 res.writeHead(404)
                 res.end('Not found')
+                return
             }
+            res.writeHead(200, {
+                'Content-Type': contentType(fp),
+                'Cache-Control': 'no-cache'
+            })
+            res.end(fs.readFileSync(fp))
         })
         server.on('error', reject)
         server.listen(port, () => resolve(server))
@@ -105,7 +136,8 @@ async function run() {
     }
 
     console.log('[browser] launching Chromium...')
-    browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] })
+    const headless = cliArgs.includes('--headless')
+    browser = await chromium.launch({ headless, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] })
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true })
 
     const errors = []
@@ -130,6 +162,17 @@ async function run() {
             timeout: 8000
         })
         .catch(() => {})
+
+    // The Svelte shell mounts #focus-stage unconditionally once App.svelte
+    // renders. Waiting for it (instead of the rAF-only settle above) makes the
+    // harness robust to lazy boot AND confirms the loaded page is the built
+    // app — not the repo-root case-study redirect page that /index.html used
+    // to resolve to.
+    await page
+        .waitForFunction(() => Boolean(document.querySelector('#focus-stage')), null, { timeout: 20000 })
+        .catch(() => {
+            console.error('[load] #focus-stage never mounted — is dist/svelte current? Run npm run build:svelte first.')
+        })
 
     // --- Surface 1: focus-search ---
     console.log('\n[TEST] focus-search surface')
@@ -187,15 +230,9 @@ async function forceFocusSearch(page) {
             const byLeadId = s?.pointIndexByLeadId
             const rawIndex = byLeadId?.get?.('1') ?? byLeadId?.get?.(1) ?? 0
             const focusIndex = Number.isFinite(rawIndex) ? rawIndex : 0
-            const focusNode = focusOnNode
-            const setTrailDepth = setTrailDepth
-            const refreshCompositionState = refreshCompositionState
-            if (typeof focusNode === 'function') {
-                focusNode(focusIndex, { fromSearchResult: true, skipUrlSync: true })
-            }
-            if (typeof setTrailDepth === 'function') {
-                setTrailDepth(1, { skipUrlSync: true })
-            }
+            const actions = window.__navActions__
+            actions?.focusOnNode?.(focusIndex, { fromSearchResult: true, skipUrlSync: true })
+            actions?.setTrailDepth?.(1, { skipUrlSync: true })
             if (s) {
                 const mutate = typeof window.withStateMutation === 'function' ? window.withStateMutation : (fn) => fn()
                 mutate(() => {
@@ -213,7 +250,7 @@ async function forceFocusSearch(page) {
                     s.trailDepth = Math.max(1, Number(s.trailDepth) || 1)
                 })
             }
-            refreshCompositionState?.()
+            window.__navActions__?.refreshCompositionState?.()
             window.updateJourneyCompass?.()
 
             document.body.dataset.activeView = 'galaxy'
@@ -279,8 +316,8 @@ async function forceSemanticDive(page) {
     const applyFixture = async () =>
         page.evaluate(() => {
 
-            setSemanticDiveMode?.(true)
-            refreshCompositionState?.()
+            window.__navActions__?.setSemanticDiveMode?.(true)
+            window.__navActions__?.refreshCompositionState?.()
 
             document.body.classList.add('is-active')
             document.body.dataset.activeView = 'galaxy'
@@ -341,7 +378,9 @@ async function waitForTouchTargets(page, ids) {
                     return rect.width >= 43.5 && rect.height >= 43.5
                 }),
             ids,
-            { timeout: 1500 }
+            // The JourneyCompass surface is a lazy-loaded chunk; give it time
+            // to load and render on a cold boot.
+            { timeout: 10000 }
         )
         .catch(() => {})
 }

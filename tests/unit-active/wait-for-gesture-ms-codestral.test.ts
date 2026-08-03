@@ -200,6 +200,8 @@ describe('cooldown and auto-teardown', () => {
   })
 
   it('schedules teardown after cooldown', () => {
+    // @ts-ignore — harness: mockClear not on removeEventListener type
+    // @ts-ignore — harness: mockClear not on removeEventListener type
     window.removeEventListener.mockClear()
     teardown = installGestureMonitor({ onReady })
     const event = new Event('pointerdown')

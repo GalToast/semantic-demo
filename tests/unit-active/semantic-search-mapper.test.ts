@@ -52,16 +52,16 @@ describe('semantic-search-mapper: mapServiceRow', () => {
         expect(r!.category).toBe('')
         expect(r!.snippet).toBe('')
         // no name → point.name undefined
-        expect(r!.point.name).toBeUndefined()
+        expect(r!.point!.name).toBeUndefined()
     })
 
     it('maps a name-only row and prefers lead_id for id when present', () => {
         const r = mapServiceRow({ name: 'Acme', lead_id: '9' }, 1)
         expect(r!.id).toBe('9')
         expect(r!.name).toBe('Acme')
-        expect(r!.point.name).toBe('Acme')
+        expect(r!.point!.name).toBe('Acme')
         // lead_id flows into point so deep-link anchor restore by lead_id works
-        expect(r!.point.lead_id).toBe('9')
+        expect(r!.point!.lead_id).toBe('9')
     })
 
     it('picks score from score then semantic_score, defaulting to 0', () => {
@@ -81,15 +81,15 @@ describe('semantic-search-mapper: mapServiceRow', () => {
 
     it('passes through optional point contact fields only when present', () => {
         const r = mapServiceRow({ name: 'B', city: 'Conroe', website: 'w', email: 'e', phone: 'p' }, 0)
-        expect(r!.point.city).toBe('Conroe')
-        expect(r!.point.website).toBe('w')
-        expect(r!.point.email).toBe('e')
-        expect(r!.point.phone).toBe('p')
-        expect(r!.point.what).toBeUndefined()
+        expect(r!.point!.city).toBe('Conroe')
+        expect(r!.point!.website).toBe('w')
+        expect(r!.point!.email).toBe('e')
+        expect(r!.point!.phone).toBe('p')
+        expect(r!.point!.what).toBeUndefined()
     })
 
     it('coerces every exposed field to a string and number', () => {
-        const r = mapServiceRow({ name: 123 as unknown as string, lead_id: 7 as unknown as string, category: null }, 0)
+        const r = mapServiceRow({ name: 123 as unknown as string, lead_id: 7 as unknown as string, category: null as unknown as string }, 0)
         expect(typeof r!.id).toBe('string')
         expect(typeof r!.name).toBe('string')
         expect(typeof r!.category).toBe('string')
@@ -103,8 +103,8 @@ describe('semantic-search-mapper: pagination normalizers', () => {
         expect(normalizeSearchPage(2.9)).toBe(2)
         expect(normalizeSearchPage(5)).toBe(5)
         expect(normalizeSearchPage(-3)).toBe(0)
-        expect(normalizeSearchPage(Number.NaN)).toBe(0)
-        expect(normalizeSearchPage(Number.POSITIVE_INFINITY)).toBe(0)
+        expect(normalizeSearchPage(Number!.NaN)).toBe(0)
+        expect(normalizeSearchPage(Number!.POSITIVE_INFINITY)).toBe(0)
     })
 
     it('normalizeSearchOffset uses explicit offset when > 0, else page*PAGE_SIZE', () => {
@@ -113,9 +113,9 @@ describe('semantic-search-mapper: pagination normalizers', () => {
         expect(normalizeSearchOffset(0, 0)).toBe(0)
         expect(normalizeSearchOffset(3, 0)).toBe(3 * PAGE_SIZE)
         // non-finite / negative offset collapse to 0, then page math applies
-        expect(normalizeSearchOffset(2, Number.NaN)).toBe(2 * PAGE_SIZE)
+        expect(normalizeSearchOffset(2, Number!.NaN)).toBe(2 * PAGE_SIZE)
         expect(normalizeSearchOffset(0, -5)).toBe(0)
-        expect(normalizeSearchOffset(Number.NaN, 0)).toBe(0)
+        expect(normalizeSearchOffset(Number!.NaN, 0)).toBe(0)
     })
 
     it('normalizeSearchLimit clamps to >= 1 and floors, defaulting to PAGE_SIZE for non-finite', () => {
@@ -123,8 +123,8 @@ describe('semantic-search-mapper: pagination normalizers', () => {
         expect(normalizeSearchLimit(0)).toBe(1)
         expect(normalizeSearchLimit(0.5)).toBe(1)
         expect(normalizeSearchLimit(-3)).toBe(1)
-        expect(normalizeSearchLimit(Number.NaN)).toBe(PAGE_SIZE)
-        expect(normalizeSearchLimit(Number.POSITIVE_INFINITY)).toBe(PAGE_SIZE)
+        expect(normalizeSearchLimit(Number!.NaN)).toBe(PAGE_SIZE)
+        expect(normalizeSearchLimit(Number!.POSITIVE_INFINITY)).toBe(PAGE_SIZE)
     })
 
     it('exposes the shared PAGE_SIZE constant', () => {

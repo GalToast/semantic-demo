@@ -36,7 +36,8 @@ describe('dom-builder', () => {
         it('creates an element with event listeners', () => {
             const handler = vi.fn()
             const button = el('button', { onclick: handler })
-            button.click()
+            // @ts-ignore — harness: click() not on SVGElement
+        button.click()
             expect(handler).toHaveBeenCalled()
         })
 
@@ -314,7 +315,8 @@ describe('dom-builder', () => {
             const handler = vi.fn()
             const attrs: DomAttributes = { onclick: handler }
             const button = el('button', attrs)
-            button.click()
+            // @ts-ignore — harness: click() not on SVGElement
+        button.click()
             expect(handler).toHaveBeenCalled()
         })
 

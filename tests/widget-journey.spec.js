@@ -818,6 +818,60 @@ test.describe('Widget journey', () => {
         )
     })
 
+    test('W71: URL query hydrates and runs search without a second input event', async ({ page }) => {
+        test.setTimeout(60000)
+        let searchRequests = 0
+
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
+                return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_search'
+            },
+            async (route) => {
+                searchRequests += 1
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        ok: true,
+                        count: 1,
+                        results: [
+                            {
+                                lead_id: 1,
+                                name: 'Java Junction Coffee',
+                                what: 'Coffee roaster and cafe',
+                                city: 'Conroe',
+                                lat: 30.3119,
+                                lng: -95.4561,
+                                cluster: 3,
+                                status: 'active',
+                                website: 'https://example.com/java',
+                                email: 'hello@example.com',
+                                phone: '(936) 555-0101',
+                                score: 0.99,
+                                semantic_score: 0.99
+                            }
+                        ]
+                    })
+                })
+            }
+        )
+
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=coffee`, {
+            waitUntil: 'domcontentloaded'
+        })
+        await expect(page.locator('#search-input')).toBeVisible({ timeout: 40000 })
+        await expect(page.locator('#search-input')).toHaveValue('coffee', { timeout: 15000 })
+        await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 30000 })
+
+        expect(searchRequests, 'URL restore must dispatch the semantic search request').toBeGreaterThan(0)
+        // Exactly one semantic_search round-trip: the restore and the onMount
+        // ?q= path race through startSearch's isNew gate, and the winner must
+        // dedupe the loser. A second request means the lease release() change
+        // regressed into a double API call.
+        expect(searchRequests, 'same-query dedup must prevent a second semantic search request').toBe(1)
+    })
+
     test('W54-A1: mobile search sheet raises on typed input (Bug A — search-dispatch.ts fix)', async ({ page }) => {
         // W54 audit: when a mobile user typed into the search input,
         // dispatchSearch fired SET_SURFACE 'search' but never called

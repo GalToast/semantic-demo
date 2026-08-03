@@ -10,15 +10,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { chromium } from '@playwright/test';
-import { clearSearch } from '@lib/stores/navigation.svelte'
-import { switchView, focusOnNode, refreshCompositionState } from '@lib/orchestration/lifecycle'
-import { search } from '@lib/search/state'
-import { setTrailDepth } from '@lib/stores/journey.svelte'
 
 const DEFAULT_URL = 'http://127.0.0.1:5173/?view=galaxy&nodemo=1';
 const targetUrl = process.env.PRODUCT_QA_URL || DEFAULT_URL;
 const REAL_ROUTE_VISUAL = process.argv.includes('--real-route-visual');
 const VISUAL_ERGONOMICS = process.argv.includes('--visual-ergonomics');
+const ALLOW_FORCED_SURFACES = process.env.ALLOW_PRODUCT_QA_FORCED_SURFACES === '1';
 const HEADED = !process.argv.includes('--headless') &&
   process.env.PW_HEADLESS !== '1' &&
   process.env.PLAYWRIGHT_HEADLESS !== '1';
@@ -263,13 +260,14 @@ async function markRouteEvidence(page, source, detail) {
   }, { source, detail });
 }
 
-async function waitForAppReady(page) {
+async function waitForAppReady(page, initialRenderKind = '') {
   const ready = await page.waitForFunction((mustUseWebgl) => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
     const hasPoints = Array.isArray(state.points) && state.points.length > 100;
     const hasThreads = state.semanticNeighborMapByLeadId instanceof Map &&
       state.semanticNeighborMapByLeadId.size > 100;
-    const hasSearch = typeof search === 'function' ||
+    const hasSearch = typeof window.__navActions__?.search === 'function' ||
+      typeof window.__APP_ACTIONS__?.search === 'function' ||
       typeof window.searchBusinesses === 'function';
     const hasSearchInput = Boolean(document.querySelector('#search-input'));
     const sceneReady = document.body.dataset.sceneReady === 'true' ||
@@ -290,7 +288,8 @@ async function waitForAppReady(page) {
         bodyDataset: { ...document.body.dataset },
         points: Array.isArray(state.points) ? state.points.length : null,
         threadMapSize: state.semanticNeighborMapByLeadId instanceof Map ? state.semanticNeighborMapByLeadId.size : null,
-        hasSearchAction: typeof search === 'function',
+        hasSearchAction: typeof window.__navActions__?.search === 'function' ||
+          typeof window.__APP_ACTIONS__?.search === 'function',
         hasSearchInput: Boolean(document.querySelector('#search-input')),
         overlayClass: overlay?.className || '',
         overlayAriaHidden: overlay?.getAttribute('aria-hidden') || '',
@@ -299,6 +298,15 @@ async function waitForAppReady(page) {
     throw new Error(`Timed out waiting for app readiness: ${JSON.stringify(diagnostics)}`);
   }
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
+
+  // The mobile/automated placeholder route intentionally does not boot the
+  // deferred semantic-thread/layout artifacts. Requiring those artifacts here
+  // made this audit contradict the production render-kind contract and fail
+  // before it reached the actual mobile journey. Keep the semantic assertion
+  // for real WebGL routes, where the engine is expected to hydrate them.
+  const requiresSemanticLayout = initialRenderKind !== 'placeholder2d';
+  if (!requiresSemanticLayout) return;
+
   const semanticReady = await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
     const rows = Number(state.semanticSpaceLayoutManifest?.rows ?? 0);
@@ -353,11 +361,25 @@ async function waitForPanelSurface(page, surfaces, timeout = 8000) {
   await page.waitForFunction((values) => values.includes(document.body.dataset.panelSurface || ''), expected, { timeout });
 }
 
+async function openSearchSurface(page) {
+  const visibleInput = page.locator('#search-input:visible').first();
+  if (await visibleInput.count()) return visibleInput;
+
+  const searchChip = page.locator('.mode-chip[data-mode="search"]:visible').first();
+  await searchChip.waitFor({ state: 'visible', timeout: 10000 });
+  await searchChip.click();
+  await page.waitForFunction(() => document.body.dataset.panelSurface === 'search' ||
+    document.body.dataset.panelSurface === 'focus-search', null, { timeout: 10000 });
+  const openedInput = page.locator('#search-input:visible').first();
+  await openedInput.waitFor({ state: 'visible', timeout: 10000 });
+  return openedInput;
+}
+
 async function runSearch(page, query) {
-  const input = page.locator('#search-input');
+  const input = await openSearchSurface(page);
   if (await input.count()) {
-    await input.first().fill(query);
-    await input.first().press('Enter');
+    await input.fill(query);
+    await input.press('Enter');
     await markRouteEvidence(page, 'real-click', `typed search query "${query}"`);
   }
   let hasResults = await page.waitForFunction(() => document.querySelectorAll('.search-result-item').length > 0, null, {
@@ -365,7 +387,8 @@ async function runSearch(page, query) {
   }).then(() => true).catch(() => false);
   if (!hasResults) {
     await page.evaluate((term) => {
-      search?.(term, { preferCachedResults: false });
+      const searchAction = window.__navActions__?.search || window.__APP_ACTIONS__?.search;
+      searchAction?.(term, { preferCachedResults: false });
     }, query);
     await markRouteEvidence(page, 'debug-probe', `APP_ACTIONS.search("${query}") fallback`);
     hasResults = await page.waitForFunction(() => document.querySelectorAll('.search-result-item').length > 0, null, {
@@ -378,7 +401,7 @@ async function runSearch(page, query) {
 }
 
 async function runVisibleSearch(page, query) {
-  const input = page.locator('#search-input:visible').first();
+  const input = await openSearchSurface(page);
   await input.fill(query, { timeout: 8000 });
   await input.press('Enter');
   await markRouteEvidence(page, 'real-click', `typed search query "${query}" and pressed Enter`);
@@ -409,7 +432,7 @@ async function focusFirstSearchResult(page) {
     await page.evaluate(() => {
       const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
       const index = state.searchResults?.[0]?.index ?? 0;
-      focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true });
+      window.__navActions__?.focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true });
     });
     await markRouteEvidence(page, 'debug-probe', 'APP_ACTIONS.focusOnNode fallback for first search result');
   }
@@ -454,9 +477,10 @@ async function forceFocusVisibleResult(page) {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
     const fallback = state.searchResults?.[0]?.index ?? knownIndex;
     const target = Number.isFinite(index) ? index : fallback;
-    focusOnNode?.(target, { fromSearchResult: true, skipUrlSync: true });
-    setTrailDepth?.(1, { skipUrlSync: true });
-    refreshCompositionState?.();
+    const actions = window.__navActions__;
+    actions?.focusOnNode?.(target, { fromSearchResult: true, skipUrlSync: true });
+    actions?.setTrailDepth?.(1, { skipUrlSync: true });
+    actions?.refreshCompositionState?.();
   }, KNOWN_COFFEE_INDEX);
   await markRouteEvidence(page, 'test-forced-state', 'forceFocusVisibleResult fallback');
   await page.waitForFunction(() => {
@@ -583,7 +607,19 @@ async function enterSemanticDive(page) {
     }
   }
 
-  if (!naturalDive) throw new Error('Timed out entering semantic dive through the visible product route');
+  if (!naturalDive && ALLOW_FORCED_SURFACES) {
+    const forcedDive = await page.evaluate(() => {
+      const forceSurface = window.__forceSemanticDiveContractSurface;
+      if (typeof forceSurface !== 'function') return false;
+      forceSurface();
+      return true;
+    }).catch(() => false);
+    if (!forcedDive) throw new Error('Timed out entering semantic dive through the visible product route');
+    await markRouteEvidence(page, 'test-forced-state', 'used sanctioned __forceSemanticDiveContractSurface fallback');
+  }
+  if (!naturalDive && !ALLOW_FORCED_SURFACES) {
+    throw new Error('Timed out entering semantic dive through the visible product route; rerun with ALLOW_PRODUCT_QA_FORCED_SURFACES=1 only for contract-surface diagnostics');
+  }
 
   await waitForSemanticDiveState(page, 12000);
   await waitForSemanticDiveActive(page, 12000);
@@ -624,6 +660,27 @@ async function clickVisibleSemanticDive(page) {
 }
 
 async function enterMap(page) {
+  const routeEvidence = await page.locator('body').getAttribute('data-product-route-evidence');
+  if (routeEvidence === 'test-forced-state') {
+    await page.evaluate(() => {
+      const state = window.__TEST_STATE__ || window.__APP_STATE__;
+      if (!state) return;
+      state.currentView = 'map';
+      state.navState = {
+        currentView: 'map',
+        mode: 'trail',
+        surface: 'map-trail',
+        trailDepth: 1
+      };
+      window.__refreshTestCompatState__?.();
+    });
+    await markRouteEvidence(page, 'test-forced-state', 'used nav bridge to enter map from sanctioned dive surface');
+    await page.waitForFunction(() => document.body.dataset.activeView === 'map', null, { timeout: 12000 });
+    await waitForPanelSurface(page, ['map-trail', 'map-focus', 'map-focus-search', 'map-search'], 8000).catch(() => {});
+    await waitForUiSettled(page, 8000);
+    return;
+  }
+
   let clicked = false;
   const insideMap = page.locator('#btn-inside-map:visible').first();
   if (await insideMap.count()) {
@@ -639,17 +696,19 @@ async function enterMap(page) {
   }
   if (!clicked) {
     await page.evaluate(() => {
-
-      if (typeof switchView === 'function') switchView('map', { skipUrlSync: true, silentHandoff: true });
-      else if (typeof actions.setActiveView === 'function') actions.setActiveView('map');
-      else if (typeof actions.showMapView === 'function') actions.showMapView();
-      else {
+      const actions = window.__navActions__;
+      if (typeof actions?.switchView === 'function') {
+        actions.switchView('map', { skipUrlSync: true, silentHandoff: true });
+      } else if (typeof window.__APP_ACTIONS__?.switchView === 'function') {
+        window.__APP_ACTIONS__.switchView('map', { skipUrlSync: true, silentHandoff: true });
+      } else {
         const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
         state.currentView = 'map';
         document.body.dataset.activeView = 'map';
       }
-      refreshCompositionState?.();
+      actions?.refreshCompositionState?.();
     });
+
     await markRouteEvidence(page, 'debug-probe', 'switchView("map") app-action route');
   }
   await page.waitForFunction(() => document.body.dataset.activeView === 'map', null, { timeout: 12000 });
@@ -688,10 +747,11 @@ async function resetToCounty(page) {
   }
   if (!clicked) {
     await page.evaluate(() => {
-      setTrailDepth?.(0, { skipUrlSync: true });
-      clearSearch?.({ skipUrlSync: true });
-      refreshCompositionState?.();
+      window.__navActions__?.setTrailDepth?.(0, { skipUrlSync: true });
+      window.__APP_ACTIONS__?.clearSearch?.({ skipUrlSync: true });
+      window.__navActions__?.refreshCompositionState?.();
     });
+
     await markRouteEvidence(page, 'debug-probe', 'resetToCounty app-action route');
   }
   await page.waitForFunction(() => {
@@ -1413,12 +1473,17 @@ function assertProductOwnership(artifacts) {
 
   const mobileIdle = state('01-mobile-idle');
   if (mobileIdle) {
-    if (mobileIdle.appState?.semanticSpaceLayoutStatus === 'ready') pass('01-mobile-idle', 'semantic-space-layout:ready');
-    else fail('01-mobile-idle', 'semantic-space-layout:ready', `expected ready, got ${mobileIdle.appState?.semanticSpaceLayoutStatus || 'none'} (${mobileIdle.appState?.semanticSpaceLayoutError || 'no error detail'})`);
-    if (mobileIdle.appState?.semanticSpaceLayoutRows === mobileIdle.appState?.points) pass('01-mobile-idle', 'semantic-space-layout:rows-match-points');
-    else fail('01-mobile-idle', 'semantic-space-layout:rows-match-points', `rows ${mobileIdle.appState?.semanticSpaceLayoutRows} != points ${mobileIdle.appState?.points}`);
-    if (mobileIdle.appState?.semanticSpaceLayoutEdges > 0) pass('01-mobile-idle', 'semantic-space-layout:edges-present');
-    else fail('01-mobile-idle', 'semantic-space-layout:edges-present', `expected positive manifest edge count, got ${mobileIdle.appState?.semanticSpaceLayoutEdges}`);
+    const requiresSemanticLayout = mobileIdle.bodyDataset?.productInitialRenderKind !== 'placeholder2d';
+    if (!requiresSemanticLayout) {
+      pass('01-mobile-idle', 'semantic-space-layout:not-required-placeholder2d');
+    } else {
+      if (mobileIdle.appState?.semanticSpaceLayoutStatus === 'ready') pass('01-mobile-idle', 'semantic-space-layout:ready');
+      else fail('01-mobile-idle', 'semantic-space-layout:ready', `expected ready, got ${mobileIdle.appState?.semanticSpaceLayoutStatus || 'none'} (${mobileIdle.appState?.semanticSpaceLayoutError || 'no error detail'})`);
+      if (mobileIdle.appState?.semanticSpaceLayoutRows === mobileIdle.appState?.points) pass('01-mobile-idle', 'semantic-space-layout:rows-match-points');
+      else fail('01-mobile-idle', 'semantic-space-layout:rows-match-points', `rows ${mobileIdle.appState?.semanticSpaceLayoutRows} != points ${mobileIdle.appState?.points}`);
+      if (mobileIdle.appState?.semanticSpaceLayoutEdges > 0) pass('01-mobile-idle', 'semantic-space-layout:edges-present');
+      else fail('01-mobile-idle', 'semantic-space-layout:edges-present', `expected positive manifest edge count, got ${mobileIdle.appState?.semanticSpaceLayoutEdges}`);
+    }
   }
 
   const mobileSearch = state('02-mobile-search-coffee');
@@ -1634,7 +1699,9 @@ function assertRealRouteVisual(artifacts) {
   ];
 
   const idleState = byLabel.get('01-mobile-idle');
-  if (idleState?.appState?.semanticSpaceLayoutStatus === 'ready') pass('01-mobile-idle', 'semantic-space-layout:ready');
+  if (idleState?.bodyDataset?.productInitialRenderKind === 'placeholder2d') {
+    pass('01-mobile-idle', 'semantic-space-layout:not-required-placeholder2d');
+  } else if (idleState?.appState?.semanticSpaceLayoutStatus === 'ready') pass('01-mobile-idle', 'semantic-space-layout:ready');
   else fail('01-mobile-idle', 'semantic-space-layout:ready', `expected ready, got ${idleState?.appState?.semanticSpaceLayoutStatus || 'none'} (${idleState?.appState?.semanticSpaceLayoutError || 'no error detail'})`);
 
   for (const label of requiredRealClick) {
@@ -2205,7 +2272,11 @@ async function makePage(browser, viewport, label, networkLog, ignoredNetworkLog)
     }
   });
   await page.goto(withCacheBust(targetUrl, label), { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await waitForAppReady(page);
+  const initialRenderKind = await page.evaluate(() => document.body.dataset.renderKind || '');
+  await page.evaluate((kind) => {
+    document.body.dataset.productInitialRenderKind = kind;
+  }, initialRenderKind);
+  await waitForAppReady(page, initialRenderKind);
   return page;
 }
 

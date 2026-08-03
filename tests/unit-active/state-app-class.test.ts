@@ -141,7 +141,6 @@ describe('state-app-class — validateStateProperty (enum paths)', () => {
         ['currentView', 'galaxy', true],
         ['currentView', 'bogus', false],
         ['navState.currentView', 'map', true],
-        ,
         ['navState.currentView', 'xur', false],
 
         // Navigation mode
