@@ -48,33 +48,6 @@ function makeElement(
     return el
 }
 
-// ── Append functions ───────────────────────────────────────────────────────
-
-function appendFocusNeighborRail(root: HTMLElement): void {
-    const rail = makeElement('div', {
-        id: 'focus-stage-neighbors-aux',
-        className: 'focus-stage-neighbors',
-        attributes: { 'aria-live': 'off' }
-    })
-    const header = makeElement('div', { className: 'focus-stage-neighbor-header' })
-    header.append(
-        makeElement('div', { className: 'focus-stage-neighbor-kicker', text: 'Nearby Stops' }),
-        makeElement('div', {
-            id: 'focus-stage-neighbor-count-aux',
-            className: 'focus-stage-neighbor-count',
-            text: '0 visible neighbors'
-        })
-    )
-    rail.append(
-        header,
-        makeElement('div', {
-            id: 'focus-stage-neighbor-list-aux',
-            className: 'focus-stage-neighbor-list'
-        })
-    )
-    root.appendChild(rail)
-}
-
 function appendInsideControls(root: HTMLElement): void {
     const status = makeElement('div', {
         id: 'focus-stage-inside-status',
@@ -210,6 +183,36 @@ function appendTrailControls(root: HTMLElement): void {
     root.append(controls, makeElement('div', { id: 'trail-context', className: 'trail-context' }))
 }
 
+// ── Public API ─────────────────────────────────────────────────────────────
+
+export function ensureFocusStageAuxiliaryDom(): boolean {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return false
+    const card = document.getElementById('focus-pocket') || document.querySelector?.('.focus-stage-card')
+    if (!card) return false
+
+    let root = document.getElementById(AUXILIARY_SURFACE_ID)
+    if (!root) {
+        root = makeElement('div', {
+            id: AUXILIARY_SURFACE_ID,
+            className: 'focus-stage-auxiliary-surfaces'
+        })
+        card.appendChild(root)
+    }
+
+    if (
+        !document.getElementById('focus-stage-inside-status') ||
+        !document.getElementById('focus-stage-inside-controls')
+    ) {
+        appendInsideControls(root)
+    }
+    if (!document.getElementById('focus-thread-inspector')) appendThreadInspector(root)
+    if (!document.getElementById('trail-controls') || !document.getElementById('trail-context')) {
+        appendTrailControls(root)
+    }
+
+    return true
+}
+
 // ── Dive button helpers ─────────────────────────────────────────────────────
 
 function appendDiveButton(root: HTMLElement): void {
@@ -233,37 +236,6 @@ function appendDiveButton(root: HTMLElement): void {
         })
     )
     root.appendChild(diveBtn)
-}
-
-// ── Public API ─────────────────────────────────────────────────────────────
-
-export function ensureFocusStageAuxiliaryDom(): boolean {
-    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return false
-    const card = document.getElementById('focus-pocket') || document.querySelector?.('.focus-stage-card')
-    if (!card) return false
-
-    let root = document.getElementById(AUXILIARY_SURFACE_ID)
-    if (!root) {
-        root = makeElement('div', {
-            id: AUXILIARY_SURFACE_ID,
-            className: 'focus-stage-auxiliary-surfaces'
-        })
-        card.appendChild(root)
-    }
-
-    if (!document.getElementById('focus-stage-neighbors-aux')) appendFocusNeighborRail(root)
-    if (
-        !document.getElementById('focus-stage-inside-status') ||
-        !document.getElementById('focus-stage-inside-controls')
-    ) {
-        appendInsideControls(root)
-    }
-    if (!document.getElementById('focus-thread-inspector')) appendThreadInspector(root)
-    if (!document.getElementById('trail-controls') || !document.getElementById('trail-context')) {
-        appendTrailControls(root)
-    }
-
-    return true
 }
 
 /**

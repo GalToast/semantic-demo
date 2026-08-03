@@ -17,8 +17,6 @@ describe('focus-ui.ts public API contract', () => {
         'isCondensedFocusStageViewport',
         'hasColdDegradedSemanticFallback',
         'shouldUseFloatingFocusJourneyOnly',
-        'initFocusNeighborRailSubscriptions',
-        'updateFocusNeighborRail',
         'updateTraversalUi'
     ]
 
@@ -46,19 +44,6 @@ describe('focus-ui.ts public API contract', () => {
     it('shouldUseFloatingFocusJourneyOnly returns a boolean', () => {
         const result = module.shouldUseFloatingFocusJourneyOnly()
         expect(typeof result).toBe('boolean')
-    })
-
-    it('initFocusNeighborRailSubscriptions is a void-returning function', () => {
-        // Idempotent: calling multiple times should not throw.
-        expect(() => module.initFocusNeighborRailSubscriptions()).not.toThrow()
-        expect(() => module.initFocusNeighborRailSubscriptions()).not.toThrow()
-    })
-
-    it('updateFocusNeighborRail is a void-returning function', () => {
-        // Reads document state; in Node test environment document
-        // is undefined and the function exits early at the `if (!rail || !list)`
-        // check. Should never throw.
-        expect(() => module.updateFocusNeighborRail()).not.toThrow()
     })
 
     it('updateTraversalUi is a void-returning function', () => {

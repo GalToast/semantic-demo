@@ -5,9 +5,9 @@
  *
  * Verifies:
  *  - src/lib/orchestration/adapters.ts exists and exports initAdapters
- *  - adapters.ts imports all 10 adapter init functions from their canonical owners
- *  - adapters.ts body calls all 10 init functions
- *  - calling initAdapters() with mock deps doesn't throw and invokes all 10
+ *  - adapters.ts imports all 9 adapter init functions from their canonical owners
+ *  - adapters.ts body calls all 9 init functions
+ *  - calling initAdapters() with mock deps doesn't throw and invokes all 9
  *    adapter init functions exactly once
  *  - adapters.ts tracks initialization state via areAdaptersInitialized()
  *
@@ -41,14 +41,13 @@ const W11_MUTABLE_MOCK_FNS: Record<AdapterInitName, ReturnType<typeof vi.fn>> = 
     ReturnType<typeof vi.fn>
 >
 
-// ── The 10 adapter init functions (canonical names) ──────────────────────────
+// ── The adapter init functions (canonical names) ──────────────────────────
 
 const ADAPTER_INIT_NAMES = [
     'initJourneyLifecycleAdapter',
     'initJourneyCompassAdapter',
     'initJourneySelectedCard',
     'initSemanticDiveUiSubscriptions',
-    'initFocusNeighborRailSubscriptions',
     'initRouteTraceSubscriptions',
     'initThreadInspectorAdapter',
     'initMapStateSubscriptions',
@@ -63,7 +62,6 @@ const ADAPTER_IMPORT_SOURCES: Record<AdapterInitName, string> = {
     initJourneyCompassAdapter: '@lib/orchestration/compass-controller',
     initJourneySelectedCard: '@lib/journey/selected-card',
     initSemanticDiveUiSubscriptions: '@lib/journey/semantic-dive',
-    initFocusNeighborRailSubscriptions: '@lib/journey/focus-ui',
     initRouteTraceSubscriptions: '@lib/journey/route-trace',
     initThreadInspectorAdapter: '@lib/journey/thread-inspector-adapter',
     initMapStateSubscriptions: '@lib/engine/map-state',
@@ -85,7 +83,7 @@ describe('W11-T7: adapters.ts exports initAdapters API', () => {
     })
 })
 
-describe('W11-T7: adapters.ts imports all 10 adapter init functions from canonical owners', () => {
+describe('W11-T7: adapters.ts imports all 9 adapter init functions from canonical owners', () => {
     const src = readOrchestrationSource()
 
     for (const name of ADAPTER_INIT_NAMES) {
@@ -105,7 +103,7 @@ describe('W11-T7: adapters.ts imports all 10 adapter init functions from canonic
     }
 })
 
-describe('W11-T7: adapters.ts body calls all 10 init functions', () => {
+describe('W11-T7: adapters.ts body calls all 9 init functions', () => {
     const src = readOrchestrationSource()
 
     for (const name of ADAPTER_INIT_NAMES) {
@@ -119,7 +117,7 @@ describe('W11-T7: adapters.ts body calls all 10 init functions', () => {
 
 // ── Runtime Test ─────────────────────────────────────────────────────────────
 
-describe('W11-T7: runtime — initAdapters() invokes all 10 adapters', () => {
+describe('W11-T7: runtime — initAdapters() invokes all 9 adapters', () => {
     beforeEach(async () => {
         // Reset the module state by re-importing (vitest module cache)
         vi.resetModules()
@@ -129,7 +127,7 @@ describe('W11-T7: runtime — initAdapters() invokes all 10 adapters', () => {
         }
     })
 
-    it('calls all 10 adapter init functions exactly once without throwing', async () => {
+    it('calls all 9 adapter init functions exactly once without throwing', async () => {
         for (const [name, source] of Object.entries(ADAPTER_IMPORT_SOURCES) as [AdapterInitName, string][]) {
             vi.doMock(source, () => ({ [name]: W11_MUTABLE_MOCK_FNS[name] }))
         }
@@ -194,14 +192,14 @@ describe('W11-T7: runtime — initAdapters() invokes all 10 adapters', () => {
         // (route-trace statically imports three.js for WebGL overlay rendering;
         // deferring keeps three out of the cold-load modulepreload set). The
         // dynamic import is fire-and-forget inside initAdapters, so we poll
-        // for all 10 adapter inits to complete instead of a fixed 50ms wait.
+        // for all 9 adapter inits to complete instead of a fixed 50ms wait.
         await vi.waitFor(() => {
             for (const name of ADAPTER_INIT_NAMES) {
                 expect(W11_MUTABLE_MOCK_FNS[name]).toHaveBeenCalledTimes(1)
             }
         }, { timeout: 2000, interval: 5 })
 
-        // All 10 should have been called exactly once (redundant with waitFor
+        // All 9 should have been called exactly once (redundant with waitFor
         // above but documents the invariant for human readers).
         for (const name of ADAPTER_INIT_NAMES) {
             expect(W11_MUTABLE_MOCK_FNS[name]).toHaveBeenCalledTimes(1)

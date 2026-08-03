@@ -79,9 +79,7 @@ import {
 import {
     isCondensedFocusStageViewport,
     hasColdDegradedSemanticFallback,
-    updateFocusNeighborRail,
     updateTraversalUi,
-    initFocusNeighborRailSubscriptions,
     shouldUseFloatingFocusJourneyOnly
 } from '@lib/journey/focus-ui'
 import {
@@ -282,8 +280,6 @@ export {
     isCondensedFocusStageViewport,
     hasColdDegradedSemanticFallback,
     shouldUseFloatingFocusJourneyOnly,
-    initFocusNeighborRailSubscriptions,
-    updateFocusNeighborRail,
     updateTraversalUi,
     applyPointFilterColors,
     describeThreadLensForPoint,

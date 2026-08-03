@@ -24,7 +24,7 @@ import { getNextExploreCandidateForIndex } from './thread-model'
 import { summarizeNeighborReason } from './thread-settler'
 
 import { getNextWalkCandidateForIndex } from '@lib/journey/neighborhood'
-import { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '@lib/journey/focus-stage-dom'
+import { ensureDiveButton, ensureFocusStageAuxiliaryDom } from '@lib/journey/focus-stage-dom'
 
 function truncateDiveStatusCopy(text: string | null | undefined, max = 74): string {
     const clean = cleanOptionalValue(text)

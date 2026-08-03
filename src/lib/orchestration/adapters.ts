@@ -10,7 +10,6 @@ import { initJourneyLifecycleAdapter } from '@lib/journey/lifecycle-adapter'
 import { initJourneyCompassAdapter } from '@lib/orchestration/compass-controller'
 import { initJourneySelectedCard } from '@lib/journey/selected-card'
 import { initSemanticDiveUiSubscriptions } from '@lib/journey/semantic-dive'
-import { initFocusNeighborRailSubscriptions } from '@lib/journey/focus-ui'
 import { initThreadInspectorAdapter } from '@lib/journey/thread-inspector-adapter'
 import { initMapStateSubscriptions } from '@lib/engine/map-state'
 import { initViewControllerAdapter } from '@lib/orchestration/view-controller'
@@ -164,9 +163,6 @@ export function initAdapters(deps: AdapterDeps): void {
     //    CAMERA_NODE_FOCUSED so focused businesses get the same cluster +
     //    signal preview that mouse-hover users get.
     initCanvasHoverPreviewSubscription()
-
-    // 6. Focus neighbor rail subscriptions (no deps)
-    initFocusNeighborRailSubscriptions()
 
     // 7. Route trace subscriptions (no deps)
     // W45: dynamic import — route-trace statically imports three (ShaderMaterial,
