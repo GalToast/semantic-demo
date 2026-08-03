@@ -342,8 +342,26 @@ function w44AssetCompressionPlugin(): Plugin {
                     candidates.push({ filePath, parentPath: entry.parentPath })
                 })
             )
+            async function readFileWithRetry(filePath: string, retries = 5, delay = 200): Promise<Buffer> {
+                let lastErr: unknown
+                for (let i = 0; i < retries; i++) {
+                    try {
+                        return await readFile(filePath)
+                    } catch (err) {
+                        lastErr = err
+                        const code = (err as NodeJS.ErrnoException).code
+                        if (code === 'EBUSY' || code === 'EPERM') {
+                            await new Promise((r) => setTimeout(r, delay * (i + 1)))
+                            continue
+                        }
+                        throw err
+                    }
+                }
+                throw lastErr
+            }
+
             const tasks: Promise<unknown>[] = candidates.map(({ filePath, parentPath }) =>
-                readFile(filePath).then(async (buf) => {
+                readFileWithRetry(filePath).then(async (buf) => {
                     // Quality 11 blocks local builds for minutes on large data assets.
                     // Defaults favor fast repeat builds; CI/release can override via env.
                     const br = await brotliCompressAsync(buf, {
