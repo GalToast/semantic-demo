@@ -875,9 +875,11 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=coffee`, {
             waitUntil: 'domcontentloaded'
         })
+        await expect(page).toHaveTitle(/Semantic Explorer|MoCo Business Mycelium/)
         await expect(page.locator('#search-input')).toBeVisible({ timeout: 40000 })
         await expect(page.locator('#search-input')).toHaveValue('coffee', { timeout: 15000 })
         await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 30000 })
+        await expect(page.locator('.search-result-item')).toHaveCount(1)
 
         expect(searchRequests, 'URL restore must dispatch the semantic search request').toBeGreaterThan(0)
         // Exactly one semantic_search round-trip: the restore and the onMount
@@ -885,6 +887,58 @@ test.describe('Widget journey', () => {
         // dedupe the loser. A second request means the lease release() change
         // regressed into a double API call.
         expect(searchRequests, 'same-query dedup must prevent a second semantic search request').toBe(1)
+    })
+
+    test('W71b: deep-link query with zero results renders empty state without a second search request', async ({
+        page
+    }) => {
+        test.setTimeout(60000)
+        let searchRequests = 0
+
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
+                return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_search'
+            },
+            async (route) => {
+                searchRequests += 1
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ ok: true, count: 0, results: [] })
+                })
+            }
+        )
+        // Keep the lane-health probe healthy so the search flow never takes a
+        // degraded path that could change how many search requests fire.
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
+                return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_lane_health'
+            },
+            async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ ok: true, state: 'healthy' })
+                })
+            }
+        )
+
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=zzzzzznomatch`, {
+            waitUntil: 'domcontentloaded'
+        })
+        await expect(page.locator('#search-input')).toBeVisible({ timeout: 40000 })
+        await expect(page.locator('#search-input')).toHaveValue('zzzzzznomatch', { timeout: 15000 })
+        // The zero-result search settles through runSearch (status 'results'
+        // with 0 rows) and SearchResults renders SearchEmptyState.
+        await expect(page.locator('.search-empty-state')).toBeVisible({ timeout: 30000 })
+        await expect(page.locator('.search-empty-title')).toContainText('zzzzzznomatch')
+        await expect(page.locator('.search-result-item')).toHaveCount(0)
+
+        // The onMount ?q= guard must not re-dispatch after the restore already
+        // fulfilled the empty query — exactly one semantic_search round-trip.
+        expect(searchRequests, 'empty deep-link must dispatch exactly one semantic search request').toBe(1)
     })
 
     test('W54-A1: mobile search sheet raises on typed input (Bug A — search-dispatch.ts fix)', async ({ page }) => {
