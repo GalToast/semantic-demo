@@ -12,6 +12,7 @@ import { get } from 'svelte/store'
 import { navStore, updateNavState } from '@lib/stores/navigation.svelte.ts'
 import { animateCameraToTerrainPrelude } from '@lib/engine/camera-controls'
 import { applyMapFlatteningLayout } from '@lib/utils/map-flattening-layout'
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -299,12 +300,11 @@ function _syncContainerVisibility(view: ViewName): void {
 }
 
 function _requestUrlSync(reason: string): void {
-    if (typeof window === 'undefined') return
-    window.dispatchEvent(
-        new CustomEvent('semantic:url-sync-requested', {
-            detail: { params: {}, mode: 'push', reason }
-        })
-    )
+    publish(EVENTS.URL_SYNC_REQUESTED, {
+        params: {},
+        mode: 'push',
+        reason
+    })
 }
 
 // ── Handoff Model ─────────────────────────────────────────────────────────────

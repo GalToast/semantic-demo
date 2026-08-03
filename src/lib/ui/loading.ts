@@ -41,8 +41,6 @@ const LOADING_PHASE_META: Record<string, LoadingPhaseMeta> = {
 
 const PHASE_ORDER: readonly string[] = ['records', 'scene', 'restore', 'launch']
 
-const SCENE_READY_EVENT = 'semantic:scene-ready'
-
 // ── Internal State ────────────────────────────────────────────────────────────
 
 const _registry = new DisposableRegistry({ label: 'loading' })
@@ -131,11 +129,6 @@ export async function hideLoadingOverlay(): Promise<void> {
     overlay.setAttribute('aria-hidden', 'true')
     overlay.inert = true
     overlay.hidden = true
-
-    // Dispatch scene ready event
-    if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent(SCENE_READY_EVENT))
-    }
 }
 
 /**

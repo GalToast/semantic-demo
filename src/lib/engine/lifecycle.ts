@@ -400,12 +400,12 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         // 12. Mark ready
         setEngineStatus('ready')
 
-        // 13. Notify Canvas.svelte (and other consumers) that the scene is ready.
+        // Notify Canvas.svelte (and other consumers) that the scene is ready.
         //     The direct onLoadingPhase('launch') call below is the SINGLE source
         //     of the in-process signal — lifecycle no longer self-listens for the
         //     'scene-ready' window event (that caused a duplicate 'launch' fire
-        //     and double signalSceneReady()). The window event dispatched just
-        //     below is retained for any legacy/external window-level listeners only.
+        //     and double signalSceneReady()). The orphaned window dispatch was
+        //     removed; zero listeners exist repo-wide.
         if (typeof performance?.mark === 'function') {
             performance.mark('engine-init-ready')
             try {
@@ -416,9 +416,6 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             }
         }
         callbacks.onLoadingPhase?.('launch', 1)
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('scene-ready'))
-        }
     } catch (err) {
         if (typeof performance?.mark === 'function') performance.mark('engine-init-failed')
         debugError('[engine/lifecycle] initEngineHeavy: initialization failed', err)

@@ -516,14 +516,6 @@ function _restoreClusterFilter(clusterStr: string): void {
     const params = new URLSearchParams()
     params.set('cluster', String(cluster))
     restoreActiveClusterFilterFromUrl(params)
-
-    if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-            new CustomEvent('semantic:cluster-filter-restore-requested', {
-                detail: { cluster }
-            })
-        )
-    }
 }
 
 function preserveDomForcedFocusSearchSurface(): void {
