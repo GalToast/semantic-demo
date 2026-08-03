@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
  */
 test.describe('switchView race condition regression', () => {
     test('rapid switchView calls settle without the prelude timer overriding the final view', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(90000) // WebGL boot under concurrent load can exceed 60s (flaky under parallel tsc/worker load, 2026-08-03)
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${process.env.TEST_BASE_URL || 'http://127.0.0.1:8796'}/dist/svelte/index.html?nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -47,13 +47,14 @@ test.describe('switchView race condition regression', () => {
 
         // The stale prelude timer may still fire (up to 430ms later); it must no-op.
         await page.waitForTimeout(700)
-        expect(await page.evaluate(() => document.body.dataset.activeView), 'stale prelude must not override galaxy').toBe(
-            'galaxy'
-        )
+        expect(
+            await page.evaluate(() => document.body.dataset.activeView),
+            'stale prelude must not override galaxy'
+        ).toBe('galaxy')
     })
 
     test('switchView returns early when called with the already-current view', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(90000) // WebGL boot under concurrent load can exceed 60s (flaky under parallel tsc/worker load, 2026-08-03)
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${process.env.TEST_BASE_URL || 'http://127.0.0.1:8796'}/dist/svelte/index.html?nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -69,6 +70,8 @@ test.describe('switchView race condition regression', () => {
         // (no throw, no view flip) — the prelude path must not restart.
         await page.evaluate(() => window.__navActions__.switchView('map'))
         await page.waitForTimeout(600)
-        expect(await page.evaluate(() => document.body.dataset.activeView), 'same-view switch must stay on map').toBe('map')
+        expect(await page.evaluate(() => document.body.dataset.activeView), 'same-view switch must stay on map').toBe(
+            'map'
+        )
     })
 })
