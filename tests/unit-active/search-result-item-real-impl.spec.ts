@@ -50,8 +50,8 @@ describe('W62-B search-render bugsweep (mock-shadow regression)', () => {
         expect(itemSrc).not.toContain('`${deps.getSearchResultCardClasses()} search-result-item`')
     })
 
-    it('SearchResultItem.svelte invokes real getSearchResultStrength(resultItem, topScore) with arity-2', () => {
-        expect(itemSrc).toContain('getSearchResultStrength(resultItem, topScore)')
+    it('SearchResultItem.svelte invokes real getSearchResultStrength(..., topScore) with arity-2', () => {
+        expect(itemSrc).toContain('getSearchResultStrength(presentationResult, topScore)')
     })
 
     it('SearchResultItem.svelte invokes real getSearchResultCardClasses(orderIdx, isAnchor) with arity-2', () => {
