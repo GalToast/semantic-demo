@@ -856,6 +856,21 @@ test.describe('Widget journey', () => {
                 })
             }
         )
+        // Stub the lane-health probe too so the search flow never takes a
+        // degraded path that could change how many search requests fire.
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
+                return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_lane_health'
+            },
+            async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ ok: true, state: 'healthy' })
+                })
+            }
+        )
 
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=coffee`, {
             waitUntil: 'domcontentloaded'

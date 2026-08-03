@@ -54,6 +54,51 @@ function contentType(filePath) {
     return MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream'
 }
 
+/**
+ * Newest mtime under `dir` (recursive). Returns the running max so callers can
+ * fold multiple roots together. Best-effort: unreadable paths are skipped.
+ */
+function newestMtime(dir, max = 0) {
+    let entries = []
+    try {
+        entries = fs.readdirSync(dir, { withFileTypes: true })
+    } catch {
+        return max
+    }
+    for (const entry of entries) {
+        const p = path.join(dir, entry.name)
+        if (entry.isDirectory()) {
+            max = newestMtime(p, max)
+            continue
+        }
+        try {
+            const st = fs.statSync(p)
+            if (st.mtimeMs > max) max = st.mtimeMs
+        } catch {
+            // unreadable file — skip
+        }
+    }
+    return max
+}
+
+/**
+ * The harness validates the BUILT app, so a stale dist would either fail
+ * confusingly or — worse — silently pass against outdated CSS. Fail fast with
+ * guidance when any source tree is newer than the newest dist artifact.
+ */
+function isDistStale() {
+    let newestDist = 0
+    try {
+        newestDist = newestMtime(APP_DIR, 0)
+    } catch {
+        return true
+    }
+    if (newestDist === 0) return true // dist missing entirely
+    const sourceRoots = ['src', 'css', 'semantic-demo.css', 'vector-explorer-pandora.css']
+    const newestSrc = sourceRoots.reduce((max, root) => newestMtime(path.resolve(process.cwd(), root), max), 0)
+    return newestSrc > newestDist
+}
+
 // ---------------------------------------------------------------------------
 // Embedded HTTP server — serves the built app (dist/svelte) with a repo-root
 // fallback so legacy css/ and js/ paths still resolve for external callers.
@@ -87,9 +132,18 @@ function startServer(port) {
                 res.end('Not found')
                 return
             }
+            // The build emits precompressed .br/.gz copies alongside assets;
+            // serve them with the matching Content-Encoding so the browser can
+            // decode them if anything requests the compressed variant directly.
+            const contentEncoding = fp.endsWith('.br')
+                ? { 'Content-Encoding': 'br' }
+                : fp.endsWith('.gz')
+                  ? { 'Content-Encoding': 'gzip' }
+                  : {}
             res.writeHead(200, {
                 'Content-Type': contentType(fp),
-                'Cache-Control': 'no-cache'
+                'Cache-Control': 'no-cache',
+                ...contentEncoding
             })
             res.end(fs.readFileSync(fp))
         })
@@ -123,6 +177,14 @@ function closeServer(serverInstance) {
 }
 
 async function run() {
+    // Fail fast on a stale build so the audits never validate outdated CSS.
+    if (!cliArgs.includes('--allow-stale') && isDistStale()) {
+        console.error('[freshness] dist/svelte is older than current source — the contract would validate stale CSS/DOM.')
+        console.error('[freshness] Run `npm run build:svelte` first, then re-run this contract.')
+        console.error('[freshness] (Pass --allow-stale only when dist is managed externally.)')
+        process.exit(1)
+    }
+
     let serverPort = PORT
 
     // If the URL is our default, start our own server
