@@ -153,8 +153,10 @@ test('cancelDemo has explanatory comment', () => {
 // Test 10: Verify the fix matches the legacy behavior
 console.log('\nTest 10: Fix matches legacy cancelChoreography guard')
 test('Svelte cancelDemo matches legacy guard behavior', () => {
-    const legacyHasGuard = legacyDemoSource.includes(
-        '_demoPhase === PHASE.IDLE || _demoPhase === PHASE.COMPLETE || _demoCancelled'
+    // Legacy cancelChoreography guard (demo-choreography.ts) uses the non-null
+    // asserted `PHASE.IDLE!` / `PHASE.COMPLETE!` forms; accept the optional `!`.
+    const legacyHasGuard = /_demoPhase === PHASE\.IDLE!?\s*\|\|\s*_demoPhase === PHASE\.COMPLETE!?\s*\|\|\s*_demoCancelled/.test(
+        legacyDemoSource
     )
     const svelteHasGuard = cancelDemoSource.includes(
         "phase === 'IDLE' || phase === 'COMPLETE' || phase === 'CANCELLED'"

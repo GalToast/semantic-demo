@@ -15,13 +15,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { setTrailFromSeed } from '@lib/journey/neighborhood'
 
 const ROOT = path.resolve(process.cwd())
 const APP_PATH = path.join(ROOT, 'src/lib/orchestration/app-init.ts')
 const APP_TS_PATH = path.join(ROOT, 'src/lib/orchestration/app-init.ts')
 const MAIN_TS_PATH = path.join(ROOT, 'src/main.ts')
 const LIFECYCLE_PATH = path.join(ROOT, 'src/lib/stores/lifecycle.ts')
+const WINDOW_ACTIONS_PATH = path.join(ROOT, 'src/lib/orchestration/window-actions.ts')
 const TESTS_DIR = path.join(ROOT, 'tests')
 const THIS_FILE = fileURLToPath(import.meta.url)
 
@@ -92,16 +92,16 @@ function testLegitimateHooks() {
     const _appSrc = read(APP_PATH)
     const appTsSrc = read(APP_TS_PATH)
 
-    assert(
-        /window\.__APP_STATE__\s*=/.test(appTsSrc),
-        'app.ts should retain window.__APP_STATE__ hook (inlined from bridge-registry)'
-    )
-    // __APP_STATE__ is assigned in app-init.ts; __TEST_STATE__ is assigned in main.ts
-    // (some hooks moved during the TS migration). Accept either source.
+    // __APP_STATE__ / __TEST_STATE__ are assigned in main.ts
+    // (publishTestCompatState); app-init.ts reads them without assigning.
     const mainTsSrc = read(MAIN_TS_PATH)
     assert(
-        /window\.__TEST_STATE__\s*=/.test(appTsSrc) || /w\.__TEST_STATE__\s*=/.test(mainTsSrc),
-        'app.ts or main.ts should retain window.__TEST_STATE__ fallback亦凡 fallback hook (inlined from bridge-registry)'
+        /window\.__APP_STATE__\s*=/.test(appTsSrc) || /w\.__APP_STATE__\s*=(?!=)/.test(mainTsSrc),
+        'main.ts should retain window.__APP_STATE__ hook (publishTestCompatState)'
+    )
+    assert(
+        /window\.__TEST_STATE__\s*=/.test(appTsSrc) || /w\.__TEST_STATE__\s*=(?!=)/.test(mainTsSrc),
+        'main.ts should retain window.__TEST_STATE__ fallback hook (publishTestCompatState)'
     )
     assert(!/window\.state\s*=\s*state/.test(_appSrc), 'app.js must not reintroduce retired window.state hook')
     assert(!/window\.state\s*=\s*state/.test(appTsSrc), 'app.ts must not reintroduce retired window.state hook')
@@ -111,20 +111,20 @@ function testLegitimateHooks() {
 function testAppActionsNamespace() {
     console.log('\n[TEST 4] Verifying __APP_ACTIONS__ namespace is assigned')
     const _appSrc = read(APP_PATH)
-    const appTsSrc = read(APP_TS_PATH)
+    const windowActionsSrc = read(WINDOW_ACTIONS_PATH)
 
+    // The __APP_ACTIONS__ namespace is owned by window-actions.ts
+    // (installWindowActions) since the TS migration.
     assert(
-        /window\.__APP_ACTIONS__\s*=\s*\{/.test(appTsSrc) ||
-            /\(window as any\)\.__APP_ACTIONS__\s*=\s*\{/.test(appTsSrc),
-        'app.ts should assign window.__APP_ACTIONS__ namespace (inlined from bridge-registry)'
+        /w\.__APP_ACTIONS__\s*=\s*\{/.test(windowActionsSrc),
+        'window-actions.ts should assign window.__APP_ACTIONS__ namespace (installWindowActions)'
     )
     for (const key of APP_ACTION_KEYS) {
-        const objectLiteralKey = new RegExp(`${key}(?::|\\s*[,}])`).test(appTsSrc)
-        const propertyAssignment = new RegExp(`window\\.__APP_ACTIONS__\\.${key}\\s*=`).test(appTsSrc)
-        assert(objectLiteralKey || propertyAssignment, `__APP_ACTIONS__ should contain key: ${key}`)
+        const objectLiteralKey = new RegExp(`\\b${key}\\s*:`).test(windowActionsSrc)
+        assert(objectLiteralKey, `__APP_ACTIONS__ should contain key: ${key}`)
     }
     assert(
-        /setTrailFromSeed/.test(appTsSrc),
+        /setTrailFromSeed/.test(windowActionsSrc),
         '__APP_ACTIONS__.setTrailFromSeed should bind to setTrailFromSeed (direct or wrapped)'
     )
     console.log('  PASS — __APP_ACTIONS__ namespace verified')

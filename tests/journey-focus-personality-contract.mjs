@@ -1,5 +1,12 @@
 'use strict';
 
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const FOCUS_POCKET_PATH = path.join(__dirname, '..', 'src', 'lib', 'journey', 'focus-pocket.ts')
+
 function assert(condition, message) {
   if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
 }
@@ -74,7 +81,13 @@ try {
   assert(dense.type === 'DENSE_HUB', `dense semantic neighborhood should select DENSE_HUB, got ${dense.type}`);
   assert(dense.cameraArc === 'wide', 'DENSE_HUB should use wide camera arc');
   assert(dense.compressionMult === 0.82, 'DENSE_HUB compression multiplier should be stable');
-  assert(state.recentArrangements.at(-1) === 'DENSE_HUB', 'selected personality should be recorded');
+  // getNeighborhoodPersonality is pure: recording recent arrangements is owned
+  // by applyLocalNeighborhoodFocus (focus-pocket.ts), which sets
+  // navState.currentPersonality and pushes to appState.recentArrangements.
+  assert(
+    state.recentArrangements.length === 0,
+    'getNeighborhoodPersonality must not record — recording is owned by applyLocalNeighborhoodFocus'
+  );
 
   seedSemanticNeighbors(9, 0.9);
   state.trailDepth = 0;
@@ -82,7 +95,10 @@ try {
   const guarded = getNeighborhoodPersonality(0);
   assert(guarded.type === 'BRIDGE_NODE', `repetition guard should skip repeated DENSE_HUB, got ${guarded.type}`);
   assert(guarded.motifOverride === 'lattice', 'BRIDGE_NODE motif override should stay lattice');
-  assert(state.recentArrangements.at(-1) === 'BRIDGE_NODE', 'fallback selected personality should be recorded');
+  assert(
+    state.recentArrangements.length === 3,
+    'getNeighborhoodPersonality must not record — repetition history is read-only input'
+  );
 
   seedSemanticNeighbors(2, 0.72);
   state.trailDepth = 0;
@@ -106,6 +122,26 @@ try {
   state.pointIndexByLeadId = original.pointIndexByLeadId;
   state.recentArrangements = original.recentArrangements;
   state.trailDepth = original.trailDepth;
+}
+
+// Recording ownership: getNeighborhoodPersonality is pure — the selection
+// recording invariant lives in applyLocalNeighborhoodFocus (focus-pocket.ts),
+// which sets navState.currentPersonality and pushes into recentArrangements.
+// Source-scan guards the split so the invariant stays covered even though the
+// pure function under test no longer records.
+{
+  const focusPocketSrc = fs.readFileSync(FOCUS_POCKET_PATH, 'utf8')
+  const applyFocusMatch = focusPocketSrc.match(/export function applyLocalNeighborhoodFocus[\s\S]*?\n}/)
+  assert(applyFocusMatch, 'applyLocalNeighborhoodFocus body found in focus-pocket.ts')
+  const applyBody = applyFocusMatch[0]
+  assert(
+    /navState\.currentPersonality = personality\.type/.test(applyBody),
+    'applyLocalNeighborhoodFocus must set navState.currentPersonality from the selected personality'
+  )
+  assert(
+    /recentArrangements[\s\S]*?\.push\(personality\.type\)/.test(applyBody),
+    'applyLocalNeighborhoodFocus must record the selected personality into recentArrangements'
+  )
 }
 
 console.log('PASS journey-focus-personality-contract');

@@ -137,15 +137,33 @@ function testNoRethrowOnClipboardFailure() {
 // ---------------------------------------------------------------------------
 
 function testShareButtonLabelReset() {
-    console.log('\n[TEST] view-bindings.js resets share button label on copy success')
+    console.log('\n[TEST] share feedback is toast-based — DOM aria-label reset de-windowed')
 
     const EVB_PATH = resolve(CWD, 'src/lib/ui/view-bindings.ts')
     const evbSrc = readFileSync(EVB_PATH, 'utf-8')
 
-    assertContains(
+    // The DOM-direct aria-label mutation was retired (de-windowing): view-bindings
+    // no longer pokes the share button label after a copy. Visible feedback now
+    // flows through the toast system instead.
+    assertNotContains(
         evbSrc,
-        "btn.setAttribute('aria-label', 'Link copied to clipboard')",
-        'view-bindings sets aria-label to Link copied to clipboard on success'
+        "setAttribute('aria-label', 'Link copied'",
+        'view-bindings no longer mutates share button aria-label directly'
+    )
+
+    // Share surfaces still give the user visible success feedback via toasts.
+    const CONTROLS_PATH = resolve(CWD, 'src/components/Controls.svelte')
+    const controlsSrc = readFileSync(CONTROLS_PATH, 'utf-8')
+
+    assertContains(
+        controlsSrc,
+        "showToast('Link copied'",
+        'Controls.svelte share flow shows Link copied toast'
+    )
+    assertContains(
+        controlsSrc,
+        'aria-label="Share link"',
+        'Controls.svelte share button keeps a static accessible label'
     )
 }
 

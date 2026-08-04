@@ -88,20 +88,34 @@ test('demoFocusSetup exists and is called from timed phase timers', () => {
 test('demoReset resets selectedPoint, derived focus index, navState.mode, and trail/walk fields', () => {
     const body = funcBodies.demoReset
     assert(body, 'demoReset body must exist')
-    assert(/\bselectedPoint\s*=\s*null\b/.test(body), 'demoReset must reset selectedPoint = null')
+    // demoReset routes the selection clear through the owner API
+    // (updateSelectedBusiness(null)) rather than writing selectedPoint directly.
+    assert(
+        /updateSelectedBusiness\s*\(\s*null\s*\)|\bselectedPoint\s*=\s*null\b/.test(body),
+        'demoReset must clear the selection (updateSelectedBusiness(null) or selectedPoint = null)'
+    )
     assert(/\bmode\s*:\s*['"]overview['"]/.test(body), 'demoReset must set mode = "overview"')
     assert(/\bfocusedIndex\s*:\s*null\b/.test(body), 'demoReset must reset focusedIndex = null')
     assert(/\bwalkHistoryIndices\s*:\s*\[\]/.test(body), 'demoReset must reset walkHistoryIndices = []')
     assert(/\btrailCursor\s*:\s*-1\b/.test(body), 'demoReset must reset trailCursor = -1')
     assert(/\bfocusCameraAssistActive\s*=\s*false\b/.test(body), 'demoReset must reset focusCameraAssistActive = false')
-    assert(/\bfocusTransitionMode\s*=\s*['"]idle['"]/.test(body), 'demoReset must reset focusTransitionMode = "idle"')
+    // demoReset routes the transition-mode reset through the setFocusTransitionMode helper.
+    assert(
+        /setFocusTransitionMode\s*\(\s*['"]idle['"]\s*\)|\bfocusTransitionMode\s*=\s*['"]idle['"]/.test(body),
+        'demoReset must reset focusTransitionMode to "idle" (setter or direct write)'
+    )
 })
 
 // --- Contract 4: demoFocusSetup sets focusedNode, selectedPoint, navState fields ---
 test('demoFocusSetup sets selectedPoint, derived focus index, navState.mode, focusedIndex, walkHistoryIndices', () => {
     const body = funcBodies.demoFocusSetup
     assert(body, 'demoFocusSetup body must exist')
-    assert(/\bselectedPoint\s*=\s*point\b/.test(body), 'demoFocusSetup must set selectedPoint = point')
+    // demoFocusSetup routes the selection through the owner API
+    // (updateSelectedBusiness(point)) rather than writing selectedPoint directly.
+    assert(
+        /updateSelectedBusiness\s*\(\s*point\b|\bselectedPoint\s*=\s*point\b/.test(body),
+        'demoFocusSetup must set the selection (updateSelectedBusiness(point) or selectedPoint = point)'
+    )
     assert(/\bmode\s*:\s*['"]focus['"]/.test(body), 'demoFocusSetup must set mode = "focus"')
     assert(/\bfocusedIndex\s*:\s*demoNode\b/.test(body), 'demoFocusSetup must set focusedIndex = demoNode')
     assert(

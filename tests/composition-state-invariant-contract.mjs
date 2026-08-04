@@ -210,9 +210,10 @@ function ds(k) {
 }
 function syncStoresFromState() {
     const searchInput = elementsById.get('search-input')
-    const query = String(state.currentSearchSummary?.query ?? searchInput?.value ?? '')
-    const hasSearchIntent = !!state.currentSearchSummary || query.trim().length >= 2
-    const hasFocus = state.navState.focusedIndex != null || state.focusedNode != null || state.selectedPoint != null
+    const query = String(state.searchState.currentSearchSummary?.query ?? searchInput?.value ?? '')
+    const hasSearchIntent = !!state.searchState.currentSearchSummary || query.trim().length >= 2
+    const hasFocus =
+        state.navState.focusedIndex != null || state.focusedNode != null || state.focusState.selectedPoint != null
     const activeView = state.currentView || 'galaxy'
     const semanticDiveActive = activeView === 'galaxy' && hasFocus && state.semanticDiveMode === true
 
@@ -240,8 +241,8 @@ function syncStoresFromState() {
     })
     setJourneyTrailDepth(state.trailDepth)
 
-    if (state.currentSearchSummary) {
-        setSearchSummary({ query, ...state.currentSearchSummary })
+    if (state.searchState.currentSearchSummary) {
+        setSearchSummary({ query, ...state.searchState.currentSearchSummary })
     } else {
         setSearchSummary(null)
     }
@@ -276,7 +277,7 @@ function resetState() {
     withStateMutation(() => {
         state.currentView = 'galaxy'
         state.focusedNode = null
-        state.selectedPoint = null
+        state.focusState.selectedPoint = null
         state.navState.focusedIndex = null
         state.navState.mode = 'overview'
         state.navState.trailCursor = -1
@@ -286,7 +287,7 @@ function resetState() {
         state.navState.threadCandidates = []
         state.trailDepth = 0
         state.semanticDiveMode = false
-        state.currentSearchSummary = null
+        state.searchState.currentSearchSummary = null
         state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false }
     })
     updateNavState({
@@ -316,7 +317,7 @@ function resetState() {
 // Convenience: set hasFocus via selectedPoint (most common real-world path)
 function setFocusViaSelectedPoint(index) {
     const p = state.points?.[index] ?? { lead_id: `fake-${index}`, name: `Biz ${index}`, cluster: 1 }
-    state.selectedPoint = p
+    state.focusState.selectedPoint = p
     state.focusedNode = index
     state.navState.focusedIndex = index
     updateNavState({ focusedIndex: index })
@@ -346,7 +347,7 @@ function setTrailDepthOnAll(depth) {
 // Convenience: set hasSearchIntent
 function setSearchIntent(query = 'coffee') {
     const sum = { query, visibleMatches: 5 }
-    state.currentSearchSummary = sum
+    state.searchState.currentSearchSummary = sum
     setSearchSummary(sum)
     const input = new FakeElement('input')
     input.value = query
@@ -413,7 +414,7 @@ console.log('  PASS: hasFocus=false forces semanticDive=inactive and panelSurfac
 console.log('[TEST] 1D — valid: semanticDiveMode + focusedNode only (no selectedPoint)')
 resetState()
 state.focusedNode = 7
-state.selectedPoint = null
+state.focusState.selectedPoint = null
 // Update nav store and trail depth
 updateNavState({ focusedIndex: 7 })
 setTrailDepthOnAll(2)
@@ -444,11 +445,11 @@ resetStateBeforeUrlRestore({ clearSearchInput: true })
 commit()
 
 assertEq(state.focusedNode, null, '2A: focusedNode is null after reset')
-assertEq(state.selectedPoint, null, '2A: selectedPoint is null after reset')
+assertEq(state.focusState.selectedPoint, null, '2A: selectedPoint is null after reset')
 assertEq(state.navState.focusedIndex, null, '2A: focusedIndex is null after reset')
 assertEq(state.trailDepth, 0, '2A: trailDepth is 0 after reset')
 assertEq(state.semanticDiveMode, false, '2A: semanticDiveMode is false after reset')
-assertEq(state.currentSearchSummary, null, '2A: currentSearchSummary is null after reset')
+assertEq(state.searchState.currentSearchSummary, null, '2A: currentSearchSummary is null after reset')
 assertEq(ds('panelSurface'), 'idle', '2A: panelSurface is idle after reset')
 assertEq(ds('semanticDive'), 'inactive', '2A: semanticDive is inactive after reset')
 assertEq(ds('graphContext'), 'idle', '2A: graphContext is idle after reset')
@@ -467,7 +468,7 @@ resetStateBeforeUrlRestore({ clearSearchInput: true })
 commit()
 
 assertEq(state.focusedNode, null, '2B: focusedNode is null after reset')
-assertEq(state.selectedPoint, null, '2B: selectedPoint is null after reset')
+assertEq(state.focusState.selectedPoint, null, '2B: selectedPoint is null after reset')
 assertEq(ds('panelSurface'), 'idle', '2B: panelSurface is idle after reset')
 assertEq(ds('graphContext'), 'idle', '2B: graphContext is idle after reset')
 console.log('  PASS: focus-only reset clears focus tuple and returns idle\n')
@@ -516,7 +517,7 @@ console.log('[TEST] 3B — map view with focus but no search')
 resetState()
 setCurrentViewForTest('map')
 setFocusViaSelectedPoint(5)
-state.currentSearchSummary = null
+state.searchState.currentSearchSummary = null
 setSearchSummary(null)
 elementsById.delete('search-input')
 commit()
@@ -587,7 +588,7 @@ console.log('  PASS: search-only resolves correctly\n')
 console.log('[TEST] 4C — focus-only (no search) resolves to focus')
 resetState()
 setFocusViaSelectedPoint(7)
-state.currentSearchSummary = null
+state.searchState.currentSearchSummary = null
 elementsById.delete('search-input')
 commit()
 

@@ -47,7 +47,7 @@ export function resolveSource(legacyPath, root) {
             app: 'src/lib/orchestration/app-init.ts',
             'journey-compass-controller': 'src/lib/orchestration/compass-controller.ts',
             'lifecycle-search-sync': 'src/lib/stores/lifecycle.ts',
-            'thread-inspector': 'src/lib/journey/thread-inspector.ts',
+            'thread-inspector': 'src/lib/journey/thread-inspector-state.ts',
             'journey-thread-model': 'src/lib/journey/thread-model.ts',
             'mycelium-engine': 'src/lib/engine/three-engine-mycelium.ts',
             'keyboard-help': 'src/lib/keyboard/keyboard-help.ts',

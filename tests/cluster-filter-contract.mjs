@@ -21,6 +21,7 @@ const CLUSTER_FILTER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/filter.svelt
 const CLUSTER_FILTER_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/cluster-filter-controller.ts');
 const SEARCH_FILTER_CORE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/search-filter-core.ts');
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/lifecycle.ts');
+const URL_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/url-state.ts');
 
 function readSliced(paths) {
     return paths.map((p) => {
@@ -134,12 +135,15 @@ function testLifecycleDelegation() {
     // `./cluster-filter-controller.ts` / `@lib/orchestration/cluster-filter-controller`.
     // Also accept that the references may live in any lifecycle-related file
     // (orchestration/lifecycle.ts, stores/lifecycle.ts, adapters-bridge.ts,
-    // etc.) since the TS migration split binding sites from lifecycle.ts proper.
+    // url-state.ts, search-filter-core.ts, etc.) since the TS migration split
+    // binding sites from lifecycle.ts proper.
     const lifecycleUnionSrc = readSliced([
         LIFECYCLE_PATH,
         path.join(SEMDEMO_ROOT, 'src/lib/stores/lifecycle.ts'),
         path.join(SEMDEMO_ROOT, 'src/lib/engine/adapters-bridge.ts'),
         path.join(SEMDEMO_ROOT, 'src/lib/orchestration/cluster-filter-controller.ts'),
+        URL_STATE_PATH,
+        SEARCH_FILTER_CORE_PATH
     ]);
     assert(
         /(?:from\s+['"][^'"]*cluster-filter-controller(?:\.ts)?['"])/.test(lifecycleUnionSrc) ||
