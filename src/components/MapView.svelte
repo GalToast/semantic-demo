@@ -254,6 +254,26 @@
       _registry.disposeAll();
     };
   });
+
+  // M16 companion: the URL / deep-link path flips appState.currentView to
+  // 'map' AFTER MapView has already mounted eagerly — App.svelte renders
+  // MapView under __PLAYWRIGHT__ even when the view is still 'galaxy' so
+  // #map-container exists for contract tests, and the M16 dormant bail above
+  // defers activation for that early mount. onMount alone would never catch
+  // the later flip (same component instance stays mounted: the lazy
+  // mapViewLazy.ensure(mapModeActive) effect only loads the chunk, it does
+  // not remount). Real user clicks avoid the hole because they remount via
+  // the view switch; only the URL-driven flip lands here. Watching currentView
+  // re-activates the shared controller exactly once — the status === 'loading'
+  // guard skips when an activation is already in flight, and appState.map
+  // being set means initMap already ran (idempotent second call is a no-op).
+  $effect(() => {
+    if (!mounted) return
+    if (appState.currentView !== 'map') return
+    if (appState.map) return
+    if (status === 'loading') return
+    void activateLeafletMap()
+  })
 </script>
 
 <section
