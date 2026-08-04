@@ -31,6 +31,7 @@ const cliArgs = process.argv.slice(2).filter((arg) => arg !== '--')
 const headed =
     !cliArgs.includes('--headless') && process.env.PW_HEADLESS !== '1' && process.env.PLAYWRIGHT_HEADLESS !== '1'
 const requireWebgl = headed && process.env.ALLOW_WEBGL_FALLBACK !== '1'
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 const launchOptions = {
     headless: !headed,
     args: headed
@@ -38,9 +39,20 @@ const launchOptions = {
               '--ignore-gpu-blocklist',
               '--use-gl=angle',
               '--enable-webgl',
-              ...(process.platform === 'win32' && process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : [])
+              ...(process.platform === 'win32' && process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : []),
+              ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])
           ]
-        : []
+        : [
+              ...(forceSoftwareWebgl
+                  ? [
+                        '--ignore-gpu-blocklist',
+                        '--use-gl=angle',
+                        '--enable-webgl',
+                        '--enable-unsafe-swiftshader',
+                        '--enable-webgl-software-rendering'
+                    ]
+                  : [])
+          ]
 }
 function stableUrl(url) {
     const next = new URL(url)
