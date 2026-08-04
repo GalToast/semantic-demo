@@ -27,11 +27,19 @@ When a task arrives, run this loop on the main lane before touching anything:
 1. **Investigate** — read files, search for the relevant patterns, identify the seam. Use `rg` for text search, `ast-grep` for structural TypeScript/Svelte, `ctx_*` for output-heavy probes, `memory_search` for durable context. Note: parallel-session dirty files, recent commits touching the same surface, contract tests that will gate the work.
 2. **Plan** — design the solution in main-lane head. Identify scope, allowed files, no-revert boundaries, verification commands. Write the design to a `tmp/<topic>-<date>/worker-prompt.md` if it will be delegated.
 3. **Decompose** — split into sub-tasks. For each sub-task, ask: is this bigger than ~50 LOC of code or ~100 LOC of test, OR does it require more than one read cycle of investigation? If yes → delegate. If no → main-lane is faster. Don't ask permission, just decide.
-4. **Delegate** — `external_subagent_start` with `model: kilo/openrouter/owl-alpha` (primary) or `agnes-2.0-flash` (registered alt — bare ref, no provider prefix) or a free fallback. Provide: scope, allowed files, no-revert boundaries, expected evidence (diff + verification output + tmp/report.md), verification commands. `timeout_seconds: 900`. `mode: yolo`. `mcp_profile: subagent`. `owner_tag: kimi-main`. Acquire session lock if multi-commit.
+4. **Delegate** — call `external_subagent_free_models` first, then pass an exact provider-qualified `launch_ref` to `external_subagent_start`. Provide: scope, allowed files, no-revert boundaries, expected evidence (diff + verification output + tmp/report.md), verification commands. Worker timeouts have a 30-minute minimum (`timeout_seconds` values below 1800 are clamped). `mode: yolo`. `mcp_profile: subagent`. `owner_tag: kimi-main`. Acquire session lock if multi-commit. For progressive MCP research, also pass a scoped `mcp_config_path` containing only the needed server (for example websearch); after the broker refresh, Pi workers can discover `mcp__websearch__web_search` through `tool_search` without loading browser MCPs.
     - **Quick model lookup**: `node scripts/list-subagent-models.mjs` filters the live catalog to project-relevant refs.
     - **Steer tool**: `external_subagent_steer` requires `prompt_text` (not `message`).
 5. **Judge** — when the worker finishes, read `tmp/<topic>/report.md` + `git diff`. Score 1-10 against the brief. Look for: scope creep, broken types/tests, missing a11y, formatting drift, half-applied edits, parallel-session interference, missing evidence.
 6. **Polish** — if score <10, take over on the main lane and finish the gap. Examples: missing styles → add them; failing test → fix it; scope creep → revert and re-apply tightly; whitespace drift in unrelated files → revert that drift. If score =10, ship (commit + push).
+
+### Startup scope
+
+The external-subagent broker keeps a historical worker-root registry for recovery, but
+normal admission, polling, and current-launcher listing stay scoped to roots touched by
+the current broker. This avoids scanning old projects on every start. Use an explicit
+`out_dir` for a worker in another root, or enable `EXTERNAL_SUBAGENT_GLOBAL_ADMISSION=1`
+and `EXTERNAL_SUBAGENT_GLOBAL_WORKER_SCAN=1` only for cross-project audits.
 
 Discriminator for main-lane vs delegate: smaller tasks (single edit, single command, <50 LOC, scoped to 1-2 files) go main-lane because the delegation overhead (worker ramp-up, evidence roundtrip, judge step) costs more than the time saved. Everything else delegates.
 
@@ -83,57 +91,68 @@ Required for:
 
 Worker contract: workers doing UI work should capture a screenshot and include the path in `tmp/<topic>/report.md`. Main lane verifies by reading the image. If the screenshot is missing, the work is incomplete.
 
-## Vision Capability Matrix (set 2026-06-26, precisely scoped after user correction)
+## Vision Capability Matrix (empirically re-probed 2026-08-05, full-sweep replacement for the 2026-06-26 set)
 
-The original 400 error was `kimi-k2.7-code` via **freeinference.org** specifically. Do NOT generalize one provider's behavior to other providers or to the whole model family.
+**Method:** 670+ live probes on 2026-08-05 — deterministic red-circle PNG sent via direct OpenAI-compat chat calls through the key router (19 routes with live keys), then a 2× confirmation pass. Evidence: `tmp/vision-probe/` (sweep + gap + confirm result JSONs). A model only counts as STABLE vision if BOTH confirmation probes described the image.
 
-CONFIRMED NO VISION (precisely scoped, user-verified 2026-06-26):
+**Method limits (recorded honestly):** the family-name greps used to build the sweep (`/gemini|grok|kimi|minimax|mimo|vision|vl|vlm|llava|phi-3|internvl|glm-4|glm-5|omni|nova|ernie|qwen.*vl|gemma|step|mistral-medium|nemotron|agnes-image|image/i`) did NOT include claude/gpt-5/gpt-4o/o3/o4 — a second frontier wave (2026-08-05) probed those separately. Routes whose /models endpoint lists nothing (freemodel) or is Google-native (gemini) were probed by direct id. Any catalog entry not probed through one of those three paths is explicitly NOT covered.
 
-- `kimi-k2.7-code` via `freeinference.org` ✗ (returns 400 on image input)
+**STABLE VISION — verified 2× each on 2026-08-05 (use these for UI/visual work):**
 
-CONFIRMED HAS VISION (user-verified 2026-06-26):
+Free/cheap routes first:
 
-- `kimi-k2.6` (provider not specified — has vision)
-- `agnes-2.0-flash` ✓
-- `mimo-v2.5` ✓
-- `MiniMax-M3` (main lane — this model) ✓
-- `google/gemini-*` (2.5-flash/pro, 3-flash, 3.5-flash) ✓
-- `google/models/gemini-*` (direct Google API) ✓
-- `google/models/aqa` (visual QA tuned) ✓
-- `anthropic/claude-3-7-ch-exp`, `claude-opus-4-7` ✓
-- `openai/gpt-5.5`, `gpt-5.5-pro`, `gpt-5.4`, `gpt-5.3-codex` ✓
-- `meta/llama-3.2-90b-vision-instruct`, `llama-3.2-11b-vision-instruct` ✓
-- `google/gemma-3-4b-it`, `gemma-3-12b-it`, `gemma-3-27b-it` ✓
+- `zenmux/stepfun/step-3.7-flash` — free, ~4-17s, excellent
+- `zenmux/sapiens-ai/agnes-2.0-flash` — free, ~9s
+- `zenmux/z-ai/glm-4.6v-flash-free` — free (the ONLY glm-v that sees images on our routes)
+- `agnes/agnes-2.5-flash` — free, ~8s
+- `cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct` — free, llama-4 native multimodal
+- `openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` — free
+- `openrouter/google/gemma-4-26b-a4b-it:free` — free
+- `zen/mimo-v2.5-free` — free (opencode-zen route; works even though other zen models are billing-blocked)
+- `groq/qwen/qwen3.6-27b` — free
+- `llm7/gemini-3.1-flash-lite` — free
+- `kilo/stepfun/step-3.7-flash:free` — free
+- `mistral/mistral-medium` (+ all 7 dated variants incl. `mistral-medium-3.5`) — free tier
+- `modelscope/Qwen/Qwen3-VL-8B-Instruct` — free, ~2s
+- `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct` — free
+- `nvidia/minimaxai/minimax-m3` — slow (41-120s first call) but stable; still the best-reasoning vision default
+- `nvidia/meta/llama-3.2-90b-vision-instruct` — ~4-5s
+- `zydit/meta/llama-3.2-90b-vision-instruct`, `zydit/stepfun-ai/step-3.7-flash`
 
-UNVERIFIED — default to UNVERIFIED, not text-only, until empirically tested:
+**REJECTED — actually no vision on our routes (probe said "VISION UNAVAILABLE" / empty / no image endpoints):**
 
-- `kimi-k2.7-code` via other providers (neuralwatt, moonshotai, zydit) — only freeinference.org was tested
-- `kimi-k2.5` (any provider)
-- `owl-alpha` (openrouter stealth — unknown)
-- `deepseek-v4-flash`, `deepseek-v4-pro`
-- `qwen3-coder`, `qwen3.5+`, `qwen3.6-*`
-- `llama-3.1`, `llama-3.2-1b`, `llama-3.2-3b`
-- `mixtral`, `mistral-code-*`, `mistral-large`, `mistral-medium`
+- `openai/gpt-oss-20b`, `gpt-oss-120b` — text-only on nvidia/zydit; openrouter "no endpoints support image input"; llm7 explicitly rejects
+- GLM family (`z-ai/glm-4.5`, `4.5v`, `4.6`, `4.6v`, `5`, `5.1`, `5.2` on kilo/nvidia/neuralwatt/zenmux/openrouter) — "VISION UNAVAILABLE" or reasoning-only content. Exception: `zenmux/z-ai/glm-4.6v-flash-free` (above)
+- `agnes/agnes-2.5-pro` — thinking-only output, never describes pixels
+- `kilo/google/gemini-3.6-flash`, `kilo/google/gemini-2.5-pro` — flaky/negative (one sweep hit saw pixels, 2× confirmation says VISION UNAVAILABLE)
+- `cloudflare/@cf/google/gemma-4-26b-a4b-it` — flaky (1 vision hit, 2× confirmation thinking-only)
+- modelscope `OpenGVLab/InternVL3_5-241B-A28B`, `PaddlePaddle/ERNIE-4.5-VL-28B-A3B-PT`, `zai-org/GLM-4.7-Flash`, `stepfun-ai/Step-3.5-Flash`, `MiniMax/MiniMax-M1-80k` — empty output on image prompts (route defect)
+- `openrouter/nvidia/nemotron-nano-12b-v2-vl:free` — flaky
 
-LESSON: One provider's failure does NOT generalize to other providers of the same model. One model's failure does NOT generalize to its family. Default to UNVERIFIED when not directly tested. Don't over-correct from n=1 evidence.
+**Frontier families (claude / gpt-5 / gpt-4o / o3 / o4) — catalogued but ALL billing-blocked 2026-08-05, so no vision verdict possible today:**
+
+- claude (91 ids: kilo/openrouter/zenmux/llm7/zen/infron — opus-4.1..5, sonnet-4..5, haiku-4.5, fable-5), gpt-5 (132 ids incl. 5.6-luna/terra/sol, 5.5, 5.4), gpt-4o/4.1/o3/o4-mini (60 ids) — multimodal by design, but every live probe returned no-credit / insufficient-balance (kilo, openrouter, zenmux 402, zen CreditsError, llm7 insufficient quota, freemodel keys on cooldown). llm7 served `claude-sonnet-5`/`gpt-5.5` but explicitly "does not support vision input" (text-only endpoint). Once any of these lanes get credits, re-probe before trusting — the pair `docs/subagent-model-benchmarks.md` 2026-06-26 user-verified claude-opus-4-7 / gpt-5.5 as vision-capable upstream.
+- gemini route (direct Google API, native format): first probe "VISION UNAVAILABLE", then 429 credits-depleted — not a usable vision lane today despite "google/models/gemini-\*" in the old matrix.
+
+**Previously confirmed 2026-06-26 — now DEAD or unreachable (removed from active list):**
+
+- `kimi-k2.6` — 404 "Function not found" on kilo/openrouter/zenmux/nvidia; unavailable on cloudflare; logfare timeouts
+- `kimi-k3`, `grok-4.5`, `xiaomi/mimo-v2.5(-pro)` — paid-only (no-credit) or no image endpoints on every live route
+- `owl-alpha` — already dead (see lane inventory)
+
+**NEW LESSON (key-rotation flakiness):** the same route+model can return pixels on one call and "VISION UNAVAILABLE" on the next (observed: zenmux/gemini-3.5-flash vision at 12:19, no-vision at 12:25; kilo/gemini-3.6-flash the reverse). Routes round-robin multiple keys with different upstream image support. **Never trust a single probe — confirm with 2+ calls before using a lane for real visual work.**
+
+**Empirical probe rule (unchanged):** before claiming a model has or lacks vision, actually probe it with an image. Catalog name strings are NOT proof of capability (`gpt-oss` and `glm-4.6v` prove this both directions).
 
 ## Subagent Lane Inventory
 
 (from `model-providers.json` → `allowed_models`)
 
-**Vision-capable (use these for visual work AND for workers that need to see images):**
+**Vision-capable (empirically verified 2026-08-05 — see Vision Capability Matrix in `subagent-delegation.md`; use for visual work AND workers that need to see images):**
 
-- `MiniMax-M3` (main lane — always has vision)
-- `google/gemini-3-flash` (free, best default for visual work)
-- `google/gemini-3.5-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`
-- `google/models/gemini-2.5-flash`, `gemini-3-flash-preview`, `gemini-3-pro-preview` (direct Google API)
-- `google/models/aqa` (visual QA tuned)
-- `anthropic/claude-3-7-ch-exp`, `claude-opus-4-7`
-- `openai/gpt-5.5`, `gpt-5.5-pro`, `gpt-5.4`, `gpt-5.3-codex`
-- `meta/llama-3.2-90b-vision-instruct`, `llama-3.2-11b-vision-instruct`
-- `kimi-k2.6` (vision-capable — useful as worker when image input needed)
-- `agnes-2.0-flash` (vision-capable — useful as worker when image input needed)
-- `mimo-v2.5` (vision-capable — useful as worker when image input needed)
+- Free: `zenmux/stepfun/step-3.7-flash`, `zenmux/sapiens-ai/agnes-2.0-flash`, `zenmux/z-ai/glm-4.6v-flash-free`, `agnes/agnes-2.5-flash`, `cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct`, `openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`, `openrouter/google/gemma-4-26b-a4b-it:free`, `zen/mimo-v2.5-free`, `groq/qwen/qwen3.6-27b`, `llm7/gemini-3.1-flash-lite`, `kilo/stepfun/step-3.7-flash:free`, `mistral/mistral-medium(-3.5)`, `modelscope/Qwen/Qwen3-VL-8B-Instruct`, `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct`
+- Slow/paid but stable: `nvidia/minimaxai/minimax-m3` (best-reasoning vision default), `nvidia/meta/llama-3.2-90b-vision-instruct`, `zydit/meta/llama-3.2-90b-vision-instruct`, `zydit/stepfun-ai/step-3.7-flash`
+- DEAD as of 2026-08-05: `kimi-k2.6` (404 everywhere), `owl-alpha`, `gpt-oss-*` (no image endpoints), GLM-v family except zenmux `glm-4.6v-flash-free`
 
 **Text/code work (vision status unverified or known text-only — fine for non-visual tasks):**
 

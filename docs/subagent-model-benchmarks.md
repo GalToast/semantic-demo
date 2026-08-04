@@ -11,6 +11,77 @@ Live tracker of which provider/model routes work reliably for subagent coding ta
     - ⚠️ Conditional — works for some tasks or intermittently; know the caveats.
     - ❌ Avoid — repeated failures in this repo right now.
 
+## Vision Capability Sweep — 2026-08-05 (W58 catalogue refresh)
+
+670+ empirical probes over 20 routes with a deterministic red-circle PNG (direct OpenAI-compat chat calls through the key router), then a 2× confirmation pass. **19 STABLE vision lanes** confirmed; full table + rejections + dead routes in `docs/subagent-delegation.md` Vision Capability Matrix. Evidence: `tmp/vision-probe/*.json` (sweep-all 633, gap 38, ambiguous 27, confirm 28×2).
+
+Key findings:
+
+- **New stable free vision lanes:** `zenmux/stepfun/step-3.7-flash`, `zenmux/sapiens-ai/agnes-2.0-flash`, `zenmux/z-ai/glm-4.6v-flash-free`, `agnes/agnes-2.5-flash`, `cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct`, `openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`, `openrouter/google/gemma-4-26b-a4b-it:free`, `zen/mimo-v2.5-free`, `groq/qwen/qwen3.6-27b`, `llm7/gemini-3.1-flash-lite`, `kilo/stepfun/step-3.7-flash:free`, `mistral/mistral-medium`, `modelscope/Qwen/Qwen3-VL-8B-Instruct`, `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct`.
+- **Stable slow/paid:** `nvidia/minimaxai/minimax-m3` (41-120s, still best-reasoning default), `nvidia/zydit` `meta/llama-3.2-90b-vision-instruct`, `zydit/stepfun-ai/step-3.7-flash`.
+- **Name-claim failures:** `openai/gpt-oss-20b/120b` text-only everywhere; GLM family (except zenmux `glm-4.6v-flash-free`) "VISION UNAVAILABLE"; `agnes/agnes-2.5-pro` thinking-only; modelscope InternVL3_5/ERNIE-4.5-VL/GLM-4.7/Step-3.5/MiniMax-M1 empty output.
+- **Dead since 2026-06-26 matrix:** `kimi-k2.6` (404 on kilo/openrouter/zenmux/nvidia), `grok-4.5`/`mimo-v2.5-pro` (paid-only), `owl-alpha` (already dead).
+- **Key-rotation flakiness:** same route+model flipped vision↔no-vision between calls (zenmux/gemini-3.5-flash, kilo/gemini-3.6-flash). Single probes are NOT trustworthy; always 2×-confirm.
+
+## Machine-Readable Registry (2026-08-04)
+
+The current normalized vendor evidence lives in [`subagent-model-benchmarks.json`](subagent-model-benchmarks.json). The external-subagents MCP loads that file from the active workspace and exposes a compact `benchmark_registry` summary in `external_subagent_free_models`; pass `rank: true` for route-qualified rankings.
+
+This registry deliberately keeps three facts separate:
+
+1. **Model evidence** — vendor or benchmark-author scores, with source, date, harness, and reasoning configuration.
+2. **Route identity** — the exact provider-qualified launch ref and the checkpoint/alias caveat.
+3. **Local dispatch evidence** — repo-specific smoke/subagent outcomes, which are still recorded in this historical Markdown log until promoted into route rows.
+
+### Current vendor snapshot
+
+These are not a single universal leaderboard. The harness and effort settings differ, so the MCP reports the source context and ranks only comparable rows. The official Kimi K3 table reports `Terminal-Bench 2.1 88.3`, `DeepSWE 67.5`, and `ProgramBench 77.8` at max reasoning with the Kimi Code harness. The official GLM-5.2 table reports `Terminal-Bench 2.1 81.0`, `SWE-bench Pro 62.1`, and `DeepSWE 46.2`. DeepSeek's 2026-07-31 API update reports the V4-Flash 0731 code-agent results separately: `Terminal Bench 2.1 82.7`, `DeepSWE 54.4`, and `NL2Repo 54.2` using its minimal harness at max effort. Poolside's official Laguna S 2.1 checkpoint card reports `Terminal-Bench 2.1 70.2`, `SWE-Bench Pro 59.4`, `DeepSWE 40.4`, `SWE-bench Multilingual 78.5`, `SWE Atlas 46.2`, and `Toolathlon Verified 49.7` as of 2026-07-21. Those Laguna values use Poolside's Harbor-derived setup and are not directly interchangeable with the other harnesses.
+
+### Dimension-Level Evidence
+
+The registry now retains individual benchmark rows and exposes task profiles for `coding_agent`, `reasoning`, `tool_use`, `browser`, and `vision`. Use `external_subagent_free_models({ rank: true, task_profile: "vision" })` to rank only routes with matching vision evidence; a missing score is intentionally different from a zero.
+
+| Family | Official model-level vision evidence | Current interpretation |
+| --- | --- | --- |
+| Kimi K3 | `WorldVQA 51.0`, `OmniDocBench 91.1`, `PerceptionBench 58.5`, `Video-MME 90.0`, `MMVU 82.1`, `BabyVision 85.7`, `MMMU-Pro 81.6/83.4`, `CharXiv 84.8/91.3` | Confirmed native multimodal; strongest documented vision profile in this registry. |
+| DeepSeek V4 Flash 0731 | No tracked official vision rows or image-input contract | Not evaluated; provider-route probes must remain separate. |
+| GLM 5.2 | No tracked official GLM-5.2 vision rows | Not evaluated; GLM-V aliases are separate models/routes. |
+| Laguna S 2.1 | Official checkpoint declares `text-to-text`; no vision rows | Text-only at the model-card level. |
+
+The `MMMU-Pro` and `CharXiv` pairs preserve the vendor's no-tool/tool-augmented variants rather than collapsing them into an unlabeled average. These scores are model evidence, not a claim that every configured provider route accepts images.
+
+### Coverage Boundary — 2026-08-04
+
+The registry is **not** a benchmark for every live provider route. The live free catalog reports 1,148 route candidates, while the normalized registry covers four model families and 15 documented route rows. Provider duplicates are routes, not new model families; embeddings, vision-only, safety, OCR, audio, and translation endpoints are not comparable coding-agent benchmark targets. The next expansion should add model families only when a primary benchmark source and checkpoint identity are available, then measure route health separately with bounded local probes.
+
+### Live Catalog Snapshot — 2026-08-04
+
+This is a launchability snapshot, not a quality ranking. Counts come from `external_subagent_free_models({ compact: false, free_only: true })`; the free-ref column is the provider's reported launchable-free set and can include non-coding endpoints.
+
+| Provider | Catalog models | Free refs | Catalog status |
+| --- | ---: | ---: | --- |
+| opencode-zen | 60 | 6 | 200 |
+| nvidia | 102 | 102 | 200 |
+| mistral | 53 | 53 | 200 |
+| modelscope | 41 | 41 | 200 |
+| kilo | 347 | 12 | 200 |
+| freemodel | 0 | 0 | 429 |
+| logfare | 11 | 11 | 200 |
+| poolside | 2 | 0 | 200 |
+| zydit | 103 | 103 | 200 |
+| zydit-v4 | 36 | 36 | 200 |
+| openprovider | 0 | 0 | 502 |
+| cloudflare | 16 | 16 | 200 |
+| zenmux | 150 | 150 | 200 |
+| groq | 15 | 0 | 200 |
+| novita | 145 | 145 | 200 |
+| infron | 458 | 458 | 200 |
+| openrouter | 338 | 15 | 200 |
+
+The catalog contains duplicate provider routes and specialized endpoints, so these rows must not be summed into a model-quality leaderboard. The next practical benchmark wave is a deduplicated text/coding subset, with one route-health probe per provider family and public benchmark evidence attached only where the checkpoint is identified.
+
+The current live catalog is authoritative for whether a provider route is presently launchable. A strong vendor score never overrides a dead, rate-limited, schema-incompatible, or checkpoint-ambiguous route.
+
 ## Free / Shadow Routes
 
 | Provider                 | Model                           | Smoke     | Subagent                                  | Rating         | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -303,7 +374,7 @@ Tactics retested: (a) `external_subagent_followup` on stalled-deep-work to recov
 | Followup-recover stalled                        | W4c Svelte-5 snapshot/gate footguns | ✅ completed in ~4 min from followup dispatch (118 new output tokens, $0) → 13.3 KB report | **GOOSE-UNLOCK MECHANISM WORKS** for stalled `agnes` deep-work: `external_subagent_followup({worker_id})` resumes via the recorded `session_id` and finishes only the write step.                               |
 | Followup-retry on transient `Connection error.` | W3c lifecycle                       | ✅ completed in ~2.3 min from re-dispatch → 9.6 KB report                                  | Re-followup on the same `worker_id` (same `session_id`) recovers from transient route blips fast. ⚠️ BUT the W3c resulting report's #1 finding was a fabricated false-positive (see 2nd caveat + ledger below). |
 
-**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: *"Reading it inside $derived registers reactivity directly — no mirror needed."*
+**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: _"Reading it inside $derived registers reactivity directly — no mirror needed."_
 
 Report honest-stamped 4/10 + caution footer in `tmp/bugsweep-2026-07-24/worker4-reactivity-footguns-report.md`; do NOT action the 9 findings.
 
@@ -1117,7 +1188,7 @@ Four workers dispatched in parallel on an identical scope (WeatherWidget + Compa
 
 ### Round 2 takeaway
 
-No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably *read + analyze* but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
+No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably _read + analyze_ but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
 
 Two tool-quirks persisted to `failures.md`:
 
@@ -1508,21 +1579,21 @@ Full report: `reports/visual-audit-continued-2026-07-28.md` § "Root-Cause Findi
 
 **Verdict: TIE on vision quality; minimax-m3 nvidia is the better default.** Both saw the pixels and independently confirmed BOTH W56 fixes (map-mode subtitle leak hidden; scrollbar native→styled teal) with pixel-accurate detail.
 
-| Metric | inkling (nvidia) | minimax-m3 (nvidia) |
-|---|---|---|
-| Vision works | ✅ | ✅ |
-| supportsVision flag | true (added) | true (already) |
-| contextWindow | 256K | 1M |
-| Wall-clock | ~4.4 min | ~5.5 min |
-| Connection errors | **5** (silent retry loop, ~2.5 min lost) | 0 |
-| thinking deltas | 10 | 414 (deep reasoning) |
-| Cache hit | 17,792 cacheRead (warm) | 128 (cold) |
-| Cost | $0.006 | **$0 (free)** |
-| Specificity | "arrow buttons" on native scrollbar | "~14px wide" measurement |
+| Metric              | inkling (nvidia)                         | minimax-m3 (nvidia)      |
+| ------------------- | ---------------------------------------- | ------------------------ |
+| Vision works        | ✅                                       | ✅                       |
+| supportsVision flag | true (added)                             | true (already)           |
+| contextWindow       | 256K                                     | 1M                       |
+| Wall-clock          | ~4.4 min                                 | ~5.5 min                 |
+| Connection errors   | **5** (silent retry loop, ~2.5 min lost) | 0                        |
+| thinking deltas     | 10                                       | 414 (deep reasoning)     |
+| Cache hit           | 17,792 cacheRead (warm)                  | 128 (cold)               |
+| Cost                | $0.006                                   | **$0 (free)**            |
+| Specificity         | "arrow buttons" on native scrollbar      | "~14px wide" measurement |
 
 **Pick**: `nvidia/minimaxai/minimax-m3` — free, 1M ctx, explicit `supportsVision:true`, genuine deep reasoning (414 thinking deltas). inkling is a fine fallback but paid and hit a transient connection-error retry loop.
 
-**Is inkling slow?** The *model* isn't — once connected it produced 10 thinking deltas + verdict quickly. ~2.5 min of its 4.4 min wall-clock was a **silent connection-error retry loop** (5× `Connection error.` + `auto_retry_start attempt 1/10`) that the harness telemetry HID (see below). minimax-m3 nvidia's longer time was genuine deep reasoning (414 thinking deltas), not a stall.
+**Is inkling slow?** The _model_ isn't — once connected it produced 10 thinking deltas + verdict quickly. ~2.5 min of its 4.4 min wall-clock was a **silent connection-error retry loop** (5× `Connection error.` + `auto_retry_start attempt 1/10`) that the harness telemetry HID (see below). minimax-m3 nvidia's longer time was genuine deep reasoning (414 thinking deltas), not a stall.
 
 ### W56 harness telemetry gap — `external_subagent_poll` hides retry/error state
 

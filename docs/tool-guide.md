@@ -43,7 +43,7 @@ Invoke via `mcp { tool: "<owner>_<tool>", args: {...} }` (or use `mcp { server: 
 - `chrome-devtools` (29 tools).
 - `nvidia-capabilities` (19 tools).
 - `websearch` (5 tools).
-- `external_subagents` (51 tools) — subagent dispatch; every start returns `worker_id`, which `external_subagents_external_subagent_poll` / `external_subagents_external_subagent_steer` / `external_subagents_external_subagent_followup` then require.
+- `external_subagents` — subagent dispatch; every start returns `worker_id`, which `external_subagents_external_subagent_poll` / `external_subagents_external_subagent_steer` / `external_subagents_external_subagent_followup` then require. Model discovery and benchmark-aware ranking are consolidated in `external_subagents_external_subagent_free_models` (`rank: true`); there is no separate ranking tool.
 - Direct-from-lean pierce servers (also via `mcp`): `playwright` (23), `pi-context` (8).
 
 ## 3. Tool profile policy
@@ -146,7 +146,7 @@ For a custom scope, `claim_resource uri: "..."` (with `ttl` for expiry).
 - **Heartbeat is required** to remain visible. Stop heartbeating → peers see `stale: true` after 5 min. Treat going-online-without-heartbeat as _invisibility_.
 - **Task heartbeats ≠ agent heartbeats.** `heartbeat_agent` keeps you visible; `heartbeat_task` keeps only a _claimed_ task fresh (default 120 min).
 - **`external_subagents_*` `worker_id` is mandatory** for every post-start call (poll / steer / followup). Without it, "not-found".
-- **Workers don't inherit browser/MCP.** Dispatch with `mcp_profile: browser` AND consult the `subagent-mcp-browser-profile-fix` skill if MCP fails to surface — Pi-harness lean-startup strips MCP from workers by default.
+- **Workers don't inherit MCP automatically.** Ordinary Pi workers stay lean. For progressive disclosure, dispatch with an explicit scoped `mcp_config_path` and an MCP-enabled profile; the external-subagents broker must be current enough to load `pi-mcp-adapter` when a config is supplied. Use a websearch-only config for research so Chrome/Playwright do not start. `mcp_profile: browser` without a scoped config loads the full default MCP set and can trigger browser-server startup failures; verify `mcp__websearch__web_search` through `tool_search` before relying on it.
 - **`mcp` is the route to switchboard**, NOT `pi_tool`. Per AGENTS.md native-vs-MCP policy: allowlisted native tools go through `pi_tool`; MCP-hosted servers (switchboard, playwright, external_subagents, websearch, chrome-devtools, nvidia-capabilities) go through `mcp`.
 - **Don't kill broad `node` / Claude / Gemini / MCP / Pi process trees** — exact-PID stops only (AGENTS.md).
 - **Profile switch = cache miss.** Prefer `action=add tools:[...]` for one-tool needs.
