@@ -67,7 +67,14 @@
          trail" title behind the notch / status bar on phones with a
          safe-area-inset-top, clipping the kicker + title text. Offset by
          the safe-area inset so the cue clears the top-of-screen chrome. */
-      top: calc(1rem + max(0px, env(safe-area-inset-top, 0px)));
+      /* W58 mobile audit 2026-08-05: top:1rem left the cue (kicker y34-46,
+         title y50-63, stage y69-87, span x33-358) underneath the header
+         chrome — the JourneyCompass "Step Inside" chip (y18-62, right) and
+         the SemanticOverlay "Manifold" badge (y68-81, center) rendered
+         through the cue text (DOM-verified 12-54px overlaps, vision jury
+         flagged garbled header text on mobile search). Offset the cue below
+         the header zone (badge bottom ~81px) so it clears both. */
+      top: calc(5.5rem + max(0px, env(safe-area-inset-top, 0px)));
       bottom: auto;
     }
   }

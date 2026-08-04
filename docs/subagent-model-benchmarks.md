@@ -39,14 +39,14 @@ These are not a single universal leaderboard. The harness and effort settings di
 
 ### Dimension-Level Evidence
 
-The registry now retains individual benchmark rows and exposes task profiles for `coding_agent`, `reasoning`, `tool_use`, `browser`, and `vision`. Use `external_subagent_free_models({ rank: true, task_profile: "vision" })` to rank only routes with matching vision evidence; a missing score is intentionally different from a zero.
+The registry now retains individual benchmark rows and exposes task profiles for `coding_agent`, `reasoning`, `tool_use`, `browser`, and `vision`. Use `external_subagent_free_models({ rank: true, task_profile: "vision" })` to rank only routes with matching vision evidence; a missing score is intentionally different from a zero. Since 2026-08-04 the ranked output also carries a flat `capabilities` array per candidate (e.g. `["coding", "agentic", "vision"]`) plus a `capabilities: ...` line in `selection_reasons`, so vision-capable lanes are visible at a glance without parsing `capability_evidence`; the relaxed catalog (`rank: false`) stays a raw provider/model dump.
 
-| Family | Official model-level vision evidence | Current interpretation |
-| --- | --- | --- |
-| Kimi K3 | `WorldVQA 51.0`, `OmniDocBench 91.1`, `PerceptionBench 58.5`, `Video-MME 90.0`, `MMVU 82.1`, `BabyVision 85.7`, `MMMU-Pro 81.6/83.4`, `CharXiv 84.8/91.3` | Confirmed native multimodal; strongest documented vision profile in this registry. |
-| DeepSeek V4 Flash 0731 | No tracked official vision rows or image-input contract | Not evaluated; provider-route probes must remain separate. |
-| GLM 5.2 | No tracked official GLM-5.2 vision rows | Not evaluated; GLM-V aliases are separate models/routes. |
-| Laguna S 2.1 | Official checkpoint declares `text-to-text`; no vision rows | Text-only at the model-card level. |
+| Family                 | Official model-level vision evidence                                                                                                                      | Current interpretation                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Kimi K3                | `WorldVQA 51.0`, `OmniDocBench 91.1`, `PerceptionBench 58.5`, `Video-MME 90.0`, `MMVU 82.1`, `BabyVision 85.7`, `MMMU-Pro 81.6/83.4`, `CharXiv 84.8/91.3` | Confirmed native multimodal; strongest documented vision profile in this registry. |
+| DeepSeek V4 Flash 0731 | No tracked official vision rows or image-input contract                                                                                                   | Not evaluated; provider-route probes must remain separate.                         |
+| GLM 5.2                | No tracked official GLM-5.2 vision rows                                                                                                                   | Not evaluated; GLM-V aliases are separate models/routes.                           |
+| Laguna S 2.1           | Official checkpoint declares `text-to-text`; no vision rows                                                                                               | Text-only at the model-card level.                                                 |
 
 The `MMMU-Pro` and `CharXiv` pairs preserve the vendor's no-tool/tool-augmented variants rather than collapsing them into an unlabeled average. These scores are model evidence, not a claim that every configured provider route accepts images.
 
@@ -58,25 +58,25 @@ The registry is **not** a benchmark for every live provider route. The live free
 
 This is a launchability snapshot, not a quality ranking. Counts come from `external_subagent_free_models({ compact: false, free_only: true })`; the free-ref column is the provider's reported launchable-free set and can include non-coding endpoints.
 
-| Provider | Catalog models | Free refs | Catalog status |
-| --- | ---: | ---: | --- |
-| opencode-zen | 60 | 6 | 200 |
-| nvidia | 102 | 102 | 200 |
-| mistral | 53 | 53 | 200 |
-| modelscope | 41 | 41 | 200 |
-| kilo | 347 | 12 | 200 |
-| freemodel | 0 | 0 | 429 |
-| logfare | 11 | 11 | 200 |
-| poolside | 2 | 0 | 200 |
-| zydit | 103 | 103 | 200 |
-| zydit-v4 | 36 | 36 | 200 |
-| openprovider | 0 | 0 | 502 |
-| cloudflare | 16 | 16 | 200 |
-| zenmux | 150 | 150 | 200 |
-| groq | 15 | 0 | 200 |
-| novita | 145 | 145 | 200 |
-| infron | 458 | 458 | 200 |
-| openrouter | 338 | 15 | 200 |
+| Provider     | Catalog models | Free refs | Catalog status |
+| ------------ | -------------: | --------: | -------------- |
+| opencode-zen |             60 |         6 | 200            |
+| nvidia       |            102 |       102 | 200            |
+| mistral      |             53 |        53 | 200            |
+| modelscope   |             41 |        41 | 200            |
+| kilo         |            347 |        12 | 200            |
+| freemodel    |              0 |         0 | 429            |
+| logfare      |             11 |        11 | 200            |
+| poolside     |              2 |         0 | 200            |
+| zydit        |            103 |       103 | 200            |
+| zydit-v4     |             36 |        36 | 200            |
+| openprovider |              0 |         0 | 502            |
+| cloudflare   |             16 |        16 | 200            |
+| zenmux       |            150 |       150 | 200            |
+| groq         |             15 |         0 | 200            |
+| novita       |            145 |       145 | 200            |
+| infron       |            458 |       458 | 200            |
+| openrouter   |            338 |        15 | 200            |
 
 The catalog contains duplicate provider routes and specialized endpoints, so these rows must not be summed into a model-quality leaderboard. The next practical benchmark wave is a deduplicated text/coding subset, with one route-health probe per provider family and public benchmark evidence attached only where the checkpoint is identified.
 

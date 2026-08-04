@@ -1863,10 +1863,14 @@ async function enterMapViaVisibleControl(page) {
 }
 
 async function enterMapFocusSearchByRealRoute(page) {
-    await runVisibleSearch(page, 'coffee')
-    await clickVisibleFirstSearchResult(page)
-    await enterSemanticDiveViaVisibleControl(page)
-    await enterMapViaVisibleControl(page)
+    // W58 (2026-08-05): headless 390x844 renders the placeholder2d map (no WebGL
+    // canvas, no selectable nodes), so interaction routes to map-focus-search
+    // (search→click→dive→map, or the focus-card "View on Map" button) are not
+    // reliable across builds. The URL params ?view=map&q=coffee deterministically
+    // land the app on the map-focus-search surface (activeView=map,
+    // panelSurface=map-focus-search, #search-input visible) — deep-link route.
+    // The caller's withParams({ view: 'map', q: 'coffee' }) performs the goto;
+    // this step only waits for the expected surface and the focus-search input.
     await page.waitForFunction(
         () => {
             return (
@@ -1874,8 +1878,21 @@ async function enterMapFocusSearchByRealRoute(page) {
             )
         },
         undefined,
-        { timeout: 12000 }
+        { timeout: 15000 }
     )
+    await page
+        .waitForFunction(
+            () => {
+                const input = document.querySelector('#search-input')
+                if (!input) return false
+                const s = getComputedStyle(input)
+                const r = input.getBoundingClientRect()
+                return s.display !== 'none' && r.width > 0 && r.height > 0
+            },
+            undefined,
+            { timeout: 8000 }
+        )
+        .catch(() => {})
 }
 
 async function enterThreadInspectorByRealRoute(page) {
@@ -2703,8 +2720,10 @@ async function run() {
                 }
 
                 if (wantsState('24-mobile-map-focus-search')) {
-                    await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy' }))
-                    await waitForReady(mobilePage, '24-mobile-map-focus-search:prepare')
+                    // W58: ?view=map&q=coffee deep-links straight into map-focus-search
+                    // (activeView=map, panelSurface=map-focus-search, #search-input visible)
+                    // — the only deterministic entry in headless placeholder2d mode.
+                    await gotoReady(mobilePage, withParams(targetUrl, { view: 'map', q: 'coffee' }))
                     await enterMapFocusSearchByRealRoute(mobilePage)
                     await captureMaybe(states, mobilePage, '24-mobile-map-focus-search')
                 }

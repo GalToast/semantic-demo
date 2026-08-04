@@ -2,7 +2,7 @@
 
 Moved out of `AGENTS.md` (Prompt Budget: no large reference tables in the hot-path file). `docs/subagent-delegation.md` remains the source for lifecycle/rate/vision rules; this doc is just the live per-model viability table.
 
-Probed 2026-07-27. Updated 2026-07-30. **See also `docs/subagent-models.md`** for the quick-reference version (verified table, conditional/avoid list, and untested backlog).
+Probed 2026-07-27. Updated 2026-08-05 (vision lanes refreshed by 670-probe sweep — see Vision Capability Matrix in `docs/subagent-delegation.md`; evidence `tmp/vision-probe/`). **See also `docs/subagent-models.md`** for the quick-reference version (verified table, conditional/avoid list, and untested backlog).
 
 ## Routing preference (session 2026-08-04, user directive)
 

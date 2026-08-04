@@ -4233,6 +4233,15 @@ async function assert_search_trail_cue(page, ctx) {
         const steps = document.querySelectorAll('.search-trail-cue-step')
         results.stepsClipped = Array.from(steps).some(textClipped)
 
+        // W58 regression guard (mobile header collision): at 390px the cue must
+        // render below the header chrome — JourneyCompass "Step Inside" chip
+        // (bottom ~62px) and SemanticOverlay "Manifold" badge (bottom ~81px) —
+        // or its kicker/title collide with them (DOM-verified 12-54px overlap
+        // 2026-08-05; fixed by top: 5.5rem in SearchTrailCue.svelte).
+        const cueRect = cue ? cue.getBoundingClientRect() : null
+        results.cueClearsHeader = cueRect ? cueRect.top >= 80 : null
+        if (cueRect) results.cueTop = Math.round(cueRect.top)
+
         return results
     })
 
@@ -4247,6 +4256,14 @@ async function assert_search_trail_cue(page, ctx) {
 
     if (info.stepsClipped) ctx.fail('search-trail-cue', 'text-clipping:cue-steps', 'trail cue steps are clipped')
     else if (info.stepsClipped === false) ctx.pass('search-trail-cue', 'text-clipping:cue-steps')
+
+    if (info.cueClearsHeader === false)
+        ctx.fail(
+            'search-trail-cue',
+            'overlap:cue-vs-header-chrome',
+            'trail cue top (' + info.cueTop + 'px) collides with mobile header chrome (needs >= 80px)'
+        )
+    else if (info.cueClearsHeader === true) ctx.pass('search-trail-cue', 'overlap:cue-vs-header-chrome')
 
     return info
 }
