@@ -472,3 +472,14 @@ User directive: health-test every available model/provider and graduate the viab
 - groq 413 message pins the exact ceiling: "Limit 12000, Requested 43330" — a documented, stable limit worth remembering before anyone tries groq again.
 - `z-ai/glm-5.2-fast` (bare) routes to **infron**; if a fast glm-5.2 variant is needed, prefer `nvidia/z-ai/glm-5.2` (graduated) or accept infron routing.
 - Sweep scripts + outputs archived under `tmp/health-sweep-*.mjs`; grad reports under `tmp/grad-*-report.md`.
+
+### Gap-sweep addendum (2026-08-04 16:10Z) — providers missed by the first pass
+
+First sweep missed four keyed providers (gemini's `/v1/models` uses a different JSON shape so it appeared empty; modelscope/kilo/freemodel had recent failures and were skipped). Follow-up probes (`tmp/health-sweep-gaps.mjs`, 256-token budget):
+
+- **`gemini/*` ✅ ALL HEALTHY 2026-08-04** — 3 keys, previously NEVER swept (my first catalog call assumed OpenAI `data[]` shape; gemini returns `models[]`). `gemini-3.5-flash` PONG 2.6s, `gemini-3.1-flash-lite` PONG 1.2s, `gemini-2.5-flash` PONG 734ms. **Launchable via `gemini/...` refs (verified in launch allowlist). New primary-quality lane (Google first-party models, 1M ctx, free via our keys).** Subagent graduation trial still pending — chat-healthy but not yet grad-trialed.
+- **`modelscope/*` ✅ RECOVERED 2026-08-04** — was "quota-dead" per §W57 (401/429 exhausted), but now: `zai-org/GLM-5.2` PONG 3.4s, `Qwen/Qwen3.5-35B-A3B` PONG 7.2s, `Qwen/Qwen3-Coder-30B-A3B-Instruct` PONG 1.2s. Only `deepseek-ai/DeepSeek-V4-Flash` fails (400 "no provider supported"). **The W57 quota-death verdict is OVERTURNED — modelscope is back.**
+- **`kilo/*` ✅ HEALTHY 2026-08-04** — `kilo-auto/free` PONG 2.1s, `kilo/inclusionai/ling-3.0-flash:free` PONG 1.6s, `kilo/nvidia/nemotron-3-ultra-550b-a55b:free` PONG 1.4s. The 14:56 502 was transient (routeBackoff expired). Existing kilo entries stand.
+- **`freemodel/*` ❌ STILL DEGRADED 2026-08-04** — `gpt-5.6-luna` 401 invalid token, `gpt-5.6-sol`/`terra` 429 (single key on ~6h cooldown, `nextReadyInMs≈21.6M`). Only `freemodel/gpt-5.6-luna` had a prior graduation (2026-07-29); the whole lane is currently unusable — key needs attention.
+- **9 configured-but-keyless providers (0 keys — dead until keys are added):** `bazaarlink`, `ainative`, `deepseek`, `siliconflow`, `together`, `cerebras`, `cohere`, `hyperbolic`, `aimlapi`. Router exposes the routes (404/empty catalogs) but there are no API keys to serve them. Do not attempt dispatch on these; re-check router `/health` if keys ever appear.
+- Also confirmed: `gemini-3.5-flash` and `modelscope/zai-org/GLM-5.2` looked empty at 24 tokens and PONG cleanly at 256 (same reasoning-burn pattern as zydit — the 256-token rule applies everywhere).
