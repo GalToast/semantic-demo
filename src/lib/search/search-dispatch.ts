@@ -49,13 +49,26 @@ export class SearchDispatch {
     }
 
     /**
-     * Fulfills a staged splash/search query once the engine signals ready.
+     * Fulfills a staged splash/search query once the engine signals ready AND
+     * the local data index has loaded.
+     *
      * The caller passes the current pending value so the reactive effect that
-     * drives this stays the source of truth; the controller consumes the store
-     * intent so the same query isn't dispatched twice.
+     * drives this stays the single-source of truth; the pending controller
+     * consumes the store intent so the same query isn't dispatched twice.
+     *
+     * `dataReady` is a caller-composed reactive read of the isDataReady store.
+     * It gates here (not only at the call site) so both the engine gate and the
+     * data gate are testable on the controller. While data is still loading we
+     * bail BEFORE consuming the staged query, so when the reactive effect
+     * re-fires on data-ready the same intent is still available to fulfill.
+     * This is the Path-C companion to the Path-A onMount gate in
+     * SearchInput.svelte: performSearch has no data-ready guard, so a splash
+     * submit that lands before initData() resolves would search the empty local
+     * index → setResults([]) + status 'empty', poisoning the deep-link / later
+     * URL-restore path.
      */
-    fulfillPending(stagedQuery: string | null, engineReady: boolean): void {
-        if (!engineReady || !stagedQuery) return
+    fulfillPending(stagedQuery: string | null, engineReady: boolean, dataReady: boolean): void {
+        if (!engineReady || !dataReady || !stagedQuery) return
         const query = pendingSearch.consume()
         if (!query || query.length < 2) return
         this.onQuerySet(query)

@@ -67,6 +67,10 @@
   // ── Derived ───────────────────────────────────────────────────────────────────
 
   let status = $derived($searchState.status);
+  // Reactive data-readiness for the Path-C splash-fulfillment gate: the store
+  // flips after the local index loads; passing it into fulfillPending lets the
+  // controller defer (not drop) a splash submit that lands pre-data.
+  let dataReady = $derived($isDataReady);
   let showLoading = $derived(status === 'searching');
   let hasQuery = $derived(queryInput.trim().length > 0);
   let hasResults = $derived($searchState.results.length > 0);
@@ -89,11 +93,12 @@
   // ── Deferred splash-search fulfillment ───────────────────────────────────────
   // This component mounts early (during the idle-surface splash phase) but must
   // not run a search until the user opts in via the gate. The Splash component
-  // stages an intent here on submit; once engineReady flips true we fulfill it
-  // through the normal dispatch path. onMount's one-shot `?q=` read already ran
-  // at boot, so the URL param alone is not enough for the splash-submit case.
+  // stages an intent here on submit; once engineReady flips true AND the data
+  // index is loaded we fulfill it through the normal dispatch path. onMount's
+  // one-shot `?q=` read already ran at boot, so the URL param alone is not
+  // enough for the splash-submit case.
   $effect(() => {
-    dispatch.fulfillPending(pendingSearch.value, engineReady.value);
+    dispatch.fulfillPending(pendingSearch.value, engineReady.value, dataReady);
   });
 
   // ── Deferred Enter-focus fulfillment ───────────────────────────────────────-

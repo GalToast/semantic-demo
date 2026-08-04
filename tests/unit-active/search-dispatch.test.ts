@@ -196,31 +196,55 @@ describe('SearchDispatch', () => {
         vi.useRealTimers()
     })
 
-    it('fulfills a staged splash query when the engine is ready', () => {
+    it('fulfills a staged splash query when the engine and data are ready', () => {
         mocks.pendingSearch.set('coffee')
         mocks.runSearch.mockResolvedValue(undefined)
-        dispatch.fulfillPending('coffee', true)
+        dispatch.fulfillPending('coffee', true, true)
         expect(onQuerySet).toHaveBeenCalledWith('coffee')
         expect(mocks.setSearchQuery).toHaveBeenCalledWith('coffee')
         expect(mocks.runSearch).toHaveBeenCalledWith('coffee', expect.any(AbortSignal))
         expect(mocks.requestEntryFocus).toHaveBeenCalled()
     })
 
+    it('defers a staged query when the data index has not loaded yet (Path-C data gate)', () => {
+        mocks.pendingSearch.set('coffee')
+        mocks.runSearch.mockResolvedValue(undefined)
+
+        // Data not ready: fulfillPending must bail BEFORE consuming the staged
+        // intent so the reactive effect can re-fire it once isDataReady flips.
+        dispatch.fulfillPending('coffee', true, false)
+        expect(mocks.pendingSearch.consume).not.toHaveBeenCalled()
+        expect(onQuerySet).not.toHaveBeenCalled()
+        expect(mocks.runSearch).not.toHaveBeenCalled()
+
+        // Data loads → same staged query fulfills (mirrors the effect retry).
+        dispatch.fulfillPending('coffee', true, true)
+        expect(onQuerySet).toHaveBeenCalledWith('coffee')
+        expect(mocks.runSearch).toHaveBeenCalledWith('coffee', expect.any(AbortSignal))
+    })
+
     it('ignores a pending splash query that is too short', () => {
         mocks.pendingSearch.set('x')
-        dispatch.fulfillPending('x', true)
+        dispatch.fulfillPending('x', true, true)
         expect(onQuerySet).not.toHaveBeenCalled()
         expect(mocks.runSearch).not.toHaveBeenCalled()
     })
 
     it('does nothing when the engine is not ready', () => {
         mocks.pendingSearch.set('coffee')
-        dispatch.fulfillPending('coffee', false)
+        dispatch.fulfillPending('coffee', false, true)
+        expect(mocks.runSearch).not.toHaveBeenCalled()
+    })
+
+    it('does nothing when the data is not ready and stays deferrable', () => {
+        mocks.pendingSearch.set('coffee')
+        dispatch.fulfillPending('coffee', true, false)
+        expect(mocks.pendingSearch.consume).not.toHaveBeenCalled()
         expect(mocks.runSearch).not.toHaveBeenCalled()
     })
 
     it('does nothing when no query is pending', () => {
-        dispatch.fulfillPending(null, true)
+        dispatch.fulfillPending(null, true, true)
         expect(mocks.runSearch).not.toHaveBeenCalled()
     })
 
