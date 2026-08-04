@@ -329,7 +329,14 @@ float semanticBreath = 1.0 + 1.0 * sin(uTime * 1.5 + position.x * 2.5 + position
 vSemanticPointBoost = max(0.08, uRevealProgress) * max(0.55, mix(1.0, uHoverBoost, semanticHoverMask) + semanticRippleMask * 0.38) * semanticBreath;`
             )
             .replace(
-                'gl_PointSize = clamp(size, 1.0, 128.0);',
+                // three r184's points_vert emits `gl_PointSize = size;` (NOT the
+                // legacy `clamp(size, 1.0, 128.0)`), so targeting the clamp form was a
+                // silent no-op: vSemanticPointBoost was computed but never reached
+                // gl_PointSize, leaving hover/ripple/reveal/breath point-SIZE dynamics
+                // dead (only the fragment alpha path consumed the varying). Target the
+                // actual r184 line so the size boost applies. Verified against
+                // node_modules/three/src/renderers/shaders/ShaderLib/points.glsl.js.
+                'gl_PointSize = size;',
                 'gl_PointSize = clamp(size * vSemanticPointBoost, 1.0, 128.0);'
             )
         shader.fragmentShader = shader.fragmentShader
