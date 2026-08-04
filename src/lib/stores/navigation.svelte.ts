@@ -34,6 +34,7 @@ export {
     isMapMode,
     loadingPhase,
     writeNavStateMirror,
+    getLastCommittedView,
     resetNavState,
     updateNavState,
     setFocusedIndex,

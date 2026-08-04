@@ -74,7 +74,8 @@ import {
     navStore,
     dispatchNavTransition,
     NAV_TRANSITION_ACTIONS,
-    writeNavStateMirror
+    writeNavStateMirror,
+    getLastCommittedView
 } from '@lib/stores/navigation.svelte'
 import { addTrailStop, setThreadCandidates, setTrailDepth, setTrailNeighborIndices } from '@lib/stores/journey.svelte'
 import { getBusinessRecords } from '@lib/data-store'
@@ -124,6 +125,24 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_TRANSITION_STARTED', EVENTS.SEARCH_FOCU
 subscribeKeyed('triggers.ts:SEARCH_FOCUS_TRANSITION_SETTLED', EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
     refreshCompositionState()
     updateJourneyCompass()
+    // W-view-preserve (2026-08-04, probe matrix): the click-driven focus
+    // transition reconciles surface/mode AFTER the camera settles, and that
+    // reconciliation includes a raw Svelte-$state write of currentView back
+    // to 'galaxy' that bypasses writeNavStateMirror — so a user-initiated
+    // map switch that lands while the settle is pending gets clobbered
+    // (the switch commits, VIEW_CHANGED fires, then the settle tail restores
+    // galaxy; dataset.activeView never flips). Re-assert the last view the
+    // user/flow committed through the canonical mirror API once the settle
+    // reconciliation has run. Deferred via queueMicrotask so we run AFTER
+    // any synchronous settle writers; post-settle re-assertions are stable
+    // (settled-state switches always stick — E2 probe matrix).
+    const committedView = getLastCommittedView()
+    queueMicrotask(() => {
+        const cur = get(navStore)
+        if (cur.currentView !== committedView) {
+            writeNavStateMirror({ currentView: committedView })
+        }
+    })
 })
 
 // ── Engine → Compass Subscriptions ───────────────────────────────────────────

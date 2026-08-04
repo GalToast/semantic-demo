@@ -83,6 +83,14 @@ export function _readNavSnapshot(): NavState {
     return appState.navState
 }
 
+// W-view-commit: last view committed through the canonical mirror API
+// (see writeNavStateMirror). Used by the SEARCH_FOCUS_TRANSITION_SETTLED
+// re-assert in triggers.ts.
+let _lastCommittedView: 'galaxy' | 'map' = 'galaxy'
+export function getLastCommittedView(): 'galaxy' | 'map' {
+    return _lastCommittedView
+}
+
 /**
  * The navigation mirror.
  *
@@ -96,14 +104,9 @@ export function _readNavSnapshot(): NavState {
  * Fields with `null` are navState-local only — they don't need to be mirrored
  * back after a factory update because they only live in appState.navState.
  *
- * Note: `trailDepth` and `currentView` are also written to their `appState.*`
- * top-level mirrors by `writeNavStateMirror` post-update (since the kernel
- * reads them from both the navState and the top-level). The binding here
- * additionally mirrors all fields that consumers read solely through
- * `appState.navState.X` — which is *every* field, since navState is the
- * canonical location. We pass `appState.navState` indirectly by targeting
- * keys on a synthetic proxy; the factory primitives detection means we only
- * actually write the two kernel top-level mirrors explicitly.
+ * `trailDepth` still mirrors its legacy top-level slot. `currentView` is a
+ * direct alias over `navState.currentView`, so it intentionally has no flat
+ * binding: replaying it from a partial snapshot can overwrite a newer view.
  */
 const navMirror = createStateMirror<NavState>({
     computeFromAppState: _readNavSnapshot,
@@ -129,7 +132,12 @@ const navMirror = createStateMirror<NavState>({
         currentPersonality: null,
         neighborhoodIndices: null,
         explorationHistoryIndices: null,
-        currentView: 'currentView',
+        // `currentView` is already a direct alias over `appState.navState.currentView`.
+        // Do not mirror it back as a flat field on every partial nav update:
+        // focus/map teardown writes (for example FocusPocket cleanup) can carry
+        // a stale full snapshot and otherwise replay `galaxy` over a just-committed
+        // map switch. Explicit currentView patches already mutate navState below.
+        currentView: null,
         myceliumMode: null,
         autoRotate: null,
         autoRotateSuspended: null,
@@ -238,6 +246,17 @@ export const loadingPhase = () => _readNavSnapshot().loadingPhaseKey
  */
 export function writeNavStateMirror(patch: Partial<NavState>): void {
     const current = _readNavSnapshot()
+
+    // W-view-commit: record the last view committed through the canonical
+    // mirror API (user switches, engine SET_VIEW mirrors, resets). The
+    // focus-settle reconciliation can clobber currentView through a raw
+    // Svelte-$state write that bypasses this API entirely; the
+    // SEARCH_FOCUS_TRANSITION_SETTLED subscriber re-asserts this committed
+    // value after the settle (see triggers.ts).
+    if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
+        _lastCommittedView = patch.currentView
+    }
+
     let noop = true
     for (const key in patch) {
         if (

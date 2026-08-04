@@ -208,6 +208,7 @@ import {
     setFocusPocketMeta,
     clearFocusPocketMeta,
     writeNavStateMirror,
+    getLastCommittedView,
     dispatchNavTransition
 } from '@lib/stores/navigation.svelte.ts'
 import { NAV_TRANSITION_ACTIONS } from '@lib/navigation-actions'
@@ -770,6 +771,19 @@ describe('navStore — mutation functions', () => {
     it('writeNavStateMirror({currentView:"map"}) sets currentView=map', () => {
         writeNavStateMirror({ currentView: 'map' })
         expect(navStore().currentView).toBe('map')
+    })
+
+    it('tracks the last committed view for the settle re-assert (W-view-preserve)', () => {
+        // The SEARCH_FOCUS_TRANSITION_SETTLED subscriber re-asserts this value
+        // after the focus-settle reconciliation (which can clobber currentView
+        // through a raw write that bypasses writeNavStateMirror).
+        writeNavStateMirror({ currentView: 'map' })
+        expect(getLastCommittedView()).toBe('map')
+        writeNavStateMirror({ currentView: 'galaxy' })
+        expect(getLastCommittedView()).toBe('galaxy')
+        // Non-view patches must not disturb the tracker.
+        writeNavStateMirror({ mode: 'focus' })
+        expect(getLastCommittedView()).toBe('galaxy')
     })
 
     it('writeNavStateMirror({trailDepth:5}) sets trailDepth=5', () => {
