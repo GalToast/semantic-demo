@@ -1116,7 +1116,8 @@
     }
 
     body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
-        #focus-stage.focus-stage > * {
+        #focus-stage.focus-stage
+        > * {
         pointer-events: auto;
     }
 
@@ -1290,11 +1291,6 @@
         bottom: calc(108px + env(safe-area-inset-bottom, 0px));
         max-height: min(39dvh, 330px);
         overflow: hidden;
-    }
-
-    /* Field node also needs to clear the info-panel in focus-search idle state */
-    body.surface-focus-search[data-focus-panel-mode='field-node'][data-trail-state='idle'] #focus-stage.focus-stage {
-        bottom: calc(108px + env(safe-area-inset-bottom, 0px));
     }
 
     /* When trail is active, info-panel is hidden, so focus-stage returns to bottom */
