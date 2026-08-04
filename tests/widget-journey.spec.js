@@ -3561,7 +3561,12 @@ test.describe('Widget journey', () => {
         })
 
         const backBtn = page.locator('.map-back-btn')
-        await backBtn.waitFor({ state: 'visible', timeout: 10000 })
+        // Raised from 10s: under serial-suite GPU accumulation the deep-link
+        // boot can push the map-back button render past the old 10s budget
+        // (full-suite transcript: L3564 TimeoutError on the visible wait).
+        // currentView==='map' above already gates the state flip; the button
+        // render is the lag.
+        await backBtn.waitFor({ state: 'visible', timeout: 20000 })
 
         // W61-W54: the deep-link boot settles asynchronously (load-dependent
         // window, ~1-2s under suite load): the navStore mirror and
@@ -3574,10 +3579,21 @@ test.describe('Widget journey', () => {
         // the settle window length. Mirror of the smoke-spec W54 test.
         let galaxyHeld = false
         for (let attempt = 0; attempt < 4 && !galaxyHeld; attempt++) {
-            await backBtn.click({ timeout: 10000 })
+            // W61-rAF click stall: under serial WebGL accumulation a
+            // `locator.click` on this confirmed-visible button hangs on
+            // Playwright's post-click "scheduled navigations" rAF settle
+            // (grep transcript: "click action done -> waiting for scheduled
+            // navigations to finish" -> TimeoutError). Dispatch the click via a
+            // coordinate mouse event at the button's center — the map-back
+            // coordinate-click pattern — which fires onclick without the rAF
+            // post-settle wait. returnToOverview is idempotent, so the retry
+            // loop still confirms the view held.
+            const box = await backBtn.boundingBox()
+            if (!box) throw new Error('map-back button has no bounding box (expected visible)')
+            await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
             galaxyHeld = await page
                 .waitForFunction(() => window.__APP_STATE__?.currentView === 'galaxy', null, {
-                    timeout: 3000,
+                    timeout: 5000,
                     polling: 100
                 })
                 .then(() => true)
@@ -4414,9 +4430,16 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
         // FocusCard is lazy-loaded; wait for the populated card + dismiss button.
         const card = page.locator('.focus-card').first()
-        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
-        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
-        await card.waitFor({ state: 'visible', timeout: 20000 })
+        // Gate on the deterministic focus-state signal first (timer-poll, rAF-
+        // immune) so the card wait starts only once the surface transition has
+        // committed, then wait the lazily-hydrated card visible with a budget
+        // raised for serial-suite GPU stalls (full-suite transcript: L4419
+        // TimeoutError at the 20s card budget).
+        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'focus', null, {
+            timeout: 20000,
+            polling: 100
+        })
+        await card.waitFor({ state: 'visible', timeout: 35000 })
 
         const closeBtn = page.locator('[data-test-id="focus-card-close"]')
         await expect(closeBtn).toBeVisible()
