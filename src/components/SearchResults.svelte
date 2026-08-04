@@ -23,7 +23,7 @@
 -->
 <script lang="ts">
   import { tick } from 'svelte';
-  import { searchState, setActiveResult } from '@lib/stores/search.svelte';
+  import { searchState, setActiveResult, clearSearch as clearSearchState } from '@lib/stores/search.svelte';
   import { searchVisibleCount as searchVisibleCountFn, setSearchVisibleCount } from '@lib/stores/search.svelte';
   import { activeClusterFilter } from '@lib/stores/filter.svelte';
   import { getBusinessRecords } from '@lib/data-store';
@@ -32,6 +32,7 @@
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
   import { showErrorToast, showExperienceToast } from '@lib/orchestration/toast';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
+  import { SearchDispatch } from '@lib/search/search-dispatch';
   import { appState } from '@lib/state/app.svelte';
   import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
   import { friendlyErrorMessage } from '@lib/utils/error-messages';
@@ -46,6 +47,16 @@
   }
 
   let { visible = true }: Props = $props();
+
+  // BUG-6 (bugsweep ds4): the Svelte error-card Retry button re-runs the
+  // same query through SearchDispatch.dispatchSearch — the canonical
+  // typed-input entry that owns the startSearch lease (search-abort.ts,
+  // BUG-3 fix) and routes through runSearch -> setSearchError on failure
+  // (so the Svelte card re-mounts consistently instead of mixing in the
+  // legacy applySemanticSearchDegradedState DOM path that orchestration
+  // search() uses on its catch). Never schedules debounces, so a shared
+  // instance is sufficient; dispose is a debounce no-op for this use.
+  const retryDispatch = new SearchDispatch();
 
   // ── Derived ───────────────────────────────────────────────────────────────────
 
@@ -351,13 +362,36 @@
     }
   }
 
+  // BUG-6 (bugsweep ds4): the error-card Retry/Clear buttons previously only
+  // published SEARCH_CLEARED, never clearing the Svelte error card
+  // (isFullError derives from appState.searchState.searchError) and never
+  // re-running a search. The common typed-input error path renders this card
+  // via runSearch -> setSearchError, so without this wiring the user is stuck
+  // on the error card. Retry routes through SearchDispatch.dispatchSearch
+  // (startSearch lease + runSearch -> setSearchError) so the BUG-3 stale-completion
+  // guards still apply and the Svelte card re-mounts consistently if the
+  // retry also fails.
   function onRetry(): void {
-    if (summary?.query) {
-      publish(EVENTS.SEARCH_CLEARED, { query: summary.query, preferCachedResults: false });
-    }
+    // Prefer the query on the failed searchError (the query that produced the
+    // card); fall back to the current summary. Retry only makes sense with a
+    // query to re-run.
+    const query = searchError?.query ?? summary?.query;
+    if (!query) return;
+    // Clear the stale error so the card dismisses into the searching state;
+    // dispatchSearch's runSearch will setSearchError re-sets the card if this
+    // attempt also fails, and setSearchResults clears searchError on success
+    // (card stays dismissed). store clearSearch notifies subscribers with no
+    // SEARCH_CLEARED, so ?q= stays mid-retry.
+    clearSearchState();
+    retryDispatch.dispatchSearch(query);
   }
 
   function onClear(): void {
+    // Clear the store (error + results + summary) so the card actually
+    // dismisses, then preserve the existing SEARCH_CLEARED notification so
+    // downstream subscribers (url-state strips `q`, compass refresh) still
+    // react — the same surface callers relied on before.
+    clearSearchState();
     publish(EVENTS.SEARCH_CLEARED);
   }
 </script>

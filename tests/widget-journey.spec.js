@@ -868,7 +868,9 @@ test.describe('Widget journey', () => {
         await page.route(
             (url) => {
                 const parsed = new URL(url)
-                return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_lane_health'
+                return (
+                    parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_lane_health'
+                )
             },
             async (route) => {
                 await route.fulfill({
@@ -922,6 +924,328 @@ test.describe('Widget journey', () => {
         // The onMount ?q= guard must not re-dispatch after the restore already
         // fulfilled the empty query — exactly one semantic_search round-trip.
         expect(searchRequests.count, 'empty deep-link must dispatch exactly one semantic search request').toBe(1)
+    })
+
+    test('BUG-6: search-error card Retry re-runs search and Clear dismisses (SearchResults.svelte fix)', async ({
+        page
+    }) => {
+        // BUG-6 (bugsweep): SearchResults.svelte onRetry/onClear only published
+        // EVENTS.SEARCH_CLEARED — nobody re-ran the search nor cleared the
+        // error state, so both buttons stayed inert. That is exactly the
+        // missing-callback category the repo's journey-test invariant exists to
+        // catch (contract tests only assert the card RENDERS). Fix: onRetry →
+        // clearSearchState() then dispatchSearch(query); onClear →
+        // clearSearchState() then publish the clear event. Drive the real built
+        // app into a Svelte search-error state via the proven `?staticDev=0` +
+        // 503-route-stub pattern (mirror `assert_search_error` in
+        // surface-contract-check.mjs), then assert the RENDERED Retry button
+        // re-fires semantic_search and dismisses the card, and that Clear
+        // dismisses the card WITHOUT faking a second search.
+        test.setTimeout(300000)
+        // Mirror the proven `search-error` surface config (mobile 390x844) used
+        // by assert_search_error in surface-contract-check.mjs so the CTA and
+        // search sheet settle on the same path that is known to surface the card.
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort */
+            }
+        })
+
+        const SUCCESS_BODY = {
+            ok: true,
+            count: 1,
+            results: [
+                {
+                    lead_id: 1,
+                    name: 'Java Junction Coffee',
+                    what: 'Coffee roaster and cafe',
+                    city: 'Conroe',
+                    lat: 30.3119,
+                    lng: -95.4561,
+                    cluster: 3,
+                    status: 'active',
+                    website: 'https://example.com/java',
+                    email: 'hello@example.com',
+                    phone: '(936) 555-0101',
+                    score: 0.99,
+                    semantic_score: 0.99
+                }
+            ]
+        }
+
+        const state = { fail: true, searchRequests: 0 }
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
+                return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_search'
+            },
+            async (route) => {
+                state.searchRequests += 1
+                if (state.fail) {
+                    await route.fulfill({
+                        status: 503,
+                        contentType: 'application/json',
+                        body: JSON.stringify({ ok: false, error: 'forced-bug6-retry-journey' })
+                    })
+                } else {
+                    await route.fulfill({
+                        status: 200,
+                        contentType: 'application/json',
+                        body: JSON.stringify(SUCCESS_BODY)
+                    })
+                }
+            }
+        )
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
+                return (
+                    parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_lane_health'
+                )
+            },
+            async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ ok: true, state: 'healthy' })
+                })
+            }
+        )
+
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=galaxy&staticDev=0`, {
+            waitUntil: 'domcontentloaded'
+        })
+        // Mirror loadAndWait + loadIdleAndTypeSearch in surface-contract-check.mjs:
+        // let the Svelte app fully mount + load so the splash CTA's onclick is
+        // bound BEFORE the synthetic dispatch() fires engineReady.signalReady()
+        // (without this wait the dispatch lands on an unbound element, the
+        // splash never dismisses, and #search-input stays hidden).
+        await page.waitForLoadState('load', { timeout: 10000 }).catch(() => {})
+        // Best-effort wait until the Svelte parity layer signals the surface
+        // has settled; this lets the splash CTA's onclick binding register
+        // before we dispatch the synthetic click. Retry the dispatch up to 3x so
+        // a dispatch-to-unbound-handler doesn't leave the splash pinned (which
+        // would freeze #search-input hidden and starve the follow-on wait).
+        await page
+            .waitForFunction(() => document.body.dataset.surfaceSettled === 'true', null, { timeout: 8000 })
+            .catch(() => {})
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const settled = await page.evaluate(() => {
+                const el = document.querySelector('[data-testid="splash-cta"], [data-testid="placeholder-cta"]')
+                if (!el) return document.body.dataset.surfaceSettled === 'true'
+                el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+                return false
+            })
+            if (settled) break
+            await page.waitForTimeout(800)
+        }
+        await page
+            .waitForFunction(
+                () => {
+                    const cta = document.querySelector('[data-testid="splash-cta"]')
+                    return !cta || document.body.dataset.surfaceSettled === 'true'
+                },
+                null,
+                { timeout: 15000 }
+            )
+            .catch(() => {})
+
+        // Dismiss the first-visit help dialog (W47, sits above #search-input).
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if (await helpDialog.isVisible().catch(() => false)) {
+            await helpDialog
+                .locator('button')
+                .first()
+                .click()
+                .catch(() => {})
+            await page
+                .waitForFunction(
+                    () => {
+                        const d = document.querySelector('dialog.help-dialog')
+                        return !d || !d.open
+                    },
+                    null,
+                    { timeout: 5000 }
+                )
+                .catch(() => {})
+        }
+        await page.waitForSelector('#search-input', { state: 'visible', timeout: 30000 })
+
+        async function fillQuery(q) {
+            await page.locator('#search-input').first().fill(q)
+            await page
+                .waitForFunction(
+                    (q) => {
+                        const el = document.querySelector('#search-input')
+                        return !!el && el.value === q
+                    },
+                    q,
+                    { timeout: 5000 }
+                )
+                .catch(() => {})
+        }
+
+        // ── Retry leg: error card → flip to success → Retry RE-RUNS search ──
+        await fillQuery('coffee')
+        await expect(page.locator('.search-error-state')).toBeVisible({ timeout: 25000 })
+        await expect(page.locator('.search-error-retry-btn')).toBeVisible({ timeout: 5000 })
+        const requestsBeforeRetry = state.searchRequests
+        expect(requestsBeforeRetry, 'typing must fire at least one semantic_search request').toBeGreaterThan(0)
+
+        state.fail = false
+        await page.locator('.search-error-retry-btn').click()
+
+        // BUG-6 fix headline: Retry actually re-fires the search (not inert).
+        await expect
+            .poll(() => state.searchRequests, { timeout: 20000, intervals: [200] })
+            .toBeGreaterThan(requestsBeforeRetry)
+        // ...and the re-run renders results + dismisses the card.
+        await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 30000 })
+        await expect(page.locator('.search-error-state')).toBeHidden({ timeout: 15000 })
+    })
+
+    test('BUG-6-Clear: search-error card Clear dismisses without re-running search (SearchResults.svelte fix)', async ({
+        page
+    }) => {
+        // BUG-6 (bugsweep): SearchResults.svelte onClear only published
+        // EVENTS.SEARCH_CLEARED — it never cleared the error state, so the
+        // card stayed mounted after pressing Clear. Fix: onClear →
+        // clearSearchState() then publish the clear event. Mirror the proven
+        // `?staticDev=0` + 503-route-stub pattern (assert_search_error +
+        // loadIdleAndTypeSearch in surface-contract-check.mjs) so the built
+        // Svelte app surfaces a search-error card, then assert the RENDERED
+        // Clear button DISMISSES the card AND does not re-fire a search.
+        test.setTimeout(300000)
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort */
+            }
+        })
+
+        const state = { searchRequests: 0 }
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
+                return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_search'
+            },
+            async (route) => {
+                state.searchRequests += 1
+                await route.fulfill({
+                    status: 503,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ ok: false, error: 'forced-bug6-clear-journey' })
+                })
+            }
+        )
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
+                return (
+                    parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_lane_health'
+                )
+            },
+            async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ ok: true, state: 'healthy' })
+                })
+            }
+        )
+
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=galaxy&staticDev=0`, {
+            waitUntil: 'domcontentloaded'
+        })
+        await page.waitForLoadState('load', { timeout: 10000 }).catch(() => {})
+        // Best-effort wait until the Svelte parity layer signals the surface
+        // has settled; this lets the splash CTA's onclick binding register
+        // before we dispatch the synthetic click. Retry the dispatch up to 3x so
+        // a dispatch-to-unbound-handler doesn't leave the splash pinned (which
+        // would freeze #search-input hidden and starve the follow-on wait).
+        await page
+            .waitForFunction(() => document.body.dataset.surfaceSettled === 'true', null, { timeout: 8000 })
+            .catch(() => {})
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const settled = await page.evaluate(() => {
+                const el = document.querySelector('[data-testid="splash-cta"], [data-testid="placeholder-cta"]')
+                if (!el) return document.body.dataset.surfaceSettled === 'true'
+                el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+                return false
+            })
+            if (settled) break
+            await page.waitForTimeout(800)
+        }
+        await page
+            .waitForFunction(
+                () => {
+                    const cta = document.querySelector('[data-testid="splash-cta"]')
+                    return !cta || document.body.dataset.surfaceSettled === 'true'
+                },
+                null,
+                { timeout: 15000 }
+            )
+            .catch(() => {})
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if (await helpDialog.isVisible().catch(() => false)) {
+            await helpDialog
+                .locator('button')
+                .first()
+                .click()
+                .catch(() => {})
+            await page
+                .waitForFunction(
+                    () => {
+                        const d = document.querySelector('dialog.help-dialog')
+                        return !d || !d.open
+                    },
+                    null,
+                    { timeout: 5000 }
+                )
+                .catch(() => {})
+        }
+        await page.waitForSelector('#search-input', { state: 'visible', timeout: 30000 })
+
+        await page.locator('#search-input').first().fill('mocha')
+        await page
+            .waitForFunction(
+                () => {
+                    const el = document.querySelector('#search-input')
+                    return !!el && el.value === 'mocha'
+                },
+                null,
+                { timeout: 5000 }
+            )
+            .catch(() => {})
+
+        await expect(page.locator('.search-error-state')).toBeVisible({ timeout: 25000 })
+        await expect(page.locator('.search-error-dismiss-btn')).toBeVisible({ timeout: 5000 })
+
+        // Settle any debounce before capturing the count
+        await page.waitForTimeout(1000)
+        const requestsBeforeClear = state.searchRequests
+        expect(requestsBeforeClear, 'typing must fire at least one semantic_search request').toBeGreaterThan(0)
+
+        await page.locator('.search-error-dismiss-btn').click()
+
+        // BUG-6 fix: Clear DISMISSES the card (previous bug kept it mounted).
+        await expect(page.locator('.search-error-state')).toBeHidden({ timeout: 15000 })
+        // Clear must NOT re-run the search. Wait a grace window for any
+        // remaining debounce, then assert the request counter did not move.
+        await page.waitForTimeout(1500)
+        expect(state.searchRequests, 'Clear must NOT re-run the search').toBe(requestsBeforeClear)
     })
 
     test('W54-A1: mobile search sheet raises on typed input (Bug A — search-dispatch.ts fix)', async ({ page }) => {
