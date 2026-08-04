@@ -18,6 +18,7 @@
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import {
     searchState,
     setSearchQuery,
@@ -25,6 +26,7 @@
     consumeSearchInputFocusIntent
   } from '@lib/stores/search.svelte';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
+  import { isDataReady } from '@lib/data-store';
   import { pendingSearch } from '@lib/stores/pending-search.svelte';
   import { SearchDispatch } from '@lib/search/search-dispatch';
   import SearchInputChrome from '@lib/components/search/SearchInputChrome.svelte';
@@ -233,6 +235,17 @@
       queryInput = query;
       return;
     }
+    // Data-gate (deep-link ?q= render nondeterminism): performSearch has no
+    // data-ready guard, so dispatching before initData() resolves searches the
+    // not-yet-loaded local index → setResults([]) + status 'empty' + storeQuery
+    // 'coffee'. That poisoned state makes the later URL-restore path (app-init
+    // → applyUrlState → _restoreSearchFromParams, which DOES await initData and
+    // owns the deep-link search) see isNew:false and wait-for-settle instead of
+    // re-running, leaving the deep-link stuck with zero results — and handleInput's
+    // redundant-fill guard (`value === storeQuery`) then skips a manual re-kick.
+    // Deferring to the URL-restore path makes the deep-link search deterministic.
+    // When data is already ready by mount time, dispatching here is safe.
+    if (!get(isDataReady)) return;
     queryInput = query;
     setSearchQuery(query);
     dispatch.dispatchSearch(query);
