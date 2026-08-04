@@ -12,7 +12,7 @@
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from './search-panel-adapter'
-import { setSearchGlow as storeSetSearchGlow } from '@lib/stores/search.svelte'
+import { setSearchGlow as storeSetSearchGlow, withSearchNotify } from '@lib/stores/search.svelte'
 import { recordSemanticLaneSnapshot } from '../orchestration/semantic-lane'
 import { appState } from '@lib/state/app.svelte'
 import type { SemanticState, SearchErrorData, SearchResult } from '@lib/state/state-types'
@@ -353,14 +353,16 @@ export function finishSemanticSearchSuccessState(
 }
 
 export function clearSearchState(_resultsEl: HTMLElement | null, _statusEl: HTMLElement | null): void {
-    state.searchState.currentSearchSummary = null
+    withSearchNotify(() => {
+        state.searchState.currentSearchSummary = null
 
-    // Clear appState
-    appState.searchResults = []
-    appState.searchSummary = null
-    appState.searchState.isSearching = false
-    appState.searchState.searchError = null
-    appState.searchState.searchVisibleCount = 10
+        // Clear appState
+        appState.searchResults = []
+        appState.searchSummary = null
+        appState.searchState.isSearching = false
+        appState.searchState.searchError = null
+        appState.searchState.searchVisibleCount = 10
+    })
 
     setSearchPanelState({ searching: false, focusing: false, resultsRendered: false, degraded: false })
     const spinner = document.getElementById('search-spinner')
