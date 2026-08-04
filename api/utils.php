@@ -110,9 +110,14 @@ function requireSameHostReferrer(): void
     $serverHost = strtolower((string)($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
     $serverHost = preg_replace('/:\d+$/', '', $serverHost);
     $allowedHosts = ['mccullough.cloud', 'www.mccullough.cloud'];
-    if (in_array($serverHost, ['127.0.0.1', 'localhost'], true)) {
+    if (in_array($serverHost, ['127.0.0.1', 'localhost', '::1', '[::1]'], true)) {
+        // IPv4 + IPv6 loopback are both local origins — a Vite dev server
+        // bound to `::1` sends a Referer host of `[::1]`, which previously
+        // fell through to 403 Access denied for every browser request.
         $allowedHosts[] = '127.0.0.1';
         $allowedHosts[] = 'localhost';
+        $allowedHosts[] = '::1';
+        $allowedHosts[] = '[::1]';
     }
 
     if (!in_array($host, $allowedHosts, true)) {

@@ -15,6 +15,7 @@
  */
 
 import { appState } from '@lib/state/app.svelte'
+import { focusStore } from '@lib/stores/focus.svelte'
 import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-choreography/orbit-slack'
 import { setRouteExplorationPhase } from '@lib/stores/journey.svelte'
 
@@ -91,9 +92,20 @@ class CameraControlsCore {
         const duration = Math.max(0, Number.isFinite(options.duration) ? options.duration! : 720)
         if (canonicalMode === 'idle') return
         this.focusTransitionSettleTimer = window.setTimeout(() => {
-            if (this.focusTransitionMode === canonicalMode) {
-                /* still current */
-            } else return
+            if (this.focusTransitionMode !== canonicalMode) return
+            // Complete the transition: the settle window is over, so flip the
+            // canonical mode back to 'idle' (not just the CSS phase class).
+            // Parity (body dataset focus-transition-*) and Svelte consumers
+            // read focusStore.transitionMode / focusTransitionMode, and a
+            // transition that never returns to 'idle' leaves hit-testing,
+            // isTransitioning gates, and the focus-transition-entering body
+            // class stuck forever — observed on deep-link boot where the
+            // second focus pass re-arms entering and the focus card becomes
+            // click-dead (painted but not hit-testable).
+            this.focusTransitionMode = 'idle'
+            if (appState.focusState) {
+                appState.focusState.focusTransitionMode = 'idle'
+            }
             if (document.body) {
                 // NOTE: body.dataset.focusTransitionPhase removed — CSS uses class selectors
                 for (const cls of Array.from(document.body.classList)) {
@@ -101,6 +113,10 @@ class CameraControlsCore {
                 }
                 document.body.classList.add('focus-transition-phase-settled')
             }
+            // Publish through the focus store so parity consumers (body
+            // dataset.focusTransition, focus-transition-* class mirrors) get
+            // the idle flip without waiting for an unrelated store write.
+            focusStore.update((s) => ({ ...s, transitionMode: 'idle' }))
         }, duration + 180)
     }
 
