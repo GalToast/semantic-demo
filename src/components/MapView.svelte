@@ -156,6 +156,26 @@
       // back-clicks were swallowed, late ones worked).
       if (!mounted || token !== activationToken) return;
 
+      // M16: guard against prematurely flipping currentView to 'map' at boot.
+      // App.svelte's isPlaywright condition mounts MapView eagerly so
+      // #map-container exists in the DOM for contract tests, even when the
+      // view is 'galaxy'. In that case we should activate the shell (for DOM
+      // presence) but NOT write currentView='map' — the view-switch path
+      // (switchView → navStore mirror) handles that when the user actually
+      // clicks the Map button. The url-state early-return (parallel session)
+      // removed the resetStateBeforeUrlRestore() call that previously masked
+      // this bug by resetting currentView to 'galaxy' after MapView's
+      // premature write.
+      if (appState.currentView === 'galaxy') {
+        // Mark as dormant (not an error) so the template shows neither
+        // loading-spinner nor error state. The DOM shell (#map-container)
+        // is already created by activateMapShell() above and remains
+        // present for contract tests.
+        status = 'ready'
+        statusDetail = 'Map dormant (galaxy view active)'
+        return
+      }
+
       setLegacyView('map');
 
       // W49-E: hide the canvas hover preview when the map takes over the

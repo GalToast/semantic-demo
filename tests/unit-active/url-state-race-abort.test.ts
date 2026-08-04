@@ -281,6 +281,23 @@ describe('url-state — applyUrlState race protection', () => {
         vi.restoreAllMocks()
     })
 
+    it('does not reset an interaction when the URL only has boot flags', async () => {
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+
+        // app-init invokes the restore after data settles. A user can select
+        // Search before that deferred call runs, so boot-only params must not
+        // send the navigation state back to overview.
+        mockState.navStore.mode = 'search'
+        mockState.navStore.surface = 'search'
+        mockState.urlSearch = '?nodemo=1&staticDev=1&mode=dormant'
+
+        await applyUrlState({})
+
+        expect(mockState.navStore.mode).toBe('search')
+        expect(mockState.navStore.surface).toBe('search')
+        expect(mockState.navStore.urlStateRestoreToken).toBe(0)
+    })
+
     it('aborts the previous runSearch signal when a newer applyUrlState starts', async () => {
         const { applyUrlState } = await import('@lib/orchestration/url-state')
 

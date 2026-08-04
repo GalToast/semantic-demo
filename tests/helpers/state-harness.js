@@ -275,8 +275,8 @@ export async function mutate(page, operation, extra = {}) {
 
                 case 'resetExploration':
                     // Official reset API — preferred over direct mutation.
-                    if (typeof window.resetExplorationFocus === 'function') {
-                        window.resetExplorationFocus()
+                    if (typeof window.__APP_ACTIONS__?.resetExplorationFocus === 'function') {
+                        window.__APP_ACTIONS__.resetExplorationFocus()
                     }
                     break
 
@@ -314,8 +314,8 @@ export async function reset(page, scope = 'exploration') {
 
             if (s === 'exploration') {
                 // Official API — resets focusedNode, trailDepth, navState.mode to overview.
-                if (typeof window.resetExplorationFocus === 'function') {
-                    window.resetExplorationFocus()
+                if (typeof window.__APP_ACTIONS__?.resetExplorationFocus === 'function') {
+                    window.__APP_ACTIONS__.resetExplorationFocus()
                 } else {
                     // Fallback: direct teardown when the official API is not available.
                     state.focusedNode = null
@@ -330,17 +330,17 @@ export async function reset(page, scope = 'exploration') {
                 }
             } else if (s === 'search') {
                 // Official API — clears search summary and input state.
-                if (typeof window.clearSearch === 'function') {
-                    window.clearSearch()
+                if (typeof window.__APP_ACTIONS__?.clearSearch === 'function') {
+                    window.__APP_ACTIONS__.clearSearch()
                 } else {
                     state.currentSearchSummary = null
                 }
             } else if (s === 'deep') {
                 // Full reset: exploration + search + view.
-                if (typeof window.resetExperienceState === 'function') {
-                    window.resetExperienceState()
-                } else if (typeof window.resetExplorationFocus === 'function') {
-                    window.resetExplorationFocus()
+                if (typeof window.__APP_ACTIONS__?.resetExperienceState === 'function') {
+                    window.__APP_ACTIONS__.resetExperienceState()
+                } else if (typeof window.__APP_ACTIONS__?.resetExplorationFocus === 'function') {
+                    window.__APP_ACTIONS__.resetExplorationFocus()
                 }
                 state.currentView = 'galaxy'
                 state.currentSearchSummary = null

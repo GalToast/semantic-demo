@@ -67,6 +67,35 @@ export interface UpdateUrlStateOptions {
 
 // ── Internal State ────────────────────────────────────────────────────────────
 
+// URL flags such as `nodemo=1` and `staticDev=1` control boot/test behavior;
+// they do not describe application navigation. The post-data boot restore
+// must not reset a user interaction when the URL has no state to restore.
+const URL_STATE_KEYS = [
+    'view',
+    'q',
+    'mode',
+    'depth',
+    'story',
+    'anchor',
+    'record',
+    'status',
+    'city',
+    'website',
+    'email',
+    'geocoded',
+    'cluster'
+] as const
+
+function hasRestorableUrlState(params: URLSearchParams): boolean {
+    return URL_STATE_KEYS.some((key) => {
+        // `dormant` is the initial renderer state and is serialized by the
+        // first URL sync on compact boot. It carries no navigation intent, so
+        // treating it as a restore would reintroduce the mode-chip race.
+        if (key === 'mode' && params.get(key) === 'dormant') return false
+        return params.has(key)
+    })
+}
+
 /**
  * Parse a depth value from URL params, clamped to [0, 2].
  * Exported (Phase 6c, 2026-06-26) to enable direct contract testing without
@@ -209,6 +238,16 @@ let _activeRestoreController: AbortController | null = null
  * - Deferred restoration when data hasn't loaded yet
  */
 export async function applyUrlState(options: UrlStateOptions = {}): Promise<void> {
+    const params = getSearchParams()
+
+    // On a fresh visit there is no URL state to restore. In particular, the
+    // boot-only `nodemo=1` flag used by the journey tests must not allow the
+    // deferred post-data restore to overwrite a mode selected by the user
+    // while data initialization is still settling. History restores remain
+    // authoritative even when returning to a clean URL, because they must
+    // clear the state represented by the previous history entry.
+    if (!options.fromHistory && !hasRestorableUrlState(params)) return
+
     const restoreToken = bumpUrlStateRestoreToken()
     const $nav = get(navStore)
     const priorRestoringBrowserHistory = $nav.restoringBrowserHistory
@@ -226,7 +265,6 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         restoringBrowserHistory: !!options.fromHistory
     })
 
-    const params = getSearchParams()
     const restoredQuery = params.get('q')
 
     try {
