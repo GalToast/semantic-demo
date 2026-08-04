@@ -83,7 +83,6 @@ export function renderThreadInspection(
                 {
                     appState.canvasThreadInspectionClearTimer = null
                 }
-                appState.canvasThreadInspectionClearTimer = null
             }
         }
         const pointerLeave = (): void => {
@@ -126,7 +125,6 @@ export function renderThreadInspection(
         {
             appState.canvasThreadInspectionClearTimer = null
         }
-        appState.canvasThreadInspectionClearTimer = null
     }
 
     inspector.classList.toggle('active', !!inspectionState?.active)

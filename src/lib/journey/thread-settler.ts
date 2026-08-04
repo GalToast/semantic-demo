@@ -254,9 +254,6 @@ export class ThreadSettler {
             }
         }
 
-        appState.focusState.pinnedThreadIndex = null
-        appState.focusState.inspectedThreadIndex = null
-
         cancelAllThreadTimers()
         setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason })
         this.manager.setPhase('exploring', { targetIndex: index, fromIndex, reason })

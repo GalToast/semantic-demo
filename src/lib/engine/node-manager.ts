@@ -199,6 +199,16 @@ export function setNodeSporeInstanceMatrix(
     targetMesh.setMatrixAt(index, _nodeSporeObject.matrix)
 }
 
+/**
+ * Returns the spore color for `index`.
+ *
+ * ALIASING CONTRACT: returns the shared module-level scratch `_nodeSporeColor`,
+ * which is mutated on every call. It is intentionally NOT cloned here to avoid a
+ * per-node allocation across the 8,406-point rebuild loop. Consumers must consume
+ * the returned Color immediately (e.g. `InstancedMesh.setColorAt` copies it), and
+ * must never retain the reference across calls. Callers that need to store the
+ * color must clone it at the call site.
+ */
 export function getNodeSporeColor(index: number, factor = 1) {
     const colorOffset = index * 3
     const baseR = state.pointBaseColors?.[colorOffset] ?? 0.45
@@ -272,12 +282,13 @@ export function getPointBoundsCenter(
 export function compilePointMaterialForReadiness() {
     if (!webglContext.renderer || !webglContext.scene || !webglContext.camera || !webglContext.pointsMaterial) return
     webglContext.pointsMaterial.needsUpdate = true
+    // installPointMaterialShader sets material.userData.shader synchronously at
+    // creation, so the legacy `if (!userData.shader) render()` fallback could never
+    // fire and was dead code — removed. Precompiling here warms the points program
+    // so the first real frame does not hitch.
     try {
         if (typeof webglContext.renderer.compile === 'function') {
             webglContext.renderer.compile(webglContext.scene, webglContext.camera)
-        }
-        if (!webglContext.pointsMaterial.userData.shader) {
-            webglContext.renderer.render(webglContext.scene, webglContext.camera)
         }
     } catch (error) {
         debugWarn('Semantic point shader precompile failed:', error)

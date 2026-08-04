@@ -534,7 +534,7 @@ function _clearSemanticThreadsRetryTimer(): void {
     const state = getState()
     {
         if (state.semanticThreadsRetryTimer) {
-            window.clearTimeout(state.semanticThreadsRetryTimer)
+            globalThis.clearTimeout(state.semanticThreadsRetryTimer)
             state.semanticThreadsRetryTimer = null
         }
     }

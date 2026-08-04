@@ -315,3 +315,17 @@
     backdrop-filter: blur(var(--glass-blur-heavy));
     -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
 }
+
+/* Reduced motion: disable weather overlay animations and transitions. */
+@media (prefers-reduced-motion: reduce) {
+    .rain-drop,
+    .snow-flake,
+    .lightning-flash.flash,
+    .weather-icon .weather-seed-base {
+        animation: none;
+    }
+
+    .weather-overlay {
+        transition: none;
+    }
+}

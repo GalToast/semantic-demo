@@ -129,7 +129,16 @@ test.describe('Journey smoke (no WebGL engine)', () => {
         await backBtn.waitFor({ state: 'visible', timeout: 10000 })
         let galaxyHeld = false
         for (let attempt = 0; attempt < 4 && !galaxyHeld; attempt++) {
-            await backBtn.click({ timeout: 10000 })
+            if (attempt > 0) await backBtn.waitFor({ state: 'visible', timeout: 10000 })
+            const backBox = await backBtn.boundingBox()
+            expect(backBox, 'map back button must have a clickable box').not.toBeNull()
+            if (!backBox) break
+            // The click handler unmounts MapView synchronously. Playwright's
+            // locator.click() waits on the detached target after dispatching
+            // the native pointer sequence and can time out despite the click
+            // having succeeded. Coordinate input preserves the real hit test
+            // without waiting for the removed locator to settle.
+            await page.mouse.click(backBox.x + backBox.width / 2, backBox.y + backBox.height / 2)
             galaxyHeld = await page
                 .waitForFunction(() => window.__APP_STATE__?.currentView === 'galaxy', null, {
                     timeout: 3000,
