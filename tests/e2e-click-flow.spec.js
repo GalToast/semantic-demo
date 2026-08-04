@@ -69,7 +69,7 @@ const SEARCH_STUB = {
 }
 
 test('E2E Semantic Explorer Click Flow', async ({ page }) => {
-    test.setTimeout(180000)
+    test.setTimeout(240000)
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.route('**api.php**semantic_lane_health**', async (route) => {
         await route.fulfill({
@@ -119,14 +119,8 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
     await page.locator('.search-result-item').first().click()
     // result click — settlement handled by subsequent waitForFunction
 
-    // Wait for the search-focus transition to fully settle before switching
-    // views. A click lands while the app is in its 'focusing' phase (amber
-    // camera/settle state); switching to map mid-transition lets the pending
-    // focus-settle reconciliation (which re-writes mode:'search' +
-    // surface:'focus-search' and restores the galaxy view) land AFTER the
-    // switch and clobber it — the app pins to galaxy and
-    // `dataset.activeView === 'map'` never flips (probe-parity-timeline
-    // matrix, 2026-08-04: switches from settled state always stick).
+    // Wait for the focus surface to settle before switching views. This keeps
+    // the assertion focused on the view handoff rather than on camera timing.
     // Gate on the settled focus DOM, NOT on searchStatus: headless GPU stalls
     // can leave status stuck at 'focusing' even when the focus UI is fully
     // settled (CAMERA_NODE_FOCUSED never publishes), which would make a status
@@ -148,31 +142,14 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
         })
         .catch(() => {})
 
-    // The map switch can be clobbered once by the focus-settle reconciliation
-    // tail: if the settle completes AFTER the switch (the click's camera/settle
-    // chain can lag ~10-20s behind a headless main-thread stall), the app
-    // re-writes mode/surface and restores the galaxy view, so
-    // `dataset.activeView === 'map'` never flips even though the switch itself
-    // committed (write trail shows `currentView:'map'` mirroring at switch
-    // time, then a settle-path write reverts it; probe matrix 2026-08-04).
-    // Settled-state switches always stick (E2 matrix), so a bounded retry is
-    // deterministic: once the settle tail has run, the next attempt lands.
-    let switched = false
-    for (let attempt = 0; attempt < 15 && !switched; attempt++) {
-        await page.evaluate(() => window.__navActions__.switchView('map', { skipTerrainPrelude: true }))
-        await page
-            .waitForFunction(() => document.body.dataset.activeView === 'map', {
-                timeout: 4000,
-                polling: 50
-            })
-            .then(() => {
-                switched = true
-            })
-            .catch(() => {
-                /* settle tail may still be pending — retry */
-            })
-    }
-    expect(switched, 'map switch must stick after the focus-settle reconciliation (bounded retry)').toBe(true)
+    // FocusPocket is torn down when the map takes ownership of the view. Its
+    // partial cleanup must not replay a stale `currentView:'galaxy'` snapshot
+    // over this user-initiated map switch.
+    await page.evaluate(() => window.__navActions__.switchView('map', { skipTerrainPrelude: true }))
+    await page.waitForFunction(() => document.body.dataset.activeView === 'map', {
+        timeout: 15000,
+        polling: 50
+    })
 
     // 4. Switch to Map Mode
     // Repaired 2026-08-03: the original drove the dead legacy #btn-map overlay
