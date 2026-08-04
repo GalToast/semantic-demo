@@ -26,7 +26,7 @@
   import { searchState, setActiveResult, clearSearch as clearSearchState } from '@lib/stores/search.svelte';
   import { searchVisibleCount as searchVisibleCountFn, setSearchVisibleCount } from '@lib/stores/search.svelte';
   import { activeClusterFilter } from '@lib/stores/filter.svelte';
-  import { getBusinessRecords } from '@lib/data-store';
+  import { getBusinessRecords, getPointIndexByLeadId } from '@lib/data-store';
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { prefersReducedMotion } from '@lib/utils/environment';
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
@@ -318,9 +318,17 @@
 
   function getResultPoint(result: SearchResult): NonNullable<SearchResult['point']> | null {
     if (result.point) return result.point;
-    const record = getBusinessRecords()[Number(result.index)];
+    const records = getBusinessRecords();
+    // Legacy/cast results may omit `point`, but their id is normally the
+    // lead_id. Resolve that before treating `index` as a record position so a
+    // page-order result cannot borrow another business's details.
+    const recordByLeadId = result.id
+      ? records.find((candidate) => String(candidate.lead_id) === String(result.id))
+      : undefined;
+    const record = recordByLeadId ?? records[Number(result.index)];
     if (!record && !result.name) return null;
     return {
+      lead_id: record?.lead_id,
       name: record?.name ?? result.name ?? 'Unknown',
       what: record?.what ?? result.snippet ?? result.category ?? '',
       cluster: record?.cluster,
@@ -333,22 +341,29 @@
 
   function handleResultClick(index: number | string): void {
     const result = results.find((item) => Number(item.index) === Number(index));
-    const point = result ? getResultPoint(result) : null;
+    let point = result ? getResultPoint(result) : null;
+    // Default focus target: the handed-in index. Mapper-produced results
+    // normally already carry the canonical corpus index, but legacy/cast
+    // results can retain API page order, so resolve by lead_id when possible.
+    let focusIndex = Number(index);
+    const leadId = point?.lead_id ?? (result as { lead_id?: string | number } | null)?.lead_id;
+    if (leadId != null) {
+      const canonicalIndex = getPointIndexByLeadId().get(String(leadId));
+      if (canonicalIndex != null && Number.isFinite(canonicalIndex) && canonicalIndex >= 0) {
+        focusIndex = canonicalIndex;
+      }
+    }
     if (point) {
       const actions = typeof window !== 'undefined' ? window.__APP_ACTIONS__ : undefined;
       // Publish focus-request event BEFORE calling the legacy focusOnNode so
       // triggers.ts can populate legacy navState (threadCandidates, etc.) before
       // the route-trace overlay refreshes in response to CAMERA_NODE_FOCUSED.
-      publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: Number(index) });
-      actions?.focusOnNode?.(Number(index), { fromSearchResult: true });
-    } else if (result) {
-      // W52-UX: previously the click silently did nothing when the underlying
-      // record was missing (corrupt catalogue index). The user clicked a
-      // result and got no feedback. Surface a warning so the user understands
-      // why the click had no effect and can retry.
+      publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: focusIndex });
+      actions?.focusOnNode?.(focusIndex, { fromSearchResult: true });
+    } else {
       showErrorToast(
         'Selection unavailable',
-        'This result is missing its details. Please retry the search.'
+        'This business is missing its details. Please retry the search.'
       );
     }
   }

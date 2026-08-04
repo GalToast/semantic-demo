@@ -11,26 +11,42 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { SearchDispatch } from '@lib/search/search-dispatch'
 import { resetSearchAbort } from '@lib/search/search-abort'
 
-const mocks = vi.hoisted(() => ({
-    runSearch: vi.fn(),
-    setSearchStatus: vi.fn(),
-    setSearchQuery: vi.fn(),
-    dispatchNavTransition: vi.fn(),
-    publish: vi.fn(),
-    showExperienceToast: vi.fn(),
-    requestEntryFocus: vi.fn(),
-    pendingSearch: {
-        value: null as string | null,
-        set: vi.fn((q: string) => {
-            mocks.pendingSearch.value = q
-        }),
-        consume: vi.fn(() => {
-            const v = mocks.pendingSearch.value
-            mocks.pendingSearch.value = null
-            return v
-        })
+const mocks = vi.hoisted(() => {
+    let navCurrentView = 'galaxy'
+    const navStore = () => ({ currentView: navCurrentView })
+    // Minimal readable-store surface so svelte/store.get(navStore) works
+    // (the real navStore is a callable + Readable hybrid).
+    ;(navStore as { subscribe?: (run: (v: { currentView: string }) => void) => () => void }).subscribe = (
+        run: (v: { currentView: string }) => void
+    ) => {
+        run({ currentView: navCurrentView })
+        return () => {}
     }
-}))
+    return {
+        runSearch: vi.fn(),
+        setSearchStatus: vi.fn(),
+        setSearchQuery: vi.fn(),
+        dispatchNavTransition: vi.fn(),
+        publish: vi.fn(),
+        showExperienceToast: vi.fn(),
+        requestEntryFocus: vi.fn(),
+        navStore,
+        setNavCurrentView: (v: string) => {
+            navCurrentView = v
+        },
+        pendingSearch: {
+            value: null as string | null,
+            set: vi.fn((q: string) => {
+                mocks.pendingSearch.value = q
+            }),
+            consume: vi.fn(() => {
+                const v = mocks.pendingSearch.value
+                mocks.pendingSearch.value = null
+                return v
+            })
+        }
+    }
+})
 
 vi.mock('@lib/stores/search.svelte', () => ({
     runSearch: mocks.runSearch,
@@ -43,7 +59,11 @@ vi.mock('@lib/stores/navigation.svelte.ts', () => ({
     NAV_TRANSITION_ACTIONS: {
         SET_SURFACE: 'SET_SURFACE',
         RETURN_OVERVIEW: 'RETURN_OVERVIEW'
-    }
+    },
+    // navStore: callable store-shaped read (navStore() or get(navStore))
+    // with a minimal subscribe for svelte/store.get(). Default view is
+    // galaxy; the map-preserve test flips it via mocks.setNavCurrentView.
+    navStore: mocks.navStore
 }))
 
 vi.mock('@lib/orchestration/event-bus', () => ({
@@ -77,6 +97,7 @@ describe('SearchDispatch', () => {
         resetSearchAbort()
         vi.clearAllMocks()
         mocks.pendingSearch.value = null
+        mocks.setNavCurrentView('galaxy')
         dispatch = new SearchDispatch({
             onQuerySet,
             getInputElement: () => inputEl
@@ -110,6 +131,18 @@ describe('SearchDispatch', () => {
         dispatch.dispatchSearch('coffee')
         expect(mocks.setSearchStatus).toHaveBeenCalledWith('searching')
         expect(mocks.dispatchNavTransition).toHaveBeenCalledWith('SET_SURFACE', { surface: 'search' })
+        expect(mocks.runSearch).toHaveBeenCalledWith('coffee', expect.any(AbortSignal))
+    })
+
+    it('preserves the map view: skips the search-surface lift while currentView is map', () => {
+        // W-map-preserve: a search dispatched from the map view must NOT lift
+        // the search surface as a galaxy-bound transition (a late debounced
+        // re-dispatch would otherwise clobber a user-initiated map switch).
+        mocks.runSearch.mockResolvedValue(undefined)
+        mocks.setNavCurrentView('map')
+        dispatch.dispatchSearch('coffee')
+        expect(mocks.setSearchStatus).toHaveBeenCalledWith('searching')
+        expect(mocks.dispatchNavTransition).not.toHaveBeenCalledWith('SET_SURFACE', { surface: 'search' })
         expect(mocks.runSearch).toHaveBeenCalledWith('coffee', expect.any(AbortSignal))
     })
 

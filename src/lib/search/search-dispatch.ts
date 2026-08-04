@@ -1,7 +1,8 @@
 import { runSearch, setSearchStatus, setSearchQuery } from '@lib/stores/search.svelte'
 import { requestEntryFocus } from '@lib/focus/focus-coordinator'
 import { pendingSearch } from '@lib/stores/pending-search.svelte'
-import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts'
+import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts'
+import { get } from 'svelte/store'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { debugWarn } from '@lib/utils/debug'
@@ -109,8 +110,22 @@ export class SearchDispatch {
         if (!isNew) return
         this.searchStartTime = performance.now()
         setSearchStatus('searching')
-        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
-        this.surfaceSwitchedToSearch = true
+        // W-map-preserve: when the user is already in the map view, a new /
+        // re-dispatched search must NOT lift the search surface as a galaxy-
+        // bound transition. The app supports search/focus surfaces over the map
+        // (map-search / map-focus-search derived surfaces), so forcing
+        // SET_SURFACE(search) here can clobber a user-initiated map switch — a
+        // debounced re-dispatch that lands after the switch (main-thread stall
+        // delays the timer) would pull the view back to galaxy. In map view the
+        // search store update still flows and parity derives the map-search
+        // surface; only the galaxy-bound surface lift is skipped.
+        const isMapView = get(navStore).currentView === 'map'
+        if (!isMapView) {
+            dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
+            this.surfaceSwitchedToSearch = true
+        } else {
+            this.surfaceSwitchedToSearch = false
+        }
 
         if (isCompactSearchViewport() && !document.body.dataset.mobileSearchSheet) {
             setMobileSearchSheetMode('peek')
@@ -152,6 +167,7 @@ export class SearchDispatch {
         cancelSearch()
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)
         this.surfaceSwitchedToSearch = false
+        setSearchStatus('idle')
     }
 
     clearQuery(): void {
