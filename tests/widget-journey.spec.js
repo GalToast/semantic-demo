@@ -53,7 +53,10 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        // Raised 40s->60s: this initial-boot splash-CTA render is the first GPU/stall
+        // exposure after prior suite WebGL tests; under serial accumulation the
+        // engineReady signal gating the CTA can push past 40s (full-suite L56).
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -62,7 +65,7 @@ test.describe('Widget journey', () => {
             timeout: 20000,
             polling: 100
         })
-        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 45000 })
         await page.waitForTimeout(1500)
 
         // The first-visit help dialog auto-opens after splash dismissal
@@ -173,7 +176,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -182,7 +185,7 @@ test.describe('Widget journey', () => {
             timeout: 20000,
             polling: 100
         })
-        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 45000 })
         await page.waitForTimeout(1500)
 
         const helpDialog = page.locator('dialog.help-dialog[open]')
@@ -219,7 +222,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -228,7 +231,7 @@ test.describe('Widget journey', () => {
             timeout: 20000,
             polling: 100
         })
-        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 45000 })
         await page.waitForTimeout(1500)
 
         const helpDialog = page.locator('dialog.help-dialog[open]')
@@ -350,7 +353,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -359,7 +362,7 @@ test.describe('Widget journey', () => {
             timeout: 20000,
             polling: 100
         })
-        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 45000 })
         await page.waitForTimeout(1500)
 
         const helpDialog = page.locator('dialog.help-dialog[open]')
@@ -483,7 +486,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&offline=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -492,7 +495,7 @@ test.describe('Widget journey', () => {
             timeout: 20000,
             polling: 100
         })
-        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 45000 })
         await page.waitForTimeout(1500)
 
         // Dismiss first-visit help dialog if auto-opened.
@@ -535,7 +538,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -770,7 +773,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -1093,7 +1096,11 @@ test.describe('Widget journey', () => {
 
         // ── Retry leg: error card → flip to success → Retry RE-RUNS search ──
         await fillQuery('coffee')
-        await expect(page.locator('.search-error-state')).toBeVisible({ timeout: 25000 })
+        // Raised 25s->45s: full-suite quiet run timed out the error-state card
+        // (transcript BUG-6 L1099) because the typing->round-trip->error settle
+        // chain runs slower under serial Suite GPU/CPU accumulation. Passes in
+        // isolation at ~1.3m total.
+        await expect(page.locator('.search-error-state')).toBeVisible({ timeout: 45000 })
         await expect(page.locator('.search-error-retry-btn')).toBeVisible({ timeout: 5000 })
         const requestsBeforeRetry = state.searchRequests
         expect(requestsBeforeRetry, 'typing must fire at least one semantic_search request').toBeGreaterThan(0)
@@ -1272,7 +1279,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -1353,7 +1360,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -1466,7 +1473,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -1545,7 +1552,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
         // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
@@ -1622,7 +1629,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
@@ -1686,7 +1693,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -1787,7 +1794,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
         await page.waitForTimeout(1000)
 
@@ -1911,8 +1918,10 @@ test.describe('Widget journey', () => {
             // works confirms the demo's reactive state machine is wired correctly.
             const dismissBtn = page.locator('#demo-choreography .demo-dismiss')
             // 20s timeout accommodates WebGL GPU-stall delays during initial scene
-            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
-            await dismissBtn.waitFor({ state: 'visible', timeout: 20000 })
+            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline
+            // diagnosis. Raised 20s->40s for serial-suite accumulation (full-suite
+            // W51-demo L1915 TimeoutError on this exact wait).
+            await dismissBtn.waitFor({ state: 'visible', timeout: 40000 })
             await page.evaluate(() => {
                 const btn = document.querySelector('#demo-choreography .demo-dismiss')
                 if (btn && 'click' in btn) btn.click()
@@ -2001,7 +2010,7 @@ test.describe('Widget journey', () => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-            await explore.waitFor({ state: 'visible', timeout: 40000 })
+            await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
@@ -2030,17 +2039,20 @@ test.describe('Widget journey', () => {
             // hydrated. Use evaluate polling because Svelte transitions can make
             // Playwright's visibility/attached checks flaky under load.
             await page.waitForFunction(() => document.querySelector('#fc-selected-name') !== null, null, {
-                timeout: 20000,
+                // Raised 20->30s for serial-suite GPU accumulation (full-suite W52-a11y).
+                timeout: 30000,
                 polling: 100
             })
             await page.waitForFunction(() => document.querySelector('#focus-card-selected') !== null, null, {
-                timeout: 15000,
+                // Raised 15->25s for serial-suite GPU accumulation.
+                timeout: 25000,
                 polling: 100
             })
             await page.waitForFunction(
                 () => document.querySelector('#focus-pocket-a11y .focus-pocket-item-btn') !== null,
                 null,
-                { timeout: 15000, polling: 100 }
+                // Raised 15->25s for serial-suite GPU accumulation.
+                { timeout: 25000, polling: 100 }
             )
 
             // ── F1-1: exactly one #selected-card id (InfoPanel); FocusCard moved to #focus-card-selected ──
@@ -2097,7 +2109,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -2198,7 +2210,7 @@ test.describe('Widget journey', () => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-            await explore.waitFor({ state: 'visible', timeout: 40000 })
+            await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
@@ -2242,7 +2254,7 @@ test.describe('Widget journey', () => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-            await explore.waitFor({ state: 'visible', timeout: 40000 })
+            await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
@@ -2300,7 +2312,7 @@ test.describe('Widget journey', () => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-            await explore.waitFor({ state: 'visible', timeout: 40000 })
+            await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
@@ -2342,7 +2354,8 @@ test.describe('Widget journey', () => {
                     )
                 },
                 null,
-                { timeout: 20000, polling: 100 }
+                // Raised 20->35s for serial-suite GPU accumulation (full-suite Bug3b).
+                { timeout: 35000, polling: 100 }
             )
 
             // The map button lives inside the FocusCard which may be hidden/
@@ -2405,7 +2418,7 @@ test.describe('Widget journey', () => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-            await explore.waitFor({ state: 'visible', timeout: 40000 })
+            await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
@@ -2623,7 +2636,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -2746,7 +2759,7 @@ test.describe('Widget journey', () => {
         })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
@@ -3030,7 +3043,7 @@ test.describe('Widget journey', () => {
         })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
@@ -3325,7 +3338,7 @@ test.describe('Widget journey', () => {
         })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
@@ -3391,7 +3404,7 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -3500,7 +3513,9 @@ test.describe('Widget journey', () => {
                 return el.getAttribute('aria-hidden') === 'false'
             },
             null,
-            { timeout: 8000, polling: 100 }
+            // Raised 8->15s: the inert-removal panel-open chain can exceed 8s
+            // under serial-suite GPU accumulation (full-suite 5h L3499).
+            { timeout: 15000, polling: 100 }
         )
 
         expect(await infoPanel.getAttribute('aria-hidden'), 'panel open => aria-hidden=false').toBe('false')
@@ -3921,7 +3936,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
         // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
@@ -4014,7 +4029,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
@@ -4023,7 +4038,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             timeout: 20000,
             polling: 100
         })
-        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 45000 })
         await page.waitForFunction(() => document.body?.dataset?.sceneReady === 'true', null, {
             timeout: 15000,
             polling: 100
@@ -4088,7 +4103,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
@@ -4384,7 +4399,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -4393,7 +4408,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             timeout: 20000,
             polling: 100
         })
-        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 45000 })
         await page.waitForTimeout(1500)
 
         // Close the first-visit help dialog so its backdrop doesn't absorb the dismiss click.
@@ -4529,7 +4544,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -4538,7 +4553,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             timeout: 20000,
             polling: 100
         })
-        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        // Raised 30->45s: the weather-widget warm-up gate under serial-suite GPU
+        // accumulation (full-suite Legend L4544 TimeoutError on this exact wait).
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 45000 })
         await page.waitForTimeout(800)
 
         const helpDialog = page.locator('dialog.help-dialog[open]')
@@ -4605,7 +4622,11 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
         // Wait for the canonical demo choreography box to appear.
         const demoBox = page.locator('#demo-choreography')
-        await demoBox.waitFor({ state: 'visible', timeout: 30000 })
+        // Raised 30->45s->80s: the forced-demo WebGL scene boot + first phase is
+        // the heaviest test in the suite; isolation total is ~56s, but after
+        // serial WebGL tests the boot chain exceeds 45s (verify-batch2 L4627
+        // TimeoutError). 80s is practical headroom for this heavyweight.
+        await demoBox.waitFor({ state: 'visible', timeout: 80000 })
 
         // Open the keyboard-help panel (the replay affordance lives there).
         const helpBtn = page.locator('#btn-keyboard-help').first()
@@ -4655,7 +4676,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -4690,7 +4711,16 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // Click the 'map' mode chip; selectMode() calls SET_VIEW + SET_SURFACE.
         // Bug #5 fix: writeNavStateMirror({ currentView: view }) in SET_VIEW
         // case ensures currentView is synced.
-        await page.click('.mode-chip[data-mode="map"]', { force: true })
+        // T1-4 rAF-stall: locator.click on this chip hung past the app test
+        // timeout under serial WebGL accumulation (full-suite transcript: page.click
+        // on .mode-chip[data-mode="map"] -> 120s timeout; force:true bypasses
+        // visibility but not the post-click rAF settle). Dispatch at the chip
+        // center via coordinates — same pattern as the W54/map-back fix.
+        const mapChip = page.locator('.mode-chip[data-mode="map"]')
+        await mapChip.waitFor({ state: 'visible', timeout: 10000 })
+        const mapBox = await mapChip.boundingBox()
+        if (!mapBox) throw new Error('map chip missing bounding box (expected visible)')
+        await page.mouse.click(mapBox.x + mapBox.width / 2, mapBox.y + mapBox.height / 2)
         await page.waitForTimeout(500)
 
         const mapView = await page.evaluate(() => window.__APP_STATE__?.currentView)
@@ -4702,7 +4732,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -4760,7 +4790,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -4820,7 +4850,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -4962,7 +4992,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -5099,7 +5129,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
         // 30s budget accommodates WebGL GPU-stall delays during initial scene
