@@ -4,6 +4,17 @@ Moved out of `AGENTS.md` (Prompt Budget: no large reference tables in the hot-pa
 
 Probed 2026-07-27. Updated 2026-07-30. **See also `docs/subagent-models.md`** for the quick-reference version (verified table, conditional/avoid list, and untested backlog).
 
+## Routing preference (session 2026-08-04, user directive)
+
+**Prefer `kilo/*` and `openrouter/*` routes over `opencode-zen/*`** for subagent dispatch while opencode-zen keys are on cooldown (429 "no keys currently off cooldown" hit during ling review 2026-08-04). Same model on multiple routers — pick route in this order when both exist:
+
+1. `kilo/...` (kilo gateway — claude/gemini/gpt lanes, incl. lang variants like `kilo/inclusionai/ling-3.0-flash:free`)
+2. `openrouter/...` (e.g., `openrouter/inclusionai/ling-3.0-flash:free`, `openrouter/poolside/laguna-s-2.1:free`)
+3. `opencode-zen/...` (fallback only — router-cooldown-prone)
+4. direct providers (`router-poolside/poolside/laguna-s-2.1`, `router-agnes/agnes-2.5-*`) — poolside direct is the premium free carrier per earlier sweeps
+
+Lane probes were run via opencode-zen 2026-07-27..08-04, so "opencode-zen" in the entries below means the lane was validated there; the same model refs generally resolve on kilo/openrouter too (ling-3.0-flash especially — see 2026-08-04 note).
+
 ## Lane inventory (from `model-providers.json`)
 
 - **Primary:** `minimax-m3` (MiniMax-M3 — main lane; verified vision-capable 2026-07-15, routes: kilo/minimax, logfare, opencode-zen, minimax-direct). Previous `kilo/openrouter/owl-alpha` is dead (404 on both the kilo gateway and OpenRouter; absent from `/v1/models`) — do not re-add.
