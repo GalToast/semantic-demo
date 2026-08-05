@@ -557,6 +557,25 @@
     #focus-card-selected.focus-card.focus-stage-card.selected-card.surface-focus,
     #focus-card-selected.focus-card.focus-stage-card.selected-card.surface-focus-search {
       z-index: var(--z-focus-stage-card);
+      /* Stage-rail clear (2026-08-04 mobile UI sweep): with the bottom sheet
+         at its full content height, the card's top band (grip + name row)
+         rendered UNDER the neighbor/journey pill rail of #focus-stage
+         (pill rail z700 > card z70) — vision jury read it as "text is
+         cut/clipped where the larger card begins". Keep the card BELOW the
+         rail (z stays --z-focus-stage-card so the nearby-list toggle at
+         --z-panels stays reachable) but cap its height to ~330px below the
+         viewport top; the stage band (compact search box + pill rail) keeps
+         its 0-~320px strip and the card peeks under it, scrollable. Applied
+         only on tall-enough phones; short-landscape keeps its own compact
+         layout. */
+      max-height: calc(100dvh - max(0px, env(safe-area-inset-bottom, 0px)) - 330px);
+    }
+
+    @media (max-width: 768px) and (max-height: 540px) {
+      #focus-card-selected.focus-card.focus-stage-card.selected-card.surface-focus,
+      #focus-card-selected.focus-card.focus-stage-card.selected-card.surface-focus-search {
+        max-height: min(170px, calc(100dvh - max(0px, env(safe-area-inset-bottom, 0px)) - 10px));
+      }
     }
   }
 </style>

@@ -23,6 +23,7 @@ This file is loaded into every Pi model call. Keep it concise. Detailed referenc
 - Evaluate unfamiliar changes on their merits — good changes should stick, bad ones should be fixed. Don't reflexively revert a parallel-lane change just because it doesn't match your mental model; if it improves the code, keep it. Don't preserve bad code silently because authorship is murky either — if a change introduces an error or breaks an invariant, fix it (or revert it with a brief explanation, not as a stealth revert). When parallel sessions land conflicting changes, surface the conflict in chat rather than silently picking a side.
 - If durable repo behavior changes, update the appropriate repo doc in the same turn.
 - Before presenting work as finished, verify against the real success criteria and state what was run.
+- **Verify "impossible" claims against the actual environment before believing them.** Twice (2026-08-05) a "can't run here" conclusion was wrong — the fix was a flag: `--enable-unsafe-swiftshader` for software WebGL (`SEMANTIC_FORCE_WEBGL_SOFTWARE=1` audit env) and `--use-angle=d3d11` to reach the real physical GPU (`SEMANTIC_USE_D3D11=1`; machine has RTX 4050 + Intel UHD, confirm via `Get-CimInstance win32_VideoController`). When a tool/test "can't render/can't connect/can't run", probe the actual capability (GPU query, software-rendering flags, port truth) before declaring it environment-gated.
 - **Default to delegating when it improves throughput/quality.** Main-lane speedup only wins when the alternative blocks the user.
 - **Finish all N sites of an established pattern, not just the high-ROI one.** Partial pattern fixes create drift — new consumers can't rely on it if half the old sites bypass it. Stop only on user request or genuine risk.
 - **User-visible features need a journey test.** Svelte/DOM-touching features → add a test in `tests/widget-journey.spec.js` + run `npm run qa:journey:headless`. Contract tests miss click-eating z-index / missing-callback / `Math.random()`-as-data bugs. Pre-commit hook warns on unstaged-journey-test for `*.svelte`/`App.svelte`/`lib/ui`/`lib/keyboard`; `--SkipTestStrategyGapCheck` for pure refactors. Full rule: `docs/session-coordination.md` § test-strategy gap.
@@ -88,6 +89,7 @@ Read only when relevant (full module inventory: `docs/important-files.md`):
 - `docs/typing-contract.md` — `as any` budget, typing-contract tests
 - `docs/session-coordination.md` — session lock, parallel sessions, test-strategy gap
 - `docs/subagent-delegation.md` — delegation lifecycle, rate/polish, vision matrix
+- `docs/vision-lane-catalog.md` — chat-vision lane census (verified vs blocked), inline vision bridge `tmp/vision-ask.mjs`
 - `docs/subagent-lane-inventory.md` — per-model subagent viability + routes
 - `docs/search-fallback.md` — API/banner fallback detail
 - `docs/dev-commands.md` — full script list + a11y flags

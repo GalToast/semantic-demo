@@ -497,6 +497,20 @@
         order: 30;
     }
 
+    /* map-focus aux suppression (2026-08-04 sweep, batch-3): in map-focus-search
+       the auxiliary surfaces (dive/thread extras) rendered as absolute content
+       to y≈1070 — ~226px below the 844px fold, with body overflow-y hidden and
+       no inner scroll surface, so the content was unreachable (43px-extending
+       the page for nothing). The map-focus surface owns its drawer; suppress
+       the aux block there. */
+    body[data-panel-surface='map-focus-search'] .focus-stage-auxiliary-surfaces,
+    body.surface-map-focus-search .focus-stage-auxiliary-surfaces {
+        display: none;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
+
     /* ----------------------------------------------------------------
        4. Focus stage — focus-search journey block
        ---------------------------------------------------------------- */
@@ -1459,7 +1473,10 @@
         visibility: visible;
         opacity: 1;
         pointer-events: auto;
-        transform: translateY(0);
+        /* Keep fixed card descendants viewport-anchored. Any transform on
+           this owner creates a containing block and makes bottom: 0 resolve
+           against the stage's content height instead of the viewport. */
+        transform: none;
     }
 
     /* Field-node flex-column override: must appear after the display:block

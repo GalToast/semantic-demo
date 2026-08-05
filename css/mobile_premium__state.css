@@ -1663,8 +1663,6 @@
         margin-top: 6px;
     }
 
-
-
     /* Neighbors/Insights List */
     .focus-stage-neighbors.active {
         margin: 0 20px 24px;
@@ -1683,7 +1681,6 @@
         flex-direction: column;
         gap: 8px;
     }
-
 
     body.surface-semantic-dive #focus-stage {
         display: block;
@@ -1704,7 +1701,6 @@
         display: none;
         pointer-events: none;
     }
-
 
     /* Map-search final geometry guard: keep map chrome out of the content lane. */
     body.surface-map-any .info-panel {
@@ -2350,6 +2346,21 @@
        suppressed so the search/focus surfaces do not duplicate ownership. */
     body.surface-focus-search:not([data-focus-panel-mode='field-node']) #selected-card,
     body.surface-focus-search:not([data-focus-panel-mode='field-node']) #selected-card {
+        display: none;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* Header caption vs mode-chip overlap (2026-08-04 inline-vision find):
+       in focus-family surfaces the mobile header caption row (y≈33-60)
+       overlaps the mode-chip row (y≈38-84) and is ellipsized to two lines
+       ("See all businesses linked to the focused one, ranked by how
+       strongly t…"). The focus-stage compass already owns intent copy, so
+       suppress the redundant caption in these surfaces. */
+    body[data-panel-surface='focus'] .header-description,
+    body[data-panel-surface='focus-search'] .header-description,
+    body[data-panel-surface='semantic-dive'] .header-description {
         display: none;
         visibility: hidden;
         opacity: 0;

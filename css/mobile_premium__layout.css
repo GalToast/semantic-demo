@@ -558,6 +558,26 @@
         pointer-events: none;
     }
 
+    /* app-help straggler fix (2026-08-04 mobile UI sweep): #btn-app-help
+       inherited the rail slot (top:216px / right:14px) on content surfaces
+       where .controls (z-blocker=1000) occupies that exact slot — the help
+       button rendered ON TOP of the controls cluster, and in focus-search
+       it landed exactly on the focus card's close button (surface-overlap
+       audit: focus-card-selected vs #btn-app-help). Mute it only where the
+       sibling affordances are already hidden so the controls rail stays
+       interactive; idle + map surfaces keep the help rail. */
+    body:not(.surface-idle):is(
+            [data-panel-surface='search'],
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
+        #btn-app-help {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     body:not(.surface-idle)[data-panel-surface] .controls {
         position: fixed;
         bottom: auto;
