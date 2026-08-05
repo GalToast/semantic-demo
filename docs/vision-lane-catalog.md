@@ -204,3 +204,10 @@ Router (8788) does NOT strip — grep shows content passes through untouched. Th
 
 CONSEQUENCE: every "EMPTY/TEXT_EMPTY/REFUSAL" verdict from this census MUST be re-probed through a gateway that DOESN'T strip. Verified passthrough gates (PIXELS_OK confirmed through them): modelscope, openrouter, nvidia, cloudflare, llm7, agnes, mistral, zenmux, kilo. Suspect strippers (need cross-check): zydit/v4, groq-403, freemodel-403.
 METHOD RULE (banked): when a family returns 200-with-no-content across many models, READ THE REPLY TEXT — if it meta-refers to the image ("can't see images", "no image attached"), that's gateway stripping, not model capability. A truthful "can't see" from a model that GOT the image is impossible; only the gateway can produce that.
+
+## GROQ UNBLOCKED + more (2026-08-05 11:1x) — 1-key pool, cooldown-flapping
+
+- groq gate had been written off (403). With 1 active key: qwen/qwen3.6-27b @groq = PIXELS-READING (prompt_tokens 794, quoted real card tags ACTIVE/WEBSITE/PHONE/SEARCH RESULT). Single-key pool flips to 403-HTML between calls — treat groq as vision-verified but 1-key-rate-limited.
+- openai/gpt-oss-* @groq = "content must be a string" (text-only path on groq format).
+- Verify meta patterns: groq reasoning models fill 220 max_tokens with reasoning AND STILL NAME REAL TAGS — the "thinking-format only" lane note was the max_tokens-saturation misread (agnes lesson, now 2 families).
+- NEW VERIFIED count bump: 27 (+groq qwen3.6) -> 28, holding until zydat-v1's 4 (chatjimmy-8B, diffusiongemma-26b, +step37 +ds-v4-pro replays) are re-verified via passthrough.
