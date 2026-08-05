@@ -1,0 +1,276 @@
+{
+  "model": "deepseek-ai/deepseek-v4-flash",
+  "repeats": 1,
+  "arms": [
+    "A",
+    "B"
+  ],
+  "maxSteps": 5,
+  "generated_at": "2026-08-05T17:28:54.543Z",
+  "rows": [
+    {
+      "task": "task-1",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 8928,
+      "tokens": 676,
+      "note": null
+    },
+    {
+      "task": "task-1",
+      "arm": "B",
+      "run": 1,
+      "pass": false,
+      "steps": 1,
+      "ms": 7133,
+      "tokens": 666,
+      "note": null
+    },
+    {
+      "task": "task-10",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 3593,
+      "tokens": 375,
+      "note": null
+    },
+    {
+      "task": "task-10",
+      "arm": "B",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 5729,
+      "tokens": 358,
+      "note": null
+    },
+    {
+      "task": "task-11",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 7851,
+      "tokens": 457,
+      "note": null
+    },
+    {
+      "task": "task-11",
+      "arm": "B",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 3447,
+      "tokens": 435,
+      "note": null
+    },
+    {
+      "task": "task-12",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 1457,
+      "tokens": 563,
+      "note": null
+    },
+    {
+      "task": "task-12",
+      "arm": "B",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 3147,
+      "tokens": 541,
+      "note": null
+    },
+    {
+      "task": "task-2",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 9327,
+      "tokens": 456,
+      "note": null
+    },
+    {
+      "task": "task-2",
+      "arm": "B",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 6022,
+      "tokens": 446,
+      "note": null
+    },
+    {
+      "task": "task-3",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 3737,
+      "tokens": 460,
+      "note": null
+    },
+    {
+      "task": "task-3",
+      "arm": "B",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 12512,
+      "tokens": 450,
+      "note": null
+    },
+    {
+      "task": "task-4",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 1739,
+      "tokens": 464,
+      "note": null
+    },
+    {
+      "task": "task-4",
+      "arm": "B",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 3015,
+      "tokens": 454,
+      "note": null
+    },
+    {
+      "task": "task-5",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 4820,
+      "tokens": 724,
+      "note": null
+    },
+    {
+      "task": "task-5",
+      "arm": "B",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 3033,
+      "tokens": 714,
+      "note": null
+    },
+    {
+      "task": "task-6",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 6174,
+      "tokens": 524,
+      "note": null
+    },
+    {
+      "task": "task-6",
+      "arm": "B",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 1814,
+      "tokens": 514,
+      "note": null
+    },
+    {
+      "task": "task-7",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 2437,
+      "tokens": 463,
+      "note": null
+    },
+    {
+      "task": "task-7",
+      "arm": "B",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 3656,
+      "tokens": 453,
+      "note": null
+    },
+    {
+      "task": "task-8",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 1246,
+      "tokens": 351,
+      "note": null
+    },
+    {
+      "task": "task-8",
+      "arm": "B",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 1158,
+      "tokens": 341,
+      "note": null
+    },
+    {
+      "task": "task-9",
+      "arm": "A",
+      "run": 1,
+      "pass": true,
+      "steps": 2,
+      "ms": 6204,
+      "tokens": 613,
+      "note": null
+    },
+    {
+      "task": "task-9",
+      "arm": "B",
+      "run": 1,
+      "pass": true,
+      "steps": 1,
+      "ms": 1535,
+      "tokens": 542,
+      "note": null
+    }
+  ],
+  "summaries": {
+    "A": {
+      "passRate": 1,
+      "passes": 12,
+      "totalRuns": 12,
+      "meanTokens": 511,
+      "meanMs": 4793,
+      "minMs": 1246,
+      "maxMs": 9327,
+      "minTokens": 351,
+      "maxTokens": 724
+    },
+    "B": {
+      "passRate": 0.9166666666666666,
+      "passes": 11,
+      "totalRuns": 12,
+      "meanTokens": 493,
+      "meanMs": 4350,
+      "minMs": 1158,
+      "maxMs": 12512,
+      "minTokens": 341,
+      "maxTokens": 714
+    }
+  }
+}

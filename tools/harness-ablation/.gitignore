@@ -1,0 +1,6 @@
+# temp workspaces / test copies
+.tmp-*/
+.piworker-ws-*/
+.armc-workers/
+.opencode/
+results/archive-*.json
