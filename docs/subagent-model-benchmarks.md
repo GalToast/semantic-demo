@@ -22,6 +22,7 @@ Key findings:
 - **Name-claim failures:** `openai/gpt-oss-20b/120b` text-only everywhere; GLM family (except zenmux `glm-4.6v-flash-free`) "VISION UNAVAILABLE"; `agnes/agnes-2.5-pro` thinking-only; modelscope InternVL3_5/ERNIE-4.5-VL/GLM-4.7/Step-3.5/MiniMax-M1 empty output.
 - **Dead since 2026-06-26 matrix:** `kimi-k2.6` (404 on kilo/openrouter/zenmux/nvidia), `grok-4.5`/`mimo-v2.5-pro` (paid-only), `owl-alpha` (already dead).
 - **Key-rotation flakiness:** same route+model flipped vision↔no-vision between calls (zenmux/gemini-3.5-flash, kilo/gemini-3.6-flash). Single probes are NOT trustworthy; always 2×-confirm.
+- **2026-08-04 evening lane probe (4/4 noisy):** kimi-k3 rejected image payloads (zenmux 404, novita 403 no body); `zenmux/z-ai/glm-4.6v-flash-free` hit the free-tier usage cap mid-jury (429); `openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` 404 page not found. The advertised `supportsVision` catalog flags carry no lane-health promise — treat them as a first guess, and re-probe before dispatch. Jury screenshots staged in `tmp/vision-jury/` (10-14 post-fix) for a future run.
 
 ## Machine-Readable Registry (2026-08-04)
 
@@ -374,7 +375,7 @@ Tactics retested: (a) `external_subagent_followup` on stalled-deep-work to recov
 | Followup-recover stalled                        | W4c Svelte-5 snapshot/gate footguns | ✅ completed in ~4 min from followup dispatch (118 new output tokens, $0) → 13.3 KB report | **GOOSE-UNLOCK MECHANISM WORKS** for stalled `agnes` deep-work: `external_subagent_followup({worker_id})` resumes via the recorded `session_id` and finishes only the write step.                               |
 | Followup-retry on transient `Connection error.` | W3c lifecycle                       | ✅ completed in ~2.3 min from re-dispatch → 9.6 KB report                                  | Re-followup on the same `worker_id` (same `session_id`) recovers from transient route blips fast. ⚠️ BUT the W3c resulting report's #1 finding was a fabricated false-positive (see 2nd caveat + ledger below). |
 
-**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: _"Reading it inside $derived registers reactivity directly — no mirror needed."_
+**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: *"Reading it inside $derived registers reactivity directly — no mirror needed."*
 
 Report honest-stamped 4/10 + caution footer in `tmp/bugsweep-2026-07-24/worker4-reactivity-footguns-report.md`; do NOT action the 9 findings.
 
@@ -1188,7 +1189,7 @@ Four workers dispatched in parallel on an identical scope (WeatherWidget + Compa
 
 ### Round 2 takeaway
 
-No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably _read + analyze_ but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
+No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably *read + analyze* but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
 
 Two tool-quirks persisted to `failures.md`:
 
@@ -1593,7 +1594,7 @@ Full report: `reports/visual-audit-continued-2026-07-28.md` § "Root-Cause Findi
 
 **Pick**: `nvidia/minimaxai/minimax-m3` — free, 1M ctx, explicit `supportsVision:true`, genuine deep reasoning (414 thinking deltas). inkling is a fine fallback but paid and hit a transient connection-error retry loop.
 
-**Is inkling slow?** The _model_ isn't — once connected it produced 10 thinking deltas + verdict quickly. ~2.5 min of its 4.4 min wall-clock was a **silent connection-error retry loop** (5× `Connection error.` + `auto_retry_start attempt 1/10`) that the harness telemetry HID (see below). minimax-m3 nvidia's longer time was genuine deep reasoning (414 thinking deltas), not a stall.
+**Is inkling slow?** The *model* isn't — once connected it produced 10 thinking deltas + verdict quickly. ~2.5 min of its 4.4 min wall-clock was a **silent connection-error retry loop** (5× `Connection error.` + `auto_retry_start attempt 1/10`) that the harness telemetry HID (see below). minimax-m3 nvidia's longer time was genuine deep reasoning (414 thinking deltas), not a stall.
 
 ### W56 harness telemetry gap — `external_subagent_poll` hides retry/error state
 
