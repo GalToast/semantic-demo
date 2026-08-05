@@ -99,7 +99,7 @@ VERIFIED VISION (27 families, deduped; real single-image bridge read):
 
 EXCLUDED-honest residuals (not vision-blocked, need keys/heal/wrong-id normalizing):
 
-- 129 x HTTP*402 (billing walls: claude-\_5, gpt-5.6-*, kimi-*, novita-* on charged gates)
+- 129 x HTTP*402 (billing walls: claude-\_5, gpt-5.6-*, kimi-_, novita-_ on charged gates)
 - 84 x HTTP_400 (invalid-id/shape on that gate), 29 x HTTP_404, 18 x HTTP_410 (EOL),
 - 23 x EMPTY/TEXT_EMPTY (image-token-detail zero or max_tokens saturation), 3 x untested-429, 1 x REFUSAL cluster gemini-3.x-preview (text-only frontends)
 - The ~39 previously claimed "19 stable lanes" docs pre-2026-08-05 are CONFOUNDED: 429-as-untested + no-retry + single-gate probes. Re-run the disputed bucket (429/EMPTY/REFUSAL) before trusting any "vision lane" claim from before this date.
@@ -161,16 +161,24 @@ Why earlier "census" undercounted (method flaw, now documented):
 
 NEXT (needs long-horizon run, ~hours, rate-capped):
 
-- Probe the 1,333 never-probed against their 23 declared providers (per-gate, retry 429, capture image-tokens). Estimate: zydit 158 + zydit-v4 159 (2 keys, ~90s per probe-cycle) ≈ 8h serial; freeinference 13 + command-code 11 + minimax-coding 3 + opencode 7 + qwen-* mirrors = cheap (fast gates); pi-direct 729 (env-keyed baseUrls) — many are direct-vendor (google/meta/airforce) with account billing states to re-check. This turns the "dead 403/429" verdicts into true probes.
+- Probe the 1,333 never-probed against their 23 declared providers (per-gate, retry 429, capture image-tokens). Estimate: zydit 158 + zydit-v4 159 (2 keys, ~90s per probe-cycle) ≈ 8h serial; freeinference 13 + command-code 11 + minimax-coding 3 + opencode 7 + qwen-\* mirrors = cheap (fast gates); pi-direct 729 (env-keyed baseUrls) — many are direct-vendor (google/meta/airforce) with account billing states to re-check. This turns the "dead 403/429" verdicts into true probes.
 
 ## ROUND-5 CORRECTION (2026-08-05 15:4x) — agnes family was NEVER empty; parse bug
+
 Root cause: my sweep parsers read only choices[0].message.content with max_tokens<=90. Reasoning-style lanes (agnes etc.) emit the real answer into message.reasoning_content + a short content tail ⇒ mislabeled '(hollow)'.
 FIX for any future probe: read content + reasoning_content, max_tokens >= 1200.
 VERIFIED NOW (4/5 of agnes family, all 5/5 recall on m04):
-- agnes/agnes-2.5-flash      5/5 @ 2.6s  — TOP-TIER fast lane (CLEVELAND, FOOD & HOSPITALITY, ACTIVE, WEBSITE, PHONE, SEARCH RESULT, INSPECT, View on Map, Connection, EXPLORE NEIGHBORHOOD)
-- agnes/agnes-2.0-flash      5/5 @ 10.4s (adds 95°, X)
-- agnes/agnes-2.5-pro        5/5 @ 62s
-- agnes/agnes-2.5-pro-alpha  5/5 @ 76s
+
+- agnes/agnes-2.5-flash 5/5 @ 2.6s — TOP-TIER fast lane (CLEVELAND, FOOD & HOSPITALITY, ACTIVE, WEBSITE, PHONE, SEARCH RESULT, INSPECT, View on Map, Connection, EXPLORE NEIGHBORHOOD)
+- agnes/agnes-2.0-flash 5/5 @ 10.4s (adds 95°, X)
+- agnes/agnes-2.5-pro 5/5 @ 62s
+- agnes/agnes-2.5-pro-alpha 5/5 @ 76s
 - agnes-image-2.1-flash = IMAGE-GEN (503 on chat) — not a VLM.
-Previous "agnes-2.x returns empty" rows in this doc are WRONG (parse bug), superseded above.
-Re-tested non-agnes lanes with fixed parser — unchanged: step-3.5-flash 0/5 (hollow), GLM-4.7-Flash 0/5, minimax-m3 504 today, gpt-oss-20b 400 today, @cf gemma-4-26b 429 (rate; earlier read OK in-sweep → still good, watch reasoning_content next verify).
+  Previous "agnes-2.x returns empty" rows in this doc are WRONG (parse bug), superseded above.
+  Re-tested non-agnes lanes with fixed parser — unchanged: step-3.5-flash 0/5 (hollow), GLM-4.7-Flash 0/5, minimax-m3 504 today, gpt-oss-20b 400 today, @cf gemma-4-26b 429 (rate; earlier read OK in-sweep → still good, watch reasoning_content next verify).
+
+## Never-probed tail: first-pass results (2026-08-05 10:5x)
+- NEW VERIFIED: mimo-v2.5-free @opencode-zen (opencode gate that earlier /v1/models sweep 403s — probing bypassed it)
+- quick batch (33 router-backed never-probed): 1 OK, 16x HTTP_429 (openprovider/logfare/opencode cooldowns — NOT verdicts), 5x 502 (upstream), 5x 400, 2x 401, 4 NO_OUTPUT
+- zydit-v1 122-model tail launch: background patient runner (vision-tail-runner.mjs, retries 429 x4 backoff, image-token classifier, resume-capable). zydit-v4 122-model + pi-direct 729 remain.
+- METHOD ADDENDUM: gate 403/404 on /v1/models is NOT a dead gate — it is usually auth-cooldown (keys rotate seconds-to-minutes) or key-scoped. Gate probe (chat) bypasses the models endpoint; sweep both.
