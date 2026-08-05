@@ -203,18 +203,23 @@ function runMode(manifestPath, ciMode) {
 
   let anyFail = printResults(results)
   if (ciMode) {
-    console.log(anyFail ? '\nCI GATE: FAIL' : '\nCI GATE: PASS')
+    // Model threshold check applies ONLY to models the manifest gates — historical benchmark rows
+    // (e.g. skill A/B experiments) must not trip the regression gate.
+    const manifestModels = new Set(runs.map(r => r.model).filter(Boolean))
     const modelStats = new Map()
     for (const row of loadLog()) {
+      if (!manifestModels.has(row.model)) continue
       const key = row.model
       if (!modelStats.has(key)) modelStats.set(key, { total: 0, successes: 0 })
       const s = modelStats.get(key); s.total++; if (row.success) s.successes++
     }
+    let modelFail = false
     for (const [model, stat] of modelStats) {
       const rate = stat.total ? stat.successes / stat.total : 0
-      if (rate < minSuccess) { anyFail = true; console.log(`  ✗ ${model} success rate ${(rate * 100).toFixed(1)}% < ${(minSuccess * 100).toFixed(0)}% threshold (${stat.successes}/${stat.total})`) }
+      if (rate < minSuccess) { modelFail = true; console.log(`  ✗ ${model} success rate ${(rate * 100).toFixed(1)}% < ${(minSuccess * 100).toFixed(0)}% threshold (${stat.successes}/${stat.total})`) }
     }
-    if (anyFail) process.exit(1)
+    console.log(anyFail || modelFail ? '\nCI GATE: FAIL' : '\nCI GATE: PASS')
+    if (anyFail || modelFail) process.exit(1)
   }
 }
 

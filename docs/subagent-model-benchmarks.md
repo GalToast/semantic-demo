@@ -1615,3 +1615,22 @@ Three concrete gaps:
 - ✅ MapBackButton no-record desktop return — closed as no-repro (verified 1440×900 main lane + 1280×720 subagent).
 - ✅ W56 regression test in `tests/widget-journey-smoke.spec.js` (stylesheet-presence guard).
 - ✅ `scripts/worker-health.mjs` telemetry helper + `subagent-worker-health-forensics` skill.
+
+### Skill-efficacy A/B — 2026-08-05 (first controlled skill measurement)
+
+**Design**: same bounded task (≤120-word module summary + exactly 3 file:line cites + marker line) on `src/lib/search/state.ts`, 3× treatment (task explicitly invokes `concise-agent-communication`) vs 3× control (same task, skill reference stripped). Single lane (`zenmux/stepfun/step-3.7-flash`) to isolate the skill variable. Deterministic scoring: words ≤120, exactly 3 cites, `EVAL TASK DONE` marker, single message.
+
+**Results** (recorded in `tmp/eval-harness-log.jsonl`, model tags `[skill=on]` / `[skill=off]`):
+
+| condition | pass | words (median) | latency | cost |
+|---|---|---|---|---|
+| skill=on | 2/3 (66.7%) | 51.5 | 114.7s | $0.0068 |
+| skill=off | 3/3 (100%) | 76 | 93.7s | $0.0065 |
+
+**Reading**: no measurable skill advantage on this task class — the prompt already hard-codes the constraints, so the skill adds ~nothing scorable (marginal concision at best: 51 vs 76 median words). The single treatment failure (eval-t1) was a completion flake (echoed file content, never emitted the summary) — a stochastic output-truncation, not a skill defect.
+
+**Actionable conclusions**:
+
+1. Skills move output most when the prompt is UNDER-constrained. Benchmark tasks should test a skill's marginal effect on an open-ended task (e.g. "summarize this module" WITHOUT word/cite constraints), not a checklist task where instructions dominate.
+2. Hard requirements in prompts are the real lever; skills are for defaults, tone, and judgment — not for re-encoding constraints the prompt already states.
+3. `eval-t1`-style flakes (final message = tool-result echo, no summary) are worth a retry-once policy in the eval harness (n+1 run on same task when scored FAIL and exit=0 with zero final text).
