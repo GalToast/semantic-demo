@@ -35,7 +35,7 @@ Before starting multi-commit work that will touch files another Pi/Codex/subagen
 
 ## Parallel Sessions
 
-See `docs/session-coordination.md` — session lock + parallel-session + switchboard coordination. Join the switchboard bus via `mcp switchboard_join_chat` (server `switchboard`) when other sessions may be active; quick-start in `docs/tool-guide.md` §4.
+See `docs/session-coordination.md` — session lock + parallel-session + switchboard coordination.**Check the switchboard before assuming you're alone on a file**: attach via `mcp switchboard_join_chat` (server `switchboard`) and read recent messages when other sessions may be active (quick-start: `docs/tool-guide.md` §4). The session lock is advisory and lane-specific — a live lock held by another lane does NOT mean they aren't sweeping the same seam (visual-state lane has repeatedly touched tests/, navigation, and mode-transitions mid-flight), so verify via switchboard and keep edits out of their touched files when coordination isn't possible.
 
 ## Subagents
 
