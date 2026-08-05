@@ -243,3 +243,9 @@ Direct probe bypassing the router (http.client + browser UA; Python urllib gets 
 Router cooldowns (key * → +1h?, provider * → 2 days) are SYMPTOMS of account-level 401/503s; no cooldown expiry fixes it. The lane's "auto-cooldown ~5.5h self-recovers" was wrong — the account needs FUNDS.
 Actionable: top up freemodel balance OR drop the lane from vision dispatch until funding.
 ALSO: WAF lesson — some gateways 403 Python urllib User-Agent (api.freemodel.dev did). Use http.client + browser UA (Mozilla/5.0) for direct probes.
+
+## ROUND-7 kilo finds (2026-08-05 16:4x) — kilo lane = hidden free goldmine
+- kilo/openrouter/free  5/5 @ 7.2s (kilo→openrouter free alias; actually the 'openrouter/free' id)
+- kilo/stepfun/step-3.5-flash  5/5 @ 13.5s  — EARLIER CLASSIFICATION (hollow/504) WAS WRONG; step-3.5-flash is a real vision lane via kilo. (zenmux 200-32s-0/5 was a flake.)
+- kilo/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free 5/5 @ 10.4s (4th lane for omni free).
+- kilo = slow (many 402/504/410s) but free + highest hit density seen today.
