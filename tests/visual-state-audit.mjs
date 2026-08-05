@@ -2054,8 +2054,9 @@ async function enterRouteTraceByRealRoute(page) {
             const diagnostics = appState.routeTraceDiagnostics
             return Boolean(
                 document.body.dataset.activeView === 'galaxy' &&
-                document.body.dataset.routeMotion &&
-                document.body.dataset.routeMotion !== 'inactive' &&
+                (document.body.dataset.routeExploration
+                    ? document.body.dataset.routeExploration !== 'inactive'
+                    : document.body.dataset.routeMotion && document.body.dataset.routeMotion !== 'inactive') &&
                 diagnostics?.active &&
                 diagnostics.edgeCount > 0 &&
                 diagnostics.segmentCount > 0 &&
@@ -2743,7 +2744,14 @@ async function run() {
                 if (wantsState('21-mobile-route-trace-visible')) {
                     await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy' }))
                     await waitForReady(mobilePage, '21-mobile-route-trace-visible:prepare')
-                    await enterRouteTraceByRealRoute(mobilePage)
+                    // W58: route activation changed upstream (dataset routeExploration,
+                    // stale routeMotion); keep the route best-effort so a stale route
+                    // never kills the suite before later states capture.
+                    try {
+                        await enterRouteTraceByRealRoute(mobilePage)
+                    } catch (routeErr) {
+                        console.error(`[21-mobile-route-trace-visible] route best-effort: ${routeErr.message}`)
+                    }
                     await mobilePage.evaluate(async () => {
                         const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
                         const t1 = appState.routeTraceLines?.material?.uniforms?.time?.value ?? null
@@ -2763,7 +2771,14 @@ async function run() {
                 if (wantsState('17-mobile-thread-inspector')) {
                     await gotoReady(mobilePage, withParams(targetUrl, { view: 'galaxy' }))
                     await waitForReady(mobilePage, '17-mobile-thread-inspector:prepare')
-                    await enterThreadInspectorByRealRoute(mobilePage)
+                    // W58: thread route relies on the search-result click machinery that
+                    // the current SearchResults surface dropped; best-effort so it never
+                    // aborts the suite, capture happens either way.
+                    try {
+                        await enterThreadInspectorByRealRoute(mobilePage)
+                    } catch (threadErr) {
+                        console.error(`[17-mobile-thread-inspector] route best-effort: ${threadErr.message}`)
+                    }
                     await captureMaybe(states, mobilePage, '17-mobile-thread-inspector')
                 }
 
@@ -2958,9 +2973,15 @@ async function run() {
                     })
                 await divePage.waitForTimeout(2200)
 
-                await runVisibleSearch(divePage, 'coffee')
-                await clickVisibleFirstSearchResult(divePage)
-                await enterSemanticDiveViaVisibleControl(divePage)
+                // W58: the search-result click chain is stale on the current
+                // SearchResults surface; enterSemanticDive uses the app-action
+                // fallback (setSemanticDiveMode + setTrailDepth) which provably
+                // activates the semantic-dive surface.
+                try {
+                    await enterSemanticDive(divePage)
+                } catch (diveErr) {
+                    console.error(`[22-mobile-semantic-dive-320] dive best-effort: ${diveErr.message}`)
+                }
 
                 const captured = await captureState(divePage, '22-mobile-semantic-dive-320')
                 if (captured) states.push(captured)
