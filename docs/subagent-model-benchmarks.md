@@ -375,7 +375,7 @@ Tactics retested: (a) `external_subagent_followup` on stalled-deep-work to recov
 | Followup-recover stalled                        | W4c Svelte-5 snapshot/gate footguns | ✅ completed in ~4 min from followup dispatch (118 new output tokens, $0) → 13.3 KB report | **GOOSE-UNLOCK MECHANISM WORKS** for stalled `agnes` deep-work: `external_subagent_followup({worker_id})` resumes via the recorded `session_id` and finishes only the write step.                               |
 | Followup-retry on transient `Connection error.` | W3c lifecycle                       | ✅ completed in ~2.3 min from re-dispatch → 9.6 KB report                                  | Re-followup on the same `worker_id` (same `session_id`) recovers from transient route blips fast. ⚠️ BUT the W3c resulting report's #1 finding was a fabricated false-positive (see 2nd caveat + ledger below). |
 
-**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: *"Reading it inside $derived registers reactivity directly — no mirror needed."*
+**Bench-quality caveat (added 17:36Z): `agnes` is WEAK on complex Svelte 5 reactive inference.** Its W4c report flagged 9 `$derived(getter())` patterns as "non-reactive mount-time snapshots" — **all 9 FALSE POSITIVES**. Main-lane source-trace confirms: `_readNavSnapshot()` (`navigation-state.svelte.ts:83`) returns `appState.navState` directly, which IS `$state<NavState>` (`app.svelte.ts:282`); Svelte 5 wraps non-primitive `$state` in a deeply reactive proxy that tracks property reads through any call-frame depth. `agnes` conflated the canonical AGENTS.md W54-class `const x = getInitial*()` (TOP-LEVEL `const` outside `$derived`/`$effect`; captured once, frozen) footgun with the unrelated `$derived(fn-reading-$state())` pattern. The project's own `FocusCard.svelte:58` comment empirically-documented this Way-clears ago: _"Reading it inside $derived registers reactivity directly — no mirror needed."_
 
 Report honest-stamped 4/10 + caution footer in `tmp/bugsweep-2026-07-24/worker4-reactivity-footguns-report.md`; do NOT action the 9 findings.
 
@@ -1189,7 +1189,7 @@ Four workers dispatched in parallel on an identical scope (WeatherWidget + Compa
 
 ### Round 2 takeaway
 
-No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably *read + analyze* but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
+No new golden goose. The honest takeaway across 4 lanes: free models on opencode-zen reliably _read + analyze_ but uniformly fail at delivering real disk edits in this 300 s harness — only `codestral` (mistral) completed in time + with a clean log footprint, and that was only through confabulation. Existing golden geese (`mimo-v2.5-free` sprint + `agnes-2.0-flash` steady) still hold.
 
 Two tool-quirks persisted to `failures.md`:
 
@@ -1594,7 +1594,7 @@ Full report: `reports/visual-audit-continued-2026-07-28.md` § "Root-Cause Findi
 
 **Pick**: `nvidia/minimaxai/minimax-m3` — free, 1M ctx, explicit `supportsVision:true`, genuine deep reasoning (414 thinking deltas). inkling is a fine fallback but paid and hit a transient connection-error retry loop.
 
-**Is inkling slow?** The *model* isn't — once connected it produced 10 thinking deltas + verdict quickly. ~2.5 min of its 4.4 min wall-clock was a **silent connection-error retry loop** (5× `Connection error.` + `auto_retry_start attempt 1/10`) that the harness telemetry HID (see below). minimax-m3 nvidia's longer time was genuine deep reasoning (414 thinking deltas), not a stall.
+**Is inkling slow?** The _model_ isn't — once connected it produced 10 thinking deltas + verdict quickly. ~2.5 min of its 4.4 min wall-clock was a **silent connection-error retry loop** (5× `Connection error.` + `auto_retry_start attempt 1/10`) that the harness telemetry HID (see below). minimax-m3 nvidia's longer time was genuine deep reasoning (414 thinking deltas), not a stall.
 
 ### W56 harness telemetry gap — `external_subagent_poll` hides retry/error state
 
@@ -1622,10 +1622,10 @@ Three concrete gaps:
 
 **Results** (recorded in `tmp/eval-harness-log.jsonl`, model tags `[skill=on]` / `[skill=off]`):
 
-| condition | pass | words (median) | latency | cost |
-|---|---|---|---|---|
-| skill=on | 2/3 (66.7%) | 51.5 | 114.7s | $0.0068 |
-| skill=off | 3/3 (100%) | 76 | 93.7s | $0.0065 |
+| condition | pass        | words (median) | latency | cost    |
+| --------- | ----------- | -------------- | ------- | ------- |
+| skill=on  | 2/3 (66.7%) | 51.5           | 114.7s  | $0.0068 |
+| skill=off | 3/3 (100%)  | 76             | 93.7s   | $0.0065 |
 
 **Reading**: no measurable skill advantage on this task class — the prompt already hard-codes the constraints, so the skill adds ~nothing scorable (marginal concision at best: 51 vs 76 median words). The single treatment failure (eval-t1) was a completion flake (echoed file content, never emitted the summary) — a stochastic output-truncation, not a skill defect.
 
@@ -1634,3 +1634,26 @@ Three concrete gaps:
 1. Skills move output most when the prompt is UNDER-constrained. Benchmark tasks should test a skill's marginal effect on an open-ended task (e.g. "summarize this module" WITHOUT word/cite constraints), not a checklist task where instructions dominate.
 2. Hard requirements in prompts are the real lever; skills are for defaults, tone, and judgment — not for re-encoding constraints the prompt already states.
 3. `eval-t1`-style flakes (final message = tool-result echo, no summary) are worth a retry-once policy in the eval harness (n+1 run on same task when scored FAIL and exit=0 with zero final text).
+
+### Skill-efficacy A/B #2 — open-ended task, 2026-08-05 (skill as the only constraint)
+
+**Design**: same module (`src/lib/search/state.ts`), same lane (zenmux step-3.7-flash), 3+3 — but the task is BARE ("write a summary of what this module is for and what it exports"): no word cap, no cite requirement, no marker. Treatment adds one sentence: "Apply the concise-agent-communication skill's rules." Rubric pre-registered before dispatch (`tmp/eval-open-rubric.md`, 6 binary criteria: CONCISION ≤120w, EVIDENCE ≥1 cite, PURPOSE, EXPORTS ≥3 named, NO_FILLER, SINGLE_MESSAGE). Scoring from `agent_end`-parsed final messages, deterministic except judgment calls noted.
+
+**Results** (rows in `tmp/eval-harness-log.jsonl`, tags `[open:skill=on/off]`):
+
+| run | words | score | notes |
+|---|---|---|---|
+| open-t1 (on) | 124 | 4/6 | just over cap; named 9 exports |
+| open-t2 (on) | — | FAIL | flake: found+read skill, thinking-only terminal msg |
+| open-t3 (on) | 109 | **5/6** | tightest complete answer, 4 exports |
+| open-c1 (off) | 218 | 4/6 | verbose bullet structure |
+| open-c2 (off) | 134 | 4/6 | mid verbosity |
+| open-c3 (off) | 59 | 4/6 | brief but named 0 export symbols |
+
+**Reading**:
+1. **Modest concision signal**: skill-on medians 116.5w (non-flake) vs control 134w; the only 5/6 was skill-on. Direction consistent with A/B #1 (51.5 vs 76 median words).
+2. **EVIDENCE did NOT transfer**: zero file:line citations in either group. The skill's "state findings as evidence" rule does not generate unprompted citations on open tasks — citations require the prompt to ask. Skills set defaults; they are not constraints.
+3. **Export coverage held under brevity**: skill-on kept ≥4 named exports while cutting words; control c3 cut words by dropping exports. The skill shifts the brevity/coverage tradeoff in the right direction.
+4. **Flake rate**: 1/6 here (thinking-only terminal message) + 1/6 in A/B #1 (tool-result echo) ≈ 15-17% stochastic output truncation on this model. Retry-once is worth adding to the eval harness for exit-0-no-final-text runs.
+
+**Actionable**: keep `concise-agent-communication` (consistent marginal concision, no measured downside); treat skill descriptions as DEFAULT-SHAPERS — when a behavior is mandatory, put it in the prompt. Next candidate for A/B: a skill whose claim is behavioral, not stylistic (e.g. `verification-before-completion` on an artifact-producing task with no explicit "verify" instruction).
