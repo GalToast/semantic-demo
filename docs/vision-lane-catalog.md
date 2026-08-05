@@ -136,6 +136,7 @@ DIRECT-PLATFORM VERDICT: these are REAL additional surfaces with live keys — m
 IMPORTANT for future sweeps: NEVER claim "all gates swept" from the router alone — sweep `model-providers.json` envKeys' baseUrls too (they're Pi-agent direct endpoints, invisible to the 8788 router AND to worker/subagent routing). If a direct endpoint matters, add it to the router's providers registry + routePrefix so workers can use it too.
 
 ## MEGA ROUND-3 = catalog-complete (2026-08-05 15:2x) — case-insensitive + input_modalities-aware, no slice cap
+
 - Bug fixed since last audit: earlier sweeps used case-sensitive name filter + 22/provider cap → missed ALL zydit/zydat caps ids + modality-only ids. v-all3.mjs fixed both.
 - STILL the #1 truth: Qwen3-VL (modelscope 8B -> 235B) champion.
 - NEW lanes found by case-fix: zydit 'google/diffusiongemma-26b-a4b-it' (their Gemma-4-26b alias) = 5/5 label read, free, 2.7s. <ADDED>
@@ -143,3 +144,18 @@ IMPORTANT for future sweeps: NEVER claim "all gates swept" from the router alone
 - All frontier vision ids seen via this sweep = paid/403/402/429 walls (gpt-5.x, claude-opus-4.x/5, grok-4.x, gemini-3.x, glm-5v-turbo, doubao-seed, nova, ernie-vl, qwen3.6-vl...) — catalog-only; NOT fundable (user rule).
 - Remaining providers offline during round-3 tail (novita/mistral/aghne/neuralwatt/freemodel/infron catalogs empty) — all previously classified (403/hang/429-cooldown); no coverage loss.
 - Round-3 modality flags of note for future audits: infron flags ~30 frontier ids image-capable; openrouter catalog = 338 total.
+## FULL-CONFIG superset audit (2026-08-05 10:4x) — the real scope
+
+Combining ALL config surfaces (opencode.json 23 providers/781 models + pi modelProviders.json 729) = **1,510 unique models authoritative to this machine's harness**. Census treated 329 / superset 1,510 = it probed **11.7%**. NEVER-probed: **1,333 (88.3%)** — the true "LOTT".
+
+Declared-vision never-probed (11): pi-direct gemini entries (gemini-3.1-pro-preview/3-flash-preview/2.5-pro/2.5-flash/3.5-flash/3.1-flash-lite + gemma-4-31b/26b + gemini-pro-latest/flash-latest) — these route via ~/.pi/agent/model-providers.json baseUrls (port 8789/gemini direct + google api), NOT the 8788 router. The router-mounted qwen3-vl is probed OK; the pi:GEMINI variants are only reachable through Pi-agent direct - separate axis.
+
+Why earlier "census" undercounted (method flaw, now documented):
+1. Derived candidate universe ONLY from router `data[]` catalogs + name-hint regex — skipped opencode.json's 781-model registry + pi model config's 729.
+2. zydit/groq/freemodel gates were mid-cooldown at sweep: /v1/models 403/429 — treated as dead, but they rotate keys every few seconds to ~minutes.
+3. Only 1-3 gates probed per model (no full per-gate matrix).
+4. 429-as-verdict not retried (fixed in rerun layer, but the never-probed tail remains).
+5. Config modality flags (`attachment`, `modalities.input`) are RELIABLE ONLY for declared image (the 13 listed); for everything else they say text — the harness bug. Empirics beat config.
+
+NEXT (needs long-horizon run, ~hours, rate-capped):
+- Probe the 1,333 never-probed against their 23 declared providers (per-gate, retry 429, capture image-tokens). Estimate: zydit 158 + zydit-v4 159 (2 keys, ~90s per probe-cycle) ≈ 8h serial; freeinference 13 + command-code 11 + minimax-coding 3 + opencode 7 + qwen-* mirrors = cheap (fast gates); pi-direct 729 (env-keyed baseUrls) — many are direct-vendor (google/meta/airforce) with account billing states to re-check. This turns the "dead 403/429" verdicts into true probes.
