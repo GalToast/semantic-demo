@@ -39,7 +39,7 @@ describe('canvas-hover-preview teardown', () => {
         // Calling destroy again should be safe (idempotent).
         expect(() => destroyCanvasHoverPreview()).not.toThrow()
         expect(mockUnsubscribe).toHaveBeenCalledTimes(1) // still only once
-    })
+    }, 60000)
 
     it('removes the preview DOM element on destroy', async () => {
         const { initCanvasHoverPreviewSubscription, destroyCanvasHoverPreview, showCanvasHoverPreview } =

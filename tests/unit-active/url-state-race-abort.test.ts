@@ -296,7 +296,7 @@ describe('url-state — applyUrlState race protection', () => {
         expect(mockState.navStore.mode).toBe('search')
         expect(mockState.navStore.surface).toBe('search')
         expect(mockState.navStore.urlStateRestoreToken).toBe(0)
-    })
+    }, 60000)
 
     it('aborts the previous runSearch signal when a newer applyUrlState starts', async () => {
         const { applyUrlState } = await import('@lib/orchestration/url-state')

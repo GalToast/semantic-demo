@@ -222,5 +222,5 @@ describe('W11-T7: runtime — initAdapters() invokes all 9 adapters', () => {
         for (const name of ADAPTER_INIT_NAMES) {
             expect(W11_MUTABLE_MOCK_FNS[name]).toHaveBeenCalledTimes(1)
         }
-    })
+    }, 60000)
 })

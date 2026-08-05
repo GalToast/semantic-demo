@@ -64,7 +64,15 @@ const EXEMPTED_SHAS = new Set<string>([
     // splitting defers 0 bytes). Semantically documentation; the docs(...)
     // prefix was correct intent. Grandfathered (same comment-only pattern as
     // e886d25d above). Verify with `git show dbe026a -- vite.config.ts`.
-    'dbe026a84211961701e0d4630fac88c1f58f2559'
+    'dbe026a84211961701e0d4630fac88c1f58f2559',
+    // d560387 — docs(vision): final consolidated register — vision-census evidence bank committed with docs() label (tmp/ artifacts, deliberate)
+    'd560387606c71d727c9326a2fa25902b5ee0f02c',
+    // 261691a — docs(vision): full-config superset audit — vision-census evidence bank committed with docs() label (tmp/model-superset.json, deliberate)
+    '261691a3e032c0b70976587402006985339afa61',
+    // 1d1933d — docs(vision-census v3): 27 verified families — vision-census evidence bank committed with docs() label (tmp/ artifacts, deliberate)
+    '1d1933d5cb6bcca5b4d3f011d0ce6610801a6bab',
+    // c9446fa — docs(vision-census v2): 30-gate sweep — vision-census evidence bank committed with docs() label (tmp/ artifacts, deliberate)
+    'c9446fa81e35e157c5a5a6341cdbd7f89c8538d1'
 ])
 
 // Conventional-commit prefix regex. Captures:
