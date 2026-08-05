@@ -11,12 +11,16 @@ import { existsSync } from 'node:fs'
 const PORT = Number(process.argv[2] || 8793)
 
 // The cline "cline" provider free models (verified answering, keyless via CLI)
+// reasoning: max accepted effort per model (from cline catalog reasoningOptions).
+// laguna has NO reasoning option (omit --thinking); step caps at high.
 const MODELS = [
-  { id: 'cline-free/glm-5.2', name: 'GLM-5.2 (free)', context: 1048576, vision: false },
-  { id: 'deepseek/deepseek-v4-flash', name: 'DeepSeek V4 Flash (free)', context: 1048576, vision: false },
-  { id: 'poolside/laguna-s-2.1:free', name: 'Laguna S 2.1 (free)', context: 300000, vision: false },
-  { id: 'stepfun/step-3.7-flash', name: 'Step 3.7 Flash (free, vision-capable)', context: 256000, vision: true },
+  { id: 'cline-free/glm-5.2', name: 'GLM-5.2 (free)', context: 1048576, vision: false, effort: 'xhigh' },
+  { id: 'deepseek/deepseek-v4-flash', name: 'DeepSeek V4 Flash (free)', context: 1048576, vision: false, effort: 'xhigh' },
+  { id: 'poolside/laguna-s-2.1:free', name: 'Laguna S 2.1 (free)', context: 300000, vision: false, effort: null },
+  { id: 'stepfun/step-3.7-flash', name: 'Step 3.7 Flash (free, vision-capable)', context: 256000, vision: true, effort: 'high' },
 ]
+
+const EFFORT_BY_MODEL = Object.fromEntries(MODELS.map((m) => [m.id, m.effort]))
 
 function extractText(messages) {
   // last user message; join text parts (ignore image parts -> later pass images via cline if supported)
@@ -34,7 +38,10 @@ function extractText(messages) {
 function callCline(model, prompt, maxTokens) {
   return new Promise((resolve) => {
     const clineBin = process.env.CLINE_BIN || 'C:/Users/HP/AppData/Roaming/npm/node_modules/cline/node_modules/@cline/cli-windows-x64/bin/cline.exe'
-    const args = ['-P', 'cline', '-m', model, '--json', '-p', prompt]
+    const args = ['-P', 'cline', '-m', model, '--json']
+    const effort = EFFORT_BY_MODEL[model]
+    if (effort) args.push('--thinking', effort)
+    args.push('-p', prompt)
     const child = spawn(clineBin, args, { cwd: process.cwd(), stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, PATH: process.env.PATH } })
     let out = ''
     const t0 = Date.now()
