@@ -55,7 +55,6 @@ Every session loads only skill **name + description**; bodies load on demand whe
 | `tool-use-discipline`                            | parallel calls, self-correct on errors, summarize results, validate shapes ⭐ NEW                     |
 | `data-viz-encoding`                              | pre-attentive attributes, CVD-safe palettes, label management, affordances ⭐ NEW                     |
 | `interactive-web-artifacts`                      | self-contained prototypes, screenshot+vision review, port on success ⭐ NEW                           |
-| `subagent-role-templates`                        | worker role anatomy: frontmatter scope/no_revert + comms + quality bar; role-vs-skill layering ⭐ NEW |
 | `verification-before-completion`                 | Iron Law TDD, red-green verification, done-claims need evidence ⭐ NEW                                |
 | `pr-description-writer`                          | write a PR description                                                                                |
 | `second-opinion-review`                          | independent review from a different model                                                             |
@@ -67,29 +66,28 @@ Every session loads only skill **name + description**; bodies load on demand whe
 | `test-baseline-sync`                             | invariant-test baselines during migrations                                                            |
 | `dependency-supply-chain-audit`                  | dependency risk/health                                                                                |
 | `skill-self-review`                              | audit a SKILL.md                                                                                      |
-| `skill-authoring`                                | create/edit skills, progressive disclosure ⭐ NEW                                                     |
 
 ## Global — Pi harness / environment
 
-| Skill                                                                                                                              | Trigger                                                                                          |
-| ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `mcp-subagent-dispatch-routing`                                                                                                    | where are subagent tools, No such tool, dispatch routing                                         |
-| `subagent-websearch-access`                                                                                                        | websearch not found in worker, connect cached websearch MCP, research worker needs search ⭐ NEW |
-| `subagent-*` (timeout, followup, spawn-wedge, workspace-sweep, build-task, mcp-browser)                                            | worker stuck/quiet/recovery/cleanup                                                              |
-| `worker-timeout-on-disk-edits-takeover`                                                                                            | worker exit 124, edits landed but no report                                                      |
-| `pi-harness-self-upgrade` / `local-package-idempotency-audit` / `model-config-sync` / `pi-harness-subagent-model-capability-split` | harness upgrades, model config                                                                   |
-| `memory-routing-policy`                                                                                                            | which memory store, size/scope                                                                   |
-| `js-repl`                                                                                                                          | quick JS/Python/PowerShell experiments                                                           |
-| `write-node-script-on-windows` / `write-tool-debug` / `context-mode-windows-shell-path` / `bash-detach-handling`                   | Windows shell/tool quirks                                                                        |
-| `tool-retry-exponential-backoff`                                                                                                   | cascading tool retries after errors                                                              |
-| `parallel-session-watch`                                                                                                           | git drift before commits                                                                         |
-| `harness-hook-patterns`                                                                                                            | harness internals, extensions, hooks, compaction, ledgering, plugin bundling ⭐ NEW              |
-| `pi-harness-conventions`                                                                                                            | OUR runtime: pi main lane + external_subagents (pi harness), pi_tool/mcp routing, key router, memory ⭐ NEW |
-| `opencode-harness-patterns`                                                                                                         | opencode FALLBACK lane + key-router lineage reference (NOT primary runtime) ⭐ NEW               |
-| `skill-benchmarks`                                                                                                                  | measurable skill quality: benchmark task, N trials, success/latency/cost, regression gate ⭐ NEW |
-| `skill-discovery-precedence`                                                                                                       | tiered discovery (workspace>user>ext>builtin), .agents/skills alias, progressive activation ⭐ NEW |
-| `ast-grep-decision-tree`                                                                                                           | which search tool (rg vs ast-grep vs ctx)                                                        |
-| `mcp-playwright-wedge-resolution`                                                                                                  | Playwright MCP hangs                                                                             |
+| Skill                                                                                                                              | Trigger                                                                                                     |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `mcp-subagent-dispatch-routing`                                                                                                    | where are subagent tools, No such tool, dispatch routing                                                    |
+| `subagent-websearch-access`                                                                                                        | websearch not found in worker, connect cached websearch MCP, research worker needs search ⭐ NEW            |
+| `subagent-*` (timeout, followup, spawn-wedge, workspace-sweep, build-task, mcp-browser)                                            | worker stuck/quiet/recovery/cleanup                                                                         |
+| `worker-timeout-on-disk-edits-takeover`                                                                                            | worker exit 124, edits landed but no report                                                                 |
+| `pi-harness-self-upgrade` / `pi-harness-local-package-idempotency-audit` / `model-config-sync` / `pi-harness-subagent-model-capability-split` / `pi-harness-subagent-spawn-wedge-3-layer` | harness upgrades, model config                                                                              |
+| `memory-routing-policy`                                                                                                            | which memory store, size/scope                                                                              |
+| `js-repl`                                                                                                                          | quick JS/Python/PowerShell experiments                                                                      |
+| `write-node-script-on-windows` / `write-tool-debug` / `context-mode-windows-shell-path` / `bash-detach-handling`                   | Windows shell/tool quirks                                                                                   |
+| `tool-retry-exponential-backoff`                                                                                                   | cascading tool retries after errors                                                                         |
+| `parallel-session-watch`                                                                                                           | git drift before commits                                                                                    |
+| `harness-hook-patterns`                                                                                                            | harness internals, extensions, hooks, compaction, ledgering, plugin bundling ⭐ NEW                         |
+| `pi-harness-conventions`                                                                                                           | OUR runtime: pi main lane + external_subagents (pi harness), pi_tool/mcp routing, key router, memory ⭐ NEW |
+| `opencode-harness-patterns`                                                                                                        | opencode FALLBACK lane + key-router lineage reference (NOT primary runtime) ⭐ NEW                          |
+| `skill-benchmarks`                                                                                                                 | measurable skill quality: benchmark task, N trials, success/latency/cost, regression gate ⭐ NEW            |
+| `skill-discovery-precedence`                                                                                                       | tiered discovery (workspace>user>ext>builtin), .agents/skills alias, progressive activation ⭐ NEW          |
+| `ast-grep-decision-tree`                                                                                                           | which search tool (rg vs ast-grep vs ctx)                                                                   |
+| `mcp-playwright-wedge-resolution`                                                                                                  | Playwright MCP hangs                                                                                        |
 
 ## Project — semantic-explorer
 
@@ -101,7 +99,6 @@ Every session loads only skill **name + description**; bodies load on demand whe
 | `safe-subagent-dispatch-and-cleanup`    | external_subagents in this repo                                                |
 | `dev-server-drift-handling`             | unexpected Vite-modified files                                                 |
 | `store-state-class-t4-regression-test`  | state-class migration regression tests                                         |
-| `tostore-migration-pattern`             | toStore bridges                                                                |
 | `bash-detach-handling`                  | 15s auto-detach                                                                |
 | `switchboard-coordination`              | switchboard taskboard, parallel session coordination, resource locks, handoffs |
 
