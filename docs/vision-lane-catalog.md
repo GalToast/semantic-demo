@@ -290,13 +290,21 @@ Direct vendors (browser-UA probe, real keys):
   REGISTER FINAL: **69 unique case-normalized verified id** (evidence pack tmp/vision-census-evidence/\*.jsonl, +21k lines). Session arc: 12 -> 27 -> 33 -> 36 -> 68 -> 69.
 
 ## REGISTER RECONCILIATION (2026-08-05 14:0x) — honest final, gaps closed
+
 Self-audit found 3 discrepancies from the "69" claim; closed them:
+
 1. groq qwen3.6-27b "verified x2" was NOT in evidence (only 410s) → filed as PIXELS_OK (manual bridge x2, detail=prompt_tokens 788/794). NOW COUNTED.
 2. zydit-v1's 2 NEW (chatjimmy/diffusiongemma) were "gate-suspect" but counted anyway → diffusiongemma RE-VERIFIED via nvidia passthrough today (Tag read) ✓; chatjimmy = kilo 402 + openrouter fail ⇒ REMAINS zydot-v1-only (counted, flagged).
 3. Doc contradicted itself (26/36/68/69) → final below.
-FINAL REGISTER (evidence-backed, case-normalized): **71 unique PIXELS_OK ids** (evidence pack, incl. manual-bridge groq + nvidia re-verify lines).
-Confidence tiers:
-- TIER-1 (200-content + 2nd method or passthrough re-probe): Qwen3-VL 235b/8b/think, gemini 2.5/3.1/3-pro/3.5, mistral-large-2512 + medium*(5) + ministral-8b + magistral-small (spot), llama vision 11b/90b, scout, gemma-4-26b, step-3.7, nemotron-omni, minimax-01/m3, diffgemma(nvidia), kimi-k2.7-code(freeinf), agnes 2.0/flash/2.5-pro-alpha, groq-qwen3.6 (manual×2), laguna, wait count=71.
+   FINAL REGISTER (evidence-backed, case-normalized): **71 unique PIXELS_OK ids** (evidence pack, incl. manual-bridge groq + nvidia re-verify lines).
+   Confidence tiers:
+
+- TIER-1 (200-content + 2nd method or passthrough re-probe): Qwen3-VL 235b/8b/think, gemini 2.5/3.1/3-pro/3.5, mistral-large-2512 + medium\*(5) + ministral-8b + magistral-small (spot), llama vision 11b/90b, scout, gemma-4-26b, step-3.7, nemotron-omni, minimax-01/m3, diffgemma(nvidia), kimi-k2.7-code(freeinf), agnes 2.0/flash/2.5-pro-alpha, groq-qwen3.6 (manual×2), laguna, wait count=71.
 - TIER-2 (batch-content, family-confident): remaining mistral family ids (batch PIXELS_OK, spot-sampled)
-- ZYDOT-ONLY (gate-limited): chatjimmy. 
-Full truthful set above; no over-claim beyond this.
+- ZYDOT-ONLY (gate-limited): chatjimmy.
+  Full truthful set above; no over-claim beyond this.
+
+## FINAL CORRECTION (2026-08-05 14:2x) — 68 REAL verified
+chatjimmy/llama3.1-8B: SUPERSEDED — second-method shows TEXT_ONLY (zydit model: "I need a card to look at... can you please provide the text strings"; novita 404, neuralwatt 402, modelscope 400). Its earlier PIXELS_OK was a zydit-parsing artifact. DROPPED.
+All 14 previously-batch-confident mistral ids individually re-verified (content: "Angel Fire Coffee" + Coffee shop/CLEVELAND/FOOD & HOSPITALITY/ACTIVE"). No remaining family-confidence-only entries.
+REGISTER FINAL: **68 unique PIXELS_OK models** (all individually second-method or content-proven; chatjimmy corrected to TEXT_ONLY). Session arc: 12 -> 27 -> 33 -> 36 -> 68 (peak 71 incl. chatjimmy) -> 68 true.

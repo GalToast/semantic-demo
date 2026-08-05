@@ -3,3 +3,19 @@
 {"ts":"2026-08-05T13:15:00Z","model":"thinkingmachines/inkling","provider":"nvidia","verdict":"PIXELS_OK","detail":"Angel Fire Coffee, Active tag, Cleveland / Food & Hospitality read","ms":2196}
 {"ts":"2026-08-05T14:05:00Z","model":"google/diffusiongemma-26b-a4b-it@nvidia","provider":"nvidia","verdict":"PIXELS_OK","detail":"Passthrough re-verify: Tag Food & Hospitality read via nvidia (zydit-v1 gate-suspect now nvidia-confirmed)","ms":3609}
 {"ts":"2026-08-05T14:05:00Z","model":"qwen/qwen3.6-27b@groq","provider":"groq-direct","verdict":"PIXELS_OK","detail":"Manual bridge probe x2: prompt_tokens 788/794, card tags cited (FIELD)","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"magistral-medium-2509@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify: Angel Fire Coffee + Coffee shop","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"magistral-medium-latest@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify: Angel Fire Coffee","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"ministral-14b-2512@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify: FULL tags Cleveland/Food&Hospitality/Active","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"ministral-14b-latest@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify: FULL tags","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"mistral-large-latest@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"mistral-medium@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify: Angel Fire Coffee","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"mistral-medium-3@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify: Angel Fire Coffee + Coffee shop","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"mistral-medium-3.5@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify: Angel Fire Coffee + Coffee shop","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"mistral-small-latest@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"mistral-tiny-latest@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"mistral-vibe-cli-latest@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"mistral-vibe-cli-with-tools@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"mistral-medium-3-5@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify (worker slice-6)","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"ministral-3b-2512@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"ministral-3b-latest@mistral","provider":"mistral","verdict":"PIXELS_OK","detail":"individual verify","ms":0}
+{"ts":"2026-08-05T14:15:00Z","model":"chatjimmy/llama3.1-8B@zydit","provider":"zydit","verdict":"TEXT_ONLY","detail":"CORRECTED: zydit returned model says can't see image (quote: need a card to look at); novita kernel 404/402/400 - TEXT_ONLY not PIXELS_OK","ms":0}
