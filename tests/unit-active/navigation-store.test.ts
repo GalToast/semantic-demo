@@ -98,7 +98,7 @@ const mockAppState = vi.hoisted(() => ({
         semanticGuideRequestSequence: 0,
         currentSemanticGuide: null,
         summaryCardTypeToken: 0,
-searchVisibleCount: 5
+        searchVisibleCount: 5
     },
     viewportState: {
         viewportWidth: 1280,
@@ -209,6 +209,7 @@ import {
     clearFocusPocketMeta,
     writeNavStateMirror,
     getLastCommittedView,
+    describeNavDrift,
     dispatchNavTransition
 } from '@lib/stores/navigation.svelte.ts'
 import { NAV_TRANSITION_ACTIONS } from '@lib/navigation-actions'
@@ -784,6 +785,22 @@ describe('navStore — mutation functions', () => {
         // Non-view patches must not disturb the tracker.
         writeNavStateMirror({ mode: 'focus' })
         expect(getLastCommittedView()).toBe('galaxy')
+    })
+
+    it('drift tracer: flags valid-state writes that bypass the mirror, then clears on canonical refresh', () => {
+        // Baseline via the canonical funnel.
+        writeNavStateMirror({ currentView: 'galaxy', mode: 'overview', surface: 'idle' })
+        expect(describeNavDrift(mockAppState.navState)).toBeNull()
+
+        // An off-mirror raw write (the exact class that silently flipped the
+        // view in the 2026-08-04 clobber) must be detected.
+        mockAppState.navState.currentView = 'map'
+        const report = describeNavDrift(mockAppState.navState)
+        expect(report).toMatch(/currentView/)
+
+        // A canonical write refreshes the baseline and clears the drift.
+        writeNavStateMirror({ currentView: 'map' })
+        expect(describeNavDrift(mockAppState.navState)).toBeNull()
     })
 
     it('writeNavStateMirror({trailDepth:5}) sets trailDepth=5', () => {

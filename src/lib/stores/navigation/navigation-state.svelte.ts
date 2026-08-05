@@ -7,6 +7,7 @@
  */
 import type { NavState, NavMode } from '@lib/types/state'
 import { get, type Readable } from 'svelte/store'
+import { debugWarn } from '@lib/utils/debug'
 import { appState } from '@lib/state/app.svelte.ts'
 import { createStateMirror } from '@lib/state/create-state-mirror'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
@@ -89,6 +90,78 @@ export function _readNavSnapshot(): NavState {
 let _lastCommittedView: 'galaxy' | 'map' = 'galaxy'
 export function getLastCommittedView(): 'galaxy' | 'map' {
     return _lastCommittedView
+}
+
+// ── DEV: nav-state drift tracer ──────────────────────────────────────────
+//
+// Flags VALID-value writes to appState.navState that bypass the canonical
+// mirror funnel (raw `$state` property sets, whole-object `navState =`
+// replacements). Such writes never reach writeNavStateMirror, so nothing
+// warns — yet parity re-reads appState.navState directly and the UI
+// silently changes (the 2026-08-04 'unwritable-view' alarm class: a
+// focus-settle reconciliation reverted the user's map switch through
+// exactly this hole).
+//
+// Mechanism: every canonical write refreshes a digest of the
+// parity-critical keys; a DEV interval compares the live digest and logs
+// any drift — which key changed, and how long since the last canonical
+// write. Worth the ~3s sampling latency: it turns the next mystery write
+// into a named key + timing breadcrumb instead of a multi-hour hunt.
+
+export const NAV_DRIFT_KEYS = [
+    'currentView',
+    'mode',
+    'surface',
+    'focusedIndex',
+    'trailDepth',
+    'trailSeedIndex'
+] as const
+
+export function navDriftDigest(nav: NavState): string {
+    const parts: string[] = []
+    for (const key of NAV_DRIFT_KEYS) {
+        parts.push(`${key}=${JSON.stringify((nav as unknown as Record<string, unknown>)[key])}`)
+    }
+    return parts.join('|')
+}
+
+let _lastCanonicalDigest = ''
+let _lastCanonicalAt = 0
+
+/**
+ * Refresh the canonical-digest baseline after a mirrored write.
+ * Called by writeNavStateMirror / navStore set-update paths.
+ */
+export function refreshNavDriftBaseline(nav: NavState): void {
+    _lastCanonicalDigest = navDriftDigest(nav)
+    _lastCanonicalAt = Date.now()
+}
+
+/**
+ * Compare appState.navState against the last canonical digest.
+ * Returns a human-readable drift report, or null when clean.
+ * Pure + test-friendly.
+ */
+export function describeNavDrift(live: NavState): string | null {
+    const liveDigest = navDriftDigest(live)
+    if (liveDigest === _lastCanonicalDigest) return null
+    const changed: string[] = []
+    for (const key of NAV_DRIFT_KEYS) {
+        const a = String((live as unknown as Record<string, unknown>)[key])
+        const d = navDriftDigestParts(_lastCanonicalDigest, key)
+        if (a !== d) changed.push(key)
+    }
+    const ageMs = _lastCanonicalAt > 0 ? Date.now() - _lastCanonicalAt : -1
+    return `navState drifted off-mirror (${changed.join(',')}) ${ageMs >= 0 ? `${ageMs}ms after last canonical write` : 'no canonical baseline yet'}`
+}
+
+function navDriftDigestParts(digest: string, key: string): string {
+    const prefix = `${key}=`
+    const idx = digest.indexOf(prefix)
+    if (idx < 0) return ''
+    const rest = digest.slice(idx + prefix.length)
+    const end = rest.indexOf('|')
+    return end < 0 ? rest : rest.slice(0, end)
 }
 
 /**
@@ -186,6 +259,7 @@ function _applyNavUpdate(fn: (_current: NavState) => NavState): void {
     if (next.currentView === 'galaxy' || next.currentView === 'map') {
         appState.currentView = next.currentView
     }
+    refreshNavDriftBaseline(_readNavSnapshot())
 }
 
 function _createNavStore(): NavStoreApi {
@@ -199,6 +273,7 @@ function _createNavStore(): NavStoreApi {
         if (value.currentView === 'galaxy' || value.currentView === 'map') {
             appState.currentView = value.currentView
         }
+        refreshNavDriftBaseline(_readNavSnapshot())
     }
     return fn
 }
@@ -266,7 +341,13 @@ export function writeNavStateMirror(patch: Partial<NavState>): void {
             break
         }
     }
-    if (noop) return
+    if (noop) {
+        // Even a no-op touch re-baselines the drift TRAP so the baseline
+        // always tracks the most recent canonical write, and cleared state
+        // stays clean across identical re-patches.
+        refreshNavDriftBaseline(appState.navState)
+        return
+    }
 
     const previousView = current.currentView
 
@@ -292,6 +373,11 @@ export function writeNavStateMirror(patch: Partial<NavState>): void {
             })
         }
     }
+
+    // Post-apply digest: the drift tracer (DEV) must baseline against the
+    // state as it is AFTER this canonical write, or it would flag its own
+    // legitimate mutations as drift.
+    refreshNavDriftBaseline(appState.navState)
 }
 
 /** Reset navigation state to initial values. */
@@ -357,6 +443,37 @@ export function clearFocusPocketIndices(): void {
 /** Set focus pocket metadata. */
 export function setFocusPocketMeta(_meta: unknown): void {
     // Implementation for focus pocket state
+}
+
+// ── DEV: drift sampler ───────────────────────────────────────────────────────
+// Runs only in dev: samples appState.navState every ~3s and warns when it
+// drifted outside the canonical writers (see describeNavDrift above). This is
+// the instrumentation that would have pinned the 2026-08-04 unwritable-view
+// clobber in minutes instead of hours.
+{
+    const IS_DEV = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.DEV)
+    if (IS_DEV && typeof window !== 'undefined') {
+        let warnedAt = 0
+        ;(async () => {
+            try {
+                const { DisposableRegistry } = await import('@lib/utils/disposable-registry')
+                const reg = new DisposableRegistry({ label: 'nav-drift-audit', warnAfterDispose: false })
+                reg.scheduleInterval(3000, () => {
+                    const report = describeNavDrift(_readNavSnapshot())
+                    if (report) {
+                        const now = Date.now()
+                        if (now - warnedAt > 15000) {
+                            warnedAt = now
+                            debugWarn('[navigation] ' + report)
+                        }
+                    }
+                })
+                window.addEventListener('beforeunload', () => reg.disposeAll())
+            } catch {
+                /* audit must never break nav init */
+            }
+        })()
+    }
 }
 
 /** Clear focus pocket metadata. */

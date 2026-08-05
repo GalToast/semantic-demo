@@ -574,7 +574,14 @@ export function applyFocusPocketBreathing(
 
 export function getRuntimeStateSnapshot(): Record<string, unknown> {
     return {
-        navState: appState.navState,
+        // Shallow-clone navState: returning the LIVE object would let a later
+        // syncRuntimeState() whole-object-replace appState.navState with a
+        // snapshot that aliases (or predates) the canonical state — bypassing
+        // every writeNavstateMirror trap (the 2026-08 alarm class). The price
+        // is that only the current raw values survive a restore; collections
+        // (threadCandidates Map etc.) are shared by reference through the
+        // clone, so they stay consistent.
+        navState: { ...appState.navState },
         targetPositions: appState.targetPositions,
         pocketMotionByIndex: appState.focusState.pocketMotionByIndex,
         pocketTransitionStartedAt: appState.focusState.pocketTransitionStartedAt,
@@ -598,7 +605,13 @@ export function syncRuntimeState(snapshot: Record<string, unknown>): void {
         autoRotate: boolean
     }>
     {
-        if (s.navState !== undefined) appState.navState = s.navState
+        // navState restore must go through the canonical mirror funnel, never
+        // a whole-object replacement: a naive `appState.navState = snapshot`
+        // bypasses every writeNav-app mirror trap and the no-op guard, and can
+        // resurrect a stale view/mode alongside whatever the user just did.
+        if (s.navState !== undefined) {
+            writeNavStateMirror({ ...(s.navState as Partial<typeof appState.navState>) })
+        }
         if (s.targetPositions !== undefined) appState.targetPositions = s.targetPositions
         if (s.pocketMotionByIndex !== undefined) appState.focusState.pocketMotionByIndex = s.pocketMotionByIndex
         if (s.pocketTransitionStartedAt !== undefined)

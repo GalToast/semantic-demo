@@ -27,6 +27,7 @@ export {
     loadingPhase,
     writeNavStateMirror,
     getLastCommittedView,
+    describeNavDrift,
     resetNavState,
     updateNavState,
     setFocusedIndex,
@@ -45,11 +46,7 @@ export {
 export type { NavStoreApi, NavStoreState } from './navigation-state.svelte.ts'
 
 // ── URL state ────────────────────────────────────────────────────────────────
-export {
-    setApplyingUrlState,
-    setRestoringBrowserHistory,
-    bumpUrlStateRestoreToken
-} from './url-state.svelte.ts'
+export { setApplyingUrlState, setRestoringBrowserHistory, bumpUrlStateRestoreToken } from './url-state.svelte.ts'
 
 // ── Compass phase ────────────────────────────────────────────────────────────
 export {

@@ -35,6 +35,7 @@ export {
     loadingPhase,
     writeNavStateMirror,
     getLastCommittedView,
+    describeNavDrift,
     resetNavState,
     updateNavState,
     setFocusedIndex,
