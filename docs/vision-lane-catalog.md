@@ -210,4 +210,23 @@ METHOD RULE (banked): when a family returns 200-with-no-content across many mode
 - groq gate had been written off (403). With 1 active key: qwen/qwen3.6-27b @groq = PIXELS-READING (prompt_tokens 794, quoted real card tags ACTIVE/WEBSITE/PHONE/SEARCH RESULT). Single-key pool flips to 403-HTML between calls — treat groq as vision-verified but 1-key-rate-limited.
 - openai/gpt-oss-* @groq = "content must be a string" (text-only path on groq format).
 - Verify meta patterns: groq reasoning models fill 220 max_tokens with reasoning AND STILL NAME REAL TAGS — the "thinking-format only" lane note was the max_tokens-saturation misread (agnes lesson, now 2 families).
-- NEW VERIFIED count bump: 27 (+groq qwen3.6) -> 28, holding until zydat-v1's 4 (chatjimmy-8B, diffusiongemma-26b, +step37 +ds-v4-pro replays) are re-verified via passthrough.
+- CONFIRMED x2 (direct): qwen/qwen3.6-27b @groq PIXELS-READS (prompt_tokens 788-794, card tags cited). Count: 27 base + groq-qwen3.6 + zydit-v1 4 (chatjimmy-8B, diffusiongemma-26b, step-3.7, ds-v4-pro) = 32 nominal; re-verify zydit-v1 items via passthrough before final's 4 (chatjimmy-8B, diffusiongemma-26b, +step37 +ds-v4-pro replays) are re-verified via passthrough.
+## FINAL CONSOLIDATED REGISTER (2026-08-05 ~11:3x) — honest boundary of what probing proves
+
+Sweeps run this session (all evidence on disk under tmp/vision-census-evidence/):
+- zydit-v1 122-model tail: 4 OK (chatjimmy/llama3.1-8B, google/diffusiongemma-26b-a4b-it NEW; step-3.7-flash + deepseek-v4-pro replays) — but zydit-v1 replies need passthrough re-verify (zydot family history).
+- zydit-v4 28-model: ALL empty/refusal with explicit model self-reports of no-image — GATEWAY STRIPS IMAGES (confirmed, see above).
+- strip-reprobe (10 suspicious families on passthrough gates): all 404/400 — the stamped ids are zydot-specific aliases; underlying model truth unknown but not provable via router.
+- groq now live: qwen/qwen3.6-27b @groq PIXELS-READS x2 (prompt_tokens 788/794) — NEW verified lane; 1-key pool flaps 403-HTML between calls.
+- v-final & v-final2 all-gate sweeps: DEGRADED to 402/404/429 under 4-concurrent-sweep key starvation; 0 final HITs. Stopped to restore key health. Lesson: never stack >2 sweeps on shared 1-2 key pools.
+- openprovider: upstream host down ("fetch failed", 23s backoff) — externally blocked, not probeable today.
+- logfare glm-5.2: 240s hang = upstream never answers (lane's "logfare hangs" confirmed; not a vision verdict).
+
+CURRENT VERIFIED LIST (reconciled):
+A. Passthrough-proven (truth): Qwen3-VL-235B/8B/8B-thinking @modelscope; llama-3.2-11b/90b @nvidia; nemotron-omni-30b @openrouter; gemma-4-26b @openrouter; step-3.7-flash @openrouter; minimax-01/m3 @openrouter; gemini-2.5-flash(+-lite)/3.1-flash-lite(+image)/3-pro-image @openrouter; mistral-medium-latest @mistral; llama-4-scout + mistral-small-3.1 @cloudflare; agnes-2.0/2.5-flash/2.5-pro @agnes; gemini-3.1-flash-lite @llm7; kilo-auto + openrouter/free auto-routes @kilo; gemini-3.5-flash @zenmux; qwen3.5-122b/35b/27b @modelscope (non-VL ids!); mimo-v2.5-free @opencode-zen; chatjimmy-8B + diffusiongemma-26b @zydit-v1 (gate-suspect, treat as LIKELY).
+B. ONE-KEY-FLAPPY: qwen/qwen3.6-27b @groq (x2 confirmed).
+C. WALLED (vision-capable but billing): claude-*5 family, gpt-5.6-*, kimi-k*, minimax-direct, meta muse-spark, blaze 117-model cat, airforce 226-cat.
+
+**STRIPPING LAW (final):** EMPTY + model-says-"can't see image" = gateway dropped the part, NOT model truth. zydot/v4, openprovider-down, and any catalog-declared-text-only gate are suspect. VERIFIED passthrough only: modelscope/openrouter/nvidia/cloudflare/llm7/agnes/mistral/zenmux/kilo/groq.
+
+Next real work (not blocker): watch freemodel 19.8M-ms cooldown expiry (~5.5h) for gpt-5.6-* vision retest; re-verify zydot-v1's 2 NEW via passthrough equivalents (chatjimmy-8B ~ llama-3.1-8b; diffusiongemma -> gemma-4-26b already OK); maintain the 1-key groq rhythm.
