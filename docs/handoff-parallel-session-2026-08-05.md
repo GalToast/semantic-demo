@@ -11,13 +11,13 @@
 All edits are **mobile-premium CSS + one Svelte layout + one e2e spec**.
 Comments inline reference the "2026-08-04 sweep" / "W58" audit origins.
 
-| # | File (relative) | One-line reason |
-|---|---|---|
-| a | `css/mobile_premium__layout.css` | Mute `#btn-app-help` on search / focus / focus-search / semantic-dive surfaces — ghost button was rendering on top of the focus card's close / controls rail (z-blocker overlap). Idle + map surfaces keep the help button. |
-| b | `src/components/FocusCard.svelte` | Mobile sheet `max-height: calc(100dvh − 330px)` on focus / focus-search so the card top band clears the stage pill rail (z-70 kept for nearby-list toggle). Short-landscape (`≤540px`) gets a separate 10px inset rule. |
-| c | `css/mobile_premium__state.css` | Hide `.header-description` on `focus` / `focus-search` / `semantic-dive` — caption row (y≈33–60) overlapped the mode-chip rail (y≈38–84); the focus-stage compass already owns intent copy. |
-| d | `css/mobile_premium__components.css` | Suppress `.focus-stage-auxiliary-surfaces` under `map-focus-search` — aux content was absolute-positioned to y≈1070 (226px below 844px fold), unreachable with body overflow hidden. |
-| e | `tests/widget-journey.spec.js` | **5i** W58 cue anchor band: assertion updated from `< 64` to `64..240` (top now `calc(5.5rem + safe-area)` to clear header chrome). Also added new test: compass Search remains available without a selection on map view. |
+| #   | File (relative)                      | One-line reason                                                                                                                                                                                                             |
+| --- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| a   | `css/mobile_premium__layout.css`     | Mute `#btn-app-help` on search / focus / focus-search / semantic-dive surfaces — ghost button was rendering on top of the focus card's close / controls rail (z-blocker overlap). Idle + map surfaces keep the help button. |
+| b   | `src/components/FocusCard.svelte`    | Mobile sheet `max-height: calc(100dvh − 330px)` on focus / focus-search so the card top band clears the stage pill rail (z-70 kept for nearby-list toggle). Short-landscape (`≤540px`) gets a separate 10px inset rule.     |
+| c   | `css/mobile_premium__state.css`      | Hide `.header-description` on `focus` / `focus-search` / `semantic-dive` — caption row (y≈33–60) overlapped the mode-chip rail (y≈38–84); the focus-stage compass already owns intent copy.                                 |
+| d   | `css/mobile_premium__components.css` | Suppress `.focus-stage-auxiliary-surfaces` under `map-focus-search` — aux content was absolute-positioned to y≈1070 (226px below 844px fold), unreachable with body overflow hidden.                                        |
+| e   | `tests/widget-journey.spec.js`       | **5i** W58 cue anchor band: assertion updated from `< 64` to `64..240` (top now `calc(5.5rem + safe-area)` to clear header chrome). Also added new test: compass Search remains available without a selection on map view.  |
 
 **Do not re-edit these five files** unless you have a concrete regression. The sweep comments cite their own audit rationale.
 
@@ -27,13 +27,13 @@ Comments inline reference the "2026-08-04 sweep" / "W58" audit origins.
 
 ### Verified-vision lane ladder (from `docs/vision-lane-catalog.md`)
 
-| Lane | Route | Notes |
-|---|---|---|
-| `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct` | Best focused VLM | Pixel-perfect reads, fast |
-| `zenmux/stepfun/step-3.7-flash` | Best general fast/cheap | — |
-| `nvidia/thinkingmachines/inkling` | Deeper reasoning | Slow |
-| `cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct` | Free tier | — |
-| `nvidia/minimaxai/minimax-m3` | Slow, occasional 400s | — |
+| Lane                                                 | Route                   | Notes                     |
+| ---------------------------------------------------- | ----------------------- | ------------------------- |
+| `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct`        | Best focused VLM        | Pixel-perfect reads, fast |
+| `zenmux/stepfun/step-3.7-flash`                      | Best general fast/cheap | —                         |
+| `nvidia/thinkingmachines/inkling`                    | Deeper reasoning        | Slow                      |
+| `cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct` | Free tier               | —                         |
+| `nvidia/minimaxai/minimax-m3`                        | Slow, occasional 400s   | —                         |
 
 ### Blocked / not-vision right now
 
@@ -68,13 +68,22 @@ Feel free to add your own `tmp/` artifacts; they will not appear in diffs or PRs
 
 ## 4 · Gate Status
 
-| Gate | Result | Action |
-|---|---|---|
-| `qa:contract` | **309 pass / 0 fail** | None |
-| `qa:journey` | **60/60 pass** (post 5i spec fix) | None |
+| Gate          | Result                            | Action |
+| ------------- | --------------------------------- | ------ |
+| `qa:contract` | **309 pass / 0 fail**             | None   |
+| `qa:journey`  | **60/60 pass** (post 5i spec fix) | None   |
 
 Both gates green. No broken invariants, no pending test updates needed.
 
 ---
 
-*Generated 2026-08-05 by main lane. This file is tracked in git.*
+_Generated 2026-08-05 by main lane. This file is tracked in git._
+
+## UI fixture recipe (2026-08-05, verified) — the RICH neighbor/walk capture
+
+`?anchor=N` / live-search NEVER populate neighbors ("0 visible neighbors" on every record — those are search-result pills, not neighbor pills). The rich path = the app bridge: after load, `(window.__APP_ACTIONS__ ?? window.__navActions__).focusOnNode(0, {})` → node 0 has **5 visible neighbors + Walk rail + "WHY THESE NEIGHBORS / Connection — 'These businesses appear near each other in the local market'"**. Then hover the first `[class*="neighbor"]` (thread preview) / click (walk) / `button[data-journey-action="enter-inside"]` (dive, trail depth→2). Full capture script: `tmp/rich-node-capture.mjs` (also covers fallback click-path). Headless needs SEMANTIC_FORCE_WEBGL_SOFTWARE=1 to render the real scene.
+
+## LIVE search = VERIFIED (2026-08-05 15:55) — previously "API-gated re-audit"
+API (:8795 /api.php?action=semantic_search) was alive tonight; full live flow captured & QA-clean:
+search('coffee') → results (Top match: Angel Fire Coffee; "10 of 17 · 7 behind"; MATCH rows; Show-more; CONNECTION CUE "Search found related businesses…") → real click top row → focus node 518 (5 visible neighbors + WHY THESE NEIGHBORS) → hover/click thread → walk rail → enter-inside → semantic-dive(active). Shots: tmp/ui-jury-set/l-focus-live|thread-live|walk-live|dive-live(.png/.json). Vision: clean.
+CAVEAT (infra): api.php answered `degraded:true, reason:"semantic_service_offline"` → lexical_fallback only; the FULL semantic-quality path (the fancy tie) needs the semantic service up. Health: `curl '/api.php?action=semantic_search&q=coffee&limit=1&offset=0' -H 'Referer: http://127.0.0.1:5173/'`.
