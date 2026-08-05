@@ -31,3 +31,8 @@
 
 - freebuff 0.0.137 logged in (credentials.json authToken + fingerprint). CLI only accepts `login`; the agent runs via native binary + TUI. Its model setting = deepseek-v4-flash default, SDK supports many families.
 - Headless reuse requires mimicking their web client fingerprint + anti-bot headers (captcha mentions) — ToS-gray / fragile. NOT built. Its free models overlap our router anyway (deepseek-v4-flash free via zenmux).
+
+## freebuff follow-up test (2026-08-05 12:0x)
+- Tried: POST freebuff.com/chat/completions with authToken + x-freebuff/fingerprint headers + desktop UA -> 404 (Next.js SSR app, not an OpenAI-format path).
+- freebuff CLI: login-only command; agent runs as native binary + TUI (no --json/-p headless flag).
+- VERDICT: headless reuse requires either their web-client auth envelope re-creation (anti-bot fingerprint/captcha — circumvention, won't build) or TUI automation (fragile). Model overlap with our router = ~0 net-new (deepseek-v4-flash etc all free via zenmux). Parked.
