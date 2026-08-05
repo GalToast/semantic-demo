@@ -2367,3 +2367,15 @@
         pointer-events: none;
     }
 }
+
+/* W58 parity guard: at tablet widths the bottom-left proximity legend (300px,
+   absolute) collides with the focus-search results panel (verified overlap
+   69px @936, 47px @1024, 0px @1280+). Hold it out of the way while a focus
+   panel is open; legend still shows on idle/map/overview. 2026-08-05 */
+@media (max-width: 1024px) {
+  body[data-panel-surface='focus-search'] .proximity-legend-wrapper,
+  body[data-panel-surface='semantic-dive'] .proximity-legend-wrapper {
+    opacity: 0 !important;
+    visibility: hidden;
+  }
+}
