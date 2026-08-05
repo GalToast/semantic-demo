@@ -1,0 +1,110 @@
+[
+  {
+    "id": "Qwen/Qwen3-4B",
+    "verdict": "HTTP_400",
+    "provider": "modelscope",
+    "detail": "no provider supported (dead id)"
+  },
+  {
+    "id": "Qwen/Qwen3-8B",
+    "verdict": "EMPTY",
+    "provider": "modelscope",
+    "detail": "HTTP 200 empty content, 0 tokens"
+  },
+  {
+    "id": "iic/Tongyi-DeepResearch-30B-A3B",
+    "verdict": "EMPTY",
+    "provider": "modelscope",
+    "detail": "HTTP 200 empty content"
+  },
+  {
+    "id": "PaddlePaddle/ERNIE-4.5-0.3B-PT",
+    "verdict": "EMPTY",
+    "provider": "modelscope",
+    "detail": "HTTP 200 empty content"
+  },
+  {
+    "id": "PaddlePaddle/ERNIE-4.5-21B-A3B-PT",
+    "verdict": "EMPTY",
+    "provider": "modelscope",
+    "detail": "HTTP 200 empty content"
+  },
+  {
+    "id": "PaddlePaddle/ERNIE-4.5-300B-A47B-PT",
+    "verdict": "EMPTY",
+    "provider": "modelscope",
+    "detail": "HTTP 200 empty content"
+  },
+  {
+    "id": "Shanghai_AI_Laboratory/Intern-S1",
+    "verdict": "EMPTY",
+    "provider": "modelscope",
+    "detail": "HTTP 200 empty content"
+  },
+  {
+    "id": "Shanghai_AI_Laboratory/Intern-S1-mini",
+    "verdict": "EMPTY",
+    "provider": "modelscope",
+    "detail": "HTTP 200 empty content"
+  },
+  {
+    "id": "zai-org/GLM-4.7-Flash",
+    "verdict": "EMPTY",
+    "provider": "modelscope",
+    "detail": "HTTP 200 empty content"
+  },
+  {
+    "id": "zai-org/GLM-5.2",
+    "verdict": "EMPTY",
+    "provider": "modelscope",
+    "detail": "reasoning only, no final answer content"
+  },
+  {
+    "id": "Menlo/Jan-nano",
+    "verdict": "HTTP_400",
+    "provider": "modelscope",
+    "detail": "invalid model id (dead id)"
+  },
+  {
+    "id": "Qwen-Ambassador/Qwen3.7-Max",
+    "verdict": "HTTP_403",
+    "provider": "modelscope",
+    "detail": "account does not have access to model (likely billing/access)"
+  },
+  {
+    "id": "Qwen-Ambassador/Qwen3.7-Plus",
+    "verdict": "HTTP_403",
+    "provider": "modelscope",
+    "detail": "account does not have access to model (likely billing/access)"
+  },
+  {
+    "id": "XiaomiMiMo/MiMo-V2-Flash",
+    "verdict": "HTTP_400",
+    "provider": "modelscope",
+    "detail": "no provider supported (dead id)"
+  },
+  {
+    "id": "Tencent-Hunyuan/Hy3",
+    "verdict": "EMPTY",
+    "provider": "modelscope",
+    "detail": "HTTP 200 empty content"
+  },
+  {
+    "id": "stepfun/step-3.7-flash-free",
+    "verdict": "HTTP_404",
+    "provider": "zenmux",
+    "detail": "dead id; alt openrouter also 400 invalid"
+  },
+  {
+    "id": "z-ai/glm-4.7-flash-free",
+    "verdict": "REFUSAL",
+    "provider": "zenmux",
+    "detail": "text-only, rejects image_url content"
+  },
+  {
+    "id": "x-ai/grok-4.5-free",
+    "verdict": "HTTP_404",
+    "provider": "zenmux",
+    "detail": "dead id; alt openrouter also 400 invalid"
+  }
+]
