@@ -48,6 +48,76 @@ const pollFor = async (page, predicate, timeoutMs, intervalMs = 50) => {
 }
 
 test.describe('Widget journey', () => {
+    test('map compass Search remains available without a selection', async ({ page }) => {
+        await page.setViewportSize({ width: 375, height: 667 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map`, { waitUntil: 'domcontentloaded' })
+        await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'map', null, {
+            timeout: 10000,
+            polling: 100
+        })
+
+        const searchAction = page.locator('#btn-journey-tertiary[data-journey-action="focus-search"]')
+        await searchAction.waitFor({ state: 'visible', timeout: 20000 })
+        await expect(searchAction).toHaveAttribute('aria-disabled', 'false')
+
+        await searchAction.click()
+        await expect(page.locator('#search-input')).toBeFocused()
+        expect(
+            await page.evaluate(() => window.__APP_STATE__?.currentView),
+            'post-click map-search must preserve the map view'
+        ).toBe('map')
+
+        // ── Post-click settled state (2026-08-05 journey hardening) ──────────────
+        // (a) The compass-controller FOCUS_SEARCH fix enters the map-trail search
+        //     lane (SET_SURFACE { surface: 'map-trail' }) when the map has no
+        //     business selection; the parity layer mirrors it to
+        //     body[data-panel-surface]. The focused input is that lane's input.
+        expect(
+            await page.evaluate(() => document.body.dataset?.panelSurface),
+            'post-click map-search must settle the map-trail search lane (compass-controller SET_SURFACE)'
+        ).toBe('map-trail')
+
+        // (b) Empty Escape while the search input is focused is a documented
+        //     no-op: W52-UX-esc (SearchInput.svelte — empty query does nothing)
+        //     + W7ks1-F1 (global-shortcuts.ts bails on isTextInputField, so
+        //     return-to-overview never fires). The input keeps focus and the
+        //     view stays map — Escape does NOT leave the map from here.
+        await page.keyboard.press('Escape')
+        await expect(page.locator('#search-input')).toBeFocused()
+        await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'map', null, {
+            timeout: 5000,
+            polling: 50
+        })
+    })
+
+    test('deep-linked map focus: ?view=map&record=519 settles map + record focus', async ({ page }) => {
+        // record=519 (lead_id 519 -> array index 518) is the established valid
+        // deep-link fixture in this file (see the existing record=519 tests and
+        // H5-deeplink-journey.spec.js). __PLAYWRIGHT__ forces the webgl render
+        // kind so engineReady auto-fires at boot for deep-links (same mechanism
+        // as the existing 390px deep-link test further down this file).
+        await page.setViewportSize({ width: 375, height: 667 })
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map&record=519`, {
+            waitUntil: 'domcontentloaded'
+        })
+
+        // Settled state: map view + the record focus resolved (record maps to
+        // anchor index 518 via applyUrlState once the records load).
+        await page.waitForFunction(
+            () =>
+                window.__APP_STATE__?.currentView === 'map' &&
+                (window.__APP_STATE__?.navState?.focusedIndex === 518 ||
+                    document.body.dataset?.focusedNode === '518'),
+            null,
+            { timeout: 20000, polling: 100 }
+        )
+        expect(page.url(), 'deep-linked map view must carry view=map in the URL').toContain('view=map')
+        expect(page.url(), 'deep-linked record must be preserved in the URL').toContain('record=519')
+    })
+
     test('5g. Focus-panel facts separator is aria-hidden (W47 audit #2)', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
@@ -300,8 +370,11 @@ test.describe('Widget journey', () => {
             width: 0,
             height: 0
         })
-        // Cue is now top-anchored (W48 reposition): assert it's visible and
-        // sits at the top of the viewport, well above the bottom search panel.
+        // Cue is top-anchored (W48 reposition): assert it's visible and anchored
+        // above the bottom search panel. W58 mobile audit (2026-08-05) moved the
+        // anchor from top:1rem (16px) to top:calc(5.5rem + safe-area) so the cue
+        // clears the header chrome (JourneyCompass chip + overlay badge) — the
+        // invariant stays “never overlap the bottom result cards”, not a fixed 16px.
         expect(overlap.cue, 'search-trail-cue should be present on mobile').not.toBeNull()
         expect(
             overlap.cue.display,
@@ -309,12 +382,12 @@ test.describe('Widget journey', () => {
         ).not.toBe('none')
         expect(overlap.cue.width, 'search-trail-cue must have positive width on mobile').toBeGreaterThan(0)
         expect(overlap.cue.height, 'search-trail-cue must have positive height on mobile').toBeGreaterThan(0)
-        // Sanity: cue is positioned near the top (top: 1rem ~ 16px) so it
-        // cannot overlap the bottom-anchored search results panel.
+        // W58 anchor band: below header chrome, plainly above the bottom sheet.
         expect(
             overlap.cue.top,
-            `search-trail-cue must be top-anchored on mobile (got top=${overlap.cue.top}px; expected near 16px)`
-        ).toBeLessThan(64)
+            `search-trail-cue must sit in the W58 header-clear band (got top=${overlap.cue.top}px; expected 64..240)`
+        ).toBeGreaterThanOrEqual(64)
+        expect(overlap.cue.top, 'search-trail-cue must stay well above the bottom sheet').toBeLessThan(240)
 
         // Also verify a visible result card is not occluded — its text rect should not be
         // covered by anything with the synth/cue classes. The top match is the only visible

@@ -1964,17 +1964,30 @@ async function enterThreadInspectorByRealRoute(page) {
 
     if (routeTarget === 'pill') {
         await pill.scrollIntoViewIfNeeded({ timeout: 8000 }).catch(() => {})
-        const clicked = await pill
-            .click({ timeout: 8000, noWaitAfter: true })
-            .then(() => true)
-            .catch(() => false)
-        if (clicked) {
-            await markVisualRouteEvidence(page, 'real-click', 'clicked first visible neighbor pill')
+        // Thread preview opens on HOVER/focus (mouseenter -> scheduleInspect ->
+        // inspectThreadNeighbor), not on click (pointerup -> walkToIndex).
+        // The pre-W58 route clicked the pill and then waited for
+        // threadInspectSurface != idle — which never fired (observed 2x). Hover
+        // instead; fall back to a mouse-move across the pill center.
+        const box = await pill.boundingBox().catch(() => null)
+        const hovered = box
+            ? await page.mouse
+                  .move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 })
+                  .then(() => true)
+                  .catch(() => false)
+            : false
+        if (hovered) {
+            await markVisualRouteEvidence(page, 'real-hover', 'hovered first visible neighbor pill (thread preview)')
         } else {
-            const box = await pill.boundingBox()
-            if (!box) throw new Error('first visible neighbor pill had no clickable bounding box')
-            await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 28))
-            await markVisualRouteEvidence(page, 'real-click', 'mouse-clicked first visible neighbor pill center')
+            const clicked = await pill
+                .click({ timeout: 8000, noWaitAfter: true })
+                .then(() => true)
+                .catch(() => false)
+            if (clicked) {
+                await markVisualRouteEvidence(page, 'real-click', 'clicked first visible neighbor pill')
+            } else {
+                throw new Error('neighbor pill had no pointer-agnostic bounding box')
+            }
         }
     } else {
         const inspector = page.locator('#focus-thread-inspector.active').first()
