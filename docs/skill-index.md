@@ -10,6 +10,8 @@ Every session loads only skill **name + description**; bodies load on demand whe
 | `ui-animation`                         | animation/transition/motion design, prefers-reduced-motion, transform/opacity              | mblode + Anthropic ⭐ NEW                                 |
 | `web-quality-audit`                    | pre-delivery audit, Core Web Vitals, WCAG 2.1/2.2, Lighthouse targets, bounded verify loop | addyosmani + web-design-reviewer + ui-ux-pro-max ⭐ NEW   |
 | `threejs-webgl-practices`              | Three.js/WebGL loops, clips, culling, LOD, testing                                         | cloudai-x/threejs + playwright ⭐ NEW                     |
+| `canvas-webgl-a11y`                    | canvas/WebGL accessibility: off-DOM data table, keyboard parallel DOM, role=img, reduced-motion scene | a11y-perf-viz research ⭐ NEW                            |
+| `css-architecture`                     | @layer cascade, container queries, semantic tokens, OKLCH/contrast-first, specificity wars   | Mindrally + antfu + meodai ⭐ NEW                        |
 | `svelte-5-runes-practices`             | Svelte 5 runes, $state/$derived/$effect, reactivity bugs, lockstep gating                  | sveltejs/ai-tools + semantic-explorer field-proven ⭐ NEW |
 | `skill-authoring`                      | create/edit skills, progressive disclosure, lean bodies + trigger descriptions             | Anthropic skill-creator + harness model ⭐ NEW            |
 | `ux-copywriting`                       | user-facing copy, banned AI-isms, outcome CTAs, state copy, before/after audit             | mblode copywriting + product-design + Anthropic ⭐ NEW    |
@@ -25,6 +27,8 @@ Every session loads only skill **name + description**; bodies load on demand whe
 | ------------------------------------------------ | ------------------------------------------------------------------------------ |
 | `code-diff-review`                               | review diff/PR, security+correctness review                                    |
 | `code-review-discipline`                         | severity tiers, risk-first triage, blast radius, evidence-before-claims ⭐ NEW |
+| `agent-security-guardrails`                      | harness hardening: runtime tool gates, untrusted content, least privilege, MCP vetting ⭐ NEW |
+| `episodic-memory-implementation`                 | episode tuples, session-end distillation, golden sets, cross-session recall ⭐ NEW |
 | `verification-before-completion`                 | Iron Law TDD, red-green verification, done-claims need evidence ⭐ NEW         |
 | `pr-description-writer`                          | write a PR description                                                         |
 | `second-opinion-review`                          | independent review from a different model                                      |
@@ -40,21 +44,21 @@ Every session loads only skill **name + description**; bodies load on demand whe
 
 ## Global — Pi harness / environment
 
-| Skill                                                                                                                              | Trigger                                                                             |
-| ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `mcp-subagent-dispatch-routing`                                                                                                    | where are subagent tools, No such tool, dispatch routing                            |
+| Skill                                                                                                                              | Trigger                                                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `mcp-subagent-dispatch-routing`                                                                                                    | where are subagent tools, No such tool, dispatch routing                                         |
 | `subagent-websearch-access`                                                                                                        | websearch not found in worker, connect cached websearch MCP, research worker needs search ⭐ NEW |
-| `subagent-*` (timeout, followup, spawn-wedge, workspace-sweep, build-task, mcp-browser)                                            | worker stuck/quiet/recovery/cleanup                                                 |
-| `worker-timeout-on-disk-edits-takeover`                                                                                            | worker exit 124, edits landed but no report                                         |
-| `pi-harness-self-upgrade` / `local-package-idempotency-audit` / `model-config-sync` / `pi-harness-subagent-model-capability-split` | harness upgrades, model config                                                      |
-| `memory-routing-policy`                                                                                                            | which memory store, size/scope                                                      |
-| `js-repl`                                                                                                                          | quick JS/Python/PowerShell experiments                                              |
-| `write-node-script-on-windows` / `write-tool-debug` / `context-mode-windows-shell-path` / `bash-detach-handling`                   | Windows shell/tool quirks                                                           |
-| `tool-retry-exponential-backoff`                                                                                                   | cascading tool retries after errors                                                 |
-| `parallel-session-watch`                                                                                                           | git drift before commits                                                            |
-| `harness-hook-patterns`                                                                                                            | harness internals, extensions, hooks, compaction, ledgering, plugin bundling ⭐ NEW |
-| `ast-grep-decision-tree`                                                                                                           | which search tool (rg vs ast-grep vs ctx)                                           |
-| `mcp-playwright-wedge-resolution`                                                                                                  | Playwright MCP hangs                                                                |
+| `subagent-*` (timeout, followup, spawn-wedge, workspace-sweep, build-task, mcp-browser)                                            | worker stuck/quiet/recovery/cleanup                                                              |
+| `worker-timeout-on-disk-edits-takeover`                                                                                            | worker exit 124, edits landed but no report                                                      |
+| `pi-harness-self-upgrade` / `local-package-idempotency-audit` / `model-config-sync` / `pi-harness-subagent-model-capability-split` | harness upgrades, model config                                                                   |
+| `memory-routing-policy`                                                                                                            | which memory store, size/scope                                                                   |
+| `js-repl`                                                                                                                          | quick JS/Python/PowerShell experiments                                                           |
+| `write-node-script-on-windows` / `write-tool-debug` / `context-mode-windows-shell-path` / `bash-detach-handling`                   | Windows shell/tool quirks                                                                        |
+| `tool-retry-exponential-backoff`                                                                                                   | cascading tool retries after errors                                                              |
+| `parallel-session-watch`                                                                                                           | git drift before commits                                                                         |
+| `harness-hook-patterns`                                                                                                            | harness internals, extensions, hooks, compaction, ledgering, plugin bundling ⭐ NEW              |
+| `ast-grep-decision-tree`                                                                                                           | which search tool (rg vs ast-grep vs ctx)                                                        |
+| `mcp-playwright-wedge-resolution`                                                                                                  | Playwright MCP hangs                                                                             |
 
 ## Project — semantic-explorer
 
