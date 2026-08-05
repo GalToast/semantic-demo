@@ -483,3 +483,22 @@ First sweep missed four keyed providers (gemini's `/v1/models` uses a different 
 - **`freemodel/*` ❌ STILL DEGRADED 2026-08-04** — `gpt-5.6-luna` 401 invalid token, `gpt-5.6-sol`/`terra` 429 (single key on ~6h cooldown, `nextReadyInMs≈21.6M`). Only `freemodel/gpt-5.6-luna` had a prior graduation (2026-07-29); the whole lane is currently unusable — key needs attention.
 - **9 configured-but-keyless providers (0 keys — dead until keys are added):** `bazaarlink`, `ainative`, `deepseek`, `siliconflow`, `together`, `cerebras`, `cohere`, `hyperbolic`, `aimlapi`. Router exposes the routes (404/empty catalogs) but there are no API keys to serve them. Do not attempt dispatch on these; re-check router `/health` if keys ever appear.
 - Also confirmed: `gemini-3.5-flash` and `modelscope/zai-org/GLM-5.2` looked empty at 24 tokens and PONG cleanly at 256 (same reasoning-burn pattern as zydit — the 256-token rule applies everywhere).
+
+### Vision worker-path re-probe (2026-08-05, post pi-model-providers harness fix)
+
+The subagent worker `read`-path was silently dropping images before 2026-08-05 (bare {id}
+catalog rows -> input:[text] -> openai-completions stripped image parts). After the
+visionInputFromModelId fallback fix, a 6-lane worker-path probe found:
+
+- WORKER-VISION ✅ `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct` — PIXELS OK ×2 (real phone # read)
+- WORKER-VISION ✅ `zenmux/stepfun/step-3.7-flash` — PIXELS OK (real phone # read)
+- TEXT-ONLY (worker path) `zenmux/sapiens-ai/agnes-2.0-flash` — VISION UNAVAILABLE (read says image/bytes)
+- BILLING/LANE `zenmux/z-ai/glm-4.6v-flash-free` — 429 insufficient_quota (Aliyun)
+- DEAD 404 `openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`
+- INVALID 400 `zenmux/mimo-v2.5-free` model not valid this routing
+- 429-UPSTREAM `openrouter/google/gemma-4-26b-a4b-it:free`
+
+Rule change: with the harness fixed, "VISION UNAVAILABLE" now means TEXT-PATH, and provider
+errors (429/400/404) are honest failures. The earlier confounded "19 stable lanes" sweep
+should be re-validated on the worker path before trusting a lane for subagent vision work.
+
