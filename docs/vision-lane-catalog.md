@@ -57,11 +57,11 @@ USABLE: llama-3.2-11b-vision (local 2.4s / hosted), llama-3.2-90b-vision (11s), 
 DEAD/ghost: phi-4-multimodal (EOL 0715), llama-4-maverick (EOL), fuyu-8b, deplot, gemma-3-12b/3-4b, gemma-4-31b (blocked), kosmos-2, phi-3-vision, phi-3.5-moe, kimi-k2.6, cosmos-reason2, neva-22b, vila (all 404 Function-not-for-account), nemotron-nano-vl-8b (500), mistral-medium-3.5 (net err).
 Web-LADDER update: this does NOT change the top (Qwen3-VL still #1) — omni-30b joins as a slower feasible alternative (53s).
 
-## Exhaustive bridge census (2026-08-05 06:0x) — every model id that breaks into vision
+## Exhaustive bridge census v2 (2026-08-05 06:2x) — 17 VERIFIED, honest gap confession
 
-Method: 3-pass sweep of 278 unique candidate ids (union: kilo catalog-declared 189 + openrouter 181 + pattern-hints 100 + lane records) through `tmp/vision-ask.mjs` (single image, base64 data URI, /v1/chat/completions), per-model provider failover, concurrency 6. Full machine table: `tmp/vision-census-final.json` + raw `tmp/vision-census-*-results.jsonl`.
+Method: swept ALL 30 router gates (not just 9). First pass hit 9 gates / 278 ids (12 verified). Second audit pass (prompted by "did you miss anything?") found 21 GATES NEVER SWEPT: cloudflare, llm7, gemini (58 direct Google models), mistral-ocr, agnes, neuralwatt, openprovider(502), zydit(403), groq(403), freemodel(429), poolside. That reshaped the register. Full merged results: `tmp/vision-census-evidence/*.jsonl` + `tmp/vision-census-final.json`.
 
-VERIFIED VISION (12 — real pixel read, not catalog claim):
+VERIFIED VISION (17 — real pixel read via 1-image bridge probe):
 
 1. Qwen/Qwen3-VL-235B-A22B-Instruct @modelscope (10s)
 2. Qwen/Qwen3-VL-8B-Instruct @modelscope (12s)
@@ -72,20 +72,23 @@ VERIFIED VISION (12 — real pixel read, not catalog claim):
 7. google/gemma-4-26b-a4b-it:free @openrouter (6s)
 8. stepfun/step-3.7-flash @openrouter (6s)
 9. minimax/minimax-01 @openrouter (19s)
-10. google/gemini-2.5-flash-lite @openrouter (29s — slow, low tokens)
+10. google/gemini-2.5-flash-lite @openrouter (29s)
 11. kilo-auto/small @kilo (3.6s — auto-router backends)
 12. openrouter/free @kilo (9.5s — auto-router backends)
+13. mistral-medium-latest @mistral (2.5s — fast, lane was right)
+14. gemini-3.1-flash-lite @llm7 (4s — llm7 gate)
+15. @cf/meta/llama-4-scout-17b-16e-instruct @cloudflare (4s)
+16. @cf/mistralai/mistral-small-3.1-24b-instruct @cloudflare (3s)
+17. agnes-2.0-flash @agnes (10s, reasoning-burn; 136 image tokens prove ingest)
 
-The rest of 278 (honest verdicts, no more silent drops):
+Gates swept but no vision (honest): gemini gate = 58 Google GenAI models BILLING-BLOCKED (prepaid depleted, AI Studio 429) — *would* be vision but accounts out of credits; neuralwatt :: glm-5.2 family 429 (rate), gemma-4-31b 402; mistral-ocr-* = 400 invalid (OCR endpoint models, not chat); poolside 0 vision; zydit/groq/openprovider 403/502.
 
-- 140 billing/auth 402/403 wall (openrouter/kilo credit, novita NO_BALANCE, infron quota)
-- 97 dead/wrong id (410 EOL on kilo/openrouter for qwen3.5/3.6/3.7, gemini-3.x, gpt-5.4+; 404 kimi on kilo; 400 @cf/ & \*-thinking unsupported ids)
-- 22 likely-vision unroutable (GLM-4.5v/4.6v/5v: 221 reasoning tokens then 504/403 — ModelScope alt times out; InternVL3_5-241B & PaddleOCR/ERNIE-VL prompt_tokens 0 — id not servable; gemini-2.5-pro/3-flash/3.1-family: prompt_tokens 25 → image not attached on that route)
-- 7 timeout/empty (nemotron-nano-12b-v2-vl:free upstream, Qwen-Image-Edit no output)
+Gap classes found & closed (the v1 census's real misses):
 
-Route-specific truths this census locks in:
+- MISS #1: whole gate not swept (cloudflare, llm7, gemini, agnes, neuralwatt, mistral-ocr) — 5 new verified lanes.
+- MISS #2: `mistral-medium-latest` not in any prior catalog pull — added manually.
+- MISS #3: hosted NVIDIA NIM (integrate.api.nvidia.com) not in router sweep — direct probe 403 today (keys invalid/rotated), lane's earlier 403-able entries still true but key-dependent.
+- MISS #4: worker-path read-tool reported agnes "VISION UNAVAILABLE" (filesystem error) but bridge shows TRUE vision — worker read path ≠ model capability; bridge + read tool disagree, bridge wins for verdicts.
+- OPEN: EDITING-verified `mistral-medium-3.5` etc. sub-ids, ocr-specific endpoints, `gemini-3.5-flash` variants on llm7 (400 wrong-id — worth exact-id retry), plus 25 "EMPTY" (image accepted with real image_tokens but no text — likely max_tokens=220 saturation, e.g. agnes pattern).
 
-- `Qwen/` (modelscope) = THE live VL route; `qwen/` (kilo/openrouter) = 410 EOL for same family. Always map to modelscope.
-- The verified list is shorter than the catalog-declared 370 because most "vision" catalog rows are billing walls, EOL ids, or text-only routes — catalog modality ≠ usable vision.
-- GLM-V models are genuinely V-capable (221 reasoning tokens prove image ingestion) but unroutable today: zenmux alt = ModelScope 504 at 15s; novita = 403. Re-probe if zenmux gains a native GLM-V route.
-- Re-verify 2× before subagent use; earlier lane list remains the primary, this registers the FULL space.
+So: catalog-declared ~370 image models across 30 gates → **17 confirmed usable vision models right now**, up from 12 pre-gap-audit. The majority of the rest are billing walls, EOL ids, rate limits, or unimplemented shim ids — honest verdicts, no silent drops.
