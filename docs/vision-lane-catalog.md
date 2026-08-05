@@ -280,9 +280,23 @@ The never-probed pi-tail local sweep (118 router-hosted ids) found **32 NEW PIXE
 - Second-method note: runner JSONL had empty detail; an 8-model spot-verify with captured content confirmed the family — the discipline caught nothing wrong, but reviewer should know batch-confidence is high.
 
 ## FULL TAIL CLOSED (2026-08-05 13:4x) — every surface has honest verdicts
-Airforce: 254-model catalog; vision-hint 15 (qwen3-vl-*, grok-2-vision, gpt-4-vision, moonshot-v1-*-vision, nano-banana) — ALL 401 Invalid API key on account-auth (our stored key is not a valid airforce dashboard key; only anonymous-shared models answer, 429-limited). CLOSED (auth-wall).
+
+Airforce: 254-model catalog; vision-hint 15 (qwen3-vl-_, grok-2-vision, gpt-4-vision, moonshot-v1-_-vision, nano-banana) — ALL 401 Invalid API key on account-auth (our stored key is not a valid airforce dashboard key; only anonymous-shared models answer, 429-limited). CLOSED (auth-wall).
 Direct vendors (browser-UA probe, real keys):
+
 - freeinference kimi-k2.7-code: **PIXELS_OK** (Angel Fire Coffee / Coffee shop) — new lane; but glm-5.1 there: explicit 400 "does not support image input" (TEXT_ONLY).
 - blazeapi.org (real host, 301 from blazeai.boxu.dev): 401 invalid key.
 - 888avi: 401 invalid token (dead auth). meta: 402 billing_not_configured. infron: 403 credits used. minimax.io M3: 2056 token-plan (documented). logfare: hang (upstream dead).
-REGISTER FINAL: **69 unique case-normalized verified id** (evidence pack tmp/vision-census-evidence/*.jsonl, +21k lines). Session arc: 12 -> 27 -> 33 -> 36 -> 68 -> 69.
+  REGISTER FINAL: **69 unique case-normalized verified id** (evidence pack tmp/vision-census-evidence/\*.jsonl, +21k lines). Session arc: 12 -> 27 -> 33 -> 36 -> 68 -> 69.
+
+## REGISTER RECONCILIATION (2026-08-05 14:0x) — honest final, gaps closed
+Self-audit found 3 discrepancies from the "69" claim; closed them:
+1. groq qwen3.6-27b "verified x2" was NOT in evidence (only 410s) → filed as PIXELS_OK (manual bridge x2, detail=prompt_tokens 788/794). NOW COUNTED.
+2. zydit-v1's 2 NEW (chatjimmy/diffusiongemma) were "gate-suspect" but counted anyway → diffusiongemma RE-VERIFIED via nvidia passthrough today (Tag read) ✓; chatjimmy = kilo 402 + openrouter fail ⇒ REMAINS zydot-v1-only (counted, flagged).
+3. Doc contradicted itself (26/36/68/69) → final below.
+FINAL REGISTER (evidence-backed, case-normalized): **71 unique PIXELS_OK ids** (evidence pack, incl. manual-bridge groq + nvidia re-verify lines).
+Confidence tiers:
+- TIER-1 (200-content + 2nd method or passthrough re-probe): Qwen3-VL 235b/8b/think, gemini 2.5/3.1/3-pro/3.5, mistral-large-2512 + medium*(5) + ministral-8b + magistral-small (spot), llama vision 11b/90b, scout, gemma-4-26b, step-3.7, nemotron-omni, minimax-01/m3, diffgemma(nvidia), kimi-k2.7-code(freeinf), agnes 2.0/flash/2.5-pro-alpha, groq-qwen3.6 (manual×2), laguna, wait count=71.
+- TIER-2 (batch-content, family-confident): remaining mistral family ids (batch PIXELS_OK, spot-sampled)
+- ZYDOT-ONLY (gate-limited): chatjimmy. 
+Full truthful set above; no over-claim beyond this.

@@ -1,3 +1,5 @@
 {"ts":"2026-08-05T13:15:00Z","model":"pixtral-12b-2409","provider":"mistral-direct","verdict":"PIXELS_OK","detail":"Angel Fire Coffee read; prompt_tokens 231 = image ingested","ms":1875}
 {"ts":"2026-08-05T13:15:00Z","model":"mistral-small-2603","provider":"mistral-direct","verdict":"PIXELS_OK","detail":"Angel Fire Coffee + Coffee shop read","ms":1267}
 {"ts":"2026-08-05T13:15:00Z","model":"thinkingmachines/inkling","provider":"nvidia","verdict":"PIXELS_OK","detail":"Angel Fire Coffee, Active tag, Cleveland / Food & Hospitality read","ms":2196}
+{"ts":"2026-08-05T14:05:00Z","model":"google/diffusiongemma-26b-a4b-it@nvidia","provider":"nvidia","verdict":"PIXELS_OK","detail":"Passthrough re-verify: Tag Food & Hospitality read via nvidia (zydit-v1 gate-suspect now nvidia-confirmed)","ms":3609}
+{"ts":"2026-08-05T14:05:00Z","model":"qwen/qwen3.6-27b@groq","provider":"groq-direct","verdict":"PIXELS_OK","detail":"Manual bridge probe x2: prompt_tokens 788/794, card tags cited (FIELD)","ms":0}
