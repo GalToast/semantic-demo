@@ -61,13 +61,14 @@ Web-LADDER update: this does NOT change the top (Qwen3-VL still #1) — omni-30b
 
 Three successive census layers — each caught a real class of miss that the previous one shipped as "done":
 
-| Layer | Gates swept | Total ids | Verified | Miss this layer caught |
-|---|---|---|---|---|
-| v1 | 9 | 278 | 12 | catalog-derived candidates only |
-| v2 | 21 | 329 | 17 | +cloudflare+llm7+gemini+agnes+mistral+gates; whole-gate misses |
-| v3 | 21 + alt-gate matrix | 329 + 122 alt probes | 27 | 429-rate-limits never retried = 123 mis-filed "untested"; no usage-image-token classifier; missing per-model alt-gate matrix |
+| Layer | Gates swept          | Total ids            | Verified | Miss this layer caught                                                                                                       |
+| ----- | -------------------- | -------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| v1    | 9                    | 278                  | 12       | catalog-derived candidates only                                                                                              |
+| v2    | 21                   | 329                  | 17       | +cloudflare+llm7+gemini+agnes+mistral+gates; whole-gate misses                                                               |
+| v3    | 21 + alt-gate matrix | 329 + 122 alt probes | 27       | 429-rate-limits never retried = 123 mis-filed "untested"; no usage-image-token classifier; missing per-model alt-gate matrix |
 
 VERIFIED VISION (27 families, deduped; real single-image bridge read):
+
 1. Qwen/Qwen3-VL-235B-A22B-Instruct @modelscope (7-10s)
 2. Qwen/Qwen3-VL-8B-Instruct @modelscope (12-23s)
 3. Qwen/Qwen3-VL-8B-Thinking @modelscope (8-11s)
@@ -97,17 +98,39 @@ VERIFIED VISION (27 families, deduped; real single-image bridge read):
 27. kilo-auto/small + openrouter/free auto-routes @kilo (5-10s)
 
 EXCLUDED-honest residuals (not vision-blocked, need keys/heal/wrong-id normalizing):
-- 129 x HTTP_402 (billing walls: claude-*5, gpt-5.6-*, kimi-*, novita-* on charged gates)
+
+- 129 x HTTP_402 (billing walls: claude-_5, gpt-5.6-_, kimi-_, novita-_ on charged gates)
 - 84 x HTTP_400 (invalid-id/shape on that gate), 29 x HTTP_404, 18 x HTTP_410 (EOL),
 - 23 x EMPTY/TEXT_EMPTY (image-token-detail zero or max_tokens saturation), 3 x untested-429, 1 x REFUSAL cluster gemini-3.x-preview (text-only frontends)
 - The ~39 previously claimed "19 stable lanes" docs pre-2026-08-05 are CONFOUNDED: 429-as-untested + no-retry + single-gate probes. Re-run the disputed bucket (429/EMPTY/REFUSAL) before trusting any "vision lane" claim from before this date.
 
 Census methodology lock-in (so future sweeps don't repeat v1/v2 blind spots):
+
 1. 429 is NOT a verdict — it is backoff. Always retry (min 2 attempts, 3-4s backs).
 2. Capture usage.image_tokens / prompt_tokens_details — image_ingest > 0 + max_tokens raised, else reasoning-burn models classify "EMPTY" when they're vision.
 3. Gate-routing is part of the verdict: gemini-3.5 410@openrouter but works @zenmux; qwen3-vl 410@kilo but modelscope OK. Probe per (model, gate) matrix, not once per id.
-4. "image" capability hides in non-"VL" ids (qwen3.5-* family). Match on catalog declared input_modalities, not name regex.
+4. "image" capability hides in non-"VL" ids (qwen3.5-\* family). Match on catalog declared input_modalities, not name regex.
 5. Sweep ALL router gates (/health routes), not the 9 familiar ones — v1 missed cloudflare/llm7/gemini/agnes/mistral/neuralwatt entirely.
 6. Direct-platform keys (MINIMAX_API_KEY, GROQ_API_KEY, EIGHT8AVI, etc.) exist as harness-level env but have no baseURL in pi config — they are NOT currently routable through Pi's provider model, so the register only covers router-reachable models. Wiring those is a separate harness task.
 
-Full machine tables: tmp/vision-census-final-v2.json (best verdict per id), tmp/vision-census-evidence/*.jsonl per layer.
+Full machine tables: tmp/vision-census-final-v2.json (best verdict per id), tmp/vision-census-evidence/\*.jsonl per layer.
+
+## DIRECT-platform census (2026-08-05) — beyond the router; from pi modelProviders config
+
+The router (127.0.0.1:8788, 30 gates) is only HALF the surface. `~/.pi/agent/model-providers.json` defines DIRECT endpoints the Pi agent itself uses with their own env keys. 38 unique (envKey, baseUrl) endpoints, 5 NOT reachable via the router:
+
+| Endpoint | Key | Models | Status (probed this session) |
+|---|---|---|---|
+| api.minimax.io (anthropic + v2) | MINIMAX_API_KEY | MiniMax-M3/M2.7/M2.5/M2.1 | LIVE endpoint, answers calls BUT Token Plan 2056 exhausted — /v1/text/chatcompletion_v2 returns envelope + status_code 2056; anthropic-format 429 |
+| api.meta.ai | MODEL_API_KEY | muse-spark-1.1 (multimodal) | LIVE, 402 payment-required on chat |
+| blazeai.boxu.dev/api | BLAZE_API_KEY | 117 models (MiniMax family, GLM-4.6, GPT-OSS…) | models list OK; chat 404 on all known path+id combos (vendor schema differs) |
+| api.888avi.cc | EIGHT8AVI_API_KEY | gpt-5.5, claude-opus-4-1, gpt-5-3 | 401 invalid token (key not authorized at /v1) |
+| freeinference.org | FREEINFERENCE_API_KEY | glm-5.1/5-turbo, kimi-k2.7-code, minimax-* | 403 on direct /v1; router gate /freeinference doesn't exist (404 earlier) |
+| api.airforce | AIRFORCE_API_KEY | 226 models incl. nemotron-nano-12b-v2-vl, grok-4.1-mini | models 200 w/o auth; chat/probe 403 with key — endpoint live but key has no vision route |
+| api.888avi.cc | EIGHT8AVI_API_KEY | claude-opus-4-1 etc. | 401 |
+| 127.0.0.1:8789 (Gemini AI Studio proxy) | GEMINI_API_KEY | gemini-2.5-pro/flash, 3.x (10 vision-declared) | 529 overloaded on probe; separate port from key-router — dead now, port not listening |
+| 127.0.0.1:8790 (cloudflare overlay) | CLOUDFLARE_API_KEY | same @cf models | socket closed (not listening) |
+
+DIRECT-PLATFORM VERDICT: these are REAL additional surfaces with live keys — minimax-direct M3, meta muse-spark-1.1, blaze 117-model catalog, airforce 226-catalog — but every one is currently blocked by per-vendor billing (minimax 2056 token-plan, meta 402), auth schema (blaze 404, eight8 401, airforce 403), or platform state (8789/8790 dead). NONE adds a confirmed-usable VISION lane today beyond the 27 already counted. Digital forensics to unblock: minimax needs wallet top-up; blaze needs its real chat schema (try POST /api/v1/chat/completions with x-api-key — got 404, may need model="payg/..." shape variants); airforce needs its key-scoped route. Re-probe cust when wallets/heal.
+
+IMPORTANT for future sweeps: NEVER claim "all gates swept" from the router alone — sweep `model-providers.json` envKeys' baseUrls too (they're Pi-agent direct endpoints, invisible to the 8788 router AND to worker/subagent routing). If a direct endpoint matters, add it to the router's providers registry + routePrefix so workers can use it too.
