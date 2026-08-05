@@ -37,6 +37,8 @@ import { setTimeout as wait } from 'node:timers/promises'
 const DEV_URL = 'http://127.0.0.1:5173/?nodemo=1&view=galaxy'
 const PREVIEW_URL = 'http://127.0.0.1:4174/?nodemo=1&view=galaxy'
 const VIEWPORT = { width: 1440, height: 900 }
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const bodyAttrsToCheck = [
     'mode',
@@ -62,7 +64,7 @@ const flows = [
 ]
 
 async function captureBodyAttrs(url) {
-    const browser = await chromium.launch({ headless: true })
+    const browser = await chromium.launch({ headless: true, args: [...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] })
     const context = await browser.newContext({ viewport: VIEWPORT })
     const page = await context.newPage()
     try {
@@ -82,7 +84,7 @@ async function captureBodyAttrs(url) {
 }
 
 async function captureAfterSearch(url, query) {
-    const browser = await chromium.launch({ headless: true })
+    const browser = await chromium.launch({ headless: true, args: [...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] })
     const context = await browser.newContext({ viewport: VIEWPORT })
     const page = await context.newPage()
     try {

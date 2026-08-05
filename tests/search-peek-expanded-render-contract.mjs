@@ -55,6 +55,8 @@ import { extname, resolve } from 'path'
 const ROOT = process.cwd()
 const headed =
     process.env.CONTRACT_HEADED === '1' || process.env.PLAYWRIGHT_HEADED === '1' || process.env.PWDEBUG === '1'
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 // ---------------------------------------------------------------------------
 // Inline HTTP server (serves project files, auto-shutdown)
@@ -644,7 +646,9 @@ async function main() {
 
     const browser = await chromium.launch({
         headless: !headed,
-        args: headed ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] : ['--no-sandbox']
+        args: headed
+            ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])]
+            : ['--no-sandbox', ...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])]
     })
     const context = await browser.newContext({
         viewport: { width: 390, height: 844 },

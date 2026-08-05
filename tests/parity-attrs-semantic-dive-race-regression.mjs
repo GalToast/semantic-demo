@@ -33,7 +33,9 @@ import assert from 'node:assert/strict';
 const BASE_URL = 'http://127.0.0.1:8795/index.html';
 const VIEWPORT = { width: 1440, height: 900 };
 
-const browser = await chromium.launch({ headless: true });
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
+const browser = await chromium.launch({ headless: true, args: [...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
 const context = await browser.newContext({ viewport: VIEWPORT });
 const page = await context.newPage();
 

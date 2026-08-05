@@ -11,6 +11,8 @@ mkdirSync(SCREENSHOT_DIR, { recursive: true });
 
 const SVELTE_URL = 'http://localhost:5173/';
 const LEGACY_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const results = {
   console: { errors: [], warnings: [], info: [] },
@@ -378,6 +380,7 @@ async function runAudit() {
       '--use-angle=swiftshader',
       '--enable-webgl',
       '--ignore-gpu-blocklist',
+      ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : []),
     ],
   });
   

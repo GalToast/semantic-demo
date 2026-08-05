@@ -15,6 +15,8 @@ const SVELTE_URL = 'http://localhost:5173/';
 const LEGACY_URL = 'http://127.0.0.1:8795/index.html';
 const SCREENSHOT_DIR = path.resolve(process.cwd(), 'reports', 'screenshots', 'svelte-targeted');
 const REPORT_FILE = path.resolve(process.cwd(), 'reports', 'svelte-targeted-report.md');
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -22,7 +24,7 @@ async function main() {
   console.log('=== TARGETED SVELTE 3D CHECKS ===\n');
   await fs.mkdir(SCREENSHOT_DIR, { recursive: true });
 
-  const browser = await chromium.launch({ headless: false, args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--no-sandbox', ...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
 

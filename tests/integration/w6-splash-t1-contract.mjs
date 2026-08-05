@@ -19,13 +19,15 @@ import { chromium } from 'playwright'
 import { describe, it, expect, before, after } from 'vitest'
 
 const TEST_BASE_URL = process.env.TEST_BASE_URL ?? 'http://127.0.0.1:5175/'
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 describe('W6-T1 splash shell + gesture monitor', () => {
     let browser
     let page
 
     before(async () => {
-        browser = await chromium.launch({ headless: true })
+        browser = await chromium.launch({ headless: true, args: [...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] })
         page = await browser.newPage()
         await page.goto(TEST_BASE_URL, { waitUntil: 'networkidle' })
     })

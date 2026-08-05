@@ -22,9 +22,10 @@
  */
 
 import { chromium } from '@playwright/test';
-import { search } from '@lib/search/state'
+import { clearSearch, search } from '@lib/search/state'
 import { refreshCompositionState } from '@lib/orchestration/lifecycle'
-import { clearSearch } from '@lib/stores/navigation.svelte'
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 
@@ -132,7 +133,7 @@ async function getPanelVisibleState(page) {
 async function main() {
   console.log('\n=== Focus Trap Contract ===\n');
 
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 

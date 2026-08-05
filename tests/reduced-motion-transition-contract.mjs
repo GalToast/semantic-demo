@@ -30,7 +30,8 @@ import { resolve, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 const root = resolve(__dirname, '..');
 
 const OUT_DIR = resolve(root, 'tmp', 'reduced-motion-video-proof-2026-05-20');
@@ -210,7 +211,7 @@ async function waitForReady(page) {
 
 async function runBrowserProof(port) {
   const server = await startServer(port);
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
 
   const desktopPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await desktopPage.emulateMedia({ reducedMotion: 'reduce' });

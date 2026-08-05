@@ -20,6 +20,8 @@ import { chromium } from 'playwright'
 
 const PORT = Number(process.env.SEMANTIC_WEATHER_WIDGET_PORT || 8795)
 const BASE_URL = `http://127.0.0.1:${PORT}/dist/svelte/index.html?nodemo=1`
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 async function waitForServer(proc) {
     const deadline = Date.now() + 8000
@@ -168,7 +170,7 @@ async function main() {
     let browser
     try {
         await waitForServer(server)
-        browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] })
+        browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] })
 
         const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
         await context.addInitScript(() => {

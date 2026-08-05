@@ -815,3 +815,20 @@ body[data-panel-surface]:not(.surface-map-any)[data-strand-journey='exploring']
     color: rgba(161, 198, 197, 0.85);
     line-height: 1.45;
 }
+
+/* Desktop map-focus-search: suppress #focus-stage-auxiliary-surfaces.
+   Matches the mobile fix in mobile_premium__components.css (batch-3,
+   2026-08-04). On desktop the aux block is still in layout flow at
+   y≈914+ with height≈287px, inflating document scrollHeight beyond
+   clientHeight (985 vs 900) despite body overflow-y: hidden. The map
+   surface owns its own drawer controls; the aux block is unreachable
+   and extends the page for nothing. */
+@media (min-width: 769px) {
+    body[data-panel-surface='map-focus-search'] .focus-stage-auxiliary-surfaces,
+    body.surface-map-focus-search .focus-stage-auxiliary-surfaces {
+        display: none;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
+}

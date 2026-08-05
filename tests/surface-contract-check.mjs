@@ -65,11 +65,13 @@ const positionalUrl =
     shellUrl(flagValue(cliArgs, 'shell') || process.env.SURFACE_CONTRACT_SHELL)
 const headed =
     !cliArgs.includes('--headless') && process.env.PW_HEADLESS !== '1' && process.env.PLAYWRIGHT_HEADLESS !== '1'
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 const launchOptions = {
     headless: !headed,
     args: headed
-        ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox', '--disable-application-cache', '--disable-cache']
-        : ['--no-sandbox', '--disable-application-cache', '--disable-cache', '--disable-gpu']
+        ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox', '--disable-application-cache', '--disable-cache', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])]
+        : ['--no-sandbox', '--disable-application-cache', '--disable-cache', '--disable-gpu', ...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])]
 }
 
 function parseFlags(args) {

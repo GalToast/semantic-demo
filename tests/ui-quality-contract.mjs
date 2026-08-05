@@ -16,9 +16,13 @@ const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html'
 const cliArgs = process.argv.slice(2)
 const headed =
     !cliArgs.includes('--headless') && process.env.PW_HEADLESS !== '1' && process.env.PLAYWRIGHT_HEADLESS !== '1'
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 const launchOptions = {
     headless: !headed,
-    args: headed ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] : ['--no-sandbox']
+    args: headed
+        ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])]
+        : ['--no-sandbox', ...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])]
 }
 function positionalUrl(args) {
     const flagsWithValue = new Set(['--surface', '--state', '--states', '--surfaces'])

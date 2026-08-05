@@ -19,6 +19,8 @@
 
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 const APP_PATH = '/index.html';
@@ -83,7 +85,7 @@ async function gotoApp(page) {
 }
 
 async function runTestsForViewport(viewport) {
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
   const page = await browser.newPage({
     viewport: viewport,
     isMobile: true,

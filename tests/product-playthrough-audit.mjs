@@ -20,14 +20,29 @@ const HEADED = !process.argv.includes('--headless') &&
   process.env.PW_HEADLESS !== '1' &&
   process.env.PLAYWRIGHT_HEADLESS !== '1';
 const REQUIRE_WEBGL = HEADED && process.env.ALLOW_WEBGL_FALLBACK !== '1';
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1';
 const launchOptions = {
   headless: !HEADED,
   args: HEADED
     ? [
         '--ignore-gpu-blocklist',
         ...(process.platform === 'win32' && process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : []),
+        ...(forceSoftwareWebgl
+          ? ['--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering']
+          : []),
       ]
-    : [],
+    : [
+        ...(forceSoftwareWebgl
+          ? [
+              '--ignore-gpu-blocklist',
+              '--use-gl=angle',
+              '--enable-webgl',
+              '--enable-unsafe-swiftshader',
+              '--enable-webgl-software-rendering',
+            ]
+          : []),
+      ],
 };
 const runId = new Date().toISOString().replace(/[:.]/g, '-');
 const outLane = VISUAL_ERGONOMICS && REAL_ROUTE_VISUAL

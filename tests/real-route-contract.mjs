@@ -27,6 +27,8 @@ const TARGET_URL = `${baseRoot}/index.html?view=galaxy&q=coffee&anchor=1&mode=tr
 
 const VIEWPORT = { width: 390, height: 844 };
 const DEVICE_SCALE_FACTOR = 2;
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,7 +59,7 @@ async function main() {
 
   let browser;
   try {
-    browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+    browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
   } catch (e) {
     console.error('FAIL: browser launch failed:', e.message);
     process.exit(1);

@@ -31,7 +31,8 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { refreshCompositionState } from '@lib/orchestration/lifecycle'
 import { setTrailDepth } from '@lib/stores/journey.svelte'
-import { clearSearch } from '@lib/stores/navigation.svelte'
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -188,7 +189,7 @@ async function run() {
 
   const { server, port } = await startServer();
 
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
     // Emulate reduced-motion so all animation/camera paths collapse to instant

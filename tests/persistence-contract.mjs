@@ -20,13 +20,14 @@
 
 import { chromium } from '@playwright/test';
 import { refreshCompositionState } from '@lib/orchestration/lifecycle'
-import { clearSearch } from '@lib/stores/navigation.svelte'
-import { search } from '@lib/search/state'
+import { clearSearch, search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 const STORAGE_KEY_DEMO = 'moco_mycelium_demo_v1';
 const STORAGE_KEY_KH_DISMISSED = 'kh_dismissed';
 const STORAGE_KEY_SEARCH_VISIBLE = 'searchVisibleCount';
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const SEMANTIC_HEALTH_STUB = {
   ok: true, state: 'healthy',
@@ -124,7 +125,7 @@ async function getStorageValue(page, storageType, key) {
 // ── Sub-test 1: kh_dismissed persistence ──────────────────────────────────────
 
 async function test_kh_dismissed_persistence() {
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 
@@ -165,7 +166,7 @@ async function test_kh_dismissed_persistence() {
 // ── Sub-test 2: micro-demo localStorage flag ──────────────────────────────────
 
 async function test_micro_demo_localStorage_flag() {
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 
@@ -223,7 +224,7 @@ async function test_micro_demo_localStorage_flag() {
 // ── Sub-test 3: searchVisibleCount persistence ───────────────────────────────
 
 async function test_searchVisibleCount_persistence() {
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 

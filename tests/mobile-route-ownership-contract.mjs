@@ -8,7 +8,7 @@
 
 import { chromium } from 'playwright';
 import { setTrailDepth } from '@lib/stores/journey.svelte'
-import { clearSearch } from '@lib/stores/navigation.svelte'
+import { clearSearch } from '@lib/search/state'
 import { resetExplorationFocus, switchView, refreshCompositionState } from '@lib/orchestration/lifecycle'
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
@@ -247,7 +247,9 @@ function assertSinglePrimarySurface(snapshot, expectedName) {
     `expected single primary mobile surface ${expectedName}, got ${JSON.stringify(primary)}; surfaces=${JSON.stringify(surfaces)}; body=${JSON.stringify(snapshot.bodyDataset)}`);
 }
 
-const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 1,

@@ -25,6 +25,8 @@ import { chromium } from 'playwright'
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795'
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
 const DIAGNOSTIC = process.env.DIAGNOSTIC === '1'
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const SEMANTIC_HEALTH_STUB = {
     ok: true,
@@ -83,7 +85,7 @@ async function main() {
     let browser
     let page
     try {
-        browser = await chromium.launch({ headless: false })
+        browser = await chromium.launch({ headless: false, args: [...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] })
         page = await browser.newPage({ viewport: { width: 1280, height: 800 } })
 
         const consoleMessages = []

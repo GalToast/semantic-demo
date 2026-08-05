@@ -19,6 +19,9 @@ import path from 'node:path'
 import http from 'node:http'
 import { chromium } from 'playwright'
 
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
+
 const DEFAULT_PORT = 8814
 const DEFAULT_WIDTH = 390
 const DEFAULT_HEIGHT = 844
@@ -189,7 +192,7 @@ async function run() {
     let passed
 
     try {
-        browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] })
+        browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] })
         const page = await makePage(browser)
 
         const targetUrl = `http://127.0.0.1:${DEFAULT_PORT}/docs/archive/vector-explorer-polished-legacy.html`

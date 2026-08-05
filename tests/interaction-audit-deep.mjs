@@ -19,6 +19,8 @@ const LOAD_WAIT_MS = 10_000;
 const consoleErrors = [];
 const allConsoleWarnings = [];
 const results = [];
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 function record(area, action, result, detail = '', severity = 'Info') {
   results.push({ area, action, result, detail, severity });
@@ -28,7 +30,7 @@ function record(area, action, result, detail = '', severity = 'Info') {
 fs.mkdirSync('reports/screenshots', { recursive: true });
 
 (async () => {
-  const browser = await chromium.launch({ headless: false, args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--no-sandbox', ...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
 

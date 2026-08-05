@@ -5,6 +5,8 @@ import { inflateSync } from 'node:zlib';
 import { chromium } from 'playwright';
 import { setTrailDepth } from '@lib/stores/journey.svelte'
 import { focusOnNode } from '@lib/orchestration/lifecycle'
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const PORT = Number(process.env.SEMANTIC_SCENE_PLAYTEST_PORT || 8798);
 const BASE_URL = `http://127.0.0.1:${PORT}/index.html`;
@@ -338,7 +340,7 @@ async function main() {
     let browser;
     try {
         await waitForServer(server);
-        browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+        browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
         const runFreshPage = async (name, params, setup = null) => {
             const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true });
             const page = await context.newPage();

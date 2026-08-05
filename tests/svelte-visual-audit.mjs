@@ -11,7 +11,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
-const SVELTE_URL = 'http://localhost:5173/';
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 const LEGACY_URL = 'http://127.0.0.1:8795/index.html';
 const SCREENSHOT_DIR = path.resolve(process.cwd(), 'reports', 'screenshots', 'svelte-audit');
 const REPORT_FILE = path.resolve(process.cwd(), 'reports', 'svelte-visual-audit-report.md');
@@ -117,7 +118,7 @@ async function auditSvelteServer() {
     `Legacy: ${LEGACY_URL}`,
     '');
 
-  const browser = await chromium.launch({ headless: false, args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ headless: false, args: ['--no-sandbox', ...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,

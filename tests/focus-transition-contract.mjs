@@ -26,6 +26,8 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 const root = path.resolve(__dirname, '..')
 const DEFAULT_PORT = 8795
 const HTML_FILE = 'docs/archive/vector-explorer-polished-legacy.html'
@@ -483,7 +485,7 @@ async function run() {
     const targetPage = TARGET_URL || `${baseUrl}/${HTML_FILE}`
 
     console.log('[browser] launching Chromium...')
-    browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] })
+    browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] })
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
 
     const errors = []

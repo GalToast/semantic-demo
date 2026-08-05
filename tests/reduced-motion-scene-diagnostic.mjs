@@ -29,6 +29,8 @@ const outDir = resolve(root, 'tmp', 'css-seam-wave-20260520')
 const HTML_PAGE = resolve(root, 'dist/svelte/index.html')
 
 const DEFAULT_URL = `file://${HTML_PAGE}`
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 const PORT = 8815
 const SERVER_URL = `http://127.0.0.1:${PORT}`
 
@@ -228,7 +230,7 @@ async function run() {
 
     const browser = await chromium.launch({
         headless: false,
-        args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox']
+        args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])]
     })
     let passed = false
     let diagnosticOutput = null

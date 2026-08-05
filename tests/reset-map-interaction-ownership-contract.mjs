@@ -14,8 +14,7 @@ import {
     returnToOverview
 } from '@lib/orchestration/lifecycle'
 import { setTrailDepth } from '@lib/stores/journey.svelte'
-import { clearSearch } from '@lib/stores/navigation.svelte'
-import { search } from '@lib/search/state'
+import { clearSearch, search } from '@lib/search/state'
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1'
 const TARGET_URL = process.env.RESET_MAP_OWNERSHIP_URL || DEFAULT_URL
@@ -688,7 +687,9 @@ async function runMapTransitionScenario(browser) {
     return { map, reset }
 }
 
-const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] })
+// SwiftShader gate (see visual-state-audit.mjs)
+const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] })
 
 try {
     const clearButton = await runClearButtonScenario(browser)
