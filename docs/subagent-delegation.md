@@ -93,6 +93,11 @@ Worker contract: workers doing UI work should capture a screenshot and include t
 
 ## Vision Capability Matrix (empirically re-probed 2026-08-05, full-sweep replacement for the 2026-06-26 set)
 
+**> IMPORTANT — two different image paths (2026-08-05 discovery):**
+> This matrix probes the **direct router chat** path (`node tmp/vision-ask.mjs <slug> <model> <img>` -> base64 -> `127.0.0.1:8788/<slug>/v1/chat/completions`). That path ALWAYS worked.
+> The **subagent-worker path** (worker's `read` tool -> image part -> model) was silently dropping images until 2026-08-05 because modelscope/logfare-style router catalogs return bare `{id}` rows with NO `input_modalities`, so Pi's `pi-model-providers` extension inferred `input:["text"]` and `openai-completions` discarded tool-result image parts. FIX: `~/.pi/agent/local-packages/pi-model-providers/index.ts` now falls back to a model-id pattern (`visionInputFromModelId`: `-vl`/`vision`/`internvl`/`phi-3-vision`/`glm-4.6v`/`glm-5v`/`minimax` etc.) when catalog modality data is absent. Verified end-to-end with a worker probe on `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct` returning "PIXELS OK — business card for Angel Fire Coffee".
+> Implication: a lane read of "VISION UNAVAILABLE" pre-2026-08-05 does NOT mean the model lacks vision — re-probe on the current harness if the model id matches a VL pattern.
+
 **Method:** 670+ live probes on 2026-08-05 — deterministic red-circle PNG sent via direct OpenAI-compat chat calls through the key router (19 routes with live keys), then a 2× confirmation pass. Evidence: `tmp/vision-probe/` (sweep + gap + confirm result JSONs). A model only counts as STABLE vision if BOTH confirmation probes described the image.
 
 **Method limits (recorded honestly):** the family-name greps used to build the sweep (`/gemini|grok|kimi|minimax|mimo|vision|vl|vlm|llava|phi-3|internvl|glm-4|glm-5|omni|nova|ernie|qwen.*vl|gemma|step|mistral-medium|nemotron|agnes-image|image/i`) did NOT include claude/gpt-5/gpt-4o/o3/o4 — a second frontier wave (2026-08-05) probed those separately. Routes whose /models endpoint lists nothing (freemodel) or is Google-native (gemini) were probed by direct id. Any catalog entry not probed through one of those three paths is explicitly NOT covered.

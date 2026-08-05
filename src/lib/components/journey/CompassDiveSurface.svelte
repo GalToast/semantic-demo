@@ -70,6 +70,27 @@
   // break getElementById for parent/consumer code during HMR remounts.
 </script>
 
+<style>
+  /*
+   * V4 fix (2026-08-05): Override the horizontal margin that
+   * mobile_premium__components.css:438 applies to .focus-stage-dive-btn:
+   *   margin: 0 16px 12px
+   * That rule adds margin-left:16px + margin-right:16px, which on a
+   * position:fixed button with left:12px/right:12px reduces the
+   * rendered width from 366px to 334px on a 390px viewport. The right
+   * edge of the button is then 28px inset from the viewport edge,
+   * causing it to be clipped by the info-panel / scrollbar region.
+   *
+   * The scoped selector targets #btn-focus-dive via this component's
+   * own root element, giving sufficient specificity to override the
+   * external rule without needing !important.
+   */
+  :global(#btn-focus-dive) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+</style>
+
 <div
   id="map-trail-strip"
   class="map-trail-strip"

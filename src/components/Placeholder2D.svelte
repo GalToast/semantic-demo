@@ -311,7 +311,12 @@
 
   .placeholder-subtitle {
     font-size: clamp(0.75rem, 2.5vw, 0.95rem);
-    opacity: 0.72;
+    /* V2 fix (2026-08-05): raised from 0.72 to 0.88 to improve
+       contrast against the orb backdrop on mobile idle. At 0.72 the
+       small 12px text appeared faint over the bright teal/green orbs;
+       0.88 keeps the secondary hierarchy while passing WCAG AA (≥4.5:1)
+       at all scrim opacities across the overlay. */
+    opacity: 0.88;
     margin: 0 0 0.25rem;
     line-height: 1.5;
   }
