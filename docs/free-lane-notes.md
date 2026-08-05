@@ -12,7 +12,7 @@
 - LOCAL SHIM: `node tmp/cline-shim.mjs 8793` -> OpenAI-compatible /v1/chat/completions + /v1/models wrapping the cline CLI
     - Tested via curl: glm-5.2 -> "SHIM-OK", step-3.7-flash -> "VISION-LANE-OK"
     - Spawn uses absolute exe path (Node can't spawn the .cmd; bare 'cline' ENOENT from subprocess):
-    C:/Users/HP/AppData/Roaming/npm/node_modules/cline/node_modules/@cline/cli-windows-x64/bin/cline.exe
+      C:/Users/HP/AppData/Roaming/npm/node_modules/cline/node_modules/@cline/cli-windows-x64/bin/cline.exe
     - Override with CLINE_BIN env
 
 ## Stripping cline entirely: NOT viable cleanly
@@ -33,6 +33,13 @@
 - Headless reuse requires mimicking their web client fingerprint + anti-bot headers (captcha mentions) — ToS-gray / fragile. NOT built. Its free models overlap our router anyway (deepseek-v4-flash free via zenmux).
 
 ## freebuff follow-up test (2026-08-05 12:0x)
+
 - Tried: POST freebuff.com/chat/completions with authToken + x-freebuff/fingerprint headers + desktop UA -> 404 (Next.js SSR app, not an OpenAI-format path).
 - freebuff CLI: login-only command; agent runs as native binary + TUI (no --json/-p headless flag).
 - VERDICT: headless reuse requires either their web-client auth envelope re-creation (anti-bot fingerprint/captcha — circumvention, won't build) or TUI automation (fragile). Model overlap with our router = ~0 net-new (deepseek-v4-flash etc all free via zenmux). Parked.
+
+## clinefree dispatch integration status (2026-08-05 12:1x)
+- ROUTER: /clinefree/v1 live (verified: chat via 8788 returns ROUTER-OK). ✅
+- external-subagents src/dist: provider added to PROVIDER_QUALIFIED_REF_PROVIDERS, route map ("/clinefree/" -> router-clinefree), inline allowlist, auto-sync regex; dist/mmx.js rebuilt (4 clinefree refs). Build unblocked by fixing pre-existing nestedStateEntryCount type errors. ✅ committed a736214.
+- REMAINING: the RUNNING external-subagents MCP server still holds stale in-memory validator (returned "Unsupported model" from OLD code even after rebuild) — the adapter child must respawn (Pi restart or MCP reconnect/recycle). Router-level dispatch (curl) already works.
+- After next restart, dispatch ref: clinefree/cline-free/glm-5.2 (also clinefree/deepseek/deepseek-v4-flash, clinefree/poolside/laguna-s-2.1:free, clinefree/stepfun/step-3.7-flash).
