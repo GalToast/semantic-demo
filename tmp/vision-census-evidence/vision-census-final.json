@@ -1,0 +1,2446 @@
+{
+ "generated_at": "2026-08-05T06:00Z",
+ "note": "3-pass bridge census (image-format via /v1/chat/completions), 278 unique candidates, 3 probe waves + manual GLM re-probe",
+ "best_verdict": {
+  "OpenGVLab/InternVL3_5-241B-A28B": {
+   "verdict": "EMPTY",
+   "provider": "modelscope",
+   "ms": 3719
+  },
+  "PaddlePaddle/ERNIE-4.5-VL-28B-A3B-PT": {
+   "verdict": "EMPTY",
+   "provider": "modelscope",
+   "ms": 3731
+  },
+  "@cf/google/gemma-4-26b-a4b-it": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4011
+  },
+  "@cf/meta/llama-3.2-11b-vision-instruct": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3998
+  },
+  "@cf/meta/llama-4-scout-17b-16e-instruct": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 6007
+  },
+  "MusePublic/Qwen-Image-Edit": {
+   "verdict": "NO_OUTPUT",
+   "provider": "modelscope",
+   "ms": 40085
+  },
+  "amazon/nova-2-lite-v1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1197
+  },
+  "adept/fuyu-8b": {
+   "verdict": "HTTP_404",
+   "provider": "nvidia",
+   "ms": 2444
+  },
+  "Qwen/Qwen3-VL-235B-A22B-Instruct": {
+   "verdict": "PIXELS_OK",
+   "provider": "modelscope",
+   "ms": 9977
+  },
+  "Qwen/Qwen3-VL-8B-Thinking": {
+   "verdict": "PIXELS_OK",
+   "provider": "modelscope",
+   "ms": 10658
+  },
+  "Qwen/Qwen3-VL-8B-Instruct": {
+   "verdict": "PIXELS_OK",
+   "provider": "modelscope",
+   "ms": 12291
+  },
+  "Qwen/Qwen-Image-Edit": {
+   "verdict": "NO_OUTPUT",
+   "provider": "modelscope",
+   "ms": 40015
+  },
+  "anthropic/claude-fable-5": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1231
+  },
+  "amazon/nova-micro-v1": {
+   "verdict": "HTTP_404",
+   "provider": "openrouter",
+   "ms": 1490
+  },
+  "amazon/nova-lite-v1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 917
+  },
+  "amazon/nova-premier-v1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1141
+  },
+  "anthropic/claude-3-haiku": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1078
+  },
+  "amazon/nova-pro-v1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1857
+  },
+  "anthropic/claude-opus-4.1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1823
+  },
+  "anthropic/claude-opus-4.6": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1789
+  },
+  "anthropic/claude-haiku-4.5": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1753
+  },
+  "anthropic/claude-opus-4": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1556
+  },
+  "anthropic/claude-opus-4.5": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1586
+  },
+  "anthropic/claude-opus-4.6-fast": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4987
+  },
+  "anthropic/claude-opus-4.7": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1100
+  },
+  "anthropic/claude-opus-4.7-fast": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1421
+  },
+  "anthropic/claude-opus-4.8": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1334
+  },
+  "anthropic/claude-opus-5": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1268
+  },
+  "anthropic/claude-opus-5-fast": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1235
+  },
+  "anthropic/claude-opus-4.8-fast": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 999
+  },
+  "anthropic/claude-sonnet-4.5": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1223
+  },
+  "anthropic/claude-sonnet-4": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1247
+  },
+  "anthropic/claude-sonnet-5": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1250
+  },
+  "anthropic/claude-sonnet-4.6": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 857
+  },
+  "baidu/ernie-4.5-vl-28b-a3b": {
+   "verdict": "HTTP_500",
+   "provider": "novita",
+   "ms": 2108
+  },
+  "baidu/ernie-4.5-vl-28b-a3b-thinking": {
+   "verdict": "HTTP_500",
+   "provider": "novita",
+   "ms": 2217
+  },
+  "baidu/ernie-4.5-vl-424b-a47b": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 912
+  },
+  "bytedance-seed/seed-2.0-lite": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1139
+  },
+  "bytedance-seed/seed-1.6-flash": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1598
+  },
+  "bytedance-seed/seed-2.0-mini": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 988
+  },
+  "bytedance-seed/seed-1.6": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1446
+  },
+  "baidu/ernie-5.0-thinking-preview": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3353
+  },
+  "bytedance/doubao-seed-2.0-lite": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 2802
+  },
+  "bytedance/doubao-seed-2.0-code": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3013
+  },
+  "bytedance/doubao-seed-2.0-mini": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4037
+  },
+  "bytedance/doubao-seed-2.1-pro": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4232
+  },
+  "bytedance/doubao-seed-1.8": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4364
+  },
+  "bytedance/doubao-seed-2.0-pro": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4911
+  },
+  "bytedance/doubao-seed-code": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 1469
+  },
+  "bytedance/doubao-seed-evolving": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 1653
+  },
+  "bytedance/doubao-seed-2.1-turbo": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3486
+  },
+  "bytedance/doubao-seed-character": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3629
+  },
+  "bytedance/seed-2.1-turbo": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3615
+  },
+  "bytedance/seed-2.0-code": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 7255
+  },
+  "google/deplot": {
+   "verdict": "HTTP_404",
+   "provider": "nvidia",
+   "ms": 902
+  },
+  "bytedance/ui-tars-1.5-7b": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1531
+  },
+  "deepseek/deepseek-ocr-2": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 2638
+  },
+  "google/gemini-2.5-flash": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 2869
+  },
+  "deepseek/deepseek-ocr": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3338
+  },
+  "gemma-4-31b": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3739
+  },
+  "google/gemini-2.5-pro-preview-05-06": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 4196
+  },
+  "google/gemini-3-flash-preview": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 4229
+  },
+  "google/gemini-2.5-pro-preview": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 4367
+  },
+  "google/gemini-2.5-flash-lite": {
+   "verdict": "PIXELS_OK",
+   "provider": "openrouter",
+   "ms": 29499
+  },
+  "google/gemini-2.5-flash-image": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 4462
+  },
+  "google/gemini-2.5-pro": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 4600
+  },
+  "google/gemini-3.1-flash-image": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 2743
+  },
+  "google/gemini-3.1-flash-lite": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 2993
+  },
+  "google/gemini-3.1-flash-lite-image": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 2980
+  },
+  "google/gemini-3-pro-image-preview": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 3417
+  },
+  "google/gemini-3.1-flash-image-preview": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 3427
+  },
+  "google/gemini-3-pro-image": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 3480
+  },
+  "google/gemini-3.1-pro-preview": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 2581
+  },
+  "google/gemini-3.1-flash-lite-preview": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 14311
+  },
+  "google/gemini-3.5-flash": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2980
+  },
+  "google/gemini-3.5-flash-lite": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2817
+  },
+  "google/gemini-3.6-flash": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2760
+  },
+  "google/gemini-3.1-pro-preview-customtools": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2964
+  },
+  "google/gemma-4-26b-a4b-it": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2061
+  },
+  "google/gemma-3-12b-it": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 737
+  },
+  "google/gemma-3-4b-it": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 887
+  },
+  "google/gemma-3-27b-it": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 859
+  },
+  "google/gemma-4-26b-a4b": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4857
+  },
+  "google/gemma-4-26b-a4b-it:free": {
+   "verdict": "PIXELS_OK",
+   "provider": "openrouter",
+   "ms": 5855
+  },
+  "google/lyria-3-pro-preview": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 932
+  },
+  "google/gemma-4-31b-it:free": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1982
+  },
+  "google/gemma-4-31b-it": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 862
+  },
+  "google/lyria-3-clip-preview": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1061
+  },
+  "kilo-auto/balanced": {
+   "verdict": "HTTP_402",
+   "provider": "kilo",
+   "ms": 3133
+  },
+  "gt-4p": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3365
+  },
+  "kwaipilot/kat-coder-pro-v2.5": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 1590
+  },
+  "kilo-auto/frontier": {
+   "verdict": "HTTP_402",
+   "provider": "kilo",
+   "ms": 2523
+  },
+  "kwaipilot/kat-coder-air-v2.5": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 2971
+  },
+  "kilo-auto/small": {
+   "verdict": "PIXELS_OK",
+   "provider": "kilo",
+   "ms": 3614
+  },
+  "kilo-auto/efficient": {
+   "verdict": "HTTP_402",
+   "provider": "kilo",
+   "ms": 7246
+  },
+  "meta-ai/muse-spark-1.1": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 7499
+  },
+  "meta-llama/llama-4-scout": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 926
+  },
+  "meta-llama/llama-guard-4-12b": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 897
+  },
+  "meta-llama/llama-4-maverick": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 928
+  },
+  "meta-llama/llama-4-maverick-17b-128e-instruct-fp8": {
+   "verdict": "HTTP_403",
+   "provider": "novita",
+   "ms": 2408
+  },
+  "meta-llama/llama-4-scout-17b-16e-instruct": {
+   "verdict": "HTTP_403",
+   "provider": "novita",
+   "ms": 3321
+  },
+  "meta-llama/llama3-11b-vision-instruct": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4175
+  },
+  "microsoft/kosmos-2": {
+   "verdict": "HTTP_404",
+   "provider": "nvidia",
+   "ms": 1791
+  },
+  "meta/muse-spark-1.1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 724
+  },
+  "microsoft/phi-3-vision-128k-instruct": {
+   "verdict": "HTTP_404",
+   "provider": "nvidia",
+   "ms": 2042
+  },
+  "meta/llama-3.2-11b-vision-instruct": {
+   "verdict": "PIXELS_OK",
+   "provider": "nvidia",
+   "ms": 3231
+  },
+  "meta/llama-4-scout-17b-16e-instruct": {
+   "verdict": "HTTP_402",
+   "provider": "zenmux",
+   "ms": 4340
+  },
+  "meta/llama-3.2-90b-vision-instruct": {
+   "verdict": "PIXELS_OK",
+   "provider": "nvidia",
+   "ms": 17123
+  },
+  "mistralai/ministral-8b-2512": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 726
+  },
+  "mistralai/ministral-3b-2512": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 946
+  },
+  "mistralai/ministral-14b-2512": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 948
+  },
+  "mistralai/mistral-large-2512": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 999
+  },
+  "minimax/minimax-01": {
+   "verdict": "PIXELS_OK",
+   "provider": "openrouter",
+   "ms": 19456
+  },
+  "minimax/minimax-m3": {
+   "verdict": "HTTP_504",
+   "provider": "openrouter",
+   "ms": 31724
+  },
+  "mistralai/mistral-medium-3-5": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 811
+  },
+  "mistralai/mistral-small-2603": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 859
+  },
+  "mistralai/mistral-small-3.1-24b-instruct": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 728
+  },
+  "mistralai/mistral-small-3.2-24b-instruct": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1269
+  },
+  "mistralai/mistral-medium-3.1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1309
+  },
+  "mistralai/mistral-medium-3": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1160
+  },
+  "moonshotai/kimi-k2.7-code-highspeed": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3642
+  },
+  "moonshotai/kimi-k2.5": {
+   "verdict": "HTTP_404",
+   "provider": "openrouter",
+   "ms": 4439
+  },
+  "moonshotai/kimi-k2.7-code-fast": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4553
+  },
+  "moonshotai/kimi-k2.7-code": {
+   "verdict": "HTTP_404",
+   "provider": "openrouter",
+   "ms": 4806
+  },
+  "moonshotai/kimi-k3": {
+   "verdict": "HTTP_404",
+   "provider": "openrouter",
+   "ms": 5203
+  },
+  "moonshotai/kimi-k2.6": {
+   "verdict": "HTTP_404",
+   "provider": "openrouter",
+   "ms": 5318
+  },
+  "nex-agi/nex-n2-mini": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1207
+  },
+  "moonshotai/kimi-v1-32k-vision-preview": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 1733
+  },
+  "nex-agi/nex-n2-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1029
+  },
+  "moonshotai/kimi-v1-8k-vision-preview": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3477
+  },
+  "moonshotai/kimi-v1-128k-vision-preview": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3668
+  },
+  "nvidia/cosmos-reason2-8b": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3844
+  },
+  "nvidia/llama-3.2-nemoretriever-1b-vlm-embed-v1": {
+   "verdict": "HTTP_404",
+   "provider": "nvidia",
+   "ms": 1763
+  },
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": {
+   "verdict": "HTTP_404",
+   "provider": "nvidia",
+   "ms": 1907
+  },
+  "nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
+   "verdict": "HTTP_404",
+   "provider": "nvidia",
+   "ms": 2015
+  },
+  "nvidia/llama-nemotron-embed-vl-1b-v2": {
+   "verdict": "HTTP_404",
+   "provider": "nvidia",
+   "ms": 2077
+  },
+  "nvidia/nemotron-3.5-content-safety:free": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 3573
+  },
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
+   "verdict": "PIXELS_OK",
+   "provider": "openrouter",
+   "ms": 21141
+  },
+  "openai/gpt-4.1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1171
+  },
+  "openai/gpt-4-turbo": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1029
+  },
+  "nvidia/nemotron-nano-12b-v2-vl": {
+   "verdict": "HTTP_404",
+   "provider": "nvidia",
+   "ms": 2001
+  },
+  "openai/gpt-4": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 5030
+  },
+  "openai/chat-latest": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 6096
+  },
+  "nvidia/nemotron-nano-12b-v2-vl:free": {
+   "verdict": "NO_OUTPUT",
+   "provider": "openrouter",
+   "ms": 40034
+  },
+  "openai/gpt-4.1-nano": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1207
+  },
+  "openai/gpt-4o-2024-05-13": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1073
+  },
+  "openai/gpt-4o-2024-11-20": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1122
+  },
+  "openai/gpt-4o-2024-08-06": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 841
+  },
+  "openai/gpt-4.1-mini": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 772
+  },
+  "openai/gpt-4o": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1149
+  },
+  "openai/gpt-5-image": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1346
+  },
+  "openai/gpt-4o-mini-2024-07-18": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1281
+  },
+  "openai/gpt-4o-mini": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 957
+  },
+  "openai/gpt-5": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1152
+  },
+  "openai/gpt-5-codex": {
+   "verdict": "HTTP_402",
+   "provider": "zenmux",
+   "ms": 4566
+  },
+  "openai/gpt-5-chat": {
+   "verdict": "HTTP_402",
+   "provider": "zenmux",
+   "ms": 7348
+  },
+  "openai/gpt-5-image-mini": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1254
+  },
+  "openai/gpt-5-nano": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 892
+  },
+  "openai/gpt-5-mini": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1094
+  },
+  "openai/gpt-5.1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1013
+  },
+  "openai/gpt-5-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 878
+  },
+  "openai/gpt-5.1-chat": {
+   "verdict": "HTTP_402",
+   "provider": "zenmux",
+   "ms": 3805
+  },
+  "openai/gpt-5.1-codex-max": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1171
+  },
+  "openai/gpt-5.1-codex-mini": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1046
+  },
+  "openai/gpt-5.2": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1056
+  },
+  "openai/gpt-5.2-codex": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 930
+  },
+  "openai/gpt-5.1-codex": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1063
+  },
+  "openai/gpt-5.2-chat": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 961
+  },
+  "openai/gpt-5.2-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 751
+  },
+  "openai/gpt-5.4-mini": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1006
+  },
+  "openai/gpt-5.3-codex": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 771
+  },
+  "openai/gpt-5.4": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1223
+  },
+  "openai/gpt-5.3-chat": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1326
+  },
+  "openai/gpt-5.4-image-2": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1180
+  },
+  "openai/gpt-5.5": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1009
+  },
+  "openai/gpt-5.5-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1163
+  },
+  "openai/gpt-5.6-luna-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1005
+  },
+  "openai/gpt-5.4-nano": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1285
+  },
+  "openai/gpt-5.6-luna": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1397
+  },
+  "openai/gpt-5.4-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1305
+  },
+  "openai/gpt-5.6-sol-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1079
+  },
+  "openai/gpt-5.6-sol": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1403
+  },
+  "openai/gpt-5.6-terra-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1009
+  },
+  "openai/gpt-chat-latest": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2619
+  },
+  "openai/gpt-5.6-terra": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2620
+  },
+  "openai/gpt-image-1.5": {
+   "verdict": "HTTP_404",
+   "provider": "zenmux",
+   "ms": 1980
+  },
+  "openai/o3": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2363
+  },
+  "openai/o1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2363
+  },
+  "openai/o1-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2588
+  },
+  "openai/gpt-image-2": {
+   "verdict": "HTTP_404",
+   "provider": "zenmux",
+   "ms": 1455
+  },
+  "openai/gpt-oss-120b": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4205
+  },
+  "openai/gpt-oss-20b": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 5650
+  },
+  "openai/o4-mini": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2707
+  },
+  "openai/o3-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1020
+  },
+  "openrouter/free": {
+   "verdict": "PIXELS_OK",
+   "provider": "kilo",
+   "ms": 9526
+  },
+  "openai/o4-mini-high": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1391
+  },
+  "openrouter/auto-beta": {
+   "verdict": "HTTP_404",
+   "provider": "openrouter",
+   "ms": 1950
+  },
+  "openrouter/auto": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1183
+  },
+  "perplexity/sonar": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1181
+  },
+  "perceptron/perceptron-mk1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1432
+  },
+  "perplexity/sonar-reasoning-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1505
+  },
+  "perplexity/sonar-pro-search": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1542
+  },
+  "perplexity/sonar-pro": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1322
+  },
+  "paddlepaddle/paddleocr-vl": {
+   "verdict": "HTTP_403",
+   "provider": "novita",
+   "ms": 3208
+  },
+  "qwen/qwen3-vl-235b-a22b-instruct": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2067
+  },
+  "qwen/qwen2.5-vl-72b-instruct": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2313
+  },
+  "qwen/qwen3-omni-30b-a3b-instruct": {
+   "verdict": "HTTP_403",
+   "provider": "novita",
+   "ms": 2678
+  },
+  "qwen/qwen-2-vl-72b-instruct": {
+   "verdict": "HTTP_500",
+   "provider": "novita",
+   "ms": 2718
+  },
+  "qwen/qwen3-vl-235b-a22b-thinking": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2669
+  },
+  "qwen/qwen3-omni-30b-a3b-thinking": {
+   "verdict": "HTTP_403",
+   "provider": "novita",
+   "ms": 3120
+  },
+  "qwen/qwen3-vl-30b-a3b-instruct": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 1057
+  },
+  "qwen/qwen3-vl-8b-instruct": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2026
+  },
+  "qwen/qwen3-vl-8b-thinking": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2445
+  },
+  "qwen/qwen3-vl-32b-instruct": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2555
+  },
+  "qwen/qwen3-vl-30b-a3b-thinking": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2574
+  },
+  "qwen/qwen3-vl-embedding": {
+   "verdict": "HTTP_404",
+   "provider": "zenmux",
+   "ms": 3052
+  },
+  "qwen/qwen3.5-397b-a17b": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 1974
+  },
+  "qwen/qwen3.5-122b-a10b": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2335
+  },
+  "qwen/qwen3.5-35b-a3b": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2371
+  },
+  "qwen/qwen3.5-27b": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2596
+  },
+  "qwen/qwen3-vl-flash": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3972
+  },
+  "qwen/qwen3-vl-plus": {
+   "verdict": "HTTP_410",
+   "provider": "zenmux",
+   "ms": 4121
+  },
+  "qwen/qwen3.5-plus-20260420": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 1703
+  },
+  "qwen/qwen3.5-9b": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 1818
+  },
+  "qwen/qwen3.5-flash-02-23": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 1962
+  },
+  "qwen/qwen3.5-plus-02-15": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2320
+  },
+  "qwen/qwen3.5-plus": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4301
+  },
+  "qwen/qwen3.5-flash": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 6189
+  },
+  "qwen/qwen3.6-35b-a3b": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2365
+  },
+  "qwen/qwen3.6-plus": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2379
+  },
+  "qwen/qwen3.6-flash": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2639
+  },
+  "qwen/qwen3.7-flash": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2708
+  },
+  "qwen/qwen3.6-27b": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2937
+  },
+  "qwen/qwen3.6-plus:free": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3520
+  },
+  "sakana/fugu-ultra": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1898
+  },
+  "rekaai/reka-edge": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1955
+  },
+  "qwen/qwen3.7-plus": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2421
+  },
+  "qwen/qwen3.8-max": {
+   "verdict": "HTTP_410",
+   "provider": "openrouter",
+   "ms": 2868
+  },
+  "sapiens-ai/agnes-2.0-flash:free": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3769
+  },
+  "sapiens-ai/agnes-2.0-flash": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 7907
+  },
+  "stealth/claude-opus-4.8": {
+   "verdict": "HTTP_402",
+   "provider": "kilo",
+   "ms": 5295
+  },
+  "stealth/claude-opus-4.6": {
+   "verdict": "HTTP_402",
+   "provider": "kilo",
+   "ms": 5615
+  },
+  "stealth/gpt-5.6-sol": {
+   "verdict": "HTTP_402",
+   "provider": "kilo",
+   "ms": 5724
+  },
+  "stealth/claude-opus-4.7": {
+   "verdict": "HTTP_402",
+   "provider": "kilo",
+   "ms": 5928
+  },
+  "stealth/claude-sonnet-4.6": {
+   "verdict": "HTTP_402",
+   "provider": "kilo",
+   "ms": 6067
+  },
+  "stealth/qwen3.6-plus": {
+   "verdict": "HTTP_410",
+   "provider": "kilo",
+   "ms": 6479
+  },
+  "thinkingmachines/inkling": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2114
+  },
+  "thinkingmachines/inkling-small": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2171
+  },
+  "x-ai/grok-4.2-fast": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3414
+  },
+  "x-ai/grok-4.2-fast-non-reasoning": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 6201
+  },
+  "stepfun/step-3.7-flash": {
+   "verdict": "PIXELS_OK",
+   "provider": "openrouter",
+   "ms": 6308
+  },
+  "stepfun/step-3.7-flash:free": {
+   "verdict": "EMPTY",
+   "provider": "kilo",
+   "ms": 7394
+  },
+  "x-ai/grok-4.3": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1951
+  },
+  "x-ai/grok-4.20": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2125
+  },
+  "x-ai/grok-build-0.1": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2226
+  },
+  "xiaomi/mimo-v2.5": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 2293
+  },
+  "x-ai/grok-4.20-multi-agent": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1951
+  },
+  "x-ai/grok-4.5": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1652
+  },
+  "xiaomimimo/mimo-v2.5": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4509
+  },
+  "z-ai/glm-4.6v-flash-free": {
+   "verdict": "HTTP_429",
+   "provider": "zenmux",
+   "ms": 15131
+  },
+  "z-ai/glm-4.6v": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 24416
+  },
+  "z-ai/glm-4.5v": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 25086
+  },
+  "z-ai/glm-5v-turbo": {
+   "verdict": "EMPTY",
+   "provider": "openrouter",
+   "ms": 25574
+  },
+  "z-ai/glm-4.6v-flash": {
+   "verdict": "EMPTY",
+   "provider": "zenmux",
+   "ms": 29371
+  },
+  "~anthropic/claude-haiku-latest": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1541
+  },
+  "~anthropic/claude-fable-latest": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1482
+  },
+  "zai-org/glm-4.6v": {
+   "verdict": "HTTP_403",
+   "provider": "novita",
+   "ms": 2874
+  },
+  "zai-org/autoglm-phone-9b-multilingual": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 3584
+  },
+  "zai-org/glm-5v-turbo": {
+   "verdict": "HTTP_403",
+   "provider": "novita",
+   "ms": 3863
+  },
+  "zai-org/glm-4.5v": {
+   "verdict": "HTTP_400",
+   "provider": "modelscope",
+   "ms": 4751
+  },
+  "~anthropic/claude-sonnet-latest": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1709
+  },
+  "~openai/gpt-latest": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1571
+  },
+  "~anthropic/claude-opus-latest": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1718
+  },
+  "~moonshotai/kimi-latest": {
+   "verdict": "HTTP_404",
+   "provider": "openrouter",
+   "ms": 6980
+  },
+  "~google/gemini-pro-latest": {
+   "verdict": "HTTP_400",
+   "provider": "openrouter",
+   "ms": 18334
+  },
+  "~google/gemini-flash-latest": {
+   "verdict": "HTTP_400",
+   "provider": "openrouter",
+   "ms": 18388
+  },
+  "~openai/gpt-mini-latest": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1153
+  },
+  "~x-ai/grok-latest": {
+   "verdict": "HTTP_429",
+   "provider": "openrouter",
+   "ms": 1226
+  }
+ },
+ "per_provider_verdict": {
+  "OpenGVLab/InternVL3_5-241B-A28B": {
+   "modelscope": "EMPTY"
+  },
+  "PaddlePaddle/ERNIE-4.5-VL-28B-A3B-PT": {
+   "modelscope": "EMPTY"
+  },
+  "@cf/google/gemma-4-26b-a4b-it": {
+   "modelscope": "HTTP_400"
+  },
+  "@cf/meta/llama-3.2-11b-vision-instruct": {
+   "modelscope": "HTTP_400"
+  },
+  "@cf/meta/llama-4-scout-17b-16e-instruct": {
+   "modelscope": "HTTP_400"
+  },
+  "MusePublic/Qwen-Image-Edit": {
+   "modelscope": "NO_OUTPUT"
+  },
+  "amazon/nova-2-lite-v1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "adept/fuyu-8b": {
+   "nvidia": "HTTP_404"
+  },
+  "Qwen/Qwen3-VL-235B-A22B-Instruct": {
+   "modelscope": "PIXELS_OK"
+  },
+  "Qwen/Qwen3-VL-8B-Thinking": {
+   "modelscope": "PIXELS_OK"
+  },
+  "Qwen/Qwen3-VL-8B-Instruct": {
+   "modelscope": "PIXELS_OK"
+  },
+  "Qwen/Qwen-Image-Edit": {
+   "modelscope": "NO_OUTPUT"
+  },
+  "anthropic/claude-fable-5": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "amazon/nova-micro-v1": {
+   "openrouter": "HTTP_404",
+   "kilo": "HTTP_402"
+  },
+  "amazon/nova-lite-v1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "amazon/nova-premier-v1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "anthropic/claude-3-haiku": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "amazon/nova-pro-v1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "anthropic/claude-opus-4.1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "anthropic/claude-opus-4.6": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "anthropic/claude-haiku-4.5": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "anthropic/claude-opus-4": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "anthropic/claude-opus-4.5": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "anthropic/claude-opus-4.6-fast": {
+   "modelscope": "HTTP_400"
+  },
+  "anthropic/claude-opus-4.7": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "anthropic/claude-opus-4.7-fast": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "anthropic/claude-opus-4.8": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "anthropic/claude-opus-5": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "anthropic/claude-opus-5-fast": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "anthropic/claude-opus-4.8-fast": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "anthropic/claude-sonnet-4.5": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "anthropic/claude-sonnet-4": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "anthropic/claude-sonnet-5": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "anthropic/claude-sonnet-4.6": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "baidu/ernie-4.5-vl-28b-a3b": {
+   "novita": "HTTP_500"
+  },
+  "baidu/ernie-4.5-vl-28b-a3b-thinking": {
+   "novita": "HTTP_500"
+  },
+  "baidu/ernie-4.5-vl-424b-a47b": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "novita": "HTTP_403"
+  },
+  "bytedance-seed/seed-2.0-lite": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "bytedance-seed/seed-1.6-flash": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "bytedance-seed/seed-2.0-mini": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "bytedance-seed/seed-1.6": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "baidu/ernie-5.0-thinking-preview": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/doubao-seed-2.0-lite": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/doubao-seed-2.0-code": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/doubao-seed-2.0-mini": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/doubao-seed-2.1-pro": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/doubao-seed-1.8": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/doubao-seed-2.0-pro": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/doubao-seed-code": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/doubao-seed-evolving": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/doubao-seed-2.1-turbo": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/doubao-seed-character": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/seed-2.1-turbo": {
+   "modelscope": "HTTP_400"
+  },
+  "bytedance/seed-2.0-code": {
+   "modelscope": "HTTP_400"
+  },
+  "google/deplot": {
+   "nvidia": "HTTP_404"
+  },
+  "bytedance/ui-tars-1.5-7b": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "deepseek/deepseek-ocr-2": {
+   "modelscope": "HTTP_400"
+  },
+  "google/gemini-2.5-flash": {
+   "openrouter": "HTTP_400",
+   "kilo": "HTTP_400"
+  },
+  "deepseek/deepseek-ocr": {
+   "modelscope": "HTTP_400"
+  },
+  "gemma-4-31b": {
+   "modelscope": "HTTP_400"
+  },
+  "google/gemini-2.5-pro-preview-05-06": {
+   "openrouter": "HTTP_400",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3-flash-preview": {
+   "openrouter": "HTTP_400",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-2.5-pro-preview": {
+   "openrouter": "HTTP_400",
+   "kilo": "EMPTY"
+  },
+  "google/gemini-2.5-flash-lite": {
+   "openrouter": "PIXELS_OK"
+  },
+  "google/gemini-2.5-flash-image": {
+   "openrouter": "HTTP_400",
+   "kilo": "HTTP_400"
+  },
+  "google/gemini-2.5-pro": {
+   "openrouter": "HTTP_400",
+   "kilo": "HTTP_400"
+  },
+  "google/gemini-3.1-flash-image": {
+   "openrouter": "HTTP_400",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3.1-flash-lite": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3.1-flash-lite-image": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3-pro-image-preview": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3.1-flash-image-preview": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3-pro-image": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3.1-pro-preview": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3.1-flash-lite-preview": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3.5-flash": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3.5-flash-lite": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3.6-flash": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "google/gemini-3.1-pro-preview-customtools": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "google/gemma-4-26b-a4b-it": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "google/gemma-3-12b-it": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "google/gemma-3-4b-it": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "google/gemma-3-27b-it": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "google/gemma-4-26b-a4b": {
+   "modelscope": "HTTP_400"
+  },
+  "google/gemma-4-26b-a4b-it:free": {
+   "openrouter": "PIXELS_OK"
+  },
+  "google/lyria-3-pro-preview": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "google/gemma-4-31b-it:free": {
+   "openrouter": "HTTP_429"
+  },
+  "google/gemma-4-31b-it": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "google/lyria-3-clip-preview": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "kilo-auto/balanced": {
+   "kilo": "HTTP_402"
+  },
+  "gt-4p": {
+   "modelscope": "HTTP_400"
+  },
+  "kwaipilot/kat-coder-pro-v2.5": {
+   "modelscope": "HTTP_400"
+  },
+  "kilo-auto/frontier": {
+   "kilo": "HTTP_402"
+  },
+  "kwaipilot/kat-coder-air-v2.5": {
+   "modelscope": "HTTP_400"
+  },
+  "kilo-auto/small": {
+   "kilo": "PIXELS_OK"
+  },
+  "kilo-auto/efficient": {
+   "kilo": "HTTP_402"
+  },
+  "meta-ai/muse-spark-1.1": {
+   "modelscope": "HTTP_400"
+  },
+  "meta-llama/llama-4-scout": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "meta-llama/llama-guard-4-12b": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "meta-llama/llama-4-maverick": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "meta-llama/llama-4-maverick-17b-128e-instruct-fp8": {
+   "novita": "HTTP_403"
+  },
+  "meta-llama/llama-4-scout-17b-16e-instruct": {
+   "novita": "HTTP_403"
+  },
+  "meta-llama/llama3-11b-vision-instruct": {
+   "modelscope": "HTTP_400"
+  },
+  "microsoft/kosmos-2": {
+   "nvidia": "HTTP_404"
+  },
+  "meta/muse-spark-1.1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "microsoft/phi-3-vision-128k-instruct": {
+   "nvidia": "HTTP_404"
+  },
+  "meta/llama-3.2-11b-vision-instruct": {
+   "nvidia": "PIXELS_OK"
+  },
+  "meta/llama-4-scout-17b-16e-instruct": {
+   "zenmux": "HTTP_402"
+  },
+  "meta/llama-3.2-90b-vision-instruct": {
+   "nvidia": "PIXELS_OK"
+  },
+  "mistralai/ministral-8b-2512": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "mistralai/ministral-3b-2512": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "mistralai/ministral-14b-2512": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "mistralai/mistral-large-2512": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "minimax/minimax-01": {
+   "openrouter": "PIXELS_OK"
+  },
+  "minimax/minimax-m3": {
+   "openrouter": "HTTP_504",
+   "kilo": "HTTP_504"
+  },
+  "mistralai/mistral-medium-3-5": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "mistralai/mistral-small-2603": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "mistralai/mistral-small-3.1-24b-instruct": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "mistralai/mistral-small-3.2-24b-instruct": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "mistralai/mistral-medium-3.1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "mistralai/mistral-medium-3": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "moonshotai/kimi-k2.7-code-highspeed": {
+   "modelscope": "HTTP_400"
+  },
+  "moonshotai/kimi-k2.5": {
+   "openrouter": "HTTP_404",
+   "kilo": "HTTP_404"
+  },
+  "moonshotai/kimi-k2.7-code-fast": {
+   "modelscope": "HTTP_400"
+  },
+  "moonshotai/kimi-k2.7-code": {
+   "openrouter": "HTTP_404",
+   "kilo": "HTTP_404"
+  },
+  "moonshotai/kimi-k3": {
+   "openrouter": "HTTP_404",
+   "kilo": "HTTP_404"
+  },
+  "moonshotai/kimi-k2.6": {
+   "openrouter": "HTTP_404",
+   "kilo": "HTTP_404"
+  },
+  "nex-agi/nex-n2-mini": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "moonshotai/kimi-v1-32k-vision-preview": {
+   "modelscope": "HTTP_400"
+  },
+  "nex-agi/nex-n2-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "moonshotai/kimi-v1-8k-vision-preview": {
+   "modelscope": "HTTP_400"
+  },
+  "moonshotai/kimi-v1-128k-vision-preview": {
+   "modelscope": "HTTP_400"
+  },
+  "nvidia/cosmos-reason2-8b": {
+   "modelscope": "HTTP_400"
+  },
+  "nvidia/llama-3.2-nemoretriever-1b-vlm-embed-v1": {
+   "nvidia": "HTTP_404"
+  },
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": {
+   "nvidia": "HTTP_404"
+  },
+  "nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
+   "nvidia": "HTTP_404"
+  },
+  "nvidia/llama-nemotron-embed-vl-1b-v2": {
+   "nvidia": "HTTP_404"
+  },
+  "nvidia/nemotron-3.5-content-safety:free": {
+   "openrouter": "EMPTY",
+   "kilo": "EMPTY"
+  },
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
+   "openrouter": "PIXELS_OK"
+  },
+  "openai/gpt-4.1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-4-turbo": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "nvidia/nemotron-nano-12b-v2-vl": {
+   "nvidia": "HTTP_404"
+  },
+  "openai/gpt-4": {
+   "modelscope": "HTTP_400"
+  },
+  "openai/chat-latest": {
+   "modelscope": "HTTP_400"
+  },
+  "nvidia/nemotron-nano-12b-v2-vl:free": {
+   "openrouter": "NO_OUTPUT"
+  },
+  "openai/gpt-4.1-nano": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-4o-2024-05-13": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-4o-2024-11-20": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-4o-2024-08-06": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-4.1-mini": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-4o": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5-image": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-4o-mini-2024-07-18": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-4o-mini": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5-codex": {
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5-chat": {
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5-image-mini": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-5-nano": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5-mini": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.1-chat": {
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.1-codex-max": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-5.1-codex-mini": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.2": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.2-codex": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.1-codex": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.2-chat": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.2-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.4-mini": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.3-codex": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.4": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.3-chat": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.4-image-2": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-5.5": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.5-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.6-luna-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-5.4-nano": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.6-luna": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.4-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.6-sol-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-5.6-sol": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-5.6-terra-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-chat-latest": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-5.6-terra": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402",
+   "zenmux": "HTTP_402"
+  },
+  "openai/gpt-image-1.5": {
+   "zenmux": "HTTP_404"
+  },
+  "openai/o3": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/o1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/o1-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/gpt-image-2": {
+   "zenmux": "HTTP_404"
+  },
+  "openai/gpt-oss-120b": {
+   "modelscope": "HTTP_400"
+  },
+  "openai/gpt-oss-20b": {
+   "modelscope": "HTTP_400"
+  },
+  "openai/o4-mini": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openai/o3-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openrouter/free": {
+   "openrouter": "HTTP_404",
+   "kilo": "PIXELS_OK"
+  },
+  "openai/o4-mini-high": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "openrouter/auto-beta": {
+   "openrouter": "HTTP_404",
+   "kilo": "HTTP_402"
+  },
+  "openrouter/auto": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "perplexity/sonar": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "perceptron/perceptron-mk1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "perplexity/sonar-reasoning-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "perplexity/sonar-pro-search": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "perplexity/sonar-pro": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "paddlepaddle/paddleocr-vl": {
+   "novita": "HTTP_403"
+  },
+  "qwen/qwen3-vl-235b-a22b-instruct": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen2.5-vl-72b-instruct": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3-omni-30b-a3b-instruct": {
+   "novita": "HTTP_403"
+  },
+  "qwen/qwen-2-vl-72b-instruct": {
+   "novita": "HTTP_500"
+  },
+  "qwen/qwen3-vl-235b-a22b-thinking": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3-omni-30b-a3b-thinking": {
+   "novita": "HTTP_403"
+  },
+  "qwen/qwen3-vl-30b-a3b-instruct": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3-vl-8b-instruct": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3-vl-8b-thinking": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3-vl-32b-instruct": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3-vl-30b-a3b-thinking": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3-vl-embedding": {
+   "zenmux": "HTTP_404"
+  },
+  "qwen/qwen3.5-397b-a17b": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.5-122b-a10b": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.5-35b-a3b": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.5-27b": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3-vl-flash": {
+   "modelscope": "HTTP_400"
+  },
+  "qwen/qwen3-vl-plus": {
+   "zenmux": "HTTP_410"
+  },
+  "qwen/qwen3.5-plus-20260420": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.5-9b": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.5-flash-02-23": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.5-plus-02-15": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.5-plus": {
+   "modelscope": "HTTP_400"
+  },
+  "qwen/qwen3.5-flash": {
+   "modelscope": "HTTP_400"
+  },
+  "qwen/qwen3.6-35b-a3b": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.6-plus": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.6-flash": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.7-flash": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.6-27b": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.6-plus:free": {
+   "modelscope": "HTTP_400"
+  },
+  "sakana/fugu-ultra": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "rekaai/reka-edge": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "qwen/qwen3.7-plus": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "qwen/qwen3.8-max": {
+   "openrouter": "HTTP_410",
+   "kilo": "HTTP_410"
+  },
+  "sapiens-ai/agnes-2.0-flash:free": {
+   "modelscope": "HTTP_400"
+  },
+  "sapiens-ai/agnes-2.0-flash": {
+   "modelscope": "HTTP_400"
+  },
+  "stealth/claude-opus-4.8": {
+   "kilo": "HTTP_402"
+  },
+  "stealth/claude-opus-4.6": {
+   "kilo": "HTTP_402"
+  },
+  "stealth/gpt-5.6-sol": {
+   "kilo": "HTTP_402"
+  },
+  "stealth/claude-opus-4.7": {
+   "kilo": "HTTP_402"
+  },
+  "stealth/claude-sonnet-4.6": {
+   "kilo": "HTTP_402"
+  },
+  "stealth/qwen3.6-plus": {
+   "kilo": "HTTP_410"
+  },
+  "thinkingmachines/inkling": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "thinkingmachines/inkling-small": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "x-ai/grok-4.2-fast": {
+   "modelscope": "HTTP_400"
+  },
+  "x-ai/grok-4.2-fast-non-reasoning": {
+   "modelscope": "HTTP_400"
+  },
+  "stepfun/step-3.7-flash": {
+   "openrouter": "PIXELS_OK"
+  },
+  "stepfun/step-3.7-flash:free": {
+   "kilo": "EMPTY"
+  },
+  "x-ai/grok-4.3": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "x-ai/grok-4.20": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "x-ai/grok-build-0.1": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "xiaomi/mimo-v2.5": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "x-ai/grok-4.20-multi-agent": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "x-ai/grok-4.5": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "xiaomimimo/mimo-v2.5": {
+   "modelscope": "HTTP_400"
+  },
+  "z-ai/glm-4.6v-flash-free": {
+   "zenmux": "HTTP_429"
+  },
+  "z-ai/glm-4.6v": {
+   "openrouter": "EMPTY",
+   "kilo": "EMPTY"
+  },
+  "z-ai/glm-4.5v": {
+   "openrouter": "EMPTY",
+   "kilo": "EMPTY"
+  },
+  "z-ai/glm-5v-turbo": {
+   "openrouter": "EMPTY",
+   "kilo": "HTTP_429",
+   "zenmux": "HTTP_504"
+  },
+  "z-ai/glm-4.6v-flash": {
+   "zenmux": "EMPTY"
+  },
+  "~anthropic/claude-haiku-latest": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "~anthropic/claude-fable-latest": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "zai-org/glm-4.6v": {
+   "novita": "HTTP_403"
+  },
+  "zai-org/autoglm-phone-9b-multilingual": {
+   "modelscope": "HTTP_400"
+  },
+  "zai-org/glm-5v-turbo": {
+   "novita": "HTTP_403"
+  },
+  "zai-org/glm-4.5v": {
+   "modelscope": "HTTP_400"
+  },
+  "~anthropic/claude-sonnet-latest": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "~openai/gpt-latest": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "~anthropic/claude-opus-latest": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "~moonshotai/kimi-latest": {
+   "openrouter": "HTTP_404",
+   "kilo": "HTTP_404"
+  },
+  "~google/gemini-pro-latest": {
+   "openrouter": "HTTP_400",
+   "kilo": "HTTP_400"
+  },
+  "~google/gemini-flash-latest": {
+   "openrouter": "HTTP_400",
+   "kilo": "HTTP_400"
+  },
+  "~openai/gpt-mini-latest": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  },
+  "~x-ai/grok-latest": {
+   "openrouter": "HTTP_429",
+   "kilo": "HTTP_402"
+  }
+ }
+}
