@@ -86,6 +86,18 @@
 - Effect: best model quality per call; burns the per-model free window faster (a 20k-token prompt baseline includes the reasoning scratchpad). Rotate models to spread window-burn.
 
 ## cline-worker-2 audit → vision fix (2026-08-05 13:0x)
+
 - Worker 2 (deepseek-v4-flash audit) caught: extractText() stripped image_url parts -> the shim advertised "vision-capable" but never sent images; doc overstated.
 - FIXED in tmp/cline-shim.mjs: extractText now forwards image_url paths (file:// path inline, http URL inline, data: noted as [image attached]). Verified live: file:// path -> step-3.7-flash read the card -> "Angel Fire Coffee" ✓ (full curl->shim->cline->model stack).
 - Worker 2 other flags: kill-without-close can hang request (timed child.kill relies on close event); usage.completion_tokens hardcoded 0; stderr merged into parse stream. Pending if desired.
+
+## cline subagent dispatch — act mode is mandatory for writers (2026-08-05 13:0x)
+- cline -p one-shot workers DEFAULT to plan mode (read-only): they probe/analyze fine but any file-write (`-e "..." > file`, fs.writeFile) is rejected: "file modifications are blocked in plan mode."
+- FIX: pass `--auto-approve true` at dispatch (act mode). Verified: w1 failed without it, relaunch with it wrote file. w3 completed analysis then deadlocked at write — same cause.
+- Parallel cline workers on the SAME hub (ws://127.0.0.1:25463) contend: w1 got "aborted by another client". Stagger, or run >1 sequential per hub.
+- Recipe: cline.exe -P cline -m deepseek/deepseek-v4-flash --auto-approve true -c <repo> -p "<prompt>"
+
+## never-probed fast-gate tail — CLOSED (2026-08-05 13:0x, 23 ids / 3 cline workers)
+- Final verdicts: 16x404 (dead/free-paid-split), 3x410 EOL (qwen3.5/3.6 kilo), 2 EMPTY (z-ai glm-4.5-air + glm-5.2 @zenmux, 200-no-card), 1 REFUSAL (cohere/north-mini-code text-only), 1x402 (mistral-medium-3-5 paid).
+- ZERO new PIXELS_OK in this tail → the "never-probed 88%" is now probed for fast gates; no hidden vision models there.
+- Evidence: tmp/probe-results-slice-{1,2,3}.json (workers) + tmp/vision-doc-audit-report.md.
