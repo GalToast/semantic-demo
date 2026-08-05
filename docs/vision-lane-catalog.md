@@ -185,9 +185,22 @@ VERIFIED NOW (4/5 of agnes family, all 5/5 recall on m04):
 - METHOD ADDENDUM: gate 403/404 on /v1/models is NOT a dead gate — it is usually auth-cooldown (keys rotate seconds-to-minutes) or key-scoped. Gate probe (chat) bypasses the models endpoint; sweep both.
 
 ## ROUND-6 (2026-08-05 15:5x) — regex-class misses + freemodel retry
-- mistral/pixtral-12b    5/5 @ 3.6s  — UNPROBED until now (name never matched any hint regex — pixtral class = the "so much more" the user flagged). NEW TOP LANE.
-- mistral/mistral-small-latest  3/5 @ 2.6s (partial reads fine).
+
+- mistral/pixtral-12b 5/5 @ 3.6s — UNPROBED until now (name never matched any hint regex — pixtral class = the "so much more" the user flagged). NEW TOP LANE.
+- mistral/mistral-small-latest 3/5 @ 2.6s (partial reads fine).
 - mistral/mistral-nemo-latest 400 (no vision).
 - freemodel retried after cooldown: gpt-5.6-terra 503, gpt-5.6-sol 401, gpt-5.4-mini 429, gpt-5.6-terra-vision 429 — STILL degraded (mixed), not usable today; refresh spares expected eventually.
 - zydit-residual (gpt-oss-20b/120b, glm-5.2, laguna, yi-large…) — no new usable (200s but wrong/hollow content).
 - v-final2.mjs = now running visible full-sweep (no KNOWN-skip; fixed parser (content+reasoning_content); prints every 200-with-content). Openrouter+all chat lanes; result HITs get appended here when done.
+
+## GATEWAY IMAGE-STRIPPING (2026-08-05) — EMPTY/REFUSAL verdicts are NOT capability verdicts
+
+Confirmed: zydit/v4 gateway strips image_url content-parts for models its catalog declares text-only. Direct quotes from probe replies:
+- gemini-thinking: "Because image input isn't supported in this environment, I can't see the specific image"
+- gemini-auto: "Since I cannot see or access images, please share the text description"
+- kimi-* family (k2, k2.5, thinking, search variants): 200 with completely EMPTY content (image dropped, no text)
+
+Router (8788) does NOT strip — grep shows content passes through untouched. The stripping happens at the GATEWAY's request-fanout layer when its model catalog says the target's input modality is text-only.
+
+CONSEQUENCE: every "EMPTY/TEXT_EMPTY/REFUSAL" verdict from this census MUST be re-probed through a gateway that DOESN'T strip. Verified passthrough gates (PIXELS_OK confirmed through them): modelscope, openrouter, nvidia, cloudflare, llm7, agnes, mistral, zenmux, kilo. Suspect strippers (need cross-check): zydit/v4, groq-403, freemodel-403.
+METHOD RULE (banked): when a family returns 200-with-no-content across many models, READ THE REPLY TEXT — if it meta-refers to the image ("can't see images", "no image attached"), that's gateway stripping, not model capability. A truthful "can't see" from a model that GOT the image is impossible; only the gateway can produce that.
