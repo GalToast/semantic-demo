@@ -39,7 +39,35 @@
 - VERDICT: headless reuse requires either their web-client auth envelope re-creation (anti-bot fingerprint/captcha — circumvention, won't build) or TUI automation (fragile). Model overlap with our router = ~0 net-new (deepseek-v4-flash etc all free via zenmux). Parked.
 
 ## clinefree dispatch integration status (2026-08-05 12:1x)
+
 - ROUTER: /clinefree/v1 live (verified: chat via 8788 returns ROUTER-OK). ✅
 - external-subagents src/dist: provider added to PROVIDER_QUALIFIED_REF_PROVIDERS, route map ("/clinefree/" -> router-clinefree), inline allowlist, auto-sync regex; dist/mmx.js rebuilt (4 clinefree refs). Build unblocked by fixing pre-existing nestedStateEntryCount type errors. ✅ committed a736214.
 - REMAINING: the RUNNING external-subagents MCP server still holds stale in-memory validator (returned "Unsupported model" from OLD code even after rebuild) — the adapter child must respawn (Pi restart or MCP reconnect/recycle). Router-level dispatch (curl) already works.
 - After next restart, dispatch ref: clinefree/cline-free/glm-5.2 (also clinefree/deepseek/deepseek-v4-flash, clinefree/poolside/laguna-s-2.1:free, clinefree/stepfun/step-3.7-flash).
+
+## FREE-TIER LIMITS — known state (2026-08-05)
+
+### Cline free lane (the 4 we wired)
+- cline-free/glm-5.2, deepseek-v4-flash, laguna-s-2.1, step-3.7-flash: $0, our account's free tier.
+- Cline enforces a server-side free model limit ("ClineFreeModelLimitError" + "free limit reached on model, try again in Nm" strings in bundle). EXACT rpm/rpd NOT published in the npm bundle — enforced upstream, unknown number. Observed: our handful of calls this session all returned 200 with no 429s.
+- cline-pass/* (deepseek-v4-flash/qwen3.8-max/kimi-k3/glm-5.2/mimo/minimax/qwen3.7-max-plus): REQUIRES SUBSCRIPTION (verified "No access to ClinePass subscription models"; $0.14-3/M in,$0.28-15/M out). NOT free.
+
+### Our own router gates (free lanes, limits observed this session)
+- OUTPUT-side enforced cooldowns when providers error (router code + state):
+  - rate-limit 429 → min 60s + jitter, capped 12h (OPENCODE_KEY_ROUTER_RATE_MAX_COOLDOWN_MS)
+  - quota-exhausted (402/usage-limit) → 6h cap (QUOTA_COOLDOWN_MS)
+  - auth-fail (401) → 6h (AUTH_COOLDOWN_MS)
+  - >=500 → 30s (ERROR_COOLDOWN_MS)
+- Registry state showed: openrouter 178 expired-windows + ~3.7h active (server-side rate window); zen(zenmux) ~4-5h windows; modelscope ~3.7-6h model-scoped; cloudflare/gemini ~3.75h. These are the punished "slow lane" durations when a provider throttles us.
+- freemodel: currently free-model account shows "Insufficient balance" for chat (401) — true limit = billing, not RPM.
+
+### External direct free tiers (other tools' own caps, from vendor docs/known)
+- OpenRouter :free models — counts against free-tier RPM (~20 req/min on some, daily caps vary; we saw heavy 429s when 2 concurrent sweeps hammered it → treat ~1 free request every few seconds).
+- Groq free: we saw prompt_tokens 788-794 work but pool flips 403-HTML between calls (1-key, seconds-level recovery: key cooldown ~60s base).
+- zydit/v4: 2 keys, gate-level stripping + keys cool for seconds-to-minutes between probes.
+- Freemodel: account-level billing (no free chat without funds).
+
+### Bottom line for capacity planning
+- Cline = NO known hard RPM for the 4 (best free boost; watch for the hidden free-model limit — if you start 429ing with "free limit reached", back off a few minutes).
+- Our router: 429/402 → 1min-6h enforced-away (design protects us; treat 429 like rain, space ~2-5s between calls on the same free lane).
+- Treat ALL free lanes as burst-tolerant-not-guaranteed; never parallel-dispatched >2 sweeps on 1-key pools (we burned openrouter into 429-starvation earlier doing exactly that).
