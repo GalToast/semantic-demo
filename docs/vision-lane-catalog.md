@@ -81,7 +81,7 @@ VERIFIED VISION (17 — real pixel read via 1-image bridge probe):
 16. @cf/mistralai/mistral-small-3.1-24b-instruct @cloudflare (3s)
 17. agnes-2.0-flash @agnes (10s, reasoning-burn; 136 image tokens prove ingest)
 
-Gates swept but no vision (honest): gemini gate = 58 Google GenAI models BILLING-BLOCKED (prepaid depleted, AI Studio 429) — *would* be vision but accounts out of credits; neuralwatt :: glm-5.2 family 429 (rate), gemma-4-31b 402; mistral-ocr-* = 400 invalid (OCR endpoint models, not chat); poolside 0 vision; zydit/groq/openprovider 403/502.
+Gates swept but no vision (honest): gemini gate = 58 Google GenAI models BILLING-BLOCKED (prepaid depleted, AI Studio 429) — _would_ be vision but accounts out of credits; neuralwatt :: glm-5.2 family 429 (rate), gemma-4-31b 402; mistral-ocr-\* = 400 invalid (OCR endpoint models, not chat); poolside 0 vision; zydit/groq/openprovider 403/502.
 
 Gap classes found & closed (the v1 census's real misses):
 
@@ -92,3 +92,14 @@ Gap classes found & closed (the v1 census's real misses):
 - OPEN: EDITING-verified `mistral-medium-3.5` etc. sub-ids, ocr-specific endpoints, `gemini-3.5-flash` variants on llm7 (400 wrong-id — worth exact-id retry), plus 25 "EMPTY" (image accepted with real image_tokens but no text — likely max_tokens=220 saturation, e.g. agnes pattern).
 
 So: catalog-declared ~370 image models across 30 gates → **17 confirmed usable vision models right now**, up from 12 pre-gap-audit. The majority of the rest are billing walls, EOL ids, rate limits, or unimplemented shim ids — honest verdicts, no silent drops.
+
+## EXHAUSTIVE all-provider vision audit (2026-08-05 06:0x, mega-sweep)
+TestMethod(s): each (provider,vision-hint id) tried on m04 (image chat) + 2nd-shot fidelity (explicit tag list). Lanes: agnes, cloudflare, freemodel, groq, infron, kilo, logfare, mistral, modelscope, neuralwatt, novita, nvidia, opencode-zen, openprovider, openrouter, poolside, zydit(v4), zenmux.
+ACADEMY = reports are truth: ~160 pairs tried.
+VERIFIED USABLE (content read, not hollow): 
+- nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free (openrouter) — 5/5 labels (SEARCH RESULT, CLEVELAND, FOOD & HOSPITALITY, ACTIVE, WEBSITE, PHONE, Connection…) ~36-58s. NEW LANE.
+- @cf/meta/llama-4-scout-17b-16e-instruct (cloudflare) — reads labels, 1.9s, sometimes partial.
+- llama-3.2-11b/90b-vision (nvidia local + hosted) — 5/5.
+- nemotron-nano-12b-v2-vl (hosted) — 5/5. gemma-4-26b (cf) — high quality but flaky. minimax-m3 — weak.
+FAILS: gemini-3.1-flash-image/-lite/-preview, gemini-2.5-flash(+lite) — respond "Insufficient context" (refuse pixel reads) on OR/zenmux/kilo. modelscope InternVL3_5-241B, ERNIE-4.5-VL-28B, GLM-4.7-Flash, gpt-oss-20b, glm-5.2 — hollow 200 (choices:null). stepfun step-3.5-flash (zenmux/kilo) — empty. agnes — empty. novita — 403 balance / 500. infron — 403 all. opencode-zen — 401. logfare — hangs. freemodel — catalog-empty (cooldown). freeinference — EXCLUDED (charged; no funding).
+Qwen3-VL (modelscope) remains #1. omni-30b joins ladder at 4-5s/slower free tier.
