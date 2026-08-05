@@ -45,6 +45,13 @@ Best measured: modelscope Qwen3-VL-8B-Instruct (full label recall, 11s) ≈ 235B
 POD (5-fixture battery): Qwen3-VL-8B/235B = best & most consistent; gemma-4-26b-a4b-it:free (openrouter) = co-leader (flagging a w320 "overlap" that DOM proved CLEAN — chips end y60, caption y70; gauge: good but can invent); llama-3.2-11b/90b-vision solid; scout fallback. Dropped after re-test: mistral-medium-latest (400 inconsistent), nemotron-nano-12b-vl:free (65s timeouts), agnes (always empty), voxtral (image-disabled), minimax-m2.x (504), gemma-4-31b:free (429).
 
 - NVIDIA NIM dedicated tier: NOT reachable today — integration.api.nvidia.com chat = network fetch-fail (5 attempts); ai.api.nvidia.com hosted routes = account-404 (documented); key pool nvapi-\* has no hosted entitlement. Treat dedicated NIM VLMs (paligemma/vila/phi-4-multimodal/nemotric-parse) as unavailable pending entitlement + reachable host.
+
 ## CORRECTION: hosted NVIDIA NIM tier WORKS (2026-08-05 05:3x)
-- Recipe: host = https://integrate.api.nvidia.com/v1/chat/completions + Authorization Bearer nvapi-* (key pool OK). My earlier verdict was wrong: (a) I typo'd the host (`integration.api` vs `integrate.api`), (b) probed DEAD model ids: microsoft/phi-4-multimodal-instruct (410 EOL 2026-07-15), meta/llama-4-maverick-17b-128e-instruct (410 EOL), google/paligemma (404 — not on this listing).
+
+- Recipe: host = <https://integrate.api.nvidia.com/v1/chat/completions> + Authorization Bearer nvapi-\* (key pool OK). My earlier verdict was wrong: (a) I typo'd the host (`integration.api` vs `integrate.api`), (b) probed DEAD model ids: microsoft/phi-4-multimodal-instruct (410 EOL 2026-07-15), meta/llama-4-maverick-17b-128e-instruct (410 EOL), google/paligemma (404 — not on this listing).
 - LIVE hosted NIM VLMs (real-image verified): meta/llama-3.2-11b-vision-instruct (read all 5 tags + connection), nvidia/nemotron-nano-12b-v2-vl (tags + overlap). Same models as the local router lane — direct hosted path works.
+
+## Complete NVIDIA NIM vision register (2026-08-05, all 21 catalog ids, local+hosted)
+USABLE: llama-3.2-11b-vision (local 2.4s / hosted), llama-3.2-90b-vision (11s), nemotron-3-nano-omni-30b-a3b-reasoning (HOSTED 53s — full reads), nemotron-nano-12b-v2-vl (hosted 2.4s; ghost locally), minimax-m3 (weak). HOSTED = https://integrate.api.nvidia.com/v1/chat/completions (key OK).
+DEAD/ghost: phi-4-multimodal (EOL 0715), llama-4-maverick (EOL), fuyu-8b, deplot, gemma-3-12b/3-4b, gemma-4-31b (blocked), kosmos-2, phi-3-vision, phi-3.5-moe, kimi-k2.6, cosmos-reason2, neva-22b, vila (all 404 Function-not-for-account), nemotron-nano-vl-8b (500), mistral-medium-3.5 (net err).
+Web-LADDER update: this does NOT change the top (Qwen3-VL still #1) — omni-30b joins as a slower feasible alternative (53s).
