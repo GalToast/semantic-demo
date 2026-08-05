@@ -35,26 +35,26 @@ Every session loads only skill **name + description**; bodies load on demand whe
 | `agent-ux-hitl`                                  | permission tiers, reversibility marking, blast-radius preview, autonomy budgets, OTEL tracing ⭐ NEW  |
 | `ambiguity-resolution`                           | grill-me, ask-if-underspecified, anti-over-engineering ⭐ NEW                                         |
 | `subagent-role-templates`                        | worker role anatomy: frontmatter scope/no_revert + comms + quality bar; role-vs-skill layering ⭐ NEW |
-| `boundary-validation`                            | Zod at every boundary (API/worker/URL params), fail-fast, branded types ⭐ NEW                     |
-| `store-mutation-discipline`                      | single-write mutation path, components dispatch, store mutates ⭐ NEW                             |
-| `differential-review`                            | review the diff + git-history lens, context of change ⭐ NEW                                        |
-| `testing-anti-patterns`                          | no private-state asserts, no self-mocking, property fuzz for invariants ⭐ NEW                     |
-| `threat-modeling`                                | OWASP + STRIDE before building user-touching surfaces ⭐ NEW                                        |
-| `large-file-edit-discipline`                     | surgical SEARCH/REPLACE over full rewrites for >300-line files ⭐ NEW                             |
-| `api-approval-write`                             | propose public API changes in review BEFORE implementing ⭐ NEW                                    |
-| `dependency-discipline`                          | npm ls audit, unused-dep checks, no phantom imports, pinned versions ⭐ NEW                       |
-| `concise-agent-communication`                    | caveman: cut noise, evidence-first findings, brevity budgets ⭐ NEW                                |
-| `test-driven-development`                        | red-green-refactor, Iron Law (delete code written before failing test) ⭐ NEW                     |
-| `skill-discovery-meta`                           | find the right skill: index scan, trigger keywords, create-vs-reuse ⭐ NEW                         |
-| `live-docs-lookup`                               | context7-style: prefer live docs over training memory for versioned APIs ⭐ NEW                    |
-| `persistent-planning-files`                      | task_plan/findings/progress survive context loss; update-before-pause ⭐ NEW                       |
-| `context-ledger`                                 | serialize key state around compactions + subagent handoffs ⭐ NEW                                 |
-| `annotated-screenshots-qa`                       | numbered element labels for vision QA + covering-element fail-fast ⭐ NEW                         |
-| `webgl-performance-discipline`                   | BatchedMesh, buffer reuse, dispose pools, GC pressure, pixel-ratio caps ⭐ NEW                    |
-| `mcp-builder`                                    | build MCP servers/tools: workflow tools, actionable errors, streamable HTTP, Zod schemas ⭐ NEW  |
-| `tool-use-discipline`                            | parallel calls, self-correct on errors, summarize results, validate shapes ⭐ NEW                 |
-| `data-viz-encoding`                              | pre-attentive attributes, CVD-safe palettes, label management, affordances ⭐ NEW                 |
-| `interactive-web-artifacts`                      | self-contained prototypes, screenshot+vision review, port on success ⭐ NEW                      |
+| `boundary-validation`                            | Zod at every boundary (API/worker/URL params), fail-fast, branded types ⭐ NEW                        |
+| `store-mutation-discipline`                      | single-write mutation path, components dispatch, store mutates ⭐ NEW                                 |
+| `differential-review`                            | review the diff + git-history lens, context of change ⭐ NEW                                          |
+| `testing-anti-patterns`                          | no private-state asserts, no self-mocking, property fuzz for invariants ⭐ NEW                        |
+| `threat-modeling`                                | OWASP + STRIDE before building user-touching surfaces ⭐ NEW                                          |
+| `large-file-edit-discipline`                     | surgical SEARCH/REPLACE over full rewrites for >300-line files ⭐ NEW                                 |
+| `api-approval-write`                             | propose public API changes in review BEFORE implementing ⭐ NEW                                       |
+| `dependency-discipline`                          | npm ls audit, unused-dep checks, no phantom imports, pinned versions ⭐ NEW                           |
+| `concise-agent-communication`                    | caveman: cut noise, evidence-first findings, brevity budgets ⭐ NEW                                   |
+| `test-driven-development`                        | red-green-refactor, Iron Law (delete code written before failing test) ⭐ NEW                         |
+| `skill-discovery-meta`                           | find the right skill: index scan, trigger keywords, create-vs-reuse ⭐ NEW                            |
+| `live-docs-lookup`                               | context7-style: prefer live docs over training memory for versioned APIs ⭐ NEW                       |
+| `persistent-planning-files`                      | task_plan/findings/progress survive context loss; update-before-pause ⭐ NEW                          |
+| `context-ledger`                                 | serialize key state around compactions + subagent handoffs ⭐ NEW                                     |
+| `annotated-screenshots-qa`                       | numbered element labels for vision QA + covering-element fail-fast ⭐ NEW                             |
+| `webgl-performance-discipline`                   | BatchedMesh, buffer reuse, dispose pools, GC pressure, pixel-ratio caps ⭐ NEW                        |
+| `mcp-builder`                                    | build MCP servers/tools: workflow tools, actionable errors, streamable HTTP, Zod schemas ⭐ NEW       |
+| `tool-use-discipline`                            | parallel calls, self-correct on errors, summarize results, validate shapes ⭐ NEW                     |
+| `data-viz-encoding`                              | pre-attentive attributes, CVD-safe palettes, label management, affordances ⭐ NEW                     |
+| `interactive-web-artifacts`                      | self-contained prototypes, screenshot+vision review, port on success ⭐ NEW                           |
 | `subagent-role-templates`                        | worker role anatomy: frontmatter scope/no_revert + comms + quality bar; role-vs-skill layering ⭐ NEW |
 | `verification-before-completion`                 | Iron Law TDD, red-green verification, done-claims need evidence ⭐ NEW                                |
 | `pr-description-writer`                          | write a PR description                                                                                |
@@ -84,6 +84,10 @@ Every session loads only skill **name + description**; bodies load on demand whe
 | `tool-retry-exponential-backoff`                                                                                                   | cascading tool retries after errors                                                              |
 | `parallel-session-watch`                                                                                                           | git drift before commits                                                                         |
 | `harness-hook-patterns`                                                                                                            | harness internals, extensions, hooks, compaction, ledgering, plugin bundling ⭐ NEW              |
+| `pi-harness-conventions`                                                                                                            | OUR runtime: pi main lane + external_subagents (pi harness), pi_tool/mcp routing, key router, memory ⭐ NEW |
+| `opencode-harness-patterns`                                                                                                         | opencode FALLBACK lane + key-router lineage reference (NOT primary runtime) ⭐ NEW               |
+| `skill-benchmarks`                                                                                                                  | measurable skill quality: benchmark task, N trials, success/latency/cost, regression gate ⭐ NEW |
+| `skill-discovery-precedence`                                                                                                       | tiered discovery (workspace>user>ext>builtin), .agents/skills alias, progressive activation ⭐ NEW |
 | `ast-grep-decision-tree`                                                                                                           | which search tool (rg vs ast-grep vs ctx)                                                        |
 | `mcp-playwright-wedge-resolution`                                                                                                  | Playwright MCP hangs                                                                             |
 
