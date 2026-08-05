@@ -1,12 +1,12 @@
 {
-  "model": "deepseek-ai/deepseek-v4-flash",
+  "model": "thinkingmachines/inkling",
   "repeats": 1,
   "arms": [
     "A",
     "B"
   ],
   "maxSteps": 5,
-  "generated_at": "2026-08-05T17:28:54.543Z",
+  "generated_at": "2026-08-05T18:08:00.386Z",
   "rows": [
     {
       "task": "task-1",
@@ -14,18 +14,18 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 8928,
-      "tokens": 676,
+      "ms": 4167,
+      "tokens": 683,
       "note": null
     },
     {
       "task": "task-1",
       "arm": "B",
       "run": 1,
-      "pass": false,
+      "pass": true,
       "steps": 1,
-      "ms": 7133,
-      "tokens": 666,
+      "ms": 7249,
+      "tokens": 722,
       "note": null
     },
     {
@@ -34,8 +34,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 3593,
-      "tokens": 375,
+      "ms": 6646,
+      "tokens": 403,
       "note": null
     },
     {
@@ -44,8 +44,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 5729,
-      "tokens": 358,
+      "ms": 2803,
+      "tokens": 392,
       "note": null
     },
     {
@@ -54,8 +54,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 7851,
-      "tokens": 457,
+      "ms": 4879,
+      "tokens": 479,
       "note": null
     },
     {
@@ -64,8 +64,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 3447,
-      "tokens": 435,
+      "ms": 10013,
+      "tokens": 459,
       "note": null
     },
     {
@@ -74,8 +74,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 1457,
-      "tokens": 563,
+      "ms": 124536,
+      "tokens": 585,
       "note": null
     },
     {
@@ -84,8 +84,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 3147,
-      "tokens": 541,
+      "ms": 1079,
+      "tokens": 560,
       "note": null
     },
     {
@@ -94,8 +94,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 9327,
-      "tokens": 456,
+      "ms": 3263,
+      "tokens": 529,
       "note": null
     },
     {
@@ -104,8 +104,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 6022,
-      "tokens": 446,
+      "ms": 3514,
+      "tokens": 522,
       "note": null
     },
     {
@@ -114,8 +114,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 3737,
-      "tokens": 460,
+      "ms": 2390,
+      "tokens": 490,
       "note": null
     },
     {
@@ -124,8 +124,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 12512,
-      "tokens": 450,
+      "ms": 1924,
+      "tokens": 459,
       "note": null
     },
     {
@@ -134,8 +134,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 1739,
-      "tokens": 464,
+      "ms": 1337,
+      "tokens": 508,
       "note": null
     },
     {
@@ -144,8 +144,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 3015,
-      "tokens": 454,
+      "ms": 1670,
+      "tokens": 499,
       "note": null
     },
     {
@@ -154,8 +154,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 4820,
-      "tokens": 724,
+      "ms": 2844,
+      "tokens": 755,
       "note": null
     },
     {
@@ -164,8 +164,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 3033,
-      "tokens": 714,
+      "ms": 2052,
+      "tokens": 783,
       "note": null
     },
     {
@@ -174,8 +174,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 6174,
-      "tokens": 524,
+      "ms": 6568,
+      "tokens": 979,
       "note": null
     },
     {
@@ -184,8 +184,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 1814,
-      "tokens": 514,
+      "ms": 5366,
+      "tokens": 938,
       "note": null
     },
     {
@@ -194,8 +194,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 2437,
-      "tokens": 463,
+      "ms": 1363,
+      "tokens": 486,
       "note": null
     },
     {
@@ -204,8 +204,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 3656,
-      "tokens": 453,
+      "ms": 1330,
+      "tokens": 485,
       "note": null
     },
     {
@@ -214,8 +214,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 1246,
-      "tokens": 351,
+      "ms": 1351,
+      "tokens": 379,
       "note": null
     },
     {
@@ -224,8 +224,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 1158,
-      "tokens": 341,
+      "ms": 1098,
+      "tokens": 380,
       "note": null
     },
     {
@@ -233,9 +233,9 @@
       "arm": "A",
       "run": 1,
       "pass": true,
-      "steps": 2,
-      "ms": 6204,
-      "tokens": 613,
+      "steps": 1,
+      "ms": 122607,
+      "tokens": 619,
       "note": null
     },
     {
@@ -244,8 +244,8 @@
       "run": 1,
       "pass": true,
       "steps": 1,
-      "ms": 1535,
-      "tokens": 542,
+      "ms": 1841,
+      "tokens": 601,
       "note": null
     }
   ],
@@ -254,23 +254,23 @@
       "passRate": 1,
       "passes": 12,
       "totalRuns": 12,
-      "meanTokens": 511,
-      "meanMs": 4793,
-      "minMs": 1246,
-      "maxMs": 9327,
-      "minTokens": 351,
-      "maxTokens": 724
+      "meanTokens": 575,
+      "meanMs": 23496,
+      "minMs": 1337,
+      "maxMs": 124536,
+      "minTokens": 379,
+      "maxTokens": 979
     },
     "B": {
-      "passRate": 0.9166666666666666,
-      "passes": 11,
+      "passRate": 1,
+      "passes": 12,
       "totalRuns": 12,
-      "meanTokens": 493,
-      "meanMs": 4350,
-      "minMs": 1158,
-      "maxMs": 12512,
-      "minTokens": 341,
-      "maxTokens": 714
+      "meanTokens": 567,
+      "meanMs": 3328,
+      "minMs": 1079,
+      "maxMs": 10013,
+      "minTokens": 380,
+      "maxTokens": 938
     }
   }
 }

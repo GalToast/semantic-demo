@@ -7,15 +7,15 @@
  *
  * Executor: external-subagents MCP (persistent server, real pi worker with
  * the full harness). NOT a per-task pi CLI spawn (that was 16s+ startup and
- * churn-prone).
+ * churn-prone). One stdio server instance per task via arms/mcp-client.mjs
+ * `watch` (start -> poll until terminal/timeout -> cancel on timeout).
  *
  * Isolation: copies the task to a neutral temp dir OUTSIDE the repo (so the
  * repo's package.json "type":"module" cannot contaminate the CJS fixture).
- * Hard timeout: cancels the worker if it exceeds budget.
  *
  * Usage from the runner: runPiWorkerArm(taskDirPath, { model, timeoutMs })
  */
-import { mkdirSync, copyFileSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs'
+import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
@@ -24,50 +24,22 @@ import { tmpdir } from 'node:os'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const DEFAULT_MODEL = process.env.MODEL_ID || 'nvidia/thinkingmachines/inkling' // stronger than flash for full-harness arm
-const WORKER_TIMEOUT_MS = Number(process.env.WORKER_TIMEOUT_MS || 90000)
+const WORKER_TIMEOUT_MS = Number(process.env.WORKER_TIMEOUT_MS || 240000)
 
-/**
- * Invoke the external-subagents MCP start tool.
- * NOTE: this arm runs inside the runner (a plain Node process), NOT inside a
- * Pi session, so it cannot use the `mcp` top-level tool. It shells to a small
- * MCP client script that starts a worker via the external-subagents server.
- */
-function startWorker(taskPrompt, cwd, model) {
+/** Drive one worker to completion via the mcp-client `watch` command. */
+function watchWorker(prompt, cwd, model, timeoutMs) {
   const client = join(__dirname, 'mcp-client.mjs')
-  const res = execFileSync(process.execPath, [client, 'start', JSON.stringify({ prompt: taskPrompt, cwd, model })], {
+  const arg = JSON.stringify({ prompt, cwd, model, timeoutMs })
+  const res = execFileSync(process.execPath, [client, 'watch', arg], {
     cwd: __dirname,
     encoding: 'utf8',
-    timeout: 30000,
+    timeout: timeoutMs + 60000, // allow server startup + poll margin
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   return JSON.parse(res.trim())
-}
-
-function pollWorker(workerId) {
-  const client = join(__dirname, 'mcp-client.mjs')
-  const res = execFileSync(process.execPath, [client, 'poll', workerId], {
-    cwd: __dirname,
-    encoding: 'utf8',
-    timeout: 30000,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  })
-  return JSON.parse(res.trim())
-}
-
-function cancelWorker(workerId) {
-  try {
-    const client = join(__dirname, 'mcp-client.mjs')
-    execFileSync(process.execPath, [client, 'cancel', workerId], {
-      cwd: __dirname,
-      encoding: 'utf8',
-      timeout: 15000,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
-  } catch { /* best effort */ }
 }
 
 function copyTaskToNeutralDir(taskDirPath) {
-  // Neutral temp dir OUTSIDE the repo (no package.json "type":"module")
   const ws = join(tmpdir(), `ablation-armc-${Date.now()}`)
   mkdirSync(ws, { recursive: true })
   for (const f of ['README.md', 'src', 'test']) {
@@ -75,7 +47,6 @@ function copyTaskToNeutralDir(taskDirPath) {
       execFileSync('cp', ['-r', join(taskDirPath, f), join(ws, f)], { stdio: 'ignore' })
     }
   }
-  // Explicit CJS package.json so node treats it as CommonJS
   writeFileSync(join(ws, 'package.json'), JSON.stringify({ type: 'commonjs' }))
   return ws
 }
@@ -103,10 +74,7 @@ export async function runPiWorkerArm(taskDirPath, opts = {}) {
   const testSrc = readFileSync(join(taskDirPath, 'test', 'test.js'), 'utf8')
   const readme = readFileSync(join(taskDirPath, 'README.md'), 'utf8')
 
-  // Neutral isolated workspace
   const ws = copyTaskToNeutralDir(taskDirPath)
-  const relSrc = 'src/task.js'
-  const relTest = 'test/test.js'
 
   const prompt = [
     `Fix the bug in src/task.js so the test passes. The dir is CommonJS (require/module.exports) — do NOT change the module format.`,
@@ -128,40 +96,21 @@ export async function runPiWorkerArm(taskDirPath, opts = {}) {
     `When green (or out of attempts): return the FINAL content of src/task.js in a code block, then a one-line summary: "PASS attempts=N" or "FAIL attempts=N".`,
   ].join('\n')
 
-  let workerId = null
   try {
-    const s = await startWorker(prompt, ws, model)
-    workerId = s?.worker_id || s?.id || null
-    if (!workerId) throw new Error('startWorker: no worker_id: ' + JSON.stringify(s).slice(0, 300))
-
-    // Poll until terminal or timeout
-    const deadline = Date.now() + timeoutMs
-    let status = 'running'
-    while (Date.now() < deadline) {
-      const p = await pollWorker(workerId)
-      status = p?.status || 'running'
-      if (['completed', 'failed', 'canceled', 'error'].includes(status)) break
-      await new Promise((r) => setTimeout(r, 5000))
-    }
-
-    const timedOut = !['completed', 'failed', 'canceled', 'error'].includes(status)
-    if (timedOut) {
-      await cancelWorker(workerId)
-      workerId = null
-    }
-
+    const w = await watchWorker(prompt, ws, model, timeoutMs)
     const ms = Date.now() - started
-    // Read the final edited src from the workspace (best effort)
-    let finalSrc = null
-    try { finalSrc = readFileSync(join(ws, relSrc), 'utf8') } catch { /* not yet written */ }
+    const timedOut = !!w.timedOut
 
-    // Test the worker's edited file
+    // Read the worker's edited src (best effort)
+    let finalSrc = null
+    try { finalSrc = readFileSync(join(ws, 'src', 'task.js'), 'utf8') } catch { /* not written */ }
+
+    // Test the edited file in a fresh neutral copy
     let test
     if (finalSrc) {
-      // Copy edited src into a fresh neutral copy, run test
       const testWs = copyTaskToNeutralDir(taskDirPath)
       try {
-        writeFileSync(join(testWs, relSrc), finalSrc)
+        writeFileSync(join(testWs, 'src', 'task.js'), finalSrc)
         test = runTaskTest(testWs)
       } catch (e) {
         test = { pass: false, err: String(e.message).slice(0, 200) }
@@ -173,18 +122,20 @@ export async function runPiWorkerArm(taskDirPath, opts = {}) {
     }
 
     // Restore original src (defensive)
-    writeFileSync(join(taskDirPath, relSrc), taskSrc)
+    writeFileSync(join(taskDirPath, 'src', 'task.js'), taskSrc)
 
     const attempts = (finalSrc || '').match(/attempts=(\d+)/)?.[1] ?? null
+    // Token estimate: the worker's transcript isn't surfaced in poll; estimate
+    // from the edited file + elapsed as a rough proxy (chars/4 ≈ tokens).
+    const tokens = finalSrc ? Math.round(finalSrc.length / 4) : 0
     return {
       pass: test.pass,
       steps: attempts ? Number(attempts) : (timedOut ? 'timeout' : 1),
-      tokens: 0, // MCP worker usage not surfaced in poll summary; estimate below
+      tokens,
       ms,
       note: timedOut ? 'timeout' : test.pass ? (test.out || 'green') : (test.err || 'fail'),
     }
   } catch (e) {
-    if (workerId) await cancelWorker(workerId)
     const ms = Date.now() - started
     return { pass: false, steps: 'error', tokens: 0, ms, note: String(e.message).slice(0, 300) }
   } finally {
@@ -193,7 +144,7 @@ export async function runPiWorkerArm(taskDirPath, opts = {}) {
 }
 
 // CLI: node arms/pi-worker.mjs <taskDirPath> [model]
-if (import.meta.url === `file://${process.argv[1]?.replace(/\\/g, '/')}` || process.argv[1]?.endsWith('pi-worker.mjs')) {
+if (process.argv[1]?.endsWith('pi-worker.mjs')) {
   const taskDir = process.argv[2]
   if (!taskDir) {
     console.error('usage: node arms/pi-worker.mjs <task-dir> [model]')

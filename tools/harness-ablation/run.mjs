@@ -40,10 +40,21 @@ function cliHas(name) {
 function parseArm() {
     const raw = cliFlag('arm') || 'both'
     const map = {
-        A: ['A'], B: ['B'], C: ['C'],
-        both: ['A', 'B'], all: ['A', 'B', 'C']
+        A: ['A'],
+        B: ['B'],
+        C: ['C'],
+        both: ['A', 'B'],
+        all: ['A', 'B', 'C']
     }
-    return map[raw] ?? (raw === 'both' ? ['A', 'B'] : ['A', 'B'])
+    // Support comma-separated lists (e.g. --arm=A,B,C)
+    if (raw.includes(',')) {
+        return raw
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .filter((s) => map[s] != null)
+    }
+    return map[raw] ?? ['A', 'B']
 }
 
 const ARM_FILTER = parseArm()
@@ -81,7 +92,8 @@ function pickProvider(providers) {
 
 const providers = loadQwenProviders()
 const provider = pickProvider(providers)
-const BASE_URL = cliFlag('base-url') || process.env.OPENAI_BASE_URL || provider?.baseUrl || 'http://127.0.0.1:8788/nvidia/v1'
+const BASE_URL =
+    cliFlag('base-url') || process.env.OPENAI_BASE_URL || provider?.baseUrl || 'http://127.0.0.1:8788/nvidia/v1'
 const API_KEY = cliFlag('api-key') || process.env.OPENAI_API_KEY || provider?.apiKey || 'sk-none'
 const MODEL = cliFlag('model') || process.env.MODEL_ID || 'nvidia/thinkingmachines/inkling'
 
@@ -89,22 +101,37 @@ const MODEL = cliFlag('model') || process.env.MODEL_ID || 'nvidia/thinkingmachin
 /* Chat (returns { content, tokensUsed })                               */
 /* ------------------------------------------------------------------ */
 async function chat(messages) {
-    const res = await fetch(`${BASE_URL}/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${API_KEY}` },
-        body: JSON.stringify({ model: MODEL, messages, temperature: 0.2 })
-    })
-    if (!res.ok) throw new Error(`chat ${res.status}: ${(await res.text()).slice(0, 200)}`)
-    const data = await res.json()
-    const content = data.choices?.[0]?.message?.content ?? ''
-    const usage = data.usage ?? {}
-    let tokensUsed = usage.total_tokens ?? usage.completion_tokens ?? usage.prompt_tokens ?? null
-    if (tokensUsed == null) {
-        // Estimate from prompt + response content length (chars / 4 heuristic)
-        const promptChars = messages.reduce((sum, m) => sum + (m.content?.length || 0), 0)
-        tokensUsed = Math.round((promptChars + content.length) / 4)
+    // Retry transient network/timeout errors (router contention, slow heads)
+    const ATTEMPTS = 3
+    let lastErr
+    for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+        try {
+            const res = await fetch(`${BASE_URL}/chat/completions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${API_KEY}` },
+                body: JSON.stringify({ model: MODEL, messages, temperature: 0.2 }),
+                signal: AbortSignal.timeout(120000)
+            })
+            if (!res.ok) throw new Error(`chat ${res.status}: ${(await res.text()).slice(0, 200)}`)
+            const data = await res.json()
+            const content = data.choices?.[0]?.message?.content ?? ''
+            const usage = data.usage ?? {}
+            let tokensUsed = usage.total_tokens ?? usage.completion_tokens ?? usage.prompt_tokens ?? null
+            if (tokensUsed == null) {
+                const promptChars = messages.reduce((sum, m) => sum + (m.content?.length || 0), 0)
+                tokensUsed = Math.round((promptChars + content.length) / 4)
+            }
+            return { content, tokensUsed }
+        } catch (e) {
+            lastErr = e
+            const isTransient = /timeout|UND_ERR|fetch failed|ECONNRESET|ETIMEDOUT|429/.test(String(e))
+            if (!isTransient) throw e
+            const delay = Math.min(5000, 500 * attempt)
+            console.log(`  [retry ${attempt}/${ATTEMPTS} after ${delay}ms: ${String(e).slice(0, 80)}]`)
+            await new Promise((r) => setTimeout(r, delay))
+        }
     }
-    return { content, tokensUsed }
+    throw lastErr
 }
 
 /* ------------------------------------------------------------------ */
@@ -161,7 +188,8 @@ async function armA(task, taskDir) {
     const messages = [
         {
             role: 'system',
-            content: 'You fix a small bug in a JS file. The repo has src/task.js and test/test.js. Return ONLY the corrected full src/task.js content in a code fence.'
+            content:
+                'You fix a small bug in a JS file. The repo has src/task.js and test/test.js. Return ONLY the corrected full src/task.js content in a code fence.'
         },
         {
             role: 'user',
@@ -186,7 +214,8 @@ async function armB(task, taskDir) {
     const { content: reply, tokensUsed } = await chat([
         {
             role: 'system',
-            content: 'You fix a small bug in a JS file. Return ONLY the corrected full src/task.js content in a code fence. No explanations.'
+            content:
+                'You fix a small bug in a JS file. Return ONLY the corrected full src/task.js content in a code fence. No explanations.'
         },
         {
             role: 'user',
@@ -296,15 +325,17 @@ for (const armId of ARM_FILTER) {
 }
 
 console.log(`\n=== Harness Ablation — ${MODEL} (repeats=${REPEATS}, arms=${ARM_FILTER.join(',')}) ===`)
-console.table(rows.map((r) => ({
-    task: r.task,
-    arm: r.arm,
-    run: r.run,
-    pass: r.pass ? 'PASS' : 'FAIL',
-    steps: r.steps,
-    ms: r.ms,
-    tokens: r.tokens
-})))
+console.table(
+    rows.map((r) => ({
+        task: r.task,
+        arm: r.arm,
+        run: r.run,
+        pass: r.pass ? 'PASS' : 'FAIL',
+        steps: r.steps,
+        ms: r.ms,
+        tokens: r.tokens
+    }))
+)
 
 console.log('\n--- Per-arm summary ---')
 for (const armId of ARM_FILTER) {
@@ -315,9 +346,9 @@ for (const armId of ARM_FILTER) {
     }
     console.log(
         `${armId}: passRate=${(s.passRate * 100).toFixed(0)}% ` +
-        `(passes=${s.passes}/${s.totalRuns}) | ` +
-        `meanMs=${s.meanMs} (min=${s.minMs}, max=${s.maxMs}) | ` +
-        `meanTokens=${s.meanTokens} (min=${s.minTokens}, max=${s.maxTokens})`
+            `(passes=${s.passes}/${s.totalRuns}) | ` +
+            `meanMs=${s.meanMs} (min=${s.minMs}, max=${s.maxMs}) | ` +
+            `meanTokens=${s.meanTokens} (min=${s.minTokens}, max=${s.maxTokens})`
     )
 }
 
@@ -334,9 +365,6 @@ const latestPayload = {
     summaries
 }
 
-writeFileSync(
-    join(RESULTS_DIR, 'latest.json'),
-    JSON.stringify(latestPayload, null, 2)
-)
+writeFileSync(join(RESULTS_DIR, 'latest.json'), JSON.stringify(latestPayload, null, 2))
 console.log('Results: tools/harness-ablation/results/latest.json')
 console.log('Archive: previous latest saved to results/archive-timestamp>.json')
