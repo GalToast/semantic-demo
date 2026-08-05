@@ -113,6 +113,7 @@ Every session loads only skill **name + description**; bodies load on demand whe
 - `tmp/research-lane-kimi.md` (lane: Moonshot Kimi — agent harness/skills frontier)
 - `tmp/research-sysprompt-labs.md` (lane: frontier lab system prompts — Claude Code/Codex/Gemini/Cursor comparison)
 - `tmp/research-sysprompt-research.md` (lane: context-engineering papers — prompt composition evidence)
+- subagent skill-injection root cause (07-29 wedge ↔ worker -ne) → `docs/subagent-delegation.md`
 
 ## Additions policy
 

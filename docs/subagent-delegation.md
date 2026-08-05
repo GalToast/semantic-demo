@@ -43,6 +43,14 @@ and `EXTERNAL_SUBAGENT_GLOBAL_WORKER_SCAN=1` only for cross-project audits.
 
 Discriminator for main-lane vs delegate: smaller tasks (single edit, single command, <50 LOC, scoped to 1-2 files) go main-lane because the delegation overhead (worker ramp-up, evidence roundtrip, judge step) costs more than the time saved. Everything else delegates.
 
+### Worker skill visibility (2026-08-05, root-caused)
+
+External subagents receive skill paths **only** from explicitly-listed extensions; the `-ne` flag disables auto-discovery, so `pi-hermes-memory`, `pi-lens`, and `projects-memory` contributions are absent unless those extensions are listed. Historically this left workers with only the ~21 user skills in `~/.pi/agent/skills` while a ~62-skill library existed on disk but was never injected — worker prompts that reference a skill by name may silently ignore it (mitigation: embed mandatory rules in the prompt; treat skills as default-shapers only).
+
+Fix: a skills-only extension (`~/.pi/agent/local-packages/pi-worker-skills/index.ts`) registers `resources_discover` for the global + project skills dirs with zero memory/hooks; add it to the worker `--extension` list.
+
+Hygiene rule: after any change to worker extension wiring or the skill library, verify by probing a live worker's own `<skill list` (spawn a probe worker asking it to list its injected skills); do not assume.
+
 ## Parallel Divide-and-Conquer (set 2026-06-26, persistent)
 
 Subagents aren't only for implementation — they're for ANY cognitive work: research, investigation, planning, design, review, implementation, polish. Use them as 2nd/3rd/4th/... parallel "me" to divide and conquer.
