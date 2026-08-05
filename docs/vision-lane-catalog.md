@@ -99,7 +99,7 @@ VERIFIED VISION (27 families, deduped; real single-image bridge read):
 
 EXCLUDED-honest residuals (not vision-blocked, need keys/heal/wrong-id normalizing):
 
-- 129 x HTTP*402 (billing walls: claude-\_5, gpt-5.6-*, kimi-_, novita-_ on charged gates)
+- 129 x HTTP*402 (billing walls: claude-\_5, gpt-5.6-*, kimi-*, novita-* on charged gates)
 - 84 x HTTP_400 (invalid-id/shape on that gate), 29 x HTTP_404, 18 x HTTP_410 (EOL),
 - 23 x EMPTY/TEXT_EMPTY (image-token-detail zero or max_tokens saturation), 3 x untested-429, 1 x REFUSAL cluster gemini-3.x-preview (text-only frontends)
 - The ~39 previously claimed "19 stable lanes" docs pre-2026-08-05 are CONFOUNDED: 429-as-untested + no-retry + single-gate probes. Re-run the disputed bucket (429/EMPTY/REFUSAL) before trusting any "vision lane" claim from before this date.
@@ -144,6 +144,7 @@ IMPORTANT for future sweeps: NEVER claim "all gates swept" from the router alone
 - All frontier vision ids seen via this sweep = paid/403/402/429 walls (gpt-5.x, claude-opus-4.x/5, grok-4.x, gemini-3.x, glm-5v-turbo, doubao-seed, nova, ernie-vl, qwen3.6-vl...) — catalog-only; NOT fundable (user rule).
 - Remaining providers offline during round-3 tail (novita/mistral/aghne/neuralwatt/freemodel/infron catalogs empty) — all previously classified (403/hang/429-cooldown); no coverage loss.
 - Round-3 modality flags of note for future audits: infron flags ~30 frontier ids image-capable; openrouter catalog = 338 total.
+
 ## FULL-CONFIG superset audit (2026-08-05 10:4x) — the real scope
 
 Combining ALL config surfaces (opencode.json 23 providers/781 models + pi modelProviders.json 729) = **1,510 unique models authoritative to this machine's harness**. Census treated 329 / superset 1,510 = it probed **11.7%**. NEVER-probed: **1,333 (88.3%)** — the true "LOTT".
@@ -151,6 +152,7 @@ Combining ALL config surfaces (opencode.json 23 providers/781 models + pi modelP
 Declared-vision never-probed (11): pi-direct gemini entries (gemini-3.1-pro-preview/3-flash-preview/2.5-pro/2.5-flash/3.5-flash/3.1-flash-lite + gemma-4-31b/26b + gemini-pro-latest/flash-latest) — these route via ~/.pi/agent/model-providers.json baseUrls (port 8789/gemini direct + google api), NOT the 8788 router. The router-mounted qwen3-vl is probed OK; the pi:GEMINI variants are only reachable through Pi-agent direct - separate axis.
 
 Why earlier "census" undercounted (method flaw, now documented):
+
 1. Derived candidate universe ONLY from router `data[]` catalogs + name-hint regex — skipped opencode.json's 781-model registry + pi model config's 729.
 2. zydit/groq/freemodel gates were mid-cooldown at sweep: /v1/models 403/429 — treated as dead, but they rotate keys every few seconds to ~minutes.
 3. Only 1-3 gates probed per model (no full per-gate matrix).
@@ -158,4 +160,17 @@ Why earlier "census" undercounted (method flaw, now documented):
 5. Config modality flags (`attachment`, `modalities.input`) are RELIABLE ONLY for declared image (the 13 listed); for everything else they say text — the harness bug. Empirics beat config.
 
 NEXT (needs long-horizon run, ~hours, rate-capped):
+
 - Probe the 1,333 never-probed against their 23 declared providers (per-gate, retry 429, capture image-tokens). Estimate: zydit 158 + zydit-v4 159 (2 keys, ~90s per probe-cycle) ≈ 8h serial; freeinference 13 + command-code 11 + minimax-coding 3 + opencode 7 + qwen-* mirrors = cheap (fast gates); pi-direct 729 (env-keyed baseUrls) — many are direct-vendor (google/meta/airforce) with account billing states to re-check. This turns the "dead 403/429" verdicts into true probes.
+
+## ROUND-5 CORRECTION (2026-08-05 15:4x) — agnes family was NEVER empty; parse bug
+Root cause: my sweep parsers read only choices[0].message.content with max_tokens<=90. Reasoning-style lanes (agnes etc.) emit the real answer into message.reasoning_content + a short content tail ⇒ mislabeled '(hollow)'.
+FIX for any future probe: read content + reasoning_content, max_tokens >= 1200.
+VERIFIED NOW (4/5 of agnes family, all 5/5 recall on m04):
+- agnes/agnes-2.5-flash      5/5 @ 2.6s  — TOP-TIER fast lane (CLEVELAND, FOOD & HOSPITALITY, ACTIVE, WEBSITE, PHONE, SEARCH RESULT, INSPECT, View on Map, Connection, EXPLORE NEIGHBORHOOD)
+- agnes/agnes-2.0-flash      5/5 @ 10.4s (adds 95°, X)
+- agnes/agnes-2.5-pro        5/5 @ 62s
+- agnes/agnes-2.5-pro-alpha  5/5 @ 76s
+- agnes-image-2.1-flash = IMAGE-GEN (503 on chat) — not a VLM.
+Previous "agnes-2.x returns empty" rows in this doc are WRONG (parse bug), superseded above.
+Re-tested non-agnes lanes with fixed parser — unchanged: step-3.5-flash 0/5 (hollow), GLM-4.7-Flash 0/5, minimax-m3 504 today, gpt-oss-20b 400 today, @cf gemma-4-26b 429 (rate; earlier read OK in-sweep → still good, watch reasoning_content next verify).
