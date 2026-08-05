@@ -94,6 +94,7 @@ Worker contract: workers doing UI work should capture a screenshot and include t
 ## Vision Capability Matrix (empirically re-probed 2026-08-05, full-sweep replacement for the 2026-06-26 set)
 
 **> IMPORTANT — two different image paths (2026-08-05 discovery):**
+
 > This matrix probes the **direct router chat** path (`node tmp/vision-ask.mjs <slug> <model> <img>` -> base64 -> `127.0.0.1:8788/<slug>/v1/chat/completions`). That path ALWAYS worked.
 > The **subagent-worker path** (worker's `read` tool -> image part -> model) was silently dropping images until 2026-08-05 because modelscope/logfare-style router catalogs return bare `{id}` rows with NO `input_modalities`, so Pi's `pi-model-providers` extension inferred `input:["text"]` and `openai-completions` discarded tool-result image parts. FIX: `~/.pi/agent/local-packages/pi-model-providers/index.ts` now falls back to a model-id pattern (`visionInputFromModelId`: `-vl`/`vision`/`internvl`/`phi-3-vision`/`glm-4.6v`/`glm-5v`/`minimax` etc.) when catalog modality data is absent. Verified end-to-end with a worker probe on `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct` returning "PIXELS OK — business card for Angel Fire Coffee".
 > Implication: a lane read of "VISION UNAVAILABLE" pre-2026-08-05 does NOT mean the model lacks vision — re-probe on the current harness if the model id matches a VL pattern.
