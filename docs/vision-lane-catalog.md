@@ -41,5 +41,10 @@ Best measured: modelscope Qwen3-VL-8B-Instruct (full label recall, 11s) ≈ 235B
 - New blockers: novita = 403 NOT_ENOUGH_BALANCE (all VL dead); zenmux qwen3.7-plus → same 410 EOL (kilo index bug hits qwen3.5/3.6/3.7 ids); agnes (2.0 & 2.5) = empty content always; voxtral-mini = image-disabled on route; minimax-m2.x = 504; gemma-4/phi-4-multimodal/cosmos-reason2/nemotron-nano-vl/fuyu = 402/404; modelscope \*-Thinking ids = 400 not servable.
 
 ## Hard-trial + NVIDIA-NIM verdict (2026-08-05 05:0x)
+
 POD (5-fixture battery): Qwen3-VL-8B/235B = best & most consistent; gemma-4-26b-a4b-it:free (openrouter) = co-leader (flagging a w320 "overlap" that DOM proved CLEAN — chips end y60, caption y70; gauge: good but can invent); llama-3.2-11b/90b-vision solid; scout fallback. Dropped after re-test: mistral-medium-latest (400 inconsistent), nemotron-nano-12b-vl:free (65s timeouts), agnes (always empty), voxtral (image-disabled), minimax-m2.x (504), gemma-4-31b:free (429).
-- NVIDIA NIM dedicated tier: NOT reachable today — integration.api.nvidia.com chat = network fetch-fail (5 attempts); ai.api.nvidia.com hosted routes = account-404 (documented); key pool nvapi-* has no hosted entitlement. Treat dedicated NIM VLMs (paligemma/vila/phi-4-multimodal/nemotric-parse) as unavailable pending entitlement + reachable host.
+
+- NVIDIA NIM dedicated tier: NOT reachable today — integration.api.nvidia.com chat = network fetch-fail (5 attempts); ai.api.nvidia.com hosted routes = account-404 (documented); key pool nvapi-\* has no hosted entitlement. Treat dedicated NIM VLMs (paligemma/vila/phi-4-multimodal/nemotric-parse) as unavailable pending entitlement + reachable host.
+## CORRECTION: hosted NVIDIA NIM tier WORKS (2026-08-05 05:3x)
+- Recipe: host = https://integrate.api.nvidia.com/v1/chat/completions + Authorization Bearer nvapi-* (key pool OK). My earlier verdict was wrong: (a) I typo'd the host (`integration.api` vs `integrate.api`), (b) probed DEAD model ids: microsoft/phi-4-multimodal-instruct (410 EOL 2026-07-15), meta/llama-4-maverick-17b-128e-instruct (410 EOL), google/paligemma (404 — not on this listing).
+- LIVE hosted NIM VLMs (real-image verified): meta/llama-3.2-11b-vision-instruct (read all 5 tags + connection), nvidia/nemotron-nano-12b-v2-vl (tags + overlap). Same models as the local router lane — direct hosted path works.
