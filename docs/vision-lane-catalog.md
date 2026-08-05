@@ -52,6 +52,40 @@ POD (5-fixture battery): Qwen3-VL-8B/235B = best & most consistent; gemma-4-26b-
 - LIVE hosted NIM VLMs (real-image verified): meta/llama-3.2-11b-vision-instruct (read all 5 tags + connection), nvidia/nemotron-nano-12b-v2-vl (tags + overlap). Same models as the local router lane — direct hosted path works.
 
 ## Complete NVIDIA NIM vision register (2026-08-05, all 21 catalog ids, local+hosted)
-USABLE: llama-3.2-11b-vision (local 2.4s / hosted), llama-3.2-90b-vision (11s), nemotron-3-nano-omni-30b-a3b-reasoning (HOSTED 53s — full reads), nemotron-nano-12b-v2-vl (hosted 2.4s; ghost locally), minimax-m3 (weak). HOSTED = https://integrate.api.nvidia.com/v1/chat/completions (key OK).
+
+USABLE: llama-3.2-11b-vision (local 2.4s / hosted), llama-3.2-90b-vision (11s), nemotron-3-nano-omni-30b-a3b-reasoning (HOSTED 53s — full reads), nemotron-nano-12b-v2-vl (hosted 2.4s; ghost locally), minimax-m3 (weak). HOSTED = <https://integrate.api.nvidia.com/v1/chat/completions> (key OK).
 DEAD/ghost: phi-4-multimodal (EOL 0715), llama-4-maverick (EOL), fuyu-8b, deplot, gemma-3-12b/3-4b, gemma-4-31b (blocked), kosmos-2, phi-3-vision, phi-3.5-moe, kimi-k2.6, cosmos-reason2, neva-22b, vila (all 404 Function-not-for-account), nemotron-nano-vl-8b (500), mistral-medium-3.5 (net err).
 Web-LADDER update: this does NOT change the top (Qwen3-VL still #1) — omni-30b joins as a slower feasible alternative (53s).
+
+## Exhaustive bridge census (2026-08-05 06:0x) — every model id that breaks into vision
+
+Method: 3-pass sweep of 278 unique candidate ids (union: kilo catalog-declared 189 + openrouter 181 + pattern-hints 100 + lane records) through `tmp/vision-ask.mjs` (single image, base64 data URI, /v1/chat/completions), per-model provider failover, concurrency 6. Full machine table: `tmp/vision-census-final.json` + raw `tmp/vision-census-*-results.jsonl`.
+
+VERIFIED VISION (12 — real pixel read, not catalog claim):
+
+1. Qwen/Qwen3-VL-235B-A22B-Instruct @modelscope (10s)
+2. Qwen/Qwen3-VL-8B-Instruct @modelscope (12s)
+3. Qwen/Qwen3-VL-8B-Thinking @modelscope (11s)
+4. meta/llama-3.2-11b-vision-instruct @nvidia (3s)
+5. meta/llama-3.2-90b-vision-instruct @nvidia (17s)
+6. nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free @openrouter (21s)
+7. google/gemma-4-26b-a4b-it:free @openrouter (6s)
+8. stepfun/step-3.7-flash @openrouter (6s)
+9. minimax/minimax-01 @openrouter (19s)
+10. google/gemini-2.5-flash-lite @openrouter (29s — slow, low tokens)
+11. kilo-auto/small @kilo (3.6s — auto-router backends)
+12. openrouter/free @kilo (9.5s — auto-router backends)
+
+The rest of 278 (honest verdicts, no more silent drops):
+
+- 140 billing/auth 402/403 wall (openrouter/kilo credit, novita NO_BALANCE, infron quota)
+- 97 dead/wrong id (410 EOL on kilo/openrouter for qwen3.5/3.6/3.7, gemini-3.x, gpt-5.4+; 404 kimi on kilo; 400 @cf/ & \*-thinking unsupported ids)
+- 22 likely-vision unroutable (GLM-4.5v/4.6v/5v: 221 reasoning tokens then 504/403 — ModelScope alt times out; InternVL3_5-241B & PaddleOCR/ERNIE-VL prompt_tokens 0 — id not servable; gemini-2.5-pro/3-flash/3.1-family: prompt_tokens 25 → image not attached on that route)
+- 7 timeout/empty (nemotron-nano-12b-v2-vl:free upstream, Qwen-Image-Edit no output)
+
+Route-specific truths this census locks in:
+
+- `Qwen/` (modelscope) = THE live VL route; `qwen/` (kilo/openrouter) = 410 EOL for same family. Always map to modelscope.
+- The verified list is shorter than the catalog-declared 370 because most "vision" catalog rows are billing walls, EOL ids, or text-only routes — catalog modality ≠ usable vision.
+- GLM-V models are genuinely V-capable (221 reasoning tokens prove image ingestion) but unroutable today: zenmux alt = ModelScope 504 at 15s; novita = 403. Re-probe if zenmux gains a native GLM-V route.
+- Re-verify 2× before subagent use; earlier lane list remains the primary, this registers the FULL space.
