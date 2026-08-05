@@ -57,49 +57,57 @@ USABLE: llama-3.2-11b-vision (local 2.4s / hosted), llama-3.2-90b-vision (11s), 
 DEAD/ghost: phi-4-multimodal (EOL 0715), llama-4-maverick (EOL), fuyu-8b, deplot, gemma-3-12b/3-4b, gemma-4-31b (blocked), kosmos-2, phi-3-vision, phi-3.5-moe, kimi-k2.6, cosmos-reason2, neva-22b, vila (all 404 Function-not-for-account), nemotron-nano-vl-8b (500), mistral-medium-3.5 (net err).
 Web-LADDER update: this does NOT change the top (Qwen3-VL still #1) — omni-30b joins as a slower feasible alternative (53s).
 
-## Exhaustive bridge census v2 (2026-08-05 06:2x) — 17 VERIFIED, honest gap confession
+## Exhaustive bridge census v3 (2026-08-05) — 27 verified families (real pixel probes)
 
-Method: swept ALL 30 router gates (not just 9). First pass hit 9 gates / 278 ids (12 verified). Second audit pass (prompted by "did you miss anything?") found 21 GATES NEVER SWEPT: cloudflare, llm7, gemini (58 direct Google models), mistral-ocr, agnes, neuralwatt, openprovider(502), zydit(403), groq(403), freemodel(429), poolside. That reshaped the register. Full merged results: `tmp/vision-census-evidence/*.jsonl` + `tmp/vision-census-final.json`.
+Three successive census layers — each caught a real class of miss that the previous one shipped as "done":
 
-VERIFIED VISION (17 — real pixel read via 1-image bridge probe):
+| Layer | Gates swept | Total ids | Verified | Miss this layer caught |
+|---|---|---|---|---|
+| v1 | 9 | 278 | 12 | catalog-derived candidates only |
+| v2 | 21 | 329 | 17 | +cloudflare+llm7+gemini+agnes+mistral+gates; whole-gate misses |
+| v3 | 21 + alt-gate matrix | 329 + 122 alt probes | 27 | 429-rate-limits never retried = 123 mis-filed "untested"; no usage-image-token classifier; missing per-model alt-gate matrix |
 
-1. Qwen/Qwen3-VL-235B-A22B-Instruct @modelscope (10s)
-2. Qwen/Qwen3-VL-8B-Instruct @modelscope (12s)
-3. Qwen/Qwen3-VL-8B-Thinking @modelscope (11s)
-4. meta/llama-3.2-11b-vision-instruct @nvidia (3s)
-5. meta/llama-3.2-90b-vision-instruct @nvidia (17s)
-6. nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free @openrouter (21s)
-7. google/gemma-4-26b-a4b-it:free @openrouter (6s)
-8. stepfun/step-3.7-flash @openrouter (6s)
-9. minimax/minimax-01 @openrouter (19s)
-10. google/gemini-2.5-flash-lite @openrouter (29s)
-11. kilo-auto/small @kilo (3.6s — auto-router backends)
-12. openrouter/free @kilo (9.5s — auto-router backends)
-13. mistral-medium-latest @mistral (2.5s — fast, lane was right)
-14. gemini-3.1-flash-lite @llm7 (4s — llm7 gate)
-15. @cf/meta/llama-4-scout-17b-16e-instruct @cloudflare (4s)
-16. @cf/mistralai/mistral-small-3.1-24b-instruct @cloudflare (3s)
-17. agnes-2.0-flash @agnes (10s, reasoning-burn; 136 image tokens prove ingest)
+VERIFIED VISION (27 families, deduped; real single-image bridge read):
+1. Qwen/Qwen3-VL-235B-A22B-Instruct @modelscope (7-10s)
+2. Qwen/Qwen3-VL-8B-Instruct @modelscope (12-23s)
+3. Qwen/Qwen3-VL-8B-Thinking @modelscope (8-11s)
+4. NEW qwen/qwen3.5-122b-a10b @modelscope (8s) — non-"VL" id IS vision
+5. NEW qwen/qwen3.5-35b-a3b @modelscope (11s)
+6. NEW qwen/qwen3.5-27b @modelscope (11s)
+7. meta/llama-3.2-11b-vision-instruct @nvidia (3s)
+8. meta/llama-3.2-90b-vision-instruct @nvidia (17s)
+9. nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free @openrouter (21s)
+10. google/gemma-4-26b-a4b-it:free @openrouter (6s)
+11. stepfun/step-3.7-flash @openrouter (6s)
+12. minimax/minimax-01 @openrouter (19s)
+13. minimax/minimax-m3 @openrouter (15s)
+14. google/gemini-2.5-flash @openrouter (5s)
+15. google/gemini-2.5-flash-lite @openrouter (29s)
+16. google/gemini-3.1-flash-lite @openrouter (4s)
+17. google/gemini-3.1-flash-lite-image @openrouter (4s)
+18. google/gemini-3-pro-image @openrouter (5s)
+19. NEW google/gemini-3.5-flash @zenmux (29s) — openrouter 410 = WRONG GATE
+20. NEW gemini-3.1-flash-lite @llm7 (4s) — llm7 gate serves gemini minus prefix
+21. mistral-medium-latest @mistral (2.5s — fastest)
+22. @cf/meta/llama-4-scout-17b-16e-instruct @cloudflare (4s)
+23. @cf/mistralai/mistral-small-3.1-24b-instruct @cloudflare (3s)
+24. agnes-2.0-flash @agnes (10s; uses 220 reasoning tokens — size max_tokens)
+25. agnes-2.5-flash @agnes (38s)
+26. agnes-2.5-pro @agnes (38s)
+27. kilo-auto/small + openrouter/free auto-routes @kilo (5-10s)
 
-Gates swept but no vision (honest): gemini gate = 58 Google GenAI models BILLING-BLOCKED (prepaid depleted, AI Studio 429) — _would_ be vision but accounts out of credits; neuralwatt :: glm-5.2 family 429 (rate), gemma-4-31b 402; mistral-ocr-\* = 400 invalid (OCR endpoint models, not chat); poolside 0 vision; zydit/groq/openprovider 403/502.
+EXCLUDED-honest residuals (not vision-blocked, need keys/heal/wrong-id normalizing):
+- 129 x HTTP_402 (billing walls: claude-*5, gpt-5.6-*, kimi-*, novita-* on charged gates)
+- 84 x HTTP_400 (invalid-id/shape on that gate), 29 x HTTP_404, 18 x HTTP_410 (EOL),
+- 23 x EMPTY/TEXT_EMPTY (image-token-detail zero or max_tokens saturation), 3 x untested-429, 1 x REFUSAL cluster gemini-3.x-preview (text-only frontends)
+- The ~39 previously claimed "19 stable lanes" docs pre-2026-08-05 are CONFOUNDED: 429-as-untested + no-retry + single-gate probes. Re-run the disputed bucket (429/EMPTY/REFUSAL) before trusting any "vision lane" claim from before this date.
 
-Gap classes found & closed (the v1 census's real misses):
+Census methodology lock-in (so future sweeps don't repeat v1/v2 blind spots):
+1. 429 is NOT a verdict — it is backoff. Always retry (min 2 attempts, 3-4s backs).
+2. Capture usage.image_tokens / prompt_tokens_details — image_ingest > 0 + max_tokens raised, else reasoning-burn models classify "EMPTY" when they're vision.
+3. Gate-routing is part of the verdict: gemini-3.5 410@openrouter but works @zenmux; qwen3-vl 410@kilo but modelscope OK. Probe per (model, gate) matrix, not once per id.
+4. "image" capability hides in non-"VL" ids (qwen3.5-* family). Match on catalog declared input_modalities, not name regex.
+5. Sweep ALL router gates (/health routes), not the 9 familiar ones — v1 missed cloudflare/llm7/gemini/agnes/mistral/neuralwatt entirely.
+6. Direct-platform keys (MINIMAX_API_KEY, GROQ_API_KEY, EIGHT8AVI, etc.) exist as harness-level env but have no baseURL in pi config — they are NOT currently routable through Pi's provider model, so the register only covers router-reachable models. Wiring those is a separate harness task.
 
-- MISS #1: whole gate not swept (cloudflare, llm7, gemini, agnes, neuralwatt, mistral-ocr) — 5 new verified lanes.
-- MISS #2: `mistral-medium-latest` not in any prior catalog pull — added manually.
-- MISS #3: hosted NVIDIA NIM (integrate.api.nvidia.com) not in router sweep — direct probe 403 today (keys invalid/rotated), lane's earlier 403-able entries still true but key-dependent.
-- MISS #4: worker-path read-tool reported agnes "VISION UNAVAILABLE" (filesystem error) but bridge shows TRUE vision — worker read path ≠ model capability; bridge + read tool disagree, bridge wins for verdicts.
-- OPEN: EDITING-verified `mistral-medium-3.5` etc. sub-ids, ocr-specific endpoints, `gemini-3.5-flash` variants on llm7 (400 wrong-id — worth exact-id retry), plus 25 "EMPTY" (image accepted with real image_tokens but no text — likely max_tokens=220 saturation, e.g. agnes pattern).
-
-So: catalog-declared ~370 image models across 30 gates → **17 confirmed usable vision models right now**, up from 12 pre-gap-audit. The majority of the rest are billing walls, EOL ids, rate limits, or unimplemented shim ids — honest verdicts, no silent drops.
-
-## EXHAUSTIVE all-provider vision audit (2026-08-05 06:0x, mega-sweep)
-TestMethod(s): each (provider,vision-hint id) tried on m04 (image chat) + 2nd-shot fidelity (explicit tag list). Lanes: agnes, cloudflare, freemodel, groq, infron, kilo, logfare, mistral, modelscope, neuralwatt, novita, nvidia, opencode-zen, openprovider, openrouter, poolside, zydit(v4), zenmux.
-ACADEMY = reports are truth: ~160 pairs tried.
-VERIFIED USABLE (content read, not hollow): 
-- nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free (openrouter) — 5/5 labels (SEARCH RESULT, CLEVELAND, FOOD & HOSPITALITY, ACTIVE, WEBSITE, PHONE, Connection…) ~36-58s. NEW LANE.
-- @cf/meta/llama-4-scout-17b-16e-instruct (cloudflare) — reads labels, 1.9s, sometimes partial.
-- llama-3.2-11b/90b-vision (nvidia local + hosted) — 5/5.
-- nemotron-nano-12b-v2-vl (hosted) — 5/5. gemma-4-26b (cf) — high quality but flaky. minimax-m3 — weak.
-FAILS: gemini-3.1-flash-image/-lite/-preview, gemini-2.5-flash(+lite) — respond "Insufficient context" (refuse pixel reads) on OR/zenmux/kilo. modelscope InternVL3_5-241B, ERNIE-4.5-VL-28B, GLM-4.7-Flash, gpt-oss-20b, glm-5.2 — hollow 200 (choices:null). stepfun step-3.5-flash (zenmux/kilo) — empty. agnes — empty. novita — 403 balance / 500. infron — 403 all. opencode-zen — 401. logfare — hangs. freemodel — catalog-empty (cooldown). freeinference — EXCLUDED (charged; no funding).
-Qwen3-VL (modelscope) remains #1. omni-30b joins ladder at 4-5s/slower free tier.
+Full machine tables: tmp/vision-census-final-v2.json (best verdict per id), tmp/vision-census-evidence/*.jsonl per layer.

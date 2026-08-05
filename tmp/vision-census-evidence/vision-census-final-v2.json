@@ -1,0 +1,1647 @@
+{
+ "OpenGVLab/InternVL3_5-241B-A28B": {
+  "verdict": "EMPTY",
+  "provider": "modelscope",
+  "ms": 3719
+ },
+ "PaddlePaddle/ERNIE-4.5-VL-28B-A3B-PT": {
+  "verdict": "EMPTY",
+  "provider": "modelscope",
+  "ms": 3731
+ },
+ "@cf/google/gemma-4-26b-a4b-it": {
+  "verdict": "EMPTY",
+  "provider": "cloudflare",
+  "ms": 5976
+ },
+ "@cf/meta/llama-3.2-11b-vision-instruct": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3998
+ },
+ "@cf/meta/llama-4-scout-17b-16e-instruct": {
+  "verdict": "PIXELS_OK",
+  "provider": "cloudflare",
+  "ms": 3877
+ },
+ "MusePublic/Qwen-Image-Edit": {
+  "verdict": "NO_OUTPUT",
+  "provider": "modelscope",
+  "ms": 40085
+ },
+ "amazon/nova-2-lite-v1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2387
+ },
+ "adept/fuyu-8b": {
+  "verdict": "HTTP_404",
+  "provider": "nvidia",
+  "ms": 2444
+ },
+ "Qwen/Qwen3-VL-235B-A22B-Instruct": {
+  "verdict": "PIXELS_OK",
+  "provider": "modelscope",
+  "ms": 9977
+ },
+ "Qwen/Qwen3-VL-8B-Thinking": {
+  "verdict": "PIXELS_OK",
+  "provider": "modelscope",
+  "ms": 10658
+ },
+ "Qwen/Qwen3-VL-8B-Instruct": {
+  "verdict": "PIXELS_OK",
+  "provider": "modelscope",
+  "ms": 12291
+ },
+ "Qwen/Qwen-Image-Edit": {
+  "verdict": "NO_OUTPUT",
+  "provider": "modelscope",
+  "ms": 40015
+ },
+ "anthropic/claude-fable-5": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1413
+ },
+ "amazon/nova-micro-v1": {
+  "verdict": "HTTP_404",
+  "provider": "openrouter",
+  "ms": 1490
+ },
+ "amazon/nova-lite-v1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1568
+ },
+ "amazon/nova-premier-v1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1647
+ },
+ "anthropic/claude-3-haiku": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1618
+ },
+ "amazon/nova-pro-v1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1738
+ },
+ "anthropic/claude-opus-4.1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1921
+ },
+ "anthropic/claude-opus-4.6": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1977
+ },
+ "anthropic/claude-haiku-4.5": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2072
+ },
+ "anthropic/claude-opus-4": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2062
+ },
+ "anthropic/claude-opus-4.5": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2100
+ },
+ "anthropic/claude-opus-4.6-fast": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4987
+ },
+ "anthropic/claude-opus-4.7": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 950
+ },
+ "anthropic/claude-opus-4.7-fast": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1077
+ },
+ "anthropic/claude-opus-4.8": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1384
+ },
+ "anthropic/claude-opus-5": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1500
+ },
+ "anthropic/claude-opus-5-fast": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1559
+ },
+ "anthropic/claude-opus-4.8-fast": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1725
+ },
+ "anthropic/claude-sonnet-4.5": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1136
+ },
+ "anthropic/claude-sonnet-4": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1261
+ },
+ "anthropic/claude-sonnet-5": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1262
+ },
+ "anthropic/claude-sonnet-4.6": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1354
+ },
+ "baidu/ernie-4.5-vl-28b-a3b": {
+  "verdict": "HTTP_500",
+  "provider": "novita",
+  "ms": 2108
+ },
+ "baidu/ernie-4.5-vl-28b-a3b-thinking": {
+  "verdict": "HTTP_500",
+  "provider": "novita",
+  "ms": 2217
+ },
+ "baidu/ernie-4.5-vl-424b-a47b": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1142
+ },
+ "bytedance-seed/seed-2.0-lite": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1419
+ },
+ "bytedance-seed/seed-1.6-flash": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1504
+ },
+ "bytedance-seed/seed-2.0-mini": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1493
+ },
+ "bytedance-seed/seed-1.6": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1543
+ },
+ "baidu/ernie-5.0-thinking-preview": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3353
+ },
+ "bytedance/doubao-seed-2.0-lite": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 2802
+ },
+ "bytedance/doubao-seed-2.0-code": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3013
+ },
+ "bytedance/doubao-seed-2.0-mini": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4037
+ },
+ "bytedance/doubao-seed-2.1-pro": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4232
+ },
+ "bytedance/doubao-seed-1.8": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4364
+ },
+ "bytedance/doubao-seed-2.0-pro": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4911
+ },
+ "bytedance/doubao-seed-code": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 1469
+ },
+ "bytedance/doubao-seed-evolving": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 1653
+ },
+ "bytedance/doubao-seed-2.1-turbo": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3486
+ },
+ "bytedance/doubao-seed-character": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3629
+ },
+ "bytedance/seed-2.1-turbo": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3615
+ },
+ "bytedance/seed-2.0-code": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 7255
+ },
+ "google/deplot": {
+  "verdict": "HTTP_404",
+  "provider": "nvidia",
+  "ms": 902
+ },
+ "bytedance/ui-tars-1.5-7b": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1378
+ },
+ "deepseek/deepseek-ocr-2": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 2638
+ },
+ "google/gemini-2.5-flash": {
+  "verdict": "PIXELS_OK",
+  "provider": "openrouter",
+  "ms": 4615
+ },
+ "deepseek/deepseek-ocr": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3338
+ },
+ "gemma-4-31b": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3739
+ },
+ "google/gemini-2.5-pro-preview-05-06": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 4196
+ },
+ "google/gemini-3-flash-preview": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 4229
+ },
+ "google/gemini-2.5-pro-preview": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 4367
+ },
+ "google/gemini-2.5-flash-lite": {
+  "verdict": "PIXELS_OK",
+  "provider": "openrouter",
+  "ms": 29499
+ },
+ "google/gemini-2.5-flash-image": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 4462
+ },
+ "google/gemini-2.5-pro": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 4600
+ },
+ "google/gemini-3.1-flash-image": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 2743
+ },
+ "google/gemini-3.1-flash-lite": {
+  "verdict": "PIXELS_OK",
+  "provider": "openrouter",
+  "ms": 3839
+ },
+ "google/gemini-3.1-flash-lite-image": {
+  "verdict": "PIXELS_OK",
+  "provider": "openrouter",
+  "ms": 3788
+ },
+ "google/gemini-3-pro-image-preview": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 3417
+ },
+ "google/gemini-3.1-flash-image-preview": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 3427
+ },
+ "google/gemini-3-pro-image": {
+  "verdict": "PIXELS_OK",
+  "provider": "openrouter",
+  "ms": 4587
+ },
+ "google/gemini-3.1-pro-preview": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 2581
+ },
+ "google/gemini-3.1-flash-lite-preview": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 14311
+ },
+ "google/gemini-3.5-flash": {
+  "verdict": "PIXELS_OK",
+  "provider": "zenmux",
+  "ms": 29435
+ },
+ "google/gemini-3.5-flash-lite": {
+  "verdict": "EMPTY",
+  "provider": "zenmux",
+  "ms": 14522
+ },
+ "google/gemini-3.6-flash": {
+  "verdict": "EMPTY",
+  "provider": "kilo",
+  "ms": 16975
+ },
+ "google/gemini-3.1-pro-preview-customtools": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 2964
+ },
+ "google/gemma-4-26b-a4b-it": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1547
+ },
+ "google/gemma-3-12b-it": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1622
+ },
+ "google/gemma-3-4b-it": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1612
+ },
+ "google/gemma-3-27b-it": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1871
+ },
+ "google/gemma-4-26b-a4b": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4857
+ },
+ "google/gemma-4-26b-a4b-it:free": {
+  "verdict": "PIXELS_OK",
+  "provider": "openrouter",
+  "ms": 5855
+ },
+ "google/lyria-3-pro-preview": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1426
+ },
+ "google/gemma-4-31b-it:free": {
+  "verdict": "HTTP_429",
+  "provider": "openrouter",
+  "ms": 1982
+ },
+ "google/gemma-4-31b-it": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2008
+ },
+ "google/lyria-3-clip-preview": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2218
+ },
+ "kilo-auto/balanced": {
+  "verdict": "HTTP_402",
+  "provider": "kilo",
+  "ms": 3133
+ },
+ "gt-4p": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3365
+ },
+ "kwaipilot/kat-coder-pro-v2.5": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 1590
+ },
+ "kilo-auto/frontier": {
+  "verdict": "HTTP_402",
+  "provider": "kilo",
+  "ms": 2523
+ },
+ "kwaipilot/kat-coder-air-v2.5": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 2971
+ },
+ "kilo-auto/small": {
+  "verdict": "PIXELS_OK",
+  "provider": "kilo",
+  "ms": 3614
+ },
+ "kilo-auto/efficient": {
+  "verdict": "HTTP_402",
+  "provider": "kilo",
+  "ms": 7246
+ },
+ "meta-ai/muse-spark-1.1": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 7499
+ },
+ "meta-llama/llama-4-scout": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1564
+ },
+ "meta-llama/llama-guard-4-12b": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1766
+ },
+ "meta-llama/llama-4-maverick": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1924
+ },
+ "meta-llama/llama-4-maverick-17b-128e-instruct-fp8": {
+  "verdict": "HTTP_403",
+  "provider": "novita",
+  "ms": 2408
+ },
+ "meta-llama/llama-4-scout-17b-16e-instruct": {
+  "verdict": "HTTP_404",
+  "provider": "cloudflare",
+  "ms": 3610
+ },
+ "meta-llama/llama3-11b-vision-instruct": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4175
+ },
+ "microsoft/kosmos-2": {
+  "verdict": "HTTP_404",
+  "provider": "nvidia",
+  "ms": 1791
+ },
+ "meta/muse-spark-1.1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1925
+ },
+ "microsoft/phi-3-vision-128k-instruct": {
+  "verdict": "HTTP_404",
+  "provider": "nvidia",
+  "ms": 2042
+ },
+ "meta/llama-3.2-11b-vision-instruct": {
+  "verdict": "PIXELS_OK",
+  "provider": "nvidia",
+  "ms": 3231
+ },
+ "meta/llama-4-scout-17b-16e-instruct": {
+  "verdict": "HTTP_404",
+  "provider": "novita",
+  "ms": 1207
+ },
+ "meta/llama-3.2-90b-vision-instruct": {
+  "verdict": "PIXELS_OK",
+  "provider": "nvidia",
+  "ms": 17123
+ },
+ "mistralai/ministral-8b-2512": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1520
+ },
+ "mistralai/ministral-3b-2512": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1548
+ },
+ "mistralai/ministral-14b-2512": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1863
+ },
+ "mistralai/mistral-large-2512": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2185
+ },
+ "minimax/minimax-01": {
+  "verdict": "PIXELS_OK",
+  "provider": "openrouter",
+  "ms": 19456
+ },
+ "minimax/minimax-m3": {
+  "verdict": "PIXELS_OK",
+  "provider": "openrouter",
+  "ms": 15146
+ },
+ "mistralai/mistral-medium-3-5": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1753
+ },
+ "mistralai/mistral-small-2603": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1813
+ },
+ "mistralai/mistral-small-3.1-24b-instruct": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1853
+ },
+ "mistralai/mistral-small-3.2-24b-instruct": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1944
+ },
+ "mistralai/mistral-medium-3.1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1991
+ },
+ "mistralai/mistral-medium-3": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2120
+ },
+ "moonshotai/kimi-k2.7-code-highspeed": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3642
+ },
+ "moonshotai/kimi-k2.5": {
+  "verdict": "HTTP_404",
+  "provider": "openrouter",
+  "ms": 4439
+ },
+ "moonshotai/kimi-k2.7-code-fast": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4553
+ },
+ "moonshotai/kimi-k2.7-code": {
+  "verdict": "HTTP_404",
+  "provider": "openrouter",
+  "ms": 4806
+ },
+ "moonshotai/kimi-k3": {
+  "verdict": "HTTP_404",
+  "provider": "openrouter",
+  "ms": 5203
+ },
+ "moonshotai/kimi-k2.6": {
+  "verdict": "HTTP_404",
+  "provider": "openrouter",
+  "ms": 5318
+ },
+ "nex-agi/nex-n2-mini": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1662
+ },
+ "moonshotai/kimi-v1-32k-vision-preview": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 1733
+ },
+ "nex-agi/nex-n2-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1759
+ },
+ "moonshotai/kimi-v1-8k-vision-preview": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3477
+ },
+ "moonshotai/kimi-v1-128k-vision-preview": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3668
+ },
+ "nvidia/cosmos-reason2-8b": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3844
+ },
+ "nvidia/llama-3.2-nemoretriever-1b-vlm-embed-v1": {
+  "verdict": "HTTP_404",
+  "provider": "nvidia",
+  "ms": 1763
+ },
+ "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": {
+  "verdict": "HTTP_404",
+  "provider": "nvidia",
+  "ms": 1907
+ },
+ "nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
+  "verdict": "HTTP_404",
+  "provider": "nvidia",
+  "ms": 2015
+ },
+ "nvidia/llama-nemotron-embed-vl-1b-v2": {
+  "verdict": "HTTP_404",
+  "provider": "nvidia",
+  "ms": 2077
+ },
+ "nvidia/nemotron-3.5-content-safety:free": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 3573
+ },
+ "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
+  "verdict": "PIXELS_OK",
+  "provider": "openrouter",
+  "ms": 21141
+ },
+ "openai/gpt-4.1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1872
+ },
+ "openai/gpt-4-turbo": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1933
+ },
+ "nvidia/nemotron-nano-12b-v2-vl": {
+  "verdict": "HTTP_404",
+  "provider": "nvidia",
+  "ms": 2001
+ },
+ "openai/gpt-4": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 5030
+ },
+ "openai/chat-latest": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 6096
+ },
+ "nvidia/nemotron-nano-12b-v2-vl:free": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 60017
+ },
+ "openai/gpt-4.1-nano": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2905
+ },
+ "openai/gpt-4o-2024-05-13": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2898
+ },
+ "openai/gpt-4o-2024-11-20": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2926
+ },
+ "openai/gpt-4o-2024-08-06": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 3073
+ },
+ "openai/gpt-4.1-mini": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 3221
+ },
+ "openai/gpt-4o": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 3251
+ },
+ "openai/gpt-5-image": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1688
+ },
+ "openai/gpt-4o-mini-2024-07-18": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1856
+ },
+ "openai/gpt-4o-mini": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2052
+ },
+ "openai/gpt-5": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2138
+ },
+ "openai/gpt-5-codex": {
+  "verdict": "HTTP_402",
+  "provider": "zenmux",
+  "ms": 4566
+ },
+ "openai/gpt-5-chat": {
+  "verdict": "HTTP_402",
+  "provider": "zenmux",
+  "ms": 7348
+ },
+ "openai/gpt-5-image-mini": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1854
+ },
+ "openai/gpt-5-nano": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2024
+ },
+ "openai/gpt-5-mini": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2054
+ },
+ "openai/gpt-5.1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2216
+ },
+ "openai/gpt-5-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2291
+ },
+ "openai/gpt-5.1-chat": {
+  "verdict": "HTTP_402",
+  "provider": "zenmux",
+  "ms": 3805
+ },
+ "openai/gpt-5.1-codex-max": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 984
+ },
+ "openai/gpt-5.1-codex-mini": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1308
+ },
+ "openai/gpt-5.2": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1343
+ },
+ "openai/gpt-5.2-codex": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1763
+ },
+ "openai/gpt-5.1-codex": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1857
+ },
+ "openai/gpt-5.2-chat": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1869
+ },
+ "openai/gpt-5.2-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 955
+ },
+ "openai/gpt-5.4-mini": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1248
+ },
+ "openai/gpt-5.3-codex": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1313
+ },
+ "openai/gpt-5.4": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1342
+ },
+ "openai/gpt-5.3-chat": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1583
+ },
+ "openai/gpt-5.4-image-2": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1572
+ },
+ "openai/gpt-5.5": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1345
+ },
+ "openai/gpt-5.5-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1409
+ },
+ "openai/gpt-5.6-luna-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1419
+ },
+ "openai/gpt-5.4-nano": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1536
+ },
+ "openai/gpt-5.6-luna": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1641
+ },
+ "openai/gpt-5.4-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1754
+ },
+ "openai/gpt-5.6-sol-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1198
+ },
+ "openai/gpt-5.6-sol": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1402
+ },
+ "openai/gpt-5.6-terra-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1374
+ },
+ "openai/gpt-chat-latest": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1519
+ },
+ "openai/gpt-5.6-terra": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1600
+ },
+ "openai/gpt-image-1.5": {
+  "verdict": "HTTP_404",
+  "provider": "zenmux",
+  "ms": 1980
+ },
+ "openai/o3": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 939
+ },
+ "openai/o1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1257
+ },
+ "openai/o1-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1255
+ },
+ "openai/gpt-image-2": {
+  "verdict": "HTTP_404",
+  "provider": "zenmux",
+  "ms": 1455
+ },
+ "openai/gpt-oss-120b": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4205
+ },
+ "openai/gpt-oss-20b": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 5650
+ },
+ "openai/o4-mini": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1430
+ },
+ "openai/o3-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1596
+ },
+ "openrouter/free": {
+  "verdict": "PIXELS_OK",
+  "provider": "kilo",
+  "ms": 9526
+ },
+ "openai/o4-mini-high": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1865
+ },
+ "openrouter/auto-beta": {
+  "verdict": "HTTP_404",
+  "provider": "openrouter",
+  "ms": 1950
+ },
+ "openrouter/auto": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2130
+ },
+ "perplexity/sonar": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1984
+ },
+ "perceptron/perceptron-mk1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2125
+ },
+ "perplexity/sonar-reasoning-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2154
+ },
+ "perplexity/sonar-pro-search": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2167
+ },
+ "perplexity/sonar-pro": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2220
+ },
+ "paddlepaddle/paddleocr-vl": {
+  "verdict": "HTTP_403",
+  "provider": "novita",
+  "ms": 3208
+ },
+ "qwen/qwen3-vl-235b-a22b-instruct": {
+  "verdict": "PIXELS_OK",
+  "provider": "modelscope",
+  "ms": 7009
+ },
+ "qwen/qwen2.5-vl-72b-instruct": {
+  "verdict": "HTTP_500",
+  "provider": "novita",
+  "ms": 1986
+ },
+ "qwen/qwen3-omni-30b-a3b-instruct": {
+  "verdict": "HTTP_403",
+  "provider": "novita",
+  "ms": 2678
+ },
+ "qwen/qwen-2-vl-72b-instruct": {
+  "verdict": "HTTP_500",
+  "provider": "novita",
+  "ms": 2718
+ },
+ "qwen/qwen3-vl-235b-a22b-thinking": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 2669
+ },
+ "qwen/qwen3-omni-30b-a3b-thinking": {
+  "verdict": "HTTP_403",
+  "provider": "novita",
+  "ms": 3120
+ },
+ "qwen/qwen3-vl-30b-a3b-instruct": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 1057
+ },
+ "qwen/qwen3-vl-8b-instruct": {
+  "verdict": "PIXELS_OK",
+  "provider": "modelscope",
+  "ms": 23125
+ },
+ "qwen/qwen3-vl-8b-thinking": {
+  "verdict": "PIXELS_OK",
+  "provider": "modelscope",
+  "ms": 8417
+ },
+ "qwen/qwen3-vl-32b-instruct": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 2555
+ },
+ "qwen/qwen3-vl-30b-a3b-thinking": {
+  "verdict": "HTTP_500",
+  "provider": "novita",
+  "ms": 2065
+ },
+ "qwen/qwen3-vl-embedding": {
+  "verdict": "HTTP_404",
+  "provider": "zenmux",
+  "ms": 3052
+ },
+ "qwen/qwen3.5-397b-a17b": {
+  "verdict": "EMPTY",
+  "provider": "modelscope",
+  "ms": 4138
+ },
+ "qwen/qwen3.5-122b-a10b": {
+  "verdict": "PIXELS_OK",
+  "provider": "modelscope",
+  "ms": 8918
+ },
+ "qwen/qwen3.5-35b-a3b": {
+  "verdict": "PIXELS_OK",
+  "provider": "modelscope",
+  "ms": 10654
+ },
+ "qwen/qwen3.5-27b": {
+  "verdict": "PIXELS_OK",
+  "provider": "modelscope",
+  "ms": 10991
+ },
+ "qwen/qwen3-vl-flash": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3972
+ },
+ "qwen/qwen3-vl-plus": {
+  "verdict": "HTTP_410",
+  "provider": "zenmux",
+  "ms": 4121
+ },
+ "qwen/qwen3.5-plus-20260420": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 1703
+ },
+ "qwen/qwen3.5-9b": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 1818
+ },
+ "qwen/qwen3.5-flash-02-23": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 1962
+ },
+ "qwen/qwen3.5-plus-02-15": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 2320
+ },
+ "qwen/qwen3.5-plus": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4301
+ },
+ "qwen/qwen3.5-flash": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 6189
+ },
+ "qwen/qwen3.6-35b-a3b": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 2365
+ },
+ "qwen/qwen3.6-plus": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 2379
+ },
+ "qwen/qwen3.6-flash": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 2639
+ },
+ "qwen/qwen3.7-flash": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 2708
+ },
+ "qwen/qwen3.6-27b": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 2937
+ },
+ "qwen/qwen3.6-plus:free": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3520
+ },
+ "sakana/fugu-ultra": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1898
+ },
+ "rekaai/reka-edge": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2233
+ },
+ "qwen/qwen3.7-plus": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 2421
+ },
+ "qwen/qwen3.8-max": {
+  "verdict": "HTTP_410",
+  "provider": "openrouter",
+  "ms": 2868
+ },
+ "sapiens-ai/agnes-2.0-flash:free": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3769
+ },
+ "sapiens-ai/agnes-2.0-flash": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 7907
+ },
+ "stealth/claude-opus-4.8": {
+  "verdict": "HTTP_404",
+  "provider": "zenmux",
+  "ms": 1742
+ },
+ "stealth/claude-opus-4.6": {
+  "verdict": "HTTP_404",
+  "provider": "zenmux",
+  "ms": 1393
+ },
+ "stealth/gpt-5.6-sol": {
+  "verdict": "HTTP_404",
+  "provider": "zenmux",
+  "ms": 1840
+ },
+ "stealth/claude-opus-4.7": {
+  "verdict": "HTTP_404",
+  "provider": "zenmux",
+  "ms": 1627
+ },
+ "stealth/claude-sonnet-4.6": {
+  "verdict": "HTTP_404",
+  "provider": "zenmux",
+  "ms": 1913
+ },
+ "stealth/qwen3.6-plus": {
+  "verdict": "HTTP_410",
+  "provider": "kilo",
+  "ms": 6479
+ },
+ "thinkingmachines/inkling": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1522
+ },
+ "thinkingmachines/inkling-small": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1718
+ },
+ "x-ai/grok-4.2-fast": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3414
+ },
+ "x-ai/grok-4.2-fast-non-reasoning": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 6201
+ },
+ "stepfun/step-3.7-flash": {
+  "verdict": "PIXELS_OK",
+  "provider": "openrouter",
+  "ms": 6308
+ },
+ "stepfun/step-3.7-flash:free": {
+  "verdict": "EMPTY",
+  "provider": "kilo",
+  "ms": 7394
+ },
+ "x-ai/grok-4.3": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2373
+ },
+ "x-ai/grok-4.20": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2438
+ },
+ "x-ai/grok-build-0.1": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2432
+ },
+ "xiaomi/mimo-v2.5": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2603
+ },
+ "x-ai/grok-4.20-multi-agent": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2734
+ },
+ "x-ai/grok-4.5": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2858
+ },
+ "xiaomimimo/mimo-v2.5": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4509
+ },
+ "z-ai/glm-4.6v-flash-free": {
+  "verdict": "TEXT_EMPTY",
+  "provider": "zenmux",
+  "ms": 9635
+ },
+ "z-ai/glm-4.6v": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 24416
+ },
+ "z-ai/glm-4.5v": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 25086
+ },
+ "z-ai/glm-5v-turbo": {
+  "verdict": "EMPTY",
+  "provider": "openrouter",
+  "ms": 25574
+ },
+ "z-ai/glm-4.6v-flash": {
+  "verdict": "EMPTY",
+  "provider": "zenmux",
+  "ms": 29371
+ },
+ "~anthropic/claude-haiku-latest": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2003
+ },
+ "~anthropic/claude-fable-latest": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2032
+ },
+ "zai-org/glm-4.6v": {
+  "verdict": "HTTP_404",
+  "provider": "zenmux",
+  "ms": 2764
+ },
+ "zai-org/autoglm-phone-9b-multilingual": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 3584
+ },
+ "zai-org/glm-5v-turbo": {
+  "verdict": "HTTP_404",
+  "provider": "zenmux",
+  "ms": 2704
+ },
+ "zai-org/glm-4.5v": {
+  "verdict": "HTTP_400",
+  "provider": "modelscope",
+  "ms": 4751
+ },
+ "~anthropic/claude-sonnet-latest": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1578
+ },
+ "~openai/gpt-latest": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1962
+ },
+ "~anthropic/claude-opus-latest": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 2038
+ },
+ "~moonshotai/kimi-latest": {
+  "verdict": "HTTP_404",
+  "provider": "openrouter",
+  "ms": 6980
+ },
+ "~google/gemini-pro-latest": {
+  "verdict": "HTTP_400",
+  "provider": "openrouter",
+  "ms": 18334
+ },
+ "~google/gemini-flash-latest": {
+  "verdict": "HTTP_400",
+  "provider": "openrouter",
+  "ms": 18388
+ },
+ "~openai/gpt-mini-latest": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1231
+ },
+ "~x-ai/grok-latest": {
+  "verdict": "HTTP_402",
+  "provider": "openrouter",
+  "ms": 1479
+ },
+ "@cf/moonshotai/kimi-k2.6": {
+  "verdict": "HTTP_404",
+  "provider": "novita",
+  "ms": 1583
+ },
+ "@cf/openai/gpt-oss-120b": {
+  "verdict": "HTTP_400",
+  "provider": "cloudflare",
+  "ms": 1777
+ },
+ "@cf/openai/gpt-oss-20b": {
+  "verdict": "HTTP_400",
+  "provider": "cloudflare",
+  "ms": 1817
+ },
+ "@cf/zai-org/glm-4.7-flash": {
+  "verdict": "HTTP_400",
+  "provider": "cloudflare",
+  "ms": 3552
+ },
+ "@cf/nvidia/nemotron-3-120b-a12b": {
+  "verdict": "HTTP_400",
+  "provider": "cloudflare",
+  "ms": 3367
+ },
+ "@cf/mistralai/mistral-small-3.1-24b-instruct": {
+  "verdict": "PIXELS_OK",
+  "provider": "cloudflare",
+  "ms": 2820
+ },
+ "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+  "verdict": "HTTP_400",
+  "provider": "cloudflare",
+  "ms": 1739
+ },
+ "@cf/qwen/qwen3-30b-a3b-fp8": {
+  "verdict": "HTTP_400",
+  "provider": "cloudflare",
+  "ms": 1911
+ },
+ "@cf/qwen/qwq-32b": {
+  "verdict": "HTTP_400",
+  "provider": "cloudflare",
+  "ms": 1936
+ },
+ "@cf/qwen/qwen2.5-coder-32b-instruct": {
+  "verdict": "HTTP_400",
+  "provider": "cloudflare",
+  "ms": 1845
+ },
+ "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": {
+  "verdict": "HTTP_400",
+  "provider": "cloudflare",
+  "ms": 1494
+ },
+ "@cf/ibm-granite/granite-4.0-h-micro": {
+  "verdict": "HTTP_400",
+  "provider": "cloudflare",
+  "ms": 1626
+ },
+ "@cf/aisingapore/gemma-sea-lion-v4-27b-it": {
+  "verdict": "HTTP_400",
+  "provider": "cloudflare",
+  "ms": 1856
+ },
+ "mistral/pixtral-large-2509": {
+  "verdict": "HTTP_400",
+  "provider": "mistral",
+  "ms": 2005
+ },
+ "mistral/mistral-medium-latest": {
+  "verdict": "HTTP_400",
+  "provider": "mistral",
+  "ms": 2083
+ },
+ "mistral/pixtral-12b-2409": {
+  "verdict": "HTTP_400",
+  "provider": "mistral",
+  "ms": 2214
+ },
+ "Inkling": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2518
+ },
+ "Inkling-Small": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2597
+ },
+ "claude-opus-4-8": {
+  "verdict": "HTTP_402",
+  "provider": "llm7",
+  "ms": 2243
+ },
+ "XiaomiMiMo/MiMo-V2.5": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2339
+ },
+ "claude-fable-5": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2965
+ },
+ "claude-sonnet-5": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2918
+ },
+ "XiaomiMiMo/MiMo-V2.5-Pro": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 3224
+ },
+ "claude-opus-5": {
+  "verdict": "HTTP_402",
+  "provider": "llm7",
+  "ms": 3198
+ },
+ "gemini-omni-flash": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2214
+ },
+ "gpt-5.4": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2309
+ },
+ "gemini-3.5-flash-low": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2400
+ },
+ "gpt-5.5": {
+  "verdict": "HTTP_402",
+  "provider": "llm7",
+  "ms": 2931
+ },
+ "gpt-5.6-sol": {
+  "verdict": "HTTP_402",
+  "provider": "llm7",
+  "ms": 3113
+ },
+ "gemini-3.1-flash-lite": {
+  "verdict": "PIXELS_OK",
+  "provider": "llm7",
+  "ms": 4137
+ },
+ "minimax-m2.7": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 1963
+ },
+ "mistral-Small-24B-Instruct-2501": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2064
+ },
+ "grok-4.5": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2203
+ },
+ "kimi-k3": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2305
+ },
+ "gpt-5.6-terra": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2365
+ },
+ "kimi-k2.7-code": {
+  "verdict": "HTTP_400",
+  "provider": "llm7",
+  "ms": 2412
+ },
+ "mistral-ocr-2512": {
+  "verdict": "HTTP_400",
+  "provider": "mistral",
+  "ms": 2336
+ },
+ "mistral-ocr-4-0": {
+  "verdict": "HTTP_400",
+  "provider": "mistral",
+  "ms": 2439
+ },
+ "mistral-ocr-3-0": {
+  "verdict": "HTTP_400",
+  "provider": "mistral",
+  "ms": 2688
+ },
+ "mistral-ocr-3": {
+  "verdict": "HTTP_400",
+  "provider": "mistral",
+  "ms": 2801
+ },
+ "mistral-ocr-4-1": {
+  "verdict": "HTTP_400",
+  "provider": "mistral",
+  "ms": 2083
+ },
+ "mistral-ocr-4": {
+  "verdict": "HTTP_400",
+  "provider": "mistral",
+  "ms": 2578
+ },
+ "mistral-medium-latest": {
+  "verdict": "PIXELS_OK",
+  "provider": "mistral",
+  "ms": 2860
+ },
+ "mistral-ocr-latest": {
+  "verdict": "HTTP_400",
+  "provider": "mistral",
+  "ms": 3077
+ },
+ "voxtral-mini-2602": {
+  "verdict": "HTTP_400",
+  "provider": "mistral",
+  "ms": 2003
+ },
+ "qwen3.6-35b": {
+  "verdict": "HTTP_410",
+  "provider": "neuralwatt",
+  "ms": 3281
+ },
+ "glm-5.2": {
+  "verdict": "HTTP_429",
+  "provider": "neuralwatt",
+  "ms": 21528
+ },
+ "glm-5.2-fast": {
+  "verdict": "HTTP_429",
+  "provider": "neuralwatt",
+  "ms": 23953
+ },
+ "agnes-2.5-flash": {
+  "verdict": "PIXELS_OK",
+  "provider": "agnes",
+  "ms": 36838
+ },
+ "agnes-2.0-flash": {
+  "verdict": "PIXELS_OK",
+  "provider": "agnes",
+  "ms": 10392
+ },
+ "agnes-2.5-pro": {
+  "verdict": "PIXELS_OK",
+  "provider": "agnes",
+  "ms": 38475
+ }
+}
