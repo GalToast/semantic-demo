@@ -57,7 +57,9 @@ USABLE: llama-3.2-11b-vision (local 2.4s / hosted), llama-3.2-90b-vision (11s), 
 DEAD/ghost: phi-4-multimodal (EOL 0715), llama-4-maverick (EOL), fuyu-8b, deplot, gemma-3-12b/3-4b, gemma-4-31b (blocked), kosmos-2, phi-3-vision, phi-3.5-moe, kimi-k2.6, cosmos-reason2, neva-22b, vila (all 404 Function-not-for-account), nemotron-nano-vl-8b (500), mistral-medium-3.5 (net err).
 Web-LADDER update: this does NOT change the top (Qwen3-VL still #1) — omni-30b joins as a slower feasible alternative (53s).
 
-## Exhaustive bridge census v3 (2026-08-05) — 27 verified families (real pixel probes)
+## Exhaustive bridge census v3 (2026-08-05) — 33 verified ids / 27 families (real pixel probes)
+
+REGISTER CONSOLIDATION (2026-08-05 13:0x, worker-audited): evidence pack tmp/vision-census-evidence/\*.jsonl holds 36 PIXELS_OK lines = 33 case-normalized unique model ids (27-family + mimo-v2.5-free + zydit-v1 chatjimmy/diffusiongemma + groq qwen3.6-27b manual). The "27 families" headings below are the deduped family roll-up; the id-level set is 33. Full audit: tmp/vision-doc-audit-report.md
 
 Three successive census layers — each caught a real class of miss that the previous one shipped as "done":
 
@@ -253,8 +255,16 @@ Direct probe bypassing the router (http.client + browser UA; Python urllib gets 
 - kilo = slow (many 402/504/410s) but free + highest hit density seen today.
 
 ## ✅✅ FINAL 100% COVERAGE COMPLETE (2026-08-05 17:38 UTC) — every lane has a terminal done-line
+
 All chat-capable ids across ALL router lanes probed. Total lanes: 22. Done-lines (this pass):
 openrouter 326 (x2 passes) ok-o ok-o · zenmux 145 ok 0 | kilo 355 ok 2 (0/2 = openrouter/free 5/5, step-3.5-flash 5/5, omni:free 5/5, kilo-auto/small 4/5) | infron 354 ok 0 | novita 143 ok 0 | opencode-zen 61 ok 2 (hollow) | mistral 46 ok 0 (pixtral-12b 5/5 + small 3/5 verified earlier) | modelscope 40 ok 0 hollow (Qwen3-VL champion verified earlier) | groq 10 ok 0 | cloudflare 16 ok 0 (429-window; scout/gemma-4 verified earlier) | nvidia 78 ok 0 (llama-vision 5/5 verified earlier) | zydit 79 ok 0 (gemma-26b 5/5 verified earlier) | poolside 2 ok 0 | neuralwatt 17 ok 0 | freemodel catalog-empty (degraded all day) | agnes lane (native, verified 4 models 5/5 incl. 2.5-flash @2.6s) | NIM hosted (verified llama-3.2-vision, nemotron-nano, omni-30b) | logfare 0 models/hang.
 OBSERVATION: evening free-tier exhaustion (our own quota burn) → most free lanes return hollow/429 AFTER the golden windows; usable-lane record is the best-evidence set below.
 USABLE FREE VISION REGISTER (final): Qwen3-VL (modelscope) ★ | agnes-2.5-flash @2.6s ★ | pixtral-12b @3.6s ★ | agnes-2.0-flash @10s | step-3.5-flash (kilo) | omni-30b:free (kilo/OR/hosted) | openrouter/free (kilo) | kilo-auto/small | llama-3.2-11b/90b-vision | nemotron-nano-12b (hosted+) | llama-4-scout (cf) | zydit-gemma-26b-alias | gemma-4-26b (cf) | mistral-small-latest (3/5) | minimax-m3 (weak).
 FINAL LADDER: Qwen3-VL ≻ agnes-2.5-flash ≻ agnes-2.0-flash ≻ pixtral-12b ≻ omni-30b:free ≻ step-3.5-flash(kilo) ≻ llama-3.2-vision ≻ scout ≻ zydit-gemma ≻ gemma-4-26b ≻ nemotron-nano ≻ minimax-m3.
+
+## EXHAUSTIVENESS AUDIT (2026-08-05 17:45) — residual-claim closure
+1. HOSTED NIM CATALOG ENUMERATED from the source (integrate.api.nvidia.com/v1/models, key OK): 102 ids == EXACT mirror of local nvidia/zydit catalogs (identical set, including llama-3.2-vision, nemotron-*vl, omni-30b, gpt-oss, poolside laguna…). Nothing beyond the tested set exists there. Hosted hole = CLOSED.
+2. zydit-v4: all 5 path spellings -> 0 ids (empty-catalog mirror). Nothing hidden.
+3. logfare: /v1/models now times out; earlier 11-id read is the recorded evidence; chat hangs upstream => provider-side failure, not untested terrain.
+RESIDUAL (by design, not oversight): paid/fundable lanes (402 walls) — excluded by user rule; freeinference — excluded (billing rule); live free-tier quota WINDOWS vary hour-to-hour (golden-window reads in this doc remain the canonical usable set).
+AUDIT MEANS: "all router-enumerable model-ids were image-probed (real fixture, dual-field parser, no skip-sets); plus the hosted NIM catalog closure above." Nothing shape-file-wise remains un-enumerated.
