@@ -130,6 +130,7 @@
         "test:visual:update": "UPDATE_SNAPSHOTS=true npx playwright test tests/integration/visual-state-snapshots.spec.js --browser=chromium --timeout=60000",
         "test:a11y": "playwright test tests/integration/a11y-baseline.spec.js --browser=chromium",
         "test:e2e:click-flow": "npx playwright test tests/e2e-click-flow.spec.js --browser=chromium --headed",
+        "test:live:e2e": "TEST_BASE_URL=http://127.0.0.1:8797 npx playwright test tests/e2e-click-flow.spec.js --browser=chromium",
         "test:svelte-migration": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/verify-svelte-migration.mjs",
         "test:microdemo": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/micro-demo-verify.js",
         "test:microdemo:server": "npx playwright test tests/micro-demo.spec.js --browser=chromium --headed",

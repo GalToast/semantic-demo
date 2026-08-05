@@ -12,9 +12,15 @@ import { fileURLToPath } from 'node:url'
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const ROOT = resolve(__dirname, '..')
 
-process.env.VITE_API_BASE_URL = 'http://127.0.0.1:8795'
+// The API origin the browser should talk to. Defaults to the local static
+// stand-in for backward compat (a NODE server — /api.php there is served as
+// raw text, never executed). When a REAL PHP executor is up, start with
+// PHP_API_URL. E.g. php -S 127.0.0.1:8799 -t . + PHP_API_URL=http://127.0.0.1:8799.
+// (See tmp/test-topology-audit-2026-08-04 for the full topology census.)
+const API_HOST = process.env.PHP_API_URL || process.env.VITE_API_BASE_URL || 'http://127.0.0.1:8795'
+process.env.VITE_API_BASE_URL = API_HOST
 
-console.log('[playwright-web-server] VITE_API_BASE_URL=http://127.0.0.1:8795')
+console.log(`[playwright-web-server] VITE_API_BASE_URL=${API_HOST}`)
 console.log('[playwright-web-server] Running npm run build...')
 execSync('npm run build', { cwd: ROOT, stdio: 'inherit' })
 
