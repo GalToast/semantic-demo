@@ -269,3 +269,10 @@ FINAL LADDER: Qwen3-VL ≻ agnes-2.5-flash ≻ agnes-2.0-flash ≻ pixtral-12b �
 3. logfare: /v1/models now times out; earlier 11-id read is the recorded evidence; chat hangs upstream => provider-side failure, not untested terrain.
    RESIDUAL (by design, not oversight): paid/fundable lanes (402 walls) — excluded by user rule; freeinference — excluded (billing rule); live free-tier quota WINDOWS vary hour-to-hour (golden-window reads in this doc remain the canonical usable set).
    AUDIT MEANS: "all router-enumerable model-ids were image-probed (real fixture, dual-field parser, no skip-sets); plus the hosted NIM catalog closure above." Nothing shape-file-wise remains un-enumerated.
+
+## MISTRAL GATE = major undiscovered vision surface (2026-08-05 13:3x)
+The never-probed pi-tail local sweep (118 router-hosted ids) found **32 NEW PIXELS_OK**, dominated by the MISTRAL family (28 models @mistral) + GLM-5.2 trio @nvidia/@neuralwatt + agnes-2.5-pro-alpha @agnes.
+- Spot-verified with full content (10/10): mistral-medium(2505/2508/2604/3-5/3/3.5/base), open-mistral-nemo(-2407), ministral-8b/3b, magistral-small, mistral-large-2512, mistral-tiny, mistral-small-2506, mistral-vibe-cli-fast — ALL read "Angel Fire Coffee / Cleveland / Food & Hospitality / Coffee shop" (real pixel reads).
+- The mistral API accepts image input on essentially the whole chat family (previously we had only tested mistral-medium-latest via one gateway).
+- REGISTER NOW: **68 unique case-normalized verified ids** (evidence pack tmp/vision-census-evidence/*.jsonl, incl. pi-tail-local.jsonl).
+- Second-method note: runner JSONL had empty detail; an 8-model spot-verify with captured content confirmed the family — the discipline caught nothing wrong, but reviewer should know batch-confidence is high.

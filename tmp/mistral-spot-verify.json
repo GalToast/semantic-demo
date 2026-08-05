@@ -1,0 +1,52 @@
+[
+ {
+  "model": "mistral-medium-2505",
+  "verdict": "PIXELS_OK",
+  "detail": "2. Food & Hospitality"
+ },
+ {
+  "model": "open-mistral-nemo",
+  "verdict": "PIXELS_OK",
+  "detail": "2. Cleveland (which appears to be a location tag)"
+ },
+ {
+  "model": "ministral-8b-2512",
+  "verdict": "PIXELS_OK",
+  "detail": "2. Cleveland (likely referring to the location or a specific branch in Cleveland)"
+ },
+ {
+  "model": "magistral-small-latest",
+  "verdict": "PIXELS_OK",
+  "detail": "Angel Fire Coffee , Coffee shop."
+ },
+ {
+  "model": "mistral-large-2512",
+  "verdict": "PIXELS_OK",
+  "detail": "2. Cleveland"
+ },
+ {
+  "model": "mistral-tiny-2407",
+  "verdict": "PIXELS_OK",
+  "detail": "The two tags (or categories) listed"
+ },
+ {
+  "model": "mistral-small-2506",
+  "verdict": "PIXELS_OK",
+  "detail": "Angel Fire Coffee , Coffee shop."
+ },
+ {
+  "model": "mistral-vibe-cli-fast",
+  "verdict": "PIXELS_OK",
+  "detail": "Angel Fire Coffee - Coffee shop."
+ },
+ {
+  "model": "mistral-medium-2604",
+  "verdict": "PIXELS_OK",
+  "detail": "The business name is \"Angel Fire Coffee,\" and two tags associated with it are \"Coffee shop"
+ },
+ {
+  "model": "mistral-medium-2508",
+  "verdict": "PIXELS_OK",
+  "detail": "2. Food & Hospitality"
+ }
+]
