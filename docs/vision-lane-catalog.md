@@ -178,7 +178,16 @@ VERIFIED NOW (4/5 of agnes family, all 5/5 recall on m04):
   Re-tested non-agnes lanes with fixed parser — unchanged: step-3.5-flash 0/5 (hollow), GLM-4.7-Flash 0/5, minimax-m3 504 today, gpt-oss-20b 400 today, @cf gemma-4-26b 429 (rate; earlier read OK in-sweep → still good, watch reasoning_content next verify).
 
 ## Never-probed tail: first-pass results (2026-08-05 10:5x)
+
 - NEW VERIFIED: mimo-v2.5-free @opencode-zen (opencode gate that earlier /v1/models sweep 403s — probing bypassed it)
 - quick batch (33 router-backed never-probed): 1 OK, 16x HTTP_429 (openprovider/logfare/opencode cooldowns — NOT verdicts), 5x 502 (upstream), 5x 400, 2x 401, 4 NO_OUTPUT
 - zydit-v1 122-model tail launch: background patient runner (vision-tail-runner.mjs, retries 429 x4 backoff, image-token classifier, resume-capable). zydit-v4 122-model + pi-direct 729 remain.
 - METHOD ADDENDUM: gate 403/404 on /v1/models is NOT a dead gate — it is usually auth-cooldown (keys rotate seconds-to-minutes) or key-scoped. Gate probe (chat) bypasses the models endpoint; sweep both.
+
+## ROUND-6 (2026-08-05 15:5x) — regex-class misses + freemodel retry
+- mistral/pixtral-12b    5/5 @ 3.6s  — UNPROBED until now (name never matched any hint regex — pixtral class = the "so much more" the user flagged). NEW TOP LANE.
+- mistral/mistral-small-latest  3/5 @ 2.6s (partial reads fine).
+- mistral/mistral-nemo-latest 400 (no vision).
+- freemodel retried after cooldown: gpt-5.6-terra 503, gpt-5.6-sol 401, gpt-5.4-mini 429, gpt-5.6-terra-vision 429 — STILL degraded (mixed), not usable today; refresh spares expected eventually.
+- zydit-residual (gpt-oss-20b/120b, glm-5.2, laguna, yi-large…) — no new usable (200s but wrong/hollow content).
+- v-final2.mjs = now running visible full-sweep (no KNOWN-skip; fixed parser (content+reasoning_content); prints every 200-with-content). Openrouter+all chat lanes; result HITs get appended here when done.
