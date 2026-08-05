@@ -43,6 +43,10 @@ Before starting multi-commit work that will touch files another Pi/Codex/subagen
 - Lightly poll long-running workers (~every 2-3 min) when live steering is available — give them runway, don't micro-manage.
 - **Steering a live worker:** `external_subagent_steer({ worker_id, prompt_text })` — the message goes in `prompt_text`; `message`/`session_id` are NOT steer params. True live input requires `live_steer=true` (verify `steerable: true`); otherwise steer returns `delegate_to_followup`. Steer only for mid-flight nudges — relaunch when a worker is mis-launched with zero progress.
 - Do not assume workers inherit browser/MCP tools. Have workers report exposed tools before artifact-producing work that depends on them.
+- **Rubric-first prompts (Kimi K2 pipeline):** spell out success criteria + scoring rubric BEFORE execution in every worker prompt — not as an afterthought. Rubric-first task design also prevents reward hacking: prefer tasks that are **hard to solve, easy to verify** (execution-passed tests over LLM-judged rubrics) — Qwen3-Coder agentic-RL principle.
+- **Skills are default-shapers, not constraints (measured 2026-08-05):** skill bodies may not be injected into worker sessions (loader gaps, frontmatter failures, availability subsets). When a behavior is mandatory, embed it in the prompt itself; skills only nudge defaults (verified via 2 A/B rounds, `docs/subagent-model-benchmarks.md`).
+- **Long-running work needs a session-state artifact protocol (Anthropic harness blog + Kimi K2.6):** for multi-session delegated work, an initializer writes a progress artifact + structured feature list (pass/fail per item); every session starts with a smoke test before new work; commit at session end with progress notes. Zero-cost fix for the agent-forgets-what-it-did failure mode.
+- **Track durability on long runs (K2.6 benchmark: 4,000+ tool calls / 12+ h):** for long-horizon workers, log tool-call counts + context utilization — survival ≠ intelligence; a worker that stayed coherent across 50+ tool calls is a stronger signal than a single task pass.
 
 **Delegation rules:** full lifecycle, rate/polish, parallel divide-and-conquer, visual verification, and vision capability matrix: `docs/subagent-delegation.md`. **Lane inventory:** per-model viability + route strings: `docs/subagent-lane-inventory.md`. Critical: `kilo/openrouter/owl-alpha` is dead — do not re-add.
 
@@ -85,6 +89,7 @@ Core: `npm run build` · `lint` · `test:unit` · `qa:contract`. Full script lis
 
 ## Pi Harness Notes
 
+- **Skills silently fail to load when frontmatter YAML breaks** (inner double quotes, single-line frontmatter, embedded structured fields — loader drops them with only a console warning). After creating/editing a SKILL.md, verify it loads: `node --input-type=module -e "import {loadSkills} from 'file:///<pi>/dist/core/skills.js'; ..."` (see `skill-authoring` skill).
 - `memory_write` is broken at the gateway layer until `~/.pi/agent/extensions/pi-hermes-memory-writer.ts` is loaded. If `pi_tool memory_write → Tool not found`, run `/reload-runtime` or restart once. See `~/.pi/agent/patches/pi-hermes-memory-writer.md`.
 - **Constantly improve** the Pi harness, key-router, environment, skills, system prompts, memory stores, and tools — when friction presents OR when an observation warrants it (not a per-turn mandate). Capture coding gains as skills + repo docs; route user-preference / life-side gains to `pi_tool memory_write target:"user"`. Long-term compound goal: an amazing coding AND life assistant.
 - Keep reusable Pi harness rules in global Pi docs/skills, not in this repo file unless repo-specific.
