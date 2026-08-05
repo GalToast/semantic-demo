@@ -4,43 +4,70 @@ Every session loads only skill **name + description**; bodies load on demand whe
 
 ## Global — Design / UI / UX (harness-wide)
 
-| Skill                                  | Trigger (description keywords)                                                             | Source                                                    |
-| -------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| `frontend-design`                      | distinctive/non-templated visual design, anti-AI-slop, palette/typography/layout decisions | Anthropic official + impeccable ⭐ NEW                    |
-| `ui-animation`                         | animation/transition/motion design, prefers-reduced-motion, transform/opacity              | mblode + Anthropic ⭐ NEW                                 |
-| `web-quality-audit`                    | pre-delivery audit, Core Web Vitals, WCAG 2.1/2.2, Lighthouse targets, bounded verify loop | addyosmani + web-design-reviewer + ui-ux-pro-max ⭐ NEW   |
-| `threejs-webgl-practices`              | Three.js/WebGL loops, clips, culling, LOD, testing                                         | cloudai-x/threejs + playwright ⭐ NEW                     |
-| `canvas-webgl-a11y`                    | canvas/WebGL accessibility: off-DOM data table, keyboard parallel DOM, role=img, reduced-motion scene | a11y-perf-viz research ⭐ NEW                            |
-| `css-architecture`                     | @layer cascade, container queries, semantic tokens, OKLCH/contrast-first, specificity wars   | Mindrally + antfu + meodai ⭐ NEW                        |
-| `svelte-5-runes-practices`             | Svelte 5 runes, $state/$derived/$effect, reactivity bugs, lockstep gating                  | sveltejs/ai-tools + semantic-explorer field-proven ⭐ NEW |
-| `skill-authoring`                      | create/edit skills, progressive disclosure, lean bodies + trigger descriptions             | Anthropic skill-creator + harness model ⭐ NEW            |
-| `ux-copywriting`                       | user-facing copy, banned AI-isms, outcome CTAs, state copy, before/after audit             | mblode copywriting + product-design + Anthropic ⭐ NEW    |
-| `design-taste`                         | typography/color/layout taste, AI-slop checklist, restraint, tabular figures               | mblode typography-audit/ui-design + Anthropic ⭐ NEW      |
-| `svelte-extract-scoped-css-reactivity` | Svelte component extraction regressions (scoped CSS, store snapshots)                      | repo-proven                                               |
-| `tostore-migration-pattern`            | toStore bridges → writable+notify migration                                                | repo-proven (project)                                     |
-| `visual-qa-critique`                   | structured visual QA critique for 3D/web apps                                              | repo-proven                                               |
-| `vision-audit-with-model-jury`         | vision model jury, screenshot QA, image diff, VLM                                          | repo-proven                                               |
+| Skill                                  | Trigger (description keywords)                                                                        | Source                                                    |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `frontend-design`                      | distinctive/non-templated visual design, anti-AI-slop, palette/typography/layout decisions            | Anthropic official + impeccable ⭐ NEW                    |
+| `ui-animation`                         | animation/transition/motion design, prefers-reduced-motion, transform/opacity                         | mblode + Anthropic ⭐ NEW                                 |
+| `web-quality-audit`                    | pre-delivery audit, Core Web Vitals, WCAG 2.1/2.2, Lighthouse targets, bounded verify loop            | addyosmani + web-design-reviewer + ui-ux-pro-max ⭐ NEW   |
+| `threejs-webgl-practices`              | Three.js/WebGL loops, clips, culling, LOD, testing                                                    | cloudai-x/threejs + playwright ⭐ NEW                     |
+| `canvas-webgl-a11y`                    | canvas/WebGL accessibility: off-DOM data table, keyboard parallel DOM, role=img, reduced-motion scene | a11y-perf-viz research ⭐ NEW                             |
+| `css-architecture`                     | @layer cascade, container queries, semantic tokens, OKLCH/contrast-first, specificity wars            | Mindrally + antfu + meodai ⭐ NEW                         |
+| `svelte-5-runes-practices`             | Svelte 5 runes, $state/$derived/$effect, reactivity bugs, lockstep gating                             | sveltejs/ai-tools + semantic-explorer field-proven ⭐ NEW |
+| `skill-authoring`                      | create/edit skills, progressive disclosure, lean bodies + trigger descriptions                        | Anthropic skill-creator + harness model ⭐ NEW            |
+| `ux-copywriting`                       | user-facing copy, banned AI-isms, outcome CTAs, state copy, before/after audit                        | mblode copywriting + product-design + Anthropic ⭐ NEW    |
+| `design-taste`                         | typography/color/layout taste, AI-slop checklist, restraint, tabular figures                          | mblode typography-audit/ui-design + Anthropic ⭐ NEW      |
+| `svelte-extract-scoped-css-reactivity` | Svelte component extraction regressions (scoped CSS, store snapshots)                                 | repo-proven                                               |
+| `tostore-migration-pattern`            | toStore bridges → writable+notify migration                                                           | repo-proven (project)                                     |
+| `visual-qa-critique`                   | structured visual QA critique for 3D/web apps                                                         | repo-proven                                               |
+| `vision-audit-with-model-jury`         | vision model jury, screenshot QA, image diff, VLM                                                     | repo-proven                                               |
 
 ## Global — Dev workflow
 
-| Skill                                            | Trigger                                                                        |
-| ------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `code-diff-review`                               | review diff/PR, security+correctness review                                    |
-| `code-review-discipline`                         | severity tiers, risk-first triage, blast radius, evidence-before-claims ⭐ NEW |
-| `agent-security-guardrails`                      | harness hardening: runtime tool gates, untrusted content, least privilege, MCP vetting ⭐ NEW |
-| `episodic-memory-implementation`                 | episode tuples, session-end distillation, golden sets, cross-session recall ⭐ NEW |
-| `verification-before-completion`                 | Iron Law TDD, red-green verification, done-claims need evidence ⭐ NEW         |
-| `pr-description-writer`                          | write a PR description                                                         |
-| `second-opinion-review`                          | independent review from a different model                                      |
-| `changelog-release-notes`                        | changelog/release notes from git history                                       |
-| `flaky-test-triage`                              | intermittent test failures                                                     |
-| `performance-optimization-review`                | measured latency/memory/CPU bottleneck                                         |
-| `git-worktree-management` / `git-branch-cleanup` | worktrees, branch tidy                                                         |
-| `structured-bugsweep`                            | comprehensive codebase analysis                                                |
-| `test-baseline-sync`                             | invariant-test baselines during migrations                                     |
-| `dependency-supply-chain-audit`                  | dependency risk/health                                                         |
-| `skill-self-review`                              | audit a SKILL.md                                                               |
-| `skill-authoring`                                | create/edit skills, progressive disclosure ⭐ NEW                              |
+| Skill                                            | Trigger                                                                                               |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `code-diff-review`                               | review diff/PR, security+correctness review                                                           |
+| `code-review-discipline`                         | severity tiers, risk-first triage, blast radius, evidence-before-claims ⭐ NEW                        |
+| `agent-security-guardrails`                      | harness hardening: runtime tool gates, untrusted content, least privilege, MCP vetting ⭐ NEW         |
+| `episodic-memory-implementation`                 | episode tuples, session-end distillation, golden sets, cross-session recall ⭐ NEW                    |
+| `memory-retrieval-discipline`                    | write/retrieval discipline: high-signal entries, ≤5 chunk injections, semantic+lexical fusion ⭐ NEW  |
+| `context-engineering`                            | context rot, prompt caching (stable prefix), structured note-taking, token budgets ⭐ NEW             |
+| `multi-agent-orchestration`                      | orchestrator-worker, structured handoffs, maker-checker, model economics, budget caps ⭐ NEW          |
+| `agent-ux-hitl`                                  | permission tiers, reversibility marking, blast-radius preview, autonomy budgets, OTEL tracing ⭐ NEW  |
+| `ambiguity-resolution`                           | grill-me, ask-if-underspecified, anti-over-engineering ⭐ NEW                                         |
+| `subagent-role-templates`                        | worker role anatomy: frontmatter scope/no_revert + comms + quality bar; role-vs-skill layering ⭐ NEW |
+| `boundary-validation`                            | Zod at every boundary (API/worker/URL params), fail-fast, branded types ⭐ NEW                     |
+| `store-mutation-discipline`                      | single-write mutation path, components dispatch, store mutates ⭐ NEW                             |
+| `differential-review`                            | review the diff + git-history lens, context of change ⭐ NEW                                        |
+| `testing-anti-patterns`                          | no private-state asserts, no self-mocking, property fuzz for invariants ⭐ NEW                     |
+| `threat-modeling`                                | OWASP + STRIDE before building user-touching surfaces ⭐ NEW                                        |
+| `large-file-edit-discipline`                     | surgical SEARCH/REPLACE over full rewrites for >300-line files ⭐ NEW                             |
+| `api-approval-write`                             | propose public API changes in review BEFORE implementing ⭐ NEW                                    |
+| `dependency-discipline`                          | npm ls audit, unused-dep checks, no phantom imports, pinned versions ⭐ NEW                       |
+| `concise-agent-communication`                    | caveman: cut noise, evidence-first findings, brevity budgets ⭐ NEW                                |
+| `test-driven-development`                        | red-green-refactor, Iron Law (delete code written before failing test) ⭐ NEW                     |
+| `skill-discovery-meta`                           | find the right skill: index scan, trigger keywords, create-vs-reuse ⭐ NEW                         |
+| `live-docs-lookup`                               | context7-style: prefer live docs over training memory for versioned APIs ⭐ NEW                    |
+| `persistent-planning-files`                      | task_plan/findings/progress survive context loss; update-before-pause ⭐ NEW                       |
+| `context-ledger`                                 | serialize key state around compactions + subagent handoffs ⭐ NEW                                 |
+| `annotated-screenshots-qa`                       | numbered element labels for vision QA + covering-element fail-fast ⭐ NEW                         |
+| `webgl-performance-discipline`                   | BatchedMesh, buffer reuse, dispose pools, GC pressure, pixel-ratio caps ⭐ NEW                    |
+| `mcp-builder`                                    | build MCP servers/tools: workflow tools, actionable errors, streamable HTTP, Zod schemas ⭐ NEW  |
+| `tool-use-discipline`                            | parallel calls, self-correct on errors, summarize results, validate shapes ⭐ NEW                 |
+| `data-viz-encoding`                              | pre-attentive attributes, CVD-safe palettes, label management, affordances ⭐ NEW                 |
+| `interactive-web-artifacts`                      | self-contained prototypes, screenshot+vision review, port on success ⭐ NEW                      |
+| `subagent-role-templates`                        | worker role anatomy: frontmatter scope/no_revert + comms + quality bar; role-vs-skill layering ⭐ NEW |
+| `verification-before-completion`                 | Iron Law TDD, red-green verification, done-claims need evidence ⭐ NEW                                |
+| `pr-description-writer`                          | write a PR description                                                                                |
+| `second-opinion-review`                          | independent review from a different model                                                             |
+| `changelog-release-notes`                        | changelog/release notes from git history                                                              |
+| `flaky-test-triage`                              | intermittent test failures                                                                            |
+| `performance-optimization-review`                | measured latency/memory/CPU bottleneck                                                                |
+| `git-worktree-management` / `git-branch-cleanup` | worktrees, branch tidy                                                                                |
+| `structured-bugsweep`                            | comprehensive codebase analysis                                                                       |
+| `test-baseline-sync`                             | invariant-test baselines during migrations                                                            |
+| `dependency-supply-chain-audit`                  | dependency risk/health                                                                                |
+| `skill-self-review`                              | audit a SKILL.md                                                                                      |
+| `skill-authoring`                                | create/edit skills, progressive disclosure ⭐ NEW                                                     |
 
 ## Global — Pi harness / environment
 
