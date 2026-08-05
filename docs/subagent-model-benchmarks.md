@@ -1641,19 +1641,37 @@ Three concrete gaps:
 
 **Results** (rows in `tmp/eval-harness-log.jsonl`, tags `[open:skill=on/off]`):
 
-| run | words | score | notes |
-|---|---|---|---|
-| open-t1 (on) | 124 | 4/6 | just over cap; named 9 exports |
-| open-t2 (on) | — | FAIL | flake: found+read skill, thinking-only terminal msg |
-| open-t3 (on) | 109 | **5/6** | tightest complete answer, 4 exports |
-| open-c1 (off) | 218 | 4/6 | verbose bullet structure |
-| open-c2 (off) | 134 | 4/6 | mid verbosity |
-| open-c3 (off) | 59 | 4/6 | brief but named 0 export symbols |
+| run           | words | score   | notes                                               |
+| ------------- | ----- | ------- | --------------------------------------------------- |
+| open-t1 (on)  | 124   | 4/6     | just over cap; named 9 exports                      |
+| open-t2 (on)  | —     | FAIL    | flake: found+read skill, thinking-only terminal msg |
+| open-t3 (on)  | 109   | **5/6** | tightest complete answer, 4 exports                 |
+| open-c1 (off) | 218   | 4/6     | verbose bullet structure                            |
+| open-c2 (off) | 134   | 4/6     | mid verbosity                                       |
+| open-c3 (off) | 59    | 4/6     | brief but named 0 export symbols                    |
 
 **Reading**:
+
 1. **Modest concision signal**: skill-on medians 116.5w (non-flake) vs control 134w; the only 5/6 was skill-on. Direction consistent with A/B #1 (51.5 vs 76 median words).
 2. **EVIDENCE did NOT transfer**: zero file:line citations in either group. The skill's "state findings as evidence" rule does not generate unprompted citations on open tasks — citations require the prompt to ask. Skills set defaults; they are not constraints.
 3. **Export coverage held under brevity**: skill-on kept ≥4 named exports while cutting words; control c3 cut words by dropping exports. The skill shifts the brevity/coverage tradeoff in the right direction.
 4. **Flake rate**: 1/6 here (thinking-only terminal message) + 1/6 in A/B #1 (tool-result echo) ≈ 15-17% stochastic output truncation on this model. Retry-once is worth adding to the eval harness for exit-0-no-final-text runs.
 
 **Actionable**: keep `concise-agent-communication` (consistent marginal concision, no measured downside); treat skill descriptions as DEFAULT-SHAPERS — when a behavior is mandatory, put it in the prompt. Next candidate for A/B: a skill whose claim is behavioral, not stylistic (e.g. `verification-before-completion` on an artifact-producing task with no explicit "verify" instruction).
+
+### Skill-efficacy A/B #3 — VALID RUN (skill genuinely injected), 2026-08-05
+
+**Fix context**: A/B #1/#2 measured prompt-priming, not skill engagement — workers ran with `-ne` and zero pi-hermes-memory skills (root cause + fix: `docs/subagent-delegation.md` "Worker skill visibility"). After the pi-worker-skills fix, workers inject 84 skills. This run re-runs the same open-ended bare task with the skill legitimately present.
+
+**Design**: same open-ended module-summary task (`tmp/eval-open-task*.md`), 3× treatment ("apply concise-agent-communication skill's rules") vs 3× control, single lane (zenmux step-3.7-flash), rubric `tmp/eval-open-rubric.md` (6 binary criteria). Treatment workers had the skill's name+description in their injected list (5 description mentions in logs; bodies not read — normal Pi design). Rows: `fx-t*`/`fx-c*` in `tmp/eval-harness-log.jsonl`.
+
+| group | median words | avg score /6 | cost |
+|---|---|---|---|
+| skill=on (injected) | 121 | 4.3 | $0.0054 |
+| skill=off | 104 | 4.7 | $0.0056 |
+
+**Reading** (n=3 each — directional, not conclusive):
+1. With the skill genuinely injected, the concision edge from A/B #2 **disappears** (control 104w vs treatment 121w median). No measurable marginal benefit of `concise-agent-communication` on this task.
+2. The A/B #2 "signal" was an artifact of the broken harness state (neither group had the skill; the treatment text alone primed slightly).
+3. **Curation implication**: this skill is a prune/disable candidate on this task class — the model is already concise by default, the rules add noise. Re-test on an over-verbose task (e.g. "explain X in detail") before final judgment.
+4. Method win: the loader/injection probe (spawn worker, ask it to enumerate injected skills) is now a required step before any skill A/B.
