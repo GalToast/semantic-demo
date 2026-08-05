@@ -59,7 +59,7 @@ Web-LADDER update: this does NOT change the top (Qwen3-VL still #1) — omni-30b
 
 ## Exhaustive bridge census v3 (2026-08-05) — 33 verified ids / 27 families (real pixel probes)
 
-REGISTER CONSOLIDATION (2026-08-05 13:0x, worker-audited): evidence pack tmp/vision-census-evidence/\*.jsonl holds 36 PIXELS_OK lines = 33 case-normalized unique model ids (27-family + mimo-v2.5-free + zydit-v1 chatjimmy/diffusiongemma + groq qwen3.6-27b manual). The "27 families" headings below are the deduped family roll-up; the id-level set is 33. Full audit: tmp/vision-doc-audit-report.md
+REGISTER CONSOLIDATION (2026-08-05 13:1x, worker-audited + re-probed): evidence pack tmp/vision-census-evidence/*.jsonl holds 39 PIXELS_OK lines = 36 case-normalized unique model ids (27-family + mimo-v2.5-free + zydit-v1 chatjimmy/diffusiongemma + groq qwen3.6-27b manual + ROUND-6 re-verified pixtral-12b-2409 + mistral-small-2603 + inkling @nvidia). ROUND-6/inkling claims were true but never JSONL-filed — re-probed 2026-08-05 and evidence saved (round6-verification.jsonl). The "27 families" headings below are the deduped family roll-up; the id-level set is 36. Full audit: tmp/vision-doc-audit-report.md
 
 Three successive census layers — each caught a real class of miss that the previous one shipped as "done":
 
@@ -101,7 +101,7 @@ VERIFIED VISION (27 families, deduped; real single-image bridge read):
 
 EXCLUDED-honest residuals (not vision-blocked, need keys/heal/wrong-id normalizing):
 
-- 129 x HTTP*402 (billing walls: claude-\_5, gpt-5.6-*, kimi-_, novita-_ on charged gates)
+- 129 x HTTP*402 (billing walls: claude-\_5, gpt-5.6-*, kimi-*, novita-* on charged gates)
 - 84 x HTTP_400 (invalid-id/shape on that gate), 29 x HTTP_404, 18 x HTTP_410 (EOL),
 - 23 x EMPTY/TEXT_EMPTY (image-token-detail zero or max_tokens saturation), 3 x untested-429, 1 x REFUSAL cluster gemini-3.x-preview (text-only frontends)
 - The ~39 previously claimed "19 stable lanes" docs pre-2026-08-05 are CONFOUNDED: 429-as-untested + no-retry + single-gate probes. Re-run the disputed bucket (429/EMPTY/REFUSAL) before trusting any "vision lane" claim from before this date.
@@ -230,7 +230,7 @@ Sweeps run this session (all evidence on disk under tmp/vision-census-evidence/)
 CURRENT VERIFIED LIST (reconciled):
 A. Passthrough-proven (truth): Qwen3-VL-235B/8B/8B-thinking @modelscope; llama-3.2-11b/90b @nvidia; nemotron-omni-30b @openrouter; gemma-4-26b @openrouter; step-3.7-flash @openrouter; minimax-01/m3 @openrouter; gemini-2.5-flash(+-lite)/3.1-flash-lite(+image)/3-pro-image @openrouter; mistral-medium-latest @mistral; llama-4-scout + mistral-small-3.1 @cloudflare; agnes-2.0/2.5-flash/2.5-pro @agnes; gemini-3.1-flash-lite @llm7; kilo-auto + openrouter/free auto-routes @kilo; gemini-3.5-flash @zenmux; qwen3.5-122b/35b/27b @modelscope (non-VL ids!); mimo-v2.5-free @opencode-zen; chatjimmy-8B + diffusiongemma-26b @zydit-v1 (gate-suspect, treat as LIKELY).
 B. ONE-KEY-FLAPPY: qwen/qwen3.6-27b @groq (x2 confirmed).
-C. WALLED (vision-capable but billing): claude-_5 family, gpt-5.6-_, kimi-k\*, minimax-direct, meta muse-spark, blaze 117-model cat, airforce 226-cat.
+C. WALLED (vision-capable but billing): claude-*5 family, gpt-5.6-*, kimi-k\*, minimax-direct, meta muse-spark, blaze 117-model cat, airforce 226-cat.
 
 **STRIPPING LAW (final):** EMPTY + model-says-"can't see image" = gateway dropped the part, NOT model truth. zydot/v4, openprovider-down, and any catalog-declared-text-only gate are suspect. VERIFIED passthrough only: modelscope/openrouter/nvidia/cloudflare/llm7/agnes/mistral/zenmux/kilo/groq.
 
@@ -243,7 +243,7 @@ Direct probe bypassing the router (http.client + browser UA; Python urllib gets 
 - /v1/models: ALIVE — catalog gpt-5.6-luna / gpt-5.6-sol / gpt-5.6-terra / FreeModel
 - chat gpt-5.6-luna/sol/terra: 401 "Insufficient balance" (account has zero funds)
 - chat FreeModel (auto): 503 no container instance (free tier maxed)
-  Router cooldowns (key _→ +1h?, provider_ → 2 days) are SYMPTOMS of account-level 401/503s; no cooldown expiry fixes it. The lane's "auto-cooldown ~5.5h self-recovers" was wrong — the account needs FUNDS.
+  Router cooldowns (key *→ +1h?, provider* → 2 days) are SYMPTOMS of account-level 401/503s; no cooldown expiry fixes it. The lane's "auto-cooldown ~5.5h self-recovers" was wrong — the account needs FUNDS.
   Actionable: top up freemodel balance OR drop the lane from vision dispatch until funding.
   ALSO: WAF lesson — some gateways 403 Python urllib User-Agent (api.freemodel.dev did). Use http.client + browser UA (Mozilla/5.0) for direct probes.
 
@@ -263,8 +263,9 @@ USABLE FREE VISION REGISTER (final): Qwen3-VL (modelscope) ★ | agnes-2.5-flash
 FINAL LADDER: Qwen3-VL ≻ agnes-2.5-flash ≻ agnes-2.0-flash ≻ pixtral-12b ≻ omni-30b:free ≻ step-3.5-flash(kilo) ≻ llama-3.2-vision ≻ scout ≻ zydit-gemma ≻ gemma-4-26b ≻ nemotron-nano ≻ minimax-m3.
 
 ## EXHAUSTIVENESS AUDIT (2026-08-05 17:45) — residual-claim closure
-1. HOSTED NIM CATALOG ENUMERATED from the source (integrate.api.nvidia.com/v1/models, key OK): 102 ids == EXACT mirror of local nvidia/zydit catalogs (identical set, including llama-3.2-vision, nemotron-*vl, omni-30b, gpt-oss, poolside laguna…). Nothing beyond the tested set exists there. Hosted hole = CLOSED.
+
+1. HOSTED NIM CATALOG ENUMERATED from the source (integrate.api.nvidia.com/v1/models, key OK): 102 ids == EXACT mirror of local nvidia/zydit catalogs (identical set, including llama-3.2-vision, nemotron-\*vl, omni-30b, gpt-oss, poolside laguna…). Nothing beyond the tested set exists there. Hosted hole = CLOSED.
 2. zydit-v4: all 5 path spellings -> 0 ids (empty-catalog mirror). Nothing hidden.
 3. logfare: /v1/models now times out; earlier 11-id read is the recorded evidence; chat hangs upstream => provider-side failure, not untested terrain.
-RESIDUAL (by design, not oversight): paid/fundable lanes (402 walls) — excluded by user rule; freeinference — excluded (billing rule); live free-tier quota WINDOWS vary hour-to-hour (golden-window reads in this doc remain the canonical usable set).
-AUDIT MEANS: "all router-enumerable model-ids were image-probed (real fixture, dual-field parser, no skip-sets); plus the hosted NIM catalog closure above." Nothing shape-file-wise remains un-enumerated.
+   RESIDUAL (by design, not oversight): paid/fundable lanes (402 walls) — excluded by user rule; freeinference — excluded (billing rule); live free-tier quota WINDOWS vary hour-to-hour (golden-window reads in this doc remain the canonical usable set).
+   AUDIT MEANS: "all router-enumerable model-ids were image-probed (real fixture, dual-field parser, no skip-sets); plus the hosted NIM catalog closure above." Nothing shape-file-wise remains un-enumerated.
