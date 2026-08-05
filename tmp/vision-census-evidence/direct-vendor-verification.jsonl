@@ -1,0 +1,6 @@
+{"ts":"2026-08-05T13:25:00Z","model":"kimi-k2.7-code","provider":"freeinference-direct","verdict":"PIXELS_OK","detail":"Angel Fire Coffee, Coffee shop / Food & Hospitality read via freeinference.org direct","ms":0}
+{"ts":"2026-08-05T13:25:00Z","model":"MiniMax-M3","provider":"blazeapi","verdict":"HTTP_401","detail":"Invalid API key on real host blazeapi.org (blazeai.boxu.dev 301 redirect)","ms":0}
+{"ts":"2026-08-05T13:25:00Z","model":"gpt-5.5","provider":"888avi","verdict":"HTTP_401","detail":"Invalid token","ms":0}
+{"ts":"2026-08-05T13:25:00Z","model":"muse-spark-1.1","provider":"meta-direct","verdict":"HTTP_402","detail":"billing_not_configured","ms":0}
+{"ts":"2026-08-05T13:25:00Z","model":"mindai/macaron-v1-venti:free","provider":"infron-direct","verdict":"HTTP_403","detail":"credits used up","ms":0}
+{"ts":"2026-08-05T13:25:00Z","model":"glm-5.1","provider":"freeinference-direct","verdict":"TEXT_ONLY","detail":"explicit 400: model does not support image input","ms":0}

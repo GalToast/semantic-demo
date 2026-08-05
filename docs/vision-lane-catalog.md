@@ -59,7 +59,7 @@ Web-LADDER update: this does NOT change the top (Qwen3-VL still #1) — omni-30b
 
 ## Exhaustive bridge census v3 (2026-08-05) — 33 verified ids / 27 families (real pixel probes)
 
-REGISTER CONSOLIDATION (2026-08-05 13:1x, worker-audited + re-probed): evidence pack tmp/vision-census-evidence/*.jsonl holds 39 PIXELS_OK lines = 36 case-normalized unique model ids (27-family + mimo-v2.5-free + zydit-v1 chatjimmy/diffusiongemma + groq qwen3.6-27b manual + ROUND-6 re-verified pixtral-12b-2409 + mistral-small-2603 + inkling @nvidia). ROUND-6/inkling claims were true but never JSONL-filed — re-probed 2026-08-05 and evidence saved (round6-verification.jsonl). The "27 families" headings below are the deduped family roll-up; the id-level set is 36. Full audit: tmp/vision-doc-audit-report.md
+REGISTER CONSOLIDATION (2026-08-05 13:1x, worker-audited + re-probed): evidence pack tmp/vision-census-evidence/\*.jsonl holds 39 PIXELS_OK lines = 36 case-normalized unique model ids (27-family + mimo-v2.5-free + zydit-v1 chatjimmy/diffusiongemma + groq qwen3.6-27b manual + ROUND-6 re-verified pixtral-12b-2409 + mistral-small-2603 + inkling @nvidia). ROUND-6/inkling claims were true but never JSONL-filed — re-probed 2026-08-05 and evidence saved (round6-verification.jsonl). The "27 families" headings below are the deduped family roll-up; the id-level set is 36. Full audit: tmp/vision-doc-audit-report.md
 
 Three successive census layers — each caught a real class of miss that the previous one shipped as "done":
 
@@ -101,7 +101,7 @@ VERIFIED VISION (27 families, deduped; real single-image bridge read):
 
 EXCLUDED-honest residuals (not vision-blocked, need keys/heal/wrong-id normalizing):
 
-- 129 x HTTP*402 (billing walls: claude-\_5, gpt-5.6-*, kimi-*, novita-* on charged gates)
+- 129 x HTTP*402 (billing walls: claude-\_5, gpt-5.6-*, kimi-_, novita-_ on charged gates)
 - 84 x HTTP_400 (invalid-id/shape on that gate), 29 x HTTP_404, 18 x HTTP_410 (EOL),
 - 23 x EMPTY/TEXT_EMPTY (image-token-detail zero or max_tokens saturation), 3 x untested-429, 1 x REFUSAL cluster gemini-3.x-preview (text-only frontends)
 - The ~39 previously claimed "19 stable lanes" docs pre-2026-08-05 are CONFOUNDED: 429-as-untested + no-retry + single-gate probes. Re-run the disputed bucket (429/EMPTY/REFUSAL) before trusting any "vision lane" claim from before this date.
@@ -230,7 +230,7 @@ Sweeps run this session (all evidence on disk under tmp/vision-census-evidence/)
 CURRENT VERIFIED LIST (reconciled):
 A. Passthrough-proven (truth): Qwen3-VL-235B/8B/8B-thinking @modelscope; llama-3.2-11b/90b @nvidia; nemotron-omni-30b @openrouter; gemma-4-26b @openrouter; step-3.7-flash @openrouter; minimax-01/m3 @openrouter; gemini-2.5-flash(+-lite)/3.1-flash-lite(+image)/3-pro-image @openrouter; mistral-medium-latest @mistral; llama-4-scout + mistral-small-3.1 @cloudflare; agnes-2.0/2.5-flash/2.5-pro @agnes; gemini-3.1-flash-lite @llm7; kilo-auto + openrouter/free auto-routes @kilo; gemini-3.5-flash @zenmux; qwen3.5-122b/35b/27b @modelscope (non-VL ids!); mimo-v2.5-free @opencode-zen; chatjimmy-8B + diffusiongemma-26b @zydit-v1 (gate-suspect, treat as LIKELY).
 B. ONE-KEY-FLAPPY: qwen/qwen3.6-27b @groq (x2 confirmed).
-C. WALLED (vision-capable but billing): claude-*5 family, gpt-5.6-*, kimi-k\*, minimax-direct, meta muse-spark, blaze 117-model cat, airforce 226-cat.
+C. WALLED (vision-capable but billing): claude-_5 family, gpt-5.6-_, kimi-k\*, minimax-direct, meta muse-spark, blaze 117-model cat, airforce 226-cat.
 
 **STRIPPING LAW (final):** EMPTY + model-says-"can't see image" = gateway dropped the part, NOT model truth. zydot/v4, openprovider-down, and any catalog-declared-text-only gate are suspect. VERIFIED passthrough only: modelscope/openrouter/nvidia/cloudflare/llm7/agnes/mistral/zenmux/kilo/groq.
 
@@ -243,7 +243,7 @@ Direct probe bypassing the router (http.client + browser UA; Python urllib gets 
 - /v1/models: ALIVE — catalog gpt-5.6-luna / gpt-5.6-sol / gpt-5.6-terra / FreeModel
 - chat gpt-5.6-luna/sol/terra: 401 "Insufficient balance" (account has zero funds)
 - chat FreeModel (auto): 503 no container instance (free tier maxed)
-  Router cooldowns (key *→ +1h?, provider* → 2 days) are SYMPTOMS of account-level 401/503s; no cooldown expiry fixes it. The lane's "auto-cooldown ~5.5h self-recovers" was wrong — the account needs FUNDS.
+  Router cooldowns (key _→ +1h?, provider_ → 2 days) are SYMPTOMS of account-level 401/503s; no cooldown expiry fixes it. The lane's "auto-cooldown ~5.5h self-recovers" was wrong — the account needs FUNDS.
   Actionable: top up freemodel balance OR drop the lane from vision dispatch until funding.
   ALSO: WAF lesson — some gateways 403 Python urllib User-Agent (api.freemodel.dev did). Use http.client + browser UA (Mozilla/5.0) for direct probes.
 
@@ -271,8 +271,18 @@ FINAL LADDER: Qwen3-VL ≻ agnes-2.5-flash ≻ agnes-2.0-flash ≻ pixtral-12b �
    AUDIT MEANS: "all router-enumerable model-ids were image-probed (real fixture, dual-field parser, no skip-sets); plus the hosted NIM catalog closure above." Nothing shape-file-wise remains un-enumerated.
 
 ## MISTRAL GATE = major undiscovered vision surface (2026-08-05 13:3x)
+
 The never-probed pi-tail local sweep (118 router-hosted ids) found **32 NEW PIXELS_OK**, dominated by the MISTRAL family (28 models @mistral) + GLM-5.2 trio @nvidia/@neuralwatt + agnes-2.5-pro-alpha @agnes.
+
 - Spot-verified with full content (10/10): mistral-medium(2505/2508/2604/3-5/3/3.5/base), open-mistral-nemo(-2407), ministral-8b/3b, magistral-small, mistral-large-2512, mistral-tiny, mistral-small-2506, mistral-vibe-cli-fast — ALL read "Angel Fire Coffee / Cleveland / Food & Hospitality / Coffee shop" (real pixel reads).
 - The mistral API accepts image input on essentially the whole chat family (previously we had only tested mistral-medium-latest via one gateway).
-- REGISTER NOW: **68 unique case-normalized verified ids** (evidence pack tmp/vision-census-evidence/*.jsonl, incl. pi-tail-local.jsonl).
+- REGISTER NOW: **68 unique case-normalized verified ids** (evidence pack tmp/vision-census-evidence/\*.jsonl, incl. pi-tail-local.jsonl).
 - Second-method note: runner JSONL had empty detail; an 8-model spot-verify with captured content confirmed the family — the discipline caught nothing wrong, but reviewer should know batch-confidence is high.
+
+## FULL TAIL CLOSED (2026-08-05 13:4x) — every surface has honest verdicts
+Airforce: 254-model catalog; vision-hint 15 (qwen3-vl-*, grok-2-vision, gpt-4-vision, moonshot-v1-*-vision, nano-banana) — ALL 401 Invalid API key on account-auth (our stored key is not a valid airforce dashboard key; only anonymous-shared models answer, 429-limited). CLOSED (auth-wall).
+Direct vendors (browser-UA probe, real keys):
+- freeinference kimi-k2.7-code: **PIXELS_OK** (Angel Fire Coffee / Coffee shop) — new lane; but glm-5.1 there: explicit 400 "does not support image input" (TEXT_ONLY).
+- blazeapi.org (real host, 301 from blazeai.boxu.dev): 401 invalid key.
+- 888avi: 401 invalid token (dead auth). meta: 402 billing_not_configured. infron: 403 credits used. minimax.io M3: 2056 token-plan (documented). logfare: hang (upstream dead).
+REGISTER FINAL: **69 unique case-normalized verified id** (evidence pack tmp/vision-census-evidence/*.jsonl, +21k lines). Session arc: 12 -> 27 -> 33 -> 36 -> 68 -> 69.
