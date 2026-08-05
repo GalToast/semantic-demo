@@ -23,13 +23,27 @@ const MODELS = [
 const EFFORT_BY_MODEL = Object.fromEntries(MODELS.map((m) => [m.id, m.effort]))
 
 function extractText(messages) {
-  // last user message; join text parts (ignore image parts -> later pass images via cline if supported)
+  // Build the cline prompt from OpenAI message parts.
+  // cline reads image FILES by path when referenced in the prompt (it loads them itself).
+  // For image_url parts with a data: URI, the shim caller passed us a path via the message
+  // text; for file:// or plain paths we pass through. If a data: URI appears (base64), we
+  // note the image is attached but can't hand cline a live file path — best effort text.
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i]
     if (m.role !== 'user') continue
     if (typeof m.content === 'string') return m.content
     if (Array.isArray(m.content)) {
-      return m.content.filter(p => p.type === 'text').map(p => p.text).join('\n')
+      const parts = []
+      for (const p of m.content) {
+        if (p.type === 'text') parts.push(p.text)
+        else if (p.type === 'image_url') {
+          const url = String(p.image_url?.url || '')
+          if (url.startsWith('file://')) parts.push(url.slice('file://'.length))
+          else if (url.startsWith('data:')) parts.push('[image attached inline]')
+          else if (url.startsWith('http')) parts.push(url)
+        }
+      }
+      return parts.join('\n')
     }
   }
   return ''
