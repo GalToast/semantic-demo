@@ -237,6 +237,35 @@
     pointer-events: none;
   }
 
+  /* ─── SUPPRESS PREVIEW OVERLAY WHEN FOCUS/SEARCH IS ACTIVE ────────────
+     When a focus card or search surface is active, the full-viewport
+     "Enter 3D Scene" preview must not present itself as the primary
+     idle screen. It should fade to a subtle backdrop so the active
+     surface (FocusCard, search results, JourneyChrome) reads clearly.
+     The overlay/scrim/orbs recede visually and leave hit testing to the
+     active surface; the idle CTA returns with the idle surface.
+     Gate: body[data-panel-surface] with focus, focus-search, semantic-dive,
+     search, or trail — NOT idle or map-idle. */
+  :global(body:not(.surface-idle):not(.surface-map-idle)[data-panel-surface]:not([data-panel-surface=""]):not([data-panel-surface="idle"])) .placeholder-2d {
+    opacity: 0.15;
+    transition: opacity 0.2s ease;
+  }
+
+  :global(body:not(.surface-idle):not(.surface-map-idle)[data-panel-surface]:not([data-panel-surface=""]):not([data-panel-surface="idle"])) .placeholder-overlay {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  :global(body:not(.surface-idle):not(.surface-map-idle)[data-panel-surface]:not([data-panel-surface=""]):not([data-panel-surface="idle"])) .placeholder-cta {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: scale(0.8);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
   .placeholder-svg {
     position: absolute;
     inset: 0;
@@ -324,13 +353,14 @@
   .placeholder-cta {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     background: rgba(var(--color-primary-alt-rgb), 0.42);
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.88);
     color: rgba(255, 255, 255, 0.98);
     font-size: 1rem;
     padding: 0.75rem 2rem;
-    border-radius: 4px;
+    border-radius: 999px;
     cursor: pointer;
     letter-spacing: 0.08em;
     min-height: 44px;
@@ -366,11 +396,15 @@
   .cta-icon {
     font-size: 0.75em;
     opacity: 0.85;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    transform: translateY(0.02em);
   }
 
   .placeholder-hint {
-    font-size: 0.8rem;
-    opacity: 0.5;
+    font-size: 0.85rem;
+    opacity: 0.72;
     margin: 1rem 0 0;
     letter-spacing: 0.02em;
   }
