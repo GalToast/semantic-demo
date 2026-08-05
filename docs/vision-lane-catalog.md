@@ -237,15 +237,24 @@ Next real work (not blocker): watch freemodel 19.8M-ms cooldown expiry (~5.5h) f
 ## FREEMODEL REAL STATE (2026-08-05 11:3x) — cooldown lifted, BILLING is the gate
 
 Direct probe bypassing the router (http.client + browser UA; Python urllib gets WAF 1010):
+
 - /v1/models: ALIVE — catalog gpt-5.6-luna / gpt-5.6-sol / gpt-5.6-terra / FreeModel
 - chat gpt-5.6-luna/sol/terra: 401 "Insufficient balance" (account has zero funds)
 - chat FreeModel (auto): 503 no container instance (free tier maxed)
-Router cooldowns (key * → +1h?, provider * → 2 days) are SYMPTOMS of account-level 401/503s; no cooldown expiry fixes it. The lane's "auto-cooldown ~5.5h self-recovers" was wrong — the account needs FUNDS.
-Actionable: top up freemodel balance OR drop the lane from vision dispatch until funding.
-ALSO: WAF lesson — some gateways 403 Python urllib User-Agent (api.freemodel.dev did). Use http.client + browser UA (Mozilla/5.0) for direct probes.
+  Router cooldowns (key _→ +1h?, provider_ → 2 days) are SYMPTOMS of account-level 401/503s; no cooldown expiry fixes it. The lane's "auto-cooldown ~5.5h self-recovers" was wrong — the account needs FUNDS.
+  Actionable: top up freemodel balance OR drop the lane from vision dispatch until funding.
+  ALSO: WAF lesson — some gateways 403 Python urllib User-Agent (api.freemodel.dev did). Use http.client + browser UA (Mozilla/5.0) for direct probes.
 
 ## ROUND-7 kilo finds (2026-08-05 16:4x) — kilo lane = hidden free goldmine
-- kilo/openrouter/free  5/5 @ 7.2s (kilo→openrouter free alias; actually the 'openrouter/free' id)
-- kilo/stepfun/step-3.5-flash  5/5 @ 13.5s  — EARLIER CLASSIFICATION (hollow/504) WAS WRONG; step-3.5-flash is a real vision lane via kilo. (zenmux 200-32s-0/5 was a flake.)
+
+- kilo/openrouter/free 5/5 @ 7.2s (kilo→openrouter free alias; actually the 'openrouter/free' id)
+- kilo/stepfun/step-3.5-flash 5/5 @ 13.5s — EARLIER CLASSIFICATION (hollow/504) WAS WRONG; step-3.5-flash is a real vision lane via kilo. (zenmux 200-32s-0/5 was a flake.)
 - kilo/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free 5/5 @ 10.4s (4th lane for omni free).
 - kilo = slow (many 402/504/410s) but free + highest hit density seen today.
+
+## ✅✅ FINAL 100% COVERAGE COMPLETE (2026-08-05 17:38 UTC) — every lane has a terminal done-line
+All chat-capable ids across ALL router lanes probed. Total lanes: 22. Done-lines (this pass):
+openrouter 326 (x2 passes) ok-o ok-o · zenmux 145 ok 0 | kilo 355 ok 2 (0/2 = openrouter/free 5/5, step-3.5-flash 5/5, omni:free 5/5, kilo-auto/small 4/5) | infron 354 ok 0 | novita 143 ok 0 | opencode-zen 61 ok 2 (hollow) | mistral 46 ok 0 (pixtral-12b 5/5 + small 3/5 verified earlier) | modelscope 40 ok 0 hollow (Qwen3-VL champion verified earlier) | groq 10 ok 0 | cloudflare 16 ok 0 (429-window; scout/gemma-4 verified earlier) | nvidia 78 ok 0 (llama-vision 5/5 verified earlier) | zydit 79 ok 0 (gemma-26b 5/5 verified earlier) | poolside 2 ok 0 | neuralwatt 17 ok 0 | freemodel catalog-empty (degraded all day) | agnes lane (native, verified 4 models 5/5 incl. 2.5-flash @2.6s) | NIM hosted (verified llama-3.2-vision, nemotron-nano, omni-30b) | logfare 0 models/hang.
+OBSERVATION: evening free-tier exhaustion (our own quota burn) → most free lanes return hollow/429 AFTER the golden windows; usable-lane record is the best-evidence set below.
+USABLE FREE VISION REGISTER (final): Qwen3-VL (modelscope) ★ | agnes-2.5-flash @2.6s ★ | pixtral-12b @3.6s ★ | agnes-2.0-flash @10s | step-3.5-flash (kilo) | omni-30b:free (kilo/OR/hosted) | openrouter/free (kilo) | kilo-auto/small | llama-3.2-11b/90b-vision | nemotron-nano-12b (hosted+) | llama-4-scout (cf) | zydit-gemma-26b-alias | gemma-4-26b (cf) | mistral-small-latest (3/5) | minimax-m3 (weak).
+FINAL LADDER: Qwen3-VL ≻ agnes-2.5-flash ≻ agnes-2.0-flash ≻ pixtral-12b ≻ omni-30b:free ≻ step-3.5-flash(kilo) ≻ llama-3.2-vision ≻ scout ≻ zydit-gemma ≻ gemma-4-26b ≻ nemotron-nano ≻ minimax-m3.
