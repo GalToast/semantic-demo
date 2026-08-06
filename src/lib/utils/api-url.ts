@@ -8,7 +8,11 @@
  * connection limit, which can queue `/api.php` requests behind large static
  * downloads (data.dat, JS chunks) and cause tests to time out.
  */
-export const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL ?? ''
+// NOTE: no optional chaining here — `import.meta.env?.VITE_API_BASE_URL`
+// defeats Vite's static define-replacement (it only matches the exact
+// `import.meta.env.VITE_X` expression), so the override silently resolved to
+// '' and cross-origin API config never worked (W85).
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export function apiUrl(path: string): string {
     // Support both 'api.php?...' and '/api.php?...' style inputs.
