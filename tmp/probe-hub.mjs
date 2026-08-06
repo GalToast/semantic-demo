@@ -23,10 +23,11 @@ const PORT = Number(process.argv[3] || 8911)
 
 const OPS = {
   /** Navigate the warm page to a deep-link and wait for engine readiness. */
-  async navigate(page, { url }) {
+  async navigate(page, { url, waitSel, settleMs = 1800 }) {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {})
     await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 25000, polling: 200 }).catch(() => {})
-    await page.waitForTimeout(1800)
+    if (waitSel) await page.waitForSelector(waitSel, { timeout: 20000 }).catch(() => {})
+    await page.waitForTimeout(settleMs)
     return page.evaluate(() => ({
       href: location.href,
       surface: document.body.dataset.panelSurface ?? null,
@@ -114,6 +115,9 @@ const OPS = {
         const cs = getComputedStyle(el)
         if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) continue
         const rect = el.getBoundingClientRect()
+        // Unrendered-but-in-DOM elements (0×0 boxes from off-canvas containers)
+        // are not on any visual surface — skip them wholesale (phantom class).
+        if (rect.width < 1 || rect.height < 1) continue
         // 1) horizontal overflow beyond viewport (right edge only; left-off-canvas is common by design)
         if (rect.right > vw + 2) {
           out.overflow++
@@ -127,10 +131,14 @@ const OPS = {
         if (interactive && (cs.pointerEvents === 'none' || el.hasAttribute('disabled'))) {
           out.hitless.push({ kind: 'dead', tag: el.tagName, cls: String(el.className).slice(0, 30), txt: (el.textContent || '').trim().slice(0, 30) })
         }
-        // 4) interactive with no accessible label
-        if (interactive && (cs.pointerEvents !== 'none')) {
-          const title = el.getAttribute('aria-label') || el.getAttribute('title') || el.getAttribute('aria-labelledby')
-          if (!title) out.unlabeled.push({ kind: 'unlabeled', tag: el.tagName, cls: String(el.className).slice(0, 30), txt: (el.textContent || '').trim().slice(0, 24) })
+        // 4) interactive with no accessible label (visible text + sr-only text counts)
+        if (interactive && (cs.pointerEvents !== 'none') && !el.hasAttribute('disabled')) {
+          const txt = (el.textContent || '').trim().replace(/\s+/g, ' ')
+          // clientWidth is 0 for inline boxes by spec — use bbox (rect) instead
+          const hasVisibleTxt = txt.length > 0 && rect.width > 0
+          const hasSrChild = !!el.querySelector('.sr-only, [class*="sr-only"]')
+          const labelled = el.getAttribute('aria-label') || el.getAttribute('title') || el.getAttribute('aria-labelledby')
+          if (!labelled && !hasVisibleTxt && !hasSrChild) out.unlabeled.push({ kind: 'unlabeled', tag: el.tagName, cls: String(el.className).slice(0, 30), txt: txt.slice(0, 24) })
         }
       }
       return out
