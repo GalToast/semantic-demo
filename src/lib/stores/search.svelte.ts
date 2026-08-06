@@ -527,8 +527,8 @@ export function setSearchResults(results: SearchResult[]): void {
     // CONTRACT (2026-08-06, search-race audit): canonical STORE-path writer of
     // currentSearchSummary. Sibling writer: orchestration.search() →
     // setSearchSummary (DOM path). Both populate appState.searchResults. Keep
-    // the field sets aligned; renderContext consumers read appState.searchSummary
-    // (results-ui.ts:233), everything else reads currentSearchSummary.
+    // the field sets aligned; consumers read currentSearchSummary (the legacy
+    // appState.searchSummary mirror was removed — it had 0 readers).
     withSearchNotify(() => {
         if (!appState.searchState.currentSearchSummary) {
             appState.searchState.currentSearchSummary = {
