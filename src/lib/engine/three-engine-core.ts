@@ -19,7 +19,7 @@ import {
     applyAutoRotateConfig,
     exposeDevEngineBridge
 } from './three-engine-init-helpers'
-import { sceneNeedsContinuousFrame } from './three-engine-helpers'
+import { sceneNeedsContinuousFrame, sceneVisualsNeedRender } from './three-engine-helpers'
 import { cameraControlsRestore } from '@lib/engine/camera-controls-restore.svelte.ts'
 import { webglContext } from '@lib/engine/webgl-context'
 import { disposeEventListeners } from '@lib/ui/global-bindings'
@@ -59,6 +59,12 @@ import {
     updatePointsShaderHoverBoost
 } from './three-engine-frame-updates'
 import { scheduleNextAnimationFrame, yieldToBrowser, pauseRenderLoopTimers, setAnimateFn } from './three-engine-timers'
+import {
+    clearScheduledFrameTasks,
+    hasScheduledFrameTasks,
+    runFrameTasks,
+    setFrameSchedulerWake
+} from './frame-scheduler'
 import {
     shouldSkipNextRender as shouldSkipNextRenderHelper,
     type SceneStaticSnapshot
@@ -289,8 +295,9 @@ export function onWindowResize() {
 
 export function cancelAnimate() {
     pauseRenderLoopTimers({ clearRestoreTimer: true })
-    // M4/M7: cancel any pending route animation rAFs before the renderer/canvas
-    // are torn down, so a pending step() won't fire against nulled camera/controls.
+    clearScheduledFrameTasks()
+    // M4/M7: cancel any pending route frame tasks before the renderer/canvas are
+    // torn down, so a pending step() won't fire against nulled camera/controls.
     cancelRouteAnimations()
     // M9: also cancel any pending focus-camera animation rAF. The route
     // registry above only tracks route animations; focus.ts manages its rAF
@@ -484,11 +491,12 @@ export function animate() {
     // Schedule next frame FIRST so the RAF loop stays alive even when
     // _shouldSkipFrame() returns true (document hidden, view switched away
     // from 'galaxy', etc.). The skip check still gates the actual frame work.
-    const sceneNeedsContinuous = sceneNeedsContinuousFrame(
-        performance.now(),
-        engineState.state,
-        cameraControlsRestore.autoRotateResumeDueAt
-    )
+    const sceneNeedsContinuous =
+        sceneNeedsContinuousFrame(
+            performance.now(),
+            engineState.state,
+            cameraControlsRestore.autoRotateResumeDueAt
+        ) || hasScheduledFrameTasks()
     scheduleNextAnimationFrame(sceneNeedsContinuous)
 
     if (_shouldSkipFrame()) {
@@ -502,6 +510,9 @@ export function animate() {
     try {
         const frameStart = performance.now()
         const frameNow = frameStart
+        // Camera/search choreography runs in this engine-owned frame before
+        // controls, interaction visuals, and the renderer consume the state.
+        runFrameTasks(frameNow)
         const sceneFrameMs = engineState.state?.scenePerformanceDiagnostics?.lastFrameAt
             ? Math.min(250, Math.max(0, frameNow - engineState.state.scenePerformanceDiagnostics.lastFrameAt))
             : 0
@@ -629,11 +640,22 @@ function tickRenderAndPerf(frameNow: number, sceneFrameMs: number, sceneNeedsCon
         cameraPos: [posArr[0], posArr[1], posArr[2]] as const,
         cameraQuat: [quatArr[0], quatArr[1], quatArr[2], quatArr[3]] as const
     }
-    const skipCheck = shouldSkipNextRenderHelper(engineState.lastCameraSnapshot, newSnapshot, sceneNeedsContinuous)
-    const pp = engineState.ppModule
-    const renderedViaComposer = pp ? pp.renderPostProcessing() : false
-    if (!renderedViaComposer) {
-        webglContext.renderer.render(webglContext.scene, webglContext.camera)
+    const prefersReducedMotion =
+        typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+            ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            : false
+    const visualsNeedRender = sceneVisualsNeedRender(
+        sceneNeedsContinuous,
+        prefersReducedMotion,
+        engineState.hoverEmissiveFlash
+    )
+    const skipCheck = shouldSkipNextRenderHelper(engineState.lastCameraSnapshot, newSnapshot, visualsNeedRender)
+    if (!skipCheck.shouldSkip) {
+        const pp = engineState.ppModule
+        const renderedViaComposer = pp ? pp.renderPostProcessing() : false
+        if (!renderedViaComposer) {
+            webglContext.renderer.render(webglContext.scene, webglContext.camera)
+        }
     }
     engineState.lastCameraSnapshot = newSnapshot
     if (skipCheck.shouldSkip) {
@@ -654,3 +676,6 @@ function tickRenderAndPerf(frameNow: number, sceneFrameMs: number, sceneNeedsCon
 
 // Wire animate callback into timers module (avoids circular import)
 setAnimateFn(animate)
+// Choreography tasks wake the existing engine loop; they never create a second
+// RAF chain of their own.
+setFrameSchedulerWake(() => scheduleNextAnimationFrame(true))

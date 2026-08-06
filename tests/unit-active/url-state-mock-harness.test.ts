@@ -616,5 +616,25 @@ describe('url-state.ts — Svelte 5 mock harness (Phase 6e)', () => {
             updateUrlState({ foo: 'bar', baz: 'qux' })
             expect(replaceSpy).toHaveBeenCalled()
         })
+
+        it('preserves deep-link params only during the initial restore', () => {
+            const originalUrl = window.location.href
+            window.history.pushState({}, '', '/?record=519&anchor=519&view=map')
+            mockState.navStoreState.currentView = 'map'
+
+            try {
+                updateUrlState({}, { force: true, preserveDeepLinkParams: true })
+                const preserved = new URL(String(replaceSpy.mock.calls.at(-1)?.[2] || ''), window.location.origin)
+                expect(preserved.searchParams.get('record')).toBe('519')
+                expect(preserved.searchParams.get('anchor')).toBe('519')
+
+                updateUrlState({}, { force: true })
+                const cleared = new URL(String(replaceSpy.mock.calls.at(-1)?.[2] || ''), window.location.origin)
+                expect(cleared.searchParams.has('record')).toBe(false)
+                expect(cleared.searchParams.has('anchor')).toBe(false)
+            } finally {
+                window.history.pushState({}, '', originalUrl)
+            }
+        })
     })
 })

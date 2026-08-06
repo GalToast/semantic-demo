@@ -23,7 +23,7 @@
  *
  * Safety guards:
  *   - First call (no previous snapshot) → never skip.
- *   - Any animation flag in `animatingNow` → never skip.
+ *   - Any animation or visual-update flag in `animatingNow` → never skip.
  *   - Camera position/quaternion changed → never skip.
  *   - All-zero state (e.g. before mount) → never skip.
  */
@@ -41,7 +41,7 @@ export interface SceneStaticCheck {
      *   - the previous snapshot exists,
      *   - the previous snapshot had a non-zero camera transform,
      *   - every component matches within tolerance, AND
-     *   - no animations are currently in progress.
+     *   - no animations or other render-relevant visual updates are active.
      *
      * False means either "first call" or "something changed".
      */
@@ -58,10 +58,9 @@ const EPSILON = 1e-5
  *
  * @param prev    The snapshot from the previous frame, or null on first call.
  * @param curr    The snapshot for the current frame.
- * @param animatingNow  True if any user-driven animation is currently
- *                        active (the same conditions checked by
- *                        sceneNeedsContinuousFrame). Skipping during
- *                        animations breaks the visual.
+ * @param animatingNow  True if any animation or render-relevant visual update
+ *                        is active. Skipping while this is true breaks the
+ *                        visual even when the camera is unchanged.
  */
 export function shouldSkipNextRender(
     prev: SceneStaticSnapshot | null,

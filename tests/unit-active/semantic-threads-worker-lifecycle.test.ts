@@ -133,6 +133,20 @@ function createBundle(): SemanticThreadBundle {
     }
 }
 
+async function flushWorkerPromises(): Promise<void> {
+    await Promise.resolve()
+    await Promise.resolve()
+}
+
+function emitWorkerError(worker: MockWorker): void {
+    worker.dispatchEvent(
+        new ErrorEvent('error', {
+            message: 'worker exploded',
+            error: new Error('worker exploded')
+        })
+    )
+}
+
 function createState() {
     return {
         semanticThreadsLoadPromise: null,
@@ -233,6 +247,67 @@ describe('semantic thread worker lifecycle', () => {
         expect(worker.terminated).toBe(true)
     })
 
+    it('restarts caller request ids when a fresh worker is created', async () => {
+        const firstPromise = loadSemanticThreads({ reason: 'unit-test-worker-generation-one' })
+        await Promise.resolve()
+        await Promise.resolve()
+
+        const firstWorker = MockWorker.instances[0]
+        expect(firstWorker).toBeDefined()
+        const firstRequest = firstWorker.lastMessage as { requestId: number }
+        expect(firstRequest.requestId).toBe(1)
+
+        firstWorker.dispatchEvent(
+            new MessageEvent('message', {
+                data: {
+                    type: 'LOAD_THREADS_SUCCESS',
+                    requestId: firstRequest.requestId,
+                    payload: {
+                        neighborEntries: [['lead-1', createSemanticThreadNode()]],
+                        artifactName: 'semantic_threads_ui.dat',
+                        bundle
+                    }
+                }
+            })
+        )
+        await expect(firstPromise).resolves.toBe(true)
+        expect(firstWorker.terminated).toBe(true)
+
+        // Simulate a fresh external load after the successful worker teardown.
+        // The new worker's internal request counter starts at one as well.
+        state.semanticThreadsLoadPromise = null
+        state.semanticThreadsStatus = 'idle'
+        state.semanticThreadBundle = null
+        state.semanticThreadArtifactName = null
+        state.semanticNeighborMapByLeadId = new Map()
+
+        const secondPromise = loadSemanticThreads({ reason: 'unit-test-worker-generation-two' })
+        await Promise.resolve()
+        await Promise.resolve()
+
+        const secondWorker = MockWorker.instances[1]
+        expect(secondWorker).toBeDefined()
+        const secondRequest = secondWorker.lastMessage as { requestId: number }
+        expect(secondRequest.requestId).toBe(1)
+
+        secondWorker.dispatchEvent(
+            new MessageEvent('message', {
+                data: {
+                    type: 'LOAD_THREADS_SUCCESS',
+                    requestId: secondRequest.requestId,
+                    payload: {
+                        neighborEntries: [['lead-1', createSemanticThreadNode()]],
+                        artifactName: 'semantic_threads_ui.dat',
+                        bundle
+                    }
+                }
+            })
+        )
+
+        await expect(secondPromise).resolves.toBe(true)
+        expect(secondWorker.terminated).toBe(true)
+    })
+
     it('ignores stale worker responses until the matching request id resolves', async () => {
         const promise = loadSemanticThreads({ reason: 'unit-test-stale-response' })
         const resolved = vi.fn()
@@ -311,12 +386,101 @@ describe('semantic thread worker lifecycle', () => {
         expect(getLayoutManifest()).toBeNull()
     })
 
+    it('schedules one retry and suppresses duplicate loads while the retry is pending', async () => {
+        const promise = loadSemanticThreads({ reason: 'unit-test-retry-guard' })
+        await flushWorkerPromises()
+
+        const worker = MockWorker.instances[0]
+        expect(worker).toBeDefined()
+        emitWorkerError(worker)
+
+        await expect(promise).resolves.toBe(false)
+        expect(state.semanticThreadsRetryAttempt).toBe(1)
+        expect(state.semanticThreadsRetryTimer).not.toBeNull()
+        expect(MockWorker.instances).toHaveLength(1)
+
+        const duplicatePromise = loadSemanticThreads({ reason: 'unit-test-duplicate-load' })
+        await expect(duplicatePromise).resolves.toBe(false)
+        expect(MockWorker.instances).toHaveLength(1)
+
+        vi.clearAllTimers()
+    })
+
+    it('recovers through the retry timer with a fresh worker generation', async () => {
+        const initialPromise = loadSemanticThreads({ reason: 'unit-test-retry-recovery' })
+        await flushWorkerPromises()
+
+        const firstWorker = MockWorker.instances[0]
+        expect(firstWorker).toBeDefined()
+        emitWorkerError(firstWorker)
+        await expect(initialPromise).resolves.toBe(false)
+
+        await vi.advanceTimersByTimeAsync(2499)
+        expect(MockWorker.instances).toHaveLength(1)
+        await vi.advanceTimersByTimeAsync(1)
+        await flushWorkerPromises()
+
+        const retryWorker = MockWorker.instances[1]
+        expect(retryWorker).toBeDefined()
+        const retryRequest = retryWorker.lastMessage as { requestId: number }
+        expect(retryRequest.requestId).toBe(1)
+
+        retryWorker.dispatchEvent(
+            new MessageEvent('message', {
+                data: {
+                    type: 'LOAD_THREADS_SUCCESS',
+                    requestId: retryRequest.requestId,
+                    payload: {
+                        neighborEntries: [['lead-1', createSemanticThreadNode()]],
+                        artifactName: 'semantic_threads_ui.dat',
+                        bundle
+                    }
+                }
+            })
+        )
+
+        const retryPromise = state.semanticThreadsLoadPromise as Promise<boolean>
+        await expect(retryPromise).resolves.toBe(true)
+        expect(state.semanticThreadsStatus).toBe('ready')
+        expect(state.semanticThreadsRetryAttempt).toBe(0)
+        expect(state.semanticThreadsRetryTimer).toBeNull()
+        expect(retryWorker.terminated).toBe(true)
+    })
+
+    it('stops scheduling after the retry budget is exhausted', async () => {
+        const initialPromise = loadSemanticThreads({ reason: 'unit-test-retry-budget' })
+        await flushWorkerPromises()
+
+        const firstWorker = MockWorker.instances[0]
+        expect(firstWorker).toBeDefined()
+        emitWorkerError(firstWorker)
+        await expect(initialPromise).resolves.toBe(false)
+
+        const retryDelays = [2500, 8000, 15000, 15000, 15000]
+        for (const [index, delay] of retryDelays.entries()) {
+            await vi.advanceTimersByTimeAsync(delay)
+            await flushWorkerPromises()
+
+            const retryWorker = MockWorker.instances[index + 1]
+            expect(retryWorker).toBeDefined()
+            emitWorkerError(retryWorker)
+
+            const retryPromise = state.semanticThreadsLoadPromise as Promise<boolean>
+            await expect(retryPromise).resolves.toBe(false)
+        }
+
+        expect(MockWorker.instances).toHaveLength(6)
+        expect(state.semanticThreadsRetryAttempt).toBe(5)
+        expect(state.semanticThreadsRetryTimer).toBeNull()
+        expect(state.semanticThreadsStatus).toBe('failed')
+    })
+
     it('fails and terminates the worker when the semantic thread request times out', async () => {
         const promise = loadSemanticThreads({ reason: 'unit-test-timeout' })
         await Promise.resolve()
         await Promise.resolve()
 
-        await vi.runAllTimersAsync()
+        await vi.advanceTimersByTimeAsync(180_000)
         const worker = MockWorker.instances[0]
         expect(worker).toBeDefined()
         expect(worker.terminated).toBe(true)
@@ -328,6 +492,11 @@ describe('semantic thread worker lifecycle', () => {
         expect(getSemanticThreadArtifactName()).toBeNull()
         expect(getSemanticNeighborMap().size).toBe(0)
         expect(getLayoutManifest()).toBeNull()
+        expect(MockWorker.instances).toHaveLength(1)
+        expect(state.semanticThreadsRetryAttempt).toBe(1)
+        expect(state.semanticThreadsRetryTimer).not.toBeNull()
+
+        vi.clearAllTimers()
     })
 })
 

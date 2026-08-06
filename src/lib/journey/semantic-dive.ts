@@ -107,6 +107,17 @@ export function syncSemanticDiveUi(): void {
 
     const diveButton = (document.getElementById('btn-focus-dive') ||
         document.getElementById('btn-focus-dive-legacy')) as HTMLButtonElement | null
+    // Attribute ownership: when the Svelte CompassDiveSurface is mounted
+    // (#btn-focus-dive exists), IT owns hidden/disabled/aria-* via the
+    // reactive template bindings. Writing hidden() here in the same frame
+    // creates a dual-writer race on the single element: each camera-frame
+    // call flips the attribute against Svelte's bind, and the compiled
+    // `.focus-stage-dive-btn[hidden] { display:none }` mirror rule leaves the
+    // button intermittently display:none/0x0 even though hidden=false
+    // (2026-08-06 dive-button chase — matched-rules empty, CDP confirms no
+    // author rule, yet computed display:none). Only the legacy fallback
+    // button (button only when surface not mounted) needs imperative writes.
+    const canonicalDiveButton = document.getElementById('btn-focus-dive')
     const insideControls = document.getElementById('focus-stage-inside-controls')
     const insideStatus = document.getElementById('focus-stage-inside-status')
     const insideStatusCopy = document.getElementById('focus-stage-inside-status-copy')
@@ -230,8 +241,13 @@ export function syncSemanticDiveUi(): void {
     if (!diveButton) return
 
     const showDiveButton = appState.trailDepth >= 1 && hasFocus && !active
-    if (diveButton) diveButton.hidden = !showDiveButton
-    if (diveButton) diveButton.inert = !showDiveButton
+    // Only manage visibility for the LEGACY button. The canonical Svelte
+    // button (CompassDiveSurface) owns hidden/inert reactively; duplicating
+    // the write here is the dual-writer race (see above).
+    if (!canonicalDiveButton) {
+        if (diveButton) diveButton.hidden = !showDiveButton
+        if (diveButton) diveButton.inert = !showDiveButton
+    }
 
     const label = diveButton.querySelector('.focus-stage-dive-label')
     const copy = diveButton.querySelector('.focus-stage-dive-copy')

@@ -16,8 +16,13 @@
  *  8. Caller gets the current snapshot back as `nextSnapshot` so
  *     they can pass it on the next call
  */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import { shouldSkipNextRender, type SceneStaticSnapshot } from '../../src/lib/engine/renderer/scene-static-tracker'
+
+const coreSource = readFileSync(resolve(process.cwd(), 'src/lib/engine/three-engine-core.ts'), 'utf8')
+const renderFunction = coreSource.match(/function tickRenderAndPerf\([\s\S]*?\n}\n\n\/\/ Wire animate callback/)?.[0] ?? ''
 
 const sample1: SceneStaticSnapshot = {
     cameraPos: [1.234, 5.678, 9.012],
@@ -113,5 +118,15 @@ describe('shouldSkipNextRender (W49-H)', () => {
             const r = shouldSkipNextRender(c.prev, c.curr, c.animating)
             expect(r.shouldSkip, c.label).toBe(c.expected)
         }
+    })
+
+    it('gates the real renderer call when a static frame is redundant', () => {
+        const gateIndex = renderFunction.indexOf('if (!skipCheck.shouldSkip)')
+        const renderIndex = renderFunction.indexOf('webglContext.renderer.render(')
+
+        expect(gateIndex).toBeGreaterThanOrEqual(0)
+        expect(renderIndex).toBeGreaterThan(gateIndex)
+        expect(renderFunction).toContain('sceneVisualsNeedRender(')
+        expect(renderFunction).toContain('shouldSkipNextRenderHelper(engineState.lastCameraSnapshot, newSnapshot, visualsNeedRender)')
     })
 })

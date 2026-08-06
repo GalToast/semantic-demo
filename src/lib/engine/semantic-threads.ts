@@ -226,6 +226,10 @@ export function resetSemanticThreadWorker(): void {
         _dataWorker.terminate()
     }
     _dataWorker = null
+    // data-worker.ts owns a separate request counter that starts at zero for
+    // every Worker instance. Re-sync the caller-side counter with that new
+    // worker or its first response will be ignored as stale until timeout.
+    _semanticThreadRequestId = 0
     // Explicitly clear the circuit breaker so a teardown/worker-reset does not
     // leave the breaker stuck open (replaces the old untracked reset timer).
     _workerFailureCount = 0

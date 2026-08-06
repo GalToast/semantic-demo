@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hasFiniteNodeIndex, sceneNeedsContinuousFrame } from '@lib/engine/three-engine-helpers'
+import { hasFiniteNodeIndex, sceneNeedsContinuousFrame, sceneVisualsNeedRender } from '@lib/engine/three-engine-helpers'
 
 // ---------------------------------------------------------------------------
 // hasFiniteNodeIndex — table-driven
@@ -21,6 +21,23 @@ describe('hasFiniteNodeIndex', () => {
         ['array', [1], false]
     ])('returns %s for %j', (_label, input, expected) => {
         expect(hasFiniteNodeIndex(input)).toBe(expected)
+    })
+})
+
+// ---------------------------------------------------------------------------
+// sceneVisualsNeedRender — render-skip safety matrix
+// ---------------------------------------------------------------------------
+
+describe('sceneVisualsNeedRender', () => {
+    it.each([
+        ['continuous scene', true, true, 0, true],
+        ['normal motion idle tick', false, false, 0, true],
+        ['reduced-motion static scene', false, true, 0, false],
+        ['reduced-motion hover flash decay', false, true, 0.25, true],
+        ['tiny flash below decay threshold', false, true, 0.001, false],
+        ['invalid flash value', false, true, NaN, false]
+    ])('%s', (_label, continuous, reducedMotion, flash, expected) => {
+        expect(sceneVisualsNeedRender(continuous, reducedMotion, flash)).toBe(expected)
     })
 })
 

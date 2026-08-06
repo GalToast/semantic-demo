@@ -23,6 +23,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { NavState } from '@lib/types/state'
 
 // ── Hoisted mock handles ────────────────────────────────────────────────────
 const mockAppState = vi.hoisted(() => ({
@@ -59,7 +60,7 @@ const mockAppState = vi.hoisted(() => ({
         restoringBrowserHistory: false,
         urlStateRestoreToken: 0,
         activeStoryPrompt: null
-    } as Record<string, unknown>,
+    } as NavState,
     trailDepth: 0,
     currentView: 'galaxy',
     // The real appState exposes these top-level slices that focus reset
@@ -264,7 +265,7 @@ async function freshNavStore() {
 
 /// Base default nav state object — used in beforeEach to reset both
 // the mock appState and the singleton _navWritable.
-const DEFAULT_NAV_STATE = {
+const DEFAULT_NAV_STATE: NavState = {
     mode: 'overview',
     surface: 'idle',
     previousSurface: 'idle',
@@ -642,6 +643,73 @@ describe('navStore — mutation functions', () => {
         expect(navStore().previousSurface).toBe('focus')
     })
 
+    // ── setSurface map-family view coupling (surface-invariant regression) ──
+    // Guards the invariant: setSurface derives currentView from the surface's
+    // map-family membership. Map-prefixed surfaces must NOT be silently forced
+    // back to galaxy (the exact-match `=== 'map'` bug). Existing non-map
+    // surface → galaxy coupling is locked, not changed.
+    it('setSurface("map") keeps map view after switchView(map) (bridge-paired, map start)', () => {
+        switchView('map')
+        setSurface('map')
+        expect(navStore().currentView).toBe('map')
+    })
+
+    it('setSurface("map") derives map view from a galaxy start', () => {
+        setSurface('map')
+        expect(navStore().currentView).toBe('map')
+    })
+
+    it('setSurface("map-trail") no longer forces galaxy from a map start (regression)', () => {
+        switchView('map')
+        setSurface('map-trail')
+        expect(navStore().currentView).toBe('map')
+    })
+
+    it('setSurface("map-trail") derives map view from a galaxy start', () => {
+        setSurface('map-trail')
+        expect(navStore().currentView).toBe('map')
+    })
+
+    it('setSurface("map-focus") no longer forces galaxy from a map start (regression)', () => {
+        switchView('map')
+        setSurface('map-focus')
+        expect(navStore().currentView).toBe('map')
+    })
+
+    it('setSurface("map-focus") derives map view from a galaxy start', () => {
+        setSurface('map-focus')
+        expect(navStore().currentView).toBe('map')
+    })
+
+    it('setSurface("map-focus-search") no longer forces galaxy from a map start (regression)', () => {
+        switchView('map')
+        setSurface('map-focus-search')
+        expect(navStore().currentView).toBe('map')
+    })
+
+    it('setSurface("map-focus-search") derives map view from a galaxy start', () => {
+        setSurface('map-focus-search')
+        expect(navStore().currentView).toBe('map')
+    })
+
+    it('setSurface("focus") still couples to galaxy view from a map start (existing behavior preserved)', () => {
+        switchView('map')
+        setSurface('focus')
+        expect(navStore().currentView).toBe('galaxy')
+    })
+
+    it('setSurface("search") still couples to galaxy from a galaxy start (existing behavior preserved)', () => {
+        setSurface('search')
+        expect(navStore().currentView).toBe('galaxy')
+        expect(navStore().mode).toBe('search')
+    })
+
+    it('setSurface("idle") still couples to galaxy view (existing behavior preserved)', () => {
+        setSurface('idle')
+        expect(navStore().currentView).toBe('galaxy')
+        expect(navStore().mode).toBe('overview')
+    })
+
     it('setFocusedIndex(42) sets focusedIndex=42', () => {
         setFocusedIndex(42)
         expect(navStore().focusedIndex).toBe(42)
@@ -899,6 +967,27 @@ describe('navStore — NAV_TRANSITION_ACTIONS dispatch', () => {
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' })
         expect(navStore().surface).toBe('focus')
         expect(navStore().mode).toBe('focus')
+    })
+
+    it('SET_SURFACE preserves the current map view for map-trail', () => {
+        switchView('map')
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map-trail' })
+        expect(navStore().currentView).toBe('map')
+        expect(navStore().surface).toBe('map-trail')
+    })
+
+    it('SET_SURFACE preserves the current map view for map-focus', () => {
+        switchView('map')
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map-focus' })
+        expect(navStore().currentView).toBe('map')
+        expect(navStore().surface).toBe('map-focus')
+    })
+
+    it('SET_SURFACE preserves the current map view for map-focus-search', () => {
+        switchView('map')
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map-focus-search' })
+        expect(navStore().currentView).toBe('map')
+        expect(navStore().surface).toBe('map-focus-search')
     })
 
     it('SET_SURFACE with idle resets mode to overview', () => {

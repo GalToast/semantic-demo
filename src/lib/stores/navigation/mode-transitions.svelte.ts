@@ -98,11 +98,21 @@ export function setSurface(surface: PanelSurface): void {
                   : surface === 'idle'
                     ? 'overview'
                     : cur.mode
+    // Map-family surfaces ('map', 'map-trail', 'map-focus', 'map-focus-search')
+    // carry the map view; every other surface is a galaxy-panel surface. The
+    // prefix check fixes the latent bug where map-prefixed surfaces silently
+    // fell through the exact-match `=== 'map'` predicate and forced galaxy.
+    // The SET_SURFACE action preserves currentView by omitting it from its
+    // patch; writeNavStateMirror merges unmentioned fields. That behavior is
+    // independent of whether a caller also dispatches SET_VIEW. The standalone
+    // setSurface() bridge helper below intentionally derives currentView from
+    // the surface family for test/setup callers.
+    const isMapFamilySurface = surface === 'map' || surface.startsWith('map-')
     writeNavStateMirror({
         previousSurface: cur.surface,
         surface,
         mode,
-        currentView: surface === 'map' ? 'map' : 'galaxy'
+        currentView: isMapFamilySurface ? 'map' : 'galaxy'
     })
 }
 

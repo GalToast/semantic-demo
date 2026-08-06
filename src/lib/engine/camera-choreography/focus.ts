@@ -29,6 +29,7 @@ import {
     easeOutQuint
 } from '@lib/utils/math-easing'
 import { setFocusTransitionMode, startFocusCameraAssist } from '../camera-controls-core'
+import { scheduleFrameTask } from '../frame-scheduler'
 interface FocusFramingOptions extends FramingParams {
     transitionStyle?: string
     distance?: number
@@ -56,13 +57,11 @@ interface FocusPersonality {
 // FOCUS CAMERA ANIMATION — animateCameraToNode
 // -----------------------------------------------------------------------------
 
-let _focusCameraRafId: number | null = null
+let _focusCameraTaskCancel: (() => void) | null = null
 
 export function cancelFocusCameraAnimation() {
-    if (_focusCameraRafId !== null) {
-        window.cancelAnimationFrame(_focusCameraRafId)
-        _focusCameraRafId = null
-    }
+    _focusCameraTaskCancel?.()
+    _focusCameraTaskCancel = null
 }
 
 export function animateCameraToNode(index: number, options: FocusFramingOptions = {}) {
@@ -273,8 +272,11 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
         targetControlPoint = res.targetControlPoint
     }
 
-    function step(now: number) {
-        if (animationToken !== appState.focusCameraAnimationToken) return
+    function step(now: number): boolean {
+        if (animationToken !== appState.focusCameraAnimationToken) {
+            _focusCameraTaskCancel = null
+            return true
+        }
         const t = Math.min((now - startTime) / duration, 1)
 
         const personalityEasing =
@@ -318,10 +320,12 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
 
         controls.update()
         if (t < 1) {
-            _focusCameraRafId = requestAnimationFrame(step)
+            return false
         } else {
             appState.focusCameraOffset = null
+            _focusCameraTaskCancel = null
+            return true
         }
     }
-    _focusCameraRafId = requestAnimationFrame(step)
+    _focusCameraTaskCancel = scheduleFrameTask(step)
 }

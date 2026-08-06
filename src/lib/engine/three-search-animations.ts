@@ -25,6 +25,7 @@
  * contract tests.
  */
 import { webglContext } from '@lib/engine/webgl-context'
+import { scheduleFrameTask } from './frame-scheduler'
 import {
     Vector3,
     InstancedBufferAttribute,
@@ -98,7 +99,7 @@ const _corridorGlowTimers = new Set<ReturnType<typeof setTimeout>>()
 
 let _corridorAnimState: CorridorAnimState | null = null
 let _corridorAnimStartTime: number | null = null
-let _heroRafId = 0
+let _heroFrameTaskCancel: (() => void) | null = null
 
 // Persistent anchor glow state: tracks the anchor node and remaining
 // lifetime so updateCorridorNodeGlow can sustain a residual glow after
@@ -345,8 +346,8 @@ export function triggerSearchHeroMoment(anchorIndex: number) {
     if (!webglContext.pointsMaterial || !webglContext.pointsMaterial.userData.shader || !state.nodePositions) return
     const shader = webglContext.pointsMaterial.userData.shader
 
-    cancelAnimationFrame(_heroRafId)
-    _heroRafId = 0
+    _heroFrameTaskCancel?.()
+    _heroFrameTaskCancel = null
 
     // Arm persistent anchor glow so the anchor node stays visually distinct
     // after the bloom peaks.
@@ -365,7 +366,7 @@ export function triggerSearchHeroMoment(anchorIndex: number) {
     const duration = 2400
     const startTime = performance.now()
 
-    function animateHero(now: number) {
+    function animateHero(now: number): boolean {
         const elapsed = now - startTime
         const progress = Math.min(elapsed / duration, 1.0)
 
@@ -378,18 +379,19 @@ export function triggerSearchHeroMoment(anchorIndex: number) {
         }
 
         if (progress < 1.0) {
-            _heroRafId = requestAnimationFrame(animateHero)
+            return false
         } else {
-            _heroRafId = 0
+            _heroFrameTaskCancel = null
             if (webglContext.pointsMaterial && webglContext.pointsMaterial.userData.shader) {
                 // Do NOT reset uGlowIntensity to zero — the persistent anchor
                 // glow in updateCorridorNodeGlow will sustain a residual level.
                 webglContext.pointsMaterial.userData.shader.uniforms.uRippleTime.value = -1000.0
             }
+            return true
         }
     }
 
-    _heroRafId = requestAnimationFrame(animateHero)
+    _heroFrameTaskCancel = scheduleFrameTask(animateHero)
 }
 
 export function triggerCorridorNodeGlow(anchorIndex: number, routeIndices: number[] = []) {
@@ -631,14 +633,12 @@ export function disposeSearchCorridorAnimation() {
 }
 
 /**
- * Dispose hero-moment rAF and corridor-glow timers.
+ * Dispose hero-moment frame task and corridor-glow timers.
  * Called during engine teardown via disposeInteractionVisuals → here.
  */
 export function disposeHeroAnimation() {
-    if (_heroRafId) {
-        cancelAnimationFrame(_heroRafId)
-        _heroRafId = 0
-    }
+    _heroFrameTaskCancel?.()
+    _heroFrameTaskCancel = null
     // Clear persistent anchor glow state on teardown.
     _anchorGlowIndex = -1
     _anchorGlowRemaining = 0

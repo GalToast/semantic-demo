@@ -198,6 +198,18 @@
     border-radius: 0.25rem;
   }
 
+  /* Hover affordance: MUST live here (scoped). The global
+     css/layout_base.css .legend-item:hover rule can never win because
+     this scoped base (class + svelte-hash attr) outranks it on the same
+     properties — the orphan rule silently no-ops (2026-08-06 probe). */
+  .legend-item:hover {
+    transform: translateY(-2px);
+    border-radius: 0.3rem;
+    color: var(--color-text-teal-light);
+    background: var(--glass-reflection-muted);
+    box-shadow: var(--shadow-glass-glow);
+  }
+
   /* ── filtered badge ────────────────────────────────────────────────────── */
   .legend-filtered-badge {
     display: inline-block;

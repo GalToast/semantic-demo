@@ -171,7 +171,7 @@
    the user feedback that their click registered and something is happening.
    ----------------------------------------------------------------------- */
 
-body[data-semantic-dive="transitioning"]::before {
+body[data-semantic-dive='transitioning']::before {
     content: 'Focusing…';
     position: fixed;
     top: 1rem;
@@ -207,7 +207,7 @@ body[data-semantic-dive="transitioning"]::before {
 
 /* Reduced motion: show instantly */
 @media (prefers-reduced-motion: reduce) {
-    body[data-semantic-dive="transitioning"]::before {
+    body[data-semantic-dive='transitioning']::before {
         animation: none;
         opacity: 1;
         transform: translateX(-50%);

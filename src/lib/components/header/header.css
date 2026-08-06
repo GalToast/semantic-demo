@@ -104,6 +104,26 @@
     cursor: pointer;
     transition: all 0.15s;
 }
+
+/* Header owns these buttons. Older layout CSS positions the same class names
+   as fixed viewport chrome; leaving those offsets active moves the buttons
+   down into the idle search panel while they remain in the header flex row. */
+@media (min-width: 769px) {
+    .app-header .legend-toggle,
+    .app-header .help-toggle {
+        top: auto;
+        right: auto;
+    }
+
+    /* The legacy layout uses ID selectors for the two help buttons, so the
+       owner rule must match that specificity to clear their fixed offsets. */
+    .app-header #btn-keyboard-help,
+    .app-header #btn-app-help {
+        top: auto;
+        right: auto;
+    }
+}
+
 .legend-toggle:hover,
 .help-toggle:hover {
     background: rgba(var(--color-primary-alt-rgb), 0.15);

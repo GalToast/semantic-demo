@@ -14,6 +14,7 @@ import { setFocusTransitionMode } from '@lib/engine/camera-controls-core'
 import { appState } from '@lib/state/app.svelte'
 import { debugError } from '@lib/utils/debug'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
+import { scheduleFrameTask } from '../frame-scheduler'
 
 // ── Local Types ──────────────────────────────────────────────────────────────
 
@@ -40,17 +41,17 @@ interface Point {
 
 let _insideCentroidLerpToken = 0
 
-// M7: reusable DisposableRegistry for requestAnimationFrame tracking across
-// all route animations. Each animation function clears the previous registry
-// (cancelling any pending rAF) before creating new entries.
+// M7: reusable DisposableRegistry for frame-task cancellation across all
+// route animations. Each animation function clears the previous registry
+// before registering a fresh task with the engine-owned frame scheduler.
 //
-// M4: stored rAF ids ensure cancelAnimationFrame is called during teardown
-// rather than relying solely on the module token check at step() top, which
-// still lets the pending rAF fire once against potentially-nulled camera/controls.
+// M4: cancellation callbacks ensure teardown removes pending work rather than
+// relying solely on the module token check at step() top, which would still let
+// a pending task run once against potentially-nulled camera/controls.
 let _routeRafRegistry: DisposableRegistry | null = null
 
 /**
- * Cancel all pending route animations and clear the rAF registry.
+ * Cancel all pending route animations and clear the frame-task registry.
  * Safe to call even when no animation is active.
  */
 export function cancelRouteAnimations(): void {
@@ -173,14 +174,14 @@ export function animateCameraToSearchCorridor(
     cancelRouteAnimations()
     _routeRafRegistry = new DisposableRegistry({ label: 'camera-route-search-corridor' })
 
-    function step(now: number) {
+    function step(now: number): boolean {
         if (
             animationToken! !== appState.routeCameraAnimationToken ||
             appState.navState.focusedIndex !== null ||
             appState.currentView !== 'galaxy'
         )
-            return
-        if (!activeControls.target || !activeCamera.position) return
+            return true
+        if (!activeControls.target || !activeCamera.position) return true
         const t = Math.min((now - startTime) / duration, 1)
         const eased = easeInOutCubic(t)
         activeControls.target.set(
@@ -190,10 +191,11 @@ export function animateCameraToSearchCorridor(
         )
         activeCamera.position.lerpVectors(startPos, endPos, eased)
         if (t < 1) {
-            _routeRafRegistry!.raf(requestAnimationFrame(step))
+            return false
         }
+        return true
     }
-    _routeRafRegistry.raf(requestAnimationFrame(step))
+    _routeRafRegistry.add(scheduleFrameTask(step))
     return true
 }
 
@@ -251,10 +253,10 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
             activeControls.enabled = priorControlsEnabled
         })
 
-        function step(now: number) {
+        function step(now: number): boolean {
             if (animationToken !== appState.focusCameraAnimationToken) {
                 activeControls.enabled = priorControlsEnabled
-                return
+                return true
             }
             const t = Math.min((now - startTime) / duration, 1)
             const eased = easeInOutCubic(t)
@@ -262,7 +264,7 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
             activeCamera.position.lerpVectors(startPos, desiredPos, eased)
 
             if (t < 1) {
-                _routeRafRegistry!.raf(requestAnimationFrame(step))
+                return false
             } else {
                 activeControls.enabled = priorControlsEnabled
                 // Signal arrival WHEN the prelude animation actually completes.
@@ -275,9 +277,10 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
                 // intentionally does NOT publish 'idle': the superseding
                 // animation owns the arrival signal.
                 publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
+                return true
             }
         }
-        _routeRafRegistry.raf(requestAnimationFrame(step))
+        _routeRafRegistry.add(scheduleFrameTask(step))
     } catch (_err) {
         debugError('animateCameraToTerrainPrelude failed:', _err)
         // Error path: release the announced phase so subscribers aren't stuck.
@@ -353,21 +356,22 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
     cancelRouteAnimations()
     _routeRafRegistry = new DisposableRegistry({ label: 'camera-route-centroid' })
 
-    function stepCentroid(nowInner: number) {
-        if (token !== _insideCentroidLerpToken) return
+    function stepCentroid(nowInner: number): boolean {
+        if (token !== _insideCentroidLerpToken) return true
         const t = Math.min(1, (nowInner - startTime) / duration)
         const eased = easeInOutCubic(t)
         activeControls.target.lerpVectors(startTarget, lookAtTarget, eased)
         activeControls.update()
         if (t < 1) {
-            _routeRafRegistry!.raf(requestAnimationFrame(stepCentroid))
+            return false
         }
+        return true
     }
     if (prefersReducedMotion()) {
         activeControls.target.copy(lookAtTarget)
         activeControls.update()
     } else {
-        _routeRafRegistry.raf(requestAnimationFrame(stepCentroid))
+        _routeRafRegistry.add(scheduleFrameTask(stepCentroid))
     }
 }
 

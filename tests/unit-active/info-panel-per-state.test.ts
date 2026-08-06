@@ -8,6 +8,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
+import { getInfoPanelContent } from '@lib/orchestration/info-panel-state'
 
 const INFO_PANEL_PATH = resolve(__dirname, '../../src/components/InfoPanel.svelte')
 const HELPER_PATH = resolve(__dirname, '../../src/lib/orchestration/info-panel-state.ts')
@@ -49,13 +50,22 @@ describe('Info Panel per-state content', () => {
 
     it('info-panel-state helper defines content for idle surface', () => {
         expect(helperSource).toContain('idle:')
-        expect(helperSource).toContain("headerText: 'Business Details'")
-        expect(helperSource).toContain('headerVisible: true')
+        expect(getInfoPanelContent('idle')).toMatchObject({
+            headerText: 'Search Businesses',
+            headerVisible: false,
+            panelVisible: true,
+            selectionSuppressed: true
+        })
     })
 
     it('info-panel-state helper defines content for focus surface', () => {
         expect(helperSource).toContain('focus:')
-        expect(helperSource).toContain("headerText: 'Business Details'")
+        expect(getInfoPanelContent('focus')).toMatchObject({
+            headerText: 'Business Details',
+            headerVisible: true,
+            panelVisible: true,
+            selectionSuppressed: false
+        })
     })
 
     it('info-panel-state helper defines content for search surface with hidden header', () => {

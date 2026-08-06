@@ -63,6 +63,8 @@ export interface UpdateUrlStateOptions {
     reason?: string
     /** Force update even when applyingUrlState is true. */
     force?: boolean
+    /** Keep record/anchor params while an initial deep-link restore is settling. */
+    preserveDeepLinkParams?: boolean
 }
 
 // ── Internal State ────────────────────────────────────────────────────────────
@@ -301,7 +303,10 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         if (story) {
             writeNavStateMirror({ activeStoryPrompt: story })
             if (!options.fromHistory) {
-                updateUrlState({ q: restoredQuery || null }, { reason: 'apply-url-story', force: true })
+                updateUrlState(
+                    { q: restoredQuery || null },
+                    { reason: 'apply-url-story', force: true, preserveDeepLinkParams: true }
+                )
             }
         }
 
@@ -357,7 +362,10 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         // search-input DOM hasn't mounted yet, so shared search deep-links stay
         // shareable and browser history doesn't silently drop the query.
         if (!options.fromHistory) {
-            updateUrlState({ q: restoredQuery || null }, { reason: 'apply-url', force: true })
+            updateUrlState(
+                { q: restoredQuery || null },
+                { reason: 'apply-url', force: true, preserveDeepLinkParams: true }
+            )
         }
     } catch (err) {
         // Non-fatal: a deep-link restore failure must never crash boot or
@@ -431,9 +439,13 @@ export function updateUrlState(
 
     // Deep-link entry params (record, anchor) must NOT persist across mode
     // switches: leaving them in the URL causes popstate→applyUrlState to
-    // re-enter focus mode and revert the switch (mode-lock bug).
-    params.delete('record')
-    params.delete('anchor')
+    // re-enter focus mode and revert the switch (mode-lock bug). An active
+    // applyUrlState restore opts into preserving them until the initial
+    // deep-link has settled so the resulting URL remains shareable.
+    if (!options.preserveDeepLinkParams) {
+        params.delete('record')
+        params.delete('anchor')
+    }
 
     // Extra params
     for (const [key, value] of Object.entries(extra)) {

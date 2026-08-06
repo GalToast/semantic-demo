@@ -11,6 +11,24 @@ export function hasFiniteNodeIndex(value: unknown): boolean {
     return typeof value === 'number' && Number.isFinite(value) && value >= 0
 }
 
+/**
+ * The render-skip gate must account for visual updates that do not require a
+ * continuous 60fps loop. In normal motion mode the idle loop still advances
+ * point time, pulse phase, and thread opacity, so its 8fps tick needs to
+ * render. A hover flash can also decay after the continuous-frame flag clears.
+ */
+export function sceneVisualsNeedRender(
+    sceneNeedsContinuous: boolean,
+    prefersReducedMotion: boolean,
+    hoverEmissiveFlash: number
+): boolean {
+    return Boolean(
+        sceneNeedsContinuous ||
+        !prefersReducedMotion ||
+        (Number.isFinite(hoverEmissiveFlash) && hoverEmissiveFlash > 0.001)
+    )
+}
+
 export function sceneNeedsContinuousFrame(
     now: number,
     state: AppState | null,
