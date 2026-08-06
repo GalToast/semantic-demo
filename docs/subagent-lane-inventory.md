@@ -2,7 +2,7 @@
 
 Moved out of `AGENTS.md` (Prompt Budget: no large reference tables in the hot-path file). `docs/subagent-delegation.md` remains the source for lifecycle/rate/vision rules; this doc is just the live per-model viability table.
 
-Probed 2026-07-27. Updated 2026-08-05 (vision lanes refreshed by 670-probe sweep — see Vision Capability Matrix in `docs/subagent-delegation.md`; evidence `tmp/vision-probe/`). **See also `docs/subagent-models.md`** for the quick-reference version (verified table, conditional/avoid list, and untested backlog).
+Probed 2026-07-27. Updated 2026-08-06 (live catalogue refresh; vision lanes refreshed by 670-probe sweep — see Vision Capability Matrix in `docs/subagent-delegation.md`; evidence `tmp/vision-probe/`). **See also `docs/subagent-models.md`** for the quick-reference version (verified table, conditional/avoid list, and untested backlog).
 
 ## Routing preference (session 2026-08-04, user directive)
 
@@ -536,5 +536,28 @@ provider/model pair before a provider-qualified launch ref is accepted.
   returns **404** (zenmux) / **403** (novita). `/v1/models` lists ZERO kimi ids.
 - LESSON: free_models' route_status reflects _catalog_ entries, not runtime mapping.
   Always verify a candidate lane with a 2-token chat probe before dispatching work.
+- TokenRouter now lists `tokenrouter/moonshotai/kimi-k3-free` and
+  `tokenrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` as cataloged and
+  launchable. A real Kimi K3 Pi worker smoke still failed all three attempts with
+  zero tokens and `Connection error`; classify the route as catalog-visible, not
+  execution-healthy. Nemotron remains unbenchmarked and unprobed.
 - Verified live this wave: `zenmux/deepseek/deepseek-v4-flash-free` → 200 (use it
   for future telemetry/audit workers), `opencode-zen/deepseek-v4-flash-free` → 200.
+
+## Verified-dead lane probe table (2026-08-06, live key-router on 8788)
+Probe method: POST /<real-segment>/v1/chat/completions {model:"<id>", max_tokens:2}, timeout 15s.
+Real segments: opencode-zen, zenmux, poolside, zydit, novita (NOT the catalog prefixes opencode/qwen/openai).
+NOTE: these are dead at the PROVIDER/BILLING layer (our config listing is inert — a map, not a cause).
+| lane | segment | status | why dead |
+|---|---|---|---|
+| hy3-free | opencode-zen | 401 | key credits exhausted |
+| qwen3.6-plus-free | opencode-zen | 401 | key credits exhausted |
+| kimi-k2.6 | zenmux / novita | 404 / 403 | model removed / key not authorized |
+| gpt-5.6-sol, gpt-5.6-terra | zenmux (openai/) | 402 | paid-only, never free |
+| gpt-oss-20b:free, gpt-oss-120b:free | zenmux | 404 | removed |
+| laguna-xs-2.1-free | opencode-zen | 401 | key credits exhausted |
+| nemotron-3-super-free | opencode-zen | 401 | key credits exhausted |
+| deepseek-v4-pro-free | opencode-zen | 401 | key credits exhausted |
+| deepseek-v4-flash-free (CONTROL) | opencode-zen + zenmux | 429 | LIVE, quota-lagged (do not prune) |
+| mimo-v2.5-free (CONTROL) | opencode-zen | 429 | LIVE (do not prune) |
+CAVEAT: 401/429 rotate with keys/quota — re-probe before relying on "dead". 402/403/404 are stable.
