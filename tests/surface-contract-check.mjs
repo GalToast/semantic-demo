@@ -70,8 +70,29 @@ const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 const launchOptions = {
     headless: !headed,
     args: headed
-        ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox', '--disable-application-cache', '--disable-cache', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])]
-        : ['--no-sandbox', '--disable-application-cache', '--disable-cache', '--disable-gpu', ...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])]
+        ? [
+              '--use-gl=angle',
+              '--enable-webgl',
+              '--no-sandbox',
+              '--disable-application-cache',
+              '--disable-cache',
+              ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])
+          ]
+        : [
+              '--no-sandbox',
+              '--disable-application-cache',
+              '--disable-cache',
+              '--disable-gpu',
+              ...(forceSoftwareWebgl
+                  ? [
+                        '--ignore-gpu-blocklist',
+                        '--use-gl=angle',
+                        '--enable-webgl',
+                        '--enable-unsafe-swiftshader',
+                        '--enable-webgl-software-rendering'
+                    ]
+                  : [])
+          ]
 }
 
 function parseFlags(args) {
@@ -456,11 +477,23 @@ function makeAssert(name) {
 
 async function assert_mobile_idle(page, ctx) {
     await loadAndWait(page, positionalUrl)
-    // Trigger engineReady gate (requires user gesture to mount <Canvas>)
-    await page.evaluate(() => {
-        window.dispatchEvent(new Event('pointerdown'))
-    })
+    // Trigger engineReady gate. Desktop-idle uses the real splash CTA click
+    // (reliable trusted gesture); this used a synthetic window pointerdown,
+    // which is NOT a user gesture — <Canvas> stayed unmounted, so the
+    // canvas-container assertion below failed every run. Use the same real
+    // CTA path so the lazy mount actually fires on mobile.
+    await page
+        .click('[data-testid="splash-cta"], [data-testid="placeholder-cta"]', { timeout: 10000 })
+        .catch(() => {
+            // Fallback: some mobile shells gate via placeholder-cta only.
+            return page.evaluate(() => {
+                const el = document.querySelector('[data-testid="placeholder-cta"]')
+                if (el) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+            })
+        })
     await waitForMobileIdleChrome(page)
+    // Wait for the lazy canvas mount (engineReady gate) — same as desktop-idle.
+    await page.waitForSelector('#canvas-container', { state: 'attached', timeout: 10000 }).catch(() => {})
 
     const info = await page.evaluate(() => {
         // Browser-side helpers
@@ -524,6 +557,11 @@ async function assert_mobile_idle(page, ctx) {
 
         const canvas = document.querySelector('#canvas-container')
         results.canvasPresent = canvas !== null
+        // Canvas mount on the idle gate is expected AFTER a real engineReady
+        // gesture (see assert_mobile_idle head: trusted CTA click vs the old
+        // synthetic pointerdown that never mounted it). Track renderKind as a
+        // belt-and-suspenders guard — placeholder2d would allow absence.
+        results.renderKindMobile = document.body.dataset.renderKind ?? null
 
         const selectedCard = document.querySelector('.selected-card')
         if (selectedCard) {
@@ -555,8 +593,22 @@ async function assert_mobile_idle(page, ctx) {
         ctx.fail('mobile-idle', 'overlay:journey-compass', 'journey compass covers too much of the viewport')
     else if (info.compassBlocksViewport === false) ctx.pass('mobile-idle', 'overlay:journey-compass')
 
-    if (info.canvasPresent) ctx.pass('mobile-idle', 'dom:canvas-container')
-    else ctx.fail('mobile-idle', 'dom:canvas-container', 'missing #canvas-container')
+    // Mobile idle: canvas presence depends on render kind (placeholder2d =>
+    // deliberately absent; webgl => must mount). The old assertion always
+    // demanded a canvas, which W45-A's responsive-renderer never creates on
+    // mobile+webdriver — a false regression every run.
+    if (info.renderKindMobile === 'placeholder2d') {
+        if (info.canvasPresent === false) ctx.pass('mobile-idle', 'dom:canvas-container')
+        else ctx.fail('mobile-idle', 'dom:canvas-container', 'canvas mounted but renderKind=placeholder2d')
+    } else {
+        if (info.canvasPresent) ctx.pass('mobile-idle', 'dom:canvas-container')
+        else
+            ctx.fail(
+                'mobile-idle',
+                'dom:canvas-container',
+                'missing #canvas-container (renderKind=' + info.renderKind + ')'
+            )
+    }
 
     if (info.selectedCardBlackOnDark)
         ctx.fail('mobile-idle', 'black-on-dark:selected-card', 'black text on dark .selected-card')
@@ -5940,7 +5992,12 @@ const surfacesToRun = requestedSurfaces.length
     ? requestedSurfaces.filter((s) => SURFACE_LIST.includes(s))
     : SURFACE_LIST
 
-const PER_SURFACE_MS = 90_000
+// Software-WebGL (SwiftShader) boots measure 40-90s per surface on this
+// dev machine (2026-08-06: desktop-idle 84.7s, map-container 92s, mobile-idle
+// timers out at 90s with a real user-gesture CTA+canvas-wait). 90s was tuned
+// for a hardware GPU; under software rendering it's too tight and surfaces
+// die with runner:surface-timeout even when the assertions are correct.
+const PER_SURFACE_MS = 150_000
 const RUN_TIMEOUT_MS = requestedSurfaces.length
     ? requestedSurfaces.length * PER_SURFACE_MS * 1.2 + 20_000
     : Object.keys(SURFACES).length * PER_SURFACE_MS * 1.2 + 20_000

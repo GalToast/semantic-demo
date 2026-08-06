@@ -5179,7 +5179,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         )
     })
 
-    test.fixme('F5.2: SemanticGuideCard synthesize -> summary card -> suggestion chip drives focus', async ({ page }) => {
+    test.fixme('F5.2: SemanticGuideCard synthesize -> summary card -> suggestion chip drives focus', async ({
+        page
+    }) => {
         // SemanticGuideCard.svelte: #btn-synthesize onclick -> requestSemanticGuide()
         // (semantic-guide.ts). startSemanticGuideRequest() shows #semantic-summary-card
         // (class:hidden toggles off !isVisible) synchronously, then a fetch completes
@@ -5539,7 +5541,7 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         if (st.diveTop != null) expect(st.y + 44 <= st.diveTop + 2, 'toggle bottom clears the dive strip').toBe(true)
     })
 
-    test.fixme('B1. deep-link search renders result strength bars (setSearchResults population fix)', async ({
+    test('B1. deep-link search renders result strength bars (setSearchResults population fix)', async ({
         page
     }) => {
         // Fix B (2026-08-06): setSearchResults now populates renderContext/topScore +
