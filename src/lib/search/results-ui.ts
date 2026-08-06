@@ -217,9 +217,6 @@ export function renderSearchResultItems(
         Math.max(INITIAL_SHOW, Number.isFinite(savedCount) && savedCount > 0 ? savedCount : INITIAL_SHOW)
     )
 
-    const isPeek = document.body?.dataset?.panelSurfaceDetail === 'peek'
-    const mode = visibleCount >= total ? 'expanded' : isPeek ? 'peek' : 'initial'
-
     const isExpanded = total > INITIAL_SHOW && visibleCount >= total
     if (resultsEl) {
         resultsEl.classList.toggle('is-expanded', isExpanded)
