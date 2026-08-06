@@ -6,6 +6,7 @@
  * Works on Windows, Linux, and macOS.
  */
 import { execSync } from 'node:child_process'
+import { getPlaywrightDistFreshness } from './playwright-dist-freshness.mjs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -21,8 +22,17 @@ const API_HOST = process.env.PHP_API_URL || process.env.VITE_API_BASE_URL || 'ht
 process.env.VITE_API_BASE_URL = API_HOST
 
 console.log(`[playwright-web-server] VITE_API_BASE_URL=${API_HOST}`)
-console.log('[playwright-web-server] Running npm run build...')
-execSync('npm run build', { cwd: ROOT, stdio: 'inherit' })
+const distIndex = process.env.PLAYWRIGHT_DIST_INDEX || resolve(ROOT, 'dist/svelte/index.html')
+const freshness = getPlaywrightDistFreshness({ root: ROOT, distIndex })
+const forceBuild = process.env.PLAYWRIGHT_FORCE_BUILD === '1'
+
+if (forceBuild || !freshness.fresh) {
+    const reason = forceBuild ? 'PLAYWRIGHT_FORCE_BUILD=1' : `dist ${freshness.reason}`
+    console.log(`[playwright-web-server] Running npm run build (${reason})...`)
+    execSync('npm run build', { cwd: ROOT, stdio: 'inherit' })
+} else {
+    console.log(`[playwright-web-server] Reusing fresh dist (${distIndex})`)
+}
 
 console.log('[playwright-web-server] Starting test server on port 8796...')
 execSync('node scripts/test-server.mjs', { cwd: ROOT, stdio: 'inherit' })

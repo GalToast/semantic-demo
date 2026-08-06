@@ -29,8 +29,9 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
 ## Test server & stale-dist (Playwright `reuseExistingServer`)
 
 - **8796** = Playwright test server (`scripts/test-server.mjs`): static `dist/` + proxy
-  `/api.php` → **8795** (PHP). `playwright.config.js` `webServer.command` =
-  `... npm run build && node scripts/test-server.mjs`, port 8796, `reuseExistingServer: true`.
+  `/api.php` → **8795** (PHP). `playwright.config.js` starts
+  `scripts/playwright-web-server.mjs`, port 8796, `reuseExistingServer: true`; the wrapper
+  builds only when `dist/svelte/index.html` is missing or older than its tracked build inputs.
 - `test-server.mjs` reads files from `dist/` **per request** (`Cache-Control: no-cache`), so a
   mid-session `npm run build` refreshes a **running** 8796 with no restart.
 - **Foot-gun:** if _any_ process already binds 8796 when tests run, Playwright **skips the
@@ -48,6 +49,10 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
 - **Force-fresh:** run `npm run build` immediately before `npx playwright test …`; a running
   8796 then serves the just-rebuilt dist live. The `qa:journey:fresh*` scripts bake the
   pre-build in (`npm run build && npm run qa:journey*`).
+
+- **Fresh-build override:** when 8796 is free, set `PLAYWRIGHT_FORCE_BUILD=1` to make the
+  wrapper rebuild before starting the server. This does not affect a server already bound to
+  8796; stop that exact server or run `npm run build` first.
 
 - **Strict-freshness guard (opt-in):** `playwright.config.js` registers
   `scripts/playwright-global-setup.mjs` as `globalSetup`. By default it is a **no-op** (never
