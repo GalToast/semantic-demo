@@ -169,11 +169,23 @@
 - LESSON: journey grid tracks are fragile — any auto-placed child whose sibling (empty-state) vanishes mid-mode collapses the track. Rail now spans explicitly.
 
 ## Rail grid-column fix — collision verification (2026-08-06)
+
 - Was the 1/-1 span safe? Verified across 3 states:
-  - dive-state: rail 487px grid-column 1/-1 (fixed)
-  - focus (rail active): rail 508px auto→2/3
-  - trail-depth 1 + rail active: rail 508px, trail buttons PRESENT but in
-    `.focus-stage-auxiliary-surfaces` (separate container, NOT the journey grid)
-    → no overlap possible. trailInJourney === false (measured).
+    - dive-state: rail 487px grid-column 1/-1 (fixed)
+    - focus (rail active): rail 508px auto→2/3
+    - trail-depth 1 + rail active: rail 508px, trail buttons PRESENT but in
+      `.focus-stage-auxiliary-surfaces` (separate container, NOT the journey grid)
+      → no overlap possible. trailInJourney === false (measured).
 - CONCLUSION: rail spans when active; nothing else occupies the journey-grid
   track. Fix is safe. (The concern — co-render overlap — was empirically disproven.)
+
+## audit:a11y rule_9 — 0 findings, tool note (2026-08-06)
+- Ran audit:a11y + strict → both say 0 findings (HIGH/MEDIUM/LOW all zero), 39 components scanned.
+- Verified not-stale: the tool's rule_9 is file-coarse — hasReducedMotionGuard() returns true if the
+  FILE contains ANY prefers-reduced-motion block (animations.css's giant gate exempts every other file
+  in the same sheet). controls.css/layout_base.css have their own blocks too. So 0 is *expected*, not a
+  regression.
+- Implication: audit-a11y rule_9 silently can't see per-rule gaps inside a guard-bearing file. The
+  deeper checker is tmp/audit-reduced-motion.mjs (per-keyframe, 43 keyframes, 0 gaps) — that's the one
+  that caught the 4 real holes earlier. Keep BOTH: audit-a11y for the standing 0, audit-reduced-motion
+  for the real gate completeness.
