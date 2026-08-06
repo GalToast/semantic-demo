@@ -52,6 +52,14 @@
 
   const FORCED_START_DELAY_MS = 800;
   const RETRY_START_DELAY_MS = 500;
+  /**
+   * C fix: below this corpus size the demo's search-dependent phases
+   * (SEARCH/FOCUS/THREADS/TRAIL/DIVE/FILTER) no-op — the tour becomes
+   * captions-only over an unfiltered scene. Real corpus = 8,406; the mock
+   * fallback (backend down) serves ~20. Guard: skip the tour + show the
+   * getting-started hint instead.
+   */
+  const MOCK_CORPUS_MIN = 100;
   /** Delay before the fallback onboarding toast appears after splash dismissal. */
   const FALLBACK_HINT_DELAY_MS = 2500;
   /** Maximum time to wait for the 3D scene to become ready before falling back. */
@@ -132,34 +140,16 @@
     );
   }
 
-  const phaseLabels: Record<DemoPhase, string> = {
-    IDLE: '',
-    OVERVIEW: '',
-    SEARCH: 'Search for any business type…',
-    FOCUS: '…and focus on one.',
-    THREADS: 'Every connection it has.',
-    NEIGHBORS: 'Businesses that do similar things — by role.',
-    TRAIL: 'Follow the trail back to its source…',
-    DIVE: '…or dive into a whole kind of business.',
-    FILTER: 'Filter the county to one kind of business.',
-    MAP: 'See where they actually are.',
-    RETURN: 'Now explore your way.',
-    COMPLETE: '',
-    CANCELLED: ''
-  };
+  const TERMINAL_DEMO_PHASES: ReadonlySet<DemoPhase> = new Set(['IDLE', 'COMPLETE', 'CANCELLED'])
 
   /**
-   * OVERVIEW caption derived from the ACTUAL loaded corpus. The old
-   * hardcoded "8,406 businesses" lied when the mock fallback served the
-   * 20-business catalog (backend down) — the tour narrated 8,406 over a
-   * 20-dot scene. findDemoNode() guarantees records exist by the time this
-   * phase renders, so the count is accurate here.
+   * Single source of truth for captions: DEMO_SCRIPT (step.caption). The old
+   * component-local phaseLabels map drifted from the script's captions (B fix:
+   * "Follow the trail" vs "Follow a thread"). Terminal phases render nothing.
    */
-  function overviewCaption(): string {
-    const count = getBusinessRecords().length
-    return count > 0
-      ? `${count.toLocaleString()} businesses across Montgomery County — as a living network.`
-      : 'Montgomery County businesses — as a living network.'
+  function captionFor(phase: DemoPhase): string {
+    if (TERMINAL_DEMO_PHASES.has(phase)) return ''
+    return DEMO_SCRIPT.find((step) => step.phase === phase)?.caption() ?? phase
   }
 
   /** Show a brief onboarding hint when the auto-demo can't run. */
@@ -243,6 +233,14 @@
         return;
       }
       scheduleDemoTimer(() => attemptStart(remainingAttempts - 1), RETRY_START_DELAY_MS);
+      return;
+    }
+
+    // C fix: a degraded (mock-fallback) corpus cannot drive the
+    // search-dependent tour phases — skip the demo + offer the fallback hint.
+    if (records.length < MOCK_CORPUS_MIN) {
+      eligible = false;
+      scheduleDemoTimer(() => showFallbackHint(), FALLBACK_HINT_DELAY_MS);
       return;
     }
 
@@ -391,9 +389,7 @@
     aria-label="Guided demo"
   >
     <button type="button" class="demo-dismiss" onclick={dismissDemo} aria-label="Dismiss demo"></button>
-    <p class="demo-status">
-      {demoPhase() === 'OVERVIEW' ? overviewCaption() : (phaseLabels[demoPhase()] ?? demoPhase())}
-    </p>
+    <p class="demo-status">{captionFor(demoPhase())}</p>
   </div>
 {/if}
 

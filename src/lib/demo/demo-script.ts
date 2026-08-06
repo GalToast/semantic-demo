@@ -14,12 +14,13 @@ import { focusOnNode } from '@lib/engine/camera-choreography/cursor'
 import { traverseNeighbor } from '@lib/journey/thread-settler'
 import { setClusterFilter, clearClusterFilter } from '@lib/orchestration/cluster-filter-controller'
 import { switchView } from '@lib/orchestration/view-controller'
+import { getBusinessRecords } from '@lib/data-store'
 import { setLegendOpen } from '@lib/stores/legend.svelte'
 
 export type DemoStep = {
     phase: DemoPhase
     durationMs: number
-    caption: string
+    caption: () => string
     action: () => void | Promise<void>
 }
 
@@ -37,7 +38,12 @@ export const DEMO_SCRIPT: DemoStep[] = [
         // NOTE: display-dead — DemoChoreography renders its own phaseLabels,
         // not step.caption (drift hazard). Kept count-neutral here so this
         // copy can't lie about corpus size.
-        caption: 'Montgomery County businesses — as a living network.',
+        caption: () => {
+        const count = getBusinessRecords().length
+        return count > 0
+          ? `${count.toLocaleString()} businesses across Montgomery County — as a living network.`
+          : 'Montgomery County businesses — as a living network.'
+      },
         action: () => {
             toggleAutoRotate()
         }
@@ -45,7 +51,7 @@ export const DEMO_SCRIPT: DemoStep[] = [
     {
         phase: 'SEARCH',
         durationMs: 5000,
-        caption: 'Search for any business type…',
+        caption: () => 'Search for any business type…',
         action: async () => {
             await search('coffee')
         }
@@ -53,7 +59,7 @@ export const DEMO_SCRIPT: DemoStep[] = [
     {
         phase: 'FOCUS',
         durationMs: 4000,
-        caption: '…and focus on one.',
+        caption: () => '…and focus on one.',
         action: () => {
             // Turn off auto-rotate so the camera stays put on the focused node.
             toggleAutoRotate()
@@ -66,7 +72,7 @@ export const DEMO_SCRIPT: DemoStep[] = [
     {
         phase: 'THREADS',
         durationMs: 3000,
-        caption: 'Every connection it has.',
+        caption: () => 'Every connection it has.',
         action: () => {
             // Threads auto-render on focus — just hold + caption.
         }
@@ -74,7 +80,7 @@ export const DEMO_SCRIPT: DemoStep[] = [
     {
         phase: 'NEIGHBORS',
         durationMs: 4000,
-        caption: 'Businesses that do similar things — by role.',
+        caption: () => 'Businesses that do similar things — by role.',
         action: () => {
             // Focus pocket auto-renders on focus — just hold + caption.
         }
@@ -82,7 +88,7 @@ export const DEMO_SCRIPT: DemoStep[] = [
     {
         phase: 'TRAIL',
         durationMs: 5000,
-        caption: 'Follow a thread to its source…',
+        caption: () => 'Follow a thread to its source…',
         action: () => {
             traverseNeighbor(1)
         }
@@ -90,7 +96,7 @@ export const DEMO_SCRIPT: DemoStep[] = [
     {
         phase: 'DIVE',
         durationMs: 4000,
-        caption: '…or dive inside a whole cluster.',
+        caption: () => '…or dive inside a whole cluster.',
         action: () => {
             exploreInsideToNextStop()
         }
@@ -98,7 +104,7 @@ export const DEMO_SCRIPT: DemoStep[] = [
     {
         phase: 'FILTER',
         durationMs: 4000,
-        caption: 'Filter the county to one kind of business.',
+        caption: () => 'Filter the county to one kind of business.',
         action: () => {
             returnToCountyView()
             setClusterFilter(0)
@@ -107,7 +113,7 @@ export const DEMO_SCRIPT: DemoStep[] = [
     {
         phase: 'MAP',
         durationMs: 5000,
-        caption: 'See where they actually are.',
+        caption: () => 'See where they actually are.',
         action: () => {
             switchView('map')
             setLegendOpen(true)
@@ -116,7 +122,7 @@ export const DEMO_SCRIPT: DemoStep[] = [
     {
         phase: 'RETURN',
         durationMs: 3000,
-        caption: 'Now explore your way.',
+        caption: () => 'Now explore your way.',
         action: () => {
             switchView('galaxy')
             clearClusterFilter()
