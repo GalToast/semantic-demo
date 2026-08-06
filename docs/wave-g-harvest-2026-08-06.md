@@ -9,11 +9,11 @@ fixed (`page.evaluate` 2-arg misuse).
 
 ## Deliverables (committed)
 
-| File | Tests | Blind spot | Status |
-|---|---|---|---|
-| `tests/state-matrix-sweep.spec.js` | 24 cells | state × viewport × margin crossings | **1 real finding, tuned** |
-| `tests/adversarial-state-fuzz.spec.js` | 6 (5 seeds + teeth) | rapid-input/broken-state | net proven |
-| `tests/transition-frame-probe.spec.js` | 1 (5 edges) | 40-400ms transient windows | built |
+| File                                   | Tests               | Blind spot                          | Status                    |
+| -------------------------------------- | ------------------- | ----------------------------------- | ------------------------- |
+| `tests/state-matrix-sweep.spec.js`     | 24 cells            | state × viewport × margin crossings | **1 real finding, tuned** |
+| `tests/adversarial-state-fuzz.spec.js` | 6 (5 seeds + teeth) | rapid-input/broken-state            | net proven                |
+| `tests/transition-frame-probe.spec.js` | 1 (5 edges)         | 40-400ms transient windows          | built                     |
 
 ### 1. `state-matrix-sweep.spec.js` — the cross-product net
 
@@ -23,9 +23,9 @@ fixed (`page.evaluate` 2-arg misuse).
     - (a) no horizontal scroll (`scrollWidth <= innerWidth + 1`)
     - (b) no `position:fixed` element wider than the viewport
     - (c) no clipped text on `overflow:hidden` containers
-    **tuned:** skips canvas, `.sr-only` (a11y clip by design), and elements
-    that are themselves scroll containers (`overflow-y: auto/scroll`) —
-    intentional internal scroll is the FEATURE, not a defect
+      **tuned:** skips canvas, `.sr-only` (a11y clip by design), and elements
+      that are themselves scroll containers (`overflow-y: auto/scroll`) —
+      intentional internal scroll is the FEATURE, not a defect
     - (d) no console errors captured during the transition
     - (e) `#app` fills the viewport (bottom within 2px)
 - State via deep-link `?nodemo=1&<state>` (no WebGL/API dependency for mobile).
@@ -38,9 +38,9 @@ fixed (`page.evaluate` 2-arg misuse).
   goBack, reload, first-result click, viewport resize.
 - Universal invariants after EVERY action (fail-fast w/ trace):
     - I1 zero uncaught page errors — **allowlist is loose on purpose**:
-    `'Failed to load resource'` + `'404'` must BOTH be present to pass through
-    (the browser's exact string is
-    `Failed to load resource: the server responded with a status of 404 (...)`).
+      `'Failed to load resource'` + `'404'` must BOTH be present to pass through
+      (the browser's exact string is
+      `Failed to load resource: the server responded with a status of 404 (...)`).
     - I2 never a blank app (canvas / placeholder2d / info-panel / dialog visible)
     - I3 no stuck full-viewport overlay (veil/dialog >95% vh with pointer-events)
     - I4 modal focus sanity (no open `[aria-modal]` without a focusable child)
@@ -97,8 +97,8 @@ lands:
 
 ```yaml
 # suggested additions (cheap-first)
-- run: npm run qa:journey:smoke          # ~1 min, flow regression
-- run: npx playwright test tests/state-matrix-sweep.spec.js --browser=chromium   # ~7 min, crossings
+- run: npm run qa:journey:smoke # ~1 min, flow regression
+- run: npx playwright test tests/state-matrix-sweep.spec.js --browser=chromium # ~7 min, crossings
 ```
 
 Fuzz seeds (5×12) + frame-probe are slower (~15 min) — consider scheduled
@@ -133,3 +133,36 @@ FORCE_BREAK_PROBE=1 npx playwright test tests/adversarial-state-fuzz.spec.js --g
    is a metric; the DOM parent-chain probes found the true, different
    offender (.search-loading in panel-contained mode). The second message
    corrected the first.
+
+## Dive-feedback chase (2026-08-06 afternoon) — "dead machinery" audit double
+
+**Phenomenon:** the dive-entry "Focusing… / Entering Neighborhood" transient
+(parity `data-semantic-dive="transitioning"`) never fired for users.
+
+**Root-cause chain (producer-verify pattern):**
+
+1. CSS "Focusing…" keyed on a **dead body class** (`focus-transition-arriving`,
+   0 writers) → migrated to live dataset `body[data-semantic-dive="transitioning"]`
+   (commit 9de1f44c).
+2. The dataset flips only when `semantic-dive.ts isTransitioning` reads
+   `appState._semanticDiveTransitionDeadline > now` — which was **declared +
+   initialized + validated + read but never WRITTEN** (0 remain forever, so
+   `transitioning` never emitted). Producer was missing from the dive-entry
+   seam. Fixed: `ENTER_INSIDE` (compass-controller) arms
+   deadline = Date.now()+1200 (commit d7373e96). Covers both the button and
+   Ctrl+5 (both route through the same handler).
+3. **Button mount flap** (the "present-but-inert" red herring): in plain
+   headless (no **PLAYWRIGHT**), `#btn-focus-dive` mounts with jittery timing
+   (2.5-6.5s, sometimes never) because it lives in the LAZY JourneyCompass
+   chunk that resolves only when legacyCompassSurfaceActive flips. CDP
+   matched-styles + mutation-observer disproved CSS race / inert / oscillation;
+   it was the cold-start mount window. Fixed with an idle `requestIdleCallback`
+   pre-warm of the compass chunk for ALL users (commit 8bb61de8; mount
+   3-4s → ~0.4s verified).
+
+**Lesson (repeated):** "dead" UI feedback = producer chain missing a LINK, and
+the consumer/validator existence is the evidence it was *intended live*.
+Walk declaration → write → read → style-consumer BEFORE concluding dead vs
+incomplete. Second: headless mounts are NOT a stable DOM oracle — verify
+visibility claims with the REAL test harness (`window.__PLAYWRIGHT__`
+preloads) or name the cold-start caveat instead of chasing CSS ghosts.
