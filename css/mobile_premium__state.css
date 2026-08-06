@@ -949,7 +949,7 @@
         top: auto;
         bottom: max(0px, env(safe-area-inset-bottom, 0px));
         width: auto;
-        height: min(42dvh, 320px);
+        height: auto;
         min-height: 214px;
         max-height: min(42dvh, 320px);
         transform: translateY(0);
