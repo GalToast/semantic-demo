@@ -108,7 +108,14 @@
     body .focus-stage-dive-btn,
     body .focus-stage-inside-btn,
     body.surface-semantic-dive #btn-inside-next.focus-stage-inside-btn[aria-busy='true'],
-    body .focus-stage-neighbor-pill {
+    body .focus-stage-neighbor-pill,
+    /* Pulse loops on pseudo-elements + scramble that the gate missed
+       (2026-08-06 audit: infinite loops w/ movement under reduce) */
+    body .journey-compass-kicker::before,
+    body .journey-compass-kicker::after,
+    body .focus-stage-inside-status::before,
+    body .search-vector-scramble,
+    body .search-vector-scramble * {
         animation: none;
         transition: none;
     }
