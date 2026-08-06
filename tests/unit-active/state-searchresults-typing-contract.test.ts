@@ -51,10 +51,10 @@ describe('engine-boundary refactor / Phase 2-2 / searchResults field typing', ()
         // Types are re-exported from state-types.ts (thin barrel) — check the actual definition
         const searchTypes = readSource('src/lib/state/types/search-types.ts')
         expect(searchTypes).toMatch(/export\s+interface\s+SearchResult\b/)
-        // Required fields
-        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*point\s*:\s*SearchResultPoint/)
-        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*index\s*:\s*number/)
-        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*score\s*:\s*number/)
+        // point is optional + nullable (search results may lack geometry)
+        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*point\?:\s*SearchResultPoint\s*\|\s*null/)
+        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*index:\s*number/)
+        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*score:\s*number/)
         // Optional fields
         expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*publicNote\?\s*:\s*string/)
         expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*publicDetail\?\s*:\s*string/)

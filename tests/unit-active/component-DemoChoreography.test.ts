@@ -56,24 +56,18 @@ describe('DemoChoreography component', () => {
         expect(source).toContain('aria-label="Dismiss demo"')
     })
 
-    it('status paragraph .demo-status displays phase labels', () => {
+    it('status paragraph .demo-status displays phase caption via captionFor', () => {
         expect(source).toContain('class="demo-status"')
-        expect(source).toContain('{phaseLabels[demoPhase()]')
+        expect(source).toContain('{captionFor(demoPhase())}')
+        expect(source).toContain('captionFor(')
+        // captionFor reads from DEMO_SCRIPT, not a component-local map
+        expect(source).toContain('DEMO_SCRIPT')
     })
 
-    it('phase labels object contains all expected phases', () => {
-        expect(source).toContain('OVERVIEW:')
-        expect(source).toContain('SEARCH:')
-        expect(source).toContain('FOCUS:')
-        expect(source).toContain('THREADS:')
-        expect(source).toContain('NEIGHBORS:')
-        expect(source).toContain('TRAIL:')
-        expect(source).toContain('DIVE:')
-        expect(source).toContain('FILTER:')
-        expect(source).toContain('MAP:')
-        expect(source).toContain('RETURN:')
-        expect(source).toContain('COMPLETE:')
-        expect(source).toContain('CANCELLED:')
+    it('captionFor resolves captions from DEMO_SCRIPT steps', () => {
+        // DEMO_SCRIPT is the single source of truth (phaseLabels map removed)
+        expect(source).toContain('DEMO_SCRIPT.find((step) => step.phase === phase)')
+        expect(source).toContain('TERMINAL_DEMO_PHASES')
     })
 
     it('conditional rendering gated by eligible && isDemoActive()', () => {

@@ -19,7 +19,7 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 const FILES = [
-    resolve(__dirname, '../../src/components/DemoChoreography.svelte'),
+    resolve(__dirname, '../../src/lib/demo/demo-script.ts'),
     resolve(__dirname, '../../src/components/LoadingOverlay.svelte'),
     resolve(__dirname, '../../src/components/Legend.svelte')
 ]
@@ -32,12 +32,15 @@ describe('UI friendly copy (UI-hardening pass)', () => {
     const src = readAll()
 
     it('locks the friendly demo/tour copy', () => {
-        // New friendly phrasings present
-        expect(src).toContain("'Follow the trail back to its source…'")
-        expect(src).toContain("'…or dive into a whole kind of business.'")
-        // Old jargon gone
-        expect(src).not.toContain('Follow a thread to its source')
-        expect(src).not.toContain('dive inside a whole cluster')
+        // Current friendly phrasings present (in demo-script.ts)
+        expect(src).toContain("'Follow a thread to its source…'")
+        expect(src).toContain("'…or dive inside a whole cluster.'")
+        expect(src).toContain("'Search for any business type…'")
+        expect(src).toContain("'Every connection it has.'")
+        expect(src).toContain("'Businesses that do similar things — by role.'")
+        // Old jargon gone from user-visible captions (not comments/imports)
+        expect(src).not.toContain("'Follow the trail back to its source…'")
+        expect(src).not.toContain("'…or dive into a whole kind of business.'")
     })
 
     it('locks the friendly loading aria-label', () => {
