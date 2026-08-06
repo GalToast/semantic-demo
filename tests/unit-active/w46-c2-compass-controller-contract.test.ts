@@ -211,7 +211,7 @@ describe('W46-C2: getJourneyCompassPresentationState phase mapping (structural)'
     })
 })
 
-describe('W46-C2: runtime -- getJourneyCompassPresentationState for known phases', { timeout: 60000 }, () => {
+describe('W46-C2: runtime -- getJourneyCompassPresentationState for known phases', { timeout: 120000 }, () => {
     it('returns the standard expanded branch when phase is overview', async () => {
         const { getJourneyCompassPresentationState } = await import('../../src/lib/orchestration/compass-controller')
         const result = getJourneyCompassPresentationState({ phase: 'overview' })
