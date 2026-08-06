@@ -22,21 +22,44 @@ const APP_URL = process.argv[2] || 'http://localhost:5174'
 const PORT = Number(process.argv[3] || 8911)
 
 const OPS = {
-  /** Search for q and return the top N rendered names (what the user sees). */
+  /** Search for q and return the top N rendered names (what the user sees).
+   *  Deterministic: navigates the warm page via the deep-link (?q=) which is the
+   *  proven render path — synthetic typing clears the panel and races the app. */
   async searchNames(page, { q = 'coffee', n = 6 } = {}) {
-    const input = page.locator('#search-input, input[type="search"]').first()
-    await input.fill('')
-    await input.fill(q)
-    await input.press('Enter')
-    // Wait for the panel to actually render items (up to 15s)
-    await page.waitForSelector('.search-result-listitem', { timeout: 15000 }).catch(() => {})
-    await page.waitForTimeout(500)
+    const url = new URL(page.url())
+    url.searchParams.set('q', q)
+    await page.goto(url.href, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {})
+    await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 25000, polling: 200 }).catch(() => {})
+    await page.waitForSelector('.search-result-listitem', { timeout: 20000 }).catch(() => {})
     const res = await page.evaluate((n) => {
       const els = [...document.querySelectorAll('.search-result-listitem')].slice(0, n)
       const r = els.map((el) => el.querySelector('.search-result-name')?.textContent.replace(/\s+/g, ' ').trim() ?? null)
-      return { count: els.length, names: r, surface: document.body.dataset.panelSurface }
+      return { count: els.length, names: r, surface: document.body.dataset.panelSurface, hasResults: !!document.querySelector('.search-result-listitem') }
     }, n)
     return { res }
+  },
+
+  async debugStep(page, { step = 'fill', q = 'coffee' } = {}) {
+    if (step === 'count') {
+      const input = page.locator('#search-input, input[type="search"]').first()
+      return { count: await input.count(), visible: await input.isVisible().catch(() => false) }
+    }
+    const setOk = await page.evaluate((query) => {
+      const i = document.querySelector('#search-input, input[type="search"]')
+      if (!i) return false
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+      setter.call(i, query)
+      i.dispatchEvent(new Event('input', { bubbles: true, composed: true }))
+      return i.value
+    }, q).catch((e) => `ERR ${e?.message}`)
+    await page.waitForTimeout(1500)
+    if (step === 'enter') { await page.keyboard.press('Enter').catch(() => 'enter-err') }
+    await page.waitForTimeout(1500)
+    return page.evaluate(() => ({
+      value: document.querySelector('#search-input, input[type="search"]')?.value ?? null,
+      hasResults: !!document.querySelector('.search-result-listitem'),
+      surface: document.body.dataset.panelSurface
+    })).catch((e) => ({ readErr: String(e?.message) }))
   },
 
   /** Read the raw URL/query state + surface without interaction. */
@@ -50,6 +73,7 @@ const OPS = {
     }))
   },
 
+  /** One step at a time — debug which interaction stalls. step: 'fill'|'enter'|'wait'|'read'. */
   /** Current app surface + viewport geometry + bool flags, no interaction. */
   async state(page) {
     return page.evaluate(() => ({
@@ -93,19 +117,23 @@ async function bootPage(size) {
   const ctx = await state.browser.newContext({
     viewport: isMobile ? { width: 390, height: 844 } : { width: 1440, height: 900 },
     deviceScaleFactor: 1,
-    reducedMotion: 'no-preference'
+    // Kill animation churn on the probe page → every page.evaluate is cheaper
+    // (the app's WebGL + CSS loops otherwise eat the headless main thread).
+    reducedMotion: 'reduce'
   })
   const page = await ctx.newPage()
   const bootUrl = isMobile ? `${APP_URL}?nodemo=1` : `${APP_URL}?nodemo=1&q=coffee`
   await page.goto(bootUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {})
   if (!isMobile) {
-    await page.waitForSelector('.search-result-listitem', { timeout: 30000 }).catch(() => {})
+    // Deep-link q=coffee → engine-ready immediately; wait for the portal to be
+    // functional, not for pre-rendered results (they need interactive search).
+    await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 25000, polling: 200 }).catch(() => {})
   } else {
     const cta = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
     await cta.waitFor({ state: 'visible', timeout: 30000 }).catch(() => {})
     await cta.click().catch(() => {})
+    await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 25000, polling: 200 }).catch(() => {})
   }
-  await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 25000, polling: 200 }).catch(() => {})
   state.pages[size] = page
   console.log(`[hub] booted ${size}`)
 }
@@ -141,9 +169,14 @@ const server = http.createServer((req, res) => {
           const page = state.pages[size]
           if (!page) return send(503, { ok: false, error: `page ${size} not ready` })
           const t0 = Date.now()
-          const data = await fn(page, args)
+          // Hard cap per op so a stuck op can never wedge the hub (the exact
+          // failure mode the user complained about).
+          const data = await Promise.race([
+            fn(page, args),
+            new Promise((_, reject) => setTimeout(() => reject(new Error(`op ${op} timed out after 25s`)), 25000))
+          ])
           send(200, { ok: true, op, size, ms: Date.now() - t0, data })
-        } catch (e) { send(500, { ok: false, error: String(e?.message || e) }) }
+        } catch (e) { console.error(`[hub] op error:`, e?.message); send(500, { ok: false, error: String(e?.message || e) }) }
       })()
     })
     return
