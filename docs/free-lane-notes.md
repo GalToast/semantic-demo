@@ -160,9 +160,20 @@
 - Remaining intentionally-ellipsized (NOT bugs): search-result-name rows, .selected-relationship-label, .focus-stage-neighbor-name, sr-only announcements, app-title h1.
 
 ## Delegated inside/dive surface sweep (2026-08-06) — REAL BUG FOUND + FIXED
+
 - DISPATCH: Worker B (opencode-zen/deepseek-v4-flash-free) → semantic-dive surface audit;
   Worker A (zenmux/deepseek-v4-flash-free) → inside audit (kimi-k3 zenmux 404'd at runtime — lane catalog lies, verified via chat probe; doc corrected).
 - Worker B REPORT: `tmp/audit-dive-REPORT-WB.md` — VERDICT NONE on dive controls (5 good obs), but its battery ran on the dive-controls surface, NOT the neighbor rail.
 - Worker A + main-lane chain probe found the REAL bug: `.focus-stage-neighbor-main` buttons 3px wide in semantic-dive. Root cause: `.focus-stage-journey` is a 3-col grid (56px minmax(0,1fr) 56px); the neighbor rail (first grid child, grid-column:auto) lands in the 56px sidebar track; the empty-state (which filled the middle) is display:none when candidates exist → middle track collapses to 0.
 - FIX: `.focus-stage-neighbors.active { grid-column: 1 / -1 }` in FocusNeighborhood.css. Verified: rail 56→487px, button 3→353px (both probes agree). Committed.
 - LESSON: journey grid tracks are fragile — any auto-placed child whose sibling (empty-state) vanishes mid-mode collapses the track. Rail now spans explicitly.
+
+## Rail grid-column fix — collision verification (2026-08-06)
+- Was the 1/-1 span safe? Verified across 3 states:
+  - dive-state: rail 487px grid-column 1/-1 (fixed)
+  - focus (rail active): rail 508px auto→2/3
+  - trail-depth 1 + rail active: rail 508px, trail buttons PRESENT but in
+    `.focus-stage-auxiliary-surfaces` (separate container, NOT the journey grid)
+    → no overlap possible. trailInJourney === false (measured).
+- CONCLUSION: rail spans when active; nothing else occupies the journey-grid
+  track. Fix is safe. (The concern — co-render overlap — was empirically disproven.)
