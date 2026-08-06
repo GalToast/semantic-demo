@@ -92,12 +92,21 @@
 - Worker 2 other flags: kill-without-close can hang request (timed child.kill relies on close event); usage.completion_tokens hardcoded 0; stderr merged into parse stream. Pending if desired.
 
 ## cline subagent dispatch — act mode is mandatory for writers (2026-08-05 13:0x)
+
 - cline -p one-shot workers DEFAULT to plan mode (read-only): they probe/analyze fine but any file-write (`-e "..." > file`, fs.writeFile) is rejected: "file modifications are blocked in plan mode."
 - FIX: pass `--auto-approve true` at dispatch (act mode). Verified: w1 failed without it, relaunch with it wrote file. w3 completed analysis then deadlocked at write — same cause.
 - Parallel cline workers on the SAME hub (ws://127.0.0.1:25463) contend: w1 got "aborted by another client". Stagger, or run >1 sequential per hub.
 - Recipe: cline.exe -P cline -m deepseek/deepseek-v4-flash --auto-approve true -c <repo> -p "<prompt>"
 
 ## never-probed fast-gate tail — CLOSED (2026-08-05 13:0x, 23 ids / 3 cline workers)
+
 - Final verdicts: 16x404 (dead/free-paid-split), 3x410 EOL (qwen3.5/3.6 kilo), 2 EMPTY (z-ai glm-4.5-air + glm-5.2 @zenmux, 200-no-card), 1 REFUSAL (cohere/north-mini-code text-only), 1x402 (mistral-medium-3-5 paid).
 - ZERO new PIXELS_OK in this tail → the "never-probed 88%" is now probed for fast gates; no hidden vision models there.
 - Evidence: tmp/probe-results-slice-{1,2,3}.json (workers) + tmp/vision-doc-audit-report.md.
+
+## mobile overflow sweep (2026-08-05 ~23:5x) — chip fix + clean record
+- Sweep: 390x844 walk idle -> search -> focus -> dive -> map -> trail; measured ANY visible element with rect.right > innerWidth or scrollWidth > clientWidth.
+- RESULT: 0 offenders across all reachable surfaces (idle/boot/search/map-trail). focus/dive surfaces geo-clean in earlier probes too.
+- BUG FOUND + FIXED (commit 6a8f0088): Filters.svelte duplicate `@media (max-width:768px)` block forced .filter-toolbar width:90vw (351px) inside a ~106px centered rail -> chips painted at x=424/464 past the 390px viewport. Fix: width:100% box-sizing:border-box + .filters-section max-width:calc(100vw - 1rem). Journey test W54-B1 extended with chip-overflow assertion (green).
+- CONFIRMED NOT A BUG: .search-show-more-btn starts below fold (y832-876 at 844) but is scroll-reachable (visible within viewport after scrollTop) — normal scrollable-sheet behavior.
+- Reusable probe: tmp/probe-mobile-sweep.mjs (walk) + tmp/probe-chip-layout.mjs (container trace).
