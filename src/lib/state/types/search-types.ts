@@ -5,7 +5,7 @@
  * Contains search summaries, results, errors, guides, and the SearchAppState aggregate.
  */
 
-import type { SearchStatus } from '@lib/types/state'
+import type { SearchStatus, SearchRenderContext } from '@lib/types/state'
 
 /** Shape of state.searchState.currentSearchSummary — set by search-state.ts, consumed by map-state, semantic-guide-ui, etc. */
 export interface SearchSummary {
@@ -20,6 +20,7 @@ export interface SearchSummary {
     resultIndices: number[]
     summaryType: 'semantic' | 'text' | 'mixed'
     reason?: string
+    renderContext?: SearchRenderContext
 }
 
 /** Shape of state.semanticGuideState — drives the SemanticGuideCard component. */
@@ -88,7 +89,7 @@ export interface SearchResultPoint {
  * without `Array<Record<string, unknown>>`.
  */
 export interface SearchResult {
-    point: SearchResultPoint | null
+    point?: SearchResultPoint | null
     index: number
     score: number
     publicNote?: string

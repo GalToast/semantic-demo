@@ -112,6 +112,7 @@ export interface SearchResult {
     category: string
     snippet: string
     point?: SearchResultPoint
+    [key: string]: unknown
 }
 
 export interface SearchResultPoint {
@@ -123,6 +124,7 @@ export interface SearchResultPoint {
     website?: string | null
     email?: string | null
     phone?: string | null
+    [key: string]: unknown
 }
 
 export interface SearchRenderContext {
@@ -425,7 +427,14 @@ export interface LoadingPhaseMeta {
 
 // ── Semantic Lane State ───────────────────────────────────────────────────────
 
-export type SemanticLaneState = 'checking' | 'healthy' | 'degraded' | 'offline' | 'stuck' | 'reconnecting' | 'unavailable'
+export type SemanticLaneState =
+    | 'checking'
+    | 'healthy'
+    | 'degraded'
+    | 'offline'
+    | 'stuck'
+    | 'reconnecting'
+    | 'unavailable'
 
 // ── Derived State Flags ───────────────────────────────────────────────────────
 
