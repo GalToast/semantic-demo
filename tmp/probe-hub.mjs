@@ -22,6 +22,32 @@ const APP_URL = process.argv[2] || 'http://localhost:5174'
 const PORT = Number(process.argv[3] || 8911)
 
 const OPS = {
+  /** Navigate the warm page to a deep-link and wait for engine readiness. */
+  async navigate(page, { url }) {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {})
+    await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 25000, polling: 200 }).catch(() => {})
+    await page.waitForTimeout(1800)
+    return page.evaluate(() => ({
+      href: location.href,
+      surface: document.body.dataset.panelSurface ?? null,
+      btnPrev: !!document.querySelector('#btn-prev-node')
+    }))
+  },
+
+  /** Any-page evaluate bridge: args = { code } → run as page.evaluate(code).
+   *  The escape hatch that makes the hub the ONLY probe surface — never spin a
+   *  cold browser for a one-off DOM question again. */
+  async eval(page, { code }) {
+    const src = String(code || '').trim()
+    // Accept BOTH a bare function-expression (called with no args) and a
+    // full IIFE string `(…expr…)()` — never double-wrap the latter.
+    const isIife = /^\([\s\S]*\)\s*\(\s*\)\s*$/.test(src)
+    const fn = isIife
+      ? new Function(`return (${src})`)
+      : new Function(`return (${src})()`)
+    const out = await page.evaluate(fn).catch((e) => ({ __evalErr: String(e?.message || e) }))
+    return { result: out }
+  },
   /** Search for q and return the top N rendered names (what the user sees).
    *  Deterministic: navigates the warm page via the deep-link (?q=) which is the
    *  proven render path — synthetic typing clears the panel and races the app. */
@@ -74,6 +100,43 @@ const OPS = {
   },
 
   /** One step at a time — debug which interaction stalls. step: 'fill'|'enter'|'wait'|'read'. */
+  /** Battery sweep of the current surface: clipping, dead interactives, off-screen, overlapped hit targets.
+   *  Returns arrays + counts — cheap enough to run per-surface. */
+  async sweep(page) {
+    return page.evaluate(() => {
+      const vw = innerWidth
+      const out = { hitless: [], overflow: 0, unlabeled: [], surface: document.body.dataset.panelSurface ?? null }
+      const all = document.querySelectorAll('*')
+      for (const el of all) {
+        // skip inert/empty/hidden primitives
+        if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'CANVAS' || el.tagName === 'SVG') continue
+        if (!(el instanceof HTMLElement)) continue
+        const cs = getComputedStyle(el)
+        if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) continue
+        const rect = el.getBoundingClientRect()
+        // 1) horizontal overflow beyond viewport (right edge only; left-off-canvas is common by design)
+        if (rect.right > vw + 2) {
+          out.overflow++
+        }
+        // 2) clipped text: scrollWidth > clientWidth with nowrap/ellipsis
+        if (cs.whiteSpace === 'nowrap' && el.scrollWidth > el.clientWidth + 2 && (cs.textOverflow === 'ellipsis' || cs.overflowX === 'hidden')) {
+          out.hitless.push({ kind: 'clip', tag: el.tagName, txt: (el.textContent || '').trim().slice(0, 42), sw: el.scrollWidth, cw: el.clientWidth, cls: String(el.className).slice(0, 30) })
+        }
+        // 3) interactive elements that receive no pointer events (dead click targets)
+        const interactive = el.matches('a, button, input, select, [role="button"], [role="link"], [tabindex]')
+        if (interactive && (cs.pointerEvents === 'none' || el.hasAttribute('disabled'))) {
+          out.hitless.push({ kind: 'dead', tag: el.tagName, cls: String(el.className).slice(0, 30), txt: (el.textContent || '').trim().slice(0, 30) })
+        }
+        // 4) interactive with no accessible label
+        if (interactive && (cs.pointerEvents !== 'none')) {
+          const title = el.getAttribute('aria-label') || el.getAttribute('title') || el.getAttribute('aria-labelledby')
+          if (!title) out.unlabeled.push({ kind: 'unlabeled', tag: el.tagName, cls: String(el.className).slice(0, 30), txt: (el.textContent || '').trim().slice(0, 24) })
+        }
+      }
+      return out
+    })
+  },
+
   /** Current app surface + viewport geometry + bool flags, no interaction. */
   async state(page) {
     return page.evaluate(() => ({

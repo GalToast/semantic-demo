@@ -13,9 +13,9 @@ cost structure this session:
 - ONE chromium stays alive on :8911; holds a warm **desktop** page (booted via the
   fast `?nodemo=1&q=coffee` deep-link which skips splash) and a warm **mobile** page.
 - Ops are small registered functions that run INSIDE the warm page and return JSON:
-  - `POST /op {op:"searchNames", q, n}` → top-N rendered search names (~1-3s)
-  - `POST /op {op:"state"}` → surface/canvas/viewport/reduced-motion truth (~400ms)
-  - `POST /op {op:"motionHost", args:{selector}}` → computed animation on a host
+    - `POST /op {op:"searchNames", q, n}` → top-N rendered search names (~1-3s)
+    - `POST /op {op:"state"}` → surface/canvas/viewport/reduced-motion truth (~400ms)
+    - `POST /op {op:"motionHost", args:{selector}}` → computed animation on a host
 - So a normal probe answer = curl → JSON, in seconds, not minutes. Add new ops to
   `OPS` in `tmp/probe-hub.mjs` (they're plain functions running in page context).
 - Start it once: `node tmp/probe-hub.mjs [appUrl] [port]` in background, leave
@@ -41,6 +41,7 @@ cost structure this session:
 4. Prefer the hub for UI truth — it's the only way probe cycles are <10s.
 5. A probe that needs a NEW browser boot is a signal to add an op to the hub
    instead of launching another chromium.
+
 ## Correction (verified 2026-08-06): what actually works
 
 - Playwright `input.fill()` **HANGS** on this app's search input (actionability stall: the
@@ -52,3 +53,8 @@ cost structure this session:
 - Boot context uses `reducedMotion: 'reduce'` (cuts WebGL/CSS churn → cheaper evaluates).
 - Ops have a hard 25s timeout so a hung op returns JSON, never wedges the hub.
 - First op after warm pays the scene-build (~5s); steady-state ops are 1.9-6s.
+
+## Op protocol (add any ad-hoc check without code changes)
+1. `POST /op {size:"desktop"|"mobile", op:"navigate", args:{url:"...?record=N"}}` → put warm page in target state
+2. `POST /op {op:"eval", args:{code:"<expr or IIFE>"}}` → any DOM question, ~100ms-2s
+3. Write probe code as a FILE in tmp/ (avoids shell quoting) and pass its content in args.code
