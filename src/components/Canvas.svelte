@@ -354,13 +354,14 @@
     data-graphics-mode={graphicsMode}
     aria-describedby="canvas-hover-preview"
   >
+    <!-- svelte-ignore a11y_no_interactive_element_to_noninteractive_role: WebGL graphviz canvas needs a non-native role; role is img per canvas-webgl-a11y canon (focus + keyshortcuts stay interactive) -->
     <canvas
       id="engine-canvas"
       bind:this={canvasEl}
       class="semantic-canvas"
       width={$viewport.width * $viewport.dpr}
       height={$viewport.height * $viewport.dpr}
-      role="application"
+      role="img"
       aria-label="3D business network"
       aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End Plus Minus"
       tabindex={interactive ? 0 : -1}

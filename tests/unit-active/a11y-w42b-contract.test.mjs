@@ -35,8 +35,8 @@ describe('A11y W42-B: Canvas focus-visible indicator', () => {
         expect(src).toMatch(/tabindex=\{interactive \? 0 : -1\}/)
     })
 
-    it('canvas element has role="application"', () => {
-        expect(src).toContain('role="application"')
+    it('canvas element has role="img" (canon a11y: WebGL graphviz surfaces are img semantics per canvas-webgl-a11y skill)', () => {
+        expect(src).toContain('role="img"')
     })
 
     it('canvas element has aria-keyshortcuts', () => {
