@@ -8,7 +8,6 @@
  * keyboard handling.
  */
 
-import { get } from 'svelte/store'
 import { legendOpen, setLegendOpen } from './legend.svelte'
 import { appState } from '@lib/state/app.svelte'
 import { describeCluster } from '@lib/utils/ui-presentation'
@@ -25,12 +24,12 @@ type CloseLegendGuideOptions = {
 
 /** Returns true if the legend panel is currently open. */
 export function isLegendPanelOpen(): boolean {
-    return get(legendOpen)
+    return appState.legendOpen
 }
 
 /** Opens the legend panel. Safe to call when already open. */
 export function openLegendPanel(): void {
-    if (get(legendOpen)) return
+    if (appState.legendOpen) return
     setLegendOpen(true)
 
     const legendPanel = document.getElementById('legend-panel')
@@ -52,7 +51,7 @@ export function openLegendPanel(): void {
 
 /** Closes the legend panel. Safe to call when already closed. */
 export function closeLegendPanel(): void {
-    if (!get(legendOpen)) return
+    if (!appState.legendOpen) return
     setLegendOpen(false)
 
     const legendPanel = document.getElementById('legend-panel')
