@@ -2,11 +2,10 @@
  * POST /v1/chat/completions  {model, messages, max_tokens} -> cline -P cline -m <model> --json -p <prompt>
  * GET  /v1/models -> the cline free-tier model list this shim exposes.
  *
- * Usage: node tmp/cline-shim.mjs [port=8793]
+ * Usage: node scripts/shims/cline-shim.mjs [port=8793]
  */
 import http from 'node:http'
 import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
 
 const PORT = Number(process.argv[2] || 8793)
 
@@ -61,13 +60,13 @@ function callCline(model, prompt, maxTokens) {
     const t0 = Date.now()
     child.stdout.on('data', d => (out += d))
     child.stderr.on('data', d => (out += d))
-    const timer = setTimeout(() => { try { child.kill() } catch {} }, Number(maxTokens > 4000 ? 300000 : 120000))
+    const timer = setTimeout(() => { try { child.kill() } catch { /* already exited */ } }, Number(maxTokens > 4000 ? 300000 : 120000))
     child.on('close', (code) => {
       clearTimeout(timer)
       // --json emits lines: agent_event (content_delta etc) + run_result at end
       const lines = out.split('\n').map(l => l.trim()).filter(Boolean)
       let text = ''
-      let cost = 0
+      let _cost = 0
       let inputTokens = 0
       for (const l of lines) {
         try {
@@ -83,7 +82,7 @@ function callCline(model, prompt, maxTokens) {
             inputTokens = usage.inputTokens || usage.totalInputTokens || inputTokens
             text = text || (obj.result || '')
           }
-        } catch {}
+        } catch { /* skip malformed line */ }
       }
       resolve({ text, ms: Date.now() - t0, code, inputTokens, raw: out.slice(0, 400) })
     })
