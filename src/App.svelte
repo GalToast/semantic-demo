@@ -105,11 +105,21 @@
   // contract tests but now lazy-loaded in production for performance.
   // W46-B2b: pre-load via the helper handles' ensure(true) so we don't reach
   // into module-internal $state holders (which no longer exist).
+  // DIVE-BUTTON GAP (2026-08-06): the compass surface is the primary
+  // chrome for search/focus/map, yet its lazy chunk only resolves AFTER
+  // legacyCompassSurfaceActive flips (line 317). On slow/cold starts that
+  // leave the first focus entry with NO #btn-focus-dive for ~2-3s, and any
+  // click in that window deadlocks the dive affordance. The Playwright block
+  // below bypasses this for tests only; real users pay the fetch latency.
+  // Pre-warm at idle for everyone — the chunk is small and this is the same
+  // treatment every other core surface (demo, canvas) already gets.
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    requestIdleCallback(() => legacyCompassSurfaceLazy.ensure(true), { timeout: 3000 })
+  }
   if (typeof window !== 'undefined' && window.__PLAYWRIGHT__) {
     mapViewLazy.ensure(true)
     legacyCompassSurfaceLazy.ensure(true)
-    threadInspectorLazy.ensure(true)
-    // Contract tests need #canvas-container and #map-container in the DOM.
+    threadInspectorLazy.ensure(true)    // Contract tests need #canvas-container and #map-container in the DOM.
     // Canvas.svelte is gated on engineReady.value; signal it so the component
     // renders without waiting for a user gesture that never happens in headless
     // Playwright. The Three.js engine init is deferred via requestIdleCallback

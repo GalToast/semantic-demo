@@ -45,6 +45,10 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
+    // f0840f8 — docs(lanes): verified-dead lane probe table — evidence-bank
+    // probe (tmp/probe-dead-lanes{,.2}.mjs) committed with the docs() analysis
+    // it evidences, same deliberate shape as the 6 prior probe exemptions.
+    'f0840f814f8e7776aa7f6667bfc9568631ae9e09',
     // --- Historical context (motivating failure, NOT a live exemption) ---
     // b5ad93e — docs(roadmap): ... — THE failure mode that motivated
     // this test. Bundled 6 Svelte components + 1 test under a docs
