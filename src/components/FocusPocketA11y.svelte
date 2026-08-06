@@ -226,7 +226,8 @@
   }
 
   .focus-pocket-list-toggle.lifted {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 3.5rem);
+    /* clear the bottom dive strip (48px) + margins: 12+48+20 = 80px */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
   }
 
   .focus-pocket-list-toggle:hover,

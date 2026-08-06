@@ -1664,7 +1664,10 @@ test.describe('Widget journey', () => {
             }
             return { viewport: window.innerWidth, offenders: off }
         })
-        expect(chipOverflow.offenders, 'no .filter-chip may run past the 390px viewport (Filters.svelte width:100% fix)').toEqual([])
+        expect(
+            chipOverflow.offenders,
+            'no .filter-chip may run past the 390px viewport (Filters.svelte width:100% fix)'
+        ).toEqual([])
     })
 
     test('5l. Help (?) button re-opens the help dialog after dismissal (W48 fix)', async ({ page }) => {
@@ -5483,5 +5486,45 @@ test.describe('idle CTA design polish (W58-style)', () => {
         expect(styles, 'idle must render the Enter-3D CTA + hint').not.toBeNull()
         expect(styles.radius, 'CTA uses pill radius for consistency').toBe('999px')
         expect(styles.hintOpacity, 'hint text must be readable (>= 0.7)').toBeGreaterThanOrEqual(0.7)
+    })
+})
+
+test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
+    const APP = 'http://127.0.0.1:8795/dist/svelte/index.html'
+    test('tablet focus: proximity legend self-collapses at 936', async ({ page }) => {
+        test.setTimeout(60000)
+        await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
+        await page.setViewportSize({ width: 936, height: 800 })
+        await page.waitForTimeout(5200)
+        const st = await page.evaluate(() => {
+            const w = document.querySelector('.proximity-legend-wrapper')
+            return w ? { collapsed: w.classList.contains('collapsed'), vis: getComputedStyle(w).visibility } : null
+        })
+        expect(st, 'legend wrapper must exist').not.toBeNull()
+        expect(st.collapsed, 'legend is self-collapsed on focus at ≤1024').toBe(true)
+        expect(st.vis, '…and hidden').toBe('hidden')
+    })
+    test('mobile focus: list toggle lifts above the dive strip', async ({ page }) => {
+        test.setTimeout(60000)
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
+        await page.waitForTimeout(5200)
+        const st = await page.evaluate(() => {
+            const el = [...document.querySelectorAll('button')].find((x) =>
+                (x.textContent || '').includes('View as list')
+            )
+            if (!el) return null
+            const dives = [...document.querySelectorAll('button[data-journey-action="enter-inside"]')].map((x) =>
+                x.getBoundingClientRect()
+            )
+            // the dive we collide with is the BOTTOM strip in the compact focus stage
+            const diveRect = dives.length ? dives.reduce((m, r) => (r.top > m.top ? r : m), dives[0]) : null
+            const dive = diveRect
+            const r = el.getBoundingClientRect()
+            return { lifted: el.classList.contains('lifted'), y: r.y, diveTop: dive ? dive.top : null }
+        })
+        expect(st, 'toggle must exist').not.toBeNull()
+        expect(st.lifted, 'toggle should carry the lifted class on mobile focus').toBe(true)
+        if (st.diveTop != null) expect(st.y + 44 <= st.diveTop + 2, 'toggle bottom clears the dive strip').toBe(true)
     })
 })
