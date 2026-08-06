@@ -12,6 +12,13 @@
  * Surfaces: mobile-idle | desktop-idle | launch-focus | search-error | search-no-results | map-trail | focus-pocket | field-node | info-panel-empty | compass-rail | loading-overlay | mode-grid | filters | thread-inspector | controls | search-chrome | info-panel-populated | global-spacing | mobile-product-focus-route | mobile-product-preview-route
  * Default URL (svelte): http://127.0.0.1:8795/dist/svelte/index.html
  * Default URL (legacy): http://127.0.0.1:8795/vector-explorer-polished.html
+ *
+ * VERDICT INTERPRETATION (2026-08-06): under SwiftShader a full 28-surface run
+ * can show ~1 soft load-flake (singleton surface; isolate green). Only treat a
+ * failure as REAL when the SAME surface fails in two independent full runs, or
+ * fails in isolation. Singleton + isolate-green = memory-pressure scatter, not
+ * a defect — don't chase it (hardened 2026-08-06: filters + info-panel-flake
+ * classification).
  */
 
 import fs from 'node:fs'
