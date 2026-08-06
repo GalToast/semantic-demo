@@ -37,9 +37,33 @@ export function parseLegalName(publicNote: string | null | undefined): string | 
  * Title Case a slug like `519-angel-fire-coffee` → `519 Angel Fire Coffee`.
  * Lead_id-style numeric prefixes (leading digits in the first word) are kept
  * as-is; the rest of each word is title-cased character-by-character.
+ *
+ * Slug-aware: inputs that are NOT slug-shaped (already contain spaces, with
+ * no `-`/`_` separators) are property-agnostic already-humanized names
+ * (e.g. `Angel Fire Coffee` from the bundle or `BLOOMIN' BREWS COFFEE LLC`
+ * legal forms) — those pass through UNCHANGED. Only true slug/token runs
+ * are rewritten; this prevents the corrupting `Angel Fire Coffee` →
+ * `Angel fire coffee` lower-blast that all-lowercase splitting caused
+ * (2026-08-06: reproduced in live search DOM, humanize-transformed legal
+ * names used to get their middlewords destroyed).
  */
 export function titleCaseSlug(slug: string): string {
     if (!slug) return ''
+    // Already-humanized (whitespace-separated, no slug separators):
+    //  - ALL-CAPS legal forms (e.g. `BLOOMIN' BREWS COFFEE LLC`) and
+    //    mixed-case proper names (e.g. `Angel Fire Coffee` from the bundle)
+    //    pass through UNCHANGED — never destroy their casing.
+    //  - Only fully-lowercase prose (`angel fire coffee`) is title-cased.
+    if (/\s/.test(slug) && !/[-_]/.test(slug)) {
+        if (/[A-Z]/.test(slug.slice(1))) {
+            return slug
+        }
+        return slug
+            .split(/\s+/)
+            .filter((part) => part.length > 0)
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+            .join(' ')
+    }
     return slug
         .split('-')
         .filter((part) => part.length > 0)

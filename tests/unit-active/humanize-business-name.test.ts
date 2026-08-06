@@ -96,4 +96,21 @@ describe('titleCaseSlug', () => {
     it('preserves multi-digit lead_id prefixes', () => {
         expect(titleCaseSlug('12345-foo-bar-baz')).toBe('12345 Foo Bar Baz')
     })
+
+    it('passes through already-humanized mixed-case names unchanged (BUG: was Angel fire coffee)', () => {
+        expect(titleCaseSlug('Angel Fire Coffee')).toBe('Angel Fire Coffee')
+        expect(titleCaseSlug("BLOOMIN' BREWS COFFEE LLC")).toBe("BLOOMIN' BREWS COFFEE LLC")
+        expect(titleCaseSlug('HP Inc')).toBe('HP Inc')
+    })
+
+    it('title-cases fully-lowercase prose with spaces', () => {
+        expect(titleCaseSlug('angel fire coffee')).toBe('Angel Fire Coffee')
+    })
+
+    it('does NOT mangle legal/ALL-CAPS fallback via humanizeBusinessName', () => {
+        expect(humanizeBusinessName({ name: "BLOOMIN' BREWS COFFEE LLC", public_note: '' })).toBe(
+            "BLOOMIN' BREWS COFFEE LLC"
+        )
+        expect(humanizeBusinessName({ name: 'Angel Fire Coffee', public_note: '' })).toBe('Angel Fire Coffee')
+    })
 })
