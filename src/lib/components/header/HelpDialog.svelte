@@ -216,5 +216,5 @@
 </dialog>
 
 <style>
-  @import '@lib/components/header/header.css';
+  /* header.css now imported once at App scope (see App.svelte side-effect imports) */
 </style>

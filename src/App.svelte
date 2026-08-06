@@ -27,6 +27,12 @@
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
   import '@lib/css/canvas-hover-preview.css';
+  // Side-effect import: shared app-header visual contract (Header family).
+  // Hoisted from per-component @imports (HelpDialog/Header) so the CSS loads
+  // once at app scope — behavior is identical (the stack already emits it
+  // globally) but svelte-check stops misrepporting the shared selectors as
+  // "unused in this component."
+  import '@lib/components/header/header.css';
   import AppBoot from '@components/AppBoot.svelte';
 
   // W46-B2b: Lazy components consolidated via createLazyComponent() helper.
@@ -213,7 +219,7 @@
   // mounts in the focus-search fallback path even though URL hydration routes
   // nav.surface = 'focus-search' through the production chain.
   let focusActive = $derived(
-    nav.mode === 'focus' || nav.mode === 'inside' || nav.mode === 'trail' || nav.focusedIndex != null || parity.focusPanelMode === 'field-node' || parity.panelSurface === 'focus' || parity.panelSurface === 'inside' || parity.panelSurface === 'trail' || parity.panelSurface === 'focus-search' || parity.focusSearchForced || parity.panelSurface === 'semantic-dive'
+    nav.mode === 'focus' || nav.mode === 'inside' || nav.mode === 'trail' || nav.focusedIndex != null || parity.focusPanelMode === 'field-node' || parity.panelSurface === 'focus' || parity.panelSurface === 'inside' || parity.panelSurface === 'trail' || parity.panelSurface === 'focus-search' || parity.panelSurface === 'map-trail' || parity.focusSearchForced || parity.panelSurface === 'semantic-dive'
   );
   let focusStageActive = $derived(focusActive && !mapModeActive);
 

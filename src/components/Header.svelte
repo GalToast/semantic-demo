@@ -193,5 +193,5 @@
 {/if}
 
 <style>
-  @import '@lib/components/header/header.css';
+  /* header.css imported once at App scope (see src/App.svelte side-effect imports) */
 </style>
