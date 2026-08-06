@@ -1,0 +1,10 @@
+{"ts":"2026-08-06T03:19:59.627Z","kind":"start","url":"http://localhost:5174"}
+{"ts":"2026-08-06T03:20:03.216Z","kind":"beat","label":"scan-undefined","at":1785986403216}
+{"ts":"2026-08-06T03:20:09.396Z","kind":"focus-rings","issues":[],"tabbed":24}
+{"ts":"2026-08-06T03:20:09.397Z","kind":"beat","phase":"idle-done"}
+{"ts":"2026-08-06T03:20:12.223Z","kind":"beat","label":"scan-undefined","at":1785986412223}
+{"ts":"2026-08-06T03:22:18.685Z","kind":"focus-rings","issues":[],"tabbed":24}
+{"ts":"2026-08-06T03:22:18.688Z","kind":"beat","phase":"search-done"}
+{"ts":"2026-08-06T03:22:22.494Z","kind":"beat","label":"scan-undefined","at":1785986542494}
+{"ts":"2026-08-06T03:22:27.356Z","kind":"focus-rings","issues":[],"tabbed":24}
+{"ts":"2026-08-06T03:22:27.357Z","kind":"done"}

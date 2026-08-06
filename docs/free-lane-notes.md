@@ -111,3 +111,21 @@
 - BUG FOUND + FIXED (commit 6a8f0088): Filters.svelte duplicate `@media (max-width:768px)` block forced .filter-toolbar width:90vw (351px) inside a ~106px centered rail -> chips painted at x=424/464 past the 390px viewport. Fix: width:100% box-sizing:border-box + .filters-section max-width:calc(100vw - 1rem). Journey test W54-B1 extended with chip-overflow assertion (green).
 - CONFIRMED NOT A BUG: .search-show-more-btn starts below fold (y832-876 at 844) but is scroll-reachable (visible within viewport after scrollTop) — normal scrollable-sheet behavior.
 - Reusable probe: tmp/probe-mobile-sweep.mjs (walk) + tmp/probe-chip-layout.mjs (container trace).
+
+## sublime UI sweep 2026-08-06 — findings so far
+
+- FOLD reduced-motion: COMPLIANT (global gate in css/animations.css kills all shell anims; only 0.2s opacity fades remain on compact header + search-shortcut-hint — acceptable short fades).
+- FOLD small touch targets: only skip-link (a11y affordance, intentional). No <44px user controls found at 390/768.
+- FOLD icon-only-unlabeled: 0 at idle/search.
+- FOLD click-dead pointer affordances: 0 (no cursor:pointer non-interactive).
+- FOLD viewport-overwide at 768: 0.
+- FOLD keyboard focus rings: idle scan = 0 missing rings across 24 tabs. search scan in progress.
+- Tooling lesson banked (memory): probes must write per-surface JSONL w/ appendFileSync + bounded() + heartbeat — never buffer to stdout-pipe; launch bg, do other work, check once when due.
+- Probe lib: tmp/probe-lib.mjs (write/beat/bounded/boot/openSearch). Runner: tmp/probe-focus-rings2.mjs.
+
+## sublime wave 2 (2026-08-06) — extreme corners
+- Extreme viewports: 320x844 (iPhone SE) + 844x390 (landscape) => 0 offenders, 0 clipped per surface scan.
+- Adversarial long business name (60+ chars injected into focus card): wraps cleanly (whiteSpace normal, sw==cw, no clip). PASS.
+- Empty-state + error-state DOM contracts exist (SearchEmptyState.svelte / SearchResultList error-inline) and render w/o offenders.
+- BUG FOUND + FIXED (commit on css/animations.css): .fade-in (empty-search state, 0.5s ease + translateY(10px)) was NOT in the prefers-reduced-motion gate — animates motion under reduce (WCAG 2.3.3 violation invisible to visual passes). Added body .fade-in to the gate.
+- Tooling: probe sedge (320/landscape/longname) + probe-longname2 use probe-lib (bounded/heartbeat/JSONL). Reusable per wave.
