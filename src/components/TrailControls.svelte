@@ -179,14 +179,16 @@
     color: var(--color-primary-alt);
     cursor: pointer;
     padding: 0.25rem 0.6rem;
-    min-width: 72px;
+    width: max-content;    /* explicit width beats flex-basis-auto sizing (which clamps to the clipped content box) */
+    min-width: max-content;
     min-height: 44px;
+    flex: 0 0 auto;       /* defeat the global grow/share so the button sizes to its label */
     font-family: var(--font-body);
     font-size: 0.65rem;
     font-weight: 600;
     transition: all 0.15s;
     white-space: nowrap;
-    flex-shrink: 0;
+    overflow: visible;
   }
   .trail-btn:disabled {
     opacity: 0.5;
