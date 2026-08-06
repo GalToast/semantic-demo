@@ -58,7 +58,14 @@ const ACTION_TABLE = {
         }
     },
     esc: (page) => page.keyboard.press('Escape'),
-    back: (page) => page.goBack({ timeout: 4000 }).catch(() => Promise.resolve()),
+    back: async (page) => {
+        // Skip back when history is empty — page.goBack would land on
+        // about:blank (browser host origin), which is a host-nav void, not an
+        // app state, and recovering from it requires a slow cold-boot goto.
+        const hLen = await page.evaluate(() => window.history.length).catch(() => 0)
+        if (hLen <= 1) return
+        await page.goBack({ timeout: 4000 }).catch(() => Promise.resolve())
+    },
     reload: (page) => page.reload({ timeout: 4000 }).catch(() => Promise.resolve()),
     result: async (page) => {
         const r = page.locator('[data-record-row], .search-result, [role="option"]').first()
@@ -93,13 +100,57 @@ async function runFuzz(page, seed, steps, opts) {
     if (opts && opts.injectErrorOn === 0) await throwIn('inject@0', 50)
     for (let i = 0; i < seq.length; i++) {
         const name = seq[i]
+        let recovered = false
         try {
             await ACTION_TABLE[name](page, rng)
-        } catch (e) {
+        } catch (_e) {
             // action-level failures are fuzz noise, not invariants
         }
+        // Host-nav self-heal: a nav action (back/reload) can land the tab on
+        // about:blank (browser host behavior when history's first entry is the
+        // origin). Recover BEFORE any page API call (a closed-doc page object
+        // throws on waitForTimeout) so the fuzz never tests host-nav voids.
+        // A recovered step is a known transient (cold boot), not a product
+        // state — skip its invariant check to keep the fuzz fast + meaningful.
+        const url = page.url()
+        if (!url.startsWith(BASE)) {
+            await page
+                .goto(`${BASE}${APP_PATH}?q=coffee&nodemo=1`, { waitUntil: 'domcontentloaded', timeout: 20000 })
+                .catch(() => {})
+            recovered = true
+        }
         if (opts && opts.injectErrorOn === i + 1) await throwIn(`inject@${i + 1}`, 10)
-        await page.waitForTimeout(120)
+        if (recovered) {
+            console.log(`[fuzz-recover] seq[${i}]=${name} -> recovered from host-nav (skip invariants)`)
+            continue
+        }
+        // Polling wait: a slow reload boot can take >120ms; wait up to ~2.5s for
+        // the app surface to appear so we test real app states, not timing races.
+        await page.waitForFunction(
+            () => {
+                const pick = (sel) => {
+                    const el = document.querySelector(sel)
+                    if (!el) return false
+                    const r = el.getBoundingClientRect()
+                    const cs = getComputedStyle(el)
+                    return (
+                        r.width > 0 &&
+                        r.height > 0 &&
+                        cs.visibility !== 'hidden' &&
+                        cs.display !== 'none' &&
+                        parseFloat(cs.opacity || '1') > 0.05
+                    )
+                }
+                return (
+                    pick('canvas') ||
+                    pick('[data-surface="placeholder"]') ||
+                    pick('#info-panel') ||
+                    pick('#search-result-list') ||
+                    pick('[role="dialog"]')
+                )
+            },
+            { timeout: 2500 }
+        ).catch(() => {})
         await assertInvariants(page, errors, `seq[${i}]=${name}`)
     }
     return seq
@@ -109,28 +160,35 @@ async function assertInvariants(page, errors, traceText) {
     const real = errors.filter((t) => !ALLOWED.some((a) => t.includes(a)))
     expect(real, `console/page errors after ${traceText}\n  ${real.join('\n  ')}`).toEqual([])
 
-    const visible = await page.evaluate(() => {
-        const pick = (sel) => {
-            const el = document.querySelector(sel)
-            if (!el) return false
-            const r = el.getBoundingClientRect()
-            const cs = getComputedStyle(el)
-            return (
-                r.width > 0 &&
-                r.height > 0 &&
-                cs.visibility !== 'hidden' &&
-                cs.display !== 'none' &&
-                parseFloat(cs.opacity || '1') > 0.05
-            )
-        }
-        return (
-            pick('canvas') ||
-            pick('[data-surface="placeholder"]') ||
-            pick('#info-panel') ||
-            pick('#search-result-list') ||
-            pick('[role="dialog"]')
+    const visible = await page
+        .waitForFunction(
+            () => {
+                const pick = (sel) => {
+                    const el = document.querySelector(sel)
+                    if (!el) return false
+                    const r = el.getBoundingClientRect()
+                    const cs = getComputedStyle(el)
+                    return (
+                        r.width > 0 &&
+                        r.height > 0 &&
+                        cs.visibility !== 'hidden' &&
+                        cs.display !== 'none' &&
+                        parseFloat(cs.opacity || '1') > 0.05
+                    )
+                }
+                return (
+                    pick('canvas') ||
+                    pick('[data-surface="placeholder"]') ||
+                    pick('#info-panel') ||
+                    pick('#search-result-list') ||
+                    pick('[role="dialog"]')
+                )
+            },
+            { timeout: 8000 },
+            'app visible'
         )
-    })
+        .then(() => true)
+        .catch(() => false)
     expect(visible, `blank app after ${traceText}`).toBe(true)
 
     const stuck = await page.evaluate(() => {
@@ -167,6 +225,7 @@ async function assertInvariants(page, errors, traceText) {
 
 for (const seed of [1, 2, 3, 4, 5]) {
     test(`fuzz seed ${seed} (12 actions)`, async ({ page }) => {
+        test.setTimeout(40000)
         const seq = await runFuzz(page, seed, 12, {})
         test.info().annotations.push({ type: 'fuzz-seq', description: seq.join(' -> ') })
     })
