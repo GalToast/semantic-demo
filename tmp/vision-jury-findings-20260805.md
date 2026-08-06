@@ -55,3 +55,16 @@ No visible overlaps, clipped text, or off-screen elements in trail mode. All pan
 - V1 "Website underline into phone row": current code has Website link as its own 44px box (y534 h44) with underline INSIDE (rgba teal 0.95) — phone not overlapping in live render. NOT reproducible at current code.
 - Corrections to my earlier "V1-V4/V17/V18 all re-verified FIXED" line: that claim covered V2/V4/V17/V18 only; V1+V3 slipped. This is now the completion of that audit.
 - Cosmetic leftover worth a data-hygiene pass: lead name '519-angel-fire-coffee' (slug) vs proper casing elsewhere ('BLOOMIN BREWS COFFEE LLC') — display-only, would benefit from title-casing in the search call sites.
+
+## 2026-08-06 — P2 #3 "View on Map clip" FALSE-POSITIVE (verified, no code)
+- ui-issues-report #3 flagged #fc-btn-selected-map (sw>cw, overflow hidden). Deep audit:
+  - Text "View on Map" = 77px, textRight 1271 < btnRight 1284 → textFits: true. NOT clipped visually.
+  - scrollWidth (151-222px) was inflated by `.biofield-glow::before` — an absolute
+    decorative glow (width ~202px, left:-50px, top:-21px) which expands scrollWidth
+    (absolutely-positioned descendants count as scrollable overflow).
+  - LESSON (banks with probe-lib): scrollWidth>clientWidth is NOT a reliable clip
+    indicator when an element carries absolute pseudo-elements (::before/::after
+    with width>100% or negative offsets). Use text-node Range rect vs the element
+    right edge (getRangeAt / selectNodeContents) for ground truth.
+- Real P2 clip series stays: ← Prev / Next → trail buttons (fixed 7dd6ab16). View on
+  Map was fine all along.
