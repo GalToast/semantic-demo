@@ -95,7 +95,7 @@ test.describe('Widget journey', () => {
         // to body[data-panel-surface]='map-trail', then checks the lockstep App/JourneyChrome
         // gates mount the user-visible walk controls.
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -163,7 +163,7 @@ test.describe('Widget journey', () => {
 
     test('5g. Focus-panel facts separator is aria-hidden (W47 audit #2)', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         // Raised 40s->60s: this initial-boot splash-CTA render is the first GPU/stall
@@ -286,7 +286,7 @@ test.describe('Widget journey', () => {
     // structural detector.
     test.fixme('5h. Trail counter never says "Stop N of 0" (W48 audit, JourneyChrome regression)', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -308,12 +308,15 @@ test.describe('Widget journey', () => {
             await page.waitForTimeout(200)
         }
 
-        // Placeholder body — see the test.fixme comment above for the full
-        // architectural explanation of why this regression detector is not
-        // deterministically exercisable as a runtime assertion in the current
-        // harness. Kept minimal (no dead references to removed test-only
-        // actions) since test.fixme skips execution. The setup above ensures
-        // the app is booted if/when this is ever un-fixme'd.
+        // SUPERSEDED (2026-08-06): the "Stop N of 0" regression is now pinned by
+        // unit-level structural guards in tests/unit-active/
+        // focus-ui-pr-w47-g-fallback-structural.test.ts (which reads BOTH
+        // focus-ui.ts and JourneyChrome.svelte and asserts the 0-neighbor fallback
+        // copy + the `neighborCount > 0 ?` branch exist). A full walk-journey
+        // route to a 0-neighbor node is not deterministically reachable in this
+        // harness (W48 note), so this journey test stays fixme as a breadcrumb
+        // only — the real regression net is the unit guard. Boot setup kept for
+        // future re-activation.
         const naturalProgress = await page.evaluate(
             () => document.querySelector('#focus-stage-progress')?.textContent?.trim() ?? ''
         )
@@ -332,7 +335,7 @@ test.describe('Widget journey', () => {
         // exact rectangle, so the overlays occluded Match 3's body and city
         // text. Fix hides both at max-width: 768px.
         await page.setViewportSize({ width: 375, height: 812 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -466,7 +469,7 @@ test.describe('Widget journey', () => {
         //       hidden behind the trail buttons. After the W48 fix the
         //       cue hides when panelSurface starts with "focus".
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -651,7 +654,7 @@ test.describe('Widget journey', () => {
         // .brand-label at ≤390px while keeping .brand-mark ("SE") visible.
         // This journey test asserts the fix at 375×667 viewport.
         await page.setViewportSize({ width: 375, height: 667 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -802,7 +805,7 @@ test.describe('Widget journey', () => {
             // NOTE: the badge may be visually hidden by the info-panel CSS, but its
             // textContent is still deterministically "Business view" after focus.
             await page.setViewportSize({ width: 1440, height: 900 })
-            await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
             // Raised from 40s: under the full-suite run this test shares the machine
@@ -886,7 +889,7 @@ test.describe('Widget journey', () => {
                 /* best-effort: ignore storage failures (e.g. private mode) */
             }
         })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -1467,7 +1470,7 @@ test.describe('Widget journey', () => {
                 /* best-effort */
             }
         })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -1548,7 +1551,7 @@ test.describe('Widget journey', () => {
         // so it ships in dist. Verified: dist index css now contains the rule.
         // Contract suite `filters` surface: 11/0 pass.
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -1682,7 +1685,7 @@ test.describe('Widget journey', () => {
         // This test exercises the real DOM: dismiss any auto-opened help,
         // then click #btn-app-help, then assert the dialog is open.
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -1761,7 +1764,7 @@ test.describe('Widget journey', () => {
         // move within the toolbar (WAI-ARIA toolbar pattern). The fix adds
         // roving tabindex + Arrow/Home/End navigation.
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -1838,7 +1841,7 @@ test.describe('Widget journey', () => {
         // pocket nodes appeared as role="support" in the A11y list.
         // This test verifies the list items have the correct role labels.
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -1902,7 +1905,7 @@ test.describe('Widget journey', () => {
         // (2) drop garbage entries (street addresses, ZIPs, unmatched parens),
         // (3) dedupe case variants (Cut And Shoot + Cut and Shoot → 1 entry).
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -1971,7 +1974,7 @@ test.describe('Widget journey', () => {
         // not two (App's "Semantic Explorer — ..." + Placeholder2D's
         // "Semantic Explorer Preview").
         await page.setViewportSize({ width: 375, height: 667 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         // Wait for hydration + renderKind=placeholder2d to take effect
         await page.waitForFunction(() => document.body.classList.contains('render-kind-placeholder2d'), null, {
@@ -2003,7 +2006,7 @@ test.describe('Widget journey', () => {
         // The SVG lock indicator is aria-hidden=true so screen readers
         // should hear a descriptive label, not "lock" or U+1F512.
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -2219,7 +2222,7 @@ test.describe('Widget journey', () => {
             // <button> instead of <li role="button">), F1-5 (mobile z-index), and
             // F1-8 (friendly "nearby business" aria-label).
             await page.setViewportSize({ width: 1440, height: 900 })
-            await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -2318,7 +2321,7 @@ test.describe('Widget journey', () => {
         page
     }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -2430,7 +2433,7 @@ test.describe('Widget journey', () => {
         { tag: '@live' },
         async ({ page }) => {
             await page.setViewportSize({ width: 390, height: 844 })
-            await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -2474,7 +2477,7 @@ test.describe('Widget journey', () => {
         { tag: '@live' },
         async ({ page }) => {
             await page.setViewportSize({ width: 1440, height: 900 })
-            await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -2532,7 +2535,7 @@ test.describe('Widget journey', () => {
         { tag: '@live' },
         async ({ page }) => {
             await page.setViewportSize({ width: 390, height: 844 })
-            await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -2638,7 +2641,7 @@ test.describe('Widget journey', () => {
             })
 
             await page.setViewportSize({ width: 390, height: 844 })
-            await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -2856,7 +2859,7 @@ test.describe('Widget journey', () => {
                 /* best-effort: ignore storage failures */
             }
         })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -2977,7 +2980,7 @@ test.describe('Widget journey', () => {
                 /* best-effort: ignore storage failures */
             }
         })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, {
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, {
             waitUntil: 'domcontentloaded'
         })
 
@@ -3261,7 +3264,7 @@ test.describe('Widget journey', () => {
                 /* best-effort */
             }
         })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, {
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, {
             waitUntil: 'domcontentloaded'
         })
 
@@ -3556,7 +3559,7 @@ test.describe('Widget journey', () => {
                 /* best-effort */
             }
         })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, {
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, {
             waitUntil: 'domcontentloaded'
         })
 
@@ -3624,7 +3627,7 @@ test.describe('Widget journey', () => {
         page
     }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -3750,7 +3753,7 @@ test.describe('Widget journey', () => {
 
     test('W54 visual audit: placeholder2d Search chip reveals #info-panel + #search-input', async ({ page }) => {
         await page.setViewportSize({ width: 375, height: 667 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the first-visit help dialog if it auto-opens; it blocks taps
         // on the mode-chip rail on mobile just like it blocks search input.
@@ -4156,7 +4159,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // formalises the no-clip invariant so future regressions (e.g. someone
         // deciding to clip chip text instead of scrolling) get caught.
         await page.setViewportSize({ width: 820, height: 800 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -4249,7 +4252,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // z-index:2 and renders behind the info panel (#13). This test
         // verifies the resolved z-index is 100 at desktop width.
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -4323,7 +4326,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // ring (WCAG 2.4.7). This test focuses a pocket button and verifies
         // the computed style includes the outline and box-shadow properties.
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -4439,7 +4442,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // computed z-index of the splash overlay BEFORE the Svelte
         // app removes it.
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, {
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, {
             waitUntil: 'commit' // read DOM as early as possible, before Svelte hydrates
         })
 
@@ -4476,7 +4479,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // browser has a visible address bar, but the CSS property itself
         // must be 100dvh).
         await page.setViewportSize({ width: 375, height: 812 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         // Wait for body to render.
         await page.waitForFunction(() => document.body, null, { timeout: 5000, polling: 100 })
@@ -4619,7 +4622,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         page
     }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -4764,7 +4767,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // of the color key. This test verifies the live DOM after opening the
         // category legend via the header toggle.
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -4896,7 +4899,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
     test('T1-4: mode chip clicks sync nav state (Bug #3 setJourneyPhase + Bug #5 currentView)', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -4952,7 +4955,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
     test('F-search-8: search result scores are normalized to 0-1 range with granularity', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -5010,7 +5013,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
     test('F-nav-5: clicking map chip syncs currentView to map (Bug #5 currentView sync)', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -5070,7 +5073,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             }
         })
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -5214,7 +5217,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // pollFor is defined at module scope (see file top) — CDP-channel polling
         // immune to WebGL rAF stalls (W61 F5.2 fix).
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -5351,7 +5354,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             }
         })
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
@@ -5486,7 +5489,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 test.describe('idle CTA design polish (W58-style)', () => {
     test('idle placeholder CTA is pill-radius + hint readable (design-call 2026-08-05)', async ({ page }) => {
         test.setTimeout(60000)
-        await page.goto(`http://127.0.0.1:8795/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
         await page.waitForTimeout(4200)
         const styles = await page.evaluate(() => {
             const cta = document.querySelector('.placeholder-cta')
@@ -5503,7 +5506,7 @@ test.describe('idle CTA design polish (W58-style)', () => {
 })
 
 test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
-    const APP = 'http://127.0.0.1:8795/dist/svelte/index.html'
+    const APP = `${BASE_URL}/dist/svelte/index.html`
     test('tablet focus: proximity legend self-collapses at 936', async ({ page }) => {
         test.setTimeout(60000)
         await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
