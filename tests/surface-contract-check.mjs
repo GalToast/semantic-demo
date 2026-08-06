@@ -585,8 +585,9 @@ async function assert_mobile_idle(page, ctx) {
         // demand canvas unconditionally on mobile (that was the original bug in
         // this assertion).
         results.renderKindMobile = document.body.dataset.renderKind ?? null
-        results.placeholderPresent =
-            !!document.querySelector('[data-testid="placeholder-cta"], [data-testid="splash-cta"]')
+        results.placeholderPresent = !!document.querySelector(
+            '[data-testid="placeholder-cta"], [data-testid="splash-cta"]'
+        )
 
         const selectedCard = document.querySelector('.selected-card')
         if (selectedCard) {
@@ -634,7 +635,15 @@ async function assert_mobile_idle(page, ctx) {
     } else if (info.canvasPresent) {
         ctx.pass('mobile-idle', 'dom:canvas-container')
     } else {
-        ctx.info('mobile-idle', 'dom:canvas-container', 'canvas not mounted (renderKind=' + info.renderKindMobile + ' placeholder=' + info.placeholderPresent + ') — non-blocking per W45-A mobile+webdriver placeholder contract')
+        ctx.info(
+            'mobile-idle',
+            'dom:canvas-container',
+            'canvas not mounted (renderKind=' +
+                info.renderKindMobile +
+                ' placeholder=' +
+                info.placeholderPresent +
+                ') — non-blocking per W45-A mobile+webdriver placeholder contract'
+        )
     }
 
     if (info.selectedCardBlackOnDark)
