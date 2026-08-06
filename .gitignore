@@ -38,6 +38,13 @@ tests/wave*-diag.spec.js
 
 # One-off screenshots and browser captures
 *.png
+
+# Orphaned work-in-progress variants kept on disk but not tracked (2026-08-06):
+# extensionless editor-buffer dup of the canonical adversarial-state-fuzz.spec.js
+# + helpers only the orphan imports; superseded by tracked frame-scheduler/fuzz-prng.
+/tests/adversarial-state-fuzz.spec
+/tests/helpers/frame-capture-helpers.js
+/tests/diag-body-classes.mjs
 *.jpg
 *.jpeg
 *.webp
@@ -136,3 +143,9 @@ ts
 tmp-*.py
 tmp-*.ts
 ocw_*/
+
+# Root transient artifacts (ide/session scratch, snapshot dumps, editor buffers) — W-session cleanup 2026-08-06
+tk-req.txt
+/snapshot-*.yml
+/out_dir/
+/AGENTS.md.bak*
