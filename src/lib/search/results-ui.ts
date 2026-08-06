@@ -230,11 +230,10 @@ export function renderSearchResultItems(
     // Push to appState
     appState.searchResults = dedupedResults
     appState.searchState.searchVisibleCount = visibleCount
-    appState.searchSummary = {
-        query: renderContext.trimmedQuery,
-        renderContext,
-        mode
-    }
+    // NOTE: this is the live search-path summary field; the canonical
+    // currentSearchSummary lives in appState.searchState (written by
+    // setSearchSummary / setSearchResults). The legacy appState.searchSummary
+    // mirror was removed (zombie field — 0 readers, bugsweep W4 slice-4).
     publish(EVENTS.TOOLTIP_HIDE_REQUESTED)
     publish(EVENTS.SEARCH_UI_SYNC_REQUESTED, { resultsEl, statusEl, results: dedupedResults, renderContext })
     publish(EVENTS.SEMANTIC_LANE_STATE_REQUESTED, {
@@ -358,7 +357,6 @@ export function clearSearchState(_resultsEl: HTMLElement | null, _statusEl: HTML
 
         // Clear appState
         appState.searchResults = []
-        appState.searchSummary = null
         appState.searchState.isSearching = false
         appState.searchState.searchError = null
         appState.searchState.searchVisibleCount = 10
@@ -426,7 +424,6 @@ export function applyEmptySemanticSearchState(
     trimmedQuery: string
 ): void {
     appState.searchResults = []
-    appState.searchSummary = { query: trimmedQuery, renderContext: null, mode: 'empty' }
     appState.searchState.searchError = null
     appState.searchState.isSearching = false
     if (resultsEl) {

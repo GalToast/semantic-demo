@@ -144,6 +144,7 @@
     parity.panelSurface === 'inside' ||
     parity.panelSurface === 'trail' ||
     parity.panelSurface === 'focus-search' ||
+    parity.panelSurface === 'map-trail' ||
     parity.focusSearchForced ||
     parity.panelSurface === 'semantic-dive'
   );

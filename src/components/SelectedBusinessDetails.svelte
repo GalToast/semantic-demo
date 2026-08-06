@@ -389,10 +389,30 @@ import SelectedMatchNarrative from '@lib/components/focus/SelectedMatchNarrative
     }
 
     .selected-facts {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0 var(--space-1);
       font-size: var(--mobile-type-body);
       line-height: var(--mobile-line-normal);
       overflow-wrap: break-word;
       word-break: break-word;
+    }
+
+    /* Contact links are actions, not inline decoration. Give Website/Email
+       the same minimum target as the map action while allowing long values
+       to wrap inside the card. */
+    .selected-facts a {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--mobile-touch-min);
+      padding: 0.25rem 0.35rem;
+      max-width: 100%;
+      vertical-align: middle;
+    }
+
+    .selected-facts .fact-sep {
+      margin-inline: 0.1rem;
     }
 
     /* Action button: full-width with a 44px touch target. */
