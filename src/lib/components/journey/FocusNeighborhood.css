@@ -65,6 +65,12 @@
 }
 .focus-stage-neighbors.active {
     display: flex;
+    /* The rail lives inside .focus-stage-journey, a 3-col grid with 56px side
+       tracks (prev/next buttons). Auto-placement drops it into the narrow
+       first column (measured: rail 56px → pill 56 → neighbor button 3px) on
+       the semantic-dive surface. Span the full row so the rail owns its width
+       and the middle minmax(0,1fr) track stops collapsing to 0. */
+    grid-column: 1 / -1;
 }
 .neighbor-count {
     font-family: var(--font-mono);
