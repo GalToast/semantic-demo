@@ -32,6 +32,7 @@
     body .time-display::before,
     /* H7/M9: search spinner + shake animations */
     body .search-spinner,
+    body .fade-in,
     body.searching .search-spinner,
     body.searching .search-container.has-query .search-spinner,
     body .search-spinner-overlay,
