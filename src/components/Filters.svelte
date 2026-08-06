@@ -253,6 +253,7 @@ function handleContactToggle(id: string): void {
   @media (max-width: 768px) {
     .filters-section {
       bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+      max-width: calc(100vw - 1rem);
     }
   }
   .filter-toolbar {
@@ -268,7 +269,10 @@ function handleContactToggle(id: string): void {
   @media (max-width: 768px) {
     .filter-toolbar {
       flex-direction: column;
-      width: 90vw;
+      /* 90vw leaks past the centered rail on small screens; fill the
+         rail's content box instead so chips never run off-viewport. */
+      width: 100%;
+      box-sizing: border-box;
     }
   }
   .filter-group {
@@ -396,7 +400,9 @@ function handleContactToggle(id: string): void {
   @media (max-width: 768px) {
     .filter-toolbar {
       flex-direction: column;
-      width: 90vw;
+      /* fill the centered rail content box; 90vw leaked past the
+         viewport on small screens (chips overflowed right edge) */
+      width: 100%;
       bottom: 0.5rem;
     }
   }

@@ -126,10 +126,7 @@ test.describe('Widget journey', () => {
         })
 
         // Verify the parity system reflects map-trail in body[data-panel-surface]
-        await page.waitForFunction(
-            () => document.body.dataset.panelSurface === 'map-trail',
-            { timeout: 5000 }
-        )
+        await page.waitForFunction(() => document.body.dataset.panelSurface === 'map-trail', { timeout: 5000 })
 
         const panelSurface = await page.evaluate(() => document.body.dataset.panelSurface)
         expect(panelSurface, 'parity layer must reflect map-trail surface').toBe('map-trail')
@@ -156,8 +153,7 @@ test.describe('Widget journey', () => {
         await page.waitForFunction(
             () =>
                 window.__APP_STATE__?.currentView === 'map' &&
-                (window.__APP_STATE__?.navState?.focusedIndex === 518 ||
-                    document.body.dataset?.focusedNode === '518'),
+                (window.__APP_STATE__?.navState?.focusedIndex === 518 || document.body.dataset?.focusedNode === '518'),
             null,
             { timeout: 20000, polling: 100 }
         )
@@ -1098,8 +1094,12 @@ test.describe('Widget journey', () => {
         await page.locator('.search-result-item').first().waitFor({ state: 'visible', timeout: 30000 })
         await page.waitForTimeout(900)
 
-        await expect(page.locator('#btn-focus-dive')).toHaveCount(1)
-        await expect(page.locator('#btn-focus-dive')).toBeHidden()
+        // The legacy compass sibling may be omitted entirely once the modern
+        // JourneyChrome owner is mounted. If it is present during lazy
+        // hydration, it must remain hidden so it cannot re-enter document flow.
+        const legacyDive = page.locator('#btn-focus-dive')
+        expect(await legacyDive.count(), 'legacy dive control must not duplicate').toBeLessThanOrEqual(1)
+        await expect(legacyDive).toBeHidden()
         const bounds = await page.evaluate(() => ({
             width: document.documentElement.scrollWidth,
             height: document.documentElement.scrollHeight,
@@ -1647,6 +1647,24 @@ test.describe('Widget journey', () => {
             scrimState.backgroundColor,
             '.filters-scrim background-color must be set to the orphan rgba(10, 14, 24, ...) value (was orphan in css/search.css, rgba(10, 14, 24, 0.55))'
         ).toMatch(/rgba\(10,\s*14,\s*24/) // not 'rgba(0, 0, 0, 0)' (default)
+
+        // Mobile overflow regression: filter chips must stay INSIDE the viewport.
+        // Filters.svelte had a duplicate max-width:768px block forcing the
+        // toolbar to width:90vw, which leaked past the centered rail so chips
+        // painted off-screen (measured right edge 424/464 at 390px viewport).
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.waitForTimeout(300)
+        const chipOverflow = await page.evaluate(() => {
+            const off = []
+            for (const el of document.querySelectorAll('.filter-chip')) {
+                const b = el.getBoundingClientRect()
+                if (b.width > 0 && b.right > window.innerWidth + 0.5 && el.offsetParent !== null) {
+                    off.push({ txt: (el.textContent || '').trim(), right: Math.round(b.right) })
+                }
+            }
+            return { viewport: window.innerWidth, offenders: off }
+        })
+        expect(chipOverflow.offenders, 'no .filter-chip may run past the 390px viewport (Filters.svelte width:100% fix)').toEqual([])
     })
 
     test('5l. Help (?) button re-opens the help dialog after dismissal (W48 fix)', async ({ page }) => {
