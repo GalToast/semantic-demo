@@ -35,3 +35,19 @@
   mobile+webdriver placeholder is valid; boot can be mid-flip at assert).
 - CONFIRM run: PASS 3 / FAIL 0, `CONFIRM_EXIT=0`. qa:contract completes + passes
   for mobile-idle. Full suite remains runnable.
+
+## search-error / search-no-results / map-trail — STALE FIXTURES (2026-08-06, root-caused)
+- Full-seq (clean machine, isolated) verdicts: search-error Timeout 15s (.search-error-state),
+  search-no-results Timeout 15s, map-trail Timeout 30s.
+- ROOT (repro tmp/search-error-repro.mjs, dist + route-mock 503): forced search 503 →
+  `markApiUnreachable()` (search-engine.ts:159) → falls back to LOCAL INDEX (success) →
+  NO `.search-error-state` mounts. searchStatus stays idle, results come from local fallback.
+- So the "forced 503 → error card" premise in assert_search_error/assert_search_no_results is
+  OBSOLETE: app now degrades gracefully to local-index results (by design since search-engine
+  fallback + prewarm aa75be50 this session). The tests assert an error path the product no
+  longer takes by default.
+- FIX (search lane): assertions should target the DEGRADED state (e.g. `.search-result-listitem`
+  present + provenance/fallback banner, or make the mock 503 ALSO fail the local path to truly
+  force the error card). map-trail depends on the same type-then-search; check separately.
+- Evidence: tmp/ser.out repro (inputVal set, searchStatus idle, no .search-error-state),
+  isolated run ISO3. Handed to search lane (task #3 close discussed; this is the same seam).
