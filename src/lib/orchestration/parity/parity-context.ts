@@ -45,6 +45,8 @@ export interface ParityContext {
     presentation: CompassPresentationState
     loadingPhase: LoadingPhase
     graphicsMode: string
+    /** Legacy fallback from window.__APP_STATE__.focusState._semanticDiveTransitionDeadline */
+    semanticDiveDeadline: number | null
     /** Legacy fallback from window.__APP_STATE__.navState.focusedIndex */
     legacyFocusedIndex: number | null
 }
@@ -86,6 +88,28 @@ export function resolveParityContext(): ParityContext {
         /* ignore */
     }
 
+    // Dive-transition transient window (ms): armed by ENTER_INSIDE
+    // (compass-controller) as `appState.focusState
+    // ._semanticDiveTransitionDeadline = Date.now() + 1200`. The parity
+    // resolver uses it to emit `data-semantic-dive="transitioning"` for the
+    // synchronous "Focusing…" feedback, matching the imperative writer in
+    // semantic-dive.ts (single shared definition of `transitioning`). Same
+    // window.__APP_STATE__ fallback pattern as legacyFocusedIndex — the
+    // deadline lives on the engine appState, not the Svelte focus store.
+    let semanticDiveDeadline: number | null = null
+    try {
+        const dl = (
+            window.__APP_STATE__?.focusState as
+                | { _semanticDiveTransitionDeadline?: number }
+                | undefined
+        )?._semanticDiveTransitionDeadline
+        if (typeof dl === 'number' && Number.isFinite(dl)) {
+            semanticDiveDeadline = dl
+        }
+    } catch {
+        /* ignore */
+    }
+
     return {
         nav,
         journey,
@@ -99,6 +123,7 @@ export function resolveParityContext(): ParityContext {
         presentation,
         loadingPhase: loadingPhaseValue,
         graphicsMode: graphicsModeValue,
-        legacyFocusedIndex
+        legacyFocusedIndex,
+        semanticDiveDeadline
     }
 }

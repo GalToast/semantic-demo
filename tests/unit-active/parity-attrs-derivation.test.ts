@@ -755,22 +755,43 @@ describe('computeParityAttributes IIFE derivations', () => {
     })
 
     describe('semanticDive', () => {
-        it('returns "active" when semanticDiveMode is true', () => {
+        it('returns "active" when semanticDiveMode is true (no transient window)', () => {
             _nav.focusedIndex = 42
             _focus.semanticDiveMode = true
             const result = computeParityAttributes()
             expect(result.semanticDive).toBe('active')
         })
 
-        it('returns "transitioning" when journey.depth >= 2', () => {
+        it('returns "transitioning" only inside the armed deadline window (dive entrance )', () => {
             _nav.focusedIndex = 42
-            _journey.depth = 2
-            _journey.trailDepth = 2
-            const result = computeParityAttributes()
-            expect(result.semanticDive).toBe('transitioning')
+            _focus.semanticDiveMode = true
+            ;(window as any).__APP_STATE__ = {
+                focusState: { _semanticDiveTransitionDeadline: Date.now() + 1200 }
+            }
+            try {
+                const result = computeParityAttributes()
+                expect(result.semanticDive).toBe('transitioning')
+            } finally {
+                delete (window as any).__APP_STATE__
+            }
         })
 
-        it('returns "inactive" when not diving and depth < 2', () => {
+        it('returns "active" once the deadline window has lapsed', () => {
+            _nav.focusedIndex = 42
+            _focus.semanticDiveMode = true
+            ;(window as any).__APP_STATE__ = {
+                // Boundary: deadline set in the past (no longer in the 1200ms window)
+                focusState: { _semanticDiveTransitionDeadline: Date.now() - 100 }
+            }
+            try {
+                const result = computeParityAttributes()
+                expect(result.semanticDive).toBe('active')
+            } finally {
+                delete (window as any).__APP_STATE__
+            }
+        })
+
+        it('returns "inactive" when not diving', () => {
             const result = computeParityAttributes()
             expect(result.semanticDive).toBe('inactive')
         })

@@ -187,11 +187,16 @@ export interface SemanticDiveResult {
 }
 
 export function resolveSemanticDive(ctx: ParityContext, hasFocus: boolean): SemanticDiveResult {
+    const deadline = ctx.semanticDiveDeadline
+    const inTransientWindow =
+        deadline !== null && Number.isFinite(deadline) && deadline > 0 && Date.now() < deadline
     const semanticDive: 'inactive' | 'transitioning' | 'active' =
         ctx.nav.currentView === 'galaxy'
             ? ctx.focus.semanticDiveMode && hasFocus
-                ? 'active'
-                : ctx.journey.depth >= 2 && hasFocus
+                ? inTransientWindow
+                    ? 'transitioning'
+                    : 'active'
+                : ctx.journey.depth >= 2 && hasFocus && inTransientWindow
                   ? 'transitioning'
                   : 'inactive'
             : 'inactive'
