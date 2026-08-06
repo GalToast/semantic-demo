@@ -20,6 +20,7 @@
 <script lang="ts">
   import { focusStore, setPocketListVisible } from '@lib/stores/focus.svelte';
   import { setFocusedIndex } from '@lib/stores/navigation.svelte.ts';
+  import { appState } from '@lib/state/app.svelte.ts';
   import type { FocusPocketNode } from '@lib/types/state';
 
   // eslint-disable-next-line no-empty-pattern -- empty $props() destructuring is the Svelte 5 idiom for "no props accepted"
@@ -46,6 +47,12 @@
   let pocketNodes = $derived($focusStore.pocketNodes);
   let isVisible = $derived($focusStore.pocketListVisible);
   let hasNodes = $derived(pocketNodes.length > 0);
+  // SoM-found (2026-07-05): on compact focus the floating toggle overlapped the
+  // bottom dive strip; lift it above the strip inside its own component.
+  let compact = $derived(appState.viewportState?.viewportIsCompact ?? false);
+  let focusSurface = $derived(['focus', 'focus-search', 'semantic-dive'].includes(appState.surface));
+  let surfaceActive = $derived(['focus', 'focus-search', 'semantic-dive'].includes(appState.navState?.surface ?? appState.panelSurface ?? appState.surface));
+  let shouldLift = $derived(compact && surfaceActive);
 </script>
 
 <!--
@@ -98,6 +105,7 @@
   <button
     id="focus-pocket-list-toggle"
     class="focus-pocket-list-toggle"
+    class:lifted={shouldLift}
     type="button"
     aria-expanded={isVisible}
     aria-controls="focus-pocket-a11y"
@@ -200,7 +208,9 @@
     position: fixed;
     right: 0.75rem;
     bottom: 0.75rem;
-    padding: 0.45rem 0.8rem;
+    padding: 0.65rem 1rem;
+    min-height: 44px;
+    min-width: 44px;
     background: rgba(var(--color-surface-chrome-rgb), 0.92);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -213,6 +223,10 @@
     cursor: pointer;
     z-index: var(--z-panels);
     transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .focus-pocket-list-toggle.lifted {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 3.5rem);
   }
 
   .focus-pocket-list-toggle:hover,

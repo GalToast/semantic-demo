@@ -2372,13 +2372,6 @@
    absolute) collides with the focus-search results panel (verified overlap
    69px @936, 47px @1024, 0px @1280+). Hold it out of the way while a focus
    panel is open; legend still shows on idle/map/overview. 2026-08-05 */
-@media (max-width: 1024px) {
-    body[data-panel-surface='focus-search'] .proximity-legend-wrapper,
-    body[data-panel-surface='semantic-dive'] .proximity-legend-wrapper {
-        opacity: 0 !important;
-        visibility: hidden;
-    }
-}
 
 /* ── Design-call polish (2026-08-05) ─────────────────────────────────────────
    1. Focus card name: 2-line clamp on focus-search (long legal names cut at
@@ -2386,17 +2379,18 @@
    2. Empty-state line under the name: brighter + slightly bigger so it reads
       off the glowing network backdrop. */
 body[data-panel-surface='focus-search'] #selected-name {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  white-space: normal;
-  overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 #journey-chrome .journey-empty-state {
-  color: #f2f7f9;
-  font-size: 0.95rem;
-  font-weight: 450;
-  letter-spacing: 0.01em;
+    color: #f2f7f9;
+    font-size: 0.95rem;
+    font-weight: 450;
+    letter-spacing: 0.01em;
 }
+

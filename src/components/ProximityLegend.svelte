@@ -143,6 +143,11 @@
   // dependency chain: $derived reads the $state-backed property (tracked),
   // and $effect reads the $derived (tracked), so the effect re-runs when
   // search state changes.
+  // SoM-found (2026-08-05): on compact/tablet the fixed legend overlaps the
+  // focus results panel; own the collapse inside the component (no global hacks).
+  let surface = $derived(appState.navState?.surface ?? appState.panelSurface ?? appState.surface);
+  let vw = $derived(appState.viewportState?.viewportWidth ?? 1280);
+  let selfCollapsed = $derived((surface === 'focus-search' || surface === 'semantic-dive') && vw <= 1024);
   let searchSummary = $derived(appState.searchState.currentSearchSummary);
   let cueLastRendered = $derived(appState.searchTrailCueLastRenderedAt);
   let searchStatus = $derived(appState.searchState.searchStatus);
@@ -177,6 +182,7 @@
 {#if !dismissed && visible && !isDemoActive()}
   <div
     class="proximity-legend-wrapper"
+    class:collapsed={selfCollapsed}
     aria-label="Proximity legend: dots close together do similar things"
     aria-live="polite"
   >
@@ -207,6 +213,11 @@
 
 <style>
   @import '@lib/css/z-layers.css';
+
+  .proximity-legend-wrapper.collapsed {
+    visibility: hidden;
+    opacity: 0;
+  }
 
   .proximity-legend-wrapper {
     position: absolute;
