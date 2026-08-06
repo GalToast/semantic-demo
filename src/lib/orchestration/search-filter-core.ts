@@ -15,7 +15,7 @@
 import { get } from "svelte/store";
 import { businessRecords } from "@lib/data-store";
 import { filterState, pointMatchesActiveFilters } from "@lib/stores/filter.svelte";
-import { searchStore } from "@lib/stores/search.svelte";
+import { clearShortSemanticSearchStateStore } from "@lib/stores/search.svelte";
 import type { BusinessRecord } from "@lib/types/business";
 import type { ActiveFilters } from "@lib/types/state";
 
@@ -129,16 +129,10 @@ export function clearShortSemanticSearchState(
   resultsEl?: HTMLElement | null,
   statusEl?: HTMLElement | null
 ): void {
-  // Clear search store summary
-  searchStore.update((s) => ({
-    ...s,
-    summary: null,
-    glowActive: false,
-    glowIndices: new Set(),
-    glowTopIndex: null,
-    previewIndex: null,
-    anchorIndex: null,
-  }));
+  // Clear search store summary via the real kernel-write action (the
+  // mirror bindings are null, so update() only notified subscribers and
+  // never touched appState — this writes the kernel fields directly).
+  clearShortSemanticSearchStateStore();
 
   // Update results element
   if (resultsEl) {

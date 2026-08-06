@@ -430,11 +430,19 @@ function updateWalkBreadcrumb(hasFocus: boolean = false): void {
     if (!breadcrumb) return
 
     const points = appState.points!
+    // First-index-wins dedup: the old `indexOf(index) === order || order ===
+    // list.length - 1` filter let consecutive duplicates survive ([A,A] → two
+    // same chips) and dropped mid-list repeats. Deduping here AND slicing the
+    // click handler from this same array keeps displayed chips and compacted
+    // walk indices consistent.
+    const _seenWalk = new Set<number>()
     const history = ((appState.navState?.walkHistoryIndices || []) as number[])
         .filter((index: number) => Number.isFinite(index) && points[index])
-        .filter(
-            (index: number, order: number, list: number[]) => list.indexOf(index) === order || order === list.length - 1
-        )
+        .filter((index: number) => {
+            if (_seenWalk.has(index)) return false
+            _seenWalk.add(index)
+            return true
+        })
 
     if (!hasFocus || history.length <= 1) {
         breadcrumb.hidden = true

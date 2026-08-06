@@ -384,6 +384,24 @@ export function clearSearchGlow(): void {
     })
 }
 
+/**
+ * Kernel-write mirror of the former searchStore.update() clear in
+ * search-filter-core. The mirror bindings are null, so update() only
+ * notified subscribers and never touched appState; this action writes the
+ * real kernel fields via withSearchNotify so consumers reading appState
+ * (glow slices, currentSearchSummary) actually see the clear.
+ */
+export function clearShortSemanticSearchStateStore(): void {
+    withSearchNotify(() => {
+        appState.searchState.currentSearchSummary = null
+        appState.searchState.searchGlowActive = false
+        appState.searchState.searchGlowIndices = new Set()
+        appState.searchState.searchGlowTopIndex = null
+        appState.searchState.searchPreviewIndex = null
+        appState.searchState.searchAnchorIndex = null
+    })
+}
+
 export function setTrailCue(cue: SearchStoreState['trailCue']): void {
     withSearchNotify(() => {
         appState.searchState.semanticTrailCue = cue
@@ -443,7 +461,9 @@ export function clearSearch(): void {
         appState.searchState.searchAnchorIndex = null
         appState.searchState.searchPreviewIndex = null
         appState.searchState.searchGlowIndices = new Set()
+        appState.searchState.searchGlowTopIndex = null
         appState.searchState.searchGlowActive = false
+        appState.searchState.currentEmptyQuery = null
         updateSearchTrailCue({ beat: 'idle' })
     })
 }
@@ -519,8 +539,23 @@ export function setSearchResults(results: SearchResult[]): void {
                 summaryType: 'text'
             }
         }
-        appState.searchState.currentSearchSummary.resultIndices = results.map((r) => r.index)
-        appState.searchState.currentSearchSummary.resultCount = results.length
+        const summary = appState.searchState.currentSearchSummary
+        summary.resultIndices = results.map((r) => r.index)
+        summary.resultCount = results.length
+        summary.totalMatches = results.length
+        summary.visibleMatches = results.length
+        summary.topScore = results[0]?.score ?? 0
+        summary.topIndex = results[0]?.index ?? null
+        summary.anchorIndex = results[0]?.index ?? null
+        summary.renderContext = {
+            trimmedQuery: summary.query,
+            topIndex: summary.topIndex,
+            anchorIndex: summary.anchorIndex,
+            topScore: summary.topScore
+        }
+        // Consumers (getSearchResult / getFirstSearchHit) and the deep-link
+        // path read appState.searchResults directly — keep it in sync.
+        appState.searchResults = results
         appState.searchState.searchStatus = 'results'
         appState.searchState.searchError = null
         appState.searchState.isSearching = false

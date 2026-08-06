@@ -103,26 +103,10 @@ export function getJourneyCompassState(): CompassState {
     // in trail mode or a trail is being walked (trailDepth > 0).
     const trailDepthVal: number = Number(appState.trailDepth || 0)
     const inTrailMode: boolean = appState.navState?.mode === 'trail' || trailDepthVal > 0
-    if (inTrailMode) {
-        const trailWalkIndices: readonly number[] = Array.isArray(appState.navState?.walkHistoryIndices)
-            ? appState.navState!.walkHistoryIndices!
-            : []
-        const trailWalkLength: number = trailWalkIndices.length
-        const trailClusterName: string = focusedPoint ? describeCluster(focusedPoint.cluster!) : 'Trail'
-        return {
-            phase: 'trail',
-            kicker:
-                trailWalkLength > 1
-                    ? `Trail Step ${trailWalkLength} | ${trailClusterName}`
-                    : `Trail | ${trailClusterName}`,
-            title: '',
-            note: 'Follow the trail linking related Montgomery County businesses.',
-            primaryAction: { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE },
-            secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
-            tertiaryAction: { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW, hint: 'Exit trail' }
-        }
-    }
 
+    // Dive wins: evaluate the inside-active (semantic dive) phase BEFORE
+    // trail mode so a dive in progress emits 'inside' (Neighborhood kicker)
+    // rather than 'trail' with a contradictory "Trail Step N" label.
     if (insideActive) {
         const focusIndex: number = Number.isFinite(appState.navState?.focusedIndex)
             ? appState.navState!.focusedIndex!
@@ -145,6 +129,26 @@ export function getJourneyCompassState(): CompassState {
                 : { label: 'End of Trail', action: JOURNEY_ACTIONS.SHOW_TRAIL_PANEL },
             secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
             tertiaryAction: { label: 'County View', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW, hint: 'Exit trail' }
+        }
+    }
+
+    if (inTrailMode) {
+        const trailWalkIndices: readonly number[] = Array.isArray(appState.navState?.walkHistoryIndices)
+            ? appState.navState!.walkHistoryIndices!
+            : []
+        const trailWalkLength: number = trailWalkIndices.length
+        const trailClusterName: string = focusedPoint ? describeCluster(focusedPoint.cluster!) : 'Trail'
+        return {
+            phase: 'trail',
+            kicker:
+                trailWalkLength > 1
+                    ? `Trail Step ${trailWalkLength} | ${trailClusterName}`
+                    : `Trail | ${trailClusterName}`,
+            title: '',
+            note: 'Follow the trail linking related Montgomery County businesses.',
+            primaryAction: { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE },
+            secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
+            tertiaryAction: { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW, hint: 'Exit trail' }
         }
     }
 
