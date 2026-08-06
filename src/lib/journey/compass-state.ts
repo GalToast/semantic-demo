@@ -141,7 +141,7 @@ export function getJourneyCompassState(): CompassState {
         return {
             phase: 'trail',
             kicker:
-                trailWalkLength > 1
+                trailWalkLength >= 1
                     ? `Trail Step ${trailWalkLength} | ${trailClusterName}`
                     : `Trail | ${trailClusterName}`,
             title: '',
@@ -196,8 +196,7 @@ export function getJourneyCompassState(): CompassState {
 
         return {
             phase: 'focus',
-            kicker:
-                walkHistoryLength > 1 ? `Trail Step ${walkHistoryLength} | ${clusterName}` : `Focus | ${clusterName}`,
+            kicker: `Focus | ${clusterName}`,
             title: '',
             note: isSearchFocus
                 ? 'The strongest match for this search.'

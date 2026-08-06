@@ -5527,4 +5527,74 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         expect(st.lifted, 'toggle should carry the lifted class on mobile focus').toBe(true)
         if (st.diveTop != null) expect(st.y + 44 <= st.diveTop + 2, 'toggle bottom clears the dive strip').toBe(true)
     })
+
+    test('B1. deep-link search renders result strength bars (setSearchResults population fix)', async ({ page }) => {
+        // Fix B (2026-08-06): setSearchResults now populates renderContext/topScore +
+        // appState.searchResults on the runSearch path — SearchResults.svelte reads
+        // renderContext for strength-bar widths and getFirstSearchHit for the deep-link.
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=coffee`, {
+            waitUntil: 'domcontentloaded'
+        })
+        await page.waitForFunction(
+            () => Array.isArray(window.__APP_STATE__?.searchResults) && window.__APP_STATE__.searchResults.length > 0,
+            null,
+            { timeout: 20000, polling: 100 }
+        )
+        const bars = await page.locator('#search-results .search-result-bar').count()
+        expect(bars, 'deep-link search must render strength bars (was always-undefined renderContext)').toBeGreaterThan(
+            0
+        )
+        const firstBox = await page.locator('#search-results .search-result-bar').first().boundingBox()
+        expect(firstBox?.width ?? 0, 'first strength bar must have positive rendered width').toBeGreaterThan(0)
+    })
+
+    test.fixme('C1. semantic dive wins over trail in compass phase (insideActive-before-inTrailMode fix)', async ({
+        page
+    }) => {
+        // Fix C (2026-08-06) is unit-verified (a3-1/a3-2/t1 + structural diff). The
+        // journey-level dive assertion needs the app's real dive choreography
+        // (mode-nav cycling as in header-journey-component-contract.spec.js); direct
+        // state writes are non-reactive here. Kept as fixme so the intent is
+        // documented, not silently dropped.
+        // Fix C (2026-08-06): compass evaluates insideActive before inTrailMode, so a
+        // dive in progress emits phase='inside' (not 'trail'). Drive a dive state and
+        // assert the compass DOM reflects it.
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+        })
+        // Establish a real focused node (deep-link record) so the Inside mode is unlocked.
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map&record=519`, {
+            waitUntil: 'domcontentloaded'
+        })
+        await page.waitForFunction(
+            () => document.body.dataset.panelSurface === 'focus' || !!document.body.dataset.focusedNode,
+            null,
+            { timeout: 20000, polling: 100 }
+        )
+        // Drive a dive through the real mode nav (Inside radio) — the same path the
+        // header-journey spec uses to reach mode='inside' with real app state.
+        const insideRadio = page.locator('input[type=radio][value=inside], [role=radio]:has-text("Inside")').first()
+        await insideRadio.click({ timeout: 8000 }).catch(async () => {
+            // fallback: drive the dive flags directly if the nav radio is not reachable
+            await page.evaluate(() => {
+                window.__navActions__?.writeNavStateMirror({ surface: 'inside', trailDepth: 2 })
+                const s = window.__APP_STATE__
+                if (s) {
+                    s.trailDepth = 2
+                    s.semanticDiveMode = true
+                }
+            })
+        })
+        await page.waitForFunction(() => document.querySelector('#journey-compass')?.dataset.phase === 'inside', null, {
+            timeout: 8000,
+            polling: 100
+        })
+        const phase = await page.getAttribute('#journey-compass', 'data-phase')
+        expect(phase, 'during a dive the compass must show inside phase (was trail)').toBe('inside')
+    })
 })

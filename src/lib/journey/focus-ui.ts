@@ -583,7 +583,7 @@ function _renderTraversalContext(params: {
         nextWalkReason
     } = params
 
-    if ((appState.trailDepth ?? 0) >= 1 && (nav.walkHistoryIndices || []).length >= 0) {
+    if ((appState.trailDepth ?? 0) >= 1 && !(neighborCount === 0 && nav.threadSource === 'semantic')) {
         const reason = nav.lastTraversalReason || currentCandidate?.reason || 'nearby business relationship'
         const walkLength = (nav.walkHistoryIndices || []).length
         const stepNumber = walkLength
@@ -596,9 +596,7 @@ function _renderTraversalContext(params: {
             neighborCount > 0 ? ' or Next to continue' : ', then return to Overview to find more connections'
         }.`
         focusProgressEl.textContent =
-            neighborCount > 0
-                ? `Stop ${stepNumber} of ${neighborCount}`
-                : `Stop ${stepNumber}. No more visible stops with these filters.`
+            neighborCount > 0 ? `Stop ${stepNumber}.` : `Stop ${stepNumber}. No more visible stops with these filters.`
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
                 ? `Next: ${nextWalkName} - ${nextWalkReason}.`

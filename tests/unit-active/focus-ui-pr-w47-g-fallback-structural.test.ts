@@ -47,10 +47,12 @@ describe('PR-W47-g 0-neighbor fallback — structural regression detector', () =
         expect(focusUiSrc).toContain(FALLBACK_PROGRESS)
     })
 
-    it('focus-ui.ts guards the "of ${neighborCount}" total against neighborCount===0', () => {
-        // The fix guards the ternary so neighborCount===0 never produces
-        // "Stop N of 0". Assert the guard expression is present.
-        expect(focusUiSrc).toMatch(/neighborCount\s*>\s*0\s*\?\s*`Stop[^`]*of[^`]*`/)
+    it('focus-ui.ts no longer mixes the cumulative stop ordinal with the per-node "of N" total', () => {
+        // F1 (2026-08-06): "Stop N of M" mixed units (N = cumulative stops walked,
+        // M = current node's neighbor candidates) so "Stop 3 of 2" was structurally
+        // common. The walking branch now renders "Stop N." (the "Use Next" cue
+        // carries the affordance) and the 0-neighbor fallback keeps its phrasing.
+        expect(focusUiSrc).toMatch(/neighborCount\s*>\s*0\s*\?\s*`Stop\s*\$\{stepNumber}\./)
         expect(focusUiSrc).toContain(FALLBACK_PROGRESS)
     })
 
