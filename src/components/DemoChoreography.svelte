@@ -134,7 +134,7 @@
 
   const phaseLabels: Record<DemoPhase, string> = {
     IDLE: '',
-    OVERVIEW: '8,406 businesses across Montgomery County — as a living network.',
+    OVERVIEW: '',
     SEARCH: 'Search for any business type…',
     FOCUS: '…and focus on one.',
     THREADS: 'Every connection it has.',
@@ -147,6 +147,20 @@
     COMPLETE: '',
     CANCELLED: ''
   };
+
+  /**
+   * OVERVIEW caption derived from the ACTUAL loaded corpus. The old
+   * hardcoded "8,406 businesses" lied when the mock fallback served the
+   * 20-business catalog (backend down) — the tour narrated 8,406 over a
+   * 20-dot scene. findDemoNode() guarantees records exist by the time this
+   * phase renders, so the count is accurate here.
+   */
+  function overviewCaption(): string {
+    const count = getBusinessRecords().length
+    return count > 0
+      ? `${count.toLocaleString()} businesses across Montgomery County — as a living network.`
+      : 'Montgomery County businesses — as a living network.'
+  }
 
   /** Show a brief onboarding hint when the auto-demo can't run. */
   function showFallbackHint(): void {
@@ -377,7 +391,9 @@
     aria-label="Guided demo"
   >
     <button type="button" class="demo-dismiss" onclick={dismissDemo} aria-label="Dismiss demo"></button>
-    <p class="demo-status">{phaseLabels[demoPhase()] ?? demoPhase()}</p>
+    <p class="demo-status">
+      {demoPhase() === 'OVERVIEW' ? overviewCaption() : (phaseLabels[demoPhase()] ?? demoPhase())}
+    </p>
   </div>
 {/if}
 

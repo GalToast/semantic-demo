@@ -34,7 +34,10 @@ export const DEMO_SCRIPT: DemoStep[] = [
     {
         phase: 'OVERVIEW',
         durationMs: 4000,
-        caption: '8,406 businesses across Montgomery County — as a living network.',
+        // NOTE: display-dead — DemoChoreography renders its own phaseLabels,
+        // not step.caption (drift hazard). Kept count-neutral here so this
+        // copy can't lie about corpus size.
+        caption: 'Montgomery County businesses — as a living network.',
         action: () => {
             toggleAutoRotate()
         }
