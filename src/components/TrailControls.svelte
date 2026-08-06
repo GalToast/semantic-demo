@@ -180,7 +180,7 @@
     cursor: pointer;
     padding: 0.25rem 0.6rem;
     width: max-content;    /* explicit width beats flex-basis-auto sizing (which clamps to the clipped content box) */
-    min-width: max-content;
+    min-width: 72px;       /* W54 Fix I floor: usable touch target even when the grid squeezes the label */
     min-height: 44px;
     flex: 0 0 auto;       /* defeat the global grow/share so the button sizes to its label */
     font-family: var(--font-body);
