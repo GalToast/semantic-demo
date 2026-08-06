@@ -502,3 +502,39 @@ Rule change: with the harness fixed, "VISION UNAVAILABLE" now means TEXT-PATH, a
 errors (429/400/404) are honest failures. The earlier confounded "19 stable lanes" sweep
 should be re-validated on the worker path before trusting a lane for subagent vision work.
 
+### Registry coverage correction (2026-08-05)
+
+The external-subagents broker previously described the Qwen settings plus the parent-router
+catalog as exhaustive. That was incomplete. The current inventory contract reads seven local
+registry surfaces: Qwen settings, Pi model providers, Pi native models, the Pi model store, and
+the three OpenCode config locations. It reports source provenance, duplicate records, unmapped
+entries, protocol type, catalog status, and Pi launch status separately.
+
+The broker also parses the key-router source definition: 31 carrier routes, including the
+keyless welfare lanes (`deepseek`, `siliconflow`, `together`, `cerebras`, `cohere`, `hyperbolic`,
+and `aimlapi`) plus the `clinefree` route, and the 8-entry V2 routing overlay. Overlay quality
+labels are advisory and do not establish live model availability.
+
+Important routing rule: a provider-qualified ref must resolve to a registered Pi provider/model
+pair. If it does not, the broker refuses to substitute another provider with the same model ID.
+FreeInference remains visible in inventory but excluded from external-subagent launch refs;
+Anthropic-only records are not probed as OpenAI `/models` routes. Re-run the broker inventory
+smoke after provider-registry or router changes, then restart the external-subagents MCP before
+using the live tool descriptions.
+
+The inventory now also reports the active auto-shard policy, disk-backed router cooldown/
+rotation/failure state (counts and observed model IDs only), the broker's static fallback
+tables with static-only refs, and the Pi model-provider extension's built-in metadata and
+runtime route adapter. These are separate evidence layers: runtime state is not a model
+catalog, static refs are not launch proof, and the Pi adapter must still register the selected
+provider/model pair before a provider-qualified launch ref is accepted.
+
+
+## 2026-08-06 correction: kimi-k3 family is NOT route-mapped despite registry claims
+- Registry `external_subagent_free_models` listed kimi-k3 (zenmux/novita/infron) with
+  `route_status: {ok:true, key_configured:true, status:200}` — a completion probe
+  returns **404** (zenmux) / **403** (novita). `/v1/models` lists ZERO kimi ids.
+- LESSON: free_models' route_status reflects *catalog* entries, not runtime mapping.
+  Always verify a candidate lane with a 2-token chat probe before dispatching work.
+- Verified live this wave: `zenmux/deepseek/deepseek-v4-flash-free` → 200 (use it
+  for future telemetry/audit workers), `opencode-zen/deepseek-v4-flash-free` → 200.
