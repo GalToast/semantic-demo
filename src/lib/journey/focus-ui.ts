@@ -596,17 +596,19 @@ function _renderTraversalContext(params: {
             neighborCount > 0 ? ' or Next to continue' : ', then return to Overview to find more connections'
         }.`
         focusProgressEl.textContent =
-            neighborCount > 0 ? `Stop ${stepNumber}.` : `Stop ${stepNumber}. No more visible stops with these filters.`
+            neighborCount > 0
+                ? `Stop ${stepNumber}.`
+                : `Stop ${stepNumber}. Nothing visible near ${currentName} with the current filters — broaden the filters to see nearby businesses.`
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
                 ? `Next: ${nextWalkName} - ${nextWalkReason}.`
-                : 'No more stops to explore with these filters.'
+                : 'No more stops visible with the current filters.'
             if (nextWalkName) focusNextEl.title = focusNextEl.textContent!
             else focusNextEl.removeAttribute('title')
         }
     } else if (neighborCount === 0 && nav.threadSource === 'semantic') {
-        contextEl.textContent = `Related businesses are near ${currentName}, but none are visible with the current filters. Broaden the view to see them.`
-        focusProgressEl.textContent = `No visible nearby businesses from ${currentName} with these filters.`
+        contextEl.textContent = `Related businesses are near ${currentName}, but none are visible with the current filters. Broaden the filters to see nearby businesses.`
+        focusProgressEl.textContent = `No visible nearby businesses from ${currentName} with the current filters.`
         if (focusNextEl) focusNextEl.textContent = 'No visible next stop with these filters.'
     } else {
         const fallbackLeadIn =
