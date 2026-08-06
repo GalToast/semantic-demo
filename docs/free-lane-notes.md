@@ -132,8 +132,20 @@
 - Tooling: probe sedge (320/landscape/longname) + probe-longname2 use probe-lib (bounded/heartbeat/JSONL). Reusable per wave.
 
 ## sublime wave 3 (2026-08-06) — live data + micro + perf
+
 - LIVE-DATA geometry (real map/trail at 1440x900 after boot+search+map): canvas 1440x900 non-zero, map-container full size, route/trail SVG present, 0 offenders on search/map/trail surfaces.
 - MICRO-INTERACTION: NO real bug. "No hover feedback" findings were off-screen/hidden elements (legend off-canvas at x-190 by design at idle, first-visit help dialog veil covering center). Real controls have hover (mode-chip :hover .mode-caption, legend-item:hover, etc. confirmed in CSS). Added scoped legend-item:hover as defense (harmless).
 - KEY LESSON (tooling): hover probes MUST verify the target is on-screen + not veiled (boundingBox.x >= 0 + elementFromPoint == target) or they report phantom findings. This is the "sublime" false-positive trap.
 - PERF (static): the only getBoundingClientRect in animation code is camera-view-offset at ANIMATION-START (bounded), not per-frame. Per-frame loops write transform/position only — no layout read = no thrash. Clean.
 - tooling: probe-live-map.mjs (geometry), probe-micro.mjs (hover), probe-hover6 (state-verified) — all probe-lib based.
+
+## obscure-bug hunt wave 4 (2026-08-06) — the reduced-motion keyframe audit
+- AUDITED ALL 43 @keyframes across css/ vs the prefers-reduced-motion gates (multiple @media blocks + per-module gates in time_weather.css).
+- 4 REAL HOLES FOUND + FIXED (the obscure class — infinite pulse loops that heartbeat under reduce):
+  1. .fade-in (empty-search entry, 10px translate) - fixed earlier today.
+  2. .journey-compass-kicker::before (statusPulseRapid 0.6s infinite) — pseudo not covered.
+  3. .focus-stage-inside-status::before (insideStatusPulse 2.4s infinite) — pseudo not covered.
+  4. .search-vector-scramble (searchGlowPulse 2s infinite) — scramble overlay not covered.
+- Covered-by-design (verified NOT gaps): weather's own reduce block (rain/snow/lightning), #weather-overlay *, .search-result-item descendent, .semantic-map-route-pulse, #canvas-container, .journey-compass-*.
+- Reusable audit: tmp/audit-reduced-motion.mjs — 43 keyframes, now 0 gaps. Run after any new @keyframes.
+- LESSON: pseudo-element animations (:before/:after) are the classic silent gap — they match neither their host's :hover chain nor sibling selectors; audit must check composites AND descendant chains.
