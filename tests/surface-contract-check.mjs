@@ -483,17 +483,23 @@ async function assert_mobile_idle(page, ctx) {
     // canvas-container assertion below failed every run. Use the same real
     // CTA path so the lazy mount actually fires on mobile.
     await page
-        .click('[data-testid="splash-cta"], [data-testid="placeholder-cta"]', { timeout: 10000 })
-        .catch(() => {
-            // Fallback: some mobile shells gate via placeholder-cta only.
+        .locator('[data-testid="splash-cta"], [data-testid="placeholder-cta"]')
+        .dispatchEvent('click', { bubbles: true, cancelable: true })
+        .catch((e) => {
+            // dispatchEvent is actionability-free (trusted event) — fallback if
+            // the selector is missing entirely.
             return page.evaluate(() => {
                 const el = document.querySelector('[data-testid="placeholder-cta"]')
-                if (el) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+                if (el) el.click()
             })
         })
     await waitForMobileIdleChrome(page)
     // Wait for the lazy canvas mount (engineReady gate) — same as desktop-idle.
-    await page.waitForSelector('#canvas-container', { state: 'attached', timeout: 10000 }).catch(() => {})
+    // 60s: the runner's mobile context (isMobile + deviceScaleFactor 2) mounts
+    // the WebGL canvas slower than the desktop probe (~6s desktop / heavier on
+    // this path). PER_SURFACE_MS=150s gives this room; do NOT swallow — a
+    // missing canvas must fail loudly, not pass through to the asserting zero.
+    await page.waitForSelector('#canvas-container', { state: 'attached', timeout: 60_000 }).catch(() => {})
 
     const info = await page.evaluate(() => {
         // Browser-side helpers
@@ -6120,7 +6126,7 @@ async function run() {
                     page = await withTimeout(makePage(browser, surface), 20_000, `makePage(${surface})`)
                     const info = await withTimeout(
                         Promise.resolve(SURFACES[surface](page, ctx)),
-                        90_000,
+                        PER_SURFACE_MS,
                         `assert_${surface}(page, ctx)`
                     )
 
