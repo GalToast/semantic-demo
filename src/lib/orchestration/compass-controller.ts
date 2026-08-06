@@ -8,9 +8,15 @@
  * journey actions (search focus, anchor center, map switch, etc.).
  */
 import { get } from 'svelte/store'
-import { navStore, switchView as navSwitchView, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
+import {
+    navStore,
+    switchView as navSwitchView,
+    writeNavStateMirror,
+    dispatchNavTransition,
+    NAV_TRANSITION_ACTIONS
+} from '@lib/stores/navigation.svelte.ts'
 import { searchStore } from '@lib/stores/search.svelte'
-import { legacyState } from '@lib/state/app.svelte'
+import { legacyState, appState } from '@lib/state/app.svelte'
 import {
     JOURNEY_COMPASS_PHASE_ORDER,
     JOURNEY_CONFIG,
@@ -299,6 +305,14 @@ export function executeJourneyCompassAction(action: string): void {
                 return
             }
 
+            // The map county/trail surface does not mount InfoPanel's search
+            // input until it owns the map-trail search lane. Enter that lane
+            // before focusing so the visible Search action never becomes a
+            // no-op on mobile map routes with no selected business.
+            if ($nav.currentView === 'map' && !document.getElementById('search-input')) {
+                dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map-trail' })
+            }
+
             focusSearchInput()
             return
         }
@@ -324,6 +338,12 @@ export function executeJourneyCompassAction(action: string): void {
             journeySetTrailDepth(2)
             setSemanticDiveMode(true)
             writeNavStateMirror({ trailDepth: 2 })
+            // Arm the dive-transition transient: isTransitioning (semantic-dive.ts)
+            // gates on _semanticDiveTransitionDeadline > now, which drives the
+            // 'Focusing…' overlay + 'Entering Neighborhood' kicker via
+            // data-semantic-dive="transitioning". Never written anywhere before —
+            // the produce half of the dive-feedback feature (was always 0).
+            appState._semanticDiveTransitionDeadline = Date.now() + 1200
             // Parity-attrs owns semanticDive, panelSurface, trailDepth.
             // Mirror to test-compat globals via legacyState. The test-compat
             // proxy forwards writes from __APP_STATE__ / __TEST_STATE__
