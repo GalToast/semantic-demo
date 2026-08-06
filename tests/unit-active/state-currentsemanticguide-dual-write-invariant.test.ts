@@ -91,4 +91,19 @@ describe('engine-boundary refactor / Phase 2 latent-bug fix / currentSemanticGui
         expect(body).toMatch(/appState\.searchState\.summaryCardTypeToken/)
         expect(body).toMatch(/appState\.semanticGuideState\.isVisible\s*=\s*true/)
     })
+
+    // 2026-08-06 — dual-path search audit: the DOM-path summary
+    // (orchestration.search() -> setSearchSummary) must mirror the store path
+    // (setSearchResults) and populate renderContext. If it regresses, typed-path
+    // searches fall back to the empty context and strength bars render blank.
+    it('DOM-path orchestration setSearchSummary carries renderContext', () => {
+        const orchestration = readSource('src/lib/search/orchestration.ts')
+        const call = orchestration.match(/setSearchSummary\(\{[\s\S]*?summaryType: 'semantic'[\s\S]*?\}\)/)
+        expect(call, 'DOM-path setSearchSummary({... summaryType: semantic}) not found').not.toBeNull()
+        const body = call![0]
+        expect(body).toMatch(/renderContext:\s*\{/)
+        expect(body).toMatch(/trimmedQuery,/)
+        expect(body).toMatch(/topIndex:\s*topResult\?\.index\s*\?\?\s*null,/)
+        expect(body).toMatch(/topScore:\s*topResult\?\.score\s*\?\?\s*0/)
+    })
 })

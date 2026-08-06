@@ -255,7 +255,17 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         anchorIndex,
         topIndex: topResult?.index ?? null,
         resultIndices,
-        summaryType: 'semantic'
+        summaryType: 'semantic',
+        // mirror … store path (setSearchResults): DOM-path searches must
+        // populate renderContext too, or SearchResults.svelte's $derived
+        // falls back to the empty context (bars/strengths render blank on
+        // typed-search runs). See 2026-08-06 dual-path audit.
+        renderContext: {
+            trimmedQuery,
+            topIndex: topResult?.index ?? null,
+            anchorIndex,
+            topScore: topResult?.score ?? 0
+        }
     })
 
     publish(EVENTS.SEARCH_SUCCESS, {
