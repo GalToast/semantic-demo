@@ -2845,7 +2845,10 @@ async function assert_filters(page, ctx) {
     await page.waitForSelector('#filters-section', { state: 'attached', timeout: 25000 }).catch(() => {})
     const toggle = page.locator('.filter-toggle')
     if ((await toggle.count()) > 0) {
-        await toggle.first().click({ timeout: 8000 }).catch(() => {})
+        await toggle
+            .first()
+            .click({ timeout: 8000 })
+            .catch(() => {})
     }
     await page.waitForTimeout(400)
     await page.evaluate(() => {

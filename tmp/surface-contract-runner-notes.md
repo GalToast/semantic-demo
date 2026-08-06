@@ -51,3 +51,19 @@
   force the error card). map-trail depends on the same type-then-search; check separately.
 - Evidence: tmp/ser.out repro (inputVal set, searchStatus idle, no .search-error-state),
   isolated run ISO3. Handed to search lane (task #3 close discussed; this is the same seam).
+
+## 2026-08-06 (PM) — filters in-suite flake + full-suite truth
+- Full-suite BEFORE fix: 344 pass / 2 fail (28 surfaces) — ONLY filters failed
+  (`state:filters-section-open`, `layout:filter-toolbar-overflow`). Isolate 12/12 green.
+- 13-predecessor chain (mobile-idle…mode-grid → filters at #14-of-14): fail:0. So the
+  contamination needs the FULL 28-surface accumulation (memory/GPU pressure at #14-of-28,
+  not 14-of-14). Deterministic cause: Filters.svelte <details> has static `{open=false}`
+  prop (App.svelte:529); old assert set raw `.open=true` which Svelte's flush can clobber
+  under load between evaluate and second-evaluate read.
+- FIX in assert_filters (tests/surface-contract-check.mjs): waitForSelector #filters-section,
+  CLICK .filter-toggle (real affordance; native toggle not re-clobbered by static prop),
+  400ms settle, force-open fallback only if still closed. Isolate after fix: 12/12.
+- Truth run (full 28 with fix) launched background (tmp/full-suite-FIXED-20260806.out).
+- Also: zombie appState.searchSummary removal already landed by lane in 4afb5dc1
+  (2min before my redundant attempt — tree ended byte-identical). Their commit left
+  dangling `mode`/`isPeek` locals in results-ui.ts (ESLint warning) — removed in e790c0c3.
