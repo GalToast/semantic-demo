@@ -140,12 +140,20 @@
 - tooling: probe-live-map.mjs (geometry), probe-micro.mjs (hover), probe-hover6 (state-verified) — all probe-lib based.
 
 ## obscure-bug hunt wave 4 (2026-08-06) — the reduced-motion keyframe audit
+
 - AUDITED ALL 43 @keyframes across css/ vs the prefers-reduced-motion gates (multiple @media blocks + per-module gates in time_weather.css).
 - 4 REAL HOLES FOUND + FIXED (the obscure class — infinite pulse loops that heartbeat under reduce):
-  1. .fade-in (empty-search entry, 10px translate) - fixed earlier today.
-  2. .journey-compass-kicker::before (statusPulseRapid 0.6s infinite) — pseudo not covered.
-  3. .focus-stage-inside-status::before (insideStatusPulse 2.4s infinite) — pseudo not covered.
-  4. .search-vector-scramble (searchGlowPulse 2s infinite) — scramble overlay not covered.
-- Covered-by-design (verified NOT gaps): weather's own reduce block (rain/snow/lightning), #weather-overlay *, .search-result-item descendent, .semantic-map-route-pulse, #canvas-container, .journey-compass-*.
+    1. .fade-in (empty-search entry, 10px translate) - fixed earlier today.
+    2. .journey-compass-kicker::before (statusPulseRapid 0.6s infinite) — pseudo not covered.
+    3. .focus-stage-inside-status::before (insideStatusPulse 2.4s infinite) — pseudo not covered.
+    4. .search-vector-scramble (searchGlowPulse 2s infinite) — scramble overlay not covered.
+- Covered-by-design (verified NOT gaps): weather's own reduce block (rain/snow/lightning), #weather-overlay _, .search-result-item descendent, .semantic-map-route-pulse, #canvas-container, .journey-compass-_.
 - Reusable audit: tmp/audit-reduced-motion.mjs — 43 keyframes, now 0 gaps. Run after any new @keyframes.
 - LESSON: pseudo-element animations (:before/:after) are the classic silent gap — they match neither their host's :hover chain nor sibling selectors; audit must check composites AND descendant chains.
+
+## Multi-surface sweep via probe-hub (2026-08-06, final)
+- Method: hub `sweep` op → 6 surfaces (search/focus/map × desktop/mobile). Sub-minute per surface, no cold boots.
+- Lens calibration needed 3 fixes to be honest: (1) skip 0×0 off-canvas boxes, (2) inline boxes report clientWidth 0 — count visible text via bbox width, (3) ignore sr-only label children. 30 phantom "unlabeled" → 0.
+- VERDICT per surface: 0 unlabeled anywhere; 0 real horizontal overflow. The ONLY real find this pass: trail Prev/Next clip (fixed 7dd6ab16).
+- map-desktop ovf=5 = Leaflet tiles beyond viewport edge, clipped by map container overflow — false positive (tile panning by design).
+- Remaining intentionally-ellipsized (NOT bugs): search-result-name rows, .selected-relationship-label, .focus-stage-neighbor-name, sr-only announcements, app-title h1.
