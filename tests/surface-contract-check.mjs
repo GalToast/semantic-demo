@@ -2838,10 +2838,20 @@ async function assert_mode_grid(page, ctx) {
 async function assert_filters(page, ctx) {
     await loadAndWait(page, positionalUrl)
 
+    // Filter panel is a <details> whose `open` is Svelte-bound ({open} prop). Raw
+    // .open DOM writes get clobbered by Svelte's re-render/flush — in-suite flake
+    // under load. Drive the REAL affordance (summary click = native toggle) so the
+    // open state is Svelte-consistent, then wait for the toggle to apply.
+    await page.waitForSelector('#filters-section', { state: 'attached', timeout: 25000 }).catch(() => {})
+    const toggle = page.locator('.filter-toggle')
+    if ((await toggle.count()) > 0) {
+        await toggle.first().click({ timeout: 8000 }).catch(() => {})
+    }
+    await page.waitForTimeout(400)
     await page.evaluate(() => {
-        // Open the filters section
+        // Fallback: if the click didn't mount the details (headless quirk), force open.
         const filtersSection = document.querySelector('#filters-section')
-        if (filtersSection) {
+        if (filtersSection && !filtersSection.open) {
             filtersSection.open = true
         }
         document.body.dataset.graphContext = 'filters-open'
