@@ -21,6 +21,7 @@
   import { focusStore, setPocketListVisible } from '@lib/stores/focus.svelte';
   import { setFocusedIndex } from '@lib/stores/navigation.svelte.ts';
   import { appState } from '@lib/state/app.svelte.ts';
+  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
   import type { FocusPocketNode } from '@lib/types/state';
 
   // eslint-disable-next-line no-empty-pattern -- empty $props() destructuring is the Svelte 5 idiom for "no props accepted"
@@ -50,8 +51,9 @@
   // SoM-found (2026-07-05): on compact focus the floating toggle overlapped the
   // bottom dive strip; lift it above the strip inside its own component.
   let compact = $derived(appState.viewportState?.viewportIsCompact ?? false);
-  let focusSurface = $derived(['focus', 'focus-search', 'semantic-dive'].includes(appState.surface));
-  let surfaceActive = $derived(['focus', 'focus-search', 'semantic-dive'].includes(appState.navState?.surface ?? appState.panelSurface ?? appState.surface));
+  const parity = useParityAttrs();
+  let focusSurface = $derived(['focus', 'focus-search', 'semantic-dive'].includes(parity.panelSurface));
+  let surfaceActive = $derived(['focus', 'focus-search', 'semantic-dive'].includes(parity.panelSurface));
   let shouldLift = $derived(compact && surfaceActive);
 </script>
 

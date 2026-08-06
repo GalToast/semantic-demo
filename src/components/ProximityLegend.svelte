@@ -13,6 +13,7 @@
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { ONBOARDING_STORAGE_KEY, markOnboardingSeen } from '@lib/onboarding/onboarding-storage';
   import { appState } from '@lib/state/app.svelte.ts';
+  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
 
   // Top-8 category swatches for the color key
   const SWATCH_COUNT = 8;
@@ -145,7 +146,8 @@
   // search state changes.
   // SoM-found (2026-08-05): on compact/tablet the fixed legend overlaps the
   // focus results panel; own the collapse inside the component (no global hacks).
-  let surface = $derived(appState.navState?.surface ?? appState.panelSurface ?? appState.surface);
+  const parity = useParityAttrs();
+  let surface = $derived(parity.panelSurface);
   let vw = $derived(appState.viewportState?.viewportWidth ?? 1280);
   let selfCollapsed = $derived((surface === 'focus-search' || surface === 'semantic-dive') && vw <= 1024);
   let searchSummary = $derived(appState.searchState.currentSearchSummary);
