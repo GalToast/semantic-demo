@@ -74,7 +74,17 @@ const EXEMPTED_SHAS = new Set<string>([
     // c9446fa — docs(vision-census v2): 30-gate sweep — vision-census evidence bank committed with docs() label (tmp/ artifacts, deliberate)
     'c9446fa81e35e157c5a5a6341cdbd7f89c8538d1',
     // dfdc0b7 — docs(mobile-sweep): 390px sweep verification (lane W58-era). tmp/probe-mobile-sweep.mjs under docs() label — evidence-bank probe, deliberate.
-    'dfdc0b7715364d9bc48a5b894f3161a0e78ae1fa'
+    'dfdc0b7715364d9bc48a5b894f3161a0e78ae1fa',
+    // 63adb98 — docs(search): dual-path summary ownership contract — COMMENT-ONLY
+    // code edits (ownership comments, 14 added lines, zero code) documenting the
+    // renderContext writer split — same semantic-docs pattern as e886d25d/dbe026a.
+    '63adb989611661490c1ec5d4ec7bfb7c47fb7ce6',
+    // 7f96a41 — docs(ui): W3 empty-band verification — tmp/ probes + json evidence bank, deliberate.
+    '7f96a41c41c5c9e743fa123fab07729a2f29c7fc',
+    // af94987 — docs(ui-sweep): rail grid-column fix — tmp/ probes, evidence bank, deliberate.
+    'af949871ad91ddbfda0fce2bd340119eaa868823',
+    // 024b56f — test(ui): rail-width regression — tmp/rail-reach-check.mjs probe under test() label, evidence-bank pattern.
+    '024b56f3d2e0b485447a757fcf546eb3bd8b219a'
 ])
 
 // Conventional-commit prefix regex. Captures:
