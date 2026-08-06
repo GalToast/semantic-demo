@@ -105,6 +105,7 @@
 - Evidence: tmp/probe-results-slice-{1,2,3}.json (workers) + tmp/vision-doc-audit-report.md.
 
 ## mobile overflow sweep (2026-08-05 ~23:5x) — chip fix + clean record
+
 - Sweep: 390x844 walk idle -> search -> focus -> dive -> map -> trail; measured ANY visible element with rect.right > innerWidth or scrollWidth > clientWidth.
 - RESULT: 0 offenders across all reachable surfaces (idle/boot/search/map-trail). focus/dive surfaces geo-clean in earlier probes too.
 - BUG FOUND + FIXED (commit 6a8f0088): Filters.svelte duplicate `@media (max-width:768px)` block forced .filter-toolbar width:90vw (351px) inside a ~106px centered rail -> chips painted at x=424/464 past the 390px viewport. Fix: width:100% box-sizing:border-box + .filters-section max-width:calc(100vw - 1rem). Journey test W54-B1 extended with chip-overflow assertion (green).
