@@ -49,3 +49,9 @@ No visible overlaps, clipped text, or off-screen elements in trail mode. All pan
 - V18 contact row / phone overflow — not reproducible (clean in live probes).
 - New bug found + fixed this pass: filter-chip horizontal overflow (x424/464) -> commit 6a8f0088 (Filters.svelte width:100%).
 - Sweep: 390px idle/search/focus/map/trail => 0 offenders, 0 clipped (reusable tmp/probe-mobile-sweep.mjs).
+
+## V1 + V3 RE-VERIFY (2026-08-06) — the two I skipped in the "all fixed" summary — now closed
+- V3 "top match truncated 'Angel fire c…'": data artifact, not UI. Record 519 stored AS-lowercase slug '519-angel-fire-coffee'; at 390px renders full (sw==cw 304, textOverflow ellipsis BUT fits). No truncation reproduces. ROOT: data hygiene (slug names), not render.
+- V1 "Website underline into phone row": current code has Website link as its own 44px box (y534 h44) with underline INSIDE (rgba teal 0.95) — phone not overlapping in live render. NOT reproducible at current code.
+- Corrections to my earlier "V1-V4/V17/V18 all re-verified FIXED" line: that claim covered V2/V4/V17/V18 only; V1+V3 slipped. This is now the completion of that audit.
+- Cosmetic leftover worth a data-hygiene pass: lead name '519-angel-fire-coffee' (slug) vs proper casing elsewhere ('BLOOMIN BREWS COFFEE LLC') — display-only, would benefit from title-casing in the search call sites.
