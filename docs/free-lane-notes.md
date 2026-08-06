@@ -124,8 +124,16 @@
 - Probe lib: tmp/probe-lib.mjs (write/beat/bounded/boot/openSearch). Runner: tmp/probe-focus-rings2.mjs.
 
 ## sublime wave 2 (2026-08-06) — extreme corners
+
 - Extreme viewports: 320x844 (iPhone SE) + 844x390 (landscape) => 0 offenders, 0 clipped per surface scan.
 - Adversarial long business name (60+ chars injected into focus card): wraps cleanly (whiteSpace normal, sw==cw, no clip). PASS.
 - Empty-state + error-state DOM contracts exist (SearchEmptyState.svelte / SearchResultList error-inline) and render w/o offenders.
 - BUG FOUND + FIXED (commit on css/animations.css): .fade-in (empty-search state, 0.5s ease + translateY(10px)) was NOT in the prefers-reduced-motion gate — animates motion under reduce (WCAG 2.3.3 violation invisible to visual passes). Added body .fade-in to the gate.
 - Tooling: probe sedge (320/landscape/longname) + probe-longname2 use probe-lib (bounded/heartbeat/JSONL). Reusable per wave.
+
+## sublime wave 3 (2026-08-06) — live data + micro + perf
+- LIVE-DATA geometry (real map/trail at 1440x900 after boot+search+map): canvas 1440x900 non-zero, map-container full size, route/trail SVG present, 0 offenders on search/map/trail surfaces.
+- MICRO-INTERACTION: NO real bug. "No hover feedback" findings were off-screen/hidden elements (legend off-canvas at x-190 by design at idle, first-visit help dialog veil covering center). Real controls have hover (mode-chip :hover .mode-caption, legend-item:hover, etc. confirmed in CSS). Added scoped legend-item:hover as defense (harmless).
+- KEY LESSON (tooling): hover probes MUST verify the target is on-screen + not veiled (boundingBox.x >= 0 + elementFromPoint == target) or they report phantom findings. This is the "sublime" false-positive trap.
+- PERF (static): the only getBoundingClientRect in animation code is camera-view-offset at ANIMATION-START (bounded), not per-frame. Per-frame loops write transform/position only — no layout read = no thrash. Clean.
+- tooling: probe-live-map.mjs (geometry), probe-micro.mjs (hover), probe-hover6 (state-verified) — all probe-lib based.
