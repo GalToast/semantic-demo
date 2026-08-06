@@ -41,3 +41,14 @@ cost structure this session:
 4. Prefer the hub for UI truth — it's the only way probe cycles are <10s.
 5. A probe that needs a NEW browser boot is a signal to add an op to the hub
    instead of launching another chromium.
+## Correction (verified 2026-08-06): what actually works
+
+- Playwright `input.fill()` **HANGS** on this app's search input (actionability stall: the
+  input is covered by the app's focus/dialog layers). Native-setter `page.evaluate` +
+  synthetic `input` event worked but **cleared the panel** (render race → `count: 0`).
+- The DETERMINISTIC path is the **deep-link**: `page.goto(URL + '?q=' + q)` re-renders
+  results reliably. Current `searchNames` op does exactly this → **1.9s on the warm page**
+  (was 60-90s cold boot). Use deep-link navigation for ANY op that needs search results.
+- Boot context uses `reducedMotion: 'reduce'` (cuts WebGL/CSS churn → cheaper evaluates).
+- Ops have a hard 25s timeout so a hung op returns JSON, never wedges the hub.
+- First op after warm pays the scene-build (~5s); steady-state ops are 1.9-6s.
