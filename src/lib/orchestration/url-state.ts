@@ -429,6 +429,12 @@ export function updateUrlState(
     if ($nav.activeStoryPrompt) params.set('story', $nav.activeStoryPrompt)
     else params.delete('story')
 
+    // Deep-link entry params (record, anchor) must NOT persist across mode
+    // switches: leaving them in the URL causes popstate→applyUrlState to
+    // re-enter focus mode and revert the switch (mode-lock bug).
+    params.delete('record')
+    params.delete('anchor')
+
     // Extra params
     for (const [key, value] of Object.entries(extra)) {
         if (value === null || value === undefined || value === '') params.delete(key)
