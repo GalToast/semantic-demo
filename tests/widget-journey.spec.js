@@ -5541,9 +5541,7 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         if (st.diveTop != null) expect(st.y + 44 <= st.diveTop + 2, 'toggle bottom clears the dive strip').toBe(true)
     })
 
-    test('B1. deep-link search renders result strength bars (setSearchResults population fix)', async ({
-        page
-    }) => {
+    test('B1. deep-link search renders result strength bars (setSearchResults population fix)', async ({ page }) => {
         // Fix B (2026-08-06): setSearchResults now populates renderContext/topScore +
         // appState.searchResults on the runSearch path — SearchResults.svelte reads
         // renderContext for strength-bar widths and getFirstSearchHit for the deep-link.
