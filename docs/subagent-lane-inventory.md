@@ -529,12 +529,12 @@ runtime route adapter. These are separate evidence layers: runtime state is not 
 catalog, static refs are not launch proof, and the Pi adapter must still register the selected
 provider/model pair before a provider-qualified launch ref is accepted.
 
-
 ## 2026-08-06 correction: kimi-k3 family is NOT route-mapped despite registry claims
+
 - Registry `external_subagent_free_models` listed kimi-k3 (zenmux/novita/infron) with
   `route_status: {ok:true, key_configured:true, status:200}` — a completion probe
   returns **404** (zenmux) / **403** (novita). `/v1/models` lists ZERO kimi ids.
-- LESSON: free_models' route_status reflects *catalog* entries, not runtime mapping.
+- LESSON: free_models' route_status reflects _catalog_ entries, not runtime mapping.
   Always verify a candidate lane with a 2-token chat probe before dispatching work.
 - Verified live this wave: `zenmux/deepseek/deepseek-v4-flash-free` → 200 (use it
   for future telemetry/audit workers), `opencode-zen/deepseek-v4-flash-free` → 200.

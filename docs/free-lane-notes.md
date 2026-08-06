@@ -152,8 +152,17 @@
 - LESSON: pseudo-element animations (:before/:after) are the classic silent gap — they match neither their host's :hover chain nor sibling selectors; audit must check composites AND descendant chains.
 
 ## Multi-surface sweep via probe-hub (2026-08-06, final)
+
 - Method: hub `sweep` op → 6 surfaces (search/focus/map × desktop/mobile). Sub-minute per surface, no cold boots.
 - Lens calibration needed 3 fixes to be honest: (1) skip 0×0 off-canvas boxes, (2) inline boxes report clientWidth 0 — count visible text via bbox width, (3) ignore sr-only label children. 30 phantom "unlabeled" → 0.
 - VERDICT per surface: 0 unlabeled anywhere; 0 real horizontal overflow. The ONLY real find this pass: trail Prev/Next clip (fixed 7dd6ab16).
 - map-desktop ovf=5 = Leaflet tiles beyond viewport edge, clipped by map container overflow — false positive (tile panning by design).
 - Remaining intentionally-ellipsized (NOT bugs): search-result-name rows, .selected-relationship-label, .focus-stage-neighbor-name, sr-only announcements, app-title h1.
+
+## Delegated inside/dive surface sweep (2026-08-06) — REAL BUG FOUND + FIXED
+- DISPATCH: Worker B (opencode-zen/deepseek-v4-flash-free) → semantic-dive surface audit;
+  Worker A (zenmux/deepseek-v4-flash-free) → inside audit (kimi-k3 zenmux 404'd at runtime — lane catalog lies, verified via chat probe; doc corrected).
+- Worker B REPORT: `tmp/audit-dive-REPORT-WB.md` — VERDICT NONE on dive controls (5 good obs), but its battery ran on the dive-controls surface, NOT the neighbor rail.
+- Worker A + main-lane chain probe found the REAL bug: `.focus-stage-neighbor-main` buttons 3px wide in semantic-dive. Root cause: `.focus-stage-journey` is a 3-col grid (56px minmax(0,1fr) 56px); the neighbor rail (first grid child, grid-column:auto) lands in the 56px sidebar track; the empty-state (which filled the middle) is display:none when candidates exist → middle track collapses to 0.
+- FIX: `.focus-stage-neighbors.active { grid-column: 1 / -1 }` in FocusNeighborhood.css. Verified: rail 56→487px, button 3→353px (both probes agree). Committed.
+- LESSON: journey grid tracks are fragile — any auto-placed child whose sibling (empty-state) vanishes mid-mode collapses the track. Rail now spans explicitly.
