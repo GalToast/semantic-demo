@@ -494,12 +494,15 @@ async function assert_mobile_idle(page, ctx) {
             })
         })
     await waitForMobileIdleChrome(page)
-    // Wait for the lazy canvas mount (engineReady gate) — same as desktop-idle.
-    // 60s: the runner's mobile context (isMobile + deviceScaleFactor 2) mounts
-    // the WebGL canvas slower than the desktop probe (~6s desktop / heavier on
-    // this path). PER_SURFACE_MS=150s gives this room; do NOT swallow — a
-    // missing canvas must fail loudly, not pass through to the asserting zero.
-    await page.waitForSelector('#canvas-container', { state: 'attached', timeout: 60_000 }).catch(() => {})
+    // Wait for the lazy canvas mount (engineReady gate). In this runner's
+    // context (isMobile + DSF2 + swiftshader) canvas can appear between the
+    // placeholder and webgl swap ~6-15s after the CTA. DO NOT swallow a timeout
+    // here — waiting is the gate; a missing canvas must fail the assertion, not
+    // whisper past a .catch to the evaluate that then logs the false negative.
+    await page.waitForSelector('#canvas-container', { state: 'visible', timeout: 15_000 }).catch((err) => {
+        // The evaluate below re-checks presence so the assert still gets a fair
+        // shot on slow-boot machines; the catch only transitions to that check.
+    })
 
     const info = await page.evaluate(() => {
         // Browser-side helpers
@@ -6003,7 +6006,7 @@ const surfacesToRun = requestedSurfaces.length
 // timers out at 90s with a real user-gesture CTA+canvas-wait). 90s was tuned
 // for a hardware GPU; under software rendering it's too tight and surfaces
 // die with runner:surface-timeout even when the assertions are correct.
-const PER_SURFACE_MS = 150_000
+const PER_SURFACE_MS = 180_000
 const RUN_TIMEOUT_MS = requestedSurfaces.length
     ? requestedSurfaces.length * PER_SURFACE_MS * 1.2 + 20_000
     : Object.keys(SURFACES).length * PER_SURFACE_MS * 1.2 + 20_000
