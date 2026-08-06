@@ -1,8 +1,0 @@
-[
-  {
-    "id": "chatjimmy/llama3.1-8B",
-    "verdict": "TEXT_ONLY",
-    "provider": "zydit",
-    "detail": "200 from zydit only real read: \"I need a card to look at... can you please provide the text strings\" - cannot see image. novita 404 no model; neuralwatt 402 billing; modelscope 400 (no llama id)."
-  }
-]

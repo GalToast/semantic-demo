@@ -72,7 +72,9 @@ const EXEMPTED_SHAS = new Set<string>([
     // 1d1933d — docs(vision-census v3): 27 verified families — vision-census evidence bank committed with docs() label (tmp/ artifacts, deliberate)
     '1d1933d5cb6bcca5b4d3f011d0ce6610801a6bab',
     // c9446fa — docs(vision-census v2): 30-gate sweep — vision-census evidence bank committed with docs() label (tmp/ artifacts, deliberate)
-    'c9446fa81e35e157c5a5a6341cdbd7f89c8538d1'
+    'c9446fa81e35e157c5a5a6341cdbd7f89c8538d1',
+    // dfdc0b7 — docs(mobile-sweep): 390px sweep verification (lane W58-era). tmp/probe-mobile-sweep.mjs under docs() label — evidence-bank probe, deliberate.
+    'dfdc0b7715364d9bc48a5b894f3161a0e78ae1fa'
 ])
 
 // Conventional-commit prefix regex. Captures:
