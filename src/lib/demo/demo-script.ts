@@ -16,6 +16,7 @@ import { setClusterFilter, clearClusterFilter } from '@lib/orchestration/cluster
 import { switchView } from '@lib/orchestration/view-controller'
 import { getBusinessRecords } from '@lib/data-store'
 import { setLegendOpen } from '@lib/stores/legend.svelte'
+import { appState } from '@lib/state/app.svelte.ts'
 
 export type DemoStep = {
     phase: DemoPhase
@@ -107,7 +108,14 @@ export const DEMO_SCRIPT: DemoStep[] = [
         caption: () => 'Filter the county to one kind of business.',
         action: () => {
             returnToCountyView()
-            setClusterFilter(0)
+            // Filter to the FOCUSED node's own cluster (guaranteed non-empty) —
+            // hardcoding cluster 0 could filter to nothing if that cluster is
+            // sparse/absent in the loaded corpus.
+            const focusedIndex = appState.focusedIndex
+            const focusedPoint =
+                focusedIndex !== null && Array.isArray(appState.points) ? appState.points[focusedIndex] : undefined
+            const cluster = typeof focusedPoint?.cluster === 'number' ? focusedPoint.cluster : 0
+            setClusterFilter(cluster)
         }
     },
     {

@@ -238,7 +238,8 @@
 
     // C fix: a degraded (mock-fallback) corpus cannot drive the
     // search-dependent tour phases — skip the demo + offer the fallback hint.
-    if (records.length < MOCK_CORPUS_MIN) {
+    // A FORCED demo (?demo=force) bypasses the guard (debug path).
+    if (records.length < MOCK_CORPUS_MIN && !force) {
       eligible = false;
       scheduleDemoTimer(() => showFallbackHint(), FALLBACK_HINT_DELAY_MS);
       return;
