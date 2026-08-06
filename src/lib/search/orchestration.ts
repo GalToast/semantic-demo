@@ -239,6 +239,13 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     const anchorName = anchorResult ? formatBusinessName(anchorResult.point?.name as string) : null
 
     setSearchSummary({
+        // CONTRACT (2026-08-06, search-race audit): this DOM-path write populates
+        // currentSearchSummary for the renderContext/status consumers. The STORE
+        // path (setSearchResults in search.svelte.ts) is the other canonical
+        // writer — both must stay field-aligned (totalMatches/visibleMatches/
+        // topScore/anchorIndex/topIndex/renderContext). New consumers: read
+        // appState.searchResults + currentSearchSummary, not appState.searchSummary
+        // (the render-context-only alias written by results-ui.ts:233).
         query: trimmedQuery,
         totalMatches: results.length,
         totalSemanticMatches: results.length,
