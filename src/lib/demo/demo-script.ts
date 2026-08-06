@@ -32,6 +32,21 @@ export type DemoStep = {
  */
 export { getFirstSearchHit } from '@lib/search/state'
 
+/**
+ * Poll getFirstSearchHit() until a hit appears or the cap expires. The demo's
+ * SEARCH phase awaits its action (bounded), but in slow envs the search may
+ * still be settling when FOCUS runs — this holds FOCUS until the state is real.
+ */
+async function waitForSearchHit(timeoutMs: number): Promise<number | null> {
+    const deadline = Date.now() + timeoutMs
+    while (Date.now() < deadline) {
+        const hit = getFirstSearchHit()
+        if (hit !== null) return hit
+        await new Promise((r) => setTimeout(r, 250))
+    }
+    return getFirstSearchHit()
+}
+
 export const DEMO_SCRIPT: DemoStep[] = [
     {
         phase: 'OVERVIEW',
@@ -40,11 +55,11 @@ export const DEMO_SCRIPT: DemoStep[] = [
         // not step.caption (drift hazard). Kept count-neutral here so this
         // copy can't lie about corpus size.
         caption: () => {
-        const count = getBusinessRecords().length
-        return count > 0
-          ? `${count.toLocaleString()} businesses across Montgomery County — as a living network.`
-          : 'Montgomery County businesses — as a living network.'
-      },
+            const count = getBusinessRecords().length
+            return count > 0
+                ? `${count.toLocaleString()} businesses across Montgomery County — as a living network.`
+                : 'Montgomery County businesses — as a living network.'
+        },
         action: () => {
             toggleAutoRotate()
         }
@@ -61,10 +76,15 @@ export const DEMO_SCRIPT: DemoStep[] = [
         phase: 'FOCUS',
         durationMs: 4000,
         caption: () => '…and focus on one.',
-        action: () => {
+        action: async () => {
             // Turn off auto-rotate so the camera stays put on the focused node.
             toggleAutoRotate()
-            const hit = getFirstSearchHit()
+            // Poll for the first search hit: the search can settle slowly in
+            // split-origin test envs (API fetch queued behind big data
+            // downloads), so SEARCH's await bound may pass before results
+            // land. Hold here until a hit appears (or the cap expires) so the
+            // caption never claims a focus that hasn't happened.
+            const hit = await waitForSearchHit(25000)
             if (hit !== null) {
                 focusOnNode(hit)
             }
@@ -111,7 +131,7 @@ export const DEMO_SCRIPT: DemoStep[] = [
             // Filter to the FOCUSED node's own cluster (guaranteed non-empty) —
             // hardcoding cluster 0 could filter to nothing if that cluster is
             // sparse/absent in the loaded corpus.
-            const focusedIndex = appState.focusedIndex
+            const focusedIndex = appState.navState.focusedIndex
             const focusedPoint =
                 focusedIndex !== null && Array.isArray(appState.points) ? appState.points[focusedIndex] : undefined
             const cluster = typeof focusedPoint?.cluster === 'number' ? focusedPoint.cluster : 0

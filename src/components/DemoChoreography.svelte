@@ -181,7 +181,7 @@
 
   function runDemoSequence() {
     let i = 0;
-    const runNext = () => {
+    const runNext = async () => {
       if (i >= DEMO_SCRIPT.length) {
         completeDemo();
         return;
@@ -192,19 +192,18 @@
         return;
       }
       transitionDemo(step.phase);
-      // Fire the action (may be async — e.g. search() returns a Promise).
-      // W49c: previously used `.catch(() => {})` which silently dropped
-      // failures — a failed search step would advance to the next phase
-      // with no signal that anything went wrong. Now we log so demo-step
-      // failures are diagnosable.
-      Promise.resolve(step.action()).catch((err) => {
+      // Await the action (bounded) so slow async steps gate the next phase —
+      // the captions must not outrun the scene. Previously actions were fired
+      // without awaiting, so a search settling in 15-20s (API queued behind
+      // static downloads in split-origin test envs) left SEARCH/FOCUS phases
+      // showing captions over zero results. Bound = 3x the phase duration so
+      // a pathological action can never stall the tour forever.
+      const actionP = Promise.resolve(step.action()).catch((err) => {
         if (import.meta.env.DEV) {
-          console.error(
-            `[DemoChoreography] Step "${step.phase}" failed; advancing anyway.`,
-            err
-          );
+          console.error(`[DemoChoreography] Step "${step.phase}" failed; advancing anyway.`, err);
         }
       });
+      await Promise.race([actionP, new Promise((resolve) => setTimeout(resolve, step.durationMs * 3))]);
       // Schedule the next step after this phase's duration
       scheduleDemoTimer(() => {
         i++;

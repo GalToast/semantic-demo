@@ -90,6 +90,23 @@ export function getLocalIndex(): { index: Map<string, LocalIndexToken[]>; record
 }
 
 /**
+ * Prewarm the local index OFF the user's first-search path. The lazy
+ * getLocalIndex() build over the full corpus is synchronous (8,406 records
+ * tokenized + indexed) — running it inside the first search freezes the main
+ * thread for seconds, which also stalls the demo's SEARCH phase and makes
+ * journey tests time out. Callers schedule this after data loads; the build
+ * still blocks while it runs but happens during idle, not during a search.
+ */
+export function prewarmLocalIndex(): void {
+    const records = getBusinessRecords()
+    if (!Array.isArray(records) || records.length === 0) return
+    if (_localIndex && _localIndexRecordCount === records.length && _localIndexRecordRef === records) return
+    _localIndex = buildLocalIndex(records)
+    _localIndexRecordCount = records.length
+    _localIndexRecordRef = records
+}
+
+/**
  * Cheap Levenshtein distance with an early-exit threshold. Bails out
  * (returns Infinity) as soon as the partial distance exceeds `max`.
  */

@@ -18,6 +18,7 @@
  */
 
 import { initData, setLoadingPhase, setDataLoadError } from '@lib/data-store'
+import { prewarmLocalIndex } from '@lib/search/local-search-index'
 import { initViewportListeners } from '@lib/stores/viewport.svelte.ts'
 import { debugWarn } from '@lib/utils/debug'
 import { initAdapters } from '@lib/orchestration/adapters'
@@ -313,6 +314,14 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     // all of which need business data to be loaded. Awaiting dataReadyPromise
     // ensures the URL state can resolve against loaded records.
     await dataReadyPromise
+    // Prewarm the local search index off the first-search path: the lazy
+    // getLocalIndex() build over the full corpus (8,406 records) freezes the
+    // main thread for seconds — it stalled the demo's SEARCH phase and made
+    // first user searches (and journey tests) feel hung. Deferred tick keeps
+    // the boot/URL-restore flow unblocked.
+    setTimeout(() => {
+        prewarmLocalIndex()
+    }, 0)
     // Fix B (tmp/focus-blank-investigation.md): don't block first paint on the
     // deep-link URL-state restore, which awaits a network search (up to 30 s).
     // Run it fire-and-forget so the loading overlay / safety valve clears
