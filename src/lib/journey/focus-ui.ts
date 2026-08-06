@@ -596,9 +596,7 @@ function _renderTraversalContext(params: {
             neighborCount > 0 ? ' or Next to continue' : ', then return to Overview to find more connections'
         }.`
         focusProgressEl.textContent =
-            neighborCount > 0
-                ? `Stop ${stepNumber}.`
-                : `Stop ${stepNumber}. Nothing visible near ${currentName} with the current filters — broaden the filters to see nearby businesses.`
+            neighborCount > 0 ? `Stop ${stepNumber}.` : `Stop ${stepNumber}. No more visible stops with these filters.`
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
                 ? `Next: ${nextWalkName} - ${nextWalkReason}.`

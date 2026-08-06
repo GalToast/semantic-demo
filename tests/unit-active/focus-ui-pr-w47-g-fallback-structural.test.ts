@@ -33,7 +33,7 @@ const JOURNEY_CHROME = resolve(REPO_ROOT, 'src/components/JourneyChrome.svelte')
 
 // The PR-W47-g fallback copy. Must match exactly the string set in
 // focus-ui.ts and JourneyChrome.svelte (0-neighbor branch).
-const FALLBACK_PROGRESS = 'Nothing visible near'
+const FALLBACK_PROGRESS = 'No more visible stops with these filters.'
 // The contextual cue that swaps the "Use Next to continue" tail for the
 // "return to Overview" tail when neighborCount===0 in the trailDepth>=1
 // branch of focus-ui.ts.
