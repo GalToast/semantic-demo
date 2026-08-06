@@ -2412,6 +2412,17 @@ test.describe('Widget journey', () => {
         expect(state.semanticDive, 'Inside chip must engage the semantic-dive surface').toBe(true)
         expect(state.pocketDisplay, 'focus pocket must be visible in the dive surface').toBe('block')
         expect(state.pocketAriaHidden, 'focus pocket must not be aria-hidden in the dive surface').not.toBe('true')
+
+        // UI-3 regression (2026-08-06): the neighbor rail used to collapse to the
+        // first 56px grid column on the semantic-dive surface — buttons measured
+        // 3px wide (result: invisible rail). `.focus-stage-neighbors.active` now
+        // spans the full journey row (grid-column: 1 / -1). If the rail renders
+        // here, its pill buttons must be wide enough to hold their labels.
+        const railBtns = page.locator('.focus-stage-neighbors.active .focus-stage-neighbor-main')
+        if (await railBtns.count()) {
+            const btnW = (await railBtns.first().boundingBox())?.width ?? 0
+            expect(btnW, 'dive-surface neighbor buttons must not be collapsed (was 3px)').toBeGreaterThanOrEqual(120)
+        }
     })
 
     test(
