@@ -20,7 +20,7 @@
   import { loadingPhaseStore, dataLoadState } from '@lib/data-store';
   import { friendlyErrorMessage } from '@lib/utils/error-messages';
   import ErrorState from '@components/ErrorState.svelte';
-  import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state';
+  import { LOADING_PHASE_META, PHASE_ORDER } from '@lib/ui/loading';
 
   interface Props {
     visible?: boolean;
@@ -28,23 +28,17 @@
 
   let { visible = true }: Props = $props();
 
-  // Phase definitions matching the legacy LOADING_PHASE_META order
-  const PHASE_ORDER: readonly LoadingPhase[] = ['records', 'scene', 'restore', 'launch'];
-
-  const phaseMeta: Record<LoadingPhase, LoadingPhaseMeta> = {
-    records: { progress: 0.2, note: 'Loading businesses...', foot: 'County businesses are loading first.' },
-    scene: { progress: 0.48, note: 'Raising the cloud...', foot: 'Shaping the scene.' },
-    restore: { progress: 0.76, note: 'Restoring view...', foot: 'Restoring last known path.' },
-    launch: { progress: 1, note: 'Awake.', foot: 'Connections are live.' }
-  };
+  // F5 (data-pipeline bugsweep 2026-08-08): phase meta + order are imported
+  // from @lib/ui/loading (single source of truth). The local copies were
+  // removed after they drifted from the component copy (launch foot).
 
   // Read directly from the loadingPhase store — the 4-phase progression
   // (records→scene→restore→launch) is driven by data-store's initData().
   let phase = $derived($loadingPhaseStore);
 
-  let progress = $derived(phaseMeta[phase as LoadingPhase]?.progress ?? 0);
-  let note = $derived(phaseMeta[phase as LoadingPhase]?.note ?? '');
-  let foot = $derived(phaseMeta[phase as LoadingPhase]?.foot ?? '');
+  let progress = $derived(LOADING_PHASE_META[phase]?.progress ?? 0);
+  let note = $derived(LOADING_PHASE_META[phase]?.note ?? '');
+  let foot = $derived(LOADING_PHASE_META[phase]?.foot ?? '');
   // W47-D: hide on launch (success). On error, stay visible and switch to the
   // error state so the user knows what happened and can reload.
   let isError = $derived($dataLoadState.status === 'error');

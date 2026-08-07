@@ -199,7 +199,11 @@ self.onmessage = async (event: MessageEvent) => {
     try {
         if (type === 'LOAD_RECORDS') {
             const result = await handleLoadRecords(payload as { url: string })
-            if (requestId !== _activeRequestId) return // Transfer buffers to main thread to eliminate cloning overhead
+            // Superseded by a newer request — drop silently without replying.
+            if (requestId !== _activeRequestId) return
+            // F4 (data-pipeline bugsweep 2026-08-08): this postMessage is the
+            // actual transfer point — buffers move to the main thread here,
+            // eliminating structured-clone overhead (the guard above transfers nothing).
             ;(self as unknown as { postMessage(message: unknown, transfer?: Transferable[]): void }).postMessage(
                 { type: 'LOAD_RECORDS_SUCCESS', payload: result, requestId },
                 [result.positionsBuffer.buffer, result.clustersBuffer.buffer] as Transferable[]

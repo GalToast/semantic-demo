@@ -293,10 +293,9 @@
         spellcheck="false"
         role="combobox"
         aria-controls="search-result-list"
-        aria-haspopup="listbox"
+        aria-haspopup="list"
         aria-expanded={hasQuery}
-        aria-activedescendant={_activeResultId}
-      />
+        aria-activedescendant={_activeResultId}      />
     {/snippet}
   </SearchInputChrome>
 </div>

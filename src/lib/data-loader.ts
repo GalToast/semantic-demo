@@ -131,6 +131,14 @@ interface LoadRecordsWorkerResult {
     invalidPositionIndices: number[]
 }
 
+/**
+ * Send one request to a fresh data worker and await its reply.
+ * The worker is terminated on the first settled response.
+ *
+ * F6 (data-pipeline bugsweep 2026-08-08): `type: 'PING'` is supported for
+ * future liveness checks — data-worker.ts answers PING with PONG, which this
+ * handler resolves. Per-call fresh workers make pingId correlation unnecessary.
+ */
 export function callDataWorker(
     type: 'LOAD_RECORDS',
     payload: { url: string },
@@ -180,6 +188,9 @@ export function callDataWorker<T>(type: string, payload: unknown, options?: Call
                 settle(() => resolve(res.payload as T))
             } else if (res.type === 'ERROR') {
                 settle(() => reject(new Error((res.payload as { message?: string })?.message || 'Worker failed')))
+            } else if (type === 'PING' && res.type === 'PONG') {
+                // F6: worker answered the liveness ping — treat as success.
+                settle(() => resolve({ pong: true } as T))
             }
         }
         const messageErrorHandler = (): void => {

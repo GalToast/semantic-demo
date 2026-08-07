@@ -201,7 +201,7 @@ describe('lead enrichment hydration seam in data-store', () => {
         expect(get(dataLoadState)).toMatchObject({
             status: 'ready',
             businessLoaded: true,
-            threadsLoaded: true,
+            threadsLoaded: false,
             error: null
         })
         expect(get(loadingPhaseStore)).toBe('launch')
@@ -234,7 +234,10 @@ describe('lead enrichment hydration seam in data-store', () => {
         expect(get(dataLoadState)).toMatchObject({
             status: 'ready',
             businessLoaded: true,
-            threadsLoaded: true,
+            // F3 (data-pipeline bugsweep 2026-08-08): threadsLoaded stays false
+            // after initData() until setSemanticThreadData()/setSemanticThreadFailure()
+            // settle — initData no longer pre-announces threads that haven't loaded.
+            threadsLoaded: false,
             error: null
         })
         expect(legacyState.leadEnrichment).toEqual(enrichment)
@@ -260,7 +263,7 @@ describe('lead enrichment hydration seam in data-store', () => {
         expect(get(dataLoadState)).toMatchObject({
             status: 'ready',
             businessLoaded: true,
-            threadsLoaded: true,
+            threadsLoaded: false,
             error: null
         })
     })

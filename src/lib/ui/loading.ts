@@ -29,17 +29,23 @@ export interface LoadingOverrides {
 
 const LOADING_MIN_VISIBLE_MS = 1320
 
-const LOADING_PHASE_META: Record<string, LoadingPhaseMeta> = {
+// F5 (data-pipeline bugsweep 2026-08-08): single source of truth for the
+// 4-phase loading metadata. LoadingOverlay.svelte imports these constants, so
+// the legacy setLoadingPhase() DOM-write path and the reactive render cannot
+// drift again — they previously diverged on the launch foot ('Threads are live.'
+// here vs 'Connections are live.' in the component; the component's de-jargoned
+// copy is the correct one). NOTE: CONFIG.LOADING_PHASE_META (engine/config.ts)
+// still holds a stale mirror with the old copy — reconcile when that file is
+// next touched.
+export const LOADING_PHASE_META: Record<string, LoadingPhaseMeta> = {
     // De-jargon per docs/ux-copy-rules.md: `record` -> `listing`/`businesses`.
-    // Kept byte-identical to the live copy in src/components/LoadingOverlay.svelte + CONFIG
-    // so the legacy setLoadingPhase() path can never reintroduce jargon if re-wired.
     records: { progress: 0.2, note: 'Loading businesses...', foot: 'County businesses are loading first.' },
     scene: { progress: 0.48, note: 'Raising the cloud...', foot: 'Shaping the scene.' },
     restore: { progress: 0.76, note: 'Restoring view...', foot: 'Restoring last known path.' },
-    launch: { progress: 1, note: 'Awake.', foot: 'Threads are live.' }
+    launch: { progress: 1, note: 'Awake.', foot: 'Connections are live.' }
 }
 
-const PHASE_ORDER: readonly string[] = ['records', 'scene', 'restore', 'launch']
+export const PHASE_ORDER: readonly string[] = ['records', 'scene', 'restore', 'launch']
 
 // ── Internal State ────────────────────────────────────────────────────────────
 

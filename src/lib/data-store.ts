@@ -545,11 +545,16 @@ export async function initData(): Promise<void> {
 
         // Final phase: launch
         setLoadingPhase('launch')
+        // F3 (data-pipeline bugsweep 2026-08-08): threadsLoaded is intentionally
+        // NOT set here. Semantic threads load later — loadSemanticThreads() runs
+        // inside initEngineHeavy (engine/lifecycle.ts) and flips threadsLoaded
+        // when it actually settles via setSemanticThreadData()/setSemanticThreadFailure().
+        // status:'ready' is accurate for business data only; keep threadsLoaded
+        // false until threads arrive so consumers can't read null bundles.
         dataLoadState.update((s) => ({
             ...s,
             status: 'ready',
             businessLoaded: true,
-            threadsLoaded: true,
             error: null
         }))
         // Lead enrichment is loaded on-demand when the user first selects a
