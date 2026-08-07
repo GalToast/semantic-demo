@@ -326,10 +326,14 @@ assert(
     'filter-state.ts must export restoreActiveClusterFilterFromUrl'
 )
 
-// withFilterStateNotify is internal — verify it exists and is used
+// Internal notify: the rune-class stores signal subscribers with a private
+// notify() (concrete stores) / _notify() (derived compute class). The 266e12e1
+// refactor renamed the old withFilterStateNotify helper into this pattern; the
+// contract pins the new internal shape.
 assert(
-    filterStateSource.includes('function withFilterStateNotify'),
-    'filter.svelte.ts must have internal withFilterStateNotify() helper'
+    filterStateSource.includes('private notify(): void') &&
+        filterStateSource.includes('private _notify(): void'),
+    'filter.svelte.ts must have internal rune-class notify()/_notify() helpers'
 )
 
 console.log('PASS CONTRACT 1: filter-state.ts exports all canonical activeFilters APIs')

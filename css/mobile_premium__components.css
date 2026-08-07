@@ -1896,9 +1896,9 @@
     }
 
     /* Contract: tests/mobile-chrome-ownership-contract.mjs —
-       short-landscape focus/dive suppresses share/panel/time/weather chrome */
+       short-landscape focus/dive suppresses share/panel/time chrome */
     body:is(.surface-focus, .surface-focus-search, .surface-semantic-dive)
-        :is(.share-toggle, .controls, .panel-toggle, .time-display, .weather-widget) {
+        :is(.share-toggle, .controls, .panel-toggle, .time-display) {
         display: none;
         visibility: hidden;
         pointer-events: none;

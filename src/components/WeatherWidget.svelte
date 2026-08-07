@@ -344,4 +344,16 @@
       pointer-events: none;
     }
   }
+
+  /* Short-landscape focus/dive: WeatherWidget owns its visibility, so the
+     suppression rule lives here (not in chrome.css—see
+     tests/weather-surface-ownership-contract.mjs). Mirrors the wave-G
+     short-landscape focus-surface chrome rule. */
+  @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
+    :global(body.surface-focus, body.surface-focus-search, body.surface-semantic-dive) .weather-widget {
+      display: none;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  }
 </style>
