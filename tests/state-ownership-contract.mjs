@@ -421,9 +421,15 @@ console.log(
 const urlStateSource = readFileSync(join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'url-state.ts'), 'utf8')
 assert(
     /export function clearExplorationFocusSelection/.test(urlStateSource) &&
-        /appState\.focusedNode\s*=\s*null/.test(urlStateSource) &&
-        (/updateSelectedBusiness\s*\(\s*null\s*\)/.test(urlStateSource) ||
-            /appState\.selectedPoint\s*=\s*null/.test(urlStateSource)),
+        // 2026-08-07 single-writer consolidation (cbc770bb): direct
+        // `appState.focusedNode = null` / `appState.selectedPoint = null`
+        // writes were replaced by canonical setters — setFocusedNode(null)
+        // (focus ownership) and updateSelectedBusiness(null) (selection
+        // ownership). The old flat selectedPoint assignment was a no-op +
+        // threw on the getter-only mock, so the contract now pins the
+        // canonical setter route (same clearing intent, current impl).
+        /setFocusedNode\s*\(\s*null\s*\)/.test(urlStateSource) &&
+        /updateSelectedBusiness\s*\(\s*null\s*\)/.test(urlStateSource),
     'clearExplorationFocusSelection must clear focusedNode and selectedPoint through the current focus-clear owner'
 )
 
