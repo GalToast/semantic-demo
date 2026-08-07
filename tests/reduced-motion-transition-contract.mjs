@@ -32,6 +32,7 @@ import { chromium } from 'playwright';
 
 // SwiftShader gate (see visual-state-audit.mjs)
 const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 
 const OUT_DIR = resolve(root, 'tmp', 'reduced-motion-video-proof-2026-05-20');

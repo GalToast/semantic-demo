@@ -34,7 +34,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const MODULES_DIR = join(__dirname, '..', 'src', 'lib')
 const OWNER_PATH = join(__dirname, '..', 'src', 'lib', 'engine', 'camera-controls-core.svelte.ts')
 const MIRROR_PATH = join(__dirname, '..', 'src', 'lib', 'stores', 'focus.svelte.ts')
-const STATE_TYPES_PATH = join(__dirname, '..', 'src', 'lib', 'state', 'state-types.ts')
+const STATE_TYPES_PATH = join(__dirname, '..', 'src', 'lib', 'state', 'types', 'navigation-types.ts')
 const APP_STATE_PATH = join(__dirname, '..', 'src', 'lib', 'state', 'app.svelte.ts')
 
 let failures = 0
@@ -97,13 +97,16 @@ if (!/setFocusTransitionMode\s*\(/.test(ownerSource)) {
 // Verify the field is declared in state-types.ts (interface) and app.svelte.ts (class)
 const stateTypesSource = readFileSync(STATE_TYPES_PATH, 'utf8')
 if (!/\bfocusTransitionMode\s*:/.test(stateTypesSource)) {
-    console.error('FAIL: state-types.ts does not declare focusTransitionMode')
+    console.error('FAIL: navigation-types.ts does not declare focusTransitionMode')
     failures += 1
 }
 
 const appStateSource = readFileSync(APP_STATE_PATH, 'utf8')
-if (!/focusTransitionMode\s*=\s*\$state/.test(appStateSource)) {
-    console.error('FAIL: app.svelte.ts does not declare focusTransitionMode = $state')
+// focusTransitionMode is initialized as an object-literal property (line 119),
+// not a standalone $state rune. The Svelte 5 compiler treats the enclosing
+// $state({...}) object as reactive, so the field is still reactive.
+if (!/\bfocusTransitionMode\s*:\s*['"]/.test(appStateSource)) {
+    console.error('FAIL: app.svelte.ts does not initialize focusTransitionMode (object-literal property)')
     failures += 1
 }
 

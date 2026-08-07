@@ -31,6 +31,18 @@ test.describe('W53 corrective fixes (V8/V9/V2gap/WeatherWidget)', () => {
         expect(bg, 'active chip must be an opaque (alpha=1) color').toMatch(/^rgb\(/)
         expect(bg, 'active chip must not be transparent').not.toMatch(/rgba\([^)]*, 0\)/)
         expect(Number(opacity), 'active chip must be fully opaque').toBe(1)
+        // Poll for the settled box height instead of one-shot boundingBox.
+        // Webfont swap (FOUT) after mount changes chip height → the ≥40px read
+        // can race font load.
+        const boxSettled = await page.waitForFunction(
+            () => {
+                const box = document.querySelector('.mode-chip.active')?.getBoundingClientRect()
+                return box && box.height >= 40
+            },
+            null,
+            { timeout: 15000, polling: 50 }
+        )
+        expect(boxSettled, 'active chip should settle to ≥40px tap target').toBeTruthy()
         const box = await chip.boundingBox()
         expect(box.height, 'active chip should be a comfortable tap target').toBeGreaterThanOrEqual(40)
     })
@@ -51,6 +63,20 @@ test.describe('W53 corrective fixes (V8/V9/V2gap/WeatherWidget)', () => {
         if (await help.count()) {
             await expect(help).toBeHidden({ timeout: 5000 })
         }
+        // Poll for the settled rect instead of one-shot reading after sleep.
+        // The legend slideUp animation (500ms translateY) doesn't change w/h,
+        // but the reveal (100ms delay + visible flip) can still be mid-flight.
+        const dismissSizeSettled = await page.waitForFunction(
+            () => {
+                const el = document.querySelector('.proximity-legend-dismiss')
+                if (!el) return false
+                const r = el.getBoundingClientRect()
+                return Math.min(r.width, r.height) >= 44
+            },
+            null,
+            { timeout: 15000, polling: 50 }
+        )
+        expect(dismissSizeSettled, 'legend dismiss rect must settle to >=44px').toBeTruthy()
         const size = await dismiss.evaluate((el) => {
             const r = el.getBoundingClientRect()
             return { w: r.width, h: r.height }
@@ -76,6 +102,17 @@ test.describe('W53 corrective fixes (V8/V9/V2gap/WeatherWidget)', () => {
         await page.waitForSelector('#selected-details, #fc-selected-details, .focus-card', { timeout: 10000 })
         // Empty state must NOT be present (no double-render flash).
         await expect(page.locator('#selected-empty, .selected-empty')).toHaveCount(0)
+        // Poll for #fc-selected-name to be populated (non-empty text) before the
+        // clip read — the lazy FocusCard hydrates after the deep-link focus,
+        // so the clip read races the last data flush.
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#fc-selected-name')
+                return el && el.textContent.trim().length > 0
+            },
+            null,
+            { timeout: 15000, polling: 50 }
+        )
         const title = page.locator('#selected-name, #fc-selected-name, .selected-card h3').first()
         await expect(title).toBeVisible()
         const clip = await title.evaluate((el) => {

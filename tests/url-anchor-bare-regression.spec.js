@@ -127,6 +127,15 @@ test.describe('URL-anchor bare regression (post-fix pinning)', () => {
 
         await openAppWithUrl(page, 'anchor=519')
 
+        // Wait for the URL-restore surface flip before probing.
+        // The webgl gate resolves before focus-search lands → reads 'idle'.
+        // Mirror Test B (below) which already does this.
+        await page.waitForFunction(
+            () => document.body.dataset?.panelSurface === 'focus-search',
+            null,
+            { timeout: NAV_TIMEOUT_MS }
+        )
+
         const probe = await anchorProbe(page)
 
         // URL routing MUST trigger the focus-search surface

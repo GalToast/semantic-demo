@@ -46,8 +46,19 @@ test('?record=519 deep-link restores focus on lead_id=519', async ({ page }) => 
     // so signalReady() fires automatically; we just need the dataset.
     await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 10000, polling: 100 })
 
-    // Give applyUrlState() a tick to resolve the record and dispatch focus.
-    await page.waitForTimeout(250)
+    // Poll for the settled record resolution instead of a fixed sleep + one-shot read.
+    // `applyUrlState` record→index resolution runs after data load; >250ms under load
+    // → focusedIndex null → fail. Wait for lead_id '519' to actually appear.
+    await page.waitForFunction(
+        () => {
+            const state = window.__APP_STATE__
+            const points = state?.points ?? []
+            const focusedIndex = state?.navState?.focusedIndex ?? null
+            return focusedIndex != null && points[focusedIndex]?.lead_id === '519'
+        },
+        null,
+        { timeout: 30000, polling: 100 }
+    )
 
     const state = await page.evaluate(() => {
         const points = window.__APP_STATE__?.points ?? []

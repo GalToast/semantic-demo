@@ -51,8 +51,16 @@ assert(
   'InfoPanel.svelte owns #selected-details; SelectedBusinessDetails.svelte owns prefixed child action-row / map ids'
 );
 assert(
-  selectedDetailsSrc.includes('id="{idPrefix}selected-match-panel"') && selectedDetailsSrc.includes('{viewModel.matchNarrative}'),
-  'SelectedBusinessDetails.svelte must own the selected match panel copy'
+  selectedDetailsSrc.includes('SelectedMatchNarrative') &&
+    selectedDetailsSrc.includes('matchNarrative={viewModel.matchNarrative}'),
+  'SelectedBusinessDetails.svelte must delegate match panel to SelectedMatchNarrative component'
+);
+// Verify SelectedMatchNarrative.svelte owns the match-panel DOM
+const matchNarrativeSrc = read('src/lib/components/focus/SelectedMatchNarrative.svelte');
+assert(
+  matchNarrativeSrc.includes('id="{idPrefix}selected-match-panel"') &&
+    matchNarrativeSrc.includes('{matchNarrative}'),
+  'SelectedMatchNarrative.svelte must own the selected match panel DOM'
 );
 assert(
   viewModelSrc.includes('matchNarrative') && viewModelSrc.includes('showMatchPanel'),

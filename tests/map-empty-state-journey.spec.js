@@ -32,9 +32,9 @@ test.describe('Map empty-state dismiss (W53 V2)', () => {
 
         // Map container + empty-state appear (no business selected → trail inactive).
         await page.locator('#map-container').waitFor({ state: 'attached', timeout: 20000 })
-        await page
-            .waitForFunction(() => !!document.querySelector('.map-empty-state'), null, { timeout: 20000, polling: 100 })
-            .catch(() => {})
+        // No .catch: if the empty-state overlay never appears, this should fail loudly
+        // rather than silently swallowing a missing overlay.
+        await page.waitForFunction(() => !!document.querySelector('.map-empty-state'), null, { timeout: 20000, polling: 100 })
 
         const empty = page.locator('.map-empty-state')
         await expect(empty).toBeVisible()
@@ -52,6 +52,19 @@ test.describe('Map empty-state dismiss (W53 V2)', () => {
         expect(pe, 'close button must accept pointer events despite parent pointer-events:none').toBe('auto')
 
         // Touch target >= 28px for comfortable tap/keyboard focus.
+        // Poll for the settled rect instead of one-shot reading — an entrance
+        // fade/scale tween can still clip the read after toBeVisible.
+        const closeBtnSettled = await page.waitForFunction(
+            () => {
+                const btn = document.querySelector('.map-empty-state-close')
+                if (!btn) return false
+                const r = btn.getBoundingClientRect()
+                return Math.min(r.width, r.height) >= 28
+            },
+            null,
+            { timeout: 15000, polling: 50 }
+        )
+        expect(closeBtnSettled, 'closeBtn must settle to >=28px min-dim').toBeTruthy()
         const size = await closeBtn.evaluate((el) => {
             const r = el.getBoundingClientRect()
             return { w: r.width, h: r.height }

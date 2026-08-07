@@ -90,7 +90,7 @@ const registry = [
     },
     {
         primitive: 'map-trail-compass-hide',
-        selector: "data-panel-surface='map-trail'] .journey-compass",
+        selector: ".journey-compass[data-panel-surface='map-trail']",
         terminalOwner: 'css/mobile_premium__state.css',
         baselineOwnerCount: 3,
         allowedOwners: ['css/mobile_premium__state.css']

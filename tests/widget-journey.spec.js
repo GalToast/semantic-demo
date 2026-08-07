@@ -361,16 +361,29 @@ test.describe('Widget journey', () => {
         // during the 'query' stage of the search lifecycle).
         await page.fill('#search-input', 'coffee')
         await page.keyboard.press('Enter')
-        // Wait for at least 4 results to render so Match 3 actually exists.
-        await page.waitForFunction(
+        // Fold geometry into a single settled-predicate poll: items>=4 + cue.top
+        // in the W58 band (64..240) + a visible result card (h>0). The old pattern
+        // of "wait items>=4 + 800ms sleep + one-shot rects" raced the peek-sheet
+        // layout shift after result render.
+        const settled = await pollFor(
+            page,
             () => {
                 const items = document.querySelectorAll('.search-result-listitem, [role="option"]')
-                return items.length >= 4
+                if (items.length < 4) return false
+                const cue = document.querySelector('#search-trail-cue')
+                if (!cue) return false
+                const cueRect = cue.getBoundingClientRect()
+                if (cueRect.top < 64 || cueRect.top >= 240) return false
+                const cs = getComputedStyle(cue)
+                if (cs.display === 'none' || cs.visibility === 'hidden') return false
+                const match = items[0].getBoundingClientRect()
+                if (match.height <= 0) return false
+                return true
             },
-            null,
-            { timeout: 45000, polling: 100 }
+            45000,
+            100
         )
-        await page.waitForTimeout(800)
+        expect(settled, 'items>=4 + cue in W58 band + match visible must settle').toBe(true)
 
         // W48 fix landed in d77bfeb7: the search-trail-cue is repositioned
         // to top: 1rem on mobile (instead of hidden) so it stays visible
@@ -380,6 +393,7 @@ test.describe('Widget journey', () => {
         // anchored, and (below) that its rect does not intersect Match 3.
         // The .synthesize-trigger remains display:none on mobile (W48
         // intent preserved by the d77bfeb7 SemanticGuideCard change).
+        // Re-read geometry for the existing assertions.
         const overlap = await page.evaluate(() => {
             const result = { synth: null, cue: null }
             const synth = document.querySelector('.synthesize-trigger')
@@ -666,22 +680,26 @@ test.describe('Widget journey', () => {
             timeout: 20000,
             polling: 100
         })
-        await page.waitForTimeout(1200)
+        // Poll for the header rail (mode-chips) to be mounted before reading rects.
+        // The old fixed sleeps (1200ms + 400ms) could lag the header mount + layout.
+        await pollFor(
+            page,
+            () => {
+                const rail = document.querySelector('.mode-chips')
+                if (!rail) return false
+                const chips = rail.querySelectorAll('.mode-chip')
+                return chips.length >= 6
+            },
+            30000,
+            100
+        )
 
         // Dismiss first-visit help dialog if auto-opened.
         const helpDialog = page.locator('dialog.help-dialog[open]')
         if ((await helpDialog.count()) > 0) {
             await page.keyboard.press('Escape')
             await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(300)
         }
-
-        // NOTE: This is a header-layout test (idle mode). Focus mode intentionally
-        // hides .legend-toggle (display:none — confirmed via probe), which would make
-        // the chips-vs-toggle overlap check meaningless. So we intentionally do NOT
-        // enter focus mode here — the Surface-7 assertions apply to the idle header
-        // where the legend toggle is visible at the right edge (x=317 @375px).
-        await page.waitForTimeout(400)
 
         // --- Assertion 1: .brand-label must be hidden at ≤390px ---
         // Note: Header.svelte conditionally renders .brand-label via
@@ -1095,7 +1113,23 @@ test.describe('Widget journey', () => {
             waitUntil: 'domcontentloaded'
         })
         await page.locator('.search-result-item').first().waitFor({ state: 'visible', timeout: 30000 })
-        await page.waitForTimeout(900)
+
+        // Wait for the settled focus-search surface + rail before reading geometry.
+        // Result visible ≠ focus-search surface/layout settled; the neighborhood rail
+        // mounts after the surface flip. Also confirm legacy dive is hidden.
+        const focusSearchSettled = await pollFor(
+            page,
+            () => {
+                const dive = document.querySelector('#btn-focus-dive')
+                const rail = document.querySelector('#journey-chrome .focus-stage-neighbors')
+                if (!dive || !rail) return false
+                const cs = getComputedStyle(dive)
+                return cs.display === 'none' || dive.hidden
+            },
+            30000,
+            100
+        )
+        expect(focusSearchSettled, 'legacy dive sibling must be hidden in focus-search').toBe(true)
 
         // The legacy compass sibling may be omitted entirely once the modern
         // JourneyChrome owner is mounted. If it is present during lazy
@@ -1926,7 +1960,20 @@ test.describe('Widget journey', () => {
         // component that flushes only after the main thread is unblocked.
         await citySelect.waitFor({ state: 'attached', timeout: 20000 })
 
-        // First option must say "All Cities (8406)" — the full record count
+        // First option must say "All Cities (8406)" — poll the settled text
+        // instead of a one-shot read that races the hydration flush.
+        // Under load, hydration can lag the attach by hundreds of ms → reads "All Cities (0)".
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#city-filter')
+                if (!el) return false
+                const first = el.querySelector('option')
+                return first && first.textContent.includes('(8406)')
+            },
+            null,
+            { timeout: 30000, polling: 100 }
+        )
+
         await expect(citySelect).toBeEnabled()
         const firstOptionText = await citySelect.locator('option').first().textContent()
         expect(firstOptionText.trim()).toMatch(/^All Cities \(8406\)$/)
@@ -2787,15 +2834,28 @@ test.describe('Widget journey', () => {
 
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, { waitUntil: 'domcontentloaded' })
 
-        // Wait for the selected-business detail panel to attach. At 390px mobile,
-        // the InfoPanel is hidden (surface-focus.is-compact-body.has-focused-node)
+        // Wait for the selected-business detail panel to attach AND settle.
+        // At 390px mobile, the InfoPanel is hidden (surface-focus.is-compact-body.has-focused-node)
         // and only the FocusCard bottom-sheet is visible, which renders
         // #fc-selected-name (FocusCard passes idPrefix="fc-"). The suffix selector
         // [id$="selected-name"] is ambiguous (matches both #selected-name and
         // #fc-selected-name), so target the FocusCard element explicitly.
+        // Poll for the settled box-in-viewport predicate instead of attach+fixed-sleep;
+        // the deep-link focus runs through camera/focus tween + pocket gather, so the
+        // box read races mid-tween layout.
         const selectedName = page.locator('#fc-selected-name')
         await selectedName.waitFor({ state: 'attached', timeout: 60000 })
-        await page.waitForTimeout(500) // allow layout + $derived effects to flush
+        const settled = await pollFor(
+            page,
+            () => {
+                const box = selectedName.boundingBox()
+                if (!box) return false
+                return box.x >= 0 && box.x + box.width <= VIEWPORT_W
+            },
+            30000,
+            100
+        )
+        expect(settled, '#fc-selected-name must settle within the 390px viewport').toBe(true)
 
         // (a) #selected-name must be rendered and its box must sit within the
         //     390px viewport (no right-side overflow).
@@ -4015,7 +4075,15 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             null,
             { timeout: 30000, polling: 100 }
         )
-        await page.waitForTimeout(800)
+
+        // Wait for the lazily-hydrated card elements to exist before reading CSSOM.
+        // The elements can mount after the state gate, so the old 800ms sleep was
+        // a guess — focused card mounts can lag that under load.
+        await page.waitForFunction(
+            () => !!document.querySelector('.selected-hero-main, .selected-card h3'),
+            null,
+            { timeout: 30000, polling: 100 }
+        )
 
         // Assertion 1: .selected-hero-main must have min-width: 0
         const heroMainMinWidth = await page.evaluate(() => {
@@ -4170,7 +4238,20 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             timeout: 20000,
             polling: 100
         })
-        await page.waitForTimeout(1200)
+
+        // Poll for the mode-chip rail to be mounted with 6 chips before reading geometry.
+        // Mirrors B-S7 fix: the old 1200ms sleep was a guess that could lag the header mount.
+        await pollFor(
+            page,
+            () => {
+                const rail = document.querySelector('.mode-chips')
+                if (!rail) return false
+                const chips = rail.querySelectorAll('.mode-chip')
+                return chips.length >= 6
+            },
+            30000,
+            100
+        )
 
         // Dismiss first-visit help dialog if auto-opened (mirrors B-S7).
         const helpDialog = page.locator('dialog.help-dialog[open]')
@@ -5489,7 +5570,27 @@ test.describe('idle CTA design polish (W58-style)', () => {
     test('idle placeholder CTA is pill-radius + hint readable (design-call 2026-08-05)', async ({ page }) => {
         test.setTimeout(60000)
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
-        await page.waitForTimeout(4200)
+        // Poll for the settled style predicate instead of a raw 4.2s sleep.
+        // No existence wait: if hydration/placeholder mount lags past 4.2s
+        // the one-shot read is null → fail; if it mounts mid-sleep the read
+        // races the fade-in. The settled predicate gates on both elements
+        // present AND the expected CSSOM values.
+        const settled = await pollFor(
+            page,
+            () => {
+                const cta = document.querySelector('.placeholder-cta')
+                const hint = document.querySelector('.placeholder-hint')
+                if (!cta || !hint) return false
+                const c = getComputedStyle(cta)
+                const h = getComputedStyle(hint)
+                const radius = c.borderRadius
+                const opacity = Number(h.opacity)
+                return radius === '999px' && opacity >= 0.7
+            },
+            30000,
+            100
+        )
+        expect(settled, 'idle CTA must settle to pill-radius + readable hint').toBe(true)
         const styles = await page.evaluate(() => {
             const cta = document.querySelector('.placeholder-cta')
             const hint = document.querySelector('.placeholder-hint')

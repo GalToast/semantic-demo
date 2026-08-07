@@ -13,9 +13,13 @@ const retiredLegacyComponentPath = 'js/modules/components/SearchResultsList.svel
 const retiredSurfacePath = 'js/modules/components/InfoPanelSearchSurface.svelte';
 const searchBarPath = 'src/components/SearchBar.svelte';
 const srcComponentPath = 'src/components/SearchResults.svelte';
+const resultListPath = 'src/lib/components/search/SearchResultList.svelte';
+const resultItemPath = 'src/components/SearchResultItem.svelte';
 
 const searchBarSrc = read(searchBarPath);
 const srcComponentSrc = read(srcComponentPath);
+const resultListSrc = read(resultListPath);
+const resultItemSrc = read(resultItemPath);
 
 assert(
   !fs.existsSync(path.join(root, retiredLegacyComponentPath)),
@@ -31,17 +35,23 @@ assert(
 );
 assert(
   searchBarSrc.includes("import SearchInput from './SearchInput.svelte'") &&
-    searchBarSrc.includes("import SearchResults from './SearchResults.svelte'") &&
+    searchBarSrc.includes("import('./SearchResults.svelte')") &&
     searchBarSrc.includes('<SearchInput ') &&
-    searchBarSrc.includes('<SearchResults />'),
+    searchBarSrc.includes('<SearchResultsComponent />'),
   'src/components/SearchBar.svelte should compose the canonical search input and results components'
 );
 assert(
-  srcComponentSrc.includes('id="search-results"') &&
-    srcComponentSrc.includes('id="search-result-list"') &&
-    srcComponentSrc.includes('class="search-result-listitem"') &&
-    srcComponentSrc.includes('id={`search-result-${Number(result.index)}`}'),
-  'src/components/SearchResults.svelte should own canonical Svelte-shell search result markup'
+  srcComponentSrc.includes('id="search-results"'),
+  'src/components/SearchResults.svelte should own the search-results wrapper'
+);
+assert(
+  resultListSrc.includes('id="search-result-list"'),
+  'src/lib/components/search/SearchResultList.svelte should own the search-result-list container'
+);
+assert(
+  resultItemSrc.includes('class="search-result-listitem"') &&
+    resultItemSrc.includes('id={`search-result-option-${order}`}'),
+  'src/components/SearchResultItem.svelte should own canonical search result item markup'
 );
 
 console.log('Search results ownership contract OK.');
