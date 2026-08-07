@@ -5535,11 +5535,22 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         test.setTimeout(60000)
         await page.setViewportSize({ width: 390, height: 844 })
         await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
+        // Mobile cold-load renders the 2D placeholder (render-kind-placeholder2d):
+        // WebGL does NOT auto-boot on mobile deep-links (desktop only), so the
+        // bottom dive strip (#btn-focus-dive) never mounts until the user enters
+        // the 3D scene. Enter it explicitly when present. Use a programmatic DOM
+        // click (not Playwright's hit-tested click) — same pattern as the legend
+        // dismiss test: the focus card may overlap the CTA mid-transition and
+        // pointer-events interception makes actionability retries loop.
+        await page.evaluate(() => {
+            const cta = document.querySelector('[aria-label="Enter 3D scene"]')
+            if (cta) cta.click()
+        })
         // Target the REAL bottom dive strip (#btn-focus-dive), which only exists
-        // once the WebGL engine has booted. In render-kind-placeholder2d the only
+        // once the WebGL engine has booted. In placeholder2d the only
         // enter-inside button is #btn-journey-primary mounted at the TOP (y≈18),
         // which is not the strip the toggle lifts over — asserting against it is
-        // meaningless and flakes whenever WebGL boot is slow (full-suite load).
+        // meaningless. Wait for the strip + lifted toggle + clearance.
         const clearsDiveStrip = await pollFor(
             page,
             () => {
