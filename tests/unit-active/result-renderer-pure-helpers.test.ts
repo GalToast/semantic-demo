@@ -19,12 +19,6 @@
  *   - buildSearchRankLabel (rank params → label)
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
-import { readFileSync } from 'node:fs'
-// @ts-ignore
-import { fileURLToPath } from 'node:url'
-// @ts-ignore
-import { dirname, resolve } from 'node:path'
 import {
     renderResultCountLine,
     getSearchResultStrength,
@@ -282,9 +276,7 @@ describe('buildSearchRankLabel', () => {
     })
 
     it('returns "Current stop" when index matches exploreIndex', () => {
-        expect(buildSearchRankLabel({ index: 5, order: 1, topIndex: 0, exploreIndex: 5 })).toBe(
-            'Current stop'
-        )
+        expect(buildSearchRankLabel({ index: 5, order: 1, topIndex: 0, exploreIndex: 5 })).toBe('Current stop')
     })
 
     it('returns "Original anchor" when index is anchor AND explore exists AND not same', () => {
@@ -304,9 +296,7 @@ describe('buildSearchRankLabel', () => {
     })
 
     it('returns "Original top match" when index is top AND explore exists AND not same', () => {
-        expect(buildSearchRankLabel({ index: 7, order: 1, topIndex: 7, exploreIndex: 5 })).toBe(
-            'Original top match'
-        )
+        expect(buildSearchRankLabel({ index: 7, order: 1, topIndex: 7, exploreIndex: 5 })).toBe('Original top match')
     })
 
     it('returns "Top match" when index is top AND no explore', () => {
@@ -327,23 +317,11 @@ describe('buildSearchRankLabel', () => {
     })
 })
 
-describe('result-renderer — as unknown as cast lock-in (laneC-dsfree)', () => {
-    const __filename = fileURLToPath(import.meta.url)
-    const __dirname = dirname(__filename)
-    const src = readFileSync(resolve(__dirname, '../../src/lib/search/result-renderer.ts'), 'utf-8')
-    const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+// (2026-08-07) The two former source-inspection asserts from this block
+// regex-checked the typed 'no-cast' scheduling path in result-renderer.ts.
+// That contract is now tested behaviorally in the jsdom sibling
+// result-renderer-reveal-schedule.test.ts (real setTimeout ids registered on
+// appState.compactSearchRevealTimers and resolved on tick via the actual
+// scroll side effect). This file stays @vitest-environment node for its pure
+// helpers only; module-level readFileSync machinery removed with the block.
 
-    it('no `as unknown as` casts remain in result-renderer.ts', () => {
-        // The only double-cast was in scheduleCompactSearchResultReveal
-        // (`window.setTimeout(reveal, delay) as unknown as
-        // ReturnType<typeof setTimeout>`). The call site now uses
-        // `globalThis.setTimeout` so the value is already
-        // `ReturnType<typeof setTimeout>` (Node typing in this config).
-        const castMatches = stripped.match(/as\s+unknown\s+as\b/g) ?? []
-        expect(castMatches.length).toBe(0)
-    })
-
-    it('compact reveal timers are scheduled with the typed globalThis.setTimeout', () => {
-        expect(stripped).toMatch(/compactSearchRevealTimers\.push\(globalThis\.setTimeout\(reveal, delay\)\)/)
-    })
-})
