@@ -112,6 +112,10 @@ export function updateCameraViewportOffset() {
         camera.clearViewOffset?.()
     }
     camera.updateProjectionMatrix?.()
+    // Frustum changed from a view-offset shift — the render-skip snapshot
+    // (camera pos/quat only) is now stale and would skip a needed frame for
+    // reduced-motion users. Invalidate it (render sweep 2026-08-07).
+    engineState.lastCameraSnapshot = null
 }
 
 export async function initThreeJS() {
@@ -291,6 +295,11 @@ export function onWindowResize() {
     // Sync the focus semantic overlay resolution too — a resize while focused
     // would otherwise leave the overlay linewidth shader at the old size.
     syncFocusSemanticOverlayResolutionPort()
+    // Render-skip snapshot is camera-pos/quat only; a resize changes the
+    // drawing buffer + frustum, so the cached snapshot is stale and would
+    // skip (blank/stale canvas) for reduced-motion users until the camera
+    // moves. Invalidate it so the next frame renders (render sweep 2026-08-07).
+    engineState.lastCameraSnapshot = null
 }
 
 export function cancelAnimate() {
