@@ -31,7 +31,7 @@ import { updateUrlState } from '@lib/orchestration/url-state'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { el, setChildren } from '@lib/utils/dom-builder'
-import { legacyState } from '@lib/state/app.svelte'
+import { appState } from '@lib/state/app.svelte'
 import type { BusinessRecord } from '@lib/types/business'
 import type { ActiveFilters } from '@lib/types/state'
 
@@ -86,7 +86,7 @@ export function setClusterFilter(cluster: number | null): void {
     // active. This was the visible half of P0-5: legend click would dim the
     // legend row but leave the mycelium field untouched.
     {
-        legacyState.activeClusterFilter = toggledCluster
+        appState.activeClusterFilter = toggledCluster
     }
 
     // Clear story prompt when cluster filter changes

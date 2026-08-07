@@ -125,8 +125,8 @@ export function clearExplorationFocusSelection(): void {
     appState.focusedNode = null
     appState.trailIndices?.clear?.()
     updateSelectedBusiness(null)
-    // Note: the prior line `legacyState.selectedPoint = null`
-    // (and `legacyState.currentSearchSummary = null`) was deleted.
+    // Note: the prior line `appState.selectedPoint = null`
+    // (and `appState.currentSearchSummary = null`) was deleted.
     // It was a no-op at runtime (the flat `selectedPoint` slot does
     // not exist on the Svelte 5 class instance, only `focusState` does),
     // and it threw "Cannot set property selectedPoint of #<Object>
@@ -136,9 +136,9 @@ export function clearExplorationFocusSelection(): void {
     // Compatibility reads via the test-bridge proxy (Playwright
     // surface tests, journey contract tests) are now satisfied by
     // a fallback in src/main.ts:182 getCompatValue(): if the flat
-    // `legacyState[prop]` is undefined, the getter falls back to
-    // `legacyState.focusState[prop]` for selectedPoint-family fields
-    // and `legacyState.searchState[prop]` for currentSearchSummary.
+    // `appState[prop]` is undefined, the getter falls back to
+    // `appState.focusState[prop]` for selectedPoint-family fields
+    // and `appState.searchState[prop]` for currentSearchSummary.
     // See tmp/selectedPoint-bug-audit-2026-06-29.md Section 4.
 }
 

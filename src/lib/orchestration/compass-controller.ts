@@ -16,7 +16,7 @@ import {
     NAV_TRANSITION_ACTIONS
 } from '@lib/stores/navigation.svelte.ts'
 import { searchStore } from '@lib/stores/search.svelte'
-import { legacyState, appState } from '@lib/state/app.svelte'
+import { appState } from '@lib/state/app.svelte'
 import {
     JOURNEY_COMPASS_PHASE_ORDER,
     JOURNEY_CONFIG,
@@ -345,14 +345,14 @@ export function executeJourneyCompassAction(action: string): void {
             // the produce half of the dive-feedback feature (was always 0).
             appState._semanticDiveTransitionDeadline = Date.now() + 1200
             // Parity-attrs owns semanticDive, panelSurface, trailDepth.
-            // Mirror to test-compat globals via legacyState. The test-compat
+            // Mirror to test-compat globals via appState. The test-compat
             // proxy forwards writes from __APP_STATE__ / __TEST_STATE__
-            // back to legacyState — a single direct write replaces the
+            // back to appState — a single direct write replaces the
             // two-block mirror that previously duplicated per-global writes.
             // See lifecycle.ts applyCompositionState() for the convergence contract.
             if (typeof window !== 'undefined') {
-                legacyState.semanticDiveMode = true
-                legacyState.trailDepth = 2
+                appState.semanticDiveMode = true
+                appState.trailDepth = 2
             }
             return
 

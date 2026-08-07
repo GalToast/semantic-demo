@@ -79,7 +79,7 @@ import {
 } from '@lib/stores/navigation.svelte'
 import { addTrailStop, setThreadCandidates, setTrailDepth, setTrailNeighborIndices } from '@lib/stores/journey.svelte'
 import { getBusinessRecords } from '@lib/data-store'
-import { appState, legacyState } from '@lib/state/app.svelte.ts'
+import { appState } from '@lib/state/app.svelte.ts'
 import { buildNeighborhoodManifest, getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood'
 import {
     bindSearchResultInteractions,
@@ -250,13 +250,13 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
             threadSource
         })
         {
-            // legacyState.navState is `NavState | null`; withStateMutation guarantees
+            // appState.navState is `NavState | null`; withStateMutation guarantees
             // the state is initialized, so the structural cast is safe. We only write
             // 5 fields here; the inline shape uses a loose threadCandidates element
             // type (only `index`, `source`, `reason`) rather than the strict
             // `ThreadCandidateLike` because we don't compute the scoring fields
             // (`score`, `semanticScore`, `sameCity`, `sameStatus`) at this layer.
-            const nav = legacyState.navState as unknown as {
+            const nav = appState.navState as unknown as {
                 trailSeedIndex?: number | null
                 trailNeighborIndices?: number[]
                 threadCandidates?: Array<{ index: number; source: string; reason: string }>

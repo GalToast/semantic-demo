@@ -7,7 +7,7 @@
  */
 
 import { withStateMutation } from '@lib/state/with-state-mutation'
-import { legacyState, type AppState } from '@lib/state/app.svelte'
+import { appState, type AppState } from '@lib/state/app.svelte'
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { search, clearSearch } from '@lib/search/state'
 import type { ThreadCandidateLike } from '@lib/state/state-types'
@@ -94,7 +94,7 @@ async function loadLegacyActionModules(): Promise<LegacyActionModules> {
 
     loadPromise = Promise.resolve().then(() => {
         const modules: LegacyActionModules = {
-            state: legacyState,
+            state: appState,
             withStateMutation,
             camera: { focusOnNode },
             lifecycle: {
