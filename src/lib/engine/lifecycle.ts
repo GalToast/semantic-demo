@@ -46,6 +46,9 @@ import {
 // internally, but we call it explicitly to mirror deinit() and cancel the
 // corridor-glow timers deterministically.
 import { disposeHeroAnimation } from '@lib/engine/three-search-animations'
+import { disposeAudio } from '@lib/audio/audio-scape'
+import { cancelOverviewCameraAnimation } from '@lib/demo/camera'
+import { disposeEventListeners } from '@lib/ui/global-bindings'
 import { destroyMap } from '@lib/engine/map-state'
 import { createMycelium } from '@lib/engine/thread-manager'
 // Dynamic import: postprocessing is code-split to save ~150-200 kB
@@ -531,6 +534,27 @@ export function destroyEngine(): void {
         disposeHeroAnimation()
     } catch (error) {
         debugWarn('[engine/lifecycle] hero animation dispose failed:', error)
+    }
+    // P2-1 (render sweep 2026-08-07): destroyEngine never called deinit(), so the
+    // audio scape, global window listeners (popstate/focus/visibilitychange) and
+    // demo overview-camera RAF persisted across destroy→re-init cycles — the exact
+    // leak audio-scape.ts:298 documents as needing teardown. Call the exported
+    // pieces directly (deinit() would double-dispose interaction-visuals/map which
+    // destroyEngine already handled above). Idempotent + try/catch guarded.
+    try {
+        disposeAudio()
+    } catch (error) {
+        debugWarn('[engine/lifecycle] audio dispose failed:', error)
+    }
+    try {
+        disposeEventListeners()
+    } catch (error) {
+        debugWarn('[engine/lifecycle] global event listeners dispose failed:', error)
+    }
+    try {
+        cancelOverviewCameraAnimation()
+    } catch (error) {
+        debugWarn('[engine/lifecycle] overview camera animation dispose failed:', error)
     }
 
     // 5. Null out engine THREE-object references so a hot remount never sees
