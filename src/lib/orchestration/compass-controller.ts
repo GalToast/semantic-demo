@@ -20,7 +20,8 @@ import { appState } from '@lib/state/app.svelte'
 import {
     JOURNEY_COMPASS_PHASE_ORDER,
     JOURNEY_CONFIG,
-    setTrailDepth as journeySetTrailDepth
+    setTrailDepth as journeySetTrailDepth,
+    setJourneyPhase
 } from '@lib/stores/journey.svelte.ts'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- focusStore import retained per w46-c2-compass-controller-contract.test.ts pattern assertion (L53); removal would break the contract even though we no longer read it after W63 dead-code cleanup of strandContinuityPhase 'exploring' guard + disabled-predicate dead clause.
 import { focusStore, setSemanticDiveMode } from '@lib/stores/focus.svelte.ts'
@@ -34,6 +35,7 @@ import {
     type CompassAction
 } from '@lib/journey/compass-state'
 import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
+import { updateUrlState } from '@lib/orchestration/url-state'
 import type { PanelSurface } from '@lib/types/state'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -335,9 +337,32 @@ export function executeJourneyCompassAction(action: string): void {
         }
 
         case JOURNEY_ACTIONS.ENTER_INSIDE:
+            // M1 (w12 journey bugsweep): ENTER_INSIDE is the single dive-entry
+            // funnel. Previously it only set trailDepth + semanticDiveMode but
+            // never flipped nav mode/surface to 'inside' and never synced the
+            // URL — so the compass "Step Inside" path left nav.mode='trail',
+            // the Header Inside chip unhighlighted, resolveGraphContext yielded
+            // 'focus' not 'inside', and reload landed back in trail. Now this
+            // does the full mode/surface/URL/journeyPhase write that the Header
+            // chip (mode-nav.ts selectMode) and Ctrl+5 (global-shortcuts.ts)
+            // already do before calling ENTER_INSIDE. Those callers' preceding
+            // SET_SURFACE + URL sync are now redundant but harmless — they
+            // correctly track previousSurface before ENTER_INSIDE overwrites
+            // mode/surface to the same values.
             journeySetTrailDepth(2)
             setSemanticDiveMode(true)
-            writeNavStateMirror({ trailDepth: 2 })
+            writeNavStateMirror({ mode: 'inside', surface: 'inside', trailDepth: 2 })
+            setJourneyPhase('inside')
+            // Sync URL so the browser bar reflects the dive state; mirror the
+            // same reason tag the Header chip uses so URL-state consumers can
+            // distinguish mode-switch pushes from search/filter/anchor pushes.
+            if (typeof window !== 'undefined') {
+                try {
+                    updateUrlState({}, { reason: 'mode-switch' })
+                } catch (_e) {
+                    // URL sync is best-effort; nav state is already committed
+                }
+            }
             // Arm the dive-transition transient: isTransitioning (semantic-dive.ts)
             // gates on _semanticDiveTransitionDeadline > now, which drives the
             // 'Focusing…' overlay + 'Entering Neighborhood' kicker via

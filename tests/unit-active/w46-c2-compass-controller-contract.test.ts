@@ -273,3 +273,48 @@ describe('W46-C2: runtime -- getViewHandoffModel returns well-formed ViewHandoff
         expect(galaxy.kicker).not.toBe(map.kicker)
     })
 })
+
+// ── M1 (w12 journey bugsweep): ENTER_INSIDE is the single dive funnel ───────
+
+describe('M1: ENTER_INSIDE is the complete dive-entry funnel', { timeout: 120000 }, () => {
+    it('M1 struct: ENTER_INSIDE case writes mode="inside" and surface="inside" to nav mirror', () => {
+        // The ENTER_INSIDE case block must include writeNavStateMirror with mode + surface
+        const enterBlock = src.match(/case JOURNEY_ACTIONS\.ENTER_INSIDE:[\s\S]*?^\s*return/m)
+        expect(enterBlock).not.toBeNull()
+        const block = enterBlock![0]
+        // Must include the fused writeNavStateMirror call with mode, surface, trailDepth
+        expect(block).toMatch(/writeNavStateMirror\(\{[^}]*mode:\s*['"]inside['"][^}]*surface:\s*['"]inside['"][^}]*\}\)/)
+        // Must call setJourneyPhase('inside')
+        expect(block).toContain("setJourneyPhase('inside')")
+        // Must call updateUrlState
+        expect(block).toContain('updateUrlState(')
+    })
+
+    it('M1 struct: ENTER_INSIDE URL sync uses reason mode-switch', () => {
+        const enterBlock = src.match(/case JOURNEY_ACTIONS\.ENTER_INSIDE:[\s\S]*?^\s*return/m)
+        expect(enterBlock).not.toBeNull()
+        // The updateUrlState call must include reason:'mode-switch' to match Header chip contract
+        expect(enterBlock![0]).toContain("reason: 'mode-switch'")
+    })
+
+    it('M1 struct: ENTER_INSIDE still sets semanticDiveMode + trailDepth 2 + transition deadline', () => {
+        const enterBlock = src.match(/case JOURNEY_ACTIONS\.ENTER_INSIDE:[\s\S]*?^\s*return/m)
+        expect(enterBlock).not.toBeNull()
+        const block = enterBlock![0]
+        // Still calls journeySetTrailDepth(2)
+        expect(block).toContain('journeySetTrailDepth(2)')
+        // Still calls setSemanticDiveMode(true)
+        expect(block).toContain('setSemanticDiveMode(true)')
+        // Still arms the transition deadline
+        expect(block).toContain('_semanticDiveTransitionDeadline')
+        // Still mirrors to appState
+        expect(block).toContain('appState.semanticDiveMode = true')
+    })
+
+    it('M1 struct: compass-controller imports setJourneyPhase and updateUrlState', () => {
+        // The import from @lib/stores/journey.svelte.ts must include setJourneyPhase
+        expect(src).toMatch(/import\s*\{[^}]*\bsetJourneyPhase\b[^}]*\}\s*from\s+['"]@lib\/stores\/journey\.svelte\.ts['"]/)
+        // The import from @lib/orchestration/url-state must include updateUrlState
+        expect(src).toMatch(/import\s*\{[^}]*\bupdateUrlState\b[^}]*\}\s*from\s+['"]@lib\/orchestration\/url-state['"]/)
+    })
+})
