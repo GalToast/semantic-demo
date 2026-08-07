@@ -301,7 +301,9 @@ vi.mock('@lib/stores/focus.svelte', () => ({
             fn()
             return () => {}
         }
-    })
+    }),
+    setSemanticDiveMode: () => {},
+    resetFocus: () => {}
 }))
 
 // Mock filter store
@@ -341,6 +343,11 @@ vi.mock('@lib/journey/selected-card', () => ({
     updateSelectedBusiness: (v: unknown) => {
         mockState.updateSelectedBusinessCalls.push(v)
     }
+}))
+
+// Cut the lifecycle import chain at its entry point (imported by url-state.ts)
+vi.mock('@lib/journey/thread-settler', () => ({
+    setFocusedNode: () => {}
 }))
 
 // Mock search-filter-core

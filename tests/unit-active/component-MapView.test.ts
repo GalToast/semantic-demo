@@ -133,8 +133,9 @@ describe('W48: no dishonest appState.currentView cast in MapView', () => {
         ).not.toMatch(/interface\s+RuntimeMap/);
     });
 
-    it('setLegacyView assigns appState.currentView directly (no cast)', () => {
-        // Verify the function body uses direct assignment.
+    it('setLegacyView routes currentView through writeNavStateMirror (no cast)', () => {
+        // Verify the function body uses writeNavStateMirror, the canonical
+        // single-writer funnel (cbc770bb refactor).
         const src = readMapViewSource();
         const fnIdx = src.indexOf('function setLegacyView');
         expect(fnIdx, 'setLegacyView function must exist').toBeGreaterThan(-1);
@@ -151,8 +152,8 @@ describe('W48: no dishonest appState.currentView cast in MapView', () => {
         const body = src.slice(bodyStart, i);
         expect(
             body,
-            'setLegacyView must assign appState.currentView directly'
-        ).toMatch(/appState\.currentView\s*=\s*view/);
+            'setLegacyView must route through writeNavStateMirror'
+        ).toMatch(/writeNavStateMirror\(\{\s*currentView:\s*view/);
         expect(
             body,
             'setLegacyView must not contain any "as unknown as" cast'

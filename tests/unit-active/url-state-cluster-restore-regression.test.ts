@@ -54,7 +54,11 @@ vi.mock('@lib/stores/navigation.svelte.ts', async () => {
         bumpUrlStateRestoreToken: () => {
             navState.urlStateRestoreToken++
             return navState.urlStateRestoreToken
-        }
+        },
+        updateNavState: () => {},
+        switchView: () => {},
+        currentView: () => 'galaxy',
+        setMyceliumMode: () => {}
     }
 })
 
@@ -79,7 +83,10 @@ vi.mock('@lib/stores/focus.svelte', () => ({
         subscribe: () => () => {},
         update: () => {},
         set: () => {}
-    }
+    },
+    setSemanticDiveMode: () => {},
+    resetFocus: () => {},
+    setSelectedBusiness: () => {}
 }))
 
 vi.mock('@lib/state/app.svelte', () => ({
@@ -155,6 +162,11 @@ vi.mock('@lib/journey/selected-card', () => ({
     updateSelectedBusiness: () => {}
 }))
 
+// Cut the lifecycle import chain at its entry point (imported by url-state.ts)
+vi.mock('@lib/journey/thread-settler', () => ({
+    setFocusedNode: () => {}
+}))
+
 vi.mock('@lib/orchestration/search-filter-core', () => ({
     applyFilters: () => {}
 }))
@@ -167,14 +179,18 @@ vi.mock('@lib/utils/debug', () => ({
     debugWarn: () => {}
 }))
 
-vi.mock('@lib/utils/disposable-registry', () => ({
-    DisposableRegistry: class DisposableRegistry {
+vi.mock('@lib/utils/disposable-registry', () => {
+    const DisposableRegistry = class {
         label: string | undefined
         constructor(opts?: { label?: string }) { this.label = opts?.label }
         schedule = () => {}
         disposeAll = () => {}
     }
-}))
+    return {
+        DisposableRegistry,
+        createDisposableRegistry: (opts?: { label?: string }) => new DisposableRegistry(opts)
+    }
+})
 
 vi.mock('@lib/engine/camera-choreography/focus', () => ({
     animateCameraToNode: () => {}

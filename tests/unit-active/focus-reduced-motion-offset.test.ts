@@ -53,6 +53,13 @@ vi.mock('@lib/engine/camera-controls-core', () => ({
     },
     startFocusCameraAssist: (...args: unknown[]) => {
         _assistCalls.start.push(args)
+    },
+    setFocusCameraOffset: (offset: unknown) => {
+        if (offset && typeof (offset as Record<string, unknown>).x === 'number') {
+            _appState.focusCameraOffset = { ...offset as Record<string, number> }
+        } else {
+            _appState.focusCameraOffset = null
+        }
     }
 }))
 

@@ -90,6 +90,56 @@ vi.mock('@lib/state/app.svelte', () => ({
             return null
         },
         set focusedNode(_v: unknown) {},
+        viewportState: {
+            viewportWidth: 1280,
+            viewportHeight: 800,
+            isCompactViewport: false,
+            isMobileViewport: false,
+            isTabletViewport: false,
+            devicePixelRatio: 1
+        },
+        focusState: {
+            selectedPoint: null,
+            inspectedThreadIndex: null,
+            pinnedThreadIndex: null,
+            threadInspectorPointerInside: false,
+            pocketMotionByIndex: new Map(),
+            pocketTransitionStartedAt: 0,
+            infoPanelOpen: true,
+            pocketListVisible: false,
+            pocketRoleFilter: 'all',
+            focusTransitionMode: 'idle',
+            focusTransitionStartedAt: 0,
+            nodesAreSettling: false,
+            inspectedStrandDiagnostics: {
+                active: false,
+                source: '',
+                index: null,
+                focusedIndex: null,
+                segmentCount: 0,
+                braidCount: 0,
+                endpointCount: 0
+            }
+        },
+        searchState: {
+            currentSearchSummary: null,
+            searchStatus: 'idle',
+            searchError: null,
+            searchRequestSequence: 0,
+            searchAnchorIndex: null,
+            searchPreviewIndex: null,
+            searchGlowIndices: new Set(),
+            searchGlowTopIndex: null,
+            searchGlowActive: false,
+            searchFocusTransitionToken: 0,
+            isSearching: false,
+            currentEmptyQuery: null,
+            semanticTrailCue: 'idle',
+            isCompactViewport: false,
+            semanticGuideRequestSequence: 0,
+            currentSemanticGuide: null,
+            summaryCardTypeToken: 0
+        },
         withMutation: (fn: () => unknown) => fn()
     }
 }))
@@ -102,7 +152,9 @@ vi.mock('@lib/stores/search.svelte', () => ({
 }))
 
 vi.mock('@lib/stores/focus.svelte', () => ({
-    focusStore: { update: () => {} }
+    focusStore: { update: () => {} },
+    setSemanticDiveMode: () => {},
+    resetFocus: () => {}
 }))
 
 vi.mock('@lib/stores/journey.svelte', () => ({
@@ -111,6 +163,7 @@ vi.mock('@lib/stores/journey.svelte', () => ({
 }))
 
 vi.mock('@lib/journey/selected-card', () => ({ updateSelectedBusiness: () => {} }))
+vi.mock('@lib/journey/thread-settler', () => ({ setFocusedNode: () => {} }))
 vi.mock('@lib/orchestration/search-filter-core', () => ({ applyFilters: () => {} }))
 vi.mock('@lib/orchestration/cluster-filter-controller', () => ({
     syncFilterControls: () => {},

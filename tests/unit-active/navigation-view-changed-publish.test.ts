@@ -136,26 +136,23 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 describe('MapView setLegacyView publishes VIEW_CHANGED (W49-F)', () => {
-    it('MapView.svelte setLegacyView mutates appState.currentView and publishes', () => {
-        // Source inspection: setLegacyView must (a) still mutate the legacy
-        // appState.currentView (for compatibility with the docstring note
-        // "nav store may not be initialized yet"), and (b) fire the
-        // VIEW_CHANGED event with previousView captured before mutation.
+    it('MapView.svelte setLegacyView routes through writeNavStateMirror', () => {
+        // Source inspection: setLegacyView must route through the canonical
+        // writeNavStateMirror funnel (cbc770bb refactor). writeNavStateMirror
+        // handles VIEW_CHANGED publish (tested in the describe block above),
+        // so setLegacyView does NOT need its own publish call anymore.
         // We assert on the source because the import path of MapView.svelte
         // pulls in Leaflet which is heavy to import in the test runtime.
         const src = readFileSync(
             resolve(__dirname, '../../src/components/MapView.svelte'),
             'utf-8'
         )
-        // The function body still contains a direct appState.currentView
-        // assignment so other imperative readers (e.g. guards.ts) see it.
-        expect(src).toMatch(/function setLegacyView[^{]*\{[\s\S]*appState\.currentView\s*=\s*view/)
-        // And it publishes VIEW_CHANGED with previousView captured.
-        expect(src).toContain("publish(EVENTS.VIEW_CHANGED")
-        // The payload destructures both `view` and `previousView` (either
-        // order is acceptable since we only assert each identifier is
-        // referenced inside the object literal).
-        expect(src).toMatch(/\bview\b/)
-        expect(src).toMatch(/\bpreviousView\b/)
+        // The function body now routes through writeNavStateMirror (the
+        // canonical single-writer path) instead of directly mutating
+        // appState.currentView (cbc770bb refactor).
+        expect(src).toMatch(/function setLegacyView[^{]*\{[\s\S]*writeNavStateMirror\(\{\s*currentView:\s*view/)
+        // MapView still imports publish/EVENTS for TOOLTIP_HIDE_REQUESTED
+        expect(src).toContain('publish')
+        expect(src).toContain('EVENTS')
     })
 })
