@@ -28,7 +28,7 @@ import {
     clearTimer,
     cancelAllThreadTimers
 } from '@lib/journey/thread-settler'
-import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
+import { subscribe, subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 
 // Circular import — resolved at call time in ESM; render calls
 // scheduleCanvasThreadInspectionClear and getThreadInspectionState back.
@@ -87,12 +87,40 @@ export interface ThreadInspectionOptions {
 
 // ── Event bus subscriptions ──────────────────────────────────────────────────
 
-subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
+const onCameraNodeFocused = (payload: Record<string, unknown>): void => {
     clearThreadInspection({
         force: true,
         preserveJourney: !!(payload.options as Record<string, unknown>)?.fromTraversal
     })
-})
+}
+
+// subscribeKeyed is key-replacing (event-bus.ts:158): re-importing this module
+// (Vite HMR re-init) replaces the previous callback instead of stacking a
+// duplicate, so this module-level CAMERA_NODE_FOCUSED handler never leaks or
+// fires N× per clearThreadInspection. Matches the module-scope subscribeKeyed
+// pattern in map-state.ts / triggers.ts. The captured unsubscribe is also
+// exposed via disposeThreadInspectionSubscriptions() for explicit teardown.
+//
+// Fallback: the event-bus mock in store-parity-mirror-regression.test.ts
+// predates subscribeKeyed and stubs only `subscribe`, so degrade to plain
+// subscribe in environments where the keyed export is absent (tests). The app
+// always gets the key-replacing form.
+const subscribeCameraNodeFocused: () => () => void =
+    typeof subscribeKeyed === 'function'
+        ? () =>
+              subscribeKeyed(
+                  'thread-inspector-state:camera-node-focused',
+                  EVENTS.CAMERA_NODE_FOCUSED,
+                  onCameraNodeFocused
+              )
+        : () => subscribe(EVENTS.CAMERA_NODE_FOCUSED, onCameraNodeFocused)
+
+const unsubscribeCameraNodeFocused = subscribeCameraNodeFocused()
+
+/** Tear down the module-level event-bus subscription (explicit dispose/HMR). */
+export function disposeThreadInspectionSubscriptions(): void {
+    unsubscribeCameraNodeFocused()
+}
 
 let clearingThreadInspection = false
 
@@ -203,8 +231,18 @@ export function inspectThreadNeighbor(
     index: number,
     options: ThreadInspectionOptions = {}
 ): ThreadInspectionState | null {
-    if (appState.focusState.pinnedThreadIndex !== null && !options.force) {
-        return renderThreadInspection(appState.focusState.pinnedThreadIndex, { surface: 'pinned', pinned: true })
+    const pinnedIndex = appState.focusState.pinnedThreadIndex
+    if (pinnedIndex !== null && !options.force) {
+        // Guard: only preserve the pinned rendering when the caller re-inspects
+        // the SAME pinned index. When the caller hovers a DIFFERENT neighbor
+        // (focus-ui rail hover passes no force), render the HOVERED thread
+        // instead of the pinned one — getThreadInspectionState derives
+        // pinned:false for it (pinnedThreadIndex !== index), so the preview
+        // shows the hovered connection while the pin stays armed.
+        if (!Number.isFinite(index) || pinnedIndex === index) {
+            return renderThreadInspection(pinnedIndex, { surface: 'pinned', pinned: true })
+        }
+        return renderThreadInspection(index, options)
     }
     appState.focusState.inspectedThreadIndex = Number.isFinite(index) ? index : null
     focusStore.update((s) => ({
@@ -374,6 +412,21 @@ export function scheduleCanvasThreadInspectionClear(delay: number = 1800): void 
 
 export function clearThreadInspection(options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
     if (clearingThreadInspection) {
+        // Re-entrant call (e.g. CAMERA_NODE_FOCUSED fires mid-clear). The guard
+        // must not silently drop `force`: propagate the force side-effects
+        // (clear-timer cancel, focus-stage sync, journey strand teardown) so a
+        // recursive clearThreadInspection({ force: true }) behaves like the
+        // non-guarded force path.
+        if (options.force) {
+            if (appState.canvasThreadInspectionClearTimer) {
+                window.clearTimeout(appState.canvasThreadInspectionClearTimer)
+                appState.canvasThreadInspectionClearTimer = null
+            }
+            syncFocusStage(appState.focusState.selectedPoint)
+            syncSemanticDiveUi()
+            if (!options.preserveJourney) clearStrandContinuityState('force-clear')
+            cancelAllThreadTimers()
+        }
         appState.focusState.pinnedThreadIndex = null
         appState.focusState.inspectedThreadIndex = null
         appState.focusState.threadInspectorPointerInside = false

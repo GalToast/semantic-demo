@@ -169,7 +169,11 @@ function buildSearchStoreSnapshot(): SearchStoreState {
  * subscriber notification channel; `appState` is the single source of truth
  * for all 22 fields, and every write path goes `appState.X =
  * ...; searchMirror.set(fresh)` via `withSearchNotify`. There is no
- * mirrorToAppState target — setting a binding would double-write to appState.
+ * mirrorToAppState target in the factory bindings — setting a binding would
+ * double-write to appState. The ONE explicit exception is `update()`: it
+ * wraps through withSearchNotify and bridges the updater result into appState
+ * via `syncSearchUpdateToAppState` (P1-1 state sweep, 2026-08-07) — factory
+ * update() with all-null bindings was a silent no-op for appState.
  *
  * The `storageKey` MUST be the deterministic string below — tests using
  * `delete window['__SEMANTIC_EXPLORER_SEARCH_MIRROR__']` rely on a predictable
@@ -210,7 +214,19 @@ function _createSearchStore(): SearchStoreApi {
     const fn = (() => searchMirror()) as unknown as SearchStoreApi
 
     fn.subscribe = searchMirror.subscribe
-    fn.update = searchMirror.update
+    // Wrapped through withSearchNotify (same as `set`): the updater runs inside
+    // the notify, its result is bridged into appState (SoT) by
+    // syncSearchUpdateToAppState, then the fresh appState-derived snapshot is
+    // published. Fixes P1-1: factory update() with all-null bindings never
+    // synced appState, so update callers (lifecycle.ts: resetExperienceState /
+    // activateSearchGlow / recordEmptySearch / hideExploreTrailReview) silently
+    // desynced the writable from appState.
+    fn.update = (updater: (_s: SearchStoreState) => SearchStoreState) => {
+        withSearchNotify(() => {
+            const current = searchMirror()
+            syncSearchUpdateToAppState(current, updater(current))
+        })
+    }
     fn.set = (value: SearchStoreState) => withSearchNotify(() => value)
 
     return fn
@@ -268,6 +284,54 @@ export function withSearchNotify<T>(fn: () => T): T {
     const fresh = buildSearchStoreSnapshot()
     searchMirror.set(fresh)
     return result
+}
+
+/**
+ * Reverse of `buildSearchStoreSnapshot`: write an `update()` updater's result
+ * back into appState, the single source of truth. The factory bindings are
+ * intentionally all-null (notification channel — see searchMirror doc), so
+ * this explicit bridge is what makes `searchStore.update(fn)` sync appState
+ * the way `set` does via withSearchNotify. Derived fields (query / results /
+ * hasQuery / resultsRendered) have no appState home of their own — they are
+ * bridged onto the summary object only when the updater changed them, so the
+ * inverse stays lossless. `activeResultId` is written only on change via the
+ * canonical nav mirror (same as setActiveResult) to avoid clobbering unrelated
+ * nav state.
+ */
+function syncSearchUpdateToAppState(current: SearchStoreState, next: SearchStoreState): void {
+    // Whole-object summary field: null lands as a clear, replacement lands as
+    // the new object, and an untouched ref is an idempotent same-ref assign.
+    appState.searchState.currentSearchSummary = next.summary
+    if (next.summary) {
+        // Inverse of the snapshot derivation (query/results are derived FROM
+        // the summary) — only bridge when the updater actually changed them.
+        if (next.query !== next.summary.query) next.summary.query = next.query
+        const derivedIndices = next.results.map((r) => r.index)
+        if (
+            derivedIndices.length !== next.summary.resultIndices.length ||
+            derivedIndices.some((idx, i) => idx !== next.summary.resultIndices[i])
+        ) {
+            next.summary.resultIndices = derivedIndices
+        }
+    }
+    if (next.activeResultId !== current.activeResultId) {
+        writeNavStateMirror({ focusedIndex: next.activeResultId !== null ? Number(next.activeResultId) : null })
+    }
+    appState.searchState.searchStatus = next.status
+    appState.searchState.searchRequestSequence = next.requestSequence
+    appState.searchState.searchAnchorIndex = next.anchorIndex
+    appState.searchState.searchPreviewIndex = next.previewIndex
+    appState.searchState.searchGlowIndices =
+        next.glowIndices instanceof Set ? new Set(next.glowIndices) : next.glowIndices
+    appState.searchState.searchGlowTopIndex = next.glowTopIndex
+    appState.searchState.searchGlowActive = next.glowActive
+    appState.searchState.currentEmptyQuery = next.currentEmptyQuery
+    appState.searchState.searchFocusTransitionToken = next.focusTransitionToken
+    appState.searchState.semanticTrailCue = next.trailCue
+    appState.searchState.isCompactViewport = next.isCompactViewport
+    appState.searchState.semanticGuideRequestSequence = next.semanticGuideRequestSequence
+    appState.searchState.currentSemanticGuide = next.currentSemanticGuide
+    appState.searchState.summaryCardTypeToken = next.summaryCardTypeToken
 }
 
 // ── Focus-intent bridge (idle↔search-surface remount) ───────────────────────

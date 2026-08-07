@@ -92,6 +92,12 @@ export function showSemanticThreadsDetail(): Promise<void> {
                 const config = { ...appState.semanticGuideState.config }
                 config.text = 'Select a business first to load its full connection report.'
                 appState.semanticGuideState.config = config
+                // P1: the early return must not leave a stale essay (or spinner)
+                // from a previous report visible — tear the story state down
+                // consistently with setStoryLoading()/clearStoryLoading() on the
+                // normal path.
+                _hideStory()
+                clearStoryLoading()
                 return
             }
             const focusedResult = buildSemanticGuidePayloadResult(focusedIdx as number)
@@ -99,6 +105,8 @@ export function showSemanticThreadsDetail(): Promise<void> {
                 const config = { ...appState.semanticGuideState.config }
                 config.text = 'Select a business first to load its full connection report.'
                 appState.semanticGuideState.config = config
+                _hideStory()
+                clearStoryLoading()
                 return
             }
             payload = payload || { results: [] }

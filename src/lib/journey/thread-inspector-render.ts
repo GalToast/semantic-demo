@@ -27,6 +27,14 @@ import type { InspectorElement, ThreadInspectionOptions, ThreadInspectionState }
 // Register the WebGL update callback
 setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay)
 
+// Tracks the DOM element the pointer-guard listeners are currently bound to.
+// renderThreadInspection is called from ~6 call sites per render; the old code
+// removed + re-added the listeners on every call, and because the cleanup also
+// deleted the `pointerGuardBound` dataset flag, the re-bind path always ran
+// (2× remove + 2× add per render). Binding once per element identity kills the
+// churn.
+let lastPointerGuardElement: InspectorElement | null = null
+
 export function renderThreadInspection(
     index: number | null = appState.focusState.inspectedThreadIndex,
     options: ThreadInspectionOptions = {}
@@ -60,20 +68,25 @@ export function renderThreadInspection(
 
     if (!inspector) return inspectionState
 
-    // Clean up pointer guards
+    // Clean up pointer guards — but ONLY when the bound element changes.
+    // The inspector node is a stable singleton (getElementById of the same
+    // id), so on every subsequent render we skip the remove/re-add churn
+    // entirely.
     const inspectorEl = inspector as HTMLElement & {
         _pointerEnterListener?: ((e: PointerEvent) => void) | null
         _pointerLeaveListener?: ((e: PointerEvent) => void) | null
     }
-    if (inspectorEl._pointerEnterListener) {
-        inspectorEl.removeEventListener('pointerenter', inspectorEl._pointerEnterListener)
-        inspectorEl.removeEventListener('pointerleave', inspectorEl._pointerLeaveListener!)
-        delete inspectorEl._pointerEnterListener
-        delete inspectorEl._pointerLeaveListener
-        delete inspector.dataset.pointerGuardBound
-    }
+    if (inspector !== lastPointerGuardElement) {
+        const prevBound = lastPointerGuardElement
+        if (prevBound) {
+            prevBound.removeEventListener('pointerenter', prevBound._pointerEnterListener!)
+            prevBound.removeEventListener('pointerleave', prevBound._pointerLeaveListener!)
+            delete prevBound._pointerEnterListener
+            delete prevBound._pointerLeaveListener
+            delete prevBound.dataset.pointerGuardBound
+        }
+        lastPointerGuardElement = inspector
 
-    if (!inspector.dataset.pointerGuardBound) {
         inspector.dataset.pointerGuardBound = 'true'
         const pointerEnter = (): void => {
             appState.focusState.threadInspectorPointerInside = true
@@ -146,7 +159,15 @@ export function renderThreadInspection(
     const clearBtn = document.getElementById('btn-thread-clear') as HTMLButtonElement | null
 
     if (titleEl) titleEl.textContent = inspectionState?.title ?? null
-    if (copyEl) copyEl.textContent = inspectionState?.copy ?? null
+    if (copyEl) {
+        // aria-live so screen readers announce thread changes (the panel only
+        // sets aria-hidden=true when inactive, and the copy is replaced
+        // wholesale — aria-atomic matches the MapSummary.svelte live-region
+        // convention so the full new copy is announced).
+        copyEl.setAttribute('aria-live', 'polite')
+        copyEl.setAttribute('aria-atomic', 'true')
+        copyEl.textContent = inspectionState?.copy ?? null
+    }
     if (metaEl) metaEl.textContent = inspectionState?.meta ?? null
 
     // PR-T2: button textContent is owned by the Svelte component

@@ -29,6 +29,40 @@ import {
     getThreeLineSegmentCount
 } from './webgl-utils'
 
+/**
+ * Writes arrival-handoff diagnostics to the $state object ONLY when a field
+ * actually changed. `updateArrivalHandoffOverlay` runs every frame
+ * (three-engine-core.ts:834); wholesale reassignment every frame triggers a
+ * Svelte reactivity update even after the 0.65s settle, when opacity is
+ * constant. Comparing against the current value keeps the write rate flat
+ * once the values plateau: a single write during 'exploring', writes only
+ * during the opacity fade while 'arrived', then silence.
+ */
+function writeArrivalHandoffDiagnostics(next: {
+    active: boolean
+    fromIndex: number | null
+    targetIndex: number | null
+    phase: string
+    segmentCount: number
+    endpointCount: number
+    opacity: number
+}): void {
+    const current = state.arrivalHandoffDiagnostics
+    if (
+        current &&
+        current.active === next.active &&
+        current.fromIndex === next.fromIndex &&
+        current.targetIndex === next.targetIndex &&
+        current.phase === next.phase &&
+        current.segmentCount === next.segmentCount &&
+        current.endpointCount === next.endpointCount &&
+        current.opacity === next.opacity
+    ) {
+        return
+    }
+    state.arrivalHandoffDiagnostics = next
+}
+
 export function removeArrivalHandoffOverlay(): void {
     if (!state.arrivalHandoffGroup) return
     const scene = state.scene as { remove?: (obj: Object3D) => void } | null
@@ -149,15 +183,13 @@ export function updateArrivalHandoffOverlay(): void {
     const age = Math.max(0, performance.now() - (state.strandContinuityState.startedAt || performance.now()))
     const opacity = phase === 'exploring' ? 0.5 : MathUtils.clamp(0.5 - Math.max(0, age - 650) / 6200, 0.12, 0.5)
     line.material.opacity = opacity
-    {
-        state.arrivalHandoffDiagnostics = {
-            active: true,
-            fromIndex,
-            targetIndex,
-            phase,
-            segmentCount: getLineSegmentCount(line),
-            endpointCount: 2,
-            opacity
-        }
-    }
+    writeArrivalHandoffDiagnostics({
+        active: true,
+        fromIndex,
+        targetIndex,
+        phase,
+        segmentCount: getLineSegmentCount(line),
+        endpointCount: 2,
+        opacity
+    })
 }
