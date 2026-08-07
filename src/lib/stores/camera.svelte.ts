@@ -492,7 +492,19 @@ export function completeCameraTransition(): void {
 
 /** Reset camera to initial state. */
 export function resetCamera(): void {
-    cameraStoreImpl.set({ ...INITIAL_STORE })
+    // Fresh arrays/objects, not the shared INITIAL refs — a future in-place
+    // mutation (e.g. position[i] = x) would otherwise corrupt the reset
+    // baseline (P3-5, camera sweep 2026-08-07; same class as resetFocus fix).
+    cameraStoreImpl.set({
+        ...INITIAL_STORE,
+        position: [...DEFAULT_POSITION],
+        target: [...DEFAULT_TARGET],
+        transition: {
+            ...INITIAL_TRANSITION,
+            from: { position: [...DEFAULT_POSITION], target: [...DEFAULT_TARGET] },
+            to: { position: [...DEFAULT_POSITION], target: [...DEFAULT_TARGET] }
+        }
+    })
     // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
 }
 
