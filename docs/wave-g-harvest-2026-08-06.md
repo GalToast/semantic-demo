@@ -203,3 +203,13 @@ Walk declaration → write → read → style-consumer BEFORE concluding dead vs
 incomplete. Second: headless mounts are NOT a stable DOM oracle — verify
 visibility claims with the REAL test harness (`window.__PLAYWRIGHT__`
 preloads) or name the cold-start caveat instead of chasing CSS ghosts.
+
+## Post-update QA sweep follow-up (2026-08-07, pi 0.84.0 session)
+
+Full gate sweep after the harness update surfaced three pre-existing/bridge gaps, all fixed in commit `161ae836`:
+
+1. **Node 24 strip-mode contract crashes (13/68 → fixed).** `npm run test:contract` threw `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` ("TypeScript parameter property is not supported in strip-only mode") in rune-class stores (`filter.svelte.ts` et al. use `constructor(private ...)`). `tests/run-all-contracts.js` now spawns child contracts with `--experimental-transform-types`; suite went 55/68 → 68/68.
+2. **Weather visibility owned by the wrong layer.** Wave-G moved the short-landscape focus/dive `.weather-widget` suppression into `WeatherWidget.svelte` (component owns its visibility per `weather-surface-ownership-contract`); the chrome rule in `mobile_premium__components.css` no longer touches weather.
+3. **Stale source-inspection contract.** `filter-ownership-contract.mjs` still pinned the pre-rune `withFilterStateNotify` helper (renamed in `266e12e1`); now asserts the rune-class `private notify()/_notify()` internals.
+
+Journey: full headless 74-case run had 2 flaky WebGL/Chromium-concurrency fails that pass in isolation (W71b + tablet legend collapse); single-case reruns are green.
