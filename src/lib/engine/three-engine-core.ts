@@ -273,6 +273,12 @@ export async function initThreeJS() {
 
     exposeDevEngineBridge()
 
+    // F2: restore succeeded — clear the watchdog
+    if (engineState.webglRestoreTimer) {
+        window.clearTimeout(engineState.webglRestoreTimer)
+        engineState.webglRestoreTimer = null
+    }
+
     return true
 }
 
@@ -303,7 +309,7 @@ export function onWindowResize() {
 }
 
 export function cancelAnimate() {
-    pauseRenderLoopTimers({ clearRestoreTimer: true })
+    pauseRenderLoopTimers()
     clearScheduledFrameTasks()
     // M4/M7: cancel any pending route frame tasks before the renderer/canvas are
     // torn down, so a pending step() won't fire against nulled camera/controls.
@@ -441,6 +447,11 @@ export function cancelAnimate() {
 
 export function deinit() {
     cancelAnimate()
+    // F2: clear any pending restore watchdog on final teardown
+    if (engineState.webglRestoreTimer) {
+        window.clearTimeout(engineState.webglRestoreTimer)
+        engineState.webglRestoreTimer = null
+    }
     cancelOverviewCameraAnimation()
     engineState.cameraControls?.cancelFocusCameraAnimation()
     engineState.loadingUi?.cancelLoadingHide()
@@ -475,9 +486,12 @@ export function applyMapFlatteningLayout(enabled: boolean): void {
 }
 
 export function animate() {
-    // Clear the RAF id at the start of every callback so book-keeping
-    // stays correct across frames. Without this, the first scheduled
-    // callback would see engineState.rafId != null and exit, killing the loop.
+    // Cancel any pending RAF callback before clearing the id so a direct
+    // animate() invocation (restartLoop from C6/C7) cannot clobber a pending
+    // callback and create a double-RAF chain that cancelAnimate can't kill.
+    if (engineState.rafId !== null) {
+        window.cancelAnimationFrame(engineState.rafId)
+    }
     engineState.rafId = null
 
     // T3-1: If the WebGL context was lost and restored, trigger a full
@@ -488,12 +502,32 @@ export function animate() {
     // be set) and the re-init would never fire.
     if (engineState.webglNeedsRestoreReinit) {
         engineState.webglNeedsRestoreReinit = false
+        // F2: arm a bounded watchdog so a stuck restore escalates instead of
+        // leaving the engine permanently dead. Cleared by initThreeJS on
+        // success or by deinit on final teardown.
+        if (typeof window !== 'undefined' && engineState.webglRestoreTimer === null) {
+            engineState.webglRestoreTimer = window.setTimeout(() => {
+                engineState.webglRestoreTimer = null
+                engineState.circuitBreakerTripped = true
+                debugError('[three-engine] WebGL restore watchdog expired — engine may be stuck')
+                engineState.uiFeedback?.showExperienceToast(
+                    'Graphics recovery failed',
+                    'Please reload the page to restore the 3D view.'
+                )
+            }, 15000)
+        }
         // Fire-and-forget, but DON'T swallow the rejection: if re-init fails the
         // engine is left half-torn-down (cancelAnimate already ran). Log it so
         // the failure surfaces instead of silently deadlocking (W58 F2).
         void initThreeJS().catch((err) => {
             debugError('[three-engine] WebGL restore re-init failed:', err)
         })
+        return
+    }
+
+    // F4: bail before scheduling when engine handles are null (teardown).
+    // A wake after teardown must not restart a self-sustaining zombie RAF loop.
+    if (!webglContext.renderer || !webglContext.scene || !webglContext.camera) {
         return
     }
 

@@ -255,10 +255,13 @@ describe('cancelAnimate', () => {
         document.body.querySelectorAll('.webgl-fallback-map').forEach((n) => n.remove())
     })
 
-    it('calls pauseRenderLoopTimers with clearRestoreTimer=true first', () => {
+    it('calls pauseRenderLoopTimers WITHOUT clearing the restore timer (F2 watchdog)', () => {
+        // F2 (2026-08-07): cancelAnimate must NOT pass { clearRestoreTimer: true }
+        // — that would kill the bounded webglRestoreTimer watchdog before
+        // initThreeJS() gets a chance to succeed on the restore path.
         cancelAnimate()
         expect(_pauseRenderLoopTimers).toHaveBeenCalledTimes(1)
-        expect(_pauseRenderLoopTimers).toHaveBeenCalledWith({ clearRestoreTimer: true })
+        expect(_pauseRenderLoopTimers).toHaveBeenCalledWith({})
     })
 
     it('disposes the scene registry', () => {
