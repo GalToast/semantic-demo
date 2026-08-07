@@ -585,6 +585,14 @@ body.surface-focus-search .search-container:not(.info-panel-contained) {
     .semantic-lane-pill {
         display: none;
     }
+
+    /* The label is also the mobile results-sheet toggle. Collapse the empty
+       idle row, but keep its hit area once results exist so the sheet remains
+       expandable on the narrowest phones. The extra state selectors outrank
+       the later idle display rule in strands.css. */
+    body[data-panel-surface] .search-container:not(.has-query) .search-label {
+        display: none;
+    }
 }
 
 .semantic-lane-pill {

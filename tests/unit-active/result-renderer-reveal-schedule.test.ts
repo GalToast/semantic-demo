@@ -30,7 +30,7 @@ describe('result-renderer compact reveal — real typed timer scheduling', () =>
         if (typeof globalThis.CSS === 'undefined' || typeof globalThis.CSS.escape !== 'function') {
             ;(globalThis as { CSS?: { escape?: (s: string) => string } }).CSS = {
                 escape: (str: string) =>
-                    str.replace(/[^a-zA-Z0-9_-]/g, (c: string) => '\\' + c.charCodeAt(0).toString(16).padStart(4, '0')),
+                    str.replace(/[^a-zA-Z0-9_-]/g, (c: string) => '\\' + c.charCodeAt(0).toString(16).padStart(4, '0'))
             }
         }
 
@@ -79,7 +79,17 @@ describe('result-renderer compact reveal — real typed timer scheduling', () =>
         const rowEls = resultsEl.querySelectorAll('.search-result-item')
         for (const el of Array.from(rowEls)) {
             ;(el as HTMLElement).getBoundingClientRect = () =>
-                ({ top: 200, bottom: 240, left: 0, right: 400, width: 400, height: 40, x: 0, y: 200, toJSON: () => ({}) }) as DOMRect
+                ({
+                    top: 200,
+                    bottom: 240,
+                    left: 0,
+                    right: 400,
+                    width: 400,
+                    height: 40,
+                    x: 0,
+                    y: 200,
+                    toJSON: () => ({})
+                }) as DOMRect
         }
         infoPanel.getBoundingClientRect = () =>
             ({ top: 0, bottom: 300, left: 0, right: 400, width: 400, height: 300, x: 0, y: 0 }) as DOMRect

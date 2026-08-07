@@ -106,9 +106,8 @@ export function resolveParityContext(): ParityContext {
         semanticDiveDeadline = liveDeadline
     } else {
         try {
-            const dl = (window.__APP_STATE__?.focusState as
-                | { _semanticDiveTransitionDeadline?: number }
-                | undefined)?._semanticDiveTransitionDeadline
+            const dl = (window.__APP_STATE__?.focusState as { _semanticDiveTransitionDeadline?: number } | undefined)
+                ?._semanticDiveTransitionDeadline
             if (typeof dl === 'number' && Number.isFinite(dl) && dl > 0) {
                 semanticDiveDeadline = dl
             }

@@ -324,4 +324,3 @@ describe('buildSearchRankLabel', () => {
 // appState.compactSearchRevealTimers and resolved on tick via the actual
 // scroll side effect). This file stays @vitest-environment node for its pure
 // helpers only; module-level readFileSync machinery removed with the block.
-

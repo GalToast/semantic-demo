@@ -147,11 +147,11 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
             }
         }
     }
-    // shittiest-parts #1: zoom in tighter on an active focus pocket so the
-    // gathered neighborhood reads as prominent against the full 8,406-dot
-    // cloud (instead of a small cluster lost in the noise). Only when the
-    // caller didn't specify an explicit distance.
-    if (isSemanticPocketFocus && !framing.distance) distance = 0.62
+    // shittiest-parts #1: ensure a minimum readable distance for an active
+    // focus pocket so the gathered neighborhood reads as prominent against
+    // the full 8,406-dot cloud without crowding the selected node. Only
+    // when the caller didn't specify an explicit distance.
+    if (isSemanticPocketFocus && !framing.distance) distance = Math.max(distance, 1.02)
     if (safeTargetOffset) {
         focusTarget = focusTarget.clone().add(safeTargetOffset)
     }

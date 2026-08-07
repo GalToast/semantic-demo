@@ -233,23 +233,17 @@ describe('computeParityAttributes', () => {
         // Inside phase wins
         navStore.update((s) => ({ ...s, mode: 'inside' }))
         let stores = snapshotStores()
-        expect(
-            computeParityAttributes().graphContext
-        ).toBe('inside')
+        expect(computeParityAttributes().graphContext).toBe('inside')
 
         // Focus phase
         navStore.update((s) => ({ ...s, mode: 'focus', focusedIndex: 42 }))
         stores = snapshotStores()
-        expect(
-            computeParityAttributes().graphContext
-        ).toBe('focus')
+        expect(computeParityAttributes().graphContext).toBe('focus')
 
         // Map view wins over mode
         navStore.update((s) => ({ ...s, mode: 'overview', currentView: 'map' }))
         stores = snapshotStores()
-        expect(
-            computeParityAttributes().graphContext
-        ).toBe('map')
+        expect(computeParityAttributes().graphContext).toBe('map')
 
         // Back to overview
         navStore.update((s) => ({ ...s, mode: 'overview', currentView: 'galaxy' }))

@@ -100,9 +100,7 @@ export function getFocusOrbitSlackPivot(): Vector3 | null {
     const controls = getTypedControls()
     const focusedNode = appState.focusedNode
     if (!camera || !controls || focusedNode === null || focusedNode === undefined) return null
-    const focusPosition =
-        getNodePositions()[focusedNode] ||
-        getOriginalPositions()[focusedNode]
+    const focusPosition = getNodePositions()[focusedNode] || getOriginalPositions()[focusedNode]
     if (!focusPosition) return null
 
     const focusVector = new Vector3(focusPosition.x, focusPosition.y, focusPosition.z)

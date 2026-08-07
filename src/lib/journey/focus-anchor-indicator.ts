@@ -23,7 +23,7 @@ const RING_OUTER_RADIUS = 0.085
 const RING_OUTER_THICKNESS = 0.0085
 const PULSE_FREQUENCY_HZ = 0.7
 const PULSE_AMPLITUDE = 0.12
-const OPACITY_CEIL = 0.95
+const OPACITY_CEIL = 0.48
 const FADE_RATE = 0.12
 
 let _initialized = false
@@ -156,7 +156,7 @@ export function updateFocusAnchorIndicator(now: number, focusedNode: number | nu
     haloSprite.scale.set(spriteScale, spriteScale, 1)
 
     let ringScale = 1.0
-    const ringOpacity = semanticDiveActive ? 0.2 : 0.78
+    const ringOpacity = semanticDiveActive ? 0.2 : 0.52
     if (!reducedMotion) {
         const slowPulse = Math.sin(time * Math.PI * 2 * PULSE_FREQUENCY_HZ * 0.5 + 0.7)
         ringScale = 1.0 + slowPulse * 0.05

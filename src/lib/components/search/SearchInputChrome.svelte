@@ -2,7 +2,7 @@
   @lib/components/search/SearchInputChrome.svelte — Search input chrome (icon, pills, buttons, status)
   Extracted from SearchInput.svelte to separate chrome from input logic.
   All DOM ids/classes preserved for contract test compatibility:
-    #semantic-lane-pill, .search-label-text, .search-back-btn,
+    .search-label, #semantic-lane-pill, .search-label-text, .search-back-btn,
     .search-icon, .search-shortcut-hint, #search-clear-btn,
     #search-cancel-btn, #search-status, #search-spinner, .search-input-wrap
 -->
@@ -43,15 +43,13 @@
   }: Props = $props();
 </script>
 
-<!-- Semantic lane pill (health indicator) -->
-<div id="semantic-lane-pill" class="semantic-lane-pill" data-state="healthy">
-  <span class="lane-pill-dot"></span>
-</div>
-
-<!-- Search label (only shown when query is active) -->
-{#if hasQuery}
+<!-- Search label row owns the mobile sheet toggle and the lane status affordance. -->
+<div class="search-label">
   <span class="search-label-text">Search</span>
-{/if}
+  <div id="semantic-lane-pill" class="semantic-lane-pill" data-state="healthy">
+    <span class="lane-pill-dot"></span>
+  </div>
+</div>
 
 <!-- Input row: back button, icon, input (via snippet), shortcut hint, clear, cancel -->
 <div class="search-input-wrap" class:searching={showLoading} class:search-active={searchActive}>
@@ -72,13 +70,18 @@
   </svg>
   {@render children()}
   <kbd class="search-shortcut-hint" aria-hidden="true">/</kbd>
-  {#if hasQuery}
-    <button class="search-clear" id="search-clear-btn" onclick={onClearQuery} aria-label="Clear query" type="button">
-      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    </button>
-  {/if}
+  <button
+    class="search-clear"
+    id="search-clear-btn"
+    onclick={onClearQuery}
+    aria-label="Clear query"
+    type="button"
+    hidden={!hasQuery}
+  >
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
   {#if showLoading}
     <button class="search-cancel" id="search-cancel-btn" onclick={onCancel} aria-label="Cancel search" type="button">
       Cancel
@@ -140,6 +143,12 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     /* label is decorative; let clicks fall through to whatever sits below */
+    pointer-events: none;
+  }
+
+  :global(body.surface-focus-search .search-container .search-label) {
+    display: none;
+    visibility: hidden;
     pointer-events: none;
   }
 

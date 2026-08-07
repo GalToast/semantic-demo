@@ -344,7 +344,7 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
         Number.isFinite(anchorPos.z) ? anchorPos.z : 0
     )
 
-        const personality = (appState.navState.currentPersonality || {}) as ChoreographyPersonality
+    const personality = (appState.navState.currentPersonality || {}) as ChoreographyPersonality
     let centroidWeight: number
     if (personality.type === 'TIGHT_CLUSTER') {
         centroidWeight = 0.12

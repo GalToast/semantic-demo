@@ -96,14 +96,34 @@ ownership contract now rejects either retired selector from production CSS.
 The `.search-loading` overflow finding above is resolved by the compact peek
 viewport rule and the hidden-action flow fix.
 
-**Visual-state audit follow-up (2026-08-06):** `tests/visual-state-audit.mjs`
+**Visual-state audit follow-up (2026-08-07):** `tests/visual-state-audit.mjs`
 now distinguishes a rendered compass, an intentionally hidden short-landscape
 compass, and a missing compass. The old zero-sized `display:none` rectangle
-could pass `withinViewport()` and mask the absence. The four branch outcomes
-were logic-tested by the worker; the full audit remains blocked by the
-pre-existing Node 24/Svelte-rune runtime mismatch (`$state` / TypeScript
-parameter-property loading), documented in
-`tmp/visual-state-compass-audit-20260806.md`.
+could pass `withinViewport()` and mask the absence. The runner's browser-side
+search action now uses `window.__APP_ACTIONS__.search` instead of importing
+Svelte-rune state into Node 24, so the audit is executable again.
+
+The focused `23-mobile-short-landscape` audit now passes in the main lane with
+39 assertions and 0 failures. It verifies no overflow, no unexpected surface
+overlap, hidden weather/utility chrome, a hidden compass, and scene luminance
+p95=227 (ceiling 230). The weather widget overlap was fixed by extending the
+existing short-landscape focus-surface suppression rule. The focus anchor's
+additive halo/ring was also tuned (`OPACITY_CEIL` 0.95→0.48; ring opacity
+0.78→0.52) after the audit measured p95=243; the tuned result is below the
+ceiling without changing test thresholds.
+
+The separate `qa:focus-readability` contract now starts after two runner fixes:
+its Svelte imports were replaced with the browser action bridge, and
+`__PLAYWRIGHT__` is installed before navigation so the engine can initialize.
+The active-pocket camera conflict was then fixed without weakening the contract:
+the hard-coded `0.62` pocket distance became a `Math.max(distance, 1.02)` floor,
+preserving explicit caller distances. The strict contract advanced past the
+camera guard and now reports the next real finding: the non-dive focus halo
+reaches scale `0.1269` while the existing cap is `0.096`; that visual constant
+is the current narrow follow-up. Remaining audit warnings are font decode
+warnings, aborted local API requests, and Chromium `ReadPixels` stalls during
+WebGL settle; they did not produce assertion failures in the focused
+short-landscape run.
 
 ## CI wiring (deferred, recipe for when baseline is green)
 

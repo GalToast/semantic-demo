@@ -36,9 +36,7 @@ function mount(): HTMLInputElement {
 }
 
 function pressKeydown(key: string, init: KeyboardEventInit = {}): boolean {
-    return window.dispatchEvent(
-        new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init })
-    )
+    return window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }))
 }
 
 describe('P1 quick-jump search shortcut — behavioral', () => {
@@ -70,7 +68,7 @@ describe('P1 quick-jump search shortcut — behavioral', () => {
                 anchorIndex: null,
                 topIndex: null,
                 resultIndices: [],
-                summaryType: 'text',
+                summaryType: 'text'
             }
         } else {
             appState.searchState.currentSearchSummary.query = 'seed'

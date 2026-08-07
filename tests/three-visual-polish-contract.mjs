@@ -147,7 +147,7 @@ assert(
 )
 assert(
     interactionVisuals.includes('const auraTargetOpacity = hasFocus ? (isInside ? 0.065 : 0.135) : 0.0') &&
-        interactionVisuals.includes('const auraScale = isInside ? 0.06 : 0.12'),
+        interactionVisuals.includes('const auraScale = isInside ? 0.06 : 0.085'),
     'focus halo should be large enough to emphasize the selected node without washing out the scene'
 )
 
