@@ -5182,9 +5182,10 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         )
     })
 
-    test.fixme('F5.2: SemanticGuideCard synthesize -> summary card -> suggestion chip drives focus', async ({
+    test('F5.2: SemanticGuideCard synthesize -> summary card -> suggestion chip drives focus', async ({
         page
     }) => {
+        test.setTimeout(300000)
         // SemanticGuideCard.svelte: #btn-synthesize onclick -> requestSemanticGuide()
         // (semantic-guide.ts). startSemanticGuideRequest() shows #semantic-summary-card
         // (class:hidden toggles off !isVisible) synchronously, then a fetch completes
