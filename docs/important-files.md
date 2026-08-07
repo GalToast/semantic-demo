@@ -47,7 +47,7 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 - `src/lib/state/state-types.ts`
 - `src/lib/data-store.ts`
 - `src/lib/data-loader.ts`
-- `src/lib/engine/semantic-threads.ts`
+- `src/lib/engine/semantic-threads.ts` — semantic-thread artifact loading; worker resets re-sync the caller request-id sequence with each fresh worker generation so valid responses are not ignored until timeout.
 - `src/lib/search-engine.ts`
 
 ## Search

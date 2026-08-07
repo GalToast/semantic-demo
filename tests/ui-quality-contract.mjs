@@ -415,8 +415,36 @@ async function auditState(page, name) {
                     Number(style.opacity || 1) > 0.05 &&
                     rect.width > 0 &&
                     rect.height > 0 &&
-                    inViewport
+                    inViewport &&
+                    !hasHiddenAncestor(el)
                 )
+            }
+
+            function hasHiddenAncestor(el) {
+                for (let ancestor = el.parentElement; ancestor; ancestor = ancestor.parentElement) {
+                    const style = getComputedStyle(ancestor)
+                    const rect = ancestor.getBoundingClientRect()
+                    const clippedByUtility =
+                        style.position === 'absolute' &&
+                        style.overflow !== 'visible' &&
+                        rect.width <= 1 &&
+                        rect.height <= 1
+                    const clippedByCss =
+                        (style.clip && style.clip !== 'auto' && style.clip !== 'none') ||
+                        (style.clipPath && style.clipPath !== 'none')
+                    if (
+                        ancestor.hidden ||
+                        style.display === 'none' ||
+                        style.visibility === 'hidden' ||
+                        Number(style.opacity || 1) <= 0.05 ||
+                        ancestor.matches('.focus-pocket-a11y:not(.visible), [aria-hidden="true"]') ||
+                        clippedByUtility ||
+                        clippedByCss
+                    ) {
+                        return true
+                    }
+                }
+                return false
             }
 
             // Fully laid-out map summary cards must be completely visible; transient
@@ -625,6 +653,10 @@ async function auditState(page, name) {
                     const style = getComputedStyle(el)
                     const label =
                         el.id || el.className || el.getAttribute('aria-label') || el.textContent?.trim() || el.tagName
+                    // Skip sr-only / clipped elements (e.g., focus-pocket-a11y list buttons when not visible)
+                    if (style.clip === 'rect(0, 0, 0, 0)' || style.clipPath === 'inset(50%)' || style.position === 'absolute' && rect.width === 1 && rect.height === 1) {
+                        continue
+                    }
                     if (
                         style.pointerEvents !== 'none' &&
                         (rect.width < TOUCH_TARGET_MIN_WITH_TOLERANCE || rect.height < TOUCH_TARGET_MIN_WITH_TOLERANCE)
@@ -816,36 +848,35 @@ async function auditState(page, name) {
                 }
 
                 if (['focus', 'focus-search', 'semantic-dive'].includes(panelSurface)) {
-                    const selectedCard =
-                        document.querySelector('#focus-stage #selected-card') ||
-                        document.querySelector('#selected-card')
-                    const selectedDetails =
-                        document.querySelector('#focus-stage #selected-details') ||
-                        document.querySelector('#selected-details')
-                    if (selectedCard?.dataset.contentOwner !== 'focus-stage') {
+                    const canonicalSelectedCard = document.querySelector('#focus-card-selected')
+                    const legacySelectedCard = document.querySelector('#selected-card')
+                    const legacySelectedDetails = document.querySelector('#selected-details')
+                    const canonicalVisible = visible(canonicalSelectedCard)
+                    if (!canonicalVisible || canonicalSelectedCard?.dataset.contentOwner !== 'focus-stage') {
                         failures.push({
                             check: 'composition:focus-selected-content-owner',
+                            selector: '#focus-card-selected',
+                            state: name,
+                            owner: canonicalSelectedCard?.dataset.contentOwner || '',
+                            variant: canonicalSelectedCard?.dataset.contentVariant || '',
+                            visible: canonicalVisible
+                        })
+                    }
+                    if (legacySelectedCard && visible(legacySelectedCard)) {
+                        failures.push({
+                            check: 'composition:focus-selected-card-duplicate-owner',
                             selector: '#selected-card',
                             state: name,
-                            owner: selectedCard?.dataset.contentOwner || '',
-                            variant: selectedCard?.dataset.contentVariant || ''
+                            owner: legacySelectedCard.dataset.contentOwner || '',
+                            variant: legacySelectedCard.dataset.contentVariant || ''
                         })
                     }
-                    if (selectedCard && selectedCard.getAttribute('aria-hidden') !== 'true') {
+                    if (legacySelectedDetails && visible(legacySelectedDetails)) {
                         failures.push({
-                            check: 'composition:focus-selected-card-aria-hidden',
-                            selector: '#selected-card',
-                            state: name
-                        })
-                    }
-                    if (selectedDetails && selectedDetails.getAttribute('aria-hidden') !== 'true') {
-                        failures.push({
-                            check: 'composition:focus-selected-details-aria-hidden',
+                            check: 'composition:focus-selected-details-duplicate-owner',
                             selector: '#selected-details',
                             state: name,
-                            hidden: selectedDetails.hidden,
-                            ariaHidden: selectedDetails.getAttribute('aria-hidden'),
-                            rect: rectFor('#focus-stage #selected-details') || rectFor('#selected-details')
+                            rect: rectFor('#selected-details')
                         })
                     }
                 }

@@ -24,8 +24,7 @@
 
 import { test, expect } from '@playwright/test'
 import { switchView, resetExplorationFocus, setSemanticDiveMode } from '@lib/orchestration/lifecycle'
-import { clearSearch } from '@lib/stores/navigation.svelte'
-import { search } from '@lib/search/state'
+import { clearSearch, search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 

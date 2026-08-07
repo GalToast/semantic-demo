@@ -64,36 +64,53 @@ First concrete catch. Symptom from sweep invariants (a–e): at 390×844 (and
 768×1024), `documentElement.scrollHeight` = 892 > 844 while the root
 `overflow:hidden` — content clipped below the fold. Desktop ≥1280 clean.
 
-**Measured root cause (3 probes, 2026-08-06):**
+**Measured root causes (2026-08-06):**
 
-- `html` grows to 892 (48px) — downstream symptom; `body` stays 844.
-- Actual offender: in `info-panel-contained` mode, `.search-loading`
-  (153px, static) sits at top 772 → bottom 925 inside the fixed
-  `aside.info-panel` (top 626 → bottom 844, `overflow:hidden`), and its inner
-  `.search-loading-text` at 860-876 — **past the panel's 844 bottom**. Fixed
-  panel clips it (~81px lost below the fold on mobile).
-- NOT (as first suspected) the `max-height: min(52vh, 420px)` wrapper cap —
-  the mobile media query already caps at `min(40vh, 320px)`.
+- The first probe found a real contained-surface defect: `.search-loading`
+  (153px, static) sat at top 772 → bottom 925 inside the fixed
+  `aside.info-panel` (top 626 → bottom 844, `overflow:hidden`). Its
+  `.search-loading-text` reached y=876, outside the compact panel. The
+  `peek` rule now clamps `#search-results.active .search-loading` to the
+  result viewport with `box-sizing:border-box`, zero margins, and compact
+  padding.
+- That clamp exposed the separate root-page offender: `#btn-focus-dive`
+  carried the `hidden` attribute but an author rule for `.focus-stage-dive-btn`
+  still won with `display:flex`. It remained a static 48px child at y=844,
+  expanding `#app` and `html` to 892 (and to 1072 at 768×1024).
+- The component's hidden-state rule now uses `display:none !important` for
+  both the dive and county sibling buttons, so hidden mounted actions cannot
+  enter document flow.
 
-**Fix seam (mobile/info-panel CSS, owned by the visual lane):**
-`search-container.info-panel-contained` → `.search-loading` must be clamped to
-the panel's client box (e.g. `max-height: 100%`-ish inside the panel
-scroll/max-height context) or the loading surface must live in a scrolling
-child. Any of: allow panel content scroll, `overflow-y: auto` on the
-contained search container, or position the loading box within the panel's
-flow rather than oversized.
+**Current status:** fixed and verified in the main lane. The four focused
+search/error cells at 390×844 and 768×1024 pass, as do the 10 short-landscape
+and 896×414 audit checks. The separate short-landscape `is-active` CSS gap is
+also closed; the CSS ownership contract rejects either retired selector from
+production CSS.
 
-**Current status: with the visual lane (switchboard messages 74 + 76).**
-Not fixed by main lane — mobile CSS + SearchResults.svelte are the lane's
-seam; posted measurement + repro, awaiting their merge of the current WIP.
+**Selector-migration follow-up (2026-08-06):** the separate short-landscape
+`is-active` CSS gap is closed. The three utility-chrome rules now use the
+canonical `surface-focus`, `surface-focus-search`, and `surface-semantic-dive`
+classes; field-node compass rules no longer depend on the retired body class;
+and the focused short-landscape helpers no longer inject `is-active`. The CSS
+ownership contract now rejects either retired selector from production CSS.
+The `.search-loading` overflow finding above is resolved by the compact peek
+viewport rule and the hidden-action flow fix.
+
+**Visual-state audit follow-up (2026-08-06):** `tests/visual-state-audit.mjs`
+now distinguishes a rendered compass, an intentionally hidden short-landscape
+compass, and a missing compass. The old zero-sized `display:none` rectangle
+could pass `withinViewport()` and mask the absence. The four branch outcomes
+were logic-tested by the worker; the full audit remains blocked by the
+pre-existing Node 24/Svelte-rune runtime mismatch (`$state` / TypeScript
+parameter-property loading), documented in
+`tmp/visual-state-compass-audit-20260806.md`.
 
 ## CI wiring (deferred, recipe for when baseline is green)
 
 Current `.github/workflows/ci.yml`: unit + build:svelte + lint-nav-mirror only.
-The wave-g harnesses + visual/journey suites are NOT gated. **Do not wire
-while the sweep baseline is red** (it currently fails the 6 mobile cells from
-the finding above — a red gate is noise). Once the info-panel loading fix
-lands:
+The wave-g harnesses + visual/journey suites are NOT gated. The focused mobile
+cells are green now, but the full 24-cell sweep has not been rerun; keep CI
+wiring deferred until that broader baseline is intentionally packaged:
 
 ```yaml
 # suggested additions (cheap-first)
@@ -161,7 +178,7 @@ FORCE_BREAK_PROBE=1 npx playwright test tests/adversarial-state-fuzz.spec.js --g
    3-4s → ~0.4s verified).
 
 **Lesson (repeated):** "dead" UI feedback = producer chain missing a LINK, and
-the consumer/validator existence is the evidence it was *intended live*.
+the consumer/validator existence is the evidence it was _intended live_.
 Walk declaration → write → read → style-consumer BEFORE concluding dead vs
 incomplete. Second: headless mounts are NOT a stable DOM oracle — verify
 visibility claims with the REAL test harness (`window.__PLAYWRIGHT__`

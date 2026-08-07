@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { SNAPSHOT_FIELDS, snapshot, stateField } from '../helpers/state-harness.js';
-import { clearSearch } from '@lib/stores/navigation.svelte'
+import { clearSearch } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 

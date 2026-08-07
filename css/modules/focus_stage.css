@@ -636,6 +636,16 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-nex
 /* ── 5. Responsive Overrides ─────────────────────────────────────────────── */
 
 @media (min-width: 769px) {
+    /* The desktop focus cockpit is owned by FocusCard/JourneyChrome. The
+       legacy JourneyCompass sibling still renders #btn-focus-dive after the
+       main app shell; without an explicit desktop gate it remains in normal
+       document flow below the viewport and creates a phantom page scroll. */
+    body:is(.surface-focus, .surface-focus-search) #btn-focus-dive.focus-stage-dive-btn {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     body.surface-focus .focus-stage,
     body.surface-focus-search .focus-stage,
     body.surface-semantic-dive .focus-stage {
@@ -1183,6 +1193,23 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-nex
         position: relative;
         z-index: var(--z-compass);
         pointer-events: auto;
+    }
+}
+
+/* The desktop JourneyChrome rail is anchored from the bottom of the focus
+   stage. When its neighbor list is left outside the 58px journey track, the
+   list paints past the viewport instead of moving the anchored cockpit up.
+   Let the track participate in layout on full desktop widths; the cap keeps
+   unusually large neighborhoods keyboard- and scroll-accessible. */
+@media (min-width: 901px) {
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
+        #focus-stage
+        .focus-stage-journey.active:has(.focus-stage-neighbors.active) {
+        height: auto;
+        max-height: min(600px, calc(100dvh - 160px));
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
     }
 }
 

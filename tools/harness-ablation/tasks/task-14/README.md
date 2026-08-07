@@ -6,6 +6,7 @@ negative and beyond-range) maps into `[0, n)` — the circular-index semantics.
 **Repro:** `node test/test.js` (expect FAIL — the naive `i % n` keeps negatives).
 
 **Expected (pinned only by test asserts):**
+
 - `wrap(0, 5)` → `0`
 - `wrap(3, 5)` → `3`
 - `wrap(7, 5)` → `2` (maps mod-5)

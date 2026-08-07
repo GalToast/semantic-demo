@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-04",
+  "updated_at": "2026-08-06",
   "purpose": "Machine-readable benchmark evidence for external-subagents model selection. Route health remains live and is never inferred from this file.",
   "sources": [
     {
@@ -168,7 +168,8 @@
       "routes": [
         {"launch_ref": "logfare/kimi-k3", "provider": "logfare", "last_catalog_seen": "2026-08-04"},
         {"launch_ref": "novita/moonshotai/kimi-k3", "provider": "novita", "last_catalog_seen": "2026-08-04"},
-        {"launch_ref": "zenmux/moonshotai/kimi-k3", "provider": "zenmux", "last_catalog_seen": "2026-08-04"}
+        {"launch_ref": "zenmux/moonshotai/kimi-k3", "provider": "zenmux", "last_catalog_seen": "2026-08-04"},
+        {"launch_ref": "tokenrouter/moonshotai/kimi-k3-free", "provider": "tokenrouter", "last_catalog_seen": "2026-08-06", "probe_status": "connection_error_zero_tokens_2026-08-06"}
       ]
     },
     {

@@ -139,6 +139,17 @@ const mobilePremiumLegacyStatePatternExceptions = new Map([['mobile_premium__com
 
 const globalLegacyPanelStatePatterns = ['data-graph-context', 'data-map-context', 'data-semantic-dive="active"']
 
+const forbiddenActivitySelectors = [
+    {
+        pattern: /body\.is-active\b/,
+        label: 'body.is-active'
+    },
+    {
+        pattern: /body:not\(\.is-active\)/,
+        label: 'body:not(.is-active)'
+    }
+]
+
 const bannedSelectorImportantRules = [
     {
         file: 'search.css',
@@ -310,6 +321,12 @@ for (const file of cssFiles) {
     for (const pattern of globalLegacyPanelStatePatterns) {
         if (uncommentedContent.includes(pattern)) {
             violations.push(`${file} uses legacy panel state ${pattern}; panel ownership must use data-panel-surface.`)
+        }
+    }
+
+    for (const rule of forbiddenActivitySelectors) {
+        if (rule.pattern.test(uncommentedContent)) {
+            violations.push(`${file} uses retired activity selector ${rule.label}; use canonical surface classes.`)
         }
     }
 

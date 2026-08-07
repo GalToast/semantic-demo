@@ -13,6 +13,7 @@ project's specific semantics, all pinned ONLY by test asserts:
 first nested-object assert).
 
 **Expected examples (uncover all from failing messages):**
+
 - `deepMerge({a:1}, {b:2})` → `{a:1, b:2}`
 - `deepMerge({a:1}, {a:2})` → `{a:2}`
 - `deepMerge({tags:['x']}, {tags:['y']})` → `{tags:['x','y']}` (concat — the

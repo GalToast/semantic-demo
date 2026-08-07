@@ -6,7 +6,6 @@ import { inflateSync } from 'node:zlib'
 import { chromium } from 'playwright'
 import { VISUAL_STATE_ID_SET } from './visual-state-registry.mjs'
 // Note: page-side helpers are read from window.__APP_ACTIONS__ inside page.evaluate callbacks
-import { search } from '@lib/search/state'
 
 // Local vector-explorer-polished.html is preserved as a legacy rollback shell.
 // Deploy publishes dist/svelte/index.html to vector-explorer-polished.html, so
@@ -1653,7 +1652,7 @@ async function runVisibleSearch(page, query) {
         }, query)
     }
     await page.evaluate(async (nextQuery) => {
-        const search = search
+        const search = window.__APP_ACTIONS__?.search
         if (typeof search === 'function') {
             try {
                 await search(nextQuery, { preferCachedResults: false })
@@ -5791,15 +5790,28 @@ async function run() {
                 `expected focus/focus-search, got "${slState.bodyDataset?.panelSurface || 'missing'}"`
             )
         }
-        // Journey compass must be within short landscape viewport
+        // Journey compass: short-landscape focus/focus-search hides the compass per
+        // mobile_premium__layout.css short-landscape block; other surfaces keep it visible.
         const compass = box(slState, '.journey-compass')
-        if (compass && withinViewport(compass, slViewport)) {
+        if (isRendered(compass) && withinViewport(compass, slViewport)) {
             pass('23-mobile-short-landscape', 'short-landscape:compass-within-viewport')
-        } else if (compass) {
+        } else if (isRendered(compass)) {
             fail(
                 '23-mobile-short-landscape',
                 'short-landscape:compass-within-viewport',
                 `.journey-compass extends outside ${slViewport.width}x${slViewport.height} viewport`
+            )
+        } else if (compass) {
+            pass(
+                '23-mobile-short-landscape',
+                'short-landscape:compass-hidden',
+                'compass hidden per CSS in focus/focus-search short-landscape'
+            )
+        } else {
+            fail(
+                '23-mobile-short-landscape',
+                'short-landscape:compass-missing',
+                '.journey-compass not found in DOM'
             )
         }
         const focusStage = box(slState, '#focus-stage')

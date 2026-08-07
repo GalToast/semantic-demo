@@ -51,6 +51,10 @@ Fix: a skills-only extension (`~/.pi/agent/local-packages/pi-worker-skills/index
 
 Hygiene rule: after any change to worker extension wiring or the skill library, verify by probing a live worker's own `<skill list` (spawn a probe worker asking it to list its injected skills); do not assume.
 
+**A/B preflight gate (2026-08-05, from skill-efficacy A/B #2/#3):** before any skill-efficacy measurement, confirm the treatment worker demonstrably has the target skill in its injected context. Two cheap confirmations, either suffices: (a) post-run grep the treatment worker's stdout for the skill's description string (workers apply skills from the injected name+description without reading the body file — that's normal Pi design), or (b) spawn a one-shot probe worker that enumerates its own `<available_skills>` and asserts the skill name. A run recorded without this confirmation is INVALID — A/B #2 was invalidated this way (neither group had the skill; the apparent "signal" was prompt-priming from the treatment text). Workers launched with the deterministic `pi-worker-skills` extension in args satisfy this trivially; spot-check one log after the run.
+
+**Main-session resume snapshot:** a resumed main Pi session restores its session-start `<available_skills>` block; skills authored mid-session are invisible to that resumed session until a fresh boot. Workers (always fresh spawns) and fresh main sessions see the full current library. Do not confuse a stale resumed-snapshot (~50 skills) with a loader failure — all skill dirs load clean via `npm run check:skills` (92 skills, exit 0) and a fresh-boot one-shot sees 98. The resumed-session gap is cosmetic (on-demand skill reads still work via the file path); start a new conversation when you need the main lane to carry the full library natively.
+
 ## Parallel Divide-and-Conquer (set 2026-06-26, persistent)
 
 Subagents aren't only for implementation — they're for ANY cognitive work: research, investigation, planning, design, review, implementation, polish. Use them as 2nd/3rd/4th/... parallel "me" to divide and conquer.

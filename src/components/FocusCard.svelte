@@ -339,6 +339,7 @@
     class:selected-card-empty={isEmpty}
     role="region"
     aria-label="Selected business"
+    data-content-owner="focus-stage"
   >
     {#if !isEmpty}
       <div class="focus-card-grip">

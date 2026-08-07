@@ -870,6 +870,24 @@
         pointer-events: none;
     }
 
+    /* ─── SHORT-LANDSCAPE FOCUS CARD GEOMETRY (667x375 etc.) ───────────
+       Establish non-overlapping layout: FocusCard bottom-sheet capped so
+       JourneyChrome (journey rail ~y214) and compass stay visible.
+       FocusCard max-height leaves ≥190px canvas breathing room per test. */
+    #focus-card-selected.focus-card.surface-focus,
+    #focus-card-selected.focus-card.surface-focus-search,
+    #focus-card-selected.focus-card.surface-semantic-dive {
+        max-height: 170px;
+        overflow-y: auto;
+    }
+
+    /* JourneyChrome (journey rail) stays at its natural position.
+       Ensure it's not pushed off-screen by the focus card. */
+    #journey-chrome.journey-chrome {
+        max-height: calc(100vh - 190px);
+        overflow-y: auto;
+    }
+
     body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
@@ -964,26 +982,24 @@
     }
 
     /* ─── INFO-PANEL VISIBILITY (Short Landscape 844x390) ─────────────
-       Multiple CSS sources hide the info-panel for focus/focus-search/
-       semantic-dive at ≤900×420/480 landscape:
-       - mobile_premium__components.css: display:none (≤900×420)
-       - strands.css: opacity:0, visibility:hidden (≤900×480) — lower specificity
-       This override restores the panel so controls like Step Inside and
-       selected cards are usable. mobile_premium__layout.css loads AFTER
-       mobile_premium__components.css in the cascade (link order 19 vs 18),
-       so equal specificity (0,3,1) wins naturally. strands.css has lower
-       specificity (0,2,1) and loses.
-       No !important needed. Scope: only focus/focus-search/semantic-dive
-       inside this mobile landscape media query. */
-    body.surface-focus .info-panel,
-    body.surface-focus-search .info-panel,
-    body.surface-semantic-dive .info-panel {
-        display: block;
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-        transform: none;
-    }
+       The legacy .info-panel is intentionally NOT restored for focus/focus-search/
+       semantic-dive at short landscape. The canonical owners are:
+       - surface-focus: FocusCard (bottom-sheet) + JourneyChrome (journey rail)
+       - surface-focus-search: FocusCard + JourneyChrome + compact search
+       - surface-semantic-dive: FocusCard (bottom-sheet) + JourneyChrome + inside controls
+       Restoring the full-width .info-panel creates duplicate-owner overlap
+       (see semantic-ui-root-fix-wave-20260805 Issue 1).
+       mobile_premium__components.css and strands.css hides remain effective.
+       No override here. */
+    /* body.surface-focus .info-panel,
+       body.surface-focus-search .info-panel,
+       body.surface-semantic-dive .info-panel {
+           display: block;
+           opacity: 1;
+           visibility: visible;
+           pointer-events: auto;
+           transform: none;
+       } */
 
     /* V9-LD1: chip rail geometry fix for 900-landscape (896×414).
        The desktop .journey-compass left-algorithm (calc(360px + (100vw - 360px)/2))
@@ -1258,5 +1274,77 @@
     .journey-compass-action.primary[data-journey-action='next-stop']::after {
         animation: none;
         opacity: 0;
+    }
+}
+
+/* ─── ACTIVE FOCUS OWNERSHIP GEOMETRY ───────────────────────────────────
+   The selected-business FocusCard is the canonical mobile owner. Keep the
+   separately mounted journey rail above its bottom sheet instead of letting
+   the two fixed layers share a vertical band. The compact landscape rule is
+   deliberately height-derived so it also works below 375px tall. */
+@media (max-width: 768px) and (max-height: 540px) and (orientation: landscape) {
+    body:not(.surface-idle):not(.surface-map-any) #journey-chrome.journey-chrome {
+        top: calc(100dvh - 222px);
+        bottom: auto;
+        left: 50%;
+        right: auto;
+        width: min(95vw, 360px);
+        min-width: 0;
+        max-width: calc(100vw - 24px);
+        height: 44px;
+        min-height: 44px;
+        max-height: 44px;
+        overflow: hidden;
+        transform: translateX(-50%);
+    }
+
+    body:not(.surface-idle):not(.surface-map-any) #journey-chrome .journey-header {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    body:not(.surface-idle):not(.surface-map-any) #journey-chrome .trail-controls {
+        height: 44px;
+        min-height: 44px;
+        max-height: 44px;
+        padding: 0 4px;
+        gap: 4px;
+        flex-wrap: nowrap;
+        overflow: hidden;
+    }
+
+    body:not(.surface-idle):not(.surface-map-any) #journey-chrome .trail-context-wrapper {
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    body:not(.surface-idle):not(.surface-map-any) #journey-chrome .focus-stage-neighbors,
+    body:not(.surface-idle):not(.surface-map-any) #journey-chrome .journey-empty-state {
+        max-height: 44px;
+        overflow: hidden;
+    }
+}
+
+/* On tall phones the existing compact rail is only a few pixels into the
+   FocusCard's top edge. Lift it by a small, explicit gap without changing
+   the card's scrollable height or its safe-area anchoring. */
+@media (max-width: 768px) and (min-height: 541px) and (orientation: portrait) {
+    body:not(.surface-idle):not(.surface-map-any) #journey-chrome.journey-chrome {
+        transform: translate(-50%, -8px);
+    }
+}
+
+/* Wide short-landscape uses the desktop-sized FocusCard on the right. Move
+   the journey rail into the left canvas column so its last few pixels cannot
+   collide with the card at the center boundary. */
+@media (min-width: 769px) and (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
+    body:not(.surface-idle):not(.surface-map-any) #journey-chrome.journey-chrome {
+        left: 12px;
+        right: auto;
+        width: min(360px, calc(100vw - 320px));
+        min-width: 0;
+        max-width: calc(100vw - 320px);
+        transform: none;
     }
 }

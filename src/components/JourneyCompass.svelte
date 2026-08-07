@@ -501,12 +501,12 @@
     gap: 8px;
   }
   :global(.focus-stage-dive-btn[hidden]) {
-    display: none;
+    display: none !important;
     visibility: hidden;
     pointer-events: none;
   }
   :global(.map-county-reset-btn[hidden]) {
-    display: none;
+    display: none !important;
     visibility: hidden;
     pointer-events: none;
   }

@@ -420,8 +420,7 @@ body.surface-map .app-title {
 }
 
 @media (min-width: 769px) {
-    body:not(.surface-idle) .journey-compass-actions,
-    body:not(.is-active) .journey-compass-actions {
+    body:not(.surface-idle) .journey-compass-actions {
         display: none;
     }
 }

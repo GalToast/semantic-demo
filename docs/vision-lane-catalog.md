@@ -305,6 +305,7 @@ Self-audit found 3 discrepancies from the "69" claim; closed them:
   Full truthful set above; no over-claim beyond this.
 
 ## FINAL CORRECTION (2026-08-05 14:2x) — 68 REAL verified
+
 chatjimmy/llama3.1-8B: SUPERSEDED — second-method shows TEXT_ONLY (zydit model: "I need a card to look at... can you please provide the text strings"; novita 404, neuralwatt 402, modelscope 400). Its earlier PIXELS_OK was a zydit-parsing artifact. DROPPED.
 All 14 previously-batch-confident mistral ids individually re-verified (content: "Angel Fire Coffee" + Coffee shop/CLEVELAND/FOOD & HOSPITALITY/ACTIVE"). No remaining family-confidence-only entries.
 REGISTER FINAL: **68 unique PIXELS_OK models** (all individually second-method or content-proven; chatjimmy corrected to TEXT_ONLY). Session arc: 12 -> 27 -> 33 -> 36 -> 68 (peak 71 incl. chatjimmy) -> 68 true.

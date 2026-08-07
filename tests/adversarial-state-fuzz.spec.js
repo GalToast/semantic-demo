@@ -126,31 +126,33 @@ async function runFuzz(page, seed, steps, opts) {
         }
         // Polling wait: a slow reload boot can take >120ms; wait up to ~2.5s for
         // the app surface to appear so we test real app states, not timing races.
-        await page.waitForFunction(
-            () => {
-                const pick = (sel) => {
-                    const el = document.querySelector(sel)
-                    if (!el) return false
-                    const r = el.getBoundingClientRect()
-                    const cs = getComputedStyle(el)
+        await page
+            .waitForFunction(
+                () => {
+                    const pick = (sel) => {
+                        const el = document.querySelector(sel)
+                        if (!el) return false
+                        const r = el.getBoundingClientRect()
+                        const cs = getComputedStyle(el)
+                        return (
+                            r.width > 0 &&
+                            r.height > 0 &&
+                            cs.visibility !== 'hidden' &&
+                            cs.display !== 'none' &&
+                            parseFloat(cs.opacity || '1') > 0.05
+                        )
+                    }
                     return (
-                        r.width > 0 &&
-                        r.height > 0 &&
-                        cs.visibility !== 'hidden' &&
-                        cs.display !== 'none' &&
-                        parseFloat(cs.opacity || '1') > 0.05
+                        pick('canvas') ||
+                        pick('[data-surface="placeholder"]') ||
+                        pick('#info-panel') ||
+                        pick('#search-result-list') ||
+                        pick('[role="dialog"]')
                     )
-                }
-                return (
-                    pick('canvas') ||
-                    pick('[data-surface="placeholder"]') ||
-                    pick('#info-panel') ||
-                    pick('#search-result-list') ||
-                    pick('[role="dialog"]')
-                )
-            },
-            { timeout: 2500 }
-        ).catch(() => {})
+                },
+                { timeout: 2500 }
+            )
+            .catch(() => {})
         await assertInvariants(page, errors, `seq[${i}]=${name}`)
     }
     return seq

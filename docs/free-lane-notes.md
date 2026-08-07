@@ -192,7 +192,8 @@
   for the real gate completeness.
 
 ## Lane-parking clear (2026-08-06) — both closed + verified
-- #10 W3 empty-band: worker landed ffbbda29 (1-line: height:min(42dvh,320px)→height:auto in mobile_premium__state.css). Verified independently on fresh dist: deadBand 206px→100px, panel 320→214px (min-height floor), compact idle. Worker aborted AFTER commit (exit-0-no-progress then edit+commit landed); steer to skip-repro was correct call.
+
+- #10 W3 empty-band: worker landed ffbbda29 (1-line: height:min(42dvh,320px)→height:auto in mobile_premium\_\_state.css). Verified independently on fresh dist: deadBand 206px→100px, panel 320→214px (min-height floor), compact idle. Worker aborted AFTER commit (exit-0-no-progress then edit+commit landed); steer to skip-repro was correct call.
 - #11 orphaned Playwright dist-freshness: worker landed 84fd2d7c (4 scoped paths, contract PASS).
 - Lane was offline (0 switchboard agents, no .session-lock) → claimed via session-lock acquire/release; posted trail comments to task 4.
 - Worker lesson (4-total today): deepseek-v4-flash free rat-holes building page probes (~8MB stdout) instead of making 1-line edits. Steer to "skip repro, main lane verifies" is the right nudding; or main-lane take 1-line fixes directly (2-min job).

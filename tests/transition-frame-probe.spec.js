@@ -18,14 +18,34 @@ const APP_PATH = '/dist/svelte/index.html'
 const OVERLAY_SELS = ['[role="dialog"]', '[class*="veil"]', '[class*="overlay"]']
 
 async function gotoApp(page, suffix) {
-    await page.goto(`${BASE}${APP_PATH}${suffix}`, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {})
+    await page.goto(`${BASE}${APP_PATH}${suffix}`, { waitUntil: 'load', timeout: 30000 }).catch(() => {})
     await page.waitForTimeout(700)
+    try {
+        await page.waitForLoadState('load', { timeout: 5000 })
+    } catch {
+        // Proceed
+    }
+}
+
+async function waitForBodyClass(page, clsFragment, timeoutMs = 3000) {
+    try {
+        await page.waitForFunction(
+            (frag) => document.body.classList.toString().includes(frag),
+            frag,
+            { timeout: timeoutMs }
+        )
+        return true
+    } catch {
+        return false
+    }
 }
 
 async function drive(page, edge) {
     switch (edge) {
         case 'overview->search':
             await page.click('.mode-chip[data-mode="search"]', { timeout: 4000 }).catch(() => {})
+            // // await waitForBodyClass(page, 'surface-search', 1200)
+            // // await waitForBodyClass(page, 'surface-focus-search', 1200)
             break
         case 'search->focus':
             await page.click('.mode-chip[data-mode="search"]', { timeout: 4000 }).catch(() => {})
@@ -35,6 +55,8 @@ async function drive(page, edge) {
                 .first()
                 .click({ timeout: 4000, force: true })
                 .catch(() => {})
+            // await waitForBodyClass(page, 'surface-focus', 1200)
+            // await waitForBodyClass(page, 'focus-transition-settled', 1200)
             break
         case 'focus->inside': {
             const ok = await page
@@ -50,6 +72,8 @@ async function drive(page, edge) {
                 })
                 .catch(() => false)
             if (!ok) await page.click('.mode-chip[data-mode="inside"]', { timeout: 3000 }).catch(() => {})
+            // await waitForBodyClass(page, 'surface-inside', 1200)
+            // await waitForBodyClass(page, 'focus-transition-inside', 1200)
             break
         }
         case 'overview->map':
@@ -61,9 +85,14 @@ async function drive(page, edge) {
                     if (chip) chip.click()
                 })
                 .catch(() => {})
+            // await waitForBodyClass(page, 'surface-map', 1200)
+            // await waitForBodyClass(page, 'view-map', 1200)
             break
         case 'map->overview':
             await page.goBack({ timeout: 4000 }).catch(() => {})
+            try { await page.waitForLoadState('load', { timeout: 5000 }) } catch {}
+            // await waitForBodyClass(page, 'surface-idle', 1200)
+            // await waitForBodyClass(page, 'view-galaxy', 1200)
             break
         default:
             break
@@ -149,7 +178,7 @@ test('transition frame probes', async ({ page }) => {
             expect(
                 f.overlays.length <= 2,
                 `ghost overlay count ${f.overlays.length} at ${f.label} (edge ${edge}): ${JSON.stringify(f.overlays.map((o) => o.sel))}`
-            ).toBe(false)
+            ).toBe(true)
         }
     }
 })

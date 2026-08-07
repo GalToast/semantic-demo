@@ -1665,12 +1665,13 @@ Three concrete gaps:
 
 **Design**: same open-ended module-summary task (`tmp/eval-open-task*.md`), 3× treatment ("apply concise-agent-communication skill's rules") vs 3× control, single lane (zenmux step-3.7-flash), rubric `tmp/eval-open-rubric.md` (6 binary criteria). Treatment workers had the skill's name+description in their injected list (5 description mentions in logs; bodies not read — normal Pi design). Rows: `fx-t*`/`fx-c*` in `tmp/eval-harness-log.jsonl`.
 
-| group | median words | avg score /6 | cost |
-|---|---|---|---|
-| skill=on (injected) | 121 | 4.3 | $0.0054 |
-| skill=off | 104 | 4.7 | $0.0056 |
+| group               | median words | avg score /6 | cost    |
+| ------------------- | ------------ | ------------ | ------- |
+| skill=on (injected) | 121          | 4.3          | $0.0054 |
+| skill=off           | 104          | 4.7          | $0.0056 |
 
 **Reading** (n=3 each — directional, not conclusive):
+
 1. With the skill genuinely injected, the concision edge from A/B #2 **disappears** (control 104w vs treatment 121w median). No measurable marginal benefit of `concise-agent-communication` on this task.
 2. The A/B #2 "signal" was an artifact of the broken harness state (neither group had the skill; the treatment text alone primed slightly).
 3. **Curation implication**: this skill is a prune/disable candidate on this task class — the model is already concise by default, the rules add noise. Re-test on an over-verbose task (e.g. "explain X in detail") before final judgment.

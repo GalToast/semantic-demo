@@ -61,3 +61,12 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
   pointing you at `npm run qa:journey:fresh`. Useful in CI or when chasing stale-dist regressions
   (e.g. the 5o keyboard-hint-panel z-index bug, caused by a stale dist missing `mobile_base.css`).
   It never rebuilds — use `:fresh` for that.
+
+## CI browser gate
+
+The automatic deploy gate runs only `tests/widget-journey-smoke.spec.js` with
+one Chromium worker and software WebGL enabled. This keeps the required CI
+signal deterministic and bounded; run `npm run qa:journey:headless` separately
+when the broader journey suite is needed. The production build job publishes
+the `dist-svelte` artifact, and both the bundle-size and deploy jobs restore
+that same verified artifact instead of rebuilding a second copy.

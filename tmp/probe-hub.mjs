@@ -22,6 +22,25 @@ const APP_URL = process.argv[2] || 'http://localhost:5174'
 const PORT = Number(process.argv[3] || 8911)
 
 const OPS = {
+  /** Tab through the page until the active element matches a /regex/ on its
+   *  className or id, or maxTabs reached. Returns per-tab focus state. */
+  async tabFocus(page, { match = 'dive-btn|inside-btn|action-btn', maxTabs = 20 } = {}) {
+    const re = new RegExp(match)
+    const out = []
+    for (let i = 0; i < maxTabs; i++) {
+      const s = await page.evaluate(() => {
+        const el = document.activeElement
+        if (!el) return null
+        const cs = getComputedStyle(el)
+        return { tag: el.tagName, cls: String(el.className).slice(0, 60), id: el.id, outlineStyle: cs.outlineStyle, outlineWidth: cs.outlineWidth, outlineColor: cs.outlineColor, outlineOffset: cs.outlineOffset, focusVisible: el.matches(':focus-visible'), boxShadow: cs.boxShadow.slice(0, 60) }
+      })
+      out.push(s)
+      if (s && re.test(s.cls || '')) return { found: true, tab: i, out }
+      await page.keyboard.press('Tab')
+      await page.waitForTimeout(60)
+    }
+    return { found: false, out }
+  },
   /** Navigate the warm page to a deep-link and wait for engine readiness. */
   async navigate(page, { url, waitSel, settleMs = 1800 }) {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {})

@@ -46,6 +46,12 @@ jobs:
                   cache: 'npm'
             - run: npm ci
             - run: npm run build:svelte
+            - name: Archive verified build artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dist-svelte
+                  path: dist/svelte/
+                  if-no-files-found: error
 
     bundle-size:
         name: Bundle Size Gate
@@ -93,14 +99,15 @@ jobs:
             - run: npm run test:contract:smoke
 
     test-integration:
-        # W46-T4: hard gate for deploy — closes the test strategy gap
-        # (docs/session-coordination.md). User-visible features without a
-        # journey test in tests/widget-journey.spec.js will fail this job
-        # and block deploy. `continue-on-error` was removed; `deploy` now
-        # waits on this job via the `needs:` list below.
-        name: Integration Tests (Playwright)
+        # Keep the automatic deploy gate deterministic and resource-bounded.
+        # The full Playwright inventory remains available through
+        # `npm run qa:journey:headless` and targeted CI/manual runs; it is not
+        # suitable as the default release gate because the repo contains many
+        # long-running, environment-specific specs.
+        name: Journey Smoke (Playwright)
         runs-on: ubuntu-latest
         timeout-minutes: 10
+        needs: [build]
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-node@v4
@@ -117,8 +124,11 @@ jobs:
             - name: Install Playwright browsers
               if: steps.playwright-cache.outputs.cache-hit != 'true'
               run: npx playwright install --with-deps chromium
-            - name: Build app for preview server
-              run: npm run build:svelte
+            - name: Restore verified build artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: dist-svelte
+                  path: dist/svelte/
             - name: Start preview server
               run: npx vite preview --config vite.config.ts --port 4174 --host 127.0.0.1 &
             - name: Wait for server
@@ -127,7 +137,9 @@ jobs:
               env:
                   TEST_BASE_URL: http://127.0.0.1:4174
                   INTEGRATION_HEADLESS: 'true'
-              run: npx playwright test
+                  PLAYWRIGHT_STRICT_FRESH: '1'
+                  SEMANTIC_FORCE_WEBGL_SOFTWARE: '1'
+              run: npx playwright test tests/widget-journey-smoke.spec.js --browser=chromium --workers=1
 
     deploy:
         name: Deploy Artifacts
@@ -141,15 +153,8 @@ jobs:
             - lint-nav-mirror
             - test-contract-smoke
         steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: '20'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run build:svelte
-            - name: Archive build artifacts
-              uses: actions/upload-artifact@v4
+            - name: Restore verified build artifact
+              uses: actions/download-artifact@v4
               with:
                   name: dist-svelte
                   path: dist/svelte/

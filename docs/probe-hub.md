@@ -55,6 +55,7 @@ cost structure this session:
 - First op after warm pays the scene-build (~5s); steady-state ops are 1.9-6s.
 
 ## Op protocol (add any ad-hoc check without code changes)
+
 1. `POST /op {size:"desktop"|"mobile", op:"navigate", args:{url:"...?record=N"}}` → put warm page in target state
 2. `POST /op {op:"eval", args:{code:"<expr or IIFE>"}}` → any DOM question, ~100ms-2s
 3. Write probe code as a FILE in tmp/ (avoids shell quoting) and pass its content in args.code

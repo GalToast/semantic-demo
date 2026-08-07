@@ -9,13 +9,16 @@ out of AGENTS.md to avoid bloat).
 
 | Mode                             | How to get it                                               | Server                                              | Data                   | Stability                                                        |
 | -------------------------------- | ----------------------------------------------------------- | --------------------------------------------------- | ---------------------- | ---------------------------------------------------------------- |
-| **Mock (standalone) — the gate** | `qa:journey:headless` with PHP **down**                     | Playwright auto-starts `python -m http.server 8795` | 20-record mock catalog | **Deterministic green**                                          |
+| **Mock (standalone) — the gate** | `qa:journey:headless` with PHP **down**                     | Playwright static test server on `8796` (`8795` is API-only) | 20-record mock catalog | **Deterministic green with software WebGL**                     |
 | **Live**                         | `qa:journey:live` with the **Caddy** dev server up on :8795 | Caddy + php-cgi (FastCGI) → real API                | real 8,406-record API  | **Stable via `@live` subset** (full suite may abort — see below) |
 
 ## It already runs serial
 
 `playwright.config.js` sets `fullyParallel: false` + `workers: 1`, so
-both modes run at one worker. There is no parallelism to tune.
+both modes run at one worker. There is no parallelism to tune. The headless
+gate defaults to software WebGL to keep serial context creation off the laptop
+GPU. Set `SEMANTIC_USE_D3D11=1` for the physical Windows GPU, or
+`SEMANTIC_FORCE_WEBGL_SOFTWARE=0` to use Chromium's default renderer.
 
 ## Local live server: Caddy + php-cgi (replaces `php -S`)
 
@@ -30,9 +33,9 @@ per-run-different failures. Replaced by a **threaded** server:
 
 `Caddyfile` is committed at repo root. To run live: start php-cgi, then
 Caddy (after a shell restart if caddy was just installed and is not yet
-on PATH), then `npm run qa:journey:live`. With Caddy on :8795,
-Playwright's `webServer` reuses it (live); with it down + PHP down, it
-auto-starts `python` (mock).
+on PATH), then `npm run qa:journey:live`. The Playwright test server stays on
+`:8796` and proxies `/api.php` to the live `:8795` backend; it serves the
+built static app directly so page assets never queue behind PHP.
 
 ## Live smoke = the `@live` subset (not the full suite)
 
@@ -68,8 +71,9 @@ expectation under live).
 
 ## Recommended usage
 
-- **Gate / CI:** `qa:journey:headless` with PHP down (mock). Green.
-  Deterministic.
+- **Gate / CI:** `qa:journey:headless` with PHP down (mock). Green with the
+  default software-WebGL profile. Use `SEMANTIC_USE_D3D11=1` only for a
+  hardware-renderer check.
 - **Live smoke (stable):** start Caddy + php-cgi, then
   `npm run qa:journey:live` → `@live` subset, green, ~45s.
 - Full live suite: best-effort only; may abort on GPU exhaustion.

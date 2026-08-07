@@ -28,20 +28,20 @@ The render loop is **already sophisticated** — `scheduleNextAnimationFrame(con
 
 ## What Could Be Improved (Open Findings)
 
-### 1. Multiple RAF chains driving the same frame (medium effort, ~10-15% win when camera animates)
+### 1. Multiple RAF chains driving the same frame (first tranche shipped 2026-08-06)
 
-`requestAnimationFrame` is requested independently by:
+Historically, `requestAnimationFrame` was requested independently by:
 
 - `src/lib/engine/three-engine-timers.ts:50,55` (main animate loop)
 - `src/lib/engine/camera-choreography/focus.ts:299,304` (focus camera)
 - `src/lib/engine/camera-choreography/routes.ts:167,169,219,224,302,308` (route trace animation, multiple sub-chains)
 - `src/lib/engine/three-search-animations.ts:340` (hero corridor glow)
 
-When all fire in the same frame, each callback has its own bookkeeping cost (RAF id tracking, closure allocation). They run in the SAME `requestAnimationFrame` tick so the visual effect is identical — they could share one RAF.
+When all fired in the same frame, each callback had its own bookkeeping cost (RAF id tracking, closure allocation). They run in the SAME `requestAnimationFrame` tick so the visual effect is identical — they can share one RAF.
 
-**Why we did not ship this**: refactor needs deterministic ordering (which update runs first) and is not blocked by correctness checks we can run in this round.
+**Status:** the engine-owned `src/lib/engine/frame-scheduler.ts` now runs focus-camera, route-camera, and search-hero tasks in stable registration order immediately before the main engine update/render path. The existing `DisposableRegistry` cancellation boundary is preserved for route teardown, and engine cancellation clears all scheduled tasks.
 
-**Recommendation for the lane**: extract a single `frameScheduler` module that owns the RAF id and exposes `scheduleCameraAnimation(updateFn)`. Have each camera choreographer register their update. The scheduler fires one RAF per tick and invokes all registered updates in order. Test with synthetic frame-count assertions.
+Focused unit coverage in `tests/unit-active/frame-scheduler.test.ts` verifies wake-up, stable ordering, idempotent cancellation, and deferral of tasks added during a frame. Remaining `requestAnimationFrame` calls under `src/` are UI focus/resize one-shots, audio, demo choreography, and other independently owned surfaces; they were intentionally left out of this engine tranche.
 
 ### 2. Render runs at 8fps in fully-static state (low effort, ~5× idle-CPU win when truly static)
 
@@ -103,32 +103,54 @@ Until then, this audit doc is the working hypothesis: the engine is well-optimiz
 
 ## W49-H Resolution (2026-07-03)
 
-Item 5 — Performance audit — was partially closed in commit `fee083cb`:
+Item 5 — Performance audit — was partially closed in commit `fee083cb` and the
+conditional-render follow-up was verified on 2026-08-06:
 
 **Done:**
 - New pure helper `src/lib/engine/renderer/scene-static-tracker.ts` computes
   whether the next render can be skipped (camera pos + quat delta vs.
-  prior snapshot, EPSILON=1e-5). 9 unit tests lock in every branch.
+  prior snapshot, EPSILON=1e-5). Focused unit and source-wiring tests lock in
+  every branch.
 - The animate loop (in `src/lib/engine/three-engine-core.ts`) now captures
   the camera transform each tick and calls the helper. It **records** the
   verdict in `scenePerformanceDiagnostics.renderSkipOpportunities` and
-  `consecutiveSkippedFrames` but **does not actually skip** the render.
-  This is a measurement-only change; behavior is preserved.
+  `consecutiveSkippedFrames`.
 - DevGui will now show `renderSkipOpportunities` and
   `consecutiveSkippedFrames` so a future developer can see in real time
   how many frames were skippable on any given viewport.
 
-**Still open (P3 conditional render-skip):**
-- The gating of `renderer.render(...)` on the helper verdict. With the
-  measurements above, the future developer can flip the gate on once
-  the data justifies it (e.g. when DevGui shows >=80% skip opportunities
-  in steady-state at the 1280x800 viewport). Until then, the renders
-  still happen — the helper just counts.
+**Conditional render-skip is now active:**
+- `renderer.render(...)` and postprocessing are gated by the helper verdict.
+- `sceneVisualsNeedRender()` keeps the idle 8fps tick renderable while normal
+  motion advances point time, pulse phase, and thread opacity. Reduced-motion
+  static scenes can still skip unchanged camera frames; hover-flash decay also
+  prevents a stale frame from being skipped.
+- The helper matrix and source-wiring contract are covered by
+  `tests/unit-active/three-engine-helpers.test.ts` and
+  `tests/unit-active/scene-static-tracker.test.ts`.
 
-**Out of scope for the git history but follow-up:**
-- Inserting a single-RAF scheduler refactor (P2) — there's still a real
-  CPU win in coalescing the camera-choreography RAFs around a single
-  RAF, but that work is a separate refactor with a heavier review surface.
+**Completed first tranche (2026-08-06):**
+- Focus-camera, route-camera, and search-hero choreography now share the
+  engine-owned frame scheduler. The scheduler runs before controls and render,
+  so visual ordering is deterministic while only one engine RAF drives them.
+- Short-landscape parity contracts now distinguish idle InfoPanel ownership
+  from focus-search legacy-panel suppression and test blocking focus children
+  rather than the full-viewport, pointer-events-none `#focus-stage` wrapper.
+- Verification: focused Vitest `4 files / 83 tests`, production build, the
+  standalone short-landscape layout contract at `667x375` and `768x380`, and
+  Playwright short-landscape contracts at both viewports.
+
+**Headless short-landscape profile (2026-08-06):**
+- At 667x375 with software WebGL and 8,406 points, normal motion measured
+  about 9.0M triangles, 47ms average update work, 14ms average render work,
+  and zero idle render skips. App readiness took about 18s and the canonical
+  focus-search transition about 12.5s.
+- With `prefers-reduced-motion: reduce`, the same idle scene recorded six
+  render skips, about 28ms average update work, and app readiness in about
+  1.7s. The focus transition took about 3.4s.
+- Geometry/parity-only short-landscape contracts now emulate reduced motion;
+  production normal-motion behavior is unchanged. Animation fidelity remains
+  covered by separate journey/performance work rather than these layout tests.
 
 ## Out of Scope This Round
 
@@ -142,8 +164,8 @@ Item 5 — Performance audit — was partially closed in commit `fee083cb`:
 | Priority | Item                          | Effort | Expected win                   |
 | -------- | ----------------------------- | ------ | ------------------------------ |
 | P1       | Frame-budget counter overlay  | 2-4h   | Visibility first, fixes after  |
-| P2       | Single-RAF scheduler refactor | 1-2d   | ~10-15% CPU when animating     |
-| P3       | Conditional render-skip       | 1d     | ~5× idle-CPU when truly static |
+| P2       | Audit remaining non-engine RAF owners | 0.5-1d | Only pursue if trace evidence shows contention |
+| P3       | Conditional render-skip       | Done   | Skips only when camera and visuals are static |
 | P4       | Listener cleanup audit + grep | 0.5d   | Memory leak risk closed        |
 
 Each must come with a unit test that asserts the expected RAF count given a synthetic frame stream.

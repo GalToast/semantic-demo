@@ -1,6 +1,13 @@
 # Subagent Model Quick Reference
 
-**Last verified:** 2026-07-30 (W58 campaign)
+**Last verified:** 2026-08-06 (live catalogue refresh)
+
+## Live Catalogue Snapshot
+
+- The live `external_subagent_free_models` inventory currently reports **1,133 route candidates** across configured providers. This is a route count, not a unique-model count; the benchmark registry still covers four model families and six official sources.
+- TokenRouter currently exposes two free launch refs: `tokenrouter/moonshotai/kimi-k3-free` and `tokenrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`. Both catalog routes returned HTTP 200 and are marked launchable by the inventory.
+- **Execution caveat:** a fresh Kimi K3 subagent smoke made three attempts and received `Connection error` with zero tokens each time. Treat the TokenRouter K3 route as catalog-visible, not execution-healthy, until a clean completion is observed.
+- TokenRouter Nemotron has no benchmark row or capability evidence in this registry. Do not infer coding or vision quality from the model name alone.
 
 ## Primary
 
@@ -47,6 +54,8 @@ agnes-2.0-flash          ← bare ref, NO provider prefix
 | `mistral/codestral-latest`        | `mistral/codestral-latest`                                                   | ⚠️ Transport-viable; poor accuracy / fabricates evidence. Do not trust for autonomous FIND.                |
 | `mistral/mistral-code-latest`     | `mistral/mistral-code-latest`                                                | ❌ Output-token cap too low (16 tokens) — cannot complete a `read` tool call.                              |
 | `mistral/mistral-vibe-cli-latest` | `mistral/mistral-vibe-cli-latest`                                            | ❌ Hits `stopReason: length` mid-report.                                                                   |
+| `tokenrouter/moonshotai/kimi-k3-free` | `tokenrouter/moonshotai/kimi-k3-free`                                  | ⚠️ Catalog route is live, but the 2026-08-06 subagent smoke failed three times with zero-token `Connection error`. Re-probe before dispatch. |
+| `tokenrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | `tokenrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | ⚠️ Catalog route is live but unbenchmarked and not execution-verified. |
 | `mistral/mistral-medium-latest`   | `mistral/mistral-medium-latest`                                              | ❌ Pi CLI cannot resolve `router-mistral/mistral-medium-latest`. Registration gap.                         |
 | `mistral/devstral-small-2:24b`    | `mistral/devstral-small-2:24b`                                               | ❌ `400 status code (no body)` — likely the `:` in model ID breaks launch.                                 |
 

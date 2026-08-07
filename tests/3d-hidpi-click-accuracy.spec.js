@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { focusOnNode, resetExplorationFocus, returnToOverview } from '@lib/orchestration/lifecycle'
-import { clearSearch } from '@lib/stores/navigation.svelte'
+import { clearSearch } from '@lib/search/state'
 import {
     BASE_URL,
     probe,

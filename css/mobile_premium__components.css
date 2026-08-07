@@ -1897,33 +1897,21 @@
 
     /* Contract: tests/mobile-chrome-ownership-contract.mjs —
        short-landscape focus/dive suppresses share/panel/time chrome */
-    body.is-active:is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='semantic-dive']
-        )
+    body:is(.surface-focus, .surface-focus-search, .surface-semantic-dive)
         :is(.share-toggle, .controls, .panel-toggle, .time-display) {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body.is-active:is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='semantic-dive']
-        )
+    body:is(.surface-focus, .surface-focus-search, .surface-semantic-dive)
         #btn-share-view {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body.is-active:is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='semantic-dive']
-        )
+    body:is(.surface-focus, .surface-focus-search, .surface-semantic-dive)
         :is(#btn-legend, #btn-keyboard-help) {
         display: flex;
         visibility: visible;

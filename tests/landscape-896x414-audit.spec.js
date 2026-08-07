@@ -18,7 +18,6 @@ for (const state of STATES) {
         test.beforeEach(async ({ page }) => {
             await page.goto(BASE_URL + APP_PATH + state.url)
             await page.waitForLoadState('networkidle')
-            await page.evaluate(() => document.body.classList.add('is-active'))
             if (state.panelSurface) {
                 await page.evaluate((s) => {
                     document.body.dataset.panelSurface = s

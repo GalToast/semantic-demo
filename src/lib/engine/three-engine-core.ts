@@ -492,11 +492,8 @@ export function animate() {
     // _shouldSkipFrame() returns true (document hidden, view switched away
     // from 'galaxy', etc.). The skip check still gates the actual frame work.
     const sceneNeedsContinuous =
-        sceneNeedsContinuousFrame(
-            performance.now(),
-            engineState.state,
-            cameraControlsRestore.autoRotateResumeDueAt
-        ) || hasScheduledFrameTasks()
+        sceneNeedsContinuousFrame(performance.now(), engineState.state, cameraControlsRestore.autoRotateResumeDueAt) ||
+        hasScheduledFrameTasks()
     scheduleNextAnimationFrame(sceneNeedsContinuous)
 
     if (_shouldSkipFrame()) {

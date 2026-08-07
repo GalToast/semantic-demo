@@ -98,11 +98,8 @@ export function resolveParityContext(): ParityContext {
     // deadline lives on the engine appState, not the Svelte focus store.
     let semanticDiveDeadline: number | null = null
     try {
-        const dl = (
-            window.__APP_STATE__?.focusState as
-                | { _semanticDiveTransitionDeadline?: number }
-                | undefined
-        )?._semanticDiveTransitionDeadline
+        const dl = (window.__APP_STATE__?.focusState as { _semanticDiveTransitionDeadline?: number } | undefined)
+            ?._semanticDiveTransitionDeadline
         if (typeof dl === 'number' && Number.isFinite(dl)) {
             semanticDiveDeadline = dl
         }

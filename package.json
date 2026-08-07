@@ -94,7 +94,7 @@
         "qa:semantic-guide-fallback": "npx playwright test tests/semantic-guide-fallback-contract.spec.js --browser=chromium --headed",
         "qa:live-reset": "npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --headed",
         "qa:journey": "npx playwright test tests/widget-journey.spec.js tests/widget-journey-smoke.spec.js --browser=chromium --headed",
-        "qa:journey:headless": "npx playwright test tests/widget-journey.spec.js tests/widget-journey-smoke.spec.js --browser=chromium",
+        "qa:journey:headless": "node scripts/qa-journey-headless.mjs",
         "qa:journey:smoke": "npx playwright test tests/widget-journey-smoke.spec.js --browser=chromium",
         "qa:journey:fresh": "npm run build && npm run qa:journey",
         "qa:journey:fresh:headless": "npm run build && npm run qa:journey:headless",

@@ -34,8 +34,7 @@ export function resolveFocusContext(ctx: ParityContext): FocusContextResult {
     }
 
     const hasFocusContext =
-        focusedNode !== null ||
-        (typeof ctx.focus.selectedBusiness === 'object' && ctx.focus.selectedBusiness !== null)
+        focusedNode !== null || (typeof ctx.focus.selectedBusiness === 'object' && ctx.focus.selectedBusiness !== null)
 
     return { focusedNode, hasFocusContext }
 }
@@ -74,11 +73,7 @@ export interface GraphContextResult {
     graphContext: string
 }
 
-export function resolveGraphContext(
-    ctx: ParityContext,
-    hasFocus: boolean,
-    hasSearch: boolean
-): GraphContextResult {
+export function resolveGraphContext(ctx: ParityContext, hasFocus: boolean, hasSearch: boolean): GraphContextResult {
     if (ctx.viewport.isCompact && ctx.camera.routeExplorationPhase === 'exploring') {
         return { graphContext: 'corridor' }
     }
@@ -188,8 +183,7 @@ export interface SemanticDiveResult {
 
 export function resolveSemanticDive(ctx: ParityContext, hasFocus: boolean): SemanticDiveResult {
     const deadline = ctx.semanticDiveDeadline
-    const inTransientWindow =
-        deadline !== null && Number.isFinite(deadline) && deadline > 0 && Date.now() < deadline
+    const inTransientWindow = deadline !== null && Number.isFinite(deadline) && deadline > 0 && Date.now() < deadline
     const semanticDive: 'inactive' | 'transitioning' | 'active' =
         ctx.nav.currentView === 'galaxy'
             ? ctx.focus.semanticDiveMode && hasFocus
@@ -283,8 +277,7 @@ export interface FilterActiveResult {
 export function resolveFilterActive(ctx: ParityContext): FilterActiveResult {
     const f = ctx.filters
     return {
-        filtersActive:
-            f.status !== 'all' || f.city !== '' || f.website || f.email || f.geocoded
+        filtersActive: f.status !== 'all' || f.city !== '' || f.website || f.email || f.geocoded
     }
 }
 
@@ -294,11 +287,7 @@ export interface JourneyPhaseResult {
     journeyPhase: string
 }
 
-export function resolveJourneyPhase(
-    ctx: ParityContext,
-    hasFocus: boolean,
-    hasSearch: boolean
-): JourneyPhaseResult {
+export function resolveJourneyPhase(ctx: ParityContext, hasFocus: boolean, hasSearch: boolean): JourneyPhaseResult {
     // W15+ parity-attrs fix: journey.phase reads appState.navState.mode
     // (legacy), which the Svelte track never updates. Derive journeyPhase
     // directly from nav state + search intent so body data-journey-phase

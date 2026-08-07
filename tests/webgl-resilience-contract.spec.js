@@ -19,7 +19,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearSearch } from '@lib/stores/navigation.svelte'
+import { clearSearch } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'

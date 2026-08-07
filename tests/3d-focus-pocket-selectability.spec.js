@@ -21,8 +21,7 @@
 import { test, expect } from '@playwright/test'
 import { probeFocusPocket, focusNodeViaApp } from './helpers/3d-interaction-helpers.js'
 import { focusOnNode } from '@lib/orchestration/lifecycle'
-import { search } from '@lib/search/state'
-import { clearSearch } from '@lib/stores/navigation.svelte'
+import { clearSearch, search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 

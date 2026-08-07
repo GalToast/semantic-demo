@@ -2,7 +2,7 @@
 // Bug: the shallow `Object.assign`-style spread replaces arrays and drops
 // nested object keys that the other side lacks.
 function deepMerge(a, b) {
-  const out = { ...a, ...b };
-  return out;
+    const out = { ...a, ...b }
+    return out
 }
-module.exports = { deepMerge };
+module.exports = { deepMerge }

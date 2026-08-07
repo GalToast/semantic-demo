@@ -84,6 +84,30 @@ _Generated 2026-08-05 by main lane. This file is tracked in git._
 `?anchor=N` / live-search NEVER populate neighbors ("0 visible neighbors" on every record — those are search-result pills, not neighbor pills). The rich path = the app bridge: after load, `(window.__APP_ACTIONS__ ?? window.__navActions__).focusOnNode(0, {})` → node 0 has **5 visible neighbors + Walk rail + "WHY THESE NEIGHBORS / Connection — 'These businesses appear near each other in the local market'"**. Then hover the first `[class*="neighbor"]` (thread preview) / click (walk) / `button[data-journey-action="enter-inside"]` (dive, trail depth→2). Full capture script: `tmp/rich-node-capture.mjs` (also covers fallback click-path). Headless needs SEMANTIC_FORCE_WEBGL_SOFTWARE=1 to render the real scene.
 
 ## LIVE search = VERIFIED (2026-08-05 15:55) — previously "API-gated re-audit"
+
 API (:8795 /api.php?action=semantic_search) was alive tonight; full live flow captured & QA-clean:
 search('coffee') → results (Top match: Angel Fire Coffee; "10 of 17 · 7 behind"; MATCH rows; Show-more; CONNECTION CUE "Search found related businesses…") → real click top row → focus node 518 (5 visible neighbors + WHY THESE NEIGHBORS) → hover/click thread → walk rail → enter-inside → semantic-dive(active). Shots: tmp/ui-jury-set/l-focus-live|thread-live|walk-live|dive-live(.png/.json). Vision: clean.
 CAVEAT (infra): api.php answered `degraded:true, reason:"semantic_service_offline"` → lexical_fallback only; the FULL semantic-quality path (the fancy tie) needs the semantic service up. Health: `curl '/api.php?action=semantic_search&q=coffee&limit=1&offset=0' -H 'Referer: http://127.0.0.1:5173/'`.
+
+---
+
+## 2026-08-06 lane notes (main lane)
+
+- **3 journey reds are env-owned**: deep-link ?anchor=N blank pocket, F5.1 SemanticOverlay badge, F5.2 SemanticGuideCard suggestion chips — all wait on the LIVE semantic summary data path and fail while semantic_service_offline (verified live: degraded:true). They fail in ISOLATION on a clean tree too (not run-chaos; not the seam). Fix: tmp/semantic-probe-REPORT.md. Other 5 gate reds on 08-05 were run-contamination (pass solo).
+- **Commit-purity invalidity red (lane-owned)**: `docs(...) commits touch only doc-class files` fails for lane commits ecadeb6 (docs(ui-sweep) shipped tmp/probe-\*.mjs code files) + 7202a6. Fix: reclassify temp probe files as doc-class in tests/unit-active/commit-purity-invariant.test.ts or use code-prefix commits. Not ours to change without lane OK.
+- **Clean-serve recipe (re-verified)**: build → ONE `php -S 127.0.0.1:8795 -t .` from repo root. Six parallel php listeners + missing dist/svelte caused phantom stale-bundle diagnoses on 08-05. Check `curl 127.0.0.1:8795/dist/svelte/index.html` mtime vs the new build before capture runs.
+- **Run migration wave**: seam-1 (filter, legend-panel) applied + verified (0 svelte-check errors; unit green apart from the lane invariancy); patch = /tmp/seam1.patch; commit pending. seam-2 (focus, search) dispatched to ocw_33f4a71e under strict no-build/no-commit contract. seam-3 reserved: journey/camera/engine (larger; engine harness-mirrored) — coordinate before those.
+- **Long-tail harness note**: prompt-prefix cache nuked by mid-session edits to APPEND_SYSTEM.md (49 cache_breaks today, incl. ours). Harness/system edits → batch at session boundaries. Bash stays stock: background:true + pi_background_jobs for long ops.
+
+## 2026-08-06 late-lane notes: store-wave DONE, wave re-scoped to lib/
+
+- **seam-2 VERIFIED-ALREADY-MIGRATED (main-lane audit, no code change needed)**: focus.svelte.ts and search.svelte.ts are both `createStateMirror`-based already. The only svelte/store residue: type-only `Readable` imports + `get()` on our own mirrors (focus), and ONE `writable(false)` `searchUseRerank` (search) which is TEST-PINNED ("searchUseRerank is a writable store", tests/unit-active/state-class-migration.test.ts:901) — keep as store-compat seam per wave rule. The store layer is effectively FINISHED. Audit overcounted these as migratable; count driven by `get(` occurrences, not actual writable/derived.
+- **Next genuine wave targets (lib/, measured counts = svelte/store import + writable/derived/get uses)**:
+    - src/lib/journey/neighborhood-manifest.ts (25) — biggest
+    - src/lib/data-store.ts (19) — kernel-adjacent, high risk, go last / test heavily
+    - src/lib/journey/neighborhood.ts (15)
+    - src/lib/journey/thread-settler.ts (6)
+    - src/lib/journey/canvas-hover-preview.ts (3) · src/lib/journey/journey.ts (2)
+- **Subagent fleet today: systematically broken at the id-mapping layer.** All 6 launches (ling×2, north, logfare×2, openrouter/nvidia) either wedged silently or failed fast with `Error: Model "router-nvidia/…" not found. Use --list-models` (child pi rejects the launcher-rewritten `--model router-<provider>/<rest>` alias). The launcher claims a model present in external-subagent allowed_models AND healthy per direct router probe → still fails at child resolution. Recommendation: enumerate the child's true alias space (`--list-models` from the pi CLI as the worker is invoked) and pass `requested_model` values that survive the `router-` prefix rewrite; until fixed, execute seams main-lane (ready-for-fleet pattern preserved: tmp/seam2-brief.md is valid for whoever fixes the mapping).
+- **Benchmark-lane policy** written to tmp/lane-policy-benchmark.md (gate probing + public SWE-bench ranking + dead gates table). Free slugs move fast (kimi-k2.6:free & qwen3-coder:free already 404 "paid now" upstream): ALWAYS one-token probe before dispatch.
+- semantic_service_offline still green-starvation for 3 journey tests; probe worker never ran (fleet). Hand to whoever owns infra: semantic rank service down → lexical fallback; bring-up doc: docs/search-fallback.md.

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { setupMockSearch } from './helpers/mock-semantic-search.js'
 import { setSemanticDiveMode, refreshCompositionState } from '@lib/orchestration/lifecycle'
-import { clearSearch } from '@lib/stores/navigation.svelte'
+import { clearSearch } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 

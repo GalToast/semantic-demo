@@ -5511,7 +5511,7 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         test.setTimeout(60000)
         await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
         await page.setViewportSize({ width: 936, height: 800 })
-        await page.waitForTimeout(5200)
+        await pollFor(page, () => !!document.querySelector('.proximity-legend-wrapper'), 30000, 100)
         const st = await page.evaluate(() => {
             const w = document.querySelector('.proximity-legend-wrapper')
             return w ? { collapsed: w.classList.contains('collapsed'), vis: getComputedStyle(w).visibility } : null
@@ -5524,7 +5524,13 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         test.setTimeout(60000)
         await page.setViewportSize({ width: 390, height: 844 })
         await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
-        await page.waitForTimeout(5200)
+        const hasListToggle = await pollFor(
+            page,
+            () => [...document.querySelectorAll('button')].some((x) => (x.textContent || '').includes('View as list')),
+            30000,
+            100
+        )
+        expect(hasListToggle, 'mobile focus list toggle must mount').toBe(true)
         const st = await page.evaluate(() => {
             const el = [...document.querySelectorAll('button')].find((x) =>
                 (x.textContent || '').includes('View as list')

@@ -23,7 +23,7 @@ This file is loaded into every Pi model call. Keep it concise. Detailed referenc
 - Before presenting work as finished, verify against the real success criteria and state what was run.
 - **Verify "impossible" claims against the actual environment before believing them.** Twice (2026-08-05) a "can't run here" conclusion was wrong — the fix was a flag: `--enable-unsafe-swiftshader` for software WebGL (`SEMANTIC_FORCE_WEBGL_SOFTWARE=1`) and `--use-angle=d3d11` to reach the real physical GPU (`SEMANTIC_USE_D3D11=1`; RTX 4050 + Intel UHD). Probe the actual capability before declaring something environment-gated.
 - **Default to delegating when it improves throughput/quality.** Main-lane speedup only wins when the alternative blocks the user.
-- **Anti-idle while waiting (2026-08-06):** while workers run or gates settle, pick up parallel-safe work (memory/docs/cleanup, next-task prep) instead of polling loops; check in at ~2-5 min cadence. Known harness friction + unblocks: APPEND_SYSTEM.md "Anti-Idle" + "Harness Friction Cheat Sheet" (provider TTFT ~6.3s is structural; bash detaches at ~15s → prefer background:true; `pi_background_jobs wait` is 30s-capped by design — never chain waits; worker stdout caps at 8MB → judge health by poll last_log_at not log size).
+- **Anti-idle while waiting (2026-08-06):** while workers run or gates settle, pick up parallel-safe work (memory/docs/cleanup, next-task prep) instead of polling loops; check in at ~2-5 min cadence. Known harness friction + unblocks: APPEND_SYSTEM.md "Anti-Idle" + "Harness Friction Cheat Sheet" (provider TTFT ~6.3s is structural; bash auto-detaches at ~10s → prefer `background:true`; `pi_background_jobs wait` is 30s-capped by design — never chain waits; worker stdout caps at 8MB → judge health by poll last_log_at not log size).
 - **Finish all N sites of an established pattern, not just the high-ROI one.** Partial pattern fixes create drift. Stop only on user request or genuine risk.
 - **User-visible features need a journey test.** Svelte/DOM-touching features → add a test in `tests/widget-journey.spec.js` + run `npm run qa:journey:headless`. Pre-commit hook warns on unstaged-journey-test for `*.svelte`/`App.svelte`/`lib/ui`/`lib/keyboard`; `--SkipTestStrategyGapCheck` for pure refactors. Full rule: `docs/session-coordination.md` § test-strategy gap.
 - **Audit before "done".** Enumerate every data source (files/fields/code paths), verify each with rg/git. Cheap to audit, expensive to ship half.
@@ -88,6 +88,9 @@ Core: `npm run build` · `lint` · `test:unit` · `qa:contract`. Full script lis
 - For UI work, verify at desktop and mobile sizes when layout can change.
 - For engine/WebGL work, verify that the canvas renders nonblank and resources are disposed.
 
+## Pi Harness Notes
+
+- Standing identity (4 pillars): you are more than a coder (presence) · take the wider frame (zoom-lens) · seek/persist/verify (growth: there is nothing you can't master; learn through trial + verification) · leave things more mappable (update docs, memory, and improve the harness itself when friction repeats). This harness is your home — improve it.
 ## Pi Harness Notes
 
 - **Skills silently fail to load when frontmatter YAML breaks** (inner double quotes, single-line frontmatter, embedded structured fields — loader drops them with only a console warning). After creating/editing a SKILL.md, verify it loads: `node --input-type=module -e "import {loadSkills} from 'file:///<pi>/dist/core/skills.js'; ..."` (see `skill-authoring` skill).

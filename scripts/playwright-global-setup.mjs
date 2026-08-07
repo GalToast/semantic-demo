@@ -27,38 +27,12 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { getPlaywrightDistFreshness } from './playwright-dist-freshness.mjs'
 import { pathToFileURL } from 'node:url'
 
 const root = process.cwd()
 const distIndex =
     process.env.PLAYWRIGHT_DIST_INDEX || path.join(root, 'dist/svelte/index.html')
-
-function walkDir(dir) {
-    const out = []
-    try {
-        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-            const full = path.join(dir, entry.name)
-            if (entry.isDirectory()) out.push(...walkDir(full))
-            else out.push(full)
-        }
-    } catch {
-        // dir missing — ignore
-    }
-    return out
-}
-
-function newestMtime(filePaths) {
-    let newest = 0
-    for (const p of filePaths) {
-        try {
-            const m = fs.statSync(p).mtimeMs
-            if (m > newest) newest = m
-        } catch {
-            // missing input file — ignore
-        }
-    }
-    return newest
-}
 
 export default async function globalSetup() {
     // Opt-in: default no-op so parallel sessions are never disrupted.
@@ -73,20 +47,9 @@ export default async function globalSetup() {
         process.exit(1)
     }
 
-    const distMtime = fs.statSync(distIndex).mtimeMs
-    // Build inputs that affect dist content (excludes package.json, whose mtime
-    // changes on every install without changing dist).
-    const inputs = [
-        ...walkDir(path.join(root, 'src')),
-        ...walkDir(path.join(root, 'css')),
-        path.join(root, 'index.html'),
-        path.join(root, 'semantic-demo.css'),
-        path.join(root, 'vite.config.ts'),
-        path.join(root, 'scripts/test-server.mjs')
-    ]
-    const newestInput = newestMtime(inputs)
+    const freshness = getPlaywrightDistFreshness({ root, distIndex })
 
-    if (newestInput > distMtime) {
+    if (!freshness.fresh) {
         console.error(
             '[globalSetup] dist is STALE (a build input is newer than ' +
                 path.relative(root, distIndex) +
