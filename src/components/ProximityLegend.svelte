@@ -356,7 +356,7 @@
      concept without blocking the primary search affordance. */
   @media (max-width: 768px) {
     .proximity-legend-wrapper {
-      top: calc(var(--app-header-height, 64px) + 12px);
+      top: calc(var(--app-header-height) + 12px);
       left: 12px;
       bottom: auto;
       max-width: calc(100vw - 24px);

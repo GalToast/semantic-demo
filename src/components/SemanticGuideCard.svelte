@@ -73,7 +73,7 @@
       Close
     </button>
   </div>
-  <div id="summary-text" class="typewriter-content">{config.text || ''}</div>
+  <div id="summary-text" class="typewriter-content" aria-live="polite">{config.text || ''}</div>
   {#if suggestions.length > 0}
     <div id="summary-suggestions" class="summary-suggestions">
       {#each suggestions as suggestion}

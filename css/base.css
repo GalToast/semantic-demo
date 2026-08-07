@@ -193,6 +193,13 @@
         background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
         box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     --transition-spring: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* P2-3 (component-remainder sweep): define --app-header-height once here
+       so consumers (ProximityLegend, App.svelte, WeatherWidget) don't need
+       divergent per-consumer fallbacks. Canonical value from app.html inline.
+       The app.html <style> on <html> still wins (higher specificity) but this
+       :root definition is the CSS-module fallback. */
+    --app-header-height: 60.8px;
     --glass-blur-light: 10px;
     --glass-blur-medium: 20px;
     --glass-blur-ultra: 44px;

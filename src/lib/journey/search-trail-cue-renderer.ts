@@ -87,8 +87,17 @@ export function updateSearchTrailCue(nextCue: SearchTrailCue = {}): void {
         // progress. Map 'focus' → 'anchor' (chip 2) and 'walk' → 'explore'
         // (chip 3) to match the narrative.
         (nextCue.beat === 'focus' ? 'anchor' : nextCue.beat === 'walk' ? 'explore' : 'query')
+    // P2-2 (component-remainder sweep): mark prior stages .done so the
+    // CSS .search-trail-cue-step.done treatment (dimmer fill, softer border,
+    // colored ::before dot) renders for completed steps. Keep .active on the
+    // current stage so the stronger highlight wins where both apply.
+    const stageOrder = ['query', 'anchor', 'explore']
+    const activeIdx = stageOrder.indexOf(stage)
     cueEl.querySelectorAll<HTMLElement>('.search-trail-cue-step').forEach((el) => {
-        el.classList.toggle('active', el.dataset.cueStage === stage)
+      const stepStage = el.dataset.cueStage ?? ''
+      const stepIdx = stageOrder.indexOf(stepStage)
+      el.classList.toggle('active', stepStage === stage)
+      el.classList.toggle('done', stepIdx >= 0 && stepIdx < activeIdx)
     })
 
     cueEl.hidden = false

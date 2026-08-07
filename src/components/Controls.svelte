@@ -121,6 +121,26 @@
   // all five buttons individually.
   let rovingIndex = $state(0);
 
+  // P2-5 (component-remainder sweep): when visible→false with focus inside the
+  // toolbar, stash document.activeElement and restore on re-show. Prevents focus
+  // from dropping to <body> when compact mode / surface switch hides mid-focus.
+  let savedFocusEl: HTMLElement | null = null;
+  $effect(() => {
+    if (visible) {
+      // Re-show: restore focus if we stashed it AND it's still in the DOM.
+      if (savedFocusEl && document.contains(savedFocusEl)) {
+        savedFocusEl.focus();
+      }
+      savedFocusEl = null;
+    } else {
+      // About to hide: stash focus if it's inside the toolbar.
+      const toolbar = document.getElementById('camera-controls');
+      if (toolbar && toolbar.contains(document.activeElement)) {
+        savedFocusEl = document.activeElement as HTMLElement;
+      }
+    }
+  });
+
   function onCameraToolbarKeydown(e: KeyboardEvent): void {
     const toolbar = e.currentTarget as HTMLElement;
     const buttons = Array.from(toolbar.querySelectorAll<HTMLButtonElement>('button.control-btn'));
@@ -221,6 +241,15 @@
     </button>
 </div>
 
+<!--
+  P2-6 (component-remainder sweep): scoped <style> below re-declares
+  .controls / .control-btn selectors that are OWNED by css/controls.css
+  (per docs/css-ownership.md §2). The component deliberately overrides
+  the module's position:fixed+column layout with position:absolute+row,
+  and replaces glass-bg button styling with a transparent column layout.
+  Module rules still apply to non-component .controls surfaces (map view).
+  Keep both; this comment prevents future de-duplication accidents.
+-->
 <style>
   .controls {
     position: absolute;

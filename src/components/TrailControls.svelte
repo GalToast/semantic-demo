@@ -17,11 +17,38 @@
   // F3 (a11y bugsweep 2026-08-07): toolbar roving-tabindex keyboard nav
   // per WAI-ARIA toolbar pattern — ArrowLeft/Right move focus between the
   // three focusable children, Home/End jump to first/last.
-  function onToolbarKeydown(e: KeyboardEvent): void {
-    const toolbar = e.currentTarget as HTMLElement;
-    const buttons = Array.from(toolbar.querySelectorAll<HTMLElement>(
+  //
+  // P2-1 (component-remainder sweep): the parallel lane added arrow-nav
+  // but left all three buttons individually tabbable (triple tab stop).
+  // Complete the roving pattern: one tabindex=0, siblings=-1; sync on
+  // keyboard nav AND click. Mirror Controls.svelte's W51-C4 pattern.
+  let rovingIndex = $state(0);
+
+  function getEnabledButtons(): HTMLElement[] {
+    const toolbar = document.getElementById('trail-controls');
+    if (!toolbar) return [];
+    return Array.from(toolbar.querySelectorAll<HTMLElement>(
       '#btn-focus-path, #btn-prev-node:not([disabled]), #btn-next-node:not([disabled])'
     ));
+  }
+
+  function syncRovingFromFocus(): void {
+    const buttons = getEnabledButtons();
+    const idx = buttons.indexOf(document.activeElement as HTMLElement);
+    if (idx >= 0) rovingIndex = idx;
+  }
+
+  /** Returns the tabindex value for a toolbar button by id.
+   *  Only one enabled button gets tabindex=0 at a time. */
+  function btnTabindex(buttonId: string, isDisabled: boolean): number {
+    if (isDisabled) return -1;
+    const buttons = getEnabledButtons();
+    const idx = buttons.findIndex(b => b.id === buttonId);
+    return idx === rovingIndex ? 0 : -1;
+  }
+
+  function onToolbarKeydown(e: KeyboardEvent): void {
+    const buttons = getEnabledButtons();
     if (buttons.length === 0) return;
     const current = buttons.indexOf(document.activeElement as HTMLElement);
     if (current < 0) return;
@@ -43,6 +70,7 @@
         return;
     }
     e.preventDefault();
+    rovingIndex = next;
     buttons[next]?.focus();
   }
 </script>
@@ -54,6 +82,7 @@
     class:active={active}
     role="toolbar"
     aria-label="Walk controls"
+    tabindex="-1"
     onkeydown={onToolbarKeydown}
   >
     <button
@@ -61,6 +90,8 @@
       class="focus-stage-action-btn"
       type="button"
       aria-label="Show walk"
+      tabindex={btnTabindex('btn-focus-path', false)}
+      onfocus={syncRovingFromFocus}
       onclick={() => {
         const overlay = document.getElementById('trail-review-overlay');
         if (!overlay) return;
@@ -84,6 +115,8 @@
       disabled={!canGoBack}
       aria-disabled={!canGoBack}
       title={!canGoBack ? 'No previous stops in this walk history' : 'Previous stop'}
+      tabindex={btnTabindex('btn-prev-node', !canGoBack)}
+      onfocus={syncRovingFromFocus}
       onclick={onPrev}
       type="button"
     >
@@ -110,6 +143,8 @@
       disabled={!hasNext}
       aria-disabled={!hasNext}
       title={!hasNext ? 'No nearby stops to continue to' : 'Next stop'}
+      tabindex={btnTabindex('btn-next-node', !hasNext)}
+      onfocus={syncRovingFromFocus}
       onclick={onNext}
       type="button"
     >
