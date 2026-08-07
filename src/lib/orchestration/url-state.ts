@@ -957,6 +957,12 @@ async function _restoreSearchFromParams(
             try {
                 await Promise.race([restoreDeadline, waitForSearchSettle(searchStore)])
             } catch {
+                // A caller supersession (newer applyUrlState / popstate / re-init)
+                // aborts `signal`, not the deadline — onSearchAbort already set
+                // restoreTimedOut=false; this catch must NOT clobber it back to
+                // true or a legitimately-running piggybacked search gets a spurious
+                // error card (contract: supersession stays silent).
+                if (signal.aborted) return
                 restoreTimedOut = true
             }
         }
