@@ -5577,7 +5577,7 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         expect(firstBox?.width ?? 0, 'first strength bar must have positive rendered width').toBeGreaterThan(0)
     })
 
-    test.fixme('C1. semantic dive wins over trail in compass phase (insideActive-before-inTrailMode fix)', async ({
+    test('C1. semantic dive wins over trail in compass phase (insideActive-before-inTrailMode fix)', async ({
         page
     }) => {
         // Fix C (2026-08-06) is unit-verified (a3-1/a3-2/t1 + structural diff). The
@@ -5605,15 +5605,26 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         // header-journey spec uses to reach mode='inside' with real app state.
         const insideRadio = page.locator('input[type=radio][value=inside], [role=radio]:has-text("Inside")').first()
         await insideRadio.click({ timeout: 8000 }).catch(async () => {
-            // fallback: drive the dive flags directly if the nav radio is not reachable
+            // REACTIVE DRIVER (main-lane 2026-08-07, verified C1 green on D3D11): the
+            // old fallback set semanticDiveMode but left currentView='map' (deep-link
+            // view=map). insideActive (compass-state.ts:78) requires
+            // currentView==='galaxy', so the compass never emitted phase='inside'.
+            // Switch view to galaxy FIRST, then dive, so the compass re-reads to inside.
             await page.evaluate(() => {
-                window.__navActions__?.writeNavStateMirror({ surface: 'inside', trailDepth: 2 })
-                const s = window.__APP_STATE__
-                if (s) {
-                    s.trailDepth = 2
-                    s.semanticDiveMode = true
+                const nav = window.__APP_STATE__?.navigationStore
+                if (nav && typeof nav.switchView === 'function') {
+                    nav.switchView('galaxy')
+                } else if (window.__navActions__) {
+                    window.__navActions__.writeNavStateMirror({ view: 'galaxy', surface: 'inside' })
+                }
+                const st = window.__APP_STATE__
+                if (st) {
+                    if (st.currentView) st.currentView = 'galaxy'
+                    st.semanticDiveMode = true
+                    st.trailDepth = 2
                 }
             })
+            await page.waitForTimeout(400)
         })
         await page.waitForFunction(() => document.querySelector('#journey-compass')?.dataset.phase === 'inside', null, {
             timeout: 8000,
