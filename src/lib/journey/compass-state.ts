@@ -156,7 +156,6 @@ export function getJourneyCompassState(): CompassState {
         const walkHistory: readonly number[] = Array.isArray(appState.navState?.walkHistoryIndices)
             ? appState.navState!.walkHistoryIndices
             : appState.navState?.explorationHistoryIndices || []
-        const walkHistoryLength: number = walkHistory.length
         const walkDepth: number = Math.max(0, walkHistory.length - 1)
         const isSearchFocus: boolean = !!summary && walkDepth === 0
         const isSearchAnchor: boolean = !!(
