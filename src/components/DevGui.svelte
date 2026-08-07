@@ -14,6 +14,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 import { debugLog, debugError } from '@lib/utils/debug'
+import { appState } from '@lib/state/app.svelte'
 
   interface Props {
     visible?: boolean;
@@ -64,13 +65,14 @@ import { debugLog, debugError } from '@lib/utils/debug'
         .name('Auto-rotate')
         .onChange((v: boolean) => {
           autoRotateEnabled = v;
-          // Bridge to legacy camera-controls when running in coexistence mode.
-          const camera = window.__semanticCamera
-          if (camera) {
-            camera.autoRotate = v;
+          // F2 (2026-08-07): window.__semanticCamera was declared but never
+          // written anywhere in src — the toggle silently no-op'd. Wire to the
+          // real OrbitControls source (appState.controls) instead.
+          if (appState.controls) {
+            appState.controls.autoRotate = v;
             debugLog('[dev-gui] camera.autoRotate =', v);
           } else {
-            debugLog('[dev-gui] autoRotate toggle =', v, '(no camera bridge yet)');
+            debugLog('[dev-gui] autoRotate toggle =', v, '(controls not ready yet)');
           }
         });
 

@@ -16,25 +16,15 @@ interface BindClickOptions {
 
 type EventHandler = (event?: MouseEvent) => void
 
-declare global {
-    interface Window {
-        __semanticDemoProd?: boolean
-    }
-}
-
-function isStrictBindMode(): boolean {
-    return typeof window !== 'undefined' && !window.__semanticDemoProd
-}
-
 export function bindClick(id: string, handler: EventHandler, options: BindClickOptions = {}): void {
     const element = document.getElementById(id)
     if (!element) {
         if (options.optional) return
-        const message = `[event-bindings] required button #${id} not found in DOM`
-        if (isStrictBindMode()) {
-            throw new Error(message)
-        }
-        debugWarn(message)
+        // F3 (2026-08-07): __semanticDemoProd gated a throw branch here, but
+        // bindPanelControls/bindSuggestionControls (the only bindClick callers)
+        // have zero callers in src — the branch was unreachable. The stale
+        // global + strict mode are gone; missing elements always warn.
+        debugWarn(`[event-bindings] required button #${id} not found in DOM`)
         return
     }
     element.onclick = handler

@@ -49,6 +49,12 @@ import { bindFocusTrapObserver, disposeFocusTrapBindings } from '@lib/utils'
 const ERROR_RING_MAX = 20
 const errorRing: Array<{ timestamp: number; message: string; stack?: string }> = []
 
+// F8 (2026-08-07): keep the handler refs so the exact same listeners can be
+// removed on HMR via disposeGlobalErrorSink() — previously each hot reload
+// stacked a fresh pair, producing duplicate sinks + ring spam.
+let _globalErrorListener: ((event: ErrorEvent) => void) | null = null
+let _globalRejectionListener: ((event: PromiseRejectionEvent) => void) | null = null
+
 function installGlobalErrorSink(): void {
     function pushToRing(err: unknown): void {
         errorRing.push({
@@ -58,20 +64,31 @@ function installGlobalErrorSink(): void {
         })
         if (errorRing.length > ERROR_RING_MAX) errorRing.shift()
     }
-    window.addEventListener('error', (event: ErrorEvent) => {
+    _globalErrorListener = (event: ErrorEvent) => {
         const err = event.error ?? event.message
         debugError('[global-error] uncaught error:', err)
         pushToRing(err)
-    })
-    window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+    }
+    _globalRejectionListener = (event: PromiseRejectionEvent) => {
         const reason = event.reason
         debugError('[global-error] unhandled promise rejection:', reason)
         pushToRing(reason)
-    })
+    }
+    window.addEventListener('error', _globalErrorListener)
+    window.addEventListener('unhandledrejection', _globalRejectionListener)
     Object.defineProperty(window, '__ERROR_RING__', {
         get: () => errorRing,
         configurable: true
     })
+}
+
+function disposeGlobalErrorSink(): void {
+    if (_globalErrorListener) window.removeEventListener('error', _globalErrorListener)
+    if (_globalRejectionListener) window.removeEventListener('unhandledrejection', _globalRejectionListener)
+    _globalErrorListener = null
+    _globalRejectionListener = null
+    // __ERROR_RING__ getter left in place — harmless across reloads and keeps
+    // recent failures inspectable even after dispose.
 }
 installGlobalErrorSink()
 
@@ -494,6 +511,7 @@ function disposeAppListeners(): void {
     disposeFocusTrapBindings()
     teardownToastHooks()
     appInitCleanup?.()
+    disposeGlobalErrorSink()
     if (app) unmount(app)
 }
 

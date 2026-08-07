@@ -91,16 +91,6 @@ declare global {
         }
 
         /**
-         * Live camera state mirror set by camera controls. Loose shape —
-         * DevGui uses this for auto-rotate toggling when running with the
-         * legacy state bridge active.
-         */
-        __semanticCamera?: {
-            autoRotate?: boolean
-            userAutoRotateSpeed?: number
-        }
-
-        /**
          * SpectorInspector capture bridge — headless WebGL inspection
          * via `window.__spector.capture(canvasSelector?)`.
          */
