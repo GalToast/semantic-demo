@@ -149,8 +149,6 @@ export class AppState {
     searchResults = $state<SearchResult[]>([])
     searchSummary = $state<Record<string, unknown> | null>(null)
     searchTrailCueLastRenderedAt = $state<number>(0)
-    mobileRoutePeekActive = $state<boolean>(false)
-    mobileRoutePeekReason = $state<string>('')
     semanticLaneMonitorTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     semanticLaneProbePromise = $state<Promise<unknown> | null>(null)
     semanticLaneOpsMode = $state<boolean>(false)
@@ -162,7 +160,6 @@ export class AppState {
     semanticResultContextByLeadId = $state<Map<string, unknown>>(new Map())
     semanticGuideAbortController = $state<AbortController | null>(null)
     semanticLaneWarmingCounter = $state<number>(0)
-    FOCUS_CONSTELLATION_MOTIFS = $state<Record<string, string> | null>(null)
 
     // ==== POSITION / GEOMETRY STATE ====
     points = $state<Point[]>([])
@@ -394,29 +391,6 @@ export class AppState {
     readonly HOVER_SAMPLE_MS = 24
     // ==== COLORS / CLUSTER NAMES ====
     COLORS = $state(CLUSTER_COLORS)
-    CLUSTER_NAMES = $state<string[]>([
-        'General Business',
-        'Professional Services',
-        'Food & Hospitality',
-        'Construction & Trades',
-        'Retail & Shops',
-        'Beauty & Wellness',
-        'Real Estate & Property',
-        'Industrial & Logistics',
-        'Agriculture & Ranching',
-        'Automotive',
-        'Healthcare & Medical',
-        'Therapy & Counseling',
-        'Education & Childcare',
-        'Churches',
-        'Faith Ministries',
-        'Community Nonprofits',
-        'Foundations',
-        'Arts & Culture',
-        'Economic Development',
-        'Public Agencies',
-        'Enterprise Brands'
-    ])
 
     // ==== FILTER / MODE STATE ====
     filterVersion = $state<number>(0)

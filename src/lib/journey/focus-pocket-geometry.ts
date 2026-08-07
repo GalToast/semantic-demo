@@ -91,7 +91,7 @@ export function getFocusConstellationMotif(index: number): ConstellationMotif {
         key = 'civic'
     }
     const motifKey = key as ConstellationMotifName
-    const motifs = state.FOCUS_CONSTELLATION_MOTIFS || FOCUS_CONSTELLATION_MOTIFS
+    const motifs = FOCUS_CONSTELLATION_MOTIFS
     const motif = motifs[motifKey] || motifs.market || FOCUS_CONSTELLATION_MOTIFS.market
     return {
         ...(motif as unknown as ConstellationMotif),
@@ -108,7 +108,7 @@ export function getFocusConstellationMotifForPersonality(
     const overrideKey = personality?.motifOverride
     if (!overrideKey) return fallback
     const overrideMotifKey = overrideKey as ConstellationMotifName
-    const motifs = state.FOCUS_CONSTELLATION_MOTIFS || FOCUS_CONSTELLATION_MOTIFS
+    const motifs = FOCUS_CONSTELLATION_MOTIFS
     const override = motifs[overrideMotifKey]
     if (!override) return fallback
     return {
