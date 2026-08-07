@@ -275,6 +275,36 @@ git status --short
 - If tracked files you did not touch are modified, evaluate the diff on merit. Good changes stay; bad ones get fixed or reverted with an explanation. Pause and coordinate when the change is unclear-to-you-but-claimed-by-someone-else.
 - For dirty worktrees, inspect before removal. Do not force-remove a worktree that may contain another session's WIP.
 
+### Shared-index collision (single worktree, 2026-08-07)
+
+All sessions in ONE worktree share the SAME `.git/index`. This has a subtle race:
+
+> If Session B runs `git commit` while Session A has staged files, **Session A's staged changes are swept into Session B's commit** — under B's commit message.
+
+Observed 2026-08-07: a Pi lane staged 22 wave-G files; a Codex lane's `git commit` (engine teardown) landed with 23 files — the 22 meant for Pi's wave plus the engine change — under a message describing only the engine change. Nothing was pushed, so recovery was safe.
+
+**Symptoms:** your staged set vanishes from `git status` after a foreign commit; `git show --stat <foreign-commit>` lists files you staged.
+
+**Recovery (nothing pushed yet):**
+
+```bash
+# capture the foreign message BEFORE resetting:
+MSG=$(git log --format=%B -1 HEAD)
+git reset --soft HEAD~1        # undo foreign commit; keep its tree in the index
+git reset                      # unstage everything
+# stage YOUR files; commit with your message
+# then stage THEIR files; commit with the CAPTURED original message
+# verify byte-for-byte tree identity (must print nothing):
+git diff --stat <old-foreign-sha> HEAD
+```
+
+**Prevention:**
+
+- If you must write in a shared worktree, stage+commit in one shell command (`git add <files> && git commit`) to shrink the race window.
+- Prefer per-session worktrees (isolated index, zero shared-index races).
+- Check `git log --oneline -1` immediately before AND after staging; a new foreign commit means re-verify your staged set.
+- Never delete `.git/index.lock` blindly — confirm with tasklist/`ps` (command-line evidence) that no live git process owns it.
+
 ## Switchboard coordination — beyond the file lock
 
 `.session-lock` says _"this worktree is held by someone"_ but does not say _what_ the holder is doing today, when they expect to be done, or whether they're reachable. The switchboard (via the `mcp` gateway, server `switchboard`) is the bus for that.
