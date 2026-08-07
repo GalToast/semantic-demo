@@ -394,6 +394,10 @@ export function showExploreTrailReview(_summary?: unknown): void {
     if (!overlay) return
 
     overlay.setAttribute('aria-hidden', 'false')
+    // w23 a11y M3: this overlay gates interaction (full-scene dialog the user
+    // must dismiss via the Show-walk toggle), so announce it as modal when
+    // visible instead of the hardcoded aria-modal="false" in App.svelte.
+    overlay.setAttribute('aria-modal', 'true')
     overlay.hidden = false
     overlay.classList.add('visible')
 
@@ -412,6 +416,7 @@ export function hideExploreTrailReview(): void {
     const overlay = document.getElementById('trail-review-overlay')
     if (overlay) {
         overlay.setAttribute('aria-hidden', 'true')
+        overlay.setAttribute('aria-modal', 'false')
         overlay.hidden = true
         overlay.classList.remove('visible')
 

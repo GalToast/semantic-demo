@@ -54,6 +54,20 @@ describe('H-1: focus-trap.ts stack-based nested trap registry', () => {
         expect(() => releaseFocusTrap()).not.toThrow()
     })
 
+    it('setupFocusTrap guards against unbounded stack growth (w23 M4)', () => {
+        // Push far past the MAX_TRAP_DEPTH guard; overflow pushes must be
+        // ignored without throwing, and draining must stay safe.
+        for (let i = 0; i < 12; i++) {
+            expect(() => setupFocusTrap(`[data-guard-${i}]`)).not.toThrow()
+        }
+        // Drain all real layers + the ignored overflow — nothing may throw,
+        // including the pop-empty warn path after full drain.
+        for (let i = 0; i < 12; i++) {
+            expect(() => releaseFocusTrap()).not.toThrow()
+        }
+        expect(() => releaseFocusTrap()).not.toThrow()
+    })
+
     it('document keydown listener removed when stack empties after nested pushes', () => {
         // Track add/removeEventListener calls on document
         const addListener = vi.spyOn(document, 'addEventListener')

@@ -66,6 +66,13 @@
   in the bottom-right.
 -->
 {#if hasNodes}
+<!--
+  Live announcement region (w23 a11y M5): the <ul> below is itself navigable
+  by screen readers (virtual cursor), so placing aria-live on the list made
+  every node mutation re-announce the ENTIRE list. Announce only the count
+  here; the list stays navigable without the live-region noise.
+-->
+<div class="sr-only" aria-live="polite" data-testid="focus-pocket-announcer">{pocketNodes.length} neighborhood business{pocketNodes.length === 1 ? '' : 'es'} in focus</div>
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <ul
   id="focus-pocket-a11y"
@@ -73,7 +80,6 @@
   class:visible={isVisible}
   role="list"
   aria-label="Neighborhood businesses"
-  aria-live="polite"
   tabindex={isVisible ? -1 : undefined}
 >
   {#each pocketNodes as node (node.index)}

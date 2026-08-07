@@ -221,7 +221,9 @@
       <span class="legend-overflow-text">
         {approxVisibleCount} of {clusterEntries.length} shown
       </span>
-      <span class="legend-overflow-hint" aria-hidden="true">scroll for more ↓</span>
+      <span class="legend-overflow-hint">
+        scroll for more <span aria-hidden="true">↓</span><span class="sr-only"> — more categories below. Use arrow keys or scroll to view them.</span>
+      </span>
     </div>
   {/if}
 </aside>

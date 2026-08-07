@@ -287,7 +287,7 @@
         spellcheck="false"
         role="combobox"
         aria-controls="search-result-list"
-        aria-haspopup="list"
+        aria-haspopup="true"
         aria-expanded={hasQuery}      />
     {/snippet}
   </SearchInputChrome>

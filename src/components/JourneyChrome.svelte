@@ -124,7 +124,9 @@
   const currentThreadSource = $derived(journeySnapshot.threadSource || navSnapshot.threadSource);
   // Thread computation is synchronous (walkThreadNeighbor → WalkResult | null), so there is no
   // async trail-loading state to surface here. Removed the dead `isLoading` derived value and
-  // its aria-busy attribute (M7-deferred #4 fix). Re-instate when trail loading becomes async.
+  // its hardcoded aria-busy="false" attribute (w23 a11y M2) — a static "false" misleads screen
+  // readers into thinking a busy state exists when nothing is loading. Re-instate a dynamic
+  // aria-busy only when trail loading becomes async.
   // W53 trail-button widening: mirror the W49-c widening of `focusActive` at
   // App.svelte:211. Without these parity predicates here, JourneyChrome can
   // mount (via `focusActive`) while `chromeHasFocus` stays false — e.g. when
@@ -287,7 +289,6 @@
     tabindex="-1"
     aria-label="Journey navigation"
     aria-live="polite"
-    aria-busy="false"
     onpointerdown={stopRailSurfaceEvent}
     onpointerup={stopRailSurfaceEvent}
     onmousedown={stopRailSurfaceEvent}

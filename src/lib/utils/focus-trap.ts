@@ -21,6 +21,13 @@ const trapStack: string[][] = []
 let isTrapping = false
 
 /**
+ * Maximum nesting depth for the focus-trap stack. Guards against unbounded
+ * growth from a push/pop imbalance (a trap pushed but never popped). Legitimate
+ * UI only stacks a handful of dialog layers, so 8 is generous headroom.
+ */
+const MAX_TRAP_DEPTH = 8
+
+/**
  * Pushes a new focus-trap layer onto the stack. When active,
  * pressing Tab will loop focus within visible focusable elements
  * across all active trap layers.
@@ -28,6 +35,15 @@ let isTrapping = false
 export function setupFocusTrap(containerSelectors: string | string[]): void {
     if (!Array.isArray(containerSelectors)) {
         containerSelectors = [containerSelectors]
+    }
+
+    if (trapStack.length >= MAX_TRAP_DEPTH) {
+        // w23 a11y M4: refuse to grow the stack past the guard instead of
+        // leaking layers (the listener would stay installed forever).
+        console.warn(
+            `[focus-trap] ignoring setupFocusTrap at depth ${trapStack.length} (MAX_TRAP_DEPTH=${MAX_TRAP_DEPTH}) — possible push/pop imbalance`
+        )
+        return
     }
 
     trapStack.push(containerSelectors)
@@ -44,6 +60,13 @@ export function setupFocusTrap(containerSelectors: string | string[]): void {
  * stack becomes empty, the document-level keydown listener is removed.
  */
 export function releaseFocusTrap(): void {
+    if (trapStack.length === 0) {
+        // w23 a11y M4: popping an empty stack hides a push/pop imbalance;
+        // warn instead of silently no-oping so the leak is detectable.
+        console.warn('[focus-trap] releaseFocusTrap() called on an empty stack')
+        return
+    }
+
     trapStack.pop()
 
     if (trapStack.length === 0 && isTrapping) {
