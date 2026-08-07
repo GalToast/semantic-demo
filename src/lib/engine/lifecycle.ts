@@ -568,6 +568,16 @@ export function destroyEngine(): void {
         debugWarn('[engine/lifecycle] overview camera animation dispose failed:', error)
     }
 
+    // H-1 (engine lifecycle bugsweep 2026-08-07): terminate the semantic-threads
+    // data worker on engine teardown. resetSemanticThreadWorker() was only wired
+    // to AppBoot/beforeunload, so every destroy->re-init (HMR) spawned a new
+    // Worker while the old one lived as a detached zombie (~2-5 MB each).
+    import('@lib/engine/semantic-threads')
+        .then((m) => m.resetSemanticThreadWorker())
+        .catch((error) => {
+            debugWarn('[engine/lifecycle] semantic-threads worker terminate failed:', error)
+        })
+
     // 5. Null out engine THREE-object references so a hot remount never sees
     //    disposed refs (W47 M1). Mirrors three-engine-core deinit() cleanup but
     //    targets appState (the Svelte 5 state source of truth). disposeInteractionVisuals()

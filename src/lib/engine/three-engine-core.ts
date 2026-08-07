@@ -330,6 +330,13 @@ export function cancelAnimate() {
     // M8: abort canvas pointer listeners before the renderer/canvas are torn
     // down, so stale AbortController listeners don't survive across re-init.
     disposeCanvasNodeInteractionBindings()
+    // H-2/H-3 (engine lifecycle bugsweep 2026-08-07): clear the camera-timer
+    // orphans on cancel — the focus-transition settle timer (core:74-76) and
+    // the auto-rotate resume timer (restore:118-121) are module-singleton
+    // timeouts that otherwise fire post-teardown against nulled appState
+    // refs (each HMR accumulated one pending dangling callback).
+    engineState.cameraControls?.setFocusTransitionMode?.('idle')
+    engineState.cameraControls?.clearAutoRotateResumeTimer?.()
     // Dispose all registered event listeners and timers via the central
     // registry.  Replaces the previous per-handler null-check dance.
     engineState.sceneRegistry?.disposeAll()
@@ -579,15 +586,25 @@ export function animate() {
             camera: cameraRevealProgress
         } = computeRevealProgress(frameNow)
 
+        const nodeMotionStart = performance.now()
         if (lerpNodesForFrame(frameNow)) return
+
+        const nodeMotionEnd = performance.now()
 
         _tickRevealAndParticles(cameraRevealProgress, revealProgress, pointsRevealProgress, frameNow)
 
         const hoveredNode = engineState.state?.hoverHighlightIndex ?? -1
         const focusedNode = engineState.state?.focusedNode ?? null
 
-        tickInteraction(frameNow, hoveredNode, focusedNode, sceneNeedsContinuous, pointsRevealProgress)
-        tickThreads(sceneNeedsContinuous)
+        const overlayUpdateMs = tickInteraction(
+            frameNow,
+            hoveredNode,
+            focusedNode,
+            sceneNeedsContinuous,
+            pointsRevealProgress
+        )
+
+        const threadUpdateMs = tickThreads(sceneNeedsContinuous)
         if (sceneNeedsContinuous) {
             engineState.cameraControls?.applySemanticCentroidCamera(frameNow)
             engineState.clusterLabels?.updateClusterLabels()
@@ -600,7 +617,10 @@ export function animate() {
             sceneFrameMs,
             {
                 updateMs: updateEnd - updateStart,
-                renderMs: renderEnd - renderStart
+                renderMs: renderEnd - renderStart,
+                nodeMotionMs: nodeMotionEnd - nodeMotionStart,
+                overlayUpdateMs,
+                threadUpdateMs
             },
             state
         )
@@ -644,35 +664,41 @@ function tickInteraction(
     focusedNode: number | null,
     sceneNeedsContinuous: boolean,
     pointsRevealProgress: number
-): void {
+): number {
     const state = engineState.state
     updateHoverEmissiveFlash(state)
     const threadsVisible = updateMyceliumPulse(state)
     updateThreadLayerOpacities(threadsVisible, pointsRevealProgress, state)
     updatePointsShaderHoverBoost(hoveredNode, state)
-    if (sceneNeedsContinuous) {
-        engineState.threeInteractionVisuals?.updateInteractionVisuals(frameNow, hoveredNode, focusedNode)
-        engineState.threeSearchAnimations?.updateCorridorNodeGlow(frameNow)
-        engineState.threeSearchAnimations?.updateSearchCorridorAnimation(frameNow)
-        try {
-            engineState.inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)
-            updateRouteTraceOverlayFrame(frameNow)
-            updateArrivalHandoffOverlayFrame(frameNow)
-            updateFocusSemanticOverlayFrame(frameNow)
-            updateFocusSemanticOverlayPositions()
-            syncFocusPocketSizeMesh()
-        } catch (overlayErr) {
-            debugWarn('overlay update threw:', overlayErr)
-        }
+    if (!sceneNeedsContinuous) return 0
+
+    engineState.threeInteractionVisuals?.updateInteractionVisuals(frameNow, hoveredNode, focusedNode)
+    engineState.threeSearchAnimations?.updateCorridorNodeGlow(frameNow)
+    engineState.threeSearchAnimations?.updateSearchCorridorAnimation(frameNow)
+    const overlayStart = performance.now()
+    try {
+        engineState.inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)
+        updateRouteTraceOverlayFrame(frameNow)
+        updateArrivalHandoffOverlayFrame(frameNow)
+        updateFocusSemanticOverlayFrame(frameNow)
+        updateFocusSemanticOverlayPositions(frameNow)
+        syncFocusPocketSizeMesh()
+    } catch (overlayErr) {
+        debugWarn('overlay update threw:', overlayErr)
     }
+    return performance.now() - overlayStart
 }
 
-function tickThreads(sceneNeedsContinuous: boolean): void {
-    if (sceneNeedsContinuous && shouldRenderThreadsPort()) {
+function tickThreads(sceneNeedsContinuous: boolean): number {
+    if (!sceneNeedsContinuous) return 0
+
+    const threadStart = performance.now()
+    if (shouldRenderThreadsPort()) {
         updateMyceliumThreadsPort()
-    } else if (sceneNeedsContinuous) {
+    } else {
         drainMyceliumDirtyStatePort()
     }
+    return performance.now() - threadStart
 }
 
 function tickRenderAndPerf(frameNow: number, sceneFrameMs: number, sceneNeedsContinuous: boolean): number {
