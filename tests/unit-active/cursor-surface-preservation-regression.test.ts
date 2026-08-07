@@ -184,6 +184,7 @@ vi.mock('@lib/journey/semantic-dive', () => ({
 vi.mock('@lib/orchestration/event-bus', () => ({
     publish: () => {},
     subscribe: () => () => {},
+    subscribeKeyed: () => () => {},
     EVENTS: {
         CAMERA_MOVED: 'CAMERA_MOVED',
         CAMERA_NODE_FOCUSED: 'CAMERA_NODE_FOCUSED',

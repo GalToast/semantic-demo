@@ -77,6 +77,7 @@ vi.mock('@lib/stores/navigation.svelte.ts', () => ({
 
 vi.mock('@lib/orchestration/event-bus', () => ({
     publish: mocks.publish,
+    subscribeKeyed: () => () => {},
     EVENTS: { SEARCH_CANCELLED: 'SEARCH_CANCELLED' }
 }))
 

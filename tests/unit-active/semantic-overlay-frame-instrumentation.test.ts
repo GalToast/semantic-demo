@@ -70,6 +70,7 @@ vi.mock('@lib/state/app.svelte', () => ({
 
 vi.mock('@lib/orchestration/event-bus', () => ({
     subscribe: vi.fn(),
+    subscribeKeyed: vi.fn(() => () => {}),
     EVENTS: { CAMERA_NODE_FOCUSED: 'CAMERA_NODE_FOCUSED' }
 }))
 

@@ -160,6 +160,7 @@ vi.mock('@lib/stores/focus.svelte.ts', async (importOriginal) => {
 vi.mock('@lib/orchestration/event-bus', () => ({
     publish: () => {},
     subscribe: () => () => {},
+    subscribeKeyed: () => () => {},
     EVENTS: {
         COMPOSITION_UPDATED: 'COMPOSITION_UPDATED',
         FOCUS_NODE_FOCUSED: 'FOCUS_NODE_FOCUSED',

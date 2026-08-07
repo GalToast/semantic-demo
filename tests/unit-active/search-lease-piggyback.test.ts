@@ -259,7 +259,8 @@ vi.mock('@lib/orchestration/event-bus', () => ({
         URL_SYNC_REQUESTED: 'URL_SYNC_REQUESTED',
         SEARCH_CANCELLED: 'SEARCH_CANCELLED'
     },
-    subscribe: (_type: string, _cb: (...args: unknown[]) => void) => () => {}
+    subscribe: (_type: string, _cb: (...args: unknown[]) => void) => () => {},
+    subscribeKeyed: (_key: string, _event: string, _cb: (...args: unknown[]) => void) => () => {}
 }))
 
 // URL params are injected through the url-params leaf so applyUrlState reads

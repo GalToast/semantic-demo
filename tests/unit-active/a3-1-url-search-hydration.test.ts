@@ -261,6 +261,7 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
 vi.mock('@lib/orchestration/event-bus', () => ({
     publish: () => undefined,
     subscribe: () => () => undefined,
+    subscribeKeyed: () => () => undefined,
     EVENTS: {
         SEARCH_SUCCESS: 'search:success',
         SEARCH_EMPTY: 'search:empty',

@@ -331,6 +331,7 @@ vi.mock('@lib/orchestration/event-bus', () => ({
         mockState.publishCalls.push({ type, payload })
     },
     subscribe: () => () => {},
+    subscribeKeyed: () => () => {},
     EVENTS: { URL_STATE_RESTORED: 'URL_STATE_RESTORED' }
 }))
 

@@ -225,7 +225,8 @@ vi.mock('@lib/orchestration/event-bus', () => ({
         SEARCH_CLEARED: 'search:cleared',
         STATE_RESET: 'state:reset'
     },
-    subscribe: (_type: string, _cb: (...args: unknown[]) => void) => () => {}
+    subscribe: (_type: string, _cb: (...args: unknown[]) => void) => () => {},
+    subscribeKeyed: (_key: string, _event: string, _cb: (...args: unknown[]) => void) => () => {}
 }))
 
 // Mock URL search params helper — `getSearchParams` reads from mockState

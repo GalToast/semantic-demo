@@ -165,7 +165,8 @@ vi.mock('@lib/orchestration/event-bus', () => ({
         STATE_RESET: 'STATE_RESET',
         URL_SYNC_REQUESTED: 'URL_SYNC_REQUESTED'
     },
-    subscribe: (_type: string, _cb: (...args: unknown[]) => void) => () => {}
+    subscribe: (_type: string, _cb: (...args: unknown[]) => void) => () => {},
+    subscribeKeyed: (_key: string, _event: string, _cb: (...args: unknown[]) => void) => () => {}
 }))
 
 vi.mock('@lib/orchestration/url-params', () => ({

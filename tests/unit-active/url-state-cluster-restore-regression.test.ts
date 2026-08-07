@@ -164,6 +164,7 @@ vi.mock('@lib/state/app.svelte', () => ({
 vi.mock('@lib/orchestration/event-bus', () => ({
     publish: () => {},
     subscribe: () => () => {},
+    subscribeKeyed: () => () => {},
     EVENTS: {
         SEARCH_FOCUS_REQUESTED: 'search:focus-requested',
         SEARCH_CLEARED: 'search:cleared',

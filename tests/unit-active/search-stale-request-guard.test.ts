@@ -288,6 +288,7 @@ vi.mock('@lib/orchestration/event-bus', () => ({
         mockState.publishCalls.push({ type, payload })
     },
     subscribe: () => () => undefined,
+    subscribeKeyed: () => () => undefined,
     EVENTS: {
         SEARCH_SUCCESS: 'search:success',
         SEARCH_EMPTY: 'search:empty',

@@ -25,6 +25,7 @@ vi.mock('@lib/engine/three-engine', () => ({
     deinit: vi.fn(),
     onWindowResize: vi.fn(),
     updateCameraViewportOffset: vi.fn(),
+    invalidateRestoreMachine: vi.fn(),
     animate: vi.fn(),
     cancelAnimate: vi.fn(),
     getSceneRenderableDiagnostics: vi.fn(() => ({
@@ -93,6 +94,7 @@ vi.mock('@lib/ui/tooltip', () => ({
 vi.mock('@lib/orchestration/event-bus', () => ({
     publish: vi.fn(),
     subscribe: vi.fn(() => vi.fn()), // returns unsubscribe
+    subscribeKeyed: vi.fn(() => vi.fn()),
     EVENTS: {
         CAMERA_NODE_FOCUSED: 'CAMERA_NODE_FOCUSED',
         TRANSITION_PHASE_CHANGED: 'TRANSITION_PHASE_CHANGED',
@@ -217,7 +219,7 @@ vi.mock('@lib/state/app.svelte', () => ({
             semanticGuideRequestSequence: 0,
             currentSemanticGuide: null,
             summaryCardTypeToken: 0,
-searchVisibleCount: 5
+            searchVisibleCount: 5
         },
         viewportState: {
             viewportWidth: 1280,
