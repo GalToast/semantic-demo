@@ -71,11 +71,34 @@ export interface SearchErrorData {
  * Index signature allows custom fields from external sources.
  *
  * Promotion: was a local interface in src/lib/search/results-ui.ts.
+ *
+ * Field sources (merged from 3 duplicate declarations):
+ *   - search-types (original): lead_id, name, city
+ *   - result-presentation.ts: what, lat, lng, cluster, status, website, email, phone, trivia
+ *   - types/state.ts: what, cluster, website, email, phone
  */
 export interface SearchResultPoint {
     lead_id?: string | number
     name?: string
+    /** Business category description (from result-presentation.ts + types/state.ts). */
+    what?: string
     city?: string
+    /** Latitude (from result-presentation.ts). */
+    lat?: number
+    /** Longitude (from result-presentation.ts). */
+    lng?: number
+    /** Thematic cluster id (from result-presentation.ts + types/state.ts). */
+    cluster?: number
+    /** Business status label (from result-presentation.ts). */
+    status?: string
+    /** Official website URL (from result-presentation.ts + types/state.ts). */
+    website?: string | null
+    /** Public email (from result-presentation.ts + types/state.ts). */
+    email?: string | null
+    /** Public phone (from result-presentation.ts + types/state.ts). */
+    phone?: string | null
+    /** Trivia / note field (from result-presentation.ts). */
+    trivia?: string
     [key: string]: unknown
 }
 
@@ -87,13 +110,35 @@ export interface SearchResultPoint {
  * Promotion: was a local interface in src/lib/search/results-ui.ts.
  * Hoisted to state-types.ts so appState can declare the field's shape
  * without `Array<Record<string, unknown>>`.
+ *
+ * CANONICAL definition — the single source of truth for SearchResult.
+ * Merged from 3 duplicate declarations (2026-08-06):
+ *   - search-types.ts (original): point?, index, score, publicNote?, publicDetail?
+ *   - result-presentation.ts: point (required), index, score, publicNote?, publicDetail?
+ *   - types/state.ts: id, name, index, score, category, snippet, point?
+ *
+ * All 3 modules now re-export from here.
  */
 export interface SearchResult {
-    point?: SearchResultPoint | null
+    /** Stable identifier for dedup / keying (from types/state.ts via semantic-search-mapper + local-search-index). */
+    id: string
+    /** Display name (from types/state.ts via semantic-search-mapper + local-search-index). */
+    name: string
+    /** Canonical corpus index. */
     index: number
+    /** Match score, semantically normalized. */
     score: number
+    /** Business category label (from types/state.ts). */
+    category: string
+    /** Human-readable snippet (from types/state.ts). */
+    snippet: string
+    /** Structured point data for focus/glow/transition consumers. */
+    point?: SearchResultPoint | null
+    /** Raw public note from data source (from result-presentation.ts + search-types.ts). */
     publicNote?: string
+    /** Raw public detail from data source (from result-presentation.ts + search-types.ts). */
     publicDetail?: string
+    /** Allow custom fields from external sources (all 3 modules). */
     [key: string]: unknown
 }
 

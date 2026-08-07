@@ -104,28 +104,13 @@ export interface SearchState {
     degraded: boolean
 }
 
-export interface SearchResult {
-    id: string
-    name: string
-    index: number
-    score: number
-    category: string
-    snippet: string
-    point?: SearchResultPoint
-    [key: string]: unknown
-}
-
-export interface SearchResultPoint {
-    lead_id?: string | number
-    name?: string
-    what?: string
-    cluster?: number
-    city?: string
-    website?: string | null
-    email?: string | null
-    phone?: string | null
-    [key: string]: unknown
-}
+// SearchResult + SearchResultPoint now live canonically in
+// @lib/state/types/search-types.ts (merged from 3 duplicate declarations).
+// Import for local use (SearchState picks up SearchResult) + re-export for
+// backward compatibility with the many consumers that import from
+// '@lib/types/state'.
+import type { SearchResult, SearchResultPoint } from '../state/types/search-types'
+export type { SearchResult, SearchResultPoint }
 
 export interface SearchRenderContext {
     trimmedQuery: string

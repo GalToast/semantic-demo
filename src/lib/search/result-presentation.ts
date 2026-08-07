@@ -13,32 +13,13 @@
 
 import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters'
 
-// ── TYPES ───────────────────────────────────────────────────────────────────
-
-export interface SearchResultPoint {
-    lead_id?: string | number
-    name?: string
-    what?: string
-    city?: string
-    lat?: number
-    lng?: number
-    cluster?: number
-    status?: string
-    website?: string
-    email?: string
-    phone?: string
-    trivia?: string
-    [key: string]: unknown
-}
-
-export interface SearchResult {
-    point: SearchResultPoint
-    index: number
-    score: number
-    publicNote?: string
-    publicDetail?: string
-    [key: string]: unknown
-}
+// ── TYPES (re-exported from canonical source) ──────────────────────────────
+// SearchResultPoint and SearchResult are now defined in
+// @lib/state/types/search-types.ts — the single canonical home.
+// Import for local use (function signatures) + re-export for consumers
+// (search/state.ts, result-renderer.ts).
+import type { SearchResultPoint, SearchResult } from '../state/types/search-types'
+export type { SearchResultPoint, SearchResult }
 
 export interface SearchRankParams {
     index: number | string | null | undefined
