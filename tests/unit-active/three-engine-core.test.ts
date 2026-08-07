@@ -261,7 +261,8 @@ describe('cancelAnimate', () => {
         // initThreeJS() gets a chance to succeed on the restore path.
         cancelAnimate()
         expect(_pauseRenderLoopTimers).toHaveBeenCalledTimes(1)
-        expect(_pauseRenderLoopTimers).toHaveBeenCalledWith({})
+        const arg = _pauseRenderLoopTimers.mock.calls[0]?.[0]
+        expect(arg?.clearRestoreTimer).toBeUndefined()
     })
 
     it('disposes the scene registry', () => {
