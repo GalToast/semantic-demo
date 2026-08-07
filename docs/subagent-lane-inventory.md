@@ -564,3 +564,39 @@ NOTE: these are dead at the PROVIDER/BILLING layer (our config listing is inert 
 | mimo-v2.5-free (CONTROL)            | opencode-zen          | 429       | LIVE (do not prune)                |
 
 CAVEAT: 401/429 rotate with keys/quota — re-probe before relying on "dead". 402/403/404 are stable.
+
+## 2026-08-07 operational lessons (fleet sweeps, logfare workhorses)
+
+### Two-lane redundancy dispatch pattern
+For sweep seams where a miss is expensive (engine/state/keyboard), dispatch TWO lanes on the
+same read-only seam: the primary workhorse (`logfare/deepseek-v4-flash-0731`) plus a
+cross-check lane (`logfare/deepseek-v4-pro`). The workhorse verdict is authoritative; the
+second lane's report is a cross-check against missed findings. Cons: only dispatch both when
+the seam is high-value — the pattern costs double tokens for a converge-difference check.
+(Origin: search-bugsweep W60/W61 "two-lane redundancy protects against transient model
+failures".)
+
+### kind-1 failure mode (reports without diffs) — always inspect the diff, not the report
+Workers frequently settle having written `tmp/*-REPORT.md` while the actual source diff did
+NOT land (or landed partially). Lesson: after any fix-worker settles, verify with
+`git diff --stat <scoped files>` + read the diff hunks. Do not trust the REPORT body. This
+session caught 3 kind-1s (banner-focus, unicode-highlight, boot-event) — re-did the work
+main-lane.
+
+### Provider lockout symptom 2026-08-07 (flight-recorder evidence)
+Three simultaneous wave-5 workers settled with ZERO deliverables (no report / no docs write)
+at ~10 min. `flight_recorder status/tail` revealed deepseek-v4-flash-0731 provider responses
+struck at 408s / 161s / 5,414s (90 min) — the workers were starved into empty settles, not
+model failures. Recovery: `external_subagent_followup` on the SAME session_id with a firm
+"you DO have tools, execute now" directive. If the provider remains hot, prefer main-lane for
+small deterministic docs tasks (do docs yourself rather than re-dispatching).
+
+### Provider metric: doc-writing / small deterministic edits
+Flash-class models (deepseek-v4-flash) drift on multi-paragraph docs (one drifted into
+explaining OpenCode Zen billing instead of writing the doc). For doc updates < 1 page, do
+them main-lane or give the worker a byte-budget + a paste-only target.
+
+### Dead-model roster (do NOT re-add; measured 2026-08-06/07)
+- `grape-2-pro` — talks then settles, ~75 tokens (useless for agentic work).
+- `glm-5.2`, `kimi-k2.6/k3`, `qwen-3.8-max`, `kiro-auto` — silent-settle / wedge after probe-ok.
+- `kilo/openrouter/owl-alpha` — dead lane, do not re-add.
