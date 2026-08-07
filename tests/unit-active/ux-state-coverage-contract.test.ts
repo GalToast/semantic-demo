@@ -199,7 +199,10 @@ describe('LoadingOverlay — app-level loading phases', () => {
 
     it('has 4-phase progression: records → scene → restore → launch', () => {
         // Phase order is a TypeScript const array; check it lists all 4.
-        const phaseMatch = src.match(/PHASE_ORDER:\s*readonly[^=]+=\s*\[([^\]]+)\]/)
+        // (Moved to @lib/ui/loading as part of the phase-meta unification
+        // — F5, data-pipeline bugsweep.)
+        const phaseSrc = readFile('src/lib/ui/loading.ts')
+        const phaseMatch = phaseSrc.match(/PHASE_ORDER:\s*readonly[^=]+=\s*\[([^\]]+)\]/)
         expect(phaseMatch).not.toBeNull()
         const phases = phaseMatch![1].match(/['"]([^'"]+)['"]/g) || []
         const uniquePhases = new Set(phases.map((p) => p.replace(/['"]/g, '')))
