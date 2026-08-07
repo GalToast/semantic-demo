@@ -164,8 +164,8 @@ async function collectState(page) {
                 selectedPoint: s.selectedPoint ? 'present' : null,
                 navStateMode: s.navState?.mode,
                 trailDepth: s.trailDepth,
-                searchGlowActive: s.searchGlowActive,
-                focusTransitionMode: s.focusTransitionMode,
+                searchGlowActive: s.searchState?.searchGlowActive,
+                focusTransitionMode: s.focusState?.focusTransitionMode,
                 cameraAssist: body.cameraAssist
             }
         }
@@ -251,9 +251,10 @@ async function run() {
         // Simulate search activation (glow + summary)
         const s = window.__TEST_STATE__
         s.currentSearchSummary = { query: 'restaurant', anchorIndex: 0, resultIndices: [0, 1, 2, 3] }
-        s.searchGlowActive = true
-        s.searchGlowIndices = new Set([0, 1, 2, 3])
-        s.searchGlowTopIndex = 0
+        // Phase 6b: searchState sub-aggregate — write through nested path
+        s.searchState.searchGlowActive = true
+        s.searchState.searchGlowIndices = new Set([0, 1, 2, 3])
+        s.searchState.searchGlowTopIndex = 0
         document.body.dataset.searchGlow = 'active'
 
         // Simulate focusing a node (Step Inside entry point)
@@ -268,7 +269,8 @@ async function run() {
             document.body.dataset.panelSurface = 'focus'
             document.body.dataset.focusTransition = 'idle'
             document.body.dataset.focusTransitionPhase = 'idle'
-            s.focusTransitionMode = 'idle'
+            // Phase 6c: focusState sub-aggregate — write through nested path
+            s.focusState.focusTransitionMode = 'idle'
         }
 
         // Reduced-motion proof now exercises public state orchestration only; focus-stage

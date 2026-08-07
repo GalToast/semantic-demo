@@ -273,9 +273,11 @@ async function auditNodeGrouping(page) {
         }
 
         // Check 2: pocketMotionByIndex holds animation metadata per node
-        if (s.pocketMotionByIndex instanceof Map) {
-            passes.push(`pocketMotionByIndex has ${s.pocketMotionByIndex.size} entries`)
-            for (const [idx, motion] of s.pocketMotionByIndex) {
+        // (Phase 6c: now nested under focusState)
+        const pm = s.focusState?.pocketMotionByIndex
+        if (pm instanceof Map) {
+            passes.push(`pocketMotionByIndex has ${pm.size} entries`)
+            for (const [idx, motion] of pm) {
                 if (motion.role === undefined) {
                     failures.push(`pocketMotionByIndex[${idx}] missing role`)
                 }
@@ -284,14 +286,15 @@ async function auditNodeGrouping(page) {
                 }
             }
         } else {
-            failures.push('pocketMotionByIndex is not a Map')
+            failures.push(`pocketMotionByIndex is not a Map (got ${typeof pm})`)
         }
 
         // Check 3: nodesAreSettling flag reflects transition state
-        if (typeof s.nodesAreSettling === 'boolean') {
-            passes.push(`nodesAreSettling=${s.nodesAreSettling}`)
+        // (Phase 6c: now nested under focusState)
+        if (typeof s.focusState?.nodesAreSettling === 'boolean') {
+            passes.push(`nodesAreSettling=${s.focusState.nodesAreSettling}`)
         } else {
-            failures.push('nodesAreSettling is not a boolean')
+            failures.push(`nodesAreSettling is not a boolean (got ${typeof s.focusState?.nodesAreSettling})`)
         }
 
         // Check 4: dataset attributes reflect focus state
