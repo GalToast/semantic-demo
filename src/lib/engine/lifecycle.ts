@@ -578,6 +578,15 @@ export function destroyEngine(): void {
             debugWarn('[engine/lifecycle] semantic-threads worker terminate failed:', error)
         })
 
+    // M-2 (engine lifecycle bugsweep 2026-08-07): dispose the demo-choreography
+    // registry on teardown so its phase timers/callbacks don't survive a
+    // destroy->re-init. clearDemoTimers() is idempotent (registry re-created).
+    import('@lib/engine/demo-choreography')
+        .then((m) => m.clearDemoTimers())
+        .catch((error) => {
+            debugWarn('[engine/lifecycle] demo choreography timer dispose failed:', error)
+        })
+
     // 5. Null out engine THREE-object references so a hot remount never sees
     //    disposed refs (W47 M1). Mirrors three-engine-core deinit() cleanup but
     //    targets appState (the Svelte 5 state source of truth). disposeInteractionVisuals()
