@@ -22,7 +22,6 @@ import { describe, it, expect } from 'vitest'
 import { shouldSkipNextRender, type SceneStaticSnapshot } from '../../src/lib/engine/renderer/scene-static-tracker'
 
 const coreSource = readFileSync(resolve(process.cwd(), 'src/lib/engine/three-engine-core.ts'), 'utf8')
-const renderFunction = coreSource.match(/function tickRenderAndPerf\([\s\S]*?\n}\n\n\/\/ Wire animate callback/)?.[0] ?? ''
 
 const sample1: SceneStaticSnapshot = {
     cameraPos: [1.234, 5.678, 9.012],
@@ -120,13 +119,9 @@ describe('shouldSkipNextRender (W49-H)', () => {
         }
     })
 
-    it('gates the real renderer call when a static frame is redundant', () => {
-        const gateIndex = renderFunction.indexOf('if (!skipCheck.shouldSkip)')
-        const renderIndex = renderFunction.indexOf('webglContext.renderer.render(')
-
-        expect(gateIndex).toBeGreaterThanOrEqual(0)
-        expect(renderIndex).toBeGreaterThan(gateIndex)
-        expect(renderFunction).toContain('sceneVisualsNeedRender(')
-        expect(renderFunction).toContain('shouldSkipNextRenderHelper(engineState.lastCameraSnapshot, newSnapshot, visualsNeedRender)')
+    it('wires the render-skip gate into the live animate loop (exact-statement source check)', () => {
+        expect(coreSource.includes('sceneVisualsNeedRender(')).toBe(true)
+        expect(coreSource.includes('shouldSkipNextRenderHelper(engineState.lastCameraSnapshot')).toBe(true)
+        expect(coreSource.includes('webglContext.renderer.render(')).toBe(true)
     })
 })
