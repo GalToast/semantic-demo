@@ -114,10 +114,16 @@ function _onDataReady(): void {
 }
 
 // Subscribe once at module load; the guard inside _onDataReady makes it safe
-// to fire before or after initEngine() runs.
-_dataReadyUnsub = isDataReady.subscribe((ready) => {
-    if (ready) _onDataReady()
-})
+// to fire before or after initEngine() runs. Re-armed by initEngine() after
+// destroyEngine() nulls it (render sweep 2026-08-07) so destroy→re-init keeps
+// late-geometry creation alive.
+function ensureDataReadySubscription(): void {
+    if (_dataReadyUnsub) return
+    _dataReadyUnsub = isDataReady.subscribe((ready) => {
+        if (ready) _onDataReady()
+    })
+}
+ensureDataReadySubscription()
 
 // ── Event Bridge ─────────────────────────────────────────────────────────────
 
@@ -206,6 +212,12 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
 
     _destroyed = false
     setEngineStatus('loading')
+
+    // Re-arm the data-ready subscription if destroyEngine() cleared it, so
+    // late-game geometry creation survives destroy→re-init (render sweep
+    // 2026-08-07 P2-2).
+    ensureDataReadySubscription()
+
 
     // T3-9: Clear any stale event-bus subscriptions from a previous init
     // so that calling initEngine() twice (without destroy in between) does
