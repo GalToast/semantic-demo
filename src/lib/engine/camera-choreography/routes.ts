@@ -41,6 +41,15 @@ interface Point {
 
 let _insideCentroidLerpToken = 0
 
+// P1 (2026-08-07): per-frame re-arm guard — track the in-flight centroid
+// tween target so engine-loop calls with the SAME target don't cancel+restart
+// at t=0 (the bug that made the framing never arrive). Requires a tiny
+// epsilon-tolerant vector compare since the engine passes frameNow each tick.
+let _insideCentroidActive = false
+let _insideCentroidTargetX = 0
+let _insideCentroidTargetY = 0
+let _insideCentroidTargetZ = 0
+
 // M7: reusable DisposableRegistry for frame-task cancellation across all
 // route animations. Each animation function clears the previous registry
 // before registering a fresh task with the engine-owned frame scheduler.
@@ -335,7 +344,7 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
         Number.isFinite(anchorPos.z) ? anchorPos.z : 0
     )
 
-    const personality = (appState.navState.currentPersonality || {}) as ChoreographyPersonality
+        const personality = (appState.navState.currentPersonality || {}) as ChoreographyPersonality
     let centroidWeight: number
     if (personality.type === 'TIGHT_CLUSTER') {
         centroidWeight = 0.12
@@ -345,6 +354,25 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
         centroidWeight = 0.28
     }
     const lookAtTarget = anchorVec.clone().lerp(pocketCentroid, centroidWeight)
+
+    // P1 (fleet 2026-08-07): the engine loop calls this fn every frame during
+    // inside/trail (sceneNeedsContinuous while focusedNode set), and each call
+    // used to cancel + re-arm the 1600ms tween at t=0 — so it NEVER progressed
+    // and the centroid framing never arrived. Guard: if a tween for the SAME
+    // target is already running, let it finish (per-frame calls become no-ops);
+    // only a changed target (new pocket/personality) re-arms.
+    if (
+        _insideCentroidActive &&
+        Math.abs(_insideCentroidTargetX - lookAtTarget.x) < 1e-4 &&
+        Math.abs(_insideCentroidTargetY - lookAtTarget.y) < 1e-4 &&
+        Math.abs(_insideCentroidTargetZ - lookAtTarget.z) < 1e-4
+    ) {
+        return
+    }
+    _insideCentroidActive = true
+    _insideCentroidTargetX = lookAtTarget.x
+    _insideCentroidTargetY = lookAtTarget.y
+    _insideCentroidTargetZ = lookAtTarget.z
 
     const token = ++_insideCentroidLerpToken
     const startTarget = activeControls.target.clone()
@@ -365,11 +393,13 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
         if (t < 1) {
             return false
         }
+        _insideCentroidActive = false
         return true
     }
     if (prefersReducedMotion()) {
         activeControls.target.copy(lookAtTarget)
         activeControls.update()
+        _insideCentroidActive = false
     } else {
         _routeRafRegistry.add(scheduleFrameTask(stepCentroid))
     }
@@ -398,4 +428,5 @@ export function zoomCamera(multiplier: number): void {
 
 export function clearInsideCentroid(): void {
     _insideCentroidLerpToken++
+    _insideCentroidActive = false
 }
