@@ -110,7 +110,10 @@ const EXEMPTED_SHAS = new Set<string>([
     // af94987 — docs(ui-sweep): rail grid-column fix — tmp/ probes, evidence bank, deliberate.
     'af949871ad91ddbfda0fce2bd340119eaa868823',
     // 024b56f — test(ui): rail-width regression — tmp/rail-reach-check.mjs probe under test() label, evidence-bank pattern.
-    '024b56f3d2e0b485447a757fcf546eb3bd8b219a'
+    '024b56f3d2e0b485447a757fcf546eb3bd8b219a',
+    // 43bc0c43 — docs(css): CSS ownership update with a comment-only header.css hunk.
+    // The source edit documents the already-landed App-scope import split.
+    '43bc0c438ee788e50958a07cd09e0fa611ce5ae4'
 ])
 
 // Conventional-commit prefix regex. Captures:

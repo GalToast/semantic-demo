@@ -7,6 +7,8 @@
  * (ported from the original focus-trap utility — see git history for provenance)
  */
 
+import { debugWarn } from '@lib/utils/debug'
+
 /** CSS selector string matching all standard focusable elements. */
 export const FOCUSABLE_SELECTORS = [
     'a[href]',
@@ -40,7 +42,7 @@ export function setupFocusTrap(containerSelectors: string | string[]): void {
     if (trapStack.length >= MAX_TRAP_DEPTH) {
         // w23 a11y M4: refuse to grow the stack past the guard instead of
         // leaking layers (the listener would stay installed forever).
-        console.warn(
+        debugWarn(
             `[focus-trap] ignoring setupFocusTrap at depth ${trapStack.length} (MAX_TRAP_DEPTH=${MAX_TRAP_DEPTH}) — possible push/pop imbalance`
         )
         return
@@ -63,7 +65,7 @@ export function releaseFocusTrap(): void {
     if (trapStack.length === 0) {
         // w23 a11y M4: popping an empty stack hides a push/pop imbalance;
         // warn instead of silently no-oping so the leak is detectable.
-        console.warn('[focus-trap] releaseFocusTrap() called on an empty stack')
+        debugWarn('[focus-trap] releaseFocusTrap() called on an empty stack')
         return
     }
 
