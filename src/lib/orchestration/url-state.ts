@@ -23,6 +23,7 @@ import { animateCameraToNode } from '@lib/engine/camera-choreography/focus'
 import { refreshFocusSemanticOverlay, updateFocusSemanticOverlayPositions } from '@lib/journey/semantic-overlay'
 import { applyPointFilterColors } from '@lib/journey/point-color'
 import { updateSelectedBusiness } from '@lib/journey/selected-card'
+import { setFocusedNode } from '@lib/journey/thread-settler'
 import { appState } from '@lib/state/app.svelte'
 import { applyFilters } from '@lib/orchestration/search-filter-core'
 import { syncFilterControls } from '@lib/orchestration/cluster-filter-controller'
@@ -122,7 +123,7 @@ export function clearExplorationFocusSelection(): void {
         trailNeighborIndices: [],
         trailCursor: -1
     })
-    appState.focusedNode = null
+    setFocusedNode(null)
     appState.trailIndices?.clear?.()
     updateSelectedBusiness(null)
     // Note: the prior line `appState.selectedPoint = null`

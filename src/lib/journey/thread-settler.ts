@@ -35,6 +35,24 @@ import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { showExperienceToast } from '@lib/orchestration/toast'
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * THE single writer for appState.focusedNode (single-writer contract,
+ * 2026-08-07 — sprawl backlog #5). thread-settler semantically owns the
+ * focused node: it sets it while walking threads. The reset-to-null paths in
+ * url-state (clearExplorationFocusSelection) and main.ts (test-compat proxy)
+ * route through this helper instead of writing appState directly.
+ *
+ * appState.focusedNode is a top-level alias over navState.focusedIndex (the
+ * canonical nav field, also written by the nav funnel writeNavStateMirror
+ * alongside this alias — see walkThreadNeighbor); the alias setter already
+ * normalizes non-finite values to null.
+ */
+export function setFocusedNode(index: number | null): void {
+    appState.focusedNode = index
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface WalkOptions {
@@ -294,13 +312,12 @@ export class ThreadSettler {
             focusedIndex: index,
             mode: 'trail',
             surface: appState.navState.surface === 'focus-search' ? 'focus-search' : 'focus',
-            trailDepth: Math.max(1, Number(appState.navState.trailDepth) || 0),
+            trailDepth: Math.max(1, Number(appState.trailDepth) || 0),
             walkHistoryIndices: nextHistory,
             lastTraversalReason: reason
         })
         {
-            appState.focusedNode = index
-            appState.trailDepth = Math.max(1, Number(appState.trailDepth) || 0)
+            setFocusedNode(index)
             appState.focusState.inspectedThreadIndex = null
             appState.focusState.pinnedThreadIndex = null
         }
@@ -316,16 +333,15 @@ export class ThreadSettler {
                 focusedIndex: index,
                 mode: 'trail',
                 surface: appState.navState.surface === 'focus-search' ? 'focus-search' : 'focus',
-                trailDepth: Math.max(1, Number(appState.navState.trailDepth) || 0),
+                trailDepth: Math.max(1, Number(appState.trailDepth) || 0),
                 walkHistoryIndices: reassertHistory,
                 lastTraversalReason: reason
             })
             {
-                appState.focusedNode = index
+                setFocusedNode(index)
                 appState.focusState.selectedPoint = (point ||
                     appState.focusState.selectedPoint ||
                     null) as unknown as typeof appState.focusState.selectedPoint
-                appState.trailDepth = Math.max(1, Number(appState.trailDepth) || 0)
                 appState.focusState.inspectedThreadIndex = null
                 appState.focusState.pinnedThreadIndex = null
             }

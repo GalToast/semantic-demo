@@ -40,26 +40,21 @@ const ALLOWED_2_WRITERS: Record<string, string> = {
     weatherState: 'weather.ts owns; main.ts init once',
     activeClusterFilter: 'filter store normalizes; cluster-filter-controller toggles (complementary)',
     semanticDiveMode: 'compass-controller entry (true) + url-state returnToOverview reset (false)',
-    focusedNode: 'thread-settler owns; url-state/main boot-reset',
     hoverHighlightIndex: 'canvas-hover owns; cursor.ts mirror',
     autoRotateSuspended: 'camera-controls-restore owns; camera store mirrors',
+    autoRotate: 'camera store owns (setAutoRotate); camera-controls-restore mirrors — consolidated 2026-08-07 (sprawl #2)',
     focusCameraAssistActive: 'camera-controls-core owns; demo-choreography toggles',
     canvasThreadInspectionClearTimer: 'thread-inspector-state owns; renderer clears',
     _semanticDiveTransitionDeadline: 'compass-controller arms; parity-context reads (single writer arms)',
+    currentView: 'navigation-state funnel owns; main.ts compat-proxy for Playwright e2e tests (#1 consolidated 2026-08-07)',
+    focusCameraOffset: 'camera-controls-core owns; demo-choreography resets (both touch the same camera offset)'
 }
 
 // Fields with 3+ writers = CONTRACT VIOLATION (sprawl). Currently known:
-// currentView (nav funnel x3 + MapView direct), focusCameraOffset (focus +
-// controls-core), autoRotate (restore + focus-pocket), focusedNode (settler +
-// url/main), trailDepth (settler + compass + nav funnel), points (data-store +
-// main) is 2, weatherState 2. The 3+ set is the "needs refactor" backlog.
-const KNOWN_3PLUS_SPRAWL: Record<string, string> = {
-    currentView: 'nav funnel x3 + MapView direct-write — MapView should route through the funnel',
-    autoRotate: 'camera-controls-restore owns + focus-pocket direct-writes appState (should use camera store)',
-    trailDepth: 'thread-settler + compass-controller direct + nav funnel — sprawl',
-    focusCameraOffset: 'focus.ts + camera-controls-core — should share the camera store',
-    focusedNode: 'thread-settler owns + url-state/main reset — settle on ONE owner module',
-}
+// NONE — all 5 sprawl fields were consolidated 2026-08-07 (currentView #1,
+// autoRotate #2, trailDepth #3, focusCameraOffset #4, focusedNode #5). A field
+// appearing here again is a REGRESSION.
+const KNOWN_3PLUS_SPRAWL: Record<string, string> = {}
 
 function walk(dir: string): string[] {
     const out: string[] = []
@@ -90,12 +85,16 @@ describe('single-writer state contract', () => {
                 // ` * ` block-comment lines (e.g. doc text "appState.X = Y").
                 const lineStart = src.lastIndexOf('\n', m.index) + 1
                 const beforeOnLine = src.slice(lineStart, m.index)
-                const line = src.slice(lineStart, src.indexOf('\n', m.index) >= 0 ? src.indexOf('\n', m.index) : undefined)
+                const line = src.slice(
+                    lineStart,
+                    src.indexOf('\n', m.index) >= 0 ? src.indexOf('\n', m.index) : undefined
+                )
                 if (
                     beforeOnLine.includes('//') ||
                     line.trimStart().startsWith('*') ||
                     line.trimStart().startsWith('/*')
-                ) continue
+                )
+                    continue
                 const field = m[1]
                 if (!writers.has(field)) writers.set(field, new Set())
                 writers.get(field)!.add(rel)

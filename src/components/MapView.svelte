@@ -8,7 +8,7 @@
 -->
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
+  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { updateUrlState } from '@lib/orchestration/url-state';
   import { appState } from '@lib/state/app.svelte';
@@ -96,23 +96,15 @@
    * `string` via a locally-fabricated `RuntimeState` interface, hiding the
    * type contract.
    */
+  /**
+   * Set `appState.currentView` through the canonical funnel.
+   * writeNavStateMirror handles the navState/navMirror update,
+   * the appState.currentView mirror, EVENTS.VIEW_CHANGED publish,
+   * and the nav-drift baseline refresh — a single call replaces
+   * the previous direct write + hand-rolled publish (sprawl backlog #1).
+   */
   function setLegacyView(view: 'galaxy' | 'map'): void {
-    {
-      // W49-F: capture the previous view BEFORE the mutation so the
-      // VIEW_CHANGED payload can carry it. writeNavStateMirror takes
-      // the same shape; see src/lib/stores/navigation.svelte.ts.
-      const previousView = appState.currentView === 'galaxy' || appState.currentView === 'map'
-        ? appState.currentView
-        : undefined
-      appState.currentView = view;
-      if (previousView !== view) {
-        publish(EVENTS.VIEW_CHANGED, {
-          view,
-          previousView,
-          myceliumMode: appState.myceliumMode || undefined
-        })
-      }
-    }
+    writeNavStateMirror({ currentView: view });
   }
 
   function deactivateMapShell(): void {

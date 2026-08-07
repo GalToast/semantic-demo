@@ -16,6 +16,7 @@ import type { PocketMotion, PocketMotionWithFrame, FocusPocketMeta } from '@lib/
 import { appState } from '@lib/state/app.svelte'
 import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { focusStore, writeFocusPocketMirror } from '@lib/stores/focus.svelte'
+import { setAutoRotate } from '@lib/stores/camera.svelte.ts'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
 import {
     buildFocusedPocketStagedPositions,
@@ -32,6 +33,7 @@ import {
     getFocusConstellationPlacement,
     applyRelationshipRolePlacementBias,
     getFocusThreadCurvePoint,
+    getFocusThreadCurvePointInto,
     type PocketEntry
 } from '@lib/journey/focus-pocket-geometry'
 import { seededUnit } from '@lib/utils/seeded-random'
@@ -55,6 +57,7 @@ export {
     getFocusConstellationPlacement,
     applyRelationshipRolePlacementBias,
     getFocusThreadCurvePoint,
+    getFocusThreadCurvePointInto,
     getNeighborhoodPersonality,
     getSemanticCandidateSlice
 }
@@ -280,7 +283,7 @@ function _trySemanticPocket(
         }
     )
     appState.focusState.nodesAreSettling = true
-    appState.autoRotate = false
+    setAutoRotate(false)
     return true
 }
 
@@ -317,7 +320,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     const focusPos = originalPositions?.[index]
     if (!focusPos) {
         appState.focusState.nodesAreSettling = false
-        appState.autoRotate = true
+        setAutoRotate(true)
         return false
     }
     const viewportProfile = getFocusConstellationViewportProfile()
@@ -406,7 +409,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
             viewportProfile: fallbackPocket.viewportProfile || viewportProfile
         })
         appState.focusState.nodesAreSettling = true
-        appState.autoRotate = false
+        setAutoRotate(false)
         return true
     }
 
@@ -418,7 +421,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     // claim success while no pocket was built. Honestly fail instead.
     if (localIndices.size <= 1) {
         appState.focusState.nodesAreSettling = false
-        appState.autoRotate = true
+        setAutoRotate(true)
         return false
     }
 
@@ -503,7 +506,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     setFocusPocketIndices([...localIndices].filter((candidateIndex: number) => candidateIndex !== index))
 
     appState.focusState.nodesAreSettling = true
-    appState.autoRotate = false
+    setAutoRotate(false)
     return true
 }
 
@@ -622,7 +625,7 @@ export function syncRuntimeState(snapshot: Record<string, unknown>): void {
         if (s.pocketTransitionStartedAt !== undefined)
             appState.focusState.pocketTransitionStartedAt = s.pocketTransitionStartedAt
         if (s.nodesAreSettling !== undefined) appState.focusState.nodesAreSettling = s.nodesAreSettling
-        if (s.autoRotate !== undefined) appState.autoRotate = s.autoRotate
+        if (s.autoRotate !== undefined) setAutoRotate(s.autoRotate)
     }
 }
 

@@ -350,9 +350,10 @@ export function executeJourneyCompassAction(action: string): void {
             // back to appState — a single direct write replaces the
             // two-block mirror that previously duplicated per-global writes.
             // See lifecycle.ts applyCompositionState() for the convergence contract.
+            // trailDepth is already mirrored to appState by the writeNavStateMirror
+            // above (single-writer: navigation-state funnel owns trailDepth).
             if (typeof window !== 'undefined') {
                 appState.semanticDiveMode = true
-                appState.trailDepth = 2
             }
             return
 

@@ -15,6 +15,7 @@
  */
 
 import { appState } from '@lib/state/app.svelte'
+import type { Vector3Like } from '@lib/state/types/core-types'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-choreography/orbit-slack'
 import { setRouteExplorationPhase } from '@lib/stores/journey.svelte'
@@ -52,6 +53,8 @@ class CameraControlsCore {
     })
 
     // ── Focus camera offset (set by choreography, read by focus.ts) ──────
+    // Owned by this class; the appState.focusCameraOffset field is a legacy
+    // mirror kept in lockstep via setFocusCameraOffset() / releaseFocusCameraAssist().
     focusCameraOffset = $state<{ x: number; y: number; z: number } | null>(null)
 
     // ── Derived helpers ───────────────────────────────────────────────────
@@ -151,12 +154,13 @@ class CameraControlsCore {
         this.focusCameraAssistActive = false
         this.focusCameraAssistUntil = 0
         this.focusCameraAssistReason = reason
-        this.focusCameraOffset = null
+        // Single-writer route: setFocusCameraOffset handles BOTH the class
+        // $state field and the legacy appState mirror in one call.
+        this.setFocusCameraOffset(null)
         // Legacy mirror
         appState.focusCameraAssistActive = false
         appState.focusCameraAssistUntil = 0
         appState.focusCameraAssistReason = reason
-        appState.focusCameraOffset = null
         this.syncCameraAssistDataset()
     }
 
@@ -177,6 +181,29 @@ class CameraControlsCore {
     setCameraAssistChoreography(_phase: string = 'free', _reason: string = 'view-handoff'): void {
         // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
         // This method is a no-op since the source of truth is the store state.
+    }
+
+    // ── Focus camera offset (single-writer — see single-writer contract) ──
+    // Sole canonical writer for both the class-owned $state field and the
+    // legacy appState.focusCameraOffset mirror. Choreography (focus.ts) and
+    // sibling core methods (releaseFocusCameraAssist) MUST route through this
+    // setter so the canonical + mirror never drift.
+    setFocusCameraOffset(offset: { x: number; y: number; z: number } | Vector3Like | null): void {
+        if (
+            offset &&
+            typeof offset.x === 'number' &&
+            typeof offset.y === 'number' &&
+            typeof offset.z === 'number'
+        ) {
+            const snapshot = { x: offset.x, y: offset.y, z: offset.z }
+            this.focusCameraOffset = snapshot
+            // Legacy mirror — same scalar triple (avoid retaining a Three.js
+            // Vector3 reference inside the rune state).
+            appState.focusCameraOffset = snapshot
+        } else {
+            this.focusCameraOffset = null
+            appState.focusCameraOffset = null
+        }
     }
 
     // ── Route exploration ─────────────────────────────────────────────────
@@ -263,6 +290,12 @@ export function syncCameraAssistDataset(): void {
 
 export function setCameraAssistChoreography(phase: string = 'free', reason: string = 'view-handoff'): void {
     cameraControlsCore.setCameraAssistChoreography(phase, reason)
+}
+
+export function setFocusCameraOffset(
+    offset: { x: number; y: number; z: number } | Vector3Like | null
+): void {
+    cameraControlsCore.setFocusCameraOffset(offset)
 }
 
 export function setRouteExplorationState(phase: string = 'idle', reason: string = ''): void {
