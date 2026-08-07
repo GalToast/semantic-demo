@@ -560,7 +560,14 @@ export function setInfoPanelOpen(open: boolean): void {
 }
 
 export function resetFocus(): void {
-    withFocusNotify(() => ({ ...INITIAL_FOCUS }))
+    withFocusNotify(() => ({
+        ...INITIAL_FOCUS,
+        // Fresh Maps, not the shared INITIAL instances — in-place .set() by
+        // pocket-role writers would otherwise pollute the reset baseline
+        // (P2-3, stores2 sweep 2026-08-07).
+        pocketRoleByIndex: new Map(),
+        pocketMotionByIndex: new Map()
+    }))
 }
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
