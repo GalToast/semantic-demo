@@ -1,66 +1,165 @@
 /**
+ * @vitest-environment jsdom
+ *
  * url-anchor-valid-focus.test.ts — Verify that valid ?anchor=42 focuses the correct node
  *
- * Coverage:
- *  1. _restoreAnchorFromParams dispatches SEARCH_FOCUS_REQUESTED for a valid numeric anchor
- *  2. _restoreAnchorFromParams calls applyLocalNeighborhoodFocus for a valid numeric anchor
- *  3. The focused index is validated against appState.points.length
- *  4. The navStore is updated with the focused index
- *  5. The URL is synced after focus restoration
+ * Converted from source-inspection (readFileSync regex on url-state.ts) to runtime tests.
+ * Drives applyUrlState with mocked URL params and checks observable effects:
+ *  1. numericId validated against appState.points.length (out-of-range → toast + overview)
+ *  2. SEARCH_FOCUS_REQUESTED dispatched for valid anchor (with index payload)
+ *  3. applyLocalNeighborhoodFocus called for valid anchor
+ *  4. Anchor restoration runs independently of search (ordering: anchor before search)
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { writable } from 'svelte/store'
 
-type MockNavState = {
-    mode: string
-    surface: string
-    currentView: string
-    focusedIndex: number | null
-    applyingUrlState: boolean
-    restoringBrowserHistory: boolean
-    urlStateRestoreToken: number
-}
+// ── Mutable mock state ────────────────────────────────────────────────────────
 
-const mockNavStore = vi.hoisted(() => ({
-    state: {
-        mode: 'overview',
-        surface: 'idle',
-        currentView: 'galaxy',
-        focusedIndex: null as number | null,
+const mockState = vi.hoisted(() => ({
+    navStore: {
+        urlStateRestoreToken: 0,
         applyingUrlState: false,
         restoringBrowserHistory: false,
-        urlStateRestoreToken: 0
-    } as MockNavState,
-    subscribers: [] as Array<(s: MockNavState) => void>
+        focusedIndex: null as number | null,
+        mode: 'overview' as string,
+        surface: 'idle' as string,
+        currentView: 'galaxy' as string,
+        previousSurface: null as string | null
+    } as Record<string, unknown>,
+    neighborMap: new Map<string, unknown>(),
+    publishCalls: [] as Array<{ type: string; payload: unknown }>,
+    applyLocalNeighborhoodFocusCalls: [] as Array<number>,
+    showExperienceToastCalls: [] as Array<{ title: string; message: string }>,
+    writeNavStateMirrorCalls: [] as Array<Record<string, unknown>>,
+    urlSearch: ''
 }))
 
-vi.mock('../../src/lib/stores/navigation.svelte', () => ({
+const { subscribe, set } = writable(new Map<string, unknown>())
+function semanticNeighborMapSet(next: Map<string, unknown>): void {
+    mockState.neighborMap = next
+    set(next)
+}
+
+// ── Module mocks ─────────────────────────────────────────────────────────────
+
+vi.mock('@lib/stores/navigation.svelte.ts', () => ({
     navStore: {
-        subscribe: (fn: (s: MockNavState) => void) => {
-            mockNavStore.subscribers.push(fn)
-            fn(mockNavStore.state)
-            return () => {
-                const idx = mockNavStore.subscribers.indexOf(fn)
-                if (idx >= 0) mockNavStore.subscribers.splice(idx, 1)
-            }
-        },
-        update: (fn: (s: MockNavState) => MockNavState) => {
-            mockNavStore.state = fn(mockNavStore.state)
-            mockNavStore.subscribers.forEach((s: (state: MockNavState) => void) => s(mockNavStore.state))
-        },
-        set: (s: MockNavState) => {
-            mockNavStore.state = s
-            mockNavStore.subscribers.forEach((fn: (s: MockNavState) => void) => fn(s))
+        subscribe: (fn: (v: unknown) => void) => {
+            fn(mockState.navStore)
+            return () => {}
         }
     },
-    bumpUrlStateRestoreToken: () => {
-        mockNavStore.state.urlStateRestoreToken += 1
-        return mockNavStore.state.urlStateRestoreToken
+    writeNavStateMirror: (patch: Record<string, unknown>) => {
+        mockState.writeNavStateMirrorCalls.push(patch)
+        Object.assign(mockState.navStore, patch)
     },
-    writeNavStateMirror: vi.fn()
+    bumpUrlStateRestoreToken: () => {
+        const next = (mockState.navStore.urlStateRestoreToken as number) + 1
+        mockState.navStore.urlStateRestoreToken = next
+        return next
+    }
 }))
 
-vi.mock('../../src/lib/orchestration/event-bus', () => ({
-    publish: vi.fn(),
+vi.mock('@lib/state/app.svelte', () => ({
+    appState: {
+        points: Array.from({ length: 100 }, (_, i) => ({ lead_id: String(i), name: `Biz ${i}` })),
+        get navState() {
+            return { focusedIndex: mockState.navStore.focusedIndex }
+        },
+        get camera() {
+            return {}
+        },
+        get controls() {
+            return {}
+        },
+        get semanticDiveMode() {
+            return false
+        },
+        get myceliumMode() {
+            return 'default'
+        },
+        set semanticDiveMode(_v: unknown) {},
+        set myceliumMode(_v: unknown) {},
+        get filterVersion() {
+            return 0
+        },
+        get trailIndices() {
+            return null
+        },
+        get focusedNode() {
+            return null
+        },
+        set focusedNode(_v: unknown) {},
+        withMutation: (fn: () => unknown) => fn()
+    }
+}))
+
+vi.mock('@lib/stores/search.svelte', () => ({
+    runSearch: () => Promise.resolve(),
+    clearSearch: () => {},
+    searchStore: () => ({ query: '', summary: null, results: [] }),
+    setSearchError: () => {}
+}))
+
+vi.mock('@lib/stores/focus.svelte', () => ({
+    focusStore: { update: () => {} }
+}))
+
+vi.mock('@lib/stores/journey.svelte', () => ({
+    journeyStore: { update: () => {} },
+    setJourneyPhase: () => {}
+}))
+
+vi.mock('@lib/journey/selected-card', () => ({ updateSelectedBusiness: () => {} }))
+vi.mock('@lib/orchestration/search-filter-core', () => ({ applyFilters: () => {} }))
+vi.mock('@lib/orchestration/cluster-filter-controller', () => ({
+    syncFilterControls: () => {},
+    restoreActiveClusterFilterFromUrl: () => {}
+}))
+vi.mock('@lib/stores/filter.svelte', () => ({ restoreActiveFiltersFromUrl: () => {} }))
+
+vi.mock('@lib/orchestration/toast', () => ({
+    showExperienceToast: (title: string, message: string) => {
+        mockState.showExperienceToastCalls.push({ title, message })
+    }
+}))
+
+vi.mock('@lib/engine/camera-choreography/focus', () => ({ animateCameraToNode: () => {} }))
+vi.mock('@lib/journey/semantic-overlay', () => ({
+    refreshFocusSemanticOverlay: () => {},
+    updateFocusSemanticOverlayPositions: () => {}
+}))
+vi.mock('@lib/journey/point-color', () => ({ applyPointFilterColors: () => {} }))
+vi.mock('@lib/utils/debug', () => ({ debugWarn: () => {} }))
+
+vi.mock('@lib/focus/pocket', () => ({
+    applyLocalNeighborhoodFocus: (index: number) => {
+        mockState.applyLocalNeighborhoodFocusCalls.push(index)
+        return true
+    },
+    getFocusPocketIndices: () => [],
+    setFocusPocketIndices: () => {},
+    getFocusPocketRoleByIndex: () => 'partner',
+    setFocusPocketRoleByIndex: () => {},
+    setFocusPocketRoleForIndex: () => {},
+    clearFocusPocketRoleByIndex: () => {},
+    getFocusPocketMotionByIndex: () => 'idle',
+    setFocusPocketMotionByIndex: () => {},
+    setFocusPocketMotionForIndex: () => {},
+    clearFocusPocketMotionByIndex: () => {},
+    clearFocusPocketIndices: () => {},
+    getFocusPocketMeta: () => null,
+    setFocusPocketMeta: () => {},
+    clearFocusPocketMeta: () => {},
+    syncPocketNodesToStore: () => {},
+    applyFocusPocketBreathing: () => {},
+    getRuntimeStateSnapshot: () => ({})
+}))
+
+vi.mock('@lib/orchestration/event-bus', () => ({
+    publish: (type: string, payload: unknown) => {
+        mockState.publishCalls.push({ type, payload })
+    },
     subscribe: () => () => {},
     EVENTS: {
         SEARCH_FOCUS_REQUESTED: 'SEARCH_FOCUS_REQUESTED',
@@ -71,94 +170,165 @@ vi.mock('../../src/lib/orchestration/event-bus', () => ({
     }
 }))
 
-vi.mock('../../src/lib/journey/focus-pocket', () => ({
-    applyLocalNeighborhoodFocus: vi.fn(() => true)
+vi.mock('@lib/orchestration/url-params', () => ({
+    getSearchParams: () => new URLSearchParams(mockState.urlSearch),
+    getLocationHref: () => `http://localhost/${mockState.urlSearch}`,
+    getLocationPathname: () => '/',
+    isDomForcedFocusSearchSurface: () => false
 }))
 
-vi.mock('../../src/lib/utils/diagnostic-adapter', () => ({
-    debugWarn: vi.fn()
+vi.mock('@lib/data-store', () => ({
+    semanticNeighborMap: { subscribe }
 }))
 
-vi.mock('../../src/lib/state/app.svelte', () => ({
-    appState: {
-        points: Array.from({ length: 100 }, (_, i) => ({
-            id: `lead-${i}`,
-            name: `Business ${i}`,
-            city: 'Conroe',
-            status: 'active'
-        })),
-        withMutation: <T>(fn: () => T): T => fn()
-    }
-}))
+vi.mock('@lib/search/search-panel-adapter', () => ({ setMobileSearchSheetMode: () => {} }))
+vi.mock('@lib/utils/ui-presentation', () => ({ isCompactSearchViewport: () => false }))
+vi.mock('@lib/search/search-abort', () => ({ startSearch: () => ({ isNew: false, release: () => {} }) }))
 
-// Import after mocks
-import { applyLocalNeighborhoodFocus } from '../../src/lib/journey/focus-pocket'
-import { publish } from '../../src/lib/orchestration/event-bus'
-import type { NavState } from '../../src/lib/types/state'
+// ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('URL anchor valid focus (?anchor=42)', () => {
     beforeEach(() => {
-        mockNavStore.state = {
+        // Reset all mutable state
+        mockState.navStore = {
+            urlStateRestoreToken: 0,
+            applyingUrlState: false,
+            restoringBrowserHistory: false,
+            focusedIndex: null,
             mode: 'overview',
             surface: 'idle',
             currentView: 'galaxy',
-            focusedIndex: null,
-            applyingUrlState: false,
-            restoringBrowserHistory: false,
-            urlStateRestoreToken: 0
+            previousSurface: null
         }
-        mockNavStore.subscribers = []
-        vi.clearAllMocks()
+        mockState.neighborMap = new Map()
+        mockState.publishCalls = []
+        mockState.applyLocalNeighborhoodFocusCalls = []
+        mockState.showExperienceToastCalls = []
+        mockState.writeNavStateMirrorCalls = []
+        mockState.urlSearch = ''
+        semanticNeighborMapSet(new Map())
+
+        if (typeof window !== 'undefined') {
+            window.history.replaceState({}, '', '/')
+        }
     })
 
-    afterEach(() => {
-        vi.restoreAllMocks()
+    // ═══ Test 1: numericId validated against appState.points.length ═══
+
+    it('validates numericId against appState.points.length (out-of-range → toast + overview fallback)', async () => {
+        mockState.urlSearch = '?anchor=9999'
+        window.history.replaceState({}, '', '/?anchor=9999')
+
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        await applyUrlState({})
+
+        // Toast for unavailable anchor
+        expect(mockState.showExperienceToastCalls.length).toBeGreaterThanOrEqual(1)
+        expect(mockState.showExperienceToastCalls[0]!.title).toContain('Anchor')
+
+        // No focus event dispatched
+        const focusPublishes = mockState.publishCalls.filter((c) => c.type === 'SEARCH_FOCUS_REQUESTED')
+        expect(focusPublishes.length).toBe(0)
+
+        // Fallback to overview mode
+        expect(mockState.navStore.mode).toBe('overview')
+        expect(mockState.navStore.focusedIndex).toBe(null)
     })
 
-    it('source: _restoreAnchorFromParams validates numericId against appState.points.length', () => {
-        const fs = require('fs')
-        const path = require('path')
-        const source = fs.readFileSync(path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'), 'utf-8')
-        // Must validate numericId >= 0 and numericId < pointCount
-        expect(source).toMatch(/numericId\s*<\s*0/)
-        expect(source).toMatch(/numericId\s*>=\s*pointCount/)
+    it('validates numericId against appState.points.length (negative → toast + overview fallback)', async () => {
+        mockState.urlSearch = '?anchor=-1'
+        window.history.replaceState({}, '', '/?anchor=-1')
+
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        await applyUrlState({})
+
+        // Toast for unavailable anchor
+        expect(mockState.showExperienceToastCalls.length).toBeGreaterThanOrEqual(1)
+
+        // No focus event dispatched
+        const focusPublishes = mockState.publishCalls.filter((c) => c.type === 'SEARCH_FOCUS_REQUESTED')
+        expect(focusPublishes.length).toBe(0)
+
+        // Fallback to overview
+        expect(mockState.navStore.focusedIndex).toBe(null)
+        expect(mockState.navStore.mode).toBe('overview')
     })
 
-    it('source: _restoreAnchorFromParams calls applyLocalNeighborhoodFocus for valid anchors', () => {
-        const fs = require('fs')
-        const path = require('path')
-        const source = fs.readFileSync(path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'), 'utf-8')
-        // Must call applyLocalNeighborhoodFocus in the valid-anchor branch
-        expect(source).toMatch(/applyLocalNeighborhoodFocus\s*\(\s*numericId\s*\)/)
+    // ═══ Test 2: SEARCH_FOCUS_REQUESTED dispatched for valid anchor ═══
+
+    it('dispatches SEARCH_FOCUS_REQUESTED with { index: numericId } for a valid anchor', async () => {
+        mockState.urlSearch = '?anchor=42'
+        window.history.replaceState({}, '', '/?anchor=42')
+
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        await applyUrlState({})
+
+        const focusPublishes = mockState.publishCalls.filter((c) => c.type === 'SEARCH_FOCUS_REQUESTED')
+        expect(focusPublishes.length).toBeGreaterThanOrEqual(1)
+        expect(focusPublishes[0]!.payload).toEqual({ index: 42 })
     })
 
-    it('source: _restoreAnchorFromParams dispatches SEARCH_FOCUS_REQUESTED for valid anchors', () => {
-        const fs = require('fs')
-        const path = require('path')
-        const source = fs.readFileSync(path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'), 'utf-8')
-        // Must publish SEARCH_FOCUS_REQUESTED in the valid branch
-        expect(source).toMatch(/EVENTS\.SEARCH_FOCUS_REQUESTED/)
-        expect(source).toMatch(/publish\s*\(\s*EVENTS\.SEARCH_FOCUS_REQUESTED/)
+    it('dispatches SEARCH_FOCUS_REQUESTED with the correct index for a different valid anchor', async () => {
+        mockState.urlSearch = '?anchor=7'
+        window.history.replaceState({}, '', '/?anchor=7')
+
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        await applyUrlState({})
+
+        const focusPublishes = mockState.publishCalls.filter((c) => c.type === 'SEARCH_FOCUS_REQUESTED')
+        expect(focusPublishes.length).toBeGreaterThanOrEqual(1)
+        expect(focusPublishes[0]!.payload).toEqual({ index: 7 })
     })
 
-    it('source: applyUrlState calls _restoreAnchorFromParams before _restoreSearchFromParams', () => {
-        const fs = require('fs')
-        const path = require('path')
-        const source = fs.readFileSync(path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'), 'utf-8')
-        // Must call _restoreAnchorFromParams before _restoreSearchFromParams
-        // so numeric anchors are settled before search results populate
-        const anchorMatch = source.match(/_restoreAnchorFromParams\s*\(/)
-        const searchMatch = source.match(/_restoreSearchFromParams\s*\(/)
-        expect(anchorMatch).toBeTruthy()
-        expect(searchMatch).toBeTruthy()
-        expect(anchorMatch!.index).toBeLessThan(searchMatch!.index)
+    // ═══ Test 3: applyLocalNeighborhoodFocus called for valid anchor ═══
+
+    it('calls applyLocalNeighborhoodFocus for a valid numeric anchor', async () => {
+        mockState.urlSearch = '?anchor=42'
+        window.history.replaceState({}, '', '/?anchor=42')
+
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        await applyUrlState({})
+
+        expect(mockState.applyLocalNeighborhoodFocusCalls).toContain(42)
     })
 
-    it('source: valid anchor publishes SEARCH_FOCUS_REQUESTED with numericId', () => {
-        const fs = require('fs')
-        const path = require('path')
-        const source = fs.readFileSync(path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'), 'utf-8')
-        // The valid-anchor branch publishes SEARCH_FOCUS_REQUESTED with the index
-        expect(source).toMatch(/publish\s*\(\s*EVENTS\.SEARCH_FOCUS_REQUESTED\s*,\s*\{\s*index:\s*numericId\s*\}\)/)
+    it('does NOT call applyLocalNeighborhoodFocus for an out-of-range anchor', async () => {
+        mockState.urlSearch = '?anchor=9999'
+        window.history.replaceState({}, '', '/?anchor=9999')
+
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        await applyUrlState({})
+
+        expect(mockState.applyLocalNeighborhoodFocusCalls.length).toBe(0)
+    })
+
+    // ═══ Test 4: Anchor restores before search (independent anchor path) ═══
+
+    it('restores anchor independently of search (bare ?anchor= without ?q=)', async () => {
+        mockState.urlSearch = '?anchor=7'
+        window.history.replaceState({}, '', '/?anchor=7')
+
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        await applyUrlState({})
+
+        // Anchor restore must set focusedIndex and mode even without a query
+        expect(mockState.navStore.focusedIndex).toBe(7)
+        expect(mockState.navStore.mode).toBe('focus')
+        expect(mockState.publishCalls.some((c) => c.type === 'SEARCH_FOCUS_REQUESTED')).toBe(true)
+        expect(mockState.applyLocalNeighborhoodFocusCalls).toContain(7)
+    })
+
+    it('restores anchor when both anchor and query are present (anchor settles before search)', async () => {
+        mockState.urlSearch = '?anchor=15&q=coffee'
+        window.history.replaceState({}, '', '/?anchor=15&q=coffee')
+
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        await applyUrlState({})
+
+        // Anchor must be restored: focusedIndex set, event published
+        expect(mockState.navStore.focusedIndex).toBe(15)
+        expect(mockState.navStore.mode).toBe('focus')
+        expect(mockState.publishCalls.some((c) => c.type === 'SEARCH_FOCUS_REQUESTED')).toBe(true)
+        expect(mockState.applyLocalNeighborhoodFocusCalls).toContain(15)
     })
 })
