@@ -38,6 +38,7 @@ import { get } from 'svelte/store'
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { calculateSignalScore } from '@lib/utils/geo-data'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
+import { prefersReducedMotion } from '@lib/utils/environment'
 import type { BusinessRecord } from '@lib/types/business'
 
 // Cluster colors matching the legend palette
@@ -222,6 +223,8 @@ export function showCanvasHoverPreview(index: number, screenX: number, screenY: 
     const record = records[index] ?? null
     const el = getPreviewElement()
     buildPreviewContent(record, index, el)
+    // No animation-from-interaction for reduced-motion users (WCAG 2.2 §2.3.3).
+    el.style.transition = prefersReducedMotion() ? 'none' : ''
     el.style.opacity = '1'
     el.style.transform = 'translateY(0) scale(1)'
     const rect = el.getBoundingClientRect()
@@ -240,6 +243,7 @@ export function showCanvasHoverPreview(index: number, screenX: number, screenY: 
 
 export function hideCanvasHoverPreview(): void {
     if (!_previewEl) return
+    if (prefersReducedMotion()) _previewEl.style.transition = 'none'
     _previewEl.style.opacity = '0'
     _previewEl.style.transform = 'translateY(8px) scale(0.96)'
     _previewEl.setAttribute('aria-hidden', 'true')
@@ -263,6 +267,9 @@ export function showCanvasHoverPreviewForFocused(index: number): void {
     const record = records[index] ?? null
     const el = getPreviewElement()
     buildPreviewContent(record, index, el)
+    // WCAG 2.2 §2.3.3 — no animation-from-interaction for reduced motion users
+    // (twin of showCanvasHoverPreview).
+    el.style.transition = prefersReducedMotion() ? 'none' : ''
     el.style.opacity = '1'
     el.style.transform = 'translateY(0) scale(1)'
 
