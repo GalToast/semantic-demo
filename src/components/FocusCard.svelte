@@ -452,7 +452,7 @@
   }
   .selected-empty-sub {
     font-size: 0.7rem;
-    color: rgba(224, 240, 240, 0.3); /* a11y-ok: caption-text — italic empty-state subhead */
+    color: rgba(224, 240, 240, 0.85); /* a11y-ok: caption-text — italic empty-state subhead */
     margin: 0;
   }
 
