@@ -20,13 +20,14 @@ import type { NavMode } from '@lib/types/state'
  * action verbs and concrete outcomes so users immediately know what
  * they'll be doing when they enter a mode. See REPORT.md Issue 07.
  */
-export const MODE_DESCRIPTIONS: Record<NavMode, string> = {
+// Map description is inline in modes[] (the live source); MODE_DESCRIPTIONS.map
+// was dead + divergent — the array entry is the canonical copy.
+export const MODE_DESCRIPTIONS: Omit<Record<NavMode, string>, 'map'> = {
     overview: 'See all 8,406 Montgomery County businesses in one view.',
     search: 'Find businesses by name, type, or location.',
     trail: 'Walk from the focused business to its closest neighbors — click any business to keep going.',
     focus: 'See all businesses linked to the focused one, ranked by how strongly they relate.',
     inside: 'Surround yourself with the focused business and its local neighborhood.',
-    map: 'Switch to a geographic map view of the county.',
     bridge: 'Moving between views.'
 }
 

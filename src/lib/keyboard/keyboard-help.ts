@@ -11,22 +11,6 @@
 import { cancelMicroDemo } from '@lib/demo/choreography'
 import { showToast } from '@lib/stores/toast.svelte'
 import { debugWarn } from '@lib/utils/debug'
-import { isKeyboardTextEntryTarget } from '@lib/utils/keyboard-target'
-
-// ── Pure utilities (native, no legacy deps) ─────────────────────────────────
-
-export function isKeyboardControlTarget(target: EventTarget | null): target is HTMLElement {
-    if (!target || typeof (target as HTMLElement).tagName !== 'string') return false
-    const el = target as HTMLElement
-    const tagName = el.tagName.toLowerCase()
-    if (tagName === 'button' || tagName === 'select' || tagName === 'a') return true
-    // M-7 (bugsweep): cover ARIA widget roles on custom Svelte components
-    // (role="button", "link", "menuitem", "tab") so galaxy shortcuts don't
-    // fire while focus is inside interactive custom elements.
-    const role = el.getAttribute('role')
-    if (role === 'button' || role === 'link' || role === 'menuitem' || role === 'tab') return true
-    return false
-}
 
 // ── DOM-heavy hint-panel functions (ported from legacy, no external deps) ────
 
@@ -34,53 +18,6 @@ interface KeyboardHintPanelElement extends HTMLElement {
     _openKeyboardHintPanel?: (ref?: HTMLElement | null) => void
     _closeKeyboardHintPanel?: () => void
     _autoDismissTimer?: ReturnType<typeof setTimeout> | null
-}
-
-const _defaultNoOp = () => {}
-
-let _returnToOverview: () => void = _defaultNoOp
-let _resetExplorationFocus: () => void = _defaultNoOp
-
-export function initKeyboardResetOwnership({
-    returnToOverview,
-    resetExplorationFocus
-}: { returnToOverview?: () => void; resetExplorationFocus?: () => void } = {}): void {
-    if (typeof returnToOverview === 'function') _returnToOverview = returnToOverview
-    if (typeof resetExplorationFocus === 'function') _resetExplorationFocus = resetExplorationFocus
-}
-
-export function handleGalaxyKeydown(e: KeyboardEvent): void {
-    // W7 keyboard-help audit finding (F3): guard IME-composition-phase keystrokes (CJK editing) before any galaxy-shortcut navigation fires
-    // — symmetric with global-shortcuts.ts:65 (commit 6ad96301 added the guard there but not here).
-    if (e.isComposing) return
-    if (isKeyboardTextEntryTarget(e.target) || isKeyboardControlTarget(e.target)) return
-
-    if (e.key === 'Home') {
-        e.preventDefault()
-        // W7 H-3: warn if ownership was never registered — catches the case
-        // where initKeyboardResetOwnership() isn't called (test environments
-        // or setup-order changes). debugWarn is no-op in production.
-        if (_returnToOverview === _defaultNoOp) {
-            debugWarn('[keyboard-help] handleGalaxyKeydown: Home key ignored — ownership not registered')
-        }
-        _returnToOverview()
-        return
-    }
-
-    if (e.key === '?') {
-        e.preventDefault()
-        showKeyboardShortcutsHint()
-        return
-    }
-
-    if (e.key === 'Escape') {
-        e.preventDefault()
-        // W7 H-3: warn if ownership was never registered.
-        if (_resetExplorationFocus === _defaultNoOp) {
-            debugWarn('[keyboard-help] handleGalaxyKeydown: Escape key ignored — ownership not registered')
-        }
-        _resetExplorationFocus()
-    }
 }
 
 let _previouslyFocused: HTMLElement | null = null
@@ -108,9 +45,12 @@ export function initKeyboardShortcutsHint(): void {
     panel.appendChild(title)
 
     const shortcuts = [
-        { key: 'Arrow', desc: 'Navigate nodes' },
-        { key: 'Home', desc: 'Reset view' },
-        { key: 'End', desc: 'Recenter' },
+        // Arrow + Home/End bindings live on the canvas (handleCanvasKeydown),
+        // so they only fire when the canvas has focus — noted per entry.
+        { key: '← / →', desc: 'Walk thread neighbors (canvas)' },
+        { key: '↑ / ↓', desc: 'Walk cluster siblings (canvas)' },
+        { key: 'Home', desc: 'Walk trail start (canvas)' },
+        { key: 'End', desc: 'Walk trail end (canvas)' },
         { key: '+ / -', desc: 'Zoom' },
         { key: '/', desc: 'Focus search input' },
         { key: 'w', desc: 'Toggle weather widget' },

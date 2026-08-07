@@ -200,6 +200,8 @@
     <ul class="help-dialog-steps" aria-label="Quick start steps">
       <li><strong>Search</strong> for a service like "coffee" or "HVAC".</li>
       <li><strong>Click</strong> any business to see details and reviews.</li>
+      <li>Use <strong>Discover patterns</strong> to surface clusters and relationships across businesses.</li>
+      <li><strong>Share</strong> your current view with a link — copy it from the controls bar.</li>
       <li>Use <kbd>arrow keys</kbd> or <strong>drag</strong> to explore nearby neighbors.</li>
     </ul>
     <p class="help-dialog-hint">

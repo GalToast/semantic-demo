@@ -42,20 +42,21 @@ describe('header-mode-constants — module shape', () => {
         }
     })
 
-    it('MODE_DESCRIPTIONS is keyed by every NavMode', () => {
+    it('MODE_DESCRIPTIONS is keyed by every NavMode except map (inline in modes[])', () => {
         const expectedKeys: NavMode[] = [
             'overview',
             'search',
             'trail',
             'focus',
             'inside',
-            'map',
             'bridge'
         ]
         for (const k of expectedKeys) {
             expect(MODE_DESCRIPTIONS[k]).toBeDefined()
             expect(MODE_DESCRIPTIONS[k].length).toBeGreaterThan(0)
         }
+        // map description is inline in modes[] — no longer in MODE_DESCRIPTIONS
+        expect((MODE_DESCRIPTIONS as Record<string, string>)['map']).toBeUndefined()
     })
 
     it('SELECTION_DEPENDENT_MODES contains exactly trail/focus/inside', () => {
@@ -91,10 +92,16 @@ describe('isActive — maps navState to chip "active" state', () => {
         expect(isActive('focus', 'overview', 'galaxy')).toBe(false)
     })
 
-    it('the "map" mode is active only when currentView is "map"', () => {
-        expect(isActive('map', 'overview', 'map')).toBe(true)
-        expect(isActive('map', 'focus', 'map')).toBe(true)
+    it('the "map" mode is active only when currentView is "map" AND the activeMode is off-rail', () => {
+        // Map chip is a view switch, not a surface mode. It is ONLY active when
+        // the nav mode is not a chip-rail mode (e.g. 'bridge') — otherwise the
+        // regular mode chip wins. This prevents the ARIA radiogroup violation
+        // (two checked radios: Overview + Map).
+        expect(isActive('map', 'overview', 'map')).toBe(false)
+        expect(isActive('map', 'focus', 'map')).toBe(false)
+        expect(isActive('map', 'bridge', 'map')).toBe(true)
         expect(isActive('map', 'overview', 'galaxy')).toBe(false)
+        expect(isActive('map', 'bridge', 'galaxy')).toBe(false)
     })
 })
 
@@ -278,11 +285,15 @@ describe('selectMode — action dispatch + URL sync', () => {
         expect(t.calls).toEqual(['RET', 'URL'])
     })
 
-    it('search dispatches SET_SURFACE with surface=search', () => {
+    it('search dispatches SET_VIEW galaxy then SET_SURFACE (map-exit guard)', () => {
         const t = makeCtx()
         const idx = selectMode('search', false, t.ctx)
         expect(idx).toBe(1)
-        expect(t.calls).toEqual(['SETS:{"surface":"search"}', 'URL'])
+        expect(t.calls).toEqual([
+            'SETV:{"view":"galaxy"}',
+            'SETS:{"surface":"search"}',
+            'URL'
+        ])
     })
 
     it('map dispatches SET_VIEW then SET_SURFACE (view-level switch)', () => {
@@ -303,13 +314,14 @@ describe('selectMode — action dispatch + URL sync', () => {
         expect(t.calls).toEqual([])
     })
 
-    it('focus / inside / trail with a selection proceed normally', () => {
+    it('focus / inside / trail with a selection proceed normally (SET_VIEW galaxy + SET_SURFACE)', () => {
         for (const id of ['focus', 'inside', 'trail'] as const) {
             const t = makeCtx()
             const idx = selectMode(id, true /* selected */, t.ctx)
             expect(idx).toBeGreaterThanOrEqual(0)
-            expect(t.calls.length).toBe(2) // one nav + URL
-            expect(t.calls[1]).toBe('URL')
+            expect(t.calls.length).toBe(3) // SET_VIEW galaxy + SET_SURFACE + URL
+            expect(t.calls[0]).toBe('SETV:{"view":"galaxy"}')
+            expect(t.calls[2]).toBe('URL')
         }
     })
 

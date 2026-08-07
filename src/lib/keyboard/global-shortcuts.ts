@@ -30,6 +30,7 @@ import { updateUrlState } from '@lib/orchestration/url-state'
 import { isModeLocked } from '@lib/navigation/mode-affordances'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { setSearchQuery } from '@lib/stores/search.svelte.ts'
+import { hasOpenNestedDialog } from '@lib/utils/focus-trap-bindings'
 import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller'
 import { JOURNEY_ACTIONS } from '@lib/journey/compass-state'
 import type { NavMode } from '@lib/types/state'
@@ -91,6 +92,15 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
 
         // Guard against IME composition keystrokes corrupting the composed text.
         if (e.isComposing) return
+
+        // P2 keyboard sweep (2026-08-07): the hint panel is a plain div (not a
+        // <dialog>), so the Escape handler's dialog[open] guard can't see it.
+        // While the panel is visible, suppress the single-char shortcuts it
+        // documents (`/`, `?`, `w`, `m`) — reading the panel shouldn't trigger
+        // the actions it lists. (Escape itself is already safe: the panel's own
+        // document-level keydown handler stopPropagation()s before this global
+        // window listener runs.)
+        const hintPanelOpen = !!document.getElementById('keyboard-hint-panel')?.classList.contains('visible')
 
         // Ctrl/Cmd+1-6: mode switching (A2-4). Fires before all other
         // handlers so shortcuts are never masked by component-level
@@ -156,7 +166,7 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         }
 
         // `/` focuses the search input (P1).
-        if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField && !e.repeat) {
+        if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField && !e.repeat && !hintPanelOpen) {
             e.preventDefault()
             document.getElementById('search-input')?.focus()
             return
@@ -170,7 +180,8 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
             !e.ctrlKey &&
             !e.altKey &&
             !isFormField &&
-            !e.repeat
+            !e.repeat &&
+            !hintPanelOpen
         ) {
             e.preventDefault()
             initKeyboardShortcutsHint()
@@ -179,14 +190,14 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         }
 
         // `w` toggles weather widget visibility.
-        if (e.key === 'w' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField && !e.repeat) {
+        if (e.key === 'w' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField && !e.repeat && !hintPanelOpen) {
             e.preventDefault()
             options.toggleWeather()
             return
         }
 
         // `m` toggles audio mute (optional — caller may omit it).
-        if (e.key === 'm' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField && !e.repeat) {
+        if (e.key === 'm' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField && !e.repeat && !hintPanelOpen) {
             if (options.toggleAudioMute) {
                 e.preventDefault()
                 options.toggleAudioMute()
@@ -210,6 +221,11 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
             // against the help-dialog in src/components/Header.svelte).
             const openDialog = document.querySelector('dialog[open]')
             if (openDialog) {
+                return
+            }
+            // F2 (a11y bugsweep 2026-08-07): also check non-native dialogs
+            // (role="dialog" divs registered via registerOpenDialog).
+            if (hasOpenNestedDialog()) {
                 return
             }
             e.preventDefault()

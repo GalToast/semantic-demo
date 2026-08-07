@@ -38,9 +38,16 @@ export interface SelectModeContext {
 // canonical home (PR-D3 split it out so mode-bindings can share too).
 export { isModeLocked, SELECTION_DEPENDENT_MODES } from '@lib/navigation/mode-affordances'
 
+// Mode ids that appear on the chip rail (excluding 'map' itself — it's a view
+// switch, not a surface mode). Used by isActive so the 'map' chip is only
+// active when the app is genuinely in the map surface (mode is off-rail),
+// not merely whenever currentView==='map' — fixes the ARIA radiogroup
+// violation where both a mode chip AND the Map chip appeared checked.
+const CHIP_RAIL_MODE_IDS = new Set<string>(['overview', 'search', 'trail', 'focus', 'inside'])
+
 /** A mode is "active" when navState reflects it (mode or view, depending on kind). */
 export function isActive(modeId: NavMode | 'map', activeMode: NavMode, activeView: string): boolean {
-    if (modeId === 'map') return activeView === 'map'
+    if (modeId === 'map') return activeView === 'map' && !CHIP_RAIL_MODE_IDS.has(activeMode)
     return activeMode === modeId
 }
 
@@ -145,12 +152,16 @@ export function selectMode(modeId: NavMode | 'map', hasSelection: boolean, ctx: 
     if (modeId === 'overview') {
         ctx.dispatchNavTransition(navActions.RETURN_OVERVIEW)
     } else if (modeId === 'search') {
+        ctx.dispatchNavTransition(navActions.SET_VIEW, { view: 'galaxy' })
         ctx.dispatchNavTransition(navActions.SET_SURFACE, { surface: 'search' })
     } else if (modeId === 'focus') {
+        ctx.dispatchNavTransition(navActions.SET_VIEW, { view: 'galaxy' })
         ctx.dispatchNavTransition(navActions.SET_SURFACE, { surface: 'focus' })
     } else if (modeId === 'inside') {
+        ctx.dispatchNavTransition(navActions.SET_VIEW, { view: 'galaxy' })
         ctx.dispatchNavTransition(navActions.SET_SURFACE, { surface: 'inside' })
     } else if (modeId === 'trail') {
+        ctx.dispatchNavTransition(navActions.SET_VIEW, { view: 'galaxy' })
         ctx.dispatchNavTransition(navActions.SET_SURFACE, { surface: 'trail' })
     } else if (modeId === 'map') {
         // Map is a view-level switch (galaxy ↔ map), not just a surface change.
