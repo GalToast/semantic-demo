@@ -89,17 +89,34 @@ vi.mock('@lib/orchestration/test-globals', async () => {
     }
 })
 
-vi.mock('@lib/orchestration/url-state', async () => {
-    const actual = await vi.importActual('@lib/orchestration/url-state')
-    return {
-        ...actual,
-        applyUrlState: mock.applyUrlState
-    }
-})
+vi.mock('@lib/orchestration/url-state', () => ({
+    applyUrlState: mock.applyUrlState
+}))
+
+// app-init.ts imports '@lib/journey/journey' for SIDE EFFECTS only (no symbol
+// used). journey.ts is a hub that pulls event-bus, engine store, focus-pocket,
+// selected-card, DisposableRegistry etc. — real loading of that chain (and the
+// cbc770bb-widened url-state → thread-settler → compass-controller → lifecycle
+// chain that reads appState.viewportState at module load) breaks module-registry
+// separation so appInit's _initCalled never lands in the same instance that
+// isAppInitComplete() reads. Mock it (and its entry points) to cut the chains.
+vi.mock('@lib/journey/journey', () => ({}))
 
 vi.mock('@lib/utils/debug', () => ({
     debugWarn: mock.debugWarn,
     debugError: mock.debugError
+}))
+
+// Cut the lifecycle import chain at its entry points (url-state.ts imports
+// both setFocusedNode and updateSelectedBusiness; cbc770bb refactor widened
+// the import surface so these now pull compass-controller → lifecycle).
+// journey.ts also imports summarizeNeighborReason directly from this module.
+vi.mock('@lib/journey/thread-settler', () => ({
+    setFocusedNode: () => {},
+    summarizeNeighborReason: () => ''
+}))
+vi.mock('@lib/journey/selected-card', () => ({
+    updateSelectedBusiness: () => {}
 }))
 
 vi.mock('@lib/audio/audio-scape', () => ({
@@ -139,57 +156,66 @@ describe('appInit — happy path', () => {
     })
 
     it('returns a cleanup function', async () => {
-        const cleanup = await appInit({})
+        const { appInit: freshInit } = await freshAppInit()
+        const cleanup = await freshInit({})
         expect(typeof cleanup).toBe('function')
         cleanup()
     })
 
     it('sets isAppInitComplete=true after init resolves', async () => {
-        expect(isAppInitComplete()).toBe(false)
-        const cleanup = await appInit({})
-        expect(isAppInitComplete()).toBe(true)
+        const { appInit: freshInit, isAppInitComplete: freshComplete } = await freshAppInit()
+        expect(freshComplete()).toBe(false)
+        const cleanup = await freshInit({})
+        expect(freshComplete()).toBe(true)
         cleanup()
     })
 
     it('calls initData exactly once', async () => {
-        const cleanup = await appInit({})
+        const { appInit: freshInit } = await freshAppInit()
+        const cleanup = await freshInit({})
         expect(mock.initData).toHaveBeenCalledTimes(1)
         cleanup()
     })
 
     it('calls initViewportListeners exactly once', async () => {
-        const cleanup = await appInit({})
+        const { appInit: freshInit } = await freshAppInit()
+        const cleanup = await freshInit({})
         expect(mock.initViewportListeners).toHaveBeenCalledTimes(1)
         cleanup()
     })
 
     it('calls buildAdapterDeps and initAdapters exactly once', async () => {
-        const cleanup = await appInit({})
+        const { appInit: freshInit } = await freshAppInit()
+        const cleanup = await freshInit({})
         expect(mock.buildAdapterDeps).toHaveBeenCalledTimes(1)
         expect(mock.initAdapters).toHaveBeenCalledTimes(1)
         cleanup()
     })
 
     it('calls installParityAttributeSync exactly once', async () => {
-        const cleanup = await appInit({})
+        const { appInit: freshInit } = await freshAppInit()
+        const cleanup = await freshInit({})
         expect(mock.installParityAttributeSync).toHaveBeenCalledTimes(1)
         cleanup()
     })
 
     it('calls installTestStoreGlobals exactly once', async () => {
-        const cleanup = await appInit({})
+        const { appInit: freshInit } = await freshAppInit()
+        const cleanup = await freshInit({})
         expect(mock.installTestStoreGlobals).toHaveBeenCalledTimes(1)
         cleanup()
     })
 
     it('calls applyUrlState exactly once', async () => {
-        const cleanup = await appInit({})
+        const { appInit: freshInit } = await freshAppInit()
+        const cleanup = await freshInit({})
         expect(mock.applyUrlState).toHaveBeenCalledTimes(1)
         cleanup()
     })
 
     it('calls initAudio (dynamic import) exactly once', async () => {
-        const cleanup = await appInit({})
+        const { appInit: freshInit } = await freshAppInit()
+        const cleanup = await freshInit({})
         expect(mock.initAudio).toHaveBeenCalledTimes(1)
         cleanup()
     })
@@ -206,6 +232,7 @@ describe('appInit — call order (phase invariant)', () => {
     })
 
     it('fires every side-effect in the documented phase order', async () => {
+        const { appInit: freshInit } = await freshAppInit()
         const callOrder: string[] = []
 
         // Wrap each mock to record call order
@@ -238,7 +265,7 @@ describe('appInit — call order (phase invariant)', () => {
             callOrder.push('initAudio')
         })
 
-        const cleanup = await appInit({})
+        const cleanup = await freshInit({})
 
         // The documented order:
         //   Phase 1: safety timers (not mocked — setTimeout)
@@ -265,6 +292,7 @@ describe('appInit — call order (phase invariant)', () => {
     })
 
     it('data load completes BEFORE applyUrlState runs (documented invariant)', async () => {
+        const { appInit: freshInit } = await freshAppInit()
         let dataResolved = false
         let urlStateRanBeforeData = false
 
@@ -277,7 +305,7 @@ describe('appInit — call order (phase invariant)', () => {
             if (!dataResolved) urlStateRanBeforeData = true
         })
 
-        const cleanup = await appInit({})
+        const cleanup = await freshInit({})
 
         expect(urlStateRanBeforeData).toBe(false)
         expect(dataResolved).toBe(true)
@@ -297,13 +325,14 @@ describe('appInit — initData rejection path', () => {
     })
 
     it('logs the error via debugError and still resolves when initData rejects', async () => {
+        const { appInit: freshInit, isAppInitComplete: freshComplete } = await freshAppInit()
         // In app-init.ts, initData().catch() only logs — the actual
         // setDataLoadError is called inside data-store's own try/catch.
         // When initData rejects (e.g., unhandled internal error), app-init
         // treats it as non-fatal and continues the init sequence.
         mock.initData.mockRejectedValue(new Error('network failure'))
 
-        const cleanup = await appInit({})
+        const cleanup = await freshInit({})
 
         // debugError should have been called with the rejection
         expect(mock.debugError).toHaveBeenCalledWith('[app-init] initData failed:', expect.any(Error))
@@ -311,12 +340,13 @@ describe('appInit — initData rejection path', () => {
         // Init still completes — URL state and globals still run
         expect(mock.applyUrlState).toHaveBeenCalledTimes(1)
         expect(mock.installTestStoreGlobals).toHaveBeenCalledTimes(1)
-        expect(isAppInitComplete()).toBe(true)
+        expect(freshComplete()).toBe(true)
 
         cleanup()
     })
 
     it('calls setDataLoadError when the mocked initData invokes it internally', async () => {
+        const { appInit: freshInit, isAppInitComplete: freshComplete } = await freshAppInit()
         // This path simulates the case where data-store's own try/catch
         // catches an error and calls setDataLoadError before re-throwing.
         mock.initData.mockImplementation(async () => {
@@ -324,13 +354,13 @@ describe('appInit — initData rejection path', () => {
             throw new Error('internal data error')
         })
 
-        const cleanup = await appInit({})
+        const cleanup = await freshInit({})
 
         expect(mock.setDataLoadError).toHaveBeenCalledTimes(1)
         expect(mock.setDataLoadError).toHaveBeenCalledWith('internal data error')
 
         // Init still resolves despite the error
-        expect(isAppInitComplete()).toBe(true)
+        expect(freshComplete()).toBe(true)
 
         cleanup()
     })
