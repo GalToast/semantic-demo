@@ -78,6 +78,7 @@ let _unsubWindowGlobals: (() => void) | null = null
 let _unsubWebglRestore: (() => void) | null = null
 let _unsubViewport: (() => void) | null = null
 let _unsubParity: (() => void) | null = null
+let _lastCleanup: (() => void) | null = null
 
 // ── Safety Valves ────────────────────────────────────────────────────────────
 
@@ -258,6 +259,13 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     }
     _initCalled = true
 
+    // F6 fix (context-restore cleanup accumulation): dispose the previous
+    // run's resources before re-initializing. The WebGL context-restore path
+    // sets _initCalled=false and re-enters appInit(); without this, safety
+    // timers and window-global subscriptions from earlier runs accumulate.
+    _lastCleanup?.()
+    _lastCleanup = null
+
     const { forceDemo: _forceDemo = false, noDemo: _noDemo = false } = options
 
     debugWarn('[app-init] Starting Svelte-first initialization…')
@@ -274,12 +282,9 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     // thin shell that delegates lifecycle to appInit(). Cleanups are exposed
     // via teardownAppShell() so App.svelte's onMount return-cleanup can drive
     // teardown without re-importing the installers.
-    // W-audit-D: tear down any previously-installed listeners before
-    // re-installing. A WebGL context-restore re-run of appInit() would
-    // otherwise stack duplicate resize / matchMedia listeners.
-    _unsubViewport?.()
+    // F6 fix: previous-run teardown is now handled by _lastCleanup at the
+    // top of appInit(); no need for individual _unsub*?.() calls here.
     _unsubViewport = initViewportListeners()
-    _unsubParity?.()
     _unsubParity = installParityAttributeSync()
 
     // ── Phase 3: Data loading ─────────────────────────────────────────────────
@@ -321,8 +326,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     void applyUrlStateAfterData()
 
     // ── Phase 5: WebGL context restore handler ────────────────────────────────
-    // W-audit-D: tear down a prior restore handler before re-adding.
-    _unsubWebglRestore?.()
+    // F6 fix: prior-handler teardown is now handled by _lastCleanup at the top.
     _unsubWebglRestore = setupWebglContextRestore()
 
     // ── Phase 6: First-paint coordination ─────────────────────────────────────
@@ -348,7 +352,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     debugWarn('[app-init] Initialization orchestration complete.')
 
     // ── Return cleanup function ───────────────────────────────────────────────
-    return () => {
+    const cleanup = () => {
         clearSafetyTimers(_safetyTimers)
         _safetyTimers = null
         _unsubWindowGlobals?.()
@@ -357,6 +361,8 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
         _unsubWebglRestore?.()
         _initCalled = false
     }
+    _lastCleanup = cleanup
+    return cleanup
 }
 
 /**

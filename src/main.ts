@@ -250,12 +250,24 @@ window.addEventListener(
 // The legacy init path sets __APP_STATE__ asynchronously; retry until the
 // data is present or the cap is reached.
 let hydrateAttempts = 0
+// F7 (2026-08-07): track the pending retry timer so HMR/unload can cancel
+// it (previously the setTimeout chain had no cancellation path) and so the
+// cap-exhaustion give-up is surfaced instead of silent.
+let hydrateTimer: number | null = null
 const tryHydrate = (): void => {
     const didHydrate = hydrateFromLegacyState()
     hydrateAttempts += 1
     if (didHydrate) return
     if (hydrateAttempts < 60) {
-        window.setTimeout(tryHydrate, 500)
+        hydrateTimer = window.setTimeout(tryHydrate, 500)
+    } else {
+        debugError('[main] legacy-state hydration failed after 60 attempts — app may be degraded')
+    }
+}
+function clearHydrateTimer(): void {
+    if (hydrateTimer !== null) {
+        clearTimeout(hydrateTimer)
+        hydrateTimer = null
     }
 }
 tryHydrate()
@@ -506,6 +518,7 @@ const cleanupWindowActions = installWindowActions()
 // WebGL preload, app-init, and the mounted App. Extracted so the same logic
 // can back both the real `beforeunload` path and the Vite HMR dispose path.
 function disposeAppListeners(): void {
+    clearHydrateTimer()
     unsubTestState()
     cleanupWindowActions()
     disposeJourneyWebglPreload()
