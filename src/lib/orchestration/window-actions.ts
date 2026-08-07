@@ -248,7 +248,6 @@ export function installWindowActions(): () => void {
         clearSearch: (options?: Record<string, unknown>) => {
             const resetOptions = { ...(options ?? {}), preserveSearch: false }
             resetSvelteExplorationFocus(resetOptions)
-            getLegacyModules()?.lifecycle?.resetExplorationFocus?.(resetOptions)
             syncSvelteNavFromLegacy()
         },
         switchView: (view: string, options?: Record<string, unknown>) => {
@@ -269,16 +268,12 @@ export function installWindowActions(): () => void {
         setTrailDepth: (depth: number, options?: Record<string, unknown>) => {
             normalizeLegacyNavState()
             setSvelteTrailDepth(depth, options)
-            const lifecycle = getLegacyModules()?.lifecycle
-            lifecycle?.setTrailDepth?.(depth, options)
-            lifecycle?.refreshCompositionState?.()
             refreshSvelteCompositionState()
             syncSvelteNavFromLegacy()
         },
         setSemanticDiveMode: (enabled: boolean) => {
             setSvelteSemanticDiveMode(enabled)
             setSvelteTrailDepth(enabled ? 2 : 1)
-            getLegacyModules()?.lifecycle?.setSemanticDiveMode?.(enabled)
             refreshSvelteCompositionState()
             syncSvelteNavFromLegacy()
         },
@@ -288,11 +283,9 @@ export function installWindowActions(): () => void {
         },
         resetExperienceState: () => {
             resetSvelteExperienceState()
-            getLegacyModules()?.lifecycle?.resetExperienceState?.()
         },
         resetExplorationFocus: (options?: Record<string, unknown>) => {
             resetSvelteExplorationFocus(options)
-            getLegacyModules()?.lifecycle?.resetExplorationFocus?.(options)
         },
         refreshCompositionState: () => {
             getLegacyModules()?.lifecycle?.refreshCompositionState?.()

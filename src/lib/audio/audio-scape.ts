@@ -107,19 +107,38 @@ const audioState = {
     smoothVelocity: 0
 }
 
+/**
+ * Mute state persisted across dispose→re-init. Module-level (not on
+ * audioState) so a user mute survives engine teardown: the gain re-assert in
+ * updateAudio is gated on this flag, and setAudioMuted's 0-automation stays
+ * in place while muted. Deliberately NOT reset in disposeAudio.
+ */
+let _muted = false
+
+/** Tracks whether the visibilitychange resume handler is currently registered. */
+let _visibilityBound = false
+
 // ── Public API (export parity with audio-scape.js) ──────────────────────────
 
 export function initAudio(): void {
-    if (audioState.audioCtx) return
     if (navigator.webdriver) return
+
+    // Re-register the tab-restore resume handler on EVERY init, including the
+    // early-return path: disposeAudio may have removed it while a gesture had
+    // already created the context, and a suspended context would otherwise
+    // never resume on tab-restore.
+    if (!_visibilityBound) {
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        _visibilityBound = true
+    }
+
+    if (audioState.audioCtx) return
 
     // Start context on user interaction
     const startEvents = ['mousedown', 'keydown', 'touchstart'] as const
     startEvents.forEach((evt) => {
         document.addEventListener(evt, startAudioContext, { once: true })
     })
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
 }
 
 function handleVisibilityChange(): void {
@@ -234,7 +253,13 @@ function updateAudio(): void {
         return
     }
     audioState.mainOsc.frequency.setTargetAtTime(targetFreq, audioState.audioCtx.currentTime, 0.1)
-    audioState.gainNode.gain.setTargetAtTime(targetGain, audioState.audioCtx.currentTime, 0.1)
+    // Mute gate: while muted, skip the per-frame gain re-assert so the
+    // 0-target automation from setAudioMuted stays in effect. Re-asserting the
+    // ambient level (~0.005+) every frame would push gain back up (exponential
+    // decay ~8%/frame never reaches 0), functionally defeating mute.
+    if (!_muted) {
+        audioState.gainNode.gain.setTargetAtTime(targetGain, audioState.audioCtx.currentTime, 0.1)
+    }
     audioState.filterNode.frequency.setTargetAtTime(targetFilter, audioState.audioCtx.currentTime, 0.1)
 
     audioState.rafId = requestAnimationFrame(updateAudio)
@@ -242,13 +267,16 @@ function updateAudio(): void {
 
 export function setAudioMuted(muted: boolean): void {
     if (!audioState.gainNode || !audioState.audioCtx) return
+    _muted = muted
     audioState.gainNode.gain.setTargetAtTime(muted ? 0 : 0.01, audioState.audioCtx.currentTime, 0.2)
 }
 
 export function isAudioMuted(): boolean {
     if (!audioState.gainNode || !audioState.audioCtx) return true
-    const gain = audioState.gainNode.gain.value
-    return gain === 0
+    // _muted is authoritative — under the τ=0.2 automation gain.value only
+    // approaches 0 asymptotically, so exact equality would almost always
+    // report unmuted even after setAudioMuted(true).
+    return _muted || audioState.gainNode.gain.value === 0
 }
 
 /**
@@ -298,7 +326,17 @@ export const play = trigger
  * Called during engine deinit to prevent leaks across re-inits.
  */
 export function disposeAudio(): void {
-    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    // Remove the once-gesture listeners so a post-teardown gesture cannot
+    // create an unowned AudioContext + RAF loop (the once-listeners otherwise
+    // survive teardown with no removal path).
+    const startEvents = ['mousedown', 'keydown', 'touchstart'] as const
+    startEvents.forEach((evt) => {
+        document.removeEventListener(evt, startAudioContext)
+    })
+    if (_visibilityBound) {
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+        _visibilityBound = false
+    }
 
     if (audioState.rafId !== null) {
         window.cancelAnimationFrame(audioState.rafId)
