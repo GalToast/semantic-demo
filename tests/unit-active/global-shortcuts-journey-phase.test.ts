@@ -12,8 +12,12 @@
  * and keyboard paths rendered chrome/parity differently for the same mode.
  *
  * Fix shape: import `setJourneyPhase` from the journey store and call
- * `setJourneyPhase(modeId === 'map' ? 'overview' : modeId)` at the end of the
- * Ctrl/Cmd+1-6 block — mirroring mode-nav.ts:166 verbatim.
+ * `setJourneyPhase(modeId === 'map' ? 'overview' : modeId)` in the
+ * Ctrl/Cmd+1-6 block — mirroring mode-nav.ts's selectMode funnel verbatim.
+ * W12-L4 ordering: the call runs BEFORE the per-mode dispatch switch (and
+ * before Ctrl+5's executeJourneyCompassAction(ENTER_INSIDE)), so the
+ * withJourneyNotify write inside ENTER_INSIDE mirrors the NEW phase — no
+ * stale-mode + trailDepth=2 intermediate if an await is ever inserted.
  *
  * Contract style mirrors `w7-global-shortcuts-isformfield-split.test.ts` and
  * `w46-b3-global-shortcuts-helper.test.ts`: substring-on-source assertions
@@ -59,27 +63,32 @@ describe('Keyboard Ctrl/Cmd+1-6 closes the setJourneyPhase drift with selectMode
         )
     })
 
-    it('the setJourneyPhase call is placed AFTER the per-mode switch (mirrors selectMode order)', () => {
-        // mode-nav.ts:166 performs the dispatch first (if/else-if SET_SURFACE), then
-        // calls setJourneyPhase. We assert the keyboard path mirrors that ordering:
-        // the call must appear after the case '6' block's trailing `break` + the
-        // switch's closing brace, and before the block's terminal `return`.
+    it('W12-L4: the setJourneyPhase call precedes the per-mode switch and Ctrl+5 ENTER_INSIDE', () => {
+        // W12-L4 ordering fix: setJourneyPhase now runs BEFORE the switch (and
+        // before executeJourneyCompassAction(ENTER_INSIDE) inside case '5').
+        // Ctrl+5's ENTER_INSIDE → journeySetTrailDepth(2) goes through
+        // withJourneyNotify, which mirrors navState.mode from the journey
+        // phase; running the phase write first means that mirror ships the NEW
+        // phase — no stale-mode + trailDepth=2 intermediate even if an await
+        // is ever inserted between the calls. Final same-tick state for every
+        // shortcut is unchanged (SET_SURFACE writes the same mode explicitly,
+        // and for 'map' it now reads the already-normalized 'overview').
         const ctrlOpenIdx = src.indexOf('((e.ctrlKey || e.metaKey) && /^[1-6]$/')
         expect(ctrlOpenIdx).toBeGreaterThan(-1)
         const block = src.slice(ctrlOpenIdx, ctrlOpenIdx + 4800)
 
-        const case6BreakIdx = block.indexOf("updateUrlState({ view: 'map', surface: 'map' }")
-        expect(case6BreakIdx).toBeGreaterThan(-1)
-
-        const afterCase6 = block.slice(case6BreakIdx)
-        const setJourneyPhaseIdx = afterCase6.indexOf('setJourneyPhase(')
+        const setJourneyPhaseIdx = block.indexOf('setJourneyPhase(')
         expect(setJourneyPhaseIdx).toBeGreaterThan(-1)
 
-        // It must sit between the switch close (`}`) and the block's `return`.
-        // Concretely: there should be a `return` AFTER the setJourneyPhase call
-        // still inside this block.
-        const afterCall = afterCase6.slice(setJourneyPhaseIdx)
-        expect(afterCall).toMatch(/return\b/)
+        // Must come before the per-mode switch…
+        const switchIdx = block.indexOf('switch (e.key)')
+        expect(switchIdx).toBeGreaterThan(-1)
+        expect(setJourneyPhaseIdx).toBeLessThan(switchIdx)
+        // …and before Ctrl+5's compass action, whose withJourneyNotify write
+        // mirrors mode from the journey phase (the L4 hazard).
+        const enterInsideIdx = block.indexOf('executeJourneyCompassAction(JOURNEY_ACTIONS.ENTER_INSIDE)')
+        expect(enterInsideIdx).toBeGreaterThan(-1)
+        expect(setJourneyPhaseIdx).toBeLessThan(enterInsideIdx)
     })
 
     it('does not regress the per-case nav transitions or the Ctrl+5 inside-activation', () => {

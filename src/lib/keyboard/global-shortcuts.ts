@@ -111,6 +111,10 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
                 showExperienceToast('Mode locked', 'Select a business first to use this view.')
                 return
             }
+            // Keep journeyStore().phase in lockstep with the mode. This must run
+            // before the switch because Ctrl+5's ENTER_INSIDE mirror reads it.
+            setJourneyPhase(modeId === 'map' ? 'overview' : modeId)
+
             switch (e.key) {
                 case '1':
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)
@@ -147,17 +151,6 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
                     updateUrlState({ view: 'map', surface: 'map' }, { reason: 'keyboard-shortcut-6' })
                     break
             }
-
-            // Keep journeyStore().phase in lockstep with the new mode, mirroring
-            // the selectMode() funnel in mode-nav.ts (`ctx.setJourneyPhase?.(modeId
-            // === 'map' ? 'overview' : modeId)`). The keyboard path previously
-            // dispatched only the nav transition + URL sync, so a Ctrl/Cmd+1-6
-            // switch advanced navState.mode/surface while leaving journeyStore().phase
-            // stale. That divergence leaked into parity-resolvers.ts (ctx.journey.phase
-            // — see GlobalParityProvider) and the JourneyChrome idle/overview gate
-            // (JourneyChrome.svelte), so the chip path and keyboard path rendered
-            // the chrome/parity differently for the same mode.
-            setJourneyPhase(modeId === 'map' ? 'overview' : modeId)
 
             return
         }

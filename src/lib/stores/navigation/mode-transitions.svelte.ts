@@ -186,13 +186,13 @@ export function dispatchNavTransition(
                 surface: surface as PanelSurface,
                 mode: newMode
             })
-            // M2 (w12 journey bugsweep): dive state (semanticDiveMode=true,
-            // trailDepth=2) must be torn down when navigating AWAY from the
-            // inside surface. Before this fix, clicking Search after diving
-            // left semanticDiveMode=true + trailDepth=2, causing compass-state
-            // to emit phase:'inside' while surface was 'search' and
-            // resolveMapTrailState to see depth>0 → trail active in any mode.
-            if (surface !== 'inside') {
+            // M2 (w12 journey bugsweep): tear down dive state only when leaving
+            // an actual dive. Depth 1 is a normal focused/search state; resetting
+            // every SET_SURFACE to 1 would make overview → search look like trail.
+            const leavingDive =
+                surface !== 'inside' &&
+                (current.surface === 'inside' || current.mode === 'inside' || current.trailDepth >= 2)
+            if (leavingDive) {
                 setSemanticDiveMode(false)
                 setTrailDepth(1)
             }

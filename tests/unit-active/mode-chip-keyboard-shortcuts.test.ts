@@ -75,7 +75,9 @@ describe('A2-4: Ctrl+1-6 keyboard shortcuts for mode switching', () => {
 
     it('maps Ctrl+1 to RETURN_OVERVIEW', () => {
         const shortcutIdx = appSrc.indexOf('(e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)')
-        const block = appSrc.slice(shortcutIdx, shortcutIdx + 1200)
+        const switchIdx = appSrc.indexOf('switch (e.key)', shortcutIdx)
+        expect(switchIdx).toBeGreaterThan(shortcutIdx)
+        const block = appSrc.slice(switchIdx, switchIdx + 600)
         expect(block).toContain("case '1'")
         expect(block).toContain('NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW')
     })

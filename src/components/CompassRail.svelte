@@ -17,11 +17,13 @@
 -->
 <script lang="ts">
   import { compassSteps } from '@lib/stores/compass.svelte';
-  import { compassPhase, transitionCompass } from '@lib/stores/journey.svelte';
+  import { compassPhase, transitionCompass, setJourneyPhase } from '@lib/stores/journey.svelte';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
 
   import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
   import { selectMode as applyModeSelect, type SelectModeContext } from '@lib/components/header/mode-nav';
+  import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller';
+  import { JOURNEY_ACTIONS } from '@lib/journey/compass-state';
   import { appState } from '@lib/state/app.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
   import { debugWarn } from '@lib/utils/debug';
@@ -106,12 +108,18 @@
     //    plus lock-guard for selection-dependent modes and URL sync.
     const KNOWN_NAV_MODES: readonly string[] = ['overview', 'search', 'focus', 'inside', 'trail', 'map'];
     if (KNOWN_NAV_MODES.includes(phase)) {
-      applyModeSelect(phase as NavMode, hasSelection, {
+      const selectedIndex = applyModeSelect(phase as NavMode, hasSelection, {
         navActions: NAV_TRANSITION_ACTIONS,
         dispatchNavTransition,
         updateUrlState,
         debugWarn,
+        setJourneyPhase,
       } as SelectModeContext);
+      // Header and keyboard entry both engage the semantic dive after selecting
+      // Inside. Keep the rail's equivalent entry point on the same funnel.
+      if (phase === 'inside' && selectedIndex >= 0) {
+        executeJourneyCompassAction(JOURNEY_ACTIONS.ENTER_INSIDE);
+      }
     } else {
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESET);
     }

@@ -1023,14 +1023,16 @@ describe('navStore — NAV_TRANSITION_ACTIONS dispatch', () => {
         expect(mockChainFns.setTrailDepth).not.toHaveBeenCalled()
     })
 
-    it('M2: SET_SURFACE away from non-inside surface leaves dive state alone (already torn down)', () => {
-        // Start from focus (no dive)
-        writeNavStateMirror({ mode: 'focus', surface: 'focus', trailDepth: 1 })
+    it('M2: ordinary non-dive surface changes do not create dive teardown work', () => {
+        // Start from overview (no dive). Search must remain a normal search
+        // phase; the teardown path must not manufacture trailDepth=1.
+        writeNavStateMirror({ mode: 'overview', surface: 'idle', trailDepth: 0 })
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
-        // Dive teardown fires (surface !== 'inside') but is idempotent —
-        // verify it's still called (the caller doesn't know dive state)
-        expect(mockChainFns.setSemanticDiveMode).toHaveBeenCalledWith(false)
-        expect(mockChainFns.setTrailDepth).toHaveBeenCalledWith(1)
+        expect(mockChainFns.setSemanticDiveMode).not.toHaveBeenCalled()
+        expect(mockChainFns.setTrailDepth).not.toHaveBeenCalled()
+        expect(navStore().mode).toBe('search')
+        expect(navStore().surface).toBe('search')
+        expect(navStore().trailDepth).toBe(0)
     })
 
     it('TRAVERSE_NEIGHBOR sets mode=trail and surface=trail', () => {
