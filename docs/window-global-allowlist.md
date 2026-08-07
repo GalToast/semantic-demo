@@ -94,6 +94,16 @@ Classification: `live-product`.
 
 **Purpose:** Compatibility state bridge. `src/lib/engine/semantic-threads.ts` falls back to `window.__APP_STATE__`; `__LEGACY_APP_STATE__` is published at boot so that fallback points at the real `AppState` object rather than an empty placeholder during the legacy-state migration.
 
+## `__SEMANTIC_EXPLORER_APP_STATE_DIRECT__`
+
+Classification: `live-product`.
+
+**Owner:** `src/lib/state/app.svelte.ts`
+
+**Purpose:** Cross-chunk singleton synchronisation. When Vite code-splits `app.svelte.ts` into multiple chunks, each chunk gets its own module-level `_appStateInstance`. This window property stores the validation Proxy wrapper so other chunks can reuse the same guarded object rather than creating a new empty one. It is a plain *data* property (not a getter) to avoid the infinite recursion that would occur if it used the `window[GLOBAL_APP_STATE_KEY]` getter inside `getAppState()`.
+
+**Note:** The key is held in the module-private constant `APP_STATE_DIRECT_KEY` and written as a computed property (`window[...] =`). The contract scanner resolves this constant to the literal key via P4/P7 + `resolveConstant`.
+
 ## Debug-Probe Globals
 
 Classification: `debug-probe`. These are devtools, Playwright, or visual-audit inspection surfaces.
@@ -101,6 +111,9 @@ Classification: `debug-probe`. These are devtools, Playwright, or visual-audit i
 | Global | Owner | Notes |
 |---|---|---|
 | `window.__APP_STATE__` | `js/modules/bridge-registry.js` | **Primary app state hook.** Preferred neutral state surface for runtime inspection. |
+| `window.__ERROR_RING__` | `src/main.ts` | **Global error sink.** Circular buffer of recent unhandled errors/rejections, installed via `Object.defineProperty`. Read-only getter (no setter). |
+| `window.__spectorStatus` | `src/components/SpectorInspector.svelte` | **SpectorJS lifecycle snapshot.** Published read-only status (phase, loadError, bridgeReady, etc.) for headless tests and dev panel; assigned via `getSpectorDevWindow()` alias. |
+| `window.__forceSemanticDiveContractSurface` | `src/components/AppBoot.svelte` | **Test contract hook.** Forces semantic-dive visibility for contract tests; installed unconditionally in `onMount` via `contractWindow` alias. **⚠️ Prod-gate bug: installed unconditionally (not dev-gated).** See F1 report. |
 | `window.withStateMutation` | `js/state.js` | **State mutation gate.** Allows testing/DevTools to bypass the critical keys mutation lock. |
 | `window.__TEST_STATE__` | `js/modules/bridge-registry.js` | **Legacy test bridge fallback.** Preserved for existing Playwright tests. Migrate consumers to `__APP_STATE__`. |
 | `window.__initTimings` | `js/modules/app.js` | **Init timing diagnostics.** Exposes the boot-phase timing object for DevTools/perf inspection. |
@@ -121,6 +134,7 @@ These are assigned in the modern `src/lib/**` tree and classified `debug-probe` 
 | `window.__toastHooks__` | `src/lib/orchestration/toast*` test/dev hooks |
 | `window.__SEMANTIC_GUIDE_TIMEOUT_MS__` | `src/lib/orchestration/*` guide timeout probe |
 | `window.__telemetry_devtoolsVisible` | `src/lib/*` telemetry devtools-visibility flag |
+| `window.__telemetry__` | `src/components/DevToolsMount.svelte` telemetry store + handle probe (DEV-gated) |
 | `window.__spector` | dev inspection (SpectorJS) |
 | `window.__navStore__` | `src/lib/navigation/*` store probe |
 | `window.__focusStore__` | `src/lib/stores/focus*` store probe |
