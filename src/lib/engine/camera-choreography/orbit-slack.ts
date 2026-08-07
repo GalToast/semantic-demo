@@ -212,7 +212,17 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
     }
     // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
     if (controls && !appState.semanticDiveMode) {
-        controls.maxDistance = CONFIG.ORBIT_MAX_DISTANCE_DEFAULT
+        // P1-2 (fleet 0731 sweep 2026-08-07): clearFocusOrbitSlack naively reset
+        // maxDistance to DEFAULT (5.5), but the user may have zoomed out to the
+        // free max (6.8) under slack — OrbitControls clamps every frame, so the
+        // camera snapped inward on route exit. Anchor the clamp to the user's
+        // current distance (capped at the free max) so ending the slack never
+        // yanks the camera in by up to ~1.3 units.
+        const userDist = Number.isFinite(dist) ? dist : CONFIG.ORBIT_MAX_DISTANCE_DEFAULT
+        controls.maxDistance = Math.max(
+            CONFIG.ORBIT_MAX_DISTANCE_DEFAULT,
+            Math.min(userDist, CONFIG.ORBIT_MAX_DISTANCE_FREE)
+        )
         controls.rotateSpeed = CONFIG.ORBIT_ROTATE_SPEED_DEFAULT
         controls.panSpeed = CONFIG.ORBIT_PAN_SPEED_DEFAULT
     }
