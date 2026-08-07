@@ -285,7 +285,9 @@ async function handleLoadRecords({ url }: { url: string }): Promise<LoadRecordsR
         const x = xVal ?? 0
         const y = yVal ?? 0
         const z = zVal ?? 0
-        const cluster = p.length > 3 ? (parseFiniteNumber(p[3]) ?? 0) | 0 : 0
+        // PARITY: same expression as the main-thread fallback in data-loader.ts
+        // (parseInt(String(p[COL.CLUSTER] ?? '0'), 10) || 0). Keep both in lockstep.
+        const cluster = p.length > 3 ? parseInt(String(p[3] ?? '0'), 10) || 0 : 0
 
         if (xVal === null || yVal === null || zVal === null) {
             invalidPositionIndices.push(i)
@@ -444,13 +446,24 @@ function cleanOptionalValue(value: unknown): string | null {
     return text
 }
 
-function parseFiniteNumber(value: unknown): number | null {
+/**
+ * Parses a numeric coordinate to a finite number, or null for bad input.
+ *
+ * PARITY CONTRACT: must stay byte-identical in behavior to `parseFinite` in
+ * src/lib/data-loader.ts (the main-thread fallback). Both accept any
+ * full-string numeric form Number() understands ("0.50", "1e-3", "1e3",
+ * " 12 ") and reject non-numeric / non-finite / non-string input. The
+ * main-thread fallback exists for worker failure and MUST produce the same
+ * positions on the same file — a generator emitting string coords must not
+ * fork behavior. Locked by tests/unit-active/worker-parser-parity.test.ts.
+ */
+export function parseFiniteNumber(value: unknown): number | null {
     if (typeof value === 'number') return Number.isFinite(value) ? value : null
     if (typeof value !== 'string') return null
     const trimmed = value.trim()
     if (trimmed === '') return null
     const num = Number(trimmed)
-    return Number.isFinite(num) && String(num) === trimmed ? num : null
+    return Number.isFinite(num) ? num : null
 }
 
 function normalizeLeadId(id: unknown): string | null {

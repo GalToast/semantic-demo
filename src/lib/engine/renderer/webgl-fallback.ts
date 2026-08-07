@@ -135,3 +135,17 @@ export function showWebGLFallback(
 
     return _mapButtonClickHandler
 }
+
+/**
+ * Remove any rendered fallback notice from the canvas container.
+ * Idempotent — safe to call when no notice is present.
+ * Used by the restore retry machine to clear a stale notice after
+ * a successful re-init (P2-3).
+ */
+export function removeWebGLFallbackNotice(): void {
+    if (typeof document === 'undefined') return
+    const container = document.getElementById('canvas-container')
+    if (!container) return
+    const notice = container.querySelector('.webgl-fallback-notice')
+    if (notice) notice.remove()
+}

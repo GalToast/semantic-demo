@@ -75,6 +75,7 @@ import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
 import { isMobileViewport, prefersReducedMotion } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
 import { setEngineStatus } from '@lib/stores/engine.svelte.ts'
+import { setGraphicsMode } from '@lib/data-store'
 import {
     updateRouteTraceOverlayFrame,
     updateArrivalHandoffOverlayFrame,
@@ -83,6 +84,7 @@ import {
     updateFocusSemanticOverlayPositions
 } from '@lib/engine/journey-webgl-lazy'
 import { syncFocusPocketSizeMesh } from './focus-pocket-size-mesh'
+import { removeWebGLFallbackNotice } from './renderer/webgl-fallback'
 
 // ── WebGL restore retry escalation (render sweep 2026-08-07) ─────────────────
 
@@ -168,6 +170,7 @@ function _escalateRestoreFailure() {
     engineState.circuitBreakerTripped = true
     debugError('[three-engine] WebGL restore failed after all retries — falling back to degraded state')
     setEngineStatus('degraded')
+    setGraphicsMode('fallback')
     // Honest wording: this module does not perform any map/fallback route
     // switch — it only degrades engine state. Reload is the real recovery.
     engineState.uiFeedback?.showExperienceToast(
@@ -198,6 +201,9 @@ function _restoreReinitWithRetry() {
             _restoreEscalated = false
             _restoreRetryCount = 0
             _clearRetryTimer()
+            // P2-3: clear stale fallback notice from a prior failed attempt
+            // whose N+1 retry succeeded (notice over a live 3D scene).
+            removeWebGLFallbackNotice()
             if (wasEscalated) {
                 engineState.circuitBreakerTripped = false
                 setEngineStatus('ready')

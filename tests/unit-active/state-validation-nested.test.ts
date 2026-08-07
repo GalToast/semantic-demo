@@ -167,13 +167,18 @@ describe('auditNestedStateMutations — path-level focusState.focusTransitionMod
 // ── NESTED_STATE_PATHS structure ─────────────────────────────────────────
 
 describe('NESTED_STATE_PATHS — shape and keys', () => {
-    it('contains exactly the 12 documented nested paths', () => {
+    it('contains exactly the 14 documented nested paths', () => {
         const keys = Object.keys(NESTED_STATE_PATHS)
         expect(keys).toEqual([
             'navState.mode',
             'navState.surface',
             'navState.currentView',
             'navState.myceliumMode',
+            // P1-2 (2026-08-07): previousSurface + loadingPhaseKey were dead
+            // dotted-path validators — wired into the nested audit so the dev
+            // 5s check enforces both real written fields.
+            'navState.previousSurface',
+            'navState.loadingPhaseKey',
             'searchState.searchStatus',
             'focusState.focusTransitionMode',
             // W66: the 6 phase state machines wired into the dev nested audit

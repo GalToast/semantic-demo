@@ -422,6 +422,12 @@ export const NESTED_STATE_PATHS: Record<string, StateValidator> = {
     'navState.surface': oneOf(VALID_PANEL_SURFACES, 'navState.surface'),
     'navState.currentView': oneOf(VALID_VIEWS, 'navState.currentView'),
     'navState.myceliumMode': oneOf(VALID_MYCELIUM_MODES, 'navState.myceliumMode'),
+    // W66+P1-2: previousSurface + loadingPhaseKey were dotted-path entries that
+    // could never fire through the top-level Proxy set trap and had no other
+    // runtime layer (missing from NESTED_STATE_PATHS + startup check) — wired
+    // here so the dev-only 5s nested audit enforces both real written fields.
+    'navState.previousSurface': oneOf(VALID_PANEL_SURFACES, 'navState.previousSurface'),
+    'navState.loadingPhaseKey': oneOf(VALID_LOADING_PHASES, 'navState.loadingPhaseKey'),
     'searchState.searchStatus': oneOf(VALID_SEARCH_STATUS, 'searchState.searchStatus'),
     'focusState.focusTransitionMode': oneOf(VALID_FOCUS_TRANSITION_MODES, 'focusState.focusTransitionMode'),
     // W66: the 6 phase state machines were validated ONLY via dotted-path

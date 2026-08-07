@@ -50,8 +50,22 @@ function buildAssetUrl(path: string): string {
 
 const cleanOptional = cleanOptionalValue
 
-function parseFinite(value: unknown): number | null {
-    const num = parseFloat(String(value))
+/**
+ * Parses a numeric coordinate to a finite number, or null for bad input.
+ *
+ * PARITY CONTRACT: must stay byte-identical in behavior to
+ * `parseFiniteNumber` in src/lib/workers/data-worker.ts. This main-thread
+ * fallback runs when the worker fails and MUST agree with the worker on the
+ * same file. Both accept any full-string numeric form Number() understands
+ * ("0.50", "1e-3", "1e3", " 12 ") and reject non-numeric / non-finite /
+ * non-string input. Locked by tests/unit-active/worker-parser-parity.test.ts.
+ */
+export function parseFinite(value: unknown): number | null {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null
+    if (typeof value !== 'string') return null
+    const trimmed = value.trim()
+    if (trimmed === '') return null
+    const num = Number(trimmed)
     return Number.isFinite(num) ? num : null
 }
 
