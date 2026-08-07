@@ -128,6 +128,31 @@ function _clearRetryTimer() {
     }
 }
 
+/**
+ * Invalidate the entire restore retry machine — clears timers/watchdog, resets
+ * counters, bumps the generation token. Idempotent; safe to call multiple times
+ * across teardown paths (deinit → cancelAnimate + destroyEngine).
+ */
+function _resetRestoreMachine() {
+    _clearRetryTimer()
+    _restoreRetryCount = 0
+    _restoreEscalated = false
+    _restoreGeneration++
+    if (engineState.webglRestoreTimer) {
+        window.clearTimeout(engineState.webglRestoreTimer)
+        engineState.webglRestoreTimer = null
+    }
+}
+
+/**
+ * Public teardown hook for lifecycle.ts → destroyEngine().
+ * A pending retry timer must not fire 1-3s after the engine is destroyed
+ * (P1-1: production teardown never invalidated the retry machine).
+ */
+export function invalidateRestoreMachine() {
+    _resetRestoreMachine()
+}
+
 function _escalateRestoreFailure() {
     // Idempotent per cycle: the watchdog and the retry-exhaustion path can
     // both call this; the first one wins and the second becomes a no-op
@@ -287,6 +312,12 @@ async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> 
             engineState.webglRestoreTimer = null
         }
     }
+    // P1-2: capture the generation token at init entry so the async body can
+    // bail when teardown or a newer manual init superseded this attempt while
+    // we were awaiting (yieldToBrowser gives the browser macrotask trampolines).
+    // Only restore attempts need this — manual init already bumped generation
+    // above, so its own gen is always current.
+    const restoreGen = isRestoreAttempt ? _restoreGeneration : undefined
     cancelAnimate()
 
     // Reset circuit breaker so a fresh init can start the loop even if a
@@ -316,6 +347,8 @@ async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> 
     if (!sceneResult.success) {
         return false
     }
+    // P1-2: teardown/manual-init may have fired while we awaited the scene build.
+    if (restoreGen !== undefined && restoreGen !== _restoreGeneration) return false
 
     const { scene, camera, renderer, controls, hemiLight, dirLight } = sceneResult.setup
 
@@ -341,6 +374,8 @@ async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> 
     // createMycelium() uploads 100,872 edge line segments. Both are O(n)
     // synchronous work that benefits from interleaved yield.
     await yieldToBrowser()
+    // P1-2: generation guard — bail before mutating handles with stale syncs.
+    if (restoreGen !== undefined && restoreGen !== _restoreGeneration) return false
 
     // Inline createPoints logic (was engineDelegates.createPoints) to avoid
     // circular dependency with three-engine-mycelium.
@@ -357,6 +392,8 @@ async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> 
     // W8: yield between createPoints() and createMycelium() to keep individual
     // tasks under 200ms. createMycelium() uploads 100k+ edge line segments.
     await yieldToBrowser()
+    // P1-2: generation guard — bail before stale mycelium creation.
+    if (restoreGen !== undefined && restoreGen !== _restoreGeneration) return false
 
     // Await createMyceliumPort() so the 5 mycelium handles are populated in
     // webglContext BEFORE syncMyceliumHandles mirrors them into appState. This
@@ -379,6 +416,8 @@ async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> 
     // W8: yield after mycelium buffer upload (100k+ edges) before the
     // material compilation and visual setup phases.
     await yieldToBrowser()
+    // P1-2: generation guard — bail before stale material compilation.
+    if (restoreGen !== undefined && restoreGen !== _restoreGeneration) return false
 
     compilePointMaterialForReadinessPort()
     engineState.threeInteractionVisuals?.initSemanticLens()
@@ -388,6 +427,9 @@ async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> 
     // W8: yield before starting the render loop. The first frame() call
     // triggers shader compilation and uniform binding which can block.
     await yieldToBrowser()
+    // P1-2: generation guard — teardown or a newer manual init may have fired
+    // while we yielded; bail before starting the render loop (zombie-loop guard).
+    if (restoreGen !== undefined && restoreGen !== _restoreGeneration) return false
 
     // Start the render loop explicitly. The new Svelte lifecycle no longer
     // receives the legacy DOM scene-ready path, and without this the renderer
@@ -618,18 +660,10 @@ export function cancelAnimate() {
 
 export function deinit() {
     cancelAnimate()
-    // F2 / P2-3: clear any pending restore watchdog + retry timer on teardown
-    if (engineState.webglRestoreTimer) {
-        window.clearTimeout(engineState.webglRestoreTimer)
-        engineState.webglRestoreTimer = null
-    }
-    _clearRetryTimer()
-    _restoreRetryCount = 0
-    // renderer-wave audit (2026-08-07): invalidate any in-flight restore
-    // attempt on teardown — late settles become no-ops and nothing can
-    // resurrect the loop against a torn-down engine.
-    _restoreGeneration++
-    _restoreEscalated = false
+    // P1-1 / F2: invalidate restore retry machine on teardown — pending
+    // retry timers, the watchdog, and in-flight init body settles become
+    // no-ops against a torn-down engine.
+    _resetRestoreMachine()
     cancelOverviewCameraAnimation()
     engineState.cameraControls?.cancelFocusCameraAnimation()
     engineState.loadingUi?.cancelLoadingHide()
