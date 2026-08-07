@@ -457,10 +457,9 @@ export class AppState {
     focusCameraOffset = $state<Vector3Like | null>(null)
     focusCameraTargetOffset = $state<Vector3Like | null>(null)
     recentArrangements = $state<unknown[]>([])
-    signalScores = $state<number[]>([])
-    bridgeScores = $state<number[]>([])
-    bloomIndices = $state<Set<number>>(new Set())
-    bridgeIndices = $state<Set<number>>(new Set())
+    // signalScores / bloomIndices / bridgeIndices / bridgeScores retired 2026-08-07:
+    // the semantic-signal scoring component was declared but never wired to a producer
+    // (no search/scoring pipeline ever populated these fields). See commit for audit.
     trailIndices = $state<Set<number>>(new Set())
     projectedNeighborGrid = $state<SpatialGrid | null>(null)
     projectedNeighborCache = $state<Map<number, unknown>>(new Map())

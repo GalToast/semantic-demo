@@ -192,15 +192,13 @@ export function initJourneyState(): void {
             settleTimeoutId: undefined
         }
         state.myceliumMode ??= 'default'
-        state.bloomIndices ??= new Set<number>()
-        state.bridgeIndices ??= new Set<number>()
+        // bloomIndices / bridgeIndices retired 2026-08-07 (semantic-signal component never wired)
         state.projectedNeighborGrid ??= null
         state.projectedNeighborCache ??= new Map()
         state.canvasThreadInspectionClearTimer ??= null
         state.stableCanvasHover ??= null
         state.pointIndexByLeadId ??= new Map()
-        state.signalScores ??= []
-        state.bridgeScores ??= []
+        // signalScores / bridgeScores retired 2026-08-07 (semantic-signal component never wired)
         state.semanticDiveMode ??= false
         state.focusState.pocketTransitionStartedAt ??= 0
         state.focusState.pocketMotionByIndex ??= new Map()

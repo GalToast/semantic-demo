@@ -307,10 +307,6 @@ export interface SemanticState extends StateConfig {
     searchVectorScrambleTimer: ReturnType<typeof setTimeout> | null
     compactSearchRevealToken: number
     compactSearchRevealTimers: Array<ReturnType<typeof setTimeout>>
-    mobileRouteFieldPeekTimer: ReturnType<typeof setTimeout> | null
-    mobileRouteFieldPeekToken: number
-    mobileRoutePeekActive: boolean
-    mobileRoutePeekReason: string
     semanticLaneMonitorTimer: ReturnType<typeof setTimeout> | null
     semanticLaneProbePromise: Promise<unknown> | null
     semanticLaneOpsMode: boolean
@@ -389,10 +385,7 @@ export interface SemanticState extends StateConfig {
     focusTransitionStartedAt: number
     focusTransitionSettleTimer: ReturnType<typeof setTimeout> | null
     recentArrangements: unknown[]
-    signalScores: number[]
-    bridgeScores: number[]
-    bloomIndices: Set<number>
-    bridgeIndices: Set<number>
+    // signalScores / bloomIndices / bridgeIndices / bridgeScores retired 2026-08-07
     trailIndices: Set<number>
     projectedNeighborGrid: SpatialGrid | null
     projectedNeighborCache: Map<number, unknown>

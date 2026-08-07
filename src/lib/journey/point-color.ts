@@ -66,8 +66,7 @@ export function applyPointFilterColors(): void {
     const historySet = new Set(walkHistoryIndices)
 
     if (!_state.points || !_state.pointBaseColors || _state.pointBaseColors.length < _state.points.length * 3) return
-    const signalScores: number[] = _state.signalScores || []
-    const bridgeScores: number[] = _state.bridgeScores || []
+    // signalScores / bridgeScores retired 2026-08-07 (semantic-signal component never wired)
 
     for (let i = 0; i < _state.points.length; i++) {
         const colorOffset = i * 3
@@ -128,13 +127,14 @@ export function applyPointFilterColors(): void {
                     factor = Math.max(raw, minFloor)
                 }
             } else if (_state.myceliumMode === 'bloom') {
-                factor = _state.bloomIndices.has(i)
-                    ? 1.08
-                    : Math.max(0.22, Math.min(0.66, 0.3 + (signalScores[i] ?? 0) * 0.08))
+                // bloomIndices / signalScores retired 2026-08-07 — the semantic-signal component
+                // was never wired to a producer, so indices were always empty and scores always 0.
+                // The collapsed constant is: Math.max(0.22, Math.min(0.66, 0.3 + 0*0.08)) = 0.3
+                factor = 0.3
             } else if (_state.myceliumMode === 'bridge') {
-                factor = _state.bridgeIndices.has(i)
-                    ? 1.38
-                    : Math.max(0.16, Math.min(0.88, 0.22 + (bridgeScores[i] ?? 0) * 0.32))
+                // bridgeIndices / bridgeScores retired 2026-08-07 — same as bloom above.
+                // The collapsed constant is: Math.max(0.16, Math.min(0.88, 0.22 + 0*0.32)) = 0.22
+                factor = 0.22
             } else if (_state.myceliumMode === 'trail') {
                 factor = _state.trailIndices.size
                     ? _state.trailIndices.has(i)

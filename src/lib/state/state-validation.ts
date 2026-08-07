@@ -347,10 +347,7 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     focusCameraOffset: passthrough,
     focusCameraTargetOffset: passthrough,
     recentArrangements: passthrough,
-    signalScores: passthrough,
-    bridgeScores: passthrough,
-    bloomIndices: passthrough,
-    bridgeIndices: passthrough,
+    // signalScores / bloomIndices / bridgeIndices / bridgeScores retired 2026-08-07
     trailIndices: passthrough,
     projectedNeighborGrid: passthrough,
     projectedNeighborCache: passthrough,

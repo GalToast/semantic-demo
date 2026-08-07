@@ -37,10 +37,7 @@ function getPoints(): readonly BusinessRecord[] {
     return state.points as unknown as readonly BusinessRecord[]
 }
 
-function getNumericAt(values: readonly number[], index: number): number {
-    const value = values[index]
-    return typeof value === 'number' && Number.isFinite(value) ? value : 0
-}
+// getNumericAt retired 2026-08-07 — only consumer was signalScores/bridgeScores (semantic-signal component never wired)
 
 export function normalizeLeadId(value: string | number | null | undefined): string | null {
     if (value === null || value === undefined || value === '') return null
@@ -173,20 +170,16 @@ export function getProjectedNeighborCandidates(
     index: number,
     originalPositions: readonly Point3D[],
     points: readonly BusinessRecord[],
-    signalScores: readonly number[],
-    bridgeScores: readonly number[],
     projectedNeighborGrid: SpatialGrid,
     projectedNeighborCache: Map<number, number[]>
 ): number[]
 export function getProjectedNeighborCandidates(index: number, ...args: unknown[]): number[] {
-    if (args.length >= 6) {
-        // Pure path
-        const [originalPositions, points, signalScores, bridgeScores, projectedNeighborGrid, projectedNeighborCache] =
+    if (args.length >= 4) {
+        // Pure path — signalScores / bridgeScores retired 2026-08-07
+        const [originalPositions, points, projectedNeighborGrid, projectedNeighborCache] =
             args as [
                 readonly Point3D[],
                 readonly BusinessRecord[],
-                readonly number[],
-                readonly number[],
                 SpatialGrid,
                 Map<number, number[]>
             ]
@@ -226,8 +219,7 @@ export function getProjectedNeighborCandidates(index: number, ...args: unknown[]
                         const otherCity = points[otherIndex]?.city ?? ''
                         let score = 1 / Math.max(dist, 0.0001)
                         if (normalizeCityForFilter(otherCity) === normalizeCityForFilter(selfCity)) score += 0.9
-                        score += getNumericAt(signalScores, otherIndex) * 0.12
-                        score += getNumericAt(bridgeScores, otherIndex) * 0.08
+                        // signalScores / bridgeScores retired 2026-08-07
                         const selfCluster = points[index]?.cluster
                         const otherCluster = points[otherIndex]?.cluster
                         if (otherCluster === selfCluster && Number.isFinite(selfCluster)) score += 0.45
@@ -287,8 +279,7 @@ export function getProjectedNeighborCandidates(index: number, ...args: unknown[]
                     const otherCity = points[otherIndex]?.city
                     let score = 1 / Math.max(dist, 0.0001)
                     if (normalizeCityForFilter(otherCity) === normalizeCityForFilter(selfCity)) score += 0.9
-                    score += getNumericAt(state.signalScores as number[], otherIndex) * 0.12
-                    score += getNumericAt(state.bridgeScores as number[], otherIndex) * 0.08
+                    // signalScores / bridgeScores retired 2026-08-07
                     const selfCluster = points[index]?.cluster
                     const otherCluster = points[otherIndex]?.cluster
                     if (otherCluster === selfCluster && Number.isFinite(selfCluster)) score += 0.45
@@ -436,18 +427,14 @@ export function getGeometricThreadCandidates(index: number): ThreadCandidate[]
 export function getGeometricThreadCandidates(
     index: number,
     points: readonly BusinessRecord[],
-    getProjectedNeighborCandidatesFn: (index: number) => number[],
-    signalScores: readonly number[],
-    bridgeScores: readonly number[]
+    getProjectedNeighborCandidatesFn: (index: number) => number[]
 ): ThreadCandidate[]
 export function getGeometricThreadCandidates(index: number, ...args: unknown[]): ThreadCandidate[] {
-    if (args.length >= 4) {
-        // Pure path
-        const [points, getProjectedNeighborCandidatesFn, signalScores, bridgeScores] = args as [
+    if (args.length >= 2) {
+        // Pure path — signalScores / bridgeScores retired 2026-08-07
+        const [points, getProjectedNeighborCandidatesFn] = args as [
             readonly BusinessRecord[],
-            (index: number) => number[],
-            readonly number[],
-            readonly number[]
+            (index: number) => number[]
         ]
         if (!Number.isFinite(index) || index < 0 || index >= points.length) return []
         const selfCity = normalizeCityForFilter(points[index]?.city)
@@ -459,8 +446,8 @@ export function getGeometricThreadCandidates(index: number, ...args: unknown[]):
                 semanticScore: 0,
                 sameCity: normalizeCityForFilter(points[candidateIndex]?.city) === selfCity,
                 sameStatus: (points[candidateIndex]?.status ?? 'active') === selfStatus,
-                bridgeScore: getNumericAt(bridgeScores, candidateIndex),
-                signalScore: getNumericAt(signalScores, candidateIndex),
+                bridgeScore: 0,
+                signalScore: 0,
                 threadType: 'approximate_projected_neighbor',
                 relationshipRole: UNCLASSIFIED_RELATIONSHIP_ROLE,
                 relationshipAxis: '',
@@ -481,8 +468,8 @@ export function getGeometricThreadCandidates(index: number, ...args: unknown[]):
         semanticScore: 0,
         sameCity: normalizeCityForFilter(state.points[candidateIndex]?.city) === selfCity,
         sameStatus: (state.points[candidateIndex]?.status || 'active') === selfStatus,
-        bridgeScore: getNumericAt(state.bridgeScores as number[], candidateIndex),
-        signalScore: getNumericAt(state.signalScores as number[], candidateIndex),
+        bridgeScore: 0,
+        signalScore: 0,
         threadType: 'approximate_projected_neighbor',
         relationshipRole: 'unclassified' as RelationshipRole,
         relationshipAxis: '',
