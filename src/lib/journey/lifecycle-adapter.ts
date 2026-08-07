@@ -8,7 +8,6 @@
  *   - initJourneyLifecycleAdapter: called by app.js (off-limits)
  *   - previewInsideNextThread: used by app.js (off-limits)
  *   - getNextWalkCandidateForIndex: used by app.js + journey-compass-state.js
- *   - getInterestingBusinessNote: used by app.js + journey-compass-state.js
  *   - buildSelectedMatchNarrative: used by app.js (off-limits)
  *   - getPreviouslyFocusedFocusStage / setPreviouslyFocusedFocusStage: adapter-internal state
  *
@@ -43,14 +42,13 @@ interface WalkCandidateOptions {
 }
 
 /**
- * The six functions the adapter actually delegates to.
+ * The five functions the adapter actually delegates to.
  * `initJourneyLifecycleAdapter` accepts a partial of this; the spread
  * merges supplied overrides into the defaults.
  */
 interface AdapterDelegate {
     previewInsideNextThread: (options?: PreviewInsideOptions) => void;
     getNextWalkCandidateForIndex: (currentIndex: number, options?: WalkCandidateOptions) => ThreadCandidate | null;
-    getInterestingBusinessNote: (point: Point) => string | null;
     buildSelectedMatchNarrative: (point: Point) => string;
     getPreviouslyFocusedFocusStage: () => HTMLElement | null;
     setPreviouslyFocusedFocusStage: (el: HTMLElement | null) => void;
@@ -65,7 +63,6 @@ let previouslyFocusedFocusStage: HTMLElement | null = null;
 let adapter: AdapterDelegate = {
     previewInsideNextThread: (_options?: PreviewInsideOptions) => {},
     getNextWalkCandidateForIndex: (_currentIndex: number, _options?: WalkCandidateOptions): ThreadCandidate | null => null,
-    getInterestingBusinessNote: (_point: Point): string | null => null,
     buildSelectedMatchNarrative: (_point: Point): string => '',
     getPreviouslyFocusedFocusStage: (): HTMLElement | null => previouslyFocusedFocusStage,
     setPreviouslyFocusedFocusStage: (el: HTMLElement | null): void => { previouslyFocusedFocusStage = el || null; },
@@ -86,10 +83,6 @@ export function previewInsideNextThread(options?: PreviewInsideOptions): void {
 export function getNextWalkCandidateForIndex(currentIndex: number | null, options?: WalkCandidateOptions): ThreadCandidate | null {
     if (currentIndex === null) return null;
     return adapter.getNextWalkCandidateForIndex(currentIndex, options);
-}
-
-export function getInterestingBusinessNote(point: Point): string | null {
-    return adapter.getInterestingBusinessNote(point);
 }
 
 export function buildSelectedMatchNarrative(point: Point): string {

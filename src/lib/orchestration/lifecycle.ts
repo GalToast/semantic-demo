@@ -270,19 +270,6 @@ export function applyStoryPrompt(prompt: string | null): void {
 export { updateUrlState } from '@lib/orchestration/url-state'
 
 /**
- * Get interesting business note (filters trivia, suppresses placeholder QA strings).
- * Window bridge function from lifecycle.js.
- */
-export function getInterestingBusinessNote(point: Record<string, unknown> | null): string {
-    if (!point) return ''
-    const trivia = point.trivia as string | undefined
-    if (!trivia) return ''
-    // Suppress placeholder QA strings
-    if (trivia.includes('placeholder') || trivia.includes('QA') || trivia.includes('test')) return ''
-    return trivia
-}
-
-/**
  * Build selected match narrative (returns currentSearchSummary.reason or "").
  * Window bridge function from lifecycle.js.
  */

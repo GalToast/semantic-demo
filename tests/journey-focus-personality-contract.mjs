@@ -134,9 +134,12 @@ try {
   const applyFocusMatch = focusPocketSrc.match(/export function applyLocalNeighborhoodFocus[\s\S]*?\n}/)
   assert(applyFocusMatch, 'applyLocalNeighborhoodFocus body found in focus-pocket.ts')
   const applyBody = applyFocusMatch[0]
+  // cad28e3b: currentPersonality stores the full NeighborhoodPersonality OBJECT
+  // (consumers cast it as an object — routes.ts, focus.ts, focus-pocket-geometry.ts),
+  // not just .type. The (?!\.type) guard fails a regression back to the string write.
   assert(
-    /navState\.currentPersonality = personality\.type/.test(applyBody),
-    'applyLocalNeighborhoodFocus must set navState.currentPersonality from the selected personality'
+    /navState\.currentPersonality = personality(?!\.type)/.test(applyBody),
+    'applyLocalNeighborhoodFocus must set navState.currentPersonality to the selected personality object (not just .type)'
   )
   assert(
     /recentArrangements[\s\S]*?\.push\(personality\.type\)/.test(applyBody),

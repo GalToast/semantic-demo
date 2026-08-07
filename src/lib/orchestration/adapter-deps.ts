@@ -8,10 +8,10 @@ import { appState } from '@lib/state/app.svelte'
 import {
     setSemanticDiveMode,
     hydrateLeadContext as _hydrateLeadContextLifecycle,
-    getInterestingBusinessNote,
     buildSelectedMatchNarrative,
     refreshCompositionState
 } from '@lib/orchestration/lifecycle'
+import { getInterestingBusinessNote } from '@lib/ui/renderers'
 import { switchView } from '@lib/orchestration/view-controller'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { previewInsideNextThread } from '@lib/journey/thread-settler-adapter'
@@ -48,7 +48,7 @@ export function buildAdapterDeps(): AdapterDeps {
             ): ThreadCandidate | null => getNextWalkCandidateForIndex(currentIndex, options) as ThreadCandidate | null,
             setSemanticDiveMode: (mode: unknown) => setSemanticDiveMode(Boolean(mode)),
             getInterestingBusinessNote: (point: Record<string, unknown> | null): string | null =>
-                getInterestingBusinessNote(point),
+                getInterestingBusinessNote(point as BusinessRecord | null),
             buildSelectedMatchNarrative: (point: Record<string, unknown> | null): string =>
                 buildSelectedMatchNarrative(point),
             hasColdDegradedSemanticFallback,
