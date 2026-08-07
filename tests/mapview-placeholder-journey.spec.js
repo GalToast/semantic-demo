@@ -173,6 +173,18 @@ test.describe('Placeholder2D journey', () => {
         await expect(cta).toHaveAttribute('aria-label', 'Enter 3D scene')
         await expect(cta).toContainText('Enter 3D Scene')
         await expect(cta).toHaveAttribute('aria-describedby', 'placeholder-hint')
+        // Poll for the CTA to settle at ≥44×44 before reading the rect.
+        const ctaSettled = await page.waitForFunction(
+            () => {
+                const el = document.querySelector('[data-testid="placeholder-cta"]')
+                if (!el) return false
+                const r = el.getBoundingClientRect()
+                return Math.min(r.width, r.height) >= 44
+            },
+            null,
+            { timeout: 15000, polling: 50 }
+        )
+        expect(ctaSettled, 'CTA must settle to >=44px min dimension').toBeTruthy()
         const ctaRect = await cta.evaluate((el) => {
             const r = el.getBoundingClientRect()
             return { w: r.width, h: r.height }
@@ -239,7 +251,12 @@ test.describe('Placeholder2D journey', () => {
         await page.waitForFunction(() => document.body.classList.contains('render-kind-placeholder2d'), null, { timeout: 10000, polling: 100 })
 
         const dots = page.locator('[data-testid="placeholder-legend"] .placeholder-legend-dot')
-        await dots.first().waitFor({ state: 'attached', timeout: 15000 })
+        // Poll for all 5 dots to be present (the other 4 can lag one hydration flush).
+        await page.waitForFunction(
+            () => document.querySelectorAll('[data-testid="placeholder-legend"] .placeholder-legend-dot').length === 5,
+            null,
+            { timeout: 15000, polling: 50 }
+        )
         expect(await dots.count(), 'legend must render 5 dots').toBe(5)
 
         const inlineStyles = await page.evaluate(() => {

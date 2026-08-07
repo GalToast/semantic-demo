@@ -96,11 +96,13 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
     await page.goto(`${BASE_URL}${APP_PATH}?q=coffee&nodemo=1`)
     await expect(page).toHaveTitle(/Semantic Explorer|MoCo Business Mycelium/)
     await page.waitForSelector('#search-input', { state: 'visible', timeout: 30000 })
-    await page
-        .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), {
-            timeout: 8000
-        })
-        .catch(() => {})
+    // Poll for settled DOM (results rendered) instead of double-rAF — the CDP
+    // channel is immune to headless GPU rAF stalls (see pollFor rationale).
+    await page.waitForFunction(
+        () => document.querySelector('.search-result-item') !== null || document.querySelector('#search-result-list') !== null,
+        null,
+        { timeout: 15000, polling: 100 }
+    )
 
     // 2. Perform Search
     // The fill() re-triggers a fresh search over the deep-link results so the
@@ -109,11 +111,16 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
     await searchInput.focus()
     await searchInput.fill('coffee')
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 30000 })
-    await page
-        .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), {
-            timeout: 8000
-        })
-        .catch(() => {})
+    // Poll for at least 1 result with populated text instead of double-rAF.
+    await page.waitForFunction(
+        () => {
+            const items = document.querySelectorAll('.search-result-item')
+            if (items.length === 0) return false
+            return items[0].textContent.trim().length > 0
+        },
+        null,
+        { timeout: 15000, polling: 100 }
+    )
 
     // 3. Focus / Step Inside
     await page.locator('.search-result-item').first().click()
@@ -134,13 +141,17 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
         null,
         { timeout: 30000, polling: 100 }
     )
-    // Second rAF settle so the settled-state DOM (focus card, panel) paints
-    // before the view switch.
-    await page
-        .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), {
-            timeout: 8000
-        })
-        .catch(() => {})
+    // Poll for the selected-card to have populated content (settled data flush)
+    // instead of a double-rAF settle that races GPU rAF stalls.
+    await page.waitForFunction(
+        () => {
+            const card = document.querySelector('#selected-card, #focus-card-selected')
+            if (!card) return false
+            return card.textContent.trim().length > 0
+        },
+        null,
+        { timeout: 15000, polling: 100 }
+    )
 
     // FocusPocket is torn down when the map takes ownership of the view. Its
     // partial cleanup must not replay a stale `currentView:'galaxy'` snapshot
@@ -174,11 +185,15 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
             resetExperienceState()
         }
     })
-    await page
-        .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), {
-            timeout: 8000
-        })
-        .catch(() => {})
+    // Poll for the reset to settle (overview mode active) instead of double-rAF.
+    await page.waitForFunction(
+        () => {
+            const body = document.body
+            return body.dataset.activeView === 'galaxy' || body.dataset.panelSurface === 'idle' || body.dataset.panelSurface === 'overview'
+        },
+        null,
+        { timeout: 15000, polling: 100 }
+    )
 })
 
 test.afterEach(async ({ page }) => {

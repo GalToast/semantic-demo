@@ -17,7 +17,19 @@ for (const state of STATES) {
 
         test.beforeEach(async ({ page }) => {
             await page.goto(BASE_URL + APP_PATH + state.url)
-            await page.waitForLoadState('networkidle')
+            // Replace networkidle with a DOM-settled gate per state (networkidle
+            // fires before transitions settle: ?q=coffee results mount after idle,
+            // ?record=123 focus applies after data load).
+            const settlePredicates = {
+                idle: () => document.querySelector('#info-panel') !== null,
+                search: () => document.querySelector('.search-result-item') !== null,
+                focus: () => document.querySelector('#selected-card') !== null,
+                map: () => document.querySelector('#map-container') !== null
+            }
+            const pred = settlePredicates[state.name]
+            if (pred) {
+                await page.waitForFunction(pred, null, { timeout: 30000, polling: 100 })
+            }
             if (state.panelSurface) {
                 await page.evaluate((s) => {
                     document.body.dataset.panelSurface = s
@@ -35,21 +47,21 @@ for (const state of STATES) {
                     const el = elements.nth(i)
                     const isVisible = await el.isVisible().catch(() => false)
                     if (!isVisible) continue
-                    const overflow = await el.evaluate((elem) => {
-                        const rect = elem.getBoundingClientRect()
-                        const winWidth = window.innerWidth || document.documentElement.clientWidth
-                        const winHeight = window.innerHeight || document.documentElement.clientHeight
-                        return {
-                            right: Math.max(0, rect.right - winWidth),
-                            bottom: Math.max(0, rect.bottom - winHeight),
-                            left: Math.max(0, -rect.left),
-                            top: Math.max(0, -rect.top)
-                        }
-                    })
-                    expect(overflow.right, selector + '[' + i + '] right').toBeLessThanOrEqual(0)
-                    expect(overflow.bottom, selector + '[' + i + '] bottom').toBeLessThanOrEqual(0)
-                    expect(overflow.left, selector + '[' + i + '] left').toBeLessThanOrEqual(0)
-                    expect(overflow.top, selector + '[' + i + '] top').toBeLessThanOrEqual(0)
+                    // Poll per-element overflow predicate instead of one-shot rect.
+                    const noOverflow = await page.waitForFunction(
+                        ({ sel, idx }) => {
+                            const elems = document.querySelectorAll(sel)
+                            const elem = elems[idx]
+                            if (!elem) return false
+                            const rect = elem.getBoundingClientRect()
+                            const winW = window.innerWidth || document.documentElement.clientWidth
+                            const winH = window.innerHeight || document.documentElement.clientHeight
+                            return rect.right <= winW && rect.bottom <= winH && rect.left >= 0 && rect.top >= 0
+                        },
+                        { sel: selector, idx: i },
+                        { timeout: 15000, polling: 50 }
+                    )
+                    expect(noOverflow, selector + '[' + i + '] must not overflow viewport').toBe(true)
                 }
             }
         })
@@ -61,18 +73,22 @@ for (const state of STATES) {
             const compassVisible = await compass.isVisible().catch(() => false)
             const panelVisible = await infoPanel.isVisible().catch(() => false)
             if (compassVisible && panelVisible) {
-                const cRect = await compass.evaluate((el) => {
-                    const r = el.getBoundingClientRect()
-                    return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }
-                })
-                const pRect = await infoPanel.evaluate((el) => {
-                    const r = el.getBoundingClientRect()
-                    return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }
-                })
-                const verticalOverlap = !(cRect.bottom < pRect.top || cRect.top > pRect.bottom)
-                const horizontalOverlap = !(cRect.right < pRect.left || cRect.left > pRect.right)
-                const overlap = verticalOverlap && horizontalOverlap
-                expect(overlap ? 'overlap' : 'no overlap', 'compass and panel at ' + state.name).toBe('no overlap')
+                // Poll the settled no-overlap predicate instead of one-shot rects.
+                const noOverlap = await page.waitForFunction(
+                    () => {
+                        const c = document.querySelector('.journey-compass')
+                        const p = document.querySelector('#info-panel')
+                        if (!c || !p) return false
+                        const cR = c.getBoundingClientRect()
+                        const pR = p.getBoundingClientRect()
+                        const vOverlap = !(cR.bottom < pR.top || cR.top > pR.bottom)
+                        const hOverlap = !(cR.right < pR.left || cR.left > pR.right)
+                        return !(vOverlap && hOverlap)
+                    },
+                    null,
+                    { timeout: 15000, polling: 50 }
+                )
+                expect(noOverlap, 'compass and panel must not overlap at ' + state.name).toBe(true)
             }
         })
     })

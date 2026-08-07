@@ -92,6 +92,16 @@ test.describe('W53 corrective fixes (V8/V9/V2gap/WeatherWidget)', () => {
         await page.goto(surface('/?nodemo=1'), { waitUntil: 'networkidle' })
         const pill = page.locator('#weather-widget')
         await pill.waitFor({ state: 'visible', timeout: 10000 })
+        // Poll for the settled pill height (FOUT can change chip height on font load).
+        const pillSettled = await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#weather-widget')
+                return el && el.getBoundingClientRect().height >= 44
+            },
+            null,
+            { timeout: 15000, polling: 50 }
+        )
+        expect(pillSettled, 'weather pill must settle to >=44px height').toBeTruthy()
         const h = await pill.evaluate((el) => el.getBoundingClientRect().height)
         expect(h, 'weather pill min-height 44px (WCAG 2.5.8)').toBeGreaterThanOrEqual(44)
     })

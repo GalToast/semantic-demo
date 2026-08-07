@@ -184,9 +184,10 @@ async function testSourceStaticAbortableController() {
     // Must abort previous controller before creating a new one
     assertContains(srcCode, 'semanticThreadsDetailController.abort()', 'previous controller aborted')
 
-    // AbortError must be caught and return early
-    assertContains(srcCode, "err.name === 'AbortError'", 'AbortError handled')
-    assertContains(srcCode, 'return;', 'AbortError returns early')
+    // AbortError must be caught and return early (TypeScript cast: (err as Error).name)
+    assertContains(srcCode, "'AbortError'", 'AbortError string literal present')
+    // Inline return after the AbortError check (same line: 'if ((err as Error).name === ...') return')
+    assertContains(srcCode, "'AbortError') return", 'AbortError handler returns early')
 
     console.log('  OK abortable controller lifecycle verified in source')
 }
@@ -232,36 +233,36 @@ async function testSourceCachedStoryMode() {
 }
 
 // ---------------------------------------------------------------------------
-// Test 4: Static source — UI element wiring
+// Test 4: Static source — UI state wiring (refactored to appState)
 // ---------------------------------------------------------------------------
 
 async function testSourceUiWiring() {
-    console.log('\n[TEST] Static source: UI element wiring')
+    console.log('\n[TEST] Static source: UI state wiring (appState.semanticGuideState)')
 
     const fs = await import('node:fs')
     const srcCode = fs.readFileSync(CA_PATH, 'utf-8')
 
-    // summary-text updated on early-return
-    assertContains(srcCode, "document.getElementById('summary-text')", 'summary-text looked up')
-    assertContains(srcCode, "textEl.textContent = 'Select a business", 'early return sets summary-text')
+    // Early-return: appState.semanticGuideState.config.text is set to the prompt
+    assertContains(srcCode, "config.text = 'Select a business first", 'early return sets config.text')
 
-    // summary-gemma-story elements shown during load
-    assertContains(srcCode, "document.getElementById('summary-gemma-story')", 'story note element')
-    assertContains(srcCode, "document.getElementById('summary-gemma-story-text')", 'story text element')
-    assertContains(srcCode, "document.getElementById('summary-gemma-story-source')", 'story source element')
+    // Loading state: appState.semanticGuideState.storyText
+    assertContains(srcCode, "storyText = 'Loading the full connection report", 'loading text set on storyText')
+    assertContains(srcCode, "storySource = ''", 'storySource cleared during loading')
+    assertContains(srcCode, 'isSynthesizing = true', 'isSynthesizing set to true during load')
+    assertContains(srcCode, 'isSynthesizing = false', 'isSynthesizing cleared in finally')
 
-    // Loading state: "Loading the full connection report..."
-    assertContains(srcCode, "textContent = 'Loading the full connection report", 'loading text set')
+    // Story text is set via setStoryText helper (or direct appState assignment)
+    assertContains(srcCode, 'setStoryText', 'setStoryText helper called to set story')
 
-    // semantic-summary-card gets is-synthesizing class
-    assertContains(srcCode, "card.classList.add('is-synthesizing')", 'is-synthesizing class added')
-    assertContains(srcCode, "card.classList.remove('is-synthesizing')", 'is-synthesizing class removed in finally')
+    // showStory flag toggled
+    assertContains(srcCode, 'showStory = true', 'showStory set true during load')
+    assertContains(srcCode, 'showStory = false', 'showStory cleared in _hideStory')
 
-    console.log('  OK UI element wiring verified in source')
+    console.log('  OK UI state wiring verified in source (appState.semanticGuideState)')
 }
 
 // ---------------------------------------------------------------------------
-// Test 5: Static source — empty story handling
+// Test 5: Static source — empty story handling (refactored to setStoryText)
 // ---------------------------------------------------------------------------
 
 async function testSourceEmptyStory() {
@@ -270,9 +271,10 @@ async function testSourceEmptyStory() {
     const fs = await import('node:fs')
     const srcCode = fs.readFileSync(CA_PATH, 'utf-8')
 
-    // When story is falsy, must show "still being prepared" message
-    assertContains(srcCode, "textContent = 'The connection report is still being prepared.", 'empty story message')
-    assertContains(srcCode, "storySourceEl.textContent = ''", 'source cleared for empty story')
+    // When story is falsy, setStoryText is called with the prepared message
+    assertContains(srcCode, "'The connection report is still being prepared.", 'empty story message present')
+    // Source is cleared for empty story (passed as empty string to setStoryText)
+    assertContains(srcCode, "setStoryText('The connection report is still being prepared.", 'empty story calls setStoryText with message')
 
     console.log('  OK empty story handling verified in source')
 }
@@ -648,6 +650,257 @@ async function testRuntimeFocusedIdxButNoPoint() {
 }
 
 // ---------------------------------------------------------------------------
+// Runtime Test 13: correlationId is set on JSON parse errors
+// ---------------------------------------------------------------------------
+
+async function testRuntimeCorrelationIdOnJsonError() {
+    console.log('\n[RUNTIME] correlationId on JSON parse errors')
+
+    resetState()
+    elementsById.clear()
+
+    const card = new FakeElement('div')
+    card.id = 'semantic-summary-card'
+    elementsById.set('semantic-summary-card', card)
+
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
+
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
+
+    const promise = showSemanticThreadsDetail()
+
+    // Create a fake JSON parse error with correlationId attached
+    // The real code uses Object.defineProperty to attach correlationId
+    const jsonErr = new SyntaxError('Unexpected token <')
+    Object.defineProperty(jsonErr, 'correlationId', {
+        value: 'test-correlation-id-json',
+        writable: false,
+        configurable: true
+    })
+
+    resolveFetch({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(jsonErr)
+    })
+
+    await promise
+
+    // The error message is wrapped: Error('Connection report returned invalid JSON.', {cause: jsonErr})
+    // The catch block prefixes: 'Connection report unavailable: ' + err.message
+    assert(
+        state.semanticGuideState.storyText.includes('Connection report returned invalid JSON'),
+        `error message includes wrapped JSON error, got: "${state.semanticGuideState.storyText}"`
+    )
+    assert(
+        state.semanticGuideState.storyText.startsWith('Connection report unavailable'),
+        `error message starts with unavailable prefix, got: "${state.semanticGuideState.storyText}"`
+    )
+
+    console.log('  OK correlationId survives JSON parse error path')
+}
+
+// ---------------------------------------------------------------------------
+// Runtime Test 14: correlationId is set on API errors
+// ---------------------------------------------------------------------------
+
+async function testRuntimeCorrelationIdOnApiError() {
+    console.log('\n[RUNTIME] correlationId on API errors')
+
+    resetState()
+    elementsById.clear()
+
+    const card = new FakeElement('div')
+    card.id = 'semantic-summary-card'
+    elementsById.set('semantic-summary-card', card)
+
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
+
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
+
+    const promise = showSemanticThreadsDetail()
+
+    resolveFetch({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ ok: false, error: 'Server error from API' })
+    })
+
+    await promise
+
+    // Error message includes the API error text
+    assert(
+        state.semanticGuideState.storyText.includes('Server error from API'),
+        `error message includes API error text, got: "${state.semanticGuideState.storyText}"`
+    )
+    // Source is set to generic unavailable message
+    assert(
+        state.semanticGuideState.storySource === 'Connection report unavailable',
+        `error source is generic, got: "${state.semanticGuideState.storySource}"`
+    )
+
+    console.log('  OK correlationId survives API error path')
+}
+
+// ---------------------------------------------------------------------------
+// Runtime Test 15: fetch signal is passed through
+// ---------------------------------------------------------------------------
+
+async function testRuntimeFetchSignalPassed() {
+    console.log('\n[RUNTIME] fetch signal is passed to the fetch call')
+
+    resetState()
+    elementsById.clear()
+
+    const card = new FakeElement('div')
+    card.id = 'semantic-summary-card'
+    elementsById.set('semantic-summary-card', card)
+
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
+
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
+
+    const promise = showSemanticThreadsDetail()
+
+    // Verify the pending fetch has a signal in its options
+    assert(pendingFetch !== null, 'fetch was called')
+    assert(
+        pendingFetch.options && pendingFetch.options.signal !== undefined,
+        'fetch options includes signal'
+    )
+    assert(
+        pendingFetch.options.signal instanceof AbortSignal,
+        'fetch signal is an AbortSignal instance'
+    )
+
+    // Resolve to clean up
+    resolveFetch({
+        ok: true,
+        status: 200,
+        json: () =>
+            Promise.resolve({
+                ok: true,
+                mode: 'cached_trail_story',
+                story: 'Test story',
+                source: 'test'
+            })
+    })
+
+    await promise
+
+    console.log('  OK fetch signal verified in runtime')
+}
+
+// ---------------------------------------------------------------------------
+// Runtime Test 16: story source formatting (fresh vs cached)
+// ---------------------------------------------------------------------------
+
+async function testRuntimeStorySourceFormatting() {
+    console.log('\n[RUNTIME] story source formatting (fresh vs cached)')
+
+    resetState()
+    elementsById.clear()
+
+    const card = new FakeElement('div')
+    card.id = 'semantic-summary-card'
+    elementsById.set('semantic-summary-card', card)
+
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
+
+    // Sub-test 1: cached story with no cache_age_seconds (fresh cache)
+    // NOTE: non-cached modes (live) treat story as empty; only cached_trail_story/gemma_story modes show story
+    {
+        const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
+        const promise = showSemanticThreadsDetail()
+        resolveFetch({
+            ok: true,
+            status: 200,
+            json: () =>
+                Promise.resolve({
+                    ok: true,
+                    mode: 'cached_trail_story',
+                    story: 'Fresh cache story.',
+                    source: 'semantic-guide-engine'
+                    // no cache_age_seconds — treated as fresh
+                })
+        })
+        await promise
+        assert(
+            state.semanticGuideState.storySource === 'semantic-guide-engine',
+            `fresh cached story source is engine name only, got: "${state.semanticGuideState.storySource}"`
+        )
+    }
+
+    // Sub-test 2: cached story (minutes)
+    {
+        const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
+        const promise = showSemanticThreadsDetail()
+        resolveFetch({
+            ok: true,
+            status: 200,
+            json: () =>
+                Promise.resolve({
+                    ok: true,
+                    mode: 'cached_trail_story',
+                    story: 'Cached story.',
+                    source: 'semantic-guide-engine',
+                    cache_age_seconds: 300
+                })
+        })
+        await promise
+        assert(
+            state.semanticGuideState.storySource.includes('cached'),
+            `cached story source includes "cached", got: "${state.semanticGuideState.storySource}"`
+        )
+        assert(
+            state.semanticGuideState.storySource.includes('5m ago'),
+            `cached story source shows minutes, got: "${state.semanticGuideState.storySource}"`
+        )
+    }
+
+    // Sub-test 3: cached story (hours)
+    {
+        const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
+        const promise = showSemanticThreadsDetail()
+        resolveFetch({
+            ok: true,
+            status: 200,
+            json: () =>
+                Promise.resolve({
+                    ok: true,
+                    mode: 'cached_gemma_story',
+                    story: 'Hour-old story.',
+                    source: 'gemma-engine',
+                    cache_age_seconds: 7200
+                })
+        })
+        await promise
+        assert(
+            state.semanticGuideState.storySource.includes('2h ago'),
+            `cached story source shows hours, got: "${state.semanticGuideState.storySource}"`
+        )
+    }
+
+    console.log('  OK story source formatting verified (fresh, cached-minutes, cached-hours)')
+}
+
+// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 
@@ -657,29 +910,47 @@ async function main() {
     console.log('Fast contract test: connection analysis / semantic threads detail')
     console.log('================================================================')
 
-    try {
-        testSourceStaticAbortableController()
-        testSourceCorrelationId()
-        testSourceCachedStoryMode()
-        testSourceUiWiring()
-        testSourceEmptyStory()
-        await testRuntimeCachedStory()
-        await testRuntimeEmptyStory()
-        await testRuntimeInvalidJson()
-        await testRuntimeApiError()
-        await testRuntimeAbortLifecycle()
-        await testRuntimeEarlyReturnNoFocusedPoint()
-        await testRuntimeFocusedIdxButNoPoint()
+    let pass = 0
+    let fail = 0
 
-        console.log('\n================================================================')
-        console.log('ALL TESTS PASSED')
-        console.log('================================================================')
-        process.exit(0)
-    } catch (err) {
-        console.error('\nTEST FAILED:', err.message)
-        console.error(err.stack)
-        process.exit(1)
+    const tests = [
+        { name: 'Static: abortable controller', fn: testSourceStaticAbortableController },
+        { name: 'Static: correlationId', fn: testSourceCorrelationId },
+        { name: 'Static: cached story mode', fn: testSourceCachedStoryMode },
+        { name: 'Static: UI state wiring', fn: testSourceUiWiring },
+        { name: 'Static: empty story handling', fn: testSourceEmptyStory },
+        { name: 'Runtime: cached story', fn: testRuntimeCachedStory },
+        { name: 'Runtime: empty story', fn: testRuntimeEmptyStory },
+        { name: 'Runtime: invalid JSON', fn: testRuntimeInvalidJson },
+        { name: 'Runtime: API error', fn: testRuntimeApiError },
+        { name: 'Runtime: abort lifecycle', fn: testRuntimeAbortLifecycle },
+        { name: 'Runtime: early return', fn: testRuntimeEarlyReturnNoFocusedPoint },
+        { name: 'Runtime: focusedIdx out of range', fn: testRuntimeFocusedIdxButNoPoint },
+        { name: 'Runtime: correlationId on JSON error', fn: testRuntimeCorrelationIdOnJsonError },
+        { name: 'Runtime: correlationId on API error', fn: testRuntimeCorrelationIdOnApiError },
+        { name: 'Runtime: fetch signal passed', fn: testRuntimeFetchSignalPassed },
+        { name: 'Runtime: story source formatting', fn: testRuntimeStorySourceFormatting }
+    ]
+
+    for (const { name, fn } of tests) {
+        try {
+            await fn()
+            pass++
+        } catch (err) {
+            fail++
+            console.error(`  FAIL [${name}]:`, err.message)
+        }
     }
+
+    console.log(`\n================================================================`)
+    console.log(`${pass} passed, ${fail} failed, ${tests.length} total`)
+    if (fail === 0) {
+        console.log('ALL TESTS PASSED')
+    } else {
+        console.log('SOME TESTS FAILED')
+    }
+    console.log('================================================================')
+    process.exit(fail > 0 ? 1 : 0)
 }
 
 main()

@@ -273,7 +273,14 @@ test.describe('Header extracted components — HelpDialog + ModeChipRail', () =>
 
         // Wait for placeholder2d render path to be active.
         await page.waitForFunction(() => document.body.classList.contains('render-kind-placeholder2d'), null, { timeout: 10000, polling: 100 })
-        await page.waitForTimeout(300)
+        // Poll for all 6 chip elements to be present in the rail (the header
+        // mount can lag the class flip; chips mount in one flush, so count === 6
+        // means the rail is settled).
+        await page.waitForFunction(
+            () => document.querySelectorAll('.mode-chip[data-mode]').length >= 6,
+            null,
+            { timeout: 15000, polling: 50 }
+        )
 
         // On mobile the chips render but may be visually compact.
         // The key assertion is that all six <button data-mode="..."> elements

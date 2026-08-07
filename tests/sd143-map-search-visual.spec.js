@@ -83,6 +83,19 @@ test.describe('SD-143: mobile Map mode search visibility', () => {
         const searchInput = page.locator('.search-input')
         await expect(searchInput).toBeVisible({ timeout: 10000 })
 
+        // Poll for the settled ≥44×44 tap target instead of one-shot rect.
+        const tapSettled = await page.waitForFunction(
+            () => {
+                const el = document.querySelector('.search-input')
+                if (!el) return false
+                const rect = el.getBoundingClientRect()
+                return rect.width >= 44 && rect.height >= 44
+            },
+            null,
+            { timeout: 15000, polling: 50 }
+        )
+        expect(tapSettled, 'search input must settle to >=44×44 tap target').toBeTruthy()
+
         const box = await searchInput.evaluate((el) => {
             const rect = el.getBoundingClientRect()
             return { width: rect.width, height: rect.height }

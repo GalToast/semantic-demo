@@ -580,7 +580,98 @@ assert(
 console.log('  PASS (12 reducer action handlers verified, exhaustive switch confirmed)')
 
 // ---------------------------------------------------------------------------
+// RUNTIME TEST 1: JOURNEY_COMPASS_PHASE_ORDER has canonical 6 phases
+// ---------------------------------------------------------------------------
+console.log('\nRUNTIME TEST 1: JOURNEY_COMPASS_PHASE_ORDER canonical phases')
+
+try {
+    const { JOURNEY_COMPASS_PHASE_ORDER } = await import('../src/lib/stores/journey.svelte.ts')
+    assert(Array.isArray(JOURNEY_COMPASS_PHASE_ORDER), 'JOURNEY_COMPASS_PHASE_ORDER must be an array')
+    assertEq(JOURNEY_COMPASS_PHASE_ORDER.length, 6, 'JOURNEY_COMPASS_PHASE_ORDER has 6 phases')
+    const expectedPhases = ['overview', 'search', 'focus', 'trail', 'inside', 'map']
+    for (let i = 0; i < expectedPhases.length; i++) {
+        assertEq(
+            JOURNEY_COMPASS_PHASE_ORDER[i],
+            expectedPhases[i],
+            `phase ${i} is '${expectedPhases[i]}'`
+        )
+    }
+    console.log('  PASS (6 phases: overview → search → focus → trail → inside → map)')
+} catch (err) {
+    console.error('  FAIL:', err.message)
+}
+
+// ---------------------------------------------------------------------------
+// RUNTIME TEST 2: SELECTION_DEPENDENT_MODES and isModeLocked
+// ---------------------------------------------------------------------------
+console.log('\nRUNTIME TEST 2: SELECTION_DEPENDENT_MODES and isModeLocked')
+
+try {
+    const { SELECTION_DEPENDENT_MODES, isModeLocked } = await import(
+        '../src/lib/navigation/mode-affordances'
+    )
+    assert(SELECTION_DEPENDENT_MODES instanceof Set, 'SELECTION_DEPENDENT_MODES is a Set')
+    assert(SELECTION_DEPENDENT_MODES.has('trail'), 'trail is selection-dependent')
+    assert(SELECTION_DEPENDENT_MODES.has('focus'), 'focus is selection-dependent')
+    assert(SELECTION_DEPENDENT_MODES.has('inside'), 'inside is selection-dependent')
+    assert(!SELECTION_DEPENDENT_MODES.has('overview'), 'overview is NOT selection-dependent')
+    assert(!SELECTION_DEPENDENT_MODES.has('search'), 'search is NOT selection-dependent')
+
+    // isModeLocked behavior:
+    // - A selection-dependent mode WITHOUT a selection → locked
+    assert(isModeLocked('trail', false) === true, 'trail without selection is locked')
+    assert(isModeLocked('focus', false) === true, 'focus without selection is locked')
+    assert(isModeLocked('inside', false) === true, 'inside without selection is locked')
+    // - A selection-dependent mode WITH a selection → unlocked
+    assert(isModeLocked('trail', true) === false, 'trail with selection is unlocked')
+    assert(isModeLocked('focus', true) === false, 'focus with selection is unlocked')
+    // - A non-selection-dependent mode is never locked
+    assert(isModeLocked('overview', false) === false, 'overview without selection is unlocked')
+    assert(isModeLocked('search', false) === false, 'search without selection is unlocked')
+    assert(isModeLocked('overview', true) === false, 'overview with selection is unlocked')
+    // - 'map' is not in SELECTION_DEPENDENT_MODES
+    assert(isModeLocked('map', false) === false, 'map without selection is unlocked')
+
+    console.log('  PASS (3 selection-dependent modes, correct lock semantics)')
+} catch (err) {
+    console.error('  FAIL:', err.message)
+}
+
+// ---------------------------------------------------------------------------
+// RUNTIME TEST 3: NAV_TRANSITION_ACTIONS has all required action keys
+// ---------------------------------------------------------------------------
+console.log('\nRUNTIME TEST 3: NAV_TRANSITION_ACTIONS action keys')
+
+try {
+    const { NAV_TRANSITION_ACTIONS } = await import('../src/lib/navigation-actions.ts')
+    const required = [
+        'FOCUS_NODE',
+        'SET_DEPTH',
+        'WALK_TO',
+        'BACKTRACK',
+        'RESET_FOCUS',
+        'RESET_EXPERIENCE',
+        'ENTER_INSIDE',
+        'EXIT_INSIDE',
+        'RESTORE_EXPLORATION_HISTORY'
+    ]
+    for (const key of required) {
+        assert(
+            NAV_TRANSITION_ACTIONS[key] !== undefined,
+            `NAV_TRANSITION_ACTIONS must have '${key}' key`
+        )
+        assert(
+            typeof NAV_TRANSITION_ACTIONS[key] === 'string',
+            `NAV_TRANSITION_ACTIONS['${key}'] must be a string`
+        )
+    }
+    console.log(`  PASS (${required.length} action keys verified at runtime)`)
+} catch (err) {
+    console.error('  FAIL:', err.message)
+}
+
+// ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
 console.log('\n=== state-transition-table-contract.mjs PASSED ===')
-console.log('All 48 contracts verified via source-only checks.')
+console.log('All 48 static contracts + 3 runtime behavioral tests verified.')

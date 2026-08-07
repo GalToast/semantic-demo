@@ -143,6 +143,18 @@ test.describe('Live Step Inside state sync', () => {
         const mapRoute = page.locator('.journey-compass-step[data-journey-step="map"]')
         await expect(mapRoute, 'Map journey route must exist in the DOM').toHaveCount(1, { timeout: 10000 })
         await expect(mapRoute).toBeVisible({ timeout: 10000 })
+        // Poll for the settled ≥44×44 tap target instead of one-shot boundingBox.
+        const boxSettled = await page.waitForFunction(
+            () => {
+                const el = document.querySelector('.journey-compass-step[data-journey-step="map"]')
+                if (!el) return false
+                const r = el.getBoundingClientRect()
+                return Math.min(r.width, r.height) >= 44
+            },
+            null,
+            { timeout: 15000, polling: 50 }
+        )
+        expect(boxSettled, 'map route must settle to >=44px min dimension').toBeTruthy()
         const box = await mapRoute.boundingBox()
         expect(box?.width || 0).toBeGreaterThanOrEqual(44)
         expect(box?.height || 0).toBeGreaterThanOrEqual(44)

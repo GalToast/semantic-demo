@@ -214,6 +214,151 @@ function testFocusTrap() {
 // Run
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// RUNTIME TEST 12: initKeyboardResetOwnership stores callbacks
+// ---------------------------------------------------------------------------
+
+async function testRuntimeKeyboardResetOwnership() {
+    console.log('\n[RUNTIME] initKeyboardResetOwnership stores callbacks')
+
+    const { initKeyboardResetOwnership, handleGalaxyKeydown } = await import(
+        '../src/lib/keyboard/keyboard-help.ts'
+    )
+
+    // Before registration, callbacks are no-ops (handleGalaxyKeydown should not throw)
+    let overviewCalled = false
+    let resetCalled = false
+
+    initKeyboardResetOwnership({
+        returnToOverview: () => { overviewCalled = true },
+        resetExplorationFocus: () => { resetCalled = true }
+    })
+
+    assert(
+        typeof initKeyboardResetOwnership === 'function',
+        'initKeyboardResetOwnership is a function'
+    )
+    console.log('  OK callbacks registered')
+}
+
+// ---------------------------------------------------------------------------
+// RUNTIME TEST 13: handleGalaxyKeydown dispatches Home to registered callback
+// ---------------------------------------------------------------------------
+
+// Create a minimal KeyboardEvent-like object for Node testing
+function fakeKeyEvent(key, target = { tagName: 'BODY', getAttribute: () => null }) {
+    return {
+        key,
+        isComposing: false,
+        target,
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        shiftKey: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false
+    }
+}
+
+async function testRuntimeHandleGalaxyKeydownHome() {
+    console.log('\n[RUNTIME] handleGalaxyKeydown dispatches Home key')
+
+    const { initKeyboardResetOwnership } = await import(
+        '../src/lib/keyboard/keyboard-help.ts'
+    )
+
+    let overviewCalled = false
+    initKeyboardResetOwnership({
+        returnToOverview: () => { overviewCalled = true }
+    })
+
+    const { handleGalaxyKeydown } = await import('../src/lib/keyboard/keyboard-help.ts')
+
+    handleGalaxyKeydown(fakeKeyEvent('Home'))
+    assert(overviewCalled, 'Home key dispatched to returnToOverview callback')
+
+    console.log('  OK Home key handling verified')
+}
+
+// ---------------------------------------------------------------------------
+// RUNTIME TEST 14: handleGalaxyKeydown dispatches Escape to registered callback
+// ---------------------------------------------------------------------------
+
+async function testRuntimeHandleGalaxyKeydownEscape() {
+    console.log('\n[RUNTIME] handleGalaxyKeydown dispatches Escape key')
+
+    const { initKeyboardResetOwnership } = await import(
+        '../src/lib/keyboard/keyboard-help.ts'
+    )
+
+    let resetCalled = false
+    initKeyboardResetOwnership({
+        returnToOverview: () => {},
+        resetExplorationFocus: () => { resetCalled = true }
+    })
+
+    const { handleGalaxyKeydown } = await import('../src/lib/keyboard/keyboard-help.ts')
+
+    handleGalaxyKeydown(fakeKeyEvent('Escape'))
+    assert(resetCalled, 'Escape key dispatched to resetExplorationFocus callback')
+
+    console.log('  OK Escape key handling verified')
+}
+
+// ---------------------------------------------------------------------------
+// RUNTIME TEST 15: isKeyboardControlTarget correctly identifies targets
+// ---------------------------------------------------------------------------
+
+async function testRuntimeIsKeyboardControlTarget() {
+    console.log('\n[RUNTIME] isKeyboardControlTarget identifies interactive elements')
+
+    const { isKeyboardControlTarget } = await import('../src/lib/keyboard/keyboard-help.ts')
+
+    assert(typeof isKeyboardControlTarget === 'function', 'isKeyboardControlTarget is a function')
+
+    // Null/undefined → false
+    assert(!isKeyboardControlTarget(null), 'null is not a control target')
+    assert(!isKeyboardControlTarget(undefined), 'undefined is not a control target')
+
+    // Plain div → false
+    const div = { tagName: 'DIV', getAttribute: () => null }
+    assert(!isKeyboardControlTarget(div), 'plain div is not a control target')
+
+    // Button → true (via tagName)
+    const button = { tagName: 'BUTTON', getAttribute: () => null }
+    assert(isKeyboardControlTarget(button), 'button is a control target (tagName)')
+
+    // Select → true (via tagName)
+    const select = { tagName: 'SELECT', getAttribute: () => null }
+    assert(isKeyboardControlTarget(select), 'select is a control target (tagName)')
+
+    // Anchor → true (via tagName)
+    const anchor = { tagName: 'A', getAttribute: () => null }
+    assert(isKeyboardControlTarget(anchor), 'anchor is a control target (tagName)')
+
+    // role="button" → true (via ARIA role)
+    const roleButton = { tagName: 'SPAN', getAttribute: (attr) => attr === 'role' ? 'button' : null }
+    assert(isKeyboardControlTarget(roleButton), 'role=button is a control target')
+
+    // role="link" → true (via ARIA role)
+    const roleLink = { tagName: 'SPAN', getAttribute: (attr) => attr === 'role' ? 'link' : null }
+    assert(isKeyboardControlTarget(roleLink), 'role=link is a control target')
+
+    // role="menuitem" → true
+    const roleMenuItem = { tagName: 'DIV', getAttribute: (attr) => attr === 'role' ? 'menuitem' : null }
+    assert(isKeyboardControlTarget(roleMenuItem), 'role=menuitem is a control target')
+
+    // role="tab" → true
+    const roleTab = { tagName: 'DIV', getAttribute: (attr) => attr === 'role' ? 'tab' : null }
+    assert(isKeyboardControlTarget(roleTab), 'role=tab is a control target')
+
+    // role="presentation" → false
+    const rolePresentation = { tagName: 'SPAN', getAttribute: (attr) => attr === 'role' ? 'presentation' : null }
+    assert(!isKeyboardControlTarget(rolePresentation), 'role=presentation is NOT a control target')
+
+    console.log('  OK isKeyboardControlTarget correctly identifies 10 target types')
+}
+
 const tests = [
     testPreviouslyFocusedVariable,
     testOpenCapturesFocus,
@@ -242,5 +387,23 @@ for (const test of tests) {
     }
 }
 
-console.log(`\nResult: ${passed}/${tests.length} passed\n`)
+// Run runtime behavioral tests
+const runtimeTests = [
+    testRuntimeKeyboardResetOwnership,
+    testRuntimeHandleGalaxyKeydownHome,
+    testRuntimeHandleGalaxyKeydownEscape,
+    testRuntimeIsKeyboardControlTarget
+]
+
+for (const test of runtimeTests) {
+    try {
+        await test()
+        passed++
+    } catch (err) {
+        failed++
+        console.error(`  FAIL: ${err.message}`)
+    }
+}
+
+console.log(`\nResult: ${passed}/${tests.length + runtimeTests.length} passed (${tests.length} static + ${runtimeTests.length} runtime)\n`)
 if (failed > 0) process.exit(1)

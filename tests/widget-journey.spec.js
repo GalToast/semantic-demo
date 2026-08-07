@@ -1609,7 +1609,16 @@ test.describe('Widget journey', () => {
                 if (d) d.setAttribute('open', '')
             })
         })
-        await page.waitForTimeout(500) // allow CSS transition + Svelte flush
+        // Poll for the scrim to settle (display:block after CSS transition + Svelte flush).
+        await pollFor(
+            page,
+            () => {
+                const scrim = document.querySelector('.filters-scrim')
+                return scrim && getComputedStyle(scrim).display === 'block'
+            },
+            30000,
+            50
+        )
 
         const scrimState = await page.evaluate(() => {
             const scrim = document.querySelector('.filters-scrim')
@@ -1690,7 +1699,21 @@ test.describe('Widget journey', () => {
         // toolbar to width:90vw, which leaked past the centered rail so chips
         // painted off-screen (measured right edge 424/464 at 390px viewport).
         await page.setViewportSize({ width: 390, height: 844 })
-        await page.waitForTimeout(300)
+        // Poll for filter chips to settle within the viewport after resize.
+        await pollFor(
+            page,
+            () => {
+                const chips = document.querySelectorAll('.filter-chip')
+                if (chips.length === 0) return false
+                for (const el of chips) {
+                    const b = el.getBoundingClientRect()
+                    if (b.width > 0 && b.right > window.innerWidth + 0.5 && el.offsetParent !== null) return false
+                }
+                return true
+            },
+            15000,
+            50
+        )
         const chipOverflow = await page.evaluate(() => {
             const off = []
             for (const el of document.querySelectorAll('.filter-chip')) {
@@ -2733,18 +2756,17 @@ test.describe('Widget journey', () => {
                     document.body.dataset.mobileSearchSheetUser = 'true'
                 }, mode)
                 await page.setViewportSize(size)
-                await page.waitForTimeout(300)
+                // Poll for panelSurfaceDetail to match the injected mode (settled $derived).
+                await page.waitForFunction(
+                    () => document.body.dataset.panelSurfaceDetail === arguments[0],
+                    mode,
+                    { timeout: 10000, polling: 50 }
+                )
             }
 
             // ── PEEK ──────────────────────────────────────────────────────────────
             await setSheetAndRecompute('peek', { width: 420, height: 844 })
-            await page
-                .waitForFunction(() => document.body.dataset.panelSurfaceDetail === 'peek', null, {
-                    timeout: 5000,
-                    polling: 100
-                })
-                .catch(() => {})
-            await page.waitForTimeout(150)
+            // waitForFunction inside setSheetAndRecompute already polled panelSurfaceDetail==='peek'.
 
             const peek = await page.evaluate(() => {
                 const el = document.querySelector('#search-results-count')
@@ -2760,13 +2782,7 @@ test.describe('Widget journey', () => {
 
             // ── EXPANDED (non-peek) ───────────────────────────────────────────────
             await setSheetAndRecompute('expanded', { width: 390, height: 844 })
-            await page
-                .waitForFunction(() => document.body.dataset.panelSurfaceDetail === 'expanded', null, {
-                    timeout: 5000,
-                    polling: 100
-                })
-                .catch(() => {})
-            await page.waitForTimeout(150)
+            // waitForFunction inside setSheetAndRecompute already polled panelSurfaceDetail==='expanded'.
 
             const expanded = await page.evaluate(() => {
                 const el = document.querySelector('#search-results-count')
@@ -3251,17 +3267,27 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, { waitUntil: 'domcontentloaded' })
         const selectedName = page.locator('#selected-name')
         await selectedName.waitFor({ state: 'attached', timeout: 30000 })
-        await page
-            .waitForFunction(() => document.body.classList.contains('surface-focus'), null, {
-                timeout: 30000,
-                polling: 100
-            })
-            .catch(() => {})
-        await page.waitForTimeout(500)
+        await page.waitForFunction(() => document.body.classList.contains('surface-focus'), null, {
+            timeout: 30000,
+            polling: 100
+        })
+        // Poll for the mode-chip rail to fully mount (6 chips) before reading geometry.
+        await pollFor(
+            page,
+            () => document.querySelectorAll('#mode-chips .mode-chip').length === 6,
+            30000,
+            100
+        )
 
         for (const width of [768, 360]) {
             await page.setViewportSize({ width, height: 800 })
-            await page.waitForTimeout(300)
+            // Poll for the 6-chip rail to exist at the new width before reading geometry.
+            await pollFor(
+                page,
+                () => document.querySelectorAll('#mode-chips .mode-chip').length === 6,
+                15000,
+                50
+            )
 
             // A2.2: no mode-chip label clipped mid-word. Either the label is hidden
             // per the mobile policy (≤768px) or the chip's full content is rendered
@@ -4884,6 +4910,16 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
         // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
         await legendTitle.waitFor({ state: 'attached', timeout: 20000 })
+        // Poll for the legend title to be non-hidden (the panel auto-hides after 10s).
+        await pollFor(
+            page,
+            () => {
+                const el = document.querySelector('#legend-panel .legend-title')
+                return el && el.getAttribute('aria-hidden') !== 'true'
+            },
+            15000,
+            100
+        )
 
         const ariaLabel = await legendTitle.getAttribute('aria-label')
         expect(ariaLabel, 'legend title must have a descriptive aria-label').toBeTruthy()

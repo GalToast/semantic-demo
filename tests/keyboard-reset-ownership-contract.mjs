@@ -170,8 +170,52 @@ try {
     )
     console.log('  PASS - key handlers use only _ prefixed injected functions')
 
+    // ---------------------------------------------------------------------------
+    // RUNTIME CONTRACT 6: initKeyboardResetOwnership + handleGalaxyKeydown integration
+    // ---------------------------------------------------------------------------
+    console.log('\n[RUNTIME CONTRACT 6] initKeyboardResetOwnership integration test')
+
+    let dynamicOverviewCallCount = 0
+    let dynamicResetCallCount = 0
+
+    const { initKeyboardResetOwnership, handleGalaxyKeydown } = await import(
+        '../src/lib/keyboard/keyboard-help.ts'
+    )
+
+    // Before registration, callbacks are inert no-ops (Home key won't throw)
+    // After registration, Home and Escape dispatch to the registered callbacks
+    initKeyboardResetOwnership({
+        returnToOverview: () => { dynamicOverviewCallCount++ },
+        resetExplorationFocus: () => { dynamicResetCallCount++ }
+    })
+
+    // Fake keyboard event helper
+    const fakeEvt = (key) => ({
+        key,
+        isComposing: false,
+        target: { tagName: 'BODY', getAttribute: () => null },
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        shiftKey: false,
+        metaKey: false,
+        ctrlKey: false,
+        altKey: false
+    })
+
+    handleGalaxyKeydown(fakeEvt('Home'))
+    assert(dynamicOverviewCallCount === 1, `Home dispatched once, got ${dynamicOverviewCallCount}`)
+
+    handleGalaxyKeydown(fakeEvt('Escape'))
+    assert(dynamicResetCallCount === 1, `Escape dispatched once, got ${dynamicResetCallCount}`)
+
+    // Second Home dispatch
+    handleGalaxyKeydown(fakeEvt('Home'))
+    assert(dynamicOverviewCallCount === 2, `Home dispatched twice, got ${dynamicOverviewCallCount}`)
+
+    console.log('  PASS - runtime integration: Home→returnToOverview, Escape→resetExplorationFocus')
+
     console.log('\n=================================================================')
-    console.log('ALL CONTRACT POINTS PASSED')
+    console.log('ALL CONTRACT POINTS PASSED (5 static + 1 runtime)')
     console.log('=================================================================')
     process.exit(0)
 } catch (err) {

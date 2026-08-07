@@ -32,6 +32,30 @@ test.describe('btn-journey-primary mobile overflow regression', () => {
         await page.goto(`${BASE_URL}/index.html`)
         await page.waitForSelector('#btn-journey-primary', { state: 'visible', timeout: 20000 })
 
+        // Poll for the settled no-overflow predicate instead of one-shot rect.
+        const noOverflow = await page.waitForFunction(
+            () => {
+                const btn = document.getElementById('btn-journey-primary')
+                if (!btn) return false
+                let container = btn.parentElement
+                while (container) {
+                    const overflow = getComputedStyle(container).overflowX
+                    if (overflow === 'hidden' || overflow === 'auto') break
+                    container = container.parentElement
+                    if (!container || container === document.body || container === document.documentElement) {
+                        container = btn.parentElement
+                        break
+                    }
+                }
+                const btnRect = btn.getBoundingClientRect()
+                const containerRect = container ? container.getBoundingClientRect() : btnRect
+                return btnRect.right <= containerRect.right && btnRect.left >= containerRect.left
+            },
+            null,
+            { timeout: 15000, polling: 50 }
+        )
+        expect(noOverflow, 'btn-journey-primary must settle within container bounds').toBeTruthy()
+
         // Get the button and its nearest scrollable ancestor
         const overflowInfo = await page.evaluate(() => {
             const btn = document.getElementById('btn-journey-primary')
