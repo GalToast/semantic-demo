@@ -136,20 +136,29 @@ export function disposeInteractionVisuals() {
 
 export function disposeSemanticLens() {
     disposeFocusPocketSizeMesh()
+    // P2 (2026-08-07): module-level focus cache survives engine re-init — a
+    // same-index focus after rebuild would reuse the stale signal score /
+    // neighbor list for one frame. Reset so the next focus recomputes.
+    lastFocusIdx = null
+    cachedSignalScore = 0
+    cachedNeighborIndices = []
     if (state.anchorBloomLight) {
         state.scene?.remove(state.anchorBloomLight)
         state.anchorBloomLight.dispose?.()
         state.anchorBloomLight = null
     }
     if (state.semanticManifold) {
+        state.scene?.remove(state.semanticManifold)
         disposeObject3D(state.semanticManifold)
         state.semanticManifold = null
     }
     if (state.semanticLensGroup) {
+        state.scene?.remove(state.semanticLensGroup)
         disposeObject3D(state.semanticLensGroup)
         state.semanticLensGroup = null
     }
     if (state.focusLens) {
+        state.scene?.remove(state.focusLens)
         disposeObject3D(state.focusLens)
         state.focusLens = null
     }
@@ -177,11 +186,13 @@ export function disposeSemanticLens() {
         state.hoverHalo = null
     }
     if (state.focusMoteGroup) {
+        state.scene?.remove(state.focusMoteGroup)
         disposeObject3D(state.focusMoteGroup)
         state.focusMoteGroup = null
         state.focusMotes = []
     }
     if (state.focusPetalGroup) {
+        state.scene?.remove(state.focusPetalGroup)
         disposeObject3D(state.focusPetalGroup)
         state.focusPetalGroup = null
         state.focusPetals = []

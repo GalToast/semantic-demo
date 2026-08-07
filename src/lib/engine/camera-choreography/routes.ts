@@ -68,6 +68,15 @@ export function cancelRouteAnimations(): void {
         _routeRafRegistry.disposeAll()
         _routeRafRegistry = null
     }
+    // P1 (2026-08-07): a user drag/zoom (C10 listener) or teardown cancels the
+    // frame task but previously left the per-frame centroid re-arm guard armed —
+    // applySemanticCentroidCamera() then early-returned forever on the same
+    // target and centroid framing never re-armed. Reset the guard + bump the
+    // lerp token here so any in-flight stepCentroid() stops and the next
+    // engine-loop call re-arms. applySemanticCentroidCamera() cancels BEFORE it
+    // re-arms, so this reset cannot invalidate its own registration.
+    _insideCentroidActive = false
+    _insideCentroidLerpToken++
 }
 
 // ── animateCameraToSearchCorridor ────────────────────────────────────────────
@@ -369,6 +378,13 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
     ) {
         return
     }
+    // P1: cancel BEFORE arming — cancelRouteAnimations() now resets
+    // _insideCentroidActive and bumps _insideCentroidLerpToken; if the cancel
+    // ran after arming it would invalidate the token stepCentroid() checks and
+    // the tween would never run.
+    cancelRouteAnimations()
+    _routeRafRegistry = new DisposableRegistry({ label: 'camera-route-centroid' })
+
     _insideCentroidActive = true
     _insideCentroidTargetX = lookAtTarget.x
     _insideCentroidTargetY = lookAtTarget.y
@@ -379,10 +395,6 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
     const startTime = now
     const reducedMotion = prefersReducedMotion()
     const duration = reducedMotion ? 1 : 1600
-
-    // M4/M7: cancel any prior route rAF and create a fresh registry for centroid.
-    cancelRouteAnimations()
-    _routeRafRegistry = new DisposableRegistry({ label: 'camera-route-centroid' })
 
     function stepCentroid(nowInner: number): boolean {
         if (token !== _insideCentroidLerpToken) return true

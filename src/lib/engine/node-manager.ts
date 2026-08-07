@@ -174,6 +174,16 @@ export function setNodeSporeInstanceMatrix(
     // mesh count no longer matches, trigger a rebuild and skip this frame.
     if (targetMesh.count !== state.points.length) {
         createNodeSporeLayer()
+        // P2 (2026-08-07): after the rebuild, re-apply this instance's matrix
+        // on the NEW mesh so the current frame carries the caller's exact
+        // transform (incl. scaleMultiplier) instead of only the rebuild loop's
+        // cluster-size factor. Guarded: if the rebuild did not land a fresh
+        // mesh with a matching count (reentrancy guard blocked it), skip rather
+        // than recurse.
+        const freshMesh = webglContext.nodeSporeMesh
+        if (freshMesh && freshMesh !== targetMesh && freshMesh.count === state.points.length) {
+            setNodeSporeInstanceMatrix(index, freshMesh, scaleMultiplier)
+        }
         return
     }
     const base = getNodeSporeScale(index) * scaleMultiplier
