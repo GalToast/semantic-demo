@@ -14,6 +14,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { clearSearchState } from '../../src/lib/search/results-ui.ts'
 import { searchStore, resetSearchForTests } from '@lib/stores/search.svelte.ts'
+import { appState } from '@lib/state/app.svelte'
 
 describe('clearSearchState notifies search store subscribers (BUG-2)', () => {
     beforeEach(() => {
@@ -72,5 +73,52 @@ describe('clearSearchState notifies search store subscribers (BUG-2)', () => {
         expect(() => clearSearchState(null, null)).not.toThrow()
 
         unsub()
+    })
+})
+
+// ── Regression: searchStore.update bridges bare query when summary is null ──
+// When searchStore.update sets a query while no search summary exists, the
+// syncSearchUpdateToAppState bridge must auto-create a minimal summary so the
+// query is persisted to appState. Without this, the parity-attrs layer sees
+// an empty query and derives graphContext=focus instead of focus-search.
+// (lifecycle-composition-contract, 2026-08-07)
+
+describe('searchStore.update bridges query when summary is null (regression)', () => {
+    beforeEach(() => {
+        resetSearchForTests()
+        // Reset appState search to a clean idle state
+        appState.searchState.currentSearchSummary = null
+        appState.searchState.searchStatus = 'idle'
+    })
+
+    it('persists a bare query update to appState.currentSearchSummary', () => {
+        expect(appState.searchState.currentSearchSummary).toBeNull()
+
+        searchStore.update((s) => ({ ...s, query: 'roof repair' }))
+
+        // After update, appState must carry the query in a minimal summary
+        expect(appState.searchState.currentSearchSummary).not.toBeNull()
+        expect(appState.searchState.currentSearchSummary!.query).toBe('roof repair')
+    })
+
+    it('persists a query update that differs from current (default empty)', () => {
+        // Snapshot from idle state has query = ''
+        const snapBefore = searchStore()
+        expect(snapBefore.query).toBe('')
+
+        searchStore.update((s) => ({ ...s, query: 'plumbing' }))
+
+        const snapAfter = searchStore()
+        expect(snapAfter.query).toBe('plumbing')
+        expect(appState.searchState.currentSearchSummary?.query).toBe('plumbing')
+    })
+
+    it('does not create a spurious summary for empty query update', () => {
+        expect(appState.searchState.currentSearchSummary).toBeNull()
+
+        searchStore.update((s) => ({ ...s, query: '' }))
+
+        // Empty query should NOT create a summary (no change from default)
+        expect(appState.searchState.currentSearchSummary).toBeNull()
     })
 })

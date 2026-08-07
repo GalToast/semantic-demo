@@ -299,19 +299,41 @@ export function withSearchNotify<T>(fn: () => T): T {
  * nav state.
  */
 function syncSearchUpdateToAppState(current: SearchStoreState, next: SearchStoreState): void {
+    // When the updater sets a query but there's no summary, auto-create
+    // a minimal summary so the query is persisted to appState. Match the
+    // pattern in setSearchQuery (L363–373). Without this, searchStore.update
+    // silently drops the query field because the bridge only writes query
+    // into summary.query inside the `if (next.summary)` block below.
+    // (regression: lifecycle-composition-contract focused-record + query → focus-search, 2026-08-07)
+    if (!next.summary && next.query && next.query !== current.query) {
+        next.summary = {
+            query: '',
+            totalMatches: 0,
+            totalSemanticMatches: 0,
+            visibleMatches: 0,
+            resultCount: 0,
+            topScore: 0,
+            anchorIndex: null,
+            topIndex: null,
+            resultIndices: [],
+            summaryType: 'text'
+        }
+    }
+
     // Whole-object summary field: null lands as a clear, replacement lands as
     // the new object, and an untouched ref is an idempotent same-ref assign.
     appState.searchState.currentSearchSummary = next.summary
     if (next.summary) {
+        const summary = next.summary
         // Inverse of the snapshot derivation (query/results are derived FROM
         // the summary) — only bridge when the updater actually changed them.
-        if (next.query !== next.summary.query) next.summary.query = next.query
+        if (next.query !== summary.query) summary.query = next.query
         const derivedIndices = next.results.map((r) => r.index)
         if (
-            derivedIndices.length !== next.summary.resultIndices.length ||
-            derivedIndices.some((idx, i) => idx !== next.summary.resultIndices[i])
+            derivedIndices.length !== summary.resultIndices.length ||
+            derivedIndices.some((idx, i) => idx !== summary.resultIndices[i])
         ) {
-            next.summary.resultIndices = derivedIndices
+            summary.resultIndices = derivedIndices
         }
     }
     if (next.activeResultId !== current.activeResultId) {

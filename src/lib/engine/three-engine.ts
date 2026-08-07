@@ -21,7 +21,8 @@ export {
     cancelAnimate,
     onWindowResize,
     updateCameraViewportOffset,
-    applyMapFlatteningLayout
+    applyMapFlatteningLayout,
+    invalidateRestoreMachine
 } from './three-engine-core'
 
 // ── Re-export: mycelium / thread visuals ───────────────────────────────────────

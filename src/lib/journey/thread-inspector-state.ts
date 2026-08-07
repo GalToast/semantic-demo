@@ -28,7 +28,14 @@ import {
     clearTimer,
     cancelAllThreadTimers
 } from '@lib/journey/thread-settler'
-import { subscribe, subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
+// Imported as a namespace (not named bindings) on purpose: vitest validates
+// static named imports against vi.mock factories, and the event-bus mock in
+// store-parity-mirror-regression.test.ts predates subscribeKeyed (stubs only
+// `subscribe` + a partial `EVENTS`) — a named `subscribeKeyed` import would
+// fail module evaluation under that mock before any fallback could run. The
+// namespace form lets the marker guard below pick the key-replacing form in
+// the app and plain subscribe under partial mocks.
+import * as eventBus from '@lib/orchestration/event-bus'
 
 // Circular import — resolved at call time in ESM; render calls
 // scheduleCanvasThreadInspectionClear and getThreadInspectionState back.
@@ -101,21 +108,27 @@ const onCameraNodeFocused = (payload: Record<string, unknown>): void => {
 // pattern in map-state.ts / triggers.ts. The captured unsubscribe is also
 // exposed via disposeThreadInspectionSubscriptions() for explicit teardown.
 //
-// Fallback: the event-bus mock in store-parity-mirror-regression.test.ts
-// predates subscribeKeyed and stubs only `subscribe`, so degrade to plain
-// subscribe in environments where the keyed export is absent (tests). The app
-// always gets the key-replacing form.
-const subscribeCameraNodeFocused: () => () => void =
-    typeof subscribeKeyed === 'function'
-        ? () =>
-              subscribeKeyed(
-                  'thread-inspector-state:camera-node-focused',
-                  EVENTS.CAMERA_NODE_FOCUSED,
-                  onCameraNodeFocused
-              )
-        : () => subscribe(EVENTS.CAMERA_NODE_FOCUSED, onCameraNodeFocused)
+// Some Vitest namespace mocks may omit the keyed export. Read that property
+// defensively for those partial mocks, but let errors from a real keyed
+// subscription propagate so production cannot silently lose HMR deduplication.
+let unsubscribeCameraNodeFocused: () => void = () => {}
 
-const unsubscribeCameraNodeFocused = subscribeCameraNodeFocused()
+let subscribeKeyed: typeof eventBus.subscribeKeyed | undefined
+try {
+    subscribeKeyed = eventBus.subscribeKeyed
+} catch {
+    // Vitest can throw while reading an export omitted by a partial mock.
+}
+
+if (typeof subscribeKeyed === 'function') {
+    unsubscribeCameraNodeFocused = subscribeKeyed(
+        'thread-inspector-state:camera-node-focused',
+        eventBus.EVENTS.CAMERA_NODE_FOCUSED,
+        onCameraNodeFocused
+    )
+} else {
+    unsubscribeCameraNodeFocused = eventBus.subscribe(eventBus.EVENTS.CAMERA_NODE_FOCUSED, onCameraNodeFocused)
+}
 
 /** Tear down the module-level event-bus subscription (explicit dispose/HMR). */
 export function disposeThreadInspectionSubscriptions(): void {
