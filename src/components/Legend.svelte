@@ -46,7 +46,7 @@
   }
 
   $effect(() => {
-    if (open) {
+    if (open && !concealedByFocus) {
       scheduleLegendAutoHide();
     } else {
       legendRegistry.dispose();
@@ -128,10 +128,14 @@
   let panelEl: HTMLElement | null = $state(null);
   let panelScrollHeight = $state(0);
   let panelClientHeight = $state(0);
+  let panelScrollTop = $state(0);
   let hasOverflow = $derived(panelScrollHeight > panelClientHeight + 1);
-  let approxVisibleCount = $derived(
-    panelClientHeight > 0 ? Math.max(1, Math.floor(panelClientHeight / 50)) : clusterEntries.length
-  );
+  let approxVisibleCount = $derived.by(() => {
+    if (!hasOverflow) return clusterEntries.length;
+    const firstVisible = Math.floor(panelScrollTop / 50);
+    const lastVisible = Math.min(Math.ceil((panelScrollTop + panelClientHeight) / 50), clusterEntries.length);
+    return Math.max(1, lastVisible - firstVisible);
+  });
 
   $effect(() => {
     if (!panelEl) return;
@@ -146,13 +150,18 @@
     // before paint; the ResizeObserver below also re-measures (after layout)
     // whenever the panel's box changes, so steady-state output is identical.
     const rafId = requestAnimationFrame(measure);
+    const onScroll = () => {
+      panelScrollTop = panelEl?.scrollTop ?? 0;
+    };
     const ro = new ResizeObserver(measure);
     ro.observe(panelEl);
     window.addEventListener('resize', measure);
+    panelEl.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       cancelAnimationFrame(rafId);
       ro.disconnect();
       window.removeEventListener('resize', measure);
+      panelEl?.removeEventListener('scroll', onScroll);
     };
   });
 

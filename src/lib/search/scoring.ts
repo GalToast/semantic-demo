@@ -11,6 +11,7 @@ import {
     MOCK_QUERY_NAICS_PREFIX,
     MOCK_QUERY_NAICS_DENY
 } from './mock-constants'
+import { tokenizeSearchText } from './tokenizer'
 
 interface FieldWeights {
     snapshot: number
@@ -86,9 +87,12 @@ function getMockPointSearchFields(point: Point, dataset: MockSearchDataset): Moc
 }
 
 function getMockDatasetTerms(query: string, matchedTerm: string | null): string[] {
-    const queryTokens = normalizeMockSearchText(query)
-        .split(/\s+/)
-        .filter((token) => token.length >= 3)
+    // Use the canonical tokenizer so this path accepts exactly the same tokens
+    // as the live search path. A local re-tokenization used to drift (>= 3
+    // chars vs the canonical > 1), silently dropping 2-char tokens like "TX"
+    // or "OK" that the canonical tokenizer scores (length > 1, non-stop-word).
+    // tokenizer.ts has no imports, so importing it here cannot create a cycle.
+    const queryTokens = tokenizeSearchText(query)
     const aliases = matchedTerm ? MOCK_QUERY_ALIASES[matchedTerm] || [matchedTerm] : []
     return [...new Set([...aliases, ...queryTokens].map(normalizeMockSearchText).filter(Boolean))]
 }

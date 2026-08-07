@@ -138,7 +138,6 @@
     class="search-show-more-btn"
     type="button"
     aria-label={`Show ${remaining} more search results`}
-    aria-expanded="false"
     aria-controls="search-result-list"
     aria-describedby="search-results-count"
     onclick={onShowMore}

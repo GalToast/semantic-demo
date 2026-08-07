@@ -28,7 +28,13 @@ function cacheKeyToString(key: SearchCacheKey): string {
     // Bug #4 (bugsweep): use only effective offset in the cache key.
     // Different (page, offset) pairs that normalize to the same offset
     // produce the same API call, so the cache key must not distinguish them.
-    return `${key.query}\0${key.offset}`
+    // NUL-collision fix: a raw query may contain a literal NUL (reachable via
+    // URL-decode of %00), which would be ambiguous with the old \0 separator.
+    // encodeURIComponent renders the query losslessly and never emits a bare
+    // '|' (it is encoded as %7C), so `<encoded>|<offset>` is unambiguous for
+    // any query text. Not escaped with '\0' -> '\\0' because a literal
+    // backslash-zero query would then collide with an escaped NUL.
+    return `${encodeURIComponent(key.query)}|${key.offset}`
 }
 
 // ── Hash Helper ──────────────────────────────────────────────────────────────
