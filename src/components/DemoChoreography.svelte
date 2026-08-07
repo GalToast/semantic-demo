@@ -3,6 +3,7 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { guardReducedMotion } from '@lib/demo/guards';
   import {
     demoPhase,
     isDemoActive,
@@ -204,6 +205,11 @@
         }
       });
       await Promise.race([actionP, new Promise((resolve) => setTimeout(resolve, step.durationMs * 3))]);
+      // Guard (P1, fleet 2 sweep 2026-08-07): cancelDemo/replay can fire DURING
+      // the await above — the tracked timer list only covers already-scheduled
+      // timers, so without this check a timer registered after cancel would
+      // resurrect a CANCELLED demo (or race a replay's independent iterator).
+      if (!isDemoActive()) return;
       // Schedule the next step after this phase's duration
       scheduleDemoTimer(() => {
         i++;
@@ -257,6 +263,11 @@
     // Without this check, keyboard-help "Replay tour" can start the demo
     // even when the user explicitly opted out via URL param.
     if (suppress) return
+    // P2 (fleet wave 3 sweep 2026-08-07): replay must ALSO respect the
+    // reduced-motion guard — shouldRunDemo deliberately blocks reduced-motion
+    // users (demo.svelte.ts:271-275), but requestReplay bypassed it, giving them
+    // exactly the frozen confusing sequence the guard exists to prevent.
+    if (!guardReducedMotion()) return
     cancelAllDemoTimers()
     if (isDemoActive()) cancelDemo()
     try { resetDemo() } catch { /* no-op: teardown race */ }
