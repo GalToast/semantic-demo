@@ -65,7 +65,7 @@ export interface BusinessNamePresentation {
     showRaw: boolean
 }
 
-const ATTACHED_SUFFIXES = ['PLLC', 'LLLP', 'LLC', 'LLP', 'CORP', 'INC', 'LTD', 'PLC', 'LP', 'PC', 'PA', 'CO'] as const
+const ATTACHED_SUFFIXES = ['PLLC', 'LLLP', 'LLC', 'LLP', 'CORP', 'INC', 'LTD', 'PLC', 'LP', 'PC', 'PA'] as const
 
 const PRESERVE_UPPER = new Set([
     'LLC',
