@@ -8,7 +8,7 @@
  * keyboard handling.
  */
 
-import { legendOpen, setLegendOpen } from './legend.svelte'
+import { setLegendOpen } from './legend.svelte'
 import { appState } from '@lib/state/app.svelte'
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { getSemanticGuideTitle } from '@lib/journey/semantic-guide'

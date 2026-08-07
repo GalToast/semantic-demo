@@ -52,7 +52,6 @@
   // bottom dive strip; lift it above the strip inside its own component.
   let compact = $derived(appState.viewportState?.viewportIsCompact ?? false);
   const parity = useParityAttrs();
-  let focusSurface = $derived(['focus', 'focus-search', 'semantic-dive'].includes(parity.panelSurface));
   let surfaceActive = $derived(['focus', 'focus-search', 'semantic-dive'].includes(parity.panelSurface));
   let shouldLift = $derived(compact && surfaceActive);
 </script>
