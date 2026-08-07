@@ -123,12 +123,21 @@ describe('A11y W43-A: Roving tabindex for keyboard navigation', () => {
 
     it('active result button has tabindex=0', () => {
         const childSrc = read(SEARCH_RESULT_ITEM)
-        expect(childSrc).toMatch(/tabindex=\{active \? 0 : -1\}/)
+        // Anchor to the live button tag — the legacy comment pin also contains
+        // the ternary literal as text (ARIA sweep F3 pinned the old literals).
+        const buttonTag = childSrc.match(/type="button"[^>]*>/)
+        expect(buttonTag).not.toBeNull()
+        expect(buttonTag[0]).toMatch(/tabindex=\{active \? 0 : -1\}/)
     })
 
     it('inactive result buttons have tabindex=-1', () => {
         const childSrc = read(SEARCH_RESULT_ITEM)
-        expect(childSrc).toMatch(/active \? 0 : -1/)
+        const buttonTag = childSrc.match(/type="button"[^>]*>/)
+        expect(buttonTag).not.toBeNull()
+        // Roving tabindex: the ternary yields exactly one tabindex=0 (the
+        // active item) and -1 for every other result button.
+        expect(buttonTag[0]).toMatch(/active \? 0 : -1/)
+        expect(buttonTag[0].match(/tabindex=/g) || []).toHaveLength(1)
     })
 })
 
@@ -147,14 +156,22 @@ describe('A11y W43-A: Active result live announcement', () => {
         expect(src).toMatch(/liveAnnouncement = .*Focus/)
     })
 
-    it('aria-activedescendant is set on the listbox', () => {
+    it('aria-activedescendant is NOT set on the container (roving tabindex is the focus mechanism)', () => {
         const resultListSrc = read(SEARCH_RESULT_LIST)
-        expect(resultListSrc).toMatch(/aria-activedescendant=\{activeIndex >= 0/)
+        // The old literal survives only in the legacy comment pin — anchor the
+        // absence check to the live container tag (role="list", no activedescendant).
+        const liveTag = resultListSrc.match(/id="search-result-list"[^>]*>/)
+        expect(liveTag).not.toBeNull()
+        expect(liveTag[0]).not.toContain('aria-activedescendant')
+        expect(liveTag[0]).toContain('role="list"')
     })
 
-    it('result options have aria-selected attribute', () => {
+    it('result items carry no aria-selected attribute', () => {
         const childSrc = read(SEARCH_RESULT_ITEM)
-        expect(childSrc).toContain('aria-selected={active}')
+        const itemDiv = childSrc.match(/class="search-result-listitem"[^>]*>/)
+        expect(itemDiv).not.toBeNull()
+        expect(itemDiv[0]).not.toContain('aria-selected')
+        expect(itemDiv[0]).not.toContain('role=')
     })
 })
 
@@ -167,14 +184,19 @@ describe('A11y W43-A: No keyboard trap — Tab is not trapped', () => {
         expect(tabSection).toBeNull()
     })
 
-    it('listbox role is present for proper semantics', () => {
+    it('list role is present for proper semantics', () => {
         const resultListSrc = read(SEARCH_RESULT_LIST)
-        expect(resultListSrc).toMatch(/role="listbox"/)
+        // role="list" as LIVE markup inside the container tag (the comment pin
+        // also contains the literal as text, so a plain toContain would be vacuous).
+        expect(resultListSrc).toMatch(/id="search-result-list"[^>]*role="list"/)
     })
 
-    it('result items have role="option"', () => {
+    it('result items are plain divs — no role="option"', () => {
         const childSrc = read(SEARCH_RESULT_ITEM)
-        expect(childSrc).toContain('role="option"')
+        const itemDiv = childSrc.match(/class="search-result-listitem"[^>]*>/)
+        expect(itemDiv).not.toBeNull()
+        expect(itemDiv[0]).not.toContain('role="option"')
+        expect(itemDiv[0]).not.toContain('role=')
     })
 })
 

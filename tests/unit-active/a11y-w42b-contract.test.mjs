@@ -127,27 +127,47 @@ describe('A11y W42-B: Search results live announcement', () => {
         expect(src).toMatch(/liveAnnouncement = .*Focus/)
     })
 
-    it('result listbox has aria-label', () => {
+    it('result list has role="list" and aria-label (ARIA sweep F3: listbox → list)', () => {
+        // Anchor to the live container tag — the legacy comment pin also
+        // contains role="list" as text.
         const resultListSrc = read(SEARCH_RESULT_LIST)
-        expect(resultListSrc).toMatch(/role="listbox"[\s\S]*?aria-label="Search result businesses"/)
+        expect(resultListSrc).toMatch(/id="search-result-list"[^>]*role="list"[^>]*aria-label="Search result businesses"/)
     })
 
-    it('result listbox has aria-keyshortcuts', () => {
+    it('result list has aria-keyshortcuts', () => {
         // W48-D: dropped ArrowLeft/Right from the advertised shortcuts since
-        // they were removed from the handler. The listbox only honors
+        // they were removed from the handler. The list only honors
         // ArrowDown/Up (move), Home/End (jump), Enter/Space (activate),
         // Escape (clear).
         const resultListSrc = read(SEARCH_RESULT_LIST)
         expect(resultListSrc).toMatch(/aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"/)
     })
 
-    it('result listbox has aria-activedescendant', () => {
+    it('result list has NO aria-activedescendant (roving tabindex pattern instead)', () => {
+        // ARIA sweep F3: the container emits role="list" without
+        // aria-activedescendant — activedescendant + roving tabindex are
+        // contradictory. The old literal survives ONLY in the comment pin, so
+        // the absence check is anchored to the live container tag.
         const resultListSrc = read(SEARCH_RESULT_LIST)
-        expect(resultListSrc).toMatch(/aria-activedescendant=\{activeIndex >= 0 \? `search-result-/)
+        const liveTag = resultListSrc.match(/id="search-result-list"[^>]*>/)
+        expect(liveTag).not.toBeNull()
+        expect(liveTag[0]).not.toContain('aria-activedescendant')
+        expect(liveTag[0]).toContain('role="list"')
     })
 
-    it('result options have aria-selected', () => {
+    it('result items are plain list children — no role/aria-selected, button keeps roving tabindex', () => {
         const childSrc = readFileSync(SEARCH_RESULT_ITEM, 'utf8')
-        expect(childSrc).toMatch(/role="option"[\s\S]*?aria-selected=\{active\}/)
+        // Live item div (anchored — the old literals survive only in the
+        // comment pin, so whole-file absences would be vacuous).
+        const itemDiv = childSrc.match(/class="search-result-listitem"[^>]*>/)
+        expect(itemDiv).not.toBeNull()
+        expect(itemDiv[0]).not.toContain('role=')
+        expect(itemDiv[0]).not.toContain('aria-selected')
+        // The inner result button carries the roving tabindex (exactly one
+        // tabindex=0 across items, driven by `active`).
+        const buttonTag = childSrc.match(/type="button"[^>]*>/)
+        expect(buttonTag).not.toBeNull()
+        expect(buttonTag[0]).toMatch(/tabindex=\{active \? 0 : -1\}/)
+        expect(buttonTag[0].match(/tabindex=/g) || []).toHaveLength(1)
     })
 })

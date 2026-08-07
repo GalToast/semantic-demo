@@ -12,9 +12,13 @@
  *  3. Error state .search-error-state with role="status" aria-live="polite"
  *  4. Empty state .search-empty-state with role="status" aria-live="polite"
  *  5. Results count #search-results-count with role="status" aria-live="polite"
- *  6. Result list #search-result-list with role="listbox" and aria-label
+ *  6. Result list #search-result-list with role="list" and aria-label
  *  7. Show-more button .search-show-more-btn with aria-expanded="false"
  *  8. Keyboard aria-keyshortcuts on result list container
+ *
+ * Note: the result list uses the ARIA sweep F3 pattern — container
+ * role="list" (NOT listbox, no aria-activedescendant), items are plain
+ * divs, and the inner result button carries the roving tabindex.
  */
 import { describe, it, expect, beforeAll } from 'vitest'
 import { readFileSync } from 'fs'
@@ -86,11 +90,13 @@ describe('SearchResults component', () => {
         expect(source).toContain('aria-atomic="true"')
     })
 
-    it('result list #search-result-list with role="listbox" and aria-label', () => {
+    it('result list #search-result-list with role="list" and aria-label', () => {
         const resultList = readResultList()
         expect(resultList).toContain('id="search-result-list"')
         expect(resultList).toContain('class="search-result-list"')
-        expect(resultList).toContain('role="listbox"')
+        // role="list" as LIVE markup inside the container tag (the legacy
+        // comment pin also contains the literal as text).
+        expect(resultList).toMatch(/id="search-result-list"[^>]*role="list"/)
         expect(resultList).toContain('aria-label="Search result businesses"')
     })
 
@@ -104,7 +110,7 @@ describe('SearchResults component', () => {
 
     it('keyboard aria-keyshortcuts on result list container', () => {
         // W48-D: ArrowLeft/Right removed (they were silently cycling).
-        // The listbox now only advertises the keys it actually honors.
+        // The list now only advertises the keys it actually honors.
         const resultList = readResultList()
         expect(resultList).toContain('aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"')
     })

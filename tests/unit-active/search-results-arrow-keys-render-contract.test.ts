@@ -3,7 +3,9 @@
  *
  * A2-8: Search results must not create one Tab stop per result.
  * The list should expose a single active result to Tab and use
- * arrow keys for intra-list movement (WAI-ARIA listbox pattern).
+ * arrow keys for intra-list movement. The container is role="list"
+ * (NOT listbox) with a roving-tabindex result button as the focus
+ * mechanism — the ARIA sweep F3 pattern (see SearchResultList/Item).
  */
 
 import { describe, expect, it } from 'vitest'
@@ -32,24 +34,39 @@ describe('A2-8: search results arrow-key navigation', () => {
 
     it('exposes only the active result as a tab stop (roving tabindex)', () => {
         const childSrc = readFileSync(SEARCH_RESULT_ITEM, 'utf8')
-        expect(childSrc).toMatch(/tabindex=\{active \? 0 : -1\}/)
+        // Anchor to the live button tag — the legacy comment pin also contains
+        // the ternary literal as text (ARIA sweep F3 pinned the old literals).
+        const buttonTag = childSrc.match(/type="button"[^>]*>/)
+        expect(buttonTag).not.toBeNull()
+        expect(buttonTag![0]).toMatch(/tabindex=\{active \? 0 : -1\}/)
+        expect(buttonTag![0].match(/tabindex=/g) || []).toHaveLength(1)
     })
 
-    it('uses listbox/option ARIA roles on the container and results', () => {
+    it('uses list semantics: container role="list", items are plain (no option role)', () => {
         const resultListSrc = readResultList()
-        expect(resultListSrc).toContain('role="listbox"')
+        expect(resultListSrc).toMatch(/id="search-result-list"[^>]*role="list"/)
         const childSrc = readFileSync(SEARCH_RESULT_ITEM, 'utf8')
-        expect(childSrc).toContain('role="option"')
+        const itemDiv = childSrc.match(/class="search-result-listitem"[^>]*>/)
+        expect(itemDiv).not.toBeNull()
+        expect(itemDiv![0]).not.toContain('role=')
+        expect(itemDiv![0]).not.toContain('aria-selected')
     })
 
-    it('declares aria-activedescendant on the listbox container', () => {
+    it('does NOT declare aria-activedescendant on the container', () => {
+        // The old literal survives only in the legacy comment pin — anchor the
+        // absence check to the live container tag (role="list", no activedescendant).
         const resultListSrc = readResultList()
-        expect(resultListSrc).toContain('aria-activedescendant=')
+        const liveTag = resultListSrc.match(/id="search-result-list"[^>]*>/)
+        expect(liveTag).not.toBeNull()
+        expect(liveTag![0]).not.toContain('aria-activedescendant')
     })
 
-    it('marks each option with aria-selected', () => {
+    it('items carry no aria-selected (button roving tabindex is the focus mechanism)', () => {
         const childSrc = readFileSync(SEARCH_RESULT_ITEM, 'utf8')
-        expect(childSrc).toContain('aria-selected={active}')
+        const itemDiv = childSrc.match(/class="search-result-listitem"[^>]*>/)
+        expect(itemDiv).not.toBeNull()
+        expect(itemDiv![0]).not.toContain('aria-selected')
+        expect(childSrc).toMatch(/type="button"[\s\S]*?tabindex=\{active \? 0 : -1\}/)
     })
 
     it('has a keydown handler on the results list container', () => {
@@ -80,7 +97,7 @@ describe('A2-8: search results arrow-key navigation', () => {
         expect(src).toContain('onClear')
     })
 
-    it('declares aria-keyshortcuts on the listbox container', () => {
+    it('declares aria-keyshortcuts on the results list container', () => {
         const resultListSrc = readResultList()
         expect(resultListSrc).toContain('aria-keyshortcuts=')
         expect(resultListSrc).toMatch(/aria-keyshortcuts="ArrowDown ArrowUp/)
