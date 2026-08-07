@@ -263,8 +263,14 @@ export interface CameraAssistResult {
  * (mirrored from camera-controls-core.svelte.ts:110).
  */
 export function resolveCameraAssist(): CameraAssistResult {
+    // Mirror the imperative writer's self-expiry (camera-controls-core.svelte.ts
+    // `isCameraAssistActive = focusCameraAssistActive &&
+    // focusCameraAssistUntil > now`). Without the deadline check parity can
+    // resurrect a stale 'arriving' after the assist window lapses, because the
+    // flag clears only on the next frame-loop release (bugsweep 2026-08-07).
+    const active = appState.focusCameraAssistActive && (appState.focusCameraAssistUntil || 0) > performance.now()
     return {
-        cameraAssist: appState.focusCameraAssistActive ? 'arriving' : 'free'
+        cameraAssist: active ? 'arriving' : 'free'
     }
 }
 

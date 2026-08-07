@@ -827,9 +827,10 @@ describe('computeParityAttributes IIFE derivations', () => {
             expect(result.cameraAssist).toBe('free')
         })
 
-        it('returns "arriving" when appState.focusCameraAssistActive is true', () => {
+        it('returns "arriving" when appState.focusCameraAssistActive is true and unexpired', () => {
             _loadingPhase.value = 'launch' // launch state, AND camera in flight
             _appState.focusCameraAssistActive = true
+            _appState.focusCameraAssistUntil = performance.now() + 5000
             const result = computeParityAttributes()
             expect(result.cameraAssist).toBe('arriving')
         })
@@ -838,11 +839,23 @@ describe('computeParityAttributes IIFE derivations', () => {
             // Verify decoupling: loading phase should not affect cameraAssist.
             _loadingPhase.value = 'records'
             _appState.focusCameraAssistActive = true
+            _appState.focusCameraAssistUntil = performance.now() + 5000
             const result = computeParityAttributes()
             expect(result.cameraAssist).toBe('arriving')
             // Other attrs still reflect loadingPhase
             expect(result.loadingOverlay).toBe('visible')
             expect(result.sceneReady).toBe('false')
+        })
+
+        it('returns "free" once the assist window has lapsed even while the flag lingers (bugsweep 2026-08-07)', () => {
+            // Regression: parity previously resurrected a stale 'arriving' after
+            // focusCameraAssistUntil expired but before the frame-loop cleared
+            // the flag — the #map-container arrival glow lingered. Mirror the
+            // imperative writer's self-expiry in resolveCameraAssist.
+            _appState.focusCameraAssistActive = true
+            _appState.focusCameraAssistUntil = performance.now() - 100 // lapsed
+            const result = computeParityAttributes()
+            expect(result.cameraAssist).toBe('free')
         })
     })
 
