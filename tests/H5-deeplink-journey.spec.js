@@ -67,9 +67,20 @@ test.describe('H5 deeplink demo suppression journey', () => {
                 /* ignore */
             }
         })
-        await page.waitForTimeout(2000)
-        const choreo = await page.locator('#demo-choreography').count()
+
+        // Poll the NEGATIVE for the full eligibility window (~5s).
+        // Fixed 2000ms + one-shot count was a vacuous-pass hole: a late demo
+        // start (after 2s) would produce count>0 but the assertion already passed.
+        const demoAppeared = await page
+            .waitForFunction(
+                () => document.querySelectorAll('#demo-choreography').length > 0,
+                null,
+                { timeout: 5000, polling: 200 }
+            )
+            .then(() => true)
+            .catch(() => false)
+
         // With H5 fix, demo-choreography should NOT be visible on deep-link even on first visit
-        expect(choreo, 'demo choreography must NOT appear on deep-link (H5)').toBe(0)
+        expect(demoAppeared, 'demo choreography must NOT appear on deep-link (H5)').toBe(false)
     })
 })

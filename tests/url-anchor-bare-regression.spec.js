@@ -204,10 +204,25 @@ test.describe('URL-anchor bare regression (post-fix pinning)', () => {
 
         await openAppWithUrl(page, 'anchor=garbage-id')
 
-        const probe = await anchorProbe(page)
+        // Poll the NEGATIVE for the full eligibility window (~5s).
+        // One-shot probe after webgl gate was a vacuous-pass hole: a late
+        // focus-search flip after the probe would pass the negative vacuously.
+        const focusSearchFlipped = await page
+            .waitForFunction(
+                () => document.body.dataset?.panelSurface === 'focus-search',
+                null,
+                { timeout: 5000, polling: 200 }
+            )
+            .then(() => true)
+            .catch(() => false)
 
         // Garbage anchor must not have routed to focus-search
-        expect(probe.body.panelSurface).not.toBe('focus-search')
+        expect(focusSearchFlipped, 'garbage-id anchor must NOT route to focus-search').toBe(false)
+
+        // Snapshot remaining surfaces (graphicsMode, title, URL params are
+        // static post-boot — one-shot is safe after the 5s negative poll).
+        const probe = await anchorProbe(page)
+
         // Graphics mode is still webgl — the bundle still booted
         expect(probe.body.graphicsMode).toBe('webgl')
         // Title is still the default (the focus pipeline never fired)

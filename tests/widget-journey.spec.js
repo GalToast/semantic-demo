@@ -5069,7 +5069,15 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
         await searchInput.waitFor({ state: 'visible', timeout: 20000 })
         await searchInput.fill('coffee')
-        await page.waitForTimeout(2000)
+
+        // Wait for at least one search result to render BEFORE reading scores.
+        // Fixed 2000ms + one-shot score reads was a vacuous-pass hole: if no
+        // results rendered, scores.length===0 and every assertion passed.
+        await page.waitForFunction(
+            () => document.querySelectorAll('.search-result-item').length >= 1,
+            null,
+            { timeout: 15000, polling: 100 }
+        )
 
         const scores = await page.evaluate(() => {
             const results = Array.from(document.querySelectorAll('.search-result, [data-result-score]'))
@@ -5081,15 +5089,15 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
                 .filter((s) => s !== null)
         })
 
+        expect(scores.length, 'must have at least one scored search result').toBeGreaterThan(0)
+
         for (const s of scores) {
             expect(s).toBeGreaterThanOrEqual(0)
             expect(s).toBeLessThanOrEqual(1)
         }
 
-        if (scores.length > 0) {
-            const maxScore = Math.max(...scores)
-            expect(maxScore).toBeGreaterThan(0)
-        }
+        const maxScore = Math.max(...scores)
+        expect(maxScore).toBeGreaterThan(0)
     })
 
     test('F-nav-5: clicking map chip syncs currentView to map (Bug #5 currentView sync)', async ({ page }) => {

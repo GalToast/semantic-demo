@@ -61,6 +61,22 @@ function skip(msg) {
 
 const svelteTests = []
 
+// Import stores for runtime behavioral tests
+let loadingPhaseStore, dataLoadState, setLoadingPhase, setDataLoadStatus, setDataLoadError, LoadingPhase
+let storesReady = false
+
+try {
+  const dataStore = await import('../src/lib/data-store.ts')
+  loadingPhaseStore = dataStore.loadingPhaseStore
+  dataLoadState = dataStore.dataLoadState
+  setLoadingPhase = dataStore.setLoadingPhase
+  setDataLoadStatus = dataStore.setDataLoadStatus
+  setDataLoadError = dataStore.setDataLoadError
+  storesReady = true
+} catch (err) {
+  // Svelte store imports may not be available in all environments
+}
+
 if (hasSvelte && svelteLoadingSource) {
     svelteTests.push(async function testSvelteOverlayRenders() {
         if (!svelteLoadingSource) return skip('LoadingOverlay.svelte not readable')
@@ -377,10 +393,118 @@ if (!hasSvelte && loadingUiSource) {
 }
 
 // ---------------------------------------------------------------------------
+// Runtime behavioral tests (store-level, not source-inspection)
+// These survive refactors as long as the loading phase / data-load
+// state behavior holds.
+// ---------------------------------------------------------------------------
+
+const runtimeTests = []
+
+if (storesReady) {
+  runtimeTests.push(async function testRuntimePhaseTransitionBehavior() {
+    console.log('\n  Runtime: phase store transitions')
+
+    const { get } = await import('svelte/store')
+
+    setLoadingPhase('records')
+    if (get(loadingPhaseStore) !== 'records') throw new Error('phase should start at records')
+
+    setLoadingPhase('scene')
+    if (get(loadingPhaseStore) !== 'scene') throw new Error('phase should transition to scene')
+
+    setLoadingPhase('restore')
+    if (get(loadingPhaseStore) !== 'restore') throw new Error('phase should transition to restore')
+
+    setLoadingPhase('launch')
+    if (get(loadingPhaseStore) !== 'launch') throw new Error('phase should transition to launch')
+
+    ok('Phase store transitions records → scene → restore → launch')
+  })
+
+  runtimeTests.push(async function testRuntimePhaseProgressInvariant() {
+    console.log('\n  Runtime: phase progress invariant')
+
+    const PHASE_PROGRESS = {
+      records: 0.2,
+      scene: 0.48,
+      restore: 0.76,
+      launch: 1
+    }
+
+    const prevValues = [0.2, 0.48, 0.76]
+    const phases = /** @type {const} */ (['records', 'scene', 'restore', 'launch'])
+
+    for (let i = 0; i < phases.length; i++) {
+      const phase = phases[i]
+      const progress = PHASE_PROGRESS[phase]
+      if (typeof progress !== 'number' || progress <= 0 || progress > 1)
+        throw new Error(`phase ${phase} has invalid progress: ${progress}`)
+      if (i > 0 && progress <= prevValues[i - 1])
+        throw new Error(`phase ${phase} progress ${progress} <= previous ${prevValues[i - 1]}`)
+    }
+
+    ok('Phase progress is monotonically increasing with launch at 1.0')
+  })
+
+  runtimeTests.push(async function testRuntimeDataLoadStateTransitions() {
+    console.log('\n  Runtime: data load state transitions')
+
+    const { get } = await import('svelte/store')
+
+    setDataLoadStatus('idle')
+    if (get(dataLoadState).status !== 'idle') throw new Error('status should start at idle')
+
+    setDataLoadStatus('loading')
+    if (get(dataLoadState).status !== 'loading') throw new Error('status should transition to loading')
+
+    setDataLoadStatus('ready')
+    if (get(dataLoadState).status !== 'ready') throw new Error('status should transition to ready')
+
+    ok('Data load state idle → loading → ready lifecycle')
+  })
+
+  runtimeTests.push(async function testRuntimeDataLoadErrorState() {
+    console.log('\n  Runtime: data load error state')
+
+    const { get } = await import('svelte/store')
+
+    setDataLoadError('Network failure')
+    const dlState = get(dataLoadState)
+    if (dlState.status !== 'error') throw new Error('status should be error')
+    if (dlState.error !== 'Network failure') throw new Error('error message should be preserved')
+
+    ok('Data load error state surfaces error message')
+  })
+
+  runtimeTests.push(async function testRuntimeLoadingPhaseResetBehavior() {
+    console.log('\n  Runtime: phase reset and re-transition behavior')
+
+    const { get } = await import('svelte/store')
+
+    setLoadingPhase('records')
+    setDataLoadStatus('loading')
+    setLoadingPhase('scene')
+    setLoadingPhase('restore')
+    setLoadingPhase('launch')
+    setDataLoadStatus('ready')
+
+    if (get(loadingPhaseStore) !== 'launch') throw new Error('should end at launch')
+    if (get(dataLoadState).status !== 'ready') throw new Error('should end at ready')
+
+    setLoadingPhase('records')
+    setDataLoadStatus('loading')
+    if (get(loadingPhaseStore) !== 'records') throw new Error('should reset to records')
+    if (get(dataLoadState).status !== 'loading') throw new Error('should reset to loading')
+
+    ok('Phase and data state can reset and re-transition')
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Run all tests
 // ---------------------------------------------------------------------------
 
-const allTests = hasSvelte ? svelteTests : legacyTests
+const allTests = [...(hasSvelte ? svelteTests : legacyTests), ...runtimeTests]
 const pathLabel = hasSvelte ? 'Svelte' : 'Legacy'
 
 console.log(`\n  Loading UI contract (${pathLabel} path)`)

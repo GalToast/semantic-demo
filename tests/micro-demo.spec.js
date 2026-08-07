@@ -194,19 +194,52 @@ test.describe(`Micro-demo system (${TEST_SERVER})`, () => {
   test('does not fire on repeat visits (session guard)', async ({ page }) => {
     await seedSessionSkipped(page);
     await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
-    const running = await isDemoRunning(page);
-    expect(running).toBe(false);
+    // Poll the NEGATIVE for the full eligibility window (~5s).
+    // One rAF tick + one-shot isDemoRunning read was a vacuous-pass hole:
+    // a late demo start after the rAF would pass the assertion vacuously.
+    const demoStarted = await page
+      .waitForFunction(
+        (serverType) => {
+          if (serverType === 'legacy') {
+            return window.isMicroDemoRunning?.() === true;
+          } else {
+            const phase = document.body?.dataset?.demoPhase;
+            return phase && phase !== 'IDLE' && phase !== 'COMPLETE' && phase !== 'CANCELLED';
+          }
+        },
+        TEST_SERVER,
+        { timeout: 5000, polling: 200 }
+      )
+      .then(() => true)
+      .catch(() => false);
+
+    expect(demoStarted, 'demo must NOT start (session guard)').toBe(false);
   });
 
   test('does not fire when lifetime flag is set', async ({ page }) => {
     await seedDemoSeen(page);
     await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
-    const running = await isDemoRunning(page);
-    expect(running).toBe(false);
+    // Poll the NEGATIVE for the full eligibility window (~5s).
+    // Same vacuous-pass hole as the session-guard test above.
+    const demoStarted = await page
+      .waitForFunction(
+        (serverType) => {
+          if (serverType === 'legacy') {
+            return window.isMicroDemoRunning?.() === true;
+          } else {
+            const phase = document.body?.dataset?.demoPhase;
+            return phase && phase !== 'IDLE' && phase !== 'COMPLETE' && phase !== 'CANCELLED';
+          }
+        },
+        TEST_SERVER,
+        { timeout: 5000, polling: 200 }
+      )
+      .then(() => true)
+      .catch(() => false);
+
+    expect(demoStarted, 'demo must NOT start (lifetime flag)').toBe(false);
   });
 
   test('demo=force bypasses already-seen guard', async ({ page }) => {

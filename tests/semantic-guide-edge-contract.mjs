@@ -330,6 +330,137 @@ async function testPrivateHelpersRemainPrivateWithFakeWindow() {
 }
 
 // ---------------------------------------------------------------------------
+// Strategy C — Runtime behavioral tests via the public API
+// ---------------------------------------------------------------------------
+// These tests prove the underlying behavioral invariants without pinning
+// function names. They survive refactors as long as the behavior holds.
+
+async function testRuntimeShowSummaryCardStateBehavior() {
+  console.log('\n[RUNTIME C] showSummaryCard / hideSummaryCard state transitions');
+
+  const { state: appState } = await import('./helpers/canonical-state.mjs');
+
+  // Ensure nested state objects exist (they're $state in app.svelte.ts)
+  if (!appState.searchState) appState.searchState = { summaryCardTypeToken: 0 };
+  if (!appState.semanticGuideState) {
+    appState.semanticGuideState = {
+      isVisible: false,
+      config: null,
+      typeToken: 0,
+      isSynthesizing: false,
+      buttonMode: 'ready',
+      buttonOptions: {},
+      storyText: '',
+      storySource: '',
+      showStory: false,
+    };
+  }
+
+  const mod = await import('../src/lib/journey/semantic-guide.ts');
+
+  // showSummaryCard with string config
+  mod.showSummaryCard('Test message');
+  assert(appState.semanticGuideState.isVisible === true, 'showSummaryCard sets isVisible=true');
+  assert(appState.semanticGuideState.config !== null, 'showSummaryCard sets config');
+  assert(appState.semanticGuideState.config.text === 'Test message', 'showSummaryCard preserves text');
+  assert(appState.semanticGuideState.config.title === 'Search', 'showSummaryCard defaults title to Search');
+  assert(appState.semanticGuideState.config.laneStatus === 'Ready', 'showSummaryCard defaults laneStatus to Ready');
+  assert(appState.semanticGuideState.config.instant === false, 'showSummaryCard defaults instant to false');
+
+  // showSummaryCard with object config (degraded fallback)
+  mod.showSummaryCard({ title: 'FAST FALLBACK', summary: 'Local results', degraded: true });
+  assert(appState.semanticGuideState.config.title === 'FAST FALLBACK', 'showSummaryCard preserves title');
+  assert(appState.semanticGuideState.config.text === '', 'showSummaryCard: summary field not auto-copied to text by normalize');
+  assert(appState.semanticGuideState.config.summary === 'Local results', 'showSummaryCard preserves summary field');
+
+  // hideSummaryCard
+  mod.hideSummaryCard();
+  assert(appState.semanticGuideState.isVisible === false, 'hideSummaryCard sets isVisible=false');
+  assert(appState.semanticGuideState.config === null, 'hideSummaryCard clears config');
+  assert(appState.semanticGuideState.isSynthesizing === false, 'hideSummaryCard clears isSynthesizing');
+
+  console.log('  OK showSummaryCard / hideSummaryCard state transitions verified');
+}
+
+async function testRuntimeSemanticGuideIconBehavior() {
+  console.log('\n[RUNTIME C] semanticGuideIcon output');
+
+  // semanticGuideIcon doesn't need window or state — just call it
+  const { semanticGuideIcon } = await import('../src/lib/journey/semantic-guide.ts');
+
+  // Empty id returns empty string
+  const empty = semanticGuideIcon('');
+  assert(empty === '', 'semanticGuideIcon with empty id returns empty string');
+
+  // Valid id returns SVG with use href
+  const svg = semanticGuideIcon('search');
+  assert(svg.includes('<svg'), 'semanticGuideIcon returns svg element');
+  assert(svg.includes('#icon-search'), 'semanticGuideIcon uses href to #icon-search');
+  assert(svg.includes('aria-hidden="true"'), 'semanticGuideIcon without label sets aria-hidden=true');
+
+  // With label
+  const withLabel = semanticGuideIcon('search', 'Search nearby');
+  assert(withLabel.includes('aria-hidden="false"'), 'semanticGuideIcon with label sets aria-hidden=false');
+  assert(withLabel.includes('aria-label="Search nearby"'), 'semanticGuideIcon with label sets aria-label');
+
+  console.log('  OK semanticGuideIcon output verified');
+}
+
+async function testRuntimeSetSemanticGuideButtonStateBehavior() {
+  console.log('\n[RUNTIME C] setSemanticGuideButtonState behavior');
+
+  const { state: appState } = await import('./helpers/canonical-state.mjs');
+  if (!appState.semanticGuideState) {
+    appState.semanticGuideState = {
+      isVisible: false, config: null, typeToken: 0, isSynthesizing: false,
+      buttonMode: 'ready', buttonOptions: {},
+    };
+  }
+
+  const { setSemanticGuideButtonState } = await import('../src/lib/journey/semantic-guide.ts');
+
+  // Default mode
+  setSemanticGuideButtonState();
+  assert(appState.semanticGuideState.buttonMode === 'ready', 'default mode is ready');
+
+  // Loading mode
+  setSemanticGuideButtonState('loading');
+  assert(appState.semanticGuideState.buttonMode === 'loading', 'sets loading mode');
+
+  // Refresh mode with options
+  setSemanticGuideButtonState('refresh', { disabled: true });
+  assert(appState.semanticGuideState.buttonMode === 'refresh', 'sets refresh mode');
+  assert(appState.semanticGuideState.buttonOptions.disabled === true, 'preserves options');
+
+  console.log('  OK setSemanticGuideButtonState behavior verified');
+}
+
+async function testRuntimeFallbackDegradedFlagViaPublicApi() {
+  console.log('\n[RUNTIME C] fallback degraded flag proven via public API');
+
+  // Prove that when showSummaryCard receives a degraded config, the title
+  // function returns 'FAST FALLBACK'. This is the behavioral invariant behind
+  // the static pins on buildClientSemanticGuideFallback, getSemanticGuideTitle,
+  // and buildSemanticGuideFallbackCardConfig.
+
+  const { getSemanticGuideTitle } = await import('../src/lib/journey/semantic-guide.ts');
+
+  // getSemanticGuideTitle behavioral contract: 4 branches
+  assert(getSemanticGuideTitle({ title: 'Custom' }) === 'CUSTOM', 'custom title uppercased');
+  assert(getSemanticGuideTitle({ title: 'Hello World' }) === 'HELLO WORLD', 'multi-word title uppercased');
+  assert(getSemanticGuideTitle({ degraded: true }) === 'FAST FALLBACK', 'degraded → FAST FALLBACK');
+  assert(getSemanticGuideTitle({ cached: true }) === 'SAVED SUMMARY', 'cached → SAVED SUMMARY');
+  assert(getSemanticGuideTitle({}) === 'SEARCH SUMMARY', 'default → SEARCH SUMMARY');
+  assert(getSemanticGuideTitle() === 'SEARCH SUMMARY', 'undefined → SEARCH SUMMARY');
+
+  // Edge: title takes precedence over degraded/cached flags
+  assert(getSemanticGuideTitle({ title: 'Explicit', degraded: true }) === 'EXPLICIT', 'explicit title wins over degraded');
+  assert(getSemanticGuideTitle({ title: 'Explicit', cached: true }) === 'EXPLICIT', 'explicit title wins over cached');
+
+  console.log('  OK fallback degraded flag behavioral contract verified');
+}
+
+// ---------------------------------------------------------------------------
 // Verify existing Playwright spec covers DOM-dependent edge cases
 // ---------------------------------------------------------------------------
 
@@ -379,6 +510,10 @@ async function main() {
     testGetMostFrequentImplementation,
     testExistingPlaywrightSpecCoversEdgeCases,
     testPrivateHelpersRemainPrivateWithFakeWindow,
+    testRuntimeShowSummaryCardStateBehavior,
+    testRuntimeSemanticGuideIconBehavior,
+    testRuntimeSetSemanticGuideButtonStateBehavior,
+    testRuntimeFallbackDegradedFlagViaPublicApi,
   ];
 
   let passed = 0;

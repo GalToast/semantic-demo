@@ -632,10 +632,200 @@ function testJourneyWebglLineShaderOwnership() {
 }
 
 // ---------------------------------------------------------------------------
+// TEST 11: Runtime behavioral — normalizeLeadId, getThreadCandidatesForIndex,
+//           getSemanticThreadCandidates, getNextExploreCandidateForIndex
+//           These runtime tests prove behavioral invariants without pinning
+//           function names — a rename wouldn't break them as long as behavior
+//           holds.
+// ---------------------------------------------------------------------------
+
+async function testRuntimeNormalizeLeadId() {
+  console.log('\n[RUNTIME] normalizeLeadId — all input branches');
+
+  const { normalizeLeadId } = await import('../src/lib/journey/thread-model.ts');
+
+  // null/undefined/empty → null
+  assert(normalizeLeadId(null) === null, 'null → null');
+  assert(normalizeLeadId(undefined) === null, 'undefined → null');
+  assert(normalizeLeadId('') === null, 'empty string → null');
+
+  // number → string
+  assert(normalizeLeadId(42) === '42', 'number 42 → "42"');
+  assert(normalizeLeadId(0) === '0', 'zero → "0"');
+
+  // string → string
+  assert(normalizeLeadId('LI_001') === 'LI_001', 'string preserved');
+  assert(normalizeLeadId('abc-123') === 'abc-123', 'mixed string preserved');
+
+  console.log('  OK normalizeLeadId handles all input types');
+}
+
+async function testRuntimeGetNextExploreCandidateSemanticFirst() {
+  console.log('\n[RUNTIME] getNextExploreCandidateForIndex — semantic-first fallback');
+
+  const { getNextExploreCandidateForIndex } = await import('../src/lib/journey/thread-model.ts');
+
+  // Mock walk candidate function that returns semantic first
+  let callCount = 0;
+  const walkFn = (_index, options) => {
+    callCount++;
+    if (options.requireSemantic) {
+      return { index: 7, score: 0.9, source: 'semantic' };
+    }
+    return null;
+  };
+
+  const result = getNextExploreCandidateForIndex(3, walkFn, {});
+  assert(result !== null, 'returns a candidate');
+  assert(result.index === 7, 'returns semantic candidate');
+  assert(callCount === 1, 'only tries semantic path when it succeeds');
+
+  console.log('  OK getNextExploreCandidateForIndex semantic-first strategy verified');
+}
+
+async function testRuntimeGetNextExploreCandidateFallsBack() {
+  console.log('\n[RUNTIME] getNextExploreCandidateForIndex — falls back to geometric');
+
+  const { getNextExploreCandidateForIndex } = await import('../src/lib/journey/thread-model.ts');
+
+  let callCount = 0;
+  const walkFn = (_index, options) => {
+    callCount++;
+    if (options.requireSemantic) return null;
+    // geometric fallback
+    return { index: 12, score: 0.3, source: 'geometric' };
+  };
+
+  const result = getNextExploreCandidateForIndex(3, walkFn, {});
+  assert(result !== null, 'returns a candidate when semantic fails');
+  assert(result.index === 12, 'falls back to geometric candidate');
+  assert(callCount === 2, 'tries semantic then geometric');
+
+  console.log('  OK getNextExploreCandidateForIndex geometric fallback verified');
+}
+
+async function testRuntimeGetNextExploreCandidateReturnsNull() {
+  console.log('\n[RUNTIME] getNextExploreCandidateForIndex — returns null when both fail');
+
+  const { getNextExploreCandidateForIndex } = await import('../src/lib/journey/thread-model.ts');
+
+  const walkFn = () => null;
+  const result = getNextExploreCandidateForIndex(3, walkFn, {});
+  assert(result === null, 'returns null when both paths fail');
+
+  console.log('  OK getNextExploreCandidateForIndex returns null when no candidates');
+}
+
+async function testRuntimeGetThreadCandidatesForIndexSemanticFirst() {
+  console.log('\n[RUNTIME] getThreadCandidatesForIndex — pure-path semantic-first strategy');
+
+  const { getThreadCandidatesForIndex } = await import('../src/lib/journey/thread-model.ts');
+
+  // Mock semantic function that returns results
+  const semanticFn = (_idx) => [{
+    index: 5, score: 0.8, semanticScore: 0.9, sameCity: true, sameStatus: true,
+    bridgeScore: 0, signalScore: 0, threadType: 'semantic',
+    relationshipRole: 'client', relationshipAxis: '', roleReason: '',
+    reason: 'semantic neighbor', source: 'semantic'
+  }];
+
+  // Mock geometric function
+  let geometricCalled = false;
+  const geometricFn = (_idx) => {
+    geometricCalled = true;
+    return [];
+  };
+
+  const results = getThreadCandidatesForIndex(3, semanticFn, geometricFn);
+  assert(results.length === 1, 'returns semantic candidates');
+  assert(results[0].index === 5, 'correct candidate index');
+  assert(results[0].source === 'semantic', 'source is semantic');
+  assert(!geometricCalled, 'geometric NOT called when semantic succeeds');
+
+  console.log('  OK getThreadCandidatesForIndex semantic-first behavior verified');
+}
+
+async function testRuntimeGetThreadCandidatesForIndexFallsBack() {
+  console.log('\n[RUNTIME] getThreadCandidatesForIndex — falls back to geometric');
+
+  const { getThreadCandidatesForIndex } = await import('../src/lib/journey/thread-model.ts');
+
+  // Mock semantic returns empty
+  const semanticFn = () => [];
+
+  // Mock geometric returns results
+  let geometricCalled = false;
+  const geometricFn = () => {
+    geometricCalled = true;
+    return [{
+      index: 10, score: 0.5, semanticScore: 0, sameCity: false, sameStatus: true,
+      bridgeScore: 0, signalScore: 0, threadType: 'geometric',
+      relationshipRole: 'unclassified', relationshipAxis: '', roleReason: '',
+      reason: 'geometric', source: 'geometric-fallback'
+    }];
+  };
+
+  const results = getThreadCandidatesForIndex(3, semanticFn, geometricFn);
+  assert(results.length === 1, 'returns geometric candidates when semantic empty');
+  assert(results[0].index === 10, 'correct geometric candidate index');
+  assert(results[0].source === 'geometric-fallback', 'source is geometric-fallback');
+  assert(geometricCalled, 'geometric IS called when semantic returns empty');
+
+  console.log('  OK getThreadCandidatesForIndex geometric fallback verified');
+}
+
+async function testRuntimeGetSemanticThreadCandidatesPurePath() {
+  console.log('\n[RUNTIME] getSemanticThreadCandidates — pure path with mock data');
+
+  const { getSemanticThreadCandidates } = await import('../src/lib/journey/thread-model.ts');
+
+  // Mock points
+  const points = [
+    { lead_id: 'LI_007', name: 'Biz A', city: 'Conroe', cluster: 1, status: 'active' },
+    { lead_id: 'LI_042', name: 'Biz B', city: 'Spring', cluster: 2, status: 'active' },
+    { lead_id: 'LI_099', name: 'Biz C', city: 'Woodlands', cluster: 1, status: 'inactive' },
+  ];
+
+  // Mock neighbor map
+  const neighborMap = new Map();
+  neighborMap.set('LI_007', {
+    neighbors: [
+      { leadId: 'LI_042', score: 0.9, semanticScore: 0.85, sameCity: false, sameStatus: true,
+        bridgeScore: 0, signalScore: 0, threadType: 'local_semantic_neighbor',
+        relationshipRole: 'vendor', reason: 'supplier connection' },
+      { leadId: 'LI_099', score: 0.7, semanticScore: 0.6, sameCity: false, sameStatus: false,
+        bridgeScore: 0, signalScore: 0, threadType: 'local_semantic_neighbor',
+        relationshipRole: 'partner', reason: 'shared cluster' },
+    ]
+  });
+
+  // Mock point index by lead_id
+  const pointIndexByLeadId = new Map([
+    ['LI_007', 0],
+    ['LI_042', 1],
+    ['LI_099', 2],
+  ]);
+
+  // Call pure path
+  const results = getSemanticThreadCandidates(0, points, neighborMap, pointIndexByLeadId);
+  assert(results.length === 2, 'returns 2 candidates');
+  assert(results[0].index === 1, 'first candidate is LI_042 (index 1)');
+  assert(results[0].score === 0.9, 'preserves score');
+  assert(results[0].reason === 'supplier connection', 'preserves reason');
+  assert(results[1].index === 2, 'second candidate is LI_099 (index 2)');
+
+  // No neighbors for unknown lead_id
+  const emptyResults = getSemanticThreadCandidates(1, points, neighborMap, pointIndexByLeadId);
+  assert(emptyResults.length === 0, 'empty for point with no thread node');
+
+  console.log('  OK getSemanticThreadCandidates pure path verified');
+}
+
+// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 
-function main() {
+async function main() {
     console.log('============================================================')
     console.log('journey-thread-inspector-contract.mjs')
     console.log('Fast contract test: journey + thread-inspector cluster')
@@ -653,6 +843,13 @@ function main() {
         testThreadInspectorTextHelpersExtraction()
         testWave60ExploreThreadNeighborSettleBehavior()
         testJourneyWebglLineShaderOwnership()
+        await testRuntimeNormalizeLeadId()
+        await testRuntimeGetNextExploreCandidateSemanticFirst()
+        await testRuntimeGetNextExploreCandidateFallsBack()
+        await testRuntimeGetNextExploreCandidateReturnsNull()
+        await testRuntimeGetThreadCandidatesForIndexSemanticFirst()
+        await testRuntimeGetThreadCandidatesForIndexFallsBack()
+        await testRuntimeGetSemanticThreadCandidatesPurePath()
 
         console.log('\n============================================================')
         console.log('ALL TESTS PASSED')
@@ -664,4 +861,7 @@ function main() {
     }
 }
 
-main()
+main().catch((err) => {
+    console.error('\nTEST FAILED:', err.message);
+    process.exit(1);
+})
