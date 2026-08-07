@@ -195,18 +195,9 @@ function setupWebglContextRestore(): () => void {
     // the registry will handle restore when engine inits.
     // Prefer live renderer.domElement if already mounted; fallback to id query
     // only for very early boot before three init (will be superseded by registry).
-    const { appState: _appState } = (() => {
-        try {
-            // Dynamic to avoid circular
-            return {
-                appState: (
-                    globalThis as unknown as { __APP_STATE__?: { renderer?: { domElement?: HTMLCanvasElement } } }
-                ).__APP_STATE__
-            }
-        } catch {
-            return { appState: undefined }
-        }
-    })()
+    // (2026-08-07: removed a dead `__APP_STATE__?.renderer?.domElement` proxy read —
+    // its `_appState` binding was never referenced; canvas comes from the DOM query
+    // below. compat-proxy-wrongpath-scan flagged it as needless proxy read.)
     // Try to resolve live canvas without importing appState statically (keeps module acyclic).
     // The registry path is now primary; this fallback ensures restore still re-inits if registry torn down.
     const liveCanvasFromDom =
