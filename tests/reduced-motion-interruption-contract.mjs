@@ -283,7 +283,11 @@ async function run() {
       window.setMyceliumMode('inside', { skipUrlSync: true });
     } else {
       (window.__APP_STATE__ ?? window.__TEST_STATE__).myceliumMode = 'inside';
-      (window.__APP_STATE__ ?? window.__TEST_STATE__).navState.mode = 'inside';
+      // whole-prop navState write: nested (proxy).navState.X= hits a spread-snapshot
+      // copy (getCompatNavState, main.ts:273-284) and is silently lost. Whole-prop
+      // assignments hit the proxy set-trap and forward (O1 proposal 2026-08-07).
+      const nv = window.__APP_STATE__ ?? window.__TEST_STATE__;
+      nv.navState = { ...(nv.navState ?? {}), mode: 'inside' };
     }
     if (typeof (refreshCompositionState) === 'function') {
       (refreshCompositionState)();
@@ -324,7 +328,12 @@ async function run() {
     // Use direct state mutation (safe for test) since focusOnNode(-1) is invalid.
     (window.__APP_STATE__ ?? window.__TEST_STATE__).focusedNode = null;
     (window.__APP_STATE__ ?? window.__TEST_STATE__).selectedPoint = null;
-    (window.__APP_STATE__ ?? window.__TEST_STATE__).navState.focusedIndex = null;
+    {
+      const nv = window.__APP_STATE__ ?? window.__TEST_STATE__;
+      // whole-prop nav write (same as above) — nested write would be lost to the
+      // snapshot copy (getCompatNavState, main.ts:273-284).
+      nv.navState = { ...(nv.navState ?? {}), focusedIndex: null };
+    }
     // Restore camera to overview
     if (typeof window.animateCameraToNode === 'function' && (window.__APP_STATE__ ?? window.__TEST_STATE__).navState?.focusedIndex !== null) {
       window.animateCameraToNode(0, { transitionStyle: 'reset', duration: 1 });
