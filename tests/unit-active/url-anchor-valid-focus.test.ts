@@ -169,7 +169,10 @@ vi.mock('@lib/orchestration/cluster-filter-controller', () => ({
     syncFilterControls: () => {},
     restoreActiveClusterFilterFromUrl: () => {}
 }))
-vi.mock('@lib/stores/filter.svelte', () => ({ restoreActiveFiltersFromUrl: () => {} }))
+vi.mock('@lib/stores/filter.svelte', () => ({
+    restoreActiveFiltersFromUrl: () => {},
+    getFilterState: () => ({ status: 'all', city: '', website: false, email: false, geocoded: false })
+}))
 
 vi.mock('@lib/orchestration/toast', () => ({
     showExperienceToast: (title: string, message: string) => {

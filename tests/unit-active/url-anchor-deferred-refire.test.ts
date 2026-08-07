@@ -138,7 +138,10 @@ vi.mock('@lib/orchestration/cluster-filter-controller', () => ({
     syncFilterControls: () => {},
     restoreActiveClusterFilterFromUrl: (_v: unknown) => {}
 }))
-vi.mock('@lib/stores/filter.svelte', () => ({ restoreActiveFiltersFromUrl: (_v: unknown) => {} }))
+vi.mock('@lib/stores/filter.svelte', () => ({
+    restoreActiveFiltersFromUrl: (_v: unknown) => {},
+    getFilterState: () => ({ status: 'all', city: '', website: false, email: false, geocoded: false })
+}))
 vi.mock('@lib/orchestration/toast', () => ({ showExperienceToast: (_t: string, _m: string) => {} }))
 
 // Mock the dynamic import target so applyLocalNeighborhoodFocus is observable.

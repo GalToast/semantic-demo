@@ -16,7 +16,7 @@ import { debugWarn } from '@lib/utils/debug'
 import { clearSearch, runSearch, searchStore, setSearchError } from '@lib/stores/search.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
-import { restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '@lib/stores/filter.svelte'
+import { getFilterState, restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '@lib/stores/filter.svelte'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { animateCameraToNode } from '@lib/engine/camera-choreography/focus'
@@ -479,6 +479,27 @@ export function updateUrlState(
     // preserveDeepLinkParams block may have deleted it. Only persists when
     // a business is actually focused, so mode-switching away clears it.
     if ($nav.focusedIndex != null) params.set('anchor', String($nav.focusedIndex))
+
+    // Filters (status, city, website, email, geocoded) — encode so shared
+    // links and reloads restore the same filtered view (mirror of
+    // restoreActiveFiltersFromUrl in filter.svelte.ts). Omitted when
+    // all-default for clean overview URLs, matching the depth/story/surface
+    // delete-when-default pattern. Boolean flags encode as '1' so the
+    // restore side's '1'/'true' parsing round-trips losslessly.
+    const filters = getFilterState()
+    if (filters.status !== 'all') params.set('status', filters.status)
+    else params.delete('status')
+    // city='' is the default; the legacy 'all' sentinel is normalized to ''
+    // by toggleFilter/overwriteActiveFilters and by the restore side, so it
+    // is never encoded as an active filter.
+    if (filters.city && filters.city !== 'all') params.set('city', filters.city)
+    else params.delete('city')
+    if (filters.website) params.set('website', '1')
+    else params.delete('website')
+    if (filters.email) params.set('email', '1')
+    else params.delete('email')
+    if (filters.geocoded) params.set('geocoded', '1')
+    else params.delete('geocoded')
 
     // Extra params
     for (const [key, value] of Object.entries(extra)) {

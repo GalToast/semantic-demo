@@ -11,18 +11,38 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 // Track the active cluster filter value set by the mock filter store.
 let trackedClusterFilter: string | null = null
 
+// Track the full filter state (status/city/website/email/geocoded) so the
+// round-trip test can assert encode (updateUrlState) → restore
+// (restoreActiveFiltersFromUrl via applyUrlState) reproduces the filter set.
+type TrackedFilters = { status: string; city: string; website: boolean; email: boolean; geocoded: boolean }
+let trackedFilters: TrackedFilters = { status: 'all', city: '', website: false, email: false, geocoded: false }
+
 vi.mock('@lib/stores/filter.svelte', () => ({
     filterState: {
-        subscribe: (fn: (v: { status: string; city: string; website: boolean; email: boolean; geocoded: boolean }) => void) => {
-            fn({ status: 'all', city: '', website: false, email: false, geocoded: false })
+        subscribe: (fn: (v: TrackedFilters) => void) => {
+            fn(trackedFilters)
             return () => {}
         }
     },
+    getFilterState: () => trackedFilters,
     restoreActiveClusterFilterFromUrl: (params: URLSearchParams) => {
         const value = params.get('cluster')
         trackedClusterFilter = value !== null ? String(value) : null
     },
-    restoreActiveFiltersFromUrl: () => {},
+    restoreActiveFiltersFromUrl: (params: URLSearchParams) => {
+        const status = params.get('status')
+        const city = params.get('city')
+        const website = params.get('website')
+        const email = params.get('email')
+        const geocoded = params.get('geocoded')
+        trackedFilters = {
+            status: status ?? 'all',
+            city: city !== null && city !== 'all' ? city : '',
+            website: website === '1' || website === 'true',
+            email: email === '1' || email === 'true',
+            geocoded: geocoded === '1' || geocoded === 'true'
+        }
+    },
     activeClusterFilter: {
         subscribe: (fn: (v: string | null) => void) => {
             fn(trackedClusterFilter)
@@ -225,11 +245,12 @@ vi.mock('@lib/orchestration/url-params', () => ({
     isDomForcedFocusSearchSurface: () => false
 }))
 
-import { applyUrlState } from '@lib/orchestration/url-state'
+import { applyUrlState, updateUrlState } from '@lib/orchestration/url-state'
 
 describe('url-state cluster filter restore regression', () => {
     beforeEach(() => {
         trackedClusterFilter = null
+        trackedFilters = { status: 'all', city: '', website: false, email: false, geocoded: false }
         window.history.replaceState({}, '', '/')
     })
 
@@ -257,5 +278,39 @@ describe('url-state cluster filter restore regression', () => {
         await applyUrlState({})
         expect(spy).not.toHaveBeenCalled()
         window.removeEventListener('semantic:cluster-filter-restore-requested', spy)
+    })
+
+    it('FILTER ROUND-TRIP: updateUrlState encodes filters → applyUrlState restores the same filter view', async () => {
+        // Simulate a user-applied filter set (as Filters.svelte toggleFilter produces)
+        trackedFilters = { status: 'active', city: 'Conroe', website: true, email: false, geocoded: true }
+
+        // Encode: updateUrlState pushes the filter params into the URL
+        updateUrlState({}, { reason: 'test-filter-roundtrip', force: true })
+        const encoded = new URL(window.location.href)
+        expect(encoded.searchParams.get('status')).toBe('active')
+        expect(encoded.searchParams.get('city')).toBe('Conroe')
+        expect(encoded.searchParams.get('website')).toBe('1')
+        expect(encoded.searchParams.has('email')).toBe(false)
+        expect(encoded.searchParams.get('geocoded')).toBe('1')
+
+        // Simulate a fresh visitor opening the shared link: in-app state is
+        // default; only the URL carries the filter intent.
+        trackedFilters = { status: 'all', city: '', website: false, email: false, geocoded: false }
+        await applyUrlState({})
+
+        // Filters restored from the URL — the shared link reproduces the filter view.
+        expect(trackedFilters).toEqual({ status: 'active', city: 'Conroe', website: true, email: false, geocoded: true })
+    })
+
+    it('FILTER ROUND-TRIP: all-default filters are dropped from the URL (clean shared link)', async () => {
+        // No filters active — updateUrlState must not emit filter params.
+        trackedFilters = { status: 'all', city: '', website: false, email: false, geocoded: false }
+        updateUrlState({}, { reason: 'test-filter-default', force: true })
+        const encoded = new URL(window.location.href)
+        expect(encoded.searchParams.has('status')).toBe(false)
+        expect(encoded.searchParams.has('city')).toBe(false)
+        expect(encoded.searchParams.has('website')).toBe(false)
+        expect(encoded.searchParams.has('email')).toBe(false)
+        expect(encoded.searchParams.has('geocoded')).toBe(false)
     })
 })

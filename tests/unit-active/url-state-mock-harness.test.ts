@@ -84,7 +84,7 @@ const mockState = vi.hoisted(() => ({
     focusStoreState: { selectedBusiness: null as unknown },
     // Filter state
     filterStateValues: {
-        status: '',
+        status: 'all',
         city: '',
         website: false,
         email: false,
@@ -316,6 +316,7 @@ vi.mock('@lib/stores/filter.svelte', () => ({
             return () => {}
         }
     },
+    getFilterState: () => mockState.filterStateValues,
     restoreActiveClusterFilterFromUrl: (v: unknown) => {
         mockState.restoreActiveClusterFilterCalls.push(v)
     },
@@ -432,7 +433,7 @@ function resetAllMockState(): void {
     mockState.focusStoreState = { selectedBusiness: null }
     // Filter
     mockState.filterStateValues = {
-        status: '',
+        status: 'all',
         city: '',
         website: false,
         email: false,
@@ -674,6 +675,63 @@ describe('url-state.ts — Svelte 5 mock harness (Phase 6e)', () => {
             const url = new URL(String(callArgs?.[2] || ''), window.location.origin)
             expect(url.searchParams.get('surface')).toBe('focus')
             expect(url.searchParams.get('anchor')).toBe('7')
+        })
+
+        it('encodes active filters as URL params (MEDIUM-1 fix)', () => {
+            mockState.filterStateValues = {
+                status: 'active',
+                city: 'Conroe',
+                website: true,
+                email: false,
+                geocoded: true
+            }
+            updateUrlState({}, { force: true })
+            const callArgs = replaceSpy.mock.calls.at(-1)
+            const url = new URL(String(callArgs?.[2] || ''), window.location.origin)
+            expect(url.searchParams.get('status')).toBe('active')
+            expect(url.searchParams.get('city')).toBe('Conroe')
+            expect(url.searchParams.get('website')).toBe('1')
+            expect(url.searchParams.has('email')).toBe(false)
+            expect(url.searchParams.get('geocoded')).toBe('1')
+        })
+
+        it('deletes filter params from URL when all-default (clean overview URL)', () => {
+            window.history.pushState({}, '', '/?status=active&city=Conroe&website=1&geocoded=1')
+            mockState.filterStateValues = { status: 'all', city: '', website: false, email: false, geocoded: false }
+            try {
+                updateUrlState({}, { force: true })
+                const callArgs = replaceSpy.mock.calls.at(-1)
+                const url = new URL(String(callArgs?.[2] || ''), window.location.origin)
+                expect(url.searchParams.has('status')).toBe(false)
+                expect(url.searchParams.has('city')).toBe(false)
+                expect(url.searchParams.has('website')).toBe(false)
+                expect(url.searchParams.has('email')).toBe(false)
+                expect(url.searchParams.has('geocoded')).toBe(false)
+            } finally {
+                // Restore clean URL
+                window.history.pushState({}, '', '/')
+            }
+        })
+
+        it('filter encode matches restoreActiveFiltersFromUrl consumption (lossless round-trip)', () => {
+            // Encode the same filter set restoreActiveFiltersFromUrl parses
+            // ('1'/'true' booleans, status value, city string) so a shared
+            // link reproduces the exact filter view.
+            mockState.filterStateValues = {
+                status: 'pending',
+                city: 'The Woodlands',
+                website: true,
+                email: true,
+                geocoded: false
+            }
+            updateUrlState({}, { force: true })
+            const callArgs = replaceSpy.mock.calls.at(-1)
+            const url = new URL(String(callArgs?.[2] || ''), window.location.origin)
+            expect(url.searchParams.get('status')).toBe('pending')
+            expect(url.searchParams.get('city')).toBe('The Woodlands')
+            expect(url.searchParams.get('website')).toBe('1')
+            expect(url.searchParams.get('email')).toBe('1')
+            expect(url.searchParams.has('geocoded')).toBe(false)
         })
 
         it('merges extra params into URL', () => {
