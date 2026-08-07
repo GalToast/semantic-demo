@@ -223,8 +223,8 @@
       // never shows a total smaller than the current stop, and route to the "No more visible
       // stops in this slice." copy that already exists in the focus-ui.ts twin.
       return neighborCount > 0
-        ? `Step ${currentWalkHistory.length + 1} of ${neighborCount}`
-        : `Step ${currentWalkHistory.length + 1}. No more visible stops with these filters.`;
+        ? `Step ${currentWalkHistory.length} of ${neighborCount}`
+        : `Step ${currentWalkHistory.length}. No more visible stops with these filters.`;
     }
     return neighborCount
       ? `${neighborCount} nearby to explore`
