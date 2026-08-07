@@ -5535,26 +5535,37 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         test.setTimeout(60000)
         await page.setViewportSize({ width: 390, height: 844 })
         await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
-        const hasListToggle = await pollFor(
+        // Target the REAL bottom dive strip (#btn-focus-dive), which only exists
+        // once the WebGL engine has booted. In render-kind-placeholder2d the only
+        // enter-inside button is #btn-journey-primary mounted at the TOP (y≈18),
+        // which is not the strip the toggle lifts over — asserting against it is
+        // meaningless and flakes whenever WebGL boot is slow (full-suite load).
+        const clearsDiveStrip = await pollFor(
             page,
-            () => [...document.querySelectorAll('button')].some((x) => (x.textContent || '').includes('View as list')),
+            () => {
+                const el = [...document.querySelectorAll('button')].find((x) =>
+                    (x.textContent || '').includes('View as list')
+                )
+                const dive = document.querySelector('#btn-focus-dive')
+                if (!el || !dive || dive.hidden) return false
+                if (!el.classList.contains('lifted')) return false
+                const r = el.getBoundingClientRect()
+                const dr = dive.getBoundingClientRect()
+                return r.y + 44 <= dr.top + 2
+            },
             30000,
             100
         )
-        expect(hasListToggle, 'mobile focus list toggle must mount').toBe(true)
+        expect(clearsDiveStrip, 'toggle lifted and clears the bottom dive strip on mobile focus').toBe(true)
         const st = await page.evaluate(() => {
             const el = [...document.querySelectorAll('button')].find((x) =>
                 (x.textContent || '').includes('View as list')
             )
             if (!el) return null
-            const dives = [...document.querySelectorAll('button[data-journey-action="enter-inside"]')].map((x) =>
-                x.getBoundingClientRect()
-            )
-            // the dive we collide with is the BOTTOM strip in the compact focus stage
-            const diveRect = dives.length ? dives.reduce((m, r) => (r.top > m.top ? r : m), dives[0]) : null
-            const dive = diveRect
+            const dive = document.querySelector('#btn-focus-dive')
+            const dr = dive && !dive.hidden ? dive.getBoundingClientRect() : null
             const r = el.getBoundingClientRect()
-            return { lifted: el.classList.contains('lifted'), y: r.y, diveTop: dive ? dive.top : null }
+            return { lifted: el.classList.contains('lifted'), y: r.y, diveTop: dr ? dr.top : null }
         })
         expect(st, 'toggle must exist').not.toBeNull()
         expect(st.lifted, 'toggle should carry the lifted class on mobile focus').toBe(true)
