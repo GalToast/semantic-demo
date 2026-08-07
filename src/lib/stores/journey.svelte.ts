@@ -199,9 +199,9 @@ function _readJourneyFromAppState(): JourneyStoreState {
         threadSource: navState.threadSource,
         lastTraversalReason: navState.lastTraversalReason,
         compass: compassCache,
-        terrainHandoffPhase: 'idle',
-        routeExplorationPhase: 'idle',
-        routeChoreographyPhase: 'overview'
+        terrainHandoffPhase: (appState.terrainHandoffState?.phase ?? 'idle') as JourneyStoreState['terrainHandoffPhase'],
+        routeExplorationPhase: (appState.routeExplorationState?.phase ?? 'idle') as JourneyStoreState['routeExplorationPhase'],
+        routeChoreographyPhase: (appState.routeChoreographyState?.phase ?? 'overview') as JourneyStoreState['routeChoreographyPhase']
     }
 }
 

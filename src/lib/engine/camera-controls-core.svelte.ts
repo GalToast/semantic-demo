@@ -18,7 +18,6 @@ import { appState } from '@lib/state/app.svelte'
 import type { Vector3Like } from '@lib/state/types/core-types'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-choreography/orbit-slack'
-import { setRouteExplorationPhase } from '@lib/stores/journey.svelte'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -224,10 +223,6 @@ class CameraControlsCore {
                 startedAt: performance.now()
             }
         }
-        // Wires routeExplorationPhase into the journey store so parity-attrs
-        // (which reads journey.routeExplorationPhase) produces the right
-        // data-route-exploration value.
-        setRouteExplorationPhase(normalizedPhase as 'idle' | 'free' | 'searching' | 'focusing')
         // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
     }
 
