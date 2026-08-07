@@ -192,10 +192,6 @@ export function setActiveSearchResultRow(
     refreshSearchResultHierarchy(resultsEl)
 
     if (reveal && activeRow) {
-        const searchState = getSearchStateNamespace(resultsEl)
-        if (searchState?.isMobileRouteFieldPeekActive && searchState.isMobileRouteFieldPeekActive()) {
-            return
-        }
         const rowToReveal: HTMLElement = activeRow
         if (!revealActiveSearchResultOnCompact(resultsEl, rowToReveal)) {
             rowToReveal.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })

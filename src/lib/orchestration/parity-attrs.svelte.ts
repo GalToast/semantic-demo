@@ -154,18 +154,6 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
         source: 'searchStore.status'
     },
 
-    // Mobile route peek (W47 migration: replaces bypass writes in results-ui.ts)
-    {
-        key: 'mobileRoutePeek',
-        description: 'Mobile route field peek-in active state (active when truthy, absent otherwise)',
-        source: 'appState.mobileRoutePeekActive'
-    },
-    {
-        key: 'mobileRoutePeekReason',
-        description: 'Optional reason string for the active mobile route peek (cleared when inactive)',
-        source: 'appState.mobileRoutePeekReason'
-    },
-
     // Strand journey (legacy strand-continuity.js — CSS journey_steps.css reads data-strand-journey)
     {
         key: 'strandJourney',
@@ -308,9 +296,6 @@ export function computeParityAttributes(): ParityAttributeMap {
         focusTransition: focus.transitionMode || 'idle',
         searchStatus: search.status || 'idle',
 
-        mobileRoutePeek: appState.mobileRoutePeekActive ? 'active' : null,
-        mobileRoutePeekReason: appState.mobileRoutePeekActive ? appState.mobileRoutePeekReason || null : null,
-
         strandJourney: focus.strandContinuityPhase || 'idle',
         threadInspectSurface: threadInspectionActive ? focus.threadInspector.source || 'rail' : 'idle',
         inspectedThreadIndex:
@@ -429,16 +414,6 @@ function applyBodyClassMirrors(map: ParityAttributeMap): void {
         }
     } else if (document.body.classList.contains('surface-map-any')) {
         document.body.classList.remove('surface-map-any')
-    }
-
-    // Static class: route-peek
-    const isRoutePeekActive = map.mobileRoutePeek === 'active'
-    if (isRoutePeekActive) {
-        if (!document.body.classList.contains('route-peek')) {
-            document.body.classList.add('route-peek')
-        }
-    } else if (document.body.classList.contains('route-peek')) {
-        document.body.classList.remove('route-peek')
     }
 }
 
@@ -720,20 +695,6 @@ function createParitySyncEffectBody(initialSync: boolean): () => void {
     const unsubLoadingPhase = loadingPhaseStore.subscribe(scheduleSync)
     const unsubGraphicsMode = graphicsModeStore.subscribe(scheduleSync)
     const unsubEngineReady = engineReady.subscribe(scheduleSync)
-
-    // M1 reactivity gap: track appState rune changes (mobileRoutePeekActive /
-    // mobileRoutePeekReason) that are NOT served by store subscriptions.
-    // appState is a $state class instance (not a Svelte store), so bare
-    // reads inside computeParityAttributes() do NOT trigger scheduleSync.
-    // This $effect inside the $effect.root() scope establishes reactive
-    // tracking on the appState runes so parity sync fires when they change.
-    $effect(() => {
-        // Read appState runes to establish reactive dependency — scheduleSync
-        // runs when either field changes, triggering a parity recompute.
-        const _active = appState.mobileRoutePeekActive
-        const _reason = appState.mobileRoutePeekReason
-        scheduleSync()
-    })
 
     if (initialSync) {
         // Force an initial compute on install

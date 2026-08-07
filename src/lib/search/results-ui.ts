@@ -60,7 +60,6 @@ export interface SearchStateNamespace {
     search?: (query: string, options?: { preferCachedResults?: boolean }) => void
     clearSearch?: () => void
     bindSearchResultInteractions?: unknown
-    isMobileRouteFieldPeekActive?: () => boolean
 }
 
 /**
@@ -470,23 +469,6 @@ export function resetSemanticGuideUi(): void {
 
 export function clearShortSemanticSearchState(resultsEl: HTMLElement | null, statusEl: HTMLElement | null): void {
     clearSearchState(resultsEl, statusEl)
-}
-
-export function startMobileRouteFieldPeek(_reason: string = 'hover'): void {
-    // W47+ parity migration: parity-attrs.svelte.ts owns the body data-* attribute
-    // mirror via appState rune reactivity. The appState.mobileRoutePeekActive rune
-    // is the source of truth — callers write directly to the rune.
-    // This stub is kept for barrel re-export compatibility only (no runtime callers).
-}
-
-export function clearMobileRouteFieldPeek(): void {
-    // W47+ parity migration: parity-attrs clears body attrs / route-peek class
-    // on its next reactive snapshot when appState.mobileRoutePeekActive is cleared.
-    // This stub is kept for barrel re-export compatibility only (no runtime callers).
-}
-
-export function isMobileRouteFieldPeekActive(): boolean {
-    return state.mobileRoutePeekActive === true
 }
 
 export function clearSearchPreviewHoverTimer(): void {

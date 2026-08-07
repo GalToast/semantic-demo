@@ -481,8 +481,7 @@ body:has(.info-panel.active) .panel-toggle {
 }
 
 @media (max-width: 768px) {
-    .info-panel.collapsed,
-    body.route-peek .info-panel.collapsed {
+    .info-panel.collapsed {
         transform: none;
         opacity: 1;
         pointer-events: auto;
@@ -513,60 +512,6 @@ body:has(.info-panel.active) .panel-toggle {
 
     body[data-panel-surface]:not(.surface-map-any) .info-panel {
         top: calc(196px + env(safe-area-inset-top, 0px));
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .info-panel {
-        top: auto;
-        bottom: calc(26px + env(safe-area-inset-bottom, 0px));
-        border-radius: 18px;
-        opacity: 0.82;
-        transform: translateY(0) scale(0.972);
-        border-color: rgba(var(--color-primary-tint-rgb), 0.22);
-        background:
-            radial-gradient(circle at 12% 0%, rgba(var(--color-primary-tint-rgb), 0.16), transparent 38%),
-            linear-gradient(180deg, rgba(5, 14, 21, 0.82), rgba(4, 8, 14, 0.76));
-        box-shadow:
-            0 18px 44px var(--shadow-penumbra),
-            0 0 0 1px rgba(var(--color-primary-tint-rgb), 0.055);
-        backdrop-filter: blur(18px) saturate(1.16);
-        -webkit-backdrop-filter: blur(18px) saturate(1.16);
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .info-header {
-        display: none;
-        padding: 10px 13px;
-        font-size: 12px;
-        background: rgba(255, 255, 255, 0.018);
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-input-wrapper,
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-hint,
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .semantic-lane-pill,
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .stats-row,
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-container {
-        margin: 0;
-        padding-top: 0;
-        border-top: 0;
-        background: transparent;
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-label-text {
-        font-size: 10px;
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-trail-cue {
-        margin-top: 6px;
-        padding: 7px 9px;
-        background: rgba(var(--color-primary-tint-rgb), 0.055);
-        border-color: rgba(var(--color-primary-tint-rgb), 0.12);
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-trail-cue-note {
-        -webkit-line-clamp: 1;
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-container #synthesize-trigger {
-        display: none;
     }
 
     .journey-compass[data-panel-surface='search'] {

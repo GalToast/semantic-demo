@@ -42,7 +42,6 @@ import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
 import { debugWarn } from '@lib/utils/debug'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
-import { isMobileRouteFieldPeekActive } from './results-ui'
 import { updateSearchTrailCue as renderSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
 import {
     setSearchPanelState,
@@ -134,8 +133,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         setSearchStateNamespace(resultsEl, {
             search,
             clearSearch: () => clearSearch(),
-            bindSearchResultInteractions,
-            isMobileRouteFieldPeekActive
+            bindSearchResultInteractions
         })
     }
 
@@ -442,10 +440,7 @@ export {
     clearSearchGlow as clearResultsGlow,
     resetSemanticGuideUi,
     clearShortSemanticSearchState,
-    startMobileRouteFieldPeek,
     clearSearchPreviewHoverTimer,
-    clearMobileRouteFieldPeek,
-    isMobileRouteFieldPeekActive,
     updateSearchStatusMessage
 } from './results-ui'
 

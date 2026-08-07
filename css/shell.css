@@ -190,14 +190,6 @@ body.surface-search #canvas-container::after {
         );
 }
 
-body.route-peek[data-route-motion='search-corridor'] #canvas-container::before {
-    opacity: 0.14;
-}
-
-body.route-peek[data-route-motion='search-corridor'] #canvas-container::after {
-    opacity: 0.22;
-}
-
 body.surface-focus #canvas-container::before {
     opacity: 0.24;
 }
