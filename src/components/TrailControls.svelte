@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { showExploreTrailReview, hideExploreTrailReview } from '@lib/stores/lifecycle'
+
   interface Props {
     active: boolean;
     canGoBack: boolean;
@@ -28,7 +30,16 @@
       aria-label="Show walk"
       onclick={() => {
         const overlay = document.getElementById('trail-review-overlay');
-        if (overlay) overlay.hidden = !overlay.hidden;
+        if (!overlay) return;
+        // F1 (UI sweep 2026-08-07): the raw `overlay.hidden` flip left
+        // aria-hidden='true' on a now-visible dialog (SRs never discover it)
+        // and never moved focus. Route through the canonical lifecycle
+        // writers which sync aria-hidden + move focus to the close button.
+        if (overlay.hidden) {
+          showExploreTrailReview();
+        } else {
+          hideExploreTrailReview();
+        }
       }}
     >
       Show walk
