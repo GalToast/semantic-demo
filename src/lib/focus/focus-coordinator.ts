@@ -145,11 +145,18 @@ function scheduleFocus(
     retries: number,
     attempt: number
 ): void {
-    if (!_pendingFocusRegistry || _pendingFocusRegistry.isDisposed) return
-    // eslint-disable-next-line no-restricted-syntax -- rAF is registered with _pendingFocusRegistry.raf() immediately below
+    // Capture the registry instance AT SCHEDULE TIME — not inside the rAF callback.
+    // When a newer requestEntryFocus() supersedes this one, cancelEntryFocus()
+    // disposes the old registry. The rAF callback must check THIS captured
+    // instance, not the module-global (_pendingFocusRegistry may already point
+    // at the new request's registry by the time the callback fires).
+    const registry = _pendingFocusRegistry
+    if (!registry || registry.isDisposed) return
+    // eslint-disable-next-line no-restricted-syntax -- rAF is registered with registry.raf() immediately below
     const id = requestAnimationFrame(() => {
-        // If cancelled between scheduling and execution, bail out
-        if (!_pendingFocusRegistry || _pendingFocusRegistry.isDisposed) return
+        // Use captured registry so a superseded callback bails when ITS
+        // registry was disposed, even if the global now points at a new one.
+        if (!registry || registry.isDisposed) return
         if (guardMeaningful && isMeaningfulActiveElement()) return
         const el = resolveTarget(target)
         if (el) {
@@ -161,7 +168,7 @@ function scheduleFocus(
             scheduleFocus(target, guardMeaningful, retries, attempt + 1)
         }
     })
-    _pendingFocusRegistry.raf(id)
+    registry.raf(id)
 }
 
 /** Read the current DOM focus owner (test/diagnostic helper). */
