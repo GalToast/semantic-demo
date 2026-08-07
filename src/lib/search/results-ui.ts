@@ -301,6 +301,11 @@ export function applySemanticSearchErrorState(
 
     appState.searchState.searchError = errorData
     appState.searchState.isSearching = false
+    // HIGH-1 (search/filter bugsweep 2026-08-07): the error path never cleared
+    // searchStatus, so an API failure left 'searching' forever — the compass
+    // stayed 'Searching the Field' and waitForSearchSettle polled the full 30s.
+    // Match setSearchError (search.svelte.ts:327) which sets status='error'.
+    appState.searchState.searchStatus = 'error'
 
     if (resultsEl) {
         resultsEl.classList.remove('is-searching-skeleton')
