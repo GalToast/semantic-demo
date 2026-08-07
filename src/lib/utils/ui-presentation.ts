@@ -7,6 +7,8 @@
 
 import { FOCUS_PANEL_MODE, getFocusPanelMode } from './focus-panel-mode'
 
+export const DEFAULT_DOCUMENT_TITLE = 'Montgomery County Semantic Explorer | Case Study'
+
 export type GraphPresentationState = 'overview' | 'search' | 'focus' | 'trail' | 'field-node' | 'inside'
 
 export interface GraphPresentationProfile {

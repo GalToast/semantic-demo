@@ -61,4 +61,10 @@ describe('A2-4: Escape returns to Overview mode', () => {
         expect(escapeBlock).toContain('setSearchQuery')
         expect(escapeBlock).toMatch(/setSearchQuery\(\s*['"]['"]\s*\)/)
     })
+
+    it('restores the canonical document title after Escape', () => {
+        const escapeIdx = src.indexOf("e.key === 'Escape'")
+        const escapeBlock = src.slice(escapeIdx)
+        expect(escapeBlock).toContain('updateDocumentMeta(DEFAULT_DOCUMENT_TITLE)')
+    })
 })

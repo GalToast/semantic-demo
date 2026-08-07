@@ -103,7 +103,16 @@ function candidateIndexList(value: unknown): number[] {
 export interface JourneyStoreState extends JourneyState {
     terrainHandoffPhase: 'idle' | 'prelude' | 'transition' | 'settle'
     routeExplorationPhase: 'idle' | 'free' | 'searching' | 'focusing'
-    routeChoreographyPhase: 'overview' | 'trail' | 'focus' | 'inside' | 'map'
+    routeChoreographyPhase:
+        | 'overview'
+        | 'search'
+        | 'search-corridor'
+        | 'focus'
+        | 'inside'
+        | 'map'
+        | 'map-prelude'
+        | 'trail'
+        | 'idle'
     /** Direct trail depth accessor (mirrors navState.trailDepth). */
     trailDepth: number
     /** Walk history indices (mirrors navState.walkHistoryIndices). */

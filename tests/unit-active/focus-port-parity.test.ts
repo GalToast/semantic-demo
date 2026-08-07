@@ -50,6 +50,13 @@ const SAMPLE_POINTS: ReadonlyArray<{ readonly label: string; readonly point: unk
 ]
 
 describe('focus stage renderer port parity (W11-T7)', () => {
+    it('resolves a raw point against a proxied twin by lead_id', () => {
+        const rawPoint = { lead_id: 'lead-7', name: 'Raw point' }
+        const proxiedTwin = new Proxy({ ...rawPoint }, {})
+
+        expect(port.resolvePointIndex([proxiedTwin], rawPoint)).toBe(0)
+    })
+
     it('port exposes the trivia surface', () => {
         expect(port.TRIVIA_BLOCKLIST).toBeDefined()
         expect(port.rejectsTrivia).toBeTypeOf('function')

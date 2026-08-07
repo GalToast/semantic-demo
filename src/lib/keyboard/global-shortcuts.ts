@@ -34,6 +34,7 @@ import { hasOpenNestedDialog } from '@lib/utils/focus-trap-bindings'
 import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller'
 import { JOURNEY_ACTIONS } from '@lib/journey/compass-state'
 import type { NavMode } from '@lib/types/state'
+import { DEFAULT_DOCUMENT_TITLE, updateDocumentMeta } from '@lib/utils/ui-presentation'
 
 /**
  * Maps Ctrl/Cmd+1-6 to the nav mode each shortcut targets. Used by the
@@ -245,6 +246,7 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
                 // stale view=map booted users back into map).
                 updateUrlState({}, { reason: 'escape-return-overview' })
             }
+            updateDocumentMeta(DEFAULT_DOCUMENT_TITLE)
         }
     }
 

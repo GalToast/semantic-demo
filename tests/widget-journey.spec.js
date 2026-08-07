@@ -161,6 +161,52 @@ test.describe('Widget journey', () => {
         expect(page.url(), 'deep-linked record must be preserved in the URL').toContain('record=519')
     })
 
+    test('Escape from a focused business restores the canonical document title', async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 })
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, {
+            waitUntil: 'domcontentloaded'
+        })
+
+        await page.waitForFunction(
+            () => window.__APP_STATE__?.navState?.focusedIndex !== null && document.title.includes('Semantic Explorer'),
+            null,
+            { timeout: 30000, polling: 100 }
+        )
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+        }
+
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                throw new Error('__navActions__.focusOnNode is not exposed')
+            }
+            if (!actions.focusOnNode(0)) throw new Error('focusOnNode(0) returned falsy')
+        })
+        await page.waitForFunction(
+            () => document.title !== 'Montgomery County Semantic Explorer | Case Study',
+            null,
+            { timeout: 15000, polling: 100 }
+        )
+
+        await page.evaluate(() => {
+            document.activeElement?.blur()
+        })
+        await page.keyboard.press('Escape')
+        await page.waitForFunction(
+            () => document.title === 'Montgomery County Semantic Explorer | Case Study',
+            null,
+            { timeout: 15000, polling: 100 }
+        )
+        await expect(page).toHaveTitle('Montgomery County Semantic Explorer | Case Study')
+    })
+
     test('5g. Focus-panel facts separator is aria-hidden (W47 audit #2)', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })

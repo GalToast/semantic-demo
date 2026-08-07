@@ -29,6 +29,29 @@ import { getPanelSurface, prefersReducedMotion } from '@lib/utils/environment';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+/**
+ * Resolve a point against the canonical list without relying solely on object
+ * identity. Svelte 5 can proxy one side of this comparison, while lead_id is
+ * the stable record key shared by the search and data-loader paths.
+ */
+export function resolvePointIndex(points: readonly Point[], point: Point | null): number {
+    if (!point) return -1
+
+    const directIndex = points.indexOf(point)
+    if (directIndex >= 0) return directIndex
+
+    const leadId = point.lead_id
+    if (leadId === undefined || leadId === null || leadId === '') return -1
+
+    return points.findIndex(
+        (candidate) =>
+            candidate?.lead_id !== undefined &&
+            candidate.lead_id !== null &&
+            candidate.lead_id !== '' &&
+            String(candidate.lead_id) === String(leadId)
+    )
+}
+
 // ── Renderers ──────────────────────────────────────────────────────────────
 
 export function renderSignalBadges(point: Point | null): string {
@@ -47,9 +70,7 @@ export function updateSelectedCardHeading(point: Point | null = null): void {
 
     const activePoint = point || appState.focusState.selectedPoint || null;
     const points = Array.isArray(appState.points) ? (appState.points as Point[]) : [];
-    const activeIndex = activePoint && points.length > 0
-        ? points.indexOf(activePoint)
-        : -1;
+    const activeIndex = activePoint ? resolvePointIndex(points, activePoint) : -1;
     const summary = appState.searchState.currentSearchSummary;
     const resultIndices = summary && Array.isArray(summary.resultIndices) ? (summary.resultIndices as number[]) : [];
 

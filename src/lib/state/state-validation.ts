@@ -58,10 +58,13 @@ export const VALID_ROUTE_EXPLORATION_PHASES = new Set<string>(['idle', 'searchin
 export const VALID_ROUTE_CHOREOGRAPHY_PHASES = new Set<string>([
     'overview',
     'search',
+    'search-corridor',
     'focus',
     'inside',
     'map',
-    'trail'
+    'map-prelude',
+    'trail',
+    'idle'
 ])
 
 export const VALID_STRAND_CONTINUITY_PHASES = new Set<string>([

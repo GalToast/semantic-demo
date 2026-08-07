@@ -41,7 +41,7 @@ import { isPointVisible } from '@lib/utils/geo-data'
 import { getPreviouslyFocusedFocusStage, setPreviouslyFocusedFocusStage } from '@lib/journey/lifecycle-adapter'
 import { revealSelectedBusinessCard } from '@lib/ui/panel-bindings'
 import { sanitizePublicFacingNote, getBusinessNamePresentation } from '@lib/utils/dom-formatters'
-import { updateDocumentMeta } from '@lib/utils/ui-presentation'
+import { DEFAULT_DOCUMENT_TITLE, updateDocumentMeta } from '@lib/utils/ui-presentation'
 import {
     triggerSelectedCardFade,
     updateSelectedCardHeading,
@@ -276,7 +276,7 @@ export function updateSelectedBusiness(
 
         syncFocusStage(null)
         selectedCardAdapter.updateTraversalUi()
-        document.title = 'Semantic Explorer | MoCo Business Mycelium'
+        updateDocumentMeta(DEFAULT_DOCUMENT_TITLE)
         return
     }
 
