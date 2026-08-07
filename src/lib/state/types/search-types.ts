@@ -160,7 +160,6 @@ export interface SearchResult {
  *   - searchAnchorIndex / searchPreviewIndex: selection/preview hooks
  *   - searchGlowIndices / searchGlowTopIndex / searchGlowActive: visualization state
  *   - searchFocusTransitionToken: search↔focus bridge signal
- *   - isSearching: derived-friendly boolean flag
  *   - currentEmptyQuery: last query that returned zero results
  *   - semanticTrailCue: idle|searching|focusing (the search→trail signal)
  *   - isCompactViewport: UI layout hint for search panel
@@ -180,7 +179,6 @@ export interface SearchAppState {
     searchGlowTopIndex: number | null
     searchGlowActive: boolean
     searchFocusTransitionToken: number
-    isSearching: boolean
     currentEmptyQuery: string | null
     semanticTrailCue: string
     isCompactViewport: boolean

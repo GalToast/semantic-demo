@@ -239,7 +239,6 @@ export function renderSearchResultItems(
         button: document.getElementById('btn-synthesize'),
         mode: 'idle'
     })
-    appState.searchState.isSearching = false
     appState.searchState.searchError = null
 
     if (resultsEl) {
@@ -268,21 +267,6 @@ export function renderSearchResultItems(
 
 // ── Search Lifecycle State ──────────────────────────────────────────────────
 
-export function applySemanticSearchLoadingState(resultsEl: HTMLElement | null): void {
-    appState.searchState.isSearching = true
-    appState.searchState.searchError = null
-
-    if (resultsEl) {
-        resultsEl.classList.add('searching')
-        resultsEl.classList.add('is-searching-skeleton')
-        resultsEl.setAttribute('aria-busy', 'true')
-        resultsEl.scrollTop = 0
-        resultsEl.setAttribute('aria-hidden', resultsEl.children.length > 0 ? 'false' : 'true')
-        resultsEl.hidden = false
-    }
-    clearSearchGlow()
-}
-
 export function applySemanticSearchErrorState(
     resultsEl: HTMLElement | null,
     statusEl: HTMLElement | null,
@@ -300,7 +284,6 @@ export function applySemanticSearchErrorState(
     }
 
     appState.searchState.searchError = errorData
-    appState.searchState.isSearching = false
     // HIGH-1 (search/filter bugsweep 2026-08-07): the error path never cleared
     // searchStatus, so an API failure left 'searching' forever — the compass
     // stayed 'Searching the Field' and waitForSearchSettle polled the full 30s.
@@ -357,7 +340,6 @@ export function clearSearchState(_resultsEl: HTMLElement | null, _statusEl: HTML
 
         // Clear appState
         appState.searchResults = []
-        appState.searchState.isSearching = false
         appState.searchState.searchError = null
     })
 
@@ -395,19 +377,6 @@ export function clearSearchState(_resultsEl: HTMLElement | null, _statusEl: HTML
 
 // ── Canonical Bridges and Stubs ─────────────────────────────────────────────
 
-export function beginSemanticSearchUiState(
-    resultsEl: HTMLElement | null,
-    statusEl: HTMLElement | null,
-    trimmedQuery: string
-): void {
-    applySemanticSearchLoadingState(resultsEl)
-    if (statusEl) {
-        statusEl.textContent = `Searching for businesses related to "${trimmedQuery}"...`
-        statusEl.hidden = false
-    }
-    updateSearchTrailCue({ stage: 'query' })
-}
-
 export function applySemanticSearchDegradedState(
     resultsEl: HTMLElement | null,
     statusEl: HTMLElement | null,
@@ -424,7 +393,6 @@ export function applyEmptySemanticSearchState(
 ): void {
     appState.searchResults = []
     appState.searchState.searchError = null
-    appState.searchState.isSearching = false
     if (resultsEl) {
         resultsEl.classList.remove('searching')
         resultsEl.classList.remove('is-searching-skeleton')

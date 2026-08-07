@@ -88,7 +88,6 @@ export class AppState {
         summaryCardTypeToken: 0,
         currentSearchSummary: null,
         semanticTrailCue: 'idle',
-        isSearching: false,
         searchError: null,
         searchVisibleCount: 5
     })

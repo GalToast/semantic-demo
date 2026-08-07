@@ -57,7 +57,6 @@ export const DEFAULT_SEARCH_STATE: SearchAppState = {
     searchGlowTopIndex: null,
     searchGlowActive: false,
     searchFocusTransitionToken: 0,
-    isSearching: false,
     currentEmptyQuery: null,
     semanticTrailCue: 'idle',
     isCompactViewport: false,

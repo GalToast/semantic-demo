@@ -59,7 +59,6 @@ export { setActiveSearchResultRow } from './result-renderer'
 export {
     setSearchPanelState,
     renderSearchResultItems,
-    beginSemanticSearchUiState,
     applySemanticSearchDegradedState,
     finishSemanticSearchSuccessState,
     applyEmptySemanticSearchState,

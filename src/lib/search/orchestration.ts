@@ -429,7 +429,6 @@ export { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetTogg
 export {
     setSearchPanelState,
     renderSearchResultItems,
-    beginSemanticSearchUiState,
     applySemanticSearchDegradedState,
     finishSemanticSearchSuccessState,
     applyEmptySemanticSearchState,

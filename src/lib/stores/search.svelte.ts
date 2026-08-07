@@ -332,7 +332,6 @@ export function setSearchError(query: string, error: unknown, type: SearchErrorT
             type,
             message: error instanceof Error ? error.message : String(error || 'Search failed')
         }
-        appState.searchState.isSearching = false
         updateSearchTrailCue({ stage: 'empty' })
     })
 }
@@ -457,7 +456,6 @@ export function clearSearch(): void {
         appState.searchState.currentSearchSummary = null
         appState.searchState.searchStatus = 'idle'
         appState.searchState.searchError = null
-        appState.searchState.isSearching = false
         appState.searchState.searchAnchorIndex = null
         appState.searchState.searchPreviewIndex = null
         appState.searchState.searchGlowIndices = new Set()
@@ -483,7 +481,6 @@ export function clearSearchResults(): void {
         }
         appState.searchState.searchStatus = 'idle'
         appState.searchState.searchError = null
-        appState.searchState.isSearching = false
         appState.searchState.searchAnchorIndex = null
         appState.searchState.searchPreviewIndex = null
     })
@@ -563,7 +560,6 @@ export function setSearchResults(results: SearchResult[]): void {
         appState.searchResults = results
         appState.searchState.searchStatus = 'results'
         appState.searchState.searchError = null
-        appState.searchState.isSearching = false
         updateSearchTrailCue(results.length > 0 ? { stage: 'explore' } : { stage: 'empty' })
     })
 }
