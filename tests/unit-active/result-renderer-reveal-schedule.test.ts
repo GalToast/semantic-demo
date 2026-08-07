@@ -15,14 +15,17 @@
 import { describe, it, expect, vi } from 'vitest'
 
 describe('result-renderer compact reveal — real typed timer scheduling', () => {
-    it('registers real setTimeout timer ids and fires the reveal (typed path)', async () => {
-        // Heavy-import guard: importing the live appState (Svelte module graph)
-        // in a fresh jsdom file can stall past the 20s default (repo precedent:
-        // heavy-import test timeouts raised to 90-120s).
-        // IMPORTS COMPLETE BEFORE useFakeTimers — fake timers can stall
-        // dynamic import() resolution in vitest, freezing the test.
-        const { appState } = await import('@lib/state/app.svelte')
-        const resultRenderer = await import('@lib/search/result-renderer')
+    it(
+        'registers real setTimeout timer ids and fires the reveal (typed path)',
+        async () => {
+            // Heavy-import guard: importing the live appState + result-renderer
+            // graph can stall past the 20s default under suite load (repo
+            // precedent: heavy-import tests bump the timeout — w11-t7 mocks the
+            // heavy graph; here the graph is the subject, so raise the budget.
+            // IMPORTS COMPLETE BEFORE useFakeTimers — fake timers can stall
+            // dynamic import() resolution in vitest, freezing the test.
+            const { appState } = await import('@lib/state/app.svelte')
+            const resultRenderer = await import('@lib/search/result-renderer')
 
         // jsdom does not expose the CSS.escape API used by the reveal row
         // lookup (result-renderer.ts:134). Provide the standard escape shim
@@ -116,6 +119,8 @@ describe('result-renderer compact reveal — real typed timer scheduling', () =>
             resultsEl.remove()
             infoPanel.remove()
             if (origScrollTo) infoPanel.scrollTo = origScrollTo
-        }
-    })
+            }
+        },
+        120000
+    )
 })
