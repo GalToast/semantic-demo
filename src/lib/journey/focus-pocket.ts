@@ -67,7 +67,9 @@ type FocusPocketMetaShape = Record<string, unknown> | null
 
 export function getFocusPocketIndices(): number[] {
     const indices = appState.navState.focusPocketIndices
-    return Array.isArray(indices) ? indices : []
+    // Defensive copy: callers must not mutate the live state array behind the
+    // setter/mirror funnel (single-writer discipline).
+    return Array.isArray(indices) ? [...indices] : []
 }
 
 export function setFocusPocketIndices(indices: number[]): void {
@@ -78,7 +80,9 @@ export function setFocusPocketIndices(indices: number[]): void {
 }
 
 export function getFocusPocketRoleByIndex(): Map<number, string> {
-    return appState.navState.focusPocketRoleByIndex ?? new Map()
+    // Defensive copy: callers must not mutate the live role map behind the
+    // setter/mirror funnel (single-writer discipline).
+    return new Map(appState.navState.focusPocketRoleByIndex ?? new Map())
 }
 
 export function setFocusPocketRoleByIndex(map: Map<number, string>): void {
@@ -99,7 +103,9 @@ export function clearFocusPocketRoleByIndex(): void {
 }
 
 export function getFocusPocketMotionByIndex(): Map<number, PocketMotion> {
-    return appState.focusState.pocketMotionByIndex ?? new Map()
+    // Defensive copy: callers must not mutate the live motion map behind the
+    // setter/mirror funnel (single-writer discipline).
+    return new Map(appState.focusState.pocketMotionByIndex ?? new Map())
 }
 
 export function setFocusPocketMotionByIndex(map: Map<number, PocketMotionWithFrame>): void {

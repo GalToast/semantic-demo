@@ -29,14 +29,6 @@ import { getPanelSurface, prefersReducedMotion } from '@lib/utils/environment';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface TriviaBlocklist {
-    readonly exact: readonly string[];
-    readonly equals: readonly string[];
-    readonly prefixes: readonly string[];
-    readonly substrings: readonly string[];
-    readonly minLength: number;
-}
-
 // ── Renderers ──────────────────────────────────────────────────────────────
 
 export function renderSignalBadges(point: Point | null): string {
@@ -202,115 +194,9 @@ export function syncSelectedCardContentVariant(point: Point | null = null, els?:
 }
 
 /**
- * Filter business trivia, suppressing placeholders and internal metadata.
+ * Trivia surface (TRIVIA_BLOCKLIST, rejectsTrivia, getInterestingBusinessNote).
+ * Canonical implementation lives in @lib/ui/renderers (Bug Sweep 33
+ * enrichment-first). Re-exported here so the stage-renderer module surface
+ * stays stable for existing importers/tests.
  */
-export const TRIVIA_BLOCKLIST: TriviaBlocklist = Object.freeze({
-    exact: Object.freeze([
-        'Pending research.',
-        'Pending research'
-    ]),
-    equals: Object.freeze([
-        'Has both email and phone.',
-        'Website only — no direct contact on file.'
-    ]),
-    prefixes: Object.freeze([
-        'no ',
-        'none',
-        'no verifiable',
-        'unable to',
-        'could not'
-    ]),
-    substrings: Object.freeze([
-        'SearXNG',
-        'Insufficient evidence',
-        'exact entity name',
-        'verified official',
-        'entity confirmed',
-        'Registry-only',
-        'FMCSA carrier',
-        'USDOT',
-        'SAFER snapshot',
-        'Texas Comptroller',
-        'Research check',
-        'MapQuest',
-        'GoDaddy',
-        'WordPress site on Cloudflare',
-        'Hotel page is active',
-        'Local dirt track',
-        'carrier records',
-        'carrier lookup',
-        'via carrier',
-        'via lookup',
-        'contact found',
-        'Verified phone',
-        'Verified email',
-        'formerly ',
-        'formerly known',
-        'renamed',
-        'rebranded as',
-        'retail chain location',
-        'brand location',
-        'chain location',
-        'operating as',
-        'operated as',
-        'dba',
-        'also known as',
-        'doing business as',
-        'Disqualified',
-        'SKIP',
-        'DO NOT',
-        'REDACTED',
-        ' Omits ',
-        'NAICS',
-        '**Industry**',
-        '**Service**',
-        'SIC ',
-        'SIC:',
-        'New lead profile',
-        'directory:',
-        'from directory',
-        'created from'
-    ]),
-    minLength: 20
-});
-
-export function rejectsTrivia(trivia: string = ''): boolean {
-    const trimmed = String(trivia || '').trim();
-    if (!trimmed) return true;
-    if (TRIVIA_BLOCKLIST.exact.includes(trimmed)) return true;
-    if (TRIVIA_BLOCKLIST.equals.includes(trimmed)) return true;
-    if (trimmed.length < TRIVIA_BLOCKLIST.minLength) return true;
-    const lower = trimmed.toLowerCase();
-    if (TRIVIA_BLOCKLIST.prefixes.some((prefix) => lower.startsWith(prefix))) return true;
-    return TRIVIA_BLOCKLIST.substrings.some((substring) => trimmed.includes(substring));
-}
-
-export function getInterestingBusinessNote(point: Point | null): string | null {
-    if (!point) return null;
-    // Bug Sweep 33: prefer the lead's own one-liner from the enrichment
-    // (snapshot > business_overview > observations) over the database
-    // trivia field, which is often database noise.
-    const enrichment = appState.leadEnrichment;
-    if (enrichment && point.lead_id !== undefined) {
-        const enr = enrichment[String(point.lead_id)] as Record<string, unknown> | undefined;
-        if (enr) {
-            const candidates = [
-                enr.snapshot as string | undefined,
-                enr.business_overview_extended as string | undefined,
-                enr.business_overview as string | undefined,
-                enr.observations as string | undefined
-            ];
-            for (const c of candidates) {
-                if (c && !rejectsTrivia(c)) return c.trim();
-            }
-        }
-    }
-    if (point.trivia) {
-        const t = point.trivia.trim();
-        if (rejectsTrivia(t)) return null;
-        return t;
-    }
-    if (point.email && point.phone) return null;
-    if (point.website && !point.email && !point.phone) return null;
-    return null;
-}
+export { TRIVIA_BLOCKLIST, rejectsTrivia, getInterestingBusinessNote } from '@lib/ui/renderers'

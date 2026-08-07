@@ -83,6 +83,25 @@ export function rejectsTrivia(trivia = ''): boolean {
 export function getInterestingBusinessNote(point: BusinessRecord | null): string | null {
     if (!point) return null
 
+    // Bug Sweep 33: prefer the lead's own one-liner from the enrichment
+    // (snapshot > business_overview > observations) over the database
+    // trivia field, which is often database noise.
+    const enrichment = appState.leadEnrichment
+    if (enrichment && point.lead_id !== undefined) {
+        const enr = enrichment[String(point.lead_id)] as Record<string, unknown> | undefined
+        if (enr) {
+            const candidates = [
+                enr.snapshot as string | undefined,
+                enr.business_overview_extended as string | undefined,
+                enr.business_overview as string | undefined,
+                enr.observations as string | undefined
+            ]
+            for (const c of candidates) {
+                if (c && !rejectsTrivia(c)) return c.trim()
+            }
+        }
+    }
+
     // Use trivia field from the record
     if (point.trivia) {
         const t = point.trivia.trim()

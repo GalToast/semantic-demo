@@ -95,7 +95,15 @@ export function getNeighborhoodPersonality(index: number): NeighborhoodPersonali
         return personality
     }
 
-    const countInRecent = (type: string): number => recent.filter((t) => t === type).length
+    // Count only CONSECUTIVE same-type repetitions at the tail of the recent
+    // window. A type appearing earlier with others between is NOT a repeat run
+    // and must not be skipped — the guard caps consecutive monotony, not
+    // non-consecutive variety.
+    const consecutiveRecentRun = (type: string): number => {
+        let run = 0
+        for (let i = recent.length - 1; i >= 0 && recent[i] === type; i--) run++
+        return run
+    }
 
     const candidates = [
         {
@@ -136,16 +144,9 @@ export function getNeighborhoodPersonality(index: number): NeighborhoodPersonali
 
     for (const cand of candidates) {
         if (!cand.condition) continue
-        const count = countInRecent(cand.type)
+        const run = consecutiveRecentRun(cand.type)
         // Cap at 3 consecutive same-type personalities to prevent visual monotony.
-        if (count >= 3) continue
-        const weight = count === 2 ? 0.4 : count === 1 ? 0.15 : 1.0
-        if (weight < 1.0) {
-            const standardWeight = 0.5 * (1 - weight)
-            if (standardWeight > 0 && personality.type === 'STANDARD') {
-                continue
-            }
-        }
+        if (run >= 3) continue
         personality.type = cand.type
         personality.cameraDuration = cand.cameraDuration
         personality.cameraArc = cand.cameraArc || 'standard'
