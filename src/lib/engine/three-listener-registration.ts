@@ -17,6 +17,7 @@ import { CONFIG } from '@lib/engine/config'
 import { engineState, type ThreeEngineState } from './three-engine-state'
 import { webglContext, type WebGLContextState } from '@lib/engine/webgl-context'
 import { pauseRenderLoopTimers } from './three-engine-timers'
+import { cancelRouteAnimations } from '@lib/engine/camera-choreography/routes'
 import { debugError } from '@lib/utils/debug'
 import type { WebGLRenderer } from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -144,6 +145,10 @@ export function registerContextListeners(
 
     // C10 — OrbitControls start/end
     registry.listener(controls as unknown as EventTarget, 'start', () => {
+        // P1-3 (fleet 0731 sweep 2026-08-07): a user drag/zoom must cancel an
+        // in-flight route tween (search-corridor / centroid), otherwise the tween's
+        // per-frame writes fight the gesture for its full 1.6s duration.
+        cancelRouteAnimations()
         sinks.engineState.cameraControls?.releaseFocusCameraAssist('user-control')
         sinks.engineState.cameraControls?.noteSceneInteraction(sinks.cameraAssistMs)
     })
