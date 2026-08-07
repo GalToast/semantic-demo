@@ -208,14 +208,19 @@ describe('computeParityAttributes', () => {
         }
     })
 
-    it('semantic-dive reports transitioning when trailDepth >= 2 but no active flag', () => {
+    it('semantic-dive reports inactive when trailDepth >= 2 without the armed deadline (77f4d771 single-writer)', () => {
         navStore.update((s) => ({ ...s, focusedIndex: 42 }))
         focusStore.update((s) => ({ ...s, semanticDiveMode: false }))
         journeyStore.update((s) => ({ ...s, trailDepth: 2 }))
         try {
             const stores = snapshotStores()
             const map = computeParityAttributes()
-            expect(map.semanticDive).toBe('transitioning')
+            // 77f4d771 re-scoped 'transitioning' to the _semanticDiveTransitionDeadline
+            // window (single writer) — this sibling twin updated in lockstep
+            // (AGENTS.md symmetric-gate rule). Without an armed window a bare deep
+            // trail shows 'inactive'; the armed-entrance maps to 'transitioning'
+            // (covered by parity-attrs-derivation.test.ts).
+            expect(map.semanticDive).toBe('inactive')
             expect(map.trailDepth).toBe('2')
             expect(map.trailState).toBe('active')
         } finally {

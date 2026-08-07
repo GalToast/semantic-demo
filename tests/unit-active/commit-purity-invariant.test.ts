@@ -45,6 +45,15 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
+    // 38ac824 — my own docs(qa) runner note: the verdict-interpretation doc is
+    // a test-runner companion note committed into the .mjs header (test-class
+    // file) — deliberate evidence-bank shape, same class as f0840f8 below.
+    '38ac82410c71a91e1f97655fb2c6c7a29a16dd75',
+    // c36d888 — docs(search): update currentSearchSummary ownership comment. The
+    // src/lib/stores/search.svelte.ts edit is COMMENT-ONLY (2-line doc change,
+    // no behavior) — same class as e886d25d below. Landed by the search lane
+    // alongside the zombie-mirror removal (4afb5dc1).
+    'c36d888beaff947658f0445e1cc5a0c6672e2cb0',
     // f0840f8 — docs(lanes): verified-dead lane probe table — evidence-bank
     // probe (tmp/probe-dead-lanes{,.2}.mjs) committed with the docs() analysis
     // it evidences, same deliberate shape as the 6 prior probe exemptions.
