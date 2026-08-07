@@ -349,10 +349,13 @@ export function executeJourneyCompassAction(action: string): void {
             // SET_SURFACE + URL sync are now redundant but harmless — they
             // correctly track previousSurface before ENTER_INSIDE overwrites
             // mode/surface to the same values.
+            // W12-L4: write journey phase BEFORE journeySetTrailDepth so
+            // withJourneyNotify inside trailDepth mirrors the NEW phase
+            // (not a stale one). Safe regardless of caller ordering.
+            setJourneyPhase('inside')
             journeySetTrailDepth(2)
             setSemanticDiveMode(true)
             writeNavStateMirror({ mode: 'inside', surface: 'inside', trailDepth: 2 })
-            setJourneyPhase('inside')
             // Sync URL so the browser bar reflects the dive state; mirror the
             // same reason tag the Header chip uses so URL-state consumers can
             // distinguish mode-switch pushes from search/filter/anchor pushes.

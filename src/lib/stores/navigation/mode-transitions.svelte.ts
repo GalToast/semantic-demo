@@ -98,6 +98,9 @@ export function setSurface(surface: PanelSurface): void {
                   : surface === 'idle'
                     ? 'overview'
                     : cur.mode
+    // L2 (w12 journey bugsweep): for plain 'map', the mode stays at cur.mode
+    // until the caller's setJourneyPhase('overview') corrects it same-tick.
+    // The fallthrough is required for map-family variants ('map-trail' etc.).
     // Map-family surfaces ('map', 'map-trail', 'map-focus', 'map-focus-search')
     // carry the map view; every other surface is a galaxy-panel surface. The
     // prefix check fixes the latent bug where map-prefixed surfaces silently
@@ -180,7 +183,13 @@ export function dispatchNavTransition(
                           ? 'trail'
                           : surface === 'idle'
                             ? 'overview'
-                            : (current.mode as NavMode)
+                            // L2 (w12 journey bugsweep): plain 'map' surface falls through to
+            // cur.mode here, but all three callers (chip/keyboard/rail) follow up
+            // with setJourneyPhase('overview') in the same tick, so the intermediate
+            // write is dead-but-harmless. The fallthrough is intentionally preserved
+            // because map-family surfaces ('map-trail', 'map-focus', etc.) depend on
+            // it to change the surface without forcing a mode switch.
+            : (current.mode as NavMode)
             writeNavStateMirror({
                 previousSurface: current.surface,
                 surface: surface as PanelSurface,
