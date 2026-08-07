@@ -5510,7 +5510,19 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         test.setTimeout(60000)
         await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
         await page.setViewportSize({ width: 936, height: 800 })
-        await pollFor(page, () => !!document.querySelector('.proximity-legend-wrapper'), 30000, 100)
+        // Wait for the SETTLED state, not just wrapper existence: the deep-link
+        // focus transition starts on the idle surface (legend expanded), then
+        // flips to focus-search (legend collapsed). Polling for existence alone
+        // races that transition and flakes under machine load.
+        await pollFor(
+            page,
+            () => {
+                const w = document.querySelector('.proximity-legend-wrapper')
+                return !!w && w.classList.contains('collapsed')
+            },
+            30000,
+            100
+        )
         const st = await page.evaluate(() => {
             const w = document.querySelector('.proximity-legend-wrapper')
             return w ? { collapsed: w.classList.contains('collapsed'), vis: getComputedStyle(w).visibility } : null
