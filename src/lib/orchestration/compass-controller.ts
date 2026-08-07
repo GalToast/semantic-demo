@@ -17,6 +17,7 @@ import {
 } from '@lib/stores/navigation.svelte.ts'
 import { searchStore } from '@lib/stores/search.svelte'
 import { appState } from '@lib/state/app.svelte'
+import { debugWarn } from '@lib/utils/debug'
 import {
     JOURNEY_COMPASS_PHASE_ORDER,
     JOURNEY_CONFIG,
@@ -362,8 +363,10 @@ export function executeJourneyCompassAction(action: string): void {
             if (typeof window !== 'undefined') {
                 try {
                     updateUrlState({}, { reason: 'mode-switch' })
-                } catch (_e) {
-                    // URL sync is best-effort; nav state is already committed
+                } catch (error) {
+                    // URL sync is best-effort; nav state is already committed.
+                    // Log (not swallow) so failures are visible in dev mode.
+                    debugWarn('[compass-controller] dive URL sync failed:', error)
                 }
             }
             // Arm the dive-transition transient: isTransitioning (semantic-dive.ts)
