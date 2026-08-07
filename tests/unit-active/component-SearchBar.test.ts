@@ -11,7 +11,7 @@
  *  7. When panelContained=true prop, container gets .info-panel-contained class
  *  8. Container does not have .searching class by default
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, waitFor } from '@testing-library/svelte'
 import SearchBar from '../../src/components/SearchBar.svelte'
 import { syncTestStateFromBody } from '../../src/lib/stores/test-compat.svelte'
@@ -81,24 +81,29 @@ describe('SearchBar component', () => {
         expect(search!.classList.contains('searching')).toBe(false)
     })
 
-    it('mock-banner is event-driven, not sessionStorage polling (timer-sprawl regression)', async () => {
-        // Source-level regression: the previous implementation used a 750ms
-        // setInterval to poll sessionStorage['api_unreachable']. That was
-        // timer sprawl — a forever-running interval just to flip one boolean.
-        // W47-E/M10: now reacts to SEARCH_MOCK_FALLBACK (genuine 20-row mock)
-        // / SEARCH_SUCCESS via event bus — SEARCH_DEGRADED (8406 local-index)
-        // does NOT trip the banner.
-        const { readFileSync } = await import('fs')
-        const { resolve } = await import('path')
-        const source = readFileSync(resolve(__dirname, '../../src/components/SearchBar.svelte'), 'utf-8')
-        // Strip Svelte comments and JS comments so doc references don't trip the check
-        const stripped = source.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\/[^\n]*/g, '')
-        expect(stripped).not.toMatch(/setInterval\(/)
-        expect(source).toMatch(/EVENTS\.SEARCH_MOCK_FALLBACK/)
-        expect(source).toMatch(/EVENTS\.SEARCH_SUCCESS/)
-        // Banner copy must remain (this is a refactor, not a removal)
-        expect(source).toMatch(/mock-banner/)
-        expect(source).toMatch(/Demo data/)
+    it('mock-banner is event-driven, not timer-polling (behavioral regression, M10)', async () => {
+        // CONVERTED 2026-08-07 from a source-inspection readFileSync-regex
+        // assert into a real timer-behavior check. The banner must react to
+        // event-bus publishes with ZERO polling timers running.
+        vi.useFakeTimers()
+        const { publish, EVENTS } = await import('@lib/orchestration/event-bus')
+        const { container } = render(SearchBar)
+        await vi.runAllTimersAsync()
+        expect(container.querySelector('[data-testid="mock-banner"]')).toBeNull()
+        expect(vi.getTimerCount()).toBe(0) // no idle polling interval
+
+        publish(EVENTS.SEARCH_MOCK_FALLBACK, { query: 'coffee', count: 20 })
+        await vi.runAllTimersAsync()
+        expect(container.querySelector('[data-testid="mock-banner"]')).toBeTruthy()
+        // After the banner shows, an event-driven impl must not leave a timer
+        // running (a polling impl would — that was the original bug).
+        expect(vi.getTimerCount()).toBe(0)
+
+        publish(EVENTS.SEARCH_SUCCESS, { query: 'coffee' })
+        await vi.runAllTimersAsync()
+        expect(container.querySelector('[data-testid="mock-banner"]')).toBeNull()
+        expect(vi.getTimerCount()).toBe(0)
+        vi.useRealTimers()
     })
 
     it('publishing SEARCH_MOCK_FALLBACK shows the mock-banner, SEARCH_SUCCESS hides it (M10)', async () => {
