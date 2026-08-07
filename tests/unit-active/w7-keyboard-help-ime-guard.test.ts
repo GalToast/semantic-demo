@@ -8,7 +8,12 @@
  *     comment block: "Replay must NOT stack demos"). Fix: swap to `console.warn`.
  *   - F3: IME-composition guard (`if (e.isComposing) return`) was added to
  *     `global-shortcuts.ts:65` by commit 6ad96301 but never mirrored into `keyboard-help.ts`'s
- *     `handleGalaxyKeydown` + `_onPanelKeydown` handlers. Fix: add the guard symmetrically.
+ *     `_onPanelKeydown` handler. Fix: add the guard symmetrically.
+ *
+ * Post-f5b4c9d8: the `handleGalaxyKeydown` handler was deleted (dead code — key dispatch
+ * lives in `setupGlobalShortcuts`/`handleCanvasKeydown`). This test now pins the IME guard
+ * parity between the two LIVE handlers: `handleGlobalKeydown` in `global-shortcuts.ts`
+ * (global dispatch) + `_onPanelKeydown` in `keyboard-help.ts` (hint-panel).
  *
  * Findings detailed in:
  *   tmp/bugsweep-2026-07-24/worker7-ks-keyboard-help-report.md (the F1 + F3 findings).
@@ -27,15 +32,20 @@ import { resolve } from 'node:path'
 
 const HELP_PATH = resolve(import.meta.dirname, '../../src/lib/keyboard/keyboard-help.ts')
 const src = readFileSync(HELP_PATH, 'utf-8')
+const GLOBAL_SHORTCUTS_PATH = resolve(import.meta.dirname, '../../src/lib/keyboard/global-shortcuts.ts')
+const globalShortcutsSrc = readFileSync(GLOBAL_SHORTCUTS_PATH, 'utf-8')
 
-describe('W7: keyboard-help IME-composition guard parity with global-shortcuts.ts (F3 fix)', () => {
-    it('handleGalaxyKeydown has `if (e.isComposing) return` early-return guard', () => {
-        // The guard must be present in handleGalaxyKeydown — symmetric with global-shortcuts.ts:65
-        // introduced by commit 6ad96301 (which only added the guard to global-shortcuts.ts).
-        // Match the export function body — keep the slice narrow so the guard assertion is scoped.
-        const handleFnMatch = src.match(/export\s+function\s+handleGalaxyKeydown[\s\S]{0,2000}?\n\}/)
-        expect(handleFnMatch).not.toBeNull()
-        expect(handleFnMatch![0]).toMatch(/if\s*\(\s*e\.isComposing\s*\)\s*return/)
+describe('W7: keyboard IME-composition guard parity across the live handlers (F3 fix)', () => {
+    it('handleGlobalKeydown (global-shortcuts.ts) has `if (e.isComposing) return` early-return guard', () => {
+        // The guard must be present in the live global dispatcher `handleGlobalKeydown`
+        // inside setupGlobalShortcuts (introduced by commit 6ad96301). f5b4c9d8 deleted
+        // the legacy `handleGalaxyKeydown` — this pins the guard on the surviving handler.
+        // The dispatch body is large, so anchor with indexOf + slice rather than a
+        // close-brace regex; the guard sits near the top of the handler.
+        const fnIdx = globalShortcutsSrc.indexOf('function handleGlobalKeydown')
+        expect(fnIdx).toBeGreaterThan(-1)
+        const fnHead = globalShortcutsSrc.slice(fnIdx, fnIdx + 5000)
+        expect(fnHead).toMatch(/if\s*\(\s*e\.isComposing\s*\)\s*return/)
     })
 
     it('_onPanelKeydown has `if (e.isComposing) return` early-return guard', () => {

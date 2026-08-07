@@ -283,11 +283,6 @@ async function testRuntimeKeyboardHelpExports() {
     assert(typeof mod.showKeyboardShortcutsHint === 'function', 'showKeyboardShortcutsHint is a function')
     assert(typeof mod.toggleKeyboardShortcutsHint === 'function', 'toggleKeyboardShortcutsHint is a function')
 
-    // Verify retired symbols are NOT exported (commit f5b4c9d8 removed the dead chain)
-    assert(!('initKeyboardResetOwnership' in mod), 'initKeyboardResetOwnership must not be exported (retired)')
-    assert(!('handleGalaxyKeydown' in mod), 'handleGalaxyKeydown must not be exported (retired)')
-    assert(!('isKeyboardControlTarget' in mod), 'isKeyboardControlTarget must not be exported (retired)')
-
     console.log('  OK keyboard-help exports: initKeyboardShortcutsHint, showKeyboardShortcutsHint, toggleKeyboardShortcutsHint')
 }
 

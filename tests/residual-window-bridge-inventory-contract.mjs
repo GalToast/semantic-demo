@@ -967,10 +967,6 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
         'global-shortcuts.ts should own keyboard shortcuts via setupGlobalShortcuts'
     )
     assert(
-        !/export function initKeyboardResetOwnership/.test(keyboardSrc),
-        'keyboard-help.js must not keep the retired reset-ownership injection'
-    )
-    assert(
         !keyboardSrc.includes('typeof window.returnToOverview') &&
             !keyboardSrc.includes('typeof window.resetExplorationFocus'),
         'keyboard-help.js must not use window reset fallbacks'

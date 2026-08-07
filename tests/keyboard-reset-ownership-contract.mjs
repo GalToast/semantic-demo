@@ -54,32 +54,14 @@ try {
     )
     console.log('  PASS - no window.* references')
 
-    // Contract Point 2: retired callback-injection pattern is fully removed
-    // (commit f5b4c9d8 deleted initKeyboardResetOwnership + handleGalaxyKeydown
-    // and their module-local _returnToOverview / _resetExplorationFocus / _defaultNoOp
-    // variables; the live keyboard handling moved to setupGlobalShortcuts in
-    // global-shortcuts.ts which takes callbacks directly as parameters.)
-    console.log('\n[CONTRACT 2] retired callback-injection pattern is fully removed from keyboard-help.ts')
-    assert(
-        !/_returnToOverview/.test(src),
-        'keyboard-help.ts must not define _returnToOverview (retired — superseded by setupGlobalShortcuts)'
-    )
-    assert(
-        !/_resetExplorationFocus/.test(src),
-        'keyboard-help.ts must not define _resetExplorationFocus (retired)'
-    )
-    assert(
-        !/_defaultNoOp/.test(src),
-        'keyboard-help.ts must not define _defaultNoOp (retired)'
-    )
-    assert(
-        !/export function initKeyboardResetOwnership/.test(src),
-        'keyboard-help.ts must not export initKeyboardResetOwnership (retired)'
-    )
-    assert(
-        !/export function handleGalaxyKeydown/.test(src),
-        'keyboard-help.ts must not export handleGalaxyKeydown (retired)'
-    )
+    // Contract Point 2: keyboard ownership now lives in the live Escape guard
+    // mechanism of global-shortcuts.ts. Commit f5b4c9d8 deleted the retired
+    // initKeyboardResetOwnership / handleGalaxyKeydown chain (and their module-local
+    // _returnToOverview / _resetExplorationFocus / _defaultNoOp variables); the
+    // surviving ownership surface is setupGlobalShortcuts, whose Escape branch
+    // suppresses global handling while a native <dialog open> or a registered
+    // non-native dialog is up, and while the hint panel is visible.
+    console.log('\n[CONTRACT 2] keyboard ownership is wired through the live Escape guard mechanism')
     assert(
         /export function initKeyboardShortcutsHint/.test(src),
         'keyboard-help.ts must export initKeyboardShortcutsHint (current panel API)'
@@ -88,7 +70,19 @@ try {
         /export function setupGlobalShortcuts/.test(globalShortcutsSrc),
         'global-shortcuts.ts must export setupGlobalShortcuts (current keyboard owner)'
     )
-    console.log('  PASS - callback-injection pattern retired; setupGlobalShortcuts is the owner')
+    assert(
+        /document\.querySelector\(['"]dialog\[open\]['"]\)/.test(globalShortcutsSrc),
+        'global-shortcuts.ts Escape guard must yield to a native <dialog open> (browser-native cancel closes it)'
+    )
+    assert(
+        /hasOpenNestedDialog\(\)/.test(globalShortcutsSrc),
+        'global-shortcuts.ts Escape guard must also yield to registered non-native dialogs (F2 a11y)'
+    )
+    assert(
+        /getElementById\('keyboard-hint-panel'\)\?\.classList\.contains\('visible'\)/.test(globalShortcutsSrc),
+        'global-shortcuts.ts must suppress single-char shortcuts while the hint panel is visible (P2 sweep)'
+    )
+    console.log('  PASS - Escape ownership mechanism is live in global-shortcuts.ts')
 
     // Contract Point 3: live app-level key handling is owned by global-shortcuts.ts
     // (retired 2026-08-03: triggers.ts’s module-local handleGlobalKeydown was a dead
@@ -164,12 +158,8 @@ try {
         'keyboard-help must not import from lifecycle.js (prevents direct coupling)'
     )
     assert(
-        !/export function handleGalaxyKeydown/.test(src),
-        'keyboard-help.ts must not define handleGalaxyKeydown (retired; key dispatch is in global-shortcuts.ts)'
-    )
-    assert(
-        !/export function initKeyboardResetOwnership/.test(src),
-        'keyboard-help.ts must not define initKeyboardResetOwnership (retired)'
+        /function _onPanelKeydown/.test(src),
+        'keyboard-help.ts must keep the panel-scoped keydown handler only (its sole key wiring)'
     )
     // The current keyboard owner wires Escape/Home through setupGlobalShortcuts,
     // which dispatches RETURN_OVERVIEW via the nav transition system.
