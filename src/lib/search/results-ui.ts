@@ -226,7 +226,6 @@ export function renderSearchResultItems(
 
     // Push to appState
     appState.searchResults = dedupedResults
-    appState.searchState.searchVisibleCount = visibleCount
     // NOTE: this is the live search-path summary field; the canonical
     // currentSearchSummary lives in appState.searchState (written by
     // setSearchSummary / setSearchResults). The legacy appState.searchSummary
@@ -356,7 +355,6 @@ export function clearSearchState(_resultsEl: HTMLElement | null, _statusEl: HTML
         appState.searchResults = []
         appState.searchState.isSearching = false
         appState.searchState.searchError = null
-        appState.searchState.searchVisibleCount = 10
     })
 
     setSearchPanelState({ searching: false, focusing: false, resultsRendered: false, degraded: false })
