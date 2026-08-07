@@ -137,7 +137,9 @@ const mockAppState = vi.hoisted(() => ({
 const mockChainFns = vi.hoisted(() => ({
     clearSearch: vi.fn(),
     resetFocus: vi.fn(),
-    resetJourney: vi.fn()
+    resetJourney: vi.fn(),
+    setSemanticDiveMode: vi.fn(),
+    setTrailDepth: vi.fn()
 }))
 
 // Convenience local refs (defined after vi.mock factories via hoisting)
@@ -163,11 +165,13 @@ vi.mock('@lib/stores/search.svelte.ts', () => ({
 }))
 
 vi.mock('@lib/stores/focus.svelte.ts', () => ({
-    resetFocus: mockChainFns.resetFocus
+    resetFocus: mockChainFns.resetFocus,
+    setSemanticDiveMode: mockChainFns.setSemanticDiveMode
 }))
 
 vi.mock('@lib/stores/journey.svelte.ts', () => ({
-    resetJourney: mockChainFns.resetJourney
+    resetJourney: mockChainFns.resetJourney,
+    setTrailDepth: mockChainFns.setTrailDepth
 }))
 
 // ── Import SUT after mocks ───────────────────────────────────────────────────
@@ -326,6 +330,8 @@ function resetAllNavState() {
     mockChainFns.clearSearch.mockClear()
     mockChainFns.resetFocus.mockClear()
     mockChainFns.resetJourney.mockClear()
+    mockChainFns.setSemanticDiveMode.mockClear()
+    mockChainFns.setTrailDepth.mockClear()
     resetNavState()
 }
 
@@ -995,6 +1001,36 @@ describe('navStore — NAV_TRANSITION_ACTIONS dispatch', () => {
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' })
         expect(navStore().surface).toBe('idle')
         expect(navStore().mode).toBe('overview')
+    })
+
+    // ── M2 (w12 journey bugsweep): dive teardown on SET_SURFACE away ──────
+
+    it('M2: SET_SURFACE away from inside tears down dive state', () => {
+        // Simulate being in a dive: surface='inside', mode='inside'
+        writeNavStateMirror({ mode: 'inside', surface: 'inside', trailDepth: 2 })
+        // Transition to search
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
+        // Dive state must be torn down
+        expect(mockChainFns.setSemanticDiveMode).toHaveBeenCalledWith(false)
+        expect(mockChainFns.setTrailDepth).toHaveBeenCalledWith(1)
+    })
+
+    it('M2: SET_SURFACE to inside does NOT tear down dive state', () => {
+        writeNavStateMirror({ mode: 'inside', surface: 'inside', trailDepth: 2 })
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' })
+        // Inside → Inside should be a no-op for dive teardown
+        expect(mockChainFns.setSemanticDiveMode).not.toHaveBeenCalled()
+        expect(mockChainFns.setTrailDepth).not.toHaveBeenCalled()
+    })
+
+    it('M2: SET_SURFACE away from non-inside surface leaves dive state alone (already torn down)', () => {
+        // Start from focus (no dive)
+        writeNavStateMirror({ mode: 'focus', surface: 'focus', trailDepth: 1 })
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
+        // Dive teardown fires (surface !== 'inside') but is idempotent —
+        // verify it's still called (the caller doesn't know dive state)
+        expect(mockChainFns.setSemanticDiveMode).toHaveBeenCalledWith(false)
+        expect(mockChainFns.setTrailDepth).toHaveBeenCalledWith(1)
     })
 
     it('TRAVERSE_NEIGHBOR sets mode=trail and surface=trail', () => {

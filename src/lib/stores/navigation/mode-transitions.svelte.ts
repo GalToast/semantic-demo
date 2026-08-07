@@ -8,8 +8,8 @@
 import type { NavState, NavMode, PanelSurface } from '@lib/types/state'
 import { NAV_TRANSITION_ACTIONS, type NavTransitionAction } from '@lib/navigation-actions'
 import { clearSearch } from '../search.svelte.ts'
-import { resetFocus } from '../focus.svelte.ts'
-import { resetJourney } from '../journey.svelte.ts'
+import { resetFocus, setSemanticDiveMode } from '../focus.svelte.ts'
+import { resetJourney, setTrailDepth } from '../journey.svelte.ts'
 import { _readNavSnapshot, readNavMirrorValue, writeNavStateMirror, resetNavState } from './navigation-state.svelte.ts'
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
@@ -186,6 +186,16 @@ export function dispatchNavTransition(
                 surface: surface as PanelSurface,
                 mode: newMode
             })
+            // M2 (w12 journey bugsweep): dive state (semanticDiveMode=true,
+            // trailDepth=2) must be torn down when navigating AWAY from the
+            // inside surface. Before this fix, clicking Search after diving
+            // left semanticDiveMode=true + trailDepth=2, causing compass-state
+            // to emit phase:'inside' while surface was 'search' and
+            // resolveMapTrailState to see depth>0 → trail active in any mode.
+            if (surface !== 'inside') {
+                setSemanticDiveMode(false)
+                setTrailDepth(1)
+            }
             break
         }
         case NAV_TRANSITION_ACTIONS.TRAVERSE_NEIGHBOR:
