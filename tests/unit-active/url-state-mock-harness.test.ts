@@ -20,6 +20,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 type MockNavStoreState = {
     mode: string
+    surface: string
     currentView: string
     myceliumMode: string
     trailDepthFromExploration: number
@@ -42,6 +43,7 @@ const mockState = vi.hoisted(() => ({
     // Navigation store tracking
     navStoreState: {
         mode: 'overview' as string,
+        surface: 'idle' as string,
         currentView: 'galaxy' as string,
         myceliumMode: 'default' as string,
         trailDepthFromExploration: 0,
@@ -389,6 +391,7 @@ function resetAllMockState(): void {
     // navStore
     mockState.navStoreState = {
         mode: 'overview',
+        surface: 'idle',
         currentView: 'galaxy',
         myceliumMode: 'default',
         trailDepthFromExploration: 0,
@@ -617,6 +620,60 @@ describe('url-state.ts — Svelte 5 mock harness (Phase 6e)', () => {
             mockState.navStoreState.activeStoryPrompt = 'test-story'
             updateUrlState()
             expect(replaceSpy).toHaveBeenCalled()
+        })
+
+        it('encodes non-idle surface as ?surface= URL param (H1 fix)', () => {
+            mockState.navStoreState.surface = 'search'
+            updateUrlState()
+            expect(replaceSpy).toHaveBeenCalled()
+            const callArgs = replaceSpy.mock.calls.at(-1)
+            const url = new URL(String(callArgs?.[2] || ''), window.location.origin)
+            expect(url.searchParams.get('surface')).toBe('search')
+        })
+
+        it('deletes surface from URL when idle (clean overview URL)', () => {
+            window.history.pushState({}, '', '/?surface=search')
+            mockState.navStoreState.surface = 'idle'
+            try {
+                updateUrlState({}, { force: true })
+                const callArgs = replaceSpy.mock.calls.at(-1)
+                const url = new URL(String(callArgs?.[2] || ''), window.location.origin)
+                expect(url.searchParams.has('surface')).toBe(false)
+            } finally {
+                // Restore clean URL
+                window.history.pushState({}, '', '/')
+            }
+        })
+
+        it('encodes anchor from focusedIndex when a business is focused', () => {
+            mockState.navStoreState.focusedIndex = 42
+            updateUrlState({}, { force: true })
+            const callArgs = replaceSpy.mock.calls.at(-1)
+            const url = new URL(String(callArgs?.[2] || ''), window.location.origin)
+            expect(url.searchParams.get('anchor')).toBe('42')
+        })
+
+        it('deletes anchor from URL when focusedIndex is null', () => {
+            window.history.pushState({}, '', '/?anchor=42')
+            mockState.navStoreState.focusedIndex = null
+            try {
+                updateUrlState({}, { force: true })
+                const callArgs = replaceSpy.mock.calls.at(-1)
+                const url = new URL(String(callArgs?.[2] || ''), window.location.origin)
+                expect(url.searchParams.has('anchor')).toBe(false)
+            } finally {
+                window.history.pushState({}, '', '/')
+            }
+        })
+
+        it('surface+anchor round-trip: encode then verify both params present', () => {
+            mockState.navStoreState.surface = 'focus'
+            mockState.navStoreState.focusedIndex = 7
+            updateUrlState({}, { force: true })
+            const callArgs = replaceSpy.mock.calls.at(-1)
+            const url = new URL(String(callArgs?.[2] || ''), window.location.origin)
+            expect(url.searchParams.get('surface')).toBe('focus')
+            expect(url.searchParams.get('anchor')).toBe('7')
         })
 
         it('merges extra params into URL', () => {

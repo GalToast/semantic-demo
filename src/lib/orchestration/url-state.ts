@@ -11,7 +11,7 @@
 import { get, type Unsubscriber } from 'svelte/store'
 import { navStore, bumpUrlStateRestoreToken, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { setJourneyPhase, journeyStore } from '@lib/stores/journey.svelte'
-import type { NavState, ViewName } from '@lib/types/state'
+import type { NavMode, NavState, PanelSurface, ViewName } from '@lib/types/state'
 import { debugWarn } from '@lib/utils/debug'
 import { clearSearch, runSearch, searchStore, setSearchError } from '@lib/stores/search.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
@@ -79,6 +79,7 @@ const URL_STATE_KEYS = [
     'mode',
     'depth',
     'story',
+    'surface',
     'anchor',
     'record',
     'status',
@@ -278,6 +279,27 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         const targetView: ViewName = view === 'map' ? 'map' : 'galaxy'
         writeNavStateMirror({ currentView: targetView, surface: targetView === 'map' ? 'map' : 'idle' })
 
+        // Surface restoration — map ?surface= URL param back to nav mode/surface.
+        // Uses the same surface→mode mapping as setSurface() in mode-transitions.
+        // Runs AFTER view restoration so an explicit ?surface= overrides the
+        // view-derived default (e.g. ?surface=map without ?view=map sets map view).
+        const surfaceParam = params.get('surface')
+        if (surfaceParam) {
+            const _surfaceToMode: Record<string, NavMode> = {
+                search: 'search',
+                focus: 'focus',
+                inside: 'inside',
+                trail: 'trail',
+                idle: 'overview'
+            }
+            const restoredMode = _surfaceToMode[surfaceParam]
+            const isMapFamily = surfaceParam === 'map' || surfaceParam.startsWith('map-')
+            const surfacePatch: Partial<NavState> = { surface: surfaceParam as PanelSurface }
+            if (restoredMode) surfacePatch.mode = restoredMode
+            if (isMapFamily) surfacePatch.currentView = 'map'
+            writeNavStateMirror(surfacePatch)
+        }
+
         // Filter restoration (status, city, website, email, geocoded)
         _restoreFiltersFromParams(params)
 
@@ -438,6 +460,11 @@ export function updateUrlState(
     if ($nav.activeStoryPrompt) params.set('story', $nav.activeStoryPrompt)
     else params.delete('story')
 
+    // Surface (nav mode) — encode so reload/F5 restores the same mode.
+    // Default surface 'idle' is omitted for clean overview URLs.
+    if ($nav.surface && $nav.surface !== 'idle') params.set('surface', $nav.surface)
+    else params.delete('surface')
+
     // Deep-link entry params (record, anchor) must NOT persist across mode
     // switches: leaving them in the URL causes popstate→applyUrlState to
     // re-enter focus mode and revert the switch (mode-lock bug). An active
@@ -447,6 +474,11 @@ export function updateUrlState(
         params.delete('record')
         params.delete('anchor')
     }
+
+    // Anchor (focused business index) — re-encode from navStore after the
+    // preserveDeepLinkParams block may have deleted it. Only persists when
+    // a business is actually focused, so mode-switching away clears it.
+    if ($nav.focusedIndex != null) params.set('anchor', String($nav.focusedIndex))
 
     // Extra params
     for (const [key, value] of Object.entries(extra)) {
