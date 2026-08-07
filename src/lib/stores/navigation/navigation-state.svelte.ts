@@ -430,17 +430,35 @@ export function setMyceliumMode(mode: string, _options?: Record<string, unknown>
     writeNavStateMirror({ myceliumMode: mode })
 }
 
-/** Set focus pocket specific indices. */
+/**
+ * Set focus pocket specific indices.
+ *
+ * @deprecated No-op stub. Real implementation: `@lib/journey/focus-pocket`
+ * (setFocusPocketIndices). Kept exported because navigation-store.test.ts pins
+ * the no-op behavior — do not call from new code.
+ */
 export function setFocusPocketIndices(_indices: number[]): void {
     // Implementation for focus pocket state
 }
 
-/** Clear focus pocket indices. */
+/**
+ * Clear focus pocket indices.
+ *
+ * @deprecated No-op stub. Real implementation: `@lib/journey/focus-pocket`
+ * (clearFocusPocketIndices). Kept exported because navigation-store.test.ts pins
+ * the no-op behavior — do not call from new code.
+ */
 export function clearFocusPocketIndices(): void {
     // Implementation for focus pocket state
 }
 
-/** Set focus pocket metadata. */
+/**
+ * Set focus pocket metadata.
+ *
+ * @deprecated No-op stub. Real implementation: `@lib/journey/focus-pocket`
+ * (setFocusPocketMeta). Kept exported because navigation-store.test.ts pins
+ * the no-op behavior — do not call from new code.
+ */
 export function setFocusPocketMeta(_meta: unknown): void {
     // Implementation for focus pocket state
 }
@@ -476,7 +494,13 @@ export function setFocusPocketMeta(_meta: unknown): void {
     }
 }
 
-/** Clear focus pocket metadata. */
+/**
+ * Clear focus pocket metadata.
+ *
+ * @deprecated No-op stub. Real implementation: `@lib/journey/focus-pocket`
+ * (clearFocusPocketMeta). Kept exported because navigation-store.test.ts pins
+ * the no-op behavior — do not call from new code.
+ */
 export function clearFocusPocketMeta(): void {
     // Implementation for focus pocket state
 }
