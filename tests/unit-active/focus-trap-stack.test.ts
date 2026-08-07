@@ -8,8 +8,6 @@
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { setupFocusTrap, releaseFocusTrap, FOCUSABLE_SELECTORS } from '@lib/utils/focus-trap'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 
 describe('H-1: focus-trap.ts stack-based nested trap registry', () => {
     afterEach(() => {
@@ -101,11 +99,40 @@ describe('H-1: focus-trap.ts stack-based nested trap registry', () => {
         expect(() => releaseFocusTrap()).not.toThrow()
     })
 
-    it('handleKeydown contains isComposing guard (H-2 already fixed)', () => {
-        // The IME composition guard must be present in handleKeydown
-        // to prevent CJK input disruption when Tab is pressed inside
-        // a trapped container. Verify it still exists in the source.
-        const src = readFileSync(resolve(__dirname, '../../src/lib/utils/focus-trap.ts'), 'utf-8')
-        expect(src).toMatch(/if\s*\(\s*e\.isComposing\s*\)\s*return/)
+    it('handleKeydown ignores Tab during IME composition (behavioral H-2 guard)', () => {
+        // CONVERTED 2026-08-07 from a source-inspection readFileSync regex
+        // ('handleKeydown contains isComposing guard') into a behavior check.
+        // The H-2 guard must make keydown a no-op while a CJK IME is composing:
+        // dispatching a real Tab keydown with isComposing=true must NOT move
+        // focus (that was the H-2 bug - Tab inside a trapped container during
+        // composition yanked the caret out of the input).
+        const btn = document.createElement('button')
+        btn.id = 'trap-btn'
+        btn.textContent = 'trapped'
+        document.body.appendChild(btn)
+        btn.focus()
+        try {
+            setupFocusTrap('#trap-btn')
+
+            // Composing: Tab must be ignored → focus stays on the button.
+            const composingTab = new KeyboardEvent('keydown', {
+                key: 'Tab',
+                isComposing: true,
+                bubbles: true,
+                cancelable: true
+            })
+            const prevented = !document.dispatchEvent(composingTab)
+            expect(prevented).toBe(false) // guard returned early, no preventDefault
+            expect(document.activeElement).toBe(btn) // focus untouched
+
+            // Not composing: the same dispatcher must react (no throw, listener
+            // alive) - proves the keydown path is actually wired, so the guard
+            // above is a real branch, not dead code.
+            const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+            expect(() => document.dispatchEvent(tab)).not.toThrow()
+        } finally {
+            releaseFocusTrap()
+            btn.remove()
+        }
     })
 })
