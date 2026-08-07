@@ -236,7 +236,7 @@ export function toggleFilter(_type: 'status', _value: string): void
 export function toggleFilter(_type: 'website' | 'email' | 'geocoded', _value: boolean): void
 export function toggleFilter(_type: 'city', _value: string): void
 export function toggleFilter(type: keyof ActiveFilters, value: string | boolean): void {
-    _filterState.update((current) => {
+    filterState.update((current) => {
         const next = { ...current }
         switch (type) {
             case 'status': {
@@ -285,7 +285,7 @@ export function overwriteActiveFilters(filters: ActiveFilters): void {
 
 /** Set a single filter field without toggle semantics. */
 export function setFilter<K extends keyof ActiveFilters>(type: K, value: ActiveFilters[K]): void {
-    _filterState.update((current) => ({ ...current, [type]: value }))
+    filterState.update((current) => ({ ...current, [type]: value }))
     incrementFilterVersion()
     bumpFilterColorVersion()
 }
