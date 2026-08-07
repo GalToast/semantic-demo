@@ -63,6 +63,7 @@ class Vec3 {
     }
 }
 import { cleanOptionalValue, escapeHtml } from './dom-formatters'
+import { seededUnit } from '@lib/utils/seeded-random'
 import type { ActiveFilters } from '@lib/types/state'
 
 export interface ScatterOffset {
@@ -195,11 +196,6 @@ export function computeOverviewScatterOffsets(
         { length: sourcePoints.length },
         (): ScatterOffset => ({ x: 0, y: 0, z: 0 })
     )
-
-    const seededUnit = (index: number, salt: number = 0): number => {
-        const x = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453
-        return x - Math.floor(x)
-    }
 
     const parent = Array.from({ length: sourcePoints.length }, (_, i) => i)
     const find = (i: number): number => {
