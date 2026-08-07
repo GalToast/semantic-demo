@@ -105,13 +105,13 @@ describe('shouldSkipNextRender (W49-H)', () => {
             animating: boolean
             expected: boolean
         }> = [
-            { label: 'first call',           prev: null,             curr: sample1, animating: false, expected: false },
-            { label: 'animation in flight',  prev: sample1,          curr: sample1, animating: true,  expected: false },
-            { label: 'identity prev',         prev: identity,         curr: sample1, animating: false, expected: false },
-            { label: 'static scene',          prev: sample1,          curr: sample1, animating: false, expected: true },
-            { label: 'pos drift',             prev: sample1,          curr: sample1BumpedPos, animating: false, expected: false },
-            { label: 'quat drift',            prev: sample1,          curr: sample1BumpedQuat, animating: false, expected: false },
-            { label: 'huge move',             prev: sample1,          curr: sample1DriftedFar, animating: false, expected: false }
+            { label: 'first call', prev: null, curr: sample1, animating: false, expected: false },
+            { label: 'animation in flight', prev: sample1, curr: sample1, animating: true, expected: false },
+            { label: 'identity prev', prev: identity, curr: sample1, animating: false, expected: false },
+            { label: 'static scene', prev: sample1, curr: sample1, animating: false, expected: true },
+            { label: 'pos drift', prev: sample1, curr: sample1BumpedPos, animating: false, expected: false },
+            { label: 'quat drift', prev: sample1, curr: sample1BumpedQuat, animating: false, expected: false },
+            { label: 'huge move', prev: sample1, curr: sample1DriftedFar, animating: false, expected: false }
         ]
         for (const c of cases) {
             const r = shouldSkipNextRender(c.prev, c.curr, c.animating)
