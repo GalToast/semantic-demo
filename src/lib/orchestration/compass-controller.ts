@@ -359,6 +359,30 @@ export function executeJourneyCompassAction(action: string): void {
 
         case JOURNEY_ACTIONS.SHOW_TRAIL_PANEL:
             setSemanticDiveMode(false)
+            // H2 (journey/mode bugsweep 2026-08-07): the canonical exit
+            // (setSemanticDiveModeProxy(false), lifecycle.ts:127-143) resets
+            // trailDepth to 1 + recomputes nav mode/surface. The compass exit
+            // only flipped semanticDiveMode, leaving trailDepth=2 — so every
+            // depth===2 consumer (applySemanticCentroidCamera camera framing,
+            // focus-pocket, JourneyCompass dive-'active') kept dive behavior
+            // after 'End of Trail'. Mirror the depth reset + nav recompute
+            // here (can't import the proxy — lifecycle imports this module).
+            journeySetTrailDepth(1)
+            {
+                const $nav = get(navStore)
+                const $search = get(searchStore)
+                const hasFocus = $nav.focusedIndex != null
+                const hasSearchIntent = Boolean($search.summary || $search.query.trim().length >= 2)
+                const mode = hasFocus ? 'focus' : hasSearchIntent ? 'search' : 'overview'
+                const surface = hasFocus
+                    ? hasSearchIntent
+                        ? 'focus-search'
+                        : 'focus'
+                    : hasSearchIntent
+                      ? 'search'
+                      : 'idle'
+                writeNavStateMirror({ mode, surface, trailDepth: 1 })
+            }
             return
 
         case JOURNEY_ACTIONS.NEXT_STOP:
