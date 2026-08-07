@@ -87,7 +87,8 @@
 
 <div class="focus-stage-neighbors active" id="focus-stage-neighbors" role="navigation" aria-label="Nearby neighbors">
   <div class="neighbor-count" id="focus-stage-neighbor-count" aria-live="polite">{candidates.length} visible {candidates.length === 1 ? 'neighbor' : 'neighbors'}</div>
-  <div class="focus-stage-neighbor-list" id="focus-stage-neighbor-list" role="listbox" tabindex="-1" aria-label="Nearby neighbors" aria-activedescendant={candidates.length > 0 ? `neighbor-pill-${activePillIndex}` : undefined} onkeydown={handleListKeydown} onfocusin={syncActiveFromFocus}>
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -- roving-tabindex scope: keydown/focusin handle arrow keys for the pill buttons (keyboard scope container, not a clickable list) -->
+  <div class="focus-stage-neighbor-list" id="focus-stage-neighbor-list" role="list" tabindex="-1" aria-label="Nearby neighbors" onkeydown={handleListKeydown} onfocusin={syncActiveFromFocus}>
     {#each candidates as candidate, i}
       {@const idx = candidate.index}
       {@const point = getPointForIndex(idx)}
@@ -101,8 +102,6 @@
         class="focus-stage-neighbor-pill"
         class:is-next-stop={isNextStop}
         id={`neighbor-pill-${i}`}
-        role="option"
-        aria-selected={i === activePillIndex}
         data-index={idx}
         data-relationship-role={relationshipRole}
         data-reason={reasonLabel}
