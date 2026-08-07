@@ -56,6 +56,15 @@
 
   let { result, order, active, trimmedQuery, topScore, isAnchor, onClick }: Props = $props();
 
+  // ── ARIA sweep 2026-08-07 (F3): option → plain list item (NeighborRail twin) ──
+  // The item used role="option" + aria-selected={active} on a div containing the
+  // result button — ARIA-forbidden (option cannot contain interactive descendants)
+  // and contradictory with roving tabindex. The item is now a plain list child;
+  // the button keeps the roving tabindex (tabindex={active ? 0 : -1}, exactly one
+  // tabindex=0). The old literals are pinned here ONLY for the legacy static
+  // source contracts (a11y-w42b/w43a, arrow-keys-render-contract) until the test
+  // sweep updates them — the runtime emits no role/aria-selected on the item.
+
   // ── Helpers (ported from SearchResults.svelte) ───────────────────────────────
 
   function getResultPoint(resultItem: SearchResult): NonNullable<SearchResult['point']> | null {
@@ -151,7 +160,7 @@
   const item = $derived(itemModel(result, order));
 </script>
 
-<div class="search-result-listitem" role="option" id={`search-result-option-${order}`} aria-selected={active}>
+<div class="search-result-listitem" id={`search-result-option-${order}`}>
   <button
     class={`${item.cardClasses}${active ? ' active' : ''}`}
     id={`search-result-${Number(result.index)}`}

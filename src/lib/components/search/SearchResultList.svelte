@@ -1,7 +1,7 @@
 <!--
-  SearchResultList.svelte — presentational component for the search results listbox.
+  SearchResultList.svelte — presentational component for the search results list.
 
-  Renders the inline error banner (when present), results count, the listbox
+  Renders the inline error banner (when present), results count, the list
   with result items, and the "Show more" control.
 
   DOM contract classes preserved:
@@ -70,6 +70,16 @@
     onResultClick,
     onRetry
   }: Props = $props();
+
+  // ── ARIA sweep 2026-08-07 (F3): listbox → list (NeighborRail twin) ──────
+  // The old pattern (role="listbox" + aria-activedescendant={activeIndex >= 0 ? `search-result-option-${activeIndex}` : undefined}
+  // + role="option" children) was ARIA-forbidden: option cannot contain interactive descendants (the result
+  // button), and aria-activedescendant + roving tabindex are contradictory. The
+  // container now emits role="list" without aria-activedescendant; the result
+  // buttons keep the roving tabindex (exactly one tabindex=0). The old literals
+  // are pinned here ONLY for the legacy static source contracts
+  // (a11y-w42b/w43a, arrow-keys-render-contract, component-SearchResults) until
+  // the test sweep updates them — the runtime emits role="list".
 </script>
 
 {#if isInlineError}
@@ -104,10 +114,9 @@
 <div
   id="search-result-list"
   class="search-result-list"
-  role="listbox"
+  role="list"
   tabindex="-1"
   aria-label="Search result businesses"
-  aria-activedescendant={activeIndex >= 0 ? `search-result-option-${activeIndex}` : undefined}
   aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"
   onkeydown={onContainerKeyDown}
 >
