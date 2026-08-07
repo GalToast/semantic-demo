@@ -245,7 +245,7 @@ function normalizeWeatherPayload(payload: Record<string, unknown>): WeatherData 
         condition: (current.condition as string) || normalizeWeatherIcon(current.icon as string),
         windSpeed: Math.round(windSpeed),
         windDirection,
-        windGust: current.wind_gust_mph === null ? null : Math.round(Number(current.wind_gust_mph)),
+        windGust: current.wind_gust_mph == null ? null : Math.round(Number(current.wind_gust_mph)),
         source: (payload.source as string) || 'weather'
     }
 }

@@ -104,6 +104,10 @@ export type { TokenMatchResult } from '@lib/search/tokenizer'
  */
 export { tokenizeSearchText, countTokenMatches } from '@lib/search/tokenizer'
 
+function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export function pointHasGeocode(point: GeoPoint | null | undefined): boolean {
     if (!point) return false
     const lat = point.lat
@@ -173,8 +177,13 @@ export function highlightMatch(text: unknown, query: unknown): string {
     const safeText = String(text)
     const safeQuery = query === null || query === undefined ? '' : String(query)
     if (!safeQuery) return escapeHtml(safeText)
-    const idx = safeText.toLowerCase().indexOf(safeQuery.toLowerCase())
-    if (idx === -1) return escapeHtml(safeText)
+    // Case-insensitive match on the ORIGINAL string via regex `i` flag — the
+    // old toLowerCase().indexOf() computed offsets on the lowercased string but
+    // substring() applied them to the original, so Unicode case-expansions
+    // (U+0130 İ → 'i̇', 2 code units) diverged and dropped/mangled text.
+    const match = new RegExp(escapeRegex(safeQuery), 'i').exec(safeText)
+    if (!match || match.index === undefined) return escapeHtml(safeText)
+    const idx = match.index
     const escapedMatch = escapeHtml(safeText.substring(idx, idx + safeQuery.length))
     const escapedPrefix = escapeHtml(safeText.substring(0, idx))
     const escapedSuffix = escapeHtml(safeText.substring(idx + safeQuery.length))
