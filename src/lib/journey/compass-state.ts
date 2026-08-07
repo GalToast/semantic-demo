@@ -230,19 +230,6 @@ export function getJourneyCompassState(): CompassState {
         }
     }
 
-    if (appState.searchState.currentEmptyQuery) {
-        const label: string = `"${appState.searchState.currentEmptyQuery}"`
-        return {
-            phase: 'search',
-            kicker: `Search | ${label}`,
-            title: `No results for ${label}`,
-            note: 'Try a broader term or one of the suggested popular categories below.',
-            primaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
-            secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
-            tertiaryAction: null
-        }
-    }
-
     const idleNote = '8,406 Montgomery County businesses — search by what they do, not just where they are.'
 
     return {
