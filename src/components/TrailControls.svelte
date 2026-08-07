@@ -13,6 +13,38 @@
   }
 
   let { active, canGoBack, hasNext, contextText, progressText, nextStopName, onPrev, onNext }: Props = $props();
+
+  // F3 (a11y bugsweep 2026-08-07): toolbar roving-tabindex keyboard nav
+  // per WAI-ARIA toolbar pattern — ArrowLeft/Right move focus between the
+  // three focusable children, Home/End jump to first/last.
+  function onToolbarKeydown(e: KeyboardEvent): void {
+    const toolbar = e.currentTarget as HTMLElement;
+    const buttons = Array.from(toolbar.querySelectorAll<HTMLElement>(
+      '#btn-focus-path, #btn-prev-node:not([disabled]), #btn-next-node:not([disabled])'
+    ));
+    if (buttons.length === 0) return;
+    const current = buttons.indexOf(document.activeElement as HTMLElement);
+    if (current < 0) return;
+    let next: number;
+    switch (e.key) {
+      case 'ArrowRight':
+        next = (current + 1) % buttons.length;
+        break;
+      case 'ArrowLeft':
+        next = (current - 1 + buttons.length) % buttons.length;
+        break;
+      case 'Home':
+        next = 0;
+        break;
+      case 'End':
+        next = buttons.length - 1;
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+    buttons[next]?.focus();
+  }
 </script>
 
 {#if active}
@@ -22,6 +54,7 @@
     class:active={active}
     role="toolbar"
     aria-label="Walk controls"
+    onkeydown={onToolbarKeydown}
   >
     <button
       id="btn-focus-path"

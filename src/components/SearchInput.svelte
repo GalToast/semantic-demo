@@ -75,13 +75,6 @@
   let hasQuery = $derived(queryInput.trim().length > 0);
   let hasResults = $derived($searchState.results.length > 0);
   let searchActive = $derived(surface === 'search' || surface === 'focus-search');
-  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
-  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
-  let _activeResultId = $derived(
-    $searchState.activeResultId != null
-      ? `search-result-${Number($searchState.activeResultId)}`
-      : undefined
-  );
 
   $effect(() => {
     const storeQuery = $searchState.query ?? '';
@@ -181,6 +174,7 @@
         return;
       }
       if (queryInput.length > 0) {
+        e.preventDefault();
         handleClear();
       }
     } else if (e.key === 'Enter') {
@@ -294,8 +288,7 @@
         role="combobox"
         aria-controls="search-result-list"
         aria-haspopup="list"
-        aria-expanded={hasQuery}
-        aria-activedescendant={_activeResultId}      />
+        aria-expanded={hasQuery}      />
     {/snippet}
   </SearchInputChrome>
 </div>

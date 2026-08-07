@@ -620,6 +620,15 @@
     overflow: hidden;
     outline: none;
   }
+  /* F5 (a11y bugsweep 2026-08-07): .semantic-main has tabindex="-1"
+     (programmatic focus only), but Firefox shows a focus ring for
+     programmatically-focused elements. Provide a visible :focus-visible
+     indicator so low-vision users can see when the main content area
+     receives programmatic focus (WCAG 2.4.7). */
+  .semantic-main:focus-visible {
+    outline: 2px solid var(--color-primary-alt);
+    outline-offset: 2px;
+  }
   .semantic-main.surface-semantic-dive {
     pointer-events: none;
   }

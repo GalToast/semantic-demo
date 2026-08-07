@@ -11,6 +11,31 @@ import { trapFocusIn, releaseFocusTrapNow } from '@lib/focus/focus-coordinator'
 
 let _focusTrapObserver: MutationObserver | null = null
 
+/* ── Nested-dialog registry (F2 a11y bugsweep 2026-08-07) ───────────────────
+ * Keeps a Set of open non-<dialog> dialogs (role="dialog" divs) so the
+ * global Escape handler can gate on them before returning to overview.
+ * Native <dialog open> elements are already handled by the global handler's
+ * document.querySelector('dialog[open]') check, but role="dialog" divs
+ * (trail-review-overlay, etc.) need explicit registration because
+ * stopPropagation is fragile across component boundaries.
+ */
+const _openNestedDialogs = new Set<string>()
+
+/** Register a non-native dialog as open. Global Esc will let it close first. */
+export function registerOpenDialog(id: string): void {
+  _openNestedDialogs.add(id)
+}
+
+/** Unregister a previously-opened non-native dialog. */
+export function unregisterOpenDialog(id: string): void {
+  _openNestedDialogs.delete(id)
+}
+
+/** True when at least one non-native dialog is registered as open. */
+export function hasOpenNestedDialog(): boolean {
+  return _openNestedDialogs.size > 0
+}
+
 export function bindFocusTrapObserver(): void {
     if (_focusTrapObserver) return
 
