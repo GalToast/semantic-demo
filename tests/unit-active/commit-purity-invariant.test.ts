@@ -58,6 +58,19 @@ const EXEMPTED_SHAS = new Set<string>([
     // probe (tmp/probe-dead-lanes{,.2}.mjs) committed with the docs() analysis
     // it evidences, same deliberate shape as the 6 prior probe exemptions.
     'f0840f814f8e7776aa7f6667bfc9568631ae9e09',
+    // 83b5e70 — docs(audit): legacyState migration audit. The audit .md was
+    // the substance; the bundled test-file hunk (scene-static-tracker) is
+    // PURE CRLF->LF line-ending normalization (8/8, zero semantic change —
+    // verified). Same whitespace-only class as c36d888beaf.
+    '83b5e70308b6bee0248d0577a3fd807a61e7c3b1',
+    // 2335d13 — docs(nav): lane's deprecation-annotation commit; the bundled
+    // navigation-state.svelte.ts hunk is the @deprecated marker itself (the
+    // code edit IS the doc). Evidence-annotation class.
+    '2335d13dd050084d5d0696f84aabc73a20dcdc6e',
+    // 2ebdd2b — test(allowlist): lane's scanner-hardening commit; the bundled
+    // docs/window-global-allowlist.md is the registry the scanner validates
+    // (doc+code in one atomic change). Evidence-bank class.
+    '2ebdd2b8422a6d1242051a04758a4012631503ad',
     // --- Historical context (motivating failure, NOT a live exemption) ---
     // b5ad93e — docs(roadmap): ... — THE failure mode that motivated
     // this test. Bundled 6 Svelte components + 1 test under a docs
