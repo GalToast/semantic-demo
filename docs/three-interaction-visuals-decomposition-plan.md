@@ -12,7 +12,7 @@
 > `three-lens-*` modules (anchor-bloom, filaments, focusgeo, glow-spoke, motes, petals)
 > remain because they ARE referenced. Don't re-attempt the abandoned halos extraction.
 >
-> **Update (2026-07-16):** The `Cluster C — Micro-demo bridge` block (then cited as `L862–915`, with `_demoHighlightNode` / `_demoHighlightBoost` / `_onDemoNodeHighlight` / `_onDemoNamePulse`) was extracted into its own file `src/lib/engine/three-micro-demo-bridge.ts` via commit `dcf542aa` (2026-06-28). As a result, `three-interaction-visuals.ts` shrank from `915 LOC` to `656 LOC` at HEAD, and the per-row `L862–915` / `L872–880` cites in §1 (rows #14), §3, §4 (U6), and §5 of this plan are **historical pre-extraction snapshots** — they no longer match current line numbers. The remaining downstream action against that bridge is its own retirement (inline into the caller), audited separately by Worker B under `tmp/w52-three-micro-demo-bridge-REPORT.md` (RETIRE decision documented; ready to land pending commit on the caller's uncommitted `disposeFocusPocketSizeMesh` edit).
+> **Update (2026-08-07):** The bridge extracted into `three-micro-demo-bridge.ts` (via `dcf542aa`) has been **RETIRED + DELETED** (commit `4da700a0`): `initMicroDemoBridge()` was a no-op never wired, so `disposeMicroDemoBridge()` removed listeners nobody registered — dead code. The `Cluster C — Micro-demo bridge` block is no longer part of this file; the per-row `L862–915` / `L872–880` cites in §1 (rows #14), §3, §4 (U6), and §5 are **historical pre-extraction + pre-retirement snapshots** and no longer correspond to any current line range.
 
 ---
 
