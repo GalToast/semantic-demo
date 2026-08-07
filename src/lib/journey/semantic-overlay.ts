@@ -8,13 +8,14 @@
 import { appState as state } from '@lib/state/app.svelte'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { Vector3, Vector2, Color, AdditiveBlending, Float32BufferAttribute } from 'three'
+import { Vec3 } from '@lib/utils/math-vec3'
 import { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { isPointVisible } from '@lib/utils/geo-data'
 import { getNextExploreCandidateForIndex } from '@lib/journey/thread-model'
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from '@lib/journey/neighborhood'
-import { getFocusThreadCurvePoint } from '@lib/journey/focus-pocket'
+import { getFocusThreadCurvePoint, getFocusThreadCurvePointInto } from '@lib/journey/focus-pocket'
 import type { ThreadEdge } from '@lib/journey/focus-pocket-geometry'
 import type { ThreadCandidateRef } from '@lib/types/state'
 import type { FocusConnectionSegment } from '@lib/state/state-types'
@@ -113,6 +114,18 @@ export function syncFocusSemanticOverlayResolution(): void {
         mat.resolution.x = Math.max(1, Math.round(size.x * dpr))
         mat.resolution.y = Math.max(1, Math.round(size.y * dpr))
     }
+}
+
+function recordFocusOverlayFrame(now: number, elapsed: number, edgeCount: number, pairCount: number): void {
+    const fd = state.focusFrameDiagnostics
+    fd.lastFrameAt = now
+    fd.sampleCount = Math.min(600, (fd.sampleCount || 0) + 1)
+    fd.lastOverlayMs = elapsed
+    fd.lastOverlayEdgeCount = edgeCount
+    fd.lastOverlayPairs = pairCount
+    const divisor = Math.max(1, Math.min(fd.sampleCount, 120))
+    fd.avgFrameMs = ((fd.avgFrameMs || 0) * (divisor - 1) + elapsed) / divisor
+    fd.maxFrameMs = Math.max(elapsed, (fd.maxFrameMs || 0) * 0.992)
 }
 
 function getFocusCurvePointLocal(edge: ThreadEdge, t: number): Vector3 {
@@ -586,7 +599,10 @@ export function refreshFocusSemanticOverlay(): void {
         lastFrameAt: 0,
         sampleCount: 0,
         avgFrameMs: 0,
-        maxFrameMs: 0
+        maxFrameMs: 0,
+        lastOverlayMs: 0,
+        lastOverlayEdgeCount: 0,
+        lastOverlayPairs: 0
     }
     state.focusThreadDiagnostics = {
         active: true,
@@ -649,24 +665,55 @@ export function updateFocusSemanticOverlayPositions(now: number = performance.no
         b: number
         layer: number
     }>
-    if (!line?.geometry?.attributes?.instanceStart || !pairs.length) return
+    if (!line?.geometry?.attributes?.instanceStart || !pairs.length) {
+        // Idle path: no pairs to update — record zero-cost frame.
+        recordFocusOverlayFrame(now, 0, 0, 0)
+        return
+    }
+
+    // ── Instrumentation gate: measure actual synchronous buffer work ──────
+    const startedAt = performance.now()
+    const pairCount = pairs.length
+
     const reducedMotion = prefersReducedMotion()
     const startAttr = line.geometry.attributes.instanceStart!
     const endAttr = line.geometry.attributes.instanceEnd!
+    // Reusable output targets — eliminate per-pair heap allocations.
+    // _p0/_p1 are caller-owned Vec3s; getFocusThreadCurvePointInto writes
+    // into them without allocating. The fallback path (tests) allocates
+    // temporary Vector3s, which is fine — not the hot path.
+    const _p0 = new Vec3()
+    const _p1 = new Vec3()
+    const _hasInto = typeof getFocusThreadCurvePointInto === 'function'
     let offset = 0
     pairs.forEach((edge) => {
-        const p0 = getFocusCurvePointLocal(edge, edge.t0)
-        const p1 = getFocusCurvePointLocal(edge, edge.t1)
-        startAttr.array[offset] = Number.isFinite(p0.x) ? p0.x : 0
-        startAttr.array[offset + 1] = Number.isFinite(p0.y) ? p0.y : 0
-        startAttr.array[offset + 2] = Number.isFinite(p0.z) ? p0.z : 0
-        endAttr.array[offset] = Number.isFinite(p1.x) ? p1.x : 0
-        endAttr.array[offset + 1] = Number.isFinite(p1.y) ? p1.y : 0
-        endAttr.array[offset + 2] = Number.isFinite(p1.z) ? p1.z : 0
+        if (_hasInto) {
+            getFocusThreadCurvePointInto(edge, edge.t0, _p0)
+            getFocusThreadCurvePointInto(edge, edge.t1, _p1)
+        } else {
+            // Fallback for test/mock environments where focus-pocket is
+            // stubbed (getFocusThreadCurvePointInto is undefined).
+            const pt0 = getFocusCurvePointLocal(edge, edge.t0)
+            const pt1 = getFocusCurvePointLocal(edge, edge.t1)
+            _p0.set(pt0.x, pt0.y, pt0.z)
+            _p1.set(pt1.x, pt1.y, pt1.z)
+        }
+        startAttr.array[offset] = Number.isFinite(_p0.x) ? _p0.x : 0
+        startAttr.array[offset + 1] = Number.isFinite(_p0.y) ? _p0.y : 0
+        startAttr.array[offset + 2] = Number.isFinite(_p0.z) ? _p0.z : 0
+        endAttr.array[offset] = Number.isFinite(_p1.x) ? _p1.x : 0
+        endAttr.array[offset + 1] = Number.isFinite(_p1.y) ? _p1.y : 0
+        endAttr.array[offset + 2] = Number.isFinite(_p1.z) ? _p1.z : 0
         offset += 3
     })
     startAttr.needsUpdate = true
     endAttr.needsUpdate = true
+    const edgeCount = offset / 3
+
+    const elapsed = performance.now() - startedAt
+
+    // ── Write diagnostics: scalar in-place mutation, no allocation ────────
+    recordFocusOverlayFrame(now, elapsed, edgeCount, pairCount)
     const mat = line.material as SemanticLineMaterial | undefined
     if (mat?.userData?.shader) {
         mat.userData.shader.uniforms.reducedMotion!.value = reducedMotion ? 1 : 0

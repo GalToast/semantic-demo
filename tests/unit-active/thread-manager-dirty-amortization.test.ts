@@ -60,6 +60,31 @@ const { mockWebglContext, mockState, testState } = vi.hoisted(() => {
                 semanticGuideRequestSequence: 0,
                 currentSemanticGuide: null,
                 summaryCardTypeToken: 0
+            },
+            scenePerformanceDiagnostics: {
+                active: false,
+                reason: 'not-sampled',
+                lastFrameAt: 0,
+                sampleCount: 0,
+                avgFrameMs: 0,
+                maxFrameMs: 0,
+                avgUpdateMs: 0,
+                maxUpdateMs: 0,
+                avgRenderMs: 0,
+                maxRenderMs: 0,
+                avgControlsMs: 0,
+                avgNodeMotionMs: 0,
+                avgThreadUpdateMs: 0,
+                avgGlowMs: 0,
+                avgLensMs: 0,
+                avgOverlayUpdateMs: 0,
+                maxOverlayUpdateMs: 0,
+                myceliumCoreSegments: 0,
+                myceliumWispySegments: 0,
+                myceliumBridgeSegments: 0,
+                lastThreadUpdateMs: 0,
+                lastThreadUpdateDirtyNodes: 0,
+                lastThreadUpdateDirtyPairs: 0
             }
         },
         testState
@@ -222,5 +247,85 @@ describe('thread-manager dirty-node amortization (in-place update)', () => {
 
         // Segment 0 should NOT have been overwritten with pair 5's data.
         expect(startArray[0]).not.toBe(99)
+    })
+
+    // ── Renderer-diagnostics wave: instrumentation assertions ────────────
+
+    it('records lastThreadUpdateMs, dirty nodes, and dirty pairs after update', () => {
+        // Prime the buffer (all 7 nodes dirty → full rebuild).
+        markNodesDirty([0, 1, 2, 3, 4, 5, 6])
+        updateMyceliumThreads()
+
+        // Dirty-node set is now drained. Prime a new frame: mark node 0 dirty.
+        // Pair 0 {0,1} is the only dirty pair in layer 0.
+        markNodesDirty([0])
+        updateMyceliumThreads()
+
+        const d = mockState.scenePerformanceDiagnostics
+        expect(d.lastThreadUpdateMs, 'lastThreadUpdateMs').toBeGreaterThanOrEqual(0)
+        expect(d.lastThreadUpdateDirtyNodes, 'dirtyNodes').toBe(1)
+        expect(d.lastThreadUpdateDirtyPairs, 'dirtyPairs').toBe(1)
+    })
+
+    it('records zeroes on idle path (no dirty nodes)', () => {
+        // Prime the buffer so connection pairs exist.
+        markNodesDirty([0, 1, 2, 3, 4, 5, 6])
+        updateMyceliumThreads()
+
+        // Second call with no dirty nodes — should hit the early-exit path.
+        updateMyceliumThreads()
+
+        const d = mockState.scenePerformanceDiagnostics
+        expect(d.lastThreadUpdateMs).toBe(0)
+        expect(d.lastThreadUpdateDirtyNodes).toBe(0)
+        expect(d.lastThreadUpdateDirtyPairs).toBe(0)
+    })
+
+    it('records zeroes on empty-pairs path (no connection pairs)', () => {
+        // No connection pairs at all — the earliest exit.
+        mockWebglContext.myceliumConnectionPairs = []
+        markNodesDirty([0])
+        updateMyceliumThreads()
+
+        const d = mockState.scenePerformanceDiagnostics
+        expect(d.lastThreadUpdateMs).toBe(0)
+        expect(d.lastThreadUpdateDirtyNodes).toBe(0)
+        expect(d.lastThreadUpdateDirtyPairs).toBe(0)
+    })
+
+    it('records dirty-pair counts that match the pair table exactly', () => {
+        // 6 core pairs: {0,1}, {1,2}, {2,3}, {3,4}, {4,5}, {5,6}
+        // Mark nodes 0,2,4 dirty → pairs touching them:
+        //   {0,1} touches 0 → dirty
+        //   {1,2} touches 2 → dirty
+        //   {2,3} touches 2 → dirty
+        //   {3,4} touches 4 → dirty
+        //   {4,5} touches 4 → dirty
+        //   {5,6} touches neither → clean
+        // Total: 5 dirty pairs.
+        markNodesDirty([0, 1, 2, 3, 4, 5, 6])
+        updateMyceliumThreads()
+
+        markNodesDirty([0, 2, 4])
+        updateMyceliumThreads()
+
+        const d = mockState.scenePerformanceDiagnostics
+        expect(d.lastThreadUpdateDirtyNodes).toBe(3)
+        expect(d.lastThreadUpdateDirtyPairs).toBe(5)
+    })
+
+    it('does not change buffer array references (no allocation)', () => {
+        markNodesDirty([0, 1, 2, 3, 4, 5, 6])
+        updateMyceliumThreads()
+
+        const startArray = mockWebglContext.myceliumCoreLines.geometry.getAttribute('instanceStart')
+            .array as Float32Array
+        const refBefore = startArray.buffer
+
+        markNodesDirty([0])
+        updateMyceliumThreads()
+
+        // Same Float32Array reference — no buffer reallocation.
+        expect(startArray.buffer).toBe(refBefore)
     })
 })

@@ -36,6 +36,7 @@ const _pauseRenderLoopTimers = vi.hoisted(() => vi.fn())
 const _disposeObject3D = vi.hoisted(() => vi.fn())
 const _disposePostProcessing = vi.hoisted(() => vi.fn())
 const _disposeFocusAnchorIndicator = vi.hoisted(() => vi.fn())
+const _buildThreeSceneOrFallback = vi.hoisted(() => vi.fn())
 
 // ── Trackable engineState proxy (rebuilt by each test) ──────────────────────
 
@@ -50,7 +51,11 @@ const _engineStateProxy = vi.hoisted(() => ({
     rafId: null as number | null,
     loaded: false,
     lastHoveredNode: null as number | null,
-    hoverEmissiveFlash: 0
+    hoverEmissiveFlash: 0,
+    webglNeedsRestoreReinit: false,
+    webglRestoreTimer: null as number | null,
+    circuitBreakerTripped: false,
+    uiFeedback: null as null | { showExperienceToast: (title: string, message?: string) => void }
 }))
 
 // ── Module mocks ────────────────────────────────────────────────────────────
@@ -100,7 +105,32 @@ vi.mock('@lib/engine/thread-manager', () => ({
     shouldRenderThreads: vi.fn(),
     shouldRenderBridgeThreads: vi.fn(),
     getGroupLineSegmentCount: vi.fn().mockReturnValue(0),
-    updateMyceliumThreads: vi.fn()
+    updateMyceliumThreads: vi.fn(),
+    drainMyceliumDirtyState: vi.fn(),
+    syncMyceliumLineResolution: vi.fn()
+}))
+
+// initThreeJS-adjacent modules (restore-retry suite drives the real
+// initThreeJS through the machine, so its helpers/stores must be stubbed).
+vi.mock('@lib/engine/three-engine-init-helpers', () => ({
+    buildThreeSceneOrFallback: _buildThreeSceneOrFallback,
+    applyReducedMotionGate: vi.fn(),
+    applyAutoRotateConfig: vi.fn(),
+    exposeDevEngineBridge: vi.fn()
+}))
+
+vi.mock('@lib/engine/three-listener-registration', () => ({
+    registerContextListeners: vi.fn(() => ({ disposeAll: vi.fn() }))
+}))
+
+vi.mock('@lib/engine/three-store-sync', () => ({
+    syncSceneHandles: vi.fn(),
+    syncPointsHandles: vi.fn(),
+    syncMyceliumHandles: vi.fn()
+}))
+
+vi.mock('@lib/engine/three-pp-init', () => ({
+    ensurePostProcessing: vi.fn(() => Promise.resolve({ initPostProcessing: vi.fn() }))
 }))
 
 // ── Import under test (MUST appear after all vi.mock calls) ──────────────────
@@ -114,6 +144,7 @@ import {
     applyMapFlatteningLayout,
     animate
 } from '@lib/engine/three-engine-core'
+import { getEngineStatus, setEngineStatus } from '@lib/stores/engine.svelte'
 
 // ── 1. Compile-time surface contract ────────────────────────────────────────
 
@@ -346,5 +377,227 @@ describe('cancelAnimate', () => {
         // implementation queries the DOM; if not found, it skips removal.
         _engineStateProxy.mapButtonClickHandler = vi.fn()
         expect(() => cancelAnimate()).not.toThrow()
+    })
+})
+
+// ── 4. WebGL restore retry state machine (renderer-wave audit 2026-08-07) ────
+//
+// Drives the real initThreeJS() through the machine's entry points
+// (animate() restore branch, direct initThreeJS(), deinit()) with fake
+// timers. buildThreeSceneOrFallback is the controllable seam for
+// success/failure/deferred outcomes.
+
+describe('webgl-restore retry state machine', () => {
+    let container: HTMLDivElement
+    const SUCCESS_SETUP = {
+        scene: {},
+        camera: {},
+        renderer: { dispose: vi.fn(), forceContextLoss: vi.fn(), domElement: null },
+        controls: { dispose: vi.fn() },
+        hemiLight: {},
+        dirLight: {}
+    } as any
+
+    const toast = () => (_engineStateProxy.uiFeedback!.showExperienceToast as ReturnType<typeof vi.fn>)
+
+    beforeEach(() => {
+        vi.useFakeTimers()
+        setEngineStatus('idle')
+        _buildThreeSceneOrFallback.mockReset()
+        _buildThreeSceneOrFallback.mockResolvedValue({ success: false })
+        _engineStateProxy.webglNeedsRestoreReinit = false
+        _engineStateProxy.webglRestoreTimer = null
+        _engineStateProxy.circuitBreakerTripped = false
+        _engineStateProxy.uiFeedback = { showExperienceToast: vi.fn() }
+        container = document.createElement('div')
+        container.id = 'canvas-container'
+        document.body.appendChild(container)
+    })
+
+    afterEach(() => {
+        container?.remove()
+        vi.useRealTimers()
+        setEngineStatus('idle')
+        _engineStateProxy.webglNeedsRestoreReinit = false
+        _engineStateProxy.webglRestoreTimer = null
+        _engineStateProxy.circuitBreakerTripped = false
+        _engineStateProxy.uiFeedback = null
+    })
+
+    it('restore failure schedules the 1s and 3s backoffs and stops after the retry budget', async () => {
+        _engineStateProxy.webglNeedsRestoreReinit = true
+        animate()
+        await vi.advanceTimersByTimeAsync(0)
+        // attempt 1 fails → count=1 → 1s backoff
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(1)
+
+        await vi.advanceTimersByTimeAsync(1000)
+        // attempt 2 fails → count=2 → 3s backoff (NOT 1s — the restore-attempt
+        // init must not have reset the count mid-cycle)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(2)
+
+        await vi.advanceTimersByTimeAsync(1000)
+        // t=2000: 3s backoff not yet due
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(2)
+
+        await vi.advanceTimersByTimeAsync(2000)
+        // t=4000: attempt 3 fails → count=3 > 2 → escalate
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(3)
+
+        await vi.advanceTimersByTimeAsync(0)
+        expect(toast()).toHaveBeenCalledTimes(1)
+        expect(getEngineStatus()).toBe('degraded')
+        expect(_engineStateProxy.circuitBreakerTripped).toBe(true)
+        expect(_engineStateProxy.webglRestoreTimer).toBeNull()
+
+        // Budget exhausted — no further retries, no duplicate toast
+        await vi.advanceTimersByTimeAsync(60000)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(3)
+        expect(toast()).toHaveBeenCalledTimes(1)
+        expect(vi.getTimerCount()).toBe(0)
+    })
+
+    it('manual init resets a prior failed-cycle retry count without resetting retries within the current restore cycle', async () => {
+        // Cycle 1: first attempt fails → count=1 → 1s backoff armed
+        _engineStateProxy.webglNeedsRestoreReinit = true
+        animate()
+        await vi.advanceTimersByTimeAsync(0)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(1)
+
+        // Manual re-init (direct call, not via the machine) supersedes the
+        // cycle: retry timer cleared, retry budget reset for a future cycle.
+        await initThreeJS()
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(2)
+        expect(vi.getTimerCount()).toBe(0)
+
+        // No stale backoff can resurrect the interrupted cycle
+        await vi.advanceTimersByTimeAsync(60000)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(2)
+
+        // Cycle 2 starts with a fresh budget: first failure schedules the 1s
+        // backoff (not 3s — the old cycle's count must not leak in)
+        _engineStateProxy.webglNeedsRestoreReinit = true
+        animate()
+        await vi.advanceTimersByTimeAsync(0)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(3)
+        await vi.advanceTimersByTimeAsync(1000)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(4)
+    })
+
+    it('success after a watchdog race reconciles state — no permanent breaker/degraded status', async () => {
+        let resolveBuild!: (v: { success: boolean; setup?: any }) => void
+        _buildThreeSceneOrFallback.mockImplementation(
+            () => new Promise((res) => { resolveBuild = res })
+        )
+        _engineStateProxy.webglNeedsRestoreReinit = true
+        animate()
+        await vi.advanceTimersByTimeAsync(0)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(1)
+
+        // Watchdog fires while the async restore init is still in flight
+        await vi.advanceTimersByTimeAsync(15000)
+        expect(toast()).toHaveBeenCalledTimes(1)
+        expect(getEngineStatus()).toBe('degraded')
+        expect(_engineStateProxy.circuitBreakerTripped).toBe(true)
+
+        // Late success must reconcile — not leave the engine permanently degraded
+        resolveBuild({ success: true, setup: SUCCESS_SETUP })
+        await vi.advanceTimersByTimeAsync(0)
+        expect(getEngineStatus()).toBe('ready')
+        expect(_engineStateProxy.circuitBreakerTripped).toBe(false)
+        expect(toast()).toHaveBeenCalledTimes(1)
+        expect(_engineStateProxy.webglRestoreTimer).toBeNull()
+        expect(vi.getTimerCount()).toBe(0)
+    })
+
+    it('late failure after escalation does not schedule a new retry or duplicate the toast', async () => {
+        let rejectBuild!: (v: unknown) => void
+        _buildThreeSceneOrFallback.mockImplementation(
+            () => new Promise((_, rej) => { rejectBuild = rej })
+        )
+        _engineStateProxy.webglNeedsRestoreReinit = true
+        animate()
+        await vi.advanceTimersByTimeAsync(0)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(1)
+
+        await vi.advanceTimersByTimeAsync(15000)
+        expect(toast()).toHaveBeenCalledTimes(1)
+        expect(getEngineStatus()).toBe('degraded')
+
+        // Late rejection after escalation: no re-arm, no duplicate toast
+        rejectBuild(new Error('late GPU failure'))
+        await vi.advanceTimersByTimeAsync(0)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(1)
+        expect(toast()).toHaveBeenCalledTimes(1)
+        expect(vi.getTimerCount()).toBe(0)
+        // Status stays degraded — truthful, the attempt really did fail
+        expect(getEngineStatus()).toBe('degraded')
+    })
+
+    it('deinit clears watchdog/retry timers and invalidates in-flight restore work', async () => {
+        let rejectBuild!: (v: unknown) => void
+        _buildThreeSceneOrFallback.mockImplementation(
+            () => new Promise((_, rej) => { rejectBuild = rej })
+        )
+        _engineStateProxy.webglNeedsRestoreReinit = true
+        animate()
+        await vi.advanceTimersByTimeAsync(0)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(1)
+        expect(_engineStateProxy.webglRestoreTimer).not.toBeNull()
+
+        deinit()
+        expect(_engineStateProxy.webglRestoreTimer).toBeNull()
+        expect(vi.getTimerCount()).toBe(0)
+
+        // Late failure of the invalidated attempt must not resurrect the loop
+        rejectBuild(new Error('teardown'))
+        await vi.advanceTimersByTimeAsync(0)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(1)
+        expect(toast()).not.toHaveBeenCalled()
+        expect(getEngineStatus()).toBe('idle')
+
+        await vi.advanceTimersByTimeAsync(60000)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(1)
+        expect(toast()).not.toHaveBeenCalled()
+    })
+
+    it('manual init while a restore attempt is pending is treated as manual (invalidates the pending attempt)', async () => {
+        // Per-call deferreds: index 0 = restore-owned attempt, 1 = public init
+        const resolvers: Array<(v: { success: boolean; setup?: any }) => void> = []
+        const rejectors: Array<(v: unknown) => void> = []
+        _buildThreeSceneOrFallback.mockImplementation(
+            () => new Promise((res, rej) => { resolvers.push(res); rejectors.push(rej) })
+        )
+        _engineStateProxy.webglNeedsRestoreReinit = true
+        animate()
+        await vi.advanceTimersByTimeAsync(0)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(1)
+        // Restore-owned init is awaiting; its watchdog is armed
+        expect(_engineStateProxy.webglRestoreTimer).not.toBeNull()
+
+        // Public initThreeJS() called while the restore-owned init is in flight
+        const manualInitPromise = initThreeJS()
+        await vi.advanceTimersByTimeAsync(0)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(2)
+
+        // Manual init succeeds first and must have invalidated the pending
+        // restore attempt (cleared watchdog, bumped generation)
+        resolvers[1]({ success: true, setup: SUCCESS_SETUP })
+        await vi.advanceTimersByTimeAsync(0)
+        await expect(manualInitPromise).resolves.toBe(true)
+        expect(_engineStateProxy.webglRestoreTimer).toBeNull()
+
+        // Late rejection of the superseded restore-owned init must not
+        // resurrect the loop or degrade anything
+        rejectors[0](new Error('restore attempt superseded'))
+        await vi.advanceTimersByTimeAsync(0)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(2)
+        expect(toast()).not.toHaveBeenCalled()
+        expect(getEngineStatus()).toBe('idle')
+
+        await vi.advanceTimersByTimeAsync(60000)
+        expect(_buildThreeSceneOrFallback).toHaveBeenCalledTimes(2)
+        expect(toast()).not.toHaveBeenCalled()
+        expect(vi.getTimerCount()).toBe(0)
     })
 })

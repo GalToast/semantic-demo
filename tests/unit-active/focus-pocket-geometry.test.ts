@@ -22,12 +22,22 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { Vec3 } from '@lib/utils/math-vec3'
 
 // ── Hoisted mutable viewport snapshot ───────────────────────────────────────
 
-const _viewport = vi.hoisted(() => ({
-    width: 1280,
-    height: 800
+const { _viewport, _curveState, _focusPanelMode } = vi.hoisted(() => ({
+    _viewport: {
+        width: 1280,
+        height: 800
+    },
+    _curveState: {
+        camera: null,
+        nodePositions: [] as Array<{ x: number; y: number; z: number }>,
+        navState: { focusedIndex: null as number | null },
+        points: [] as Array<Record<string, unknown>>
+    },
+    _focusPanelMode: { value: 'overview' }
 }))
 
 // ── Module mocks ────────────────────────────────────────────────────────────
@@ -37,7 +47,7 @@ vi.mock('@lib/utils/environment', () => ({
 }))
 
 vi.mock('@lib/utils/focus-panel-mode', () => ({
-    getFocusPanelMode: () => 'overview',
+    getFocusPanelMode: () => _focusPanelMode.value,
     FOCUS_PANEL_MODE: {
         OVERVIEW: 'overview',
         FIELD_NODE: 'field-node',
@@ -45,6 +55,10 @@ vi.mock('@lib/utils/focus-panel-mode', () => ({
         MANUAL_COLLAPSED: 'manual-panel-collapsed',
         LEGEND_OPEN: 'legend-open'
     }
+}))
+
+vi.mock('@lib/state/app.svelte', () => ({
+    appState: _curveState
 }))
 
 // ── Import under test (must appear AFTER vi.mock) ───────────────────────────
@@ -59,6 +73,8 @@ import {
     getDeclutteredFocusBeaconIndices,
     getFocusConstellationPlacement,
     applyRelationshipRolePlacementBias,
+    getFocusThreadCurvePoint,
+    getFocusThreadCurvePointInto,
     type ConstellationMotif,
     type ViewportProfile,
     type PlacementParams
@@ -330,6 +346,60 @@ describe('focus-pocket-geometry — viewport & beacon profiling', () => {
             const indices = [1, 2, 3]
             expect(getDeclutteredFocusBeaconIndices(indices, NaN)).toEqual([1, 2, 3])
         })
+    })
+})
+
+describe('focus-pocket-geometry — caller-owned curve output', () => {
+    const edge = {
+        a: 0,
+        b: 1,
+        motifBraid: 0.52,
+        role: 'direct',
+        curveLift: 0.8,
+        side: 1,
+        rise: 0.2,
+        depth: 0.15,
+        anchorPull: 0
+    }
+
+    beforeEach(() => {
+        _curveState.nodePositions = [
+            { x: -0.2, y: 0.1, z: 0.05 },
+            { x: 0.55, y: -0.15, z: 0.35 }
+        ]
+        _curveState.navState.focusedIndex = null
+        _focusPanelMode.value = 'overview'
+    })
+
+    it('matches the public curve result and keeps sequential targets independent', () => {
+        const targetA = new Vec3()
+        const targetB = new Vec3()
+        const expected = getFocusThreadCurvePoint(edge, 0.37)
+
+        expect(getFocusThreadCurvePointInto(edge, 0.37, targetA)).toBe(targetA)
+        const snapshotA = targetA.clone()
+        expect(getFocusThreadCurvePointInto({ ...edge, side: -1 }, 0.63, targetB)).toBe(targetB)
+
+        expect(targetA.x).toBeCloseTo(expected.x, 12)
+        expect(targetA.y).toBeCloseTo(expected.y, 12)
+        expect(targetA.z).toBeCloseTo(expected.z, 12)
+        expect(targetB).not.toBe(targetA)
+        expect(targetA.x).toBe(snapshotA.x)
+        expect(targetA.y).toBe(snapshotA.y)
+        expect(targetA.z).toBe(snapshotA.z)
+    })
+
+    it('preserves the field-node long-arc branch through the output path', () => {
+        _focusPanelMode.value = 'field-node'
+        const target = new Vec3()
+        const expected = getFocusThreadCurvePoint(edge, 0.5)
+
+        getFocusThreadCurvePointInto(edge, 0.5, target)
+
+        expect(target.x).toBeCloseTo(expected.x, 12)
+        expect(target.y).toBeCloseTo(expected.y, 12)
+        expect(target.z).toBeCloseTo(expected.z, 12)
+        expect([target.x, target.y, target.z].every(Number.isFinite)).toBe(true)
     })
 })
 

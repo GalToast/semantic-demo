@@ -94,6 +94,15 @@ export function sampleScenePerformance(
         diagnostics.sampleCount
     )
     diagnostics.maxRenderMs = Math.max(timings.renderMs || 0, (diagnostics.maxRenderMs || 0) * 0.992)
+    diagnostics.avgOverlayUpdateMs = smoothDiagnosticValue(
+        diagnostics.avgOverlayUpdateMs || 0,
+        timings.overlayUpdateMs || 0,
+        diagnostics.sampleCount
+    )
+    diagnostics.maxOverlayUpdateMs = Math.max(
+        timings.overlayUpdateMs || 0,
+        (diagnostics.maxOverlayUpdateMs || 0) * 0.992
+    )
     diagnostics.renderables = getSceneRenderableDiagnostics()
 
     if (legacyState?.scenePerformanceDiagnostics) {

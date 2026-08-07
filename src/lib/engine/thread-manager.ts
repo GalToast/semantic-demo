@@ -679,7 +679,7 @@ function rebuildDirtyPairsInLayer(
     line: LineSegments2 | null,
     layer: number,
     layerIntensity: Record<number, number>
-): void {
+): number {
     const SEGMENTS_PER_PAIR = BEZIER_SEGMENTS_PER_PAIR
     const FLOATS_PER_SEGMENT = 6 // 3 start + 3 end
 
@@ -688,7 +688,7 @@ function rebuildDirtyPairsInLayer(
     const endAttr = geom?.getAttribute('instanceEnd') as BufferAttribute | undefined
     const colorStartAttr = geom?.getAttribute('instanceColorStart') as BufferAttribute | undefined
     const colorEndAttr = geom?.getAttribute('instanceColorEnd') as BufferAttribute | undefined
-    if (!startAttr || !endAttr) return
+    if (!startAttr || !endAttr) return 0
 
     const startArray = startAttr.array as Float32Array
     const endArray = endAttr.array as Float32Array
@@ -696,11 +696,13 @@ function rebuildDirtyPairsInLayer(
     const colorEndArray = colorEndAttr?.array as Float32Array | undefined
 
     let layerPairIndex = 0
+    let dirtyPairCount = 0
     webglContext.myceliumConnectionPairs.forEach((pair) => {
         if (pair.layer !== layer) return
         const pairIsDirty = dirtyNodeIndices.has(pair.a) || dirtyNodeIndices.has(pair.b)
         layerPairIndex += 1
         if (!pairIsDirty) return
+        dirtyPairCount += 1
 
         const pairPositions: number[] = []
         const pairColors: number[] = []
@@ -752,12 +754,17 @@ function rebuildDirtyPairsInLayer(
     })
     startAttr.needsUpdate = true
     endAttr.needsUpdate = true
+    return dirtyPairCount
 }
 
 // ── Orchestrator ────────────────────────────────────────────────────────────
 
 export function updateMyceliumThreads(): void {
+    // Early exit: no connection pairs at all — nothing to rebuild.
     if (!webglContext.myceliumConnectionPairs?.length) {
+        state.scenePerformanceDiagnostics.lastThreadUpdateMs = 0
+        state.scenePerformanceDiagnostics.lastThreadUpdateDirtyNodes = 0
+        state.scenePerformanceDiagnostics.lastThreadUpdateDirtyPairs = 0
         dirtyNodeIndices.clear()
         state.myceliumDirty = false
         return
@@ -771,19 +778,29 @@ export function updateMyceliumThreads(): void {
     // Do NOT zero tail on skip — historic bug that collapsed visible mycelium.
     const hasDirtyNodes = dirtyNodeIndices.size > 0
     if (!hasDirtyNodes) {
+        state.scenePerformanceDiagnostics.lastThreadUpdateMs = 0
+        state.scenePerformanceDiagnostics.lastThreadUpdateDirtyNodes = 0
+        state.scenePerformanceDiagnostics.lastThreadUpdateDirtyPairs = 0
         dirtyNodeIndices.clear()
         state.myceliumDirty = false
         return
     }
 
+    const startedAt = performance.now()
+    const dirtyNodeCount = dirtyNodeIndices.size
+
     const layerIntensity = computeLayerIntensityMap()
 
-    // webglContext.mycelium*Lines are typed `LineSegments2 | null` and
-    // rebuildDirtyPairsInLayer already accepts (`LineSegments2 | null`) and
-    // early-returns when the geometry helpers are absent, so no cast is needed.
-    rebuildDirtyPairsInLayer(webglContext.myceliumCoreLines, 0, layerIntensity)
-    rebuildDirtyPairsInLayer(webglContext.myceliumWispyLines, 1, layerIntensity)
-    rebuildDirtyPairsInLayer(webglContext.myceliumBridgeLines, 2, layerIntensity)
+    const dirtyPairs0 = rebuildDirtyPairsInLayer(webglContext.myceliumCoreLines, 0, layerIntensity)
+    const dirtyPairs1 = rebuildDirtyPairsInLayer(webglContext.myceliumWispyLines, 1, layerIntensity)
+    const dirtyPairs2 = rebuildDirtyPairsInLayer(webglContext.myceliumBridgeLines, 2, layerIntensity)
+    const totalDirtyPairs = dirtyPairs0 + dirtyPairs1 + dirtyPairs2
+
+    const elapsed = performance.now() - startedAt
+
+    state.scenePerformanceDiagnostics.lastThreadUpdateMs = elapsed
+    state.scenePerformanceDiagnostics.lastThreadUpdateDirtyNodes = dirtyNodeCount
+    state.scenePerformanceDiagnostics.lastThreadUpdateDirtyPairs = totalDirtyPairs
 
     // Drain the dirty set — consumed for this frame.
     dirtyNodeIndices.clear()

@@ -31,6 +31,8 @@ export interface ScenePerformanceDiagnostics {
     avgThreadUpdateMs: number
     avgGlowMs: number
     avgLensMs: number
+    avgOverlayUpdateMs: number
+    maxOverlayUpdateMs: number
     myceliumCoreSegments: number
     myceliumWispySegments: number
     myceliumBridgeSegments: number
@@ -41,6 +43,12 @@ export interface ScenePerformanceDiagnostics {
     renderSkipOpportunities?: number
     /** W49-H: consecutive frames skipped at the current run. Resets when a render fires. */
     consecutiveSkippedFrames?: number
+    /** Renderer-diagnostics wave: last observed thread update duration (ms). */
+    lastThreadUpdateMs: number
+    /** Renderer-diagnostics wave: dirty node count consumed by the last thread update. */
+    lastThreadUpdateDirtyNodes: number
+    /** Renderer-diagnostics wave: dirty pair count rebuilt by the last thread update. */
+    lastThreadUpdateDirtyPairs: number
 }
 /** A single segment in the focus-stage semantic thread rendering.
  *  Each parent edge (a → b) is subdivided into many segments so the
@@ -79,6 +87,12 @@ export interface FocusFrameDiagnostics {
     sampleCount: number
     avgFrameMs: number
     maxFrameMs: number
+    /** Renderer-diagnostics wave: last overlay position-update duration (ms). */
+    lastOverlayMs: number
+    /** Renderer-diagnostics wave: edge count written in the last overlay position-update. */
+    lastOverlayEdgeCount: number
+    /** Renderer-diagnostics wave: pair count at the start of the last overlay position-update. */
+    lastOverlayPairs: number
 }
 
 export interface FocusThreadDiagnostics {

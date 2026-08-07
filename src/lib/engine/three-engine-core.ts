@@ -91,18 +91,34 @@ let _restoreRetryCount = 0
 let _restoreRetryTimer: number | null = null
 const _RESTORE_MAX_RETRIES = 2
 const _RESTORE_BACKOFF_MS = [1000, 3000]
+const _RESTORE_WATCHDOG_MS = 15000
+
+/**
+ * Generation token for the restore state machine (renderer-wave audit
+ * 2026-08-07). Bumped by a manual re-init and by teardown so stale async
+ * settles, backoff timers, and watchdog callbacks from a superseded cycle
+ * become no-ops (they can no longer resurrect the loop or corrupt a scene
+ * the manual init just built). Escalation deliberately does NOT bump it: a
+ * late success from the in-flight attempt must still be able to reconcile
+ * the breaker/status it tripped.
+ */
+let _restoreGeneration = 0
+/** Per-cycle escalation guard — the toast + degraded transition fire once. */
+let _restoreEscalated = false
 
 function _armRestoreWatchdog() {
     if (typeof window === 'undefined') return
+    const generation = _restoreGeneration
     if (engineState.webglRestoreTimer !== null) {
         window.clearTimeout(engineState.webglRestoreTimer)
     }
     engineState.webglRestoreTimer = window.setTimeout(() => {
         engineState.webglRestoreTimer = null
-        engineState.circuitBreakerTripped = true
+        // Stale watchdog (manual init / teardown superseded this cycle): no-op.
+        if (generation !== _restoreGeneration) return
         debugError('[three-engine] WebGL restore watchdog expired — escalating to fallback')
         _escalateRestoreFailure()
-    }, 15000)
+    }, _RESTORE_WATCHDOG_MS)
 }
 
 function _clearRetryTimer() {
@@ -113,6 +129,11 @@ function _clearRetryTimer() {
 }
 
 function _escalateRestoreFailure() {
+    // Idempotent per cycle: the watchdog and the retry-exhaustion path can
+    // both call this; the first one wins and the second becomes a no-op
+    // (no duplicate toast / status transition).
+    if (_restoreEscalated) return
+    _restoreEscalated = true
     _restoreRetryCount = 0
     _clearRetryTimer()
     if (engineState.webglRestoreTimer) {
@@ -122,40 +143,69 @@ function _escalateRestoreFailure() {
     engineState.circuitBreakerTripped = true
     debugError('[three-engine] WebGL restore failed after all retries — falling back to degraded state')
     setEngineStatus('degraded')
+    // Honest wording: this module does not perform any map/fallback route
+    // switch — it only degrades engine state. Reload is the real recovery.
     engineState.uiFeedback?.showExperienceToast(
         'Graphics unavailable',
-        'The 3D view could not be restored. Switching to map view.'
+        'The 3D view could not be restored. Reload the page to retry.'
     )
 }
 
 function _restoreReinitWithRetry() {
-    void initThreeJS().then((result) => {
-        // initThreeJS returns false when buildThreeSceneOrFallback fails
-        // (no GPU path available); treat as failure for retry purposes.
-        if (result === false) {
-            throw new Error('initThreeJS returned false (buildThreeSceneOrFallback failed)')
-        }
-        // Success — reset retry counter. Watchdog is already cleared by initThreeJS.
-        _restoreRetryCount = 0
-        _clearRetryTimer()
-    }).catch((err) => {
-        debugError('[three-engine] WebGL restore re-init failed:', err)
-        _restoreRetryCount++
-        if (_restoreRetryCount <= _RESTORE_MAX_RETRIES) {
-            const delay = _RESTORE_BACKOFF_MS[_restoreRetryCount - 1] ?? 3000
-            debugWarn(`[three-engine] WebGL restore retry ${_restoreRetryCount}/${_RESTORE_MAX_RETRIES} in ${delay}ms`)
+    const attemptGeneration = _restoreGeneration
+    // Route through the internal init with an explicit restore marker — never
+    // infer ownership from a mutable global, so a concurrent public
+    // initThreeJS() while this awaits is always classified as a manual init.
+    void initThreeJSInternal(true)
+        .then((result) => {
+            // Superseded by a manual re-init / teardown while we were building.
+            if (attemptGeneration !== _restoreGeneration) return
+            // initThreeJS returns false when buildThreeSceneOrFallback fails
+            // (no GPU path available); treat as failure for retry purposes.
+            if (result === false) {
+                throw new Error('initThreeJS returned false (buildThreeSceneOrFallback failed)')
+            }
+            // Success — cycle complete. If the watchdog escalated while the
+            // async restore was still building, the breaker was raised only by
+            // that watchdog and the scene is now live, so clear it and restore
+            // a truthful engine status (the earlier 'degraded' is stale).
+            const wasEscalated = _restoreEscalated
+            _restoreEscalated = false
+            _restoreRetryCount = 0
             _clearRetryTimer()
-            _restoreRetryTimer = window.setTimeout(() => {
-                _restoreRetryTimer = null
-                // Re-arm the restore flag + watchdog for this retry attempt
-                engineState.webglNeedsRestoreReinit = true
-                _armRestoreWatchdog()
-                animate()
-            }, delay)
-        } else {
-            _escalateRestoreFailure()
-        }
-    })
+            if (wasEscalated) {
+                engineState.circuitBreakerTripped = false
+                setEngineStatus('ready')
+                debugInfo('[three-engine] WebGL restore succeeded after watchdog escalation — reconciled state')
+            }
+        })
+        .catch((err) => {
+            debugError('[three-engine] WebGL restore re-init failed:', err)
+            // Superseded by a manual re-init / teardown: never resurrect the loop.
+            if (attemptGeneration !== _restoreGeneration) return
+            // Already escalated (the watchdog gave up): do not re-arm retries
+            // or emit a duplicate fallback toast.
+            if (_restoreEscalated) return
+            _restoreRetryCount++
+            if (_restoreRetryCount <= _RESTORE_MAX_RETRIES) {
+                const delay = _RESTORE_BACKOFF_MS[_restoreRetryCount - 1] ?? 3000
+                debugWarn(`[three-engine] WebGL restore retry ${_restoreRetryCount}/${_RESTORE_MAX_RETRIES} in ${delay}ms`)
+                _clearRetryTimer()
+                const backoffGeneration = _restoreGeneration
+                _restoreRetryTimer = window.setTimeout(() => {
+                    _restoreRetryTimer = null
+                    // Backoff was pending while a manual init / teardown
+                    // superseded us — the re-arm must not fire.
+                    if (backoffGeneration !== _restoreGeneration) return
+                    // Re-arm the restore flag + watchdog for this retry attempt
+                    engineState.webglNeedsRestoreReinit = true
+                    _armRestoreWatchdog()
+                    animate()
+                }, delay)
+            } else {
+                _escalateRestoreFailure()
+            }
+        })
 }
 
 export function updateCameraViewportOffset() {
@@ -193,7 +243,26 @@ export function updateCameraViewportOffset() {
     engineState.lastCameraSnapshot = null
 }
 
-export async function initThreeJS() {
+/**
+ * Public entry — always a manual init. Restore-owned re-inits are routed
+ * through {@link initThreeJSInternal} with an explicit restore marker, so the
+ * machine never relies on a mutable global to prove ownership: a concurrent
+ * public call while a restore-owned init is awaiting still invalidates the
+ * pending generation and resets the retry budget.
+ */
+export async function initThreeJS(): Promise<boolean> {
+    return initThreeJSInternal(false)
+}
+
+/**
+ * @internal — shared init body. `isRestoreAttempt` is an explicit ownership
+ * marker passed by the restore retry machine (`_restoreReinitWithRetry`).
+ * A manual init (public API) always invalidates the prior restore generation,
+ * clears the restore watchdog + backoff timer, and resets the retry budget
+ * and escalation guard. Restore-owned attempts skip that invalidation so
+ * retry progress survives across attempts within one cycle.
+ */
+async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> {
     ensureModules()
     // T3-1: If the WebGL context was lost and restored, a full GPU resource
     // re-creation is needed. The C6 handler sets this flag; we log and
@@ -202,6 +271,21 @@ export async function initThreeJS() {
     if (engineState.webglNeedsRestoreReinit) {
         engineState.webglNeedsRestoreReinit = false
         debugWarn('[three-engine] WebGL context restored — triggering full re-init')
+    }
+    // Manual re-init supersedes any in-flight restore cycle: give a future
+    // cycle a fresh retry budget, and invalidate stale attempt work (watchdog,
+    // backoff timer, late settles) so it cannot resurrect the loop or degrade
+    // a scene this init just built. Restore-attempt inits skip this — their
+    // retry counter belongs to the machine and must survive across attempts.
+    if (!isRestoreAttempt) {
+        _restoreGeneration++
+        _restoreEscalated = false
+        _restoreRetryCount = 0
+        _clearRetryTimer()
+        if (engineState.webglRestoreTimer) {
+            window.clearTimeout(engineState.webglRestoreTimer)
+            engineState.webglRestoreTimer = null
+        }
     }
     cancelAnimate()
 
@@ -541,6 +625,11 @@ export function deinit() {
     }
     _clearRetryTimer()
     _restoreRetryCount = 0
+    // renderer-wave audit (2026-08-07): invalidate any in-flight restore
+    // attempt on teardown — late settles become no-ops and nothing can
+    // resurrect the loop against a torn-down engine.
+    _restoreGeneration++
+    _restoreEscalated = false
     cancelOverviewCameraAnimation()
     engineState.cameraControls?.cancelFocusCameraAnimation()
     engineState.loadingUi?.cancelLoadingHide()

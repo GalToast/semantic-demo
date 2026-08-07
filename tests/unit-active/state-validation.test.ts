@@ -104,7 +104,10 @@ const _appState = vi.hoisted(() => ({
         lastFrameAt: 0,
         sampleCount: 0,
         avgFrameMs: 0,
-        maxFrameMs: 0
+        maxFrameMs: 0,
+        lastOverlayMs: 0,
+        lastOverlayEdgeCount: 0,
+        lastOverlayPairs: 0
     },
     focusThreadDiagnostics: {
         active: false,
@@ -149,9 +152,14 @@ const _appState = vi.hoisted(() => ({
         avgThreadUpdateMs: 0,
         avgGlowMs: 0,
         avgLensMs: 0,
+        avgOverlayUpdateMs: 0,
+        maxOverlayUpdateMs: 0,
         myceliumCoreSegments: 0,
         myceliumWispySegments: 0,
-        myceliumBridgeSegments: 0
+        myceliumBridgeSegments: 0,
+        lastThreadUpdateMs: 0,
+        lastThreadUpdateDirtyNodes: 0,
+        lastThreadUpdateDirtyPairs: 0
     },
     inspectedStrandDiagnostics: {
         active: false,

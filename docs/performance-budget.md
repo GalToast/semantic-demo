@@ -1,6 +1,6 @@
 # Performance Budget
 
-> Living document — last updated 2026-06-18 (W43 perf verification).
+> Living document — last updated 2026-08-07 (renderer diagnostics and restore hardening).
 > Source data: `docs/w40-bundle-audit-2026-06-18.md`.
 
 This document defines hard performance ceilings for the Semantic Explorer. All PRs that affect bundle size, render performance, or GPU usage must be checked against these budgets.
@@ -69,13 +69,28 @@ These are **not live** — the script still enforces 2,500 / 650 / 65 / 16.
 | **Draw calls / frame**                 | < 200                       | ~150 (est.)      | InstancedMesh for node rendering                                                                           |
 | **Texture GPU memory**                 | < 50 MB                     | ~30 MB (est.)    | Canvas textures + postprocessing                                                                           |
 | **Node count**                         | 8,406                       | 8,406            | Fixed dataset; no growth expected                                                                          |
-| **Thread CPU (updateMyceliumThreads)** | —                           | unmeasured       | Per-frame cost of LineSegments2 position/opacity updates across core/wispy/bridge layers; not yet profiled |
+| **Thread CPU (updateMyceliumThreads)** | —                           | runtime sampled  | `scenePerformanceDiagnostics.lastThreadUpdateMs` records the last dirty rebuild and its dirty-node/pair counts |
+| **Overlay CPU (focus semantic overlay)** | —                         | runtime sampled  | `focusFrameDiagnostics.lastOverlayMs` records synchronous buffer writes; averages/maxima are visible in the diagnostics state |
 
 ### GPU Profiling
 
 - Use Chrome DevTools → Performance → GPU column for draw call counts.
 - Three.js `renderer.info` exposes `programs`, `geometries`, `textures` counts.
 - For mobile profiling, use Android GPU Inspector or Xcode GPU Profiler.
+
+### Runtime Renderer Diagnostics
+
+The engine records the two previously unmeasured CPU seams without allocating
+per frame: dirty mycelium rebuild time/counts and focus semantic overlay buffer
+update time/edge counts. These values are diagnostic observations, not new
+render gates; use the existing render-skip counters and the reduced-motion
+WebGL diagnostic for pass/fail verification.
+
+WebGL context restoration uses a bounded two-retry backoff (1s, then 3s) with a
+15s watchdog per attempt. Manual re-initialization and teardown invalidate the
+restore generation, so late callbacks cannot resurrect a disposed scene. A
+watchdog escalation marks the engine degraded and offers an honest reload
+recovery message; a late successful init reconciles the engine back to ready.
 
 ---
 
