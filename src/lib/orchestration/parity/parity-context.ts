@@ -15,6 +15,7 @@ import { navStore } from '@lib/stores/navigation.svelte'
 import { journeyStore } from '@lib/stores/journey.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { searchStore } from '@lib/stores/search.svelte'
+import { appState } from '@lib/state/app.svelte'
 import { filterState } from '@lib/stores/filter.svelte'
 import { viewport } from '@lib/stores/viewport.svelte'
 import { cameraStore } from '@lib/stores/camera.svelte'
@@ -93,18 +94,27 @@ export function resolveParityContext(): ParityContext {
     // ._semanticDiveTransitionDeadline = Date.now() + 1200`. The parity
     // resolver uses it to emit `data-semantic-dive="transitioning"` for the
     // synchronous "Focusing…" feedback, matching the imperative writer in
-    // semantic-dive.ts (single shared definition of `transitioning`). Same
-    // window.__APP_STATE__ fallback pattern as legacyFocusedIndex — the
-    // deadline lives on the engine appState, not the Svelte focus store.
+    // semantic-dive.ts (single shared definition of `transitioning`). The
+    // deadline is armed on the live appState by compass-controller
+    // (appState._semanticDiveTransitionDeadline = Date.now()+1200). Read the
+    // live appState FIRST (same source semantic-dive.ts:93 uses); fall back to
+    // the legacy compat-proxy split shape for tests that still write
+    // window.__APP_STATE__.focusState (production never carries it there).
     let semanticDiveDeadline: number | null = null
-    try {
-        const dl = (window.__APP_STATE__?.focusState as { _semanticDiveTransitionDeadline?: number } | undefined)
-            ?._semanticDiveTransitionDeadline
-        if (typeof dl === 'number' && Number.isFinite(dl)) {
-            semanticDiveDeadline = dl
+    const liveDeadline = appState._semanticDiveTransitionDeadline
+    if (typeof liveDeadline === 'number' && Number.isFinite(liveDeadline) && liveDeadline > 0) {
+        semanticDiveDeadline = liveDeadline
+    } else {
+        try {
+            const dl = (window.__APP_STATE__?.focusState as
+                | { _semanticDiveTransitionDeadline?: number }
+                | undefined)?._semanticDiveTransitionDeadline
+            if (typeof dl === 'number' && Number.isFinite(dl) && dl > 0) {
+                semanticDiveDeadline = dl
+            }
+        } catch {
+            /* ignore */
         }
-    } catch {
-        /* ignore */
     }
 
     return {
