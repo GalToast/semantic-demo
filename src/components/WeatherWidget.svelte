@@ -350,7 +350,9 @@
      tests/weather-surface-ownership-contract.mjs). Mirrors the wave-G
      short-landscape focus-surface chrome rule. */
   @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
-    :global(body.surface-focus, body.surface-focus-search, body.surface-semantic-dive) .weather-widget {
+    :global(body.surface-focus) .weather-widget,
+    :global(body.surface-focus-search) .weather-widget,
+    :global(body.surface-semantic-dive) .weather-widget {
       display: none;
       visibility: hidden;
       pointer-events: none;

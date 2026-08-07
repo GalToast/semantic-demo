@@ -1,9 +1,10 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
     getViewportSize,
     isMobileViewport,
     isCompactFocusStage,
     prefersReducedMotion,
+    getReducedMotionMQL,
     hasCoarsePointer,
     isCompactLandscape,
     isUltraCompactPortrait,
@@ -104,5 +105,94 @@ describe('environment utils', () => {
     it('cancelAnimationFrame is callable', () => {
         // No error thrown
         cancelAnimationFrame(999)
+    })
+})
+
+// ── Reduced-motion MQL caching ────────────────────────────────────────────────
+
+describe('prefersReducedMotion caching', () => {
+    const QUERY = '(prefers-reduced-motion: reduce)'
+    let originalMatchMedia: typeof window.matchMedia
+
+    beforeEach(() => {
+        originalMatchMedia = window.matchMedia
+    })
+
+    afterEach(() => {
+        window.matchMedia = originalMatchMedia
+    })
+
+    it('reuses one MediaQueryList and registers one change listener', () => {
+        const addEventListener = vi.fn()
+        const created = vi.fn().mockReturnValue({
+            matches: false,
+            media: QUERY,
+            addEventListener,
+            removeEventListener: vi.fn()
+        })
+        window.matchMedia = created as any
+
+        const first = getReducedMotionMQL()
+        const second = getReducedMotionMQL()
+
+        expect(first).not.toBeNull()
+        expect(first).toBe(second)
+        expect(first?.media).toBe(QUERY)
+        expect(created).toHaveBeenCalledTimes(1)
+        expect(created).toHaveBeenCalledWith(QUERY)
+        expect(addEventListener).toHaveBeenCalledTimes(1)
+        expect(addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+    })
+
+    it('returns false when matchMedia is unavailable', () => {
+        window.matchMedia = undefined as any
+
+        expect(getReducedMotionMQL()).toBeNull()
+        expect(prefersReducedMotion()).toBe(false)
+    })
+
+    it('caches the value and updates it from the MQL change listener', () => {
+        let onChange: ((event: MediaQueryListEvent) => void) | undefined
+        const addEventListener = vi.fn((_type: string, listener: (event: MediaQueryListEvent) => void) => {
+            onChange = listener
+        })
+        const created = vi.fn().mockReturnValue({
+            matches: false,
+            media: QUERY,
+            addEventListener,
+            removeEventListener: vi.fn()
+        })
+        window.matchMedia = created as any
+
+        expect(prefersReducedMotion()).toBe(false)
+        expect(prefersReducedMotion()).toBe(false)
+        expect(created).toHaveBeenCalledTimes(1)
+
+        onChange?.({ matches: true } as MediaQueryListEvent)
+        expect(prefersReducedMotion()).toBe(true)
+        expect(created).toHaveBeenCalledTimes(1)
+    })
+
+    it('rebuilds the cache when window.matchMedia is replaced', () => {
+        const first = vi.fn().mockReturnValue({
+            matches: false,
+            media: QUERY,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn()
+        })
+        window.matchMedia = first as any
+        expect(prefersReducedMotion()).toBe(false)
+
+        const second = vi.fn().mockReturnValue({
+            matches: true,
+            media: QUERY,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn()
+        })
+        window.matchMedia = second as any
+
+        expect(prefersReducedMotion()).toBe(true)
+        expect(first).toHaveBeenCalledTimes(1)
+        expect(second).toHaveBeenCalledWith(QUERY)
     })
 })

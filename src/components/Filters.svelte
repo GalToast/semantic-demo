@@ -28,6 +28,15 @@
   let { open = false }: Props = $props();
 
   let detailsEl: HTMLDetailsElement;
+  let detailsOpen = $state(false);
+
+  $effect(() => {
+    detailsOpen = open;
+  });
+
+  function handleDetailsToggle(): void {
+    detailsOpen = detailsEl?.open ?? false;
+  }
 
   function handleScrimClick() {
     if (detailsEl) detailsEl.open = false;
@@ -166,7 +175,8 @@ function handleContactToggle(id: string): void {
   class="filters-section rail-section"
   id="filters-section"
   aria-label="Business filters"
-  {open}
+  open={detailsOpen}
+  ontoggle={handleDetailsToggle}
   bind:this={detailsEl}
 >
   <summary class="filter-toggle" aria-label="Toggle business filters">
@@ -190,7 +200,7 @@ function handleContactToggle(id: string): void {
     <FilterChipGroup
       title="Contact"
       options={contactFilters}
-      dataAttr="contact-filter"
+      dataAttr="signal-filter"
       isActive={isContactActive}
       onToggle={handleContactToggle}
     />

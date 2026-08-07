@@ -218,7 +218,6 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
     // 2026-08-07 P2-2).
     ensureDataReadySubscription()
 
-
     // T3-9: Clear any stale event-bus subscriptions from a previous init
     // so that calling initEngine() twice (without destroy in between) does
     // not register duplicate 'scene-ready' listeners.

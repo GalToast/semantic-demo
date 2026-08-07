@@ -20,6 +20,7 @@ const _getSceneRevealProgress = vi.hoisted(() => vi.fn())
 const _shouldRenderThreads = vi.hoisted(() => vi.fn())
 const _setNodeSporeInstanceMatrix = vi.hoisted(() => vi.fn())
 const _markNodesDirty = vi.hoisted(() => vi.fn())
+const _prefersReducedMotion = vi.hoisted(() => vi.fn())
 
 // ── Trackable engineState proxy ───────────────────────────────────────────────
 
@@ -38,6 +39,10 @@ const _webglContextProxy = vi.hoisted(() => ({
 }))
 
 // ── Module mocks ─────────────────────────────────────────────────────────────
+
+vi.mock('@lib/utils/environment', () => ({
+    prefersReducedMotion: _prefersReducedMotion
+}))
 
 vi.mock('@lib/engine/three-engine-state', () => ({
     engineState: _engineStateProxy
@@ -176,11 +181,19 @@ describe('computeRevealProgress (A4)', () => {
 describe('updatePointsMaterial (A7)', () => {
     let uniforms: ReturnType<typeof makeShaderUniforms>
     let material: ReturnType<typeof makePointsMaterial>
+    let originalPerformanceNow: () => number
 
     beforeEach(() => {
         uniforms = makeShaderUniforms()
         material = makePointsMaterial(uniforms)
         _webglContextProxy.pointsMaterial = material
+        _prefersReducedMotion.mockReset()
+        _prefersReducedMotion.mockReturnValue(false)
+        originalPerformanceNow = performance.now
+    })
+
+    afterEach(() => {
+        performance.now = originalPerformanceNow
     })
 
     it('no-ops when pointsMaterial is null', () => {
@@ -239,6 +252,38 @@ describe('updatePointsMaterial (A7)', () => {
         _webglContextProxy.pointsMaterial = makePointsMaterial(null)
         const state = { focusedNode: null, semanticDiveMode: false, trailDepth: 0 }
         expect(() => updatePointsMaterial(1.0, state)).not.toThrow()
+    })
+
+    it('calls prefersReducedMotion instead of raw matchMedia', () => {
+        _prefersReducedMotion.mockReturnValue(false)
+        const state = { focusedNode: null, semanticDiveMode: false, trailDepth: 0 }
+        updatePointsMaterial(0.75, state)
+        expect(_prefersReducedMotion).toHaveBeenCalledTimes(1)
+    })
+
+    it('skips uTime update when prefersReducedMotion returns true', () => {
+        _prefersReducedMotion.mockReturnValue(true)
+        const state = { focusedNode: null, semanticDiveMode: false, trailDepth: 0 }
+        const uTimeBefore = uniforms.uTime.value
+        updatePointsMaterial(0.75, state)
+        // uTime should NOT update when reduced motion is preferred
+        expect(uniforms.uTime.value).toBe(uTimeBefore)
+    })
+
+    it('reuses the provided `now` timestamp instead of calling performance.now()', () => {
+        _prefersReducedMotion.mockReturnValue(false)
+        const state = { focusedNode: null, semanticDiveMode: false, trailDepth: 0 }
+        const frozenNow = 42000
+        updatePointsMaterial(0.75, state, frozenNow)
+        expect(uniforms.uTime.value).toBeCloseTo(frozenNow * 0.001, 3)
+    })
+
+    it('falls back to performance.now() when `now` parameter is omitted', () => {
+        _prefersReducedMotion.mockReturnValue(false)
+        performance.now = vi.fn().mockReturnValue(88888)
+        const state = { focusedNode: null, semanticDiveMode: false, trailDepth: 0 }
+        updatePointsMaterial(0.5, state)
+        expect(uniforms.uTime.value).toBeCloseTo(88888 * 0.001, 3)
     })
 })
 
@@ -363,6 +408,8 @@ describe('updateMyceliumPulse (A12)', () => {
         myceliumGroup = { visible: false }
         _webglContextProxy.myceliumGroup = myceliumGroup
         _shouldRenderThreads.mockReset()
+        _prefersReducedMotion.mockReset()
+        _prefersReducedMotion.mockReturnValue(false)
     })
 
     it('sets myceliumGroup.visible from shouldRenderThreads return', () => {
@@ -393,26 +440,14 @@ describe('updateMyceliumPulse (A12)', () => {
         expect(state.pulsePhase).toBeCloseTo(0.0165, 6)
     })
 
-    it('uses basePulseSpeed=0 when prefers-reduced-motion matches', () => {
-        // jsdom doesn't have matchMedia by default, but the code guards with
-        // typeof window !== 'undefined'. We test the reduced-motion path by
-        // mocking matchMedia.
-        const originalMatchMedia = window.matchMedia
-        window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-            matches: query === '(prefers-reduced-motion: reduce)',
-            media: query,
-            addEventListener: vi.fn(),
-            removeEventListener: vi.fn()
-        })) as any
-
+    it('uses basePulseSpeed=0 when prefers-reduced-motion returns true', () => {
+        _prefersReducedMotion.mockReturnValue(true)
         _shouldRenderThreads.mockReturnValue(false)
         const state = { pulsePhase: 1.0, weather: { windSpeed: 12.0 } }
         // @ts-ignore — harness: test uses minimal weather shape
         updateMyceliumPulse(state)
         // basePulseSpeed = 0.0, so increment = 0 regardless of wind
         expect(state.pulsePhase).toBe(1.0)
-
-        window.matchMedia = originalMatchMedia
     })
 
     it('wraps pulsePhase modulo 2π', () => {

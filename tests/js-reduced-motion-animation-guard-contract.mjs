@@ -55,8 +55,16 @@ assertContains(interactionSrc, 'state.focusLens.rotation.y += rotationSpeed', 'f
 console.log('  ✓ three-interaction-visuals.ts focus-lens/motes/petals/filaments frozen under reduced motion')
 
 // 2. Point material breath: uTime only advances when motion is allowed.
+// 2026-08-07: the raw `matchMedia('(prefers-reduced-motion: reduce)')` call
+// was replaced with the shared `prefersReducedMotion()` helper (cached MQL in
+// @lib/utils/environment). Assert the helper import + the guard on the
+// computed flag rather than the literal query string.
 const frameUpdatesSrc = readSrc('src/lib/engine/three-engine-frame-updates.ts')
-assertContains(frameUpdatesSrc, 'prefers-reduced-motion', 'three-engine-frame-updates checks prefers-reduced-motion')
+assertContains(
+    frameUpdatesSrc,
+    "import { prefersReducedMotion } from '@lib/utils/environment'",
+    'three-engine-frame-updates imports prefersReducedMotion helper'
+)
 assertContains(frameUpdatesSrc, 'uTime.value', 'three-engine-frame-updates writes uTime')
 assertContains(frameUpdatesSrc, 'if (!prefersReduced)', 'three-engine-frame-updates guards uTime write')
 console.log('  ✓ three-engine-frame-updates.ts point uTime uniform gated under reduced motion')

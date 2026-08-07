@@ -231,18 +231,10 @@ describe('applyParityAttributes — body class mirrors', () => {
         expect(readClasses()).not.toContain('surface-map-any')
     })
 
-    it('mobileRoutePeek: "active" adds `route-peek` class', () => {
-        const map: ParityAttributeMap = { mobileRoutePeek: 'active' }
-        applyParityAttributes(map)
-        expect(readClasses()).toContain('route-peek')
-    })
-
-    it('mobileRoutePeek: null removes `route-peek` class', () => {
-        document.body.classList.add('route-peek')
-        const map: ParityAttributeMap = { mobileRoutePeek: null }
-        applyParityAttributes(map)
-        expect(readClasses()).not.toContain('route-peek')
-    })
+    // W47 route-peek feature retired 2026-08-07 (fields + parity attrs + CSS
+    // removed). No route-peek class mirror exists anymore, so there is nothing
+    // to assert here — the 'adds/removes route-peek' cases were deleted with
+    // the feature.
 })
 
 // ── setRenderKind ────────────────────────────────────────────────────────────

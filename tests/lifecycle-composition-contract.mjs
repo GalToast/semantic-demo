@@ -115,8 +115,6 @@ withStateMutation(() => {
 // Sync the stores so the contract inputs are reflected in the UI attributes.
 navStore.update((s) => ({ ...s, focusedIndex: 12, mode: 'trail' }))
 searchStore.update((s) => ({ ...s, query: 'roof repair' }))
-document.body.dataset.mobileRoutePeek = 'active'
-document.body.dataset.mobileRoutePeekReason = 'contract'
 
 refreshCompositionState()
 
@@ -134,11 +132,9 @@ assert(
 )
 assert(document.body.dataset.trailState === 'active', 'focused record plus search intent marks trail active')
 assert(document.body.dataset.semanticDive === 'inactive', 'semantic dive stays inactive before Step Inside')
-assert(document.body.dataset.mobileRoutePeek === undefined, 'non-idle graph context clears mobile route peek')
-assert(
-    document.body.dataset.mobileRoutePeekReason === undefined,
-    'non-idle graph context clears mobile route peek reason'
-)
+// W47 route-peek feature retired 2026-08-07: parity no longer manages
+// data-mobile-route-peek/Reason (fields + parity attrs removed). The former
+// 'non-idle context clears route peek' assertions are gone with the feature.
 
 setSemanticLaneUiState('degraded', {
     label: 'Search paused',

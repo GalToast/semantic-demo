@@ -199,29 +199,13 @@
 
 /* polish288: info-panel stats-row base styles — extracted from vector-explorer-polished.html inline style block */
 
-
-
-
-
 .launch-btn,
-
 .launch-btn:active,
-
 .launch-btn:hover,
-
-
-
-
 .launch-btn:hover,
-
 .launch-btn:focus-visible,
-
-
-
-
 .mode-grid .mode-chip:hover .mode-caption,
 .mode-grid .mode-chip:focus-visible .mode-caption,
-
 body.surface-focus .info-panel,
 body.surface-focus-search .info-panel {
     border-color: rgba(var(--color-primary-tint-rgb), 0.14);
@@ -595,7 +579,6 @@ body:has(.info-panel.active) .panel-toggle {
     }
 
     /* Mode chip base styles */
-
 
     .mode-grid .mode-chip:focus-visible,
 

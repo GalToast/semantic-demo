@@ -331,8 +331,7 @@ assert(
 // refactor renamed the old withFilterStateNotify helper into this pattern; the
 // contract pins the new internal shape.
 assert(
-    filterStateSource.includes('private notify(): void') &&
-        filterStateSource.includes('private _notify(): void'),
+    filterStateSource.includes('private notify(): void') && filterStateSource.includes('private _notify(): void'),
     'filter.svelte.ts must have internal rune-class notify()/_notify() helpers'
 )
 

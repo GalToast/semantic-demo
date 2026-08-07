@@ -1683,55 +1683,6 @@ body.surface-map-focus-search .semantic-lane-assist-meta {
    MOBILE OVERRIDES (Moved from layout_base.css)
    ────────────────────────────────────────────────────────────────────────── */
 
-@media (max-width: 768px) {
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .info-content {
-        max-height: min(25vh, 180px);
-        padding: 8px 10px 10px;
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-input-wrapper,
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-hint,
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .semantic-lane-pill,
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .stats-row,
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-container {
-        margin: 0;
-        padding-top: 0;
-        border-top: 0;
-        background: transparent;
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-label-text {
-        font-size: 10px;
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-trail-cue {
-        margin-top: 6px;
-        padding: 7px 9px;
-        background: rgba(var(--color-primary-tint-rgb), 0.055);
-        border-color: rgba(var(--color-primary-tint-rgb), 0.12);
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-trail-cue-note {
-        -webkit-line-clamp: 1;
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any)
-        .search-container:not(.search-degraded)
-        .search-results.active {
-        display: none;
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-result-item {
-        padding: 7px 8px;
-    }
-
-    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-container #synthesize-trigger {
-        display: none;
-    }
-}
-
 /* canonical: --bp-landscape-tall */
 @media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
     body.surface-search .search-result-item,

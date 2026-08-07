@@ -82,9 +82,7 @@ const _filterState = new FilterState()
 // ── Active Cluster Filter State ──────────────────────────────────────
 
 class ActiveClusterFilterState {
-    value = $state<string | null>(
-        appState.activeClusterFilter !== null ? String(appState.activeClusterFilter) : null
-    )
+    value = $state<string | null>(appState.activeClusterFilter !== null ? String(appState.activeClusterFilter) : null)
 
     private subscribers = new Set<(_v: string | null) => void>()
 
@@ -188,12 +186,13 @@ export const filterState: Readable<ActiveFilters> & {
 // ── Derived Convenience Stores ─────────────────────────────────────────
 
 /** True if any filter is active (non-default). */
-export const hasActiveFilters: Readable<boolean> = new DerivedFilterStore(() =>
-    !(_filterState.status === 'all') ||
-    !(_filterState.city === '') ||
-    _filterState.website ||
-    _filterState.email ||
-    _filterState.geocoded
+export const hasActiveFilters: Readable<boolean> = new DerivedFilterStore(
+    () =>
+        !(_filterState.status === 'all') ||
+        !(_filterState.city === '') ||
+        _filterState.website ||
+        _filterState.email ||
+        _filterState.geocoded
 )
 
 /** Number of individually active filters. */
@@ -216,12 +215,13 @@ export const statusFilter: Readable<string> = new DerivedFilterStore(() => _filt
 export const cityFilter: Readable<string> = new DerivedFilterStore(() => _filterState.city)
 
 /** Contact-related filter flags as a derived object. */
-export const contactFilters: Readable<{ website: boolean; email: boolean; geocoded: boolean }> =
-    new DerivedFilterStore(() => ({
+export const contactFilters: Readable<{ website: boolean; email: boolean; geocoded: boolean }> = new DerivedFilterStore(
+    () => ({
         website: _filterState.website,
         email: _filterState.email,
         geocoded: _filterState.geocoded
-    }))
+    })
+)
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 

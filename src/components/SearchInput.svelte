@@ -152,10 +152,12 @@
   function handleClearQuery(): void {
     queryInput = '';
     setSearchQuery('');
-    dispatch.clearQuery();
-    requestAnimationFrame(() => {
-      inputEl?.focus();
-    });
+    // The clear affordance must also remove any auto-focused result. Keeping
+    // that focus while blanking the query promotes the body to focus-search,
+    // which can hide or inert the search surface and strand keyboard focus.
+    dispatch.clear();
+    // Return focus after the navigation reset has flushed.
+    requestAnimationFrame(() => inputEl?.focus());
   }
 
   function handleClear(): void {

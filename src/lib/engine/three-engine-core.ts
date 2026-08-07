@@ -72,7 +72,7 @@ import {
 import { ensurePostProcessing } from './three-pp-init'
 import { syncSceneHandles, syncPointsHandles, syncMyceliumHandles } from './three-store-sync'
 import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
-import { isMobileViewport } from '@lib/utils/environment'
+import { isMobileViewport, prefersReducedMotion } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
 import {
     updateRouteTraceOverlayFrame,
@@ -294,6 +294,11 @@ export function onWindowResize() {
     camera.aspect = width / height
     camera.updateProjectionMatrix()
     renderer.setSize(width, height)
+    // Re-apply the device pixel ratio on resize — moving the window between
+    // monitors of different DPI, or zooming, changes window.devicePixelRatio
+    // but setSize() alone does not update the draw buffer density, leaving
+    // the canvas blurry. Cap matches scene-init.ts init (perf budget = 2).
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     engineState.ppModule?.resizePostProcessing(width, height)
     // Keep LineMaterial.resolution in sync with the drawing buffer so the
     // mycelium linewidth shader renders thin filaments, not fat bands.
@@ -576,7 +581,7 @@ export function animate() {
 
         if (lerpNodesForFrame(frameNow)) return
 
-        _tickRevealAndParticles(cameraRevealProgress, revealProgress, pointsRevealProgress)
+        _tickRevealAndParticles(cameraRevealProgress, revealProgress, pointsRevealProgress, frameNow)
 
         const hoveredNode = engineState.state?.hoverHighlightIndex ?? -1
         const focusedNode = engineState.state?.focusedNode ?? null
@@ -621,12 +626,13 @@ function _shouldSkipFrame(): boolean {
 function _tickRevealAndParticles(
     cameraRevealProgress: number,
     revealProgress: number,
-    pointsRevealProgress: number
+    pointsRevealProgress: number,
+    frameNow?: number
 ): void {
     const state = engineState.state
     if (!state) return
     lerpCameraForReveal(cameraRevealProgress, revealProgress, state)
-    updatePointsMaterial(pointsRevealProgress, state)
+    updatePointsMaterial(pointsRevealProgress, state, frameNow)
     updateFogDensity(pointsRevealProgress)
     updateReferenceSphereOpacity(revealProgress, state?.sceneRevealActive)
     updateSporeOpacity(pointsRevealProgress, state)
@@ -680,13 +686,10 @@ function tickRenderAndPerf(frameNow: number, sceneFrameMs: number, sceneNeedsCon
         cameraPos: [posArr[0], posArr[1], posArr[2]] as const,
         cameraQuat: [quatArr[0], quatArr[1], quatArr[2], quatArr[3]] as const
     }
-    const prefersReducedMotion =
-        typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-            ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-            : false
+    const reducedMotionPref = prefersReducedMotion()
     const visualsNeedRender = sceneVisualsNeedRender(
         sceneNeedsContinuous,
-        prefersReducedMotion,
+        reducedMotionPref,
         engineState.hoverEmissiveFlash
     )
     const skipCheck = shouldSkipNextRenderHelper(engineState.lastCameraSnapshot, newSnapshot, visualsNeedRender)

@@ -1904,15 +1904,13 @@
         pointer-events: none;
     }
 
-    body:is(.surface-focus, .surface-focus-search, .surface-semantic-dive)
-        #btn-share-view {
+    body:is(.surface-focus, .surface-focus-search, .surface-semantic-dive) #btn-share-view {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body:is(.surface-focus, .surface-focus-search, .surface-semantic-dive)
-        :is(#btn-legend, #btn-keyboard-help) {
+    body:is(.surface-focus, .surface-focus-search, .surface-semantic-dive) :is(#btn-legend, #btn-keyboard-help) {
         display: flex;
         visibility: visible;
         pointer-events: auto;

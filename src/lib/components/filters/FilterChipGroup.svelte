@@ -54,7 +54,7 @@
       {...{[`data-${dataAttr}`]: filter.id}}
       onclick={() => onToggle(filter.id)}
       onkeydown={(e) => handleChipKeydown(e, filter.id)}
-      aria-pressed={isActive(filter.id)}
+      aria-pressed={isActive(filter.id) ? 'true' : 'false'}
       type="button"
     >
       {filter.label}

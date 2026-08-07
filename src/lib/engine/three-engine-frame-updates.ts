@@ -15,6 +15,7 @@ import type { AppState } from '@lib/state/app.svelte'
 import type { MeshPhongMaterial, Material } from 'three'
 import { FogExp2 } from 'three'
 import type { NodePosition } from '@lib/state/state-types'
+import { prefersReducedMotion } from '@lib/utils/environment'
 import { engineState } from './three-engine-state'
 import { webglContext } from '@lib/engine/webgl-context'
 import { CONFIG } from '@lib/engine/config'
@@ -89,11 +90,15 @@ export function computeRevealProgress(now: number): { revealed: number; points: 
  *
  * @param pointsRevealProgress — eased reveal fraction for points (0–1)
  * @param state — subset of AppState for focusedNode/semanticDiveMode/trailDepth reads
+ * @param now — optional frame timestamp from animate() loop; when provided,
+ *   reused instead of calling performance.now() again. Backward-compatible
+ *   default (`undefined`) preserves existing non-engine callers.
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A7)
  */
 export function updatePointsMaterial(
     pointsRevealProgress: number,
-    state: (Pick<AppState, 'focusedNode' | 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined
+    state: (Pick<AppState, 'focusedNode' | 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined,
+    now?: number
 ): void {
     if (!webglContext.pointsMaterial) return
     const isFocused = Number.isFinite(state?.focusedNode)
@@ -105,11 +110,10 @@ export function updatePointsMaterial(
     webglContext.pointsMaterial.size =
         CONFIG.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46) * pointsSizeScale
     if (webglContext.pointsMaterial.userData.shader) {
-        const prefersReduced =
-            typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+        const prefersReduced = prefersReducedMotion()
         webglContext.pointsMaterial.userData.shader.uniforms.uRevealProgress.value = pointsRevealProgress
         if (!prefersReduced) {
-            webglContext.pointsMaterial.userData.shader.uniforms.uTime.value = performance.now() * 0.001
+            webglContext.pointsMaterial.userData.shader.uniforms.uTime.value = (now ?? performance.now()) * 0.001
         }
     }
 }
@@ -172,8 +176,7 @@ export function updateMyceliumPulse(state: Pick<AppState, 'pulsePhase' | 'weathe
     if (webglContext.myceliumGroup) {
         webglContext.myceliumGroup.visible = threadsVisible
     }
-    const prefersReduced =
-        typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    const prefersReduced = prefersReducedMotion()
     const basePulseSpeed = prefersReduced ? 0.0 : 0.015
     const windSpeed = state?.weather?.windSpeed ?? 8.0
     const pulseIncrement = basePulseSpeed * (0.6 + windSpeed / 15.0)

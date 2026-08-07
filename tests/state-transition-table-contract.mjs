@@ -313,7 +313,12 @@ console.log('  PASS')
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 23: COLORS and CLUSTER_NAMES')
 assert(stateSrc.includes('COLORS'), 'state must have COLORS')
-assert(stateSrc.includes('CLUSTER_NAMES'), 'state must have CLUSTER_NAMES')
+// CLUSTER_NAMES was de-duplicated out of appState (62fee8d4 HUNT2-g4) — the
+// canonical source is @lib/utils/ui-presentation (CLUSTER_NAMES array) with
+// the type in @lib/state/types/core-types.ts. Assert both canonical homes
+// instead of the removed state field.
+const clusterNamesSrc = fs.readFileSync(resolveSource('src/lib/state/types/core-types.ts', ROOT), 'utf8')
+assert(clusterNamesSrc.includes('CLUSTER_NAMES'), 'core-types.ts must declare CLUSTER_NAMES type')
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------

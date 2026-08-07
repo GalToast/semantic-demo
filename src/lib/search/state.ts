@@ -70,10 +70,7 @@ export {
     clearSearchGlow,
     resetSemanticGuideUi,
     clearShortSemanticSearchState,
-    startMobileRouteFieldPeek,
     clearSearchPreviewHoverTimer,
-    clearMobileRouteFieldPeek,
-    isMobileRouteFieldPeekActive,
     updateSearchStatusMessage
 } from './results-ui'
 
