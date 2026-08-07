@@ -621,6 +621,11 @@ export function destroyEngine(): void {
     appState.anchorBloomLight = null
     appState.semanticManifold = null
 
+    // M-4 (engine lifecycle bugsweep 2026-08-07): clear the lazy-loaded
+    // post-processing resize cache so a destroy->re-init re-imports fresh
+    // (the old closure would reference disposed post-processing).
+    _ppResize = null
+
     // 6. Set status to idle
     setEngineStatus('idle')
 }

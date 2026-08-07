@@ -440,14 +440,21 @@ describe('engine-lifecycle — resizeEngine behavior', () => {
         expect(updateCameraViewportOffset).toHaveBeenCalledOnce()
     })
 
-    it('calls resizePostProcessing from three-postprocessing (BUG FIX)', () => {
+    it('calls resizePostProcessing from three-postprocessing (BUG FIX)', async () => {
         resizeEngine(1920, 1080)
+        // The postprocessing composer is lazy-loaded (dynamic import) — allow
+        // the .then to land before asserting (was order-dependent before the
+        // M-4 _ppResize cache-clear on destroy).
+        await new Promise((resolve) => setTimeout(resolve, 0))
 
         expect(resizePostProcessing).toHaveBeenCalledOnce()
     })
 
-    it('passes width and height to resizePostProcessing', () => {
+    it('passes width and height to resizePostProcessing', async () => {
         resizeEngine(800, 600)
+        // Lazy-loaded composer — await the dynamic-import .then (M-4 cache-clear
+        // makes this genuinely async per test).
+        await new Promise((resolve) => setTimeout(resolve, 0))
 
         expect(resizePostProcessing).toHaveBeenCalledWith(800, 600)
     })
