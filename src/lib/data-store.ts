@@ -559,6 +559,10 @@ export async function initData(): Promise<void> {
         const msg = err instanceof Error ? err.message : String(err)
         debugError('[data-store] Unexpected error during init:', msg)
         setDataLoadError(msg)
-        setLoadingPhase('launch') // dismiss overlay on error
+        // F1 (data-pipeline bugsweep 2026-08-08): do NOT set phase='launch'
+        // here — that hides the loading overlay BEFORE the error UI can
+        // render (actuallyVisible gates on launch). The overlay now stays
+        // visible while isError is set (LoadingOverlay actuallyVisible has
+        // an isError term). Leave phase as-is so the error state shows.
     }
 }

@@ -57,9 +57,8 @@
   let friendly = $derived(isError ? friendlyErrorMessage($dataLoadState.error) : null);
   let actuallyVisible = $derived(
     visible &&
-      !(phase === 'launch')
+      !(phase === 'launch' && !isError)
   );
-
   /** Derive the active index for chip highlighting */
   let activePhaseIndex = $derived(PHASE_ORDER.indexOf(phase));
 
