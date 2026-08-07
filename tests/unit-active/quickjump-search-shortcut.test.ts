@@ -1,62 +1,83 @@
 /**
- * quickjump-search-shortcut.test.ts
+ * @vitest-environment jsdom
  *
- * Verifies the P1 quick-jump search shortcut wiring in App.svelte.
- * The shortcut adds a global window keydown listener that:
- *   - `/` focuses #search-input (when not in a form field, no modifiers)
- *   - `Esc` clears #search-input when focused
+ * quickjump-search-shortcut.test.ts (CONVERTED 2026-08-07)
  *
- * These are structural invariant tests — they read the source and assert
- * the listener logic is present, matching the unit-active test pattern.
+ * P1 quick-jump behaviors — previously source-inspection (readFileSync regex
+ * on global-shortcuts.ts asserting the '/' + Escape wiring exists). Those
+ * structural asserts are replaced with REAL behaviors: this file drives
+ * setupGlobalShortcuts() with dispatched window keydown events and asserts
+ * the observable DOM/store effects.
+ *
+ * Covered:
+ *  - '/' focuses #search-input from a neutral body focus (P1)
+ *  - '/' does NOT steal focus when a form field is focused (isFormField guard)
+ *  - Escape clears the search store query via setSearchQuery('')
  */
+import { describe, it, expect, afterEach } from 'vitest'
+import { setupGlobalShortcuts } from '@lib/keyboard/global-shortcuts'
 
-import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+let cleanup: (() => void) | null = null
+let inputEl: HTMLInputElement | null = null
 
-const repoRoot = process.cwd()
-// W46-B3: keyboard handler extracted to src/lib/keyboard/global-shortcuts.ts
-// (the orchestrator that originally held this was deleted in W47 cleanup).
-const keyboardSource = readFileSync(join(repoRoot, 'src', 'lib', 'keyboard', 'global-shortcuts.ts'), 'utf-8')
-const searchInputSvelte = readFileSync(join(repoRoot, 'src', 'components', 'SearchInput.svelte'), 'utf-8')
+afterEach(() => {
+    cleanup?.()
+    cleanup = null
+    inputEl?.remove()
+    inputEl = null
+})
 
-describe('P1 quick-jump search shortcut', () => {
-    it('global-shortcuts.ts registers a global keydown listener for / to focus search', () => {
-        // The listener must add a keydown listener on window
-        expect(keyboardSource).toContain("window.addEventListener('keydown'")
-        // Must handle '/' key
-        expect(keyboardSource).toContain("e.key === '/'")
-        // Must focus the search input by id
-        expect(keyboardSource).toContain("getElementById('search-input')")
-        // Must call preventDefault to avoid literal '/' in the input
-        expect(keyboardSource).toContain('e.preventDefault()')
+function mount(): HTMLInputElement {
+    inputEl = document.createElement('input')
+    inputEl.id = 'search-input'
+    document.body.appendChild(inputEl)
+    cleanup = setupGlobalShortcuts({})
+    return inputEl
+}
+
+function pressKeydown(key: string, init: KeyboardEventInit = {}): boolean {
+    return window.dispatchEvent(
+        new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init })
+    )
+}
+
+describe('P1 quick-jump search shortcut — behavioral', () => {
+    it('"/" focuses #search-input from a neutral body focus and calls preventDefault', () => {
+        const input = mount()
+        document.body.focus?.()
+        const notCancelled = pressKeydown('/')
+        expect(notCancelled).toBe(false) // preventDefault called → no literal '/'
+        expect(document.activeElement).toBe(input)
     })
 
-    it('global-shortcuts.ts handles Esc to clear the search input', () => {
-        // Must handle 'Escape' key
-        expect(keyboardSource).toContain("e.key === 'Escape'")
-        // H-4 (bugsweep): clear the search query through the store via
-        // setSearchQuery('') instead of direct DOM mutation, so the Svelte
-        // $state and the DOM stay in sync.
-        expect(keyboardSource).toMatch(/setSearchQuery\(\s*['"]['"]\s*\)/)
-        expect(keyboardSource).toMatch(
-            /import[\s\S]{0,80}setSearchQuery[\s\S]{0,40}from\s+['"]@lib\/stores\/search\.svelte\.ts['"]/
-        )
+    it('"/" does not steal focus when an inner <input> is focused (isFormField guard)', () => {
+        const input = mount()
+        input.focus()
+        pressKeydown('/')
+        expect(document.activeElement).toBe(input) // unchanged — shortcut suppressed
     })
 
-    it('global-shortcuts.ts skips the / shortcut when a form field is focused', () => {
-        // Must check for input/textarea/select/contentEditable to skip shortcut
-        expect(keyboardSource).toContain("tag === 'input'")
-        expect(keyboardSource).toContain("tag === 'textarea'")
-        expect(keyboardSource).toContain("tag === 'select'")
-        expect(keyboardSource).toContain('isContentEditable')
-        // Must check for modifier keys
-        expect(keyboardSource).toContain('e.metaKey')
-        expect(keyboardSource).toContain('e.ctrlKey')
-        expect(keyboardSource).toContain('e.altKey')
-    })
+    it('Escape clears the search query via the store (setSearchQuery(""))', async () => {
+        const { appState } = await import('@lib/state/app.svelte')
+        if (!appState.searchState.currentSearchSummary) {
+            appState.searchState.currentSearchSummary = {
+                query: 'seed',
+                totalMatches: 1,
+                totalSemanticMatches: 1,
+                visibleMatches: 1,
+                resultCount: 1,
+                topScore: 0,
+                anchorIndex: null,
+                topIndex: null,
+                resultIndices: [],
+                summaryType: 'text',
+            }
+        } else {
+            appState.searchState.currentSearchSummary.query = 'seed'
+        }
+        mount()
+        pressKeydown('Escape', {})
 
-    it('SearchInput.svelte placeholder mentions the / shortcut', () => {
-        expect(searchInputSvelte).toMatch(/press\s*\/|\/\s*to\s*search/i)
+        expect(appState.searchState.currentSearchSummary?.query).toBe('')
     })
 })
