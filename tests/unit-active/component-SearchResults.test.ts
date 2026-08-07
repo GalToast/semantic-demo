@@ -13,7 +13,9 @@
  *  4. Empty state .search-empty-state with role="status" aria-live="polite"
  *  5. Results count #search-results-count with role="status" aria-live="polite"
  *  6. Result list #search-result-list with role="list" and aria-label
- *  7. Show-more button .search-show-more-btn with aria-expanded="false"
+ *  7. Show-more button .search-show-more-btn with aria-label + aria-controls +
+ *     aria-describedby and NO aria-expanded (load-more buttons must not
+ *     carry aria-expanded — f38c9363 removed the stale static attribute)
  *  8. Keyboard aria-keyshortcuts on result list container
  *
  * Note: the result list uses the ARIA sweep F3 pattern — container
@@ -100,12 +102,16 @@ describe('SearchResults component', () => {
         expect(resultList).toContain('aria-label="Search result businesses"')
     })
 
-    it('show-more button .search-show-more-btn with aria-expanded="false"', () => {
+    it('show-more button .search-show-more-btn is a load-more button (aria-label + aria-controls + aria-describedby, NO aria-expanded)', () => {
+        // f38c9363: the static aria-expanded="false" was an ARIA violation —
+        // a load-more button must not carry aria-expanded (that state applies
+        // to disclosure/accordion toggles, not "load more results" actions).
         const resultList = readResultList()
         expect(resultList).toContain('class="search-show-more-btn"')
-        expect(resultList).toContain('aria-expanded="false"')
+        expect(resultList).toMatch(/aria-label=\{\`Show \$\{remaining\} more search results\`\}/)
         expect(resultList).toContain('aria-controls="search-result-list"')
         expect(resultList).toContain('aria-describedby="search-results-count"')
+        expect(resultList).not.toContain('aria-expanded')
     })
 
     it('keyboard aria-keyshortcuts on result list container', () => {
