@@ -85,4 +85,74 @@ assert(
 )
 console.log('  PASS')
 
-console.log('\nsearch-focus-transition-timer-contract.mjs passed')
+console.log('\nsearch-focus-transition-timer-contract.mjs passed (static source scans)')
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RUNTIME BEHAVIORAL TESTS (Wave 7a P3 hardening)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// These runtime tests import the real focus-transition token functions from
+// the search orchestration module. getPendingFocusTransitionToken and
+// clearPendingFocusTransitionToken are module-level functions that access a
+// simple variable — they work in Node without DOM or full app state.
+
+const rt = { passed: 0, failed: 0 }
+function rtPass(name) { rt.passed++; console.log(`  PASS  runtime  ${name}`) }
+function rtFail(name, msg) { rt.failed++; console.error(`  FAIL  runtime  ${name} — ${msg}`) }
+
+try {
+  // Dynamic import — module has heavy transitive deps (three.js, svelte stores)
+  // but the token functions are simple module-level variable accessors that
+  // should work once the module loads.
+  const orch = await import('../src/lib/search/orchestration.ts')
+
+  // R1: getPendingFocusTransitionToken is a function
+  if (typeof orch.getPendingFocusTransitionToken === 'function')
+    rtPass('R1:getPendingFocusTransitionToken is function')
+  else
+    rtFail('R1:getPendingFocusTransitionToken', `type=${typeof orch.getPendingFocusTransitionToken}`)
+
+  // R2: Token starts null/undefined (no transition active)
+  const initial = orch.getPendingFocusTransitionToken()
+  if (initial === null || initial === undefined)
+    rtPass('R2:initial token is null/undefined (no active transition)')
+  else
+    rtFail('R2:initial token', `expected null/undefined, got ${initial}`)
+
+  // R3: clearPendingFocusTransitionToken is callable (no throw)
+  if (typeof orch.clearPendingFocusTransitionToken === 'function') {
+    try {
+      orch.clearPendingFocusTransitionToken()
+      rtPass('R3:clearPendingFocusTransitionToken callable no-throw')
+    } catch (e) {
+      rtFail('R3:clearPendingFocusTransitionToken', `threw: ${e.message}`)
+    }
+  } else {
+    rtFail('R3:clearPendingFocusTransitionToken', `type=${typeof orch.clearPendingFocusTransitionToken}`)
+  }
+
+  // R4: After clear, token is still null
+  const afterClear = orch.getPendingFocusTransitionToken()
+  if (afterClear === null)
+    rtPass('R4:after clear, token remains null')
+  else
+    rtFail('R4:after clear', `expected null, got ${afterClear}`)
+
+  // R5: beginSearchFocusTransition is exported (static pin verified at source;
+  //     runtime verification that the function exists on the module object)
+  if (typeof orch.beginSearchFocusTransition === 'function')
+    rtPass('R5:beginSearchFocusTransition is function')
+  else
+    rtFail('R5:beginSearchFocusTransition', `type=${typeof orch.beginSearchFocusTransition}`)
+
+} catch (e) {
+  rtFail('import', `could not import search/orchestration: ${e.message.split('\n')[0]}`)
+  // Fail fast but don't lose the other static test results
+}
+
+console.log(`\nruntime results: ${rt.passed}/${rt.passed + rt.failed} passed`)
+if (rt.failed > 0) {
+  console.error(`${rt.failed} runtime test(s) FAILED`)
+  process.exit(1)
+}
+console.log('All runtime behavioral tests passed.')

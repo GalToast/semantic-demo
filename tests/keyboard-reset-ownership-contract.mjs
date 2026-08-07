@@ -54,24 +54,41 @@ try {
     )
     console.log('  PASS - no window.* references')
 
-    // Contract Point 2: Inert defaults are module-local
-    console.log('\n[CONTRACT 2] inert defaults are module-local')
+    // Contract Point 2: retired callback-injection pattern is fully removed
+    // (commit f5b4c9d8 deleted initKeyboardResetOwnership + handleGalaxyKeydown
+    // and their module-local _returnToOverview / _resetExplorationFocus / _defaultNoOp
+    // variables; the live keyboard handling moved to setupGlobalShortcuts in
+    // global-shortcuts.ts which takes callbacks directly as parameters.)
+    console.log('\n[CONTRACT 2] retired callback-injection pattern is fully removed from keyboard-help.ts')
     assert(
-        /let\s+_returnToOverview(?:\s*:\s*\(\)\s*=>\s*void)?\s*=\s*_defaultNoOp/.test(src),
-        'returnToOverview default must be module-local inert () => {}'
+        !/_returnToOverview/.test(src),
+        'keyboard-help.ts must not define _returnToOverview (retired — superseded by setupGlobalShortcuts)'
     )
     assert(
-        /const\s+_defaultNoOp(?:\s*:\s*\(\)\s*=>\s*void)?\s*=\s*\(\)\s*=>\s*\{\s*\}/.test(src),
-        'inert default no-op must be module-local const _defaultNoOp = () => {}'
+        !/_resetExplorationFocus/.test(src),
+        'keyboard-help.ts must not define _resetExplorationFocus (retired)'
     )
-
     assert(
-        /let\s+_resetExplorationFocus(?:\s*:\s*\(\)\s*=>\s*void)?\s*=\s*_defaultNoOp/.test(src),
-        'resetExplorationFocus default must be module-local inert () => {}'
+        !/_defaultNoOp/.test(src),
+        'keyboard-help.ts must not define _defaultNoOp (retired)'
     )
-    assert(!src.includes('window._returnToOverview'), 'inert default must not be exposed on window')
-    assert(!src.includes('window._resetExplorationFocus'), 'inert default must not be exposed on window')
-    console.log('  PASS - inert defaults are module-scoped')
+    assert(
+        !/export function initKeyboardResetOwnership/.test(src),
+        'keyboard-help.ts must not export initKeyboardResetOwnership (retired)'
+    )
+    assert(
+        !/export function handleGalaxyKeydown/.test(src),
+        'keyboard-help.ts must not export handleGalaxyKeydown (retired)'
+    )
+    assert(
+        /export function initKeyboardShortcutsHint/.test(src),
+        'keyboard-help.ts must export initKeyboardShortcutsHint (current panel API)'
+    )
+    assert(
+        /export function setupGlobalShortcuts/.test(globalShortcutsSrc),
+        'global-shortcuts.ts must export setupGlobalShortcuts (current keyboard owner)'
+    )
+    console.log('  PASS - callback-injection pattern retired; setupGlobalShortcuts is the owner')
 
     // Contract Point 3: live app-level key handling is owned by global-shortcuts.ts
     // (retired 2026-08-03: triggers.ts’s module-local handleGlobalKeydown was a dead
@@ -140,79 +157,107 @@ try {
     )
     console.log('  PASS - returnToOverview and resetExplorationFocus are real exported lifecycle functions')
 
-    // Contract Point 5: keyboard-help calls only _ prefixed variants from key handlers
-    console.log('\n[CONTRACT 5] keyboard-help calls only _returnToOverview / _resetExplorationFocus from key handlers')
+    // Contract Point 5: keyboard-help.ts has no lifecycle imports; global-shortcuts.ts owns key handling
+    console.log('\n[CONTRACT 5] keyboard-help.ts owns panel DOM only; global-shortcuts.ts owns key-to-action dispatch')
     assert(
         !src.includes("from './lifecycle.ts'") && !src.includes('from "./lifecycle.js"'),
         'keyboard-help must not import from lifecycle.js (prevents direct coupling)'
     )
-    const keyHandlerSections = src.match(/function\s+handleGalaxyKeydown[\s\S]*?(?=export\s+function\s|\z)/)
-    assert(keyHandlerSections, 'keyboard-help must define handleGalaxyKeydown')
-    const handlerBody = keyHandlerSections[0]
     assert(
-        handlerBody.includes('_returnToOverview('),
-        'handleGalaxyKeydown must call _returnToOverview(), not the unguarded variant'
+        !/export function handleGalaxyKeydown/.test(src),
+        'keyboard-help.ts must not define handleGalaxyKeydown (retired; key dispatch is in global-shortcuts.ts)'
     )
     assert(
-        handlerBody.includes('_resetExplorationFocus('),
-        'handleGalaxyKeydown must call _resetExplorationFocus(), not the unguarded variant'
+        !/export function initKeyboardResetOwnership/.test(src),
+        'keyboard-help.ts must not define initKeyboardResetOwnership (retired)'
     )
-    const handlerWithoutInjectedCalls = handlerBody
-        .replace(/_returnToOverview\s*\(/g, '')
-        .replace(/_resetExplorationFocus\s*\(/g, '')
+    // The current keyboard owner wires Escape/Home through setupGlobalShortcuts,
+    // which dispatches RETURN_OVERVIEW via the nav transition system.
     assert(
-        !/\breturnToOverview\s*\(/.test(handlerWithoutInjectedCalls),
-        'handleGalaxyKeydown must not call unguarded returnToOverview - only _returnToOverview'
+        /key\s*===\s*['"]Escape['"][\s\S]{0,1500}RETURN_OVERVIEW/.test(globalShortcutsSrc),
+        'global-shortcuts.ts Escape must dispatch RETURN_OVERVIEW through mode transitions'
     )
-    assert(
-        !/\bresetExplorationFocus\s*\(/.test(handlerWithoutInjectedCalls),
-        'handleGalaxyKeydown must not call unguarded resetExplorationFocus - only _resetExplorationFocus'
-    )
-    console.log('  PASS - key handlers use only _ prefixed injected functions')
+    console.log('  PASS - keyboard-help.ts is panel-DOM-only; global-shortcuts.ts owns key dispatch')
 
     // ---------------------------------------------------------------------------
-    // RUNTIME CONTRACT 6: initKeyboardResetOwnership + handleGalaxyKeydown integration
+    // RUNTIME CONTRACT 6: setupGlobalShortcuts integration test
     // ---------------------------------------------------------------------------
-    console.log('\n[RUNTIME CONTRACT 6] initKeyboardResetOwnership integration test')
 
-    let dynamicOverviewCallCount = 0
-    let dynamicResetCallCount = 0
+    // Minimal DOM polyfills for Node (setupGlobalShortcuts imports Svelte stores
+    // that need window/document globals at module eval time).
+    if (typeof globalThis.window === 'undefined') {
+        globalThis.window = {
+            location: { href: 'http://localhost' },
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            dispatchEvent: () => {},
+            navigator: { clipboard: { writeText: async () => {} } },
+            setTimeout: globalThis.setTimeout,
+            clearTimeout: globalThis.clearTimeout,
+            setInterval: globalThis.setInterval,
+            clearInterval: globalThis.clearInterval,
+            requestAnimationFrame: (cb) => setTimeout(cb, 0),
+            performance: { now: () => Date.now() }
+        }
+    }
+    if (typeof globalThis.document === 'undefined' || typeof globalThis.document.createElement !== 'function') {
+        const el = () => ({
+            appendChild: () => {},
+            setAttribute: () => {},
+            getAttribute: () => null,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            classList: { add: () => {}, remove: () => {}, contains: () => false },
+            querySelector: () => null,
+            querySelectorAll: () => [],
+            style: {},
+            focus: () => {},
+            contains: () => false
+        })
+        globalThis.document = {
+            ...(globalThis.document || {}),
+            createElement: () => el(),
+            getElementById: () => el(),
+            body: { ...(globalThis.document?.body || {}), appendChild: () => {}, contains: () => false },
+            querySelector: () => null,
+            querySelectorAll: () => [],
+            addEventListener: () => {},
+            removeEventListener: () => {}
+        }
+    }
+    if (typeof globalThis.sessionStorage === 'undefined') {
+        globalThis.sessionStorage = {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {}
+        }
+    }
 
-    const { initKeyboardResetOwnership, handleGalaxyKeydown } = await import(
-        '../src/lib/keyboard/keyboard-help.ts'
+    console.log('\n[RUNTIME CONTRACT 6] setupGlobalShortcuts integration test')
+
+    const { setupGlobalShortcuts } = await import(
+        '../src/lib/keyboard/global-shortcuts.ts'
     )
 
-    // Before registration, callbacks are inert no-ops (Home key won't throw)
-    // After registration, Home and Escape dispatch to the registered callbacks
-    initKeyboardResetOwnership({
-        returnToOverview: () => { dynamicOverviewCallCount++ },
-        resetExplorationFocus: () => { dynamicResetCallCount++ }
+    assert(typeof setupGlobalShortcuts === 'function', 'setupGlobalShortcuts must be a function')
+
+    const cleanup = setupGlobalShortcuts({
+        toggleWeather: () => {},
+        toggleAudioMute: () => {}
     })
 
-    // Fake keyboard event helper
-    const fakeEvt = (key) => ({
-        key,
-        isComposing: false,
-        target: { tagName: 'BODY', getAttribute: () => null },
-        preventDefault: () => {},
-        stopPropagation: () => {},
-        shiftKey: false,
-        metaKey: false,
-        ctrlKey: false,
-        altKey: false
-    })
+    assert(typeof cleanup === 'function', 'setupGlobalShortcuts must return a cleanup function')
 
-    handleGalaxyKeydown(fakeEvt('Home'))
-    assert(dynamicOverviewCallCount === 1, `Home dispatched once, got ${dynamicOverviewCallCount}`)
+    // Call cleanup — must not throw
+    let cleanupThrew = false
+    try {
+        cleanup()
+    } catch (_e) {
+        cleanupThrew = true
+    }
+    assert(!cleanupThrew, 'cleanup function must not throw')
 
-    handleGalaxyKeydown(fakeEvt('Escape'))
-    assert(dynamicResetCallCount === 1, `Escape dispatched once, got ${dynamicResetCallCount}`)
-
-    // Second Home dispatch
-    handleGalaxyKeydown(fakeEvt('Home'))
-    assert(dynamicOverviewCallCount === 2, `Home dispatched twice, got ${dynamicOverviewCallCount}`)
-
-    console.log('  PASS - runtime integration: Home→returnToOverview, Escape→resetExplorationFocus')
+    console.log('  PASS - runtime integration: setupGlobalShortcuts installs/cleans up keyboard listener')
 
     console.log('\n=================================================================')
     console.log('ALL CONTRACT POINTS PASSED (5 static + 1 runtime)')

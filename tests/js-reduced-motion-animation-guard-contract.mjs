@@ -110,7 +110,11 @@ console.log('  ✓ stage-renderer.ts selected-card fade suppressed under reduced
 
 // 6. Search result scrolls: smooth scrollIntoView collapses to 'auto' under reduced motion.
 const searchResultsSrc = readSrc('src/components/SearchResults.svelte')
-assertContains(searchResultsSrc, "import { prefersReducedMotion } from '@lib/utils/environment'", 'SearchResults imports prefersReducedMotion')
+assertContains(
+    searchResultsSrc,
+    "import { prefersReducedMotion } from '@lib/utils/environment'",
+    'SearchResults imports prefersReducedMotion'
+)
 assertContains(
     searchResultsSrc,
     "firstNewItem.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' })",
@@ -119,7 +123,11 @@ assertContains(
 console.log('  ✓ SearchResults.svelte Show more scroll gated under reduced motion')
 
 const resultRendererSrc = readSrc('src/lib/search/result-renderer.ts')
-assertContains(resultRendererSrc, "import { getViewportSize, prefersReducedMotion } from '../utils/environment'", 'result-renderer imports prefersReducedMotion')
+assertContains(
+    resultRendererSrc,
+    "import { getViewportSize, prefersReducedMotion } from '../utils/environment'",
+    'result-renderer imports prefersReducedMotion'
+)
 assertContains(
     resultRendererSrc,
     "rowToReveal.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })",
@@ -127,4 +135,135 @@ assertContains(
 )
 console.log('  ✓ result-renderer.ts active-result reveal scroll gated under reduced motion')
 
-console.log('\njs-reduced-motion-animation-guard-contract OK')
+// ---------------------------------------------------------------------------
+// RUNTIME BEHAVIORAL TESTS — wave7b P3 hardening
+// ---------------------------------------------------------------------------
+// These tests verify the runtime behavior of the reduced-motion animation
+// guards that the static assertions above inspect. The static pins prove the
+// source patterns exist; the runtime tests prove the guard function works
+// correctly and the guarded animation modules are importable and callable.
+//
+// Pattern: follows wave4a/wave6b — additive-preserving, all static
+// assertions retained, runtime tests added at end.
+
+let runtimePasses = 0
+let runtimeFailures = 0
+function runtimeAssert(condition, message) {
+    if (condition) {
+        runtimePasses++
+        console.log(`  ✓ R${runtimePasses + runtimeFailures}: ${message}`)
+    } else {
+        runtimeFailures++
+        console.error(`  ✗ R${runtimePasses + runtimeFailures}: ${message}`)
+        throw new Error(`RUNTIME ASSERTION FAILED: ${message}`)
+    }
+}
+
+console.log('\n[RUNTIME] Reduced-motion animation guard behavioral tests')
+
+// --- R1: prefersReducedMotion SSR-safe (no window) ---
+{
+    const savedWindow = globalThis.window
+    try {
+        delete globalThis.window
+        const { prefersReducedMotion } = await import('@lib/utils/environment')
+        const result = prefersReducedMotion()
+        runtimeAssert(result === false, `prefersReducedMotion() returns false in SSR (got: ${result})`)
+    } finally {
+        if (savedWindow !== undefined) globalThis.window = savedWindow
+    }
+}
+
+// --- R2: prefersReducedMotion with mock matchMedia (reduce: yes) ---
+{
+    globalThis.window = {
+        matchMedia: (query) => ({
+            matches: true,
+            media: query,
+            addEventListener: () => {},
+            removeEventListener: () => {}
+        })
+    }
+    const { prefersReducedMotion } = await import('@lib/utils/environment')
+    const result = prefersReducedMotion()
+    runtimeAssert(result === true, `prefersReducedMotion() returns true when OS prefers reduced motion (got: ${result})`)
+}
+
+// --- R3: prefersReducedMotion with mock matchMedia (reduce: no) ---
+{
+    // Replace window.matchMedia identity to trigger cache rebuild
+    globalThis.window = {
+        matchMedia: (query) => ({
+            matches: false,
+            media: query,
+            addEventListener: () => {},
+            removeEventListener: () => {}
+        })
+    }
+    const { prefersReducedMotion } = await import('@lib/utils/environment')
+    const result = prefersReducedMotion()
+    runtimeAssert(result === false, `MQL cache rebuild: prefersReducedMotion() returns false after matchMedia swap (got: ${result})`)
+}
+
+// --- R4: prefersReducedMotion canonical API surface ---
+{
+    const env = await import('@lib/utils/environment')
+    runtimeAssert(typeof env.prefersReducedMotion === 'function', 'prefersReducedMotion is exported as a function')
+    const result = env.prefersReducedMotion()
+    runtimeAssert(typeof result === 'boolean', `prefersReducedMotion() returns boolean (got: ${typeof result})`)
+}
+
+// --- R5: updateInteractionVisuals importable & callable (focus-lens guard anchor) ---
+// The static pins above verify the source contains the reducedMotion guard.
+// This runtime test proves the guarded function is wired and callable without
+// Three.js state — the early-return path handles missing WebGL context.
+{
+    const mod = await import('@lib/engine/three-interaction-visuals')
+    runtimeAssert(typeof mod.updateInteractionVisuals === 'function', 'updateInteractionVisuals is exported')
+    try {
+        mod.updateInteractionVisuals()
+        runtimeAssert(true, 'updateInteractionVisuals() called without throw (early-return on missing state)')
+    } catch (e) {
+        runtimeAssert(false, `updateInteractionVisuals() threw: ${e.message}`)
+    }
+}
+
+// --- R6: updatePointsShaderHoverBoost importable & callable (uTime guard anchor) ---
+// The static pins verify the source gates uTime writes behind prefersReduced.
+// This runtime test proves the guarded frame-update function is wired.
+{
+    const mod = await import('@lib/engine/three-engine-frame-updates')
+    runtimeAssert(typeof mod.updatePointsShaderHoverBoost === 'function', 'updatePointsShaderHoverBoost is exported')
+    try {
+        mod.updatePointsShaderHoverBoost()
+        runtimeAssert(true, 'updatePointsShaderHoverBoost() called without throw (early-return on missing state)')
+    } catch (e) {
+        runtimeAssert(false, `updatePointsShaderHoverBoost() threw: ${e.message}`)
+    }
+}
+
+// --- R7: triggerSearchCorridorAnimation importable (corridor uTime guard anchor) ---
+{
+    const mod = await import('@lib/engine/three-search-animations')
+    runtimeAssert(typeof mod.triggerSearchCorridorAnimation === 'function', 'triggerSearchCorridorAnimation is exported')
+    runtimeAssert(typeof mod.updateSearchCorridorAnimation === 'function', 'updateSearchCorridorAnimation is exported')
+}
+
+// --- R8: triggerSelectedCardFade importable (stage-renderer fade guard anchor) ---
+{
+    const mod = await import('@lib/focus/stage-renderer')
+    runtimeAssert(typeof mod.triggerSelectedCardFade === 'function', 'triggerSelectedCardFade is exported')
+}
+
+// Restore clean state
+if (typeof globalThis.window !== 'undefined') {
+    delete globalThis.window
+}
+
+console.log(`\n[RUNTIME] ${runtimePasses} passed, ${runtimeFailures} failed`)
+if (runtimeFailures > 0) {
+    console.error('RUNTIME TESTS FAILED')
+    process.exit(1)
+}
+
+console.log('\njs-reduced-motion-animation-guard-contract OK (21 static assertions + 8 runtime behavioral tests)')

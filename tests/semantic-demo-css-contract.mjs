@@ -106,3 +106,26 @@ if (failures.length > 0) {
 }
 
 console.log('PASS: dist/svelte/semantic-demo.css matches lightningcss-minified source + index.html links it')
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Wave 7a P3 hardening: LEAVE-AS-IS rationale
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// This contract is a BUILD-OUTPUT INTEGRITY check, not a source-inspection
+// contract pinning rename-able details. Its invariant is:
+//   "dist/svelte/semantic-demo.css bytes MUST EXACTLY match the lightningcss-
+//    minified source (same transform vite uses at build time)"
+//
+// The behavioral test IS the byte comparison + index.html link check. Adding
+// runtime behavioral tests (e.g. importing CSS modules, checking class names
+// at runtime) would be LESS robust than the current approach because:
+//   a) CSS class names are visual conventions, not API contracts.
+//   b) The build pipeline (lightningcss minification) is the authorative
+//      source of truth — a runtime check on CSS class presence could pass
+//      while the build output is silently wrong (dropped rules, stale build).
+//   c) This contract already self-calibrates: comment-only source → 0 bytes →
+//      PASS; real rules → minified bytes → PASS; mismatch → FAIL.
+//
+// Classification: (c) FINE-AS-IS per contract-categorization-REPORT.md.
+// The contract's behavioral test IS the minification comparison. No further
+// runtime tests needed.

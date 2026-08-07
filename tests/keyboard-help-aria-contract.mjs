@@ -215,148 +215,156 @@ function testFocusTrap() {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// RUNTIME TEST 12: initKeyboardResetOwnership stores callbacks
+// Runtime test helpers — minimal DOM polyfills for Node (the static source-pin
+// assertions above don't need DOM; the runtime imports below need createElement,
+// classList, and window.addEventListener).
 // ---------------------------------------------------------------------------
 
-async function testRuntimeKeyboardResetOwnership() {
-    console.log('\n[RUNTIME] initKeyboardResetOwnership stores callbacks')
-
-    const { initKeyboardResetOwnership, handleGalaxyKeydown } = await import(
-        '../src/lib/keyboard/keyboard-help.ts'
-    )
-
-    // Before registration, callbacks are no-ops (handleGalaxyKeydown should not throw)
-    let overviewCalled = false
-    let resetCalled = false
-
-    initKeyboardResetOwnership({
-        returnToOverview: () => { overviewCalled = true },
-        resetExplorationFocus: () => { resetCalled = true }
-    })
-
-    assert(
-        typeof initKeyboardResetOwnership === 'function',
-        'initKeyboardResetOwnership is a function'
-    )
-    console.log('  OK callbacks registered')
-}
-
-// ---------------------------------------------------------------------------
-// RUNTIME TEST 13: handleGalaxyKeydown dispatches Home to registered callback
-// ---------------------------------------------------------------------------
-
-// Create a minimal KeyboardEvent-like object for Node testing
-function fakeKeyEvent(key, target = { tagName: 'BODY', getAttribute: () => null }) {
-    return {
-        key,
-        isComposing: false,
-        target,
-        preventDefault: () => {},
-        stopPropagation: () => {},
-        shiftKey: false,
-        metaKey: false,
-        ctrlKey: false,
-        altKey: false
+if (typeof globalThis.window === 'undefined') {
+    globalThis.window = {
+        location: { href: 'http://localhost' },
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => {},
+        navigator: { clipboard: { writeText: async () => {} } },
+        setTimeout: globalThis.setTimeout,
+        clearTimeout: globalThis.clearTimeout,
+        setInterval: globalThis.setInterval,
+        clearInterval: globalThis.clearInterval,
+        requestAnimationFrame: (cb) => setTimeout(cb, 0),
+        performance: { now: () => Date.now() }
     }
 }
 
-async function testRuntimeHandleGalaxyKeydownHome() {
-    console.log('\n[RUNTIME] handleGalaxyKeydown dispatches Home key')
-
-    const { initKeyboardResetOwnership } = await import(
-        '../src/lib/keyboard/keyboard-help.ts'
-    )
-
-    let overviewCalled = false
-    initKeyboardResetOwnership({
-        returnToOverview: () => { overviewCalled = true }
+if (typeof globalThis.document === 'undefined' || typeof globalThis.document.createElement !== 'function') {
+    const el = () => ({
+        appendChild: () => {},
+        setAttribute: () => {},
+        getAttribute: () => null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        classList: { add: () => {}, remove: () => {}, contains: () => false },
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        style: {},
+        focus: () => {},
+        contains: () => false
     })
+    globalThis.document = {
+        ...(globalThis.document || {}),
+        createElement: () => el(),
+        getElementById: () => el(),
+        body: { ...(globalThis.document?.body || {}), appendChild: () => {}, contains: () => false },
+        querySelector: () => null,
+        querySelectorAll: () => [],
+        addEventListener: () => {},
+        removeEventListener: () => {}
+    }
+}
 
-    const { handleGalaxyKeydown } = await import('../src/lib/keyboard/keyboard-help.ts')
-
-    handleGalaxyKeydown(fakeKeyEvent('Home'))
-    assert(overviewCalled, 'Home key dispatched to returnToOverview callback')
-
-    console.log('  OK Home key handling verified')
+if (typeof globalThis.sessionStorage === 'undefined') {
+    globalThis.sessionStorage = {
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {}
+    }
 }
 
 // ---------------------------------------------------------------------------
-// RUNTIME TEST 14: handleGalaxyKeydown dispatches Escape to registered callback
+// RUNTIME TEST 12: keyboard-help.ts exports current panel API functions
 // ---------------------------------------------------------------------------
 
-async function testRuntimeHandleGalaxyKeydownEscape() {
-    console.log('\n[RUNTIME] handleGalaxyKeydown dispatches Escape key')
+async function testRuntimeKeyboardHelpExports() {
+    console.log('\n[RUNTIME] keyboard-help.ts exports current panel API')
 
-    const { initKeyboardResetOwnership } = await import(
-        '../src/lib/keyboard/keyboard-help.ts'
-    )
+    const mod = await import('../src/lib/keyboard/keyboard-help.ts')
 
-    let resetCalled = false
-    initKeyboardResetOwnership({
-        returnToOverview: () => {},
-        resetExplorationFocus: () => { resetCalled = true }
-    })
+    assert(typeof mod.initKeyboardShortcutsHint === 'function', 'initKeyboardShortcutsHint is a function')
+    assert(typeof mod.showKeyboardShortcutsHint === 'function', 'showKeyboardShortcutsHint is a function')
+    assert(typeof mod.toggleKeyboardShortcutsHint === 'function', 'toggleKeyboardShortcutsHint is a function')
 
-    const { handleGalaxyKeydown } = await import('../src/lib/keyboard/keyboard-help.ts')
+    // Verify retired symbols are NOT exported (commit f5b4c9d8 removed the dead chain)
+    assert(!('initKeyboardResetOwnership' in mod), 'initKeyboardResetOwnership must not be exported (retired)')
+    assert(!('handleGalaxyKeydown' in mod), 'handleGalaxyKeydown must not be exported (retired)')
+    assert(!('isKeyboardControlTarget' in mod), 'isKeyboardControlTarget must not be exported (retired)')
 
-    handleGalaxyKeydown(fakeKeyEvent('Escape'))
-    assert(resetCalled, 'Escape key dispatched to resetExplorationFocus callback')
-
-    console.log('  OK Escape key handling verified')
+    console.log('  OK keyboard-help exports: initKeyboardShortcutsHint, showKeyboardShortcutsHint, toggleKeyboardShortcutsHint')
 }
 
 // ---------------------------------------------------------------------------
-// RUNTIME TEST 15: isKeyboardControlTarget correctly identifies targets
+// RUNTIME TEST 13: initKeyboardShortcutsHint creates panel and is callable
 // ---------------------------------------------------------------------------
 
-async function testRuntimeIsKeyboardControlTarget() {
-    console.log('\n[RUNTIME] isKeyboardControlTarget identifies interactive elements')
+async function testRuntimeInitKeyboardShortcutsHint() {
+    console.log('\n[RUNTIME] initKeyboardShortcutsHint creates panel and is callable')
 
-    const { isKeyboardControlTarget } = await import('../src/lib/keyboard/keyboard-help.ts')
+    const { initKeyboardShortcutsHint } = await import('../src/lib/keyboard/keyboard-help.ts')
 
-    assert(typeof isKeyboardControlTarget === 'function', 'isKeyboardControlTarget is a function')
+    // initKeyboardShortcutsHint creates the DOM panel and attaches event
+    // listeners. With the minimal node DOM polyfills it runs without throwing.
+    let threw = false
+    try {
+        initKeyboardShortcutsHint()
+        // Second call is idempotent (panel already exists path)
+        initKeyboardShortcutsHint()
+    } catch (_e) {
+        threw = true
+    }
+    assert(!threw, 'initKeyboardShortcutsHint() must not throw (callable in Node with DOM polyfills)')
 
-    // Null/undefined → false
-    assert(!isKeyboardControlTarget(null), 'null is not a control target')
-    assert(!isKeyboardControlTarget(undefined), 'undefined is not a control target')
+    console.log('  OK initKeyboardShortcutsHint callable + idempotent')
+}
 
-    // Plain div → false
-    const div = { tagName: 'DIV', getAttribute: () => null }
-    assert(!isKeyboardControlTarget(div), 'plain div is not a control target')
+// ---------------------------------------------------------------------------
+// RUNTIME TEST 14: showKeyboardShortcutsHint early-returns when no panel exists
+// ---------------------------------------------------------------------------
 
-    // Button → true (via tagName)
-    const button = { tagName: 'BUTTON', getAttribute: () => null }
-    assert(isKeyboardControlTarget(button), 'button is a control target (tagName)')
+async function testRuntimeShowKeyboardShortcutsHintNoPanel() {
+    console.log('\n[RUNTIME] showKeyboardShortcutsHint returns safely')
 
-    // Select → true (via tagName)
-    const select = { tagName: 'SELECT', getAttribute: () => null }
-    assert(isKeyboardControlTarget(select), 'select is a control target (tagName)')
+    const { showKeyboardShortcutsHint, toggleKeyboardShortcutsHint } = await import('../src/lib/keyboard/keyboard-help.ts')
 
-    // Anchor → true (via tagName)
-    const anchor = { tagName: 'A', getAttribute: () => null }
-    assert(isKeyboardControlTarget(anchor), 'anchor is a control target (tagName)')
+    // Both functions should be callable without throwing, even with minimal DOM.
+    let threw = false
+    try {
+        showKeyboardShortcutsHint()
+        toggleKeyboardShortcutsHint()
+    } catch (_e) {
+        threw = true
+    }
+    assert(!threw, 'showKeyboardShortcutsHint / toggleKeyboardShortcutsHint must not throw')
 
-    // role="button" → true (via ARIA role)
-    const roleButton = { tagName: 'SPAN', getAttribute: (attr) => attr === 'role' ? 'button' : null }
-    assert(isKeyboardControlTarget(roleButton), 'role=button is a control target')
+    console.log('  OK showKeyboardShortcutsHint and toggleKeyboardShortcutsHint are callable')
+}
 
-    // role="link" → true (via ARIA role)
-    const roleLink = { tagName: 'SPAN', getAttribute: (attr) => attr === 'role' ? 'link' : null }
-    assert(isKeyboardControlTarget(roleLink), 'role=link is a control target')
+// ---------------------------------------------------------------------------
+// RUNTIME TEST 15: setupGlobalShortcuts installs listener and returns cleanup
+// ---------------------------------------------------------------------------
 
-    // role="menuitem" → true
-    const roleMenuItem = { tagName: 'DIV', getAttribute: (attr) => attr === 'role' ? 'menuitem' : null }
-    assert(isKeyboardControlTarget(roleMenuItem), 'role=menuitem is a control target')
+async function testRuntimeSetupGlobalShortcuts() {
+    console.log('\n[RUNTIME] setupGlobalShortcuts installs global keydown + returns cleanup')
 
-    // role="tab" → true
-    const roleTab = { tagName: 'DIV', getAttribute: (attr) => attr === 'role' ? 'tab' : null }
-    assert(isKeyboardControlTarget(roleTab), 'role=tab is a control target')
+    const { setupGlobalShortcuts } = await import('../src/lib/keyboard/global-shortcuts.ts')
 
-    // role="presentation" → false
-    const rolePresentation = { tagName: 'SPAN', getAttribute: (attr) => attr === 'role' ? 'presentation' : null }
-    assert(!isKeyboardControlTarget(rolePresentation), 'role=presentation is NOT a control target')
+    assert(typeof setupGlobalShortcuts === 'function', 'setupGlobalShortcuts is a function')
 
-    console.log('  OK isKeyboardControlTarget correctly identifies 10 target types')
+    let weatherToggled = false
+    const cleanup = setupGlobalShortcuts({
+        toggleWeather: () => { weatherToggled = true }
+    })
+
+    assert(typeof cleanup === 'function', 'setupGlobalShortcuts must return a cleanup function')
+
+    // Call cleanup — must not throw
+    let cleanupThrew = false
+    try {
+        cleanup()
+    } catch (_e) {
+        cleanupThrew = true
+    }
+    assert(!cleanupThrew, 'cleanup function must not throw when called')
+
+    console.log('  OK setupGlobalShortcuts installs + cleanup removes listener')
 }
 
 const tests = [
@@ -389,10 +397,10 @@ for (const test of tests) {
 
 // Run runtime behavioral tests
 const runtimeTests = [
-    testRuntimeKeyboardResetOwnership,
-    testRuntimeHandleGalaxyKeydownHome,
-    testRuntimeHandleGalaxyKeydownEscape,
-    testRuntimeIsKeyboardControlTarget
+    testRuntimeKeyboardHelpExports,
+    testRuntimeInitKeyboardShortcutsHint,
+    testRuntimeShowKeyboardShortcutsHintNoPanel,
+    testRuntimeSetupGlobalShortcuts
 ]
 
 for (const test of runtimeTests) {

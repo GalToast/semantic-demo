@@ -72,11 +72,13 @@ assert(
 // 4. Real impls ARE invoked with the proper arity — (result, topScore) for strength,
 //    (order, isAnchor) for cardClasses. Single-arg form was the mock smell.
 assert(
-    itemSrc.includes('getSearchResultStrength(resultItem, topScore)'),
+    itemSrc.includes('getSearchResultStrength(presentationResult, topScore)') ||
+        itemSrc.includes('getSearchResultStrength(resultItem, topScore)'),
     'SearchResultItem.svelte must call getSearchResultStrength(result, topScore), not the mock single-arg form'
 )
 assert(
-    itemSrc.includes('getSearchResultCardClasses(orderIdx, isAnchor)'),
+    itemSrc.includes('getSearchResultCardClasses(orderIdx, isAnchor)') ||
+        itemSrc.includes('getSearchResultCardClasses(order, isAnchor)'),
     'SearchResultItem.svelte must call getSearchResultCardClasses(order, isAnchor) for real DOM-class discrimination'
 )
 
@@ -128,3 +130,105 @@ assert(
 )
 
 console.log('SearchResultItem real-impl contract OK.')
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RUNTIME BEHAVIORAL TESTS (Wave 7a P3 hardening)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// These runtime tests import the real pure functions from result-presentation.ts
+// and verify their behavioral contracts (not just source strings).
+// The functions are deterministic: same input → same output, no DOM, no state.
+
+const rt = { passed: 0, failed: 0, failures: [] }
+function rtPass(name) { rt.passed++; console.log(`  PASS  runtime  ${name}`) }
+function rtFail(name, msg) { rt.failed++; rt.failures.push({ name, msg }); console.error(`  FAIL  runtime  ${name} — ${msg}`) }
+
+const presMod = await import('../src/lib/search/result-presentation.ts')
+
+// R1: getSearchResultStrength — null result returns floor (14)
+{
+  const val = presMod.getSearchResultStrength(null, 100)
+  if (val === 14) rtPass('R1:getSearchResultStrength null-guard returns 14')
+  else rtFail('R1:getSearchResultStrength null-guard', `expected 14, got ${val}`)
+}
+
+// R2: getSearchResultStrength — normalizes score relative to topScore [14,100]
+{
+  const result = { id: 'x', name: 'Test', index: 0, score: 0.75, category: '', snippet: '' }
+  const val = presMod.getSearchResultStrength(result, 1.0)
+  if (val === 75) rtPass('R2:getSearchResultStrength normalizes 0.75/1.0 → 75')
+  else rtFail('R2:getSearchResultStrength normalization', `expected 75, got ${val}`)
+}
+
+// R3: getSearchResultStrength — clamps at floor 14 even for very weak matches
+{
+  const result = { id: 'x', name: 'Test', index: 0, score: 0.01, category: '', snippet: '' }
+  const val = presMod.getSearchResultStrength(result, 100)
+  if (val === 14) rtPass('R3:getSearchResultStrength clamps floor at 14')
+  else rtFail('R3:getSearchResultStrength floor clamp', `expected 14, got ${val}`)
+}
+
+// R4: getSearchResultStrength — clamps at ceiling 100
+{
+  const result = { id: 'x', name: 'Test', index: 0, score: 999, category: '', snippet: '' }
+  const val = presMod.getSearchResultStrength(result, 1.0)
+  if (val === 100) rtPass('R4:getSearchResultStrength clamps ceiling at 100')
+  else rtFail('R4:getSearchResultStrength ceiling clamp', `expected 100, got ${val}`)
+}
+
+// R5: getSearchResultStrength — non-finite topScore returns 14
+{
+  const result = { id: 'x', name: 'Test', index: 0, score: 50, category: '', snippet: '' }
+  const val = presMod.getSearchResultStrength(result, NaN)
+  if (val === 14) rtPass('R5:getSearchResultStrength NaN topScore → 14')
+  else rtFail('R5:getSearchResultStrength NaN guard', `expected 14, got ${val}`)
+}
+
+// R6: getSearchResultCardClasses — anchor result (order 0, isAnchor true)
+{
+  const cls = presMod.getSearchResultCardClasses(0, true)
+  if (cls === 'search-result-item top-result is-anchor') rtPass('R6:getSearchResultCardClasses anchor (order=0,isAnchor=true)')
+  else rtFail('R6:getSearchResultCardClasses anchor', `got "${cls}"`)
+}
+
+// R7: getSearchResultCardClasses — secondary result (order 1, isAnchor false)
+{
+  const cls = presMod.getSearchResultCardClasses(1, false)
+  if (cls === 'search-result-item is-secondary') rtPass('R7:getSearchResultCardClasses secondary (order=1,isAnchor=false)')
+  else rtFail('R7:getSearchResultCardClasses secondary', `got "${cls}"`)
+}
+
+// R8: getSearchResultCardClasses — top result non-anchor (order 0, isAnchor false)
+{
+  const cls = presMod.getSearchResultCardClasses(0, false)
+  if (cls === 'search-result-item top-result is-secondary') rtPass('R8:getSearchResultCardClasses top non-anchor (order=0,isAnchor=false)')
+  else rtFail('R8:getSearchResultCardClasses top non-anchor', `got "${cls}"`)
+}
+
+// R9: getSearchResultStrengthLabel — label vocabulary
+{
+  const l0 = presMod.getSearchResultStrengthLabel(0, 50)   // order 0 always 'Best match'
+  const l1 = presMod.getSearchResultStrengthLabel(1, 95)   // ≥90 → 'Strong match'
+  const l2 = presMod.getSearchResultStrengthLabel(2, 80)   // ≥75 → 'Good match'
+  const l3 = presMod.getSearchResultStrengthLabel(3, 60)   // ≥50 → 'Related'
+  const l4 = presMod.getSearchResultStrengthLabel(4, 30)   // <50 → 'Broader match'
+  if (l0 === 'Best match' && l1 === 'Strong match' && l2 === 'Good match' && l3 === 'Related' && l4 === 'Broader match')
+    rtPass('R9:getSearchResultStrengthLabel vocabulary correct')
+  else rtFail('R9:getSearchResultStrengthLabel vocabulary', `got "${l0}"|"${l1}"|"${l2}"|"${l3}"|"${l4}"`)
+}
+
+// R10: buildSearchResultSnippet — returns string (not null/undefined)
+{
+  const result = { id: 'x', name: 'Test', index: 0, score: 1, category: '', snippet: '' }
+  const snippet = presMod.buildSearchResultSnippet(result)
+  if (typeof snippet === 'string' && snippet.length > 0)
+    rtPass('R10:buildSearchResultSnippet returns non-empty string')
+  else rtFail('R10:buildSearchResultSnippet', `got ${typeof snippet}: "${snippet}"`)
+}
+
+console.log(`\nruntime results: ${rt.passed}/${rt.passed + rt.failed} passed`)
+if (rt.failed > 0) {
+  console.error(`${rt.failed} runtime test(s) FAILED`)
+  process.exit(1)
+}
+console.log('All runtime behavioral tests passed.')

@@ -28,6 +28,10 @@ const loadingUiSource = hasSvelte ? null : await readFile(loadingUiPath, 'utf8')
 const lifecycleSource = hasSvelte ? null : await readFile(lifecyclePath, 'utf8').catch(() => null)
 const svelteLoadingSource = hasSvelte ? await readFile(svelteLoadingPath, 'utf8').catch(() => null) : null
 const svelteAppSource = hasSvelte ? await readFile(join(ROOT, 'src/App.svelte'), 'utf8').catch(() => null) : null
+// F5 (data-pipeline bugsweep 2026-08-08): progress values moved from
+// LoadingOverlay.svelte inline to LOADING_PHASE_META in loading.ts.
+const loadingTsPath = join(ROOT, 'src/lib/ui/loading.ts')
+const loadingTsSource = hasSvelte ? await readFile(loadingTsPath, 'utf8').catch(() => null) : null
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -118,15 +122,28 @@ if (hasSvelte && svelteLoadingSource) {
 
     svelteTests.push(async function testSveltePhaseProgressMapping() {
         if (!svelteLoadingSource) return skip('LoadingOverlay.svelte not readable')
-        // Phase definitions should map phases to progress values
-        const hasProgressMap =
-            svelteLoadingSource.includes('progress:') &&
-            svelteLoadingSource.includes('0.2') && // records
-            svelteLoadingSource.includes('0.48') && // scene
-            svelteLoadingSource.includes('0.76') && // restore
-            svelteLoadingSource.includes('1') // launch
-        if (!hasProgressMap) throw new Error('LoadingOverlay must map phases to progress values (0.2, 0.48, 0.76, 1)')
-        ok('Svelte LoadingOverlay phase progress mapping is correct')
+        if (!loadingTsSource) return skip('src/lib/ui/loading.ts not readable')
+
+        // Phase progress values live in LOADING_PHASE_META (loading.ts),
+        // not inline in the .svelte file (F5: extracted 2026-08-08).
+        const hasProgressMeta =
+            loadingTsSource.includes('LOADING_PHASE_META') &&
+            loadingTsSource.includes('0.2') &&  // records
+            loadingTsSource.includes('0.48') &&  // scene
+            loadingTsSource.includes('0.76') &&  // restore
+            loadingTsSource.includes('progress: 1')  // launch
+        if (!hasProgressMeta)
+            throw new Error('loading.ts LOADING_PHASE_META must map phases to progress values (0.2, 0.48, 0.76, 1)')
+
+        // LoadingOverlay.svelte must read progress from LOADING_PHASE_META,
+        // not inline the literal values (the old coupling point).
+        const readsFromMeta =
+            svelteLoadingSource.includes('LOADING_PHASE_META') &&
+            svelteLoadingSource.includes('progress')
+        if (!readsFromMeta)
+            throw new Error('LoadingOverlay.svelte must read progress from LOADING_PHASE_META[phase]?.progress')
+
+        ok('Svelte LoadingOverlay reads phase progress from LOADING_PHASE_META (loading.ts)')
     })
 
     svelteTests.push(async function testSvelteLoadingStateAttribute() {

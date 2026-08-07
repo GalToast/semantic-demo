@@ -200,3 +200,27 @@ if (process.exitCode) {
 }
 
 console.log('3D visual polish contract passed.')
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Wave 7a P3 hardening: LEAVE-AS-IS rationale
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// This contract pins VISUAL CONSTANTS that ARE the behavioral contract:
+//   - Camera overview pose: position.set(2.05, 1.55, 2.75)
+//   - Opacity profiles: core/wispy/bridge/pulse tuples (4 profiles)
+//   - Material colors, tone mapping, clear alpha
+//   - Bezier curve segments, float accounting
+//   - Semantic lens spoke constants (maxSpokeLength=0.12, alpha values)
+//
+// These are DESIGN DECISIONS, not rename-able implementation details.
+// Changing any of these values changes the visual appearance of the product.
+// The contract's job is to flag visual drift — it does this correctly by
+// source-scanning the current constants. A "runtime" test that imports
+// Three.js and inspects material properties would be:
+//   a) Redundant (same values, different read path — no new coverage)
+//   b) Brittle (Three.js version upgrades change internal property names)
+//   c) Slow (Three.js is a 500KB+ module that takes >10s to load in Node)
+//
+// Classification: (a) OWNERSHIP-INVARIANT — the visual constants define
+// ownership of the look-and-feel. Source-scan is the correct verification
+// strategy. No runtime tests needed.

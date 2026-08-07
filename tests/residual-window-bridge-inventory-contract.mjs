@@ -58,6 +58,7 @@ const MODULES = {
     journeyWebgl: path.join(SEMDEMO_ROOT, 'src/lib/journey/webgl.ts'),
     legendUi: path.join(SEMDEMO_ROOT, 'src/lib/journey/legend-ui.ts'),
     keyboardHelp: path.join(SEMDEMO_ROOT, 'src/lib/keyboard/keyboard-help.ts'),
+    globalShortcuts: path.join(SEMDEMO_ROOT, 'src/lib/keyboard/global-shortcuts.ts'),
     uiRenderers: path.join(SEMDEMO_ROOT, 'src/lib/ui/renderers.ts'),
     mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'src/lib/utils/map-flattening-layout.ts'),
     inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/inspected-strand-overlay-adapter.ts'),
@@ -903,6 +904,7 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
     const threadSettlerSrc = read('journeyThreadSettler')
     const journeyCompassSrc = read('journeyCompassCtrl')
     const keyboardSrc = read('keyboardHelp')
+    const globalShortcutsSrc = read('globalShortcuts')
     const uiRenderersSrc = read('uiRenderers')
     const appRuntimeSrc = read('appRuntime')
 
@@ -961,8 +963,12 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
         'journey-compass-controller.js must not use window reset fallbacks'
     )
     assert(
-        /export function initKeyboardResetOwnership/.test(keyboardSrc),
-        'keyboard-help.js should keep reset ownership injection'
+        /export function setupGlobalShortcuts/.test(globalShortcutsSrc),
+        'global-shortcuts.ts should own keyboard shortcuts via setupGlobalShortcuts'
+    )
+    assert(
+        !/export function initKeyboardResetOwnership/.test(keyboardSrc),
+        'keyboard-help.js must not keep the retired reset-ownership injection'
     )
     assert(
         !keyboardSrc.includes('typeof window.returnToOverview') &&
