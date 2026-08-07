@@ -207,6 +207,7 @@ function _restoreReinitWithRetry() {
             if (wasEscalated) {
                 engineState.circuitBreakerTripped = false
                 setEngineStatus('ready')
+                setGraphicsMode('webgl')
                 debugInfo('[three-engine] WebGL restore succeeded after watchdog escalation — reconciled state')
             }
         })

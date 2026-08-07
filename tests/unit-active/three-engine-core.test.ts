@@ -28,6 +28,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { get } from 'svelte/store'
 
 // ── Hoisted mutable stubs (consumed by vi.mock factories) ───────────────────
 
@@ -145,6 +146,7 @@ import {
     animate
 } from '@lib/engine/three-engine-core'
 import { getEngineStatus, setEngineStatus } from '@lib/stores/engine.svelte'
+import { graphicsModeStore, setGraphicsMode } from '@lib/data-store'
 
 // ── 1. Compile-time surface contract ────────────────────────────────────────
 
@@ -403,6 +405,7 @@ describe('webgl-restore retry state machine', () => {
     beforeEach(() => {
         vi.useFakeTimers()
         setEngineStatus('idle')
+        setGraphicsMode('webgl')
         _buildThreeSceneOrFallback.mockReset()
         _buildThreeSceneOrFallback.mockResolvedValue({ success: false })
         _engineStateProxy.webglNeedsRestoreReinit = false
@@ -418,6 +421,7 @@ describe('webgl-restore retry state machine', () => {
         container?.remove()
         vi.useRealTimers()
         setEngineStatus('idle')
+        setGraphicsMode('webgl')
         _engineStateProxy.webglNeedsRestoreReinit = false
         _engineStateProxy.webglRestoreTimer = null
         _engineStateProxy.circuitBreakerTripped = false
@@ -499,12 +503,14 @@ describe('webgl-restore retry state machine', () => {
         expect(toast()).toHaveBeenCalledTimes(1)
         expect(getEngineStatus()).toBe('degraded')
         expect(_engineStateProxy.circuitBreakerTripped).toBe(true)
+        expect(get(graphicsModeStore)).toBe('fallback')
 
         // Late success must reconcile — not leave the engine permanently degraded
         resolveBuild({ success: true, setup: SUCCESS_SETUP })
         await vi.advanceTimersByTimeAsync(0)
         expect(getEngineStatus()).toBe('ready')
         expect(_engineStateProxy.circuitBreakerTripped).toBe(false)
+        expect(get(graphicsModeStore)).toBe('webgl')
         expect(toast()).toHaveBeenCalledTimes(1)
         expect(_engineStateProxy.webglRestoreTimer).toBeNull()
         expect(vi.getTimerCount()).toBe(0)

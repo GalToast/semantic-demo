@@ -260,7 +260,9 @@ async function run() {
         // Simulate focusing a node (Step Inside entry point)
         const point = s.points[0]
         if (point) {
-            s.selectedPoint = point
+            // Canonical appState path; the flat selectedPoint compat alias is
+            // self-referential and would not exercise focusState hydration.
+            s.focusState.selectedPoint = point
             s.focusedNode = 0
             s.navState.focusedIndex = 0
             s.navState.mode = 'focus'
@@ -395,7 +397,7 @@ async function run() {
         // resetNodePositions() does when called without preserveSearch.
         // Use direct state mutation (safe for test) since focusOnNode(-1) is invalid.
         ;(window.__APP_STATE__ ?? window.__TEST_STATE__).focusedNode = null
-        ;(window.__APP_STATE__ ?? window.__TEST_STATE__).selectedPoint = null
+        ;(window.__APP_STATE__ ?? window.__TEST_STATE__).focusState.selectedPoint = null
         {
             const nv = window.__APP_STATE__ ?? window.__TEST_STATE__
             // whole-prop nav write (same as above) — nested write would be lost to the
