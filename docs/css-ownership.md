@@ -81,10 +81,15 @@ stable. Cross-file references in `journey_active.css`, `layout_base.css`,
 ## 4. Component-owned CSS convention
 
 Of 40 `src/**/*.svelte` files, **36 have a `<style>` block** (inline is the
-default). Only **2** use the Header `@import` pattern:
+default). Only **1** uses the `@import` pattern inside its `<style>` block:
 
-- `src/components/Header.svelte` → `@import '@lib/components/header/header.css'`
 - `src/components/ProximityLegend.svelte` → `@import '@lib/css/z-layers.css'`
+
+The header styles were split into `src/lib/components/header/header.css` in
+PR-D9/W52 and are imported **once as a side-effect at App scope**
+(`src/App.svelte:35` `import '@lib/components/header/header.css'`);
+`Header.svelte`/`HelpDialog.svelte` keep empty `<style>` blocks with comments
+pointing at the App-scope import.
 
 4 components have no `<style>` (shell / no-UI): `AppBoot.svelte`,
 `DevToolsMount.svelte`, `SearchResultItem.svelte`, `WalkBreadcrumb.svelte`.

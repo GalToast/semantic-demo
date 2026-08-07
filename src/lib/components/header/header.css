@@ -10,9 +10,9 @@
  *     (chrome + brand identity)
  *   - .legend-toggle / .help-toggle
  *     (utility buttons on the right)
- *   - .mode-chips / .mode-chip / .chip-icon / .chip-label
- *     (the 6 journey-mode chips — overview, search, focus, trail,
- *     inside, map; trail added in PR-D6)
+ *   - .mode-chips layout rule only (:global); chip visuals (.mode-chip /
+ *     .chip-icon / .chip-label) live in ModeChipRail.svelte's scoped <style>
+ *     (W52 split — this file carries just the rail layout)
  *   - .header-description
  *     (caption that surfaces the current mode's tooltip on desktop)
  *   - .help-dialog
