@@ -3,8 +3,8 @@
  *
  *
  *
- * Owns cluster filtering, city filter population, filter control sync,
- * story prompt application, and filter-driven mycelium mode switching.
+ * Owns cluster filtering, filter control sync, story prompt application,
+ * and filter-driven mycelium mode switching.
  * Decoupled from lifecycle.ts per Phase 5 migration plan.
  */
 
@@ -12,7 +12,6 @@ import { get } from 'svelte/store'
 import {
     filterState,
     activeClusterFilter,
-    toggleFilter,
     overwriteActiveFilters,
     setClusterFilter as storeSetClusterFilter,
     resetFilters
@@ -21,18 +20,14 @@ import { searchStore, clearSearchGlow } from '@lib/stores/search.svelte'
 import { writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { setMyceliumMode } from '@lib/stores/lifecycle'
-import { businessRecords } from '@lib/data-store'
 import {
     applyFilters,
     clearShortSemanticSearchState,
     getFilteredClusterCounts
 } from '@lib/orchestration/search-filter-core'
 import { updateUrlState } from '@lib/orchestration/url-state'
-import { normalizeCityForFilter } from '@lib/utils/geo-data'
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { el, setChildren } from '@lib/utils/dom-builder'
-import { appState } from '@lib/state/app.svelte'
-import type { BusinessRecord } from '@lib/types/business'
 import type { ActiveFilters } from '@lib/types/state'
 
 // ── Configuration (ported from ) ───────────────────────────
@@ -79,15 +74,9 @@ export function setClusterFilter(cluster: number | null): void {
 
     storeSetClusterFilter(toggledCluster !== null ? String(toggledCluster) : null)
 
-    // Mirror to legacy state — the WebGL engine (map-state.ts, three-engine.js)
-    // reads isPointVisible(state.points, state.activeClusterFilter, ...) from
-    // js/state.js. Without this sync the cluster filter is set in the Svelte
-    // store but the canvas keeps rendering every cluster as if no filter were
-    // active. This was the visible half of P0-5: legend click would dim the
-    // legend row but leave the mycelium field untouched.
-    {
-        appState.activeClusterFilter = toggledCluster
-    }
+    // appState.activeClusterFilter is mirrored by ActiveClusterFilterState.set()
+    // in @lib/stores/filter.svelte (the P0-5 legacy-engine sync); the
+    // storeSetClusterFilter call above already writes it.
 
     // Clear story prompt when cluster filter changes
     writeNavStateMirror({ activeStoryPrompt: null })
@@ -223,39 +212,16 @@ export function syncCityFilterUi(): void {
 }
 
 /**
- * Populate the city filter select with unique cities from business data.
+ * @deprecated Dead code (w11 MED-2): the city filter select is populated
+ * reactively by Filters.svelte's $derived.by block, and the old body's
+ * unconditional `toggleFilter('city', select.value)` bumped filterVersion on
+ * every sync even when the city never changed. Retained as a no-op export
+ * because tests/cluster-filter-contract.mjs and tests/unit-active/
+ * w46-c3-orchestration-bulk-fill.test.ts pin the export surface
+ * (`export async function populateCityFilter(`). Do not delete while pinned.
  */
 export async function populateCityFilter(): Promise<void> {
-    const points = get(businessRecords)
-    if (!points) return
-
-    const select = document.getElementById('city-filter') as HTMLSelectElement | null
-    if (!select) return
-
-    const counts = new Map<string, number>()
-
-    points.forEach((point: BusinessRecord) => {
-        const city = normalizeCityForFilter(point?.city)
-        counts.set(city, (counts.get(city) || 0) + 1)
-    })
-
-    const cities = Array.from(counts.entries())
-        .filter(([city]) => city && city !== 'Other / Unparsed')
-        .sort((a, b) => a[0].localeCompare(b[0]))
-
-    const activeFilters = get(filterState)
-    const currentCity = activeFilters.city || 'all'
-
-    const options = [
-        el('option', { value: 'all' }, 'All Cities'),
-        ...cities.map(([city, count]) => el('option', { value: city }, `${city} (${count.toLocaleString()})`))
-    ]
-
-    setChildren(select, ...options)
-    select.value = cities.some(([city]) => city === currentCity) ? currentCity : 'all'
-    toggleFilter('city', select.value)
-
-    syncCityFilterUi()
+    // Intentionally a no-op — see @deprecated note.
 }
 
 /**
