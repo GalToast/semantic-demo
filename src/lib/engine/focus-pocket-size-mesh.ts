@@ -16,7 +16,7 @@
 import { AdditiveBlending, BufferGeometry, Float32BufferAttribute, Points, PointsMaterial } from 'three'
 import { appState as state } from '@lib/state/app.svelte'
 import { CONFIG } from '@lib/engine/config'
-import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 
 const SIZE_MULTIPLIER = 3.4
 const TWIN_OPACITY = 0.9
@@ -94,4 +94,4 @@ export function syncFocusPocketSizeMesh(): void {
 // (e.g. return-to-overview). The frame-loop sync also disposes when the
 // focus/pocket clears, but continuous rendering may stop before that tick,
 // leaving the overlay in the scene after focus exit.
-subscribe(EVENTS.STATE_RESET, () => disposeFocusPocketSizeMesh())
+subscribeKeyed('focus-pocket-size-mesh:STATE_RESET', EVENTS.STATE_RESET, () => disposeFocusPocketSizeMesh())

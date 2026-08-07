@@ -6,7 +6,7 @@
  */
 import { Vector3 } from 'three'
 
-import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { getViewportSize, isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
 import { CONFIG } from '@lib/engine/config'
@@ -229,6 +229,6 @@ export function syncClusterSectionState(): void {
     // Left empty as it was mobile DOM specific
 }
 
-subscribe(EVENTS.VIEW_CHANGED, () => {
+subscribeKeyed('cluster-labels:VIEW_CHANGED', EVENTS.VIEW_CHANGED, () => {
     syncClusterSectionState()
 })

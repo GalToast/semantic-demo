@@ -10,7 +10,7 @@ import { appState as state } from '@lib/state/app.svelte'
 
 import { engineStatusStore } from '@lib/stores/engine.svelte.ts'
 
-import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus'
+import { subscribeKeyed, publish, EVENTS } from '@lib/orchestration/event-bus'
 import {
     resetRouteTraceDiagnostics,
     removeRouteTraceOverlay,
@@ -106,7 +106,7 @@ const journeyFocusTimerRegistry = new DisposableRegistry({
     warnAfterDispose: false
 })
 
-subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
+subscribeKeyed('journey:CAMERA_NODE_FOCUSED', EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
     const index = typeof payload.index === 'number' ? payload.index : NaN
     if (Number.isFinite(index)) {
         const strandState = state.strandContinuityState as { phase?: string; targetIndex?: number | null } | null

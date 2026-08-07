@@ -6,7 +6,7 @@
  */
 
 import { appState as state } from '@lib/state/app.svelte'
-import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { Vector3, Vector2, Color, AdditiveBlending, Float32BufferAttribute } from 'three'
 import { Vec3 } from '@lib/utils/math-vec3'
 import { Line2 } from 'three/examples/jsm/lines/Line2.js'
@@ -62,7 +62,7 @@ export interface SemanticShaderLike {
 }
 
 // Phase 3: Declarative synchronization
-subscribe(EVENTS.CAMERA_NODE_FOCUSED, () => {
+subscribeKeyed('semantic-overlay:CAMERA_NODE_FOCUSED', EVENTS.CAMERA_NODE_FOCUSED, () => {
     refreshFocusSemanticOverlay()
 })
 
