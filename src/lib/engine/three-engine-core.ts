@@ -74,6 +74,7 @@ import { syncSceneHandles, syncPointsHandles, syncMyceliumHandles } from './thre
 import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
 import { isMobileViewport, prefersReducedMotion } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
+import { setEngineStatus } from '@lib/stores/engine.svelte.ts'
 import {
     updateRouteTraceOverlayFrame,
     updateArrivalHandoffOverlayFrame,
@@ -82,6 +83,80 @@ import {
     updateFocusSemanticOverlayPositions
 } from '@lib/engine/journey-webgl-lazy'
 import { syncFocusPocketSizeMesh } from './focus-pocket-size-mesh'
+
+// ── WebGL restore retry escalation (render sweep 2026-08-07) ─────────────────
+
+/** Retry counter for bounded context-restore re-init attempts. */
+let _restoreRetryCount = 0
+let _restoreRetryTimer: number | null = null
+const _RESTORE_MAX_RETRIES = 2
+const _RESTORE_BACKOFF_MS = [1000, 3000]
+
+function _armRestoreWatchdog() {
+    if (typeof window === 'undefined') return
+    if (engineState.webglRestoreTimer !== null) {
+        window.clearTimeout(engineState.webglRestoreTimer)
+    }
+    engineState.webglRestoreTimer = window.setTimeout(() => {
+        engineState.webglRestoreTimer = null
+        engineState.circuitBreakerTripped = true
+        debugError('[three-engine] WebGL restore watchdog expired — escalating to fallback')
+        _escalateRestoreFailure()
+    }, 15000)
+}
+
+function _clearRetryTimer() {
+    if (_restoreRetryTimer !== null) {
+        window.clearTimeout(_restoreRetryTimer)
+        _restoreRetryTimer = null
+    }
+}
+
+function _escalateRestoreFailure() {
+    _restoreRetryCount = 0
+    _clearRetryTimer()
+    if (engineState.webglRestoreTimer) {
+        window.clearTimeout(engineState.webglRestoreTimer)
+        engineState.webglRestoreTimer = null
+    }
+    engineState.circuitBreakerTripped = true
+    debugError('[three-engine] WebGL restore failed after all retries — falling back to degraded state')
+    setEngineStatus('degraded')
+    engineState.uiFeedback?.showExperienceToast(
+        'Graphics unavailable',
+        'The 3D view could not be restored. Switching to map view.'
+    )
+}
+
+function _restoreReinitWithRetry() {
+    void initThreeJS().then((result) => {
+        // initThreeJS returns false when buildThreeSceneOrFallback fails
+        // (no GPU path available); treat as failure for retry purposes.
+        if (result === false) {
+            throw new Error('initThreeJS returned false (buildThreeSceneOrFallback failed)')
+        }
+        // Success — reset retry counter. Watchdog is already cleared by initThreeJS.
+        _restoreRetryCount = 0
+        _clearRetryTimer()
+    }).catch((err) => {
+        debugError('[three-engine] WebGL restore re-init failed:', err)
+        _restoreRetryCount++
+        if (_restoreRetryCount <= _RESTORE_MAX_RETRIES) {
+            const delay = _RESTORE_BACKOFF_MS[_restoreRetryCount - 1] ?? 3000
+            debugWarn(`[three-engine] WebGL restore retry ${_restoreRetryCount}/${_RESTORE_MAX_RETRIES} in ${delay}ms`)
+            _clearRetryTimer()
+            _restoreRetryTimer = window.setTimeout(() => {
+                _restoreRetryTimer = null
+                // Re-arm the restore flag + watchdog for this retry attempt
+                engineState.webglNeedsRestoreReinit = true
+                _armRestoreWatchdog()
+                animate()
+            }, delay)
+        } else {
+            _escalateRestoreFailure()
+        }
+    })
+}
 
 export function updateCameraViewportOffset() {
     const camera = webglContext.camera || appState.camera
@@ -459,11 +534,13 @@ export function cancelAnimate() {
 
 export function deinit() {
     cancelAnimate()
-    // F2: clear any pending restore watchdog on final teardown
+    // F2 / P2-3: clear any pending restore watchdog + retry timer on teardown
     if (engineState.webglRestoreTimer) {
         window.clearTimeout(engineState.webglRestoreTimer)
         engineState.webglRestoreTimer = null
     }
+    _clearRetryTimer()
+    _restoreRetryCount = 0
     cancelOverviewCameraAnimation()
     engineState.cameraControls?.cancelFocusCameraAnimation()
     engineState.loadingUi?.cancelLoadingHide()
@@ -514,26 +591,12 @@ export function animate() {
     // be set) and the re-init would never fire.
     if (engineState.webglNeedsRestoreReinit) {
         engineState.webglNeedsRestoreReinit = false
-        // F2: arm a bounded watchdog so a stuck restore escalates instead of
-        // leaving the engine permanently dead. Cleared by initThreeJS on
-        // success or by deinit on final teardown.
-        if (typeof window !== 'undefined' && engineState.webglRestoreTimer === null) {
-            engineState.webglRestoreTimer = window.setTimeout(() => {
-                engineState.webglRestoreTimer = null
-                engineState.circuitBreakerTripped = true
-                debugError('[three-engine] WebGL restore watchdog expired — engine may be stuck')
-                engineState.uiFeedback?.showExperienceToast(
-                    'Graphics recovery failed',
-                    'Please reload the page to restore the 3D view.'
-                )
-            }, 15000)
-        }
-        // Fire-and-forget, but DON'T swallow the rejection: if re-init fails the
-        // engine is left half-torn-down (cancelAnimate already ran). Log it so
-        // the failure surfaces instead of silently deadlocking (W58 F2).
-        void initThreeJS().catch((err) => {
-            debugError('[three-engine] WebGL restore re-init failed:', err)
-        })
+        // F2 / P2-3: arm a bounded watchdog + retry escalation so a stuck
+        // restore never leaves the engine permanently dead. Cleared by
+        // initThreeJS on success, by _escalateRestoreFailure on final failure,
+        // or by deinit on teardown.
+        _armRestoreWatchdog()
+        _restoreReinitWithRetry()
         return
     }
 
