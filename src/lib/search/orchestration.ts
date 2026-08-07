@@ -60,7 +60,7 @@ import {
 } from './results-ui'
 import { setupMobileSearchSheetToggle } from './search-panel-adapter'
 import { setActiveSearchResultRow } from './result-renderer'
-import { startSearch } from './search-abort'
+import { startSearch, cancelSearch } from './search-abort'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -147,6 +147,10 @@ export async function search(query: string, options: SearchOptions = {}): Promis
 
     if (!trimmedQuery || trimmedQuery.length < 2) {
         stopSearchVectorScramble()
+        // F2 (orch sweep 2026-08-07): cancel any ≥2-char search still in flight
+        // before clearing — clearSearch() alone leaves isRequestCurrent true, so
+        // the old search's results would resurrect under the cleared input.
+        cancelSearch()
         if (trimmedQuery && trimmedQuery.length > 0 && trimmedQuery.length < 2) {
             if (statusEl) statusEl.textContent = 'Type at least 2 characters to search'
             // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup

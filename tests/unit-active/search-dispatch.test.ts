@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => {
     }
     return {
         runSearch: vi.fn(),
+        cancelSearch: vi.fn(),
         setSearchStatus: vi.fn(),
         setSearchQuery: vi.fn(),
         dispatchNavTransition: vi.fn(),
@@ -53,6 +54,14 @@ vi.mock('@lib/stores/search.svelte', () => ({
     setSearchStatus: mocks.setSearchStatus,
     setSearchQuery: mocks.setSearchQuery
 }))
+
+vi.mock('@lib/search/search-abort', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/search/search-abort')>()
+    return {
+        ...actual,
+        cancelSearch: mocks.cancelSearch
+    }
+})
 
 vi.mock('@lib/stores/navigation.svelte.ts', () => ({
     dispatchNavTransition: mocks.dispatchNavTransition,
@@ -105,9 +114,13 @@ describe('SearchDispatch', () => {
     })
 
     it('returns overview on empty query', () => {
+        // F1 (orch sweep 2026-08-07): empty dispatch must ALSO cancel any
+        // in-flight search + settle idle — the old behavior skipped cancel, so
+        // a settling search resurrected stale results after the user cleared.
         dispatch.dispatchSearch('')
         expect(mocks.dispatchNavTransition).toHaveBeenCalledWith('RETURN_OVERVIEW')
-        expect(mocks.setSearchStatus).not.toHaveBeenCalled()
+        expect(mocks.cancelSearch).toHaveBeenCalled()
+        expect(mocks.setSearchStatus).toHaveBeenCalledWith('idle')
         expect(mocks.runSearch).not.toHaveBeenCalled()
     })
 

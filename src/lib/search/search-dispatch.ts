@@ -84,12 +84,23 @@ export class SearchDispatch {
         const trimmed = query.trim()
 
         if (trimmed.length === 0) {
+            // F1 (orch sweep 2026-08-07): must cancel any in-flight search — the
+            // old code returned without cancelling, so a debounced search still
+            // settling would resurrect stale results after the user cleared the
+            // input and returned to overview (isRequestCurrent stayed true).
+            this.searchDebounce.cancel()
+            cancelSearch()
             dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)
             this.surfaceSwitchedToSearch = false
+            setSearchStatus('idle')
             return
         }
 
         if (trimmed.length < 2) {
+            // F1: same class — a ≥2-char search in flight must not write results
+            // after this 1-char clear (mirror clearQuery's cancel+idle).
+            this.searchDebounce.cancel()
+            cancelSearch()
             setSearchStatus('idle')
             if (this.surfaceSwitchedToSearch) {
                 dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' })
