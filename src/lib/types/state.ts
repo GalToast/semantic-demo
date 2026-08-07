@@ -6,6 +6,7 @@
  */
 
 import type { BusinessRecord } from '@lib/types/business'
+import type { NeighborhoodPersonality } from '@lib/focus/pocket-personality'
 
 // ── Navigation State ──────────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ export interface NavState {
     focusPocketMeta: FocusPocketMeta | null
     focusPocketRoleByIndex: Map<number, string>
     focusFramingMeta: FocusFramingMeta | null
-    currentPersonality: string | null
+    currentPersonality: NeighborhoodPersonality | null
     neighborhoodIndices: readonly number[]
     explorationHistoryIndices: readonly number[]
     /** Optional: per-index semantic reason for the neighborhood manifest.

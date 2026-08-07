@@ -294,7 +294,12 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     if (!resetTargetPositionsFromOriginal()) return false
 
     const personality = getNeighborhoodPersonality(index)
-    navState.currentPersonality = personality.type
+    // P1 (pocket sweep 2026-08-07): consumers cast currentPersonality as an
+    // object (routes.ts:347, focus.ts:189, focus-pocket-geometry.ts:637) — the
+    // old `= personality.type` (string) made every personality branch dead
+    // (always STANDARD/0.28 fallback). Write the object so TIGHT_CLUSTER arcs,
+    // camera durations and easing branches actually fire.
+    navState.currentPersonality = personality
 
     if (Array.isArray(appState.recentArrangements)) {
         ;(appState.recentArrangements as string[]).push(personality.type)
