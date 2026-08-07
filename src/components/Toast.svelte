@@ -68,6 +68,7 @@
   class:error={isError}
   class:warning={isWarning}
   aria-hidden={active ? 'false' : 'true'}
+  inert={!active}
   aria-live={isError ? 'assertive' : 'polite'}
   role={isError ? 'alert' : 'status'}
   tabindex="-1"

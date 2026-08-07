@@ -82,6 +82,7 @@
       <button
         type="button"
         class="focus-pocket-item-btn"
+        tabindex={isVisible ? 0 : -1}
         aria-label="{node.label} ({node.role})"
         onclick={() => focusOnNode(node)}
         onkeydown={(event) => handleKeydown(event, node)}
