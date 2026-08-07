@@ -124,6 +124,70 @@ try {
   state.trailDepth = original.trailDepth;
 }
 
+// ── Additional Runtime Edge-Case Tests ──────────────────────────────────────
+
+try {
+  // R5: Zero semantic neighbors → fallback personality
+  state.points = [{ index: 0, lead_id: 'lead-0', name: 'Solo', cluster: 0, city: 'Conroe' }];
+  state.pointIndexByLeadId = new Map([['lead-0', 0]]);
+  state.semanticNeighborMapByLeadId = new Map([['lead-0', { neighbors: [] }]]);
+  state.trailDepth = 0;
+  state.recentArrangements = [];
+  const solo = getNeighborhoodPersonality(0);
+  // With zero neighbors, should return a valid personality type
+  const validTypes = ['DENSE_HUB', 'EDGE_NODE', 'BRIDGE_NODE', 'SEED_NODE', 'DEEP_DIVE', 'OPEN_FIELD', 'STANDARD'];
+  assert(
+    validTypes.includes(solo.type),
+    `zero neighbors should return a valid personality type, got ${solo.type}`
+  );
+  console.log(`  R5 PASS: zero neighbors → ${solo.type} (valid personality type)`);
+
+  // R6: Single neighbor with low score → edge-case handling
+  seedSemanticNeighbors(1, 0.3);
+  state.trailDepth = 0;
+  state.recentArrangements = [];
+  const weak = getNeighborhoodPersonality(0);
+  assert(
+    validTypes.includes(weak.type),
+    `single weak neighbor should return a valid personality type, got ${weak.type}`
+  );
+  assert(typeof weak.cameraArc === 'string', 'personality must have cameraArc string');
+  assert(typeof weak.motifOverride === 'string', 'personality must have motifOverride string');
+  console.log(`  R6 PASS: single weak neighbor → ${weak.type} (valid, all fields present)`);
+
+  // R7: Personality object has all required structural fields
+  const requiredFields = ['type', 'cameraArc', 'motifOverride', 'compressionMult', 'easing', 'cameraDuration', 'staggerMult'];
+  seedSemanticNeighbors(9, 0.9);
+  state.trailDepth = 0;
+  state.recentArrangements = [];
+  const dense = getNeighborhoodPersonality(0);
+  for (const field of requiredFields) {
+    assert(
+      dense[field] !== undefined,
+      `personality object must have field '${field}', got undefined`
+    );
+  }
+  // microVariation is a nested object
+  assert(
+    typeof dense.microVariation === 'object' && dense.microVariation !== null,
+    'personality must have microVariation object'
+  );
+  console.log('  R7 PASS: personality object has all required structural fields (type, cameraArc, motifOverride, compressionMult, easing, cameraDuration, staggerMult, microVariation)');
+
+  // R8: BRIDGE_NODE should differ from DENSE_HUB in motif
+  state.recentArrangements = ['DENSE_HUB', 'DENSE_HUB', 'DENSE_HUB'];
+  const bridge = getNeighborhoodPersonality(0);
+  assert(bridge.type !== dense.type, 'BRIDGE_NODE should differ from DENSE_HUB in type');
+  assert(bridge.motifOverride !== dense.motifOverride, 'BRIDGE_NODE should differ from DENSE_HUB in motif');
+  console.log('  R8 PASS: repetition guard produces different personality type + motif from repeated');
+} finally {
+  state.points = original.points;
+  state.semanticNeighborMapByLeadId = original.semanticNeighborMapByLeadId;
+  state.pointIndexByLeadId = original.pointIndexByLeadId;
+  state.recentArrangements = original.recentArrangements;
+  state.trailDepth = original.trailDepth;
+}
+
 // Recording ownership: getNeighborhoodPersonality is pure — the selection
 // recording invariant lives in applyLocalNeighborhoodFocus (focus-pocket.ts),
 // which sets navState.currentPersonality and pushes into recentArrangements.

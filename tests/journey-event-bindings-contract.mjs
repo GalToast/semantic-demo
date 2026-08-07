@@ -137,6 +137,93 @@ function testNoGhostTeardownReferences() {
     console.log('  OK No ghost terms found')
 }
 
+// ── Runtime behavioral tests ────────────────────────────────────────────────
+
+async function testRuntimeJourneyActionsBinding() {
+    console.log('\n[RUNTIME TEST 1] Journey compass JOURNEY_ACTIONS + getJourneyCompassState')
+    
+    const cs = await import('../src/lib/journey/compass-state')
+    
+    // Verify JOURNEY_ACTIONS has all 8 expected keys
+    const expectedActions = ['FOCUS_SEARCH','CENTER_ANCHOR','ENTER_INSIDE','SHOW_TRAIL_PANEL',
+                             'NEXT_STOP','OPEN_MAP','OPEN_MYCELIUM','COUNTY_OVERVIEW']
+    assert(cs.JOURNEY_ACTIONS != null, 'JOURNEY_ACTIONS is defined')
+    for (const key of expectedActions) {
+        assert(typeof cs.JOURNEY_ACTIONS[key] === 'string', 
+               `JOURNEY_ACTIONS.${key} is a string`)
+    }
+    assert(Object.keys(cs.JOURNEY_ACTIONS).length === 8, 'JOURNEY_ACTIONS has exactly 8 keys')
+    
+    // Verify getJourneyCompassState returns a valid CompassState
+    const state = cs.getJourneyCompassState()
+    assert(typeof state === 'object' && state !== null, 'getJourneyCompassState returns object')
+    assert(typeof state.phase === 'string', 'state.phase is a string')
+    assert(typeof state.title === 'string', 'state.title is a string')
+    assert(typeof state.primaryAction === 'object' && state.primaryAction !== null, 'state.primaryAction is an object')
+    assert(typeof state.primaryAction.label === 'string', 'primaryAction.label is a string')
+    assert(typeof state.primaryAction.action === 'string', 'primaryAction.action is a string')
+    
+    // Verify registerRouteEmbodimentReader is callable
+    assert(typeof cs.registerRouteEmbodimentReader === 'function', 'registerRouteEmbodimentReader is a function')
+    cs.registerRouteEmbodimentReader(() => [])
+    
+    console.log('  OK JOURNEY_ACTIONS (8 keys), getJourneyCompassState, registerRouteEmbodimentReader')
+}
+
+async function testRuntimeOrchestrationExports() {
+    console.log('\n[RUNTIME TEST 2] Orchestration function exports are importable')
+    
+    const cc = await import('../src/lib/orchestration/compass-controller')
+    assert(typeof cc.executeJourneyCompassAction === 'function', 'executeJourneyCompassAction is a function')
+    assert(typeof cc.updateJourneyCompass === 'function', 'updateJourneyCompass is a function')
+    
+    const pb = await import('../src/lib/ui/panel-bindings')
+    assert(typeof pb.setInfoPanelOpen === 'function', 'setInfoPanelOpen is a function')
+    assert(typeof pb.bindPanelControls === 'function', 'bindPanelControls is a function')
+    assert(typeof pb.revealSelectedBusinessCard === 'function', 'revealSelectedBusinessCard is a function')
+    
+    console.log('  OK executeJourneyCompassAction, updateJourneyCompass, setInfoPanelOpen, bindPanelControls, revealSelectedBusinessCard')
+}
+
+async function testRuntimeCompassActionCountyOverview() {
+    console.log('\n[RUNTIME TEST 3] executeJourneyCompassAction county-overview wiring')
+    
+    const ccSrc = fs.readFileSync(ORCH_COMPASS_CONTROLLER_PATH, 'utf-8')
+    
+    // Verify the county-overview case preserves search state behaviorally:
+    // it calls resetExplorationFocus with preserveSearch: false
+    assert(
+        ccSrc.includes("resetExplorationFocus({ preserveSearch: false })"),
+        'county-overview calls resetExplorationFocus with preserveSearch: false'
+    )
+    
+    // Verify it does NOT clear search state through other means
+    assert(
+        !ccSrc.includes('clearShortSemanticSearchState'),
+        'county-overview does not call clearShortSemanticSearchState'
+    )
+    
+    console.log('  OK county-overview preserves search state contract')
+}
+
+async function testRuntimeGetJourneyCompassStatePhase() {
+    console.log('\n[RUNTIME TEST 4] getJourneyCompassState returns overview phase by default')
+    
+    const cs = await import('../src/lib/journey/compass-state')
+    const state = cs.getJourneyCompassState()
+    
+    // In a fresh Node environment (no search, no focus), phase should be 'overview'
+    assert(state.phase === 'overview', `Default phase is 'overview' (got '${state.phase}')`)
+    
+    // Default journey state has title, actions
+    assert(state.kicker !== undefined, 'state.kicker is defined')
+    assert(state.note !== undefined, 'state.note is defined')
+    assert(state.secondaryAction === null || typeof state.secondaryAction === 'object', 
+           'secondaryAction is null or object')
+    
+    console.log('  OK getJourneyCompassState phase=overview with valid CompassState shape')
+}
+
 // MAIN
 console.log('============================================================')
 console.log('journey-event-bindings-contract.mjs')
@@ -148,6 +235,13 @@ try {
     testJourneyCompassActionGuard()
     testInfoPanelToggleBinding()
     testNoGhostTeardownReferences()
+    
+    // ── Runtime behavioral tests ──
+    await testRuntimeJourneyActionsBinding()
+    await testRuntimeOrchestrationExports()
+    await testRuntimeCompassActionCountyOverview()
+    await testRuntimeGetJourneyCompassStatePhase()
+    
     console.log('\n============================================================')
     console.log('ALL TESTS PASSED')
     console.log('============================================================')

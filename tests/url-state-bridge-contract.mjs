@@ -16,6 +16,7 @@
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import './helpers/svelte-rune-shim.mjs';
 
 const cwd = process.cwd();
 
@@ -114,4 +115,82 @@ assert.match(
     'url-state.ts must define clearExplorationFocusSelection (focus-clear before URL restore)'
 );
 
-console.log('url-state bridge contract passed');
+console.log('url-state bridge contract static passed');
+
+// ── Runtime Behavioral Tests ──────────────────────────────────────────────────
+
+// Shims needed for url-state imports
+if (!globalThis.document) {
+    globalThis.document = {
+        body: { dataset: {}, classList: { add() {}, remove() {}, contains() { return false; } } },
+        getElementById() { return null },
+        createElement() { return { dataset: {}, style: {}, classList: { add() {}, remove() {} } } },
+        querySelector() { return null }
+    }
+}
+if (!globalThis.window) {
+    globalThis.window = {
+        location: { search: '', href: 'http://localhost:5173/' },
+        history: { pushState() {}, replaceState() {} },
+        addEventListener() {},
+        removeEventListener() {},
+        dispatchEvent() {},
+        matchMedia() { return { matches: false, addEventListener() {}, removeEventListener() {} } }
+    }
+}
+globalThis.Event = class Event { constructor(type) { this.type = type } }
+
+const {
+    clearExplorationFocusSelection,
+    resetStateBeforeUrlRestore,
+    applyUrlState
+} = await import('../src/lib/orchestration/url-state.ts')
+const { navStore } = await import('../src/lib/stores/navigation.svelte.ts')
+
+// R1: clearExplorationFocusSelection is callable and resets nav state
+{
+    clearExplorationFocusSelection()
+    // After clearing, the nav state should reflect reset values
+    const navState = navStore.get ? navStore.get() : navStore
+    if (navState.focusedIndex !== null && navState.focusedIndex !== undefined) {
+        throw new Error(`expected focusedIndex=null/undefined after clear, got ${navState.focusedIndex}`)
+    }
+    console.log('  R1 PASS: clearExplorationFocusSelection → focusedIndex = null')
+}
+
+// R2: resetStateBeforeUrlRestore is callable (with clearSearchInput=false)
+{
+    try {
+        resetStateBeforeUrlRestore({ clearSearchInput: false })
+        console.log('  R2 PASS: resetStateBeforeUrlRestore({ clearSearchInput: false }) → no throw')
+    } catch (e) {
+        console.error(`  R2 FAIL: resetStateBeforeUrlRestore threw: ${e.message}`)
+        process.exitCode = 1
+    }
+}
+
+// R3: resetStateBeforeUrlRestore with clearSearchInput=true is callable
+{
+    try {
+        resetStateBeforeUrlRestore({ clearSearchInput: true })
+        console.log('  R3 PASS: resetStateBeforeUrlRestore({ clearSearchInput: true }) → no throw')
+    } catch (e) {
+        console.error(`  R3 FAIL: resetStateBeforeUrlRestore(clearSearchInput) threw: ${e.message}`)
+        process.exitCode = 1
+    }
+}
+
+// R4: clearExplorationFocusSelection idempotency (call twice, no throw)
+{
+    clearExplorationFocusSelection()
+    clearExplorationFocusSelection()
+    console.log('  R4 PASS: clearExplorationFocusSelection is idempotent')
+}
+
+// R5: applyUrlState is exported and callable (may throw due to missing DOM/window, but must be a function)
+{
+    assert.strictEqual(typeof applyUrlState, 'function', 'applyUrlState must be a function')
+    console.log('  R5 PASS: applyUrlState is a function (canonical URL restore entry point)')
+}
+
+console.log('url-state bridge contract complete');

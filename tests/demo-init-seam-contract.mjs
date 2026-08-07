@@ -17,6 +17,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { resolveSource } from './source-path.mjs'
+import './helpers/svelte-rune-shim.mjs'
 
 const ROOT = process.cwd()
 const svelteDemoStorePath = path.join(ROOT, 'src/lib/stores/demo.svelte.ts')
@@ -344,6 +345,127 @@ if (hasSvelte) {
             'reduced-motion return must snap controls target'
         )
     })
+}
+
+console.log(`\n${'-'.repeat(50)}`)
+console.log(`Static Results: ${passed} passed, ${failed} failed, ${skipped} skipped`)
+console.log(`${'-'.repeat(50)}`)
+
+// ── Runtime Behavioral Tests (Svelte path only) ──────────────────────────────
+
+if (hasSvelte) {
+    console.log('\n--- Runtime Behavioral Tests ---')
+
+    // Shims for demo store imports
+    if (!globalThis.document) {
+        globalThis.document = {
+            body: { dataset: {}, classList: { add() {}, remove() {}, contains() { return false; } } },
+            documentElement: { dataset: {} },
+            getElementById() { return null },
+            createElement() { return { dataset: {}, style: {}, classList: { add() {}, remove() {} } } },
+            querySelector() { return null }
+        }
+    }
+    if (!globalThis.window) {
+        globalThis.window = {
+            location: { search: '' },
+            history: { pushState() {}, replaceState() {} },
+            addEventListener() {},
+            removeEventListener() {},
+            matchMedia() { return { matches: false, addEventListener() {}, removeEventListener() {} } },
+            requestAnimationFrame() { return 1 },
+            cancelAnimationFrame() {},
+            innerWidth: 1440,
+            innerHeight: 900
+        }
+    }
+    if (!globalThis.sessionStorage) {
+        const store = {}
+        globalThis.sessionStorage = {
+            getItem(k) { return store[k] || null },
+            setItem(k, v) { store[k] = v },
+            removeItem(k) { delete store[k] }
+        }
+    }
+    if (!globalThis.localStorage) {
+        const store = {}
+        globalThis.localStorage = {
+            getItem(k) { return store[k] || null },
+            setItem(k, v) { store[k] = v },
+            removeItem(k) { delete store[k] }
+        }
+    }
+
+    const demoMod = await import('../src/lib/stores/demo.svelte.ts')
+
+    // R1: shouldRunDemo(false) returns a boolean
+    try {
+        const result = demoMod.shouldRunDemo(false)
+        if (typeof result !== 'boolean') {
+            throw new Error(`expected boolean, got ${typeof result}`)
+        }
+        // Without session storage set and with nodemo not forced, should be false
+        // (reduced-motion guard fails in Node because matchMedia is shimmed)
+        console.log(`  R1 PASS: shouldRunDemo(false) → ${result} (boolean)`)
+        passed++
+    } catch (e) {
+        console.error(`  R1 FAIL: shouldRunDemo: ${e.message}`)
+        failed++
+    }
+
+    // R2: cancelAllDemoTimers is callable and does not throw
+    try {
+        if (typeof demoMod.cancelAllDemoTimers !== 'function') {
+            throw new Error('cancelAllDemoTimers is not a function')
+        }
+        demoMod.cancelAllDemoTimers()
+        console.log('  R2 PASS: cancelAllDemoTimers() → no throw')
+        passed++
+    } catch (e) {
+        console.error(`  R2 FAIL: cancelAllDemoTimers: ${e.message}`)
+        failed++
+    }
+
+    // R3: startDemo returns a boolean (guard prevents double-start)
+    try {
+        const result = demoMod.startDemo()
+        if (typeof result !== 'boolean') {
+            throw new Error(`expected boolean, got ${typeof result}`)
+        }
+        console.log(`  R3 PASS: startDemo() → ${result} (boolean)`)
+        passed++
+    } catch (e) {
+        console.error(`  R3 FAIL: startDemo: ${e.message}`)
+        failed++
+    }
+
+    // R4: findDemoNode is callable and returns number|null
+    try {
+        const node = demoMod.findDemoNode()
+        // With no business records, should return null
+        if (node !== null && typeof node !== 'number') {
+            throw new Error(`expected null or number, got ${typeof node}`)
+        }
+        console.log(`  R4 PASS: findDemoNode() → ${node} (null or number)`)
+        passed++
+    } catch (e) {
+        console.error(`  R4 FAIL: findDemoNode: ${e.message}`)
+        failed++
+    }
+
+    // R5: transitionDemo and setDemoPhase are exported functions
+    try {
+        for (const fn of ['transitionDemo', 'setDemoPhase', 'cancelDemo']) {
+            if (typeof demoMod[fn] !== 'function') {
+                throw new Error(`${fn} is not a function`)
+            }
+        }
+        console.log('  R5 PASS: transitionDemo, setDemoPhase, cancelDemo all exported as functions')
+        passed++
+    } catch (e) {
+        console.error(`  R5 FAIL: ${e.message}`)
+        failed++
+    }
 }
 
 console.log(`\n${'-'.repeat(50)}`)

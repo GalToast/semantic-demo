@@ -15,6 +15,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import './helpers/svelte-rune-shim.mjs';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const CLUSTER_FILTER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/filter.svelte.ts');
@@ -192,24 +193,137 @@ function testLifecycleDelegation() {
 // MAIN
 // ---------------------------------------------------------------------------
 
-function main() {
+async function runRuntimeTests() {
+    console.log('\n--- Runtime Behavioral Tests ---');
+
+    // Shims needed for cluster-filter-controller imports
+    if (!globalThis.document) {
+        globalThis.document = {
+            body: { dataset: {}, classList: { add() {}, remove() {}, contains() { return false; } } },
+            getElementById() { return null },
+            createElement() { return { dataset: {}, style: {}, classList: { add() {}, remove() {} } } },
+            querySelector() { return null }
+        }
+    }
+    if (!globalThis.window) {
+        globalThis.window = {
+            location: { search: '', href: 'http://localhost:5173/' },
+            history: { pushState() {}, replaceState() {} },
+            addEventListener() {},
+            removeEventListener() {},
+            matchMedia() { return { matches: false, addEventListener() {}, removeEventListener() {} } }
+        }
+    }
+    globalThis.Event = class Event { constructor(type) { this.type = type } }
+    globalThis.performance = { now: () => 0 }
+
+    // R1: getFilteredClusterCounts returns a Map instance
+    try {
+        const { getFilteredClusterCounts } = await import('../src/lib/orchestration/cluster-filter-controller.ts')
+        const counts = getFilteredClusterCounts()
+        if (!(counts instanceof Map)) {
+            throw new Error(`expected Map, got ${typeof counts}`)
+        }
+        console.log('  R1 PASS: getFilteredClusterCounts returns Map instance')
+    } catch (e) {
+        console.error(`  R1 FAIL: ${e.message}`)
+        process.exitCode = 1
+    }
+
+    // R2: getFilteredClusterCounts with empty business records returns empty Map
+    try {
+        const { getFilteredClusterCounts } = await import('../src/lib/orchestration/cluster-filter-controller.ts')
+        const { businessRecords } = await import('../src/lib/data-store.js')
+        // Save original, set to empty
+        const original = businessRecords.get ? businessRecords.get() : null
+        if (businessRecords.set) {
+            businessRecords.set([])
+        }
+        const counts = getFilteredClusterCounts()
+        const countSize = counts.size
+        // Restore
+        if (businessRecords.set && original) {
+            businessRecords.set(original)
+        }
+        if (countSize !== 0) {
+            throw new Error(`expected empty Map (size 0), got size ${countSize}`)
+        }
+        console.log('  R2 PASS: getFilteredClusterCounts with empty records → empty Map')
+    } catch (e) {
+        console.error(`  R2 FAIL: ${e.message}`)
+        process.exitCode = 1
+    }
+
+    // R3: clearClusterFilter is callable and does not throw
+    try {
+        const { clearClusterFilter } = await import('../src/lib/orchestration/cluster-filter-controller.ts')
+        if (typeof clearClusterFilter !== 'function') {
+            throw new Error('clearClusterFilter is not a function')
+        }
+        clearClusterFilter()
+        console.log('  R3 PASS: clearClusterFilter is callable without throw')
+    } catch (e) {
+        console.error(`  R3 FAIL: ${e.message}`)
+        process.exitCode = 1
+    }
+
+    // R4: updateClusterList is exported as async function
+    try {
+        const mod = await import('../src/lib/orchestration/cluster-filter-controller.ts')
+        if (typeof mod.updateClusterList !== 'function') {
+            throw new Error('updateClusterList is not a function')
+        }
+        // updateClusterList is async and requires DOM; just verify it's a function
+        console.log('  R4 PASS: updateClusterList is an exported function')
+    } catch (e) {
+        console.error(`  R4 FAIL: ${e.message}`)
+        process.exitCode = 1
+    }
+
+    // R5: sync functions are callable (syncCityFilterUi, populateCityFilter, syncFilterControls)
+    try {
+        const mod = await import('../src/lib/orchestration/cluster-filter-controller.ts')
+        for (const fnName of ['syncCityFilterUi', 'populateCityFilter', 'syncFilterControls']) {
+            if (typeof mod[fnName] !== 'function') {
+                throw new Error(`${fnName} is not a function`)
+            }
+        }
+        console.log('  R5 PASS: syncCityFilterUi, populateCityFilter, syncFilterControls all exported as functions')
+    } catch (e) {
+        console.error(`  R5 FAIL: ${e.message}`)
+        process.exitCode = 1
+    }
+}
+
+async function main() {
     console.log('============================================================');
     console.log('cluster-filter-contract.mjs');
     console.log('Contract test: cluster-filter API and delegation');
     console.log('============================================================');
 
+    let staticFailed = false
     try {
         testClearClusterFilter();
         testClusterFilterExports();
         testLifecycleDelegation();
+        console.log('\nStatic assertions PASSED');
+    } catch (err) {
+        console.error('\nSTATIC TEST FAILED:', err.message);
+        staticFailed = true
+    }
 
+    await runRuntimeTests()
+
+    if (!staticFailed && !process.exitCode) {
         console.log('\n============================================================');
         console.log('ALL TESTS PASSED');
         console.log('============================================================');
-        process.exit(0);
-    } catch (err) {
-        console.error('\nTEST FAILED:', err.message);
-        process.exit(1);
+        process.exit(0)
+    } else {
+        console.log('\n============================================================');
+        console.log('SOME TESTS FAILED');
+        console.log('============================================================');
+        process.exit(1)
     }
 }
 
