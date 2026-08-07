@@ -61,7 +61,6 @@ import { prefersReducedMotion } from '@lib/utils/environment'
 import { updateSelectedNodeMotes } from './three-lens-motes'
 import { updateSelectedNodePetals } from './three-lens-petals'
 import { updateSelectedNodeFilaments } from './three-lens-filaments'
-import { disposeMicroDemoBridge } from './three-micro-demo-bridge'
 import { initLensGlowSpoke } from './three-lens-glow-spoke'
 import { initFocusLens } from './three-lens-focusgeo'
 import { initAnchorBloomLight } from './three-lens-anchor-bloom'
@@ -133,7 +132,6 @@ export function disposeInteractionVisuals() {
     disposeSemanticLens()
     disposeFocusAnchorIndicator()
     disposeHeroAnimation()
-    disposeMicroDemoBridge()
 }
 
 export function disposeSemanticLens() {
@@ -653,7 +651,8 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
     updateFocusAnchorIndicator(now, focusedNode)
 }
 
-// ── Micro-demo Visual Bridge ────────────────────────────────────────────────
-// Extracted to three-micro-demo-bridge.ts (Phase 2).
-// initMicroDemoBridge() is intentionally NOT wired — the 10-phase DemoChoreography.svelte
-// store owns the micro-demo (P3-I). The bridge is a deprecated no-op seam.
+// ── Micro-demo Visual Bridge (retired 2026-08-07 W52) ─────────────────────
+// three-micro-demo-bridge.ts was deleted: initMicroDemoBridge() was a no-op and
+// never wired (the 10-phase DemoChoreography.svelte store owns the micro-demo),
+// so disposeMicroDemoBridge() removed listeners nobody registered. dead code — the
+// micro-demo events fired by demo-choreography.ts have no bridge listeners.
