@@ -80,7 +80,8 @@ vi.mock('@lib/data-store', async () => {
         positionBuffer: writable(new Float32Array([0, 0, 0])),
         clustersBuffer: writable(new Float32Array([0])),
         leadEnrichment: writable({}),
-        pointIndexByLeadId: writable(new Map([['test-1', 0]]))
+        pointIndexByLeadId: writable(new Map([['test-1', 0]])),
+        setDataLoadError: vi.fn()
     }
 })
 

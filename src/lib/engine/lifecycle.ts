@@ -39,7 +39,8 @@ import {
     cancelAnimate,
     updateCameraViewportOffset,
     createPoints,
-    disposeInteractionVisuals
+    disposeInteractionVisuals,
+    invalidateRestoreMachine
 } from '@lib/engine/three-engine'
 // M2 (W47): disposeHeroAnimation is not re-exported through the three-engine
 // barrel, so import it directly. disposeInteractionVisuals() also calls it
@@ -69,7 +70,7 @@ import { initTooltipEventBusSubscriptions, disposeTooltipEventBusSubscriptions }
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 
 // Data readiness
-import { isDataReady } from '@lib/data-store'
+import { isDataReady, setDataLoadError } from '@lib/data-store'
 import { debugWarn } from '@lib/utils/debug'
 import { debugLog, debugError } from '@lib/utils/debug'
 
@@ -90,6 +91,9 @@ let _dataReadyUnsub: (() => void) | null = null
 // W53 M5: track the dev-only simulateWebGLContextLoss restore timer so it can
 // be cleared on engine teardown before it fires against a disposed context.
 let _webglContextLossTimer: ReturnType<typeof setTimeout> | null = null
+// w20 F2: track the engine-init safety-valve timer so it can be cleared on
+// teardown before it fires against a destroyed engine (f543c062 regression).
+let _engineInitSafetyTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Data readiness subscription ─────────────────────────────────────────────
 
@@ -305,6 +309,23 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         return
     }
 
+    // ── Engine init safety valve (w20 F2) ─────────────────────────────────
+    // Install a timeout that fires if GPU init hangs or stalls silently.
+    // The data-load overlay already hid (phase='launch' from initData), so
+    // without this valve the user sees a dark canvas with zero feedback.
+    if (_engineInitSafetyTimer !== null) {
+        clearTimeout(_engineInitSafetyTimer)
+    }
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
+    _engineInitSafetyTimer = setTimeout(() => {
+        if (_getEngineStatus() !== 'loading') return // already resolved
+        debugError('[engine/lifecycle] Engine init safety valve: GPU init timed out after 8s.')
+        setDataLoadError('Scene initialization timed out. Your graphics hardware may not be supported.')
+        setEngineStatus('degraded')
+        callbacks.onGraphicsStateChange?.('fallback')
+        _engineInitSafetyTimer = null
+    }, 8_000)
+
     try {
         const _perf = typeof performance?.mark === 'function'
         if (_perf) performance.mark('engine-init-gpu-start')
@@ -314,6 +335,10 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         // long task into sub-200ms chunks.
         const success = await initThreeJS()
         if (!success) {
+            if (_engineInitSafetyTimer !== null) {
+                clearTimeout(_engineInitSafetyTimer)
+                _engineInitSafetyTimer = null
+            }
             setEngineStatus('degraded')
             callbacks.onGraphicsStateChange?.('fallback')
             return
@@ -342,6 +367,10 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             ensureCanvasNodeInteractionBindings()
             _canvasInteractionBound = true
         } catch (interactionErr) {
+            if (_engineInitSafetyTimer !== null) {
+                clearTimeout(_engineInitSafetyTimer)
+                _engineInitSafetyTimer = null
+            }
             debugWarn('[engine/lifecycle] Canvas interaction binding failed:', interactionErr)
             setEngineStatus('degraded')
             callbacks.onGraphicsStateChange?.('fallback')
@@ -429,8 +458,16 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
                 debugWarn('[engine/lifecycle] performance marks absent (SSR or pre-init):', error)
             }
         }
+        if (_engineInitSafetyTimer !== null) {
+            clearTimeout(_engineInitSafetyTimer)
+            _engineInitSafetyTimer = null
+        }
         callbacks.onLoadingPhase?.('launch', 1)
     } catch (err) {
+        if (_engineInitSafetyTimer !== null) {
+            clearTimeout(_engineInitSafetyTimer)
+            _engineInitSafetyTimer = null
+        }
         if (typeof performance?.mark === 'function') performance.mark('engine-init-failed')
         debugError('[engine/lifecycle] initEngineHeavy: initialization failed', err)
         unbindEventBridge()
@@ -489,8 +526,20 @@ export function destroyEngine(): void {
         _webglContextLossTimer = null
     }
 
+    // w20 F2: clear the engine-init safety-valve timer so it cannot fire
+    // against a destroyed engine (f543c062 regression guard).
+    if (_engineInitSafetyTimer !== null) {
+        clearTimeout(_engineInitSafetyTimer)
+        _engineInitSafetyTimer = null
+    }
+
     // 1. Cancel the animation loop
     cancelAnimate()
+
+    // 1a. P1-1: invalidate restore retry machine so a pending backoff timer
+    //     cannot fire 1-3s after teardown and resurrect the RAF loop against
+    //     a destroyed engine (zombie-loop class F4).
+    invalidateRestoreMachine()
 
     // 2. Unbind event bridge
     unbindEventBridge()
