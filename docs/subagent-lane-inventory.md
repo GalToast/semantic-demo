@@ -726,3 +726,20 @@ SILENT: glm-5.2 (0 bytes no-op — NOT the 429 I mislabeled it).
 
 Rule: verify a probe file on disk, never the reply text. Prefer minimax-m3
 or pro for real tasks; flash works for quick probes.
+
+### Quality survey (2026-08-08, real task: L3 a11y cleanup)
+
+Same bounded task to 4 routes; judged by DELIVERABLE + reasoning quality (not
+probe files — probes misled me on 0731).
+
+| Route | Verdict | Evidence |
+|---|---|---|
+| deepseek-v4-flash-0731 | ✅ STRONG | committed the real fix (1a3ee3d0) surgically, verified pre-commit |
+| kimi-k3 | ✅ STRONG | "no change needed" — verified post-fix file, refused blind edit, selector analysis |
+| deepseek-v4-pro | ✅ GOOD | "no change needed" + 28/28 tests, commit N/A (honest) |
+| minimax-m3 | ✅ STRONG | detected the fix already at HEAD (1a3ee3d0), full state analysis, verifying |
+
+**Quality rule:** all 4 quality lanes made the RIGHT call (fix or correct no-op);
+probe-probes are not predictive of task quality. 0731 re-proven as primary
+workhorse. The "which lanes NOT to run" answer: glm-5.2 (silent no-op), the
+429-throttled (kimi-k2.7-code/qwen-3.8-max) until limiter clears.
