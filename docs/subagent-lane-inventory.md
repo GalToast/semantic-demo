@@ -682,3 +682,22 @@ self-directed multi-step work. Verified across every variable:
 Rule (final): subagents = single-command executors (probe/one-edit tasks).
 Any read-decide-edit-verify-commit loop = main-lane. The fleet cannot be
 an engineer, only a finger. Prescription prompts do not rescue it.
+
+### LIVE logfare subagents (probe-verified 2026-08-08) — execution-proven
+
+Probe = "run EXACTLY this one bash command, create file, report". File-on-disk
+is the execution proof (not the reply text).
+
+- minimax-m3   ✅ probe file + exit 0 (also 6/6 tool_calls at API level) ← best
+- kiro-auto    ✅ probe file + exit 0
+- kimi-k3      ✅ probe file + exit 0 (~4min thinking first — be patient)
+- qwen-3.6-35b-a3b ✅ probe file + exit 0 (~4min thinking first)
+- glm-5.2, kimi-k2.7-code, qwen-3.8-max ❌ 429 "upstream rate-limited model X"
+  — logfare throttles these routes (3 auto-retries, all fail). NOT launchable
+  from this account right now.
+- deepseek-v4-pro: API 3/6 tool_calls — flaky, no probe execution.
+- deepseek-v4-flash-0731: 4/6 — flaky. plain flash/grape: 0/6 dead.
+
+Use: minimax-m3 for anything multi-turn; kiro-auto for cheap quick tasks;
+kimi-k3/qwen-3.6 for reasoning-heavy one-shots (long thinking budget).
+Avoid: pro/flash routes (flaky tools), 429 models (until rate limit clears).
