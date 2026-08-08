@@ -568,6 +568,7 @@ CAVEAT: 401/429 rotate with keys/quota — re-probe before relying on "dead". 40
 ## 2026-08-07 operational lessons (fleet sweeps, logfare workhorses)
 
 ### Two-lane redundancy dispatch pattern
+
 For sweep seams where a miss is expensive (engine/state/keyboard), dispatch TWO lanes on the
 same read-only seam: the primary workhorse (`logfare/deepseek-v4-flash-0731`) plus a
 cross-check lane (`logfare/deepseek-v4-pro`). The workhorse verdict is authoritative; the
@@ -577,6 +578,7 @@ the seam is high-value — the pattern costs double tokens for a converge-differ
 failures".)
 
 ### kind-1 failure mode (reports without diffs) — always inspect the diff, not the report
+
 Workers frequently settle having written `tmp/*-REPORT.md` while the actual source diff did
 NOT land (or landed partially). Lesson: after any fix-worker settles, verify with
 `git diff --stat <scoped files>` + read the diff hunks. Do not trust the REPORT body. This
@@ -584,6 +586,7 @@ session caught 3 kind-1s (banner-focus, unicode-highlight, boot-event) — re-di
 main-lane.
 
 ### Provider lockout symptom 2026-08-07 (flight-recorder evidence)
+
 Three simultaneous wave-5 workers settled with ZERO deliverables (no report / no docs write)
 at ~10 min. `flight_recorder status/tail` revealed deepseek-v4-flash-0731 provider responses
 struck at 408s / 161s / 5,414s (90 min) — the workers were starved into empty settles, not
@@ -592,11 +595,27 @@ model failures. Recovery: `external_subagent_followup` on the SAME session_id wi
 small deterministic docs tasks (do docs yourself rather than re-dispatching).
 
 ### Provider metric: doc-writing / small deterministic edits
+
 Flash-class models (deepseek-v4-flash) drift on multi-paragraph docs (one drifted into
 explaining OpenCode Zen billing instead of writing the doc). For doc updates < 1 page, do
 them main-lane or give the worker a byte-budget + a paste-only target.
 
 ### Dead-model roster (do NOT re-add; measured 2026-08-06/07)
+
 - `grape-2-pro` — talks then settles, ~75 tokens (useless for agentic work).
 - `glm-5.2`, `kimi-k2.6/k3`, `qwen-3.8-max`, `kiro-auto` — silent-settle / wedge after probe-ok.
 - `kilo/openrouter/owl-alpha` — dead lane, do not re-add.
+
+### Rail split (measured 2026-08-08): logfare bare-chat vs cline agent loop
+
+- Same model (deepseek-v4-flash family) on two rails, same task class (God-files split):
+    - **logfare bare chat (direct-mcp-worker)**: w28 got the task, echoed the 1138-line
+    file 4×, then 0 tool calls, settled into a generic "Svelte 5 is at v5.56.8"
+    tutorial as its final answer. Ear-0-tool derail on big in-context task blobs.
+    - **cline agent loop (cline-shim)**: same model retains the task frame, does
+    real tool excavation (reads callers, event subscribers).
+- Lesson: flash-0731's head-context decay (measured: fails early-fact recall in
+  a 40-turn needle test, deepseek-v4-pro does not) is _harness-framing-dependent_ —
+  it bites as a bare one-shot chat but the same weights work inside cline's agent
+  loop. **Default long/code work to cline; keep logfare only for short/simple or
+  vision tasks.**
