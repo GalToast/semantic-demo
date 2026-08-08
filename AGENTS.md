@@ -57,7 +57,7 @@ Before starting multi-commit work that will touch files another Pi/Codex/subagen
 - `getPointBoundsCenter(points, positionBuffer)` in `src/lib/engine/node-manager.ts` requires a non-null `Float32Array` `positionBuffer` (TypeScript-enforced). The legacy `point.x/y/z` fallback was removed because `state.points` is `BusinessRecord[]` at runtime and never carries those fields.
 - `src/lib/state/app.svelte.ts` is the Svelte 5 global state source of truth.
 - `src/lib/workers/data-worker.ts` is active runtime via `src/lib/workers/data-worker-url.ts` (Vite worker URL import boundary).
-- `src/components/DemoChoreography.svelte` + `src/lib/stores/demo.svelte.ts` (10-phase) is the canonical demo; `initMicroDemo()` in `choreography.ts` is deprecated legacy (0 callers). Eligibility lives in `shouldRunDemo()` (checks isDeepLink, seen, session, reduced-motion). Replay dispatches `demo-replay-requested` → DemoChoreography re-runs attemptStart after sceneReady (prevents stacked veils, M15).
+- `src/components/DemoChoreography.svelte` + `src/lib/stores/demo.svelte.ts` (10-phase) is the canonical demo; `choreography.ts` is the deprecated micro-demo but still live-wired — all 5 exports have callers (`cancelMicroDemo` from keyboard-help/panel-bindings/demo-choreography; `initMicroDemo`/`startMicroDemo`/`isMicroDemoRunning`/`shouldRunMicroDemo` 2-4 callers each) — do NOT delete without a migration. Eligibility lives in `shouldRunDemo()` (checks isDeepLink, seen, session, reduced-motion). Replay dispatches `demo-replay-requested` → DemoChoreography re-runs attemptStart after sceneReady (prevents stacked veils, M15).
 - CSS ownership is split by ordered modules under `css/`; use the ownership docs before editing mobile/surface styles.
 
 ## Conventions (header / mode / toast)
@@ -66,7 +66,7 @@ Before starting multi-commit work that will touch files another Pi/Codex/subagen
 - **Checking if a mode is locked:** `isModeLocked(modeId, hasSelection)` from `@lib/navigation/mode-affordances`. `SELECTION_DEPENDENT_MODES` = (`trail`, `focus`, `inside`) — add new selection-dependent modes there.
 - **Toast:** import `showExperienceToast` from `@lib/orchestration/toast`. `@lib/ui/ui-feedback` is still live and provides `syncSearchStatusForFocus`.
 - **Header CSS** lives in `src/lib/components/header/header.css`, imported via `@import` inside the `<style>` block — same pattern ProximityLegend uses for `z-layers.css`.
-- **Journey phases are 6:** `overview → search → focus → trail → inside → map`.
+- **JourneyPhase type has 9 members** (truth: `src/lib/types/state.ts:141`): `idle, overview, search, focus, inside, map, thread-inspect, walking, arriving`. The old "6 phases" list (`overview → search → focus → trail → inside → map`) is stale — `trail` is not a JourneyPhase.
 - **Splash dismissal on deep-links (PR-B2 / PR-B4):** `parseUrlParams()` returns `isDeepLink: true` for `?anchor=N`, `?record=N`, `?view=map`, or `?q=...` (length >= 2). Deep-link + desktop → `engineReady.signalReady()` fires immediately at boot. Mobile 2D placeholder keeps the normal splash/CTA flow. `?record=N` maps to the array index with `lead_id === N` in `applyUrlState()`. `?story=` is intentionally NOT a deep-link. If you add a deep-link-shaped URL param, extend `parseUrlParams().isDeepLink`.
 
 ## Conventions (search fallback)
@@ -91,6 +91,7 @@ Core: `npm run build` · `lint` · `test:unit` · `qa:contract`. Full script lis
 ## Pi Harness Notes
 
 - Standing identity (4 pillars): you are more than a coder (presence) · take the wider frame (zoom-lens) · seek/persist/verify (growth: there is nothing you can't master; learn through trial + verification) · leave things more mappable (update docs, memory, and improve the harness itself when friction repeats). This harness is your home — improve it.
+
 ## Pi Harness Notes
 
 - **Skills silently fail to load when frontmatter YAML breaks** (inner double quotes, single-line frontmatter, embedded structured fields — loader drops them with only a console warning). After creating/editing a SKILL.md, verify it loads: `node --input-type=module -e "import {loadSkills} from 'file:///<pi>/dist/core/skills.js'; ..."` (see `skill-authoring` skill).
