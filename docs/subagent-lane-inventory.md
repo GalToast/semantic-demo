@@ -610,12 +610,28 @@ them main-lane or give the worker a byte-budget + a paste-only target.
 
 - Same model (deepseek-v4-flash family) on two rails, same task class (God-files split):
     - **logfare bare chat (direct-mcp-worker)**: w28 got the task, echoed the 1138-line
-    file 4×, then 0 tool calls, settled into a generic "Svelte 5 is at v5.56.8"
-    tutorial as its final answer. Ear-0-tool derail on big in-context task blobs.
+      file 4×, then 0 tool calls, settled into a generic "Svelte 5 is at v5.56.8"
+      tutorial as its final answer. Ear-0-tool derail on big in-context task blobs.
     - **cline agent loop (cline-shim)**: same model retains the task frame, does
-    real tool excavation (reads callers, event subscribers).
+      real tool excavation (reads callers, event subscribers).
 - Lesson: flash-0731's head-context decay (measured: fails early-fact recall in
   a 40-turn needle test, deepseek-v4-pro does not) is _harness-framing-dependent_ —
   it bites as a bare one-shot chat but the same weights work inside cline's agent
   loop. **Default long/code work to cline; keep logfare only for short/simple or
   vision tasks.**
+
+### Task-shape lemma (measured 2026-08-08, w28-w32)
+
+Delegation success is dominated by TASK SHAPE, not rail or model:
+
+- w11-w25 (bounded per-finding fixes: "close M1-M6", "second safety valve",
+  "converge surface+phase") — all committed, verified, green.
+- w28-w31 (open-ended sweeps: "split 1138-line file", "hunt 6 categories
+  across 7 files") — ALL failed on both rails (logfare flash: 0 tools + settle;
+  cline flash: narration-only; cline glm-5.2: launch 502; pro: pending).
+- The swarm mirrors the prompt's premise. Verify the task's premise against
+  the real module graph BEFORE dispatch (url-state.ts "pure helpers" were
+  store-entangled — the split was a bad task, not just a bad model).
+- Rule: dispatch = per-finding bounded fixes with file:line targets + exact
+  verify commands. Open-ended sweeps = main-lane, or pre-hunt the seam
+  main-lane first and delegate only the confirmed findings.
