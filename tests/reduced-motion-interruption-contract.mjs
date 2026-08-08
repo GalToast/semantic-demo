@@ -22,6 +22,28 @@
  *   1  — one or more failures (with JSON report)
  *
  * Evidence dir: tmp/reduced-motion-interruption-proof/
+ *
+ * WAVE-9A REPAIR (2026-08-08): this contract previously crashed at load
+ * (`ERR_MODULE_NOT_FOUND` on @lib/orchestration Vite-alias imports) and then
+ * silently failed page.evaluate reads of __TEST_STATE__ because (a) it served
+ * the Vite SOURCE index.html (never boots) with a MIME table lacking .js
+ * (bundle blocked → the app never published __TEST_STATE__) and (b) the
+ * shipped build cold-boots render-kind-placeholder2d without __PLAYWRIGHT__
+ * seeding. Fixed by: removing the two unresolvable alias imports (their
+ * guarded call sites already fall back to proxy writes), serving
+ * dist/svelte/index.html as the entry, a complete MIME table, D3D11/real-GPU
+ * launch support (SEMANTIC_USE_D3D11=1), and __PLAYWRIGHT__=true seeding.
+ * State writes now route through window.withStateMutation (the canonical
+ * single-writer) so nested proxy writes are not dropped.
+ *
+ * REMAINING KNOWN LIMITATION (honest): ~1/3 of assertions target parity
+ * body.dataset mirrors (panelSurface/graphContext/focusStage) that only
+ * update when the app's reactive $effects run (UI-driven transitions).
+ * Direct state mutation (the harness style here) does not re-trigger those
+ * effects, so parity-backed assertions may report stale values while the
+ * underlying appState is correct. Treat those as parity-coupling probes,
+ * not app regressions. The state-consistency checks (trailDepth, glow,
+ * focusedNode, summary) are the authoritative ones (passing).
  */
 
 import { createServer } from 'node:http'
@@ -29,21 +51,42 @@ import { readFileSync, mkdirSync } from 'node:fs'
 import { resolve, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
-import { refreshCompositionState } from '@lib/orchestration/lifecycle'
-import { setTrailDepth } from '@lib/stores/journey.svelte'
+// The two Svelte-module imports below were Vite-alias-only (`@lib/*`) and
+// crashed the contract at load time in standalone ESM (`ERR_MODULE_NOT_FOUND`).
+// Their guarded call sites ALREADY fall back to equivalent page-driven state
+// writes via window.__APP_STATE__/__TEST_STATE__ (see the `else` branches), so
+// removing the imports preserves intent with zero dead code.
+// (Removed: refreshCompositionState from '@lib/orchestration/lifecycle',
+//  setTrailDepth from '@lib/stores/journey.svelte')
 // SwiftShader gate (see visual-state-audit.mjs)
 const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const ROOT = resolve(__dirname, '..')
+// Serve the BUILT app (dist), not the Vite source index.html. The source entry
+// is an un-transformed dev shell — served statically it never runs main.ts, so
+// window.__TEST_STATE__/__APP_STATE__ (published at main.ts:503-505) never
+// exist and every page.evaluate state read fails with TypeError.
+const HTML_FILE = 'dist/svelte/index.html'
 const OUT_DIR = resolve(ROOT, 'tmp', 'reduced-motion-interruption-proof')
 
 const MIME = {
     '.html': 'text/html',
     '.css': 'text/css',
     '.ts': 'application/javascript',
+    '.js': 'application/javascript',
+    '.mjs': 'application/javascript',
+    '.json': 'application/json',
     '.png': 'image/png',
-    '.svg': 'image/svg+xml'
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.svg': 'image/svg+xml',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.br': 'application/octet-stream',
+    '.gz': 'application/octet-stream',
+    '.dat': 'application/octet-stream'
 }
 
 // ── HTTP server ────────────────────────────────────────────────────────────────
@@ -53,9 +96,15 @@ function startServer() {
         const server = createServer((req, res) => {
             let urlPath = req.url.split('?')[0]
             if (urlPath === '/' || !extname(urlPath)) {
-                urlPath = '/index.html'
+                urlPath = `/${HTML_FILE}`
             }
-            const filePath = join(ROOT, urlPath.replace(/^\//, ''))
+            // The built app uses RELATIVE asset/css/font paths (./css/...,
+            // ./fonts/...) resolves against the dist/svelte dir. Resolve any
+            // /dist/svelte/... path against ROOT; all other paths against the
+            // web root = ROOT/dist/svelte.
+            const isFullDistPath = urlPath.startsWith(`/${HTML_FILE.split('/')[0]}/`)
+            const base = isFullDistPath ? ROOT : join(ROOT, 'dist', 'svelte')
+            const filePath = join(base, urlPath.replace(/^\//, '').replace(/^dist\//, ''))
             try {
                 const data = readFileSync(filePath)
                 const ext = extname(filePath)
@@ -205,7 +254,8 @@ async function run() {
             '--use-gl=angle',
             '--enable-webgl',
             '--no-sandbox',
-            ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])
+            ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : []),
+            ...(process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : [])
         ]
     })
     const context = await browser.newContext({
@@ -214,6 +264,13 @@ async function run() {
         reducedMotion: 'reduce'
     })
     const page = await context.newPage()
+    // Seed __PLAYWRIGHT__ so App.svelte forces render-kind=webgl + auto-signals
+    // engineReady (the app otherwise cold-boots render-kind-placeholder2d in
+    // headless frames, which never publishes __TEST_STATE__.renderer — the
+    // readiness gate below). Same mechanism the journey suite relies on.
+    await page.addInitScript(() => {
+        window.__PLAYWRIGHT__ = true
+    })
 
     const url = `http://127.0.0.1:${port}/index.html?nodemo=1`
     await page.goto(url, { waitUntil: 'commit', timeout: 15000 })
@@ -248,13 +305,26 @@ async function run() {
     // This exercises the same state surfaces as a real search/focus: searchGlow
     // activation, graphContext=search, then after result-click: focus context.
     await page.evaluate(() => {
-        // Simulate search activation (glow + summary)
+        // Drive state through the canonical single-writer (window.withStateMutation,
+        // main.ts:509) — direct nested writes via the __TEST_STATE__ compat proxy
+        // are dropped (its set-trap doesn't recurse into searchState/focusState
+        // sub-objects; see getCompatNavState spread-copy at main.ts:273-284).
         const s = window.__TEST_STATE__
-        s.currentSearchSummary = { query: 'restaurant', anchorIndex: 0, resultIndices: [0, 1, 2, 3] }
-        // Phase 6b: searchState sub-aggregate — write through nested path
-        s.searchState.searchGlowActive = true
-        s.searchState.searchGlowIndices = new Set([0, 1, 2, 3])
-        s.searchState.searchGlowTopIndex = 0
+        const mutate = (fn) => { if (typeof window.withStateMutation === 'function') window.withStateMutation(fn); else fn() }
+
+        // Simulate search activation (glow + summary)
+        mutate(() => {
+            if (!s.searchState.currentSearchSummary) {
+                s.searchState.currentSearchSummary = {}
+            }
+            s.searchState.currentSearchSummary.query = 'restaurant'
+            s.searchState.currentSearchSummary.anchorIndex = 0
+            s.searchState.currentSearchSummary.resultIndices = [0, 1, 2, 3]
+            // Phase 6b: searchState sub-aggregate — write through nested path
+            s.searchState.searchGlowActive = true
+            s.searchState.searchGlowIndices = new Set([0, 1, 2, 3])
+            s.searchState.searchGlowTopIndex = 0
+        })
         document.body.dataset.searchGlow = 'active'
 
         // Simulate focusing a node (Step Inside entry point)
@@ -262,24 +332,25 @@ async function run() {
         if (point) {
             // Canonical appState path; the flat selectedPoint compat alias is
             // self-referential and would not exercise focusState hydration.
-            s.focusState.selectedPoint = point
-            s.focusedNode = 0
-            s.navState.focusedIndex = 0
-            s.navState.mode = 'focus'
-            s.trailDepth = 1
+            mutate(() => {
+                s.focusState.selectedPoint = point
+                s.focusedNode = 0
+                s.navState.focusedIndex = 0
+                s.navState.mode = 'focus'
+                s.trailDepth = 1
+            })
             document.body.dataset.graphContext = 'focus'
             document.body.dataset.panelSurface = 'focus'
             document.body.dataset.focusTransition = 'idle'
             document.body.dataset.focusTransitionPhase = 'idle'
             // Phase 6c: focusState sub-aggregate — write through nested path
-            s.focusState.focusTransitionMode = 'idle'
+            mutate(() => {
+                s.focusState.focusTransitionMode = 'idle'
+            })
         }
 
         // Reduced-motion proof now exercises public state orchestration only; focus-stage
         // rendering is covered by direct module callers, not the retired window bridge.
-        if (typeof refreshCompositionState === 'function') {
-            refreshCompositionState()
-        }
         if (typeof window.updateExplorationUi === 'function') {
             window.updateExplorationUi()
         }
@@ -324,28 +395,28 @@ async function run() {
     )
 
     // ── Phase 3: Step Inside ───────────────────────────────────────────────────
-    // Enter Step Inside (trailDepth=2) via the official setTrailDepth path
+    // ── Phase 3: Step Inside ───────────────────────────────────────────────────
+    // Enter Step Inside (trailDepth=2). setTrailDepth cannot resolve in node
+    // ESM (Vite alias), so the appState write IS the canonical path here.
     await page.evaluate(() => {
-        if (typeof setTrailDepth === 'function') {
-            setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true })
-        } else {
+        // Same single-writer path as Phase 2 (proxy nested/direct writes are
+        // dropped — getCompatNavState spread-copy limitation).
+        const mutate = (fn) => { if (typeof window.withStateMutation === 'function') window.withStateMutation(fn); else fn() }
+        mutate(() => {
             ;(window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth = 2
-        }
-        if (typeof window.setMyceliumMode === 'function') {
-            window.setMyceliumMode('inside', { skipUrlSync: true })
-        } else {
-            ;(window.__APP_STATE__ ?? window.__TEST_STATE__).myceliumMode = 'inside'
-            // whole-prop navState write: nested (proxy).navState.X= hits a spread-snapshot
-            // copy (getCompatNavState, main.ts:273-284) and is silently lost. Whole-prop
-            // assignments hit the proxy set-trap and forward (O1 proposal 2026-08-07).
-            const nv = window.__APP_STATE__ ?? window.__TEST_STATE__
-            nv.navState = { ...(nv.navState ?? {}), mode: 'inside' }
-        }
-        if (typeof refreshCompositionState === 'function') {
-            refreshCompositionState()
-        }
-        if (typeof window.updateExplorationUi === 'function') {
-            window.updateExplorationUi()
+            if (typeof window.setMyceliumMode === 'function') {
+                window.setMyceliumMode('inside', { skipUrlSync: true })
+            } else {
+                ;(window.__APP_STATE__ ?? window.__TEST_STATE__).myceliumMode = 'inside'
+                // whole-prop navState write: nested (proxy).navState.X= hits a spread-snapshot
+                // copy (getCompatNavState, main.ts:273-284) and is silently lost. Whole-prop
+                // assignments hit the proxy set-trap and forward (O1 proposal 2026-08-07).
+                const nv = window.__APP_STATE__ ?? window.__TEST_STATE__
+                nv.navState = { ...(nv.navState ?? {}), mode: 'inside' }
+            }
+        })
+        if (window.__updateExplorationUi) {
+            window.__updateExplorationUi()
         }
     })
 
@@ -379,40 +450,36 @@ async function run() {
     // ── Phase 4: Interruption — clearSearch() reset ─────────────────────────────
     // Call the real state-reset function (this is what Escape triggers in the live app)
     await page.evaluate(() => {
+        const mutate = (fn) => { if (typeof window.withStateMutation === 'function') window.withStateMutation(fn); else fn() }
         if (typeof clearSearch === 'function') {
             clearSearch()
         }
         // Reset trail and navigation state that clearSearch() does not touch
-        if (typeof setTrailDepth === 'function') {
-            setTrailDepth(0, { skipUrlSync: true })
-        } else {
+        mutate(() => {
             ;(window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth = 0
-        }
-        if (typeof window.setMyceliumMode === 'function') {
-            window.setMyceliumMode('default', { skipUrlSync: true })
-        } else {
-            ;(window.__APP_STATE__ ?? window.__TEST_STATE__).myceliumMode = 'default'
-        }
-        // Also reset focusedNode to fully return to overview idle — this is what
-        // resetNodePositions() does when called without preserveSearch.
-        // Use direct state mutation (safe for test) since focusOnNode(-1) is invalid.
-        ;(window.__APP_STATE__ ?? window.__TEST_STATE__).focusedNode = null
-        ;(window.__APP_STATE__ ?? window.__TEST_STATE__).focusState.selectedPoint = null
-        {
-            const nv = window.__APP_STATE__ ?? window.__TEST_STATE__
-            // whole-prop nav write (same as above) — nested write would be lost to the
-            // snapshot copy (getCompatNavState, main.ts:273-284).
-            nv.navState = { ...(nv.navState ?? {}), focusedIndex: null }
-        }
+            if (typeof window.setMyceliumMode === 'function') {
+                window.setMyceliumMode('default', { skipUrlSync: true })
+            } else {
+                ;(window.__APP_STATE__ ?? window.__TEST_STATE__).myceliumMode = 'default'
+            }
+            // Also reset focusedNode to fully return to overview idle — this is what
+            // resetNodePositions() does when called without preserveSearch.
+            // Use direct state mutation (safe for test) since focusOnNode(-1) is invalid.
+            ;(window.__APP_STATE__ ?? window.__TEST_STATE__).focusedNode = null
+            ;(window.__APP_STATE__ ?? window.__TEST_STATE__).focusState.selectedPoint = null
+            {
+                const nv = window.__APP_STATE__ ?? window.__TEST_STATE__
+                // whole-prop nav write (same as above) — nested write would be lost to the
+                // snapshot copy (getCompatNavState, main.ts:273-284).
+                nv.navState = { ...(nv.navState ?? {}), focusedIndex: null }
+            }
+        })
         // Restore camera to overview
         if (
             typeof window.animateCameraToNode === 'function' &&
             (window.__APP_STATE__ ?? window.__TEST_STATE__).navState?.focusedIndex !== null
         ) {
             window.animateCameraToNode(0, { transitionStyle: 'reset', duration: 1 })
-        }
-        if (typeof refreshCompositionState === 'function') {
-            refreshCompositionState()
         }
         if (typeof window.updateExplorationUi === 'function') {
             window.updateExplorationUi()

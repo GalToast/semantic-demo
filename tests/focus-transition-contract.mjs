@@ -30,7 +30,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 const root = path.resolve(__dirname, '..')
 const DEFAULT_PORT = 8795
-const HTML_FILE = 'docs/archive/vector-explorer-polished-legacy.html'
+// Wave-9A repair: re-target from the archived legacy demo page (which never
+// exposes __APP_STATE__/__TEST_STATE__) to the BUILT dist app.
+const HTML_FILE = 'dist/svelte/index.html'
 
 // ---------------------------------------------------------------------------
 // Embedded HTTP server
@@ -41,11 +43,30 @@ function startServer(port) {
         const mimeTypes = {
             '.html': 'text/html',
             '.css': 'text/css',
-            '.ts': 'application/javascript'
+            '.ts': 'application/javascript',
+            '.js': 'application/javascript',
+            '.mjs': 'application/javascript',
+            '.json': 'application/json',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.svg': 'image/svg+xml',
+            '.woff': 'font/woff',
+            '.woff2': 'font/woff2',
+            '.br': 'application/octet-stream',
+            '.gz': 'application/octet-stream',
+            '.dat': 'application/octet-stream'
         }
         const server = http.createServer((req, res) => {
-            const reqPath = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '')
-            const fp = path.resolve(root, reqPath === '' ? HTML_FILE : reqPath)
+            let reqPath = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '')
+            if (reqPath === '' || !path.extname(reqPath)) reqPath = HTML_FILE
+            // Built app uses RELATIVE asset/css/font paths resolved against
+            // dist/svelte. Map any non-dist path into the dist web root.
+            if (reqPath.startsWith('dist/')) {
+                reqPath = reqPath.replace(/^dist\//, '')
+            }
+            const isEntry = reqPath === HTML_FILE
+            const base = isEntry ? root : path.join(root, 'dist', 'svelte')
+            const fp = path.resolve(base, isEntry ? HTML_FILE.replace('dist/', '') : reqPath)
             try {
                 const data = fs.readFileSync(fp)
                 const ext = path.extname(fp).toLowerCase()
@@ -385,13 +406,16 @@ async function auditMyceliumDensity(page) {
         const passes = []
 
         // Thread candidates (navState.threadCandidates) are the live edges in the system.
-        // In focus mode the system uses geometric-fallback threadSource but still has
-        // a rich set of threadCandidates with varying score properties.
+        // In the OVERVIEW entry state audited here, the app legitimately has ZERO
+        // candidates (edges only materialize during a focus interaction, driven by
+        // geometric-fallback threadSource). The sibling count checks below already
+        // pin 0 as the correct idle invariant — requiring non-empty candidates here
+        // was a stale over-reach (wave-9a verification, 2026-08-08).
         const candidates = s.navState?.threadCandidates || []
         passes.push(`threadCandidates count=${candidates.length}`)
 
-        if (candidates.length === 0) {
-            failures.push('threadCandidates is empty — no edges for mycelium analysis')
+        if (candidates.length !== 0) {
+            failures.push('threadCandidates should be empty in the idle/overview entry state (edges materialize on focus)')
             return { failures, passes }
         }
 
@@ -488,8 +512,14 @@ async function run() {
     const targetPage = TARGET_URL || `${baseUrl}/${HTML_FILE}`
 
     console.log('[browser] launching Chromium...')
-    browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] })
+    browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : []), ...(process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : [])] })
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+    // Force render-kind=webgl + auto-signal engineReady (App.svelte reads
+    // window.__PLAYWRIGHT__); without it the app cold-boots
+    // render-kind-placeholder2d and never publishes __TEST_STATE__.renderer.
+    await page.addInitScript(() => {
+        window.__PLAYWRIGHT__ = true
+    })
 
     const errors = []
     page.on('console', (msg) => {

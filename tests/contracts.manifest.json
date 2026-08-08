@@ -7,6 +7,7 @@
             "contracts": [
                 "semantic-dive-ui-surface-contract.mjs",
                 "search-state-surface-contract.mjs",
+    "search-score-retention-contract.mjs",
                 "state-transition-contract.mjs",
                 "state-transition-table-contract.mjs",
                 "focus-semantic-state-boundary-contract.mjs",
