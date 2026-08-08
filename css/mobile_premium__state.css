@@ -1836,6 +1836,48 @@
         pointer-events: none;
     }
 
+    /* Focus owns the selected-business surface on mobile. The legacy
+       info-panel can remain open as an empty 20px shell while its contents
+       are hidden, which steals the CTA's bottom edge and leaves a stray
+       sliver below the sheet. */
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
+        #info-panel.info-panel {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    /* The dive CTA contains a title and supporting copy. Keep those lines
+       stacked at the mobile breakpoint so the copy cannot run into the
+       title or the viewport edge. */
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
+        #btn-focus-dive.focus-stage-dive-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 3px;
+        height: auto;
+        min-height: 60px;
+        padding: 10px 16px;
+        text-align: left;
+        line-height: 1.15;
+    }
+
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
+        #btn-focus-dive.focus-stage-dive-btn
+        .focus-stage-dive-label {
+        letter-spacing: 0;
+    }
+
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
+        #btn-focus-dive.focus-stage-dive-btn
+        .focus-stage-dive-copy {
+        margin-top: 0;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
         #journey-chrome
         .focus-stage-journey {
