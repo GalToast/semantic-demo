@@ -4,9 +4,25 @@
  * Replaces the data slices from js/state.js with Svelte stores.
  * Required business records are populated by initData(); large optional
  * enrichment and semantic thread artifacts hydrate after launch.
+ *
+ * Migration (data-store seam, 2026-08-08): the module's writables/derived
+ * are now rune-backed state with store-compatible shims (SEAM-1 pattern —
+ * see filter.svelte.ts). Public surface is byte-identical: 40 exports, same
+ * names/types/semantics; consumers keep `$store`, .subscribe/.set/.update
+ * and get() from svelte/store unchanged. The filename must stay data-store.ts
+ * (33 consumers import the @lib/data-store alias), and plain .ts files are
+ * not runes-compiled by vite-plugin-svelte (DEFAULT_SVELTE_EXT = ['.svelte']),
+ * so the shims use the exact runtime primitives the Svelte 5.56 compiler
+ * emits for `$state`/`$derived` in .svelte.ts modules (state/get/set/derived
+ * from svelte/internal/client), wrapped in a small typed facade.
  */
 
-import { writable, derived, get } from 'svelte/store'
+import type { Readable } from 'svelte/store'
+// @ts-ignore — svelte/internal/client is a runtime-only entry without published
+// type declarations (verified: exports map has no "types" entry). The shapes
+// used below are exactly what compileModule() emits for `$state`/`$derived`
+// in this Svelte version (5.56); the facade re-types them for this module.
+import * as runtime from 'svelte/internal/client'
 import type {
     BusinessRecord,
     BusinessDataResult,
@@ -23,11 +39,134 @@ import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { appState } from '@lib/state/app.svelte'
 import { debugError } from '@lib/utils/debug'
 
+// ── Rune-backed store shim ───────────────────────────────────────────────────
+// SEAM-1 pattern: state lives in class instances on rune sources; subscribe()
+// runs the subscriber synchronously (which is also what makes get() from
+// svelte/store work), set()/update() write the source and notify manually.
+
+/** Opaque view of the rune source object returned by the runtime state/derived factories. */
+interface RuneSource<T> {
+    readonly v: T
+}
+
+/** Create a rune source holding `initial` (compiled `$state` equivalent). */
+const createState = <T>(initial: T): RuneSource<T> => runtime.state(initial) as RuneSource<T>
+
+/** Synchronous snapshot read of a rune source (shim-internal get() replacement). */
+const readState = <T>(source: RuneSource<T>): T => runtime.get(source) as T
+
+/**
+ * Write a rune source (compiled `$state` assignment equivalent).
+ * Deliberately without the runtime's `should_proxy` flag: writable semantics
+ * store the value as-is (reference identity preserved for consumers), and
+ * reactivity is delivered through the shim's own subscriber notification —
+ * identical observable behavior to the previous svelte/store writable.
+ */
+const writeState = <T>(source: RuneSource<T>, value: T): void => {
+    runtime.set(source, value)
+}
+
+/** Create a lazily-evaluated, dependency-tracked rune derived (compiled `$derived` equivalent). */
+const deriveState = <T>(fn: () => T): RuneSource<T> => runtime.derived(fn) as RuneSource<T>
+
+/**
+ * Store-compatible shim over a single rune-backed value.
+ * Implements the svelte/store Writable interface structurally (subscribe /
+ * set / update) plus a synchronous getSnapshot() used in place of get()
+ * inside this module. NOT a true svelte store: get() from svelte/store works
+ * because subscribe() invokes the subscriber synchronously (SEAM-1).
+ */
+class RuneStore<T> {
+    #source: RuneSource<T>
+    #subscribers = new Set<(value: T) => void>()
+
+    constructor(initial: T) {
+        this.#source = createState(initial)
+    }
+
+    /** Synchronous snapshot read — shim-internal replacement for get(). */
+    getSnapshot(): T {
+        return readState(this.#source)
+    }
+
+    subscribe(run: (value: T) => void): () => void {
+        this.#subscribers.add(run)
+        // Synchronous first emission (SEAM-1): get() from svelte/store and
+        // $store auto-subscription both rely on this running immediately.
+        run(this.getSnapshot())
+        return () => {
+            this.#subscribers.delete(run)
+        }
+    }
+
+    set(value: T): void {
+        writeState(this.#source, value)
+        const snapshot = this.getSnapshot()
+        for (const run of this.#subscribers) {
+            run(snapshot)
+        }
+    }
+
+    update(fn: (value: T) => T): void {
+        this.set(fn(this.getSnapshot()))
+    }
+}
+
+/**
+ * Readable-compatible derived shim (SEAM-1 DerivedFilterStore pattern):
+ * computes on demand and pushes updates by subscribing to the base rune
+ * store. The compute closure reads base snapshots, and the derived value is
+ * backed by a runtime `derived` source so recomputation is lazily cached and
+ * dependency-tracked like a compiled `$derived`.
+ */
+class DerivedRuneStore<T> {
+    #derivedSource: RuneSource<T>
+    #subscribers = new Set<(value: T) => void>()
+
+    constructor(
+        private compute: () => T,
+        base: { subscribe(run: () => void): () => void }
+    ) {
+        this.#derivedSource = deriveState(() => this.compute())
+        // Permanent base subscription: the base shim pushes on every change,
+        // which re-evaluates the dependency-tracked derived source and
+        // re-emits to our subscribers. Kept for the shim's lifetime — a
+        // refcounted lazy unsubscribe would sever the push after any get()
+        // cycle (subscribe + immediate unsubscribe) and leave the derived
+        // cache stale for later subscribers (SEAM-1's DerivedFilterStore has
+        // that latent gap; runtime-derived caching makes it observable).
+        base.subscribe(() => this.notify())
+    }
+
+    /** Synchronous snapshot read of the computed derived value. */
+    getSnapshot(): T {
+        return readState(this.#derivedSource)
+    }
+
+    subscribe(run: (value: T) => void): () => void {
+        this.#subscribers.add(run)
+        run(this.getSnapshot())
+        return () => {
+            this.#subscribers.delete(run)
+        }
+    }
+
+    private notify(): void {
+        const value = this.getSnapshot()
+        for (const run of this.#subscribers) {
+            run(value)
+        }
+    }
+}
+
 // ── Cross-chunk singleton helpers ────────────────────────────────────────────
 // When Vite code-splits, this module can be duplicated into multiple chunks.
-// Each duplicate would create its own writable-store instances, so consumers
+// Each duplicate would create its own store instances, so consumers
 // in different chunks would see different (empty) stores.  We use a plain
-// *window* data property to share the canonical store instances.
+// *window* data property to share the canonical instances — the shim objects
+// themselves are the window payloads (a duplicated module eval finds the
+// existing shim in the slot and reuses it, so no second rune source is ever
+// created).
 
 /**
  * Typed view of the window object carrying semantic-explorer cross-chunk
@@ -38,7 +177,7 @@ import { debugError } from '@lib/utils/debug'
  */
 interface SemanticExplorerWindow {
     /**
-     * Cross-chunk singleton slots. Each key holds a Svelte writable store;
+     * Cross-chunk singleton slots. Each key holds a rune-backed store shim;
      * Vite code-splitting may duplicate this module, so we read/write the
      * canonical instance via window rather than module scope.
      */
@@ -68,7 +207,7 @@ interface SemanticExplorerAppState {
  * Read a cross-chunk singleton slot from the window namespace.
  * Returns undefined when SSR (no window) or when the slot is unset.
  * The cast to `SemanticExplorerWindow` is honest: the keys are injected
- * by this module's own getOrCreateWritable and by the legacy bootstrap,
+ * by this module's own getOrCreateRuneStore and by the legacy bootstrap,
  * not by the DOM library.
  */
 function getWindowSlot(key: `__SEMANTIC_EXPLORER_${string}`): unknown {
@@ -81,12 +220,12 @@ function setWindowSlot(key: `__SEMANTIC_EXPLORER_${string}`, value: unknown): vo
     asSemanticExplorerWindow()[key] = value
 }
 
-function getOrCreateWritable<T>(windowKey: `__SEMANTIC_EXPLORER_${string}`, initial: T) {
+function getOrCreateRuneStore<T>(windowKey: `__SEMANTIC_EXPLORER_${string}`, initial: T): RuneStore<T> {
     const existing = getWindowSlot(windowKey)
     if (existing && typeof (existing as { subscribe?: unknown }).subscribe === 'function') {
-        return existing as ReturnType<typeof writable<T>>
+        return existing as RuneStore<T>
     }
-    const store = writable<T>(initial)
+    const store = new RuneStore<T>(initial)
     setWindowSlot(windowKey, store)
     return store
 }
@@ -109,7 +248,7 @@ export interface DataLoadState {
 // ── Stores ────────────────────────────────────────────────────────────────────
 
 /** Raw business records loaded from data.dat */
-export const businessRecords = getOrCreateWritable<readonly BusinessRecord[]>(
+export const businessRecords = getOrCreateRuneStore<readonly BusinessRecord[]>(
     '__SEMANTIC_EXPLORER_DATA_BUSINESS_RECORDS__',
     []
 )
@@ -152,11 +291,7 @@ export function hydrateFromLegacyState(): boolean {
 
 /** Synchronous snapshot of business records. */
 export function getBusinessRecords(): readonly BusinessRecord[] {
-    let result: readonly BusinessRecord[] = []
-    const unsub = businessRecords.subscribe((v) => {
-        result = v
-    })
-    unsub()
+    const result = businessRecords.getSnapshot()
     if (result.length > 0) return result
     // Fallback: read from the legacy state when the Svelte store is empty.
     // (Hydration may not have run yet for components created before main.ts calls
@@ -172,31 +307,31 @@ export function getBusinessRecords(): readonly BusinessRecord[] {
 }
 
 /** Float32Array of interleaved [x,y,z] positions in [0,1] unit cube */
-export const positionBuffer = writable<Float32Array | null>(null)
+export const positionBuffer = new RuneStore<Float32Array | null>(null)
 
 /** Uint16Array of cluster assignments per point (parallel to positions) */
-export const clustersBuffer = writable<Uint16Array | null>(null)
+export const clustersBuffer = new RuneStore<Uint16Array | null>(null)
 
 /** Map from lead_id to point index for O(1) lookup */
-export const pointIndexByLeadId = writable<Map<string, number>>(new Map())
+export const pointIndexByLeadId = new RuneStore<Map<string, number>>(new Map())
 
 /** Enrichment data keyed by lead_id */
-export const leadEnrichment = writable<Record<string, import('@lib/types/business').LeadEnrichment> | null>(null)
+export const leadEnrichment = new RuneStore<Record<string, import('@lib/types/business').LeadEnrichment> | null>(null)
 
 /** Raw semantic thread bundle */
-export const semanticThreadBundle = writable<SemanticThreadBundle | null>(null)
+export const semanticThreadBundle = new RuneStore<SemanticThreadBundle | null>(null)
 
 /** Name of the loaded thread artifact file */
-export const semanticThreadArtifactName = writable<string | null>(null)
+export const semanticThreadArtifactName = new RuneStore<string | null>(null)
 
 /** Normalized neighbor map keyed by lead_id */
-export const semanticNeighborMap = writable<Map<string, SemanticNeighborEntry>>(new Map())
+export const semanticNeighborMap = new RuneStore<Map<string, SemanticNeighborEntry>>(new Map())
 
 /** Semantic space layout manifest (validation metadata) */
-export const layoutManifest = writable<LayoutManifest | null>(null)
+export const layoutManifest = new RuneStore<LayoutManifest | null>(null)
 
 /** Overall data loading state */
-export const dataLoadState = getOrCreateWritable<DataLoadState>('__SEMANTIC_EXPLORER_DATA_LOAD_STATE__', {
+export const dataLoadState = getOrCreateRuneStore<DataLoadState>('__SEMANTIC_EXPLORER_DATA_LOAD_STATE__', {
     status: 'idle',
     businessLoaded: false,
     threadsLoaded: false,
@@ -214,7 +349,7 @@ const LEAD_ENRICHMENT_PROMISE_SLOT = '__SEMANTIC_EXPLORER_LEAD_ENRICHMENT_PROMIS
  * The LoadingOverlay and parity-attrs.svelte.ts layer read from this store.
  * Replaces the collapsed 2-state derivation that only had records/launch.
  */
-export const loadingPhaseStore = getOrCreateWritable<LoadingPhase>(
+export const loadingPhaseStore = getOrCreateRuneStore<LoadingPhase>(
     '__SEMANTIC_EXPLORER_DATA_LOADING_PHASE__',
     'records'
 )
@@ -223,7 +358,7 @@ export const loadingPhaseStore = getOrCreateWritable<LoadingPhase>(
  * Graphics mode: 'webgl' when GPU rendering is available, 'fallback' otherwise.
  * The engine bridge should set this during init; parity-attrs.svelte.ts reads it.
  */
-export const graphicsModeStore = getOrCreateWritable<'webgl' | 'fallback'>(
+export const graphicsModeStore = getOrCreateRuneStore<'webgl' | 'fallback'>(
     '__SEMANTIC_EXPLORER_DATA_GRAPHICS_MODE__',
     'webgl'
 )
@@ -245,41 +380,56 @@ export function setGraphicsMode(mode: 'webgl' | 'fallback'): void {
 }
 
 // ── Derived Stores ────────────────────────────────────────────────────────────
+// SEAM-1 pattern: the internal _-prefixed instance keeps getSnapshot()
+// available to this module's getters while the exported binding is typed
+// exactly as the previous derived() result (Readable).
 
 /** Number of loaded business records */
-export const recordCount = derived(businessRecords, ($r) => $r.length)
+const _recordCount = new DerivedRuneStore<number>(
+    () => businessRecords.getSnapshot().length,
+    businessRecords
+)
+export const recordCount: Readable<number> = _recordCount
 
 /** Whether all data is ready */
-export const isDataReady = derived(dataLoadState, ($s) => $s.status === 'ready')
+const _isDataReady = new DerivedRuneStore<boolean>(
+    () => dataLoadState.getSnapshot().status === 'ready',
+    dataLoadState
+)
+export const isDataReady: Readable<boolean> = _isDataReady
 
 /** Whether data is currently loading */
-export const isLoading = derived(dataLoadState, ($s) => $s.status === 'loading')
+const _isLoading = new DerivedRuneStore<boolean>(
+    () => dataLoadState.getSnapshot().status === 'loading',
+    dataLoadState
+)
+export const isLoading: Readable<boolean> = _isLoading
 
 // ── Getter wrappers (match the .svelte.ts API for compatibility) ──────────
 
 export function getPointIndexByLeadId(): Map<string, number> {
-    return get(pointIndexByLeadId)
+    return pointIndexByLeadId.getSnapshot()
 }
 export function getLeadEnrichment(): Record<string, import('@lib/types/business').LeadEnrichment> | null {
-    return get(leadEnrichment)
+    return leadEnrichment.getSnapshot()
 }
 export function getSemanticThreadBundle(): SemanticThreadBundle | null {
-    return get(semanticThreadBundle)
+    return semanticThreadBundle.getSnapshot()
 }
 export function getSemanticThreadArtifactName(): string | null {
-    return get(semanticThreadArtifactName)
+    return semanticThreadArtifactName.getSnapshot()
 }
 export function getSemanticNeighborMap(): Map<string, SemanticNeighborEntry> {
-    return get(semanticNeighborMap)
+    return semanticNeighborMap.getSnapshot()
 }
 export function getLayoutManifest(): LayoutManifest | null {
-    return get(layoutManifest)
+    return layoutManifest.getSnapshot()
 }
 export function getDataLoadState(): DataLoadState {
-    return get(dataLoadState)
+    return dataLoadState.getSnapshot()
 }
 export function getIsDataReady(): boolean {
-    const local = get(isDataReady)
+    const local = _isDataReady.getSnapshot()
     if (local) return true
     // Fallback: if the Svelte dataLoadState hasn't been initialized but the
     // legacy state has the data loaded, treat the data as ready.
@@ -292,7 +442,7 @@ export function getIsDataReady(): boolean {
     return false
 }
 export function getIsLoading(): boolean {
-    return get(isLoading)
+    return _isLoading.getSnapshot()
 }
 
 /**
@@ -305,8 +455,8 @@ export function getIsLoading(): boolean {
  * Returns null until both underlying stores are populated.
  */
 export function getPositionBufferDescriptor(): PositionBufferDescriptor | null {
-    const buffer = get(positionBuffer)
-    const clusters = get(clustersBuffer)
+    const buffer = positionBuffer.getSnapshot()
+    const clusters = clustersBuffer.getSnapshot()
     if (!buffer || !clusters) return null
     return { buffer, count: buffer.length / 3, clusters }
 }
@@ -386,7 +536,7 @@ export function setLeadEnrichmentData(enrichment: Record<string, LeadEnrichment>
  * Hydrate optional lead enrichment without blocking first paint.
  */
 export async function loadLeadEnrichment(): Promise<Record<string, LeadEnrichment> | null> {
-    const existing = get(leadEnrichment)
+    const existing = leadEnrichment.getSnapshot()
     if (existing) return existing
 
     // Cross-chunk singleton (W72-H3): read the in-flight promise from the
@@ -478,8 +628,8 @@ export function setDataLoadStatus(status: DataLoadStatus): void {
 export function setDataLoadError(error: string): void {
     dataLoadState.set({
         status: 'error',
-        businessLoaded: get(dataLoadState).businessLoaded,
-        threadsLoaded: get(dataLoadState).threadsLoaded,
+        businessLoaded: dataLoadState.getSnapshot().businessLoaded,
+        threadsLoaded: dataLoadState.getSnapshot().threadsLoaded,
         error
     })
 }
@@ -519,7 +669,7 @@ export function resetDataStores(): void {
  * Call this once at app startup, typically from main.ts or App.svelte.
  */
 export async function initData(): Promise<void> {
-    const current = get(dataLoadState)
+    const current = dataLoadState.getSnapshot()
     if (current.status === 'loading' || current.status === 'ready') {
         debugWarn('[data-store] initData() called while', current.status)
         return
