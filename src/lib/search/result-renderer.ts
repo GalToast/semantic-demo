@@ -15,7 +15,6 @@
 import { appState } from '@lib/state/app.svelte'
 import { getViewportSize, prefersReducedMotion } from '../utils/environment'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
-import { getSearchStateNamespace } from './results-ui'
 
 // Re-export pure helpers + types (extracted to result-presentation.ts)
 import {

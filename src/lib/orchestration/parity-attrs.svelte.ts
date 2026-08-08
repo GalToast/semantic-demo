@@ -33,7 +33,6 @@ import { cameraStore } from '@lib/stores/camera.svelte'
 import { demoStore } from '@lib/stores/demo.svelte'
 import { graphicsModeStore, loadingPhaseStore } from '@lib/data-store'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
-import { appState } from '@lib/state/app.svelte'
 
 // ── Decomposition: pure resolvers for computeParityAttributes() ───────────
 //
