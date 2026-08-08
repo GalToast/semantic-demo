@@ -35,6 +35,7 @@ import type { EngineStatus } from '@lib/stores/engine.svelte.ts'
 // Engine sub-modules
 import {
     initThreeJS,
+    startRenderLoop,
     onWindowResize,
     cancelAnimate,
     updateCameraViewportOffset,
@@ -52,6 +53,7 @@ import { cancelOverviewCameraAnimation } from '@lib/demo/camera'
 import { disposeEventListeners } from '@lib/ui/global-bindings'
 import { destroyMap } from '@lib/engine/map-state'
 import { createMycelium } from '@lib/engine/thread-manager'
+import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
 // Dynamic import: postprocessing is code-split to save ~150-200 kB
 let _ppResize: ((w: number, h: number) => void) | null = null
 
@@ -437,8 +439,9 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         // 9a. Subscribe to tooltip hide requests
         initTooltipEventBusSubscriptions()
 
-        // 10. Start the animation loop
-        // _animate() is started internally by initThreeJS on success
+        // 10. Publish readiness before the first GPU render. The initial shader
+        // compile may block headless/software WebGL, so the first frame is
+        // scheduled only after the Svelte scene-ready callback has run.
 
         // 12. Mark ready
         setEngineStatus('ready')
@@ -463,6 +466,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             _engineInitSafetyTimer = null
         }
         callbacks.onLoadingPhase?.('launch', 1)
+        startRenderLoop()
     } catch (err) {
         if (_engineInitSafetyTimer !== null) {
             clearTimeout(_engineInitSafetyTimer)
@@ -615,6 +619,11 @@ export function destroyEngine(): void {
         cancelOverviewCameraAnimation()
     } catch (error) {
         debugWarn('[engine/lifecycle] overview camera animation dispose failed:', error)
+    }
+    try {
+        disposeJourneyFocusTimers()
+    } catch (error) {
+        debugWarn('[engine/lifecycle] journey focus timer dispose failed:', error)
     }
 
     // H-1 (engine lifecycle bugsweep 2026-08-07): terminate the semantic-threads

@@ -67,6 +67,7 @@ These are **not live** — the script still enforces 2,500 / 650 / 65 / 16.
 | -------------------------------------- | --------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------- |
 | **Frame rate**                         | ≥ 60 fps on mid-tier mobile | 60 fps (desktop) | Target: Pixel 7 / iPhone 13 class                                                                          |
 | **Draw calls / frame**                 | < 200                       | ~150 (est.)      | InstancedMesh for node rendering                                                                           |
+| **Triangles / frame**                  | < 5.0M                      | ~3.9M (measured) | 16×15 instanced spore geometry plus mycelium threads                                                        |
 | **Texture GPU memory**                 | < 50 MB                     | ~30 MB (est.)    | Canvas textures + postprocessing                                                                           |
 | **Node count**                         | 8,406                       | 8,406            | Fixed dataset; no growth expected                                                                          |
 | **Thread CPU (updateMyceliumThreads)** | —                           | runtime sampled  | `scenePerformanceDiagnostics.lastThreadUpdateMs` records the last dirty rebuild and its dirty-node/pair counts |
@@ -91,6 +92,15 @@ WebGL context restoration uses a bounded two-retry backoff (1s, then 3s) with a
 restore generation, so late callbacks cannot resurrect a disposed scene. A
 watchdog escalation marks the engine degraded and offers an honest reload
 recovery message; a late successful init reconciles the engine back to ready.
+
+Cold startup is intentionally two-phase: the engine publishes lifecycle
+readiness and the `launch` loading phase before `startRenderLoop()` schedules
+the first GPU frame. This prevents a cold shader compile from tripping the
+startup safety valve before the Svelte chrome is mounted. Browser journey runs
+on Chromium's default headless renderer may still report `GPU stall due to
+ReadPixels` and take materially longer than a physical GPU; use
+`SEMANTIC_USE_D3D11=1` for a hardware-path comparison before treating that as
+an app-level interaction regression.
 
 ---
 

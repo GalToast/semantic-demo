@@ -415,7 +415,9 @@ async function auditMyceliumDensity(page) {
         passes.push(`threadCandidates count=${candidates.length}`)
 
         if (candidates.length !== 0) {
-            failures.push('threadCandidates should be empty in the idle/overview entry state (edges materialize on focus)')
+            failures.push(
+                'threadCandidates should be empty in the idle/overview entry state (edges materialize on focus)'
+            )
             return { failures, passes }
         }
 
@@ -512,7 +514,16 @@ async function run() {
     const targetPage = TARGET_URL || `${baseUrl}/${HTML_FILE}`
 
     console.log('[browser] launching Chromium...')
-    browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : []), ...(process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : [])] })
+    browser = await chromium.launch({
+        headless: false,
+        args: [
+            '--use-gl=angle',
+            '--enable-webgl',
+            '--no-sandbox',
+            ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : []),
+            ...(process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : [])
+        ]
+    })
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
     // Force render-kind=webgl + auto-signal engineReady (App.svelte reads
     // window.__PLAYWRIGHT__); without it the app cold-boots

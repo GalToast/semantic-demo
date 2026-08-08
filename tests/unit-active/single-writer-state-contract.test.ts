@@ -42,11 +42,13 @@ const ALLOWED_2_WRITERS: Record<string, string> = {
     semanticDiveMode: 'compass-controller entry (true) + url-state returnToOverview reset (false)',
     hoverHighlightIndex: 'canvas-hover owns; cursor.ts mirror',
     autoRotateSuspended: 'camera-controls-restore owns; camera store mirrors',
-    autoRotate: 'camera store owns (setAutoRotate); camera-controls-restore mirrors — consolidated 2026-08-07 (sprawl #2)',
+    autoRotate:
+        'camera store owns (setAutoRotate); camera-controls-restore mirrors — consolidated 2026-08-07 (sprawl #2)',
     focusCameraAssistActive: 'camera-controls-core owns; demo-choreography toggles',
     canvasThreadInspectionClearTimer: 'thread-inspector-state owns; renderer clears',
     _semanticDiveTransitionDeadline: 'compass-controller arms; parity-context reads (single writer arms)',
-    currentView: 'navigation-state funnel owns; main.ts compat-proxy for Playwright e2e tests (#1 consolidated 2026-08-07)',
+    currentView:
+        'navigation-state funnel owns; main.ts compat-proxy for Playwright e2e tests (#1 consolidated 2026-08-07)',
     focusCameraOffset: 'camera-controls-core owns; demo-choreography resets (both touch the same camera offset)'
 }
 

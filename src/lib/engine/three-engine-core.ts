@@ -86,6 +86,10 @@ import {
 import { syncFocusPocketSizeMesh } from './focus-pocket-size-mesh'
 import { removeWebGLFallbackNotice } from './renderer/webgl-fallback'
 
+function markEngineInitPhase(phase: string): void {
+    if (typeof performance?.mark === 'function') performance.mark(`engine-init-${phase}`)
+}
+
 // ── WebGL restore retry escalation (render sweep 2026-08-07) ─────────────────
 
 /** Retry counter for bounded context-restore re-init attempts. */
@@ -94,6 +98,7 @@ let _restoreRetryTimer: number | null = null
 const _RESTORE_MAX_RETRIES = 2
 const _RESTORE_BACKOFF_MS = [1000, 3000]
 const _RESTORE_WATCHDOG_MS = 15000
+let _renderLoopStartPending = false
 
 /**
  * Generation token for the restore state machine (renderer-wave audit
@@ -210,6 +215,7 @@ function _restoreReinitWithRetry() {
                 setGraphicsMode('webgl')
                 debugInfo('[three-engine] WebGL restore succeeded after watchdog escalation — reconciled state')
             }
+            startRenderLoop()
         })
         .catch((err) => {
             debugError('[three-engine] WebGL restore re-init failed:', err)
@@ -354,6 +360,7 @@ async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> 
     if (!sceneResult.success) {
         return false
     }
+    markEngineInitPhase('scene-ready')
     // P1-2: teardown/manual-init may have fired while we awaited the scene build.
     if (restoreGen !== undefined && restoreGen !== _restoreGeneration) return false
 
@@ -387,6 +394,7 @@ async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> 
     // Inline createPoints logic (was engineDelegates.createPoints) to avoid
     // circular dependency with three-engine-mycelium.
     createPointsPort()
+    markEngineInitPhase('points-ready')
 
     // C11 — points/spore handle mirror (webglContext → appState + engineState.state)
     syncPointsHandles({
@@ -409,7 +417,9 @@ async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> 
     // lines rendered (the scene got them; the state mirror did not). createMycelium
     // is async (thread-manager.ts) and yields during buildSemanticMyceliumEdges —
     // a one-time init cost for a correct handle mirror at scene-ready.
+    markEngineInitPhase('mycelium-start')
     await createMyceliumPort()
+    markEngineInitPhase('mycelium-ready')
 
     // C12 — mycelium handle mirror (webglContext → appState + legacyState + engineState.state)
     syncMyceliumHandles({
@@ -427,6 +437,7 @@ async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> 
     if (restoreGen !== undefined && restoreGen !== _restoreGeneration) return false
 
     compilePointMaterialForReadinessPort()
+    markEngineInitPhase('material-ready')
     engineState.threeInteractionVisuals?.initSemanticLens()
     engineState.threeInteractionVisuals?.initSemanticManifold()
     updateCameraViewportOffset()
@@ -438,10 +449,12 @@ async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> 
     // while we yielded; bail before starting the render loop (zombie-loop guard).
     if (restoreGen !== undefined && restoreGen !== _restoreGeneration) return false
 
-    // Start the render loop explicitly. The new Svelte lifecycle no longer
-    // receives the legacy DOM scene-ready path, and without this the renderer
-    // exposes a populated scene but never issues its first draw.
-    animate()
+    // Defer the first render until the lifecycle publishes readiness. A cold
+    // shader compile can block the browser thread in headless/software WebGL;
+    // running it inline here can trip the engine safety valve before lifecycle
+    // readiness is published and leave the Svelte chrome permanently hidden.
+    markEngineInitPhase('animate-pending')
+    _renderLoopStartPending = true
 
     // Postprocessing composer: wraps renderer/scene/camera in an EffectComposer
     // (vignette + chromatic aberration + bloom + DOF). Effects stay disabled
@@ -522,6 +535,7 @@ export function onWindowResize() {
 }
 
 export function cancelAnimate() {
+    _renderLoopStartPending = false
     pauseRenderLoopTimers()
     clearScheduledFrameTasks()
     // M4/M7: cancel any pending route frame tasks before the renderer/canvas are
@@ -663,6 +677,23 @@ export function cancelAnimate() {
     // Reset the camera-matrix snapshot so a fresh engine mount gets a
     // non-stale baseline (W49-H doc contract: "Reset by the dispose path").
     engineState.lastCameraSnapshot = null
+    // Reset skip counters as well; otherwise a destroy→re-init cycle exposes
+    // stale performance history and the first fresh frames inherit the old
+    // consecutive-skip run.
+    engineState.consecutiveSkippedFrames = 0
+    engineState.renderSkipOpportunities = 0
+    if (engineState.state?.scenePerformanceDiagnostics) {
+        engineState.state.scenePerformanceDiagnostics.renderSkipOpportunities = 0
+        engineState.state.scenePerformanceDiagnostics.consecutiveSkippedFrames = 0
+    }
+}
+
+/** Start the first frame after lifecycle/UI readiness has been published. */
+export function startRenderLoop(): void {
+    if (!_renderLoopStartPending) return
+    _renderLoopStartPending = false
+    markEngineInitPhase('animate-scheduled')
+    scheduleNextAnimationFrame(true)
 }
 
 export function deinit() {

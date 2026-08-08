@@ -22,12 +22,14 @@ import type { EngineCallbacks, EngineStatus } from '@lib/engine/lifecycle'
 // Mock three-engine: initThreeJS returns true on success
 vi.mock('@lib/engine/three-engine', () => ({
     initThreeJS: vi.fn(() => true),
+    startRenderLoop: vi.fn(),
     deinit: vi.fn(),
     onWindowResize: vi.fn(),
     updateCameraViewportOffset: vi.fn(),
     invalidateRestoreMachine: vi.fn(),
     animate: vi.fn(),
     cancelAnimate: vi.fn(),
+    disposeInteractionVisuals: vi.fn(),
     getSceneRenderableDiagnostics: vi.fn(() => ({
         active: true,
         fps: 60,
@@ -66,7 +68,8 @@ vi.mock('@lib/journey/canvas-interaction', () => ({
 // Mock semantic-threads loader
 vi.mock('@lib/engine/semantic-threads', () => ({
     loadSemanticThreads: vi.fn(async () => {}),
-    attachLegacyState: vi.fn()
+    attachLegacyState: vi.fn(),
+    resetSemanticThreadWorker: vi.fn()
 }))
 
 // Mock data stores so initEngine does not wait for the 15s readiness ceiling.
@@ -201,6 +204,8 @@ vi.mock('@lib/state/app.svelte', () => ({
         threadInspectorPointerInside: false,
         renderer: null,
         scene: null,
+        registeredEvents: new Set(),
+        eventListenersInitialized: false,
         // W11-T4 partition sub-records — production reads these at module-init.
         searchState: {
             currentSearchSummary: null,
@@ -278,7 +283,7 @@ import { initEngine, resizeEngine, destroyEngine, getEngineStatus } from '../../
 import { engineStatusStore, setEngineStatus } from '@lib/stores/engine.svelte'
 
 // Also import mocked modules to verify call behavior
-import { initThreeJS, updateCameraViewportOffset } from '@lib/engine/three-engine'
+import { initThreeJS, startRenderLoop, updateCameraViewportOffset } from '@lib/engine/three-engine'
 import { resizePostProcessing } from '@lib/engine/three-postprocessing'
 import { createMycelium } from '@lib/engine/thread-manager'
 import {
@@ -370,6 +375,18 @@ describe('engine-lifecycle — initEngine behavior', () => {
         await initEngine(canvas, createMockCallbacks())
 
         expect(initThreeJS).toHaveBeenCalledOnce()
+    })
+
+    it('starts the first render only after publishing scene readiness', async () => {
+        const canvas = createMockCanvas()
+        const callbacks = createMockCallbacks()
+        await initEngine(canvas, callbacks)
+
+        expect(startRenderLoop).toHaveBeenCalledOnce()
+        expect(callbacks.onLoadingPhase).toHaveBeenCalledWith('launch', 1)
+        expect(startRenderLoop.mock.invocationCallOrder[0]).toBeGreaterThan(
+            callbacks.onLoadingPhase.mock.invocationCallOrder[0]
+        )
     })
 
     it('calls loadSemanticThreads', async () => {

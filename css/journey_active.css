@@ -213,6 +213,20 @@ body.surface-map .app-title {
         max-width: none;
     }
 
+    /* Focus/trail keeps the header mode chips as the navigation rail. The
+       journey compass spans are decorative duplicates in this surface, but
+       trailDepth used to bypass the phase-based suppress-step-indicators
+       class and expand the compact compass into a tall vertical stack. */
+    body.view-galaxy:is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search']
+        )
+        .journey-compass [data-journey-step] {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     body.view-galaxy:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
@@ -697,4 +711,13 @@ body.surface-focus-search .focus-stage-journey-meta {
 body.surface-focus .focus-stage-journey.active > #trail-controls,
 body.surface-focus-search .focus-stage-journey.active > #trail-controls {
     grid-column: 1 / -1;
+    min-width: 0;
+    width: 100%;
+    flex-wrap: nowrap;
+}
+
+body.surface-focus .focus-stage-journey.active > #trail-controls .trail-context-wrapper,
+body.surface-focus-search .focus-stage-journey.active > #trail-controls .trail-context-wrapper {
+    min-width: 0;
+    overflow: hidden;
 }

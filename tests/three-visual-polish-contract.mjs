@@ -17,6 +17,8 @@ const sceneInit = fs.existsSync(sceneInitPath) ? fs.readFileSync(sceneInitPath, 
 const sceneGraphSrc = threeSetup + '\n' + sceneInit
 const nodeManagerPath = path.join(repoRoot, 'src', 'lib', 'engine', 'node-manager.ts')
 const nodeManager = fs.readFileSync(nodeManagerPath, 'utf8')
+const frameUpdatesPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-engine-frame-updates.ts')
+const frameUpdates = fs.existsSync(frameUpdatesPath) ? fs.readFileSync(frameUpdatesPath, 'utf8') : ''
 const threadManagerPath = path.join(repoRoot, 'src', 'lib', 'engine', 'thread-manager.ts')
 const threadManager = fs.readFileSync(threadManagerPath, 'utf8')
 const interactionVisualsPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-interaction-visuals.ts')
@@ -76,6 +78,38 @@ includesAll(
     threadManager,
     ['semanticEdges ? 0.38 : 0.28', 'semanticEdges ? 0.22 : 0.16', 'semanticEdges ? 0.32 : 0.24'],
     'mycelium semantic/color fade coefficients'
+)
+
+const sporeSegments = Number(nodeManager.match(/const\s+SPORE_SEGMENTS_VISIBLE\s*=\s*(\d+)/)?.[1] ?? NaN)
+assert(
+    Number.isFinite(sporeSegments) && sporeSegments <= 16,
+    'node spore geometry must stay at or below the 16-segment render budget'
+)
+
+// Focus-hero spore restraint (visual-polish wave 2026-08-08): the shared spore
+// material must lift into the points layer's restraint band while a node is
+// focused so the 8x hero stays the single legible focal node (no teal wash
+// blow-out / blown-out square core). Pins the focus-only branch + overview /
+// semantic-dive branch preservation inside updateSporeOpacity. Symmetry-checks
+// against updatePointsMaterial so the spore underlay never out-brights the
+// dimmed points halo.
+assert(
+    frameUpdates.includes("Pick<AppState, 'focusedNode' | 'trailDepth'>"),
+    'updateSporeOpacity must read focusedNode so focus mode can be detected'
+)
+const sporeFocusBoostMatch = frameUpdates.match(/const focusBoost = isSemanticDive \? 0\.22 : isFocused \? ([\d.]+) : 1\.0/)
+assert(
+    !!sporeFocusBoostMatch,
+    'updateSporeOpacity focusBoost must keep the 3-branch semantic-dive / focus / overview ternary'
+)
+const sporeFocusBoost = Number(sporeFocusBoostMatch?.[1])
+assert(
+    Number.isFinite(sporeFocusBoost) && sporeFocusBoost >= 0.4 && sporeFocusBoost <= 0.6,
+    `focus spore restraint multiplier must stay in [0.4, 0.6] (no re-bloom above 0.6, no chroma loss below 0.4); got ${sporeFocusBoost}`
+)
+assert(
+    /pointsOpacityScale = isSemanticDive \? 0\.06 : isFocused \? 0\.46 : 1\.0/.test(frameUpdates),
+    'updatePointsMaterial must keep the 0.46 focus opacity band so the spore 0.55 restraint stays subordinate to the points halo'
 )
 
 // Post-migration: search animations are imported by engine modules directly
@@ -149,6 +183,30 @@ assert(
     interactionVisuals.includes('const auraTargetOpacity = hasFocus ? (isInside ? 0.065 : 0.135) : 0.0') &&
         interactionVisuals.includes('const auraScale = isInside ? 0.06 : 0.085'),
     'focus halo should be large enough to emphasize the selected node without washing out the scene'
+)
+
+// Focus-pocket twin Points (visual-polish wave 2026-08-08): the ~22-vertex
+// enlarged overlay MUST render as soft glow discs, not hard square quads. An
+// untextured PointsMaterial draws each enlarged point as a solid billboard
+// SQUARE — with AdditiveBlending + 3.4× size that buries the focused node
+// under bright white blocks. Pin a soft `map` sourced from the tracked
+// webglContext focus-beacon (spore) texture so the enlarged dots are
+// alpha-shaped, and a readability opacity band so the twin neither re-blows
+// the legible hero node (>=0.9) nor fades the larger-dots channel below the
+// points halo (<0.6).
+const focusPocketMeshPath = path.join(repoRoot, 'src', 'lib', 'engine', 'focus-pocket-size-mesh.ts')
+const focusPocketMesh = fs.existsSync(focusPocketMeshPath)
+    ? fs.readFileSync(focusPocketMeshPath, 'utf8')
+    : ''
+assert(
+    focusPocketMesh.includes('map: webglContext.focusBeaconTexture'),
+    'focus-pocket twin PointsMaterial must use a soft map texture (webglContext.focusBeaconTexture) so enlarged points render as glow discs, not hard square quads'
+)
+const twinOpacityMatch = focusPocketMesh.match(/const\s+TWIN_OPACITY\s*=\s*([\d.]+)/)
+const twinOpacity = Number(twinOpacityMatch?.[1])
+assert(
+    Number.isFinite(twinOpacity) && twinOpacity >= 0.6 && twinOpacity <= 0.85,
+    `focus-pocket twin opacity must stay in [0.6, 0.85] readability band (no >=0.9 re-blow of the hero node, no <0.6 fade of the larger-dots channel); got ${twinOpacity}`
 )
 
 // updateMyceliumThreads now uses LineSegments2 fat-line attributes

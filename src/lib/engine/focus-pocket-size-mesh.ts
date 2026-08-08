@@ -16,10 +16,16 @@
 import { AdditiveBlending, BufferGeometry, Float32BufferAttribute, Points, PointsMaterial } from 'three'
 import { appState as state } from '@lib/state/app.svelte'
 import { CONFIG } from '@lib/engine/config'
+import { webglContext } from './webgl-context'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 
 const SIZE_MULTIPLIER = 3.4
-const TWIN_OPACITY = 0.9
+// Readability band (visual-polish wave 2026-08-08): 0.9 let the enlarged additive
+// dots re-blow the legible hero point sitting at the same centroid. 0.78 keeps the
+// larger-dots channel clearly the brightest layer (0.78×~0.82 spore-alpha ≈ 0.64
+// vs the points layer's 0.46 focus band) while preventing the twin overlay from
+// wiping the focused node's own point-sprite detail. See REPORT.md for the band.
+const TWIN_OPACITY = 0.78
 
 function twinIndices(): number[] {
     const focused = state.navState.focusedIndex
@@ -60,7 +66,20 @@ export function syncFocusPocketSizeMesh(): void {
         const geometry = new BufferGeometry()
         geometry.setAttribute('position', new Float32BufferAttribute(new Float32Array(indices.length * 3), 3))
         geometry.setAttribute('color', new Float32BufferAttribute(new Float32Array(indices.length * 3), 3))
+        // Shape the enlarged points as soft glow discs via the shared spore
+        // (focus-beacon) texture instead of the default untextured GL_POINTS
+        // quad. An untextured PointsMaterial draws each enlarged point as a
+        // solid billboard SQUARE — with AdditiveBlending + 3.4× size that buries
+        // the focused node under bright white blocks. The alpha-feathered
+        // radial glow keeps the larger-dots channel legible (vertexColors still
+        // tint the enlarged dots with each pocket node's live color) while
+        // removing the hard square edge. The texture is tracked + populated by
+        // node-manager at scene init; only THIS mesh's geometry+material are
+        // disposed in disposeFocusPocketSizeMesh (Material.dispose never
+        // disposes its shared map), so the borrowed texture lifecycle stays
+        // owned by node-manager / the resource tracker.
         const material = new PointsMaterial({
+            map: webglContext.focusBeaconTexture,
             size: CONFIG.POINTS_MATERIAL_BASE_SIZE * SIZE_MULTIPLIER,
             vertexColors: true,
             transparent: true,

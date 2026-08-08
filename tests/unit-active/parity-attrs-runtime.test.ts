@@ -31,7 +31,7 @@ import {
     PARITY_ATTRIBUTE_KEYS,
     applyParityAttributes,
     setRenderKind,
-    resetParityAttributeCache,
+    resetParityAttributeCache
 } from '@lib/orchestration/parity-attrs.svelte'
 import type { ParityAttributeMap } from '@lib/orchestration/parity-attrs.svelte'
 
@@ -112,7 +112,7 @@ describe('applyParityAttributes — body data-* attrs', () => {
             navMode: 'overview',
             panelSurface: 'idle',
             trailDepth: '0',
-            mobile: 'false',
+            mobile: 'false'
         }
         applyParityAttributes(map)
         const body = readBody()
@@ -156,7 +156,7 @@ describe('applyParityAttributes — body data-* attrs', () => {
 
     it('numeric values are coerced to strings', () => {
         const map: ParityAttributeMap = {
-            trailDepth: 3 as unknown as string,
+            trailDepth: 3 as unknown as string
         }
         applyParityAttributes(map)
         expect(readBody().trailDepth).toBe('3')
@@ -271,7 +271,7 @@ describe('setRenderKind — bypass attr + class mirror in one tick', () => {
         Object.defineProperty(document, 'body', {
             value: null,
             configurable: true,
-            writable: true,
+            writable: true
         })
         try {
             expect(() => setRenderKind('mobile')).not.toThrow()
@@ -279,7 +279,7 @@ describe('setRenderKind — bypass attr + class mirror in one tick', () => {
             Object.defineProperty(document, 'body', {
                 value: saved,
                 configurable: true,
-                writable: true,
+                writable: true
             })
         }
     })
@@ -344,7 +344,7 @@ describe('applyParityAttributes — full schema roundtrip', () => {
             graphicsMode: 'webgl',
             testReady: 'true',
             cameraSlack: 'idle',
-            cameraSlackReason: null,
+            cameraSlackReason: null
         }
         applyParityAttributes(map)
         const body = readBody()

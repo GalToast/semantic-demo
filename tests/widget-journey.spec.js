@@ -189,21 +189,28 @@ test.describe('Widget journey', () => {
             }
             if (!actions.focusOnNode(0)) throw new Error('focusOnNode(0) returned falsy')
         })
-        await page.waitForFunction(
-            () => document.title !== 'Montgomery County Semantic Explorer | Case Study',
-            null,
-            { timeout: 15000, polling: 100 }
-        )
+        await page.waitForFunction(() => document.title !== 'Montgomery County Semantic Explorer | Case Study', null, {
+            timeout: 15000,
+            polling: 100
+        })
 
+        // The deep-link focus-search surface owns entry focus and may finish
+        // its bounded rAF focus request after the title update. Let that
+        // request settle, then explicitly focus the document so this assertion
+        // exercises the app-level Escape handler rather than SearchInput's
+        // documented empty-input no-op path.
+        await page.waitForTimeout(250)
         await page.evaluate(() => {
             document.activeElement?.blur()
+            document.body.setAttribute('tabindex', '-1')
+            document.body.focus()
         })
+        await expect(page.locator('#search-input')).not.toBeFocused()
         await page.keyboard.press('Escape')
-        await page.waitForFunction(
-            () => document.title === 'Montgomery County Semantic Explorer | Case Study',
-            null,
-            { timeout: 15000, polling: 100 }
-        )
+        await page.waitForFunction(() => document.title === 'Montgomery County Semantic Explorer | Case Study', null, {
+            timeout: 15000,
+            polling: 100
+        })
         await expect(page).toHaveTitle('Montgomery County Semantic Explorer | Case Study')
     })
 
@@ -265,11 +272,15 @@ test.describe('Widget journey', () => {
         // The focus transition and info-panel flush are asynchronous; wait for
         // a stable focus state and the rendered #selected-facts element before
         // asserting on the facts row (W48-UX clone-aware).
+        // The first post-focus frame can compile the large WebGL material set
+        // on Chromium's default headless renderer. The app state is correct
+        // once that frame yields, but a 15s assertion timeout turns the cold
+        // renderer stall into a false red (the D3D11 path settles faster).
         await page.waitForFunction(
             () =>
                 window.__APP_STATE__?.navState?.mode === 'focus' && document.querySelector('#selected-facts') !== null,
             null,
-            { timeout: 15000, polling: 100 }
+            { timeout: 45000, polling: 100 }
         )
 
         // W48-UX: the DOM can carry a hidden responsive clone of the info panel;
@@ -2811,11 +2822,10 @@ test.describe('Widget journey', () => {
                 // Poll for panelSurfaceDetail to match the injected mode (settled $derived).
                 // NOTE: waitForFunction serializes the fn to the browser — use an explicit
                 // param, NOT `arguments`, which doesn't exist in the browser context.
-                await page.waitForFunction(
-                    (m) => document.body.dataset.panelSurfaceDetail === m,
-                    mode,
-                    { timeout: 10000, polling: 50 }
-                )
+                await page.waitForFunction((m) => document.body.dataset.panelSurfaceDetail === m, mode, {
+                    timeout: 10000,
+                    polling: 50
+                })
             }
 
             // ── PEEK ──────────────────────────────────────────────────────────────
@@ -3325,28 +3335,17 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, { waitUntil: 'domcontentloaded' })
         const selectedName = page.locator('#selected-name')
         await selectedName.waitFor({ state: 'attached', timeout: 30000 })
-        await page.waitForFunction(
-            () => document.body.classList.contains('surface-focus-search'),
-            null,
-            { timeout: 30000, polling: 100 }
-        )
+        await page.waitForFunction(() => document.body.classList.contains('surface-focus-search'), null, {
+            timeout: 30000,
+            polling: 100
+        })
         // Poll for the mode-chip rail to fully mount (6 chips) before reading geometry.
-        await pollFor(
-            page,
-            () => document.querySelectorAll('#mode-chips .mode-chip').length === 6,
-            30000,
-            100
-        )
+        await pollFor(page, () => document.querySelectorAll('#mode-chips .mode-chip').length === 6, 30000, 100)
 
         for (const width of [768, 360]) {
             await page.setViewportSize({ width, height: 800 })
             // Poll for the 6-chip rail to exist at the new width before reading geometry.
-            await pollFor(
-                page,
-                () => document.querySelectorAll('#mode-chips .mode-chip').length === 6,
-                15000,
-                50
-            )
+            await pollFor(page, () => document.querySelectorAll('#mode-chips .mode-chip').length === 6, 15000, 50)
 
             // A2.2: no mode-chip label clipped mid-word. Either the label is hidden
             // per the mobile policy (≤768px) or the chip's full content is rendered
@@ -4164,11 +4163,10 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // Wait for the lazily-hydrated card elements to exist before reading CSSOM.
         // The elements can mount after the state gate, so the old 800ms sleep was
         // a guess — focused card mounts can lag that under load.
-        await page.waitForFunction(
-            () => !!document.querySelector('.selected-hero-main, .selected-card h3'),
-            null,
-            { timeout: 30000, polling: 100 }
-        )
+        await page.waitForFunction(() => !!document.querySelector('.selected-hero-main, .selected-card h3'), null, {
+            timeout: 30000,
+            polling: 100
+        })
 
         // Assertion 1: .selected-hero-main must have min-width: 0
         const heroMainMinWidth = await page.evaluate(() => {
@@ -5168,11 +5166,10 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         // Wait for at least one search result to render BEFORE reading scores.
         // Fixed 2000ms + one-shot score reads was a vacuous-pass hole: if no
         // results rendered, scores.length===0 and every assertion passed.
-        await page.waitForFunction(
-            () => document.querySelectorAll('.search-result-item').length >= 1,
-            null,
-            { timeout: 15000, polling: 100 }
-        )
+        await page.waitForFunction(() => document.querySelectorAll('.search-result-item').length >= 1, null, {
+            timeout: 15000,
+            polling: 100
+        })
 
         // Result items render as .search-result-listitem with a button carrying
         // data-result-score (the presentation refactor moved the class)

@@ -709,6 +709,7 @@ Earlier "flaky/dead" verdicts were CONTAMINATED by self-inflicted burst load
 rate limiter). Clean sequential re-test (one worker at a time, spaced):
 
 LIVE (execute commands in the harness):
+
 - minimax-m3 ✅ + completed a real write→verify→commit (w35)
 - deepseek-v4-pro ✅ (doc's "workhorse" was right; earlier ❌ was burst)
 - deepseek-v4-flash ✅ (API sweep 0/6 was burst-wrong; harness executes)

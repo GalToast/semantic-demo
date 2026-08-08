@@ -63,7 +63,7 @@ class MockWorker extends EventTarget {
 }
 
 // Import after mock
-import { loadBusinessData } from '../../src/lib/data-loader'
+import { loadBusinessData, terminateDataLoaderWorkers } from '../../src/lib/data-loader'
 
 describe('data-loader worker settle/cleanup', () => {
     beforeEach(() => {
@@ -163,6 +163,22 @@ describe('data-loader worker settle/cleanup', () => {
         })
 
         await promise
+        expect(worker.listeners.get('message')?.length ?? 0).toBe(0)
+        expect(worker.listeners.get('messageerror')?.length ?? 0).toBe(0)
+        expect(worker.listeners.get('error')?.length ?? 0).toBe(0)
+    })
+
+    it('terminates and rejects an in-flight worker during app teardown', async () => {
+        const promise = loadBusinessData()
+        await Promise.resolve()
+
+        const worker = MockWorker.instances[0]
+        expect(worker).toBeDefined()
+
+        terminateDataLoaderWorkers()
+
+        await expect(promise).rejects.toMatchObject({ name: 'AbortError' })
+        expect(worker.terminateCount).toBe(1)
         expect(worker.listeners.get('message')?.length ?? 0).toBe(0)
         expect(worker.listeners.get('messageerror')?.length ?? 0).toBe(0)
         expect(worker.listeners.get('error')?.length ?? 0).toBe(0)

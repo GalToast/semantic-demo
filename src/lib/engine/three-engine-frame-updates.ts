@@ -378,11 +378,30 @@ export function updateReferenceSphereOpacity(revealProgress: number, sceneReveal
  */
 export function updateSporeOpacity(
     pointsRevealProgress: number,
-    state: (Pick<AppState, 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined
+    state: (Pick<AppState, 'focusedNode' | 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined
 ): void {
     if (webglContext.nodeSporeMaterial) {
         const isSemanticDive = state?.semanticDiveMode === true || (state?.trailDepth ?? 0) >= 2
-        const focusBoost = isSemanticDive ? 0.22 : 1.0
+        const isFocused = Number.isFinite(state?.focusedNode)
+        // Focus-hero restraint (visual-polish wave 2026-08-08): the points
+        // layer already dims to opacity 0.46 + size 0.8 while a node is focused
+        // (see updatePointsMaterial), but the shared spore material held the
+        // full SCENE_ATMOSPHERE.sporeOpacity (0.65) across all 8,406 instances
+        // in focus. That asymmetry was the dominant overbloom source: every
+        // background cluster kept its resting emissive (intensity 2.0) so the
+        // 8x hero spore sat inside a teal wash and the summed G channel clipped
+        // toward white under ACES exposure 0.95 — the "blown-out square core"
+        // symptom. A moderate focus multiplier lifts the spores into the SAME
+        // restraint band the points layer already uses, while the hero's 8x
+        // scale (see getNodeSporeScale) keeps it the single legible focal node.
+        // 0.55 chosen so 0.65*0.55 = 0.3575 effective alpha lands just BELOW the
+        // points' 0.46 channel — the spore underlay never out-brights the
+        // dimmed points, ensuring the focused point sprite reads as the visible
+        // halo, not the spore wash. Pure focus-only: overview (no focusedNode)
+        // keeps the W48-T1A resting opacity, semantic-dive (trailDepth>=2)
+        // preserves the existing 0.22 dim. Do not raise above ~0.6 (re-bloom) or
+        // below ~0.4 (hero loses chromaticity against the points halo).
+        const focusBoost = isSemanticDive ? 0.22 : isFocused ? 0.55 : 1.0
         const targetSporeOpacity = (PORT_SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) * pointsRevealProgress * focusBoost
         webglContext.nodeSporeMaterial.opacity += (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12
     }

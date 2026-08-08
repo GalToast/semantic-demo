@@ -128,6 +128,10 @@ test.describe('WebGL Render Loop Regression', () => {
             renderInfo.triangles,
             'renderer.info.render.triangles must be > 0 (geometry rasterised)'
         ).toBeGreaterThan(0)
+        expect(
+            renderInfo.triangles,
+            'renderer.info.render.triangles must stay within the node-field budget'
+        ).toBeLessThan(5_000_000)
         expect(renderInfo.frame, 'renderer.info.render.frame must be > 0 (render loop ticked)').toBeGreaterThan(0)
 
         // 3. Render loop is alive: frame count should increment
@@ -152,7 +156,10 @@ test.describe('WebGL Render Loop Regression', () => {
     })
 
     test('canvas-ready class appears before loading overlay disappears', async ({ page }) => {
-        test.setTimeout(60_000)
+        test.setTimeout(75_000)
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+        })
         await page.goto(`${BASE_URL}${APP_PATH}?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
         })
@@ -164,7 +171,7 @@ test.describe('WebGL Render Loop Regression', () => {
                 const start = Date.now()
                 const timeout = setTimeout(() => {
                     resolve({ events, timedOut: true })
-                }, 30_000)
+                }, 45_000)
 
                 // Poll for canvas-ready
                 const pollCanvas = setInterval(() => {

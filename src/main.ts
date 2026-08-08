@@ -19,6 +19,7 @@ import { installWindowActions } from '@lib/orchestration/window-actions'
 import { installGestureMonitor } from '@lib/orchestration/wait-for-gesture'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
+import { terminateDataLoaderWorkers } from '@lib/data-loader'
 import type { WeatherData } from '@lib/utils/weather'
 import { appState, legacyState } from '@lib/state/app.svelte.ts'
 import { withStateMutation } from '@lib/state/with-state-mutation'
@@ -519,6 +520,7 @@ const cleanupWindowActions = installWindowActions()
 // can back both the real `beforeunload` path and the Vite HMR dispose path.
 function disposeAppListeners(): void {
     clearHydrateTimer()
+    terminateDataLoaderWorkers()
     unsubTestState()
     cleanupWindowActions()
     disposeJourneyWebglPreload()

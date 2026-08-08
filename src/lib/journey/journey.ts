@@ -96,15 +96,13 @@ export function ensureCanvasNodeInteractionBindings(): void {
 }
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 import { applyPointFilterColors, describeThreadLensForPoint } from './point-color'
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
+import {
+    scheduleJourneyFocusTimer
+} from './journey-focus-timers'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from '@lib/journey/text-helpers'
 import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/orchestration/lifecycle'
 
-/** Fire-and-forget timer registry for the deferred CAMERA_NODE_FOCUSED work. */
-const journeyFocusTimerRegistry = new DisposableRegistry({
-    label: 'journey-focus-defer',
-    warnAfterDispose: false
-})
+export { disposeJourneyFocusTimers } from './journey-focus-timers'
 
 subscribeKeyed('journey:CAMERA_NODE_FOCUSED', EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
     const index = typeof payload.index === 'number' ? payload.index : NaN
@@ -124,7 +122,7 @@ subscribeKeyed('journey:CAMERA_NODE_FOCUSED', EVENTS.CAMERA_NODE_FOCUSED, (paylo
         // populates it. When the engine/FocusPocket effect is not active (e.g.
         // headless tests that call __navActions__.focusOnNode without mounting
         // the scene), we still need to populate the pocket here.
-        journeyFocusTimerRegistry.schedule(0, () => {
+        scheduleJourneyFocusTimer(0, () => {
             // M12: liveness guard — a superseding CAMERA_NODE_FOCUSED in the
             // same publish block (or a navigation/mode-switch in this tick)
             // would leave this deferred callback to rebuild the trail seed +
@@ -150,9 +148,9 @@ subscribeKeyed('journey:CAMERA_NODE_FOCUSED', EVENTS.CAMERA_NODE_FOCUSED, (paylo
                 if (state.navState.focusedIndex !== index) return
                 if ((state.navState.focusPocketIndices || []).length > 0) return
                 if (applyLocalNeighborhoodFocus(index)) return
-                journeyFocusTimerRegistry.schedule(200, tryBuild)
+                scheduleJourneyFocusTimer(200, tryBuild)
             }
-            journeyFocusTimerRegistry.schedule(200, tryBuild)
+            scheduleJourneyFocusTimer(200, tryBuild)
         }
     }
 })

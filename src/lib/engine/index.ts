@@ -26,6 +26,7 @@
 
 export {
     initThreeJS,
+    startRenderLoop,
     deinit,
     animate,
     onWindowResize,

@@ -127,7 +127,7 @@ function buildSearchResultsFromIndices(indices: number[] | undefined): SearchRes
                   }
                 : undefined
         }
-        })
+    })
 }
 
 /** Build a fresh SearchStoreState snapshot from appState. */

@@ -33,6 +33,7 @@ const mock = vi.hoisted(() => ({
     installParityAttributeSync: vi.fn<() => () => void>().mockReturnValue(() => {}),
     installTestStoreGlobals: vi.fn<() => () => void>().mockReturnValue(() => {}),
     applyUrlState: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    disposeJourneyFocusTimers: vi.fn<() => void>(),
     debugWarn: vi.fn<() => void>(),
     debugError: vi.fn<(...args: unknown[]) => void>(),
     initAudio: vi.fn<() => void>()
@@ -101,6 +102,9 @@ vi.mock('@lib/orchestration/url-state', () => ({
 // separation so appInit's _initCalled never lands in the same instance that
 // isAppInitComplete() reads. Mock it (and its entry points) to cut the chains.
 vi.mock('@lib/journey/journey', () => ({}))
+vi.mock('@lib/journey/journey-focus-timers', () => ({
+    disposeJourneyFocusTimers: mock.disposeJourneyFocusTimers
+}))
 
 vi.mock('@lib/utils/debug', () => ({
     debugWarn: mock.debugWarn,
@@ -160,6 +164,15 @@ describe('appInit — happy path', () => {
         const cleanup = await freshInit({})
         expect(typeof cleanup).toBe('function')
         cleanup()
+    })
+
+    it('disposes deferred journey focus timers during cleanup', async () => {
+        const { appInit: freshInit } = await freshAppInit()
+        const cleanup = await freshInit({})
+
+        cleanup()
+
+        expect(mock.disposeJourneyFocusTimers).toHaveBeenCalledOnce()
     })
 
     it('sets isAppInitComplete=true after init resolves', async () => {

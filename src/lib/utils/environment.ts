@@ -8,20 +8,20 @@
  */
 
 export function getViewportSize(): { width: number; height: number } {
-  return {
-    width: typeof window !== 'undefined' ? window.innerWidth : 1280,
-    height: typeof window !== 'undefined' ? window.innerHeight : 800
-  };
+    return {
+        width: typeof window !== 'undefined' ? window.innerWidth : 1280,
+        height: typeof window !== 'undefined' ? window.innerHeight : 800
+    }
 }
 
 export function isMobileViewport(): boolean {
-  return typeof window !== 'undefined' && window.innerWidth <= 768;
+    return typeof window !== 'undefined' && window.innerWidth <= 768
 }
 
-export const isMobile = isMobileViewport;
+export const isMobile = isMobileViewport
 
 export function isCompactFocusStage(): boolean {
-  return isMobileViewport();
+    return isMobileViewport()
 }
 
 /**
@@ -43,28 +43,28 @@ let _reducedMotionMatchMediaFn: typeof window.matchMedia | null = null
  * preference change without a per-frame `matchMedia` call.
  */
 export function getReducedMotionMQL(): MediaQueryList | null {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null
-  // Rebuild when window.matchMedia has been replaced (test/iframe mock swap).
-  if (_reducedMotionMQL && window.matchMedia !== _reducedMotionMatchMediaFn) {
-    resetReducedMotionCache()
-  }
-  if (!_reducedMotionMQL) {
-    _reducedMotionMQL = window.matchMedia('(prefers-reduced-motion: reduce)')
-    _reducedMotionCached = _reducedMotionMQL.matches
-    _reducedMotionMatchMediaFn = window.matchMedia
-    _reducedMotionOnChange = (e: MediaQueryListEvent) => {
-      _reducedMotionCached = e.matches
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null
+    // Rebuild when window.matchMedia has been replaced (test/iframe mock swap).
+    if (_reducedMotionMQL && window.matchMedia !== _reducedMotionMatchMediaFn) {
+        resetReducedMotionCache()
     }
-    // Tolerate test mocks with no addEventListener (use addListener fallback,
-    // silently skip when neither exists — the cache is still valid, it just
-    // won't auto-invalidate on OS-preference changes).
-    if (typeof _reducedMotionMQL.addEventListener === 'function') {
-      _reducedMotionMQL.addEventListener('change', _reducedMotionOnChange)
-    } else if (typeof (_reducedMotionMQL as any).addListener === 'function') {
-      ;(_reducedMotionMQL as any).addListener('change', _reducedMotionOnChange)
+    if (!_reducedMotionMQL) {
+        _reducedMotionMQL = window.matchMedia('(prefers-reduced-motion: reduce)')
+        _reducedMotionCached = _reducedMotionMQL.matches
+        _reducedMotionMatchMediaFn = window.matchMedia
+        _reducedMotionOnChange = (e: MediaQueryListEvent) => {
+            _reducedMotionCached = e.matches
+        }
+        // Tolerate test mocks with no addEventListener (use addListener fallback,
+        // silently skip when neither exists — the cache is still valid, it just
+        // won't auto-invalidate on OS-preference changes).
+        if (typeof _reducedMotionMQL.addEventListener === 'function') {
+            _reducedMotionMQL.addEventListener('change', _reducedMotionOnChange)
+        } else if (typeof (_reducedMotionMQL as any).addListener === 'function') {
+            ;(_reducedMotionMQL as any).addListener('change', _reducedMotionOnChange)
+        }
     }
-  }
-  return _reducedMotionMQL
+    return _reducedMotionMQL
 }
 
 /**
@@ -76,17 +76,17 @@ export function getReducedMotionMQL(): MediaQueryList | null {
  * without a public API. Only advanced teardown (HMR, hot reload) needs this.
  */
 function resetReducedMotionCache(): void {
-  if (_reducedMotionMQL && _reducedMotionOnChange) {
-    if (typeof _reducedMotionMQL.removeEventListener === 'function') {
-      _reducedMotionMQL.removeEventListener('change', _reducedMotionOnChange)
-    } else if (typeof (_reducedMotionMQL as any).removeListener === 'function') {
-      ;(_reducedMotionMQL as any).removeListener('change', _reducedMotionOnChange)
+    if (_reducedMotionMQL && _reducedMotionOnChange) {
+        if (typeof _reducedMotionMQL.removeEventListener === 'function') {
+            _reducedMotionMQL.removeEventListener('change', _reducedMotionOnChange)
+        } else if (typeof (_reducedMotionMQL as any).removeListener === 'function') {
+            ;(_reducedMotionMQL as any).removeListener('change', _reducedMotionOnChange)
+        }
     }
-  }
-  _reducedMotionMQL = null
-  _reducedMotionCached = null
-  _reducedMotionOnChange = null
-  _reducedMotionMatchMediaFn = null
+    _reducedMotionMQL = null
+    _reducedMotionCached = null
+    _reducedMotionOnChange = null
+    _reducedMotionMatchMediaFn = null
 }
 
 /**
@@ -100,92 +100,73 @@ function resetReducedMotionCache(): void {
  * SSR-safe: returns `false` when `window` is absent.
  */
 export function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined') return false
-  // Always route through getReducedMotionMQL() so the window.matchMedia
-  // identity check runs on every call — test/iframe mock replacements
-  // are picked up transparently without an explicit reset API.
-  const mql = getReducedMotionMQL()
-  if (mql) return _reducedMotionCached === true
-  // SSR / no-window fallback: single-shot live query with no caching.
-  return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true
+    if (typeof window === 'undefined') return false
+    // Always route through getReducedMotionMQL() so the window.matchMedia
+    // identity check runs on every call — test/iframe mock replacements
+    // are picked up transparently without an explicit reset API.
+    const mql = getReducedMotionMQL()
+    if (mql) return _reducedMotionCached === true
+    // SSR / no-window fallback: single-shot live query with no caching.
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true
 }
 
 export function hasCoarsePointer(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(pointer: coarse)')?.matches === true
-  );
+    return typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)')?.matches === true
 }
 
 export function isCompactLandscape(): boolean {
-  if (typeof window === 'undefined') return false;
-  const { width, height } = getViewportSize();
-  return width <= 768 && height <= 740;
+    if (typeof window === 'undefined') return false
+    const { width, height } = getViewportSize()
+    return width <= 768 && height <= 740
 }
 
 export function isUltraCompactPortrait(): boolean {
-  if (typeof window === 'undefined') return false;
-  const { width, height } = getViewportSize();
-  return width <= 430 && height >= 741 && height <= 860;
+    if (typeof window === 'undefined') return false
+    const { width, height } = getViewportSize()
+    return width <= 430 && height >= 741 && height <= 860
 }
 
 export function getDevicePixelRatio(): number {
-  return typeof window !== 'undefined' && window.devicePixelRatio !== undefined
-    ? window.devicePixelRatio
-    : 1;
+    return typeof window !== 'undefined' && window.devicePixelRatio !== undefined ? window.devicePixelRatio : 1
 }
 
 export function getPanelSurface(): string {
-  if (typeof document === 'undefined') return '';
-  return document.body?.dataset?.panelSurface ?? '';
+    if (typeof document === 'undefined') return ''
+    return document.body?.dataset?.panelSurface ?? ''
 }
 
 export function isMapSummarySurface(): boolean {
-  return getPanelSurface() === 'map-focus-search';
+    return getPanelSurface() === 'map-focus-search'
 }
 
 export function isSemanticDiveSurface(): boolean {
-  return getPanelSurface() === 'semantic-dive';
+    return getPanelSurface() === 'semantic-dive'
 }
 
 export function matchMedia(query: string): MediaQueryList | null {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
-  return window.matchMedia(query);
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null
+    return window.matchMedia(query)
 }
 
 export function getLocation(): Location | null {
-  return typeof window !== 'undefined' ? window.location : null;
+    return typeof window !== 'undefined' ? window.location : null
 }
 
 export function getCurrentUrl(): string {
-  return typeof window !== 'undefined' ? window.location.href : '';
+    return typeof window !== 'undefined' ? window.location.href : ''
 }
 
-export function getComputedStyle(
-  el: Element,
-  pseudo?: string
-): CSSStyleDeclaration | null {
-  if (typeof window === 'undefined' || typeof window.getComputedStyle !== 'function')
-    return null;
-  return pseudo !== undefined
-    ? window.getComputedStyle(el, pseudo)
-    : window.getComputedStyle(el);
+export function getComputedStyle(el: Element, pseudo?: string): CSSStyleDeclaration | null {
+    if (typeof window === 'undefined' || typeof window.getComputedStyle !== 'function') return null
+    return pseudo !== undefined ? window.getComputedStyle(el, pseudo) : window.getComputedStyle(el)
 }
 
 export function requestAnimationFrame(callback: FrameRequestCallback): number {
-  if (
-    typeof window === 'undefined' ||
-    typeof window.requestAnimationFrame !== 'function'
-  )
-    return 0;
-  return window.requestAnimationFrame(callback);
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') return 0
+    return window.requestAnimationFrame(callback)
 }
 
 export function cancelAnimationFrame(id: number): void {
-  if (
-    typeof window === 'undefined' ||
-    typeof window.cancelAnimationFrame !== 'function'
-  )
-    return;
-  window.cancelAnimationFrame(id);
+    if (typeof window === 'undefined' || typeof window.cancelAnimationFrame !== 'function') return
+    window.cancelAnimationFrame(id)
 }

@@ -72,7 +72,9 @@ const NODE_SPORE_ROLE_TINT_HALO = new Color(0xff6b6b) // rose - .civic
 const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint
 const _threadTintColor = new Color(THREAD_TINT_COLOR)
 
-const SPORE_SEGMENTS_VISIBLE = 24
+// 16x15 keeps the focused spore round while reducing the 8,406-instance
+// field from 8.9M triangles to roughly 3.9M including the thread geometry.
+const SPORE_SEGMENTS_VISIBLE = 16
 
 // W54: Spore material tuned for concentric focus visuals. Phong shininess is
 // zeroed so the bright center is not pulled off-center by a specular highlight;

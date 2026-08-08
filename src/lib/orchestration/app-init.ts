@@ -29,6 +29,7 @@ import { debugError } from '@lib/utils/debug'
 import { applyUrlState } from '@lib/orchestration/url-state'
 import { teardownViewController } from '@lib/orchestration/view-controller'
 import { teardownTriggers } from '@lib/orchestration/triggers'
+import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
 
 // Side-effect: initializes journey state, canvas interaction adapter,
 // and thread-settler bindings. Must load before engine init so that
@@ -79,6 +80,7 @@ let _unsubWebglRestore: (() => void) | null = null
 let _unsubViewport: (() => void) | null = null
 let _unsubParity: (() => void) | null = null
 let _lastCleanup: (() => void) | null = null
+let _prewarmTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Safety Valves ────────────────────────────────────────────────────────────
 
@@ -154,6 +156,22 @@ function setupSafetyValves(): SafetyTimers {
 function clearSafetyTimers(timers: SafetyTimers | null): void {
     if (timers?.slowProgress) clearTimeout(timers.slowProgress)
     if (timers?.safetyValve) clearTimeout(timers.safetyValve)
+}
+
+function clearPrewarmTimer(): void {
+    if (_prewarmTimer !== null) {
+        clearTimeout(_prewarmTimer)
+        _prewarmTimer = null
+    }
+}
+
+function scheduleSearchIndexPrewarm(): void {
+    clearPrewarmTimer()
+    // eslint-disable-next-line no-restricted-syntax -- one-shot defer is canceled by app cleanup
+    _prewarmTimer = setTimeout(() => {
+        _prewarmTimer = null
+        void prewarmLocalIndex()
+    }, 0)
 }
 
 // ── URL State Application ────────────────────────────────────────────────────
@@ -315,9 +333,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     // main thread for seconds — it stalled the demo's SEARCH phase and made
     // first user searches (and journey tests) feel hung. Deferred tick keeps
     // the boot/URL-restore flow unblocked.
-    setTimeout(() => {
-        prewarmLocalIndex()
-    }, 0)
+    scheduleSearchIndexPrewarm()
     // Fix B (tmp/focus-blank-investigation.md): don't block first paint on the
     // deep-link URL-state restore, which awaits a network search (up to 30 s).
     // Run it fire-and-forget so the loading overlay / safety valve clears
@@ -355,6 +371,8 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     const cleanup = () => {
         clearSafetyTimers(_safetyTimers)
         _safetyTimers = null
+        clearPrewarmTimer()
+        disposeJourneyFocusTimers()
         _unsubWindowGlobals?.()
         _unsubViewport?.()
         _unsubParity?.()

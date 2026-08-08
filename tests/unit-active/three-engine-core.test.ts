@@ -56,7 +56,10 @@ const _engineStateProxy = vi.hoisted(() => ({
     webglNeedsRestoreReinit: false,
     webglRestoreTimer: null as number | null,
     circuitBreakerTripped: false,
-    uiFeedback: null as null | { showExperienceToast: (title: string, message?: string) => void }
+    uiFeedback: null as null | { showExperienceToast: (title: string, message?: string) => void },
+    lastCameraSnapshot: null as unknown,
+    consecutiveSkippedFrames: 0,
+    renderSkipOpportunities: 0
 }))
 
 // ── Module mocks ────────────────────────────────────────────────────────────
@@ -270,8 +273,14 @@ describe('cancelAnimate', () => {
             nodeSporeMaterial: null,
             sceneRevealActive: false,
             sceneRevealCameraStart: null,
-            sceneRevealCameraEnd: null
+            sceneRevealCameraEnd: null,
+            scenePerformanceDiagnostics: {
+                renderSkipOpportunities: 17,
+                consecutiveSkippedFrames: 4
+            }
         }
+        _engineStateProxy.consecutiveSkippedFrames = 4
+        _engineStateProxy.renderSkipOpportunities = 17
 
         // Fresh ppModule stub
         _engineStateProxy.ppModule = {
@@ -340,6 +349,18 @@ describe('cancelAnimate', () => {
         cancelAnimate()
         expect(_engineStateProxy.lastHoveredNode).toBeNull()
         expect(_engineStateProxy.hoverEmissiveFlash).toBe(0)
+    })
+
+    it('resets render-skip bookkeeping and published diagnostics', () => {
+        cancelAnimate()
+
+        expect(_engineStateProxy.lastCameraSnapshot).toBeNull()
+        expect(_engineStateProxy.consecutiveSkippedFrames).toBe(0)
+        expect(_engineStateProxy.renderSkipOpportunities).toBe(0)
+        expect(_engineStateProxy.state?.scenePerformanceDiagnostics).toMatchObject({
+            renderSkipOpportunities: 0,
+            consecutiveSkippedFrames: 0
+        })
     })
 
     it('guard: null state does not throw', () => {

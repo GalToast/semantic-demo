@@ -80,7 +80,13 @@
   )
   const threadInspectorLazy = createLazyComponent(() => import('@components/ThreadInspector.svelte'))
   const demoChoreographyLazy = createLazyComponent(() => import('@components/DemoChoreography.svelte'))
-  const weatherWidgetLazy = createLazyComponent(() => import('@components/WeatherWidget.svelte'))
+  // Weather is post-scene chrome, not cold-load work. Once WebGL is ready it
+  // must mount immediately; requestIdleCallback can remain starved by the
+  // continuous render loop and leave the chrome absent indefinitely.
+  const weatherWidgetLazy = createLazyComponent(
+    () => import('@components/WeatherWidget.svelte'),
+    { idle: false }
+  )
   // Dev-only runtime tooling (lil-gui + Spector + telemetry). Extracted to
   // DevToolsMount.svelte so App.svelte doesn't have to own 3 lazy handles +
   // the DEV-gated telemetry install. App.svelte wraps the mount in

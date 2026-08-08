@@ -476,7 +476,11 @@ assertEq(state.focusedNode, null, 'resetExplorationFocus must clear focusedNode'
 assertEq(state.focusState.selectedPoint, null, 'resetExplorationFocus must clear selectedPoint')
 assertEq(state.trailDepth, 0, 'resetExplorationFocus must reset trailDepth=0')
 assertEq(state.navState.mode, 'overview', 'resetExplorationFocus must reset navState.mode')
-assertEq(state.searchState.currentSearchSummary?.query, 'preserve me', 'resetExplorationFocus must preserve currentSearchSummary')
+assertEq(
+    state.searchState.currentSearchSummary?.query,
+    'preserve me',
+    'resetExplorationFocus must preserve currentSearchSummary'
+)
 
 console.log('PASS CONTRACT 8: resetExplorationFocus preserves search context')
 
@@ -636,7 +640,11 @@ assertEq(
     'semanticDiveMode setter must not change navState.mode directly'
 )
 assertEq(state.focusedNode, snapshotBefore.focusedNode, 'semanticDiveMode setter must not change focusedNode')
-assertEq(state.focusState.selectedPoint, snapshotBefore.selectedPoint, 'semanticDiveMode setter must not change selectedPoint')
+assertEq(
+    state.focusState.selectedPoint,
+    snapshotBefore.selectedPoint,
+    'semanticDiveMode setter must not change selectedPoint'
+)
 
 console.log('PASS CONTRACT 10: semanticDiveMode setter has no side-effects beyond trailDepth')
 
@@ -679,11 +687,7 @@ console.log('PASS CONTRACT 13: focus-pocket.js does not directly write focus sta
 // lifecycle.js reset code must call focus-pocket.js owner helpers instead of
 // directly assigning any navState.focusPocket* maps.
 
-const focusPocketFields = [
-    'navState.focusPocketIndices',
-    'navState.focusPocketMeta',
-    'navState.focusPocketRoleByIndex'
-]
+const focusPocketFields = ['navState.focusPocketIndices', 'navState.focusPocketMeta', 'navState.focusPocketRoleByIndex']
 let fpViolations = []
 for (const field of focusPocketFields) {
     const canonicalSet = CANONICAL_WRITERS[field] || new Set()

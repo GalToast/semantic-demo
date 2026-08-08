@@ -109,6 +109,29 @@ interface CallDataWorkerOptions {
 /** Monotonic request id source for callDataWorker (see CallDataWorkerOptions.requestId). */
 let _dataWorkerRequestId = 0
 
+/**
+ * Raised when application teardown cancels an in-flight data request.
+ *
+ * This is deliberately distinct from a worker failure: teardown must not
+ * silently fall back to a second main-thread parse while the old app is being
+ * replaced.
+ */
+class DataLoaderAbortError extends Error {
+    constructor() {
+        super('Data worker request aborted during application teardown')
+        this.name = 'AbortError'
+    }
+}
+
+const _activeDataWorkerAborters = new Set<() => void>()
+
+/** Cancel all data-worker requests owned by the current app instance. */
+export function terminateDataLoaderWorkers(): void {
+    for (const abort of Array.from(_activeDataWorkerAborters)) {
+        abort()
+    }
+}
+
 interface LoadRecordsWorkerResult {
     points: Array<{
         cluster: number
@@ -149,6 +172,17 @@ export function callDataWorker<T>(type: string, payload: unknown, options?: Call
     return new Promise((resolve, reject) => {
         const worker = new Worker(workerUrl, { type: 'module' })
         let settled = false
+        const signal = options?.signal
+
+        // Handle an already-aborted caller without creating a timer or
+        // registering event handlers that would otherwise outlive the request.
+        if (signal?.aborted) {
+            worker.terminate()
+            reject(new DOMException('Worker request aborted', 'AbortError'))
+            return
+        }
+
+        let activeAborter: (() => void) | null = null
         // Each call gets a monotonic requestId so the worker's supersession
         // guard (_activeRequestId) is live even though callDataWorker spins up
         // a fresh worker per call.
@@ -158,6 +192,10 @@ export function callDataWorker<T>(type: string, payload: unknown, options?: Call
             settled = true
             clearTimeout(timeoutId)
             if (signal) signal.removeEventListener('abort', abortHandler)
+            if (activeAborter) {
+                _activeDataWorkerAborters.delete(activeAborter)
+                activeAborter = null
+            }
             worker.removeEventListener('message', handler)
             worker.removeEventListener('messageerror', messageErrorHandler)
             worker.removeEventListener('error', errorHandler)
@@ -168,20 +206,17 @@ export function callDataWorker<T>(type: string, payload: unknown, options?: Call
         const timeoutId = setTimeout(() => {
             settle(() => reject(new Error('Worker timeout')))
         }, 30_000)
-        const signal = options?.signal
         const abortHandler = (): void => {
             // Aborted mid-flight: tear down the worker (cancels the in-flight
             // 8,406-record / 40 MB artifact fetch) and reject.
             settle(() => reject(new DOMException('Worker request aborted', 'AbortError')))
         }
-        if (signal) {
-            if (signal.aborted) {
-                worker.terminate()
-                reject(new DOMException('Worker request aborted', 'AbortError'))
-                return
-            }
-            signal.addEventListener('abort', abortHandler)
+        const teardownAbort = (): void => {
+            settle(() => reject(new DataLoaderAbortError()))
         }
+        activeAborter = teardownAbort
+        _activeDataWorkerAborters.add(teardownAbort)
+        if (signal) signal.addEventListener('abort', abortHandler)
         const handler = (event: MessageEvent<WorkerResponse>): void => {
             const res = event.data
             if (res.type === `${type}_SUCCESS`) {
@@ -203,7 +238,11 @@ export function callDataWorker<T>(type: string, payload: unknown, options?: Call
         worker.addEventListener('message', handler)
         worker.addEventListener('messageerror', messageErrorHandler)
         worker.addEventListener('error', errorHandler)
-        worker.postMessage({ type, payload, requestId })
+        try {
+            worker.postMessage({ type, payload, requestId })
+        } catch (error) {
+            settle(() => reject(error instanceof Error ? error : new Error(String(error))))
+        }
     })
 }
 
@@ -218,6 +257,7 @@ export async function loadBusinessData(): Promise<BusinessDataResult> {
 
     // Offload the heavy JSON.parse + typed-array construction to the Web Worker.
     const workerResult = await callDataWorker('LOAD_RECORDS', { url: dataUrl }).catch((err: unknown) => {
+        if (err instanceof DataLoaderAbortError) throw err
         debugWarn('[data-loader] Worker load failed, falling back to main thread:', err)
         return null
     })
@@ -464,6 +504,7 @@ export async function loadLeadEnrichmentData(): Promise<Record<string, LeadEnric
         )
         return result.enrichment
     } catch (err: unknown) {
+        if (err instanceof DataLoaderAbortError) throw err
         debugWarn('[data-loader] Worker enrichment load failed, falling back to main thread:', err)
         return fetchEnrichment(enrichmentUrl)
     }
@@ -497,5 +538,4 @@ function checkDataBounds(buffer: Float32Array): void {
         )
     }
 }
-
 

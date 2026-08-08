@@ -84,10 +84,7 @@ assert(
 )
 
 // 1c. Must contain a Map constructor for scoredByIndex.
-assert(
-    /new Map\b/.test(fnBody),
-    'buildSearchResultsFromIndices must construct a scoredByIndex Map (new Map)'
-)
+assert(/new Map\b/.test(fnBody), 'buildSearchResultsFromIndices must construct a scoredByIndex Map (new Map)')
 
 // 1d. Must contain a score lookup pattern: scoredByIndex.get(index) (with or
 //     without the ?? 0 fallback). This is the replacement for the old
@@ -116,10 +113,7 @@ assert(
 )
 
 // Also verify data-result-rank exists (paired attribute, same commit)
-assert(
-    /data-result-rank/.test(itemSrc),
-    'SearchResultItem.svelte must contain data-result-rank on the result button'
-)
+assert(/data-result-rank/.test(itemSrc), 'SearchResultItem.svelte must contain data-result-rank on the result button')
 
 console.log('PASS SECTION 2: SearchResultItem.svelte emits data-result-score + data-result-rank')
 
