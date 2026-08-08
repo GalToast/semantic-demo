@@ -714,8 +714,11 @@ LIVE (execute commands in the harness):
 - deepseek-v4-pro ✅ (doc's "workhorse" was right; earlier ❌ was burst)
 - deepseek-v4-flash ✅ (API sweep 0/6 was burst-wrong; harness executes)
 - kiro-auto ✅ / kimi-k3 ✅ / qwen-3.6-35b-a3b ✅
-- deepseek-v4-flash-0731 ⚠️ says PROBE_DONE but creates no file (claims-
-  not-executes — unreliable, cannot trust its done-claims)
+- deepseek-v4-flash-0731 ✅ **STRONG** — real-task verified 2026-08-08: read file,
+  found both blocks, removed the dead `outline: none` (commit 1a3ee3d0, exact
+  surgical edit), ran the verify suites pre-commit. The earlier "claims-not-
+  executes" verdict was a ONE-COMMAND-PROBE ARTIFACT — 0731 is the primary
+  workhorse (see below). Probe verdicts do not predict task quality.
 
 THROTTLED now (account-level, may clear): kimi-k2.7-code (25×429),
 qwen-3.8-max (39×429). NOT dead — retry later.
