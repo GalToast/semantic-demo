@@ -186,7 +186,6 @@
   .focus-pocket-a11y .focus-pocket-item-btn:focus-visible {
     background: rgba(var(--color-primary-alt-rgb), 0.08);
     color: var(--color-text-teal-light);
-    outline: none;
   }
 
   .focus-pocket-a11y .focus-pocket-item-btn:focus-visible {
