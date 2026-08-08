@@ -732,14 +732,30 @@ or pro for real tasks; flash works for quick probes.
 Same bounded task to 4 routes; judged by DELIVERABLE + reasoning quality (not
 probe files — probes misled me on 0731).
 
-| Route | Verdict | Evidence |
-|---|---|---|
-| deepseek-v4-flash-0731 | ✅ STRONG | committed the real fix (1a3ee3d0) surgically, verified pre-commit |
-| kimi-k3 | ✅ STRONG | "no change needed" — verified post-fix file, refused blind edit, selector analysis |
-| deepseek-v4-pro | ✅ GOOD | "no change needed" + 28/28 tests, commit N/A (honest) |
-| minimax-m3 | ✅ STRONG | detected the fix already at HEAD (1a3ee3d0), full state analysis, verifying |
+| Route                  | Verdict   | Evidence                                                                           |
+| ---------------------- | --------- | ---------------------------------------------------------------------------------- |
+| deepseek-v4-flash-0731 | ✅ STRONG | committed the real fix (1a3ee3d0) surgically, verified pre-commit                  |
+| kimi-k3                | ✅ STRONG | "no change needed" — verified post-fix file, refused blind edit, selector analysis |
+| deepseek-v4-pro        | ✅ GOOD   | "no change needed" + 28/28 tests, commit N/A (honest)                              |
+| minimax-m3             | ✅ STRONG | detected the fix already at HEAD (1a3ee3d0), full state analysis, verifying        |
 
 **Quality rule:** all 4 quality lanes made the RIGHT call (fix or correct no-op);
 probe-probes are not predictive of task quality. 0731 re-proven as primary
 workhorse. The "which lanes NOT to run" answer: glm-5.2 (silent no-op), the
 429-throttled (kimi-k2.7-code/qwen-3.8-max) until limiter clears.
+
+### Freeze ≠ death (2026-08-08, w37 close call)
+
+w37 (0731) looked frozen (bytes static, no tool events, still "running") — I
+killed it main-lane... then found its COMPLETE fix already committed (f05ed2a4)
+the byte-freeze was POST-commit (the worker had delivered; the driver just
+never flushed CLIENT-END). My kill was wrong.
+LESSON: verify by GIT LOG + FILE STATE before killing any stalled worker.
+A "frozen" worker can have a landed commit. Prefer: check git log HEAD, check
+the target file's diff, then kill.
+
+Concurrency: 3 concurrent logfare lanes (0731+k3+pro) on the shared account →
+all three entered [willRetry] loops (k3+pro were killed legitimately; 0731
+survived to commit). Lesson: logfare lanes run SEQUENTIALLY, not in parallel
+(the earlier burst lesson applied to fewer lanes than I tested). 2 lanes may
+still contend; 1 at a time is safest for heavy reasoning work.
