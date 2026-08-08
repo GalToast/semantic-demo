@@ -688,9 +688,9 @@ an engineer, only a finger. Prescription prompts do not rescue it.
 Probe = "run EXACTLY this one bash command, create file, report". File-on-disk
 is the execution proof (not the reply text).
 
-- minimax-m3   ✅ probe file + exit 0 (also 6/6 tool_calls at API level) ← best
-- kiro-auto    ✅ probe file + exit 0
-- kimi-k3      ✅ probe file + exit 0 (~4min thinking first — be patient)
+- minimax-m3 ✅ probe file + exit 0 (also 6/6 tool_calls at API level) ← best
+- kiro-auto ✅ probe file + exit 0
+- kimi-k3 ✅ probe file + exit 0 (~4min thinking first — be patient)
 - qwen-3.6-35b-a3b ✅ probe file + exit 0 (~4min thinking first)
 - glm-5.2, kimi-k2.7-code, qwen-3.8-max ❌ 429 "upstream rate-limited model X"
   — logfare throttles these routes (3 auto-retries, all fail). NOT launchable
@@ -701,3 +701,24 @@ is the execution proof (not the reply text).
 Use: minimax-m3 for anything multi-turn; kiro-auto for cheap quick tasks;
 kimi-k3/qwen-3.6 for reasoning-heavy one-shots (long thinking budget).
 Avoid: pro/flash routes (flaky tools), 429 models (until rate limit clears).
+
+### CORRECTED live matrix (2026-08-08, burst-free sequential probes)
+
+Earlier "flaky/dead" verdicts were CONTAMINATED by self-inflicted burst load
+(5 concurrent probes + 11-model API sweep with 0.5s spacing → tripped logfare
+rate limiter). Clean sequential re-test (one worker at a time, spaced):
+
+LIVE (execute commands in the harness):
+- minimax-m3 ✅ + completed a real write→verify→commit (w35)
+- deepseek-v4-pro ✅ (doc's "workhorse" was right; earlier ❌ was burst)
+- deepseek-v4-flash ✅ (API sweep 0/6 was burst-wrong; harness executes)
+- kiro-auto ✅ / kimi-k3 ✅ / qwen-3.6-35b-a3b ✅
+- deepseek-v4-flash-0731 ⚠️ says PROBE_DONE but creates no file (claims-
+  not-executes — unreliable, cannot trust its done-claims)
+
+THROTTLED now (account-level, may clear): kimi-k2.7-code (25×429),
+qwen-3.8-max (39×429). NOT dead — retry later.
+SILENT: glm-5.2 (0 bytes no-op — NOT the 429 I mislabeled it).
+
+Rule: verify a probe file on disk, never the reply text. Prefer minimax-m3
+or pro for real tasks; flash works for quick probes.
