@@ -635,3 +635,16 @@ Delegation success is dominated by TASK SHAPE, not rail or model:
 - Rule: dispatch = per-finding bounded fixes with file:line targets + exact
   verify commands. Open-ended sweeps = main-lane, or pre-hunt the seam
   main-lane first and delegate only the confirmed findings.
+
+### Camera-choreography sweep result (main-lane, 2026-08-08)
+
+Main-lane sweep of all 7 camera files (the w29/w32 delegation target):
+- All 16 public exports have callers (no dead code).
+- Events all via typed EVENTS bus (no orphan/string events).
+- zoomCamera: finite-guards + distance clamping correct.
+- Two-writer race: only choreography writes camera.position; controls only
+  read (no external writers). The P1 centroid re-arm guard already landed
+  2026-08-07. NO new HIGH/MED findings — subsystem is clean.
+- Lesson: w29/w32 "let me verify" narration chased a recently-hardened
+  subsystem. Sweep verdicts must be main-lane-confirmed; a negative sweep is
+  a valid deliverable.
