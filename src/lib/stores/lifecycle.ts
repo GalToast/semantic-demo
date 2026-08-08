@@ -402,7 +402,51 @@ export function showExploreTrailReview(_summary?: unknown): void {
     overlay.hidden = false
     overlay.classList.add('visible')
 
-    let closeBtn = overlay.querySelector('.trail-review-close') as HTMLElement | null
+    // M3 completeness: the overlay in App.svelte is an empty shell (just
+    // <div class="trail-review-overlay" id="trail-review-overlay" role="dialog" ...>).
+    // After f05ed2a4 it has a close button + Escape, but the dialog body is
+    // empty — users clicking "Show walk" see a dark void. Inject a minimal
+    // content block (h2 title + guidance paragraph) and wire aria-labelledby
+    // so the modal is labeled. Walk-data rendering is a future pass; this
+    // is the static guidance that makes the dialog non-empty and accessible.
+    //
+    // Order matters: query the close button up front (so we can place
+    // content ahead of it), then inject content idempotently, then
+    // (re)inject the close button if still missing. This keeps the close-
+    // button block below unchanged in behavior while satisfying TDZ.
+    const existingCloseBtn = overlay.querySelector('.trail-review-close') as HTMLElement | null
+
+    let content = overlay.querySelector('.trail-review-content') as HTMLElement | null
+    if (!content) {
+        content = document.createElement('div')
+        content.className = 'trail-review-content'
+
+        const heading = document.createElement('h2')
+        heading.id = 'trail-review-title'
+        heading.textContent = 'Walk review'
+
+        const guidance = document.createElement('p')
+        guidance.className = 'trail-review-guidance'
+        guidance.textContent =
+            'Use the controls below the sheet to step through this business walk. Press Escape or the × to close.'
+
+        content.append(heading, guidance)
+        // Insert before the close button (if it exists) so the title is
+        // announced in DOM order before the dismiss control. If the close
+        // button doesn't exist yet, pre-pend so the close-button block
+        // below appends after content.
+        if (existingCloseBtn) {
+            overlay.insertBefore(content, existingCloseBtn)
+        } else {
+            overlay.insertBefore(content, overlay.firstChild)
+        }
+    }
+
+    // M3 completeness: label the modal dialog by its heading so assistive tech
+    // announces "Walk review dialog" instead of an unlabeled shell.
+    overlay.setAttribute('aria-labelledby', 'trail-review-title')
+
+    let closeBtn = existingCloseBtn
     if (!closeBtn) {
         // M3 follow-up (a11y report gap): the overlay in App.svelte is an empty
         // shell — no .trail-review-close exists, so closeBtn was always null and
@@ -416,7 +460,13 @@ export function showExploreTrailReview(_summary?: unknown): void {
         btn.setAttribute('aria-label', 'Close trail review')
         btn.textContent = '✕'
         btn.addEventListener('click', () => hideExploreTrailReview())
-        overlay.append(btn)
+        // Append after the content block so DOM order is: title → guidance → ✕.
+        // If content ended up elsewhere, fall back to the prior plain append.
+        if (content && content.parentNode === overlay) {
+            overlay.appendChild(btn)
+        } else {
+            overlay.append(btn)
+        }
         closeBtn = btn
     }
 
