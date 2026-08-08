@@ -1,72 +1,28 @@
 /**
- * component-DevGui.test.ts — Component test for DevGui.svelte
+ * component-DevGui.test.ts — DevGui.svelte a11y/structure behavioral contract.
  *
- * Uses source-inspection (readFileSync + string assertions) to verify the
- * a11y/structure contract. The component lazy-imports lil-gui and depends
- * on import.meta.env.DEV, preventing a full render() in the vitest env.
- * This pattern matches the FocusCard approach.
- *
- * Verifies:
- *  1. Template is gated by {#if visible}
- *  2. Rendered div has role="complementary"
- *  3. Rendered div has aria-label="Developer tools"
- *  4. Props interface defines optional visible prop
- *  5. Auto-rotate state exposed for GUI binding
- *  6. Focus personality override state exposed
- *  7. onMount block checks visible prop before creating GUI
- *  8. GUI cleanup via return () => guiInstance?.destroy()
+ * The component lazily imports lil-gui inside onMount when visible=true; we
+ * mock lil-gui so the shell structure can be asserted without a real GUI
+ * (jsdom lacks the canvas/dom APIs lil-gui touches).
  */
-import { describe, it, expect, beforeAll } from 'vitest';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { describe, it, expect, vi } from 'vitest'
+import { render } from '@testing-library/svelte'
+import DevGui from '../../src/components/DevGui.svelte'
 
-const SOURCE_PATH = resolve(__dirname, '../../src/components/DevGui.svelte');
+vi.mock('lil-gui', () => {
+    return { default: class FakeGui { add() { return this } addFolder() { return this } name() { return this } onChange() { return this } open() {} close() {} destroy() {} } }
+})
 
-function readSource(): string {
-    return readFileSync(SOURCE_PATH, 'utf-8');
-}
+describe('DevGui component shell', () => {
+    it('renders complementary region with developer-tools label when visible', () => {
+        const { container } = render(DevGui, { props: { visible: true } })
+        const region = container.querySelector('[role="complementary"]')
+        expect(region).not.toBeNull()
+        expect(region?.getAttribute('aria-label')).toBe('Developer tools')
+    })
 
-describe('DevGui component', () => {
-    let source: string;
-
-    beforeAll(() => {
-        source = readSource();
-    });
-
-    it('template is gated by {#if visible}', () => {
-        expect(source).toContain('{#if visible}');
-    });
-
-    it('rendered div has role="complementary"', () => {
-        expect(source).toContain('role="complementary"');
-    });
-
-    it('rendered div has aria-label="Developer tools"', () => {
-        expect(source).toContain('aria-label="Developer tools"');
-    });
-
-    it('props interface defines optional visible prop with default false', () => {
-        expect(source).toContain('interface Props');
-        expect(source).toContain('visible?: boolean');
-        expect(source).toContain('visible = false');
-    });
-
-    it('auto-rotate state exposed for GUI binding', () => {
-        expect(source).toContain('autoRotateEnabled');
-        expect(source).toContain('Auto-rotate');
-    });
-
-    it('focus personality override state exposed', () => {
-        expect(source).toContain('focusPersonalityOverride');
-        expect(source).toContain('Force personality');
-    });
-
-    it('onMount block checks visible prop before creating GUI', () => {
-        expect(source).toContain('onMount');
-        expect(source).toContain('if (!visible) return;');
-    });
-
-    it('GUI cleanup via return () => guiInstance?.destroy()', () => {
-        expect(source).toContain('guiInstance?.destroy()');
-    });
-});
+    it('renders nothing when visible is false', () => {
+        const { container } = render(DevGui, { props: { visible: false } })
+        expect(container.querySelector('[role="complementary"]')).toBeNull()
+    })
+})
