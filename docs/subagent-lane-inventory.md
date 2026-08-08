@@ -665,3 +665,20 @@ w33 falsified "bounded = reliable": a bounded 3-file conversion ALSO failed
 Rule: delegate ONLY prescription-grade fixes (exact file:line + exact change).
 Anything requiring design judgment (test conversions, refactors, sweeps)
 = main-lane. The external-subagent fleet is an edit-executor, not an engineer.
+
+### FINAL: step-count boundary (2026-08-08 — reconciles all w28-w34 data)
+
+The external-subagent harness executes SINGLE direct commands but NOT
+self-directed multi-step work. Verified across every variable:
+
+- PROBE tasks (one command, then stop): kiro-auto ✅ executed, minimax-m3 ✅
+  executed (files created, exit 0). Model/rail irrelevant.
+- MULTI-STEP tasks (read → decide → edit → verify → commit): w28-w34 ALL
+  narrated — flash-0731, pro, minimax-m3, cline, logfare, bounded or not.
+  Even minimax-m3 (6/6 tool_calls at API level) narrated in the harness.
+- Tool-support matrix (API-level, via router): minimax-m3 6/6, 0731 4/6,
+  pro 3/6, plain flash 0/6, grape 0/6. BUT harness multi-step fails on all.
+
+Rule (final): subagents = single-command executors (probe/one-edit tasks).
+Any read-decide-edit-verify-commit loop = main-lane. The fleet cannot be
+an engineer, only a finger. Prescription prompts do not rescue it.
