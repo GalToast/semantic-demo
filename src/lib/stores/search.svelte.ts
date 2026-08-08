@@ -95,6 +95,16 @@ export type SearchStoreApi = (() => SearchStoreState) &
 function buildSearchResultsFromIndices(indices: number[] | undefined): SearchResult[] {
     if (!indices || !indices.length) return []
     const records = (getBusinessRecords() || []) as BusinessRecord[]
+    // Score retention (2026-08-07, F-search-8 exposure): the summary keeps
+    // resultIndices + topScore, but the render slice rebuilt here hardcoded
+    // score: 0, so the DOM never surfaced real scores (scores are normalized
+    // 0-1 upstream, e.g. local-index Math.min(1, hit.score/3.0)). Look up the
+    // live score from appState.searchResults (the canonical scored array) by
+    // index so rendered items carry honest scores.
+    const scoredByIndex = new Map<number, number>()
+    for (const r of appState.searchResults ?? []) {
+        scoredByIndex.set(r.index, r.score)
+    }
     return indices.map((idx) => {
         const index = Number(idx)
         const record = records[index]
@@ -102,7 +112,7 @@ function buildSearchResultsFromIndices(indices: number[] | undefined): SearchRes
             id: String(index),
             name: record?.name ?? 'Unknown',
             index,
-            score: 0,
+            score: scoredByIndex.get(index) ?? 0,
             category: record?.category ?? '',
             snippet: record?.what ?? '',
             point: record
@@ -117,7 +127,7 @@ function buildSearchResultsFromIndices(indices: number[] | undefined): SearchRes
                   }
                 : undefined
         }
-    })
+        })
 }
 
 /** Build a fresh SearchStoreState snapshot from appState. */

@@ -166,6 +166,8 @@
     id={`search-result-${Number(result.index)}`}
     data-index={result.index}
     data-order={order}
+    data-result-score={result.score}
+    data-result-rank={order}
     type="button"
     tabindex={active ? 0 : -1}
     aria-label={item.ariaLabel}

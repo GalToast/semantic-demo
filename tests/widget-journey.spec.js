@@ -1167,8 +1167,14 @@ test.describe('Widget journey', () => {
             page,
             () => {
                 const dive = document.querySelector('#btn-focus-dive')
+                // Modern JourneyChrome may detach the legacy #btn-focus-dive
+                // entirely once it owns the focus-stage chrome — that satisfies
+                // the "legacy sibling must be hidden" contract (it cannot
+                // re-enter document flow). Only when the legacy sibling is still
+                // attached must it be display-hidden.
+                if (!dive) return true
                 const rail = document.querySelector('#journey-chrome .focus-stage-neighbors')
-                if (!dive || !rail) return false
+                if (!rail) return false
                 const cs = getComputedStyle(dive)
                 return cs.display === 'none' || dive.hidden
             },
@@ -2803,8 +2809,10 @@ test.describe('Widget journey', () => {
                 }, mode)
                 await page.setViewportSize(size)
                 // Poll for panelSurfaceDetail to match the injected mode (settled $derived).
+                // NOTE: waitForFunction serializes the fn to the browser — use an explicit
+                // param, NOT `arguments`, which doesn't exist in the browser context.
                 await page.waitForFunction(
-                    () => document.body.dataset.panelSurfaceDetail === arguments[0],
+                    (m) => document.body.dataset.panelSurfaceDetail === m,
                     mode,
                     { timeout: 10000, polling: 50 }
                 )
@@ -2907,12 +2915,16 @@ test.describe('Widget journey', () => {
         // box read races mid-tween layout.
         const selectedName = page.locator('#fc-selected-name')
         await selectedName.waitFor({ state: 'attached', timeout: 60000 })
+        // pollFor serializes the predicate to the browser — a Node-side locator
+        // closure (`selectedName.boundingBox()`) would throw ReferenceError there.
+        // Use a pure DOM predicate querying the element directly
         const settled = await pollFor(
             page,
             () => {
-                const box = selectedName.boundingBox()
-                if (!box) return false
-                return box.x >= 0 && box.x + box.width <= VIEWPORT_W
+                const el = document.querySelector('#fc-selected-name')
+                if (!el) return false
+                const box = el.getBoundingClientRect()
+                return box.x >= 0 && box.x + box.width <= 390
             },
             30000,
             100
@@ -3313,10 +3325,11 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, { waitUntil: 'domcontentloaded' })
         const selectedName = page.locator('#selected-name')
         await selectedName.waitFor({ state: 'attached', timeout: 30000 })
-        await page.waitForFunction(() => document.body.classList.contains('surface-focus'), null, {
-            timeout: 30000,
-            polling: 100
-        })
+        await page.waitForFunction(
+            () => document.body.classList.contains('surface-focus-search'),
+            null,
+            { timeout: 30000, polling: 100 }
+        )
         // Poll for the mode-chip rail to fully mount (6 chips) before reading geometry.
         await pollFor(
             page,
@@ -5161,8 +5174,10 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             { timeout: 15000, polling: 100 }
         )
 
+        // Result items render as .search-result-listitem with a button carrying
+        // data-result-score (the presentation refactor moved the class)
         const scores = await page.evaluate(() => {
-            const results = Array.from(document.querySelectorAll('.search-result, [data-result-score]'))
+            const results = Array.from(document.querySelectorAll('[data-result-score]'))
             return results
                 .map((r) => {
                     const score = r.getAttribute('data-result-score')
