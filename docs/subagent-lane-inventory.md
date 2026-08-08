@@ -639,6 +639,7 @@ Delegation success is dominated by TASK SHAPE, not rail or model:
 ### Camera-choreography sweep result (main-lane, 2026-08-08)
 
 Main-lane sweep of all 7 camera files (the w29/w32 delegation target):
+
 - All 16 public exports have callers (no dead code).
 - Events all via typed EVENTS bus (no orphan/string events).
 - zoomCamera: finite-guards + distance clamping correct.
@@ -648,3 +649,19 @@ Main-lane sweep of all 7 camera files (the w29/w32 delegation target):
 - Lesson: w29/w32 "let me verify" narration chased a recently-hardened
   subsystem. Sweep verdicts must be main-lane-confirmed; a negative sweep is
   a valid deliverable.
+
+### CORRECTION: prescription vs discovery (2026-08-08, supersedes task-shape lemma)
+
+w33 falsified "bounded = reliable": a bounded 3-file conversion ALSO failed
+(narrated analysis, zero edits). The real differentiator across 11 dispatches:
+
+- PRESCRIPTION prompts (w11-w25): file:line + exact defect + exact fix
+  ("remove aria-activedescendant from SearchInput.svelte:294-298") → COMMITTED,
+  verified, green. The model executes precise edits reliably.
+- DISCOVERY prompts (w28-w33): any task requiring the worker to READ code,
+  DECIDE what to change, then write it — even with a bounded file list —
+  → narration-only, zero tool calls, zero edits. On every model+rail tried.
+
+Rule: delegate ONLY prescription-grade fixes (exact file:line + exact change).
+Anything requiring design judgment (test conversions, refactors, sweeps)
+= main-lane. The external-subagent fleet is an edit-executor, not an engineer.
