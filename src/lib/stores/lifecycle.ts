@@ -384,6 +384,7 @@ export function recordEmptySearch(query?: string): void {
 // ── Trail Review Overlay (ported from ) ───
 
 let _trailReviewPreviouslyFocused: HTMLElement | null = null
+let _trailReviewEscHandler: ((e: KeyboardEvent) => void) | null = null
 
 /**
  * Show the trail-review overlay DOM element.
@@ -401,10 +402,38 @@ export function showExploreTrailReview(_summary?: unknown): void {
     overlay.hidden = false
     overlay.classList.add('visible')
 
-    const closeBtn = overlay.querySelector('.trail-review-close') as HTMLElement | null
-    if (closeBtn) {
-        _trailReviewPreviouslyFocused = document.activeElement as HTMLElement | null
-        closeBtn.focus()
+    let closeBtn = overlay.querySelector('.trail-review-close') as HTMLElement | null
+    if (!closeBtn) {
+        // M3 follow-up (a11y report gap): the overlay in App.svelte is an empty
+        // shell — no .trail-review-close exists, so closeBtn was always null and
+        // focus stayed parked on the Show-walk button (hidden behind the modal)
+        // with no visible dismiss path. Inject the close button here instead of
+        // touching App.svelte's markup. The querySelector above still wins if a
+        // real close button ever lands in the markup.
+        const btn = document.createElement('button')
+        btn.type = 'button'
+        btn.className = 'trail-review-close'
+        btn.setAttribute('aria-label', 'Close trail review')
+        btn.textContent = '✕'
+        btn.addEventListener('click', () => hideExploreTrailReview())
+        overlay.append(btn)
+        closeBtn = btn
+    }
+
+    _trailReviewPreviouslyFocused = document.activeElement as HTMLElement | null
+    closeBtn.focus()
+
+    // M3 follow-up: one-time Escape-to-close. The dialog has no other keyboard
+    // dismiss path, so register a single document-level keydown listener for the
+    // visible lifetime of the overlay; hideExploreTrailReview removes it.
+    if (!_trailReviewEscHandler && typeof document.addEventListener === 'function') {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                hideExploreTrailReview()
+            }
+        }
+        _trailReviewEscHandler = handler
+        document.addEventListener('keydown', handler)
     }
 }
 
@@ -424,6 +453,14 @@ export function hideExploreTrailReview(): void {
             _trailReviewPreviouslyFocused.focus()
         }
         _trailReviewPreviouslyFocused = null
+    }
+
+    // Remove the one-time Escape listener when the overlay closes (M3 follow-up).
+    if (_trailReviewEscHandler) {
+        if (typeof document.removeEventListener === 'function') {
+            document.removeEventListener('keydown', _trailReviewEscHandler)
+        }
+        _trailReviewEscHandler = null
     }
 
     searchStore.update((s) => ({ ...s, summary: null, glowActive: false }))
