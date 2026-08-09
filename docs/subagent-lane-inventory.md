@@ -822,3 +822,23 @@ the provider answers a trivial probe (models endpoint OK ≠ completions OK —
 completions were the hang). If the router is wedged, no model rotation helps;
 pause the fleet and retry the probe until it recovers (or restart the router
 process if owned). Keep ONE parked slot, don't spin lanes into a dead upstream.
+
+### Flapping provider (2026-08-09, 2 wedges in 40min — measured)
+
+18:39 local: w44d (0731) was GENUINELY executing (23 tool_call, real reads of
+lifecycle/a3-2-focus-trap/vitest-config) when its stream died mid-thinking
+(process gone, log frozen at 1.56MB). Direct probe right after: completions
+timeout 15s. This is the 2nd wedge of the session (~23:09 recovery, then re-wedge
+~23:40). Earlier "rotate" wins (0731 fruit) only because the router was UP then.
+
+FAILURE-MODE MAP (3 distinct, all measured):
+1. WEDGE-freeze: router accepts, completions hang; worker process STAYS alive,
+   thinking streams, tool calls invisible → looks like "prose-loop" (w44b).
+   Fix: probe completions (not models), wait for recovery.
+2. WEDGE-kill: same upstream hang kills the worker process itself → log frozen
+   mid-delta, 0 mmx procs (w23.4). Fix: relaunch after sustained recovery.
+3. Model non-execution: no tool use even with router healthy → real rotate signal.
+   So far only grape-2-pro showed this (0/2 attempts).
+Date: two router tests at interval; DO NOT spend a token on a rotation while
+completions endpoint answers with timeout. Park until 2 consecutive probes OK.
+
