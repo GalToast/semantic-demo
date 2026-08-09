@@ -764,15 +764,15 @@ still contend; 1 at a time is safest for heavy reasoning work.
 
 Re-probed all known models; logfare account reportedly unlimited now.
 
-| Model | Probe | Verdict |
-|---|---|---|
-| **grape-2-pro** | LIVE (11.4s TTF) | 🆕 **NEW model** — trial lane this wave (dead-import audit of src/components, main-lane jury via w45) |
-| deepseek-v4-flash | LIVE (6.5s) | healthy base lane |
-| deepseek-v4-flash-0731 | proven (quality survey) | primary workhorse |
-| minimax-m3 / kimi-k3 / pro / qwen-3.6 | proven | quality lanes |
-| kimi-k2.7-code | 45s timeout | ❌ throttled/backed-off |
-| qwen-3.8-max | 45s timeout | ❌ throttled/backed-off |
-| glm-5.2 | 45s timeout | ❌ still silent no-op |
+| Model                                 | Probe                   | Verdict                                                                                               |
+| ------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| **grape-2-pro**                       | LIVE (11.4s TTF)        | 🆕 **NEW model** — trial lane this wave (dead-import audit of src/components, main-lane jury via w45) |
+| deepseek-v4-flash                     | LIVE (6.5s)             | healthy base lane                                                                                     |
+| deepseek-v4-flash-0731                | proven (quality survey) | primary workhorse                                                                                     |
+| minimax-m3 / kimi-k3 / pro / qwen-3.6 | proven                  | quality lanes                                                                                         |
+| kimi-k2.7-code                        | 45s timeout             | ❌ throttled/backed-off                                                                               |
+| qwen-3.8-max                          | 45s timeout             | ❌ throttled/backed-off                                                                               |
+| glm-5.2                               | 45s timeout             | ❌ still silent no-op                                                                                 |
 
 Roaster decision policy: launch the new model on a REAL bounded task + independent
 jury review (grape-2-pro ← w45 minimax review of its report/diff); replace an inept
@@ -793,3 +793,19 @@ Eventually executes and commits; grape never did in 2 trials. REPLACED in wave-h
 by deepseek-v4-flash (w46, same task). Re-trial grape-2-pro only after a model
 update / with a trivial tool-forcing prompt (e.g. "run ls and report"), and judge
 on whether it executes.
+
+### Provider wall at 3-way concurrency (2026-08-09, wave w44+w45+w46 — measured)
+
+User said "don't worry, provider is unlimited"; the same shared logfare account
+was run with 3 concurrent lanes anyway to measure. Result — **all 3 froze at the
+same instant** (all stdout.logs mtime-identical at 17:40:30):
+- w44 (0731, trail contract): frozen on bare `{"type":"turn_start"}` — mid turn.
+- w45 (minimax, components audit): `auto_retry_start attempt 1/3, "Request timed out."` never advanced.
+- w46 (deepseek-v4-flash, engine audit): same `auto_retry_start 1/3` freeze.
+All drivers CLIENT-ENDed at their 900s timebox after that. ZERO deliverables
+from the whole wave (no commits left, no test file on disk).
+LESSON (measured, 3rd occurrence): 3 concurrent logfare lanes = all-land
+freeze, even when the account reports unlimited. The "unlimited" claim does
+not extend to concurrent agent turns surviving. **Correct op: logfare lanes
+run SEQUENTIALLY (1 at a time), relaunching losers as singles.** w44-again
+relaunched solo as w44b (0731) — the proven workhorse.
