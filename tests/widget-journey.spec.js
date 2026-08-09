@@ -133,6 +133,39 @@ test.describe('Widget journey', () => {
 
         await expect(page.locator('#focus-stage-journey')).toHaveClass(/active/)
         await expect(page.locator('#btn-focus-path')).toBeVisible()
+
+        // Exit through the same lifecycle action used by the real journey. This
+        // guards against a stale map-trail mirror keeping the focus-stage chrome
+        // active after the app returns to overview.
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions?.returnToOverview) throw new Error('__navActions__.returnToOverview is not exposed')
+            actions.returnToOverview()
+        })
+        await page.waitForFunction(
+            () => {
+                const appState = window.__APP_STATE__
+                const panelSurface = document.body.dataset.panelSurface
+                return (
+                    appState?.currentView === 'galaxy' &&
+                    appState?.navState?.mode === 'overview' &&
+                    panelSurface !== 'map-trail'
+                )
+            },
+            null,
+            { timeout: 15000, polling: 100 }
+        )
+
+        const afterExit = await page.evaluate(() => ({
+            currentView: window.__APP_STATE__?.currentView,
+            mode: window.__APP_STATE__?.navState?.mode,
+            panelSurface: document.body.dataset.panelSurface,
+            focusStageActive: document.querySelector('#focus-stage-journey')?.classList.contains('active') ?? false
+        }))
+        expect(afterExit.currentView, 'map-trail exit must restore the galaxy view').toBe('galaxy')
+        expect(afterExit.mode, 'map-trail exit must restore overview mode').toBe('overview')
+        expect(afterExit.panelSurface, 'map-trail exit must clear the stale panel surface').not.toBe('map-trail')
+        expect(afterExit.focusStageActive, 'map-trail exit must release focus-stage chrome').toBe(false)
     })
     test('deep-linked map focus: ?view=map&record=519 settles map + record focus', async ({ page }) => {
         // record=519 (lead_id 519 -> array index 518) is the established valid
@@ -867,6 +900,34 @@ test.describe('Widget journey', () => {
                 intersects(overlapCheck.chips, overlapCheck.help),
                 `mode-chips must not overlap the help toggle (chips ${JSON.stringify(overlapCheck.chips)} vs help ${JSON.stringify(overlapCheck.help)})`
             ).toBe(false)
+        }
+
+        // --- Assertion 4 (W10 BS-B): locked chips keep their LABEL at mobile ---
+        // Before the fix, @media(max-width:768px) hid every .chip-label and only
+        // re-shown it on .active chips — a locked chip showed a bare padlock,
+        // so users couldn't tell WHICH mode was locked. Fixed rule:
+        // .mode-chip.is-locked .chip-label { display: inline }. Assert every
+        // locked chip at 375px has a visible label next to the lock.
+        const lockedLabels = await page.evaluate(() => {
+            const locked = Array.from(document.querySelectorAll('.mode-chip.is-locked'))
+            return locked.map((chip) => {
+                const label = chip.querySelector('.chip-label')
+                if (!label) return { present: false, display: 'missing' }
+                const cs = getComputedStyle(label)
+                const r = label.getBoundingClientRect()
+                return { present: true, display: cs.display, width: r.width }
+            })
+        })
+        // There must be at least one locked chip at this stage (nothing selected).
+        expect(lockedLabels.length, 'mode-chips must contain locked chips pre-selection').toBeGreaterThan(0)
+        for (const l of lockedLabels) {
+            expect(l.present, 'locked chip must render a .chip-label').toBe(true)
+            // Contract: the label must be VISIBLE (not display:none / zero-size).
+            // The exact display keyword varies by base chip styles (inline vs
+            // block); asserting a specific keyword would over-pin. What matters
+            // is the pre-fix behavior (display:none at <=768px) is gone.
+            expect(l.display, `locked chip label must not be hidden at 375px (got display=${l.display})`).not.toBe('none')
+            expect(l.width, `locked chip label must have nonzero width (got ${l.width})`).toBeGreaterThan(0)
         }
     })
 
