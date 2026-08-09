@@ -799,13 +799,26 @@ on whether it executes.
 User said "don't worry, provider is unlimited"; the same shared logfare account
 was run with 3 concurrent lanes anyway to measure. Result — **all 3 froze at the
 same instant** (all stdout.logs mtime-identical at 17:40:30):
+
 - w44 (0731, trail contract): frozen on bare `{"type":"turn_start"}` — mid turn.
 - w45 (minimax, components audit): `auto_retry_start attempt 1/3, "Request timed out."` never advanced.
 - w46 (deepseek-v4-flash, engine audit): same `auto_retry_start 1/3` freeze.
-All drivers CLIENT-ENDed at their 900s timebox after that. ZERO deliverables
-from the whole wave (no commits left, no test file on disk).
-LESSON (measured, 3rd occurrence): 3 concurrent logfare lanes = all-land
-freeze, even when the account reports unlimited. The "unlimited" claim does
-not extend to concurrent agent turns surviving. **Correct op: logfare lanes
-run SEQUENTIALLY (1 at a time), relaunching losers as singles.** w44-again
-relaunched solo as w44b (0731) — the proven workhorse.
+  All drivers CLIENT-ENDed at their 900s timebox after that. ZERO deliverables
+  from the whole wave (no commits left, no test file on disk).
+  LESSON (measured, 3rd occurrence): 3 concurrent logfare lanes = all-land
+  freeze, even when the account reports unlimited. The "unlimited" claim does
+  not extend to concurrent agent turns surviving. **Correct op: logfare lanes
+  run SEQUENTIALLY (1 at a time), relaunching losers as singles.** w44-again
+  relaunched solo as w44b (0731) — the proven workhorse.
+
+### Router odown — the "rotate" directive needs a provider-health pre-check (2026-08-09)
+
+After the w44b (0731) mute (thinking streamed, 0 tool calls) and w44c (minimax)
+boot-stall, probe of 127.0.0.1:8788/logfare/v1/chat/completions timed out at 15s
+while :8788 stayed LISTENING (pid 32524). Conclusive: the logfare router's
+upstream completion calls hung — a PROVIDER failure, not a model failure.
+ROTATION RULE UPDATE: "when a model doesn't work, rotate" MUST first confirm
+the provider answers a trivial probe (models endpoint OK ≠ completions OK —
+completions were the hang). If the router is wedged, no model rotation helps;
+pause the fleet and retry the probe until it recovers (or restart the router
+process if owned). Keep ONE parked slot, don't spin lanes into a dead upstream.
