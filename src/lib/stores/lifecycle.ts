@@ -24,6 +24,7 @@ import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './se
 import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'
 import { publish, EVENTS } from '../orchestration/event-bus'
 import { applyPointFilterColors } from '../journey/point-color'
+import { registerOpenDialog, unregisterOpenDialog } from '@lib/utils/focus-trap-bindings'
 import { computeParityAttributes, applyParityAttributes } from '../orchestration/parity-attrs.svelte.ts'
 
 // ── Delegates to real stores ─────────────────────────────────────────────────
@@ -401,6 +402,10 @@ export function showExploreTrailReview(_summary?: unknown): void {
     overlay.setAttribute('aria-modal', 'true')
     overlay.hidden = false
     overlay.classList.add('visible')
+    // a11y containment (2026-08-08): the overlay claims aria-modal — register it
+    // so the global Escape handler bails (hasOpenNestedDialog) instead of
+    // clearing search / returning to overview while the walk review is open.
+    registerOpenDialog('trail-review-overlay')
 
     // M3 completeness: the overlay in App.svelte is an empty shell (just
     // <div class="trail-review-overlay" id="trail-review-overlay" role="dialog" ...>).
@@ -498,6 +503,9 @@ export function hideExploreTrailReview(): void {
         overlay.setAttribute('aria-modal', 'false')
         overlay.hidden = true
         overlay.classList.remove('visible')
+        // Unregister from the nested-dialog set so the global Escape handler
+        // treats the overlay as closed again (containment symmetry).
+        unregisterOpenDialog('trail-review-overlay')
 
         if (_trailReviewPreviouslyFocused && typeof _trailReviewPreviouslyFocused.focus === 'function') {
             _trailReviewPreviouslyFocused.focus()
