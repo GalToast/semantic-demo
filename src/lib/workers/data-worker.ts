@@ -107,9 +107,9 @@ function extractStatusCode(err: unknown): number | null {
     return null
 }
 
-function computeBackoffDelay(attempt: number, baseDelay = 500): number {
+function computeBackoffDelay(attempt: number, baseDelay = 200): number {
     const exponential = baseDelay * Math.pow(2, attempt)
-    const capped = Math.min(exponential, 8000)
+    const capped = Math.min(exponential, 4000)
     return Math.round(capped * (0.5 + Math.random() * 0.5))
 }
 
@@ -118,7 +118,7 @@ function delayInWorker(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function retryFetch(url: string, options?: RequestInit, maxRetries = 3, label = 'fetch'): Promise<Response> {
+async function retryFetch(url: string, options?: RequestInit, maxRetries = 1, label = 'fetch'): Promise<Response> {
     let lastError: Error | null = null
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {

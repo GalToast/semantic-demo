@@ -60,6 +60,8 @@ import {
 import { setupMobileSearchSheetToggle } from './search-panel-adapter'
 import { setActiveSearchResultRow } from './result-renderer'
 import { startSearch, cancelSearch } from './search-abort'
+import { performLocalIndexSearch, localHitsToResults } from '@lib/search/local-search-index'
+import { showExperienceToast } from '@lib/orchestration/toast'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -198,7 +200,64 @@ export async function search(query: string, options: SearchOptions = {}): Promis
 
     let searchResults: SearchResult[]
     try {
-        searchResults = await performSearch(trimmedQuery, signal, 0, options.offset ?? 0, options.preferCachedResults)
+        // ── Fast-fail wrapper ──────────────────────────────────────────
+        // Race performSearch against a timer so a slow/absent API does NOT
+        // leave the user staring at a spinner for ~25s (8s × 3 exponent retries
+        // with no feedback). After 3s we show a toast; after 7s we abort the
+        // API and fall back to the local index directly.
+        const FAST_FAIL_MS = 7000
+        const FEEDBACK_DELAY_MS = 3000
+
+        const fastFailController = new AbortController()
+        const onPrimaryAbort = () => fastFailController.abort()
+        signal.addEventListener('abort', onPrimaryAbort, { once: true })
+
+        let feedbackFired = false
+        let fallbackResolve: ((v: SearchResult[]) => void) | null = null
+
+        const feedbackTimer = setTimeout(() => {
+            feedbackFired = true
+            showExperienceToast(
+                'Searching local data',
+                `Live search is taking longer than expected. Using local data for "${trimmedQuery}"...`
+            )
+            if (statusEl) statusEl.textContent = `Searching local data for "${trimmedQuery}"...`
+        }, FEEDBACK_DELAY_MS)
+
+        const fallbackTimer = setTimeout(() => {
+            if (!feedbackFired) {
+                showExperienceToast(
+                    'Searching local data',
+                    `Live search is taking longer than expected. Using local data for "${trimmedQuery}"...`
+                )
+                if (statusEl) statusEl.textContent = `Searching local data for "${trimmedQuery}"...`
+            }
+            fastFailController.abort()
+            const localHits = performLocalIndexSearch(trimmedQuery, options.offset ?? 0, 18)
+            const localResults = localHits && localHits.length > 0 ? localHitsToResults(localHits) : []
+            fallbackResolve?.(localResults)
+        }, FAST_FAIL_MS)
+
+        const fallbackPromise = new Promise<SearchResult[]>((resolve) => {
+            fallbackResolve = resolve
+        })
+
+        const apiPromise = performSearch(
+            trimmedQuery,
+            fastFailController.signal,
+            0,
+            options.offset ?? 0,
+            options.preferCachedResults
+        )
+
+        searchResults = await Promise.race([apiPromise, fallbackPromise])
+
+        clearTimeout(feedbackTimer)
+        clearTimeout(fallbackTimer)
+        signal.removeEventListener('abort', onPrimaryAbort)
+        // Swallow late API rejection so an unhandled rejection doesn't
+        // surface when the fast-fail path resolves first.
+        apiPromise.catch(() => {})
     } catch (error: unknown) {
         if (signal.aborted || !isRequestCurrent(requestId)) return
         stopSearchVectorScramble()
