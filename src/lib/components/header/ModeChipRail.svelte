@@ -239,11 +239,18 @@
       .mode-chip .chip-label {
           display: none;
       }
-      .mode-chip.active .chip-label {
+      /* W10-08 BS-B: locked chips were label-less on mobile (only the
+         padlock showed at <=768px, so users couldn't tell WHICH mode was
+         locked). Keep the label for locked chips too — the amber lock SVG
+         + the label together read as "this mode is locked". */
+      .mode-chip.is-locked .chip-label {
           display: inline;
           margin-left: 0.25rem;
       }
-      .mode-chip .chip-icon {
+      .mode-chip.active .chip-label {
+          display: inline;
+          margin-left: 0.25rem;
+      }      .mode-chip .chip-icon {
           display: block;
       }
       .mode-chip {

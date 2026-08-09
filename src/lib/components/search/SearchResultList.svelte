@@ -106,7 +106,7 @@
   {:else}
     <span class="search-results-count-shown">{visibleCount} of {total}</span>
     <span class="search-results-count-divider" aria-hidden="true">·</span>
-    <span class="search-results-count-hidden">{total - visibleCount} behind</span>
+    <span class="search-results-count-hidden">{total - visibleCount} more</span>
   {/if}
 </div>
 

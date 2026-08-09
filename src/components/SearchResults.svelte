@@ -30,7 +30,7 @@
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { prefersReducedMotion } from '@lib/utils/environment';
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
-  import { showErrorToast, showExperienceToast } from '@lib/orchestration/toast';
+  import { showErrorToast, showExperienceToast, showToastSpec } from '@lib/orchestration/toast';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
   import { SearchDispatch } from '@lib/search/search-dispatch';
   import { appState } from '@lib/state/app.svelte';
@@ -280,8 +280,10 @@
         // Mirror the canvas-keyboard-nav 'End of cluster' toast so the user
         // gets explicit feedback that they hit the boundary. Focus stays on
         // the last result; pressing Esc clears the search.
-        showExperienceToast('End of results', 'Press Escape to clear search.');
-      }
+        // W10 BS-B#8: one toast per boundary, not per keypress — a stable
+        // dedupeKey makes repeat Escape past-end a single queued toast
+        // instead of spamming the FIFO queue.
+        showToastSpec({ title: 'End of results', copy: 'Press Escape to clear search.', dedupeKey: 'search:end-of-results' });      }
     } else if (key === 'ArrowUp') {
       event.preventDefault();
       if (activeIndex === 0) {

@@ -351,8 +351,14 @@
     letter-spacing: 0;
     color: #f5fff9;
     text-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+    /* W10-kimi: the h2 could clip mid-word at narrow widths (the
+       h1.app-title leak was already sr-only'd, but the title itself
+       needs a wrap guarantee). max-width + overflow-wrap keep the
+       brand word intact at every viewport. */
+    max-width: 100%;
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
-
   .map-view-footer {
     left: 24px;
     right: 24px;

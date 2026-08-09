@@ -21,6 +21,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { get } from 'svelte/store'
 import {
     showToast,
+    showToastSpec,
     showErrorToast,
     dismissToast,
     clearToastQueue,
@@ -115,5 +116,23 @@ describe('toast queue + next-title preview (W49-A)', () => {
         // We test by reading the initial default state.
         const s = readState()
         expect(typeof s.nextTitle).toBe('string')
+    })
+
+    it('dedupeKey swallows an identical queued toast (W10 BS-B#8)', () => {
+        // The 'End of results' boundary toast uses a stable dedupeKey so
+        // repeated ArrowDown-past-end presses don't spam the FIFO queue.
+        // showToastSpec with the same dedupeKey while one is queued must
+        // NOT enqueue a duplicate.
+        showToast('First', 'first copy')
+        showToastSpec({ title: 'End of results', copy: 'Press Escape to clear search.', dedupeKey: 'search:end-of-results' })
+        // First is visible; End-of-results is queued (next).
+        expect(readState().queueLength).toBe(1)
+        expect(readState().nextTitle).toBe('End of results')
+        // Identical dedupeKey again → swallowed, queue stays at 1.
+        showToastSpec({ title: 'End of results', copy: 'Press Escape to clear search.', dedupeKey: 'search:end-of-results' })
+        expect(readState().queueLength).toBe(1)
+        // Different dedupeKey still enqueues.
+        showToastSpec({ title: 'Searching local data', copy: 'live search slow', dedupeKey: 'search:local-fallback' })
+        expect(readState().queueLength).toBe(2)
     })
 })
