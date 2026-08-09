@@ -759,3 +759,22 @@ all three entered [willRetry] loops (k3+pro were killed legitimately; 0731
 survived to commit). Lesson: logfare lanes run SEQUENTIALLY, not in parallel
 (the earlier burst lesson applied to fewer lanes than I tested). 2 lanes may
 still contend; 1 at a time is safest for heavy reasoning work.
+
+### Wave-g live roster check (2026-08-09, sequential probe)
+
+Re-probed all known models; logfare account reportedly unlimited now.
+
+| Model | Probe | Verdict |
+|---|---|---|
+| **grape-2-pro** | LIVE (11.4s TTF) | 🆕 **NEW model** — trial lane this wave (dead-import audit of src/components, main-lane jury via w45) |
+| deepseek-v4-flash | LIVE (6.5s) | healthy base lane |
+| deepseek-v4-flash-0731 | proven (quality survey) | primary workhorse |
+| minimax-m3 / kimi-k3 / pro / qwen-3.6 | proven | quality lanes |
+| kimi-k2.7-code | 45s timeout | ❌ throttled/backed-off |
+| qwen-3.8-max | 45s timeout | ❌ throttled/backed-off |
+| glm-5.2 | 45s timeout | ❌ still silent no-op |
+
+Roaster decision policy: launch the new model on a REAL bounded task + independent
+jury review (grape-2-pro ← w45 minimax review of its report/diff); replace an inept
+lane with proven quality lanes. Dead now: grape-2-pro verdict pending; k2.7/qwen-3.8/glm
+removed from dispatch rotation until probes recover.
