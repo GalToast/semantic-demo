@@ -229,6 +229,25 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
             if (hasOpenNestedDialog()) {
                 return
             }
+            // W10 bugsweep (BS-B#1): the experience toast is role=status, not a
+            // registered dialog — but it owns Escape while visible (Toast.svelte's
+            // window handler dismisses it). Without this guard the SAME keypress
+            // also hits the global handler below → RETURN_OVERVIEW wipes the query
+            // the user was reading. Guard: a visible toast owns Esc.
+            const activeToast = document.getElementById('experience-reset-toast')
+            if (activeToast && !activeToast.hasAttribute('inert')) {
+                return
+            }
+            // W10 bugsweep (BS-B#2): when focus is inside the search results list
+            // (or its children), the list's own Esc handler clears-and-stays — the
+            // on-screen toast promises 'Press Escape to clear search'. The global
+            // must not also RETURN_OVERVIEW; only when focus is NOT in the list
+            // does Escape mean leave-to-overview.
+            const inSearchResults =
+                e.target instanceof Element && !!e.target.closest('#search-results, #search-result-list')
+            if (inSearchResults) {
+                return
+            }
             e.preventDefault()
             // H-4 (bugsweep): clear the search query through the store, not
             // direct DOM mutation, so the Svelte $state and the DOM stay in sync.

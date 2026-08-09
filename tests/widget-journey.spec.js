@@ -5868,4 +5868,92 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         const phase = await page.getAttribute('#journey-compass', 'data-phase')
         expect(phase, 'during a dive the compass must show inside phase (was trail)').toBe('inside')
     })
+
+    test('W10: Esc on a visible toast dismisses ONLY the toast (no RETURN_OVERVIEW dump)', async ({ page }) => {
+        // Wave-10 bugsweep BS-B#1: a toast's Escape handler dismissed the toast
+        // but the SAME keypress also reached the global Esc → return-to-overview
+        // handler (RETURN_OVERVIEW wiped the query + dumped the user out of the
+        // current surface). Fixed by the toast claiming the shared window Escape event. This pins
+        // the contract: Esc while a toast is visible → toast gone, surface steady.
+        await page.setViewportSize({ width: 1280, height: 800 })
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+            timeout: 20000,
+            polling: 100
+        })
+        await page.waitForTimeout(1500)
+
+        // Dismiss the first-visit help dialog if present (it can cover the mode
+        // chips + eat the click — the established tests dismiss it before
+        // interacting).
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Enter search mode first so there's a non-idle surface to lose. Poll for
+        // the search INPUT (the durable signal the working journey tests use — the
+        // search surface mounts it) rather than navState.surface (which may lag the
+        // engine boot gate).
+        await page.click('.mode-chip[data-mode="search"]', { force: true })
+        const searchInputEl = page.locator('#search-input').first()
+        await searchInputEl.waitFor({ state: 'visible', timeout: 15000 })
+        const surfaceBefore = await page.evaluate(() => window.__APP_STATE__?.navState?.surface ?? null)
+        expect(surfaceBefore, 'search chip click must put us in the search surface').toBe('search')
+
+        // Type a search query so we can verify the global Escape handler's
+        // setSearchQuery('') side effect did NOT fire while the toast was open.
+        const testQuery = 'toast-escape-test'
+        await searchInputEl.fill(testQuery)
+        await page.waitForTimeout(300)
+        const queryBefore = await searchInputEl.inputValue()
+        expect(queryBefore, 'search input must hold the typed query before toast').toBe(testQuery)
+
+        // Pop a toast through the canonical test hook.
+        await page.waitForFunction(() => typeof window.__toastHooks__?.showToastSpec === 'function', null, {
+            timeout: 8000,
+            polling: 100
+        })
+        await page.evaluate(() => {
+            window.__toastHooks__?.showToastSpec({
+                title: 'Test toast',
+                copy: 'Esc should dismiss me only',
+                variant: 'info',
+                duration: 120000
+            })
+        })
+        await page.waitForFunction(
+            () => document.getElementById('experience-reset-toast')?.classList.contains('active') === true,
+            null,
+            { timeout: 8000, polling: 100 }
+        )
+        const toast = page.locator('#experience-reset-toast')
+        await toast.focus()
+        await expect(toast).toBeFocused()
+
+        // Press Escape — MUST dismiss the toast but NOT leave the search surface.
+        await toast.press('Escape')
+        const surfAfterEsc = await page.evaluate(() => window.__APP_STATE__?.navState?.surface ?? null)
+        expect(surfAfterEsc, 'Esc on a toast must NOT drop out of search-surface while the toast dismisses').toBe(
+            'search'
+        )
+        await page.waitForFunction(() => !document.querySelector('#experience-reset-toast.active'), null, {
+            timeout: 8000,
+            polling: 100
+        })
+
+        const surfaceAfter = await page.evaluate(() => window.__APP_STATE__?.navState?.surface ?? null)
+        expect(surfaceAfter, 'Esc on a toast must NOT return to overview (double-fire bug)').toBe('search')
+
+        // Strengthened assertion (2026-08-08): the global Escape handler also
+        // calls setSearchQuery('') + updateUrlState({ q: null }). If it fired,
+        // the input would be cleared. Verify it survived.
+        const queryAfter = await searchInputEl.inputValue()
+        expect(queryAfter, 'Esc on a toast must NOT clear the search query (global Escape gate)').toBe(testQuery)
+    })
 })
