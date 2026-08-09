@@ -778,3 +778,18 @@ Roaster decision policy: launch the new model on a REAL bounded task + independe
 jury review (grape-2-pro ← w45 minimax review of its report/diff); replace an inept
 lane with proven quality lanes. Dead now: grape-2-pro verdict pending; k2.7/qwen-3.8/glm
 removed from dispatch rotation until probes recover.
+
+### grape-2-pro trial verdict (2026-08-09, w43)
+
+NEW model on logfare (created 2026-08-07). FIRST REAL TASK = dead-import audit
+trial. Result: **ZERO tool calls across TWO launch attempts** — both instances
+emitted an opening narration block ("I'll perform a comprehensive dead-import
+audit...") then agent_end'd without invoking read/grep/bash, produced no report,
+no commit, exited "completed". stderr clean; willRetry=false; no provider error.
+
+VERDICT: **not a tool-executing lane yet** — "claims-not-executes" confirmed by
+task evidence (not probe prediction). The 0731 lesson stands reversed: 0731
+Eventually executes and commits; grape never did in 2 trials. REPLACED in wave-h
+by deepseek-v4-flash (w46, same task). Re-trial grape-2-pro only after a model
+update / with a trivial tool-forcing prompt (e.g. "run ls and report"), and judge
+on whether it executes.
