@@ -40,10 +40,13 @@
   function handleKeydown(e: KeyboardEvent): void {
     if (e.key === 'Escape' && active) {
       e.preventDefault();
+      // stopPropagation so the global Esc→return-to-overview handler (W10
+      // bugsweep) does NOT also fire after we dismiss — otherwise pressing Esc
+      // on a visible toast wipes the query and dumps the user to Overview.
+      e.stopPropagation();
       dismissToast();
     }
   }
-
   function handleBodyClick(): void {
     dismissToast();
   }

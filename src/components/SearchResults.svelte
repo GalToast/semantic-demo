@@ -307,13 +307,17 @@
       }
     } else if (key === 'Escape') {
       event.preventDefault();
+      // stopPropagation so the GLOBAL Esc→return-to-overview handler (W10
+      // bugsweep) does NOT also fire after we clear-and-stay-in-search — the
+      // on-screen toast promises 'Press Escape to clear search'; without this
+      // the same keypress ALSO performed a full RETURN_OVERVIEW (query wiped).
+      event.stopPropagation();
       onClear();
       // Return focus to the search input after clearing.
       requestAnimationFrame(() => {
         document.getElementById('search-input')?.focus();
       });
-    }
-    // Do NOT preventDefault for Tab — let Tab move to the next landmark.
+    }    // Do NOT preventDefault for Tab — let Tab move to the next landmark.
   }
 
   function getResultPoint(result: SearchResult): NonNullable<SearchResult['point']> | null {

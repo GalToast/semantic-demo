@@ -221,17 +221,26 @@ function capturePreviousPocketState(index: number): Map<number, { x: number; y: 
     return prevTargetByIndex
 }
 
-function resetTargetPositionsFromOriginal(): boolean {
+function resetTargetPositionsFromOriginal(prevKeys?: number[]): boolean {
     const points = appState.points
     const originalPositions = appState.originalPositions
     const targetPositions = appState.targetPositions
     if (!points || !Array.isArray(points) || !originalPositions) return false
-    for (let i = 0; i < points.length; i++) {
+    // W10 bugsweep F1: only restore the indices the PREVIOUS pocket touched
+    // (or all when unknown) instead of re-allocating 8,406 {x,y,z} objects on
+    // every focus event — that GC churn caused a frame-drop risk on click.
+    const keys = prevKeys && prevKeys.length > 0 ? prevKeys : null
+    const restore = (i: number): void => {
         const pos = originalPositions[i]
         const px = Number.isFinite(pos?.x) ? pos!.x : 0
         const py = Number.isFinite(pos?.y) ? pos!.y : 0
         const pz = Number.isFinite(pos?.z) ? pos!.z : 0
         if (targetPositions) targetPositions[i] = { x: px, y: py, z: pz }
+    }
+    if (keys) {
+        for (const i of keys) restore(i)
+    } else {
+        for (let i = 0; i < points.length; i++) restore(i)
     }
     return true
 }
@@ -300,7 +309,9 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     const navState = appState.navState
 
     const prevTargetByIndex = capturePreviousPocketState(index)
-    if (!resetTargetPositionsFromOriginal()) return false
+    // W10 F1: reset ONLY the indices the previous pocket moved (captured above),
+    // not all 8,406 — pass the captured keys so the reset is O(pocket), not O(n).
+    if (!resetTargetPositionsFromOriginal(Array.from(prevTargetByIndex.keys()))) return false
 
     const personality = getNeighborhoodPersonality(index)
     // P1 (pocket sweep 2026-08-07): consumers cast currentPersonality as an
