@@ -952,3 +952,14 @@ logfare/0731 ~02:00) means the gate was open then and closed since.
 ACTION: restore/log-in the premium tier (or key rotation) on the logfare
 account side; the fleet then returns. Poll probe until "Model X" premium errors
 disappear. NVIDIA remains the intermediate workhorse.
+
+### Wedge-timing lesson (2026-08-10 04:24): check mtime DIFFERENTIAL, not byte counts
+
+Both NVIDIA gate engineers died/froze silently an hour ago (w50b failed 03:23
+retry-abort; w51b frozen at 03:15 mid-thought, processes gone now). My check
+cadence watched tool-counts/bytes and used sleep-detached intervals that didn't
+advance real time, so I mistook fresh-file-ms for liveness. All three (logfire,
+nvidia) have the same failure shape on long runs — provider upstream wedges.
+DURABLE RULE: verify worker liveness by `stat mtime` (must be < 25 min old for
+a 900s lane) AND check metadata.updated_at (must move). Dating by bytes is how
+we carry dead lanes.
