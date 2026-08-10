@@ -867,20 +867,39 @@ imagined/stale tree. Do NOT dispatch lanes on that file. The real orphan-hunt
 SYMPTOMS: all completions hung (15-60s probes failed); w44/w47 lanes mute/retry-
 spun. Blamed "router down" — wrong on both ends.
 ROOT CAUSE (proven by router log + long probe):
- - key-router pid 32524 served /models fine but its stream log showed
-   `first_patch_ms=47874` — upstream ACCEPTS (headers 1s) but the first line
-   arrives ~48s for real messages.
- - A CLEAN 150s probe of logfire completions returned **200 in 44.7s** for a
-   1-token "OK" (vs 2s normal and 2.0s for OpenCode Zen).
- - So logfire is ALIVE but ~20x slower than normal right now — the traces
-   that "timed out" (15-60s) were simply shorter than logfire's real latency.
+
+- key-router pid 32524 served /models fine but its stream log showed
+  `first_patch_ms=47874` — upstream ACCEPTS (headers 1s) but the first line
+  arrives ~48s for real messages.
+- A CLEAN 150s probe of logfire completions returned **200 in 44.7s** for a
+  1-token "OK" (vs 2s normal and 2.0s for OpenCode Zen).
+- So logfire is ALIVE but ~20x slower than normal right now — the traces
+  that "timed out" (15-60s) were simply shorter than logfire's real latency.
 
 **The router restart DID help** (old worn pid → new healthy pid 22724 with
 working slot rotation). The lingering slowness is logfire-side (queue/GPU).
 
 **RULES ADDED:**
+
 - Never conclude "provider down" from a sub-60s probe of logfire — it can be
   alive at 45s TTFT. Use a 90-150s probe or cross-check a second route.
 - Failover for time-sensitive lanes: **OpenCode Zen /opencode-zen/v1 answers
   in ~2s** — route model `opencode-zen/deepseek-v4-flash-free` works.
   w47b (url-state audit) dispatched on this route 2026-08-10 01:42.
+
+### Lane taxonomy + quality ROLES (user directive 2026-08-10)
+
+Roles are prompt-shaped, not backend roles — external-subagents has ONE
+start tool; role = model + prompt template. All roles run on LOGFARE
+(cline fallback; never zen/nvidia).
+
+| Role | When it adds quality | Model default |
+|------|---------------------|---------------|
+| EXECUTOR | does the bounded fix/audit | 0731 (proven) |
+| PLANNER | decomposes a big/ambiguous task into explicit steps + expected evidence BEFORE the executor runs (prevents the 25-tool re-derivation death) | kimi-k3 |
+| REVIEWER/JUDGE | independent verdict on the executor's deliverable vs the success criteria (catches self-flattering FPs — measured: w42 caught the focus-trap lie) | qwen-3.6 or minimax |
+| READER | cheap parallel documentation/API/websearch gathering to feed a decision (uses websearch MCP if needed) | deepseek-v4-flash |
+
+Flow to use: PLAN (only for tangled tasks) → EXECUTE (logfare, bounded) →
+JUDGE (independent, checks git diff not the executor's claims) → main-lane
+verifies gates once.
