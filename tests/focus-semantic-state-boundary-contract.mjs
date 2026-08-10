@@ -7,7 +7,9 @@
  * Target concepts: focusedNode, selectedPoint, navState.focusedIndex,
  * trailDepth, panelSurface, graphContext, semanticDive.
  *
- * Run: node tests/focus-semantic-state-boundary-contract.mjs
+ * Run (canonical — needs ts-resolve-loader for @lib):
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs \n *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/focus-semantic-state-boundary-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=focus-semantic-state-boundary-contract.mjs)
  */
 
 import './helpers/svelte-rune-shim.mjs'

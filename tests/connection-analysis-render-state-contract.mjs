@@ -15,8 +15,9 @@
  *   4. HTTP 500                      → error message + "unavailable" source
  *   5. Abort                         → state cleaned up, no DOM corruption
  *
- * Usage:
- *   node tests/connection-analysis-render-state-contract.mjs
+ * Usage (canonical — imports src TS; bare node fails with ERR_MODULE_NOT_FOUND for @lib):
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs \n *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/connection-analysis-render-state-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=connection-analysis-render-state-contract.mjs)
  */
 
 import path from 'node:path'

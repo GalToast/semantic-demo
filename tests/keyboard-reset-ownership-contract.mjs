@@ -12,7 +12,9 @@
  *      key handlers, never direct lifecycle imports
  *
  * Source-only Node contract - no DOM, no Playwright.
- * Usage: node tests/keyboard-reset-ownership-contract.mjs
+ * Usage (canonical — needs ts-resolve-loader for @lib):
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs \n *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/keyboard-reset-ownership-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=keyboard-reset-ownership-contract.mjs)
  */
 
 import fs from 'node:fs'

@@ -12,7 +12,9 @@
  *   6. Escape key wired to close panel
  *   7. Focus trap inside panel (Tab cycles within panel)
  *
- * Run: node tests/keyboard-help-aria-contract.mjs
+ * Run (canonical — needs ts-resolve-loader for @lib):
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs \n *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/keyboard-help-aria-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=keyboard-help-aria-contract.mjs)
  *       (from semantic-demo root)
  */
 
