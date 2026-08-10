@@ -996,3 +996,13 @@ STEAL for our fleet (what their versions do that ours should):
 3. AUTO-CLEAR pattern: our goal tool needs the same discipline — clear when
    the condition objectively holds, don't carry achieved goals.
 4. BUDGET/TURN SENSE: count turns/tokens in the goal status like their loops.
+
+### Dispatch policy — SPAM THE POOL (user directive 2026-08-10 04:55)
+
+User's standing directive: spamming logfare subagents (many parallel lanes) is
+preferred practice over hand-rotated single lanes — even when their shared pool
+shows mixed probe health. Retries are cheap; a lane that dies costs nothing vs
+a lane that lands in a healthy window. Evidence this session: lanes that
+survive a window land (w47c, w44e); most die; redundancy wins by volume.
+Practice: launch N lanes, keep diversifying models (0731/minimax/kiro/pro/
+glm), harvest the survivor's deliverable, wait for the rest.
