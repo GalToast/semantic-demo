@@ -893,13 +893,25 @@ Roles are prompt-shaped, not backend roles — external-subagents has ONE
 start tool; role = model + prompt template. All roles run on LOGFARE
 (cline fallback; never zen/nvidia).
 
-| Role | When it adds quality | Model default |
-|------|---------------------|---------------|
-| EXECUTOR | does the bounded fix/audit | 0731 (proven) |
-| PLANNER | decomposes a big/ambiguous task into explicit steps + expected evidence BEFORE the executor runs (prevents the 25-tool re-derivation death) | kimi-k3 |
+| Role           | When it adds quality                                                                                                                              | Model default       |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| EXECUTOR       | does the bounded fix/audit                                                                                                                        | 0731 (proven)       |
+| PLANNER        | decomposes a big/ambiguous task into explicit steps + expected evidence BEFORE the executor runs (prevents the 25-tool re-derivation death)       | kimi-k3             |
 | REVIEWER/JUDGE | independent verdict on the executor's deliverable vs the success criteria (catches self-flattering FPs — measured: w42 caught the focus-trap lie) | qwen-3.6 or minimax |
-| READER | cheap parallel documentation/API/websearch gathering to feed a decision (uses websearch MCP if needed) | deepseek-v4-flash |
+| READER         | cheap parallel documentation/API/websearch gathering to feed a decision (uses websearch MCP if needed)                                            | deepseek-v4-flash   |
 
 Flow to use: PLAN (only for tangled tasks) → EXECUTE (logfare, bounded) →
 JUDGE (independent, checks git diff not the executor's claims) → main-lane
 verifies gates once.
+
+### Provider landscape (2026-08-10, gate wave)
+
+- **logfare**: flapping all session — OK windows ~20-40min, then wedges kill
+  long runs (w44b/w44d/w48/w50/w51 all died mid-2); solo short tasks OK in
+  healthy windows. Parked fast lanes on it; smoke (scripts/logfare-per-model
+  -smoke.mjs) will quantify which models survive a bounded launch NOW.
+- **NVIDIA NIM** (/nvidia/v1): healthy 200/0.7s — used for the gate wave
+  (w50b minimax, w51b glm). Route string nvidia/<model>.
+- **cline** shim: fallback for tool-free/simple lanes.
+- Smoke runner committed 4ab8b471: 11 logfare models × bounded getViewportSize-
+  export verification worker, sequential, judge by tm2/smoke-REPORT.md.
