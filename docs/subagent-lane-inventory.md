@@ -1127,3 +1127,17 @@ sandbox path ENOENT) and reviewed a PRE-upgrade file. Main-lane adjudication:
   #3 VERIFIED-OK — state flushed evaluate-condition (each check) + on the extension's session_before_compact.
   Self-check rerun main-lane: CASE1 nextTurn fires / CASE2 silent on met / CASE3 budget-clear — 3/3.
 So the loop stands review-cleared. Lesson: reviewer lanes reviewing a live-built artifact must run the actual self-test in THEIR sandbox (copy the file), not just read code — code-only review drifted on 2/3.
+
+### goal-loop stack = two complementary extensions (2026-08-10 06:15 audit)
+
+- goal.ts (567 lines, AUTO-discovered from ~/.pi/agent/extensions/ — pi docs say
+  extensions auto-load from trusted locations; flight-recorder/code-repl prove .ts loads)
+  = the interactive /goal tool (set/status/clear/pause/resume/note/tick + branch-aware
+  state replay via details/appendEntry + compaction-safe).
+- goal-loop.mjs (explicit in settings.json) = the autonomous loop: pi.on(agent_end)
+  → deterministic evaluator (spawnSync cmd) → sendMessage deliverAs nextTurn when
+  unmet; auto-clear on met; budget-bound; session_before_compact flush.
+- Adversarial review (REPORT-minimax.md) approved goal.ts; its ONE finding
+  ("no continuation evaluator") is exactly what goal-loop.mjs supplies — the pair
+  is the full /goal parity stack (tool + loop), better than frontier (deterministic
+  eval vs Claude transcript-only; budget vs Codex).
