@@ -183,50 +183,40 @@ describe('Controls component — shareLink feedback (regression: silent no-op)',
         // mocked clipboard promise, so the toast is set by the time this returns.
         await fireEvent.click(btn)
         expect(writeText).toHaveBeenCalledTimes(1)
-        expect(writeText).toHaveBeenCalledWith(window.location.href)
+        // Controls.svelte delegates to the canonical copyCurrentViewLink()
+        // (wave-10 BS-B#6), which writes the CLEANED share URL (view param
+        // from navStore, anchor→record rewrite) — not the raw location.href.
+        const written = String(writeText.mock.calls[0][0])
+        expect(new URL(written).searchParams.get('view')).toBe('galaxy')
         const captured = get(toastStore)
         expect(captured.active).toBe(true)
         expect(captured.variant).toBe('info')
         expect(captured.message).toContain('Link copied')
     })
 
-    it('share-link failure path surfaces an error toast (no silent catch)', async () => {
+    it('share-link failure path surfaces a copy-unavailable toast (no silent catch)', async () => {
         const writeText = vi.fn().mockRejectedValue(new Error('Permission denied'))
         Object.defineProperty(navigator, 'clipboard', {
             value: { writeText },
             configurable: true
         })
-        // Force the legacy fallback to also fail by stubbing document.execCommand
-        // (jsdom doesn't expose it as a defined property, so install it).
-        const originalExec = (document as { execCommand?: unknown }).execCommand
-        Object.defineProperty(document, 'execCommand', {
-            value: () => false,
-            configurable: true,
-            writable: true
-        })
-        try {
-            const { container } = render(Controls)
-            const btn = container.querySelector('button[aria-label="Share link"]') as HTMLButtonElement
-            await fireEvent.click(btn)
-            const captured = get(toastStore)
-            expect(captured.active).toBe(true)
-            expect(captured.variant).toBe('error')
-            expect(captured.message).toContain('Copy failed')
-        } finally {
-            if (originalExec === undefined) {
-                delete (document as { execCommand?: unknown }).execCommand
-            } else {
-                Object.defineProperty(document, 'execCommand', {
-                    value: originalExec,
-                    configurable: true,
-                    writable: true
-                })
-            }
-        }
+        const { container } = render(Controls)
+        const btn = container.querySelector('button[aria-label="Share link"]') as HTMLButtonElement
+        await fireEvent.click(btn)
+        const captured = get(toastStore)
+        expect(captured.active).toBe(true)
+        // Canonical copyCurrentViewLink() reports clipboard failure via the
+        // 'Copy unavailable' info toast (wave-10 BS-B#6 — the legacy
+        // execCommand fallback was removed by design; there is no 'error'
+        // variant and no 'Copy failed' copy anymore).
+        expect(captured.message).toContain('Copy unavailable')
     })
 
-    it('share-link falls back to execCommand when clipboard API is missing', async () => {
+    it('share-link with no clipboard API surfaces the unavailable toast (no execCommand fallback)', async () => {
         // Some browsers expose no clipboard at all (e.g. insecure http context).
+        // Wave-10 BS-B#6 removed the legacy document.execCommand fallback:
+        // the canonical helper catches the missing API and shows the
+        // 'Copy unavailable' toast instead of silently no-oping.
         Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
         const originalExec = (document as { execCommand?: unknown }).execCommand
         const execMock = vi.fn(() => true)
@@ -239,10 +229,10 @@ describe('Controls component — shareLink feedback (regression: silent no-op)',
             const { container } = render(Controls)
             const btn = container.querySelector('button[aria-label="Share link"]') as HTMLButtonElement
             await fireEvent.click(btn)
-            expect(execMock).toHaveBeenCalledWith('copy')
+            expect(execMock).not.toHaveBeenCalled()
             const captured = get(toastStore)
-            expect(captured.variant).toBe('info')
-            expect(captured.message).toContain('Link copied')
+            expect(captured.active).toBe(true)
+            expect(captured.message).toContain('Copy unavailable')
         } finally {
             if (originalExec === undefined) {
                 delete (document as { execCommand?: unknown }).execCommand
