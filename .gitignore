@@ -149,3 +149,4 @@ tk-req.txt
 /snapshot-*.yml
 /out_dir/
 /AGENTS.md.bak*
+subagent-outbox/
