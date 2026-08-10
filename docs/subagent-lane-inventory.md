@@ -1211,3 +1211,15 @@ clinefree/deepseek/deepseek-v4-flash (or rely on shim default).
   _renderLoopStartPending + markEngineInitPhase integration. g105 (kiro) is building the module.
 - Gate reds NOT mine: those 3 ptsMaterial/2-writer tests are the swarm's in-flight state cut
   (pointsMaterial/nodeSporeMaterial) + three-engine suites; analysis appended.
+
+### Coordination notes 2026-08-10 ~18:5x (main-lane during swarm)
+- Engine test-alignment (3 files: scene-static-tracker/animate-regression repointed
+  to render-loop by me, then REVERTED by a concurrent writer; three-engine-core.test
+  webgl-restore: 6 fails) → handed to g106-testalign (owning the mock-path fixes).
+  Lesson: concurrent writers can revert main-lane edits same-tree — checks via
+  `git log -2 -- <file>` before re-committing; hand single-owner seams to one lane.
+- Stray cleanup: three-micro-demo-bridge.ts (retired in 4da700a0, no consumers) was
+  re-added untracked on disk → removed main-lane.
+- 3d boot fix (lightningcss errorRecovery, 30528d20) is real: specs now RUN 4/4
+  (4 fail on WebGL assertion env — separate from boot). Swarm's 180s-budget bandages
+  remain until the WebGL-env cause is fixed.
