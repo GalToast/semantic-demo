@@ -358,4 +358,19 @@
       pointer-events: none;
     }
   }
+
+  /* Desktop focus/dive: the focus card (z600, fixed, right:1rem, w:260px) spans
+     x≈1164–1424 — covering the weather pill (z50, right:0.75rem, x≈1335–1428).
+     Hide weather on desktop focus surfaces so it isn't painted underneath the
+     card. Mirrors the short-landscape rule above and the focus_stage.css
+     utility-chrome suppression pattern. */
+  @media (min-width: 901px) {
+    :global(body.surface-focus) .weather-widget,
+    :global(body.surface-focus-search) .weather-widget,
+    :global(body.surface-semantic-dive) .weather-widget {
+      display: none;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  }
 </style>

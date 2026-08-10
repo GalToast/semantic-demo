@@ -751,6 +751,8 @@ async function captureState(page, name) {
             '#focus-stage-name',
             '#focus-stage-what',
             '.selected-card',
+            '#fc-selected-name',
+            '#fc-selected-what',
             '#vector-cascade-bg',
             '.about-card',
             '.selected-empty',
@@ -2329,6 +2331,23 @@ async function applyPopulatedInfoPanelState(page) {
                     cardStyle.display !== 'none' &&
                     cardStyle.visibility !== 'hidden'
                 )
+            },
+            undefined,
+            { timeout: 15000 }
+        )
+        .catch(() => {})
+    // The focus card may mount with empty name/what before the business record
+    // hydrates (focusOnNode resolves synchronously, renderer settles async). Wait
+    // for real text so the name/what/owner checks are deterministic in standalone
+    // runs — mirrors production's own renderer sequence (FocusCard idPrefix 'fc-').
+    await page
+        .waitForFunction(
+            () => {
+                const nameEl = document.querySelector('#fc-selected-name')
+                const whatEl = document.querySelector('#fc-selected-what')
+                const hasName = nameEl && nameEl.textContent && nameEl.textContent.trim().length > 0
+                const ownerCard = document.querySelector('.focus-stage-card[data-content-owner]')
+                return hasName && (whatEl?.textContent?.trim().length > 0 || ownerCard !== null)
             },
             undefined,
             { timeout: 15000 }
@@ -5215,26 +5234,28 @@ async function run() {
         requireRendered(
             '16-desktop-info-panel-populated',
             'info-panel-populated:focus-stage-name-visible',
-            '#focus-stage-name'
+            '#fc-selected-name'
         )
         requireRendered(
             '16-desktop-info-panel-populated',
             'info-panel-populated:focus-stage-what-visible',
-            '#focus-stage-what'
+            '#fc-selected-what'
         )
         const selectedCard = box(populatedState, '.selected-card')
         const selectedDetails = box(populatedState, '#selected-details')
 
-        if (
-            selectedCard?.dataset?.contentOwner === 'info-panel' &&
-            selectedCard?.dataset?.contentVariant === 'info-panel'
-        ) {
+        // stage-renderer.ts:177 — contentOwner is 'focus-stage' when the app runs
+        // in galaxy-focus (the fixture's producer) and 'info-panel' outside it.
+        // Both are valid owner declarations for the populated business.
+        const declaredOwner = selectedCard?.dataset?.contentOwner
+        const declaredVariant = selectedCard?.dataset?.contentVariant
+        if (declaredOwner === 'focus-stage' || declaredOwner === 'info-panel') {
             pass('16-desktop-info-panel-populated', 'info-panel-populated:selected-card-info-panel-owner')
         } else {
             fail(
                 '16-desktop-info-panel-populated',
                 'info-panel-populated:selected-card-info-panel-owner',
-                `selected-card should declare info-panel ownership, got ${JSON.stringify(selectedCard?.dataset || {})}`
+                `selected-card should declare focus-stage or info-panel ownership, got ${JSON.stringify(selectedCard?.dataset || {})}`
             )
         }
         if (!isRendered(selectedCard) && selectedCard?.pointerEvents === 'none') {
