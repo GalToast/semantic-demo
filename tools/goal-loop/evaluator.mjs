@@ -70,8 +70,8 @@ export function evaluateCompound(c, opts) {
 export function evaluateCondition(condition, opts = {}) {
     const c = condition && condition.type ? condition : parseCondition(condition)
     if (c.type === 'and' || c.type === 'or') {
-      const r = evaluateCompound(c, opts)
-      return { met: r.met, evidence: r.evidence }
+        const r = evaluateCompound(c, opts)
+        return { met: r.met, evidence: r.evidence }
     }
     const cwd = opts.cwd || DEFAULT_CWD
     const timeoutMs = opts.timeoutMs || 10000
@@ -109,7 +109,7 @@ export function defaultState(goal, conditionStr, budget = 12, maxMinutes = 0) {
         maxMinutes,
         status: 'running', // running | met | cleared | paused
         lastEvidence: '',
-        ledger: [], // turn-by-turn evidence audit trail
+        ledger: [] // turn-by-turn evidence audit trail
     }
 }
 
