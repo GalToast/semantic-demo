@@ -156,7 +156,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
 
     isReady = true;
 
-    const bridge = {
+    const bridge: NonNullable<Window['__spector']> = {
       isReady: () => isReady,
       listCanvases: () => {
         const canvases = Array.from(document.querySelectorAll('canvas'));
@@ -276,8 +276,6 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
       getLastCapture: () => lastCapture,
       getActiveCanvas: () => (activeCanvas ? 'captured' : 'idle'),
     };
-
-    // @ts-ignore — bridge shape is wider than window.__spector type. Remove when the window.d.ts __spector interface is widened to the full bridge shape (ticket W53-L6-followup)
     window.__spector = bridge;
     phase = 'ready';
     publishStatus();
