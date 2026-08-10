@@ -46,7 +46,9 @@ describe('A11y W43-A: Arrow key navigation in search results', () => {
     // Pinned to the live shape: showToastSpec with title + the W10 BS-B#8
     // dedupeKey (one toast per boundary, not per keypress).
     it('ArrowDown at last result surfaces an end-of-results toast (no silent wrap)', () => {
-        expect(src).toMatch(/key === 'ArrowDown'[\s\S]*?title: 'End of results'[\s\S]*?dedupeKey: 'search:end-of-results'/)
+        expect(src).toMatch(
+            /key === 'ArrowDown'[\s\S]*?title: 'End of results'[\s\S]*?dedupeKey: 'search:end-of-results'/
+        )
     })
 
     // W48-D: ArrowUp at the first result returns focus to the search input

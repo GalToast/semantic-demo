@@ -533,33 +533,17 @@ describe('focus-pocket-geometry — placement & relationship bias', () => {
         it('applies personality compressionMult to radius', () => {
             const motif = makeMotif({ key: 'market', seed: 0.3 })
             const vp = makeViewportProfile()
-            const baseline = getFocusConstellationPlacement(
-                motif,
-                { score: 0.5 },
-                0,
-                'primary',
-                5,
-                vp,
-                null
-            )
-            const compressed = getFocusConstellationPlacement(
-                motif,
-                { score: 0.5 },
-                0,
-                'primary',
-                5,
-                vp,
-                {
-                    type: 'STANDARD',
-                    motifOverride: null,
-                    cameraDuration: 980,
-                    cameraArc: 'standard',
-                    staggerMult: 1,
-                    compressionMult: 0.5,
-                    easing: 'easeInOutCubic',
-                    microVariation: { rotation: 0, scale: 1 }
-                }
-            )
+            const baseline = getFocusConstellationPlacement(motif, { score: 0.5 }, 0, 'primary', 5, vp, null)
+            const compressed = getFocusConstellationPlacement(motif, { score: 0.5 }, 0, 'primary', 5, vp, {
+                type: 'STANDARD',
+                motifOverride: null,
+                cameraDuration: 980,
+                cameraArc: 'standard',
+                staggerMult: 1,
+                compressionMult: 0.5,
+                easing: 'easeInOutCubic',
+                microVariation: { rotation: 0, scale: 1 }
+            })
             // compressionMult=0.5 should roughly halve the radius
             expect(compressed.radius).toBeLessThan(baseline.radius)
         })
@@ -567,42 +551,26 @@ describe('focus-pocket-geometry — placement & relationship bias', () => {
         it('DENSE_HUB personality amplifies zOffset and radius', () => {
             const motif = makeMotif({ key: 'market', seed: 0.3 })
             const vp = makeViewportProfile()
-            const standard = getFocusConstellationPlacement(
-                motif,
-                { score: 0.5 },
-                0,
-                'primary',
-                5,
-                vp,
-                {
-                    type: 'STANDARD',
-                    motifOverride: null,
-                    cameraDuration: 980,
-                    cameraArc: 'standard',
-                    staggerMult: 1,
-                    compressionMult: 1,
-                    easing: 'easeInOutCubic',
-                    microVariation: { rotation: 0, scale: 1 }
-                }
-            )
-            const dense = getFocusConstellationPlacement(
-                motif,
-                { score: 0.5 },
-                0,
-                'primary',
-                5,
-                vp,
-                {
-                    type: 'DENSE_HUB',
-                    motifOverride: null,
-                    cameraDuration: 980,
-                    cameraArc: 'standard',
-                    staggerMult: 1,
-                    compressionMult: 1,
-                    easing: 'easeInOutCubic',
-                    microVariation: { rotation: 0, scale: 1 }
-                }
-            )
+            const standard = getFocusConstellationPlacement(motif, { score: 0.5 }, 0, 'primary', 5, vp, {
+                type: 'STANDARD',
+                motifOverride: null,
+                cameraDuration: 980,
+                cameraArc: 'standard',
+                staggerMult: 1,
+                compressionMult: 1,
+                easing: 'easeInOutCubic',
+                microVariation: { rotation: 0, scale: 1 }
+            })
+            const dense = getFocusConstellationPlacement(motif, { score: 0.5 }, 0, 'primary', 5, vp, {
+                type: 'DENSE_HUB',
+                motifOverride: null,
+                cameraDuration: 980,
+                cameraArc: 'standard',
+                staggerMult: 1,
+                compressionMult: 1,
+                easing: 'easeInOutCubic',
+                microVariation: { rotation: 0, scale: 1 }
+            })
             expect(Math.abs(dense.zOffset)).toBeGreaterThan(Math.abs(standard.zOffset))
             expect(dense.radius).toBeGreaterThan(standard.radius)
         })

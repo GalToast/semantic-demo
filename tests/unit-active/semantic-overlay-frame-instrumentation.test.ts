@@ -27,7 +27,12 @@ const { mockState } = vi.hoisted(() => {
             },
             focusSemanticLines: null as unknown | null,
             focusSemanticConnectionPairs: [] as Array<{
-                t0: number; t1: number; cue: number; a: number; b: number; layer: number
+                t0: number
+                t1: number
+                cue: number
+                a: number
+                b: number
+                layer: number
             }>,
             focusThreadDiagnostics: {
                 active: false,
@@ -115,25 +120,53 @@ vi.mock('@lib/utils/diagnostic-adapter', () => ({
 }))
 
 vi.mock('@lib/debug/overlay-debug', () => {
-    const overlayDebug = { rfso: 0, overlayN: 0, pushRef: null, pushN: 0, refreshEnd: 0, pairsLen: 0, endRef: null, pushEndEq: false }
+    const overlayDebug = {
+        rfso: 0,
+        overlayN: 0,
+        pushRef: null,
+        pushN: 0,
+        refreshEnd: 0,
+        pairsLen: 0,
+        endRef: null,
+        pushEndEq: false
+    }
     return {
         overlayDebug,
-        setOverlayDebugRfso: (v: number) => { overlayDebug.rfso = v },
-        setOverlayDebugOverlayN: (v: number) => { overlayDebug.overlayN = v },
-        setOverlayDebugPushRef: (v: unknown) => { overlayDebug.pushRef = v },
-        setOverlayDebugPushN: (v: number) => { overlayDebug.pushN = v },
-        setOverlayDebugRefreshEnd: (v: number) => { overlayDebug.refreshEnd = v },
-        setOverlayDebugPairsLen: (v: number) => { overlayDebug.pairsLen = v },
-        setOverlayDebugEndRef: (v: unknown) => { overlayDebug.endRef = v },
-        setOverlayDebugPushEndEq: (v: boolean) => { overlayDebug.pushEndEq = v }
+        setOverlayDebugRfso: (v: number) => {
+            overlayDebug.rfso = v
+        },
+        setOverlayDebugOverlayN: (v: number) => {
+            overlayDebug.overlayN = v
+        },
+        setOverlayDebugPushRef: (v: unknown) => {
+            overlayDebug.pushRef = v
+        },
+        setOverlayDebugPushN: (v: number) => {
+            overlayDebug.pushN = v
+        },
+        setOverlayDebugRefreshEnd: (v: number) => {
+            overlayDebug.refreshEnd = v
+        },
+        setOverlayDebugPairsLen: (v: number) => {
+            overlayDebug.pairsLen = v
+        },
+        setOverlayDebugEndRef: (v: unknown) => {
+            overlayDebug.endRef = v
+        },
+        setOverlayDebugPushEndEq: (v: boolean) => {
+            overlayDebug.pushEndEq = v
+        }
     }
 })
 
-import { updateFocusSemanticOverlayPositions, getSemanticFocusCueProbeSnapshot } from '../../src/lib/journey/semantic-overlay'
+import {
+    updateFocusSemanticOverlayPositions,
+    getSemanticFocusCueProbeSnapshot
+} from '../../src/lib/journey/semantic-overlay'
 
 describe('semantic-overlay frame instrumentation', () => {
     function makeMockLine(pairCount: number) {
-        const segCount = pairCount * 16  // FOCUS_THREAD_SEGMENTS
+        const segCount = pairCount * 16 // FOCUS_THREAD_SEGMENTS
         return {
             geometry: {
                 attributes: {
@@ -204,14 +237,14 @@ describe('semantic-overlay frame instrumentation', () => {
         expect(fd.lastFrameAt).toBe(1000)
         expect(fd.sampleCount).toBe(1)
         expect(fd.lastOverlayMs).toBeGreaterThanOrEqual(0)
-        expect(fd.lastOverlayEdgeCount).toBe(3)  // 3 pairs → 3 edges
+        expect(fd.lastOverlayEdgeCount).toBe(3) // 3 pairs → 3 edges
         expect(fd.lastOverlayPairs).toBe(3)
     })
 
     it('advances sampleCount and avgFrameMs across multiple calls', () => {
         const line = makeMockLine(2)
         mockState.focusSemanticLines = line
-        mockState.navState.focusPocketIndices = [1, 2, 3]  // must match pocketIndexCount=3 in makeMockLine
+        mockState.navState.focusPocketIndices = [1, 2, 3] // must match pocketIndexCount=3 in makeMockLine
         seedSimplePairs(2)
 
         updateFocusSemanticOverlayPositions(1000)
@@ -227,7 +260,7 @@ describe('semantic-overlay frame instrumentation', () => {
     it('records zero-cost frame when pairs array is empty', () => {
         const line = makeMockLine(0)
         mockState.focusSemanticLines = line
-        mockState.navState.focusPocketIndices = []  // matches builtPocketCount=3? No — let's bypass rebuild by matching
+        mockState.navState.focusPocketIndices = [] // matches builtPocketCount=3? No — let's bypass rebuild by matching
         // Actually needs line.userData.pocketIndexCount = 0 so 0===0 → no rebuild.
         line.userData.pocketIndexCount = 0
         line.userData.segmentCount = 0
@@ -245,7 +278,7 @@ describe('semantic-overlay frame instrumentation', () => {
     it('returns early without writing when focusSemanticLines is null', () => {
         mockState.focusSemanticLines = null
         mockState.navState.focusPocketIndices = []
-        mockState.navState.focusedIndex = null  // no focus to bootstrap
+        mockState.navState.focusedIndex = null // no focus to bootstrap
 
         updateFocusSemanticOverlayPositions(1000)
 
@@ -258,8 +291,14 @@ describe('semantic-overlay frame instrumentation', () => {
     it('getSemanticFocusCueProbeSnapshot still returns all documented keys', () => {
         const probe = getSemanticFocusCueProbeSnapshot()
         const expectedKeys = [
-            'visible', 'threadSource', 'focusedIndex', 'nextIndex',
-            'lineNextIndex', 'nextCueSegments', 'focusThreadSegments', 'threadDiagnostics'
+            'visible',
+            'threadSource',
+            'focusedIndex',
+            'nextIndex',
+            'lineNextIndex',
+            'nextCueSegments',
+            'focusThreadSegments',
+            'threadDiagnostics'
         ]
         for (const key of expectedKeys) {
             expect(Object.prototype.hasOwnProperty.call(probe, key), `missing key: ${key}`).toBe(true)
@@ -271,7 +310,7 @@ describe('semantic-overlay frame instrumentation', () => {
     it('writes finite values into instanceStart and instanceEnd buffers', () => {
         const line = makeMockLine(2)
         mockState.focusSemanticLines = line
-        mockState.navState.focusPocketIndices = [1, 2, 3]  // match pocketIndexCount
+        mockState.navState.focusPocketIndices = [1, 2, 3] // match pocketIndexCount
         seedSimplePairs(2)
 
         updateFocusSemanticOverlayPositions(1000)

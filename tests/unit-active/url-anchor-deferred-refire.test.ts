@@ -169,12 +169,16 @@ vi.mock('@lib/orchestration/event-bus', () => ({
     subscribeKeyed: (_key: string, _event: string, _cb: (...args: unknown[]) => void) => () => {}
 }))
 
-vi.mock('@lib/orchestration/url-params', () => ({
+vi.mock('@lib/orchestration/url-params', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/orchestration/url-params')>()
+    return {
+        ...actual,
     getSearchParams: () => new URLSearchParams(mockState.urlSearch),
     getLocationHref: () => `http://localhost/${mockState.urlSearch}`,
     getLocationPathname: () => '/',
     isDomForcedFocusSearchSurface: () => false
-}))
+    }
+})
 
 // Mock data-store so semanticNeighborMap is the controllable writable above.
 // Only export the symbols url-state.ts imports; other consumers in the import

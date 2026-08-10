@@ -89,12 +89,16 @@ vi.mock('@lib/state/app.svelte', () => ({
     }
 }))
 
-vi.mock('@lib/orchestration/url-params', () => ({
+vi.mock('@lib/orchestration/url-params', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/orchestration/url-params')>()
+    return {
+        ...actual,
     getSearchParams: () => new URLSearchParams(),
     getLocationHref: () => mockState.locationHref,
     getLocationPathname: () => '/',
     isDomForcedFocusSearchSurface: () => false
-}))
+    }
+})
 
 // Stub stores that the module graph transitively imports but copyCurrentViewLink
 // doesn't exercise at runtime.

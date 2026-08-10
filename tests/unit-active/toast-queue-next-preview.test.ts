@@ -124,12 +124,20 @@ describe('toast queue + next-title preview (W49-A)', () => {
         // showToastSpec with the same dedupeKey while one is queued must
         // NOT enqueue a duplicate.
         showToast('First', 'first copy')
-        showToastSpec({ title: 'End of results', copy: 'Press Escape to clear search.', dedupeKey: 'search:end-of-results' })
+        showToastSpec({
+            title: 'End of results',
+            copy: 'Press Escape to clear search.',
+            dedupeKey: 'search:end-of-results'
+        })
         // First is visible; End-of-results is queued (next).
         expect(readState().queueLength).toBe(1)
         expect(readState().nextTitle).toBe('End of results')
         // Identical dedupeKey again → swallowed, queue stays at 1.
-        showToastSpec({ title: 'End of results', copy: 'Press Escape to clear search.', dedupeKey: 'search:end-of-results' })
+        showToastSpec({
+            title: 'End of results',
+            copy: 'Press Escape to clear search.',
+            dedupeKey: 'search:end-of-results'
+        })
         expect(readState().queueLength).toBe(1)
         // Different dedupeKey still enqueues.
         showToastSpec({ title: 'Searching local data', copy: 'live search slow', dedupeKey: 'search:local-fallback' })

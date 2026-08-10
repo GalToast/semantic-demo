@@ -45,6 +45,10 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
+    // ad4f7ee4 — test(a11y): trail-review contract suite + its tmp/ worker
+    // evidence report (0731-writeup) committed together — the report evidences
+    // the suite's prove, same evidence-bank shape as the prior exemptions.
+    'ad4f7ee461f7e6e34c1b6ee01a73a7d3263c9a58',
     // dd36c3a8 — test(audit): parallel-lane visual-jury infrastructure commit.
     // The added scripts/build-jury-jobs.mjs + visual-jury-nim-direct + visual-
     // pixel-variance are REQUIRED by the added tests/visual-state-audit.mjs

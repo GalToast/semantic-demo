@@ -227,12 +227,16 @@ vi.mock('@lib/orchestration/event-bus', () => ({
     }
 }))
 
-vi.mock('@lib/orchestration/url-params', () => ({
+vi.mock('@lib/orchestration/url-params', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/orchestration/url-params')>()
+    return {
+        ...actual,
     getSearchParams: () => new URLSearchParams(mockState.urlSearch),
     getLocationHref: () => `http://localhost/${mockState.urlSearch}`,
     getLocationPathname: () => '/',
     isDomForcedFocusSearchSurface: () => false
-}))
+    }
+})
 
 vi.mock('@lib/data-store', () => ({
     semanticNeighborMap: { subscribe }

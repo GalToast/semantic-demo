@@ -32,14 +32,26 @@ const guiLifecycle = vi.hoisted(() => ({ constructed: 0, destroyed: 0 }))
 vi.mock('lil-gui', () => {
     return {
         default: class FakeGui {
-            constructor() { guiLifecycle.constructed += 1 }
-            add() { return this }
-            addFolder() { return this }
-            name() { return this }
-            onChange() { return this }
+            constructor() {
+                guiLifecycle.constructed += 1
+            }
+            add() {
+                return this
+            }
+            addFolder() {
+                return this
+            }
+            name() {
+                return this
+            }
+            onChange() {
+                return this
+            }
             open() {}
             close() {}
-            destroy() { guiLifecycle.destroyed += 1 }
+            destroy() {
+                guiLifecycle.destroyed += 1
+            }
         }
     }
 })

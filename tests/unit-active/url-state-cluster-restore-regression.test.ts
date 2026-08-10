@@ -239,12 +239,16 @@ vi.mock('@lib/utils/ui-presentation', () => ({
     isDomForcedFocusSearchSurface: () => false
 }))
 
-vi.mock('@lib/orchestration/url-params', () => ({
+vi.mock('@lib/orchestration/url-params', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/orchestration/url-params')>()
+    return {
+        ...actual,
     getSearchParams: () => new URLSearchParams(window.location.search),
     getLocationHref: () => window.location.href,
     getLocationPathname: () => '/',
     isDomForcedFocusSearchSurface: () => false
-}))
+    }
+})
 
 import { applyUrlState, updateUrlState } from '@lib/orchestration/url-state'
 
