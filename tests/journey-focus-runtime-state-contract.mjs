@@ -46,7 +46,12 @@ try {
   });
 
   const snapshot = getRuntimeStateSnapshot();
-  assert(snapshot.navState === navState, 'snapshot should expose current navState reference');
+  // navState is SHALLOW-CLONED by design (47a46ae0 defensive copy — live
+  // reference would let syncRuntimeState alias canonical navState and bypass
+  // writeNavstateMirror traps). Assert value equality; collections survive by
+  // reference so they keep identity semantics.
+  assert(snapshot.navState.focusedIndex === 7, 'snapshot should expose current navState values');
+  assert(JSON.stringify(snapshot.navState.focusPocketIndices) === JSON.stringify([7, 8]), 'navState focusPocketIndices cloned by value');
   assert(snapshot.targetPositions === targetPositions, 'snapshot should expose current targetPositions reference');
   assert(snapshot.pocketMotionByIndex === pocketMotionByIndex, 'snapshot should expose current motion Map reference');
   assert(snapshot.pocketTransitionStartedAt === 1234, 'snapshot should expose transition start time');
