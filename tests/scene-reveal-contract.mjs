@@ -12,8 +12,8 @@
  *   5. onWindowResize guards on camera/renderer, sets aspect/setSize, calls map.invalidateSize
  *
  * Run from semantic-demo root:
- *   node tests/scene-reveal-contract.mjs
- *   node tests/run-from-semantic-demo.cjs scene-reveal-contract.mjs
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs \n *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/scene-reveal-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=scene-reveal-contract.mjs)
  */
 
 import { readFileSync } from 'node:fs';
