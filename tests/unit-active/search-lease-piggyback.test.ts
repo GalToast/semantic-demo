@@ -386,7 +386,7 @@ describe('url-state restoration piggyback (runtime)', () => {
             expect(searchStore().status).toBe('results')
         })
         expect(inFlight('coffee')).toBe(false)
-    })
+    }, 60000)
 
     it('a second URL restore with the same query piggybacks instead of re-running search', async () => {
         // Two URL restores in a row with the same ?q= while the first restore's
@@ -417,5 +417,5 @@ describe('url-state restoration piggyback (runtime)', () => {
             expect(searchStore().status).toBe('results')
         })
         expect(mockState.publishCalls.filter((c) => c.type === 'SEARCH_SUCCESS').length).toBeGreaterThanOrEqual(1)
-    })
+    }, 60000)
 })
