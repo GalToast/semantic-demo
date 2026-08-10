@@ -23,9 +23,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { resolveSource } from './source-path.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const PANEL_BINDINGS_PATH = path.join(__dirname, '..', 'js', 'modules', 'bindings', 'panel-bindings.ts')
+const PANEL_BINDINGS_PATH = resolveSource('src/lib/ui/panel-bindings.ts')
 
 function assert(cond, msg) {
     if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)

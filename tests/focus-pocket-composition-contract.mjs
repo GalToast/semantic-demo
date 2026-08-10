@@ -12,8 +12,9 @@
  * Runs in Node with a minimal DOM/performance shim. Imports the real
  * state bridge and src/lib/journey/focus-pocket.ts.
  *
- * Usage:
- *   node tests/focus-pocket-composition-contract.mjs
+ * Usage (canonical — needs ts-resolve-loader for @lib):
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs \n *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/focus-pocket-composition-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=focus-pocket-composition-contract.mjs)
  *   npm run test:contract  (includes this via test:contract chain)
  */
 

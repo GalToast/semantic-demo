@@ -9,8 +9,9 @@
  * Imports real state bridge and src/lib/journey/focus-pocket.ts and asserts
  * source behavior against mocked points / originalPositions / targetPositions.
  *
- * Usage:
- *   node tests/focus-pocket-motion-contract.mjs
+ * Usage (canonical — needs ts-loader loader for @lib):
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs \n *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/focus-pocket-motion-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=focus-pocket-motion-contract.mjs)
  */
 
 // ---------------------------------------------------------------------------
