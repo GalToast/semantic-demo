@@ -185,3 +185,16 @@ Free/cheap routes first:
 **Worker contract for visual work:** if a worker task explicitly requires vision, dispatch with a confirmed vision-capable model. Otherwise default to `owl-alpha` for text/code work.
 
 **Empirical probe rule:** before claiming a model has or lacks vision, actually probe it with an image. Catalog name strings are NOT proof of capability.
+
+## Direct-API NIM jury (2026-08-09; the fix for subagent-vision 400-payload wall)
+
+The subagent harness re-sends every image the worker has read so far on each subsequent API call; on the nvidia NIM lane that accumulates past the request-size limit → `400 status code (no body)` mid-review (reproduced across 3 dispatch rounds, ~20 workers, 2026-08-09). The mechanism beats the whole `external_subagent_*` path for multi-image vision work regardless of batch size.
+
+**Reliable pattern — direct per-image API calls, no harness accumulation:**
+
+- `scripts/visual-jury-nim-direct.mjs <slice> <slices> <out-suffix> [jobs.json]` — one HTTP call per image to `router-nvidia` (`meta/llama-3.2-90b-vision-instruct`, free NIM tier), each writes its own `direct-jury-slice-<suffix>.md`. Run N slices concurrently (e.g. 4) for full coverage in minutes.
+- `scripts/build-jury-jobs.mjs` — emits the shared `jobs.json` (label, filename, focus-hint per surface).
+- `scripts/visual-pixel-variance.mjs` — cheap PNG inflate variance scan to flag near-blank frames BEFORE vision spend (variance < ~500 = suspect; healthy 6000+).
+- Full-res JPEG q90 at identical dimensions is a ~5.6× payload win with negligible quality loss; keeps the "no downscale" bar.
+
+**VLM-discipline note:** layout/overlap/clipping verdicts are reliable; low-contrast + "overlap with backdrop" verdicts on dark glassy UIs are frequent false positives. Always close the loop with DOM truth (`getBoundingClientRect` + `elementFromPoint`) — see `visual-audit-false-positive-watchlist` skill. Do NOT dispatch 20 workers; one direct runner with concurrency is cheaper and deterministic.
