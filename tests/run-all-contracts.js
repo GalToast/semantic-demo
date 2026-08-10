@@ -461,6 +461,10 @@ Options:
   --dry-run               Print the resolved file list without running contracts.
   --stop-on-first-fail    Stop the runner after the first failing contract.
   --help                  Show this help text.
+  NOTE: individual contracts resolve the @lib alias via ts-resolve-loader (see --single).
+  Running a contract file directly (node tests/x.mjs) may fail with
+  ERR_MODULE_NOT_FOUND for '@lib/...' when the file dynamically imports src TS.
+  Use --single=<file> (or add the loader flags) for faithful local runs.
 
 Environment:
   CONTRACT_TIMEOUT_MS     Default per-contract timeout in milliseconds.
