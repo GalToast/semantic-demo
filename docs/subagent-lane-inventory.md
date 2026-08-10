@@ -915,3 +915,14 @@ verifies gates once.
 - **cline** shim: fallback for tool-free/simple lanes.
 - Smoke runner committed 4ab8b471: 11 logfare models × bounded getViewportSize-
   export verification worker, sequential, judge by tm2/smoke-REPORT.md.
+
+### Logfare auth-wall (2026-08-10 ~03:25, measured): 9/11 models HTTP 403/401
+
+Full per-model live probe: minimax-m3 403, deepseek-v4-pro 403, deepseek-v4-flash
+401, deepseek-v4-flash-0731 401, kimi-k3 403, kiro-auto 403, glm-5.2 403,
+kimi-k2.7-code 403, qwen-3.8-max 403, grape-2-pro 403, qwen-3.6 timeout.
+So the earlier "flapping" was likely the BEGINNING of an auth/credit deplete;
+now the router rejects launches outright. The per-model smoke (4ab8b471) will
+record this as UNAVAILABLE for most, EXECUTING only if a window reopens.
+Action when smoke runs: treat any live model as the current usable lane; file
+the auth-state to the user; NVIDIA stays the fleet workhorse until restored.
