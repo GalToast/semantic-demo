@@ -832,6 +832,7 @@ timeout 15s. This is the 2nd wedge of the session (~23:09 recovery, then re-wedg
 ~23:40). Earlier "rotate" wins (0731 fruit) only because the router was UP then.
 
 FAILURE-MODE MAP (3 distinct, all measured):
+
 1. WEDGE-freeze: router accepts, completions hang; worker process STAYS alive,
    thinking streams, tool calls invisible → looks like "prose-loop" (w44b).
    Fix: probe completions (not models), wait for recovery.
@@ -839,6 +840,16 @@ FAILURE-MODE MAP (3 distinct, all measured):
    mid-delta, 0 mmx procs (w23.4). Fix: relaunch after sustained recovery.
 3. Model non-execution: no tool use even with router healthy → real rotate signal.
    So far only grape-2-pro showed this (0/2 attempts).
-Date: two router tests at interval; DO NOT spend a token on a rotation while
-completions endpoint answers with timeout. Park until 2 consecutive probes OK.
+   Date: two router tests at interval; DO NOT spend a token on a rotation while
+   completions endpoint answers with timeout. Park until 2 consecutive probes OK.
+
+### Provider gate at dispatch time (2026-08-10, 00:49 UTC)
+
+Two consecutive completion probes FAILED (20s/15s timeouts) right when the
+url-state audit (w47, k3) was about to dispatch. Applied the recorded rule:
+DO NOT launch into a flapping endpoint. The url-state prompt is written at
+tmp/w47-urlstart-prompt.txt and waits; dispatch resumes on 2 consecutive OK.
+Third wedge of the session — the logfare completion upstream is in a
+sustained bad window (00:40-00:50 UTC span, previously recovered 23:09-23:40).
+No lanes spinning, no tokens wasted.
 
