@@ -17,12 +17,9 @@ import { clearSearch, runSearch, searchStore, setSearchError } from '@lib/stores
 import { focusStore } from '@lib/stores/focus.svelte'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import {
-    getFilterState,
     restoreActiveClusterFilterFromUrl,
     restoreActiveFiltersFromUrl
 } from '@lib/stores/filter.svelte'
-import { updateSelectedBusiness } from '@lib/journey/selected-card'
-import { setFocusedNode } from '@lib/journey/thread-settler'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { animateCameraToNode } from '@lib/engine/camera-choreography/focus'

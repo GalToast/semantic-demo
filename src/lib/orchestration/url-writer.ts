@@ -1,5 +1,4 @@
-import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
-import { startSearch } from '@lib/search/search-abort' /**
+ /**
  * @lib/orchestration/url-writer.ts — URL state writer
  *
  * Serializes application state into URL search params and writes them
