@@ -21,7 +21,7 @@ import { resolve } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import { shouldSkipNextRender, type SceneStaticSnapshot } from '../../src/lib/engine/renderer/scene-static-tracker'
 
-const coreSource = readFileSync(resolve(process.cwd(), 'src/lib/engine/three-engine-core.ts'), 'utf8')
+const coreSource = readFileSync(resolve(process.cwd(), 'src/lib/engine/three-engine-render-loop.ts'), 'utf8')
 
 const sample1: SceneStaticSnapshot = {
     cameraPos: [1.234, 5.678, 9.012],

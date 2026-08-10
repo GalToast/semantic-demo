@@ -7,7 +7,7 @@ import { resolve } from 'node:path'
 // (commit ae4770aa·family). three-engine.ts is now a barrel re-export
 // and no longer contains the function source. The two tests below guard
 // the same animate() body via its real source path.
-const SRC_PATH = resolve(__dirname, '../../src/lib/engine/three-engine-core.ts')
+const SRC_PATH = resolve(__dirname, '../../src/lib/engine/three-engine-render-loop.ts')
 
 function animateSource() {
     const src = readFileSync(SRC_PATH, 'utf8')
