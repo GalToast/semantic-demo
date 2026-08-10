@@ -62,19 +62,26 @@ export interface SemanticGuideRequestPayload {
 export type SearchSummary = SearchSummarySnapshot;
 
 // ── Internal helpers (inlined from semantic-guide-payload-adapter.ts) ───────
-
-function getSearchContextSnapshot(): SearchContextSnapshot {
+// W10 adapter-fold: getSearchContextSnapshot was an export of the deleted
+// adapter; the fold inlined it. Re-exported (additive) so the adapter's
+// public contract (semantic-guide-payload-contract.mjs runtime section)
+// continues to resolve it.
+export function getSearchContextSnapshot(): SearchContextSnapshot {
     return {
         currentSearchSummary: state.searchState.currentSearchSummary as SearchSummarySnapshot | null,
         currentView: state.currentView
     };
 }
 
-function getPoints(): Point[] {
+// W10 adapter-fold: getPoints/getResultContextMap/mapResultIndicesToPayloadResults/
+// getAnchorPoint were PUBLIC on the deleted adapter; the fold inlined them but
+// they must keep being exported so the adapter contract (semantic-guide-
+// payload-contract runtime section) still resolves them.
+export function getPoints(): Point[] {
     return state.points;
 }
 
-function getResultContextMap(): Map<string, unknown> {
+export function getResultContextMap(): Map<string, unknown> {
     return state.semanticResultContextByLeadId as Map<string, unknown>;
 }
 
@@ -102,7 +109,7 @@ function buildPayloadResultFromSnapshot(
     };
 }
 
-function mapResultIndicesToPayloadResults(
+export function mapResultIndicesToPayloadResults(
     resultIndices: number[],
     points: Point[],
     contextMap: Map<string, unknown>
@@ -114,7 +121,7 @@ function mapResultIndicesToPayloadResults(
         .filter((r): r is PayloadResult => r !== null);
 }
 
-function getAnchorPoint(currentSearchSummary: SearchSummarySnapshot | null, points: Point[]): Point | null {
+export function getAnchorPoint(currentSearchSummary: SearchSummarySnapshot | null, points: Point[]): Point | null {
     const idx = currentSearchSummary?.anchorIndex as number | undefined;
     if (!Number.isFinite(idx) || !points) return null;
     return points[idx as number] || null;

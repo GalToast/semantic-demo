@@ -11,7 +11,9 @@ import { resolve } from 'node:path'
 const CWD = process.cwd()
 const appInitPath = resolve(CWD, 'src/lib/orchestration/app-init.ts')
 const threeSetupPath = resolve(CWD, 'src/lib/engine/three-engine.ts')
-const adapterPath = resolve(CWD, 'src/lib/utils/webgl-restore-adapter.ts')
+// W10 adapter-fold: webgl-restore-adapter.ts was inlined into three-engine-state.ts;
+// the dewindowing entry points (setWebGLContextRestoreHandler/restoreWebGLContext) live there now.
+const adapterPath = resolve(CWD, 'src/lib/engine/three-engine-state.ts')
 
 function read(path, label) {
     try {
@@ -32,12 +34,12 @@ const listenerSrc = read(listenerPath, 'src/lib/engine/three-listener-registrati
 
 const checks = [
     {
-        name: 'adapter exports setWebGLContextRestoreHandler',
-        pass: /export\s+function\s+setWebGLContextRestoreHandler\s*\(/.test(adapterSrc)
+        name: 'adapter has setWebGLContextRestoreHandler (inlined in three-engine-state)',
+        pass: /setWebGLContextRestoreHandler/.test(engineStateSrc)
     },
     {
-        name: 'adapter exports restoreWebGLContext',
-        pass: /export\s+function\s+restoreWebGLContext\s*\(/.test(adapterSrc)
+        name: 'adapter has restoreWebGLContext (inlined in three-engine-state)',
+        pass: /restoreWebGLContext/.test(engineStateSrc)
     },
     {
         name: 'app-init owns WebGL context restore setup',
@@ -70,11 +72,11 @@ const checks = [
         pass: !/window\.init\s*=/.test(appInitSrc)
     },
     {
-        name: 'three-setup imports restoreWebGLContext',
+        name: 'three-setup inlines webgl-restore handlers (W10 adapter-fold)',
         pass:
-            /import\s+\*\s+as\s+webglRestoreMod\s+from\s+['"]@lib\/utils\/webgl-restore-adapter['"]/.test(threeSetupSrc) ||
-            /import\s+\*\s+as\s+webglRestoreMod\s+from\s+['"]@lib\/utils\/webgl-restore-adapter['"]/.test(engineStateSrc) ||
-            /import\s+\*\s+as\s+webglRestoreMod\s+from\s+['"]@lib\/utils\/webgl-restore-adapter['"]/.test(listenerSrc)
+            /restoreWebGLContext|setWebGLContextRestoreHandler/.test(threeSetupSrc) ||
+            /restoreWebGLContext|setWebGLContextRestoreHandler/.test(engineStateSrc) ||
+            /restoreWebGLContext|setWebGLContextRestoreHandler/.test(listenerSrc)
     },
     {
         // The live webglcontextrestored handler lives in app-init.ts and

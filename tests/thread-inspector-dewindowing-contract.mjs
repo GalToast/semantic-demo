@@ -7,7 +7,8 @@ const THREAD_INSPECTOR_FILES = [
     'src/lib/journey/thread-inspector-state.ts',
     'src/lib/journey/thread-inspector-webgl.ts',
     'src/lib/journey/thread-inspector-render.ts',
-    'src/lib/journey/thread-inspector-adapter.ts'
+    // W10 adapter-fold: thread-inspector-adapter.ts inlined into adapters.ts
+    'src/lib/orchestration/adapters.ts'
 ]
 
 const threadInspectorSrc = THREAD_INSPECTOR_FILES.map((p) => {
