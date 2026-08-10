@@ -1090,3 +1090,19 @@ Fleet-wide benefit: every live provider's models appear in the picker now.
 - Every logfire lane this session dies at exactly this point (launch ok → request forwarded → hang → retry exhaust → failed).
 - Earlier w47c DID complete on logfire (~02:00) → the outage began after; intermittent windows exist. Re-check with a 30s direct probe before any logfire dispatch; when a probe returns 200 sustained, lanes will land.
 - OpenCode Zen route continues to serve 200s (router logs) — the working fallback per user's "if not logfire" caveat.
+
+### cline = deepseek-v4-flash lane (user directive, verified live 2026-08-10)
+
+User: "deepseek-v4-flash through cline will be the best subagents". Verified live:
+- cline shim (scripts/shims/cline-shim.mjs, port 8793): models = cline-free/glm-5.2,
+  deepseek/deepseek-v4-flash (OK 15.6s), poolside/laguna-s-2.1:free (OK 22.4s),
+  stepfun/step-3.7-flash. glm-5.2 = 502 (CLI error).
+- router /clinefree/v1 → cline shim: 200/35.8s (full path works).
+- harness mmx.ts maps clinefree→router-clinefree (routeMap 1129 + resolver 6559) —
+  the worker START string is clinefree/deepseek/deepseek-v4-flash.
+- GAP at worker-boot: pi's local model-providers registry lacks router-clinefree
+  → worker stderr "Model router-clinefree/... not found". FIX staged: added
+  "router-clinefree" to REASONING_EFFORT_MAPS in local-packages/pi-model-providers
+  /index.ts (needs pi runtime reload to take effect).
+NEXT STEP when cline lane wanted: reload pi (/reload-runtime or restart) then
+dispatch model=clinefree/deepseek/deepseek-v4-flash.
