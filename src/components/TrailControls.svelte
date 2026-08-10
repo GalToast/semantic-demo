@@ -154,13 +154,12 @@
 
   <div class="route-state" id="focus-stage-route" data-state={hasNext ? 'walking' : 'empty'}></div>
 {:else}
-  <div class="trail-controls focus-stage-actions idle" id="trail-controls">
-    <div class="trail-context" id="trail-context">
+  <div class="trail-controls focus-stage-actions idle" id="trail-controls-idle">
+    <div class="trail-context" id="trail-context-idle">
       <span class="trail-context-text">Pick a business, then explore its nearby neighbors.</span>
     </div>
   </div>
 {/if}
-
 <style>
   /* PR-E2: These styles were originally in JourneyChrome.css, but Svelte's
      scoped CSS prevented them from applying to elements owned by this
