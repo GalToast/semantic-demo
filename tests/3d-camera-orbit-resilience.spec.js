@@ -75,23 +75,22 @@ async function dragCanvas(page, dx, dy, { xRatio = 0.5, yRatio = 0.5 } = {}) {
 async function resetIncidentalFocus(page) {
     const mode = (await probe(page)).navMode
     if (mode !== 'overview') {
+        // Drive the REAL app path (via the test bridge lifecycle action)
+        // instead of raw state+dataset mutation. The parity-attr system owns
+        // body[data-panel-surface] and re-derives it from the nav store, so
+        // manual dataset writes get clobbered a tick later and the
+        // `panelSurface !== 'focus'` wait below would time out (AGP39-class
+        // asymmetric-gate drift). returnToOverview() goes through
+        // resetExperienceState → navStore → parity, so the dataset settles
+        // and the wait succeeds.
         await page.evaluate(() => {
-            const appState = window.__APP_STATE__ ?? window.__TEST_STATE__
-            if (!appState) return
-            appState.focusedNode = null
-            appState.selectedPoint = null
-            appState.trailDepth = 0
-            if (appState.navState) {
-                appState.navState.mode = 'overview'
-                appState.navState.focusedIndex = null
-                appState.navState.trailSeedIndex = null
-                appState.navState.trailNeighborIndices = []
-                appState.navState.focusPocketIndices = []
+            const actions = window.__navActions__
+            if (actions?.returnToOverview) actions.returnToOverview()
+            else {
+                // Fallback for surfaces that never mounted the bridge.
+                const appState = window.__APP_STATE__ ?? window.__TEST_STATE__
+                if (appState) appState.focusedNode = null
             }
-            document.body.dataset.trailDepth = '0'
-            document.body.dataset.panelSurface = 'idle'
-            document.body.dataset.graphContext = 'overview'
-            document.body.dataset.journeyPhase = 'overview'
         })
         await page.waitForFunction(
             () => {
