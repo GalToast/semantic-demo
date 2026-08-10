@@ -23,7 +23,7 @@ This file is loaded into every Pi model call. Keep it concise. Detailed referenc
 - Before presenting work as finished, verify against the real success criteria and state what was run.
 - **Verify "impossible" claims against the actual environment before believing them.** Twice (2026-08-05) a "can't run here" conclusion was wrong — the fix was a flag: `--enable-unsafe-swiftshader` for software WebGL (`SEMANTIC_FORCE_WEBGL_SOFTWARE=1`) and `--use-angle=d3d11` to reach the real physical GPU (`SEMANTIC_USE_D3D11=1`; RTX 4050 + Intel UHD). Probe the actual capability before declaring something environment-gated.
 - **Default to delegating when it improves throughput/quality.** Main-lane speedup only wins when the alternative blocks the user.
-- **Anti-idle while waiting (2026-08-06):** while workers run or gates settle, pick up parallel-safe work (memory/docs/cleanup, next-task prep) instead of polling loops; check in at ~2-5 min cadence. Known harness friction + unblocks: APPEND_SYSTEM.md "Anti-Idle" + "Harness Friction Cheat Sheet" (provider TTFT ~6.3s is structural; bash auto-detaches at ~10s → prefer `background:true`; `pi_background_jobs wait` is 30s-capped by design — never chain waits; worker stdout caps at 8MB → judge health by poll last_log_at not log size).
+- **Anti-idle while waiting (2026-08-06):** while workers run or gates settle, pick up parallel-safe work (memory/docs/cleanup, next-task prep) instead of polling loops; check in at ~2-5 min cadence. Known harness friction + unblocks: APPEND_SYSTEM.md "Anti-Idle" + "Harness Friction Cheat Sheet" (provider TTFT ~6.3s is structural; bash auto-detaches at ~10s → prefer `background:true`; `pi_background_jobs wait` is nonblocking by default, while `blocking:true` is capped at 30s — never chain blocking waits; worker stdout caps at 8MB → judge health by poll last_log_at not log size).
 - **Finish all N sites of an established pattern, not just the high-ROI one.** Partial pattern fixes create drift. Stop only on user request or genuine risk.
 - **User-visible features need a journey test.** Svelte/DOM-touching features → add a test in `tests/widget-journey.spec.js` + run `npm run qa:journey:headless`. Pre-commit hook warns on unstaged-journey-test for `*.svelte`/`App.svelte`/`lib/ui`/`lib/keyboard`; `--SkipTestStrategyGapCheck` for pure refactors. Full rule: `docs/session-coordination.md` § test-strategy gap.
 - **Audit before "done".** Enumerate every data source (files/fields/code paths), verify each with rg/git. Cheap to audit, expensive to ship half.
@@ -75,6 +75,12 @@ Live data needs PHP on 8795 (`php -S 127.0.0.1:8795 -t .`); Vite proxies `/api*`
 
 ## Reference Docs
 
+> ⚠️ **TRANSIENT HANDOFF (consume then archive):** `docs/restart-handoff-goal-loop-2026-08-10.md` —
+> next session MUST execute it first after a pi restart: (1) load+observe the goal-loop
+> extension live (goal.mjs set → create trigger file → status met + ACHIEVED), (2) launch
+> the cline deepseek-v4-flash lane. After both pass, append 'goal-loop live-verified' to
+> `docs/subagent-lane-inventory.md` and DELETE this block.
+
 Read only when relevant (full module inventory: `docs/important-files.md`; full procedure refs: `docs/tool-guide.md`, `docs/session-coordination.md`, `docs/subagent-delegation.md`, `docs/subagent-lane-inventory.md`, `docs/vision-lane-catalog.md`, `docs/css-ownership.md`, `docs/dev-commands.md`, `docs/ux-copy-rules.md`, `docs/search-fallback.md`, `docs/typing-contract.md`, `docs/performance-budget.md`, `docs/migration-plan.md`, `docs/window-global-allowlist.md`, `docs/semantic-demo-*`). If a referenced doc is missing, use the archived full reference (`docs/archive/agents-full-reference-2026-06-19.md`) as fallback.
 
 ## Dev Commands & Surface Tests
@@ -104,4 +110,4 @@ Core: `npm run build` · `lint` · `test:unit` · `qa:contract`. Full script lis
 
 - **`const x = getInitial*()` snapshot foot-gun** (PR-2, `346891d8`): top-of-module one-time reads miss gate flips. Use `$state: $derived(getBypassAttr('x') ?? getInitial*())`. `setRenderKind(getInitialRenderKind())` MUST run before `mount(App)`. Mobile first-visit help dialog sits over the search input — dismiss it in tests that `.fill()` the input.
 - **Asymmetric `$derived` gate widening** (W53, `671af64c`): widening a parent gate (`App.svelte:211` `focusActive`) MUST mirror the same predicates into child gates gating DOM (`JourneyChrome.svelte:131` `chromeHasFocus`). Asymmetric gating causes silent 30s e2e timeouts. `check:svelte`/lint won't catch it.
-- **Lockstep predicate set** for `focusActive` (App) + `chromeHasFocus` (JourneyChrome): `parity.focusPanelMode === 'field-node' || parity.panelSurface in {focus,inside,trail,focus-search,semantic-dive} || parity.focusSearchForced`. Both import `useParityAttrs()` so parity flips roll through.
+- **Lockstep predicate set** for `focusActive` (App) + `chromeHasFocus` (JourneyChrome): `parity.focusPanelMode === 'field-node' || parity.panelSurface in {focus,inside,trail,focus-search,map-trail,semantic-dive} || parity.focusSearchForced`. Both import `useParityAttrs()` so parity flips roll through.
