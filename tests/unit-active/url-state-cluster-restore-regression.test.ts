@@ -111,25 +111,49 @@ vi.mock('@lib/stores/focus.svelte', () => ({
 
 vi.mock('@lib/state/app.svelte', () => ({
     appState: {
-        get navState() { return { focusedIndex: null, currentView: 'galaxy' } },
+        get navState() {
+            return { focusedIndex: null, currentView: 'galaxy' }
+        },
         set navState(_) {},
-        get points() { return [] },
-        get currentView() { return 'galaxy' },
+        get points() {
+            return []
+        },
+        get currentView() {
+            return 'galaxy'
+        },
         set currentView(_) {},
-        get trailDepth() { return 0 },
+        get trailDepth() {
+            return 0
+        },
         set trailDepth(_) {},
-        get semanticDiveMode() { return false },
+        get semanticDiveMode() {
+            return false
+        },
         set semanticDiveMode(_) {},
-        get myceliumMode() { return 'default' },
+        get myceliumMode() {
+            return 'default'
+        },
         set myceliumMode(_) {},
-        get focusedNode() { return null },
+        get focusedNode() {
+            return null
+        },
         set focusedNode(_) {},
-        get trailIndices() { return null },
+        get trailIndices() {
+            return null
+        },
         set trailIndices(_) {},
-        get filterVersion() { return 0 },
-        get selectedPoint() { return null },
-        get infoPanelOpen() { return true },
-        get pocketListVisible() { return false },
+        get filterVersion() {
+            return 0
+        },
+        get selectedPoint() {
+            return null
+        },
+        get infoPanelOpen() {
+            return true
+        },
+        get pocketListVisible() {
+            return false
+        },
         searchState: {
             currentSearchSummary: null,
             searchStatus: 'idle',
@@ -149,13 +173,36 @@ vi.mock('@lib/state/app.svelte', () => ({
             currentSemanticGuide: null,
             summaryCardTypeToken: 0
         },
-        viewportState: { viewportWidth: 1280, viewportHeight: 800, isCompactViewport: false, isMobileViewport: false, isTabletViewport: false, devicePixelRatio: 1 },
+        viewportState: {
+            viewportWidth: 1280,
+            viewportHeight: 800,
+            isCompactViewport: false,
+            isMobileViewport: false,
+            isTabletViewport: false,
+            devicePixelRatio: 1
+        },
         focusState: {
-            selectedPoint: null, inspectedThreadIndex: null, pinnedThreadIndex: null,
-            threadInspectorPointerInside: false, pocketMotionByIndex: new Map(),
-            pocketTransitionStartedAt: 0, infoPanelOpen: true, pocketListVisible: false,
-            pocketRoleFilter: 'all', focusTransitionMode: 'idle', focusTransitionStartedAt: 0,
-            nodesAreSettling: false, inspectedStrandDiagnostics: { active: false, source: '', index: null, focusedIndex: null, segmentCount: 0, braidCount: 0, endpointCount: 0 }
+            selectedPoint: null,
+            inspectedThreadIndex: null,
+            pinnedThreadIndex: null,
+            threadInspectorPointerInside: false,
+            pocketMotionByIndex: new Map(),
+            pocketTransitionStartedAt: 0,
+            infoPanelOpen: true,
+            pocketListVisible: false,
+            pocketRoleFilter: 'all',
+            focusTransitionMode: 'idle',
+            focusTransitionStartedAt: 0,
+            nodesAreSettling: false,
+            inspectedStrandDiagnostics: {
+                active: false,
+                source: '',
+                index: null,
+                focusedIndex: null,
+                segmentCount: 0,
+                braidCount: 0,
+                endpointCount: 0
+            }
         },
         withMutation: (fn: () => unknown) => fn()
     }
@@ -203,7 +250,9 @@ vi.mock('@lib/utils/debug', () => ({
 vi.mock('@lib/utils/disposable-registry', () => {
     const DisposableRegistry = class {
         label: string | undefined
-        constructor(opts?: { label?: string }) { this.label = opts?.label }
+        constructor(opts?: { label?: string }) {
+            this.label = opts?.label
+        }
         schedule = () => {}
         disposeAll = () => {}
     }
@@ -243,10 +292,13 @@ vi.mock('@lib/orchestration/url-params', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@lib/orchestration/url-params')>()
     return {
         ...actual,
-    getSearchParams: () => new URLSearchParams(window.location.search),
-    getLocationHref: () => window.location.href,
-    getLocationPathname: () => '/',
-    isDomForcedFocusSearchSurface: () => false
+        getSearchParams: () => new URLSearchParams(window.location.search),
+        getLocationHref: () => window.location.href,
+        getLocationPathname: () => '/',
+        isDomForcedFocusSearchSurface: () => false,
+        // Phase 8 split: ensure new url-params exports flow through mock
+        hasRestorableUrlState: actual.hasRestorableUrlState,
+        getRequestedUrlDepth: actual.getRequestedUrlDepth
     }
 })
 
@@ -304,7 +356,13 @@ describe('url-state cluster filter restore regression', () => {
         await applyUrlState({})
 
         // Filters restored from the URL — the shared link reproduces the filter view.
-        expect(trackedFilters).toEqual({ status: 'active', city: 'Conroe', website: true, email: false, geocoded: true })
+        expect(trackedFilters).toEqual({
+            status: 'active',
+            city: 'Conroe',
+            website: true,
+            email: false,
+            geocoded: true
+        })
     })
 
     it('FILTER ROUND-TRIP: all-default filters are dropped from the URL (clean shared link)', async () => {

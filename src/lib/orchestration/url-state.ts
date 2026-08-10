@@ -15,7 +15,7 @@ import type { NavMode, NavState, PanelSurface, ViewName } from '@lib/types/state
 import { debugWarn } from '@lib/utils/debug'
 import { clearSearch, runSearch, searchStore, setSearchError } from '@lib/stores/search.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
-import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { getFilterState, restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '@lib/stores/filter.svelte'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
@@ -30,13 +30,19 @@ import { syncFilterControls } from '@lib/orchestration/cluster-filter-controller
 import { semanticNeighborMap } from '@lib/data-store'
 import {
     getSearchParams,
-    getLocationHref,
     getLocationPathname,
     isDomForcedFocusSearchSurface
 } from '@lib/orchestration/url-params'
 import { setMobileSearchSheetMode } from '@lib/search/search-panel-adapter'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { startSearch } from '@lib/search/search-abort'
+
+// ── Barrel re-exports from split sub-modules (Phase 8, 2026-08-09) ──────────
+// Import triggers url-event-registration module-load auto-registration side effect
+export { registerUrlStateEventListeners } from './url-event-registration'
+export { copyCurrentViewLink } from './share-copy'
+export { getRequestedUrlDepth } from './url-params'
+import { hasRestorableUrlState, getRequestedUrlDepth } from './url-params'
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -70,45 +76,7 @@ export interface UpdateUrlStateOptions {
 
 // ── Internal State ────────────────────────────────────────────────────────────
 
-// URL flags such as `nodemo=1` and `staticDev=1` control boot/test behavior;
-// they do not describe application navigation. The post-data boot restore
-// must not reset a user interaction when the URL has no state to restore.
-const URL_STATE_KEYS = [
-    'view',
-    'q',
-    'mode',
-    'depth',
-    'story',
-    'surface',
-    'anchor',
-    'record',
-    'status',
-    'city',
-    'website',
-    'email',
-    'geocoded',
-    'cluster'
-] as const
-
-function hasRestorableUrlState(params: URLSearchParams): boolean {
-    return URL_STATE_KEYS.some((key) => {
-        // `dormant` is the initial renderer state and is serialized by the
-        // first URL sync on compact boot. It carries no navigation intent, so
-        // treating it as a restore would reintroduce the mode-chip race.
-        if (key === 'mode' && params.get(key) === 'dormant') return false
-        return params.has(key)
-    })
-}
-
-/**
- * Parse a depth value from URL params, clamped to [0, 2].
- * Exported (Phase 6c, 2026-06-26) to enable direct contract testing without
- * Svelte runtime / appState mocking.
- */
-export function getRequestedUrlDepth(params: URLSearchParams): number {
-    const rawDepth = Number(params.get('depth') || 0)
-    return Number.isFinite(rawDepth) ? Math.max(0, Math.min(2, rawDepth)) : 0
-}
+// URL_STATE_KEYS, hasRestorableUrlState, getRequestedUrlDepth moved to url-params.ts
 
 // ── State Reset ───────────────────────────────────────────────────────────────
 
@@ -543,101 +511,6 @@ export function updateUrlState(
         }
     }
 }
-
-// ── Share Link ────────────────────────────────────────────────────────────────
-
-/**
- * Copy a shareable URL for the current view state to the clipboard.
- */
-export async function copyCurrentViewLink(): Promise<string | null> {
-    let shareUrl: URL
-    try {
-        shareUrl = new URL(getLocationHref())
-    } catch {
-        _showToast('Copy unavailable', 'Could not read the current page URL.')
-        return null
-    }
-
-    const $nav = get(navStore)
-
-    shareUrl.searchParams.delete('cb')
-    shareUrl.searchParams.delete('lead')
-    shareUrl.searchParams.set('view', $nav.currentView || 'galaxy')
-
-    if ($nav.myceliumMode && $nav.myceliumMode !== 'default') {
-        shareUrl.searchParams.set('mode', $nav.myceliumMode)
-    }
-
-    // BS-B6: Convert opaque ?anchor=<bufferIndex> to stable ?record=<lead_id>
-    // in the clipboard URL only. A reordered corpus breaks anchor-index links,
-    // but record=<lead_id> is the canonical stable identity. The in-app URL
-    // retains ?anchor= for internal routing; this rewrite is clipboard-only.
-    const anchor = shareUrl.searchParams.get('anchor')
-    if (anchor != null) {
-        const anchorIndex = Number(anchor)
-        const points = appState.points
-        if (Number.isFinite(anchorIndex) && points && anchorIndex >= 0 && anchorIndex < points.length) {
-            const leadId = points[anchorIndex]?.lead_id
-            if (leadId != null) {
-                shareUrl.searchParams.set('record', String(leadId))
-                shareUrl.searchParams.delete('anchor')
-            }
-        }
-    }
-
-    const href = shareUrl.toString()
-    try {
-        await navigator.clipboard.writeText(href)
-    } catch (err) {
-        debugWarn('Clipboard write failed:', err)
-        _showToast('Copy unavailable', 'Could not write to clipboard.')
-        return null
-    }
-
-    _showToast('View link copied', 'Link copied to clipboard.')
-    return href
-}
-
-// ── Event Subscriptions ───────────────────────────────────────────────────────
-
-// Keep the browser URL aligned with Svelte-owned lifecycle/search events.
-// The legacy URL module already performs this cleanup; the Svelte shell needs
-// the same behavior so remounted search inputs do not restore stale ?q params.
-//
-// Registered through `registerUrlStateEventListeners()` so the unsubscribe
-// handles are captured (previously dropped on the floor → leak on HMR /
-// module re-evaluation). Idempotent within a module instance; auto-invoked
-// once at module load to preserve prior registration timing for importers
-// and tests. main.ts holds the returned teardown for app unload.
-let _urlStateEventTeardown: (() => void) | null = null
-
-export function registerUrlStateEventListeners(): () => void {
-    if (_urlStateEventTeardown) return _urlStateEventTeardown
-    const unsubscribers = [
-        subscribe(EVENTS.SEARCH_CLEARED, () => {
-            updateUrlState({ q: null, offset: null }, { reason: 'search-clear' })
-        }),
-        subscribe(EVENTS.SEARCH_SUCCESS, () => {
-            updateUrlState({ offset: null }, { reason: 'search-payload' })
-        }),
-        subscribe(EVENTS.SEARCH_EMPTY, () => {
-            updateUrlState({ offset: null }, { reason: 'search' })
-        }),
-        subscribe(EVENTS.STATE_RESET, ({ options }: { options?: { skipUrlSync?: boolean } }) => {
-            if (!options?.skipUrlSync) {
-                updateUrlState({ q: null, record: null, anchor: null, depth: null }, { mode: 'push', reason: 'reset' })
-            }
-        })
-    ]
-    _urlStateEventTeardown = () => {
-        for (const unsub of unsubscribers) unsub()
-        _urlStateEventTeardown = null
-    }
-    return _urlStateEventTeardown
-}
-
-// Preserve prior module-load registration behavior.
-registerUrlStateEventListeners()
 
 // ── Internal Helpers ──────────────────────────────────────────────────────────
 
@@ -1146,10 +1019,4 @@ async function _restoreSearchFromParams(
     }
 }
 
-/**
- * Minimal toast notification. Ported to Svelte Toast component
- * (see src/components/Toast.svelte, src/lib/orchestration/toast.ts).
- */
-function _showToast(title: string, message: string): void {
-    showExperienceToast(title, message)
-}
+

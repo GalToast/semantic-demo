@@ -269,10 +269,10 @@ vi.mock('@lib/orchestration/url-params', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@lib/orchestration/url-params')>()
     return {
         ...actual,
-    getSearchParams: () => new URLSearchParams(mockState.urlSearch),
-    getLocationHref: () => `http://localhost/${mockState.urlSearch}`,
-    getLocationPathname: () => '/',
-    isDomForcedFocusSearchSurface: () => false
+        getSearchParams: () => new URLSearchParams(mockState.urlSearch),
+        getLocationHref: () => `http://localhost/${mockState.urlSearch}`,
+        getLocationPathname: () => '/',
+        isDomForcedFocusSearchSurface: () => false
     }
 })
 

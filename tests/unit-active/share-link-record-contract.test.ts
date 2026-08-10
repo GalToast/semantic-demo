@@ -93,10 +93,10 @@ vi.mock('@lib/orchestration/url-params', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@lib/orchestration/url-params')>()
     return {
         ...actual,
-    getSearchParams: () => new URLSearchParams(),
-    getLocationHref: () => mockState.locationHref,
-    getLocationPathname: () => '/',
-    isDomForcedFocusSearchSurface: () => false
+        getSearchParams: () => new URLSearchParams(),
+        getLocationHref: () => mockState.locationHref,
+        getLocationPathname: () => '/',
+        isDomForcedFocusSearchSurface: () => false
     }
 })
 
@@ -182,7 +182,10 @@ vi.mock('@lib/journey/point-color', () => ({
 }))
 
 vi.mock('@lib/utils/disposable-registry', () => ({
-    DisposableRegistry: class { disposeAll() {} schedule(_ms: number, _fn: () => void) {} }
+    DisposableRegistry: class {
+        disposeAll() {}
+        schedule(_ms: number, _fn: () => void) {}
+    }
 }))
 
 vi.mock('@lib/orchestration/lifecycle', () => ({
