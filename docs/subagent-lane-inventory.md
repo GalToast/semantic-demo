@@ -963,3 +963,36 @@ nvidia) have the same failure shape on long runs — provider upstream wedges.
 DURABLE RULE: verify worker liveness by `stat mtime` (must be < 25 min old for
 a 900s lane) AND check metadata.updated_at (must move). Dating by bytes is how
 we carry dead lanes.
+
+### /goal cross-tool truth (verified via websearch 2026-08-10)
+
+Pi's lightweight `goal` tool is a single-active-goal tracker (set/status/note/
+pause/resume/clear + bounded auditable history + todo linkage). The frontier
+tools are RICHER, and verified (websearch):
+
+- **Claude Code /goal** (v2.1.139+): sets a COMPLETION CONDITION; after every
+  turn a SEPARATE SMALL FAST MODEL (haiku default) evaluates whether the
+  condition holds → No = Claude takes the reason + starts another turn; Yes =
+  goal clears. "Completion is decided by a fresh model rather than the one
+  doing the work." Status shows condition, duration, evaluated-turn count,
+  token spend, evaluator's most recent reason. /goal is a session-scoped
+  wrapper around a prompt-based Stop hook. Effective conditions: one
+  measurable end state (test exit 0, git clean, file count), a stated check,
+  constraints ("no other test file modified"), optional turn/time bound.
+  Pairs with auto mode to run unattended. /goal still active on --resume.
+
+- **Codex /goal** (CLI 0.128.0+, app/IDE): autonomous multi-hour/multi-day loop
+  — goals/continuation.md + goals/budget_limit.md prompts injected each turn;
+  reported solo 14-of-18-features over 18h at ~$0.30/feature. Strong goal =
+  explicit lifecycle + command surface + two acceptance criteria. Model can
+  also create goals when asked ("use goals with the goal of X").
+
+STEAL for our fleet (what their versions do that ours should):
+
+1. GOAL = CONDITION, not a sentence: write "gate green = 10 red / 4 files
+   fixed; svelte-check 0/0" not "fix the gate".
+2. EVALUATE FROM OUTSIDE: run the check ourselves / plan the reviewer-lane to
+   re-gate (fresh judge), not trusting the worker's own "done".
+3. AUTO-CLEAR pattern: our goal tool needs the same discipline — clear when
+   the condition objectively holds, don't carry achieved goals.
+4. BUDGET/TURN SENSE: count turns/tokens in the goal status like their loops.
