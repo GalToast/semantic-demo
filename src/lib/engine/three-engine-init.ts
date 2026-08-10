@@ -16,9 +16,7 @@ import {
     compilePointMaterialForReadiness as compilePointMaterialForReadinessPort,
     createPoints as createPointsPort
 } from '@lib/engine/node-manager'
-import {
-    createMycelium as createMyceliumPort
-} from '@lib/engine/thread-manager'
+import { createMycelium as createMyceliumPort } from '@lib/engine/thread-manager'
 import { cancelAnimate } from './three-engine-teardown'
 import { syncSceneHandles, syncPointsHandles, syncMyceliumHandles } from './three-store-sync'
 import { registerContextListeners } from './three-listener-registration'
@@ -27,14 +25,10 @@ import { ensurePostProcessing } from './three-pp-init'
 import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
-import {
-    updateCameraViewportOffset,
-    requestRenderLoopStart,
-    markEngineInitPhase,
-    animate
-} from './three-engine-core'
+import { updateCameraViewportOffset, requestRenderLoopStart, markEngineInitPhase, animate } from './three-engine-core'
 import { webglContext } from '@lib/engine/webgl-context'
 import {
+    setRestoreInitFn,
     resetRestoreMachineForManualInit,
     snapshotRestoreGeneration,
     isStaleRestoreGeneration
@@ -48,6 +42,10 @@ import {
  * pending generation and resets the retry budget.
  */
 export async function initThreeJS(): Promise<boolean> {
+    // Inject our init body into the restore retry machine once so restore-owned
+    // re-inits drive the same scene rebuild (split-fidelity fix: the g101 split
+    // dropped the setRestoreInitFn wiring; retries were silent no-ops).
+    setRestoreInitFn(initThreeJSInternal)
     return initThreeJSInternal(false)
 }
 
@@ -254,3 +252,8 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
 
     return true
 }
+
+// Register the restore callback at module load as well as at the public entry
+// point. A context-restore wake can reach `animate()` before the first manual
+// init call, and the retry machine must not silently no-op in that window.
+setRestoreInitFn(initThreeJSInternal)
