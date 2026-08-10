@@ -13,10 +13,20 @@ const PORT = Number(process.argv[2] || 8793)
 // reasoning: max accepted effort per model (from cline catalog reasoningOptions).
 // laguna has NO reasoning option (omit --thinking); step caps at high.
 const MODELS = [
-    { id: 'cline-free/glm-5.2', name: 'GLM-5.2 (free)', context: 1048576, vision: false, effort: 'xhigh' },
+    // NOTE 2026-08-10: deepseek-v4-flash is FIRST = the shim's default when no
+    // model is sent — verified live. glm-5.2's free promotion ENDED (cli errors
+    // "Free model promotion ended"); keep it listed for picker display but it is
+    // no longer dispatch-safe. Dispatch lanes with deepseek/deepseek-v4-flash.
     {
         id: 'deepseek/deepseek-v4-flash',
         name: 'DeepSeek V4 Flash (free)',
+        context: 1048576,
+        vision: false,
+        effort: 'xhigh'
+    },
+    {
+        id: 'cline-free/glm-5.2',
+        name: 'GLM-5.2 (free — promo ENDED 2026-08-10, do NOT dispatch)',
         context: 1048576,
         vision: false,
         effort: 'xhigh'
