@@ -13,8 +13,9 @@
  * Runs in Node - no Playwright, no browser, no DOM.
  * Source-only assertions via string search + structural analysis.
  *
- * Usage:
- *   node tests/journey-thread-inspector-contract.mjs
+ * Usage (canonical — imports src modules; @lib needs the ts-resolve-loader):
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs  *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/journey-thread-inspector-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=journey-thread-inspector-contract.mjs)
  */
 
 import fs from 'node:fs'
