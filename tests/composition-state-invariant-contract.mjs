@@ -19,7 +19,9 @@
  * state-transition-contract.mjs). It focuses on the INVARIANTS — the rules that
  * reject or detect contradictory state.
  *
- * Run: node tests/composition-state-invariant-contract.mjs
+ * Run (canonical — @lib import needs the loader):
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs \n *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/composition-state-invariant-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=composition-state-invariant-contract.mjs)
  * Gate: node tests/run-all-contracts.js --validate
  */
 

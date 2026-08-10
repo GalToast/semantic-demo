@@ -10,7 +10,11 @@
  *   4. URL params are cleaned before building share URL (cb, lead removed)
  *   5. Function does not re-throw on clipboard failure — failure is silent to caller
  *
- * Run: node tests/share-view-clipboard-contract.mjs
+ * Run (canonical — this contract dynamically imports src TS; bare `node tests/...mjs`
+ * fails with ERR_MODULE_NOT_FOUND for the @lib alias, needs the loader):
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs \
+ *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/share-view-clipboard-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=share-view-clipboard-contract.mjs)
  *       (from semantic-demo root)
  */
 

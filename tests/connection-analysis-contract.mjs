@@ -13,8 +13,10 @@
  *
  * Runs in Node with a tiny DOM/fetch/window shim. No Playwright.
  *
- * Usage:
- *   node tests/connection-analysis-contract.mjs
+ * Usage (canonical — @lib import needs the loader):
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs \
+ *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/connection-analysis-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=connection-analysis-contract.mjs)
  */
 
 import path from 'node:path'

@@ -8,7 +8,9 @@
  *  3. cluster-labels CSS classes are defined in clusters.css.
  *  4. visual-state-audit.mjs safely handles __clusterLabelDiagnostics absence.
  *
- * Run: node tests/cluster-labels-contract.mjs
+ * Run (canonical — dynamically imports src TS; bare node fails with ERR_MODULE_NOT_FOUND for @lib):
+ *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs \n *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/cluster-labels-contract.mjs
+ *   (or: node tests/run-all-contracts.js --single=cluster-labels-contract.mjs)
  */
 
 import { readFileSync } from 'node:fs'
