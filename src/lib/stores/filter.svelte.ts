@@ -114,8 +114,15 @@ const _activeClusterFilter = new ActiveClusterFilterState()
 class DerivedFilterStore<T> {
     private subscribers = new Set<(_v: T) => void>()
     private unsubBase: (() => void) | null = null
+    private compute: () => T
 
-    constructor(private compute: () => T) {
+    constructor(compute: () => T) {
+        // Explicit-field form (2026-08-10): the parameter-property shorthand
+        // (constructor(private compute)) is a TS-only construct that
+        // --experimental-transform-types (strip-only) CANNOT strip ("parameter
+        // property not supported in strip-only mode"), which broke Node
+        // contract runs importing this store. Semantically identical.
+        this.compute = compute
         this.unsubBase = _filterState.subscribe(() => this._notify())
     }
 
