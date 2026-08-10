@@ -1,14 +1,14 @@
 /**
  * @lib/demo/choreography.ts — Micro-demo orchestration facade
  *
- * Port of
+ * Port of the legacy micro-demo-choreography.js module. The timed camera/UI
+ * choreography still lives behind the engine bridge (engine/demo-choreography.ts)
+ * — the Svelte 5 port pending (W47 audit tier 2 #2.2); this public surface
+ * is the load-bearing contract every demo consumer depends on.
  *
  * Thin facade: eligibility guards, showcase pool selection, retry loop,
- * and choreography delegation. The timed camera/UI choreography lives in
- * @lib/engine/demo-choreography.ts (the legacy micro-demo-choreography.js
- * module is gone).
- *
- * Uses the demoStore for canonical demo state (get(demoPhase)).
+ * and choreography delegation. Uses the demoStore for canonical demo
+ * state (get(demoPhase)).
  *
  * Re-entrancy design (W47 fix):
  *   The `_startGuardClaimed` flag is owned by the public `startMicroDemo()`
