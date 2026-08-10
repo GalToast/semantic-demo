@@ -466,9 +466,9 @@ export function getMyceliumPresentationProfile() {
             linewidth: { core: 2.5, wispy: 1.0, bridge: 1.8 }
         }
     }
-    if (state.trailDepth >= 1) {
-        return { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044, linewidth: { core: 2.0, wispy: 0.8, bridge: 1.4 } }
-    }
+    // BS-A F2: the prior trailDepth>=1 gate returned the IDENTICAL profile on
+    // both sides (dead check). Collapsed to a single unconditional return so
+    // maintainers don't edit one branch expecting it to be the live path.
     return { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044, linewidth: { core: 2.0, wispy: 0.8, bridge: 1.4 } }
 }
 
@@ -717,10 +717,13 @@ function rebuildDirtyPairsInLayer(
         // Write this pair's segments to its original buffer offset.
         // Pair N in the layer starts at segment (N-1)*SEGMENTS_PER_PAIR.
         const baseSeg = (layerPairIndex - 1) * SEGMENTS_PER_PAIR
-        const maxSegsForPair = Math.min(
-            SEGMENTS_PER_PAIR,
-            Math.floor(startArray.length / 3) - baseSeg,
-            Math.floor(pairPositions.length / FLOATS_PER_SEGMENT)
+        const maxSegsForPair = Math.max(
+            0,
+            Math.min(
+                SEGMENTS_PER_PAIR,
+                Math.floor(startArray.length / 3) - baseSeg,
+                Math.floor(pairPositions.length / FLOATS_PER_SEGMENT)
+            )
         )
         for (let s = 0; s < maxSegsForPair; s += 1) {
             const pi = s * FLOATS_PER_SEGMENT

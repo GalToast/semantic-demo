@@ -65,6 +65,10 @@ export function cancelFocusCameraAnimation() {
 }
 
 export function animateCameraToNode(index: number, options: FocusFramingOptions = {}) {
+    // BS-A F3: orphaned-cancel leak — the previous tween's frame task stays in
+    // the scheduler one extra frame if we overwrite _focusCameraTaskCancel here.
+    // Cancel it explicitly so no stale step() survives into the new animation.
+    cancelFocusCameraAnimation()
     if (!appState.camera || !appState.controls) return
     const camera = appState.camera
     const controls = appState.controls
@@ -311,7 +315,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
             camera.position.lerpVectors(startPos, desiredCamPos, eased)
         }
 
-        if (t > 0.85 && stageArcActive && !prefersReducedCameraMotion) {
+        if (t > 0.85 && t < 1 && stageArcActive && !prefersReducedCameraMotion) {
             const driftIntensity = (t - 0.85) * 0.15
             const worldUp = new Vector3(0, 1, 0)
             const driftDir = new Vector3().crossVectors(worldUp, currentHeading).normalize()
