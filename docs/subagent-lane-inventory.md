@@ -1166,9 +1166,22 @@ running→met via auto-loaded extension; second live confirmation).
 
 ### Fresh lane-viability table (2026-08-10 13:56 all-11 sweep, post-router-fix)
 
-LIVE (200, 1-3s): minimax-m3, kiro-auto, grape-2-pro  ← the fleet's logfare set
+LIVE (200, 1-3s): minimax-m3, kiro-auto, grape-2-pro ← the fleet's logfare set
 THROTTLED (429, 18s): qwen-3.8-max (works with backoff)
 TIMEOUT (20s): deepseek-v4-pro, deepseek-v4-flash, deepseek-v4-flash-0731, kimi-k3,
 qwen-3.6-35b-a3b, glm-5.2, kimi-k2.7-code (upstream generation wedged)
 The premium-gate 403s from the crash era are GONE (router fix). The current
 decomposed wave (w91 minimax, w92 kiro) correctly selected live models.
+
+### Session wrap 2026-08-10 ~14:55 (main-lane checkpoint)
+
+LOCKED: gate green 3687/3687 · goal-loop proven 11/11 (fake-pi) + live-observed 2×
+(extension auto-continues agents) · router crash fixed (nvidia shadow-key) ·
+model picker: zen free models now served (catalog guard + cache purge) ·
+cline shim fixed (positional prompt; direct curl verified).
+LANE VIABILITY (all-11 sweep): minimax-m3/kiro-auto/grape-2-pro LIVE 1-3s;
+qwen-3.8-max 429-throttled; others 20s timeout (logfire flapping upstream).
+OPEN: my w90-clineforensics/w91-lfsmoke/w92-seamhunt reports still landing
+(parallel session active); cline-as-WORKER path still 0-output (shim OK via
+curl, harness route differs — debug thread); remaining spots watch the
+m1-smoke/m2-validator/m3-gatewatch lanes from the parallel session.
