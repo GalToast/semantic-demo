@@ -30,7 +30,7 @@
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { prefersReducedMotion } from '@lib/utils/environment';
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
-  import { showErrorToast, showExperienceToast, showToastSpec } from '@lib/orchestration/toast';
+  import { showErrorToast, showToastSpec } from '@lib/orchestration/toast';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
   import { SearchDispatch } from '@lib/search/search-dispatch';
   import { appState } from '@lib/state/app.svelte';
