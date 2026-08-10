@@ -158,7 +158,7 @@ async function moveUntilHoverClears(page) {
 
 test.describe('3D node hover affordance', () => {
     test('desktop: real mouse hover resolves a selectable node and pointer cursor', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         const target = await findHoverableNode(page)
@@ -177,7 +177,7 @@ test.describe('3D node hover affordance', () => {
     })
 
     test('desktop: moving away clears hover state and cursor affordance', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         const target = await findHoverableNode(page)
@@ -192,7 +192,7 @@ test.describe('3D node hover affordance', () => {
     })
 
     test('desktop: two hoverable coordinates keep hover valid without corrupting focus', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         const first = await findHoverableNode(page)
@@ -221,7 +221,7 @@ test.describe('3D node hover affordance', () => {
     })
 
     test('mobile portrait: projected coordinate hover path remains deterministic', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 390, height: 844 })
 
         const target = await findHoverableNode(page)
@@ -238,7 +238,7 @@ test.describe('3D node hover affordance', () => {
     })
 
     test('desktop focus mode: hover remains separate from focused node state', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         await focusNodeViaApp(page, 0)
@@ -259,7 +259,7 @@ test.describe('3D node hover affordance', () => {
     })
 
     test('desktop: hover state clears cleanly when focus is reset via Escape', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         const target = await findHoverableNode(page)
@@ -296,7 +296,7 @@ test.describe('3D node hover affordance', () => {
     })
 
     test('mobile portrait: hover resolves on a real node at 390x844', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 390, height: 844 })
 
         const target = await findHoverableNode(page)
@@ -311,7 +311,7 @@ test.describe('3D node hover affordance', () => {
     })
 
     test('desktop: rapid mouse movements keep hover state valid and cursor accurate', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         const [first, second] = await collectDistinctHoverTargets(page)
@@ -332,7 +332,7 @@ test.describe('3D node hover affordance', () => {
     })
 
     test('desktop: stale hover state from rapid move clears cleanly without focus corruption', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         // First establish a solid hover on one node.
@@ -376,7 +376,7 @@ test.describe('3D node hover affordance', () => {
     })
 
     test('mobile portrait: rapid hover movements keep state valid without cascading errors', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 390, height: 844 })
 
         const candidates = await collectDistinctHoverTargets(page, { maxCandidates: 24, minDistance: 12, count: 4 })

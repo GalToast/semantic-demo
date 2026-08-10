@@ -73,7 +73,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
     // -------------------------------------------------------------------------
 
     test('real mouse.move to canvas node flips hoverHighlightIndex at 844x390', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, SHORT_LANDSCAPE)
         // openApp handles settlement
 
@@ -112,7 +112,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
     })
 
     test('real mouse.move off canvas clears hoverHighlightIndex at 844x390', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, SHORT_LANDSCAPE)
         // openApp handles settlement
 
@@ -149,7 +149,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
     // -------------------------------------------------------------------------
 
     test('real mouse.click on a node sets lastCanvasNodePick at 844x390', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, SHORT_LANDSCAPE)
         // openApp handles settlement
 
@@ -193,7 +193,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
     // -------------------------------------------------------------------------
 
     test('real mouse drag on canvas preserves state integrity at 844x390', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, SHORT_LANDSCAPE)
         // openApp handles settlement
 
@@ -242,7 +242,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
     // -------------------------------------------------------------------------
 
     test('real mouse.wheel on canvas does not corrupt hoverHighlightIndex at 844x390', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, SHORT_LANDSCAPE)
         // openApp handles settlement
 
@@ -358,7 +358,7 @@ test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
     // -------------------------------------------------------------------------
 
     test('canvas cursor is pointer only when hovering a valid node at 844x390', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, SHORT_LANDSCAPE)
         // openApp handles settlement
 

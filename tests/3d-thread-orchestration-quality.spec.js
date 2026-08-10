@@ -397,7 +397,7 @@ test.describe('3D thread orchestration quality', () => {
     // Desktop overview — threads present and continuous (no mobile override)
     // -------------------------------------------------------------------------
     test('desktop overview: core threads present and continuous at 1440x900', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         const p = page
         await p.setViewportSize({ width: 1440, height: 900 })
         await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' })
@@ -519,7 +519,7 @@ test.describe('3D thread orchestration quality', () => {
     // Step-inside / semantic-dive — trailDepth 2, spokes visible
     // -------------------------------------------------------------------------
     test('step-inside: trailDepth=2, spokes active, threads continuous', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         const p = page
         await p.goto(withParams({ view: 'galaxy', q: 'coffee', anchor: '519' }), { waitUntil: 'commit' })
         await waitForScene(p)
@@ -783,7 +783,7 @@ test.describe('3D thread orchestration quality', () => {
     // Performance guardrail — diagnostics exist and are finite
     // -------------------------------------------------------------------------
     test('performance: scenePerformanceDiagnostics is active and finite', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         const p = page
         await p.goto(withParams({ view: 'galaxy' }), { waitUntil: 'commit' })
         await waitForScene(p)

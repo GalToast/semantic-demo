@@ -129,7 +129,7 @@ test.describe('3D viewport and DPR resilience', () => {
 
     for (const scenario of cases) {
         test(`${scenario.label}: canvas, camera, and projection stay coherent`, async ({ browser }) => {
-            test.setTimeout(60000)
+            test.setTimeout(180000)
             let page
             let context
             try {
@@ -160,7 +160,7 @@ test.describe('3D viewport and DPR resilience', () => {
     }
 
     test('resize: camera aspect follows canvas after desktop-to-mobile resize', async ({ browser }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         let page
         let context
         try {

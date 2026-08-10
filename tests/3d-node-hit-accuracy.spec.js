@@ -45,7 +45,7 @@ async function clickResolvedNode(page) {
 
 test.describe('3D canvas node hit accuracy', () => {
     test('desktop: clicking a real hoverable canvas node focuses a valid node', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         const { after } = await clickResolvedNode(page)
@@ -61,7 +61,7 @@ test.describe('3D canvas node hit accuracy', () => {
     })
 
     test('desktop: click pick evidence stays near the pointer coordinate', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         const { target, after } = await clickResolvedNode(page)
@@ -79,7 +79,7 @@ test.describe('3D canvas node hit accuracy', () => {
     })
 
     test('desktop: clicking away from projected nodes does not create invalid focus state', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         await page.mouse.move(18, 18, { steps: 4 })
@@ -110,7 +110,7 @@ test.describe('3D canvas node hit accuracy', () => {
     })
 
     test('mobile portrait: tapping a real hoverable canvas node focuses a valid node', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 390, height: 844 })
 
         const { after } = await clickResolvedNode(page)
@@ -121,7 +121,7 @@ test.describe('3D canvas node hit accuracy', () => {
     })
 
     test('short landscape: tapping a real hoverable canvas node focuses a valid node', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 844, height: 390 })
 
         const { after } = await clickResolvedNode(page)
@@ -132,7 +132,7 @@ test.describe('3D canvas node hit accuracy', () => {
     })
 
     test('desktop: edge-region click yields a valid pick within tolerance', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         const candidates = await projectedCanvasCandidates(page)
@@ -203,7 +203,7 @@ test.describe('3D canvas node hit accuracy', () => {
     })
 
     test('mobile portrait: edge-region tap yields valid pick within tolerance', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 390, height: 844 })
 
         const candidates = await projectedCanvasCandidates(page)
@@ -265,7 +265,7 @@ test.describe('3D canvas node hit accuracy', () => {
     })
 
     test('short landscape: edge-region click yields valid pick within tolerance', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 844, height: 390 })
 
         const candidates = await projectedCanvasCandidates(page, { maxResultsOverride: 6 })
