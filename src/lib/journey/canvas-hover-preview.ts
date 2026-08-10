@@ -64,6 +64,17 @@ let _previewEl: HTMLElement | null = null
 
 function getPreviewElement(): HTMLElement {
     if (_previewEl) return _previewEl
+    // HMR / module-reload guard: an earlier module instance may have left its
+    // element in <body> (module-scoped `_previewEl` resets on reload, but the
+    // appended element does not). Adopt the existing element instead of
+    // creating a second `#canvas-hover-preview` orphan (duplicate-id stale
+    // node). `showCanvasHoverPreview*` re-initializes style/aria on every
+    // show, so adopting a leftover element is safe.
+    const existing = document.getElementById('canvas-hover-preview')
+    if (existing instanceof HTMLElement) {
+        _previewEl = existing
+        return existing
+    }
     const el = document.createElement('div')
     el.id = 'canvas-hover-preview'
     el.className = 'canvas-hover-preview'
@@ -84,6 +95,9 @@ function removePreviewElement(): void {
         _previewEl.remove()
         _previewEl = null
     }
+    // Teardown completeness: sweep any orphaned copies left by an HMR'd
+    // earlier module instance, so destroy always leaves the DOM clean.
+    document.querySelectorAll('#canvas-hover-preview').forEach((el) => el.remove())
 }
 
 function svgIcon(pathD: string, width = 12, height = 12): SVGSVGElement {

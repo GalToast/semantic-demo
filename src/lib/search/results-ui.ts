@@ -293,13 +293,13 @@ export function applySemanticSearchErrorState(
     if (resultsEl) {
         resultsEl.classList.remove('is-searching-skeleton')
         resultsEl.setAttribute('aria-busy', 'false')
-        if (resultsEl.dataset.legacyResultsSource === 'legacy') {
-            resultsEl.replaceChildren()
-        } else {
-            resultsEl
-                .querySelectorAll('[data-legacy-search-results="1"], [data-legacy-search-error-state="1"]')
-                .forEach((el) => el.remove())
-        }
+        // Dead-branch removed: no code ever sets `legacyResultsSource='legacy'`
+        // anymore (legacy results render retired; only the error elements
+        // below are legacy-created), so the replaceChildren() wipe of the
+        // Svelte-owned tree was unreachable. Keep the data-legacy error sweep.
+        resultsEl
+            .querySelectorAll('[data-legacy-search-results="1"], [data-legacy-search-error-state="1"]')
+            .forEach((el) => el.remove())
         resultsEl.dataset.legacyResultsSource = ''
         resultsEl.removeAttribute('data-legacy-results-count')
         resultsEl.removeAttribute('data-legacy-results-anchor')
@@ -351,13 +351,11 @@ export function clearSearchState(_resultsEl: HTMLElement | null, _statusEl: HTML
         _resultsEl.classList.remove('searching')
         _resultsEl.classList.remove('is-searching-skeleton')
         _resultsEl.setAttribute('aria-busy', 'false')
-        if (_resultsEl.dataset.legacyResultsSource === 'legacy') {
-            _resultsEl.replaceChildren()
-        } else {
-            _resultsEl
-                .querySelectorAll('[data-legacy-search-results="1"], [data-legacy-search-error-state="1"]')
-                .forEach((el) => el.remove())
-        }
+        // Dead branch removed (see applySemanticSearchErrorState) — 'legacy'
+        // source mode is never set; keep the data-legacy error-element sweep.
+        _resultsEl
+            .querySelectorAll('[data-legacy-search-results="1"], [data-legacy-search-error-state="1"]')
+            .forEach((el) => el.remove())
         _resultsEl.dataset.legacyResultsSource = ''
         _resultsEl.removeAttribute('data-legacy-results-count')
         _resultsEl.removeAttribute('data-legacy-results-anchor')
@@ -397,13 +395,11 @@ export function applyEmptySemanticSearchState(
         resultsEl.classList.remove('searching')
         resultsEl.classList.remove('is-searching-skeleton')
         resultsEl.setAttribute('aria-busy', 'false')
-        if (resultsEl.dataset.legacyResultsSource === 'legacy') {
-            resultsEl.replaceChildren()
-        } else {
-            resultsEl
-                .querySelectorAll('[data-legacy-search-results="1"], [data-legacy-search-error-state="1"]')
-                .forEach((el) => el.remove())
-        }
+        // Dead branch removed (see applySemanticSearchErrorState) — 'legacy'
+        // source mode is never set; keep the data-legacy error-element sweep.
+        resultsEl
+            .querySelectorAll('[data-legacy-search-results="1"], [data-legacy-search-error-state="1"]')
+            .forEach((el) => el.remove())
         resultsEl.dataset.legacyResultsSource = ''
         resultsEl.removeAttribute('data-legacy-results-count')
         resultsEl.removeAttribute('data-legacy-results-anchor')
