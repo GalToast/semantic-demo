@@ -17,7 +17,9 @@
                 "focus-selection-owner-contract.mjs",
                 "journey-event-bindings-contract.mjs",
                 "state-store-sync-contract.mjs",
-                "semantic-demo-css-contract.mjs"
+                "semantic-demo-css-contract.mjs",
+                "event-bus-subscription-ownership-contract.mjs",
+                "search-result-item-real-impl-contract.mjs"
             ]
         },
         "navigation": {
@@ -78,7 +80,9 @@
                 "reduced-motion-interruption.spec.js",
                 "gemma-fallback-error.spec.js",
                 "data-boundary-stress.spec.js",
-                "filter-search-chrome-svelte.spec.js"
+                "filter-search-chrome-svelte.spec.js",
+                "adversarial-state-fuzz.spec.js",
+                "state-matrix-sweep.spec.js"
             ]
         },
         "short-landscape": {
@@ -224,7 +228,8 @@
                 "selected-card-dom-ownership-contract.mjs",
                 "svelte-chrome-ownership-contract.mjs",
                 "three-resource-lifecycle-contract.mjs",
-                "ts-js-drift-contract.mjs"
+                "ts-js-drift-contract.mjs",
+                "playwright-dist-freshness-contract.mjs"
             ]
         },
         "supplemental": {
@@ -564,7 +569,16 @@
                 "w53-fixes-journey.spec.js",
                 "wcag-contrast-journey.spec.js",
                 "weather-widget-context-journey.spec.js",
-                "widget-journey.spec.js"
+                "widget-journey.spec.js",
+                "deep-link-focus-card-hit-journey.spec.js",
+                "header-journey-component-contract.spec.js",
+                "journey-transition-parity.spec.js",
+                "search-input-cleared-status.spec.js",
+                "semantic-lane-retry-journey.spec.js",
+                "semantic-thread-worker-browser-fault.spec.js",
+                "transition-frame-probe.spec.js",
+                "widget-journey-keyboard-history.spec.js",
+                "widget-journey-smoke.spec.js"
             ]
         },
         "manual-risk": {
