@@ -853,3 +853,11 @@ Third wedge of the session — the logfare completion upstream is in a
 sustained bad window (00:40-00:50 UTC span, previously recovered 23:09-23:40).
 No lanes spinning, no tokens wasted.
 
+### Pro's orphan sweep is a DEAD END (2026-08-10)
+
+tmp/_orphans.json (pro css sweep artifact) lists 18 "orphan modules" — but
+12 of the paths DO NOT EXIST in this repo (src/lib/focus/anchor-indicator.ts,
+state/mutators.ts, search/mock-catalog.ts, types/events.ts, ui-renderers.ts
+etc. all absent with a clean find). The list was generated against an
+imagined/stale tree. Do NOT dispatch lanes on that file. The real orphan-hunt
+(if wanted) must regenerate from a correct file inventory first.
