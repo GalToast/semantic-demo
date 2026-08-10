@@ -855,9 +855,32 @@ No lanes spinning, no tokens wasted.
 
 ### Pro's orphan sweep is a DEAD END (2026-08-10)
 
-tmp/_orphans.json (pro css sweep artifact) lists 18 "orphan modules" — but
+tmp/\_orphans.json (pro css sweep artifact) lists 18 "orphan modules" — but
 12 of the paths DO NOT EXIST in this repo (src/lib/focus/anchor-indicator.ts,
 state/mutators.ts, search/mock-catalog.ts, types/events.ts, ui-renderers.ts
 etc. all absent with a clean find). The list was generated against an
 imagined/stale tree. Do NOT dispatch lanes on that file. The real orphan-hunt
 (if wanted) must regenerate from a correct file inventory first.
+
+### Logfire slow-not-dead: the 45s first-token trap (2026-08-10, root-caused)
+
+SYMPTOMS: all completions hung (15-60s probes failed); w44/w47 lanes mute/retry-
+spun. Blamed "router down" — wrong on both ends.
+ROOT CAUSE (proven by router log + long probe):
+ - key-router pid 32524 served /models fine but its stream log showed
+   `first_patch_ms=47874` — upstream ACCEPTS (headers 1s) but the first line
+   arrives ~48s for real messages.
+ - A CLEAN 150s probe of logfire completions returned **200 in 44.7s** for a
+   1-token "OK" (vs 2s normal and 2.0s for OpenCode Zen).
+ - So logfire is ALIVE but ~20x slower than normal right now — the traces
+   that "timed out" (15-60s) were simply shorter than logfire's real latency.
+
+**The router restart DID help** (old worn pid → new healthy pid 22724 with
+working slot rotation). The lingering slowness is logfire-side (queue/GPU).
+
+**RULES ADDED:**
+- Never conclude "provider down" from a sub-60s probe of logfire — it can be
+  alive at 45s TTFT. Use a 90-150s probe or cross-check a second route.
+- Failover for time-sensitive lanes: **OpenCode Zen /opencode-zen/v1 answers
+  in ~2s** — route model `opencode-zen/deepseek-v4-flash-free` works.
+  w47b (url-state audit) dispatched on this route 2026-08-10 01:42.
