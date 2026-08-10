@@ -148,7 +148,14 @@ function copyRuntimeAssetsPlugin(): Plugin {
                         const result = lightningTransform({
                             filename: relativePath,
                             code: raw,
-                            minify: true
+                            minify: true,
+                            // 2026-08-10 3d-spec root cause: plain css/*.css uses Svelte
+                            // `:global(...)` wrappers which lightningcss rejects as an
+                            // invalid pseudo-class. errorRecovery:true keeps valid rules
+                            // and skips the wrappers (no-op in unscoped css) instead of
+                            // failing the transform → webServer boot failed → every 3d
+                            // spec died at cold-load (band-aided by 180s timeouts).
+                            errorRecovery: true
                         })
                         await writeFile(targetPath, result.code)
                     } else {
@@ -179,7 +186,8 @@ function copyRuntimeAssetsPlugin(): Plugin {
                                 const result = lightningTransform({
                                     filename: src,
                                     code: raw,
-                                    minify: true
+                                    minify: true,
+                                    errorRecovery: true
                                 })
                                 // Compute the destination path relative to the source root
                                 const dest = normalize(
