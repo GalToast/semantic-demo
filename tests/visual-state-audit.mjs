@@ -1056,7 +1056,39 @@ async function captureState(page, name) {
                 for (let j = i + 1; j < surfaces.length; j += 1) {
                     const a = surfaces[i]
                     const b = surfaces[j]
-                    if (a.el === b.el || a.el.contains(b.el) || b.el.contains(a.el)) continue
+                    // Containment = by-design nesting (search sheet inside info-panel
+                    // rail), not a collision. a.el/b.el are live DOM nodes so ancestry
+                    // is derivable in-page; the serialized diagnostics carry no
+                    // ancestry, so keep this skip here, not in any offline re-checker.
+                    // CLIP-GUARD: DOM ancestry is NOT paint containment — a
+                    // position:absolute child can paint outside a non-clipping
+                    // ancestor onto a sibling. Only skip when the ancestor clips
+                    // (overflow auto/scroll/hidden/clip) or the child's box is fully
+                    // inside the ancestor's painted rect. Prevents the skip masking a
+                    // future bleed-over of search results / selected card.
+                    if (a.el === b.el) continue
+                    const domParent = a.el.contains(b.el) ? a : b.el.contains(a.el) ? b : null
+                    if (domParent) {
+                        const parentStyle = getComputedStyle(domParent.el)
+                        const clips =
+                            ['auto', 'scroll', 'hidden', 'clip'].includes(parentStyle.overflowX) ||
+                            ['auto', 'scroll', 'hidden', 'clip'].includes(parentStyle.overflowY)
+                        const parentRect = domParent.el.getBoundingClientRect()
+                        const child = domParent === a ? b : a
+                        const childFullyInside =
+                            child.x >= parentRect.x &&
+                            child.right <= parentRect.right &&
+                            child.y >= parentRect.y &&
+                            child.bottom <= parentRect.bottom
+                        // Anchored dropdown: a position:absolute child of a
+                        // positioned wrapper that intentionally extends below it
+                        // (e.g. #search-results under .search-container) is
+                        // by-design — same anchor pattern as combobox lists.
+                        const childStyle = getComputedStyle(child.el)
+                        const anchoredDropdown =
+                            childStyle.position === 'absolute' && parentStyle.position !== 'static'
+                        if (clips || childFullyInside || anchoredDropdown) continue
+                    }
                     if (a.pointerEvents === 'none' || b.pointerEvents === 'none') continue
                     const overlapWidth = Math.max(0, Math.min(a.right, b.right) - Math.max(a.x, b.x))
                     const overlapHeight = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y))

@@ -373,4 +373,15 @@
       pointer-events: none;
     }
   }
+
+  /* Map surfaces: the map-trail search sheet (.search-container/.search-results,
+     z99-150) overlays the weather pill (z50) top-right when search is open —
+     same class of collision as the focus-card case above. Map mode already
+     suppresses non-map utility chrome (time-display, view-toggle, compass) in
+     mobile_premium__state.css; hide weather to match. */
+  :global(body.surface-map-any) .weather-widget {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
 </style>
