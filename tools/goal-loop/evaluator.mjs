@@ -17,6 +17,25 @@ export const STATE_PATH = 'C:/Users/HP/.pi/agent/extensions/goal-state.json'
 
 export function parseCondition(conditionStr) {
     const s = String(conditionStr || '').trim()
+    // compound: cond::and:[...] / cond::or:[...] — comma-separated sub-conditions
+    const and = s.match(/^cond::and:\s*\[(.+)\]$/s)
+    if (and)
+        return {
+            type: 'and',
+            payload: and[1]
+                .split(',')
+                .map((x) => x.trim())
+                .filter(Boolean)
+        }
+    const or = s.match(/^cond::or:\s*\[(.+)\]$/s)
+    if (or)
+        return {
+            type: 'or',
+            payload: or[1]
+                .split(',')
+                .map((x) => x.trim())
+                .filter(Boolean)
+        }
     const m = s.match(/^cond::(cmd|file|judge):\s*([\s\S]+)$/)
     if (m) return { type: m[1], payload: m[2].trim() }
     // bare conditions become cmd checks (common default) unless they look like plain prose
@@ -26,8 +45,34 @@ export function parseCondition(conditionStr) {
     return { type: 'cmd', payload: s }
 }
 
+export function evaluateCompound(c, opts) {
+    if (c.type === 'and') {
+        const results = c.payload.map((sub) => evaluateCondition(sub, opts))
+        return {
+            met: results.every((r) => r.met === true),
+            evidence: results.map((r) => r.evidence).join(' ; '),
+            parts: results
+        }
+    }
+    if (c.type === 'or') {
+        const results = c.payload.map((sub) => evaluateCondition(sub, opts))
+        const anyMet = results.some((r) => r.met === true)
+        return {
+            met: anyMet,
+            evidence: results.map((r) => r.evidence).join(' | '),
+            parts: results
+        }
+    }
+    const r = evaluateCondition(c, opts)
+    return { met: r.met, evidence: r.evidence, parts: [r] }
+}
+
 export function evaluateCondition(condition, opts = {}) {
     const c = condition && condition.type ? condition : parseCondition(condition)
+    if (c.type === 'and' || c.type === 'or') {
+      const r = evaluateCompound(c, opts)
+      return { met: r.met, evidence: r.evidence }
+    }
     const cwd = opts.cwd || DEFAULT_CWD
     const timeoutMs = opts.timeoutMs || 10000
     const t0 = Date.now()
@@ -53,7 +98,7 @@ export function evaluateCondition(condition, opts = {}) {
     }
 }
 
-export function defaultState(goal, conditionStr, budget = 12) {
+export function defaultState(goal, conditionStr, budget = 12, maxMinutes = 0) {
     return {
         goal: goal || '',
         condition: conditionStr || '',
@@ -61,8 +106,10 @@ export function defaultState(goal, conditionStr, budget = 12) {
         lastCheckAt: null,
         turnCount: 0,
         budget,
+        maxMinutes,
         status: 'running', // running | met | cleared | paused
-        lastEvidence: ''
+        lastEvidence: '',
+        ledger: [], // turn-by-turn evidence audit trail
     }
 }
 
@@ -91,11 +138,17 @@ export function evaluateAndUpdate(state, opts = {}) {
     const check = evaluateCondition(state.condition, { cwd: opts.cwd, timeoutMs: opts.timeoutMs })
     state.turnCount += 1
     state.lastEvidence = check.evidence
+    if (!Array.isArray(state.ledger)) state.ledger = []
+    state.ledger.push({ t: new Date().toISOString(), turn: state.turnCount, met: check.met, evidence: check.evidence })
+    const elapsedMin = (Date.now() - new Date(state.startedAt).getTime()) / 60000
     if (check.met === true) {
         state.status = 'met'
     } else if (state.turnCount >= state.budget) {
         state.status = 'cleared'
         state.lastEvidence += ' (budget hit)'
+    } else if (state.maxMinutes && elapsedMin >= state.maxMinutes) {
+        state.status = 'cleared'
+        state.lastEvidence += ` (wall-clock ${state.maxMinutes}m hit)`
     }
     return { state, continueLoop: state.status === 'running', check }
 }
