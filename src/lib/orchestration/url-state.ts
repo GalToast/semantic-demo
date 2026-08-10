@@ -568,6 +568,23 @@ export async function copyCurrentViewLink(): Promise<string | null> {
         shareUrl.searchParams.set('mode', $nav.myceliumMode)
     }
 
+    // BS-B6: Convert opaque ?anchor=<bufferIndex> to stable ?record=<lead_id>
+    // in the clipboard URL only. A reordered corpus breaks anchor-index links,
+    // but record=<lead_id> is the canonical stable identity. The in-app URL
+    // retains ?anchor= for internal routing; this rewrite is clipboard-only.
+    const anchor = shareUrl.searchParams.get('anchor')
+    if (anchor != null) {
+        const anchorIndex = Number(anchor)
+        const points = appState.points
+        if (Number.isFinite(anchorIndex) && points && anchorIndex >= 0 && anchorIndex < points.length) {
+            const leadId = points[anchorIndex]?.lead_id
+            if (leadId != null) {
+                shareUrl.searchParams.set('record', String(leadId))
+                shareUrl.searchParams.delete('anchor')
+            }
+        }
+    }
+
     const href = shareUrl.toString()
     try {
         await navigator.clipboard.writeText(href)

@@ -14,6 +14,7 @@
     scheduleDemoTimer,
     findDemoNode,
     shouldRunDemo,
+    isPlaceholderSurface,
     markDemoCompleted,
     markDemoSessionSkipped,
     resetDemo,
@@ -220,6 +221,20 @@
   }
 
   function attemptStart(remainingAttempts = MAX_START_RETRIES) {
+    // BS-B#5: never drive the 10-phase tour over the static 2D placeholder —
+    // the camera/search phases cannot render on the placeholder surface, so
+    // the tour would degrade into ~10s of disembodied captions over a static
+    // map (no 3D to narrate). This is the pre-start backstop for start paths
+    // that bypass shouldRunDemo() (e.g. keyboard-help replay); the onMount
+    // eligibility gate already skips the auto path. By the time the scene is
+    // ready the attr has flipped to 'webgl' (W46-F1), so a real 3D surface is
+    // never blocked. A FORCED demo (?demo=force) bypasses (debug path) —
+    // mirroring the MOCK_CORPUS_MIN force bypass below.
+    if (!force && isPlaceholderSurface()) {
+      eligible = false;
+      scheduleDemoTimer(() => showFallbackHint(), FALLBACK_HINT_DELAY_MS);
+      return;
+    }
     const records = getBusinessRecords();
     const nodeIndex = findDemoNode(records);
     if (nodeIndex === null) {

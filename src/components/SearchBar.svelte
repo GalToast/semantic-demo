@@ -127,10 +127,11 @@
       class="mock-banner"
       role="status"
       data-testid="mock-banner"
-      title="Demo data: search is using a 20-business mock catalog. Append ?staticDev=0 for the real API."
+      title="Live data temporarily unavailable — search results may be a sample"
     >
-      <strong>Demo data:</strong> search is using a 20-business mock catalog.
-      Append <code>?staticDev=0</code> for the real API.
+      <strong>Live data temporarily unavailable:</strong> search is using a
+      sample of 20 local businesses because the live feed couldn't be reached.
+      Results may be incomplete — try again in a moment.
     </div>
   {/if}
   <SearchInput bind:this={searchInputRef} expanded={isExpanded} surface={currentSurface()} />
@@ -203,13 +204,5 @@
   .mock-banner strong {
     color: rgba(255, 224, 130, 1);
     letter-spacing: 0.04em;
-  }
-  .mock-banner code {
-    background: rgba(0, 0, 0, 0.32);
-    padding: 0.05rem 0.3rem;
-    border-radius: 3px;
-    font-family: ui-monospace, 'SF Mono', Consolas, monospace;
-    font-size: 0.95em;
-    color: rgba(255, 224, 130, 0.96);
   }
 </style>
