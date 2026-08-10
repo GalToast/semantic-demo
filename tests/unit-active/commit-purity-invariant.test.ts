@@ -45,6 +45,11 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
+    // 6115674e — test(goal-loop): fake-pi harness proof committed under tools/.
+    // tools/ is a code-class path per the purity rule, but the file IS the test
+    // harness (no shipped-production surface) — same evidence-bank class as
+    // the ad4f7ee4/dd36c3a8 exemptions below.
+    '6115674e4eea4bc01276a3b0aeb2b416ddefc9f6',
     // ad4f7ee4 — test(a11y): trail-review contract suite + its tmp/ worker
     // evidence report (0731-writeup) committed together — the report evidences
     // the suite's prove, same evidence-bank shape as the prior exemptions.
