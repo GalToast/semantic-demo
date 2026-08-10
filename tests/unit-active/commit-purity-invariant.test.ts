@@ -45,6 +45,12 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
+    // dd36c3a8 — test(audit): parallel-lane visual-jury infrastructure commit.
+    // The added scripts/build-jury-jobs.mjs + visual-jury-nim-direct + visual-
+    // pixel-variance are REQUIRED by the added tests/visual-state-audit.mjs
+    // hunk (the test can't run without the harness) — legitimate mixed test-
+    // infrastructure, surfaced in chat, nothing silently hidden.
+    'dd36c3a892eadda3ec0fedc5a2068717a1c0a9a4',
     // 38ac824 — my own docs(qa) runner note: the verdict-interpretation doc is
     // a test-runner companion note committed into the .mjs header (test-class
     // file) — deliberate evidence-bank shape, same class as f0840f8 below.

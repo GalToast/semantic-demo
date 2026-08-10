@@ -42,9 +42,13 @@ const { _viewport, _curveState, _focusPanelMode } = vi.hoisted(() => ({
 
 // ── Module mocks ────────────────────────────────────────────────────────────
 
-vi.mock('@lib/utils/environment', () => ({
-    getViewportSize: () => ({ width: _viewport.width, height: _viewport.height })
-}))
+vi.mock('@lib/utils/environment', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/utils/environment')>()
+    return {
+        ...actual,
+        getViewportSize: () => ({ width: _viewport.width, height: _viewport.height })
+    }
+})
 
 vi.mock('@lib/utils/focus-panel-mode', () => ({
     getFocusPanelMode: () => _focusPanelMode.value,

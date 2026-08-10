@@ -107,9 +107,13 @@ vi.mock('@lib/utils/dom-formatters', () => ({
     formatBusinessName: (name: unknown): string => (typeof name === 'string' && name.length > 0 ? name : '')
 }))
 
-vi.mock('@lib/utils/environment', () => ({
-    isMobileViewport: (): boolean => false
-}))
+vi.mock('@lib/utils/environment', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/utils/environment')>()
+    return {
+        ...actual,
+        isMobileViewport: (): boolean => false
+    }
+})
 
 vi.mock('@lib/orchestration/event-bus', () => ({
     subscribeKeyed: vi.fn(),

@@ -41,12 +41,16 @@ const _appState = vi.hoisted(() => ({
 const _assistCalls = vi.hoisted(() => ({ start: [] as unknown[], transition: [] as unknown[] }))
 
 vi.mock('@lib/state/app.svelte.ts', () => ({ appState: _appState }))
-vi.mock('@lib/utils/environment', () => ({
-    prefersReducedMotion: () => true,
-    isCompactLandscape: () => false,
-    isUltraCompactPortrait: () => false,
-    getViewportSize: () => ({ width: 1500, height: 900 })
-}))
+vi.mock('@lib/utils/environment', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/utils/environment')>()
+    return {
+        ...actual,
+        prefersReducedMotion: () => true,
+        isCompactLandscape: () => false,
+        isUltraCompactPortrait: () => false,
+        getViewportSize: () => ({ width: 1500, height: 900 })
+    }
+})
 vi.mock('@lib/engine/camera-controls-core', () => ({
     setFocusTransitionMode: (...args: unknown[]) => {
         _assistCalls.transition.push(args)

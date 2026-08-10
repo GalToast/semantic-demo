@@ -74,10 +74,14 @@ vi.mock('@lib/orchestration/event-bus', () => ({
     EVENTS: { CAMERA_NODE_FOCUSED: 'CAMERA_NODE_FOCUSED' }
 }))
 
-vi.mock('@lib/utils/environment', () => ({
-    prefersReducedMotion: () => false,
-    isMobileViewport: () => false
-}))
+vi.mock('@lib/utils/environment', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/utils/environment')>()
+    return {
+        ...actual,
+        prefersReducedMotion: () => false,
+        isMobileViewport: () => false
+    }
+})
 
 vi.mock('@lib/utils/geo-data', () => ({
     isPointVisible: () => true
