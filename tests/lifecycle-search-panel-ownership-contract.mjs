@@ -134,15 +134,16 @@ function testLifecycleCallsSetSearchPanelStateDirectly() {
             ),
         'url-state.ts must define or re-export resetStateBeforeUrlRestore'
     )
-    // Post-split: clearSearch import + delegation live in url-writer.ts (the
-    // owner of the URL write/reset path); url-state.ts is a pure barrel.
+    // Post-collapse (2026-08-10): resetStateBeforeUrlRestore's canonical home
+    // is url-restore.ts (it re-exports applyState + owns the full restore path);
+    // url-writer.ts no longer defines it. Verify the delegation there.
     assert(
-        /import\s*\{[\s\S]*\bclearSearch\b[\s\S]*\}\s+from\s+['"]@lib\/stores\/search\.svelte['"]/.test(urlWriterSrc),
-        'url-writer.ts must import clearSearch from the canonical search store'
+        /import\s*\{[\s\S]*\bclearSearch\b[\s\S]*\}\s+from\s+['"]@lib\/stores\/search\.svelte['"]/.test(urlRestoreSrc),
+        'url-restore.ts must import clearSearch from the canonical search store'
     )
     assert(
-        /resetStateBeforeUrlRestore[\s\S]*\bclearSearch\s*\(\s*\)/.test(urlWriterSrc),
-        'resetStateBeforeUrlRestore must delegate canonical state clearing to clearSearch() (url-writer.ts)'
+        /resetStateBeforeUrlRestore[\s\S]*\bclearSearch\s*\(\s*\)/.test(urlRestoreSrc),
+        'resetStateBeforeUrlRestore must delegate canonical state clearing to clearSearch() (url-restore.ts)'
     )
     assert(
         /export\s+function\s+clearSearch\s*\([\s\S]*?appState\.searchState\.currentSearchSummary\s*=\s*null/.test(

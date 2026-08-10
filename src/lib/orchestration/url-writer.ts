@@ -74,24 +74,6 @@ export function clearExplorationFocusSelection(): void {
     // See tmp/selectedPoint-bug-audit-2026-06-29.md Section 4.
 }
 
-/**
- * Reset all application state to defaults before URL restore.
- */
-export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean } = {}): void {
-    clearExplorationFocusSelection()
-
-    writeNavStateMirror({
-        mode: 'overview',
-        currentView: 'galaxy',
-        myceliumMode: 'default',
-        trailDepthFromExploration: 0,
-        trailDepth: 0
-    })
-    appState.semanticDiveMode = false
-    appState.myceliumMode = 'default'
-    clearSearch()
-}
-
 // ── URL Writer ────────────────────────────────────────────────────────────────
 
 /**
