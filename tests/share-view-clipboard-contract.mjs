@@ -152,13 +152,23 @@ function testShareButtonLabelReset() {
     )
 
     // Share surfaces still give the user visible success feedback via toasts.
+    // Wave-10 BS-B#6: Controls.svelte delegates to the canonical
+    // copyCurrentViewLink() (share-copy.ts) — no toast in the component itself.
+    // Pin the delegation + the canonical success toast instead.
     const CONTROLS_PATH = resolve(CWD, 'src/components/Controls.svelte')
     const controlsSrc = readFileSync(CONTROLS_PATH, 'utf-8')
 
     assertContains(
         controlsSrc,
-        "showToast('Link copied'",
-        'Controls.svelte share flow shows Link copied toast'
+        'await copyCurrentViewLink()',
+        'Controls.svelte share flow delegates to canonical copyCurrentViewLink'
+    )
+    const SHARE_COPY_PATH = resolve(CWD, 'src/lib/orchestration/share-copy.ts')
+    const shareCopySrc = readFileSync(SHARE_COPY_PATH, 'utf-8')
+    assertContains(
+        shareCopySrc,
+        "_showToast('View link copied'",
+        'canonical copyCurrentViewLink shows the Link copied toast'
     )
     assertContains(
         controlsSrc,
