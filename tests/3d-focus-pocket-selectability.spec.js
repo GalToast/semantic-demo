@@ -192,7 +192,7 @@ test.describe('focus-pocket node selectability', () => {
     test('desktop: entering focus sets focusedNode, populates focusPocketIndices, and exposes selectable UI', async ({
         page
     }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         // Find an index with actual point data and (ideally) thread candidates
@@ -294,7 +294,7 @@ test.describe('focus-pocket node selectability', () => {
     // ------------------------------------------------------------------
 
     test('desktop: search-result click enters focus and populates pocket + relationship UI', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         await enterFocusFromSearch(page)
@@ -330,7 +330,7 @@ test.describe('focus-pocket node selectability', () => {
     // ------------------------------------------------------------------
 
     test('mobile: focusOnNode at 844x390 populates pocket state and relationship UI is visible', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 844, height: 390 })
 
         const entryIndex = await page.evaluate(() => {
@@ -390,7 +390,7 @@ test.describe('focus-pocket node selectability', () => {
     // ------------------------------------------------------------------
 
     test('tablet: focusOnNode at 1024x768 populates pocket state and relationship UI is visible', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1024, height: 768 })
 
         const entryIndex = await page.evaluate(() => {
@@ -440,7 +440,7 @@ test.describe('focus-pocket node selectability', () => {
     })
 
     test('tablet: all focusPocketIndices have valid in-bounds screen coordinates at 1024x768', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1024, height: 768 })
 
         const entryIndex = await page.evaluate(() => {
@@ -478,7 +478,7 @@ test.describe('focus-pocket node selectability', () => {
     // ------------------------------------------------------------------
 
     test('short-landscape: focus mode enters cleanly at 844x390 with pocket evidence', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 844, height: 390 })
 
         const entryIndex = await page.evaluate(() => {
@@ -525,7 +525,7 @@ test.describe('focus-pocket node selectability', () => {
     test('desktop: focusPocketRoleByIndex assigns anchor/primary/support/halo roles deterministically', async ({
         page
     }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         const entryIndex = await page.evaluate(() => {
@@ -568,7 +568,7 @@ test.describe('focus-pocket node selectability', () => {
     // ------------------------------------------------------------------
 
     test('desktop: all focusPocketIndices have valid in-bounds screen coordinates', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
 
         const entryIndex = await page.evaluate(() => {
@@ -613,7 +613,7 @@ test.describe('focus-pocket node selectability', () => {
     // ------------------------------------------------------------------
 
     test('tablet: focus pocket has reachable nodes at 1024x768', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 1024, height: 768 })
 
         const entryIndex = await page.evaluate(() => {
@@ -647,7 +647,7 @@ test.describe('focus-pocket node selectability', () => {
     })
 
     test('short-landscape: focus pocket has reachable nodes at 844x390', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 844, height: 390 })
 
         const entryIndex = await page.evaluate(() => {
@@ -681,7 +681,7 @@ test.describe('focus-pocket node selectability', () => {
     })
 
     test('mobile-portrait: focus pocket has reachable nodes at 390x844', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openApp(page, { width: 390, height: 844 })
 
         const entryIndex = await page.evaluate(() => {

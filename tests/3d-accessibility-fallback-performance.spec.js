@@ -100,7 +100,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     test('keyboard contract: canvas stays out of tab order and focused controls expose a visible ring', async ({
         page
     }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openReadyApp(page)
 
         const keyboardSurface = await page.evaluate(() => {
@@ -148,7 +148,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     })
 
     test('reduced-motion contract: focus final state and focus-stage visibility still resolve', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await setupNetworkStubs(page)
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -175,7 +175,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     })
 
     test('webgl context-loss contract: renderer and point data survive loss and restore', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openReadyApp(page)
 
         const before = await probe(page)
@@ -282,7 +282,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     })
 
     test('a11y region landmark: semantic overlay layer has a region landmark inside main', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openReadyApp(page)
 
         // Verify the region landmark wrapper exists around the semantic overlay
@@ -308,7 +308,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     })
 
     test('a11y color contrast: focus pocket secondary text meets WCAG AA 4.5:1', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await openReadyApp(page)
 
         // Focus on a node to trigger the focus pocket

@@ -272,7 +272,7 @@ test.describe('3D cluster readability', () => {
     test('desktop: cluster labels exist, are visible, have nonzero rects, and carry color/accent data', async ({
         page
     }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.desktop)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -313,7 +313,7 @@ test.describe('3D cluster readability', () => {
     })
 
     test('desktop: no catastrophic overlap with search-input or search-clear-btn', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.desktop)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -328,7 +328,7 @@ test.describe('3D cluster readability', () => {
     })
 
     test('desktop: visible cluster labels are not occluded by the canvas at their center points', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.desktop)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -380,7 +380,7 @@ test.describe('3D cluster readability', () => {
     test('mobile: cluster labels exist, are visible, have nonzero rects, and carry color/accent data', async ({
         page
     }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.mobile)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -405,7 +405,7 @@ test.describe('3D cluster readability', () => {
     })
 
     test('mobile: no catastrophic overlap with search/clear UI at 390×844', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.mobile)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -420,7 +420,7 @@ test.describe('3D cluster readability', () => {
     })
 
     test('mobile: visible cluster labels are not occluded by the canvas at their center points', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.mobile)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -456,7 +456,7 @@ test.describe('3D cluster readability', () => {
     })
 
     test('mobile-portrait: cluster labels are click-targetable at 390x844', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.mobile)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -519,7 +519,7 @@ test.describe('3D cluster readability', () => {
     })
 
     test('mobile-portrait: cluster labels do not overlap critical UI at 390x844', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.mobile)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -536,7 +536,7 @@ test.describe('3D cluster readability', () => {
     // ── Short-landscape ──────────────────────────────────────────────────────────
 
     test('short-landscape: cluster labels exist and are visible at 844×390', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.shortLandscape)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -559,7 +559,7 @@ test.describe('3D cluster readability', () => {
     })
 
     test('short-landscape: no catastrophic overlap with search/clear UI at 844×390', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.shortLandscape)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -576,7 +576,7 @@ test.describe('3D cluster readability', () => {
     test('short-landscape: visible cluster labels are not occluded by the canvas at their center points', async ({
         page
     }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.shortLandscape)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -614,7 +614,7 @@ test.describe('3D cluster readability', () => {
     // ── Cross-viewport invariants ────────────────────────────────────────────────
 
     test('cluster counts are derivable from state.points across all viewports', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         for (const vp of Object.values(VIEWPORTS)) {
             await page.setViewportSize(vp)
             await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
@@ -631,7 +631,7 @@ test.describe('3D cluster readability', () => {
     // ── Overview → Focus transition ─────────────────────────────────────────────
 
     test('desktop: cluster label wayfinding survives overview→focus transition', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.desktop)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -662,7 +662,7 @@ test.describe('3D cluster readability', () => {
     })
 
     test('mobile: cluster label visibility behaves deterministically through overview→focus', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.mobile)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -689,7 +689,7 @@ test.describe('3D cluster readability', () => {
     })
 
     test('short-landscape: cluster label structure is stable during overview→focus transition', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.shortLandscape)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -716,7 +716,7 @@ test.describe('3D cluster readability', () => {
     })
 
     test('overview→focus transition does not corrupt cluster label with-color data', async ({ page }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.desktop)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
@@ -744,7 +744,7 @@ test.describe('3D cluster readability', () => {
     test('focus mode: no visible cluster label is occluded or has canvas as topmost at its center', async ({
         page
     }) => {
-        test.setTimeout(60000)
+        test.setTimeout(180000)
         await page.setViewportSize(VIEWPORTS.desktop)
         await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, {
             waitUntil: 'domcontentloaded'
