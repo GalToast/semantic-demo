@@ -227,13 +227,15 @@ describe('syncPointsHandles (C11)', () => {
         sinks = freshPointsSinks()
     })
 
-    it('writes all 4 points/spore handles to appState', () => {
+    it('appState receives only mesh handles; materials moved to engineState (zombie cut)', () => {
         const handles = fakePoints()
         syncPointsHandles(handles, sinks)
         expect(sinks.appState.pointsMesh).toBe(handles.pointsMesh)
-        expect(sinks.appState.pointsMaterial).toBe(handles.pointsMaterial)
         expect(sinks.appState.nodeSporeMesh).toBe(handles.nodeSporeMesh)
-        expect(sinks.appState.nodeSporeMaterial).toBe(handles.nodeSporeMaterial)
+        // Material mirrors removed (0 readers): syncPointsHandles must NOT
+        // write them (sink defaults stay null).
+        expect(sinks.appState.pointsMaterial).toBeNull()
+        expect(sinks.appState.nodeSporeMaterial).toBeNull()
     })
 
     it('writes all 4 handles to engineState.state when present', () => {
@@ -262,14 +264,14 @@ describe('syncPointsHandles (C11)', () => {
         expect(sinks.appState.pointsMesh).toBe(handles.pointsMesh)
     })
 
-    it('assigns the SAME object reference (no defensive copying)', () => {
+    it('assigns the SAME object reference for surviving mesh handles (no defensive copy)', () => {
         const handles = fakePoints()
         syncPointsHandles(handles, sinks)
         // Reference identity matters: the render loop mutates properties
-        // on these objects (e.g. nodeSporeMaterial.opacity). If we copied
-        // we would diverge from webglContext's authoritative instance.
+        // on these objects (e.g. opacity). If we copied we would diverge
+        // from webglContext's authoritative instance.
         expect(Object.is(sinks.appState.pointsMesh, handles.pointsMesh)).toBe(true)
-        expect(Object.is(sinks.appState.nodeSporeMaterial, handles.nodeSporeMaterial)).toBe(true)
+        expect(Object.is(sinks.appState.nodeSporeMesh, handles.nodeSporeMesh)).toBe(true)
     })
 })
 

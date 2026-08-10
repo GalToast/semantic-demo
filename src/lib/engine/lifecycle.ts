@@ -655,9 +655,7 @@ export function destroyEngine(): void {
     appState.camera = null
     appState.controls = null
     appState.pointsMesh = null
-    appState.pointsMaterial = null
     appState.nodeSporeMesh = null
-    appState.nodeSporeMaterial = null
     appState.myceliumGroup = null
     appState.myceliumCoreLines = null
     appState.myceliumWispyLines = null

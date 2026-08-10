@@ -36,9 +36,7 @@ export function updateMyceliumThreads(): void {
 export function createPoints(): void {
     createPointsPort()
     appState.pointsMesh = webglContext.pointsMesh
-    appState.pointsMaterial = webglContext.pointsMaterial
     appState.nodeSporeMesh = webglContext.nodeSporeMesh
-    appState.nodeSporeMaterial = webglContext.nodeSporeMaterial
     if (engineState.state) {
         engineState.state.pointsMesh = webglContext.pointsMesh
         engineState.state.pointsMaterial = webglContext.pointsMaterial

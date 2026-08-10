@@ -72,7 +72,7 @@ export interface SceneSyncSinks {
  * Sinks bundle for {@link syncPointsHandles}.
  */
 export interface PointsSyncSinks {
-    appState: Pick<typeof appState, 'pointsMesh' | 'pointsMaterial' | 'nodeSporeMesh' | 'nodeSporeMaterial'>
+    appState: Pick<typeof appState, 'pointsMesh' | 'nodeSporeMesh'>
     engineState: Pick<ThreeEngineState, 'state'>
 }
 
@@ -217,9 +217,7 @@ export function syncPointsHandles(handles: PointsMirrorInput, sinks: PointsSyncS
     const state = sinks.engineState.state
 
     app.pointsMesh = handles.pointsMesh
-    app.pointsMaterial = handles.pointsMaterial
     app.nodeSporeMesh = handles.nodeSporeMesh
-    app.nodeSporeMaterial = handles.nodeSporeMaterial
 
     if (state) {
         state.pointsMesh = handles.pointsMesh
