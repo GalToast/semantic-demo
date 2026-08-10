@@ -939,3 +939,16 @@ degradation, not the known quota cap).
 ACTION: can't be restored from our side. Poll periodically; when 2 consecutive
 completions return 200, logfare lanes are usable again. Until then NVIDIA
 (/nvidia/v1, 200/0.7s) is the fleet workhorse; cline shim is next fallback.
+
+### CORRECTED: premium-unlock gate (not service outage) — 03:35 UTC, fresh 11-model probe
+
+Error body on 8 models is explicit: HTTP 403 "Model 'X' is a premium..." —
+the logfare ACCOUNT's premium tier is not unlocked for these models right now
+(metadata: `premium_unlocked:false`). deepseek-v4-flash/flash-0731/qwen-3.6
+(formerly tier-1 free) FAIL/time out — same gate, different path.
+So: MODELS ARE HEALTHY; the premium-unlock/tier on the account is the blocker
+(kind of thing that "needs auth restore"). Earlier success (w47c completed on
+logfare/0731 ~02:00) means the gate was open then and closed since.
+ACTION: restore/log-in the premium tier (or key rotation) on the logfare
+account side; the fleet then returns. Poll probe until "Model X" premium errors
+disappear. NVIDIA remains the intermediate workhorse.
