@@ -1122,10 +1122,10 @@ k2 (nvidia llama) reviewed the loop: 3 prelim concerns — (1) deliverAs
 'nextTurn' may not exist on real sendMessage; (2) no budget/infinite-loop
 escape; (3) compaction safety. NOTE: k2 couldn't run the self-check (its
 sandbox path ENOENT) and reviewed a PRE-upgrade file. Main-lane adjudication:
-  #1 VERIFIED-OK — types.d.ts:300+926 show deliverAs?: "steer"|"followUp"|"nextTurn" exactly.
-  #2 VERIFIED-OK — budget + wall-clock maxMinutes + ledger implemented since (fd92cf02).
-  #3 VERIFIED-OK — state flushed evaluate-condition (each check) + on the extension's session_before_compact.
-  Self-check rerun main-lane: CASE1 nextTurn fires / CASE2 silent on met / CASE3 budget-clear — 3/3.
+#1 VERIFIED-OK — types.d.ts:300+926 show deliverAs?: "steer"|"followUp"|"nextTurn" exactly.
+#2 VERIFIED-OK — budget + wall-clock maxMinutes + ledger implemented since (fd92cf02).
+#3 VERIFIED-OK — state flushed evaluate-condition (each check) + on the extension's session_before_compact.
+Self-check rerun main-lane: CASE1 nextTurn fires / CASE2 silent on met / CASE3 budget-clear — 3/3.
 So the loop stands review-cleared. Lesson: reviewer lanes reviewing a live-built artifact must run the actual self-test in THEIR sandbox (copy the file), not just read code — code-only review drifted on 2/3.
 
 ### goal-loop stack = two complementary extensions (2026-08-10 06:15 audit)
@@ -1141,3 +1141,13 @@ So the loop stands review-cleared. Lesson: reviewer lanes reviewing a live-built
   ("no continuation evaluator") is exactly what goal-loop.mjs supplies — the pair
   is the full /goal parity stack (tool + loop), better than frontier (deterministic
   eval vs Claude transcript-only; budget vs Codex).
+
+### goal-loop PROVEN end-to-end (2026-08-10 13:40 main-lane, 11/11 fake-pi test)
+
+tools/goal-loop/fake-pi-test.mjs fires the extension's agent_end handler with a
+stubbed pi: 11/11 PASS — hooks register; met→silent(auto-clear); unmet→nextTurn
+w/evidence; budget-exhausted→stop; cleared→stop; malformed/missing state→graceful;
+state transitions met. The flagship /goal parity loop is now proven, not just
+landed. (The adversarial subagent lane died; main-lane ran the proof instead.)
+OPEN: cline-as-worker path still produces 0 output (worker harness→shim route
+differs from direct curl; w82c CLIENT-END 0 bytes) — separate debug thread.
