@@ -2,9 +2,13 @@
  * thread-settler-adapter-port.test.ts — Cross-seam caller tests for
  * traverseNeighbor + previewInsideNextThread (Ticket 8)
  *
- * Asserts that the Svelte-track shim (thread-settler-adapter.ts) is the
- * import path for all callers of these two functions, rather than the
- * legacy @legacy/modules/journey-thread-settler path.
+ * Post a3a0d94f ("fold adapter archipelago — 5 deleted, 8 re-pointed"):
+ * thread-settler-adapter.ts and thread-inspector-adapter.ts were
+ * deliberately retired; the canonical home for traverseNeighbor +
+ * previewInsideNextThread is now `./thread-settler` (and the
+ * `@lib/journey/thread-settler` alias). These tests lock in the
+ * post-fold routing — every consumer must import from the canonical
+ * source, not from a shim or the legacy `@legacy/modules/...` path.
  */
 
 import { describe, it, expect } from 'vitest'
@@ -48,11 +52,22 @@ describe('traverseNeighbor import routing', () => {
 })
 
 describe('previewInsideNextThread import routing', () => {
-    it('src/lib/journey/journey.ts imports previewInsideNextThread from adapter, not @legacy', () => {
+    it('src/lib/journey/journey.ts imports previewInsideNextThread from canonical thread-settler, not the retired adapter', () => {
         const src = readFile('src/lib/journey/journey.ts')
-        const adapterImport =
+        // Post a3a0d94f, journey.ts imports directly from the relative
+        // ./thread-settler path (which itself re-exports via the canonical
+        // ThreadSettler class). The previous adapter shim was deleted by
+        // the fold-adapter-archipelago wave; locking the new path here.
+        const canonicalImport =
+            /import\s*\{[^}]*previewInsideNextThread[^}]*\}\s*from\s*['"]\.\/thread-settler['"]/
+        expect(src).toMatch(canonicalImport)
+    })
+
+    it('src/lib/journey/journey.ts does not import previewInsideNextThread from retired adapter', () => {
+        const src = readFile('src/lib/journey/journey.ts')
+        const retiredAdapterImport =
             /import\s*\{[^}]*previewInsideNextThread[^}]*\}\s*from\s*['"]\.\/thread-settler-adapter['"]/
-        expect(src).toMatch(adapterImport)
+        expect(src).not.toMatch(retiredAdapterImport)
     })
 
     it('src/lib/journey/journey.ts does not import previewInsideNextThread from @legacy', () => {
@@ -63,29 +78,27 @@ describe('previewInsideNextThread import routing', () => {
     })
 })
 
-describe('adapter exports delegating shims', () => {
-    it('thread-settler-adapter.ts defines traverseNeighbor as a delegating function', () => {
-        const src = readFile('src/lib/journey/thread-settler-adapter.ts')
-        // Should have the delegating shim, not a re-export
+describe('thread-settler owns the canonical implementations', () => {
+    it('thread-settler.ts exports traverseNeighbor as a top-level function', () => {
+        // Post a3a0d94f: the delegating shim was deleted; traverseNeighbor
+        // is now a top-level export of thread-settler itself, backed by the
+        // ThreadSettler class instance.
+        const src = readFile('src/lib/journey/thread-settler.ts')
         expect(src).toMatch(/export function traverseNeighbor\(step: number\)/)
-        expect(src).toMatch(/_traverseNeighborImpl/)
     })
 
-    it('thread-settler-adapter.ts defines previewInsideNextThread as a delegating function', () => {
-        const src = readFile('src/lib/journey/thread-settler-adapter.ts')
+    it('thread-settler.ts exports previewInsideNextThread as a top-level function', () => {
+        const src = readFile('src/lib/journey/thread-settler.ts')
         expect(src).toMatch(/export function previewInsideNextThread/)
-        expect(src).toMatch(/_previewInsideNextThreadImpl/)
     })
 
-    it('thread-settler-adapter.ts does not use bare re-export for traverseNeighbor', () => {
-        const src = readFile('src/lib/journey/thread-settler-adapter.ts')
-        const bareReExport = /export\s*\{\s*traverseNeighbor\s*\}\s*from\s*['"]@legacy/
-        expect(src).not.toMatch(bareReExport)
-    })
-
-    it('thread-settler-adapter.ts does not use bare re-export for previewInsideNextThread', () => {
-        const src = readFile('src/lib/journey/thread-settler-adapter.ts')
-        const bareReExport = /export\s*\{\s*previewInsideNextThread\s*\}\s*from\s*['"]@legacy/
-        expect(src).not.toMatch(bareReExport)
+    it('thread-settler.ts does not re-export from a retired adapter path', () => {
+        const src = readFile('src/lib/journey/thread-settler.ts')
+        const retiredAdapterReExport =
+            /export\s*\{\s*(?:traverseNeighbor|previewInsideNextThread)\s*\}\s*from\s*['"]\.\/thread-settler-adapter['"]/
+        expect(src).not.toMatch(retiredAdapterReExport)
+        const legacyReExport =
+            /export\s*\{\s*(?:traverseNeighbor|previewInsideNextThread)\s*\}\s*from\s*['"]@legacy/
+        expect(src).not.toMatch(legacyReExport)
     })
 })

@@ -14,6 +14,16 @@
  * Strangler-fig invariant: the Svelte orchestration path must call the same
  * engine-kernel adapter init functions as the legacy initAdapters() in
  * :141-186.
+ *
+ * Post a3a0d94f ("fold adapter archipelago — 5 deleted, 8 re-pointed"):
+ * `initThreadInspectorAdapter` was INLINED into adapters.ts itself (the
+ * separate thread-inspector-adapter.ts module was retired and folded here).
+ * The structural-import assertion cannot target an inlined function, so
+ * this test list now targets `initCanvasHoverPreviewSubscription` (the
+ * W48-B parity addition) — a real external adapter import that the
+ * `initAdapters` body calls. The inlined thread-inspector init remains
+ * exercised transitively through the `threadInspector` mock-deps slice
+ * passed to `initAdapters`.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -48,8 +58,8 @@ const ADAPTER_INIT_NAMES = [
     'initJourneyCompassAdapter',
     'initJourneySelectedCard',
     'initSemanticDiveUiSubscriptions',
+    'initCanvasHoverPreviewSubscription',
     'initRouteTraceSubscriptions',
-    'initThreadInspectorAdapter',
     'initMapStateSubscriptions',
     'initViewControllerAdapter',
     'setupMobileSearchSheetToggle'
@@ -62,8 +72,8 @@ const ADAPTER_IMPORT_SOURCES: Record<AdapterInitName, string> = {
     initJourneyCompassAdapter: '@lib/orchestration/compass-controller',
     initJourneySelectedCard: '@lib/journey/selected-card',
     initSemanticDiveUiSubscriptions: '@lib/journey/semantic-dive',
+    initCanvasHoverPreviewSubscription: '@lib/journey/canvas-hover-preview',
     initRouteTraceSubscriptions: '@lib/journey/route-trace',
-    initThreadInspectorAdapter: '@lib/journey/thread-inspector-adapter',
     initMapStateSubscriptions: '@lib/engine/map-state',
     initViewControllerAdapter: '@lib/orchestration/view-controller',
     setupMobileSearchSheetToggle: '@lib/search/search-panel-adapter'
