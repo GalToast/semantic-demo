@@ -1123,11 +1123,11 @@ k2 (nvidia llama) reviewed the loop: 3 prelim concerns — (1) deliverAs
 escape; (3) compaction safety. NOTE: k2 couldn't run the self-check (its
 sandbox path ENOENT) and reviewed a PRE-upgrade file. Main-lane adjudication:
 
-# 1 VERIFIED-OK — types.d.ts:300+926 show deliverAs?: "steer"|"followUp"|"nextTurn" exactly.
+# 1 VERIFIED-OK — types.d.ts:300+926 show deliverAs?: "steer"|"followUp"|"nextTurn" exactly
 
-# 2 VERIFIED-OK — budget + wall-clock maxMinutes + ledger implemented since (fd92cf02).
+# 2 VERIFIED-OK — budget + wall-clock maxMinutes + ledger implemented since (fd92cf02)
 
-# 3 VERIFIED-OK — state flushed evaluate-condition (each check) + on the extension's session_before_compact.
+# 3 VERIFIED-OK — state flushed evaluate-condition (each check) + on the extension's session_before_compact
 
 Self-check rerun main-lane: CASE1 nextTurn fires / CASE2 silent on met / CASE3 budget-clear — 3/3.
 So the loop stands review-cleared. Lesson: reviewer lanes reviewing a live-built artifact must run the actual self-test in THEIR sandbox (copy the file), not just read code — code-only review drifted on 2/3.
@@ -1163,3 +1163,12 @@ HTTP429 (reachable = throttled, not hang). The 30s hard-timeout outage ended.
 Fleet resumed: m1-smoke (per-model smoke, 24 tools running), m2-validator,
 m3-gatewatch (goal-loop demo INSIDE a real worker — observed goal-state flip
 running→met via auto-loaded extension; second live confirmation).
+
+### Fresh lane-viability table (2026-08-10 13:56 all-11 sweep, post-router-fix)
+
+LIVE (200, 1-3s): minimax-m3, kiro-auto, grape-2-pro  ← the fleet's logfare set
+THROTTLED (429, 18s): qwen-3.8-max (works with backoff)
+TIMEOUT (20s): deepseek-v4-pro, deepseek-v4-flash, deepseek-v4-flash-0731, kimi-k3,
+qwen-3.6-35b-a3b, glm-5.2, kimi-k2.7-code (upstream generation wedged)
+The premium-gate 403s from the crash era are GONE (router fix). The current
+decomposed wave (w91 minimax, w92 kiro) correctly selected live models.
