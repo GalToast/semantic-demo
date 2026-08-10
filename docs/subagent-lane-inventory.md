@@ -926,3 +926,16 @@ now the router rejects launches outright. The per-model smoke (4ab8b471) will
 record this as UNAVAILABLE for most, EXECUTING only if a window reopens.
 Action when smoke runs: treat any live model as the current usable lane; file
 the auth-state to the user; NVIDIA stays the fleet workhorse until restored.
+
+### Logfare state — SERVICE-side (200-403 + SSE "Service temporarily unavailable") 03:31 UTC
+
+Deeper diagnosis via router log: health probes return "Logfare upstream status
+200 on key slot 1/6", but real generation streams error "SSE error ... Service
+temporarily unavailable", and direct HTTP probes return 403/401 (this is
+logfire rejecting its key slots / quota state — NOT a missing credential in our
+router config; the status-2056 'Token Plan 用量上限' classifier (apply-key-router
+-status-2056-patch.mjs) does NOT match this shape — this is service-side
+degradation, not the known quota cap).
+ACTION: can't be restored from our side. Poll periodically; when 2 consecutive
+completions return 200, logfare lanes are usable again. Until then NVIDIA
+(/nvidia/v1, 200/0.7s) is the fleet workhorse; cline shim is next fallback.
