@@ -1208,11 +1208,12 @@ clinefree/deepseek/deepseek-v4-flash (or rely on shim default).
   (696L moved) but died missing three-engine-render-loop.ts → 22 svelte errors.
   Contract verified main-lane: init.ts binds restartLoop:i, imports animate (line 34); core
   re-exports `export { animate } from './three-engine-render-loop'`; infinite loop the
-  _renderLoopStartPending + markEngineInitPhase integration. g105 (kiro) is building the module.
+  \_renderLoopStartPending + markEngineInitPhase integration. g105 (kiro) is building the module.
 - Gate reds NOT mine: those 3 ptsMaterial/2-writer tests are the swarm's in-flight state cut
   (pointsMaterial/nodeSporeMaterial) + three-engine suites; analysis appended.
 
 ### Coordination notes 2026-08-10 ~18:5x (main-lane during swarm)
+
 - Engine test-alignment (3 files: scene-static-tracker/animate-regression repointed
   to render-loop by me, then REVERTED by a concurrent writer; three-engine-core.test
   webgl-restore: 6 fails) → handed to g106-testalign (owning the mock-path fixes).
@@ -1223,3 +1224,5 @@ clinefree/deepseek/deepseek-v4-flash (or rely on shim default).
 - 3d boot fix (lightningcss errorRecovery, 30528d20) is real: specs now RUN 4/4
   (4 fail on WebGL assertion env — separate from boot). Swarm's 180s-budget bandages
   remain until the WebGL-env cause is fixed.
+
+- goal-loop live-verified 2026-08-10: unified goal.ts extension (goal-loop contract merged) — fake-pi-test 11/11 PASS, re-run clean at session start. Handoff deleted.
