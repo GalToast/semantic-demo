@@ -62,6 +62,35 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
   (e.g. the 5o keyboard-hint-panel z-index bug, caused by a stale dist missing `mobile_base.css`).
   It never rebuilds — use `:fresh` for that.
 
+## Heavy 3d contract groups (3d-smoke / 3d-full)
+
+These WebGL suites are heavy: each spec cold-loads `?q=coffee&nodemo=1` (8,406-point scene + engine init) and can take 60–180s+ per test on a contended host.
+
+**Know before you run (2026-08-10, `59d5e444`/`789b06d6`):**
+
+- The spec files override the playwright global timeout (120s) down to per-test budgets.
+  60s was too small on this host → all first-attempts died in `openApp` readiness wait
+  (`tests/helpers/3d-interaction-helpers.js:17`), which the runner mislabeled
+  "transient browser/server failure" and retry-treadmilled. Budget is now 180s for the
+  8 specs that were at 60s.
+- **Cold-load duration is contention-unbounded** on shared hosts: observed 60s / 120s /
+  180s+ depending on system load. Pass-rate correlates with how quiet the browser lane is.
+
+**Correct recipe (verified):**
+
+1. `npm run build` once (dist is custom-outDir `dist/svelte/`).
+2. Start + borrow a warm static server instead of letting the runner own one:
+   `cd dist/svelte && python -m http.server 8785 --bind 127.0.0.1`
+   (runner honors `TEST_BASE_URL` and skips its owned-server restart cycle entirely).
+3. Tell the runner to borrow it + use the real GPU:
+   `TEST_BASE_URL=http://127.0.0.1:8785 SEMANTIC_USE_D3D11=1 node tests/run-all-contracts.js --group=3d-full`
+   (`--use-angle=d3d11` reaches the RTX 4050; without it Chromium may use software WebGL).
+4. **Never run two browser suites in parallel** — they self-inflict the cold-load
+   contention (measured: node-hit + smoke overlapping made both slower and flakier).
+   One chromium-based contract run at a time.
+5. Budget: 16-spec 3d-full can need 60–90+ min serial. Use a background job with a
+   generous cap; judge progress by `[run]`/`[PASS]` markers, not wall time.
+
 ## CI browser gate
 
 The automatic deploy gate runs only `tests/widget-journey-smoke.spec.js` with
