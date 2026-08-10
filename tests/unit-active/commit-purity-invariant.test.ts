@@ -50,6 +50,11 @@ const EXEMPTED_SHAS = new Set<string>([
     // harness (no shipped-production surface) — same evidence-bank class as
     // the ad4f7ee4/dd36c3a8 exemptions below.
     '6115674e4eea4bc01276a3b0aeb2b416ddefc9f6',
+    // a4dd0e03 — test(goal-loop): same content as 6115674e's sibling goal-loop
+    // work, re-committed under a fresh sha after a main-lane cherry-pick
+    // recovery (2026-08-10). tools/goal-loop/ = code-class path, the files ARE
+    // the fake-pi harness test + evaluator (no shipped-production surface).
+    'a4dd0e030f967dd2ef2065232f9dce704c96e15e',
     // ad4f7ee4 — test(a11y): trail-review contract suite + its tmp/ worker
     // evidence report (0731-writeup) committed together — the report evidences
     // the suite's prove, same evidence-bank shape as the prior exemptions.
