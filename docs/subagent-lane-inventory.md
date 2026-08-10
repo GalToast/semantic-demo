@@ -1197,3 +1197,17 @@ FIX: cline-shim MODELS[0] default → deepseek/deepseek-v4-flash (verified live,
 model="deepseek/deepseek-v4-flash"). VERIFIED: fresh shim, NO-model request →
 "OK", finish stop, model deepseek-v4-flash. Consume cline lanes as
 clinefree/deepseek/deepseek-v4-flash (or rely on shim default).
+
+### God-file decomposition state (2026-08-10)
+
+- focus-pocket-geometry.ts (was 1,014L) — ✅ SPLIT DONE + committed (16a6e24b):
+  pure-barrel hub + math/profiles/thread-curve/builder/personality siblings.
+  Adopted main-lane from dead lane g100's complete-on-disk work (verify-before-kill: never abort on
+  lane death without checking the tree; the split was finished, just uncommitted).
+- three-engine-core.ts (was 974L) — ⚠️ SPLIT IN-FLIGHT: g101 created init/restore/teardown
+  (696L moved) but died missing three-engine-render-loop.ts → 22 svelte errors.
+  Contract verified main-lane: init.ts binds restartLoop:i, imports animate (line 34); core
+  re-exports `export { animate } from './three-engine-render-loop'`; infinite loop the
+  _renderLoopStartPending + markEngineInitPhase integration. g105 (kiro) is building the module.
+- Gate reds NOT mine: those 3 ptsMaterial/2-writer tests are the swarm's in-flight state cut
+  (pointsMaterial/nodeSporeMaterial) + three-engine suites; analysis appended.
