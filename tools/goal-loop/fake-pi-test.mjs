@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const EXT = 'C:/Users/HP/.pi/agent/extensions/goal-loop.mjs'
+const EXT = 'C:/Users/HP/.pi/agent/extensions/goal.ts'
 const STATE = 'C:/Users/HP/.pi/agent/extensions/goal-state.json'
 
 const captured = {}
@@ -15,7 +15,10 @@ const fakePi = {
     on: (ev, fn) => {
         captured[ev] = fn
     },
-    exec: async () => ({ stdout: '', code: 0 })
+    exec: async () => ({ stdout: '', code: 0 }),
+    registerTool: () => {},
+    registerCommand: () => {},
+    appendEntry: () => {},
 }
 const mod = await import(pathToFileURL(EXT).href)
 mod.default(fakePi)
