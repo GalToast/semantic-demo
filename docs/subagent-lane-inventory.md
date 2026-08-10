@@ -1106,3 +1106,11 @@ User: "deepseek-v4-flash through cline will be the best subagents". Verified liv
   /index.ts (needs pi runtime reload to take effect).
 NEXT STEP when cline lane wanted: reload pi (/reload-runtime or restart) then
 dispatch model=clinefree/deepseek/deepseek-v4-flash.
+
+### Route policy update (2026-08-10 06:10, user directive): CLINE preferred over zen
+
+cline (local shim, port 8793, keyless CLI lane) serves deepseek/deepseek-v4-flash
+(the 0731 top-OSS build) + glm-5.2-free + laguna/stepfun free. VERIFIED: cline
+completion answered "OK" ~24s. Use clinefree/<model> route for fleet lanes when
+logfare stalls; zen free is a further fallback (picker-fixed). Route precedent:
+pi:router-clinefree/cline-free/glm-5.2.
