@@ -926,7 +926,9 @@ test.describe('Widget journey', () => {
             // The exact display keyword varies by base chip styles (inline vs
             // block); asserting a specific keyword would over-pin. What matters
             // is the pre-fix behavior (display:none at <=768px) is gone.
-            expect(l.display, `locked chip label must not be hidden at 375px (got display=${l.display})`).not.toBe('none')
+            expect(l.display, `locked chip label must not be hidden at 375px (got display=${l.display})`).not.toBe(
+                'none'
+            )
             expect(l.width, `locked chip label must have nonzero width (got ${l.width})`).toBeGreaterThan(0)
         }
     })
@@ -2922,9 +2924,11 @@ test.describe('Widget journey', () => {
             expect(expanded.text, 'expanded: peek "Top match" anchor must be absent (F7 reactivity)').not.toContain(
                 'Top match'
             )
-            expect(expanded.text, 'expanded: peek "X more" hidden label must be absent (F7 reactivity)').not.toContain(
-                'more'
-            )
+            // b0f24c61 (wave-10 copy): the expanded branch now legitimately renders
+            // the offset form "{visible} of {total} · {N} more". What F7 must pin is
+            // that expanded shows the OFFSET form (not the peek "Top match" anchor).
+            // Assert the offset signature instead of blanket "more"-absence.
+            expect(expanded.text, 'expanded: label must show the offset form (visible of total)').toMatch(/\d+ of \d+/)
             expect(expanded.anchor, 'expanded: .search-results-count-anchor must no longer be "Top match"').not.toBe(
                 'Top match'
             )
