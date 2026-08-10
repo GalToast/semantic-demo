@@ -1056,6 +1056,7 @@ router guard for OPS safety.
 
 SYMPTOM: opencode-zen free models (deepseek-v4-flash-free, mimo-v2.5-free, etc)
 didn't show in pi's model picker. Chain root-cause:
+
 1. router /catalog handler calls publicCatalog() → Object.entries(providers)
    .map(providerCatalogRoute) which calls provider.getKeys() unconditionally.
 2. The crashed-router fix renaming nvidia shadow→nvidia_model_profiles left a
@@ -1064,8 +1065,20 @@ didn't show in pi's model picker. Chain root-cause:
 3. pi-model-providers cachedFetchJson cached the EMPTY catalog
    (~/.pi/agent/.cache/router-catalog-cache.json, 118 bytes) → picker served
    routes:[] → zen free models invisible.
-FIXES: (a) guard providerCatalogRoute for non-function getKeys (disabled route
-instead of throw); (b) purged the empty picker cache (backed up to .bak-empty);
-verified: /catalog=41KB/32 routes incl opencode-zen baseUrl; zen /models 61
-models incl 8 free; picker cold-fetch path returns them. ALSO noted:
-logfare /models now shows premium_unlocked:true (!) — logfare may be usable again.
+   FIXES: (a) guard providerCatalogRoute for non-function getKeys (disabled route
+   instead of throw); (b) purged the empty picker cache (backed up to .bak-empty);
+   verified: /catalog=41KB/32 routes incl opencode-zen baseUrl; zen /models 61
+   models incl 8 free; picker cold-fetch path returns them. ALSO noted:
+   logfare /models now shows premium_unlocked:true (!) — logfare may be usable again.
+
+### Model-picker gap: catalog didn't enumerate models (2026-08-10, fixed)
+
+pi's model picker reads the key-router `http://127.0.0.1:8788/catalog` route.
+`publicCatalog` returned only metadata per provider with NO `models` array (the
+per-route /models endpoints served fine but were never wired into the catalog).
+So zen free models existed (61 incl deepseek-v4-flash-free, mimo-v2.5-free,
+gemini-3.5-flash-lite) but NEVER appeared in the picker.
+FIX: boot-prefetch each provider's /models into CATALOG_MODELS_CACHE
+(refreshCatalogModels on listen + catalogModelsFor in providerCatalogRoute).
+VERIFIED: /catalog now returns 61 zen / 100 nvidia / 349 kilo / 419 infron etc.
+Fleet-wide benefit: every live provider's models appear in the picker now.
