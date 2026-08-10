@@ -266,7 +266,6 @@ const PINNED_FILES = [
     'demo-camera-retirement-contract.mjs',
     'cluster-labels-contract.mjs',
     'journey-thread-inspector-contract.mjs',
-    'trail-review-focus-contract.mjs',
     'journey-walk-thread-neighbor-timer-contract.mjs',
     'journey-ui-ownership-contract.mjs',
     'share-view-clipboard-contract.mjs',
