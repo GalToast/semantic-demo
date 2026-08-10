@@ -14,7 +14,7 @@ import {
 import { getInterestingBusinessNote } from '@lib/ui/renderers'
 import { switchView } from '@lib/orchestration/view-controller'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
-import { previewInsideNextThread } from '@lib/journey/thread-settler-adapter'
+import { previewInsideNextThread } from '@lib/journey/thread-settler'
 import { getNextWalkCandidateForIndex, getCurrentTrailFocusIndex } from '@lib/journey/neighborhood'
 import { getStrandArrivalNote, summarizeNeighborReason, getInsideRelationshipLabel } from '@lib/journey/thread-settler'
 import {

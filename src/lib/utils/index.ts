@@ -52,7 +52,32 @@ export {
     requestAnimationFrame,
     cancelAnimationFrame
 } from './environment'
-export { isDebugProbesEnabled, registerDiagnosticProbe } from './diagnostic-adapter'
+// ── Diagnostic probes (inlined from diagnostic-adapter.ts) ─────────────────
+
+declare global {
+    interface Window {
+        __DEBUG_PROBES__?: boolean
+    }
+}
+
+function isDebugProbesEnabled(): boolean {
+    if (typeof window === 'undefined') return false
+    if (typeof window.__DEBUG_PROBES__ !== 'undefined') return !!window.__DEBUG_PROBES__
+
+    const hostname = window.location?.hostname ?? ''
+    if (!hostname) return true
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
+    return isLocal
+}
+
+function registerDiagnosticProbe(key: string, probe: object | (() => void)): void {
+    if (!isDebugProbesEnabled()) return
+    if (typeof window === 'undefined') return
+    ;(window as unknown as Record<string, unknown>)[key] = probe
+}
+
+export { isDebugProbesEnabled, registerDiagnosticProbe }
+
 export { debugWarn } from './debug'
 export { FOCUS_PANEL_MODE, getFocusPanelMode, setFocusPanelMode } from './focus-panel-mode'
 export type { FocusPanelMode } from './focus-panel-mode'
@@ -104,4 +129,3 @@ export type { DomChild, DomEventHandler, DomAttributes } from './dom-builder'
 export { FOCUSABLE_SELECTORS, setupFocusTrap, releaseFocusTrap } from './focus-trap'
 export { bindFocusTrapObserver, disposeFocusTrapBindings, registerOpenDialog, unregisterOpenDialog, hasOpenNestedDialog } from './focus-trap-bindings'
 export { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from './three-textures'
-export { setWebGLContextRestoreHandler, restoreWebGLContext } from './webgl-restore-adapter'

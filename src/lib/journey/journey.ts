@@ -39,9 +39,10 @@ import {
     getStrandArrivalNote,
     getInsideRelationshipLabel,
     summarizeNeighborReason,
-    walkThreadNeighbor
+    walkThreadNeighbor,
+    traverseNeighbor,
+    previewInsideNextThread
 } from './thread-settler'
-import { traverseNeighbor, previewInsideNextThread } from './thread-settler-adapter'
 import {
     getThreadInspectionState,
     inspectThreadNeighbor,

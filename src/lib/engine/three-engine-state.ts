@@ -42,7 +42,10 @@ type UiFeedbackModule = typeof import('@lib/ui/ui-feedback') &
     // after the legacy DOM-direct implementation was retired from ui-feedback.
     { showExperienceToast(title: string, message?: string): void }
 type MapFlatteningModule = typeof import('../utils/map-flattening-layout')
-type WebGLRestoreModule = typeof import('@lib/utils/webgl-restore-adapter')
+type WebGLRestoreModule = {
+    setWebGLContextRestoreHandler: (fn: (() => Promise<unknown> | unknown) | null) => void
+    restoreWebGLContext: () => Promise<boolean>
+}
 type InspectedStrandModule = typeof import('@lib/journey/inspected-strand-overlay-adapter')
 type FocusAnchorModule = typeof import('@lib/journey/focus-anchor-indicator')
 type ThreeSearchAnimationsModule = typeof import('./three-search-animations')
@@ -102,6 +105,10 @@ export interface ThreeEngineState {
     renderSkipOpportunities: number
 }
 
+// ── WebGL context restore handler (inlined from webgl-restore-adapter.ts) ────
+
+let _webglRestoreHandler: (() => Promise<unknown> | unknown) | null = null
+
 // ── Singleton Instance ───────────────────────────────────────────────────────
 
 export const engineState: ThreeEngineState = {
@@ -153,7 +160,6 @@ import * as mapStateMod from '@lib/engine/map-state'
 import * as uiFeedbackMod from '@lib/ui/ui-feedback'
 import * as toastOrchMod from '@lib/orchestration/toast'
 import * as mapFlatteningMod from '../utils/map-flattening-layout'
-import * as webglRestoreMod from '@lib/utils/webgl-restore-adapter'
 import * as focusAnchorMod from '@lib/journey/focus-anchor-indicator'
 import * as audioScapeMod from '@lib/audio/audio-scape'
 import * as loadingUiMod from '../ui/loading'
@@ -183,7 +189,15 @@ export function ensureModules(): void {
         engineState.mapState = mapStateMod
         engineState.uiFeedback = { ...uiFeedbackMod, ...toastOrchMod }
         engineState.mapFlattening = mapFlatteningMod
-        engineState.webglRestore = webglRestoreMod
+        engineState.webglRestore = {
+            setWebGLContextRestoreHandler(fn: (() => Promise<unknown> | unknown) | null): void {
+                _webglRestoreHandler = typeof fn === 'function' ? fn : null
+            },
+            restoreWebGLContext(): Promise<boolean> {
+                if (!_webglRestoreHandler) return Promise.resolve(false)
+                return Promise.resolve(_webglRestoreHandler()).then(() => true)
+            }
+        }
         engineState.inspectedStrand = inspectedStrandMod
         engineState.focusAnchor = focusAnchorMod
         engineState.threeSearchAnimations = threeSearchAnimationsMod

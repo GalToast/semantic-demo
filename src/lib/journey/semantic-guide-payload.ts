@@ -7,16 +7,36 @@
  */
 
 import type { Point } from '@lib/state/state-types';
-import {
-    formatBusinessName,
-    getAnchorPoint,
-    getPoints,
-    getResultContextMap,
-    type SearchSummarySnapshot,
-    getSearchContextSnapshot,
-    buildSemanticGuidePayloadResult as buildPayloadResultFromSnapshot,
-    mapResultIndicesToPayloadResults
-} from '@lib/journey/semantic-guide-payload-adapter';
+import { appState as state } from '@lib/state/app.svelte';
+import { formatBusinessName, cleanPublicNoteText, getPublicRecordStatusLabel } from '@lib/utils/dom-formatters';
+import { describeCluster } from '@lib/utils/ui-presentation';
+
+// ── Types (inlined from semantic-guide-payload-adapter.ts) ──────────────────
+
+export interface SearchContextSnapshot {
+    currentSearchSummary: SearchSummarySnapshot | null
+    currentView: string
+}
+
+export interface SearchSummarySnapshot {
+    query: string
+    resultIndices: number[]
+    anchorIndex?: number
+    visibleMatches?: number
+    [key: string]: unknown
+}
+
+export interface PayloadResult {
+    lead_id: string | number
+    name: string
+    city: string
+    cluster_label: string
+    status: string
+    public_note: string
+    public_detail: string
+    address: string
+    naics: string
+}
 
 export interface SemanticGuidePayloadResult {
     lead_id: string | number;
@@ -41,17 +61,78 @@ export interface SemanticGuideRequestPayload {
 
 export type SearchSummary = SearchSummarySnapshot;
 
+// ── Internal helpers (inlined from semantic-guide-payload-adapter.ts) ───────
+
+function getSearchContextSnapshot(): SearchContextSnapshot {
+    return {
+        currentSearchSummary: state.searchState.currentSearchSummary as SearchSummarySnapshot | null,
+        currentView: state.currentView
+    };
+}
+
+function getPoints(): Point[] {
+    return state.points;
+}
+
+function getResultContextMap(): Map<string, unknown> {
+    return state.semanticResultContextByLeadId as Map<string, unknown>;
+}
+
+function buildPayloadResultFromSnapshot(
+    index: number,
+    points: Point[],
+    contextMap: Map<string, unknown>
+): PayloadResult | null {
+    if (!points) return null;
+    if (!(Number.isFinite(index) && index >= 0 && index < points.length)) return null;
+    const point = points[index];
+    if (!point) return null;
+    const context = (contextMap?.get?.(String(point.lead_id)) || {}) as Record<string, unknown>;
+
+    return {
+        lead_id: point.lead_id ?? '',
+        name: formatBusinessName(point.name ?? ''),
+        city: cleanPublicNoteText((point.city || context.city || '') as string),
+        cluster_label: describeCluster(point.cluster ?? 0),
+        status: getPublicRecordStatusLabel(point.status ?? ''),
+        public_note: cleanPublicNoteText((context.public_note || point.what || '') as string),
+        public_detail: cleanPublicNoteText((context.public_detail || '') as string),
+        address: cleanPublicNoteText((context.address || '') as string),
+        naics: cleanPublicNoteText((context.naics || '') as string)
+    };
+}
+
+function mapResultIndicesToPayloadResults(
+    resultIndices: number[],
+    points: Point[],
+    contextMap: Map<string, unknown>
+): PayloadResult[] {
+    if (!resultIndices?.length) return [];
+    return resultIndices
+        .slice(0, 6)
+        .map((idx) => buildPayloadResultFromSnapshot(idx, points, contextMap))
+        .filter((r): r is PayloadResult => r !== null);
+}
+
+function getAnchorPoint(currentSearchSummary: SearchSummarySnapshot | null, points: Point[]): Point | null {
+    const idx = currentSearchSummary?.anchorIndex as number | undefined;
+    if (!Number.isFinite(idx) || !points) return null;
+    return points[idx as number] || null;
+}
+
+// ── Public API ──────────────────────────────────────────────────────────────
+
 export function buildSemanticGuidePayloadResult(
     index: number,
     points: Point[] = getPoints(),
     contextMap: Map<string, unknown> = getResultContextMap()
 ): SemanticGuidePayloadResult | null {
-    return buildPayloadResultFromSnapshot(index, points, contextMap);
+    return buildPayloadResultFromSnapshot(index, points, contextMap) as SemanticGuidePayloadResult | null;
 }
 
 export function getSemanticGuidePayloadResults(summary: SearchSummary): SemanticGuidePayloadResult[] {
     if (!summary?.resultIndices?.length) return [];
-    return mapResultIndicesToPayloadResults(summary.resultIndices, getPoints(), getResultContextMap());
+    return mapResultIndicesToPayloadResults(summary.resultIndices, getPoints(), getResultContextMap()) as SemanticGuidePayloadResult[];
 }
 
 export function getSemanticGuideAnchorPoint(summary: SearchSummary): Point | null {

@@ -22,7 +22,7 @@ import type { FocusConnectionSegment } from '@lib/state/state-types'
 import { prefersReducedMotion } from '@lib/utils/environment'
 import { CLUSTER_COLORS, FOCUS_SEMANTIC_COLORS } from '@lib/utils/design-tokens'
 import { getLineSegmentCount } from '@lib/journey/webgl-utils'
-import { registerDiagnosticProbe } from '@lib/utils/diagnostic-adapter'
+import { registerDiagnosticProbe } from '@lib/utils'
 import {
     overlayDebug,
     setOverlayDebugRfso,

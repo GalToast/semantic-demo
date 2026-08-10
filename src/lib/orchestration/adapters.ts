@@ -10,7 +10,7 @@ import { initJourneyLifecycleAdapter } from '@lib/journey/lifecycle-adapter'
 import { initJourneyCompassAdapter } from '@lib/orchestration/compass-controller'
 import { initJourneySelectedCard } from '@lib/journey/selected-card'
 import { initSemanticDiveUiSubscriptions } from '@lib/journey/semantic-dive'
-import { initThreadInspectorAdapter } from '@lib/journey/thread-inspector-adapter'
+
 import { initMapStateSubscriptions } from '@lib/engine/map-state'
 import { initViewControllerAdapter } from '@lib/orchestration/view-controller'
 import { initCanvasHoverPreviewSubscription } from '@lib/journey/canvas-hover-preview'
@@ -122,6 +122,24 @@ export interface AdapterDeps {
     isCompactSearchViewport: () => boolean
 }
 
+// ── Thread inspector adapter (inlined from thread-inspector-adapter.ts) ─────
+
+interface ThreadInspectorAdapterDeps {
+    summarizeNeighborReason?: ((candidate: NeighborCandidate) => string) | null;
+    getInsideRelationshipLabel?: ((candidate: NeighborCandidate) => string) | null;
+    getCurrentTrailFocusIndex?: (() => number | null) | null;
+}
+
+let _summarizeNeighborReason: ((candidate: NeighborCandidate) => string) | null = null;
+let _getInsideRelationshipLabel: ((candidate: NeighborCandidate) => string) | null = null;
+let _getCurrentTrailFocusIndex: (() => number | null) | null = null;
+
+function initThreadInspectorAdapter(deps: ThreadInspectorAdapterDeps = {}): void {
+    _summarizeNeighborReason = typeof deps.summarizeNeighborReason === 'function' ? deps.summarizeNeighborReason : null;
+    _getInsideRelationshipLabel = typeof deps.getInsideRelationshipLabel === 'function' ? deps.getInsideRelationshipLabel : null;
+    _getCurrentTrailFocusIndex = typeof deps.getCurrentTrailFocusIndex === 'function' ? deps.getCurrentTrailFocusIndex : null;
+}
+
 // ── Module-level State ───────────────────────────────────────────────────────
 
 let _adaptersInitialized = false
@@ -184,7 +202,7 @@ export function initAdapters(deps: AdapterDeps): void {
     // Adapter was tightened to `Point3D` during W12-T8 but the dependency
     // bag above uses `BusinessRecord | null`. Cast at this boundary to keep
     // the call site typed (the injected function tolerates any record shape).
-    initThreadInspectorAdapter(deps.threadInspector as unknown as Parameters<typeof initThreadInspectorAdapter>[0])
+    initThreadInspectorAdapter(deps.threadInspector as unknown as ThreadInspectorAdapterDeps)
 
     // 9. Map state subscriptions (no deps)
     initMapStateSubscriptions()

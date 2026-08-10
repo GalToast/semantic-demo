@@ -35,7 +35,7 @@ import {
     JOURNEY_ACTIONS,
     type CompassAction
 } from '@lib/journey/compass-state'
-import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
+import { traverseNeighbor } from '@lib/journey/thread-settler'
 import { updateUrlState } from '@lib/orchestration/url-state'
 import type { PanelSurface } from '@lib/types/state'
 
