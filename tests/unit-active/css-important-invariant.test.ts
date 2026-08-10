@@ -29,7 +29,7 @@ const repoRoot = process.cwd()
 
 // CSS files to scan (source + dist mirrors). Note: we intentionally
 // scan both because a stale dist mirror is also a regression signal.
-const SCAN_DIRS = ['css', 'src/lib/css']
+const SCAN_DIRS = ['css', 'src/lib/css', 'src/components', 'src/lib/components']
 
 // Skip these — they are vendored or build artifacts that may
 // legitimately contain `!important`.
@@ -56,7 +56,21 @@ const SKIP_PATTERNS = [
 //                                                canvas-interaction.ts line 48);
 //                                                !important is required because cascade
 //                                                alone cannot override inline styles.
-const APPROVED_BASELINE = 9
+//
+// +20 approved component-level uses (2026-08-10, gate scope extended to
+// src/components + src/lib/components — previously a blind spot where
+// component <style> !important was never counted):
+//   Controls.svelte × 6        — onboarding/popover hide pattern (display/visibility/
+//                                pointer-events: none) — same sanctioned hide class as
+//                                journey_active.css display:none uses
+//   JourneyCompass.svelte × 4  — display:none hide pattern (sanctioned class)
+//   MapView.svelte × 1         — width:100% vs leaflet inline width (BUG-H5); comment-
+//                                only lines 401/415 not counted
+//   CompassDiveSurface × 2     — margin:0 recentre vs external inline rule
+//   Placeholder2D.svelte × 2   — reduced-motion animation/transition:none (sanctioned)
+//   InfoPanel.css × 1          — display:none hide (sanctioned)
+//   SearchTrailCue.svelte × 1  — display:flex row layout vs inherited hidden state
+const APPROVED_BASELINE = 26
 
 interface ImportantUse {
     file: string
@@ -65,7 +79,7 @@ interface ImportantUse {
     matchedLine: string
 }
 
-function collectCssFiles(root: string): string[] {
+function collectStyleFiles(root: string): string[] {
     const out: string[] = []
     const stack = [root]
     while (stack.length > 0) {
@@ -86,12 +100,27 @@ function collectCssFiles(root: string): string[] {
             }
             if (st.isDirectory()) {
                 stack.push(full)
-            } else if (st.isFile() && name.endsWith('.css')) {
+            } else if (st.isFile() && (name.endsWith('.css') || name.endsWith('.svelte'))) {
                 out.push(full)
             }
         }
     }
     return out
+}
+
+/**
+ * Extract the CSS-bearing text of a style file. For `.css` that's the whole
+ * file; for `.svelte` it's the concatenation of `<style>` block bodies, so
+ * `!important` occurrences in markup/script (e.g. comments, string literals)
+ * are not miscounted as CSS uses.
+ */
+function extractCssText(relPath: string, text: string): string {
+    if (!relPath.endsWith('.svelte')) return text
+    const out: string[] = []
+    const re = /<style[^>]*>([\s\S]*?)<\/style>/g
+    let m
+    while ((m = re.exec(text)) !== null) out.push(m[1])
+    return out.join('\n')
 }
 
 /**
@@ -136,7 +165,7 @@ function findImportantUses(): ImportantUse[] {
         } catch {
             continue
         }
-        const files = st.isDirectory() ? collectCssFiles(fullPath) : [fullPath]
+        const files = st.isDirectory() ? collectStyleFiles(fullPath) : [fullPath]
         for (const f of files) {
             const rel = relative(repoRoot, f)
             if (SKIP_PATTERNS.some((re) => re.test(rel))) continue
@@ -146,6 +175,8 @@ function findImportantUses(): ImportantUse[] {
             } catch {
                 continue
             }
+            text = extractCssText(rel, text)
+            if (!text.includes('!important')) continue
             const lines = text.split(/\r?\n/)
             let inBlockComment = false
             for (let i = 0; i < lines.length; i++) {
