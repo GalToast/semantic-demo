@@ -68,7 +68,9 @@ function callCline(model, prompt, maxTokens) {
         const args = ['-P', 'cline', '-m', model, '--json']
         const effort = EFFORT_BY_MODEL[model]
         if (effort) args.push('--thinking', effort)
-        args.push('-p', prompt)
+        // cline CLI wants the prompt as a POSITIONAL quoted arg, not -p
+        // (verified: `-p <text>` → "Unknown command or unquoted prompt")
+        args.push(prompt)
         const child = spawn(clineBin, args, {
             cwd: process.cwd(),
             stdio: ['ignore', 'pipe', 'pipe'],
