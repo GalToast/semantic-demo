@@ -1006,3 +1006,37 @@ a lane that lands in a healthy window. Evidence this session: lanes that
 survive a window land (w47c, w44e); most die; redundancy wins by volume.
 Practice: launch N lanes, keep diversifying models (0731/minimax/kiro/pro/
 glm), harvest the survivor's deliverable, wait for the rest.
+
+### Router crash root-cause + fix (2026-08-10 05:12) — nvidia works, logfare still timeouts
+
+SYMPTOM: all lanes died irrespective of provider; direct fetch showed connect-fail
+("TypeError: fetch failed") — the ROUTER (opencode-key-router.mjs) was DEAD, crashed
+on boot with `TypeError: provider.getKeys is not a function` at publicStatus
+during listen (server boots, fires publicStatus, crashes, leaving a zombie port).
+ROOT CAUSE: runtime providers map contains an entry whose getKeys is not a function
+(trace shows provider 'nvidia' — believed to be an object-with-shape quirk in the
+providers map; the source block HAS getKeys yet runtime flagged it). FIX APPLIED:
+boot-guard in publicStatus + listen-loop `typeof getKeys !== 'function' → skip+log`
+(main file backupped to /tmp/key-router.bak.mjs). VERIFIED: router listens, nvidia
+route 200/3s completions.
+BUT logfire route STILL times out (completions 20s+) — that's the logfire-side
+premium/unavailable state (independent of the router fix). Fleet = NVIDIA works.
+Action: don't fight logfare route until upstream answers; use nvidia for real work.
+
+### ROOT-CAUSE (2026-08-10 05:2x): the router crash was the whole day's flapping
+
+THE ORIGINAL BUG (found + fixed): providers map had TWO `nvidia:` keys — line 82
+(real provider w/ getKeys) + line 465 (a model-profile block mistakenly keyed
+`nvidia:` at top level, no getKeys). JS last-wins → providers.nvidia became the
+profile object → every publicStatus()/listen-loop `provider.getKeys()` threw →
+router crashed on EVERY boot (bind → fire → TypeError → zombie port refusing
+fetch). That killed every lane all day (logfire + nvidia alike) and made
+"provider unstable" look like the models' fault.
+FIX: rename shadow key `nvidia:`→`nvidia_model_profiles:` at line 465 (self-
+contained, no consumer). Router now boots, binds, serves (OpenCode Zen 200s,
+nvidia route attempts). Verified BOOT-OK + no boot TypeErrors; z-ai shadow now
+shows as benign skipped provider. The demon- "flapping" since 02:00 = the
+router crash-loop cycling.
+Remaining (independent): nvidia/logfire upstreams still slow/flaky per-request
+(connection-level hangs) — separate concern from the router crash. Keep the
+router guard for OPS safety.
