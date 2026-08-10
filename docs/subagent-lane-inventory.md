@@ -1094,6 +1094,7 @@ Fleet-wide benefit: every live provider's models appear in the picker now.
 ### cline = deepseek-v4-flash lane (user directive, verified live 2026-08-10)
 
 User: "deepseek-v4-flash through cline will be the best subagents". Verified live:
+
 - cline shim (scripts/shims/cline-shim.mjs, port 8793): models = cline-free/glm-5.2,
   deepseek/deepseek-v4-flash (OK 15.6s), poolside/laguna-s-2.1:free (OK 22.4s),
   stepfun/step-3.7-flash. glm-5.2 = 502 (CLI error).
@@ -1104,8 +1105,8 @@ User: "deepseek-v4-flash through cline will be the best subagents". Verified liv
   → worker stderr "Model router-clinefree/... not found". FIX staged: added
   "router-clinefree" to REASONING_EFFORT_MAPS in local-packages/pi-model-providers
   /index.ts (needs pi runtime reload to take effect).
-NEXT STEP when cline lane wanted: reload pi (/reload-runtime or restart) then
-dispatch model=clinefree/deepseek/deepseek-v4-flash.
+  NEXT STEP when cline lane wanted: reload pi (/reload-runtime or restart) then
+  dispatch model=clinefree/deepseek/deepseek-v4-flash.
 
 ### Route policy update (2026-08-10 06:10, user directive): CLINE preferred over zen
 
@@ -1114,3 +1115,15 @@ cline (local shim, port 8793, keyless CLI lane) serves deepseek/deepseek-v4-flas
 completion answered "OK" ~24s. Use clinefree/<model> route for fleet lanes when
 logfare stalls; zen free is a further fallback (picker-fixed). Route precedent:
 pi:router-clinefree/cline-free/glm-5.2.
+
+### Goal-loop review adjudication (2026-08-10, k2-review nvidia + main-lane)
+
+k2 (nvidia llama) reviewed the loop: 3 prelim concerns — (1) deliverAs
+'nextTurn' may not exist on real sendMessage; (2) no budget/infinite-loop
+escape; (3) compaction safety. NOTE: k2 couldn't run the self-check (its
+sandbox path ENOENT) and reviewed a PRE-upgrade file. Main-lane adjudication:
+  #1 VERIFIED-OK — types.d.ts:300+926 show deliverAs?: "steer"|"followUp"|"nextTurn" exactly.
+  #2 VERIFIED-OK — budget + wall-clock maxMinutes + ledger implemented since (fd92cf02).
+  #3 VERIFIED-OK — state flushed evaluate-condition (each check) + on the extension's session_before_compact.
+  Self-check rerun main-lane: CASE1 nextTurn fires / CASE2 silent on met / CASE3 budget-clear — 3/3.
+So the loop stands review-cleared. Lesson: reviewer lanes reviewing a live-built artifact must run the actual self-test in THEIR sandbox (copy the file), not just read code — code-only review drifted on 2/3.
