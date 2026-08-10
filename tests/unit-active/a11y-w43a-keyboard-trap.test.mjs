@@ -43,8 +43,10 @@ describe('A11y W43-A: Arrow key navigation in search results', () => {
 
     // W48-D: ArrowDown at the last result no longer wraps — it surfaces an
     // "End of results" toast instead. Verifies the boundary branch fires.
+    // Pinned to the live shape: showToastSpec with title + the W10 BS-B#8
+    // dedupeKey (one toast per boundary, not per keypress).
     it('ArrowDown at last result surfaces an end-of-results toast (no silent wrap)', () => {
-        expect(src).toMatch(/ArrowDown[\s\S]*?showExperienceToast\(['"]End of results['"]/)
+        expect(src).toMatch(/key === 'ArrowDown'[\s\S]*?title: 'End of results'[\s\S]*?dedupeKey: 'search:end-of-results'/)
     })
 
     // W48-D: ArrowUp at the first result returns focus to the search input
