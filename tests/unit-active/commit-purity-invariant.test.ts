@@ -209,6 +209,12 @@ function classifyFile(filePath: string): FileClass {
     // Test patterns
     if (
         p.startsWith('tests/') ||
+        // Evidence-bank carve-out: tools/goal-loop/ holds the fake-pi harness
+        // verification scripts (goal-loop proof). They are test-class by
+        // role (no shipped-production surface), NOT code — sha-independent so
+        // re-commits/recovery cherry-picks never re-trip the purity gate.
+        // (2026-08-10: re-sha'd recovery tripped the exemption twice.)
+        p.startsWith('tools/goal-loop/') ||
         p.endsWith('.test.ts') ||
         p.endsWith('.spec.ts') ||
         p.endsWith('.test.js') ||
