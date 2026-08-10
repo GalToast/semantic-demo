@@ -29,11 +29,6 @@ let _cachedEligiblePoints: Point[] | null = null
 let _cachedPointsLength = 0
 let _cachedEligibleLength = 0
 
-function _invalidatePointCaches(): void {
-    _cachedEligiblePoints = null
-    _cachedEligibleLength = 0
-}
-
 /** Get the cached eligible-points list, recomputing only when the dataset length changes. */
 function _getEligiblePoints(): Point[] {
     const pts = state.points
@@ -71,18 +66,6 @@ function _getSameCluster(focusedIdx: number): { p: Point; i: number }[] {
 /** Memoized nearest-neighbor index per focused point index. */
 let _cachedNearestIdx: number | null = null
 let _cachedNearestFocusedIdx: number | null = null
-
-/**
- * Invalidate all point-based caches. Called when dataset may have changed.
- * Exported so journey code can call it after a dataset swap.
- */
-export function invalidatePointCaches(): void {
-    _invalidatePointCaches()
-    _cachedClusterIndex = null
-    _cachedSameCluster = null
-    _cachedNearestIdx = null
-    _cachedNearestFocusedIdx = null
-}
 
 const _registry = new DisposableRegistry({ label: 'suggestion' })
 

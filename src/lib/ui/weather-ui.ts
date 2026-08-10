@@ -66,17 +66,6 @@ export function onWeatherStateChange(): void {
     }
 }
 
-/** Reactive handler — call whenever the active view changes. */
-export function onCompositionChange(): void {
-    if (!canUseWeatherDom()) return
-    const state = appState.weatherState
-    if (appState.currentView === 'map' && state.weather) {
-        applyWeatherEffects(state.weather)
-    } else {
-        clearWeatherEffects()
-    }
-}
-
 export function updateWeatherStaleness(lastFetch: number | null): void {
     const el = document.getElementById('weather-staleness')
     if (!el) return

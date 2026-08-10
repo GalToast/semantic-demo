@@ -54,19 +54,6 @@ export function handleError(options: ErrorHandlerOptions): (err: unknown) => voi
 }
 
 /**
- * Wrap a promise with error handling that returns a fallback value.
- */
-export function handleErrorWithFallback<T>(
-    fallback: T,
-    options: Omit<ErrorHandlerOptions, 'rethrow'>
-): (err: unknown) => T {
-    return (err: unknown): T => {
-        handleError(options)(err)
-        return fallback
-    }
-}
-
-/**
  * Silent error handler for non-user-facing background operations.
  */
 export function silenceError(context: string): (err: unknown) => void {
