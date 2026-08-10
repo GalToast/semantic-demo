@@ -1,46 +1,70 @@
-# Restart handoff — close the goal-loop + cline lanes (2026-08-10)
+# Restart handoff v2 — unified goal extension + max-reasoning fixes (2026-08-10)
 
-Author: main lane. WHY: the goal-loop extension + cline provider-cache fix take
-effect only after a pi restart (local-package + settings.json changes load at boot).
-This note gives the post-restart session the exact first commands.
+Author: main lane (second pass). WHY a restart: THREE harness changes only take
+effect at boot — (1) the unified goal extension, (2) the router-logfare
+REASONING_EFFORT_MAPS fix, (3) settings.json extension array change. This note is
+the exact post-restart checklist. After all lanes pass, apply the "live-verified"
+marks below and DELETE this file (per AGENTS.md transient-handoff rule).
 
-## AFTER RESTART, do these in order:
+## What changed since v1 (reconciliation, 2026-08-10)
 
-### 1. Load + observe the goal-loop extension LIVE (the remaining honest gate)
-The extension is registered at C:/Users/HP/.pi/agent/settings.json (extensions array)
--> after a restart pi should load it (import + pi.on('agent_end') hooks registered).
-VERIFY IT LOADED with zero errors:
-   node --check C:/Users/HP/.pi/agent/extensions/goal-loop.mjs   # syntax
-   (if a boot log exists, grep it for 'goal-loop' errors; none = good)
-Then WATCH IT LOOP on a real goal:
-   node C:/Users/HP/repos/semantic-explorer/tools/goal-loop/goal.mjs set "cond::cmd: [ -f C:/Users/HP/repos/semantic-explorer/tmp/looped-trigger ] || exit 1" 6
-   THEN main-lane: create the trigger file (touch tmp/looped-trigger), and work a real
-   turn; verify status goes met + the extension printed ACHIEVED. Expected evidence:
-   node .../goal.mjs status → status:"met", turnCount>0, lastEvidence contains 'exit=0'.
-   ALSO negative case: set a cond::cmd that exit(1)s; verify it fires deliverAs:nextTurn
-   (the agent begins another turn carrying the evidence) and NOT an infinite loop
-   (budget 6 stops it -> status cleared). Output the self-check too:
-   node C:/Users/HP/tmp/goal-loop-selfcheck.mjs   # expects 3/3 PASS lines.
-Note: the extension calls ctx.sendMessage({...},{deliverAs:'nextTurn',triggerTurn:true}).
-Full chain was source-verified at agent-session.js (deliverAs nextTurn:1086,
-inject pending nextTurn:887, agent_end handlers queue continuations:787).
+- **goal.ts now owns the goal-loop contract.** Merged the proven file-state loop from
+  `goal-loop.mjs` (deterministic `cond::cmd/file/judge/and/or` evaluator, `goal-state.json`,
+  `agent_end` → `ctx.sendMessage({deliverAs:'nextTurn',triggerTurn:true})` source-verified
+  continuation, budget/time rails) with the goal tool (agent-operated set/clear/status/
+  pause/resume/note/tick + self-eval fallback + `model_select` max-reasoning re-assert).
+    - `goal-loop.mjs` retired: renamed `goal-loop.mjs.deprecated-2026-08-10` on disk, removed
+    from settings extensions. The unified file auto-discovers as `~/.pi/agent/extensions/*.ts`.
+    - Canonical test: `node tools/goal-loop/fake-pi-test.mjs` → **11/11 pass** (goal.ts path).
+    - Tool `goal set --condition` now mirrors the same `goal-state.json` the CLI + loop read.
+- **router-logfare max-reasoning fix** (user's reported bug): `"router-logfare"` was MISSING
+  from `REASONING_EFFORT_MAPS` in `~/.pi/agent/local-packages/pi-model-providers/index.ts`
+  (line ~624) — a 2026-08-03 comment claimed it was added but the key never made it into the
+  object. Result: `compat.supportsReasoningEffort` never set on router-logfare models, and
+  pi's `openai-completions.js` skipped `reasoning_effort` entirely — logfare deepseek never
+  reached max. Fixed (line 661, same ladder as kilo/zydit deepseek lanes).
 
-2. Fire the cline deepseek-v4-flash lane (user: "best subagents")
-Provider-cache fix staged (router-clinefree added to REASONING_EFFORT_MAPS in
-~/.pi/agent/local-packages/pi-model-providers/index.ts). After restart:
-   node C:/Users/HP/tmp/direct-mcp-worker.mjs --model clinefree/deepseek/deepseek-v4-flash \
-     --name c1-validator --prompt "verify gate EXIT=0; write tmp/validator-c1.md" \
-     --timeout 900 --log C:/Users/HP/tmp/c1-validator.out
-Model string is clinefree/deepseek/deepseek-v4-flash (harness maps to router-clinefree;
-the shim answers on 8793; verified 200/15.6s direct).
+## AFTER RESTART, do these in order
 
-3. Update goal + memory when 1 & 2 pass: the goal-loop is definitively superior+observed;
-   record 'goal-loop live-verified' + cline-lane-live in docs/subagent-lane-inventory.md.
+### 1. Verify the unified goal extension LOADED clean + loops LIVE
 
-## Context lock (before restarting/comparing)
-- unit gate: GREEN 3687/3687 (EXIT=0 in /tmp/gate-final4.log) — verified main-lane.
-- The goal-loop build: tools/goal-loop/evaluator.mjs + goal.mjs (committed a1763193, fd92cf02),
-  extension ~/.pi/agent/extensions/goal-loop.mjs (registered), self-check 3/3.
-- Runner: /c/Users/HP/tmp/direct-mcp-worker.mjs — the canonical worker launcher.
-- logfare upstream generation has been OUT all session (router healthy, forwards,
-  no reply) -> until the upstream recovers, nvidia/cline/e-z are the working lanes.
+- `.pi` boot should import goal.ts (auto-discovered) with zero errors.
+- FAST: `node --check C:/Users/HP/.pi/agent/extensions/goal.ts`
+- Unit: `cd C:/Users/HP/repos/semantic-explorer && node tools/goal-loop/fake-pi-test.mjs` → 11/11.
+- REAL LOOP (positive): set a goal whose condition will become true:
+    node C:/Users/HP/repos/semantic-explorer/tools/goal-loop/goal.mjs set "cond::cmd: [ -f C:/Users/HP/repos/semantic-explorer/tmp/looped-trigger ] || exit 1" 6
+  Then touch `tmp/looped-trigger` and take one normal turn. Expect: `goal.mjs status`
+  → status:"met", turnCount>0, lastEvidence contains 'exit=0'. Main-lane saw ACHIEVED line.
+- REAL LOOP (negative): set `cond::cmd: exit 1` budget 3; verify it fires
+  `deliverAs:'nextTurn'` (agent begins another turn carrying the evidence) and STOPS
+  (status: "cleared" after budget) — no infinite loop.
+
+### 2. Verify the max-reason lint for router-logfare (user's interactive complaint)
+
+With the fix active, the interactive picker for logfare deepseek should now offer
+`max` in the thinking ladder (was capped at "high"). Direct probe (optional):
+    node C:/Users/HP/repos/semantic-explorer/scripts/logfc-per-model-smoke.mjs logfare
+Expect reasoning_effort:max accepted and deep output on a hard prompt.
+
+### 3. Fire the cline deepseek-v4-flash lane (user: "best subagents")
+
+    node C:/Users/HP/tmp/direct-mcp-worker.mjs --model clinefree/deepseek/deepseek-v4-flash \
+      --name c1-validator --prompt "verify gate EXIT=0; write tmp/validator-c1.md" \
+      --timeout 900 --log C:/Users/HP/tmp/c1-validator.out
+(harness maps clinefree/* → router-clinefree; shim on :8793; verified 200/15.6s direct.)
+
+### 4. Record + close
+
+When 1–3 pass: append 'goal-loop live-verified' + 'cline-lane-live' to
+docs/subagent-lane-inventory.md, update memory, then DELETE this file and the
+AGENTS.md transient-handoff block.
+
+## Context lock (before restart)
+
+- unit gate GREEN 3687/3687 (EXIT=0 in /tmp/gate-final4.log).
+- goal-loop build: tools/goal-loop/{evaluator,goal,fake-pi-test}.mjs; goal.ts owns contract.
+- logfare upstream generation was OUT all session (router healthy, forwards, no reply) —
+  while it recovers, nvidia/cline are the working lanes; also note logfare
+  deepseek-v4-flash-0731 requires training opt-in on the API key (tier-2 premium);
+  plain deepseek-v4-flash is tier-1 free.
+- Runner: /c/Users/HP/tmp/direct-mcp-worker.mjs.
