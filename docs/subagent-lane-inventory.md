@@ -1082,3 +1082,11 @@ FIX: boot-prefetch each provider's /models into CATALOG_MODELS_CACHE
 (refreshCatalogModels on listen + catalogModelsFor in providerCatalogRoute).
 VERIFIED: /catalog now returns 61 zen / 100 nvidia / 349 kilo / 419 infron etc.
 Fleet-wide benefit: every live provider's models appear in the picker now.
+
+### Logfire route status (2026-08-10 05:4x, measured conclusively)
+
+- Router: HEALTHY (boots, binds, forwards). Log: "Logfare request model=X ... Logfare trying key slot N/6" — forwarding WORKS.
+- Logfire upstream: generation endpoint HANGS after request forward — 3 majors (flash-0731, minimax, k3) ALL 30s-timeout on direct probes; router log shows forward sent, no reply. This is logfire-side generation outage (not router, not the account premium — even flash-0731 times out).
+- Every logfire lane this session dies at exactly this point (launch ok → request forwarded → hang → retry exhaust → failed).
+- Earlier w47c DID complete on logfire (~02:00) → the outage began after; intermittent windows exist. Re-check with a 30s direct probe before any logfire dispatch; when a probe returns 200 sustained, lanes will land.
+- OpenCode Zen route continues to serve 200s (router logs) — the working fallback per user's "if not logfire" caveat.
