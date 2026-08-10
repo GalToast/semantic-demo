@@ -227,8 +227,8 @@ When a global `window` keydown listener (e.g. `global-shortcuts.ts`
 `RETURN_OVERVIEW` on Escape) coexists with a component-level handler
 (Toast dismiss, SearchResults clear-and-stay), `stopPropagation()` on
 the component side does **NOT** silence the global: Svelte
-`<svelte:window>` mounts a *sibling listener on the same `window`
-target*, and `stopPropagation` only affects propagation between nodes,
+`<svelte:window>` mounts a _sibling listener on the same `window`
+target_, and `stopPropagation` only affects propagation between nodes,
 not same-target siblings. The authoritative fix lives in the GLOBAL
 handler — add a guard (e.g. toast visible → return; focus inside
 `#search-results` / `#search-result-list` → return) so the inner
@@ -322,7 +322,7 @@ git diff --stat <old-foreign-sha> HEAD
 
 ## Switchboard coordination — beyond the file lock
 
-`.session-lock` says *"this worktree is held by someone"* but does not say *what* the holder is doing today, when they expect to be done, or whether they're reachable. The switchboard (via the `mcp` gateway, server `switchboard`) is the bus for that.
+`.session-lock` says _"this worktree is held by someone"_ but does not say _what_ the holder is doing today, when they expect to be done, or whether they're reachable. The switchboard (via the `mcp` gateway, server `switchboard`) is the bus for that.
 
 **Compose, don't replace.** Hold the file lock AND register on the bus concurrently. The lock makes git-state conflicts visible; the switchboard makes your intention visible.
 
@@ -344,10 +344,29 @@ Peers may only use the file lock, not the switchboard bus. If `list_agents` retu
 
 ### Common pitfalls
 
-- **Heartbeats required.** Stop → you appear `stale: true` to peers after 5 min. Treat going-online-without-heartbeat as *invisibility*.
-- **Task heartbeats ≠ agent heartbeats.** `heartbeat_agent` keeps you visible; `heartbeat_task` keeps only a *claimed* task fresh (default 120 min).
+- **Heartbeats required.** Stop → you appear `stale: true` to peers after 5 min. Treat going-online-without-heartbeat as _invisibility_.
+- **Task heartbeats ≠ agent heartbeats.** `heartbeat_agent` keeps you visible; `heartbeat_task` keeps only a _claimed_ task fresh (default 120 min).
 - **Bus ≠ worktree authority.** `list_agents` reflects online + recently-seen peers; pair it with `.session-lock` + the pre-commit branch guard.
 - **Resource locks differ from file locks.** Switchboard resource locks cover shared browser windows / MCP surfaces / deploy environments — NOT the worktree itself.
 - **Don't ring broadly.** `ring_agent` is for one-shot urgency; persistent messages go to `post_message to: "ALL"`.
 
 Full API surface + parameter-level recipes: `docs/tool-guide.md` §4 + §5.
+
+## Gate-failure playbook (measured 2026-08-10)
+
+Three repeatable RED-GATE classes found this session, in order of frequency:
+
+1. **vi.mock module-registry leakage** — vitest serves ONE mock shape per module
+   across files; a partial mock in an earlier-alphabet test poisons later tests
+   ("No 'X' export is defined on the mock"). Fix: `vi.mock(M, async (i)=>({...await i(), <overrides>}))`.
+   Detect: standalone-passes but full-suite-fails, or failure set shifts between runs.
+2. **Ghost-path contract tests** — tests assert on a module whose file moved/
+   renamed (ENOENT). The extraction/refactor (e.g. url-params widening) happens
+   without updating lagging tests. Fix: repoint tests to the real shape (with
+   an a/b decision: stale-test vs prod-regression — evidence first).
+3. **Async test 20s-default timeout** — runtime integration tests legitimately
+   exceed default; explicit third-arg timeout (60s+) — same class as reveal-schedule.
+
+Also: commit-purity-invariant trips on `docs:`/`test:` prefixes touching non-<class>
+files. Evidence-bank reports + infra scripts are legit → EXEMPTED_SHAS with a
+one-line justification (do NOT auto-add).
