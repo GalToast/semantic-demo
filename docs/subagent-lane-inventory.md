@@ -1185,3 +1185,15 @@ OPEN: my w90-clineforensics/w91-lfsmoke/w92-seamhunt reports still landing
 (parallel session active); cline-as-WORKER path still 0-output (shim OK via
 curl, harness route differs — debug thread); remaining spots watch the
 m1-smoke/m2-validator/m3-gatewatch lanes from the parallel session.
+
+### cline-worker 0-output ROOT-CAUSED (2026-08-10 15:33): glm-5.2 free promo ended
+
+Symptoms: workers on clinefree/cline-free/glm-5.2 produced 0 output; direct curl
+'deepseek/deepseek-v4-flash' worked (200 OK ~24s). Root cause (full CLI repro):
+cline's 'cline-free/glm-5.2' free promo ENDED — CLI: "Free model promotion ended;
+The free promotion for this model has ended" (finishReason error) — plus a
+secondary 'hook dispatch failed: session.hook requires valid payload' noise.
+FIX: cline-shim MODELS[0] default → deepseek/deepseek-v4-flash (verified live,
+model="deepseek/deepseek-v4-flash"). VERIFIED: fresh shim, NO-model request →
+"OK", finish stop, model deepseek-v4-flash. Consume cline lanes as
+clinefree/deepseek/deepseek-v4-flash (or rely on shim default).
