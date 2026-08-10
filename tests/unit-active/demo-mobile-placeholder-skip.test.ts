@@ -107,9 +107,11 @@ describe('demo mobile-placeholder skip (BS-B#5)', () => {
         sessionStorage.clear()
         sceneReady.resetSceneReady()
         clearToastQueue()
+        console.log('PROBE afterEach post-clearToast title=', JSON.stringify(get(toastStore).title), 'active=', get(toastStore).active)
         cancelAllDemoTimers()
         vi.useRealTimers()
         cleanup()
+        console.log('PROBE afterEach post-cleanup title=', JSON.stringify(get(toastStore).title), 'active=', get(toastStore).active)
     })
 
     it('isPlaceholderSurface() is false when data-render-kind is unset (SSR/unit default)', () => {
@@ -193,16 +195,20 @@ describe('demo mobile-placeholder fallback hint (BS-B#5 gap-fill)', () => {
 
     it('webgl surface: real mobile 3D still gets the tour, NOT the fallback hint', () => {
         document.body.dataset.renderKind = 'webgl'
+        console.log('PROBE-WEBGL pre-mount title=', JSON.stringify(get(toastStore).title), 'active=', get(toastStore).active)
         vi.useFakeTimers()
         sceneReady.signalSceneReady()
         render(DemoChoreography, { props: { force: false } })
+        console.log('PROBE-WEBGL post-mount title=', JSON.stringify(get(toastStore).title), 'active=', get(toastStore).active, 'shouldRunDemo=', shouldRunDemo(), 'isPlaceholder=', isPlaceholderSurface())
         // startWhenReady → attemptStart after DEMO_START_DELAY_MS: corpus is
         // seeded above, so the tour claims the start guard (phase OVERVIEW).
         vi.advanceTimersByTime(DEMO_START_DELAY_MS)
+        console.log('PROBE-WEBGL after start title=', JSON.stringify(get(toastStore).title), 'active=', get(toastStore).active, 'isDemoActive=', isDemoActive(), 'eligible from doc')
         expect(isDemoActive()).toBe(true)
         // The placeholder gate would fire the hint at attemptStart+2500 — on
         // webgl it must stay silent the whole window.
         vi.advanceTimersByTime(FALLBACK_HINT_DELAY_MS)
+        console.log('PROBE-WEBGL after hint window title=', JSON.stringify(get(toastStore).title), 'copy=', JSON.stringify(get(toastStore).copy), 'next=', JSON.stringify(get(toastStore).nextTitle), 'active=', get(toastStore).active)
         const s = get(toastStore)
         expect(s.active).toBe(false)
         expect(s.title).toBe('')
