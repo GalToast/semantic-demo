@@ -175,8 +175,12 @@ async function main() {
       fail(`is-locked chip background="${lockedBg}" appears transparent`);
     }
     const lockedShadow = await trailChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('box-shadow'));
-    if (!lockedShadow || lockedShadow === 'none' || lockedShadow.match(/^0px\s+0px\s+0px\s+0px\s+transparent/)) {
-      fail(`is-locked chip box-shadow="${lockedShadow}" missing or none`);
+    // Contract (2026-08-10, ModeChipRail.svelte .is-locked): locked chips are
+    // deliberately FLAT — box-shadow:none is the design intent (dimmed palette
+    // + hover re-veal, no glow). Previously the test asserted shadow ~= none,
+    // which was inverted vs the actual .is-locked rule (drift, was failing).
+    if (lockedShadow && lockedShadow !== 'none') {
+      fail(`is-locked chip box-shadow="${lockedShadow}" should be none (flat design)`);
     }
 
     // Reset state
