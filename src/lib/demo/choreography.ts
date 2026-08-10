@@ -4,8 +4,9 @@
  * Port of
  *
  * Thin facade: eligibility guards, showcase pool selection, retry loop,
- * and choreography delegation. The actual camera/UI choreography lives
- * in the legacy micro-demo-choreography.js module (port pending).
+ * and choreography delegation. The timed camera/UI choreography lives in
+ * @lib/engine/demo-choreography.ts (the legacy micro-demo-choreography.js
+ * module is gone).
  *
  * Uses the demoStore for canonical demo state (get(demoPhase)).
  *
@@ -38,10 +39,9 @@ import { demoPhase, isDemoActive, startDemo, cancelDemo } from '@lib/stores/demo
 import { setDemoNodeIndex, runDemo, cancelChoreography as _cancelChoreographyLegacy } from '../engine/demo-choreography'
 import { appState } from '@lib/state/app.svelte'
 
-// ── Legacy Choreography Bridge ──────────────────────────────────────────────
-// The actual timed camera/UI choreography is still in the legacy JS module,
-// The actual timed camera/UI choreography is still in the legacy micro-demo-choreography.js module.
-// Static imports are resolved by Vite at bundle time; no lazy loading needed.
+// ── Choreography Delegation ────────────────────────────────────────────────
+// The timed camera/UI choreography runs in engine/demo-choreography.ts
+// (static imports resolved by Vite at bundle time; no lazy loading needed).
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
