@@ -125,7 +125,7 @@
     "test:stress": "playwright test tests/heavy-stress-leak.spec.js --browser=chromium",
     "test:unit": "vitest run --config vitest.config.js",
     "test:unit:watch": "vitest --config vitest.config.js",
-    "test:agent-runtime": "node --test tests/agent-runtime/*.test.mjs",
+    "test:agent-runtime": "node --test tests/agent-runtime/",
     "test:coverage": "vitest run --config vitest.config.js --coverage",
     "test:help": "node -e \"console.log('Available test commands:\n  npm run test          - static checks + unit tests\n  npm run test:fast     - alias for test:static\n  npm run test:unit     - Vitest unit tests\n  npm run test:contract - Node contract runner (all groups)\n  npm run test:ci       - fast + unit + contract + e2e click flow (no stress)\n  npm run test:all      - ci + stress test (120s)\n  npm run test:stress   - heavy load + WebGL leak detection (120s)\n  npm run test:smoke    - contract smoke group (node, no browser)\n  npm run test:contract:core|smoke|full  - specific groups')\"",
     "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1",
@@ -148,7 +148,8 @@
     "test:all": "npm run test:ci && npm run test:stress",
     "test:smoke": "npm run test:contract:smoke",
     "sweep": "node scripts/tmp-ttl-sweep.mjs --apply --days=14 && node scripts/harness-sweep.mjs",
-    "sweep:dry": "node scripts/tmp-ttl-sweep.mjs && node scripts/harness-sweep.mjs --dry-run"
+    "sweep:dry": "node scripts/tmp-ttl-sweep.mjs && node scripts/harness-sweep.mjs --dry-run",
+    "gate": "node scripts/smoke-gate.mjs"
   },
   "keywords": [],
   "author": "",
