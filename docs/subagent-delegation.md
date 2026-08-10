@@ -103,6 +103,19 @@ Required for:
 
 Worker contract: workers doing UI work should capture a screenshot and include the path in `tmp/<topic>/report.md`. Main lane verifies by reading the image. If the screenshot is missing, the work is incomplete.
 
+### Deliverable-first protocol (prevents the ×5 settle-before-write failure, 2026-08-10)
+
+Measured: pi-harness workers (logfare AND nvidia routes) frequently settle/abort after ~3-4 min of real tool work WITHOUT writing the final report — transcripts show completed verification + a final message, but the file never lands. Standard "write your findings to X" briefs schedule the write LAST, and the settle cuts it.
+
+**Proven fix — restructure every artifact-producing brief as deliverable-FIRST:**
+
+1. `STEP 1 (WRITE FIRST)`: create the report file immediately with the table/structure + all rows prepopulated `PENDING`.
+2. `STEP 2`: do the per-item work.
+3. `STEP 3`: **rewrite the file after EACH item** (never batch at end).
+4. Literal line: `CRITICAL: keep <file> on disk at all times, even if you settle early.`
+
+Guarantee: even a mid-sweep settle leaves a valid partial artifact to harvest. Verified: header-sweep-C (write-first via live-steer) landed a 4,989-byte report; identical-brief A/B (write-at-end) both settled with 200KB transcripts and no file. `external_subagent_steer({prompt_text: 'write now'})` works as live input while a worker is alive.
+
 ## Vision Capability Matrix (empirically re-probed 2026-08-05, full-sweep replacement for the 2026-06-26 set)
 
 **> IMPORTANT — two different image paths (2026-08-05 discovery):**
