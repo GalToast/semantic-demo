@@ -16,10 +16,10 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const URL_STATE_PATH = resolve(__dirname, '../../src/lib/orchestration/url-state.ts');
+const URL_RESTORE_PATH = resolve(__dirname, '../../src/lib/orchestration/url-restore.ts');
 
 function readSource(): string {
-  return readFileSync(URL_STATE_PATH, 'utf-8');
+  return readFileSync(URL_RESTORE_PATH, 'utf-8');
 }
 
 describe('A3-3: invalid anchor falls back to overview', () => {

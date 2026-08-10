@@ -25,6 +25,8 @@ import path from 'node:path'
 
 const SEMDEMO_ROOT = path.resolve(process.cwd())
 const URL_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/url-state.ts')
+const URL_WRITER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/url-writer.ts')
+const URL_RESTORE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/url-restore.ts')
 const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/state.ts')
 const SEARCH_RESULTS_UI_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/results-ui.ts')
 const SEARCH_STORE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/search.svelte.ts')
@@ -121,28 +123,39 @@ function testLifecycleCallsSetSearchPanelStateDirectly() {
     console.log('\n[TEST] resetStateBeforeUrlRestore clears canonical search state through the search store')
 
     const src = fs.readFileSync(URL_STATE_PATH, 'utf-8')
+    const urlRestoreSrc = fs.readFileSync(URL_RESTORE_PATH, 'utf-8')
+    const urlWriterSrc = fs.readFileSync(URL_WRITER_PATH, 'utf-8')
     const searchStoreSrc = fs.readFileSync(SEARCH_STORE_PATH, 'utf-8')
 
     assert(
-        /export\s+function\s+resetStateBeforeUrlRestore\s*\(/.test(src),
-        'url-state.ts must export resetStateBeforeUrlRestore'
+        /export\s+function\s+resetStateBeforeUrlRestore\s*\(/.test(src) ||
+            /export\s*\{[\s\S]*\bresetStateBeforeUrlRestore\b[\s\S]*?\}\s*from\s*['"][^'"]*url-restore[^'"]*['"]/.test(
+                src
+            ),
+        'url-state.ts must define or re-export resetStateBeforeUrlRestore'
+    )
+    // Post-split: clearSearch import + delegation live in url-writer.ts (the
+    // owner of the URL write/reset path); url-state.ts is a pure barrel.
+    assert(
+        /import\s*\{[\s\S]*\bclearSearch\b[\s\S]*\}\s+from\s+['"]@lib\/stores\/search\.svelte['"]/.test(urlWriterSrc),
+        'url-writer.ts must import clearSearch from the canonical search store'
     )
     assert(
-        /import\s*\{[\s\S]*\bclearSearch\b[\s\S]*\}\s+from\s+['"]@lib\/stores\/search\.svelte['"]/.test(src),
-        'url-state.ts must import clearSearch from the canonical search store'
+        /resetStateBeforeUrlRestore[\s\S]*\bclearSearch\s*\(\s*\)/.test(urlWriterSrc),
+        'resetStateBeforeUrlRestore must delegate canonical state clearing to clearSearch() (url-writer.ts)'
     )
     assert(
-        /resetStateBeforeUrlRestore[\s\S]*\bclearSearch\s*\(\s*\)/.test(src),
-        'resetStateBeforeUrlRestore must delegate canonical state clearing to clearSearch()'
-    )
-    assert(
-        /export\s+function\s+clearSearch\s*\([\s\S]*?appState\.searchState\.currentSearchSummary\s*=\s*null/.test(searchStoreSrc) ||
-            /export\s+function\s+clearSearch\s*\([\s\S]*?appState\.currentSearchSummary\s*=\s*null/.test(searchStoreSrc),
+        /export\s+function\s+clearSearch\s*\([\s\S]*?appState\.searchState\.currentSearchSummary\s*=\s*null/.test(
+            searchStoreSrc
+        ) ||
+            /export\s+function\s+clearSearch\s*\([\s\S]*?appState\.currentSearchSummary\s*=\s*null/.test(
+                searchStoreSrc
+            ),
         'clearSearch() must clear currentSearchSummary in the canonical search store'
     )
     assert(
-        /input\.dispatchEvent\s*\(\s*new\s+Event\s*\(\s*['"]input['"]/.test(src),
-        'resetStateBeforeUrlRestore({ clearSearchInput }) must notify the search input owner via an input event'
+        /input\.dispatchEvent\s*\(\s*new\s+Event\s*\(\s*['"]input['"]/.test(urlRestoreSrc),
+        'url-restore.ts must notify the search input owner via an input event'
     )
 
     console.log('  OK — resetStateBeforeUrlRestore clears canonical state through clearSearch and input ownership')

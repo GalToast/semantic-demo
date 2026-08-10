@@ -416,24 +416,33 @@ console.log(
     'PASS CONTRACT 5: focusOnNode is canonical writer for selectedPoint and delegates focus index through navState'
 )
 
-// ─── CONTRACT 6: search-state clears focusedNode/selectedPoint on filter evict ─
+// ─── CONTRACT 6: url-restore.ts clears focusedNode/selectedPoint via clearExplorationFocusSelection ─
 
-const urlStateSource = readFileSync(join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'url-state.ts'), 'utf8')
+const urlRestoreSource = readFileSync(join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'url-restore.ts'), 'utf8')
+const urlWriterSource = readFileSync(join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'url-writer.ts'), 'utf8')
+const urlStateBarrelSrc = readFileSync(join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'url-state.ts'), 'utf8')
 assert(
-    /export function clearExplorationFocusSelection/.test(urlStateSource) &&
-        // 2026-08-07 single-writer consolidation (cbc770bb): direct
-        // `appState.focusedNode = null` / `appState.selectedPoint = null`
-        // writes were replaced by canonical setters — setFocusedNode(null)
-        // (focus ownership) and updateSelectedBusiness(null) (selection
-        // ownership). The old flat selectedPoint assignment was a no-op +
-        // threw on the getter-only mock, so the contract now pins the
-        // canonical setter route (same clearing intent, current impl).
-        /setFocusedNode\s*\(\s*null\s*\)/.test(urlStateSource) &&
-        /updateSelectedBusiness\s*\(\s*null\s*\)/.test(urlStateSource),
-    'clearExplorationFocusSelection must clear focusedNode and selectedPoint through the current focus-clear owner'
+    /export\s+function\s+clearExplorationFocusSelection/.test(urlWriterSource) ||
+        /export\s*\{[\s\S]*\bclearExplorationFocusSelection\b[\s\S]*?\}\s*from\s*['"][^'"]*url-writer[^'"]*['"]/.test(
+            urlRestoreSource
+        ),
+    'clearExplorationFocusSelection must be defined in url-writer.ts (or re-exported there by url-restore.ts)'
+)
+assert(
+    /export\s*\{[\s\S]*\bclearExplorationFocusSelection\b[\s\S]*?\}\s*from\s*['"][^'"]*url-restore[^'"]*['"]/.test(
+        urlStateBarrelSrc
+    ),
+    'url-state.ts must re-export clearExplorationFocusSelection from url-restore.ts (barrel chain)'
+)
+assert(
+    (/setFocusedNode\s*\(\s*null\s*\)/.test(urlWriterSource) &&
+        /updateSelectedBusiness\s*\(\s*null\s*\)/.test(urlWriterSource)) ||
+        (/setFocusedNode\s*\(\s*null\s*\)/.test(urlRestoreSource) &&
+            /updateSelectedBusiness\s*\(\s*null\s*\)/.test(urlRestoreSource)),
+    'focus-clear owner must clear focusedNode and selectedPoint (setFocusedNode(null) + updateSelectedBusiness(null))'
 )
 
-console.log('PASS CONTRACT 6: search-state.js clears focusedNode/selectedPoint on filter eviction')
+console.log('PASS CONTRACT 6: url-restore.ts clears focusedNode/selectedPoint via clearExplorationFocusSelection')
 
 // ─── CONTRACT 7: lifecycle owns resetStateBeforeUrlRestore ───────────────────
 
