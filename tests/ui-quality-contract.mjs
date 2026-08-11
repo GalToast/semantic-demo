@@ -227,8 +227,8 @@ async function forceThreadPreview(page) {
             ? state.navState.focusedIndex
             : Number.isFinite(state.focusedNode)
               ? state.focusedNode
-              : Number.isFinite(state.currentSearchSummary?.anchorIndex)
-                ? state.currentSearchSummary.anchorIndex
+              : Number.isFinite(state.searchState.currentSearchSummary?.anchorIndex)
+                ? state.searchState.currentSearchSummary.anchorIndex
                 : 519
 
         document.body.classList.add('is-active')

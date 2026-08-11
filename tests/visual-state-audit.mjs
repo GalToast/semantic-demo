@@ -1551,7 +1551,7 @@ async function enterFocusFromSearch(page, targetIndexOverride = null) {
         await page.waitForFunction(
             () => {
                 const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
-                if (Number.isFinite(appState.currentSearchSummary?.anchorIndex)) return true
+                if (Number.isFinite(appState.searchState.currentSearchSummary?.anchorIndex)) return true
                 // Match both legacy .search-result-item and Svelte .search-result selectors
                 const row = [...document.querySelectorAll('.search-result-item, .search-result')].find((candidate) => {
                     const style = getComputedStyle(candidate)
@@ -1574,7 +1574,7 @@ async function enterFocusFromSearch(page, targetIndexOverride = null) {
 
     await page.evaluate((overrideIndex) => {
         const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
-        const summaryAnchor = appState.currentSearchSummary?.anchorIndex
+        const summaryAnchor = appState.searchState.currentSearchSummary?.anchorIndex
         // Match both legacy .search-result-item and Svelte .search-result selectors
         const visibleRow = [...document.querySelectorAll('.search-result-item, .search-result')].find((candidate) => {
             const style = getComputedStyle(candidate)
@@ -2088,8 +2088,8 @@ async function enterRouteTraceByRealRoute(page) {
         .catch(async () => {
             await page.evaluate(() => {
                 const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
-                const summaryIndex = Number(appState.currentSearchSummary?.anchorIndex)
-                const resultIndex = Number(appState.currentSearchSummary?.resultIndices?.[0])
+                const summaryIndex = Number(appState.searchState.currentSearchSummary?.anchorIndex)
+                const resultIndex = Number(appState.searchState.currentSearchSummary?.resultIndices?.[0])
                 const index = Number.isFinite(summaryIndex)
                     ? summaryIndex
                     : Number.isFinite(resultIndex)
@@ -2146,8 +2146,8 @@ async function forceFocusedVisualState(page) {
             ? appState.navState.focusedIndex
             : Number.isFinite(appState.focusedNode)
               ? appState.focusedNode
-              : Number.isFinite(appState.currentSearchSummary?.anchorIndex)
-                ? appState.currentSearchSummary.anchorIndex
+              : Number.isFinite(appState.searchState.currentSearchSummary?.anchorIndex)
+                ? appState.searchState.currentSearchSummary.anchorIndex
                 : rowIndex
         if (!Number.isFinite(focusedIndex)) {
             throw new Error('visual audit could not resolve a focused search result index')

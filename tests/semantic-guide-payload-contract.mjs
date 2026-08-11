@@ -285,7 +285,7 @@ async function testPayloadHelpersHonorExplicitSummary() {
         await import('../src/lib/journey/semantic-guide-payload.ts')
 
     const originalPoints = state.points
-    const originalSummary = state.currentSearchSummary
+    const originalSummary = state.searchState.currentSearchSummary
     const originalContextMap = state.semanticResultContextByLeadId
 
     withStateMutation(() => {
@@ -308,7 +308,7 @@ async function testPayloadHelpersHonorExplicitSummary() {
             }
         ]
         state.semanticResultContextByLeadId = new Map()
-        state.currentSearchSummary = { query: 'global', resultIndices: [0], anchorIndex: 0 }
+        state.searchState.currentSearchSummary = { query: 'global', resultIndices: [0], anchorIndex: 0 }
     })
 
     const explicitSummary = { query: 'explicit', resultIndices: [1], anchorIndex: 1 }
@@ -321,7 +321,7 @@ async function testPayloadHelpersHonorExplicitSummary() {
 
     withStateMutation(() => {
         state.points = originalPoints
-        state.currentSearchSummary = originalSummary
+        state.searchState.currentSearchSummary = originalSummary
         state.semanticResultContextByLeadId = originalContextMap
     })
 
