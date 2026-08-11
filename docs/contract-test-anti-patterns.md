@@ -109,3 +109,14 @@ Design rules proven:
   MUST composite the split-out sibling (search-core.ts / three-engine-init.ts /
   three-engine-render-loop.ts / semantic-overlay-material.ts) — the barrel re-exports but
   the body/import statements live in the sibling.
+
+## Barrel-sweep classification rule (2026-08-11, validated full-group 62/62)
+
+When an audit finds a contract reading a barrel with NO sibling composite, classify
+before re-pointing:
+1. **live `import('@lib/...')`** → OK (the barrel re-exports the runtime surface; imports are the correct usage).
+2. **assert-absence** (retired-bridge/`must not contain window.X`) → OK by design.
+3. **source-read of a def/import that now lives in a sibling** → RE-POINT (composite the sibling into the readFileSync concat).
+
+Measured: 4 search-barrel readers looked un-composited but were live-imports; 5 engine-barrel readers
+looked un-composited but assert the barrel SURFACE (exit 0). Re-pointing them would have been wrong.
