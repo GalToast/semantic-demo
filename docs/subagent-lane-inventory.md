@@ -1228,6 +1228,7 @@ clinefree/deepseek/deepseek-v4-flash (or rely on shim default).
 - goal-loop live-verified 2026-08-10: unified goal.ts extension (goal-loop contract merged) — fake-pi-test 11/11 PASS, re-run clean at session start. Handoff deleted.
 
 ### 3d-test stability thread (2026-08-11, main-lane) — 3 real root causes
+
 - **Parity-clobber**: tests that MANUALLY write `document.body.dataset.panelSurface` then
   WAIT on `!== 'focus'` will hang — parity-attrs owns that attr (derived from nav store,
   written parity-attrs.svelte.ts:343) and re-clobbers the manual write a tick later.
@@ -1242,3 +1243,13 @@ clinefree/deepseek/deepseek-v4-flash (or rely on shim default).
   mouse.down. Fix: re-move + rAF settle immediately before click (commit 79b016eb).
 - Fleet parity-resolvers refactor (their side, orthogonal; no collision).
 - Result: 3d-camera-orbit-resilience 4/4 green in 1.6m (was 2 fails + 180s timeouts).
+
+### Build-server inconsistency noticed 2026-08-11 (main-lane, sibling 3d run)
+- Sibling 3d runs (canvas-hit-test, focus-pocket) failed with `ReferenceError: $state is
+  not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW source `$state`
+  instead of the compiled dist chunk.
+- Root: src/lib/state/app.svelte.ts is FLEET-UNCOMMITTED WIP (dirty, search-mirror migration
+  at line 74); dist built 20:33 predates it; webServer (reuseExistingServer:true) appears to
+  be mixing dev-source transforms for that file. Works for committed-state tests (4/4 green).
+- Action: fleet should commit OR rebase dist after landing app.svelte.ts search-mirror WIP;
+  NOT a defect in the 3d-test fixes (all test-side, verified).
