@@ -1245,11 +1245,18 @@ clinefree/deepseek/deepseek-v4-flash (or rely on shim default).
 - Result: 3d-camera-orbit-resilience 4/4 green in 1.6m (was 2 fails + 180s timeouts).
 
 ### Build-server inconsistency noticed 2026-08-11 (main-lane, sibling 3d run)
+
 - Sibling 3d runs (canvas-hit-test, focus-pocket) failed with `ReferenceError: $state is
-  not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW source `$state`
+not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW source `$state`
   instead of the compiled dist chunk.
 - Root: src/lib/state/app.svelte.ts is FLEET-UNCOMMITTED WIP (dirty, search-mirror migration
   at line 74); dist built 20:33 predates it; webServer (reuseExistingServer:true) appears to
   be mixing dev-source transforms for that file. Works for committed-state tests (4/4 green).
 - Action: fleet should commit OR rebase dist after landing app.svelte.ts search-mirror WIP;
   NOT a defect in the 3d-test fixes (all test-side, verified).
+
+- **2026-08-11 goal-loop live-verified** (per AGENTS.txt transient-handoff item-1 gate):
+  fake-pi 11/11 PASS + live running→met/ACHIEVED transitions confirmed on the CURRENT
+  harness (report: tmp/goal-loop-live-REPORT.md). Active extension = goal.ts (v2 unified);
+  goal-loop.mjs deprecated-2026-08-10. Handoff item-2 (cline deepseek-v4-flash lane)
+  remains tracked separately under cline-shim entries.
