@@ -494,7 +494,7 @@ function _frameCameraOnAnchor(index: number, restoreToken: number): void {
             }
             try {
                 refreshFocusSemanticOverlay()
-                updateFocusSemanticOverlayPositions()
+                updateFocusSemanticOverlayPositions(performance.now())
             } catch (e) {
                 debugWarn('[url-state] focus semantic overlay refresh failed', index, e)
             }
