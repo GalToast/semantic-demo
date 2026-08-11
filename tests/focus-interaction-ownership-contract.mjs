@@ -10,7 +10,7 @@ import { chromium } from 'playwright';
 import { refreshCompositionState, focusOnNode } from '@lib/orchestration/lifecycle'
 import { inspectThreadNeighbor } from '@lib/journey/thread-inspector-state'
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
+const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&q=coffee&nodemo=1';
 const TARGET_URL = process.env.INTERACTION_OWNERSHIP_URL || DEFAULT_URL;
 const FOCUS_INDEX = Number(process.env.INTERACTION_OWNERSHIP_INDEX || 3060);
 
