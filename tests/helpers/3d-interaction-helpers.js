@@ -12,6 +12,18 @@ export async function openApp(page, viewport = { width: 1440, height: 900 }, opt
         page.on('console', (msg) => console.log('BROWSER:', msg.text()))
     }
     await setupMockSearch(page)
+    // Isolate the persistent engine-ready flag across tests sharing one browser
+    // context (playwright.config.js: fullyParallel:false, workers:1). test 1's
+    // signalReady() writes sessionStorage['semantic-explorer.engineReady'] which
+    // would otherwise leak into test 2's boot → different splash/init path →
+    // flaky click/hover. Clear on every navigation.
+    await page.addInitScript(() => {
+        try {
+            sessionStorage.removeItem('semantic-explorer.engineReady')
+        } catch {
+            /* storage may throw in private/sandboxed contexts */
+        }
+    })
     await page.setViewportSize(viewport)
     await page.goto(`${BASE_URL}${appPath}?q=coffee&nodemo=1`, { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(
