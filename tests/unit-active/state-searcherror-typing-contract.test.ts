@@ -69,13 +69,22 @@ describe('engine-boundary refactor / Phase 2-1 / searchError field typing', () =
         )
     })
 
-    it('search.svelte.ts runtime assignment matches SearchErrorData shape', () => {
+    it('search.svelte.ts re-exports setSearchError (canonical body lives in search-core.ts)', () => {
+        // S-1/S-2/S-3 split: search.svelte.ts is now a barrel that re-exports
+        // setSearchError from search-core.ts. The canonical body that mutates
+        // appState.searchState.searchError lives in search-core.ts.
         const searchStore = readSource('src/lib/stores/search.svelte.ts')
-        // The setSearchError function must set query, type, message
-        const setSearchError = searchStore.match(/export\s+function\s+setSearchError[\s\S]*?\n\}/m)
-        expect(setSearchError, 'setSearchError not found in search.svelte.ts').not.toBeNull()
+        const searchCore = readSource('src/lib/stores/search-core.ts')
+        // The barrel must re-export the setter (consumers import from search.svelte.ts)
+        expect(searchStore).toMatch(
+            /export\s*\{[\s\S]*\bsetSearchError\b[\s\S]*\}\s*from\s*['"]\.\/search-core['"]/
+        )
+        // The body must live in search-core.ts (not search.svelte.ts anymore)
+        const setSearchError = searchCore.match(/export\s+function\s+setSearchError[\s\S]*?\n\}/m)
+        expect(setSearchError, 'setSearchError not found in search-core.ts').not.toBeNull()
         const body = setSearchError![0]
-        // Phase 6b: searchError moved into searchState sub-aggregate
+        // The setter must populate the SearchErrorData shape: { query, type, message }
+        // Phase 6b: searchError lives in appState.searchState sub-aggregate.
         expect(body).toMatch(/appState\.searchState\.searchError\s*=\s*\{[\s\S]*query[\s\S]*type[\s\S]*message/)
     })
 

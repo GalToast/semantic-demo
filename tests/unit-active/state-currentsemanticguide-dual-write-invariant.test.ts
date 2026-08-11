@@ -72,10 +72,20 @@ describe('engine-boundary refactor / Phase 2 latent-bug fix / currentSemanticGui
         expect(engineTypes).not.toMatch(/currentSemanticGuide:\s*unknown\b/)
     })
 
-    it('setSemanticGuide() still writes strings to currentSemanticGuide', () => {
+    it('setSemanticGuide() still writes strings to currentSemanticGuide (via search-core.ts)', () => {
+        // S-1/S-2/S-3 split: search.svelte.ts is now a barrel. setSemanticGuide
+        // lives canonically in src/lib/stores/search-core.ts and is re-exported
+        // by search.svelte.ts for byte-compatible consumer imports. The test
+        // must read search-core.ts to find the body.
         const searchStore = readSource('src/lib/stores/search.svelte.ts')
-        const fnMatch = searchStore.match(/export\s+function\s+setSemanticGuide[\s\S]*?\n\}/m)
-        expect(fnMatch, 'setSemanticGuide not found').not.toBeNull()
+        const searchCore = readSource('src/lib/stores/search-core.ts')
+        // The barrel must re-export the setter (consumers import from search.svelte.ts)
+        expect(searchStore).toMatch(
+            /export\s*\{[\s\S]*\bsetSemanticGuide\b[\s\S]*\}\s*from\s*['"]\.\/search-core['"]/
+        )
+        // The body must live in search-core.ts (not search.svelte.ts anymore)
+        const fnMatch = searchCore.match(/export\s+function\s+setSemanticGuide[\s\S]*?\n\}/m)
+        expect(fnMatch, 'setSemanticGuide not found in search-core.ts').not.toBeNull()
         const body = fnMatch![0]
         // Phase 6b: currentSemanticGuide moved into appState.searchState sub-aggregate
         expect(body).toMatch(/appState\.searchState\.currentSemanticGuide\s*=\s*text/)

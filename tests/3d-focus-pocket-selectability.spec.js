@@ -19,9 +19,11 @@
 /* eslint-disable no-unused-vars */
 
 import { test, expect } from '@playwright/test'
-import { probeFocusPocket, focusNodeViaApp } from './helpers/3d-interaction-helpers.js'
-import { focusOnNode } from '@lib/orchestration/lifecycle'
-import { clearSearch, search } from '@lib/search/state'
+import {
+    probeFocusPocket,
+    waitForReachableFocusPocket,
+    focusNodeViaApp
+} from './helpers/3d-interaction-helpers.js'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 
@@ -61,11 +63,13 @@ async function setupMockSearch(page) {
 async function openApp(page, viewport = { width: 1440, height: 900 }) {
     await setupMockSearch(page)
     await page.setViewportSize(viewport)
-    await page.goto(`${BASE_URL}/index.html?view=galaxy`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`${BASE_URL}/dist/svelte/index.html?q=coffee&view=galaxy&nodemo=1`, {
+        waitUntil: 'domcontentloaded'
+    })
     await page.waitForFunction(
         () =>
-            typeof clearSearch === 'function' &&
-            typeof focusOnNode === 'function' &&
+            typeof (window.__APP_ACTIONS__ ?? window.__navActions__)?.clearSearch === 'function' &&
+            typeof (window.__APP_ACTIONS__ ?? window.__navActions__)?.focusOnNode === 'function' &&
             Array.isArray(window.__APP_STATE__?.points ?? window.__TEST_STATE__?.points) &&
             (window.__APP_STATE__?.points ?? window.__TEST_STATE__?.points ?? []).length > 0 &&
             (window.__APP_STATE__?.pointIndexByLeadId ?? window.__TEST_STATE__?.pointIndexByLeadId)?.size > 0,
@@ -114,7 +118,7 @@ async function probe(page) {
                     : {},
                 threadCandidates: state.navState?.threadCandidates ? state.navState.threadCandidates.slice(0, 10) : [],
                 threadSource: state.navState?.threadSource || '',
-                nodesAreSettling: state.nodesAreSettling ?? false
+                nodesAreSettling: state.nodesAreSettling ?? state.focusState?.nodesAreSettling ?? false
             },
             ui: {
                 // Focus-stage / thread-inspector panel elements that expose selectable nodes
@@ -160,7 +164,7 @@ async function performSearch(page, query = 'coffee') {
         if (!el) return
         el.value = q
         el.dispatchEvent(new Event('input', { bubbles: true }))
-        const search = search
+        const search = (window.__APP_ACTIONS__ ?? window.__navActions__)?.search
         if (typeof search === 'function') {
             await search(q, { preferCachedResults: false })
         }
@@ -458,14 +462,7 @@ test.describe('focus-pocket node selectability', () => {
         })
 
         await enterFocusByIndex(page, entryIndex)
-        await page
-            .waitForFunction(
-                () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
-                { timeout: 8000 }
-            )
-            .catch(() => {})
-
-        const pocket = await probeFocusPocket(page)
+        const pocket = await waitForReachableFocusPocket(page)
         expect(pocket.pocketSize, 'tablet pocket must have at least 1 node').toBeGreaterThan(0)
         expect(
             pocket.reachableCount,
@@ -586,14 +583,7 @@ test.describe('focus-pocket node selectability', () => {
         })
 
         await enterFocusByIndex(page, entryIndex)
-        await page
-            .waitForFunction(
-                () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
-                { timeout: 8000 }
-            )
-            .catch(() => {})
-
-        const pocket = await probeFocusPocket(page)
+        const pocket = await waitForReachableFocusPocket(page)
         expect(pocket.pocketSize, 'pocket must have at least 1 node').toBeGreaterThan(0)
         expect(
             pocket.reachableCount,
@@ -631,14 +621,7 @@ test.describe('focus-pocket node selectability', () => {
         })
 
         await enterFocusByIndex(page, entryIndex)
-        await page
-            .waitForFunction(
-                () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
-                { timeout: 8000 }
-            )
-            .catch(() => {})
-
-        const pocket = await probeFocusPocket(page)
+        const pocket = await waitForReachableFocusPocket(page)
         expect(pocket.pocketSize, 'tablet pocket must be non-empty').toBeGreaterThan(0)
         expect(
             pocket.reachableCount,
@@ -665,14 +648,7 @@ test.describe('focus-pocket node selectability', () => {
         })
 
         await enterFocusByIndex(page, entryIndex)
-        await page
-            .waitForFunction(
-                () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
-                { timeout: 8000 }
-            )
-            .catch(() => {})
-
-        const pocket = await probeFocusPocket(page)
+        const pocket = await waitForReachableFocusPocket(page)
         expect(pocket.pocketSize, 'short-landscape pocket must be non-empty').toBeGreaterThan(0)
         expect(
             pocket.reachableCount,
@@ -680,7 +656,7 @@ test.describe('focus-pocket node selectability', () => {
         ).toBeGreaterThan(0)
     })
 
-    test('mobile-portrait: focus pocket has reachable nodes at 390x844', async ({ page }) => {
+    test('mobile-portrait: focus pocket remains selectable on the fallback surface', async ({ page }) => {
         test.setTimeout(180000)
         await openApp(page, { width: 390, height: 844 })
 
@@ -708,10 +684,25 @@ test.describe('focus-pocket node selectability', () => {
 
         const pocket = await probeFocusPocket(page)
         expect(pocket.pocketSize, 'mobile-portrait pocket must be non-empty').toBeGreaterThan(0)
-        expect(
-            pocket.reachableCount,
-            `mobile-portrait must have reachable pocket nodes, got ${pocket.reachableCount}`
-        ).toBeGreaterThan(0)
+
+        const hasThreeSurface = await page.evaluate(() => {
+            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+            return Boolean(state.renderer?.domElement && state.camera && state.pointsMesh)
+        })
+        if (hasThreeSurface) {
+            expect(
+                pocket.reachableCount,
+                `mobile-portrait 3D surface must have reachable pocket nodes, got ${pocket.reachableCount}`
+            ).toBeGreaterThan(0)
+            return
+        }
+
+        // Portrait mobile intentionally uses the lightweight fallback surface;
+        // relationship selection is exposed through the focus-stage actions.
+        const snap = await probe(page)
+        const hasRelationshipUI =
+            snap.ui.threadInspectorItems > 0 || snap.ui.focusStageActions > 0 || snap.ui.nodeDetailCards > 0
+        expect(hasRelationshipUI, 'mobile-portrait fallback must expose selectable relationship UI').toBeTruthy()
     })
 
     // ------------------------------------------------------------------
@@ -757,7 +748,7 @@ test.describe('focus-pocket node selectability', () => {
             await page.evaluate(() => {
                 ;(window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth = 2
                 // Re-trigger neighborhood focus to rebuild pocket with DEEP_DIVE personality
-                const focusNode = focusOnNode
+                const focusNode = (window.__APP_ACTIONS__ ?? window.__navActions__)?.focusOnNode
                 if (typeof focusNode === 'function') {
                     focusNode((window.__APP_STATE__ ?? window.__TEST_STATE__).navState.focusedIndex)
                 }

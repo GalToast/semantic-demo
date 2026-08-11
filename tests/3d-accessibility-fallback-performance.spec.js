@@ -31,8 +31,8 @@ async function waitForAppReady(page) {
         () => {
             const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
             return (
-                typeof clearSearch === 'function' &&
-                typeof focusOnNode === 'function' &&
+                typeof window.__navActions__?.['clearSearch'] === 'function' &&
+                typeof window.__navActions__?.['focusOnNode'] === 'function' &&
                 Array.isArray(s?.points) &&
                 s.points.length > 0 &&
                 s?.renderer?.domElement &&

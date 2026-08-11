@@ -73,7 +73,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
         () => {
             const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
             return (
-                typeof clearSearch === 'function' &&
+                typeof window.__navActions__?.['clearSearch'] === 'function' &&
                 Array.isArray(s.points) &&
                 s.points.length > 0 &&
                 s.nodePositions?.length > 0 &&
@@ -229,7 +229,7 @@ async function abortInFlightSearch(page) {
 
     // Abort via clearSearch (the user-cancels flow)
     await page.evaluate(() => {
-        if (typeof clearSearch === 'function') {
+        if (typeof window.__navActions__?.['clearSearch'] === 'function') {
             window.__navActions__?.clearSearch()
         }
     })
@@ -271,7 +271,7 @@ async function slowSearchResponse(page) {
     await input.focus()
     await input.fill('latte')
     await page.evaluate(() => {
-        if (typeof search === 'function') {
+        if (typeof window.__navActions__?.['search'] === 'function') {
             window.__navActions__?.search('latte', { preferCachedResults: false })
         }
     })
