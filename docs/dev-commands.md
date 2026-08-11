@@ -88,7 +88,13 @@ These WebGL suites are heavy: each spec cold-loads `?q=coffee&nodemo=1` (8,406-p
 4. **Never run two browser suites in parallel** — they self-inflict the cold-load
    contention (measured: node-hit + smoke overlapping made both slower and flakier).
    One chromium-based contract run at a time.
-5. Budget: 16-spec 3d-full can need 60–90+ min serial. Use a background job with a
+5. **Never override `--workers` on the 3d family.** playwright.config.js mandates
+   `workers: 1` + `fullyParallel: false` for the serial WebGL suite; a
+   `--workers=2` run (2026-08-11) crashed the whole family with
+   `ReferenceError: $state is not defined` (src/lib/state/app.svelte.ts:74) — two
+   parallel app boots colliding on the `__SEMANTIC_EXPLORER_APP_STATE_V1__`/
+   NAV-mirror globals, not a product bug. Config is authoritative here.
+6. Budget: 16-spec 3d-full can need 60–90+ min serial. Use a background job with a
    generous cap; judge progress by `[run]`/`[PASS]` markers, not wall time.
 
 ## CI browser gate
