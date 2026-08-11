@@ -247,6 +247,41 @@ describe('semantic thread worker lifecycle', () => {
         expect(worker.terminated).toBe(true)
     })
 
+    it('F1: caches normalization keyed on (artifactName, bundle) identity', async () => {
+        // O-2 audit F1 (2026-08-11): the worker structured-clones payloads, so
+        // neighborEntries identity is NOT stable across loads. The effective key is
+        // (artifactName, bundle) at the caller level. Test the exported cached
+        // normalizer directly (no worker lifecycle): same key → same array ref;
+        // different bundle → fresh array.
+        const { normalizeSemanticNeighborEntriesCached } = await import(
+            '../../src/lib/engine/semantic-threads'
+        )
+        const entries: Array<[string, { name: string; neighbors?: unknown[] }]> = [
+            ['lead-1', { name: 'Lead One' }]
+        ]
+        const bundleA = { nodes: { '1': { lead_id: 'lead-1' } } }
+        const bundleB = { nodes: { '2': { lead_id: 'lead-2' } } }
+
+        const first = normalizeSemanticNeighborEntriesCached(
+            entries as never,
+            'semantic_threads_ui.dat',
+            bundleA
+        )
+        const second = normalizeSemanticNeighborEntriesCached(
+            entries as never,
+            'semantic_threads_ui.dat',
+            bundleA
+        )
+        expect(second).toBe(first)
+
+        const third = normalizeSemanticNeighborEntriesCached(
+            entries as never,
+            'semantic_threads_ui.dat',
+            bundleB
+        )
+        expect(third).not.toBe(first)
+    })
+
     it('restarts caller request ids when a fresh worker is created', async () => {
         const firstPromise = loadSemanticThreads({ reason: 'unit-test-worker-generation-one' })
         await Promise.resolve()

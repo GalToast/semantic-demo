@@ -9,7 +9,11 @@ const app = fs.readFileSync(appPath, 'utf8')
 const threeSetupPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-engine.ts')
 const threeEngineCorePath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-engine-core.ts')
 const threeEngineCoreSrc = fs.existsSync(threeEngineCorePath) ? fs.readFileSync(threeEngineCorePath, 'utf8') : ''
-const threeSetup = fs.readFileSync(threeSetupPath, 'utf8') + '\n' + threeEngineCoreSrc
+const threeEngineInitPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-engine-init.ts')
+const threeEngineInitSrc = fs.existsSync(threeEngineInitPath) ? fs.readFileSync(threeEngineInitPath, 'utf8') : ''
+const threeEngineLifecyclePath = path.join(repoRoot, 'src', 'lib', 'engine', 'lifecycle.ts')
+const threeEngineLifecycleSrc = fs.existsSync(threeEngineLifecyclePath) ? fs.readFileSync(threeEngineLifecyclePath, 'utf8') : ''
+const threeSetup = fs.readFileSync(threeSetupPath, 'utf8') + '\n' + threeEngineInitSrc + '\n' + threeEngineCoreSrc + '\n' + threeEngineLifecycleSrc
 // Post-W46-P2: scene graph construction (camera pose, clear alpha, tone mapping)
 // was extracted into renderer/scene-init.ts. Visual-polish assertions check both.
 const sceneInitPath = path.join(repoRoot, 'src', 'lib', 'engine', 'renderer', 'scene-init.ts')
@@ -57,12 +61,12 @@ function sectionBetween(source, startAnchor, endAnchor) {
 
 // Post-W8 extraction: bezier line-pair emission and per-frame thread updates
 // moved from mycelium-engine.ts (now fossilized) into thread-manager.ts.
-// Assert against thread-manager.ts where the live implementation lives.
-const pushBezierSource = sectionBetween(
-    threadManager,
-    'function pushBezierLinePair',
-    '// ── Dirty-node tracking for amortized updates'
-)
+// W-split follow-up: the pushBezierLinePair DEFINITION now lives in
+// mycelium-bezier.ts (thread-manager imports + calls it); assert the body
+// against the live owner and keep thread-manager for call-site/coefficients.
+const bezierSrc = fs.readFileSync(path.join(repoRoot, 'src', 'lib', 'engine', 'mycelium-bezier.ts'), 'utf8')
+const pushBezierStart = bezierSrc.indexOf('function pushBezierLinePair')
+const pushBezierSource = pushBezierStart >= 0 ? bezierSrc.slice(pushBezierStart) : ''
 includesAll(
     pushBezierSource,
     [
@@ -218,7 +222,7 @@ const updateThreadsSource = sectionBetween(
     'state.myceliumDirty = false'
 )
 includesAll(
-    threadManager,
+    threadManager + '\n' + bezierSrc,
     [
         'BEZIER_SEGMENTS_PER_PAIR = 10',
         'FLOATS_PER_SEGMENT = 6',

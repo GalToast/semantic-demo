@@ -1,0 +1,77 @@
+{
+  "_meta": {
+    "description": "CSS selector ownership table (Option C, see tmp/css-ownership-REPORT.md §3.3 + §4). Each entry: ownerFile must define selector at least min times (1 = load-bearing owner; 0 = optional modifier) and at most max times (omit for Infinity). To update after a CSS refactor, run a probe mirroring countSelectorDefinitions over every css/*.css and update in the same commit as the CSS change.",
+    "version": "1.0.0"
+  },
+  "ownership": [
+    { "selector": ".suggestion-btn", "ownerFile": "animations.css", "min": 1, "max": 2 },
+    { "selector": ".suggestion-btn", "ownerFile": "controls.css", "min": 1, "max": 4 },
+    { "selector": ".suggestion-btn", "ownerFile": "search.css", "min": 1, "max": 4 },
+
+    { "selector": ".btn-synthesize", "ownerFile": "controls.css", "min": 1, "max": 6 },
+    { "selector": ".btn-synthesize", "ownerFile": "journey_active.css", "min": 1, "max": 4 },
+    { "selector": ".btn-synthesize", "ownerFile": "mobile_base.css", "min": 1, "max": 2 },
+    { "selector": ".btn-synthesize", "ownerFile": "synthesis.css", "min": 1, "max": 6 },
+
+    { "selector": ".focus-stage-route", "ownerFile": "journey_steps.css", "min": 1, "max": 20 },
+    { "selector": ".focus-stage-route", "ownerFile": "mobile_premium__components.css", "min": 1, "max": 4 },
+    { "selector": ".focus-stage-route", "ownerFile": "mobile_premium__state.css", "min": 1, "max": 2 },
+
+    { "selector": ".focus-stage-card", "ownerFile": "animations.css", "min": 1, "max": 6 },
+    { "selector": ".focus-stage-card", "ownerFile": "journey_steps.css", "min": 1, "max": 36 },
+    {
+      "selector": ".focus-stage-card",
+      "ownerFile": "mobile_premium__components.css",
+      "min": 1,
+      "max": 62,
+      "note": "load-bearing canonical owner; do not refactor away without a migration issue"
+    },
+
+    { "selector": ".share-toggle", "ownerFile": "layout_base.css", "min": 1, "max": 12 },
+    { "selector": ".share-toggle", "ownerFile": "mobile_base.css", "min": 1, "max": 4 },
+    { "selector": ".share-toggle", "ownerFile": "mobile_premium__components.css", "min": 1, "max": 6 },
+    { "selector": ".share-toggle", "ownerFile": "mobile_premium__layout.css", "min": 1, "max": 10 },
+    { "selector": ".share-toggle", "ownerFile": "progressive_disclosure.css", "min": 1, "max": 4 },
+
+    { "selector": ".legend-toggle", "ownerFile": "layout_base.css", "min": 1, "max": 18 },
+    { "selector": ".legend-toggle", "ownerFile": "mobile_premium__layout.css", "min": 1, "max": 8 },
+    { "selector": ".legend-toggle", "ownerFile": "mobile_premium__state.css", "min": 1, "max": 4 },
+
+    { "selector": ".search-results.active", "ownerFile": "animations.css", "min": 1, "max": 2 },
+    { "selector": ".search-results.active", "ownerFile": "journey_active.css", "min": 1, "max": 2 },
+    { "selector": ".search-results.active", "ownerFile": "mobile_premium__layout.css", "min": 1, "max": 20 },
+    { "selector": ".search-results.active", "ownerFile": "mobile_premium__state.css", "min": 1, "max": 22 },
+    { "selector": ".search-results.active", "ownerFile": "progressive_disclosure.css", "min": 1, "max": 6 },
+    { "selector": ".search-results.active", "ownerFile": "search.css", "min": 1, "max": 10 },
+    { "selector": ".search-results.active", "ownerFile": "strands.css", "min": 1, "max": 2 },
+
+    { "selector": ".help-toggle", "ownerFile": "layout_base.css", "min": 1, "max": 8 },
+    { "selector": ".help-toggle", "ownerFile": "mobile_premium__layout.css", "min": 1, "max": 4 },
+
+    { "selector": ".journey-compass-title", "ownerFile": "journey_active.css", "min": 1, "max": 6 },
+    { "selector": ".journey-compass-title", "ownerFile": "layout_base.css", "min": 1, "max": 2 },
+    { "selector": ".journey-compass-title", "ownerFile": "mobile_premium__components.css", "min": 1, "max": 10 },
+    { "selector": ".journey-compass-title", "ownerFile": "mobile_premium__state.css", "min": 1, "max": 10 },
+    { "selector": ".journey-compass-title", "ownerFile": "strands.css", "min": 1, "max": 4 },
+
+    { "selector": ".journey-compass-actions", "ownerFile": "journey_active.css", "min": 1, "max": 6 },
+    { "selector": ".journey-compass-actions", "ownerFile": "mobile_premium__components.css", "min": 1, "max": 8 },
+    { "selector": ".journey-compass-actions", "ownerFile": "mobile_premium__layout.css", "min": 1, "max": 2 },
+    { "selector": ".journey-compass-actions", "ownerFile": "mobile_premium__state.css", "min": 1, "max": 14 },
+    { "selector": ".journey-compass-actions", "ownerFile": "progressive_disclosure.css", "min": 1, "max": 2 },
+    { "selector": ".journey-compass-actions", "ownerFile": "strands.css", "min": 1, "max": 10 },
+
+    { "selector": ".journey-compass-rail", "ownerFile": "journey_active.css", "min": 1, "max": 8 },
+    { "selector": ".journey-compass-rail", "ownerFile": "layout_base.css", "min": 1, "max": 2 },
+    { "selector": ".journey-compass-rail", "ownerFile": "mobile_premium__components.css", "min": 1, "max": 6 },
+    { "selector": ".journey-compass-rail", "ownerFile": "mobile_premium__layout.css", "min": 1, "max": 24 },
+    { "selector": ".journey-compass-rail", "ownerFile": "mobile_premium__state.css", "min": 1, "max": 4 },
+    { "selector": ".journey-compass-rail", "ownerFile": "strands.css", "min": 1, "max": 2 },
+
+    { "selector": ".journey-compass-action.primary", "ownerFile": "journey_active.css", "min": 1, "max": 12 },
+    { "selector": ".journey-compass-action.primary", "ownerFile": "mobile_premium__components.css", "min": 1, "max": 8 },
+    { "selector": ".journey-compass-action.primary", "ownerFile": "mobile_premium__layout.css", "min": 1, "max": 6 },
+    { "selector": ".journey-compass-action.primary", "ownerFile": "mobile_premium__state.css", "min": 1, "max": 8 },
+    { "selector": ".journey-compass-action.primary", "ownerFile": "strands.css", "min": 1, "max": 10 }
+  ]
+}

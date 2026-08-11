@@ -14,7 +14,7 @@ import { setJourneyPhase, journeyStore } from '@lib/stores/journey.svelte'
 import type { NavMode, NavState, PanelSurface, ViewName } from '@lib/types/state'
 import { debugWarn } from '@lib/utils/debug'
 import { clearSearch, runSearch, searchStore, setSearchError } from '@lib/stores/search.svelte'
-import { focusStore } from '@lib/stores/focus.svelte'
+import { focusStore, setSemanticDiveMode } from '@lib/stores/focus.svelte'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import {
     restoreActiveClusterFilterFromUrl,
@@ -23,7 +23,7 @@ import {
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { animateCameraToNode } from '@lib/engine/camera-choreography/focus'
-import { refreshFocusSemanticOverlay, updateFocusSemanticOverlayPositions } from '@lib/journey/semantic-overlay'
+import { refreshFocusSemanticOverlay, updateFocusSemanticOverlayPositions } from '@lib/journey/webgl'
 import { applyPointFilterColors } from '@lib/journey/point-color'
 import { appState } from '@lib/state/app.svelte'
 import { applyFilters } from '@lib/orchestration/search-filter-core'
@@ -31,7 +31,6 @@ import { syncFilterControls } from '@lib/orchestration/cluster-filter-controller
 import { semanticNeighborMap } from '@lib/data-store'
 import {
     getSearchParams,
-    getLocationPathname,
     isDomForcedFocusSearchSurface,
     hasRestorableUrlState,
     getRequestedUrlDepth
@@ -270,6 +269,10 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
             if (_isRestoreStale(restoreToken)) return
         }
 
+        // Anchor/search hydration republishes focus and normally settles on
+        // `focus-search`; honor an explicit shared-link request for the
+        // deeper semantic-dive surface after those async writes finish.
+        restoreExplicitInsideSurface(surfaceParam)
         preserveDomForcedFocusSearchSurface()
 
         // URL sync after apply — preserve the original ?q= value even when the
@@ -302,6 +305,17 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
             })
         }
     }
+}
+
+function restoreExplicitInsideSurface(surfaceParam: string | null): void {
+    if (surfaceParam !== 'inside') return
+
+    const current = get(navStore)
+    if (current.focusedIndex == null) return
+
+    setJourneyPhase('inside')
+    setSemanticDiveMode(true)
+    writeNavStateMirror({ mode: 'inside', surface: 'inside', trailDepth: 2 })
 }
 
 // ── Internal Helpers ──────────────────────────────────────────────────────────
@@ -560,10 +574,33 @@ async function _applyFocusPocketForAnchor(
  *   - We guard on the restore token so a newer applyUrlState supersedes
  *     this one (the subscription is torn down before firing).
  */
-function _setupDeferredNeighborRefire(numericId: number, restoreToken: number): void {
+function _setupDeferredNeighborRefire(
+    numericId: number,
+    restoreToken: number,
+    signal: AbortSignal,
+    timeoutMs = 30000
+): void {
     if (get(semanticNeighborMap).size === 0) {
         let unsub: Unsubscriber | null = null
+        let timeoutSignal: AbortSignal | null = null
+
+        const onRestoreAbort = (): void => cleanup()
+        const onTimeoutAbort = (): void => cleanup()
+
+        const cleanup = (): void => {
+            unsub?.()
+            unsub = null
+            signal.removeEventListener('abort', onRestoreAbort)
+            timeoutSignal?.removeEventListener('abort', onTimeoutAbort)
+            timeoutSignal = null
+        }
+
         const refire = async (): Promise<void> => {
+            // Teardown the subscription once the map has fired its one
+            // allowed notification, regardless of whether the refire itself
+            // later bails on stale token/focus.
+            cleanup()
+
             // Bail if the user navigated away or a newer restore superseded us.
             if (appState.navState.focusedIndex !== numericId) return
             if (_isRestoreStale(restoreToken)) return
@@ -586,11 +623,28 @@ function _setupDeferredNeighborRefire(numericId: number, restoreToken: number): 
         unsub = semanticNeighborMap.subscribe((map) => {
             if (map.size > 0) {
                 // Threads just became available — fire once and tear down.
-                unsub?.()
-                unsub = null
+                cleanup()
                 void refire()
             }
         })
+
+        // If the caller's restore was already superseded before we subscribed,
+        // tear down immediately instead of leaking a listener forever.
+        if (signal.aborted) {
+            cleanup()
+            return
+        }
+
+        // Supersession / caller abort: a newer applyUrlState aborts this
+        // signal, so we must remove the subscription instead of leaving it
+        // for the lifetime of the page.
+        signal.addEventListener('abort', onRestoreAbort, { once: true })
+
+        // Bounded never-load cleanup: if threads never arrive, remove the
+        // subscription after the existing URL-restore timeout convention
+        // (matches the 30s deadline in _restoreSearchFromParams).
+        timeoutSignal = AbortSignal.timeout(timeoutMs)
+        timeoutSignal.addEventListener('abort', onTimeoutAbort, { once: true })
     }
 }
 
@@ -611,7 +665,7 @@ async function _restoreAnchorFromParams(anchorId: string, restoreToken: number, 
     _restoreFocusStateForAnchor(validation.numericId)
     const applied = await _applyFocusPocketForAnchor(validation.numericId, restoreToken, signal)
     if (!applied) return
-    _setupDeferredNeighborRefire(validation.numericId, restoreToken)
+    _setupDeferredNeighborRefire(validation.numericId, restoreToken, signal)
 }
 
 /**

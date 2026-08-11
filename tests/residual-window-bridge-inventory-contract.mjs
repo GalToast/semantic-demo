@@ -63,7 +63,7 @@ const MODULES = {
     mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'src/lib/utils/map-flattening-layout.ts'),
     inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/inspected-strand-overlay-adapter.ts'),
     routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/route-arrival-overlay-adapter.ts'),
-    threeSetup: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine.ts'),
+    threeSetup: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-render-loop.ts'),
     threeEngineCore: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-core.ts'),
     threeEngineState: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-state.ts'),
     threeSearchAnimations: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-search-animations.ts'),

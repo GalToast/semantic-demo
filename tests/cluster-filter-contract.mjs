@@ -20,7 +20,7 @@ import './helpers/svelte-rune-shim.mjs';
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const CLUSTER_FILTER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/filter.svelte.ts');
 const CLUSTER_FILTER_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/cluster-filter-controller.ts');
-const SEARCH_FILTER_CORE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/search-filter-core.ts');
+const SEARCH_FILTER_CORE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/search-filter-core.ts');
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/lifecycle.ts');
 const URL_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/url-state.ts');
 
@@ -144,6 +144,7 @@ function testLifecycleDelegation() {
         path.join(SEMDEMO_ROOT, 'src/lib/engine/adapters-bridge.ts'),
         path.join(SEMDEMO_ROOT, 'src/lib/orchestration/cluster-filter-controller.ts'),
         URL_STATE_PATH,
+        path.join(SEMDEMO_ROOT, 'src/lib/orchestration/url-restore.ts'),
         SEARCH_FILTER_CORE_PATH
     ]);
     assert(
