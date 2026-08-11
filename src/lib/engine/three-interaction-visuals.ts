@@ -42,10 +42,9 @@ import {
     LineSegments,
     AdditiveBlending,
     Color,
-    Group,
-    MeshBasicMaterialParameters,
-    LineBasicMaterialParameters
+    Group
 } from 'three'
+import type { MeshBasicMaterialParameters, LineBasicMaterialParameters } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
 import { disposeFocusPocketSizeMesh } from './focus-pocket-size-mesh'
 const state = _state
@@ -148,7 +147,9 @@ function createAdditiveMesh(
 ): LineSegments
 function createAdditiveMesh(
     geometry: BufferGeometry,
-    MaterialCtor: new (params: MeshBasicMaterialParameters | LineBasicMaterialParameters) => MeshBasicMaterial | LineBasicMaterial,
+    MaterialCtor: new (
+        params: MeshBasicMaterialParameters | LineBasicMaterialParameters
+    ) => MeshBasicMaterial | LineBasicMaterial,
     materialParams: MeshBasicMaterialParameters | LineBasicMaterialParameters
 ): Mesh | LineSegments {
     const material = new MaterialCtor({
