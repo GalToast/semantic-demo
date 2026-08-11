@@ -8,7 +8,7 @@
  * until the panel is ported to a Svelte component.
  */
 
-import { cancelMicroDemo } from '@lib/demo/choreography'
+import { cancelDemo } from '@lib/stores/demo.svelte.ts'
 import { showToast } from '@lib/stores/toast.svelte'
 import { debugWarn } from '@lib/utils/debug'
 
@@ -116,7 +116,13 @@ export function initKeyboardShortcutsHint(): void {
         // store reset + attemptStart after sceneReady (one veil, one writer).
         // Keep micro-demo fallback for when DemoChoreography hasn't mounted.
         try {
-            cancelMicroDemo('replay')
+            // W2B-step1: migrated from cancelMicroDemo('replay'). The canonical cancelDemo()
+            // has no reason parameter (signature: cancelDemo(): boolean at
+            // src/lib/stores/demo.svelte.ts:170) — the 'replay' reason is dropped.
+            // Engine-level cancelChoreography is NOT called by cancelDemo(), but the canonical
+            // demo path uses the Svelte 5 {isDemoActive()} block for veil removal (see
+            // DemoChoreography.svelte:412), so this is equivalent for the canonical demo path.
+            cancelDemo()
             // W7 F2 fix: listen for the canonical-path ack BEFORE dispatching.
             // If DemoChoreography picks up demo-replay-requested, it dispatches
             // demo-replay-acknowledged synchronously after calling requestReplay().

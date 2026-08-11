@@ -90,16 +90,18 @@ describe('W7: replayBtn click handler preserves the M15 invariant (F1 fix)', () 
     })
 })
 
-describe('W7: @lib/demo/choreography import drops startMicroDemo (no unused-import warning)', () => {
-    it('startMicroDemo removed from @lib/demo/choreography import line', () => {
-        // After removing the only startMicroDemo callsite, the import should drop startMicroDemo
-        // from the @lib/demo/choreography import line. cancelMicroDemo still appears (still used
-        // in the replayBtn try-block).
-        const choreographyImportMatch = src.match(
+describe('W7: keyboard-help demo wiring is canonical (step-1/3 of choreography retirement)', () => {
+    it('imports cancelDemo from the canonical store and drops @lib/demo/choreography entirely', () => {
+        // W2B-step1 (2026-08-11): the only live legacy call (cancelMicroDemo('replay')) was
+        // migrated to the canonical cancelDemo(). The legacy module import must be gone.
+        const legacyImportMatch = src.match(
             /import\s+\{[\s\S]{0,200}?\}\s+from\s+['"]@lib\/demo\/choreography['"]/
         )
-        expect(choreographyImportMatch).not.toBeNull()
-        expect(choreographyImportMatch![0]).not.toMatch(/startMicroDemo/)
-        expect(choreographyImportMatch![0]).toMatch(/cancelMicroDemo/)
+        expect(legacyImportMatch, '@lib/demo/choreography import must be removed').toBeNull()
+        const canonicalImportMatch = src.match(
+            /import\s+\{[\s\S]{0,200}?\}\s+from\s+['"]@lib\/stores\/demo\.svelte\.ts['"]/
+        )
+        expect(canonicalImportMatch).not.toBeNull()
+        expect(canonicalImportMatch![0]).toMatch(/cancelDemo/)
     })
 })
