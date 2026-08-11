@@ -158,11 +158,18 @@ const hasClearExplorationFromStores =
 const hasClearExplorationFromOrchestration =
     /clearExplorationFocusSelection/.test(ORCHESTRATION_SOURCE) &&
     /export\s*\{[\s\S]*clearExplorationFocusSelection/.test(ORCHESTRATION_SOURCE)
+// 2026-08-11 (fleet m1-2 find, main-lane gated): the helper's canonical owner
+// moved from lifecycle re-export to url-restore — url-restore.ts:119 re-exports
+// it from url-writer.ts:48; lifecycle only IMPORTS it (:46). Accept the current
+// owner's re-export so the contract tests reality, not the retired location.
+const hasClearExplorationFromUrlOwners =
+    /export\s*\{[\s\S]*clearExplorationFocusSelection/.test(URL_RESTORE_SOURCE) ||
+    /export function clearExplorationFocusSelection/.test(URL_WRITER_SOURCE)
 assert(
-    hasClearExplorationFromStores || hasClearExplorationFromOrchestration,
-    'clearExplorationFocusSelection is not re-exported from lifecycle.ts'
+    hasClearExplorationFromStores || hasClearExplorationFromOrchestration || hasClearExplorationFromUrlOwners,
+    'clearExplorationFocusSelection is not re-exported from lifecycle.ts nor its current url-state/restore owner'
 )
-console.log('  found url-state owner export and lifecycle re-export')
+console.log('  found url-state owner export and lifecycle/url-state re-export')
 
 console.log('\nScanning for direct writes to protected fields...')
 const issues = findDirectWrites()
