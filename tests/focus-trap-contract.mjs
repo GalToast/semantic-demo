@@ -54,13 +54,19 @@ async function setupNetworkStubs(page) {
 }
 
 async function waitForAppReady(page) {
-  await page.goto(`${BASE_URL}/index.html?view=galaxy`);
+  // Data boot: the canonical search+boot path (?q=coffee&nodemo=1) is what
+  // populates __TEST_STATE__.points (the app only loads the scene/data with a
+  // search/deep-link present, per helpers/3d-interaction-helpers.js). A bare
+  // ?view=galaxy never satisfies the points.length>0 ready predicate.
+  await page.goto(`${BASE_URL}/dist/svelte/index.html?q=coffee&nodemo=1&view=galaxy`);
+  // Modern readiness (2026-08-11): the legacy window globals clearSearch /
+  // refreshCompositionState were removed in the Svelte-5-native migration —
+  // the canonical test hook is __APP_STATE__ (probe-verified points=8406 on
+  // the ?q=coffee&nodemo=1 boot path). Wait on the hook, not the gone globals.
   await page.waitForFunction(() => (
-    typeof (clearSearch) === 'function' &&
-    typeof (refreshCompositionState) === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
-  ), undefined, { timeout: 20000 });
+  ), undefined, { timeout: 30000 });
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 

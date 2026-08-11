@@ -57,7 +57,7 @@ async function setupNetworkStubs(page) {
 }
 
 async function waitForAppReady(page) {
-  await page.goto(`${BASE_URL}/index.html?view=galaxy`);
+  await page.goto(`${BASE_URL}/dist/svelte/index.html?q=coffee&nodemo=1&view=galaxy`);
   await page.waitForFunction(() => (
     typeof (clearSearch) === 'function' &&
     typeof (refreshCompositionState) === 'function' &&
@@ -175,7 +175,7 @@ async function test_micro_demo_localStorage_flag() {
 
     // Step 1: navigate with ?nodemo to bypass micro-demo auto-start
     // This lets us control localStorage before initMicroDemo() runs
-    await page.goto(`${BASE_URL}/index.html?view=galaxy&nodemo`);
+    await page.goto(`${BASE_URL}/dist/svelte/index.html?q=coffee&nodemo=1&view=galaxy`);
     await page.waitForFunction(() => (
       typeof (refreshCompositionState) === 'function' &&
       Array.isArray(window.__TEST_STATE__?.points) &&
