@@ -449,11 +449,46 @@ function normalizeLeadId(id: unknown): string | null {
     return s.length > 0 ? s : null
 }
 
+// F1 cache (O-2 audit, 2026-08-11): the worker re-parses the same bundle on
+// every LOAD_THREADS success, so the normalized map was rebuilt (≈8,406×~14
+// object allocations) per call even when nothing changed. Cache by input
+// identity: when the raw entries array is the same reference as the previous
+// call, return the previous normalized result. Safe because the worker
+// returns the same parsed array for a cached bundle (audit-verified); a
+// content-hash fallback is unnecessary while the worker owns parsing.
+// NOTE (2026-08-11, verified): neighborEntries identity is NOT stable across worker
+// calls — data-worker.ts postMessage structured-clones the payload, so a fresh array
+// arrives every load. The effective F1 key is (artifactName, bundle) at the CALLER
+// level: same artifact + same bundle → same normalized map. The cache therefore
+// lives at the call site keyed on those, not on neighborEntries identity.
+let _lastNormalizedKey: { artifactName: string; bundle: unknown } | null = null
+let _lastNormalizedOutput: Array<[string, SemanticNeighborEntry]> | null = null
+
+export function normalizeSemanticNeighborEntriesCached(
+    neighborEntries: Array<[string, NeighborEntry]>,
+    artifactName: string,
+    bundle: unknown
+): Array<[string, SemanticNeighborEntry]> {
+    if (!Array.isArray(neighborEntries)) return []
+    if (
+        _lastNormalizedKey !== null &&
+        _lastNormalizedKey.artifactName === artifactName &&
+        _lastNormalizedKey.bundle === bundle &&
+        _lastNormalizedOutput !== null
+    ) {
+        return _lastNormalizedOutput
+    }
+    const result = normalizeSemanticNeighborEntries(neighborEntries)
+    _lastNormalizedKey = { artifactName, bundle }
+    _lastNormalizedOutput = result
+    return result
+}
+
 function normalizeSemanticNeighborEntries(
     neighborEntries: Array<[string, NeighborEntry]>
 ): Array<[string, SemanticNeighborEntry]> {
     if (!Array.isArray(neighborEntries)) return []
-    return neighborEntries.map(([leadId, node]) => [
+    const result: Array<[string, SemanticNeighborEntry]> = neighborEntries.map(([leadId, node]) => [
         leadId,
         {
             leadId,
@@ -481,6 +516,8 @@ function normalizeSemanticNeighborEntries(
                 : []
         }
     ])
+    _lastNormalizedOutput = result
+    return result
 }
 
 // ── Semantic lane snapshot ────────────────────────────────────────────────────
@@ -724,7 +761,9 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
                     attemptConfigs
                 })
                 const { manifest } = await _guardSemanticSpaceLayout(bundle, artifactName, cacheBust)
-                const neighborMap = new Map(normalizeSemanticNeighborEntries(neighborEntries))
+                const neighborMap = new Map(
+                    normalizeSemanticNeighborEntriesCached(neighborEntries, artifactName, bundle)
+                )
                 {
                     state.semanticThreadBundle = bundle
                     state.semanticThreadArtifactName = artifactName
