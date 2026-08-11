@@ -13,7 +13,8 @@ import { navStore } from '@lib/stores/navigation.svelte.ts'
 // URL flags such as `nodemo=1` and `staticDev=1` control boot/test behavior;
 // they do not describe application navigation. The post-data boot restore
 // must not reset a user interaction when the URL has no state to restore.
-export const URL_STATE_KEYS = [
+// Internal-only (used by hasRestorableUrlState); not part of the export surface.
+const URL_STATE_KEYS = [
     'view',
     'q',
     'mode',
