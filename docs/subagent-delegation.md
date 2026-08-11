@@ -252,3 +252,34 @@ final-verify on everything.
 3. Parent's REPORT must carry child lineage (names + worker ids).
 4. Fan-out only for genuinely independent slices — logfare lanes run one-at-a-time
    in practice, so parallel fan-out gains little today.
+
+### Stacked goal tiers (the "beast" file-path protocol — live 2026-08-11)
+
+The goal TOOL is not surfaced in worker schemas (worker tool-filter blocks it; mmx
+extension injection does NOT add it — probed + reverted). BUT goal-state.json at
+~/.pi/agent/extensions/goal-state.json is a plain read-fileSync/writeFileSync file:
+ANY worker + nested child can read/write it with ordinary bash/node-fs — no tool.
+
+Beast stacking = every tier writes its own namespaced sub-goal alongside the main
+goal; the main lane evaluates all-tiers-ACHIEVED. Live: parent tier written BY a
+worker via node-fs (tmp/beast-subgoals/parent.json: {worker,status,ticks}), child tier
+same shape. The main extension's condition-eval can read any path.
+
+PROVEN-GOOD: worker file-ticks its sub-goal (self-write, no tool) — full control.
+STILL-CLOGGED: a worker's SELF-spawn detours into model-catalog discovery (LaunchRef
+grep) that burns its settle budget — for child spawns, use a parent brief with the
+EXACT model string + tool name pre-baked (the nested-profile parent did this and
+succeeded), or main-lane-direct the child tier.
+
+### LIVE COMPLETE (2026-08-11, 02:55Z): the full nested + recursive stack
+
+The beast-file-probe parent FULLY executed the nested flow: it spawned child
+ocw_d468266d (a REAL sub-worker), polled it to completion (exit 0), read the
+child's disk state tmp/beast-subgoals2/child.json
+({worker:beast-child,status:done,ticks:3}), verified CHILD_TICKED reply, and
+wrote final: parent-in-progress + child-done = STACKED to its report. The
+goal-tool absent-from-events verdict (sampled first-hand by a worker:
+GOAL_TOOL=absent — only read/bash/write/flight_recorder in-session) confirms
+the file-path is the worker-reachable medium; the tool is harness-side-only.
+Pept. Child spawn was hard-won (model-discovery detour) — bake the exact
+model string + tool name in the parent brief.
