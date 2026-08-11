@@ -8,15 +8,26 @@ function cameraDistance(position) {
 }
 
 async function findClickableNode(page) {
-    const candidates = await projectedCandidates(page, { marginRatio: 0.06, maxResults: 24 })
-    for (const candidate of candidates) {
-        await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 })
-        await page
-            .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
-            .catch(() => {})
-        const state = await probe(page)
-        if (state.canvasCursor === 'pointer' && isValidNodeIndex(state.hoverHighlightIndex, state.pointCount)) {
-            return { ...candidate, resolvedIndex: state.hoverHighlightIndex }
+    // Bounded retry (2 passes): after a reset/gesture/resize the camera can
+    // still be settling, so the FIRST candidate pass may find no pointer-
+    // hoverable node even though the scene is fine (observed on the resize
+    // test — 'hoverable canvas node coordinate must be discoverable' flake
+    // class). One settle + re-pass fixes it without masking real failures.
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+        const candidates = await projectedCandidates(page, { marginRatio: 0.06, maxResults: 24 })
+        for (const candidate of candidates) {
+            await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 })
+            await page
+                .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
+                .catch(() => {})
+            const state = await probe(page)
+            if (state.canvasCursor === 'pointer' && isValidNodeIndex(state.hoverHighlightIndex, state.pointCount)) {
+                return { ...candidate, resolvedIndex: state.hoverHighlightIndex }
+            }
+        }
+        if (attempt === 0) {
+            await page.waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
+                .catch(() => {})
         }
     }
     return null
