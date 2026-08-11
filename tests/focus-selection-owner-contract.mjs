@@ -8,42 +8,33 @@
  * Run:  node tests/focus-selection-owner-contract.mjs
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { resolveSource } from './source-path.mjs';
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { resolveSource } from './source-path.mjs'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SOURCE = fs.readFileSync(
-    resolveSource('src/lib/stores/lifecycle.ts', path.resolve(__dirname, '..')),
-    'utf8'
-);
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const SOURCE = fs.readFileSync(resolveSource('src/lib/stores/lifecycle.ts', path.resolve(__dirname, '..')), 'utf8')
 const LIFECYCLE_RESET_SOURCE = fs.readFileSync(
     resolveSource('src/lib/stores/lifecycle.ts', path.resolve(__dirname, '..')),
     'utf8'
-);
+)
 const ORCHESTRATION_SOURCE = fs.readFileSync(
     resolveSource('src/lib/orchestration/lifecycle.ts', path.resolve(__dirname, '..')),
     'utf8'
-);
+)
 const URL_STATE_SOURCE = fs.readFileSync(
     resolveSource('src/lib/orchestration/url-state.ts', path.resolve(__dirname, '..')),
     'utf8'
-);
-
-// Fields that may only be written inside clearExplorationFocusSelection
-const PROTECTED_FIELDS = [
-    'state.focusedNode',
-    'state.selectedPoint',
-    'state.navState.focusedIndex',
-    'state.navState.trailSeedIndex',
-    'state.navState.trailNeighborIndices',
-    'state.navState.trailCursor',
-    'state.navState.explorationHistoryIndices',
-    'state.navState.lastTraversalReason',
-    'state.trailIndices',
-];
-
+)
+const URL_WRITER_SOURCE = fs.readFileSync(
+    resolveSource('src/lib/orchestration/url-writer.ts', path.resolve(__dirname, '..')),
+    'utf8'
+)
+const URL_RESTORE_SOURCE = fs.readFileSync(
+    resolveSource('src/lib/orchestration/url-restore.ts', path.resolve(__dirname, '..')),
+    'utf8'
+)
 // Patterns that signal direct writes to protected fields (outside the helper).
 // Only flags sentinel-value clears: = null, = -1, = [], .clear()
 // Allows: valid setter assignments (= point), comparison operators (===, ==, !==, !=)
@@ -59,11 +50,11 @@ const DIRECT_WRITE_PATTERNS = [
     /state\.navState\.explorationHistoryIndices\s*=\s*\[\][^;]*;/,
     /state\.navState\.lastTraversalReason\s*=\s*null\b[^;]*;/,
     // trailIndices.clear() — direct mutation, never allowed outside helper
-    /state\.trailIndices\.clear\s*\(\s*\)/,
-];
+    /state\.trailIndices\.clear\s*\(\s*\)/
+]
 
 function assert(condition, message) {
-    if (!condition) throw new Error('ASSERTION FAILED: ' + message);
+    if (!condition) throw new Error('ASSERTION FAILED: ' + message)
 }
 
 /**
@@ -71,28 +62,28 @@ function assert(condition, message) {
  * function signature until the brace depth returns to 0.
  */
 function getHelperLineRange(sourceText = SOURCE) {
-    const lines = sourceText.split('\n');
-    let start;
-    let end;
+    const lines = sourceText.split('\n')
+    let start
+    let end
 
     for (let i = 0; i < lines.length; i++) {
         if (/export\s+function\s+clearExplorationFocusSelection/.test(lines[i])) {
-            start = i;
-            let depth = 0;
+            start = i
+            let depth = 0
             for (let j = i; j < lines.length; j++) {
-                const stripped = lines[j].replace(/\/\/.*$/, '');
+                const stripped = lines[j].replace(/\/\/.*$/, '')
                 for (const ch of stripped) {
-                    if (ch === '{') depth++;
-                    else if (ch === '}') depth--;
+                    if (ch === '{') depth++
+                    else if (ch === '}') depth--
                 }
                 if (depth === 0 && j > i) {
-                    end = j;
-                    return { start, end };
+                    end = j
+                    return { start, end }
                 }
             }
         }
     }
-    return { start: -1, end: -1 };
+    return { start: -1, end: -1 }
 }
 
 /**
@@ -100,24 +91,24 @@ function getHelperLineRange(sourceText = SOURCE) {
  * writes to trail fields independently of clearExplorationFocusSelection.
  */
 function getSetMyceliumModeLineRange() {
-    const lines = SOURCE.split('\n');
+    const lines = SOURCE.split('\n')
     for (let i = 0; i < lines.length; i++) {
         if (/export\s+function\s+setMyceliumMode\b/.test(lines[i])) {
             // Find the end of the function body
-            let depth = 0;
+            let depth = 0
             for (let j = i; j < lines.length; j++) {
-                const stripped = lines[j].replace(/\/\/.*$/, '');
+                const stripped = lines[j].replace(/\/\/.*$/, '')
                 for (const ch of stripped) {
-                    if (ch === '{') depth++;
-                    else if (ch === '}') depth--;
+                    if (ch === '{') depth++
+                    else if (ch === '}') depth--
                 }
                 if (depth === 0 && j > i) {
-                    return { start: i, end: j };
+                    return { start: i, end: j }
                 }
             }
         }
     }
-    return { start: -1, end: -1 };
+    return { start: -1, end: -1 }
 }
 
 /**
@@ -125,97 +116,99 @@ function getSetMyceliumModeLineRange() {
  * Returns array of { pattern, line, snippet }
  */
 function findDirectWrites(sourceText = SOURCE) {
-    const lines = sourceText.split('\n');
-    const { start: helperStart, end: helperEnd } = getHelperLineRange(sourceText);
-    const { start: mmStart, end: mmEnd } = getSetMyceliumModeLineRange();
-    const issues = [];
+    const lines = sourceText.split('\n')
+    const { start: helperStart, end: helperEnd } = getHelperLineRange(sourceText)
+    const { start: mmStart, end: mmEnd } = getSetMyceliumModeLineRange()
+    const issues = []
 
     for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
+        const line = lines[i].trim()
         // Skip lines inside the helper function body
-        if (i >= helperStart && i <= helperEnd) continue;
+        if (i >= helperStart && i <= helperEnd) continue
         // Skip lines inside setMyceliumMode — its else-branch independently manages
         // trail fields and is not required to route through the focus helper
-        if (i >= mmStart && i <= mmEnd) continue;
+        if (i >= mmStart && i <= mmEnd) continue
 
         for (const pattern of DIRECT_WRITE_PATTERNS) {
             if (pattern.test(line)) {
-                issues.push({ pattern: pattern.toString(), line: i + 1, snippet: line });
+                issues.push({ pattern: pattern.toString(), line: i + 1, snippet: line })
             }
         }
     }
-    return issues;
+    return issues
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-console.log('Verifying clearExplorationFocusSelection is exported...');
+console.log('Verifying clearExplorationFocusSelection is exported...')
+// Post-split (2026-08-10): the definition moved to url-writer.ts; the barrel
+// re-exports it. Assert the definition at its owner + the barrel re-export.
 assert(
-    /export\s+function\s+clearExplorationFocusSelection/.test(URL_STATE_SOURCE),
-    'clearExplorationFocusSelection is not exported from url-state.ts'
-);
-const hasClearExplorationFromStores = /clearExplorationFocusSelection/.test(SOURCE) && /export\s*\{[\s\S]*clearExplorationFocusSelection/.test(SOURCE);
-const hasClearExplorationFromOrchestration = /clearExplorationFocusSelection/.test(ORCHESTRATION_SOURCE) && /export\s*\{[\s\S]*clearExplorationFocusSelection/.test(ORCHESTRATION_SOURCE);
+    /export\s+function\s+clearExplorationFocusSelection/.test(URL_WRITER_SOURCE),
+    'clearExplorationFocusSelection is not defined in url-writer.ts'
+)
+assert(
+    /export\s*\{[\s\S]*\bclearExplorationFocusSelection\b[\s\S]*?\}\s*from\s*['"][^'"]*url-restore[^'"]*['"]/.test(
+        URL_STATE_SOURCE
+    ),
+    'url-state.ts barrel must re-export clearExplorationFocusSelection'
+)
+const hasClearExplorationFromStores =
+    /clearExplorationFocusSelection/.test(SOURCE) && /export\s*\{[\s\S]*clearExplorationFocusSelection/.test(SOURCE)
+const hasClearExplorationFromOrchestration =
+    /clearExplorationFocusSelection/.test(ORCHESTRATION_SOURCE) &&
+    /export\s*\{[\s\S]*clearExplorationFocusSelection/.test(ORCHESTRATION_SOURCE)
 assert(
     hasClearExplorationFromStores || hasClearExplorationFromOrchestration,
     'clearExplorationFocusSelection is not re-exported from lifecycle.ts'
-);
-console.log('  found url-state owner export and lifecycle re-export');
+)
+console.log('  found url-state owner export and lifecycle re-export')
 
-console.log('\nScanning for direct writes to protected fields...');
-const issues = findDirectWrites();
+console.log('\nScanning for direct writes to protected fields...')
+const issues = findDirectWrites()
 
 if (issues.length === 0) {
-    console.log('  PASS — no direct writes found outside clearExplorationFocusSelection');
+    console.log('  PASS — no direct writes found outside clearExplorationFocusSelection')
 } else {
-    console.error('  FAIL — direct writes found:');
+    console.error('  FAIL — direct writes found:')
     for (const issue of issues) {
-        console.error(`    line ${issue.line}: ${issue.snippet}`);
+        console.error(`    line ${issue.line}: ${issue.snippet}`)
     }
-    process.exit(1);
+    process.exit(1)
 }
 
 // Verify the helper is called from resetStateBeforeUrlRestore, which is owned
-// by url-state.js and re-exported by lifecycle.js.
-console.log('\nVerifying resetStateBeforeUrlRestore routes through clearExplorationFocusSelection...');
-const resetStateMatch = URL_STATE_SOURCE.match(/export\s+function\s+resetStateBeforeUrlRestore[\s\S]*?\n}(?=\n|$)/m);
-assert(resetStateMatch, 'Could not extract resetStateBeforeUrlRestore body');
-const resetStateBody = resetStateMatch[0];
+// by url-restore.ts (canonical) and re-exported via the barrel + lifecycle.
+console.log('\nVerifying resetStateBeforeUrlRestore routes through clearExplorationFocusSelection...')
+const resetStateMatch = URL_RESTORE_SOURCE.match(/export\s+function\s+resetStateBeforeUrlRestore[\s\S]*?\n}(?=\n|$)/m)
+assert(resetStateMatch, 'Could not extract resetStateBeforeUrlRestore body')
+const resetStateBody = resetStateMatch[0]
 assert(
     /clearExplorationFocusSelection\s*\(/.test(resetStateBody),
     'resetStateBeforeUrlRestore does not call clearExplorationFocusSelection'
-);
+)
 assert(
     !/state\.focusedNode\s*=\s*null/.test(resetStateBody),
     'resetStateBeforeUrlRestore still has direct write to focusedNode'
-);
+)
 assert(
     !/state\.selectedPoint\s*=\s*null/.test(resetStateBody),
     'resetStateBeforeUrlRestore still has direct write to selectedPoint'
-);
-console.log('  PASS — resetStateBeforeUrlRestore routes through clearExplorationFocusSelection');
+)
+console.log('  PASS — resetStateBeforeUrlRestore routes through clearExplorationFocusSelection')
 
 // Verify resetNodePositions routes through the Svelte focus/reset owners.
-console.log('\nVerifying resetNodePositions routes through Svelte focus reset owners...');
-const resetNodeMatch = LIFECYCLE_RESET_SOURCE.match(/export\s+function\s+resetNodePositions[\s\S]*?\n}(?=\n|$)/m);
-assert(resetNodeMatch, 'Could not extract resetNodePositions body');
-const resetNodeBody = resetNodeMatch[0];
-assert(
-    /resetFocus\s*\(/.test(resetNodeBody),
-    'resetNodePositions does not call resetFocus'
-);
-assert(
-    /resetExplorationFocus\s*\(/.test(resetNodeBody),
-    'resetNodePositions does not call resetExplorationFocus'
-);
-assert(
-    !/state\.focusedNode\s*=\s*null/.test(resetNodeBody),
-    'resetNodePositions still has direct write to focusedNode'
-);
+console.log('\nVerifying resetNodePositions routes through Svelte focus reset owners...')
+const resetNodeMatch = LIFECYCLE_RESET_SOURCE.match(/export\s+function\s+resetNodePositions[\s\S]*?\n}(?=\n|$)/m)
+assert(resetNodeMatch, 'Could not extract resetNodePositions body')
+const resetNodeBody = resetNodeMatch[0]
+assert(/resetFocus\s*\(/.test(resetNodeBody), 'resetNodePositions does not call resetFocus')
+assert(/resetExplorationFocus\s*\(/.test(resetNodeBody), 'resetNodePositions does not call resetExplorationFocus')
+assert(!/state\.focusedNode\s*=\s*null/.test(resetNodeBody), 'resetNodePositions still has direct write to focusedNode')
 assert(
     !/state\.selectedPoint\s*=\s*null/.test(resetNodeBody),
     'resetNodePositions still has direct write to selectedPoint'
-);
-console.log('  PASS — resetNodePositions routes through Svelte focus/reset owners');
+)
+console.log('  PASS — resetNodePositions routes through Svelte focus/reset owners')
 
-console.log('\nfocus-selection-owner-contract.mjs passed');
+console.log('\nfocus-selection-owner-contract.mjs passed')
