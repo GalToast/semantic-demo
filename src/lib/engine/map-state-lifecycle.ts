@@ -1,43 +1,16 @@
-/**
- * @lib/engine/map-state.ts — Leaflet map state, route embodiment, terrain handoff
- *
- * Port of
- * Manages Leaflet map initialization, marker refresh, route embodiment,
- * terrain handoff, and route director state synchronization.
- */
 import { appState } from '@lib/state/app.svelte.ts'
-import type { Point, ActiveFilters } from '@lib/state/state-types'
+import type { Point } from '@lib/state/state-types'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
-import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data'
+import { pointHasGeocode } from '@lib/utils/geo-data'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
-import { hideViewHandoff } from '@lib/orchestration/view-controller'
-import { isMobileViewport } from '@lib/utils/environment'
 import { debugWarn } from '@lib/utils/debug'
 import { useSearchSummary } from '@lib/ui/use-search-summary.svelte'
-import type { LeafletContainer, LeafletMapWithFitBounds, LeafletMarker } from './map-leaflet-runtime'
-
-// Leaflet is vendored locally under `public/vendor/leaflet/` (was: unpkg CDN
-// with no SRI). Self-hosting removes the CDN supply-chain + offline dependency
-// while preserving the lazy script/link injection (Leaflet stays out of the
-// initial bundle). Relative paths resolve against the document base (app runs
-// at the root path; same pattern as the `data.dat` fetch).
-export const LEAFLET_VERSION = '1.9.4'
-export const LEAFLET_CSS_URL = 'vendor/leaflet/leaflet.css'
-export const LEAFLET_JS_URL = 'vendor/leaflet/leaflet.js'
-
-// ── sibling imports ─────────────────────────────────────────────────────
-import { loadLeafletAssets, getLeafletMap } from './map-leaflet-runtime'
+import { syncRouteDirectorState } from './map-director'
+import { getRouteEmbodimentIndices, refreshMapRouteEmbodiment } from './map-route-embodiment'
+import { loadLeafletAssets, type LeafletContainer, type LeafletMarker } from './map-leaflet-runtime'
 import { refreshMapMarkers } from './map-markers'
-import {
-    getMapRoutePoints,
-    refreshMapRouteEmbodiment,
-    centerMapOnRouteAnchor,
-    getRouteEmbodimentIndices,
-    getRouteAnchorIndex
-} from './map-route-embodiment'
-import { getRouteDirectorState, syncRouteDirectorState, setTerrainHandoffState } from './map-director'
 
 export function initMapStateSubscriptions(): void {
     const sync = (payload: Record<string, unknown> = {}): void => {
@@ -57,21 +30,19 @@ export function initMapStateSubscriptions(): void {
 }
 
 export async function initMap(): Promise<void> {
-    const mapState = appState
+    if (appState.mapInitialized && appState.map) return
+    if (appState.mapInitialized && !appState.map) appState.mapInitialized = false
 
-    if (mapState.mapInitialized && mapState.map) return
-    if (mapState.mapInitialized && !mapState.map) mapState.mapInitialized = false
-
-    if (!mapState.mapInitialized && mapState.map) {
+    if (!appState.mapInitialized && appState.map) {
         try {
-            ;(mapState.map as { remove(): void }).remove()
+            ;(appState.map as { remove(): void }).remove()
         } catch (error) {
             debugWarn('Removing stale map instance failed:', error)
         }
-        mapState.map = null
-        mapState.markersLayer = null
-        mapState.mapRouteLayer = null
-        mapState.pointMarkers = []
+        appState.map = null
+        appState.markersLayer = null
+        appState.mapRouteLayer = null
+        appState.pointMarkers = []
     }
 
     try {
@@ -92,13 +63,8 @@ export async function initMap(): Promise<void> {
             tileLayer: (url: string, options: Record<string, unknown>) => { addTo(map: unknown): unknown }
             layerGroup: () => { addTo(map: unknown): unknown; clearLayers(): void }
             circleMarker: (latLng: [number, number], options: Record<string, unknown>) => LeafletMarker
-            polyline: (
-                latLngs: Array<[number, number]>,
-                options: Record<string, unknown>
-            ) => { addTo(layer: unknown): unknown }
-            latLngBounds: (latLngs: Array<[number, number]>) => unknown
         }
-        mapState.map = L.map(container, {
+        appState.map = L.map(container, {
             center: [30.3119, -95.4561],
             zoom: 10,
             zoomControl: false
@@ -108,25 +74,25 @@ export async function initMap(): Promise<void> {
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 attribution: 'OpenStreetMap | CARTO',
                 maxZoom: 19
-            }).addTo(mapState.map)
+            }).addTo(appState.map)
         } catch (err) {
             debugWarn('tileLayer addTo failed:', err)
         }
 
-        mapState.markersLayer = L.layerGroup().addTo(mapState.map) as Record<string, unknown>
-        mapState.mapRouteLayer = L.layerGroup().addTo(mapState.map) as Record<string, unknown>
-        mapState.pointMarkers = []
+        appState.markersLayer = L.layerGroup().addTo(appState.map) as Record<string, unknown>
+        appState.mapRouteLayer = L.layerGroup().addTo(appState.map) as Record<string, unknown>
+        appState.pointMarkers = []
 
-        if (!mapState.points || !Array.isArray(mapState.points)) return
-        const focusedNode = mapState.focusedNode
+        if (!appState.points || !Array.isArray(appState.points)) return
+        const focusedNode = appState.focusedNode
         const search = useSearchSummary()
-        mapState.points.forEach((point: Point, index: number) => {
+        appState.points.forEach((point: Point, index: number) => {
             if (!pointHasGeocode(point)) return
-            const color = mapState.COLORS[(point.cluster ?? 0) % mapState.COLORS.length]
+            const color = appState.COLORS[(point.cluster ?? 0) % appState.COLORS.length]
             const marker: LeafletMarker = L.circleMarker([point.lat!, point.lng!], {
                 radius: 4,
                 fillColor: color,
-                color: color,
+                color,
                 weight: 1,
                 opacity: 0.8,
                 fillOpacity: 0.6
@@ -137,7 +103,7 @@ export async function initMap(): Promise<void> {
                 marker.bindTooltip(name, { direction: 'top', offset: [0, -5], className: 'glass_medium' }).openTooltip()
             })
             marker.on('mouseout', () => {
-                // tooltip is updated by updateMapTooltip
+                // Tooltip state is refreshed by the marker styling pass.
             })
             marker.on('click', () => {
                 const routeSet = new Set(getRouteEmbodimentIndices())
@@ -160,11 +126,11 @@ export async function initMap(): Promise<void> {
                 focusOnPoint(point, { revealCard: true })
             })
 
-            mapState.pointMarkers.push({ marker, index })
-            marker.addTo(mapState.markersLayer)
+            appState.pointMarkers.push({ marker, index })
+            marker.addTo(appState.markersLayer)
         })
 
-        mapState.mapInitialized = true
+        appState.mapInitialized = true
         refreshMapMarkers()
         refreshMapRouteEmbodiment()
 
@@ -175,54 +141,27 @@ export async function initMap(): Promise<void> {
         }
     } catch (error) {
         debugWarn('initMap failed:', error)
-        const ms = mapState
-        ms.mapInitialized = false
-        ms.map = null
-        ms.markersLayer = null
-        ms.mapRouteLayer = null
-        ms.pointMarkers = []
+        appState.mapInitialized = false
+        appState.map = null
+        appState.markersLayer = null
+        appState.mapRouteLayer = null
+        appState.pointMarkers = []
         throw error
     }
 }
 
-export function zoomMap(multiplier: number): void {
-    if (!appState.map) return
-    if (multiplier < 1) {
-        ;(appState.map as { zoomIn(): void }).zoomIn()
-    } else {
-        ;(appState.map as { zoomOut(): void }).zoomOut()
-    }
-}
-
 export function destroyMap(): void {
-    const mapState = appState
-
-    if (mapState.map) {
+    if (appState.map) {
         try {
-            ;(mapState.map as { remove(): void }).remove()
+            ;(appState.map as { remove(): void }).remove()
         } catch (error) {
             debugWarn('destroyMap failed:', error)
         }
     }
 
-    mapState.mapInitialized = false
-    mapState.map = null
-    mapState.markersLayer = null
-    mapState.mapRouteLayer = null
-    mapState.pointMarkers = []
+    appState.mapInitialized = false
+    appState.map = null
+    appState.markersLayer = null
+    appState.mapRouteLayer = null
+    appState.pointMarkers = []
 }
-
-// ── re-exports from siblings ─────────────────────────────────────────────
-export { loadLeafletAssets } from './map-leaflet-runtime'
-
-export { showMapTooltip, refreshMapMarkers } from './map-markers'
-
-export {
-    getMapRoutePoints,
-    refreshMapRouteEmbodiment,
-    centerMapOnRouteAnchor,
-    getRouteEmbodimentIndices,
-    getRouteAnchorIndex
-} from './map-route-embodiment'
-
-export { getRouteDirectorState, syncRouteDirectorState, setTerrainHandoffState } from './map-director'
