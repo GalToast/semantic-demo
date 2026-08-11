@@ -14,6 +14,8 @@ describe('three-engine.ts public API contract', () => {
         'cancelAnimate',
         'getSceneRenderableDiagnostics',
         'updateCameraViewportOffset',
+        'invalidateRestoreMachine', // restore machine reset (split-owner: core re-exports from restore)
+        'startRenderLoop', // render-loop split owner
         'updateMyceliumThreads',
         'applyMapFlatteningLayout',
         'triggerSearchHeroMoment',
@@ -53,5 +55,22 @@ describe('three-engine.ts public API contract', () => {
         expect(typeof scale.x).toBe('number')
         expect(typeof scale.y).toBe('number')
         expect(typeof scale.z).toBe('number')
+    })
+
+    // The split barrel surface must stay stable; split-internal helpers that
+    // live in siblings (teardown/restore/overlay material) must NOT leak onto
+    // the public barrel. Guards against a future split accidentally re-exporting
+    // them (the residual-window-bridge drift class).
+    it('does not leak internal split helpers on the barrel', () => {
+        const internals = [
+            'disposeNodeVisualsPort',
+            'disposeMyceliumPort',
+            'syncFocusSemanticOverlayResolutionPort',
+            '_recordSemanticLaneSnapshot',
+            'buildFocusThreadLineMaterial'
+        ]
+        internals.forEach((name) => {
+            expect((threeEngine as unknown as Record<string, unknown>)[name]).toBeUndefined()
+        })
     })
 })
