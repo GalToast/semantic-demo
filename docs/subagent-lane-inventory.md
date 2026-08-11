@@ -610,7 +610,7 @@ them main-lane or give the worker a byte-budget + a paste-only target.
 
 ### Dead-model roster (do NOT re-add; measured 2026-08-06/07)
 
-- `grape-2-pro` — talks then settles, ~75 tokens (useless for agentic work).
+- `grape-2-pro` — talks then settles, ~75 tokens (useless for agentic work) [2026-08┐11: 4× exit-0-noop fatal — warm-standby only, never dispatch execution or analysis].
 - `glm-5.2`, `kimi-k2.6/k3`, `qwen-3.8-max`, `kiro-auto` — silent-settle / wedge after probe-ok.
 - `kilo/openrouter/owl-alpha` — dead lane, do not re-add.
 
@@ -1268,3 +1268,34 @@ not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW sour
   harness (report: tmp/goal-loop-live-REPORT.md). Active extension = goal.ts (v2 unified);
   goal-loop.mjs deprecated-2026-08-10. Handoff item-2 (cline deepseek-v4-flash lane)
   remains tracked separately under cline-shim entries.
+
+- **2026-08-11 goal-loop fleet proof:** root Pi worker
+  `ocw_594df4d4-553e-4dff-9d4a-25e91808cd05` and nested Pi worker
+  `ocw_d5594762-2c99-49ef-8a62-4cceb7753455` each reached `status:met` in isolated
+  per-worker state files. The bounded nested profile exposed six lifecycle tools and
+  depth admission prevented unbounded recursion. Rebuilt Cline lane
+  `ocw_be8f72da-2b8e-4442-88e8-0cacec03c5ac` returned `CLINE_LANE_OK 0` with the
+  native `deepseek/deepseek-v4-flash` ref after stripping the `clinefree/` catalog
+  prefix. Evidence: `tmp/goal-loop-fleet-REPORT.md`. The live MCP broker still
+  needs one restart to load the rebuilt nested-profile implementation.
+
+- **2026-08-11 goal-loop terminal-turn handoff proof:** the broker now protects both
+  managed one-shot and live-RPC Pi workers from being killed before `goal.ts`
+  persists `status:met`. One-shot probe `ocw_e91c2cb0-a42f-4408-b490-9a1d0c389f29`
+  and live-RPC probe `ocw_6314cc14-3b1d-43f1-b0d4-bbb35b8dc411` both reached
+  `status:met`; the latter ran with `live_steer:true`. The handoff window polls
+  per-worker `goal-state.json`, exits as soon as the state settles, cancels on a
+  new turn, and expires after 30 seconds. Evidence: `tmp/goal-loop-fleet-REPORT.md`.
+
+### Coordination notes 2026-08-11 (main-lane, session tail)
+- Purity gate mechanics: docs/subagent-lane-inventory.md is now COORDINATION_LEDGER_FILES
+  (exempt both directions, sha-independent — commit 664af176). Fleet's test(css) 7ca2e1d
+  mixed-commit (doc append in a test-prefix commit) tripped it; the ledger carve-out is the
+  durable fix. NOTE: a parallel writer edited the same test file mid-fix (added their own
+  inline carveout); both coexist harmlessly — surfaced, not reverted.
+- The fleet's nested-delegation claim is EVIDENCED: 50+ workers with mcp_profile:'subagent'
+  incl. a literal nested-proof2-parent (completed, deepseek-v4-flash-0731, 457KB log).
+- Parallel-duplicate convergence (dead re-exports): fleet's 72a5f9c9 + my 6659339e byte-
+  identical; HEAD kept theirs. Check merge-base before re-applying.
+- Gate baseline at this point: 4 failed | 3688 passed — A-class 0; reds = demo×2 + parity
+  + purity (purity now fixed via ledger exemption; re-verify in flight).
