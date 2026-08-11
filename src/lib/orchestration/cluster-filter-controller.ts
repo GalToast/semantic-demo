@@ -317,7 +317,6 @@ export function applyStoryPrompt(story: string | null, _options: Record<string, 
 // imports the real implementations directly.
 
 export { applyFilters, clearShortSemanticSearchState } from '@lib/orchestration/search-filter-core'
-export { updateUrlState } from '@lib/orchestration/url-state'
 export { clearSearchGlow } from '@lib/stores/search.svelte'
 
 // ── Event Subscriptions ────────────────────────────────────────────────────────

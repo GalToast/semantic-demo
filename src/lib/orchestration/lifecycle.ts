@@ -85,7 +85,7 @@ export { hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration }
 export function onWindowResize(): void {
     syncViewport()
 }
-export { copyCurrentViewLink, resetStateBeforeUrlRestore, clearExplorationFocusSelection }
+export { copyCurrentViewLink }
 export { switchView, showViewHandoff, hideViewHandoff }
 export {
     getFocusedJourneyPoint,
@@ -265,9 +265,6 @@ export function applyStoryPrompt(prompt: string | null): void {
 
 /**
  * Update URL state.
- * Re-export from url-state.ts.
- */
-export { updateUrlState } from '@lib/orchestration/url-state'
 
 /**
  * Build selected match narrative (returns currentSearchSummary.reason or "").
