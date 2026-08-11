@@ -283,3 +283,10 @@ GOAL_TOOL=absent — only read/bash/write/flight_recorder in-session) confirms
 the file-path is the worker-reachable medium; the tool is harness-side-only.
 Pept. Child spawn was hard-won (model-discovery detour) — bake the exact
 model string + tool name in the parent brief.
+
+### Ratification note (main lane, 2026-08-11)
+The nested-ENABLED amendment above (003dffa3) supersedes the flat-only default; main lane
+ratifies it AS POLICY (the user's delegation question + the fleet's live 2-level proof with
+disk-file checksum). The measured cautions remain load-bearing: in the same session, N1 ×2
+and N2 ×1 settled without deliverables even at level 1 — nested trees must not assume a
+lower settle rate. Verdict standard stays: verify by disk-file + git log, not worker exit.
