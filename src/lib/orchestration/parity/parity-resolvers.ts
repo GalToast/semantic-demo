@@ -115,6 +115,7 @@ export function resolvePanelSurfaceMode(
     }
     if (focus.semanticDiveMode) return { panelSurfaceMode: 'semantic-dive' }
     if (hasFocus && hasSearch) return { panelSurfaceMode: 'focus-search' }
+    if (hasFocus) return { panelSurfaceMode: 'focus' }
     if (hasSearch) return { panelSurfaceMode: 'search' }
     if (nav.surface === 'focus-search') return { panelSurfaceMode: 'focus-search' }
     if (nav.surface === 'map-focus-search') return { panelSurfaceMode: 'map-focus-search' }
