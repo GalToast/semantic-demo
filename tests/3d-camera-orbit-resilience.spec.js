@@ -25,6 +25,15 @@ async function findClickableNode(page) {
 async function clickValidNode(page) {
     const target = await findClickableNode(page)
     expect(target, 'a hoverable canvas node coordinate must be discoverable').not.toBeNull()
+    // Re-confirm the pointer is still producing a valid hover at the click
+    // coordinates just before the mouse.down. The candidate was sampled
+    // earlier and the camera can drift between findClickableNode() and the
+    // click (orbit settle / camera-assist), leaving the stored coords over
+    // empty space → the click hits nothing and focusedNode never sticks.
+    await page.mouse.move(target.screenX, target.screenY, { steps: 2 })
+    await page
+        .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
+        .catch(() => {})
     await page.mouse.click(target.screenX, target.screenY)
     await page
         .waitForFunction(
