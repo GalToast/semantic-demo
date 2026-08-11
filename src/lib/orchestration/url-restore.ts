@@ -33,7 +33,10 @@ import {
     getSearchParams,
     isDomForcedFocusSearchSurface,
     hasRestorableUrlState,
-    getRequestedUrlDepth
+    getRequestedUrlDepth,
+    surfaceParamToNavMode,
+    resolveAnchorFromRecordId,
+    parseClusterFilterParam
 } from '@lib/orchestration/url-params'
 import { setMobileSearchSheetMode } from '@lib/search/search-panel-adapter'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
@@ -175,19 +178,8 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         // view-derived default (e.g. ?surface=map without ?view=map sets map view).
         const surfaceParam = params.get('surface')
         if (surfaceParam) {
-            const _surfaceToMode: Record<string, NavMode> = {
-                search: 'search',
-                focus: 'focus',
-                inside: 'inside',
-                trail: 'trail',
-                idle: 'overview'
-            }
-            const restoredMode = _surfaceToMode[surfaceParam]
-            const isMapFamily = surfaceParam === 'map' || surfaceParam.startsWith('map-')
-            const surfacePatch: Partial<NavState> = { surface: surfaceParam as PanelSurface }
-            if (restoredMode) surfacePatch.mode = restoredMode
-            if (isMapFamily) surfacePatch.currentView = 'map'
-            writeNavStateMirror(surfacePatch)
+            const surfacePatch = surfaceParamToNavMode(surfaceParam)
+            if (surfacePatch) writeNavStateMirror(surfacePatch)
         }
 
         // Filter restoration (status, city, website, email, geocoded)
@@ -238,16 +230,10 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         // existing focus-restoration path. If both are present, anchor
         // wins (record is preserved in the URL for sharing).
         const query = params.get('q')
-        let anchorId = params.get('anchor')
-        const recordId = params.get('record')
-        if (recordId && !anchorId) {
-            const recordIndex = appState.points?.findIndex((p) => String(p.lead_id) === recordId) ?? -1
-            if (recordIndex >= 0) {
-                anchorId = String(recordIndex)
-            } else {
-                debugWarn('[url-state] record', recordId, 'not found in dataset; ignoring')
-                showExperienceToast('Listing not found', `Listing ${recordId} isn't available in this dataset.`)
-            }
+        const { anchorId, notFound } = resolveAnchorFromRecordId(params, appState.points)
+        if (notFound !== undefined) {
+            debugWarn('[url-state] record', notFound, 'not found in dataset; ignoring')
+            showExperienceToast('Listing not found', `Listing ${notFound} isn't available in this dataset.`)
         }
 
         // Anchor restoration runs whenever ?anchor is present (independent of ?q).
@@ -335,8 +321,8 @@ function _restoreFiltersFromParams(params: URLSearchParams): void {
 }
 
 function _restoreClusterFilter(clusterStr: string): void {
-    const cluster = Number(clusterStr)
-    if (!Number.isFinite(cluster)) return
+    const cluster = parseClusterFilterParam(clusterStr)
+    if (cluster === null) return
 
     const params = new URLSearchParams()
     params.set('cluster', String(cluster))
