@@ -29,7 +29,7 @@ async function setupNetworkStubs(page) {
 }
 
 async function waitForAppReady(page) {
-    await page.goto(`${BASE_URL}/index.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`${BASE_URL}/dist/svelte/index.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(
         () => {
             const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
@@ -257,7 +257,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
             }
         })
 
-        await page.goto(`${BASE_URL}/index.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' })
         const state = await page
             .waitForFunction(
                 () => {
