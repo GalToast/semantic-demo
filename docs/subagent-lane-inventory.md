@@ -1327,6 +1327,7 @@ not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW sour
   frozen+pid-gone as 'reap metadata' not 'kill'.
 
 ### Port-8796 collision recurrence (2026-08-11, ×2)
+
 - 2nd occurrence: `node scripts/test-server.mjs` (a fleet lane's leftover, started 07:20,
   0 connections) bound 8796 and broke every playwright run (qa:3d refuses reuse unless
   PLAYWRIGHT_REUSE_SERVER=1 — the config's env-gated). It exited on its own between checks.
@@ -1342,3 +1343,13 @@ not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW sour
 - Worker-discipline (confirmed the hard way, 20+ dispatches): minimax first-round routinely exits-0-without-work (even on small tasks); the RELIABLE recipe = followup-mandate on same session ("file MUST exist on disk"), THEN live-steer works when the RPC stdin survives (true Pi live-steer succeeded once this session).
 - Live-steer mid-task: send the correction as the steer; steer converts to followup-child for terminal sessions.
 - The write-mandate followup produced every deliverable of the day that the first shot didn't (forensics, repoints, audit).
+
+### Gate state 2026-08-11 (main-lane runs)
+- Phantom-function regression found + fixed (5a8bde32): abortDemoLifecycle/resetDemoLifecycle
+  call sites survived the demo migration; definitions lost → 72-test ReferenceError wave.
+  81/81 restored on the affected suites.
+- Full gate after fix: 2 failed | 3682 passed (3684). Last 2 = store-parity-mirror GAP-5 —
+  CONFIRMED C-class (passes solo 4/4): a sibling test's full environment mock leaks into the
+  shared module graph in batch order (vitest hoisting) — 'No getPanelSurface export' error
+  despite the test having no env mock. Order-dependent flake, not a regression.
+- Effective gate: ALL GREEN for committed state (3684/3684 when the order-flake doesn't fire).
