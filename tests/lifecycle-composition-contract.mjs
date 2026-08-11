@@ -104,8 +104,11 @@ const { searchStore } = await import('../src/lib/stores/search.svelte.ts')
 
 withStateMutation(() => {
     state.currentView = 'galaxy'
-    state.searchState = { ...state.searchState, currentSearchSummary: null }
-    state.focusState = { ...state.focusState, selectedPoint: { name: '1475 LAS Cuevas, LLC' } }
+    // Direct field writes — object-spread replaces the Svelte-5 $state proxy
+    // (audit RISK-R class); field assignment preserves proxy identity for
+    // any non-mirrored subscriber.
+    state.searchState.currentSearchSummary = null
+    state.focusState.selectedPoint = { name: '1475 LAS Cuevas, LLC' }
     state.focusedNode = null
     state.navState.mode = 'trail'
     state.navState.focusedIndex = 12
