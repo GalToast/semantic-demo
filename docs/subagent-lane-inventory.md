@@ -1345,6 +1345,7 @@ not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW sour
 - The write-mandate followup produced every deliverable of the day that the first shot didn't (forensics, repoints, audit).
 
 ### Gate state 2026-08-11 (main-lane runs)
+
 - Phantom-function regression found + fixed (5a8bde32): abortDemoLifecycle/resetDemoLifecycle
   call sites survived the demo migration; definitions lost → 72-test ReferenceError wave.
   81/81 restored on the affected suites.
@@ -1353,3 +1354,14 @@ not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW sour
   shared module graph in batch order (vitest hoisting) — 'No getPanelSurface export' error
   despite the test having no env mock. Order-dependent flake, not a regression.
 - Effective gate: ALL GREEN for committed state (3684/3684 when the order-flake doesn't fire).
+
+### 3d battery — concurrency-contamination finding (2026-08-11, 3 failed runs)
+The full 19-spec battery failed 3× NOT from script/dist issues (the dist was verified
+correct: mode-transition chunk compiles searchRequestSequence + zero raw $state; port free;
+errorRecovery config intact) — but from FLEET CONCURRENCY: (1) tests/3d-hover-affordance.spec.js
+is fleet-mid-edit (SyntaxError 221:3 — the glob runs it broken), (2) the parallel worktree
+se-wt-polish (live lane, merged the overlay refactor d2f19192) runs its own builds/servers
+racing the dist, (3) VITE_API_BASE_URL env contamination from the racing server.
+CONCLUSION: the full battery needs a QUIET WINDOW (fleet idle) — running it during active
+fleet work is unreliable by construction. The qa:3d protocol itself is proven (flagship
+spec 4/4 stable). Do NOT blind-retry; wait for fleet-quiet.
