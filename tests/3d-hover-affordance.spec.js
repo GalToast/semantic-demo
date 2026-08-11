@@ -218,13 +218,10 @@ test.describe('3D node hover affordance', () => {
             secondIsValid || secondIsCleared,
             'moving to another canvas coordinate should leave hover valid or cleanly cleared'
         ).toBe(true)
-<<<<<<< Updated upstream
         expect(firstState.focusedNode, 'hover must not CHANGE focus by itself').toBe(focusBeforeHover)
-=======
         expect(secondState.focusedNode, 'hover must preserve the focus state established before the hover move').toBe(
             firstState.focusedNode
         )
->>>>>>> Stashed changes
     })
 
     test.skip('mobile portrait: projected coordinate hover path remains deterministic — narrow-viewport branch ships placeholder (no hover surface)', async ({ page }) => {
