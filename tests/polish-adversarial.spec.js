@@ -126,7 +126,9 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     test('Micro-Demo Interruption & Resource Restoration', async ({ page }) => {
         // 1. Force start the demo
         await page.evaluate(() => {
-            window.startMicroDemo()
+            // Canonical replay entry point (DemoChoreography.svelte listens on document).
+            // Legacy window.startMicroDemo() no longer exists (choreography retirement).
+            document.dispatchEvent(new CustomEvent('demo-replay-requested'))
         })
 
         // Give it a moment to begin gliding
@@ -141,7 +143,9 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
         await page
             .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 5000 })
             .catch(() => {})
-        const demoRunning = await page.evaluate(() => window.isMicroDemoRunning())
+        const demoRunning = await page.evaluate(() => document.body.dataset.demoActive === 'true')
+        // canonical active marker; legacy window.isMicroDemoRunning removed (retirement)
+        // (see widget-journey.spec.js:5054-5136 for the canonical M15 coverage)
         expect(demoRunning).toBe(false)
 
         const controlsEnabled = await stateField(page, 'controls.enabled')

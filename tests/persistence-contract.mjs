@@ -179,7 +179,7 @@ async function test_micro_demo_localStorage_flag() {
     await setupNetworkStubs(page);
 
     // Step 1: navigate with ?nodemo to bypass micro-demo auto-start
-    // This lets us control localStorage before initMicroDemo() runs
+    // This lets us control localStorage before startDemo() runs
     await page.goto(`${BASE_URL}/dist/svelte/index.html?q=coffee&nodemo=1&view=galaxy`);
     await page.waitForFunction(() => (
       Array.isArray(window.__TEST_STATE__?.points) &&
@@ -193,12 +193,12 @@ async function test_micro_demo_localStorage_flag() {
       localStorage.setItem(key, JSON.stringify({ seen: true, timestamp: new Date().toISOString() }));
     }, STORAGE_KEY_DEMO);
 
-    // Also pre-set sessionStorage so shouldRunMicroDemo() returns false on first check
+    // Also pre-set sessionStorage so shouldRunDemo() sees both flags on first check
     await page.evaluate((key) => {
       sessionStorage.setItem(key, new Date().toISOString());
     }, 'moco_mycelium_demo_session_v1');
 
-    // Now reload without nodemo — shouldRunMicroDemo() should see both flags
+    // Now reload without nodemo — shouldRunDemo() should see both flags
     await page.reload();
     await page.waitForFunction(() => (
       Array.isArray(window.__TEST_STATE__?.points) &&
@@ -207,7 +207,7 @@ async function test_micro_demo_localStorage_flag() {
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const demoState = await page.evaluate((key) => ({
-      running: window.isMicroDemoRunning?.() === true,
+      running: document.body.dataset.demoActive === 'true',
       active: document.body.dataset.demoActive === 'true',
       blocker: Boolean(document.getElementById('micro-demo-blocker')),
       stored: localStorage.getItem(key),

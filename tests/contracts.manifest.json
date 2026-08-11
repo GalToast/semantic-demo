@@ -95,7 +95,9 @@
         },
         "stress": {
             "description": "Heavy stress and leak detection - 40-cycle full-app stress test via Playwright. Loaded on-demand; not part of any default run.",
-            "contracts": ["heavy-stress-leak.spec.js"]
+            "contracts": [
+                "heavy-stress-leak.spec.js"
+            ]
         },
         "render": {
             "description": "Backward-compatible alias for browser-backed render contracts. Prefer the browser group for new scripts.",
@@ -129,7 +131,6 @@
                 "search-state-surface-contract.mjs",
                 "focus-pocket-motion-contract.mjs",
                 "focus-pocket-composition-contract.mjs",
-                "demo-init-seam-contract.mjs",
                 "reset-callsite-routing-contract.mjs",
                 "demo-camera-retirement-contract.mjs",
                 "cluster-labels-contract.mjs",
@@ -161,11 +162,9 @@
                 "state-transition-table-contract.mjs",
                 "step-inside-state-sync-contract.mjs",
                 "focus-semantic-state-boundary-contract.mjs",
-                "demo-init-seam-contract.mjs",
                 "reset-callsite-routing-contract.mjs",
                 "semantic-guide-payload-contract.mjs",
                 "demo-camera-retirement-contract.mjs",
-                "demo-state-sync-contract.mjs",
                 "dismiss-in-complete-state-contract.mjs",
                 "micro-demo-state-owner-contract.mjs",
                 "weather-lifecycle-contract.mjs",
@@ -257,7 +256,10 @@
         "3d-engine": {
             "description": "WebGL resilience and memory hygiene contracts for the 3D engine - context loss survival and geometry disposal hygiene. Requires a running dev server on port 8795.",
             "timeout": 600000,
-            "contracts": ["webgl-resilience-contract.spec.js", "disposal-hygiene-contract.spec.js"]
+            "contracts": [
+                "webgl-resilience-contract.spec.js",
+                "disposal-hygiene-contract.spec.js"
+            ]
         },
         "3d-interaction-quality": {
             "description": "3D interaction-quality contracts - aggregate group. Requires a running dev server on port 8795.",
@@ -309,27 +311,39 @@
         "3d-focus-neighborhood-geometry": {
             "description": "Focus neighborhood geometry: screen coordinate projection, role distinguishability, and anchor/neighbor spatial separation. Requires a running dev server on port 8795.",
             "timeout": 300000,
-            "contracts": ["3d-focus-neighborhood-geometry.spec.js"]
+            "contracts": [
+                "3d-focus-neighborhood-geometry.spec.js"
+            ]
         },
         "3d-focus-ghost-graph-visibility": {
             "description": "Whole-graph context point cloud visibility during focus mode: opacity, size, projected presence, and spore-vs-point-cloud layering. Requires a running dev server on port 8795.",
             "timeout": 300000,
-            "contracts": ["3d-focus-ghost-graph-visibility.spec.js"]
+            "contracts": [
+                "3d-focus-ghost-graph-visibility.spec.js"
+            ]
         },
         "3d-hidpi-click-accuracy": {
             "description": "HiDPI 3D click/tap accuracy at DPR=2 across desktop, mobile portrait, and short-landscape viewports. Requires a running dev server on port 8795.",
             "timeout": 300000,
-            "contracts": ["3d-hidpi-click-accuracy.spec.js"]
+            "contracts": [
+                "3d-hidpi-click-accuracy.spec.js"
+            ]
         },
         "3d-focus-neighborhood-interaction": {
             "description": "Focus neighborhood interaction: hover, click, and state integrity through neighbor interaction sequences. Requires a running dev server on port 8795.",
             "timeout": 300000,
-            "contracts": ["3d-focus-neighborhood-interaction.spec.js", "semantic-role-traversal.spec.js"]
+            "contracts": [
+                "3d-focus-neighborhood-interaction.spec.js",
+                "semantic-role-traversal.spec.js"
+            ]
         },
         "3d-focus-pocket-geometry": {
             "description": "Geometry/projection: pocket node screen coordinates, in-canvas reachability, and anchor/neighbor spatial separation. Requires a running dev server on port 8795.",
             "timeout": 300000,
-            "contracts": ["3d-focus-pocket-selectability.spec.js", "3d-focus-neighborhood-geometry.spec.js"]
+            "contracts": [
+                "3d-focus-pocket-selectability.spec.js",
+                "3d-focus-neighborhood-geometry.spec.js"
+            ]
         },
         "3d-hover-click-interaction": {
             "description": "Hover/click interaction: hover affordance, real-pointer playthrough, node hit accuracy, and state integrity through interaction sequences. Requires a running dev server on port 8795.",
@@ -345,12 +359,16 @@
         "3d-focus-desktop-click": {
             "description": "Desktop-only 3D focus click lane at 1440x900 - strict hover/click accuracy without mobile-frustum soft-skips. Requires a running dev server on port 8795.",
             "timeout": 300000,
-            "contracts": ["3d-focus-desktop-click.spec.js"]
+            "contracts": [
+                "3d-focus-desktop-click.spec.js"
+            ]
         },
         "3d-rapid-re-selection": {
             "description": "Rapid 3D focus re-selection contracts for A-to-B, A-to-B-to-A, and canvas click race windows. Requires a running dev server on port 8795.",
             "timeout": 300000,
-            "contracts": ["3d-rapid-re-selection-contract.spec.js"]
+            "contracts": [
+                "3d-rapid-re-selection-contract.spec.js"
+            ]
         },
         "3d-responsive-ui": {
             "description": "Responsive UI and viewport resilience: camera aspect/resize coherence, DPR/backing scale, touch parity, and orbit stability across viewports. Requires a running dev server on port 8795.",
@@ -364,7 +382,10 @@
         "3d-visual-quality": {
             "description": "3D visual quality contracts - cluster readability and thread orchestration quality. Requires a running dev server on port 8795.",
             "timeout": 600000,
-            "contracts": ["3d-cluster-readability.spec.js", "3d-thread-orchestration-quality.spec.js"]
+            "contracts": [
+                "3d-cluster-readability.spec.js",
+                "3d-thread-orchestration-quality.spec.js"
+            ]
         },
         "3d-resilience": {
             "description": "3D resilience contracts - camera/orbit, touch parity, viewport/DPR resilience, and overlay hit ownership. Requires a running dev server on port 8795.",
@@ -379,12 +400,17 @@
         "3d-state-data": {
             "description": "3D state and data contracts - state transition integrity and data edge cases. Requires a running dev server on port 8795.",
             "timeout": 600000,
-            "contracts": ["3d-state-transition-integrity.spec.js", "3d-data-edge-cases.spec.js"]
+            "contracts": [
+                "3d-state-transition-integrity.spec.js",
+                "3d-data-edge-cases.spec.js"
+            ]
         },
         "3d-accessibility-fallback-performance": {
             "description": "3D accessibility, fallback, and performance contracts - keyboard focus ownership, reduced-motion final state, WebGL fallback/context loss, and renderer diagnostics. Requires a running dev server on port 8795.",
             "timeout": 600000,
-            "contracts": ["3d-accessibility-fallback-performance.spec.js"]
+            "contracts": [
+                "3d-accessibility-fallback-performance.spec.js"
+            ]
         },
         "3d-smoke": {
             "description": "3D fast smoke - pointer hit, hover affordance, focus-pocket selectability. Sub-5s each, minimal scene complexity.",
@@ -455,7 +481,6 @@
                 "focus-pocket-motion-contract.mjs",
                 "focus-pocket-composition-contract.mjs",
                 "journey-event-bindings-contract.mjs",
-                "demo-init-seam-contract.mjs",
                 "reset-callsite-routing-contract.mjs",
                 "demo-camera-retirement-contract.mjs",
                 "cluster-labels-contract.mjs",
@@ -495,7 +520,6 @@
                 "three-setup-zero-caller-dewindowing-contract.mjs",
                 "scene-atmosphere-contract.mjs",
                 "motion-state-contract.mjs",
-                "demo-state-sync-contract.mjs",
                 "three-visual-polish-contract.mjs",
                 "reduced-motion-coverage-contract.mjs",
                 "js-reduced-motion-animation-guard-contract.mjs",
@@ -512,8 +536,6 @@
             "contracts": [
                 "btn-journey-primary-layout.spec.js",
                 "camera-motion-visual-smoke.spec.js",
-                "demo-init-seam-contract.mjs",
-                "micro-demo.spec.js",
                 "ui-renderers-validation.spec.js"
             ]
         },
@@ -586,7 +608,10 @@
         },
         "e2e": {
             "description": "End-to-end Playwright specs - switchView race condition and full click flow proofs. Repaired 2026-08-03: both specs drive switchView via the __navActions__ test-globals hook (dead #btn-map/#btn-share-view buttons retired in f0bceb84) and run against the standard playwright webServer (port 8796, auto-booted) instead of a manual dev server on 9876.",
-            "contracts": ["switchview-race.spec.js", "e2e-click-flow.spec.js"]
+            "contracts": [
+                "switchview-race.spec.js",
+                "e2e-click-flow.spec.js"
+            ]
         }
     }
 }

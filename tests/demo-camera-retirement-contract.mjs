@@ -127,11 +127,11 @@ test('retired app.js remains absent', () => {
     assert(!fs.existsSync(p), `retired JS entry still exists: ${p}`)
 })
 
-test('micro-demo.ts does not import from retired demo-camera.ts', () => {
-    const p = path.join(ROOT, 'src/lib/demo/choreography.ts')
+test('canonical engine choreography does not import from retired demo-camera.ts', () => {
+    const p = path.join(ROOT, 'src/lib/engine/demo-choreography.ts')
     assert(fs.existsSync(p), `active demo choreography is missing: ${p}`)
     const src = fs.readFileSync(p, 'utf8')
-    // micro-demo.ts may reference micro-demo-camera.ts (active) — that's fine.
+    // engine demo-choreography may reference micro-demo-camera.ts (active) — that's fine.
     // It must NOT reference the retired demo-camera.js.
     const importMatches = src.match(/(?:import|from)\s*['"][^'"]*demo-camera\.js['"]/g) || []
     for (const match of importMatches) {
