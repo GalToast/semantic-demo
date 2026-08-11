@@ -68,23 +68,16 @@ async function waitForAppReady(page) {
 }
 
 async function performSearch(page, query = 'coffee') {
-  const input = page.locator('#search-input');
-  await input.focus();
-  await input.fill(query);
-  await page.evaluate(async (q) => {
-    const el = document.getElementById('search-input');
-    if (!el) return;
-    el.value = q;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    const search = search;
-    if (typeof search === 'function') {
-      await search(q, { preferCachedResults: false });
-    }
-  }, query);
+  // Canonical driver (2026-08-11, same as widget-journey + focus-trap): the
+  // app fires search on Enter, not raw input events; the old block also had a
+  // 'const search = search' shadow (self-shadowed import -> no search ever
+  // fired). fill + Enter is the real path.
+  await page.fill('#search-input', query);
+  await page.keyboard.press('Enter');
   await page.waitForFunction(() => (
     document.querySelectorAll('.search-result-item').length > 0 ||
     document.getElementById('search-results')?.innerHTML?.includes('search-result-item')
-  ), undefined, { timeout: 15000 });
+  ), undefined, { timeout: 20000 });
 }
 
 async function expandSearchResults(page) {
