@@ -59,7 +59,7 @@ import {
 } from './results-ui'
 import { setupMobileSearchSheetToggle } from './search-panel-adapter'
 import { setActiveSearchResultRow } from './result-renderer'
-import { startSearch, cancelSearch } from './search-abort'
+import { startSearch, cancelSearch, isRecentlyRestoredQuery } from './search-abort'
 import { performLocalIndexSearch, localHitsToResults } from '@lib/search/local-search-index'
 import { showExperienceToast } from '@lib/orchestration/toast'
 
@@ -189,8 +189,16 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     // Clear exploration focus if needed
     publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, { preserveSearch: true, skipUrlSync: true })
 
-    const { signal, isNew, release } = startSearch(trimmedQuery)
+        const { signal, isNew, release } = startSearch(trimmedQuery)
     if (!isNew) return
+    // W71b: the URL-restore path already fulfilled this exact query within the
+    // boot window (markRestoredQuery set by _restoreSearchFromParams). A
+    // mount-time hydrological re-entry for the same text must NOT dispatch a
+    // second semantic_search round-trip (zero-result deep-link regression).
+    if (isRecentlyRestoredQuery(trimmedQuery)) {
+        release()
+        return
+    }
 
     const requestId = incrementRequestSequence()
     setSearchStatus('searching')

@@ -38,7 +38,7 @@ import {
 } from '@lib/orchestration/url-params'
 import { setMobileSearchSheetMode } from '@lib/search/search-panel-adapter'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
-import { startSearch } from '@lib/search/search-abort'
+import { startSearch, markRestoredQuery } from '@lib/search/search-abort'
 import { updateUrlState, waitForSearchSettle, clearExplorationFocusSelection } from './url-writer'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -671,6 +671,12 @@ async function _restoreSearchFromParams(
         // in-flight search settles, or shared links like ?q=coffee&anchor=519
         // silently fail to focus when the typed-input path is mid-flight.
         const { isNew, release } = startSearch(query)
+        // W71b mark: this restore is the one serving ?q= for this page load;
+        // a parallel mount-time hydration search for the same query should
+        // dedup against it (see orchestration.search's isRecentlyRestoredQuery
+        // guard). Mark BEFORE the await so the hydration path (fires later in
+        // the boot sequence) sees it even if this search settles fast.
+        markRestoredQuery(query)
         releaseSearch = release
         if (isNew) {
             // Race runSearch against the restore deadline. runSearch swallows

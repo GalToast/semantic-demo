@@ -6,12 +6,29 @@
  * controllers from racing or racing each other.
  */
 
-const SAME_QUERY_GRACE_MS = 2500
-let servedQuery = ''
-let servedAt = 0
 
 let currentController: AbortController | null = null
 let currentQuery = ''
+
+// W71b boot-dedup (restore-first-wins). The URL-restore path marks the query it
+// dispatched so a parallel mount-time hydration search for the SAME query within
+// this window dedupes instead of issuing a second API round-trip (the zero-result
+// deep-link double-dispatch regression). Only the restore path sets this mark;
+// user-driven searches do not. Window stays short so a genuine later re-search
+// of the same text is never skipped.
+const RESTORED_QUERY_GRACE_MS = 2500
+let restoredQuery = ''
+let restoredAt = 0
+
+export function markRestoredQuery(query: string): void {
+    restoredQuery = query.trim()
+    restoredAt = Date.now()
+}
+
+export function isRecentlyRestoredQuery(query: string): boolean {
+    const trimmed = query.trim()
+    return trimmed.length > 0 && restoredQuery === trimmed && Date.now() - restoredAt < RESTORED_QUERY_GRACE_MS
+}
 
 interface SearchLease {
     signal: AbortSignal
@@ -47,26 +64,12 @@ export function startSearch(query: string): SearchLease {
     if (currentController && currentQuery === trimmed && !currentController.signal.aborted) {
         return { signal: currentController.signal, isNew: false, release: () => {} }
     }
-    // W71/W71b boot-window re-entry guard: at startup BOTH the URL restore
-    // (_restoreSearchFromParams) and the onMount ?q= hydration path fire a
-    // search for the same query within ~a tick of each other. The first to
-    // settle clears the singleton lease (release), so the second caller would
-    // see isNew=true and re-fetch a duplicate round-trip (the W71b zero-result
-    // regression: dispatch count 2 vs expected 1). Within the grace window a
-    // same-query that already SERVED is treated as the same search, not a new
-    // one. User-driven re-searches (Retry button, retching the same query)
-    // happen far beyond the window and are unaffected.
-    if (servedQuery === trimmed && Date.now() - servedAt < SAME_QUERY_GRACE_MS) {
-        return { signal: currentController?.signal ?? new AbortController().signal, isNew: false, release: () => {} }
-    }
     // Single synchronous block: abort previous, create fresh, set query — no
     // window between mutations where another observer can see torn state.
     currentController?.abort()
     const controller = new AbortController()
     currentController = controller
     currentQuery = trimmed
-    servedQuery = trimmed
-    servedAt = Date.now()
     return {
         signal: controller.signal,
         isNew: true,
