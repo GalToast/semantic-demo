@@ -23,9 +23,6 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { switchView, resetExplorationFocus, setSemanticDiveMode } from '@lib/orchestration/lifecycle'
-import { clearSearch, search } from '@lib/search/state'
-
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 
 const SEMANTIC_HEALTH_STUB = {
@@ -99,7 +96,7 @@ async function performMockedSearch(page, query = 'coffee') {
         await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 })
     } catch {
         await page.evaluate((q) => {
-            if (typeof search === 'function') search(q)
+            if (typeof search === 'function') window.__navActions__?.search(q)
         }, query)
         await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 })
     }
@@ -324,7 +321,7 @@ test.describe('3D semantic state transition integrity', () => {
             // btn-focus-dive may not be rendered yet; trigger via JS
             await page.evaluate(() => {
                 if (typeof setSemanticDiveMode === 'function') {
-                    setSemanticDiveMode(true)
+                    window.__navActions__?.setSemanticDiveMode(true)
                 }
             })
         } else {
@@ -374,7 +371,7 @@ test.describe('3D semantic state transition integrity', () => {
             .catch(() => {})
 
         await page.evaluate(() => {
-            if (typeof setSemanticDiveMode === 'function') setSemanticDiveMode(true)
+            if (typeof setSemanticDiveMode === 'function') window.__navActions__?.setSemanticDiveMode(true)
         })
         await page.waitForFunction(() => window.__TEST_STATE__?.semanticDiveMode === true, { timeout: 15000 })
         await page
@@ -502,7 +499,7 @@ test.describe('3D semantic state transition integrity', () => {
         } else {
             await page.evaluate(() => {
                 if (typeof setSemanticDiveMode === 'function') {
-                    setSemanticDiveMode(true)
+                    window.__navActions__?.setSemanticDiveMode(true)
                 }
             })
         }
@@ -579,7 +576,7 @@ test.describe('3D semantic state transition integrity', () => {
             .catch(() => {})
 
         await page.evaluate(() => {
-            if (typeof setSemanticDiveMode === 'function') setSemanticDiveMode(true)
+            if (typeof setSemanticDiveMode === 'function') window.__navActions__?.setSemanticDiveMode(true)
         })
         await page.waitForFunction(() => window.__TEST_STATE__?.semanticDiveMode === true, { timeout: 15000 })
         await page
@@ -668,7 +665,7 @@ test.describe('3D semantic state transition integrity', () => {
 
         // Step 4: semantic dive
         await page.evaluate(() => {
-            if (typeof setSemanticDiveMode === 'function') setSemanticDiveMode(true)
+            if (typeof setSemanticDiveMode === 'function') window.__navActions__?.setSemanticDiveMode(true)
         })
         await page.waitForFunction(() => window.__TEST_STATE__?.semanticDiveMode === true, { timeout: 15000 })
         snap = await snapshotState(page)
@@ -687,7 +684,7 @@ test.describe('3D semantic state transition integrity', () => {
 
         // Step 6: reset back to overview
         await page.evaluate(() => {
-            if (typeof resetExplorationFocus === 'function') resetExplorationFocus()
+            if (typeof resetExplorationFocus === 'function') window.__navActions__?.resetExplorationFocus()
         })
         await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'overview', { timeout: 15000 })
         await page
@@ -721,12 +718,12 @@ test.describe('3D semantic state transition integrity', () => {
 
         // Try to enter dive directly from overview
         await page.evaluate(() => {
-            if (typeof setSemanticDiveMode === 'function') setSemanticDiveMode(true)
+            if (typeof setSemanticDiveMode === 'function') window.__navActions__?.setSemanticDiveMode(true)
         })
         await page.waitForFunction(() => window.__TEST_STATE__?.navState?.mode === 'overview', { timeout: 5000 })
 
         const snap = await snapshotState(page)
-        // setSemanticDiveMode(true) when canDive=false is a no-op (canDive requires currentView===galaxy AND hasFocus)
+        // window.__navActions__?.setSemanticDiveMode(true) when canDive=false is a no-op (canDive requires currentView===galaxy AND hasFocus)
         // So semanticDiveMode should remain false
         const errors = assertInvariants(snap)
         expect(errors, `Invariants after invalid dive attempt: ${errors.join('; ')}`).toHaveLength(0)

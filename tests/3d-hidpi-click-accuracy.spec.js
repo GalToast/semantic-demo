@@ -1,6 +1,4 @@
 import { test, expect } from '@playwright/test'
-import { focusOnNode, resetExplorationFocus, returnToOverview } from '@lib/orchestration/lifecycle'
-import { clearSearch } from '@lib/search/state'
 import {
     BASE_URL,
     probe,
@@ -65,9 +63,9 @@ async function openAppHiDPI(browser, viewport = { width: 1440, height: 900 }, { 
     )
     await page.evaluate(() => {
         if (typeof returnToOverview === 'function') {
-            returnToOverview()
+            window.__navActions__?.returnToOverview()
         } else if (typeof resetExplorationFocus === 'function') {
-            resetExplorationFocus()
+            window.__navActions__?.resetExplorationFocus()
         }
     })
     await page.waitForFunction(

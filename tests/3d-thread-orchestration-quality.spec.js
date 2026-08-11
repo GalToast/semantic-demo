@@ -30,8 +30,8 @@
 import { test, expect } from '@playwright/test'
 import { inflateSync } from 'node:zlib'
 import { mutate } from './helpers/state-harness.js'
-import { setTrailDepth } from '@lib/stores/journey.svelte'
-import { focusOnNode } from '@lib/orchestration/lifecycle'
+
+
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795'
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
@@ -441,7 +441,7 @@ test.describe('3D thread orchestration quality', () => {
             .catch(() => {})
 
         // Use official API focusOnNode; trailDepth=1 is set via harness mutate()
-        // since the official setTrailDepth(1) call is the subject of this test
+        // since the official window.__navActions__?.setTrailDepth(1) call is the subject of this test
         // and we need to isolate the post-focus assertions from the depth-transition.
         const focusResult = await p.evaluate(() => {
             const preferred =
@@ -467,7 +467,7 @@ test.describe('3D thread orchestration quality', () => {
         })
         await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 })
         // Set trailDepth=1 via harness — documents this is fixture setup, not the
-        // official setTrailDepth() API being tested (that comes in step-inside).
+        // official window.__navActions__?.setTrailDepth() API being tested (that comes in step-inside).
         await mutate(p, 'setTrailDepth', { trailDepth: 1, navStateMode: 'focus' })
         await mutate(p, 'setFocusedNode', { focusedNode: focusResult.targetIndex })
         // Wait for the semantic lens glow to actually animate in (validates scene has settled)
@@ -744,7 +744,7 @@ test.describe('3D thread orchestration quality', () => {
         })
         await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 })
         // Set trailDepth=1 via harness — documents this is fixture setup, not the
-        // official setTrailDepth() API being tested.
+        // official window.__navActions__?.setTrailDepth() API being tested.
         await mutate(p, 'setTrailDepth', { trailDepth: 1, navStateMode: 'focus' })
         await mutate(p, 'setFocusedNode', { focusedNode: focusResult.targetIndex })
         // Wait for the semantic lens glow to actually animate in (validates scene has settled)

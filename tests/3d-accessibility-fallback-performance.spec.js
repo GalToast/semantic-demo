@@ -1,8 +1,5 @@
 import { test, expect } from '@playwright/test'
 import { BASE_URL, focusNodeViaApp, midpointIndex } from './helpers/3d-interaction-helpers.js'
-import { focusOnNode } from '@lib/orchestration/lifecycle'
-import { clearSearch } from '@lib/search/state'
-
 const HEALTH_OK = {
     ok: true,
     state: 'healthy',

@@ -25,7 +25,7 @@
 
 import { test, expect } from '@playwright/test'
 import { mutate } from './helpers/state-harness.js'
-import { clearSearch, search } from '@lib/search/state'
+
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
@@ -220,7 +220,7 @@ async function abortInFlightSearch(page) {
 
     // Start search without awaiting — fire-and-forget
     await page.evaluate(() => {
-        search('coffee', { preferCachedResults: false })
+        window.__navActions__?.search('coffee', { preferCachedResults: false })
     })
     // Give the request a moment to be dispatched
     await page
@@ -230,7 +230,7 @@ async function abortInFlightSearch(page) {
     // Abort via clearSearch (the user-cancels flow)
     await page.evaluate(() => {
         if (typeof clearSearch === 'function') {
-            clearSearch()
+            window.__navActions__?.clearSearch()
         }
     })
     await page
@@ -272,7 +272,7 @@ async function slowSearchResponse(page) {
     await input.fill('latte')
     await page.evaluate(() => {
         if (typeof search === 'function') {
-            search('latte', { preferCachedResults: false })
+            window.__navActions__?.search('latte', { preferCachedResults: false })
         }
     })
     // Wait just long enough for the UI to react to the in-flight state
@@ -437,7 +437,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
         await input.focus()
         await input.fill('coffee')
         await page.evaluate(() => {
-            search('coffee', { preferCachedResults: true })
+            window.__navActions__?.search('coffee', { preferCachedResults: true })
         })
         await page
             .waitForFunction(
