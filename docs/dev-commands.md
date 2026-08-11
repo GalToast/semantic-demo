@@ -38,6 +38,11 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
   build** and serves whatever is on disk. After editing source, a stale 8796 serves an
   out-of-date `dist/` and tests can fail against the OLD build. Local-dev risk only — CI
   always rebuilds (no pre-bound port).
+- **Worktree foot-g (2026-08-11):** `src/data.dat` + `src/data.dat.gz` are an **untracked
+  local corpus asset** (1.8MB, exists only in the main checkout). A fresh `git worktree`
+  must copy them (`cp <main>/src/data.dat src/` + `.gz`) and `npm run build` before
+  data-based suites (3D/journey/hover) — otherwise `GET /data.dat` → 404 → `points:0`
+  and every data-dependent test dies at the boot gate with no obvious cause.
 - **Recovery — stop the exact PID on 8796 (never broad node groups), then re-run:**
 
     ```bash
