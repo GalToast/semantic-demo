@@ -158,21 +158,6 @@ if (typeof window !== 'undefined') {
     window.syncTestStateFromBody = syncTestStateFromBody
 }
 
-/** Sync body dataset from test store (for components that write to body) */
-export function syncBodyFromTestState(): void {
-    if (typeof document === 'undefined' || !document.body) return
-
-    const body = document.body
-    const currentState = get(_testCompatWritable)
-    Object.entries(currentState).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-            // Convert camelCase to kebab-case for data attributes
-            const attr = key.replace(/([A-Z])/g, '-$1').toLowerCase()
-            body.dataset[attr] = String(value)
-        }
-    })
-}
-
 /** Reset test state to initial */
 export function resetTestState(): void {
     _testCompatWritable.set({ ...initialTestState })

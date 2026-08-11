@@ -249,20 +249,6 @@ function _handleBeforeUnload(): void {
 // terminated on page unload after the first hot reload.
 const _SEMANTIC_THREADS_UNLOAD_KEY = '__semanticThreadsUnloadHandler'
 
-/**
- * Remove the `beforeunload`/`pagehide` listeners registered by this module.
- * Safe to call multiple times; idempotent.
- */
-export function detachSemanticThreadListeners(): void {
-    if (typeof window === 'undefined' || typeof window.removeEventListener !== 'function') return
-    window.removeEventListener('beforeunload', _handleBeforeUnload)
-    window.removeEventListener('pagehide', _handleBeforeUnload)
-    const store = window as unknown as Record<string, unknown>
-    if (store[_SEMANTIC_THREADS_UNLOAD_KEY] === _handleBeforeUnload) {
-        delete store[_SEMANTIC_THREADS_UNLOAD_KEY]
-    }
-}
-
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     // Remove the PREVIOUS module-eval's closure (HMR), then register the new one.
     const store = window as unknown as Record<string, unknown>

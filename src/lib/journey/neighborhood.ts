@@ -430,15 +430,6 @@ export function initJourneyNeighborhoodAdapter(
 }
 
 /**
- * Reset bounded neighborhood state. Called when returning to overview.
- */
-export function resetBoundedNeighborhood(): void {
-    boundedNeighborhoodActive = false
-    boundedNeighborhoodAnchorIndex = null
-    boundedNeighborhoodCandidates = []
-}
-
-/**
  * Get the semantic neighbor record between a source and a target.
  * Ported from journey-neighborhood.js getSemanticNeighborRecordBetween().
  */

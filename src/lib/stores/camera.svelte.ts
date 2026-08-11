@@ -420,9 +420,6 @@ export function isAutoRotating(): boolean {
 export function isTransitioning(): boolean {
     return cameraStoreImpl.transition.phase === 'transitioning'
 }
-export function orbitSlackPhase(): string {
-    return cameraStoreImpl.orbitSlack.phase
-}
 export function cameraAssistActive(): boolean {
     return cameraStoreImpl.cameraAssistActive
 }
@@ -520,11 +517,6 @@ export function clearAutoRotateResumeTimer(): void {
     cameraStoreImpl.autoResumeDueAt = 0
 }
 
-/** Start the soft resume of auto-rotate (gradual speed-up). */
-export function startAutoRotateSoftResume(): void {
-    cameraStoreImpl.softResumeStartedAt = performance.now()
-}
-
 /** Note a scene interaction — suspends auto-rotate and schedules resume. */
 export function noteSceneInteraction(delayMs: number = CAMERA_CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS): void {
     suspendAutoRotate()
@@ -585,26 +577,6 @@ export function markRouteExploration(reason: string = 'user-control'): void {
 /** Check if route exploration should be marked (not already active). */
 export function shouldMarkRouteExploration(_reason: string = ''): boolean {
     return cameraStoreImpl.routeExplorationPhase !== 'user-control'
-}
-
-// ── Actions: Orbit Slack ─────────────────────────────────────────────────────
-
-/** Update the orbit slack state (from camera-orbit-slack.js). */
-export function updateOrbitSlack(patch: Partial<FocusOrbitSlackState>): void {
-    cameraStoreImpl.update((s) => ({
-        ...s,
-        orbitSlack: { ...s.orbitSlack, ...patch }
-    }))
-    // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
-}
-
-/** Reset orbit slack to defaults. */
-export function resetOrbitSlack(): void {
-    cameraStoreImpl.update((s) => ({
-        ...s,
-        orbitSlack: { ...INITIAL_ORBIT_SLACK }
-    }))
-    // NOTE: body.dataset.cameraSlack removed. parity-attrs.svelte.ts handles body.dataset sync.
 }
 
 // ── Helper: Is search route focus active? ────────────────────────────────────

@@ -153,14 +153,8 @@ export function weatherWindDirection(): string {
     const deg = readCanonical()?.windDirection
     return typeof deg === 'number' ? degToCompass(deg) : '--'
 }
-export function weatherWindGust(): number {
-    return readCanonical()?.windGust ?? 0
-}
 export function weatherIconKey(): WeatherIconKey {
     return readCanonical()?.icon ?? 'cloud'
-}
-export function weatherLocation(): string {
-    return 'Montgomery County, TX'
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────────

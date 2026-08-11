@@ -361,13 +361,6 @@ export function updateBloomParams(params: { luminanceThreshold?: number; intensi
 }
 
 /**
- * Get current bloom parameters (for DevGui display).
- */
-export function getBloomParams(): typeof BLOOM_DEFAULTS {
-    return { ...BLOOM_DEFAULTS }
-}
-
-/**
  * Enable/disable the Depth-of-Field effect (only active when premium mode is ON).
  */
 export function setDofEnabled(enabled: boolean): void {
@@ -376,11 +369,4 @@ export function setDofEnabled(enabled: boolean): void {
     if (dofPass && 'enabled' in dofPass) {
         dofPass.enabled = enabled
     }
-}
-
-/**
- * Check if postprocessing is initialized and available.
- */
-export function isPostProcessingAvailable(): boolean {
-    return _initialized && _composer !== null
 }

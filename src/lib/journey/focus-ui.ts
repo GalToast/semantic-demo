@@ -86,18 +86,6 @@ export function shouldUseFloatingFocusJourneyOnly(): boolean {
     return false
 }
 
-export function initFocusNeighborRailSubscriptions(): void {
-    const sync = () => updateFocusNeighborRail()
-    subscribeKeyed('focus-neighbor-rail:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync)
-    subscribeKeyed('focus-neighbor-rail:search-success', EVENTS.SEARCH_SUCCESS, sync)
-    subscribeKeyed('focus-neighbor-rail:search-cleared', EVENTS.SEARCH_CLEARED, sync)
-    subscribeKeyed('focus-neighbor-rail:filter-changed', EVENTS.FILTER_CHANGED, sync)
-    subscribeKeyed('focus-neighbor-rail:view-changed', EVENTS.VIEW_CHANGED, sync)
-    subscribeKeyed('focus-neighbor-rail:state-reset', EVENTS.STATE_RESET, sync)
-    subscribeKeyed('focus-neighbor-rail:composition-updated', EVENTS.COMPOSITION_UPDATED, sync)
-    subscribeKeyed('focus-neighbor-rail:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync)
-}
-
 function hideNeighborRail(rail: HTMLElement, list: HTMLElement, countEl: HTMLElement | null): void {
     rail.classList.remove('active')
     rail.hidden = true

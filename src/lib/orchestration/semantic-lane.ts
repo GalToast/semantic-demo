@@ -108,12 +108,6 @@ function syncSemanticLaneRetryBinding(pillEl: HTMLElement, enabled: boolean): vo
     pillEl.removeAttribute('tabindex')
 }
 
-export function initSemanticLaneAdapter({
-    updateLegendGuideState
-}: { updateLegendGuideState?: () => void } = {}): void {
-    legendGuideStateUpdater = typeof updateLegendGuideState === 'function' ? updateLegendGuideState : null
-}
-
 function getWindow(): Window | null {
     return typeof window !== 'undefined' ? window : null
 }

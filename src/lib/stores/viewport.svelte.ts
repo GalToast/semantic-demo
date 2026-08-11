@@ -227,16 +227,6 @@ export function initViewportListeners(): () => void {
         motionQuery.removeEventListener('change', onMotionChange)
     }
 }
-
-/**
- * Test-only escape hatch — drops the window-keyed writable so the next
- * import / read returns the current appState-derived initial value.
- * Most tests don't need this because the factory fixture reads from
- * appState on every call, but the singleton pattern requires it for
- * tests that need a clean slate between cases.
- */
-export const resetViewportForTests = viewportMirror.resetForTests
-
 // ── Query helpers ────────────────────────────────────────────────────────────
 
 export function getViewportSize(): { width: number; height: number } {
@@ -275,11 +265,6 @@ export function isMapSummarySurface(): boolean {
 
 export function isSemanticDiveSurface(): boolean {
     return getPanelSurface() === 'semantic-dive'
-}
-
-export function matchMediaSafe(query: string): MediaQueryList | null {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null
-    return window.matchMedia(query)
 }
 
 export function getLocation(): Location | null {

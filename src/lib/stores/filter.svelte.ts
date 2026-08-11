@@ -396,14 +396,6 @@ export function setActiveFilter<K extends keyof ActiveFilters>(key: K, value: Ac
     return true
 }
 
-/** Backwards-compatible boolean signal toggle from retired js/modules/filter-state.ts. */
-export function toggleActiveFilterSignal(key: string): boolean {
-    if (key !== 'website' && key !== 'email' && key !== 'geocoded') return false
-    const filters = getFilterState()
-    setFilter(key, !filters[key])
-    return true
-}
-
 /** Backwards-compatible reset alias from retired js/modules/filter-state.ts. */
 export const resetActiveFilters = resetFilters
 

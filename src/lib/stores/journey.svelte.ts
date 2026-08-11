@@ -335,19 +335,12 @@ export const journeyStore: JourneyStoreApi = _createJourneyStore()
 /** Backwards-compatible alias. */
 export const journeyState: JourneyStoreApi = journeyStore
 
-/** Test-only escape hatch — drops the window-keyed singleton. */
-export const resetJourneyForTests = journeyMirror.resetForTests
 
 // ── Derived Getters ──────────────────────────────────────────────────────────
 
 export const journeyPhase = () => appState.navState.mode
 export const journeyTrail = () =>
     finiteIndexList(appState.navState.walkHistoryIndices).map((index) => ({ index }) as TrailStop)
-export const journeyNeighbors = () => finiteIndexList(appState.navState.trailNeighborIndices)
-export const journeySelectedId = () => {
-    const focused = appState.navState.focusedIndex
-    return focused === null ? null : String(focused)
-}
 export const walkHistory = () =>
     finiteIndexList(appState.navState.walkHistoryIndices).map<WalkHistoryEntry>((index) => ({
         fromIndex: -1,
@@ -461,17 +454,6 @@ export function advanceTrailCursor(delta = 1): void {
     })
 }
 
-export function setNeighbors(indices: readonly number[]): void {
-    setTrailNeighborIndices(indices)
-}
-
-export function addWalkHistory(entry: WalkHistoryEntry | number): void {
-    addTrailStop(typeof entry === 'number' ? entry : entry.toIndex)
-}
-
-export function clearWalkHistory(): void {
-    clearTrail()
-}
 
 export function setThreadCandidates(candidates: readonly number[]): void {
     const refs = candidates.map((idx) => ({ index: idx, source: '', reason: '' }))
@@ -482,19 +464,6 @@ export function setThreadCandidates(candidates: readonly number[]): void {
 export function clearThreadCandidates(): void {
     journeyMirror.update((s) => ({ ...s, threadCandidates: [] }))
     writeNavStateMirror({ threadCandidates: [] })
-}
-
-export function setTerrainHandoffPhase(phase: JourneyStoreState['terrainHandoffPhase']): void {
-    journeyMirror.update((s) => ({ ...s, terrainHandoffPhase: phase }))
-}
-
-export function setRouteExplorationPhase(phase: JourneyStoreState['routeExplorationPhase']): void {
-    journeyMirror.update((s) => ({ ...s, routeExplorationPhase: phase }))
-}
-
-export function setSelectedId(id: string | null): void {
-    const index = id === null ? null : Number(id)
-    setSelectedStop(Number.isFinite(index) ? index : null)
 }
 
 export function resetJourney(): void {

@@ -574,11 +574,3 @@ export function resetFocus(): void {
 /** Constellation motifs defined in the engine config. */
 export { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config'
 export type { ConstellationMotif } from '@lib/engine/config'
-
-// ── Test-only escape hatch ──────────────────────────────────────────────────
-
-/**
- * Test-only escape hatch — drops the window-keyed writable so the next
- * import / read returns the current appState-derived initial value.
- */
-export const resetFocusForTests = focusMirror.resetForTests

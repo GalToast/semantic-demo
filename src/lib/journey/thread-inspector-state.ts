@@ -106,7 +106,7 @@ const onCameraNodeFocused = (payload: Record<string, unknown>): void => {
 // duplicate, so this module-level CAMERA_NODE_FOCUSED handler never leaks or
 // fires N× per clearThreadInspection. Matches the module-scope subscribeKeyed
 // pattern in map-state.ts / triggers.ts. The captured unsubscribe is also
-// exposed via disposeThreadInspectionSubscriptions() for explicit teardown.
+// closed over by the module; no longer re-exported.
 //
 // Some Vitest namespace mocks may omit the keyed export. Read that property
 // defensively for those partial mocks, but let errors from a real keyed
@@ -128,11 +128,6 @@ if (typeof subscribeKeyed === 'function') {
     )
 } else {
     unsubscribeCameraNodeFocused = eventBus.subscribe(eventBus.EVENTS.CAMERA_NODE_FOCUSED, onCameraNodeFocused)
-}
-
-/** Tear down the module-level event-bus subscription (explicit dispose/HMR). */
-export function disposeThreadInspectionSubscriptions(): void {
-    unsubscribeCameraNodeFocused()
 }
 
 let clearingThreadInspection = false
