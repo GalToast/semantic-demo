@@ -25,7 +25,11 @@ const appSrc = read(appPath, 'src/lib/orchestration/app-init.ts')
 const threeSetupSrc =
     read(threeSetupPath, 'src/lib/engine/three-engine.ts') +
     '\n' +
-    read(resolve(CWD, 'src/lib/engine/three-engine-core.ts'), 'src/lib/engine/three-engine-core.ts')
+    read(resolve(CWD, 'src/lib/engine/three-engine-core.ts'), 'src/lib/engine/three-engine-core.ts') +
+    '\n' +
+    read(resolve(CWD, 'src/lib/engine/three-engine-render-loop.ts'), 'src/lib/engine/three-engine-render-loop.ts') +
+    '\n' +
+    read(resolve(CWD, 'src/lib/engine/three-engine-teardown.ts'), 'src/lib/engine/three-engine-teardown.ts')
 // TS split: app-init.ts delegates bootstrap to engine/lifecycle.ts.
 // Cancel-animate call now lives in the engine lifecycle. Check there too.
 const engineLifecycleSrc = (() => {

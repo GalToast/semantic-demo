@@ -22,7 +22,7 @@ function read(path, label) {
 }
 
 const appSrc = read(appPath, 'src/lib/orchestration/app-init.ts')
-const threeSetupSrc = read(threeSetupPath, 'src/lib/engine/three-engine.ts') + '\n' + read(resolve(CWD, 'src/lib/engine/three-engine-core.ts'), 'src/lib/engine/three-engine-core.ts')
+const threeSetupSrc = read(threeSetupPath, 'src/lib/engine/three-engine.ts') + '\n' + read(resolve(CWD, 'src/lib/engine/three-engine-core.ts'), 'src/lib/engine/three-engine-core.ts') + '\n' + read(resolve(CWD, 'src/lib/engine/three-engine-render-loop.ts'), 'src/lib/engine/three-engine-render-loop.ts') + '\n' + read(resolve(CWD, 'src/lib/engine/three-engine-teardown.ts'), 'src/lib/engine/three-engine-teardown.ts')
 // TS split: app-init.ts delegates bootstrap to engine/lifecycle.ts.
 // The animate() invocation may live in three-engine.ts itself (started by
 // initThreeJS) or in engine/lifecycle.ts.
