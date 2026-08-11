@@ -1,5 +1,7 @@
 # Subagent Lane Inventory — Semantic Explorer
 
+> **COMPRESSED HISTORY (2026-08-11):** the 59 dated run-entries below are history; durable lessons → docs/subagent-delegation.md (Landmine classes). The live coordination state is in the un-dated sections.
+
 Moved out of `AGENTS.md` (Prompt Budget: no large reference tables in the hot-path file). `docs/subagent-delegation.md` remains the source for lifecycle/rate/vision rules; this doc is just the live per-model viability table.
 
 Probed 2026-07-27. Updated 2026-08-06 (live catalogue refresh; vision lanes refreshed by 670-probe sweep — see Vision Capability Matrix in `docs/subagent-delegation.md`; evidence `tmp/vision-probe/`). **See also `docs/subagent-models.md`** for the quick-reference version (verified table, conditional/avoid list, and untested backlog).
@@ -1420,6 +1422,7 @@ isolate run BEFORE re-committing this time.
   real isolate.
 
 ### 3d-data-edge suite — environmental instability (2026-08-11, 3-attempt verdict)
+
 The data-edge suite's waitForFunction/canvas-visibility failures persisted across 3 attempts
 (bridge-rewire fix → readiness-guard fix → path-repoint) with DISTINCT hypotheses each time.
 Final evidence: the failing waits are canvas.toBeVisible() + post-inject checks — the CANVAS
