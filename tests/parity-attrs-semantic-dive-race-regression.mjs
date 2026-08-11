@@ -30,7 +30,11 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 
-const BASE_URL = 'http://127.0.0.1:8795/index.html';
+// Canonical app entry (custom outDir build): the Svelte 5 build serves
+// /dist/svelte/index.html; the bare /index.html root is NOT the app shell
+// (2026-08-10 parity-race verification: /dist/svelte/index.html reaches
+// surface=focus-search with 8406 points; the root URL stays unset).
+const BASE_URL = 'http://127.0.0.1:8795/dist/svelte/index.html';
 const VIEWPORT = { width: 1440, height: 900 };
 
 // SwiftShader gate (see visual-state-audit.mjs)
