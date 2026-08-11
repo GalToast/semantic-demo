@@ -10,6 +10,7 @@ import path from 'node:path'
 const SEMDEMO_ROOT = path.resolve(process.cwd())
 const WEBGL_CONTEXT_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/webgl-context.ts')
 const THREE_ENGINE_CORE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-core.ts')
+const THREE_ENGINE_TEARDOWN_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-teardown.ts')
 const RENDERER_DIAGNOSTICS_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/renderer/renderer-diagnostics.ts')
 const THREE_ENGINE_SEARCH_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-search.ts')
 const NODE_MANAGER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/node-manager.ts')
@@ -59,7 +60,10 @@ function testLifecycleHelpersExist() {
 function testEngineTeardownPath() {
     console.log('\n[TEST] Engine Teardown Path')
 
-    const engineCoreSrc = fs.readFileSync(THREE_ENGINE_CORE_PATH, 'utf-8')
+    // W-split follow-up: the teardown sequence moved out of three-engine-core
+    // into three-engine-teardown.ts after the teardown extraction. Assert
+    // against the live owner; core re-exports cancelAnimate/deinit from it.
+    const engineCoreSrc = fs.readFileSync(THREE_ENGINE_TEARDOWN_PATH, 'utf-8')
 
     assertContains(engineCoreSrc, 'disposeNodeVisualsPort()', 'Teardown calls disposeNodeVisuals')
     assertContains(engineCoreSrc, 'disposeMyceliumPort()', 'Teardown calls disposeMycelium')
