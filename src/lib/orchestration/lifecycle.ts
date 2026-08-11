@@ -85,7 +85,11 @@ export { hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration }
 export function onWindowResize(): void {
     syncViewport()
 }
-export { copyCurrentViewLink, resetStateBeforeUrlRestore, clearExplorationFocusSelection } from '@lib/orchestration/url-state'
+export {
+    copyCurrentViewLink,
+    resetStateBeforeUrlRestore,
+    clearExplorationFocusSelection
+} from '@lib/orchestration/url-state'
 export { switchView, showViewHandoff, hideViewHandoff }
 export {
     getFocusedJourneyPoint,
@@ -116,7 +120,6 @@ export function deriveLifecyclePanelSurfaceContext(
     if (hasFocus) return 'focus'
     return 'idle'
 }
-
 // ── Semantic Dive Proxy (uses focus store) ────────────────────────────────────
 
 /**
