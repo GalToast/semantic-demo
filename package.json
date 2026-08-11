@@ -99,6 +99,8 @@
     "qa:journey:fresh": "npm run build && npm run qa:journey",
     "qa:journey:fresh:headless": "npm run build && npm run qa:journey:headless",
     "qa:journey:fresh:smoke": "npm run build && npm run qa:journey:smoke",
+    "qa:3d": "SEMANTIC_USE_D3D11=1 PLAYWRIGHT_STRICT_FRESH=1 npx playwright test tests/3d-*.spec.js --browser=chromium --workers=1",
+    "qa:3d:fresh": "npm run build && npm run qa:3d",
     "qa:map-empty-state": "npx playwright test tests/map-empty-state-journey.spec.js --browser=chromium",
     "qa:mapview-placeholder": "npx playwright test tests/mapview-placeholder-journey.spec.js --browser=chromium",
     "qa:journey:live": "npx playwright test tests/widget-journey.spec.js --browser=chromium --workers=1 --grep @live",
