@@ -35,9 +35,12 @@ import { dirname, resolve } from 'node:path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const SRC_PATH = resolve(__dirname, '../../src/lib/journey/semantic-overlay.ts')
+const MATERIAL_PATH = resolve(__dirname, '../../src/lib/journey/semantic-overlay-material.ts')
 
 function readSource(): string {
-    return readFileSync(SRC_PATH, 'utf-8')
+    // B-1 split (2026-08-11): the material factory + its 3 types moved to the sibling
+    // module; the typing guarantee now spans BOTH files.
+    return readFileSync(SRC_PATH, 'utf-8') + '\n' + readFileSync(MATERIAL_PATH, 'utf-8')
 }
 
 // Strip block + line comments so regexes don't false-positive on prose.

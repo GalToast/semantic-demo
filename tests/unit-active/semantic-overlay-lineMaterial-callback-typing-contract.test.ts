@@ -41,18 +41,18 @@ function countAnyOccurrences(source: string): number {
     return matches.length
 }
 
-describe('W47-Bite-Continued / semantic-overlay.ts / lineMaterial + callback typing', () => {
+describe('W47-Bite-Continued / semantic-overlay material + callback typing', () => {
+    // B-1 split (2026-08-11): buildFocusThreadLineMaterial moved to the
+    // semantic-overlay-material.ts sibling; refresh/typing asserts on the
+    // parent stay on semantic-overlay.ts.
     it('any count is reduced from 33 baseline to 0 (post-W48-Phase-3 baseline)', () => {
-        const source = readSource('src/lib/journey/semantic-overlay.ts')
+        const source = readSource('src/lib/journey/semantic-overlay.ts') + '\n' + readSource('src/lib/journey/semantic-overlay-material.ts')
         const count = countAnyOccurrences(source)
-        // Tightened to 0 in W48-Phase-3 (was 33 → 10 in W47-Bite-Continued;
-        // a 100% total reduction via the SemanticLineMaterial typed
-        // extension of LineMaterial). Lock-in: must remain at 0.
-        expect(count, `semantic-overlay.ts has ${count} any occurrences (lock-in target 0)`).toBe(0)
+        expect(count, `overlay files have ${count} any occurrences (lock-in target 0)`).toBe(0)
     })
 
     it('no `(lineMaterial as any)` casts remain in buildFocusThreadLineMaterial', () => {
-        const source = readSource('src/lib/journey/semantic-overlay.ts')
+        const source = readSource('src/lib/journey/semantic-overlay-material.ts')
         const buildFn = source.match(/function\s+buildFocusThreadLineMaterial[\s\S]*?\n\}/m)
         expect(buildFn, 'buildFocusThreadLineMaterial not found').not.toBeNull()
         expect(buildFn![0]).not.toMatch(/lineMaterial\s+as\s+any/)
@@ -68,7 +68,7 @@ describe('W47-Bite-Continued / semantic-overlay.ts / lineMaterial + callback typ
     it('lineMaterial.uniforms.X uses non-null assertion (`!`) at the 4 set sites', () => {
         // We use `!` since Three.js's index signature returns IUniform | undefined,
         // but buildFocusThreadLineMaterial always sets these uniforms at runtime.
-        const source = readSource('src/lib/journey/semantic-overlay.ts')
+        const source = readSource('src/lib/journey/semantic-overlay-material.ts')
         const buildFn = source.match(/function\s+buildFocusThreadLineMaterial[\s\S]*?\n\}/m)
         expect(buildFn, 'buildFocusThreadLineMaterial not found').not.toBeNull()
         const body = buildFn![0]
@@ -103,7 +103,7 @@ describe('W47-Bite-Continued / semantic-overlay.ts / lineMaterial + callback typ
     })
 
     it('onBeforeCompile callback uses Three.js implicit shader type (not (shader: any))', () => {
-        const source = readSource('src/lib/journey/semantic-overlay.ts')
+        const source = readSource('src/lib/journey/semantic-overlay-material.ts')
         // No `(shader: any)` should remain
         expect(source).not.toMatch(/\(shader:\s*any\)/)
         // onBeforeCompile should be assigned directly without explicit any annotation
