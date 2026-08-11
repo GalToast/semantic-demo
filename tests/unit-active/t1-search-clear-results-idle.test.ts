@@ -30,7 +30,7 @@ const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.met
 describe('t1 clearSearchResults sets idle without dead ternary', () => {
     describe('source-text guard (explicit idle assignment, no dead ternary)', () => {
         it("replaces (...query).trim() ? 'idle' : 'idle' with explicit searchStatus = 'idle'", () => {
-            const src = read('../../src/lib/stores/search.svelte.ts')
+            const src = read('../../src/lib/stores/search-core.ts')
 
             const m = src.match(/export function clearSearchResults\(\)[\s\S]*?\n\}/)
             expect(m, 'clearSearchResults() should be present').toBeTruthy()
