@@ -26,7 +26,8 @@ async function findClickableNode(page) {
             }
         }
         if (attempt === 0) {
-            await page.waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
+            await page
+                .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
                 .catch(() => {})
         }
     }
