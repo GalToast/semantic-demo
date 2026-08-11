@@ -60,6 +60,8 @@ export interface ThreeEngineState {
     ppModule: PostProcessingModule | null
     ppLoading: Promise<PostProcessingModule> | null
     withStateMutation: WithStateMutationFn | null
+    // Engine restore/retry coordination flag (set by initThreeJS bootstrap)
+    renderLoopStartPending: boolean
     viewController: ViewControllerModule | null
     clusterLabels: ClusterLabelsModule | null
     focusPocket: FocusPocketModule | null
@@ -113,6 +115,7 @@ let _webglRestoreHandler: (() => Promise<unknown> | unknown) | null = null
 
 export const engineState: ThreeEngineState = {
     // Lazy module cache
+    renderLoopStartPending: false,
     ppModule: null,
     ppLoading: null,
     withStateMutation: null,

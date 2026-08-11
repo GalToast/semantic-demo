@@ -173,6 +173,8 @@ export class AppState {
     controls = $state<OrbitControls | null>(null)
     pointsMesh = $state<Points | null>(null)
     nodeSporeMesh = $state<InstancedMesh | null>(null)
+    pointsMaterial = $state<PointsMaterial | null>(null)
+    nodeSporeMaterial = $state<Material | null>(null)
     rawPositionsBuffer = $state<Float32Array | null>(null)
     rawClustersBuffer = $state<Uint16Array | null>(null)
     overviewBounds = $state<Record<string, unknown> | null>(null)

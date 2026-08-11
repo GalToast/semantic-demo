@@ -91,6 +91,8 @@ const EXEMPTED_SHAS = new Set<string>([
     // docs/window-global-allowlist.md is the registry the scanner validates
     // (doc+code in one atomic change). Evidence-bank class.
     '2ebdd2b8422a6d1242051a04758a4012631503ad',
+    // 7ca2e1d0 — test(css): Option C ownership redesign. Bundled docs/subagent-lane-inventory.md addendum = measured delegation evidence (process/evidence-bank class, same shape as f0840f8). selector-baseline retirement (delegation-wave-2).
+    '7ca2e1d0305245c682c397ddca4cff70bdff042e',
     // --- Historical context (motivating failure, NOT a live exemption) ---
     // b5ad93e — docs(roadmap): ... — THE failure mode that motivated
     // this test. Bundled 6 Svelte components + 1 test under a docs

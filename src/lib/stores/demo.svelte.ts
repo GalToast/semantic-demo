@@ -269,6 +269,9 @@ export function shouldRunDemo(force = false): boolean {
     if (isDeepLinkParams(params)) return false
     if (hasDemoBeenSeen()) return false
     if (isDemoSuppressedThisSession()) return false
+    // BS-B#5 (mirrors DemoChoreography.attemptStart): never run the 10-phase tour
+    // over the static mobile-2D placeholder surface — schedule the fallback hint only.
+    if (isPlaceholderSurface()) return false
     // Restore legacy guard (dropped during the choreography.ts → demo.svelte.ts migration):
     // reduced-motion users must not receive the animation-driven tour. The camera glide is
     // suppressed under prefers-reduced-motion, which produces a frozen, confusing sequence
@@ -363,3 +366,12 @@ export function resetDemo(): void {
  * import / read returns the current appState-derived initial value.
  */
 export const resetDemoForTests = demoMirror.resetForTests
+
+/**
+ * True when the app is on the mobile 2D placeholder surface (not WebGL).
+ * Demo choreography uses this to skip non-renderable surfaces (the 10-phase
+ * demo needs the canvas; see DemoChoreography.svelte attemptStart).
+ */
+export function isPlaceholderSurface(): boolean {
+    return document.body.dataset.renderKind === 'placeholder2d'
+}
