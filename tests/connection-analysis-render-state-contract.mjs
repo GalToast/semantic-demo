@@ -170,7 +170,7 @@ const { state } = await import('./helpers/canonical-state.mjs')
 const { getConnectionStateSnapshot } = await import('../src/lib/journey/connection-analysis-adapter.ts')
 
 function resetState() {
-    state.currentSearchSummary = null
+    state.searchState.currentSearchSummary = null
     state.focusedNode = null
     state.points = []
     elementsById.clear()
@@ -242,7 +242,7 @@ async function testCachedStoryDOMRender() {
     resetState()
     const { card, storyNote, storyText, storySource } = setupDOM()
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -294,7 +294,7 @@ async function testEmptyStoryRender() {
     resetState()
     const { card, storyText, storySource } = setupDOM()
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -339,7 +339,7 @@ async function testInvalidJsonRender() {
     resetState()
     const { card, storyText, storySource } = setupDOM()
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -378,7 +378,7 @@ async function testHttp500Render() {
     resetState()
     const { card, storyText, storySource } = setupDOM()
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -417,7 +417,7 @@ async function testAbortStateCleanup() {
     resetState()
     const { card, storyText, storySource } = setupDOM()
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -464,7 +464,7 @@ async function testCachedGemmaStoryRender() {
     resetState()
     const { storyText, storySource } = setupDOM()
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }

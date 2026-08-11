@@ -159,7 +159,7 @@ function rejectFetch(reason) {
 const { state } = await import('./helpers/canonical-state.mjs')
 
 function resetState() {
-    state.currentSearchSummary = null
+    state.searchState.currentSearchSummary = null
     state.focusedNode = null
     state.points = []
 }
@@ -307,7 +307,7 @@ async function testRuntimeCachedStory() {
     storySource.id = 'summary-gemma-story-source'
     elementsById.set('summary-gemma-story-source', storySource)
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -381,7 +381,7 @@ async function testRuntimeEmptyStory() {
     storySource.id = 'summary-gemma-story-source'
     elementsById.set('summary-gemma-story-source', storySource)
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -436,7 +436,7 @@ async function testRuntimeInvalidJson() {
     storySource.id = 'summary-gemma-story-source'
     elementsById.set('summary-gemma-story-source', storySource)
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -489,7 +489,7 @@ async function testRuntimeApiError() {
     storySource.id = 'summary-gemma-story-source'
     elementsById.set('summary-gemma-story-source', storySource)
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -545,7 +545,7 @@ async function testRuntimeAbortLifecycle() {
     storySource.id = 'summary-gemma-story-source'
     elementsById.set('summary-gemma-story-source', storySource)
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -606,7 +606,7 @@ async function testRuntimeEarlyReturnNoFocusedPoint() {
     elementsById.set('summary-gemma-story-source', storySource)
 
     // No search, no focused point
-    state.currentSearchSummary = null
+    state.searchState.currentSearchSummary = null
     state.focusedNode = null
     state.points = []
 
@@ -665,7 +665,7 @@ async function testRuntimeCorrelationIdOnJsonError() {
     card.id = 'semantic-summary-card'
     elementsById.set('semantic-summary-card', card)
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -720,7 +720,7 @@ async function testRuntimeCorrelationIdOnApiError() {
     card.id = 'semantic-summary-card'
     elementsById.set('semantic-summary-card', card)
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -766,7 +766,7 @@ async function testRuntimeFetchSignalPassed() {
     card.id = 'semantic-summary-card'
     elementsById.set('semantic-summary-card', card)
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
@@ -819,7 +819,7 @@ async function testRuntimeStorySourceFormatting() {
     card.id = 'semantic-summary-card'
     elementsById.set('semantic-summary-card', card)
 
-    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
     state.focusedNode = 0
     state.points = [
         { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
