@@ -213,10 +213,28 @@ The subagent harness re-sends every image the worker has read so far on each sub
 **VLM-discipline note:** layout/overlap/clipping verdicts are reliable; low-contrast + "overlap with backdrop" verdicts on dark glassy UIs are frequent false positives. Always close the loop with DOM truth (`getBoundingClientRect` + `elementFromPoint`) — see `visual-audit-false-positive-watchlist` skill. Do NOT dispatch 20 workers; one direct runner with concurrency is cheaper and deterministic.
 
 ## Recursive Delegation — policy (set 2026-08-11, measured basis)
-The harness SUPPORTS sub-subagents (external_subagent_start has parent_worker_id /
-root_worker_id lineage fields; the launch extension exposes MCP tools inside workers).
-Policy: do NOT use nested delegation by default. Keep the fleet FLAT (main lane →
-workers; followup-on-same-session for recovery). Measured basis (wave L + M, 2026-08-10/11):
+
+**CURRENT MODE (user steer, 2026-08-11): NESTED DELEGATION ENABLED.** The flat-only default
+was overturned by the user ("our subagents will delegate their own subagents"); nested
+fan-out is now a supported operating mode. The measured cautions below (settle rates,
+join probability, blind-redelegate risk) still apply to HOW the tree is shaped, but a
+flat-only restriction is no longer in force.
+
+Nested operating rules (upgraded from the old "safe reopening" conditions to always-on
+nested norms):
+
+1. Child must deliver a DISK FILE (not text); parent verifies it exists and integrates
+   it into its own REPORT — same deliverable-first protocol as 1st-gen.
+2. Child spawn is bounded to ONE level for now (main → parent-worker → child-worker);
+   parent never waits unbounded (hard timeout, explicit at spawn).
+3. Parent's REPORT must carry child lineage (names + worker ids) — enables followup.
+4. Fan-out for genuinely independent slices; keep per-level fan-out modest (2-3 max)
+   until measured.
+
+The 2026-08-10 wave's measured-basis concerns use to be fleet-flat; adopting nested does
+NOT relax the deliverable-first protocol, per-level verification, or the main-lane
+final-verify on everything.
+
 - 1st-gen settle-without-deliverable rate was high in both waves: L-wave 6/6 attempts
   settled without deliverables (rate-limit, recon-loop, text-only replies); M2 settled
   without its REPORT even with the improved deliverable-locked prompt (recovered via
@@ -226,7 +244,8 @@ workers; followup-on-same-session for recovery). Measured basis (wave L + M, 202
 - M1's honest adopt-and-reverify behavior (discovered the seam was already executed,
   re-ran gates, reported — did NOT duplicate the migration) is the quality bar: a lane
   that re-delegates blindly loses that discernment.
-Safe reopening condition (only when these ALL hold):
+  Safe reopening condition (only when these ALL hold):
+
 1. Child must deliver a DISK FILE (not text); parent must verify it exists and
    integrate it into its own REPORT.
 2. Child spawn is bounded to ONE level; parent never waits unbounded (hard timeout).
