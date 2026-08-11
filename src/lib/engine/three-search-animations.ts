@@ -340,6 +340,30 @@ function buildCorridorParticleTrail(anchorIndex: number, routeIndices: number[])
     return particles
 }
 
+/**
+ * Applies the shared corridor shader uniforms to a single material.
+ * Both the line material and the particle trail material receive this
+ * exact uniform set; collapsing them here removes the duplicated write
+ * pattern in `updateSearchCorridorAnimation`.
+ */
+function applyCorridorUniforms(
+    mat: ShaderMaterial | undefined,
+    drawProgress: number,
+    fadeOpacity: number,
+    time: number
+): void {
+    if (mat?.uniforms?.uDrawProgress && mat.uniforms.uTime) {
+        mat.uniforms.uDrawProgress.value = drawProgress
+        mat.uniforms.uTime.value = time
+    }
+    if (mat?.uniforms?.uFadeOpacity) {
+        mat.uniforms.uFadeOpacity.value = fadeOpacity
+    }
+    if (mat) {
+        mat.opacity = fadeOpacity
+    }
+}
+
 // ── Public API ──────────────────────────────────────────────────────────────
 
 export function triggerSearchHeroMoment(anchorIndex: number) {
@@ -588,20 +612,15 @@ export function updateSearchCorridorAnimation(frameNow: number): boolean {
     const reducedMotion = prefersReducedMotion()
 
     const drawProgress = Math.min(elapsed / CORRIDOR_SOFT_DRAW_DURATION, 1.0)
+    const time = reducedMotion ? 0 : frameNow / 1000
 
-    if (st.material?.uniforms?.uDrawProgress && st.material.uniforms.uTime) {
-        st.material.uniforms.uDrawProgress.value = drawProgress
-        st.material.uniforms.uTime.value = reducedMotion ? 0 : frameNow / 1000
-    }
+    applyCorridorUniforms(st.material, drawProgress, 1.0, time)
 
     // particles.material is typed Material | Material[] in three.js but we
     // assign a ShaderMaterial in buildCorridorParticleTrail; narrow here
     // so the uniform access doesn't go through `as any`.
     const particlesMaterial = st.particles?.material as ShaderMaterial | undefined
-    if (particlesMaterial?.uniforms?.uDrawProgress && particlesMaterial.uniforms.uTime) {
-        particlesMaterial.uniforms.uDrawProgress.value = drawProgress
-        particlesMaterial.uniforms.uTime.value = reducedMotion ? 0 : frameNow / 1000
-    }
+    applyCorridorUniforms(particlesMaterial, drawProgress, 1.0, time)
 
     if (elapsed > CORRIDOR_SOFT_DRAW_DURATION) {
         const fadeProgress = Math.min(
@@ -609,10 +628,8 @@ export function updateSearchCorridorAnimation(frameNow: number): boolean {
             1.0
         )
         const lineOpacity = 1.0 - fadeProgress
-        if (st.material?.uniforms?.uFadeOpacity) st.material.uniforms.uFadeOpacity.value = lineOpacity
-        if (st.material) st.material.opacity = lineOpacity
-        if (particlesMaterial?.uniforms?.uFadeOpacity) particlesMaterial.uniforms.uFadeOpacity.value = lineOpacity
-        if (particlesMaterial) particlesMaterial.opacity = lineOpacity
+        applyCorridorUniforms(st.material, drawProgress, lineOpacity, time)
+        applyCorridorUniforms(particlesMaterial, drawProgress, lineOpacity, time)
     }
 
     if (elapsed >= CORRIDOR_SOFT_TOTAL_DURATION) {
