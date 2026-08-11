@@ -1226,3 +1226,19 @@ clinefree/deepseek/deepseek-v4-flash (or rely on shim default).
   remain until the WebGL-env cause is fixed.
 
 - goal-loop live-verified 2026-08-10: unified goal.ts extension (goal-loop contract merged) — fake-pi-test 11/11 PASS, re-run clean at session start. Handoff deleted.
+
+### 3d-test stability thread (2026-08-11, main-lane) — 3 real root causes
+- **Parity-clobber**: tests that MANUALLY write `document.body.dataset.panelSurface` then
+  WAIT on `!== 'focus'` will hang — parity-attrs owns that attr (derived from nav store,
+  written parity-attrs.svelte.ts:343) and re-clobbers the manual write a tick later.
+  Fix: drive the canonical `window.__navActions__.returnToOverview()` (test-globals.ts).
+  Class: AGP39 asymmetric-gate. Commits 5ee2ac35.
+- **Shared-context sessionStorage leak**: playwright.config.js uses fullyParallel:false +
+  workers:1 → one browser context for all tests. engine-ready's `READY_SESSION_KEY`
+  sessionStorage persisted from test 1 into test 2's boot → different splash/init timing
+  → flaky hover/click. Fix: `page.addInitScript(() => sessionStorage.removeItem('...'))`
+  in the shared openApp helpers. Commit 796fca2a.
+- **Click-drift race**: hover-probe coords go stale when camera drifts between find and
+  mouse.down. Fix: re-move + rAF settle immediately before click (commit 79b016eb).
+- Fleet parity-resolvers refactor (their side, orthogonal; no collision).
+- Result: 3d-camera-orbit-resilience 4/4 green in 1.6m (was 2 fails + 180s timeouts).
