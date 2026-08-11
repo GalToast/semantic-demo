@@ -335,6 +335,7 @@ test.describe('3D node hover affordance', () => {
     test('desktop: stale hover state from rapid move clears cleanly without focus corruption', async ({ page }) => {
         test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
+        const focusBeforeHover = (await getHoverState(page)).focusedNode
 
         // First establish a solid hover on one node.
         const first = await findHoverableNode(page, { maxCandidates: 24 })
