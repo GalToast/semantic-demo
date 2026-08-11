@@ -42,7 +42,9 @@ import {
     LineSegments,
     AdditiveBlending,
     Color,
-    Group
+    Group,
+    MeshBasicMaterialParameters,
+    LineBasicMaterialParameters
 } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
 import { disposeFocusPocketSizeMesh } from './focus-pocket-size-mesh'
@@ -136,18 +138,18 @@ function getSemanticLensNeighborIndices(focusedNode: number): number[] {
  */
 function createAdditiveMesh(
     geometry: BufferGeometry,
-    MaterialCtor: new (params: any) => MeshBasicMaterial,
-    materialParams: any
+    MaterialCtor: new (params: MeshBasicMaterialParameters) => MeshBasicMaterial,
+    materialParams: MeshBasicMaterialParameters
 ): Mesh
 function createAdditiveMesh(
     geometry: BufferGeometry,
-    MaterialCtor: new (params: any) => LineBasicMaterial,
-    materialParams: any
+    MaterialCtor: new (params: LineBasicMaterialParameters) => LineBasicMaterial,
+    materialParams: LineBasicMaterialParameters
 ): LineSegments
 function createAdditiveMesh(
     geometry: BufferGeometry,
-    MaterialCtor: new (params: any) => MeshBasicMaterial | LineBasicMaterial,
-    materialParams: any
+    MaterialCtor: new (params: MeshBasicMaterialParameters | LineBasicMaterialParameters) => MeshBasicMaterial | LineBasicMaterial,
+    materialParams: MeshBasicMaterialParameters | LineBasicMaterialParameters
 ): Mesh | LineSegments {
     const material = new MaterialCtor({
         transparent: true,
