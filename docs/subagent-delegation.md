@@ -290,3 +290,35 @@ ratifies it AS POLICY (the user's delegation question + the fleet's live 2-level
 disk-file checksum). The measured cautions remain load-bearing: in the same session, N1 ×2
 and N2 ×1 settled without deliverables even at level 1 — nested trees must not assume a
 lower settle rate. Verdict standard stays: verify by disk-file + git log, not worker exit.
+
+### 2026-08-11 landmine/lesson digest (Q-3 consolidation; a40d4996)
+
+Five recurring failure classes measured on the fleet this session, each with its
+standing countermeasure (all are live policy, not advisory):
+
+1. **Phantom functions** — audit/spec names a symbol that no longer exists (files
+   retired; callers migrated). ✋ Guard: `rg -l <name> src/ tests/ AGENTS.md docs/`
+   AND `[ -e <file> ]` verify BEFORE treating a report as actionable. Three "dead
+   contracts" in the wave inventory turned out to have already been deleted (audit
+   was computed against a stale tree snapshot).
+2. **@lib-import crash** — a worker introducing a NEW module under `src/lib/*` and
+   importing it via the `@lib/...` alias in a test/`.mjs` whose loader doesn't
+   resolve the alias → import-time crash. Guard: new modules in `src/lib/` must be
+   imported by RELATIVE path from `tests/` helpers/contract runners; keep
+   `@lib` for production-Vite-build code only.
+3. **Mock-leak** — unit mocks mutating shared `$state`/stores persist across tests
+   in the same file → order-dependent greens. Guard: mock lifetime scoped to the
+   test; run suites with random order once per batch.
+4. **Parallel-convergence** — two lanes editing the same seam: a lane's in-flight
+   diff lands on top of the other commit AFTER the merge rebase → force-silent
+   drift (the overlay `buildFocusThreadLineMaterial` un-export landed exactly this
+   way tonight: fixed `a40d4996`, check 0/0). Guard: disjoint-file delegation
+   (verified above), `git status` before commit, and post-merge `npm run check`.
+5. **Audit-staleness** — a declaration (inventory/report) says X; the tree says
+   otherwise. Every "actionable" from an audit is REQUIRED to re-verify live
+   (`test -e`, `rg`) at execution time; audits are hypotheses about a snapshot.
+   See the D4 call (already-executed) as the worked example.
+
+Also standing: **3d protocol** = `SEMANTIC_USE_D3D11=1` + `--workers=1` +
+strict-fresh context for any browser/3d-gated verdict (never judge product bugs
+from a loaded-window run — W10 taught this at N=17).
