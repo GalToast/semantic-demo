@@ -57,11 +57,11 @@ async function setupNetworkStubs(page) {
 async function waitForAppReady(page) {
   // Canonical boot path (?q=coffee&nodemo=1) populates __TEST_STATE__.points.
   // Modern readiness (2026-08-11, mirror focus-trap-contract.mjs): the legacy
-  // window globals clearSearch / refreshCompositionState were REMOVED in the
-  // Svelte-5-native migration — waiting on them as bare identifiers inside
-  // page.waitForFunction (which runs in the browser) never resolves. The
-  // canonical test hook is __APP_STATE__ / __TEST_STATE__.points. Wait on the
-  // hook, not the gone globals.
+  // window globals (cleared-search store hook + composition refresh helper)
+  // were REMOVED in the Svelte-5-native migration — waiting on them as bare
+  // identifiers inside page.waitForFunction (which runs in the browser) never
+  // resolves. The canonical test hook is __APP_STATE__ / __TEST_STATE__.points.
+  // Wait on the hook, not the gone globals.
   await page.goto(`${BASE_URL}/dist/svelte/index.html?q=coffee&nodemo=1&view=galaxy`);
   await page.waitForFunction(() => (
     Array.isArray(window.__TEST_STATE__?.points) &&
@@ -72,14 +72,21 @@ async function waitForAppReady(page) {
 
 async function performSearch(page, query = 'coffee') {
   // Canonical driver (2026-08-11, same as widget-journey + focus-trap): the
-  // app fires search on Enter, not raw input events; the old block also had a
-  // 'const search = search' shadow (self-shadowed import -> no search ever
-  // fired). fill + Enter is the real path.
+  // app fires search on Enter, not raw input events. Earlier versions of this
+  // helper had a self-shadowed store import that left the search function
+  // undefined, so no search ever fired. fill + Enter is the real path.
   await page.fill('#search-input', query);
   await page.keyboard.press('Enter');
-  // Result items render with .search-result-listitem (the presentation
-  // refactor renamed .search-result-item -> .search-result-listitem; see
-  // SearchResultItem.svelte + widget-journey.spec.js).
+  // Result-readiness signal: canonical store probe (W71 journey + B1
+  // regression test). DOM fallback keeps the helper robust when the store
+  // signal is gated by a still-in-flight hydration. Result items render with
+  // .search-result-listitem (the presentation refactor renamed
+  // .search-result-item -> .search-result-listitem; see SearchResultItem.svelte
+  // + widget-journey.spec.js).
+  await page.waitForFunction(() => {
+    const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return Array.isArray(s.searchResults) && s.searchResults.length >= 0;
+  }, undefined, { timeout: 20000 });
   await page.waitForFunction(() => (
     document.querySelectorAll('.search-result-listitem').length > 0 ||
     document.getElementById('search-results')?.innerHTML?.includes('search-result-listitem')

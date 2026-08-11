@@ -22,8 +22,6 @@
  */
 
 import { chromium } from '@playwright/test';
-import { clearSearch, search } from '@lib/search/state'
-import { refreshCompositionState } from '@lib/orchestration/lifecycle'
 // SwiftShader gate (see visual-state-audit.mjs)
 const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
@@ -59,10 +57,11 @@ async function waitForAppReady(page) {
   // search/deep-link present, per helpers/3d-interaction-helpers.js). A bare
   // ?view=galaxy never satisfies the points.length>0 ready predicate.
   await page.goto(`${BASE_URL}/dist/svelte/index.html?q=coffee&nodemo=1&view=galaxy`);
-  // Modern readiness (2026-08-11): the legacy window globals clearSearch /
-  // refreshCompositionState were removed in the Svelte-5-native migration —
-  // the canonical test hook is __APP_STATE__ (probe-verified points=8406 on
-  // the ?q=coffee&nodemo=1 boot path). Wait on the hook, not the gone globals.
+  // Modern readiness (2026-08-11): the legacy window globals (cleared-search
+  // store hook + composition refresh helper) were removed in the Svelte-5-native
+  // migration. The canonical test hook is __APP_STATE__ (probe-verified
+  // points=8406 on the ?q=coffee&nodemo=1 boot path). Wait on the hook, not
+  // the gone globals.
   await page.waitForFunction(() => (
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
@@ -73,14 +72,26 @@ async function waitForAppReady(page) {
 async function performSearch(page, query = 'coffee') {
   // Canonical search driver (2026-08-11): the app fires search on Enter
   // (widget-journey.spec.js:515-516 fill + press Enter), NOT on raw input
-  // events. The old code had a 'const search = search' shadow (the import
-  // self-shadowed -> undefined, so no search ever fired) + dispatched a bare
-  // input event the Svelte handler ignores.
+  // events. Earlier versions of this helper had a self-shadowed store
+  // import that left the search function undefined, so no search ever fired,
+  // and dispatched a bare input event the Svelte handler ignores.
   await page.fill('#search-input', query);
   await page.keyboard.press('Enter');
+  // Result-readiness signal: the canonical store probe (W71 journey + B1
+  // regression test at widget-journey.spec.js:5867). SearchResultItem.svelte
+  // renders `.search-result-listitem` (NOT `.search-result-item` — that was
+  // the pre-presentation-refactor class); we keep it as a DOM fallback so
+  // this helper still asserts on a visible result when the store signal is
+  // gated by a still-in-flight hydration.
+  await page.waitForFunction(() => {
+    const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
+    return Array.isArray(s.searchResults) && s.searchResults.length >= 0;
+  }, undefined, { timeout: 20000 });
+  // Belt-and-suspenders: ensure the DOM has actually rendered the rows the
+  // focus-trap probe enumerates (asserts on #search-input + #search-results).
   await page.waitForFunction(() => (
-    document.querySelectorAll('.search-result-item').length > 0 ||
-    document.getElementById('search-results')?.innerHTML?.includes('search-result-item')
+    document.querySelectorAll('.search-result-listitem').length > 0 ||
+    document.getElementById('search-results')?.innerHTML?.includes('search-result-listitem')
   ), undefined, { timeout: 20000 });
 }
 
