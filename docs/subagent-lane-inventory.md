@@ -1379,12 +1379,26 @@ Also: findClickableNode needed a bounded retry (b38e272c) — post-reset camera 
 hide hoverable nodes on pass 1. Protocol: qa:3d with REUSE_SERVER + pre-started server.
 
 ### 3d battery FINAL ROOT CAUSE — spec-level @lib imports (2026-08-11, isolated at last)
+
 After 6+ rounds of dist verification (all clean), the REAL mechanism: 6 specs imported
-@lib/* source modules at TOP-LEVEL (search/state, journey.svelte, lifecycle, etc.) — the
+@lib/\* source modules at TOP-LEVEL (search/state, journey.svelte, lifecycle, etc.) — the
 Node test-runner loads the raw .svelte.ts (no Svelte transform) → `$state is not defined`
 AT LOAD, before any test runs. The dist/app/server were never the problem.
 FIX (afc81073): removed the @lib imports + rewired evaluate-internal calls to the
-window.__navActions__ bridge (the camera-orbit spec's proven pattern). Plus 5 specs
+window.**navActions** bridge (the camera-orbit spec's proven pattern). Plus 5 specs
 repointed from /index.html (dev shell) to /dist/svelte/index.html (built entry).
 Protocol: PLAYWRIGHT_REUSE_SERVER=1 + pre-started test-server + NO @lib imports in specs
-+ dist-entry paths. Verified: 3-spec smoke boots clean (0 $state errors, 15 tests run).
+
+- dist-entry paths. Verified: 3-spec smoke boots clean (0 $state errors, 15 tests run).
+
+### 3d battery verdict (2026-08-11, full 15-test smoke)
+- BOOT/$state blocker: DEFINITIVELY FIXED (afc81073 — spec-level @lib imports removed,
+  bridge-rewired). Specs run + continue past failures (was: crash at load).
+- RESULT: 12 failed | 3 passed (22.4m). The 12 = LONG-RUN FLAKE CLASS, NOT the rewire:
+  the flagship's own 4/4-solo tests failed under the 22-min D3D load ('hoverable canvas
+  node discoverable' null + 30s waitForFunction timeouts). The bounded-retry (b38e272c)
+  is insufficient under sustained GPU/CPU contention.
+- FIX DIRECTION (next wave): more tolerant hover-probes (retry-until-settled with longer
+  windows) OR workers=2 to halve per-worker contention; the data-edge suite's search-flow
+  waits may need the bridge's completion semantics verified (2nd-order).
+- The protocol is sound (boot clean, specs run); the flake class needs the robustness pass.
