@@ -1433,3 +1433,14 @@ render under the current fleet-WIP/test-server conditions), NOT my rewire/guard/
 (imports→bridge, paths→dist entry, readiness-guards) are REAL + generalizable — they fixed
 the $state-at-load (the session's main battery blocker). The data-edge canvas issue needs a
 fleet-quiet-window root-cause (canvas render under test-server serving), separate task.
+
+### LIVE dispatchable roster (re-probed 2026-08-11 — probe method: POST /logfare/v1/chat/completions, max_tokens 2)
+- minimax-m3 ✅ OK (workhorse: 112 workers this session; vision-capable)
+- kiro-auto ✅ OK (2nd-workhorse: 97; was NOT in the roster doc — add it)
+- kimi-k3 ✅ OK (25; cheap reads)
+- grape-2-pro ✅ responds (26) — CAUTION: empty-turn risk (disk-gate it)
+- deepseek-v4-flash — ⚠️ flaky (timed out now; 16 workers)
+- deepseek-v4-flash-0731 — situational (36)
+- v4-pro/v4-flash/fusion/qwen3/hydra/nemotron/open-4o/hy3 — the names I guessed 404'd (NOT in the current catalog via those slugs)
+- Method: probe BEFORE dispatch (the 429/404/empty-turn window changes); disk-gate EVERY lane
+  (exit-0 ≠ deliverable — the session's constant). Strongest deck: minimax-m3 + kiro-auto + kimi-k3.
