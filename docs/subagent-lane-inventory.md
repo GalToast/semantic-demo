@@ -1368,6 +1368,7 @@ fleet work is unreliable by construction. The qa:3d protocol itself is proven (f
 spec 4/4 stable). Do NOT blind-retry; wait for fleet-quiet.
 
 ### 3d battery ROOT CAUSE — webServer's own build path (2026-08-11, isolated)
+
 The battery's $state-is-not-defined failures (4 runs) were NOT stale dist (verified 5 ways:
 chunks compile searchRequestSequence, 0 raw $state, index refs match, served chunk clean).
 ROOT: playwright's webServer (scripts/playwright-web-server.mjs) runs `npm run build` when
@@ -1376,3 +1377,14 @@ state) serves a broken bundle. FIX: PLAYWRIGHT_REUSE_SERVER=1 + a pre-started
 `node scripts/test-server.mjs` (serving the verified dist) — boot is clean, tests run.
 Also: findClickableNode needed a bounded retry (b38e272c) — post-reset camera settle can
 hide hoverable nodes on pass 1. Protocol: qa:3d with REUSE_SERVER + pre-started server.
+
+### 3d battery FINAL ROOT CAUSE — spec-level @lib imports (2026-08-11, isolated at last)
+After 6+ rounds of dist verification (all clean), the REAL mechanism: 6 specs imported
+@lib/* source modules at TOP-LEVEL (search/state, journey.svelte, lifecycle, etc.) — the
+Node test-runner loads the raw .svelte.ts (no Svelte transform) → `$state is not defined`
+AT LOAD, before any test runs. The dist/app/server were never the problem.
+FIX (afc81073): removed the @lib imports + rewired evaluate-internal calls to the
+window.__navActions__ bridge (the camera-orbit spec's proven pattern). Plus 5 specs
+repointed from /index.html (dev shell) to /dist/svelte/index.html (built entry).
+Protocol: PLAYWRIGHT_REUSE_SERVER=1 + pre-started test-server + NO @lib imports in specs
++ dist-entry paths. Verified: 3-spec smoke boots clean (0 $state errors, 15 tests run).
