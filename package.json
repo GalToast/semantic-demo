@@ -28,7 +28,7 @@
         "check:css-minified": "node tests/css-minification-build-output-contract.mjs",
         "check:semantic-space": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/semantic-space-audit.mjs && node --loader ./tests/helpers/ts-resolve-loader.mjs tests/semantic-thread-relationship-role-contract.mjs",
         "check:svelte": "svelte-check --workspace src --tsconfig tsconfig.json --diagnostic-sources svelte,css",
-        "check": "npm run check:svelte && npm run build:svelte",
+        "check": "npm run verify:syntax && npm run check:svelte && npm run build:svelte",
         "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
         "typecheck:tests": "tsc --noEmit -p tsconfig.tests.json",
         "check:ts-progress": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/ts-js-drift-contract.mjs --progress",
@@ -123,7 +123,8 @@
         "git:hook:uninstall": "pwsh -NoLogo -NoProfile -Command \"Remove-Item -Path '.git/hooks/pre-commit' -Force -ErrorAction SilentlyContinue; Remove-Item -Path '.git/hooks/pre-commit.ps1' -Force -ErrorAction SilentlyContinue; Remove-Item -Path '.git/hooks/pre-commit.cmd' -Force -ErrorAction SilentlyContinue; Write-Host 'Git pre-commit hook removed.'\"",
         "test:smoke": "npm run test:contract:smoke",
         "sweep": "node scripts/tmp-ttl-sweep.mjs --apply --days=14 && node scripts/harness-sweep.mjs",
-        "gate": "node scripts/smoke-gate.mjs"
+        "gate": "node scripts/smoke-gate.mjs",
+        "verify:syntax": "node scripts/verify-syntax.mjs"
     },
     "keywords": [],
     "author": "",
