@@ -87,7 +87,7 @@ These WebGL suites are heavy: each spec cold-loads `?q=coffee&nodemo=1` (8,406-p
 2. Start + borrow a warm static server at the REPO ROOT instead of letting the
    runner own one (the 3d helpers build `BASE_URL + /dist/svelte/index.html`, so
    TEST_BASE_URL must be repo-root-served, never dist-root):
-   `python -m http.server 8785 --bind 127.0.0.1`   (from the repo root; NOT `cd dist/svelte`)
+   `python -m http.server 8785 --bind 127.0.0.1` (from the repo root; NOT `cd dist/svelte`)
    Serves both `/dist/svelte/...` (the app) and `/src/...` (raw .ts fallbacks).
    A dist-rooted server 404s the helper's `/dist/svelte/` path and triggers a
    raw-source fallback that crashes on Svelte runes (2026-08-11).
@@ -116,3 +116,13 @@ signal deterministic and bounded; run `npm run qa:journey:headless` separately
 when the broader journey suite is needed. The production build job publishes
 the `dist-svelte` artifact, and both the bundle-size and deploy jobs restore
 that same verified artifact instead of rebuilding a second copy.
+
+## 3d battery — port-8796 coordination rule (2026-08-11)
+The playwright webServer binds 8796 (`reuseExistingServer` is env-gated via
+PLAYWRIGHT_REUSE_SERVER=1 — NOT default). Fleet test lanes (e.g. demo-poller-*,
+journey audits) spawn their own webServer on 8796; running `qa:3d` while they're
+active collides ("already used"). Check BEFORE running:
+  netstat -ano | grep :8796  → LISTENING by node.exe = a fleet lane's live run
+Wait for the fleet's lane to finish (their webServer exits with their run) OR set
+PLAYWRIGHT_REUSE_SERVER=1 ONLY if you're certain the existing server serves a
+fresh dist. The `qa:3d:fresh` (build-first) variant remains the correctness gate.
