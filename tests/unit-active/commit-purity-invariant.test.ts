@@ -195,15 +195,6 @@ type FileClass = 'doc' | 'test' | 'css' | 'code' | 'config' | 'asset'
  */
 function classifyFile(filePath: string): FileClass {
     const p = filePath.toLowerCase()
-    // Coordination-ledger carve-out (must precede the generic docs/ branch):
-    // docs/subagent-lane-inventory.md is the lane/coordination log — lane
-    // commits (test/refactor prefix) append their run notes there by design.
-    // Documentation-by-role, never production surface; sha-independent like
-    // the goal-loop evidence bank (2026-08-11: fleet test(css) commit appended
-    // a wave-2 addendum → tripped the purity gate).
-    if (p === 'docs/subagent-lane-inventory.md') {
-        return 'test'
-    }
     // Doc patterns
     if (
         p.endsWith('.md') ||
@@ -305,6 +296,19 @@ function walkRecentCommits(limit: number): CommitRecord[] {
         const parsed = parseCommit(title)
         return { sha, title, files, parsed }
     })
+}
+
+/**
+ * Coordination-ledger files: touched by lane commits across BOTH docs() and
+ * test() prefixes by design (docs/subagent-lane-inventory.md is the live
+ * lane/coordination log; lane runs append notes under their own prefix).
+ * Excluded from BOTH purity directions — sha-independent, same evidence-role
+ * rationale as the goal-loop carve-outs (2026-08-11).
+ */
+const COORDINATION_LEDGER_FILES = new Set<string>(['docs/subagent-lane-inventory.md'])
+
+function isCoordinationLedger(filePath: string): boolean {
+    return COORDINATION_LEDGER_FILES.has(filePath.toLowerCase())
 }
 
 /**
@@ -413,6 +417,7 @@ describe('commit-purity-invariant', () => {
             if (commit.parsed?.prefix !== 'test') continue
 
             for (const file of commit.files) {
+                if (isCoordinationLedger(file)) continue
                 const fileClass = classifyFile(file)
                 if (fileClass !== 'test') {
                     violations.push({
