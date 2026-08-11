@@ -152,22 +152,24 @@ function assert(cond, msg) {
 const { state, withStateMutation } = await import('./helpers/canonical-state.mjs')
 
 let refreshCompositionState
-let setSearchSummaryAction  
+let setSearchSummaryAction
 let searchStoreRef
-let setTrailDepthAction  
+let setTrailDepthAction
 let setSemanticDiveModeAction
 
 try {
     const lc = await import('../src/lib/stores/lifecycle.ts')
     refreshCompositionState = lc.refreshCompositionState
     setTrailDepthAction = lc.setTrailDepth
-    setSemanticDiveModeAction = lc.setSemanticDiveMode} catch (e) {
+    setSemanticDiveModeAction = lc.setSemanticDiveMode
+} catch (e) {
     refreshCompositionState = globalThis.window.refreshCompositionState
 }
 try {
     const searchMod = await import('../src/lib/stores/search.svelte.ts')
     setSearchSummaryAction = searchMod.setSearchSummary
-    searchStoreRef = searchMod.searchStore} catch (e) {
+    searchStoreRef = searchMod.searchStore
+} catch (e) {
     // fall back to raw appState writes (legacy env)
 }
 // The Svelte store facade returns a snapshot that only refreshes when
@@ -189,7 +191,7 @@ function resetState() {
     withStateMutation(() => {
         state.currentView = 'galaxy'
         state.focusedNode = null
-        state.selectedPoint = null
+        state.focusState.selectedPoint = null
         state.navState.focusedIndex = null
         state.navState.mode = 'overview'
         state.navState.trailCursor = -1
@@ -338,7 +340,8 @@ if (setTrailDepthAction) {
     setTrailDepthAction(2) // canonical writer: updates navState trailDepth + mirror
 } else {
     state.trailDepth = 2 // legacy fallback
-}setSearchSummaryAction(null) // isolate inside-walk without search context
+}
+setSearchSummaryAction(null) // isolate inside-walk without search context
 commit('semantic-dive')
 assert(ds('panelSurface') === 'semantic-dive', 'semantic-dive: panelSurface is semantic-dive')
 assert(ds('semanticDive') === 'active', 'semantic-dive: semanticDive is active')
@@ -359,7 +362,7 @@ console.log('[PHASE] reset — full state clear, return to overview')
 resetState()
 state.focusedNode = 4
 state.navState.focusedIndex = 4
-state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
+state.focusState.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
 setSearchSummaryAction({ query: 'coffee', visibleMatches: 5 })
 state.trailDepth = 2
 elementsById.set('search-input', new FakeElement('input'))

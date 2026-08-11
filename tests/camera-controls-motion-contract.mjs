@@ -188,7 +188,7 @@ function resetState() {
         state.focusCameraTargetOffset = null
         state.currentView = 'galaxy'
         state.focusedNode = null
-        state.selectedPoint = null
+        state.focusState.selectedPoint = null
         state.navState.mode = 'overview'
         state.navState.focusPocketMeta = null
         state.trailDepth = 0
@@ -218,7 +218,7 @@ function ensureIdleAutoRotateEnabled() {
     withStateMutation(() => {
         state.currentView = 'galaxy'
         state.focusedNode = null
-        state.selectedPoint = null
+        state.focusState.selectedPoint = null
         state.navState.mode = 'overview'
         state.navState.focusPocketMeta = null
         state.trailDepth = 0
@@ -236,7 +236,7 @@ function ensureIdleAutoRotateDisabled() {
     withStateMutation(() => {
         state.currentView = 'galaxy'
         state.focusedNode = null
-        state.selectedPoint = null
+        state.focusState.selectedPoint = null
         state.navState.mode = 'overview'
         state.navState.focusPocketMeta = null
         state.trailDepth = 0
@@ -258,7 +258,7 @@ globalThis._now = 1000
 withStateMutation(() => {
     state.currentView = 'galaxy'
     state.focusedNode = null
-    state.selectedPoint = null
+    state.focusState.selectedPoint = null
     state.navState.mode = 'overview'
     state.sceneRevealActive = false
     state.searchGlowActive = false
@@ -288,7 +288,7 @@ withStateMutation(() => {
     state.autoRotate = true
     state.currentView = 'galaxy'
     state.focusedNode = null
-    state.selectedPoint = null
+    state.focusState.selectedPoint = null
     state.navState.mode = 'overview'
     state.sceneRevealActive = false
 })
@@ -340,7 +340,7 @@ setReducedMotion(true)
 withStateMutation(() => {
     state.currentView = 'galaxy'
     state.focusedNode = null
-    state.selectedPoint = null
+    state.focusState.selectedPoint = null
     state.navState.mode = 'overview'
     state.sceneRevealActive = false
 })
@@ -386,7 +386,7 @@ ensureIdleAutoRotateEnabled()
 withStateMutation(() => {
     state.currentView = 'galaxy'
     state.focusedNode = null
-    state.selectedPoint = null
+    state.focusState.selectedPoint = null
     state.sceneRevealActive = false
 })
 scheduleAutoRotateResume(2000)
