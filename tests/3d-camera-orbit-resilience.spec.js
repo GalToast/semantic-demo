@@ -196,8 +196,27 @@ test.describe('3D camera/orbit resilience', () => {
         // Camera should have moved (not be stuck), but still be in a reasonable range
         expect(afterDist, 'orbit should produce a finite camera distance').toBeGreaterThan(0)
         expect(afterDist, 'orbit distance should not be catastrophically large').toBeLessThan(1000)
-        // Delta should be observable (not identical to before)
-        const delta = Math.abs(afterDist - beforeDist)
+        // Delta should be observable — poll briefly for camera movement instead of a
+        // one-shot probe: under CPU load (parallel builds/fleet lanes) the orbit
+        // damping can lag a frame or two, and a single rAF wait then probe can read
+        // delta=0 even though the gesture registered fine (flake class: gesture-
+        // registration race, same family as the click-drift fix 79b016eb).
+        let delta = Math.abs(afterDist - beforeDist)
+        if (delta <= 0.1) {
+            await page
+                .waitForFunction(
+                    ({ before }) => {
+                        const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+                        const cam = s?.camera
+                        if (!cam) return false
+                        return Math.abs(Math.hypot(cam.position.x, cam.position.y, cam.position.z) - before) > 0.1
+                    },
+                    { before: beforeDist, timeout: 5000 }
+                )
+                .catch(() => {})
+            const settled = cameraDistance((await probe(page)).cameraPosition)
+            delta = Math.abs(settled - beforeDist)
+        }
         expect(delta, 'wheel/drag should produce observable camera movement').toBeGreaterThan(0.1)
     })
 })
