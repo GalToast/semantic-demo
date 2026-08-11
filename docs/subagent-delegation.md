@@ -322,3 +322,13 @@ standing countermeasure (all are live policy, not advisory):
 Also standing: **3d protocol** = `SEMANTIC_USE_D3D11=1` + `--workers=1` +
 strict-fresh context for any browser/3d-gated verdict (never judge product bugs
 from a loaded-window run — W10 taught this at N=17).
+
+### 2026-08-11 night-lane evidence (appended)
+- **nvidia/minimaxai/minimax-m3 = the clean performer overnight**: 3/3 full deliveries
+  (threads-split plan 12.3KB, repoint-audit, wait-gated classifier tasks), surviving
+  occasional 429 with auto-retry. Prefer this ROUTE for text/analysis work now.
+- logfare/minimax-m3 quota exhausted ~20:00 (429) — same model, different pool.
+- opencode-zen/north-mini-code-free: "no keys off cooldown" 429 — avoid until keys sleep.
+- Two phantom-class fixes landed (waitForReachableFocusPocket restored; stash-marker
+  commitment in a spec resolved) — the C-class synthesis (tmp/C-class-DELTA.md) carries
+  the fingerprints so they never re-consume a session.
