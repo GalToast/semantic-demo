@@ -136,3 +136,9 @@ expected — use `http://[::1]:5173`). Its final coordinate-click section is the
 documented serial-GPU-rAF flake (see the spec header); record-deep-link boot+focus
 restore verified GREEN under this oracle (2026-08-11: journey=focus-search, canvas up,
 0×4xx). Don't "fix" the record path on the strength of this spec without 5173 up.
+
+### qa:3d on Windows: the npm script env syntax breaks under cmd.exe
+`npm run qa:3d` sets `SEMANTIC_USE_D3D11=1 PLAYWRIGHT_STRICT_FRESH=1` UNIX-style →
+cmd.exe: "'SEMANTIC_USE_D3D11' is not recognized". Use the bash-native equivalent:
+`SEMANTIC_USE_D3D11=1 PLAYWRIGHT_STRICT_FRESH=1 npx playwright test tests/3d-*.spec.js --browser=chromium --workers=1`
+(2026-08-11; also the STRICT_FRESH guard aborts when dist is stale — rebuild first.)
