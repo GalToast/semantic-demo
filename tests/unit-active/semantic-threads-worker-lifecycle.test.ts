@@ -253,32 +253,17 @@ describe('semantic thread worker lifecycle', () => {
         // (artifactName, bundle) at the caller level. Test the exported cached
         // normalizer directly (no worker lifecycle): same key → same array ref;
         // different bundle → fresh array.
-        const { normalizeSemanticNeighborEntriesCached } = await import(
-            '../../src/lib/engine/semantic-threads'
-        )
-        const entries: Array<[string, { name: string; neighbors?: unknown[] }]> = [
-            ['lead-1', { name: 'Lead One' }]
-        ]
+        const { normalizeSemanticNeighborEntriesCached } =
+            await import('../../src/lib/engine/semantic-threads-normalize')
+        const entries: Array<[string, { name: string; neighbors?: unknown[] }]> = [['lead-1', { name: 'Lead One' }]]
         const bundleA = { nodes: { '1': { lead_id: 'lead-1' } } }
         const bundleB = { nodes: { '2': { lead_id: 'lead-2' } } }
 
-        const first = normalizeSemanticNeighborEntriesCached(
-            entries as never,
-            'semantic_threads_ui.dat',
-            bundleA
-        )
-        const second = normalizeSemanticNeighborEntriesCached(
-            entries as never,
-            'semantic_threads_ui.dat',
-            bundleA
-        )
+        const first = normalizeSemanticNeighborEntriesCached(entries as never, 'semantic_threads_ui.dat', bundleA)
+        const second = normalizeSemanticNeighborEntriesCached(entries as never, 'semantic_threads_ui.dat', bundleA)
         expect(second).toBe(first)
 
-        const third = normalizeSemanticNeighborEntriesCached(
-            entries as never,
-            'semantic_threads_ui.dat',
-            bundleB
-        )
+        const third = normalizeSemanticNeighborEntriesCached(entries as never, 'semantic_threads_ui.dat', bundleB)
         expect(third).not.toBe(first)
     })
 
