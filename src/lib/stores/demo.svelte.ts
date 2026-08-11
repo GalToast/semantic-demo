@@ -84,6 +84,16 @@ const timers = new Map<ReturnType<typeof setTimeout>, number>()
  *  Set synchronously when startDemo() is called; checked before any timer fires. */
 let _startGuardClaimed = false
 
+/**
+ * Lifetime controller for async demo actions. A new run gets a fresh signal;
+ * every terminal transition aborts the previous run before it can resume.
+ */
+let demoLifecycleController: AbortController | null = null
+
+export function getDemoLifecycleSignal(): AbortSignal | null {
+    return demoLifecycleController?.signal ?? null
+}
+
 // ── Initial State ────────────────────────────────────────────────────────────
 
 const INITIAL_DEMO: DemoStoreState = {
@@ -143,6 +153,32 @@ export function setDemoPhase(phase: DemoPhase): void {
     demoMirror.update((s) => ({ ...s, phase }))
 }
 
+/**
+ * Stop the running demo lifecycle: release the start-guard and clear all
+ * pending transition timers. Called by cancelDemo / markDemoCompleted /
+ * resetDemo so no scheduled transitionDemo can slam the phase back after
+ * the terminal state is set. (Restored 2026-08-11: the demo-store migration
+ * left the call sites in place while the definition was lost — the calls
+ * threw ReferenceError whenever the abort paths executed.)
+ */
+export function abortDemoLifecycle(): void {
+    demoLifecycleController?.abort()
+    demoLifecycleController = null
+    cancelAllDemoTimers()
+    _startGuardClaimed = false
+}
+
+/**
+ * Reset the demo lifecycle for a fresh start: release the guard + timers
+ * so startDemo() can claim a clean slate. Sibling of abortDemoLifecycle;
+ * both were phantom calls restored together (2026-08-11).
+ */
+function resetDemoLifecycle(): void {
+    demoLifecycleController?.abort()
+    demoLifecycleController = new AbortController()
+    cancelAllDemoTimers()
+}
+
 export function startDemo(): boolean {
     // Atomic guard: prevent stacked retry loops from causing double-starts.
     // If a prior attempt (or an in-flight retry) already claimed the guard,
@@ -163,6 +199,7 @@ export function startDemo(): boolean {
     }
 
     _startGuardClaimed = true
+    resetDemoLifecycle()
 
     demoMirror.update((s) => ({ ...s, phase: 'OVERVIEW', startTime: performance.now() }))
     return true
@@ -173,6 +210,7 @@ export function cancelDemo(): boolean {
     // slam phase back over 'CANCELLED'. Must run before the early-return guard so
     // this cleanup happens even when cancellation is idempotent.
     cancelAllDemoTimers()
+    abortDemoLifecycle()
     const phase = appState.demoPhase
     // Mirror the legacy choreography guard: terminal states are already settled.
     if (phase === 'IDLE' || phase === 'COMPLETE' || phase === 'CANCELLED') return false
@@ -325,6 +363,7 @@ export function markDemoCompleted(): void {
     // M13 fix: release guard on successful completion same as cancel —
     // otherwise a post-card replay would never start.
     _startGuardClaimed = false
+    abortDemoLifecycle()
     setDemoPhase('COMPLETE')
     // Release pending timers too — M13 fix released _startGuardClaimed here but
     // didn't cancel scheduled transitionDemo calls, same gap as cancelDemo().
@@ -356,6 +395,7 @@ export function markDemoSessionSkipped(_reason = 'user-input'): void {
 
 export function resetDemo(): void {
     _startGuardClaimed = false
+    abortDemoLifecycle()
     demoMirror.set({ ...INITIAL_DEMO })
 }
 
