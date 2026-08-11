@@ -1392,6 +1392,7 @@ Protocol: PLAYWRIGHT_REUSE_SERVER=1 + pre-started test-server + NO @lib imports 
 - dist-entry paths. Verified: 3-spec smoke boots clean (0 $state errors, 15 tests run).
 
 ### 3d battery verdict (2026-08-11, full 15-test smoke)
+
 - BOOT/$state blocker: DEFINITIVELY FIXED (afc81073 — spec-level @lib imports removed,
   bridge-rewired). Specs run + continue past failures (was: crash at load).
 - RESULT: 12 failed | 3 passed (22.4m). The 12 = LONG-RUN FLAKE CLASS, NOT the rewire:
