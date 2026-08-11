@@ -85,7 +85,7 @@ export { hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration }
 export function onWindowResize(): void {
     syncViewport()
 }
-export { copyCurrentViewLink }
+export { copyCurrentViewLink, resetStateBeforeUrlRestore, clearExplorationFocusSelection } from '@lib/orchestration/url-state'
 export { switchView, showViewHandoff, hideViewHandoff }
 export {
     getFocusedJourneyPoint,
