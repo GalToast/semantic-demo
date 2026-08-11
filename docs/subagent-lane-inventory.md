@@ -1287,7 +1287,15 @@ not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW sour
   per-worker `goal-state.json`, exits as soon as the state settles, cancels on a
   new turn, and expires after 30 seconds. Evidence: `tmp/goal-loop-fleet-REPORT.md`.
 
+- **2026-08-11 post-restart live proof:** the rebuilt broker reported
+  `restart_required:false`; a fresh nested-profile smoke on `logfare/kiro-auto`
+  called `goal` plus the namespaced lifecycle tool
+  `external_subagents_external_subagent_list`, returned `NESTED_GOAL_SMOKE_DONE`,
+  and exited 0. No disposable smoke worker remained running. Evidence:
+  `tmp/goal-loop-fleet-REPORT.md`.
+
 ### Coordination notes 2026-08-11 (main-lane, session tail)
+
 - Purity gate mechanics: docs/subagent-lane-inventory.md is now COORDINATION_LEDGER_FILES
   (exempt both directions, sha-independent — commit 664af176). Fleet's test(css) 7ca2e1d
   mixed-commit (doc append in a test-prefix commit) tripped it; the ledger carve-out is the
@@ -1298,4 +1306,11 @@ not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW sour
 - Parallel-duplicate convergence (dead re-exports): fleet's 72a5f9c9 + my 6659339e byte-
   identical; HEAD kept theirs. Check merge-base before re-applying.
 - Gate baseline at this point: 4 failed | 3688 passed — A-class 0; reds = demo×2 + parity
-  + purity (purity now fixed via ledger exemption; re-verify in flight).
+    - purity (purity now fixed via ledger exemption; re-verify in flight).
+
+### 2026-08-11 ambient-zombie cleanup
+- `python -m http.server 8796` (PID 16748, created 04:58, 0 connections for 6h) was occupying
+  the playwright webServer port — bare http.server is NOT the playwright webServer (which needs
+  the built app + reuse gate PLAYWRIGHT_REUSE_SERVER=1). Stopped by exact PID after verifying
+  identity + idleness. Lesson: ambient `python -m http.server` zombies on 8796 break every
+  playwright run; check `netstat -ano | grep :8796` + tasklist/wmic identity before acting.
