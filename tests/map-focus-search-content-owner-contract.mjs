@@ -56,6 +56,7 @@ const EVENT_BUS = 'src/lib/orchestration/event-bus.ts'
 const LIFECYCLE = 'src/lib/stores/lifecycle.ts'
 const PARITY_ATTRS = 'src/lib/orchestration/parity-attrs.svelte.ts'
 const APP_SHELL = 'src/App.svelte'
+const APP_INIT = 'src/lib/orchestration/app-init.ts'
 
 // ── Svelte-owned child IDs (SelectedBusinessDetails.svelte renders these;
 // stage-renderer and journey modules must NOT write them) ─────────────────────
@@ -321,7 +322,11 @@ function testCompositionFlowOwnership() {
         'parity-attrs.svelte.ts must export installParityAttributeSync()'
     )
     const appSrc = read(APP_SHELL)
-    assert(appSrc.includes('installParityAttributeSync()'), 'App.svelte must install the parity attribute sync layer')
+    const appInitSrc = read(APP_INIT)
+    assert(
+        appInitSrc.includes('installParityAttributeSync()'),
+        'app-init.ts must install the parity attribute sync layer (the App.svelte text-match moved here when the call was extracted to app-init)'
+    )
 
     // journey.ts must delegate to syncSelectedCardContentVariant
     const journeySrc = read(JOURNEY_MODULE)
