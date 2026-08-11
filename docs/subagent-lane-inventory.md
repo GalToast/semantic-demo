@@ -1356,6 +1356,7 @@ not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW sour
 - Effective gate: ALL GREEN for committed state (3684/3684 when the order-flake doesn't fire).
 
 ### 3d battery — concurrency-contamination finding (2026-08-11, 3 failed runs)
+
 The full 19-spec battery failed 3× NOT from script/dist issues (the dist was verified
 correct: mode-transition chunk compiles searchRequestSequence + zero raw $state; port free;
 errorRecovery config intact) — but from FLEET CONCURRENCY: (1) tests/3d-hover-affordance.spec.js
@@ -1365,3 +1366,13 @@ racing the dist, (3) VITE_API_BASE_URL env contamination from the racing server.
 CONCLUSION: the full battery needs a QUIET WINDOW (fleet idle) — running it during active
 fleet work is unreliable by construction. The qa:3d protocol itself is proven (flagship
 spec 4/4 stable). Do NOT blind-retry; wait for fleet-quiet.
+
+### 3d battery ROOT CAUSE — webServer's own build path (2026-08-11, isolated)
+The battery's $state-is-not-defined failures (4 runs) were NOT stale dist (verified 5 ways:
+chunks compile searchRequestSequence, 0 raw $state, index refs match, served chunk clean).
+ROOT: playwright's webServer (scripts/playwright-web-server.mjs) runs `npm run build` when
+it deems the dist stale — and THAT in-process build (under fleet's concurrent vite.config
+state) serves a broken bundle. FIX: PLAYWRIGHT_REUSE_SERVER=1 + a pre-started
+`node scripts/test-server.mjs` (serving the verified dist) — boot is clean, tests run.
+Also: findClickableNode needed a bounded retry (b38e272c) — post-reset camera settle can
+hide hoverable nodes on pass 1. Protocol: qa:3d with REUSE_SERVER + pre-started server.
