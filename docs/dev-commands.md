@@ -79,12 +79,18 @@ These WebGL suites are heavy: each spec cold-loads `?q=coffee&nodemo=1` (8,406-p
 **Correct recipe (verified):**
 
 1. `npm run build` once (dist is custom-outDir `dist/svelte/`).
-2. Start + borrow a warm static server instead of letting the runner own one:
-   `cd dist/svelte && python -m http.server 8785 --bind 127.0.0.1`
-   (runner honors `TEST_BASE_URL` and skips its owned-server restart cycle entirely).
+2. Start + borrow a warm static server at the REPO ROOT instead of letting the
+   runner own one (the 3d helpers build `BASE_URL + /dist/svelte/index.html`, so
+   TEST_BASE_URL must be repo-root-served, never dist-root):
+   `python -m http.server 8785 --bind 127.0.0.1`   (from the repo root; NOT `cd dist/svelte`)
+   Serves both `/dist/svelte/...` (the app) and `/src/...` (raw .ts fallbacks).
+   A dist-rooted server 404s the helper's `/dist/svelte/` path and triggers a
+   raw-source fallback that crashes on Svelte runes (2026-08-11).
 3. Tell the runner to borrow it + use the real GPU:
    `TEST_BASE_URL=http://127.0.0.1:8785 SEMANTIC_USE_D3D11=1 node tests/run-all-contracts.js --group=3d-full`
    (`--use-angle=d3d11` reaches the RTX 4050; without it Chromium may use software WebGL).
+   **Never set `--workers` >1** (playwright.config.js mandates 1 for this serial
+   WebGL family; parallel boots race the global APP_STATE mirror).
 4. **Never run two browser suites in parallel** — they self-inflict the cold-load
    contention (measured: node-hit + smoke overlapping made both slower and flakier).
    One chromium-based contract run at a time.
