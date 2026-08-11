@@ -13,6 +13,7 @@ import './helpers/svelte-rune-shim.mjs'
 
 const CWD = process.cwd()
 const SEARCH_STORE_PATH = resolve(CWD, 'src/lib/stores/search.svelte.ts')
+const SEARCH_CORE_PATH = resolve(CWD, 'src/lib/stores/search-core.ts')
 
 function assert(condition, message) {
     if (!condition) throw new Error(`ASSERTION FAILED: ${message}`)
@@ -22,7 +23,7 @@ function assertContains(src, needle, label) {
     assert(src.includes(needle), `${label}: expected source to contain "${needle}"`)
 }
 
-const storeSrc = readFileSync(SEARCH_STORE_PATH, 'utf8')
+const storeSrc = readFileSync(SEARCH_STORE_PATH, 'utf8') + '\n' + readFileSync(SEARCH_CORE_PATH, 'utf8')
 
 console.log('\n[TEST 1] search store imports updateSearchTrailCue from the renderer')
 assertContains(

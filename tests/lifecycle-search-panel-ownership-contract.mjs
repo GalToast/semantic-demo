@@ -30,6 +30,7 @@ const URL_RESTORE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/url-rest
 const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/state.ts')
 const SEARCH_RESULTS_UI_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/results-ui.ts')
 const SEARCH_STORE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/search.svelte.ts')
+const SEARCH_CORE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/search-core.ts')
 const SEARCH_PANEL_BRIDGE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/search-panel-adapter.ts')
 const APP_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/app-init.ts')
 
@@ -125,7 +126,8 @@ function testLifecycleCallsSetSearchPanelStateDirectly() {
     const src = fs.readFileSync(URL_STATE_PATH, 'utf-8')
     const urlRestoreSrc = fs.readFileSync(URL_RESTORE_PATH, 'utf-8')
     const urlWriterSrc = fs.readFileSync(URL_WRITER_PATH, 'utf-8')
-    const searchStoreSrc = fs.readFileSync(SEARCH_STORE_PATH, 'utf-8')
+    const searchStoreSrc =
+        fs.readFileSync(SEARCH_STORE_PATH, 'utf-8') + '\n' + fs.readFileSync(SEARCH_CORE_PATH, 'utf-8')
 
     assert(
         /export\s+function\s+resetStateBeforeUrlRestore\s*\(/.test(src) ||
