@@ -8,6 +8,10 @@ Probed 2026-07-27. Updated 2026-08-06 (live catalogue refresh; vision lanes refr
 
 8 logfare dispatches, deliverables-first. **minimax-m3 + kimi-k3 = the workhorses; deepseek-v4-flash family + qwen-3.6-35b-a3b throttled (429 per-model quotas, NOT concurrency — user confirmed logfare has no concurrent-use cap).** Critical protocol — NEVER trust first-shot exit-0: minimax routinely 'completes' with zero tool calls (17s observed) and kimi-k3 stream-dies at the final write ('Stream ended without finish_reason') after doing the full analysis. The reliable recipe that produced all deliverables: (1) rubric-first prompt with disk-gate; (2) ALWAYS issue a followup on the same session_id (context retained) with an explicit 'the file must exist on disk before you stop' mandate — this converts talkers into doers; (3) for kimi-k3 followups, add 'do NOT re-run analysis, only write' + ask for a compact report to dodge the long-stream death. This matches the earlier deliverable-first skeleton protocol (channel msg 160). Verify deliverables in worker tmp/, never exit codes.
 
+## Delegation-wave-2 logfare addendum (2026-08-11)
+
+Wave-2/main-lane burst on the same protocols: choreo step-1 migration (W2B) landed correctly — engine `cancelChoreography` has ZERO live callers, so canonical `cancelDemo()` is the complete teardown (M15 adjudicated); 1 demarcation note: worker claimed 'equivalent' without proof — main-lane verified, claim held. css-ownership Option-C redesign (W2A) rebuilt the selectorBaselines into min/max ownership model. Wave-3 (main-lane): deleted 3 dead contracts per W2C audit (filter-ownership, legend-ui-ownership, state-mutator noop) + manifest/runner sync. Pattern reinforced: EVERY logfare worker needs the disk-mandate followup; early exits stay the norm.
+
 ## Routing preference (session 2026-08-04, user directive)
 
 **Prefer `kilo/*` and `openrouter/*` routes over `opencode-zen/*`** for subagent dispatch while opencode-zen keys are on cooldown (429 "no keys currently off cooldown" hit during ling review 2026-08-04). Same model on multiple routers — pick route in this order when both exist:

@@ -12,116 +12,125 @@ import path from 'node:path'
 
 const cssDir = path.resolve(process.cwd(), 'css')
 
+// CSS ownership model (Option C, see tmp/css-ownership-REPORT.md §3.3 + §4).
+// Each entry asserts: ownerFile must define `selector` at least `min` times
+// (min: 1 = load-bearing owner that must keep owning it; min: 0 = optional
+// modifier allowed but not required) and at most `max` times (omit for
+// `Infinity` — only set when the historical count is high enough to warrant
+// a sanity ceiling against runaway copy-paste). `note` carries any
+// documented exception the original count-baseline encoded as a 0-slot.
+//
+// min: 1 catches the "owner stopped owning" drift the old
+// `if (count === 0) continue` (tests/css-ownership-check.mjs:320 pre-redesign)
+// silently passed: the previous count-baseline had stale slots (e.g.
+// `.close-icon` declared owners in `controls.css` and `synthesis.css` even
+// though the selector no longer exists anywhere in css/; `.btn-synthesize`
+// had `search.css: 1` though the file no longer defines it). The entries
+// below are rebased to the actual current state — see
+// `tmp/css-ownership-impl-REPORT.md` for the audit and §5 for the rebase
+// source counts. To rebase after a CSS refactor, run a probe that mirrors
+// `countSelectorDefinitions` over every css/*.css and update this table
+// in the same commit as the CSS change.
+//
 // The app shell loads the double-underscore mobile premium split directly.
-// Keep this baseline aligned with the legacy shell (docs/archive/vector-explorer-polished-legacy.html) so selector
-// counts describe the loaded cascade instead of the deleted collapsed file.
-const selectorBaselines = {
-    '.close-icon': {
-        'controls.css': 1,
-        'synthesis.css': 2
+// Keep this table aligned with the legacy shell (docs/archive/vector-explorer-polished-legacy.html) so the ownership
+// entries describe the loaded cascade instead of the deleted collapsed file.
+const ownership = [
+    // .suggestion-btn
+    { selector: '.suggestion-btn', ownerFile: 'animations.css', min: 1, max: 2 },
+    { selector: '.suggestion-btn', ownerFile: 'controls.css', min: 1, max: 4 },
+    { selector: '.suggestion-btn', ownerFile: 'search.css', min: 1, max: 4 },
+
+    // .btn-synthesize
+    { selector: '.btn-synthesize', ownerFile: 'controls.css', min: 1, max: 6 },
+    { selector: '.btn-synthesize', ownerFile: 'journey_active.css', min: 1, max: 4 },
+    { selector: '.btn-synthesize', ownerFile: 'mobile_base.css', min: 1, max: 2 },
+    { selector: '.btn-synthesize', ownerFile: 'synthesis.css', min: 1, max: 6 },
+
+    // .focus-stage-route
+    { selector: '.focus-stage-route', ownerFile: 'journey_steps.css', min: 1, max: 20 },
+    { selector: '.focus-stage-route', ownerFile: 'mobile_premium__components.css', min: 1, max: 4 },
+    { selector: '.focus-stage-route', ownerFile: 'mobile_premium__state.css', min: 1, max: 2 },
+
+    // .focus-stage-card — mobile_premium__components.css is the load-bearing
+    // canonical owner (the report explicitly calls this out as MUST-own).
+    { selector: '.focus-stage-card', ownerFile: 'animations.css', min: 1, max: 6 },
+    { selector: '.focus-stage-card', ownerFile: 'journey_steps.css', min: 1, max: 36 },
+    {
+        selector: '.focus-stage-card',
+        ownerFile: 'mobile_premium__components.css',
+        min: 1,
+        max: 62,
+        note: 'load-bearing canonical owner; do not refactor away without a migration issue'
     },
-    '.suggestion-btn': {
-        'animations.css': 1,
-        'controls.css': 2,
-        'synthesis.css': 8,
-        'search.css': 2
-    },
-    '.btn-synthesize': {
-        'controls.css': 3,
-        'synthesis.css': 7,
-        'journey_active.css': 2,
-        'mobile_base.css': 1,
-        'search.css': 1
-    },
-    '.focus-stage-route': {
-        'journey_steps.css': 14,
-        'journey_active.css': 5,
-        'mobile_premium__components.css': 2,
-        'mobile_premium__state.css': 3
-    },
-    '.focus-stage-card': {
-        'animations.css': 3,
-        'clusters.css': 4,
-        'journey_active.css': 8,
-        'journey_steps.css': 18,
-        'mobile_base.css': 0,
-        // Includes the documented focus-search active-trail two-lane modifier.
-        'mobile_premium__components.css': 31,
-        'progressive_disclosure.css': 1,
-        'strands.css': 5
-    },
-    '.share-toggle': {
-        'controls.css': 3,
-        'layout_base.css': 7,
-        'journey_active.css': 3,
-        'mobile_base.css': 3,
-        'progressive_disclosure.css': 2,
-        'strands.css': 7,
-        'animations.css': 0,
-        'mobile_premium__layout.css': 6,
-        'mobile_premium__components.css': 3
-    },
-    '.legend-toggle': {
-        'controls.css': 1,
-        'layout_base.css': 10,
-        'journey_active.css': 1,
-        'strands.css': 2,
-        'mobile_base.css': 1,
-        'mobile_premium__layout.css': 5,
-        'mobile_premium__state.css': 2
-    },
-    '.search-results.active': {
-        'search.css': 6,
-        'layout_base.css': 0,
-        'journey_active.css': 1,
-        'progressive_disclosure.css': 3,
-        'strands.css': 1,
-        'mobile_premium__layout.css': 10,
-        'mobile_premium__state.css': 11,
-        'animations.css': 1
-    },
-    '.help-toggle': {
-        'layout_base.css': 5,
-        'journey_active.css': 1,
-        'mobile_base.css': 1,
-        'mobile_premium__layout.css': 4,
-        'strands.css': 2
-    },
-    '.journey-compass-title': {
-        'layout_base.css': 1,
-        'journey_active.css': 14,
-        'mobile_base.css': 0,
-        'mobile_premium__components.css': 5,
-        'mobile_premium__state.css': 5,
-        'strands.css': 2
-    },
-    '.journey-compass-actions': {
-        'journey_active.css': 15,
-        'mobile_premium__layout.css': 2,
-        'mobile_premium__components.css': 4,
-        'mobile_premium__state.css': 7,
-        'progressive_disclosure.css': 1,
-        'strands.css': 6
-    },
-    '.journey-compass-rail': {
-        'layout_base.css': 1,
-        'journey_active.css': 15,
-        'mobile_premium__components.css': 4,
-        'mobile_premium__layout.css': 12,
-        'mobile_premium__state.css': 2,
-        'strands.css': 2
-    },
-    '.journey-compass-action.primary': {
-        'animations.css': 2,
-        'journey_active.css': 6,
-        'mobile_base.css': 2,
-        'mobile_premium__layout.css': 3,
-        'mobile_premium__components.css': 4,
-        'mobile_premium__state.css': 4,
-        'search.css': 0,
-        'strands.css': 5
-    }
+
+    // .share-toggle
+    { selector: '.share-toggle', ownerFile: 'layout_base.css', min: 1, max: 12 },
+    { selector: '.share-toggle', ownerFile: 'mobile_base.css', min: 1, max: 4 },
+    { selector: '.share-toggle', ownerFile: 'mobile_premium__components.css', min: 1, max: 6 },
+    { selector: '.share-toggle', ownerFile: 'mobile_premium__layout.css', min: 1, max: 10 },
+    { selector: '.share-toggle', ownerFile: 'progressive_disclosure.css', min: 1, max: 4 },
+
+    // .legend-toggle
+    { selector: '.legend-toggle', ownerFile: 'layout_base.css', min: 1, max: 18 },
+    { selector: '.legend-toggle', ownerFile: 'mobile_premium__layout.css', min: 1, max: 8 },
+    { selector: '.legend-toggle', ownerFile: 'mobile_premium__state.css', min: 1, max: 4 },
+
+    // .search-results.active
+    { selector: '.search-results.active', ownerFile: 'animations.css', min: 1, max: 2 },
+    { selector: '.search-results.active', ownerFile: 'journey_active.css', min: 1, max: 2 },
+    { selector: '.search-results.active', ownerFile: 'mobile_premium__layout.css', min: 1, max: 20 },
+    { selector: '.search-results.active', ownerFile: 'mobile_premium__state.css', min: 1, max: 22 },
+    { selector: '.search-results.active', ownerFile: 'progressive_disclosure.css', min: 1, max: 6 },
+    { selector: '.search-results.active', ownerFile: 'search.css', min: 1, max: 10 },
+    { selector: '.search-results.active', ownerFile: 'strands.css', min: 1, max: 2 },
+
+    // .help-toggle
+    { selector: '.help-toggle', ownerFile: 'layout_base.css', min: 1, max: 8 },
+    { selector: '.help-toggle', ownerFile: 'mobile_premium__layout.css', min: 1, max: 4 },
+
+    // .journey-compass-title
+    { selector: '.journey-compass-title', ownerFile: 'journey_active.css', min: 1, max: 6 },
+    { selector: '.journey-compass-title', ownerFile: 'layout_base.css', min: 1, max: 2 },
+    { selector: '.journey-compass-title', ownerFile: 'mobile_premium__components.css', min: 1, max: 10 },
+    { selector: '.journey-compass-title', ownerFile: 'mobile_premium__state.css', min: 1, max: 10 },
+    { selector: '.journey-compass-title', ownerFile: 'strands.css', min: 1, max: 4 },
+
+    // .journey-compass-actions
+    { selector: '.journey-compass-actions', ownerFile: 'journey_active.css', min: 1, max: 6 },
+    { selector: '.journey-compass-actions', ownerFile: 'mobile_premium__components.css', min: 1, max: 8 },
+    { selector: '.journey-compass-actions', ownerFile: 'mobile_premium__layout.css', min: 1, max: 2 },
+    { selector: '.journey-compass-actions', ownerFile: 'mobile_premium__state.css', min: 1, max: 14 },
+    { selector: '.journey-compass-actions', ownerFile: 'progressive_disclosure.css', min: 1, max: 2 },
+    { selector: '.journey-compass-actions', ownerFile: 'strands.css', min: 1, max: 10 },
+
+    // .journey-compass-rail
+    { selector: '.journey-compass-rail', ownerFile: 'journey_active.css', min: 1, max: 8 },
+    { selector: '.journey-compass-rail', ownerFile: 'layout_base.css', min: 1, max: 2 },
+    { selector: '.journey-compass-rail', ownerFile: 'mobile_premium__components.css', min: 1, max: 6 },
+    { selector: '.journey-compass-rail', ownerFile: 'mobile_premium__layout.css', min: 1, max: 24 },
+    { selector: '.journey-compass-rail', ownerFile: 'mobile_premium__state.css', min: 1, max: 4 },
+    { selector: '.journey-compass-rail', ownerFile: 'strands.css', min: 1, max: 2 },
+
+    // .journey-compass-action.primary
+    { selector: '.journey-compass-action.primary', ownerFile: 'journey_active.css', min: 1, max: 12 },
+    { selector: '.journey-compass-action.primary', ownerFile: 'mobile_premium__components.css', min: 1, max: 8 },
+    { selector: '.journey-compass-action.primary', ownerFile: 'mobile_premium__layout.css', min: 1, max: 6 },
+    { selector: '.journey-compass-action.primary', ownerFile: 'mobile_premium__state.css', min: 1, max: 8 },
+    { selector: '.journey-compass-action.primary', ownerFile: 'strands.css', min: 1, max: 10 }
+]
+
+// Lookup helpers built once from `ownership` so the per-file loop is O(1)
+// per entry. `ownershipByFile` indexes entries by ownerFile for the
+// range-check pass; `allOwnedSelectors` is the set of selectors that have at
+// least one declared owner (used to flag unowned definitions in non-owner
+// files).
+const ownershipByFile = new Map()
+for (const entry of ownership) {
+    if (!ownershipByFile.has(entry.ownerFile)) ownershipByFile.set(entry.ownerFile, [])
+    ownershipByFile.get(entry.ownerFile).push(entry)
 }
+const allOwnedSelectors = new Set(ownership.map((entry) => entry.selector))
 
 const mobilePremiumLegacyStatePatterns = [
     'data-active-view="galaxy"',
@@ -358,18 +367,34 @@ for (const file of cssFiles) {
         }
     }
 
-    for (const [selector, allowedByFile] of Object.entries(selectorBaselines)) {
+    for (const entry of ownership) {
+        if (entry.ownerFile !== file) continue
+        const count = countSelectorDefinitions(content, entry.selector)
+        const noteSuffix = entry.note ? ` (${entry.note})` : ''
+        if (count < entry.min) {
+            // min: 0 entries are optional modifiers — silently allowed to be
+            // absent. min: >= 1 catches the "owner stopped owning" drift the
+            // old `if (count === 0) continue` quietly passed.
+            if (entry.min > 0) {
+                violations.push(
+                    `${file} owns ${entry.selector} (min: ${entry.min}) but defines it ${count} time(s)${noteSuffix}; owner stopped owning.`
+                )
+            }
+        } else if (entry.max != null && count > entry.max) {
+            violations.push(
+                `${file} defines ${entry.selector} ${count} time(s); ownership cap is ${entry.max}${noteSuffix}.`
+            )
+        }
+    }
+    for (const selector of allOwnedSelectors) {
+        const isOwner = ownershipByFile.get(file)?.some((entry) => entry.selector === selector)
+        if (isOwner) continue
         const count = countSelectorDefinitions(content, selector)
         if (count === 0) continue
-
-        const allowedCount = allowedByFile[file] || 0
-        if (allowedCount === 0) {
-            violations.push(
-                `${file} now defines ${selector} ${count} time(s), but it is not an owner or documented modifier.`
-            )
-        } else if (count > allowedCount) {
-            violations.push(`${file} defines ${selector} ${count} time(s); baseline allows ${allowedCount}.`)
-        }
+        const owners = ownership.filter((entry) => entry.selector === selector).map((entry) => entry.ownerFile)
+        violations.push(
+            `${file} now defines ${selector} ${count} time(s), but it is not an owner (owners: ${owners.join(', ')}).`
+        )
     }
 }
 
