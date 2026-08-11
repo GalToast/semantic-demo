@@ -324,6 +324,7 @@ export async function probeFocusPocket(page) {
             pocketSize: pocket.length,
             reachableCount: reachable.length,
             reachableIndices: reachable.map((n) => n.idx),
+            reachableCoords: reachable.map((n) => ({ idx: n.idx, x: n.screenX, y: n.screenY })),
             focusPocketMeta: state.focusPocketMeta ?? null,
             roles,
             focusedIndex: state.focusedIndex ?? null,
@@ -521,4 +522,24 @@ export async function focusNodeViaApp(page, index, options = {}) {
         },
         { idx: index, opts: options }
     )
+}
+
+/**
+ * waitForReachableFocusPocket — poll probeFocusPocket until at least one pocket
+ * node is in-bounds AND its screen coordinate is clickable (not blocked by an
+ * overlay), then return the probe. Restored name: 3d-focus-pocket-selectability
+ * imports it; the helpers file previously shipped only the building blocks.
+ */
+export async function waitForReachableFocusPocket(page, { timeoutMs = 30000, intervalMs = 150 } = {}) {
+    const start = Date.now()
+    for (;;) {
+        const probe = await probeFocusPocket(page)
+        if (probe.reachableCount > 0) {
+            for (const coord of probe.reachableCoords) {
+                if (await isReachableScreenCoordinate(page, coord.x, coord.y)) return probe
+            }
+        }
+        if (Date.now() - start > timeoutMs) return probe
+        await new Promise((r) => setTimeout(r, intervalMs))
+    }
 }
