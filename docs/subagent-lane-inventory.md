@@ -1435,6 +1435,7 @@ the $state-at-load (the session's main battery blocker). The data-edge canvas is
 fleet-quiet-window root-cause (canvas render under test-server serving), separate task.
 
 ### LIVE dispatchable roster (re-probed 2026-08-11 — probe method: POST /logfare/v1/chat/completions, max_tokens 2)
+
 - minimax-m3 ✅ OK (workhorse: 112 workers this session; vision-capable)
 - kiro-auto ✅ OK (2nd-workhorse: 97; was NOT in the roster doc — add it)
 - kimi-k3 ✅ OK (25; cheap reads)
@@ -1444,3 +1445,12 @@ fleet-quiet-window root-cause (canvas render under test-server serving), separat
 - v4-pro/v4-flash/fusion/qwen3/hydra/nemotron/open-4o/hy3 — the names I guessed 404'd (NOT in the current catalog via those slugs)
 - Method: probe BEFORE dispatch (the 429/404/empty-turn window changes); disk-gate EVERY lane
   (exit-0 ≠ deliverable — the session's constant). Strongest deck: minimax-m3 + kiro-auto + kimi-k3.
+
+### kilo/ openrouter free routing probe (2026-08-12)
+Paths exist: /kilo/v1 + /openrouter/v1 + /opencode-zen/v1 + /freemodel/v1. The "recent" free
+model ids are ALL currently unusable: qwen3-coder-next → 410 Gone (kilo/openrouter/zen — the
+id's retired from the routes), kilo/deepseek-v4-flash-0731 + kiro-auto → 402 no-credit/paid,
+openrouter/deepseek-r1 → no credits, zen/deepseek-v4-flash-0731 → keys-off-cooldown,
+free/qwen3-coder-next → unauthorized. VERDICT: the kilo/openrouter free lanes are route-present
+but dead at this window; the LIVE free deck is logfare (minimax-m3/kiro-auto/kimi-k3 — probed
+OK). Re-probe before dispatching on kilo/openrouter; don't assume qwen3-coder-next exists.
