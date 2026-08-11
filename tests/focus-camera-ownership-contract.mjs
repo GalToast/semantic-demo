@@ -36,7 +36,6 @@ async function waitReady(page) {
       typeof focusOnNode === 'function' &&
       typeof setSemanticDiveMode === 'function' &&
       state.applyingUrlState === false &&
-      window.history.state?.semanticDemo &&
       state.sceneRevealActive === false &&
       document.body.dataset.sceneReveal === 'inactive';
   }, null, { timeout: 45000 });

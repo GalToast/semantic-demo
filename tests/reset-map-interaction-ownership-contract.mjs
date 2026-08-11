@@ -110,8 +110,7 @@ async function waitReady(page) {
                 typeof setTrailDepth === 'function' &&
                 typeof returnToOverview === 'function' &&
                 state.applyingUrlState === false &&
-                window.history.state?.semanticDemo &&
-                state.sceneRevealActive === false &&
+                                state.sceneRevealActive === false &&
                 (document.body.dataset.sceneReveal === 'inactive' || document.body.dataset.sceneReady === 'true')
             )
         },

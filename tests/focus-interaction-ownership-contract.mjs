@@ -34,8 +34,7 @@ async function waitForReady(page) {
       typeof focusOnNode === 'function' &&
       typeof actions.walkThreadNeighbor === 'function' &&
       state.applyingUrlState === false &&
-      window.history.state?.semanticDemo &&
-      state.sceneRevealActive === false &&
+            state.sceneRevealActive === false &&
       document.body.dataset.sceneReveal === 'inactive';
   }, null, { timeout: 45000 });
 }
