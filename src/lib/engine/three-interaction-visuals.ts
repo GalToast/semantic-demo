@@ -126,6 +126,42 @@ function getSemanticLensNeighborIndices(focusedNode: number): number[] {
         .slice(0, 12)
 }
 
+/** Internal factory for additive-blended visuals.
+ *
+ * Wraps the repeated `MeshBasicMaterial`/`LineBasicMaterial` additive
+ * boilerplate (`transparent`, `opacity: 0`, `depthWrite: false`,
+ * `AdditiveBlending`) plus the initial `visible = false` / `scene.add`
+ * pattern shared by the focus halo/core/hover/mote/petal/filament
+ * meshes in `initSemanticLens`.
+ */
+function createAdditiveMesh(
+    geometry: BufferGeometry,
+    MaterialCtor: new (params: any) => MeshBasicMaterial,
+    materialParams: any
+): Mesh
+function createAdditiveMesh(
+    geometry: BufferGeometry,
+    MaterialCtor: new (params: any) => LineBasicMaterial,
+    materialParams: any
+): LineSegments
+function createAdditiveMesh(
+    geometry: BufferGeometry,
+    MaterialCtor: new (params: any) => MeshBasicMaterial | LineBasicMaterial,
+    materialParams: any
+): Mesh | LineSegments {
+    const material = new MaterialCtor({
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: AdditiveBlending,
+        ...materialParams
+    })
+    const Ctor = material instanceof LineBasicMaterial ? LineSegments : Mesh
+    const object = new Ctor(geometry, material)
+    object.visible = false
+    return object
+}
+
 // ── Public API ──────────────────────────────────────────────────────────────
 
 export function disposeInteractionVisuals() {
@@ -294,42 +330,24 @@ export function initSemanticLens() {
 
     // === FOCUS HALO + CORE (soft glow + bright dot at focused node) ===
     const haloGeo = new CircleGeometry(1, 64)
-    const haloMat = new MeshBasicMaterial({
+    state.focusHalo = createAdditiveMesh(haloGeo, MeshBasicMaterial, {
         side: DoubleSide,
-        color: 0x7ce7dd,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        blending: AdditiveBlending
+        color: 0x7ce7dd
     })
-    state.focusHalo = new Mesh(haloGeo, haloMat)
-    state.focusHalo.visible = false
     state.scene.add(state.focusHalo)
 
     const coreGeo = new CircleGeometry(1, 32)
-    const coreMat = new MeshBasicMaterial({
+    state.focusCore = createAdditiveMesh(coreGeo, MeshBasicMaterial, {
         side: DoubleSide,
-        color: 0xcffcf4,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        blending: AdditiveBlending
+        color: 0xcffcf4
     })
-    state.focusCore = new Mesh(coreGeo, coreMat)
-    state.focusCore.visible = false
     state.scene.add(state.focusCore)
 
     // Hover halo: follows mouse hover, distinct from focus halo
     const hoverHaloGeo = new CircleGeometry(1, 32)
-    const hoverHaloMat = new MeshBasicMaterial({
-        color: 0x8ff8ed,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        blending: AdditiveBlending
+    state.hoverHalo = createAdditiveMesh(hoverHaloGeo, MeshBasicMaterial, {
+        color: 0x8ff8ed
     })
-    state.hoverHalo = new Mesh(hoverHaloGeo, hoverHaloMat)
-    state.hoverHalo.visible = false
     state.scene.add(state.hoverHalo)
 
     // === FOCUS MOTES (orbital sprites around focused node) ===
@@ -340,14 +358,9 @@ export function initSemanticLens() {
     const moteGeo = new CircleGeometry(1, 16)
     const MOTE_COUNT = 12
     for (let i = 0; i < MOTE_COUNT; i += 1) {
-        const moteMat = new MeshBasicMaterial({
-            color: SCENE_PALETTE.threadTint,
-            transparent: true,
-            opacity: 0,
-            depthWrite: false,
-            blending: AdditiveBlending
+        const mote = createAdditiveMesh(moteGeo, MeshBasicMaterial, {
+            color: SCENE_PALETTE.threadTint
         })
-        const mote = new Mesh(moteGeo, moteMat)
         mote.userData = {
             phase: (i / MOTE_COUNT) * Math.PI * 2,
             speed: 0.35 + (i % 4) * 0.06,
@@ -369,15 +382,10 @@ export function initSemanticLens() {
     const petalGeo = new PlaneGeometry(1, 1)
     const PETAL_COUNT = 8
     for (let i = 0; i < PETAL_COUNT; i += 1) {
-        const petalMat = new MeshBasicMaterial({
+        const petal = createAdditiveMesh(petalGeo, MeshBasicMaterial, {
             color: 0x7ce7dd,
-            transparent: true,
-            opacity: 0,
-            depthWrite: false,
-            blending: AdditiveBlending,
             side: DoubleSide
         })
-        const petal = new Mesh(petalGeo, petalMat)
         petal.userData = {
             phase: (i / PETAL_COUNT) * Math.PI * 2,
             speed: 0.18 + (i % 3) * 0.05,
@@ -395,14 +403,9 @@ export function initSemanticLens() {
     const filamentPosArray = new Float32Array(FOCUS_WISP_COUNT * (FOCUS_WISP_SEGMENTS + 1) * 2 * 3)
     const filamentGeo = new BufferGeometry()
     filamentGeo.setAttribute('position', new BufferAttribute(filamentPosArray, 3))
-    const filamentMat = new LineBasicMaterial({
-        color: SCENE_PALETTE.threadTint,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        blending: AdditiveBlending
+    state.focusFilaments = createAdditiveMesh(filamentGeo, LineBasicMaterial, {
+        color: SCENE_PALETTE.threadTint
     })
-    state.focusFilaments = new LineSegments(filamentGeo, filamentMat)
     state.focusFilaments.visible = false
     state.scene.add(state.focusFilaments)
 }
