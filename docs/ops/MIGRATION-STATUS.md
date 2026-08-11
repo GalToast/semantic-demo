@@ -20,13 +20,9 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 | Parity-attrs layer                            | ✅ Functional (113 tests) | W43          |
 | A11y sweep                                    | ✅ Baseline set           | W42          |
 
-## Current Wave: Phase 7 Closeout (2026-06-20)
+## Wave tracking
 
-**Charter:** `docs/phase-7-state-bridge-retirement-2026-06-20.md`
-**Previous wave:** W10 / Phase 6C bridge thinnability continuation
-**Next wave:** Release hardening: full static/unit/contract gates, product playthrough, visual QA, and Lighthouse/performance re-baseline
-
-**Pipeline:** Final bridge retirement + release-readiness closeout
+Wave/status tracking now lives on the live switchboard taskboard (board: main) plus docs/arch/. This document is frozen as the historical migration record through Phase 7 closeout.
 
 ### Scope
 

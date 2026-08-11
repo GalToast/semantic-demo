@@ -75,12 +75,6 @@ Live data needs PHP on 8795 (`php -S 127.0.0.1:8795 -t .`); Vite proxies `/api*`
 
 ## Reference Docs
 
-> ⚠️ **TRANSIENT HANDOFF (consume then archive):** `docs/restart-handoff-goal-loop-2026-08-10.md` —
-> next session MUST execute it first after a pi restart: (1) load+observe the goal-loop
-> extension live (goal.mjs set → create trigger file → status met + ACHIEVED), (2) launch
-> the cline deepseek-v4-flash lane. After both pass, append 'goal-loop live-verified' to
-> `docs/subagent-lane-inventory.md` and DELETE this block.
-
 Read only when relevant (full module inventory: `docs/important-files.md`; full procedure refs: `docs/tool-guide.md`, `docs/session-coordination.md`, `docs/subagent-delegation.md`, `docs/subagent-lane-inventory.md`, `docs/vision-lane-catalog.md`, `docs/css-ownership.md`, `docs/dev-commands.md`, `docs/ux-copy-rules.md`, `docs/search-fallback.md`, `docs/typing-contract.md`, `docs/performance-budget.md`, `docs/migration-plan.md`, `docs/window-global-allowlist.md`, `docs/semantic-demo-*`). If a referenced doc is missing, use the archived full reference (`docs/archive/agents-full-reference-2026-06-19.md`) as fallback.
 
 ## Dev Commands & Surface Tests
