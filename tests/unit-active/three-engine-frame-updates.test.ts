@@ -40,10 +40,18 @@ const _webglContextProxy = vi.hoisted(() => ({
 
 // ── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('@lib/utils/environment', () => ({
-    prefersReducedMotion: _prefersReducedMotion
-}))
-
+vi.mock('@lib/utils/environment', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/utils/environment')>()
+    return {
+        ...actual,
+        // Only override the motion preference; spread keeps every real export
+        // (getPanelSurface, prefersReducedMotion, etc.) so this partial mock
+        // cannot poison other suites' environment imports via the shared
+        // module graph (2026-08-11: a full mock here leaked a missing
+        // getPanelSurface into store-parity-mirror-regression in batch runs).
+        prefersReducedMotion: _prefersReducedMotion
+    }
+})
 vi.mock('@lib/engine/three-engine-state', () => ({
     engineState: _engineStateProxy
 }))
