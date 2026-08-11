@@ -1317,6 +1317,7 @@ not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW sour
   playwright run; check `netstat -ano | grep :8796` + tasklist/wmic identity before acting.
 
 ### Zombie-metadata finding (2026-08-11, main-lane sweep)
+
 - O2-threadaudit/grp-p4/goal-loop-worker-race-probe showed `status: running` with logs
   frozen 2-3.7h. Verify-by-PID (tasklist) showed: 4 of 5 were GHOSTS (process long dead,
   harness metadata stale — mmx status not updated when its own process died); only grp-p4
@@ -1324,3 +1325,11 @@ not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW sour
 - Lesson: before killing a "running" lane, ALWAYS tasklist-verify the PID — most long-frozen
   "running" lanes are metadata ghosts, not live processes. The sweep tooling should treat
   frozen+pid-gone as 'reap metadata' not 'kill'.
+
+### Port-8796 collision recurrence (2026-08-11, ×2)
+- 2nd occurrence: `node scripts/test-server.mjs` (a fleet lane's leftover, started 07:20,
+  0 connections) bound 8796 and broke every playwright run (qa:3d refuses reuse unless
+  PLAYWRIGHT_REUSE_SERVER=1 — the config's env-gated). It exited on its own between checks.
+- Lesson: check `netstat -ano | grep :8796` BEFORE any playwright run; the repo's own
+  test-server.mjs + ambient python http.server both appear there. Exact-PID discipline,
+  verify identity via wmic commandline first.
