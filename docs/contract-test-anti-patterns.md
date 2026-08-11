@@ -90,3 +90,22 @@ Verified: `ui-quality-contract`, `micro-surface-interactions-contract`,
 - Re-run its GROUP via `run-all-contracts.js --group=<parent>`: the contract shows
   PASS in the group summary (no settle-blank).
 - Do not edit lib files for a contract-only stale path (exception: real lib bug).
+
+## Group-run evidence (2026-08-11) — full-union validation
+
+14/17 manifest groups were run + classified this session (first complete group-semantics
+validation). Verdict: **every failing contract in every group is a Playwright `.spec.js`
+(or `.mjs` self-launching chromium) that needs a headed/GPU host** — the env class above.
+No code-level failure was left unfixed outside that class (15+ stale-owner re-points
+committed). The `full` union battery reached **62/62 exit 0** after those fixes.
+
+Design rules proven:
+
+- HYPOTHESIS REJECTED: routing `.mjs` chromium-launcher contracts (.mjs importing
+  `playwright` + calling `chromium.launch()`) to the Playwright CLI is WRONG — they are
+  intentional plain-node browser-owners (47 such files); the group runner already times
+  them out gracefully + continues. Group summaries carry them as env-class, not hangs.
+- Contracts scanning a barrel (search.svelte.ts / three-engine.ts / semantic-overlay.ts)
+  MUST composite the split-out sibling (search-core.ts / three-engine-init.ts /
+  three-engine-render-loop.ts / semantic-overlay-material.ts) — the barrel re-exports but
+  the body/import statements live in the sibling.
