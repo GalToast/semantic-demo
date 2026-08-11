@@ -1333,3 +1333,12 @@ not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW sour
 - Lesson: check `netstat -ano | grep :8796` BEFORE any playwright run; the repo's own
   test-server.mjs + ambient python http.server both appear there. Exact-PID discipline,
   verify identity via wmic commandline first.
+
+---
+
+## Delegation wave-5/6 addendum (2026-08-11 evening, main-lane measured)
+
+- Roster re-measurement (disk-gated smoke, 8 lanes): **minimax-m3 + kimi-k3 = the only tool-executing logfare lanes now**; deepseek v4-pro/flash/0731 + qwen-3.6 + glm-5.2 per-model 429 (12h+); **kimi-k2.6 REMOVED from the logfare catalog (404)** — do not re-add.
+- Worker-discipline (confirmed the hard way, 20+ dispatches): minimax first-round routinely exits-0-without-work (even on small tasks); the RELIABLE recipe = followup-mandate on same session ("file MUST exist on disk"), THEN live-steer works when the RPC stdin survives (true Pi live-steer succeeded once this session).
+- Live-steer mid-task: send the correction as the steer; steer converts to followup-child for terminal sessions.
+- The write-mandate followup produced every deliverable of the day that the first shot didn't (forensics, repoints, audit).
