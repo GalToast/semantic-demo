@@ -6,7 +6,10 @@
  * the `engineState` singleton, so the natural seam is to mock that
  * singleton and stub the port modules it calls.
  *
- * Three test layers:
+ * Three test layers (T37 note: the webgl-restore retry state machine
+ * now lives in the sibling `three-engine-restore.ts`; this suite wires the
+ * real machine via the owner's exported callback-injection seams — see the
+ * imports below):
  *   1. Compile-time surface — type-import every exported symbol so tsc
  *      fails if the public API drifts. Mirrors state-types.test.ts.
  *
@@ -137,6 +140,13 @@ vi.mock('@lib/engine/three-pp-init', () => ({
     ensurePostProcessing: vi.fn(() => Promise.resolve({ initPostProcessing: vi.fn() }))
 }))
 
+// The restore-retry escalation now lives in the three-engine-restore sibling.
+// The production renderer-fallback glue is not exercised under jsdom — stub
+// it so the restore machine's `removeWebGLFallbackNotice()` call is a no-op.
+vi.mock('@lib/engine/renderer/webgl-fallback', () => ({
+    removeWebGLFallbackNotice: vi.fn()
+}))
+
 // ── Import under test (MUST appear after all vi.mock calls) ──────────────────
 
 import {
@@ -149,6 +159,15 @@ import {
     animate
 } from '@lib/engine/three-engine-core'
 import { getEngineStatus, setEngineStatus } from '@lib/stores/engine.svelte'
+// Restore machine owner wiring (T37 repoint): three-engine-core only
+// re-exports the machine seams; the retry counter/generation/backoff timer
+// and callback injections (`_restoreInitFn`, `_restoreAnimateCb`) live in the
+// sibling module. The retry backoff wakes the loop via `_restoreAnimateCb`,
+// which production currently never injects with the real `animate` — so under
+// test we wire the real `animate` through the owner's own setter. The public
+// init (which self-injects `initThreeJSInternal` as `_restoreInitFn`) runs on
+// the machine's prime tick, so the restore-owned re-init drives the real init.
+import { setRestoreAnimateCb } from '@lib/engine/three-engine-restore'
 import { graphicsModeStore, setGraphicsMode } from '@lib/data-store'
 
 // ── 1. Compile-time surface contract ────────────────────────────────────────
@@ -429,6 +448,9 @@ describe('webgl-restore retry state machine', () => {
         setGraphicsMode('webgl')
         _buildThreeSceneOrFallback.mockReset()
         _buildThreeSceneOrFallback.mockResolvedValue({ success: false })
+        // Route the restore backoff's re-arm through the real render loop so
+        // retries actually drive another restore-owned initThreeJS pass.
+        setRestoreAnimateCb(animate)
         _engineStateProxy.webglNeedsRestoreReinit = false
         _engineStateProxy.webglRestoreTimer = null
         _engineStateProxy.circuitBreakerTripped = false
