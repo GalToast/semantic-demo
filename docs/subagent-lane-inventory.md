@@ -1403,3 +1403,30 @@ Protocol: PLAYWRIGHT_REUSE_SERVER=1 + pre-started test-server + NO @lib imports 
   windows) OR workers=2 to halve per-worker contention; the data-edge suite's search-flow
   waits may need the bridge's completion semantics verified (2nd-order).
 - The protocol is sound (boot clean, specs run); the flake class needs the robustness pass.
+
+### semantic-threads normalize carve — reverted (2026-08-11, main-lane)
+
+A group-1 carve (semantic-threads-normalize.ts) reached 90% (svelte-check 0/0, source rewired
+816→720L) but 5 vitest tests persisted on a stale vite-ssr 'isLayoutManifest is not a function'
+(module + caller verified consistent; the error snapshots the pre-rename import). Host load ate
+the isolate-diagnostics. Per verify-before-land, REVERTED (uncommitted). Artifacts preserved:
+tmp/semantic-threads-split-PLAN.md (7.4KB, the full plan incl. execute-gate) + the module draft
+(its content is recoverable from the plan's group-1 spec). Redo when the host's calm; verify the
+isolate run BEFORE re-committing this time.
+
+- Pitfalls banked: (a) python-string carve corruption (backslash collapse — replaceAll('\','/')
+  mangled), (b) export-name mismatch (Port vs Util — the import/export names must match exactly),
+  (c) vitest's in-memory vite-ssr snapshot survives --no-cache — a fresh worker/process is the
+  real isolate.
+
+### 3d-data-edge suite — environmental instability (2026-08-11, 3-attempt verdict)
+The data-edge suite's waitForFunction/canvas-visibility failures persisted across 3 attempts
+(bridge-rewire fix → readiness-guard fix → path-repoint) with DISTINCT hypotheses each time.
+Final evidence: the failing waits are canvas.toBeVisible() + post-inject checks — the CANVAS
+never renders in this session. The suite had pre-existing failures BEFORE my changes (the
+first 15-test smoke showed them). VERDICT: pre-existing environmental instability (canvas
+render under the current fleet-WIP/test-server conditions), NOT my rewire/guard/path fixes
+(those are independently sound: the flagship 4/4 + boot are green). The spec-hygiene fixes
+(imports→bridge, paths→dist entry, readiness-guards) are REAL + generalizable — they fixed
+the $state-at-load (the session's main battery blocker). The data-edge canvas issue needs a
+fleet-quiet-window root-cause (canvas render under test-server serving), separate task.
