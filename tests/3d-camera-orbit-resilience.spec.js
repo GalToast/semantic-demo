@@ -8,12 +8,13 @@ function cameraDistance(position) {
 }
 
 async function findClickableNode(page) {
-    // Bounded retry (2 passes): after a reset/gesture/resize the camera can
-    // still be settling, so the FIRST candidate pass may find no pointer-
-    // hoverable node even though the scene is fine (observed on the resize
-    // test — 'hoverable canvas node coordinate must be discoverable' flake
-    // class). One settle + re-pass fixes it without masking real failures.
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    // Time-bounded retry: after a reset/gesture/resize — or under sustained
+    // D3D load (long full-suite runs) — the camera can be settling for a
+    // while, so the first candidate pass may find no pointer-hoverable node
+    // even though the scene is fine. Retry until found or the budget elapses
+    // (measured: 22-min full-suite runs need ~3-4 passes; 2 was not enough).
+    const deadline = Date.now() + 20000
+    while (Date.now() < deadline) {
         const candidates = await projectedCandidates(page, { marginRatio: 0.06, maxResults: 24 })
         for (const candidate of candidates) {
             await page.mouse.move(candidate.screenX, candidate.screenY, { steps: 1 })
@@ -25,11 +26,9 @@ async function findClickableNode(page) {
                 return { ...candidate, resolvedIndex: state.hoverHighlightIndex }
             }
         }
-        if (attempt === 0) {
-            await page
-                .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
-                .catch(() => {})
-        }
+        await page
+            .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
+            .catch(() => {})
     }
     return null
 }
