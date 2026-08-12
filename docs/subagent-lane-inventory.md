@@ -1430,3 +1430,5 @@ render under the current fleet-WIP/test-server conditions), NOT my rewire/guard/
 (imports→bridge, paths→dist entry, readiness-guards) are REAL + generalizable — they fixed
 the $state-at-load (the session's main battery blocker). The data-edge canvas issue needs a
 fleet-quiet-window root-cause (canvas render under test-server serving), separate task.
+
+- goal-loop: LIVE-VERIFIED 2026-08-12 (saw [goal-loop continue] condition judges in worker transcripts — extension executes in subagent sessions). cline deepseek-v4-flash launch: still pending (W-72c/classifier refs).
