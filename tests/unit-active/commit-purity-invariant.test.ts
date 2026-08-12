@@ -141,7 +141,13 @@ const EXEMPTED_SHAS = new Set<string>([
     // referenced at runtime by three-interaction-visuals even though no static
     // import exists — the static scanner counts it dead). Same rationale as the
     // bridge carve-out in svelte-bridge-import-contract KNOWN_RETIRED_BRIDGES.
-    'be9d4f42357d851280f7e999c484764a08ba2dce'
+    'be9d4f42357d851280f7e999c484764a08ba2dce',
+    // bc42822 — test(contract): repoint corridor-uTime source-pin. Lane's
+    // three-search/map-state-split refactor: the repoint test landed atomically
+    // with the 6 map-* siblings it repoints (map-director, map-leaflet-runtime,
+    // map-markers, map-route-embodiment, map-state-controls, …) — same atomic
+    // refactor+test class as be9d4f42. Map-split wave-6 (dcb9b5aa siblings).
+    'bc42822448579af20985b42524d2676fe1b56c9a'
 ])
 
 // Conventional-commit prefix regex. Captures:
