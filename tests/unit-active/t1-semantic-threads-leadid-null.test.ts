@@ -17,7 +17,9 @@ const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.met
 
 describe('t1 semantic-threads neighbor leadId null (no empty-string mask)', () => {
     it("semantic-threads.ts no longer masks neighbor leadId with ?? ''", () => {
-        const src = read('../../src/lib/engine/semantic-threads.ts')
+        // The normalizer moved to semantic-threads-normalize.ts (carve e352336a);
+        // the hub re-exports the cached wrapper but the expression lives in the module.
+        const src = read('../../src/lib/engine/semantic-threads-normalize.ts')
         const match = src.match(/leadId:\s*_?normalizeLeadId\([^)]*\)\s*\?\?\s*(''|null)/)
         expect(match, 'expected `leadId: normalizeLeadId(...) ?? null`').not.toBeNull()
         expect(match?.[1]).toBe('null')
