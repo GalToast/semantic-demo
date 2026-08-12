@@ -16,16 +16,16 @@ import { debugWarn } from '@lib/utils/debug'
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 /** Default max retries per provider (first attempt + N retries = N+1 total) */
-export const DEFAULT_MAX_RETRIES = 3
+const DEFAULT_MAX_RETRIES = 3
 
 /** Default base delay (ms) for exponential backoff */
-export const DEFAULT_BASE_DELAY_MS = 400
+const DEFAULT_BASE_DELAY_MS = 400
 
 /** Default max delay (ms) cap so retries don't exceed ~8s per provider */
-export const DEFAULT_MAX_DELAY_MS = 8_000
+const DEFAULT_MAX_DELAY_MS = 8_000
 
 /** Default max total time per provider (ms) before giving up */
-export const DEFAULT_PER_PROVIDER_TIMEOUT_MS = 30_000
+const DEFAULT_PER_PROVIDER_TIMEOUT_MS = 30_000
 
 /**
  * HTTP status codes we consider transient.
