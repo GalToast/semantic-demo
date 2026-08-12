@@ -42,9 +42,9 @@ import {
     refreshCompositionState,
     setSemanticDiveMode,
     resetExplorationFocus,
-    resetExperienceState
+    resetExperienceState,
+    focusOnNode
 } from '@lib/orchestration/lifecycle'
-import { focusOnNode } from '@lib/engine/camera-choreography/cursor'
 import { setTrailDepth } from '@lib/stores/journey.svelte'
 import { setTrailFromSeed } from '@lib/journey/neighborhood'
 import { setFocusedIndex, setSurface } from '@lib/stores/navigation.svelte'
