@@ -6,6 +6,15 @@ Moved out of `AGENTS.md` (Prompt Budget: no large reference tables in the hot-pa
 
 Probed 2026-07-27. Updated 2026-08-06 (live catalogue refresh; vision lanes refreshed by 670-probe sweep — see Vision Capability Matrix in `docs/subagent-delegation.md`; evidence `tmp/vision-probe/`). **See also `docs/subagent-models.md`** for the quick-reference version (verified table, conditional/avoid list, and untested backlog).
 
+## Cline free lane health (2026-08-12)
+
+- `clinefree/poolside/laguna-s-2.1:free` ✅ verified through native Cline and the local `router-clinefree` shim; zero-cost, 262K context, 32K max output, no exposed reasoning ladder. It is the shim and native Cline default.
+- `clinefree/deepseek/deepseek-v4-flash` ⚠️ cataloged and wired, but Cline currently returns a structured 429 daily free-limit response for the `-0731` route; retry after the provider hint rather than treating it as a transport failure.
+- `cline-free/glm-5.2` ❌ removed from the free picker: Cline reports the promotion/model as unavailable.
+- `stepfun/step-3.7-flash` ❌ not a Cline-free lane: native Cline reports nonzero pricing, so it is not exposed by the free shim.
+
+The shim exposes `/health`, defaults to Laguna, and preserves provider-specific 429/404/504 status semantics for Pi and external-subagent callers. Cline treats `-m` as its last-used model and may update `providers.json` after an alternate routed request; `--data-dir` would isolate that write but also isolates OAuth state, so the shim does not rewrite credentials after every call. Keep Laguna as the native default and treat this as a known low-priority Cline limitation.
+
 ## Delegation-wave-1 logfare verdict (2026-08-11, main-lane measured)
 
 8 logfare dispatches, deliverables-first. **minimax-m3 + kimi-k3 = the workhorses; deepseek-v4-flash family + qwen-3.6-35b-a3b throttled (429 per-model quotas, NOT concurrency — user confirmed logfare has no concurrent-use cap).** Critical protocol — NEVER trust first-shot exit-0: minimax routinely 'completes' with zero tool calls (17s observed) and kimi-k3 stream-dies at the final write ('Stream ended without finish_reason') after doing the full analysis. The reliable recipe that produced all deliverables: (1) rubric-first prompt with disk-gate; (2) ALWAYS issue a followup on the same session_id (context retained) with an explicit 'the file must exist on disk before you stop' mandate — this converts talkers into doers; (3) for kimi-k3 followups, add 'do NOT re-run analysis, only write' + ask for a compact report to dodge the long-stream death. This matches the earlier deliverable-first skeleton protocol (channel msg 160). Verify deliverables in worker tmp/, never exit codes.
@@ -1447,6 +1456,7 @@ fleet-quiet-window root-cause (canvas render under test-server serving), separat
   (exit-0 ≠ deliverable — the session's constant). Strongest deck: minimax-m3 + kiro-auto + kimi-k3.
 
 ### kilo/ openrouter free routing probe (2026-08-12)
+
 Paths exist: /kilo/v1 + /openrouter/v1 + /opencode-zen/v1 + /freemodel/v1. The "recent" free
 model ids are ALL currently unusable: qwen3-coder-next → 410 Gone (kilo/openrouter/zen — the
 id's retired from the routes), kilo/deepseek-v4-flash-0731 + kiro-auto → 402 no-credit/paid,
@@ -1454,3 +1464,9 @@ openrouter/deepseek-r1 → no credits, zen/deepseek-v4-flash-0731 → keys-off-c
 free/qwen3-coder-next → unauthorized. VERDICT: the kilo/openrouter free lanes are route-present
 but dead at this window; the LIVE free deck is logfare (minimax-m3/kiro-auto/kimi-k3 — probed
 OK). Re-probe before dispatching on kilo/openrouter; don't assume qwen3-coder-next exists.
+
+### 2026-08-12: hy3-free lanes LIVE (26 workers) + conflation check
+- kilo/tencent/hy3:free — the new dispatchable free tier (route: /kilo/v1, model tencent/hy3:free; probed 200). Used for kilo-hy3-* lanes. NOTE from main lane: prefer THIS over opencode-zen.
+- poolside/laguna-s-2.1 + kilo/poolside/laguna-s-2.1:free — the fallback + mobile lanes (also live).
+- The opencode-zen zen route remains keyless/cooldown (dead at this window).
+- Fleet-landing state: 46 dirty src, origin-ahead 23 (divergence reconcile pending a calm-commit window); their deep-cut W1-W3 UI pins + qa-ready.mjs + fold-watch tools landed.
