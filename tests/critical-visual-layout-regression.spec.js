@@ -17,8 +17,6 @@
 /* eslint-disable no-unused-vars */
 
 import { test, expect } from '@playwright/test'
-import { setTrailDepth } from '@lib/stores/journey.svelte'
-import { focusOnNode } from '@lib/orchestration/lifecycle'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
@@ -51,7 +49,7 @@ test.describe('Critical Visual Layout Regression', () => {
 
         // Wait for app ready
         await page.waitForFunction(
-            () => typeof focusOnNode === 'function' && Boolean(window.__TEST_STATE__?.points?.length),
+            () => typeof window.__navActions__?.focusOnNode === 'function' && Boolean(window.__TEST_STATE__?.points?.length),
             { timeout: 30000 }
         )
 
@@ -60,7 +58,7 @@ test.describe('Critical Visual Layout Regression', () => {
             // Activate trail mode with depth >= 1 to show journey controls
             document.body.dataset.panelSurface = 'focus'
             document.body.dataset.focusPanelMode = 'focus'
-            const setTrailDepth = setTrailDepth
+            const setTrailDepth = window.__navActions__?.setTrailDepth
             if (typeof setTrailDepth === 'function') {
                 setTrailDepth(1, { skipUrlSync: true })
             }
@@ -74,7 +72,7 @@ test.describe('Critical Visual Layout Regression', () => {
 
         // Click a search result to enter focus + trail state
         await page.evaluate(() => {
-            const focusOnNode = focusOnNode
+            const focusOnNode = window.__navActions__?.focusOnNode
             if (typeof focusOnNode === 'function') {
                 // Focus a node that has trail neighbors. 4200 is historically used in overlap QA.
                 focusOnNode(4200, { fromSearchResult: true })
@@ -150,7 +148,7 @@ test.describe('Critical Visual Layout Regression', () => {
         )
 
         await page.evaluate(() => {
-            focusOnNode?.(4200, { skipUrlSync: true })
+            window.__navActions__?.focusOnNode?.(4200, { skipUrlSync: true })
         })
         await page.waitForFunction(
             () =>
@@ -199,7 +197,7 @@ test.describe('Critical Visual Layout Regression', () => {
 
         await page.evaluate(() => {
             document.body.dataset.activeView = 'galaxy'
-            const focusOnNode = focusOnNode
+            const focusOnNode = window.__navActions__?.focusOnNode
             if (typeof focusOnNode === 'function') {
                 focusOnNode(4200, { fromSearchResult: true })
             }

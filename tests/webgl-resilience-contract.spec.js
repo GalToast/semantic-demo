@@ -19,7 +19,6 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearSearch } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
@@ -29,7 +28,7 @@ async function waitForAppReady(page) {
     // Wait for scene init — pointsMesh is a reliable scene-ready sentinel
     await page.waitForFunction(
         () =>
-            typeof clearSearch === 'function' &&
+            typeof window.__navActions__?.clearSearch === 'function' &&
             Array.isArray(window.__TEST_STATE__?.points) &&
             (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0 &&
             (window.__APP_STATE__ ?? window.__TEST_STATE__).pointIndexByLeadId?.size > 0 &&

@@ -1,6 +1,4 @@
 import { test, expect } from '@playwright/test'
-import { refreshCompositionState, setSemanticDiveMode } from '@lib/orchestration/lifecycle'
-import { search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 
@@ -38,9 +36,9 @@ async function openApp(page) {
     await page.goto(`${BASE_URL}/index.html?view=galaxy`)
     await page.waitForFunction(
         () =>
-            typeof setSemanticDiveMode === 'function' &&
-            typeof refreshCompositionState === 'function' &&
-            typeof search === 'function' &&
+            typeof window.__navActions__?.setSemanticDiveMode === 'function' &&
+            typeof window.__navActions__?.refreshCompositionState === 'function' &&
+            typeof window.__navActions__?.search === 'function' &&
             Array.isArray(window.__TEST_STATE__?.points) &&
             window.__TEST_STATE__.points.length > 0 &&
             document.body.dataset.graphicsMode === 'webgl',
@@ -67,8 +65,9 @@ async function searchAndFocusFirstResult(page, query = 'coffee') {
         await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 })
     } catch {
         await page.evaluate((q) => {
-            if (typeof search === 'function') {
-                return search(q)
+            const fn = window.__navActions__?.search
+            if (typeof fn === 'function') {
+                return fn(q)
             }
             return null
         }, query)
@@ -182,7 +181,8 @@ test.describe('Live Step Inside state sync', () => {
             await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 })
         } catch {
             await page.evaluate(() => {
-                if (typeof search === 'function') search('coffee')
+                const fn = window.__navActions__?.search
+                if (typeof fn === 'function') fn('coffee')
             })
             await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 })
         }

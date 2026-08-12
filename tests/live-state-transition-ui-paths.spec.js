@@ -1,7 +1,5 @@
 import { test, expect } from '@playwright/test'
 import { setupMockSearch } from './helpers/mock-semantic-search.js'
-import { clearSearch, search } from '@lib/search/state'
-import { setSemanticDiveMode } from '@lib/orchestration/lifecycle'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 
@@ -10,8 +8,8 @@ async function openApp(page) {
     await page.goto(`${BASE_URL}/index.html?nodemo=1`)
     await page.waitForFunction(
         () =>
-            typeof clearSearch === 'function' &&
-            typeof setSemanticDiveMode === 'function' &&
+            typeof window.__navActions__?.clearSearch === 'function' &&
+            typeof window.__navActions__?.setSemanticDiveMode === 'function' &&
             Array.isArray(window.__TEST_STATE__?.points) &&
             (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0,
         { timeout: 20000 }
@@ -34,8 +32,9 @@ async function performSearch(page, query = 'coffee') {
                 el.value = q
                 el.dispatchEvent(new Event('input', { bubbles: true }))
             }
-            if (typeof search === 'function') {
-                await search(q, { preferCachedResults: false })
+            const fn = window.__navActions__?.search
+            if (typeof fn === 'function') {
+                await fn(q, { preferCachedResults: false })
             }
         }, query)
     })
@@ -346,7 +345,7 @@ test('desktop: clear-search resets from in-focus mode (not just pre-focus)', asy
     // The #search-clear-btn is hidden in focus mode (results panel replaced by
     // focus detail panel, so .search-container.has-query is not set). Call
     // clearSearch() directly — same handler the button triggers.
-    await page.evaluate(() => clearSearch())
+    await page.evaluate(() => window.__navActions__?.clearSearch?.())
 
     await page.waitForFunction(
         () => window.__TEST_STATE__?.navState?.mode === 'overview' && window.__TEST_STATE__?.focusedNode === null,

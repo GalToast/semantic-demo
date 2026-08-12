@@ -13,7 +13,6 @@
 
 import { test, expect } from '@playwright/test'
 import { openApp } from './helpers/short-landscape-helpers.js'
-import { search } from '@lib/search/state'
 
 async function performSearch(page, query = 'coffee') {
     const input = page.locator('#search-input')
@@ -25,8 +24,9 @@ async function performSearch(page, query = 'coffee') {
             el.value = q
             el.dispatchEvent(new Event('input', { bubbles: true }))
         }
-        if (typeof search === 'function') {
-            await search(q, { preferCachedResults: false })
+        const fn = window.__navActions__?.search
+        if (typeof fn === 'function') {
+            await fn(q, { preferCachedResults: false })
         }
     }, query)
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 })

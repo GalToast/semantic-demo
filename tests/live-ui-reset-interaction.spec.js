@@ -1,7 +1,5 @@
 import { test, expect } from '@playwright/test'
 import { setupMockSearch } from './helpers/mock-semantic-search.js'
-import { setSemanticDiveMode, refreshCompositionState } from '@lib/orchestration/lifecycle'
-import { clearSearch } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 
@@ -10,9 +8,9 @@ async function openApp(page) {
     await page.goto(`${BASE_URL}/index.html?nodemo=1`)
     await page.waitForFunction(
         () =>
-            typeof clearSearch === 'function' &&
-            typeof setSemanticDiveMode === 'function' &&
-            typeof refreshCompositionState === 'function' &&
+            typeof window.__navActions__?.clearSearch === 'function' &&
+            typeof window.__navActions__?.setSemanticDiveMode === 'function' &&
+            typeof window.__navActions__?.refreshCompositionState === 'function' &&
             Array.isArray(window.__TEST_STATE__?.points) &&
             (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0 &&
             (window.__APP_STATE__ ?? window.__TEST_STATE__).pointIndexByLeadId?.size > 0,

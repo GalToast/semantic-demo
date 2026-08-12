@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test'
 import { stateField } from './helpers/state-harness.js'
-import { switchView, resetExperienceState } from '@lib/orchestration/lifecycle'
 
 /**
  * Regression test: resetExperienceState must complete within a reasonable timeout and
@@ -37,7 +36,7 @@ test.describe('resetExperienceState cleanup regression', () => {
         test.setTimeout(30000)
 
         await page.goto(`${BASE_URL}/index.html`)
-        await page.waitForFunction(() => typeof resetExperienceState === 'function', { timeout: 20000 })
+        await page.waitForFunction(() => typeof window.__navActions__?.resetExperienceState === 'function', { timeout: 20000 })
         await page
             .waitForFunction(
                 () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
@@ -47,13 +46,13 @@ test.describe('resetExperienceState cleanup regression', () => {
 
         // Establish map view state so reset has something meaningful to do
         await page.evaluate(() => {
-            switchView?.('map', { skipTerrainPrelude: true, skipUrlSync: true })
+            window.__navActions__?.switchView?.('map', { skipTerrainPrelude: true, skipUrlSync: true })
         })
         await page.waitForFunction(() => document.body.dataset.activeView === 'map', { timeout: 10000 })
 
         // Trigger reset — must complete without hanging
         await page.evaluate(() => {
-            resetExperienceState()
+            window.__navActions__?.resetExperienceState?.()
         })
 
         // Must return to galaxy view within 15s (generous — real cleanup is ~1.2s)
@@ -79,7 +78,7 @@ test.describe('resetExperienceState cleanup regression', () => {
         })
 
         await page.goto(`${BASE_URL}/index.html`)
-        await page.waitForFunction(() => typeof resetExperienceState === 'function', { timeout: 20000 })
+        await page.waitForFunction(() => typeof window.__navActions__?.resetExperienceState === 'function', { timeout: 20000 })
         await page
             .waitForFunction(
                 () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
@@ -101,7 +100,7 @@ test.describe('resetExperienceState cleanup regression', () => {
 
         // Reset
         await page.evaluate(() => {
-            resetExperienceState()
+            window.__navActions__?.resetExperienceState?.()
         })
         await page.waitForFunction(() => document.body.dataset.activeView === 'galaxy', null, { timeout: 15000 })
 
@@ -118,7 +117,7 @@ test.describe('resetExperienceState cleanup regression', () => {
         test.setTimeout(30000)
 
         await page.goto(`${BASE_URL}/index.html`)
-        await page.waitForFunction(() => typeof resetExperienceState === 'function', { timeout: 20000 })
+        await page.waitForFunction(() => typeof window.__navActions__?.resetExperienceState === 'function', { timeout: 20000 })
         await page
             .waitForFunction(
                 () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
@@ -129,12 +128,12 @@ test.describe('resetExperienceState cleanup regression', () => {
         // Set up a prelude scenario: switch to map with prelude (to start the timer)
         // Then immediately reset — the timer must be cancelled by switchView('galaxy')
         await page.evaluate(() => {
-            switchView?.('map', { skipTerrainPrelude: false, skipUrlSync: true })
+            window.__navActions__?.switchView?.('map', { skipTerrainPrelude: false, skipUrlSync: true })
         })
         // dataset write synchronous // let the prelude timer start
 
         await page.evaluate(() => {
-            resetExperienceState()
+            window.__navActions__?.resetExperienceState?.()
         })
 
         // After reset, no viewSwitchPreludeTimer should be pending

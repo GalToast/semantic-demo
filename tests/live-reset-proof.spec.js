@@ -1,7 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { SEMANTIC_HEALTH_STUB, SEARCH_STUB } from './helpers/mock-semantic-search.js';
-import { returnToOverview, resetExplorationFocus } from '@lib/orchestration/lifecycle'
-import { search } from '@lib/search/state'
 
 /**
  * Live reset interaction proof — Wave 2
@@ -36,9 +34,7 @@ async function performMockedSearch(page, query = 'coffee') {
     return;
   } catch {
     await page.evaluate((searchQuery) => {
-      if (typeof (search) === 'function') {
-        search(searchQuery);
-      }
+      window.__navActions__?.search?.(searchQuery);
     }, query);
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
   }
@@ -68,7 +64,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     });
 
     await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof (resetExplorationFocus) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof window.__navActions__?.resetExplorationFocus === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // --- 1. Perform search ---
@@ -139,7 +135,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     });
 
     await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof (resetExplorationFocus) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof window.__navActions__?.resetExplorationFocus === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Enter focus state via search click
@@ -150,7 +146,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     // Call resetExplorationFocus directly (preserves search per its contract)
     await page.evaluate(() => {
-      resetExplorationFocus?.();
+      window.__navActions__?.resetExplorationFocus?.();
     });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
@@ -177,7 +173,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     });
 
     await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof (returnToOverview) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof window.__navActions__?.returnToOverview === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Establish search + focus state
@@ -188,7 +184,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     // returnToOverview = full reset (clears search too)
     await page.evaluate(() => {
-      returnToOverview?.();
+      window.__navActions__?.returnToOverview?.();
     });
     await page.waitForFunction(
       () => document.body.dataset.activeView === 'galaxy',
@@ -217,7 +213,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
     });
 
     await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof (resetExplorationFocus) === 'function', { timeout: 20000 });
+    await page.waitForFunction(() => typeof window.__navActions__?.resetExplorationFocus === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Enter focus state

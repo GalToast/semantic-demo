@@ -1,12 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { switchView } from '@lib/orchestration/lifecycle'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:9876').replace(/\/$/, '')
 
 async function enterMapMode(page) {
-    await page.waitForFunction(() => typeof switchView === 'function', null, { timeout: 20000 })
+    await page.waitForFunction(() => typeof window.__navActions__?.switchView === 'function', null, { timeout: 20000 })
     await page.evaluate(() => {
-        switchView('map', {
+        window.__navActions__?.switchView?.('map', {
             skipTerrainPrelude: true,
             skipUrlSync: true,
             silentHandoff: true

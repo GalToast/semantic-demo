@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test'
 import { mutate, stateField } from './helpers/state-harness.js'
-import { refreshCompositionState } from '@lib/orchestration/lifecycle'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795'
 
@@ -79,7 +78,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
                 focusing: false,
                 degraded: false
             })
-            refreshCompositionState?.()
+            window.__navActions__?.refreshCompositionState?.()
         })
 
         // 2. Verify results are visible AND hidden attribute is removed
@@ -93,7 +92,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
         // setFocusedNode now handles focusedNode, selectedPoint, and navState together.
         await mutate(page, 'setFocusedNode', { focusedNode: 0, selectedPointIdx: 0, navStateMode: 'focus' })
         await page.evaluate(() => {
-            refreshCompositionState?.()
+            window.__navActions__?.refreshCompositionState?.()
         })
         await page
             .waitForFunction(

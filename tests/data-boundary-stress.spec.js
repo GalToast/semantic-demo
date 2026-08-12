@@ -1,6 +1,4 @@
 import { test, expect } from '@playwright/test'
-import { search } from '@lib/search/state'
-import { focusOnNode } from '@lib/orchestration/lifecycle'
 
 // Malicious mock data payload
 const MOCK_DATA = [
@@ -81,7 +79,7 @@ test.describe('Data Boundary Stress Tests', () => {
 
         // Ensure we trigger the search state with a malformed query
         await page.evaluate(() => {
-            search('THIS_IS_A_MASSIVE', { preferCachedResults: false })
+            window.__navActions__?.search?.('THIS_IS_A_MASSIVE', { preferCachedResults: false })
         })
 
         await page
@@ -105,7 +103,7 @@ test.describe('Data Boundary Stress Tests', () => {
 
         // Now force focus onto the node
         await page.evaluate(() => {
-            focusOnNode(9001, 'search')
+            window.__navActions__?.focusOnNode?.(9001, 'search')
         })
 
         await page

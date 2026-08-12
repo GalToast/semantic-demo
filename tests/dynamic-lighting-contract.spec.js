@@ -20,7 +20,6 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { search } from '@lib/search/state'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795'
 
@@ -98,8 +97,9 @@ async function performSearch(page, query = 'coffee') {
         if (!el) return
         el.value = q
         el.dispatchEvent(new Event('input', { bubbles: true }))
-        if (typeof search === 'function') {
-            await search(q, { preferCachedResults: false })
+        const fn = window.__navActions__?.search
+        if (typeof fn === 'function') {
+            await fn(q, { preferCachedResults: false })
         }
     }, query)
     await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 15000 })

@@ -11,7 +11,6 @@
 
 import { test, expect } from '@playwright/test'
 import { snapshot, stateField } from './helpers/state-harness.js'
-import { search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 
@@ -44,7 +43,7 @@ async function openApp(page) {
     await setupMockSearch(page)
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto(`${BASE_URL}/index.html?view=galaxy`, { waitUntil: 'domcontentloaded' })
-    await page.waitForFunction(() => typeof search === 'function', { timeout: 20000 })
+    await page.waitForFunction(() => typeof window.__navActions__?.search === 'function', { timeout: 20000 })
     await expect
         .poll(
             async () => {
@@ -85,9 +84,9 @@ test.describe('node interaction: search result focus transition', () => {
             if (!el) return
             el.value = 'coffee'
             el.dispatchEvent(new Event('input', { bubbles: true }))
-            const search = search
-            if (typeof search === 'function') {
-                await search('coffee', { preferCachedResults: false })
+            const fn = window.__navActions__?.search
+            if (typeof fn === 'function') {
+                await fn('coffee', { preferCachedResults: false })
             }
         })
         await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 15000 })
