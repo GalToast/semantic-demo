@@ -65,7 +65,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
     )
 
     await page.setViewportSize(viewport)
-    await page.goto(`${BASE_URL}${APP_PATH}?view=galaxy&nodemo=1`, {
+    await page.goto(`${BASE_URL}${APP_PATH}?view=galaxy&nodemo=1&webgl=1`, {
         waitUntil: 'domcontentloaded'
     })
 
