@@ -391,7 +391,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
                 el.dispatchEvent(new Event('input', { bubbles: true }))
                 const fn = window.__navActions__?.search
                 if (typeof fn === 'function') {
-                    await search(q, { preferCachedResults: false })
+                    await fn(q, { preferCachedResults: false })
                 }
             })
             await page
