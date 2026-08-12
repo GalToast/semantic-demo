@@ -69,8 +69,8 @@ const SKIP_PATTERNS = [
 //   CompassDiveSurface × 2     — margin:0 recentre vs external inline rule
 //   Placeholder2D.svelte × 2   — reduced-motion animation/transition:none (sanctioned)
 //   InfoPanel.css × 1          — display:none hide (sanctioned)
-//   SearchTrailCue.svelte × 1  — display:flex row layout vs inherited hidden state
-const APPROVED_BASELINE = 26
+//   SearchTrailCue.svelte × 2  — display:flex row layout vs inherited hidden state + display:none collision-hide (W58 mobile search cue, 1→2 uses)
+const APPROVED_BASELINE = 27
 
 interface ImportantUse {
     file: string

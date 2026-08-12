@@ -135,7 +135,13 @@ const EXEMPTED_SHAS = new Set<string>([
     '024b56f3d2e0b485447a757fcf546eb3bd8b219a',
     // 43bc0c43 — docs(css): CSS ownership update with a comment-only header.css hunk.
     // The source edit documents the already-landed App-scope import split.
-    '43bc0c438ee788e50958a07cd09e0fa611ce5ae4'
+    '43bc0c438ee788e50958a07cd09e0fa611ce5ae4',
+    // be9d4f42 — test(engine): harden three-engine-api barrel contract. Bundled
+    // merge-resolution that intentionally KEPT three-micro-demo-bridge.ts (live-
+    // referenced at runtime by three-interaction-visuals even though no static
+    // import exists — the static scanner counts it dead). Same rationale as the
+    // bridge carve-out in svelte-bridge-import-contract KNOWN_RETIRED_BRIDGES.
+    'be9d4f42357d851280f7e999c484764a08ba2dce'
 ])
 
 // Conventional-commit prefix regex. Captures:
