@@ -6,18 +6,24 @@
  * particle field around focused nodes), and the search manifold (the
  * glowing corridor between the anchor and discovered candidates).
  *
- * Architecture (W12, refactored 2026-06):
+ * Architecture (W12, refactored 2026-06; IA-1 manifold carve 2026-08-12):
  *   - Per-frame update driven by `updateInteractionVisuals(now, hoveredNode, focusedNode)`
- *     from the main render loop (see three-engine-core.ts animate()).
+ *     from the main render loop (see three-engine-core.ts animate()). This file has
+ *     NO self-scheduled rAF — every updater below is main-loop-driven.
  *   - Initialization is split per-visual (`initSemanticManifold`, `initSemanticLens`)
  *     because they have different lifecycle windows (some tied to scene init,
  *     others to specific mode entries).
  *   - Disposal is split per-visual to match (`disposeInteractionVisuals`,
  *     `disposeSemanticLens`); called from three-engine-core's dispose path
  *     and on mode transitions that hide the visual.
+ *   - The manifold cluster (`initSemanticManifold` + `disposeSemanticManifold`) now
+ *     lives in ./three-interaction-manifold and is re-exported here, so this file
+ *     stays the single import surface for the whole interaction-visual family
+ *     (three-star split IA-1, plan §2.4/§3.2).
  *
  * Public API:
- *   - initSemanticManifold()    — wire up the search corridor mesh; called once at scene init
+ *   - initSemanticManifold()    — ground-plane manifold mesh (re-exported from three-interaction-manifold)
+ *   - disposeSemanticManifold() — manifold-only teardown (re-exported from three-interaction-manifold)
  *   - initSemanticLens()        — wire up the focus-mode ambient lens; called once at scene init
  *   - updateInteractionVisuals() — per-frame driver; reads hovered/focused, updates transforms/colors
  *   - disposeInteractionVisuals() — tear down all visuals; called at full scene disposal
@@ -35,21 +41,27 @@ import {
     MeshBasicMaterial,
     ShaderMaterial,
     DoubleSide,
-    NormalBlending,
     Mesh,
     BufferGeometry,
     BufferAttribute,
     LineSegments,
     AdditiveBlending,
     Color,
-    Group,
-    MeshBasicMaterialParameters,
-    LineBasicMaterialParameters
+    Group
 } from 'three'
+import type { MeshBasicMaterialParameters, LineBasicMaterialParameters } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
 import { disposeFocusPocketSizeMesh } from './focus-pocket-size-mesh'
 const state = _state
 import { disposeHeroAnimation } from './three-search-animations'
+// SA-2 dispose boundary (three-star split §3.1): corridor-glow teardown was
+// carved out of `disposeHeroAnimation` into its own export in the corridor
+// module. Imported from the owning module (not the hero hub's `export *`
+// re-export) so this edge survives the pending SA-1 hero-module rename
+// unchanged. When SA-1 lands, only the `disposeHeroAnimation` import above
+// repoints to `./three-search-hero-animations` (plan §4.3).
+import { disposeCorridorGlow } from './three-search-corridor-animations'
+import { initSemanticManifold, disposeSemanticManifold } from './three-interaction-manifold'
 import { calculateSignalScore } from '@lib/utils/geo-data'
 import {
     createFocusAnchorIndicator,
@@ -148,7 +160,9 @@ function createAdditiveMesh(
 ): LineSegments
 function createAdditiveMesh(
     geometry: BufferGeometry,
-    MaterialCtor: new (params: MeshBasicMaterialParameters | LineBasicMaterialParameters) => MeshBasicMaterial | LineBasicMaterial,
+    MaterialCtor: new (
+        params: MeshBasicMaterialParameters | LineBasicMaterialParameters
+    ) => MeshBasicMaterial | LineBasicMaterial,
     materialParams: MeshBasicMaterialParameters | LineBasicMaterialParameters
 ): Mesh | LineSegments {
     const material = new MaterialCtor({
@@ -164,12 +178,25 @@ function createAdditiveMesh(
     return object
 }
 
+// ── Manifold cluster (IA-1 → ./three-interaction-manifold) ──────────────────
+// Re-exported from the hub so every existing importer keeps working without a
+// repoint: `typeof import('./three-interaction-visuals')` consumers
+// (three-engine-state.ts's ThreeInteractionVisualsModule, and therefore
+// three-engine-init.ts / three-engine-search.ts), plus the index.ts and
+// three-engine.ts barrels. Source of truth for the mesh + shader is the
+// manifold module; this file only wires it into the lens teardown path.
+export { initSemanticManifold, disposeSemanticManifold }
+
 // ── Public API ──────────────────────────────────────────────────────────────
 
 export function disposeInteractionVisuals() {
     disposeSemanticLens()
     disposeFocusAnchorIndicator()
+    // SA-2 dispose boundary (§3.1): hero rAF + corridor/anchor glow are torn
+    // down by separate exports since the SA split — call BOTH, or a teardown
+    // mid-stagger leaves corridor-glow timers armed against a disposed scene.
     disposeHeroAnimation()
+    disposeCorridorGlow()
 }
 
 export function disposeSemanticLens() {
@@ -185,11 +212,9 @@ export function disposeSemanticLens() {
         state.anchorBloomLight.dispose?.()
         state.anchorBloomLight = null
     }
-    if (state.semanticManifold) {
-        state.scene?.remove(state.semanticManifold)
-        disposeObject3D(state.semanticManifold)
-        state.semanticManifold = null
-    }
+    // Manifold teardown lives with its init (IA-1); behavior is unchanged —
+    // lens exit still drops the manifold.
+    disposeSemanticManifold()
     if (state.semanticLensGroup) {
         state.scene?.remove(state.semanticLensGroup)
         disposeObject3D(state.semanticLensGroup)
@@ -241,72 +266,6 @@ export function disposeSemanticLens() {
         state.focusFilaments = null
     }
     if (state.focusSemanticConnectionPairs) state.focusSemanticConnectionPairs.length = 0
-}
-
-export function initSemanticManifold() {
-    if (!state.scene) {
-        debugWarn('[three-interaction-visuals] initSemanticManifold: state.scene is null, skipping manifold init')
-        return
-    }
-    const manifoldGeo = new CircleGeometry(4, 64)
-    const manifoldMat = new ShaderMaterial({
-        uniforms: {
-            uTime: { value: 0 },
-            uRippleTime: { value: -1000.0 },
-            uRippleCenter: { value: new Vector3(0, 0, 0) },
-            uColor: { value: new Color(SCENE_PALETTE.threadTint) }
-        },
-        vertexShader: `
-            varying vec2 vUv;
-            varying vec3 vWorldPosition;
-            void main() {
-                vUv = uv;
-                vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform float uTime;
-            uniform float uRippleTime;
-            uniform vec3 uRippleCenter;
-            uniform vec3 uColor;
-            varying vec2 vUv;
-            varying vec3 vWorldPosition;
-            void main() {
-                vec2 centeredUv = vUv - 0.5;
-                float distToCenter = length(centeredUv) * 2.0;
-
-                // Ripple interaction
-                float d = distance(vWorldPosition, uRippleCenter);
-                float rippleWave = (uRippleTime - d * 2.0);
-                float rippleActive = (rippleWave > 0.0 && rippleWave < 1.0) ? (1.0 - rippleWave) : 0.0;
-
-                float horizonFade = smoothstep(1.0, 0.0, distToCenter);
-                float innerFade = smoothstep(0.08, 0.36, distToCenter);
-                float breathingMist = 0.5 + sin(uTime * 0.45 + distToCenter * 7.0) * 0.5;
-                float contourA = 1.0 - smoothstep(0.0, 0.016, abs(sin(distToCenter * 31.0 + uTime * 0.08)));
-                float contourB = 1.0 - smoothstep(0.0, 0.012, abs(sin((vWorldPosition.x * 0.85 + vWorldPosition.z * 0.42) * 7.0)));
-                float contours = contourA * 0.18 + contourB * 0.055;
-
-                float opacity = (0.012 + contours + breathingMist * 0.005) * horizonFade * innerFade;
-                vec3 finalColor = mix(vec3(0.1, 0.2, 0.2), uColor, 0.54 + breathingMist * 0.16);
-                if (rippleActive > 0.0) {
-                    opacity += rippleActive * 0.065;
-                    finalColor = mix(finalColor, vec3(1.0, 0.88, 0.48), rippleActive);
-                }
-
-                gl_FragColor = vec4(finalColor, opacity);
-            }
-        `,
-        transparent: true,
-        side: DoubleSide,
-        depthWrite: false,
-        blending: NormalBlending
-    })
-    state.semanticManifold = new Mesh(manifoldGeo, manifoldMat)
-    state.semanticManifold.rotation.x = -Math.PI / 2
-    state.semanticManifold.position.y = -0.8
-    state.scene.add(state.semanticManifold)
 }
 
 export function initSemanticLens() {

@@ -27,10 +27,13 @@ const frameUpdateSrc = readFileSync(resolve(CWD, 'src/lib/engine/three-engine-fr
 const coreSrc = readFileSync(resolve(CWD, 'src/lib/engine/three-engine-core.ts'), 'utf8')
 const shellCss = readFileSync(resolve(CWD, 'css/shell.css'), 'utf8')
 const biofieldCss = readFileSync(resolve(CWD, 'src/lib/css/biofield.css'), 'utf8')
-const semanticManifoldSrc =
-    interactionSrc.match(
-        /export\s+function\s+initSemanticManifold\s*\(\)\s*\{[\s\S]*?export\s+function\s+initSemanticLens/
-    )?.[0] ?? ''
+// IA-1 of the three-star split (2026-08-12): the manifold cluster moved out of
+// three-interaction-visuals.ts into three-interaction-manifold.ts. That whole
+// module IS the manifold (init + dispose, no other concern), so the old
+// "slice the manifold body out of the visuals file" regex is replaced by
+// reading the owning module directly. The hub re-export is pinned separately
+// below so the split cannot silently unwire the engine's importers.
+const semanticManifoldSrc = readFileSync(resolve(CWD, 'src/lib/engine/three-interaction-manifold.ts'), 'utf8')
 
 const checks = [
     {
@@ -73,6 +76,12 @@ const checks = [
                 semanticManifoldSrc
             ) &&
             !/blending:\s*AdditiveBlending/.test(semanticManifoldSrc)
+    },
+    {
+        name: 'interaction hub re-exports the manifold cluster (IA-1 split linkage)',
+        pass:
+            /from\s*['"]\.\/three-interaction-manifold['"]/.test(interactionSrc) &&
+            /export\s*\{[^}]*\binitSemanticManifold\b[^}]*\}/.test(interactionSrc)
     },
     {
         name: 'semantic lens score uniform exists before render loop updates it',
