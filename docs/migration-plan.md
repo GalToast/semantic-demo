@@ -29,7 +29,7 @@
 | Layer                | Path                                                                              | Status            | Notes                                                                                            |
 | -------------------- | --------------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
 | **Svelte UI**        | `src/components/*`, `src/lib/stores/*.svelte.ts`                                  | ✅ Complete       | 39 `.svelte` source files (prod + dev tooling), 16 stores, 4 type files                          |
-| **Bridge**           | `src/lib/engine/*-bridge.ts`                                                      | ✅ Retired        | Phase 7 closed the final engine bridge; see `docs/phase-7-state-bridge-retirement-2026-06-20.md` |
+| **Bridge**           | `src/lib/engine/*-bridge.ts`                                                      | ✅ Retired        | Phase 7 closed the final engine bridge; see `docs/archive/phase-7-state-bridge-retirement-2026-06-20.md` |
 | **Engine kernel**    | `src/lib/engine/`, `src/lib/focus/`, `src/lib/journey/`                           | ✅ Migrated       | Three.js scene, camera, shaders, focus pocket, journey orchestration                             |
 | **Orchestration**    | `src/lib/orchestration/`                                                          | ✅ Complete       | App init, lifecycle, view transitions, URL state, compass, events, parity-attrs                  |
 | **State & stores**   | `src/lib/state/`, `src/lib/stores/`                                               | ✅ Complete       | `appState` Svelte 5 class + typed writable stores                                                |
@@ -55,7 +55,7 @@ These files require explicit ownership, targeted tests, and coordination with pa
 | **`src/lib/orchestration/lifecycle.ts`**                                                                 | Orchestration   | App orchestration, view handoff, window bindings, scene-reveal logic. 425 lines. Many no-op stubs for legacy bridge compat.                         | Coordinate with parallel session. Do not remove legacy stubs until bridge retirement phase.                                      |
 | **`src/lib/engine/three-engine.ts`**                                                                     | Engine          | WebGL render loop, scene lifecycle, renderer management. RAF loop + GPU resource tracking.                                                          | Off-limits write surface. Do not touch without explicit lead approval. Disposal audit required for any material/texture changes. |
 | **`deploy.sh` / `deploy.ps1`**                                                                           | Deploy          | Decoupled. Production shell routing.                                                                                                                | Standalone since 2026-06-19; any deploy change requires end-to-end verification against `dist/svelte/`.                          |
-| **Focus-stage renderers** (`src/lib/focus/stage-renderer.ts`, `src/lib/journey/focus-stage-renderer.ts`) | Focus / Journey | M-flagged. Focus stage DOM rendering, selected-card hydration.                                                                                      | M-flagged. Coordinate with parallel session. CSS ownership via `docs/semantic-demo-focus-stage-css-owner-matrix.md`.             |
+| **Focus-stage renderers** (`src/lib/focus/stage-renderer.ts`, `src/lib/journey/focus-stage-renderer.ts`) | Focus / Journey | M-flagged. Focus stage DOM rendering, selected-card hydration.                                                                                      | M-flagged. Coordinate with parallel session. CSS ownership via `docs/archive/semantic-demo-focus-stage-css-owner-matrix.md`.             |
 
 ---
 
@@ -101,7 +101,7 @@ The former bridge files (`src/lib/engine/*-bridge.ts`) were the canonical seam b
 3. Remove the bridge file
 4. Verify `npm run check && npm run build:svelte && npm run test:contract`
 
-> **Note:** `docs/bridge-load-bearing-2026-06-18.md` is a historical audit input. The living bridge status is Phase 7 complete with 0 remaining `src/lib/engine/*-bridge.ts` files.
+> **Note:** `docs/archive/bridge-load-bearing-2026-06-18.md` is a historical audit input. The living bridge status is Phase 7 complete with 0 remaining `src/lib/engine/*-bridge.ts` files.
 
 The 4-signal dead-code test (AGENTS.md § "Rule for future dead-code sweeps on `src/lib/`") applies to every bridge file candidate:
 
@@ -120,7 +120,7 @@ A file passes the "dead" threshold only when **all five signals are zero**.
 ### 1. Bridge Retirement (Phase 6 / Phase 7)
 
 **Status:** ✅ Complete (2026-06-20). Phase 7 retired the final `state-bridge.ts` passthrough and aligned QA contracts around canonical state helpers.
-**Reference:** `docs/phase-7-state-bridge-retirement-2026-06-20.md`
+**Reference:** `docs/archive/phase-7-state-bridge-retirement-2026-06-20.md`
 
 ### 2. Deploy-Script `../js/scanner.js` Decoupling
 
@@ -134,9 +134,16 @@ A file passes the "dead" threshold only when **all five signals are zero**.
 **Remaining:** Verify no body data-attr is written by a non-parity-attrs path. Run `npm run check:ownership` to confirm.
 **Reference:** AGENTS.md § "W15+ Arc Lessons (parity-attrs closure, 2026-06-17)"
 
+**2026-08-10 closeout:** `src/lib/stores/lifecycle.ts` no longer writes
+`legacyState.navState` or the legacy `trailDepth` slot during composition.
+Navigation mutations now remain behind `updateNavState()` /
+`writeNavStateMirror()`; `npm run lint:nav-mirror` is the enforcement gate.
+The browser-level back/forward proof lives in
+`tests/widget-journey-keyboard-history.spec.js`.
+
 ### 4. Prod-Preview Parity Smoke
 
-**Status:** ✅ Complete (W9-A, 2026-06-20). W8 Bridge Retirement preserved parity. Refresh baseline: `docs/production-preview-parity-baseline-w9-2026-06-20.md`. Smoke contract lives in `tests/production-preview-parity-contract.mjs` (registered under `smoke` group in `tests/contracts.manifest.json`).
+**Status:** ✅ Complete (W9-A, 2026-06-20). W8 Bridge Retirement preserved parity. Refresh baseline: `docs/archive/production-preview-parity-baseline-w9-2026-06-20.md`. Smoke contract lives in `tests/production-preview-parity-contract.mjs` (registered under `smoke` group in `tests/contracts.manifest.json`).
 **Remaining:** Expand smoke to all 16 surfaces (currently 16 high-traffic attrs across 2 flows). Visual pixel-level parity diff is a future hardening.
 
 ### 5. Deploy Shell Normalization
@@ -164,7 +171,7 @@ For each high-risk surface, the following must hold before any edit:
 | `lifecycle.ts`             | 1. Coordinate with parallel session. 2. After edit: `npm run check`, `npm run test:contract`, `node scripts/qa.mjs contract --all --headed`. Do not remove legacy stubs until bridge retirement phase.          |
 | `three-engine.ts`          | 1. Requires explicit lead approval (off-limits write surface). 2. After edit: disposal audit for any new material/texture, `npm run test:contract`, visual regression for desktop-idle + mobile-idle.           |
 | `deploy.sh` / `deploy.ps1` | 1. End-to-end deploy verification against `dist/svelte/`. 2. Verify `../js/scanner.js` path resolves. 3. Test both dev and production preview.                                                                  |
-| Focus-stage renderers      | 1. M-flagged. Coordinate with parallel session. 2. After edit: `npm run check:bridges`, CSS ownership check (`docs/semantic-demo-focus-stage-css-owner-matrix.md`), focus-pocket + compass-rail surface checks. |
+| Focus-stage renderers      | 1. M-flagged. Coordinate with parallel session. 2. After edit: `npm run check:bridges`, CSS ownership check (`docs/archive/semantic-demo-focus-stage-css-owner-matrix.md`), focus-pocket + compass-rail surface checks. |
 
 **Bridge candidate deletion rule:** Before deleting any file that _might_ be a bridge candidate, run `npm run check:bridges` and verify zero references in `rg <filename> src/ docs/ tests/`.
 
@@ -176,7 +183,7 @@ For each high-risk surface, the following must hold before any edit:
 
 **The bug:** In rune-mode `.svelte` and `.svelte.ts` files, `!==` is compiled to `$.strict_equals(a, b, false)` (equivalent to `===`), silently inverting the comparison. No warning at compile or runtime.
 
-**Cookbook pointer:** `docs/svelte-5-strict-mode-cookbook.md` — three workaround patterns:
+**Cookbook pointer:** ~~`docs/svelte-5-strict-mode-cookbook.md`~~ _(deleted)_ — three workaround patterns:
 
 1. `typeof x === 'number'` guards (safest for type checks)
 2. Positive equality + `!` prefix: `!(x === 'idle')` instead of `x !== 'idle'`
@@ -184,7 +191,7 @@ For each high-risk surface, the following must hold before any edit:
 
 **CI guard:** `npm run lint:svelte5-strict-mode` (added W15, commit wave 2026-06-17).
 
-**Upstream report:** `docs/svelte-5-strict-mode-bug-upstream-report-2026-06-17.md` — paste-ready Svelte GitHub issue.
+**Upstream report:** ~~`docs/svelte-5-strict-mode-bug-upstream-report-2026-06-17.md`~~ _(deleted)_ — paste-ready Svelte GitHub issue.
 
 **Prior sweep:** `docs/latent-!==-bug-sweep-2026-06-17.md` — 167 `!==` usages audited, 38 found risky and fixed.
 
@@ -196,23 +203,23 @@ For each high-risk surface, the following must hold before any edit:
 
 | Document                      | Path                                                    | Relevance                                                         |
 | ----------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------- |
-| W42 Charter                   | `docs/w42-charter-2026-06-18.md`                        | Thread-inspector fix + a11y sweep (completed)                     |
-| W41 Charter                   | `docs/w41-charter-2026-06-18.md`                        | Bundle optimization + dead code elimination (partial)             |
-| W40 Charter                   | `docs/w40-charter-2026-06-18.md`                        | Production verification + Lighthouse baseline + visual regression |
-| W38 Charter                   | `docs/w38-charter-2026-06-17.md`                        | Prior wave charter                                                |
-| W43 Charter                   | `docs/w43-charter-2026-06-18.md`                        | Focus-stage QA + performance prep (current)                       |
-| Bridge Load-Bearing           | `docs/bridge-load-bearing-2026-06-18.md`                | Historical bridge audit input; superseded by Phase 7 closeout     |
+| W42 Charter                   | `docs/archive/w42-charter-2026-06-18.md`                        | Thread-inspector fix + a11y sweep (completed)                     |
+| W41 Charter                   | `docs/archive/w41-charter-2026-06-18.md`                        | Bundle optimization + dead code elimination (partial)             |
+| W40 Charter                   | `docs/archive/w40-charter-2026-06-18.md`                        | Production verification + Lighthouse baseline + visual regression |
+| W38 Charter                   | `docs/archive/w38-charter-2026-06-17.md`                        | Prior wave charter                                                |
+| W43 Charter                   | `docs/archive/w43-charter-2026-06-18.md`                        | Focus-stage QA + performance prep (current)                       |
+| Bridge Load-Bearing           | `docs/archive/bridge-load-bearing-2026-06-18.md`                | Historical bridge audit input; superseded by Phase 7 closeout     |
 | A11y Baseline                 | Per W42-B scope                                         | Keyboard traps, focus-visible, screen reader labels               |
 | Performance Budget            | `docs/performance-budget.md`                            | JS/CSS budget ceilings and actuals                                |
 | Design Tokens                 | `docs/semantic-demo-design-tokens.md`                   | Canonical token sheet                                             |
 | State Transition Table        | `docs/semantic-demo-state-transition-table.md`          | View-phase state machine                                          |
 | Surface Style Matrix          | `docs/semantic-demo-surface-style-matrix.md`            | 26 visual audit states mapped to tokens                           |
-| Svelte 5 Strict-Mode Cookbook | `docs/svelte-5-strict-mode-cookbook.md`                 | `!==` inversion workaround patterns                               |
+| Svelte 5 Strict-Mode Cookbook | ~~`docs/svelte-5-strict-mode-cookbook.md`~~ _(deleted)_                 | `!==` inversion workaround patterns                               |
 | Historical Migration Plan     | `docs/archive/migration-docs/phase56-migration-plan.md` | Phase 5/6 reference (archived)                                    |
-| Nav State Ownership           | `docs/nav-state-ownership.md`                           | Field-by-field ownership for NavState                             |
-| CSS Ownership Map             | `docs/semantic-demo-css-authority-map.md`               | CSS selector ownership                                            |
-| Mobile State Ownership        | `docs/semantic-demo-mobile-state-ownership.md`          | Mobile body data-attr gates                                       |
-| Focus-Stage CSS Owner         | `docs/semantic-demo-focus-stage-css-owner-matrix.md`    | Focus-stage CSS ownership                                         |
+| Nav State Ownership           | `docs/archive/nav-state-ownership.md`                           | Field-by-field ownership for NavState                             |
+| CSS Ownership Map             | `docs/archive/semantic-demo-css-authority-map.md`               | CSS selector ownership                                            |
+| Mobile State Ownership        | `docs/archive/semantic-demo-mobile-state-ownership.md`          | Mobile body data-attr gates                                       |
+| Focus-Stage CSS Owner         | `docs/archive/semantic-demo-focus-stage-css-owner-matrix.md`    | Focus-stage CSS ownership                                         |
 
 ---
 

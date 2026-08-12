@@ -259,7 +259,7 @@ The Tier B and Tier D fields are the targets for Phase 2. Tier A needs no work. 
 
 ## See also
 
-- `docs/type-system-smell-audit.md` Axis 1: documents the 21-file escape-hatch pattern
+- `docs/archive/type-system-smell-audit.md` Axis 1: documents the 21-file escape-hatch pattern
 - `src/lib/state/app.svelte.ts`: the state class (663 LOC)
 - `src/lib/state/state-types.ts`: the type definitions (663 LOC)
 - `src/lib/state/state-validation.ts`: runtime validation (498 LOC)
