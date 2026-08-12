@@ -81,7 +81,11 @@ assertContains(
     'const reducedMotion = prefersReducedMotion()',
     'three-search-animations computes reducedMotion'
 )
-assertContains(searchAnimSrc, 'uTime.value = reducedMotion ? 0 : frameNow / 1000', 'corridor uTime uniform is gated')
+assertContains(
+    searchAnimSrc,
+    'const time = reducedMotion ? 0 : frameNow / 1000',
+    'corridor uTime uniform is gated (refactored to const+assign)'
+)
 console.log('  ✓ three-search-animations.ts corridor uTime uniform gated under reduced motion')
 
 // 4. Canvas click pulse: suppressed under reduced motion.
