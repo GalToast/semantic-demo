@@ -41,4 +41,21 @@ describe('FocusCard component', () => {
         const icon = container.querySelector('.empty-icon')
         expect(icon?.getAttribute('aria-hidden')).toBe('true')
     })
+
+    it('uses tap-to-explore copy on the mobile/placeholder2d fallback (no impossible map instruction)', async () => {
+        // Mobile cold-load path: the 2D placeholder is active and there is no
+        // interactive map to click. The empty-state copy must not instruct the
+        // user to "click the map".
+        const { setRenderKind } = await import('@lib/orchestration/parity-attrs.svelte')
+        setRenderKind('placeholder2d')
+        const { appState } = await import('@lib/state/app.svelte')
+        appState.navState.focusedIndex = 0
+        appState.navState.mode = 'focus'
+        appState.navState.surface = 'focus'
+
+        const { container } = render(FocusCard, { props: { visible: true } })
+        const sub = container.querySelector('.selected-empty-sub')
+        expect(sub?.textContent).toContain('Tap a business')
+        expect(sub?.textContent).not.toContain('on the map')
+    })
 })

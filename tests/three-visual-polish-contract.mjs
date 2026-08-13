@@ -12,8 +12,17 @@ const threeEngineCoreSrc = fs.existsSync(threeEngineCorePath) ? fs.readFileSync(
 const threeEngineInitPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-engine-init.ts')
 const threeEngineInitSrc = fs.existsSync(threeEngineInitPath) ? fs.readFileSync(threeEngineInitPath, 'utf8') : ''
 const threeEngineLifecyclePath = path.join(repoRoot, 'src', 'lib', 'engine', 'lifecycle.ts')
-const threeEngineLifecycleSrc = fs.existsSync(threeEngineLifecyclePath) ? fs.readFileSync(threeEngineLifecyclePath, 'utf8') : ''
-const threeSetup = fs.readFileSync(threeSetupPath, 'utf8') + '\n' + threeEngineInitSrc + '\n' + threeEngineCoreSrc + '\n' + threeEngineLifecycleSrc
+const threeEngineLifecycleSrc = fs.existsSync(threeEngineLifecyclePath)
+    ? fs.readFileSync(threeEngineLifecyclePath, 'utf8')
+    : ''
+const threeSetup =
+    fs.readFileSync(threeSetupPath, 'utf8') +
+    '\n' +
+    threeEngineInitSrc +
+    '\n' +
+    threeEngineCoreSrc +
+    '\n' +
+    threeEngineLifecycleSrc
 // Post-W46-P2: scene graph construction (camera pose, clear alpha, tone mapping)
 // was extracted into renderer/scene-init.ts. Visual-polish assertions check both.
 const sceneInitPath = path.join(repoRoot, 'src', 'lib', 'engine', 'renderer', 'scene-init.ts')
@@ -101,7 +110,9 @@ assert(
     frameUpdates.includes("Pick<AppState, 'focusedNode' | 'trailDepth'>"),
     'updateSporeOpacity must read focusedNode so focus mode can be detected'
 )
-const sporeFocusBoostMatch = frameUpdates.match(/const focusBoost = isSemanticDive \? 0\.22 : isFocused \? ([\d.]+) : 1\.0/)
+const sporeFocusBoostMatch = frameUpdates.match(
+    /const focusBoost = isSemanticDive \? 0\.22 : isFocused \? ([\d.]+) : 1\.0/
+)
 assert(
     !!sporeFocusBoostMatch,
     'updateSporeOpacity focusBoost must keep the 3-branch semantic-dive / focus / overview ternary'
@@ -199,9 +210,7 @@ assert(
 // the legible hero node (>=0.9) nor fades the larger-dots channel below the
 // points halo (<0.6).
 const focusPocketMeshPath = path.join(repoRoot, 'src', 'lib', 'engine', 'focus-pocket-size-mesh.ts')
-const focusPocketMesh = fs.existsSync(focusPocketMeshPath)
-    ? fs.readFileSync(focusPocketMeshPath, 'utf8')
-    : ''
+const focusPocketMesh = fs.existsSync(focusPocketMeshPath) ? fs.readFileSync(focusPocketMeshPath, 'utf8') : ''
 assert(
     focusPocketMesh.includes('map: webglContext.focusBeaconTexture'),
     'focus-pocket twin PointsMaterial must use a soft map texture (webglContext.focusBeaconTexture) so enlarged points render as glow discs, not hard square quads'

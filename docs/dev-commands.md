@@ -69,6 +69,11 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
 
 ## Heavy 3d contract groups (3d-smoke / 3d-full)
 
+`npm run verify:3d-tests` is the browser-free admission check for every
+`tests/3d-*.spec.js` file. It rejects JavaScript parse errors, committed
+merge markers, and unresolved local relative imports; CI also runs Playwright collection with `--list`. It does not
+replace the resource-heavy `qa:3d` runtime battery.
+
 These WebGL suites are heavy: each spec cold-loads `?q=coffee&nodemo=1` (8,406-point scene + engine init) and can take 60–180s+ per test on a contended host.
 
 **Know before you run (2026-08-10, `59d5e444`/`789b06d6`):**
@@ -118,11 +123,12 @@ the `dist-svelte` artifact, and both the bundle-size and deploy jobs restore
 that same verified artifact instead of rebuilding a second copy.
 
 ## 3d battery — port-8796 coordination rule (2026-08-11)
+
 The playwright webServer binds 8796 (`reuseExistingServer` is env-gated via
-PLAYWRIGHT_REUSE_SERVER=1 — NOT default). Fleet test lanes (e.g. demo-poller-*,
+PLAYWRIGHT_REUSE_SERVER=1 — NOT default). Fleet test lanes (e.g. demo-poller-\*,
 journey audits) spawn their own webServer on 8796; running `qa:3d` while they're
 active collides ("already used"). Check BEFORE running:
-  netstat -ano | grep :8796  → LISTENING by node.exe = a fleet lane's live run
+netstat -ano | grep :8796 → LISTENING by node.exe = a fleet lane's live run
 Wait for the fleet's lane to finish (their webServer exits with their run) OR set
 PLAYWRIGHT_REUSE_SERVER=1 ONLY if you're certain the existing server serves a
 fresh dist. The `qa:3d:fresh` (build-first) variant remains the correctness gate.

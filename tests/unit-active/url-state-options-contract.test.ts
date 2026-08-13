@@ -27,13 +27,11 @@ describe('UrlStateOptions — exported options interface (S3 gap-test)', () => {
     it('is called without options in production paths (options optional)', () => {
         // applyUrlState() with no args must be callable per the interface
         // (all fields optional). Type-level: this must compile.
-        const callable = applyUrlState as (
-            options?: {
-                fromHistory?: boolean
-                historyState?: { params?: Record<string, string> }
-                force?: boolean
-            }
-        ) => Promise<void>
+        const callable = applyUrlState as (options?: {
+            fromHistory?: boolean
+            historyState?: { params?: Record<string, string> }
+            force?: boolean
+        }) => Promise<void>
         expect(typeof callable).toBe('function')
     })
 })

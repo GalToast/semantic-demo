@@ -28,21 +28,28 @@ console.log(
 )
 
 /**
- * Stale-8796 guard (2026-08-11). playwright.config.js uses reuseExistingServer:true,
- * so a stale holder on 8796 serves an inconsistent dist (raw .svelte.ts bundled in a
- * partially-updated build → runes crash at app.svelte.ts $state init). Warn + refuse
- * to run against a stale server; the user must stop the EXACT PID (never broad kills).
- * For automation, prefer TEST_BASE_URL pointing at a warm static server (the doc
- * recipe) which bypasses the owned-server entirely.
+ * Stale-8796 guard (2026-08-11). playwright.config.js defaults to
+ * reuseExistingServer=false, so an unexpected holder on 8796 causes the
+ * webServer command to fail fast. This pre-flight check warns early with
+ * the same actionable guidance. For automation, prefer TEST_BASE_URL pointing
+ * at a warm static server (the doc recipe) which bypasses the owned-server
+ * entirely. The explicit opt-in to reuse a known warm server is
+ * PLAYWRIGHT_REUSE_SERVER=1.
  */
 function checkStale8796() {
     if (env.TEST_BASE_URL) return // recipe path: explicit static server, no owned 8796
     try {
         const out = execSync('netstat -ano -p tcp | findstr :8796', { encoding: 'utf8', shell: true })
         if (/LISTENING/.test(out)) {
-            console.error(
-                '[qa:journey:headless] WARNING: 8796 already bound — Playwright skips build and may serve a STALE dist.'
-            )
+            if (env.PLAYWRIGHT_REUSE_SERVER === '1') {
+                console.error(
+                    '[qa:journey:headless] WARNING: 8796 already bound and PLAYWRIGHT_REUSE_SERVER=1 — an existing server may serve stale dist.'
+                )
+            } else {
+                console.error(
+                    '[qa:journey:headless] ERROR: 8796 already bound — the web-server command fails fast because the port is occupied.'
+                )
+            }
             console.error(
                 '  Stop the exact PID (never broad):  netstat -ano | findstr :8796 → taskkill /F /PID <pid>, then re-run.'
             )

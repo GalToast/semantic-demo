@@ -90,7 +90,6 @@ vi.mock('@lib/stores/navigation.svelte.ts', async (importOriginal) => {
         }
     }
 })
-
 vi.mock('@lib/state/app.svelte', () => ({
     appState: {
         // _restoreAnchorFromParams reads appState.points (for the record→index
@@ -314,5 +313,88 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
 
         // No additional SEARCH_FOCUS_REQUESTED should have fired for 42.
         expect(finalPublishCount).toBe(initialPublishCount)
+    }, 60000)
+
+    it('unsubscribes from semanticNeighborMap when a newer applyUrlState supersedes the restore', async () => {
+        mockState.urlSearch = '?anchor=42'
+        window.history.replaceState({}, '', '/?anchor=42')
+
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        const p1 = applyUrlState({})
+        await new Promise((r) => setTimeout(r, 0))
+
+        // Supersede with a second restore — this must abort the first restore's signal
+        // and tear down its deferred subscription.
+        mockState.urlSearch = '?anchor=99'
+        window.history.replaceState({}, '', '/?anchor=99')
+        const p2 = applyUrlState({})
+        await new Promise((r) => setTimeout(r, 0))
+
+        // Both promises settle cleanly.
+        await p1.catch(() => {})
+        await p2.catch(() => {})
+
+        // Track publishes specifically for anchor 42. The initial restore
+        // should have published once; after supersession, the deferred
+        // subscription must be gone, so loading threads for 42 must not
+        // produce a second publish.
+        const initialCountFor42 = mockState.publishCalls.filter(
+            (c) => c.type === 'search:search-focus-requested' && (c.payload as { index?: number })?.index === 42
+        ).length
+        expect(initialCountFor42).toBe(1)
+
+        semanticNeighborMapSet(new Map([['42', { neighbors: [{ leadId: '7', semanticScore: 0.9 }] }]]))
+
+        const deadline = Date.now() + 100
+        while (Date.now() < deadline) {
+            await new Promise((r) => setTimeout(r, 5))
+        }
+
+        expect(
+            mockState.publishCalls.filter(
+                (c) => c.type === 'search:search-focus-requested' && (c.payload as { index?: number })?.index === 42
+            ).length
+        ).toBe(initialCountFor42)
+    }, 60000)
+
+    it('unsubscribes from semanticNeighborMap when threads never load (bounded timeout cleanup)', async () => {
+        const timeoutCtrl = new AbortController()
+        vi.spyOn(AbortSignal, 'timeout').mockImplementation((_ms: number) => timeoutCtrl.signal)
+
+        mockState.urlSearch = '?anchor=42'
+        window.history.replaceState({}, '', '/?anchor=42')
+
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        const p = applyUrlState({})
+        await new Promise((r) => setTimeout(r, 0))
+
+        // Fire the never-load timeout — the subscription must be torn down.
+        timeoutCtrl.abort()
+        await new Promise((r) => setTimeout(r, 0))
+
+        await p.catch(() => {})
+
+        // Track publishes specifically for anchor 42. The initial restore
+        // should have published once; after the never-load timeout cleanup,
+        // loading threads for 42 must not produce a second publish.
+        const initialCountFor42 = mockState.publishCalls.filter(
+            (c) => c.type === 'search:search-focus-requested' && (c.payload as { index?: number })?.index === 42
+        ).length
+        expect(initialCountFor42).toBe(1)
+
+        semanticNeighborMapSet(new Map([['42', { neighbors: [{ leadId: '7', semanticScore: 0.9 }] }]]))
+
+        const deadline = Date.now() + 100
+        while (Date.now() < deadline) {
+            await new Promise((r) => setTimeout(r, 5))
+        }
+
+        expect(
+            mockState.publishCalls.filter(
+                (c) => c.type === 'search:search-focus-requested' && (c.payload as { index?: number })?.index === 42
+            ).length
+        ).toBe(initialCountFor42)
+
+        vi.restoreAllMocks()
     }, 60000)
 })

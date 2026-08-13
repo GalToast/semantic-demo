@@ -18,12 +18,12 @@ adb_sh() { "$ADB" -s "$SERIAL" shell "su -c '$1'"; }
 
 echo "== [1/4] install pi-model-providers extension =="
 if [ ! -d "$PKGDIR" ]; then
-  tar czf /tmp/pmpp.tgz -C "$HOME/.pi/agent/local-packages" pi-model-providers
-  "$ADB" -s "$SERIAL" push /tmp/pmpp.tgz /data/local/tmp/ >/dev/null
-  adb_sh "mkdir -p '$AGENT/local-packages' && cp /data/local/tmp/pmpp.tgz '$CHROOT/tmp/' && chroot '$CHROOT' /bin/sh -c 'set -e; export PATH=/usr/bin:/bin; cd /root/.pi/agent/local-packages && tar xzf /tmp/pmpp.tgz'"
-  rm -f /tmp/pmpp.tgz
+	tar czf /tmp/pmpp.tgz -C "$HOME/.pi/agent/local-packages" pi-model-providers
+	"$ADB" -s "$SERIAL" push /tmp/pmpp.tgz /data/local/tmp/ >/dev/null
+	adb_sh "mkdir -p '$AGENT/local-packages' && cp /data/local/tmp/pmpp.tgz '$CHROOT/tmp/' && chroot '$CHROOT' /bin/sh -c 'set -e; export PATH=/usr/bin:/bin; cd /root/.pi/agent/local-packages && tar xzf /tmp/pmpp.tgz'"
+	rm -f /tmp/pmpp.tgz
 else
-  echo "  (already present)"
+	echo "  (already present)"
 fi
 
 echo "== [2/4] fix settings.json packages path separator =="

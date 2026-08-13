@@ -13,7 +13,8 @@ const MODULE_DIR = dirname(fileURLToPath(import.meta.url))
 // Default cwd = repo root (two levels up from tools/goal-loop).
 const DEFAULT_CWD = dirname(dirname(MODULE_DIR))
 
-export const STATE_PATH = 'C:/Users/HP/.pi/agent/extensions/goal-state.json'
+export const STATE_PATH =
+    process.env.GOAL_STATE_PATH || process.env.PI_GOAL_STATE_PATH || 'C:/Users/HP/.pi/agent/extensions/goal-state.json'
 
 export function parseCondition(conditionStr) {
     const s = String(conditionStr || '').trim()

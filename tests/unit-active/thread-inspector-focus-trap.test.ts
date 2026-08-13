@@ -52,9 +52,13 @@ describe('PR-T3: ThreadInspector focus trap', () => {
         // The selectors are only active when panelSurface is one of
         // search/focus-search/focus/semantic-dive (the inspector
         // opens in those states). Verify the placement.
-        expect(src).toMatch(
-            /surface === ['"]focus['"][\s\S]{0,500}trapFocusIn\(\[[\s\S]{0,2000}\.thread-inspector[\s\S]{0,500}\]\)/
-        )
+        const branchStart = src.indexOf("surface === 'search'")
+        const trapStart = src.indexOf('trapFocusIn([', branchStart)
+        const trapEnd = src.indexOf('])', trapStart)
+        expect(branchStart).toBeGreaterThanOrEqual(0)
+        expect(trapStart).toBeGreaterThan(branchStart)
+        expect(trapEnd).toBeGreaterThan(trapStart)
+        expect(src.slice(trapStart, trapEnd)).toContain("'.thread-inspector'")
     })
 
     it('ThreadInspector captures the previously focused element on open', () => {

@@ -6,8 +6,16 @@
  *
  * Run: npx vitest run tests/unit-active/focus-trap-stack.test.ts
  */
-import { describe, it, expect, vi, afterEach } from 'vitest'
-import { setupFocusTrap, releaseFocusTrap, FOCUSABLE_SELECTORS } from '@lib/utils/focus-trap'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
+import {
+    setupFocusTrap,
+    releaseFocusTrap,
+    FOCUSABLE_SELECTORS,
+    getTrapStackDepth,
+    getActiveTrapSelectors,
+    isFocusTrapping
+} from '@lib/utils/focus-trap'
+import { evaluateSurfaceTrap } from '@lib/utils/focus-trap-bindings'
 
 describe('H-1: focus-trap.ts stack-based nested trap registry', () => {
     afterEach(() => {
@@ -111,6 +119,144 @@ describe('H-1: focus-trap.ts stack-based nested trap registry', () => {
 
         // Stack is now empty; extra release is safe
         expect(() => releaseFocusTrap()).not.toThrow()
+    })
+
+    // jsdom has no layout, so getBoundingClientRect returns zeros and the
+    // trap would treat every element as non-visible. Override it for the
+    // cycling / outside-focus tests so the visibility filter passes.
+    let _origRect: typeof Element.prototype.getBoundingClientRect
+    beforeEach(() => {
+        _origRect = Element.prototype.getBoundingClientRect
+        Element.prototype.getBoundingClientRect = function () {
+            return { width: 10, height: 10, top: 0, left: 0, right: 10, bottom: 10, x: 0, y: 0, toJSON() {} } as DOMRect
+        }
+    })
+    afterEach(() => {
+        Element.prototype.getBoundingClientRect = _origRect
+    })
+
+    function makeContainer(cls: string, childText: string): HTMLDivElement {
+        const c = document.createElement('div')
+        c.className = cls
+        const b = document.createElement('button')
+        b.textContent = childText
+        c.appendChild(b)
+        document.body.appendChild(c)
+        return c
+    }
+
+    it('cycles focus forward to the next element and wraps at the end', () => {
+        const a = makeContainer('cyc-a', 'a')
+        const b = makeContainer('cyc-b', 'b')
+        const btnA = a.querySelector('button')!
+        const btnB = b.querySelector('button')!
+        try {
+            setupFocusTrap(['.cyc-a', '.cyc-b'])
+            btnA.focus()
+            // Tab at last element wraps to first (handler intervenes).
+            btnB.focus()
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }))
+            expect(document.activeElement).toBe(btnA)
+        } finally {
+            releaseFocusTrap()
+            a.remove()
+            b.remove()
+        }
+    })
+
+    it('Shift+Tab from the first element wraps to the last', () => {
+        const a = makeContainer('cyc-a', 'a')
+        const b = makeContainer('cyc-b', 'b')
+        const btnA = a.querySelector('button')!
+        const btnB = b.querySelector('button')!
+        try {
+            setupFocusTrap(['.cyc-a', '.cyc-b'])
+            btnA.focus()
+            document.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true })
+            )
+            expect(document.activeElement).toBe(btnB)
+        } finally {
+            releaseFocusTrap()
+            a.remove()
+            b.remove()
+        }
+    })
+
+    it('detects focus outside the trap and pulls it back to the first element', () => {
+        // Outside-focus detection (audit finding): an element not inside any
+        // trap container must not be left stranded — Tab moves focus into the
+        // trap's first visible focusable.
+        const a = makeContainer('out-a', 'a')
+        const outside = document.createElement('button')
+        outside.id = 'outside-btn'
+        outside.textContent = 'outside'
+        document.body.appendChild(outside)
+        const btnA = a.querySelector('button')!
+        try {
+            setupFocusTrap(['.out-a'])
+            outside.focus()
+            expect(document.activeElement).toBe(outside) // precondition: outside trap
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }))
+            expect(document.activeElement).toBe(btnA) // pulled back inside
+        } finally {
+            releaseFocusTrap()
+            a.remove()
+            outside.remove()
+        }
+    })
+
+    it('duplicate activation of the same surface pushes exactly one layer (idempotent)', () => {
+        expect(getTrapStackDepth()).toBe(0)
+        evaluateSurfaceTrap('search')
+        expect(getTrapStackDepth()).toBe(1)
+        // Repeated observer re-assertions with the same active surface.
+        evaluateSurfaceTrap('search')
+        evaluateSurfaceTrap('search')
+        expect(getTrapStackDepth()).toBe(1)
+        // Variant switches among the four active surfaces share one selector set.
+        evaluateSurfaceTrap('focus-search')
+        evaluateSurfaceTrap('focus')
+        evaluateSurfaceTrap('semantic-dive')
+        expect(getTrapStackDepth()).toBe(1)
+        // Deactivation releases the single layer; re-activation pushes again.
+        evaluateSurfaceTrap('idle')
+        expect(getTrapStackDepth()).toBe(0)
+        evaluateSurfaceTrap('search')
+        expect(getTrapStackDepth()).toBe(1)
+        evaluateSurfaceTrap('idle')
+    })
+
+    it('setupFocusTrap is idempotent at the stack level (identical top layer)', () => {
+        setupFocusTrap(['.dup'])
+        expect(getTrapStackDepth()).toBe(1)
+        setupFocusTrap(['.dup'])
+        setupFocusTrap(['.dup'])
+        expect(getTrapStackDepth()).toBe(1)
+        // Reordered selectors are still the same set → deduped.
+        setupFocusTrap(['.dup'])
+        expect(getTrapStackDepth()).toBe(1)
+        releaseFocusTrap()
+        expect(getTrapStackDepth()).toBe(0)
+    })
+
+    it('different selector sets still nest (no over-dedupe)', () => {
+        setupFocusTrap(['.x'])
+        setupFocusTrap(['.y'])
+        expect(getTrapStackDepth()).toBe(2)
+        releaseFocusTrap()
+        releaseFocusTrap()
+    })
+
+    it('exposes active trap diagnostics', () => {
+        expect(getTrapStackDepth()).toBe(0)
+        expect(isFocusTrapping()).toBe(false)
+        expect(getActiveTrapSelectors()).toBeNull()
+        setupFocusTrap(['.diag-a', '.diag-b'])
+        expect(getTrapStackDepth()).toBe(1)
+        expect(isFocusTrapping()).toBe(true)
+        expect(getActiveTrapSelectors()).toEqual(['.diag-a', '.diag-b'])
+        releaseFocusTrap()
     })
 
     it('handleKeydown ignores Tab during IME composition (behavioral H-2 guard)', () => {

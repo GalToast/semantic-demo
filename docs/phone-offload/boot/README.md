@@ -5,7 +5,8 @@ The McLaren phone auto-restores the farm on boot automatically:
 them as u0_a246; both elevate via magisk su).
 
 Verified restore (each service killed, then the boot scripts rerun, all return):
-- sshd :8022  (key-auth; laptop ssh works)
+
+- sshd :8022 (key-auth; laptop ssh works)
 - key-router :8789 (cold start via chroot /etc/rc.local -> /opt/router/start.sh;
   takes ~10s on cold start — boot-router's 5s poll may print 0 but it IS up after)
 - git-daemon :9418 (LAN clones)
@@ -13,6 +14,7 @@ Verified restore (each service killed, then the boot scripts rerun, all return):
 - battery Doze exemption: com.termux whitelisted + RUN_IN_BACKGROUND allow
 
 ## Critical pitfall (fixed v3)
+
 `$HOME` is EMPTY inside `su -c` on Termux — never use `$HOME` for the bind
 source inside the mount command; hardcode /data/data/com.termux/files/home.
 v1/v2 silently bound the wrong dir (the phone home, not ~/repos) and claimed

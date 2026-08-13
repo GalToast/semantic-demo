@@ -13,12 +13,7 @@ import { getBypassAttr, type BypassAttrKey } from '@lib/orchestration/parity-att
  * returns null for a never-set key (mirrors body.dataset absence).
  */
 describe('getBypassAttr — runtime bypass snapshot reader (S3 gap-test)', () => {
-    const KEYS: BypassAttrKey[] = [
-        'focusPanelMode',
-        'insideWalkState',
-        'renderKind',
-        'mobileSearchSheet'
-    ]
+    const KEYS: BypassAttrKey[] = ['focusPanelMode', 'insideWalkState', 'renderKind', 'mobileSearchSheet']
 
     beforeEach(() => {
         // Clear body attrs so the observer (if installed by another test)

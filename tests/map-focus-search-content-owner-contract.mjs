@@ -287,7 +287,10 @@ function testFocusCardOwnsFocusOverlay() {
     const src = read(FOCUS_CARD)
 
     // FocusCard renders its own #selected-card for focus-stage positioning
-    assert(src.includes('id="focus-card-selected"'), 'FocusCard.svelte must render #focus-card-selected for focus-stage overlay')
+    assert(
+        src.includes('id="focus-card-selected"'),
+        'FocusCard.svelte must render #focus-card-selected for focus-stage overlay'
+    )
 
     // Must have focus-stage-specific positioning (fixed, bottom-right)
     assert(

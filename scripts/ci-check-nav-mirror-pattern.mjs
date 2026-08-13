@@ -3,8 +3,10 @@
  * ci-check-nav-mirror-pattern.mjs
  *
  * CI guard: ensures that direct mutations of `appState.navState.<field>`
- * (or `legacyState.navState.<field>`) only occur inside canonical mirror
- * helpers — not bare in arbitrary call-sites.
+ * (or `legacyState.navState.<field>`) — AND the flat compatibility alias
+ * door (`appState.currentView` / `semanticDiveMode` / `focusedNode` /
+ * `trailDepth`, which are setters that write into nested navState) — only
+ * occur inside canonical mirror helpers, never bare in arbitrary call-sites.
  *
  * Covers nav-state fields AND focus-pocket fields (`focusPocketIndices`,
  * `focusPocketRoleByIndex`, `focusPocketMeta`).
@@ -62,6 +64,13 @@ function isAllowlisted(absPath, line) {
 
 const DIRECT_NAV_MUTATION_RE = /\b(appState|legacyState)\.navState\.(\w+)\s*=(?!=)/
 
+// Alias-door pattern: flat compatibility aliases (currentView, semanticDiveMode,
+// focusedNode, trailDepth) are setters that write into nested navState WITHOUT
+// going through writeNavStateMirror — so they bypass the Svelte navStore mirror,
+// VIEW_CHANGED events, and the drift baseline. This is the "alias door" the
+// original guard could not see. It is now a first-class violation class.
+const ALIAS_DOOR_RE = /\b(appState|legacyState)\.(currentView|semanticDiveMode|focusedNode|trailDepth)\s*=(?!=|>)/
+
 function shouldScanFile(absPath) {
     return absPath.endsWith('.ts') || absPath.endsWith('.js') || absPath.endsWith('.svelte')
 }
@@ -80,7 +89,7 @@ function listSourceFiles(dir) {
     return files
 }
 
-/** @type {{file: string, line: number, field: string, text: string}[]} */
+/** @type {{file: string, line: number, field: string, kind: 'navState'|'aliasDoor', text: string}[]} */
 let matches = []
 
 for (const absFile of listSourceFiles(SRC_DIR)) {
@@ -106,16 +115,33 @@ for (const absFile of listSourceFiles(SRC_DIR)) {
         if (trimmed.startsWith('//')) return
 
         const mutationMatch = text.match(DIRECT_NAV_MUTATION_RE)
-        if (!mutationMatch) return
-        const receiver = mutationMatch[1]
-        if (receiver === 'appState' && !tracksAppState) return
-        if (receiver === 'legacyState' && !tracksLegacyState) return
-        matches.push({
-            file: relative(PROJECT_ROOT, absFile).replace(/\\/g, '/'),
-            line: index + 1,
-            field: mutationMatch[2],
-            text: text.trim()
-        })
+        if (mutationMatch) {
+            const receiver = mutationMatch[1]
+            if (receiver === 'appState' && !tracksAppState) return
+            if (receiver === 'legacyState' && !tracksLegacyState) return
+            matches.push({
+                file: relative(PROJECT_ROOT, absFile).replace(/\\/g, '/'),
+                line: index + 1,
+                field: mutationMatch[2],
+                kind: 'navState',
+                text: text.trim()
+            })
+        }
+
+        // Separate pass for the alias door (flat aliases that write navState).
+        const aliasMatch = text.match(ALIAS_DOOR_RE)
+        if (aliasMatch) {
+            const receiver = aliasMatch[1]
+            if (receiver === 'appState' && !tracksAppState) return
+            if (receiver === 'legacyState' && !tracksLegacyState) return
+            matches.push({
+                file: relative(PROJECT_ROOT, absFile).replace(/\\/g, '/'),
+                line: index + 1,
+                field: aliasMatch[2],
+                kind: 'aliasDoor',
+                text: text.trim()
+            })
+        }
     })
 }
 
@@ -138,7 +164,7 @@ for (const absFile of listSourceFiles(SRC_DIR)) {
  *   - _focusWritable.update(...) / withFocusNotify(...)
  *   - _searchWritable.update(...) / withSearchNotify(...)
  */
-function isInsideAllowedContext(absPath, line) {
+function isInsideAllowedContext(absPath, line, kind = 'navState') {
     let source
     try {
         source = readFileSync(absPath, 'utf-8')
@@ -153,45 +179,60 @@ function isInsideAllowedContext(absPath, line) {
     const contextEnd = Math.min(lines.length, line)
     const context = lines.slice(contextStart, contextEnd).join('\n')
 
-    // Check for writeNavStateMirror call (the entire assignment may be inside
-    // a withMutation block that's inside writeNavStateMirror)
-    if (/writeNavStateMirror\s*\(/.test(context)) return true
+    // Direct navState assignments may be part of the canonical mirror helpers.
+    // Alias-door assignments are different: merely calling a helper nearby
+    // does not make a separate flat-property write canonical. This distinction
+    // prevents a 30-line proximity window from hiding a real alias violation.
+    if (kind !== 'aliasDoor' && /writeNavStateMirror\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /writeFocusPocketMirror\s*\(/.test(context)) return true
 
-    // Check for writeFocusPocketMirror call (focus-pocket mirror helper)
-    if (/writeFocusPocketMirror\s*\(/.test(context)) return true
+    // navMirror.update() / navMirror.set() are the canonical nav store bridge
+    // (navigation-state.svelte.ts _applyNavUpdate / _createNavStore): the
+    // alias-door writes there keep the flat appState field in sync AFTER the
+    // canonical Object.assign(appState.navState, …) — the single legitimate
+    // alias-door usage, so it must not be flagged.
+    if (/navMirror\.update\s*\(/.test(context)) return true
+    if (/navMirror\.set\s*\(/.test(context)) return true
 
     // The withMutation no-op has been removed — direct property writes are
     // validated by the appState proxy (state-validation.validation.ts).
 
     // Check for _navWritable.update(...)
-    if (/_navWritable\.update\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /_navWritable\.update\s*\(/.test(context)) return true
 
     // Check for _journeyWritable.update(...) or withJourneyNotify(...)
-    if (/_journeyWritable\.update\s*\(/.test(context)) return true
-    if (/withJourneyNotify\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /_journeyWritable\.update\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /withJourneyNotify\s*\(/.test(context)) return true
 
     // Check for _focusWritable.update(...) or withFocusNotify(...)
-    if (/_focusWritable\.update\s*\(/.test(context)) return true
-    if (/withFocusNotify\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /_focusWritable\.update\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /withFocusNotify\s*\(/.test(context)) return true
 
     // Check for _searchWritable.update(...) or withSearchNotify(...)
-    if (/_searchWritable\.update\s*\(/.test(context)) return true
-    if (/withSearchNotify\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /_searchWritable\.update\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /withSearchNotify\s*\(/.test(context)) return true
 
     return false
 }
 
-/** @type {{file: string, line: number, field: string, text: string}[]} */
+/** @type {{file: string, line: number, field: string, kind: 'navState'|'aliasDoor', text: string}[]} */
 const violations = []
+/** @type {{file: string, line: number, field: string, kind: 'aliasDoor', text: string}[]} */
+const allowlistedAliasDoors = []
 
 for (const m of matches) {
     const absPath = resolve(PROJECT_ROOT, m.file)
 
-    // Skip allowlisted ranges
-    if (isAllowlisted(absPath, m.line)) continue
+    // Skip allowlisted ranges; remember alias-door sites so the success report
+    // can surface their (truthful, documented) residual risk instead of hiding
+    // them behind a falsely clean tree.
+    if (isAllowlisted(absPath, m.line)) {
+        if (m.kind === 'aliasDoor') allowlistedAliasDoors.push(m)
+        continue
+    }
 
     // Skip if inside an allowed syntactic context
-    if (isInsideAllowedContext(absPath, m.line)) continue
+    if (isInsideAllowedContext(absPath, m.line, m.kind)) continue
 
     violations.push(m)
 }
@@ -200,16 +241,29 @@ for (const m of matches) {
 // 4. Report
 // ---------------------------------------------------------------------------
 if (violations.length === 0) {
-    console.log('[nav-mirror-check] ✓ No direct navState mutations outside canonical helpers.')
+    console.log(
+        '[nav-mirror-check] ✓ No unpoliced navState mutations or alias-door writes outside canonical helpers.'
+    )
+    if (allowlistedAliasDoors.length > 0) {
+        console.log(
+            `[nav-mirror-check] ℹ ${allowlistedAliasDoors.length} alias-door site(s) accounted for via allowlist (documented residual risk):`
+        )
+        for (const a of allowlistedAliasDoors) {
+            console.log(`    ${a.file}:${a.line}  aliasDoor.${a.field}`)
+        }
+    }
     process.exit(0)
 }
 
 console.log(`[nav-mirror-check] ✗ Found ${violations.length} violation(s):\n`)
 for (const v of violations) {
-    console.log(`  ${v.file}:${v.line}  navState.${v.field}`)
+    const label = v.kind === 'aliasDoor' ? `aliasDoor.${v.field}` : `navState.${v.field}`
+    console.log(`  ${v.file}:${v.line}  ${label}`)
     console.log(`    ${v.text}`)
     console.log()
 }
-console.log('[nav-mirror-check] These mutations should be moved inside writeNavStateMirror().')
+console.log(
+    '[nav-mirror-check] navState.* mutations and alias-door writes (currentView, semanticDiveMode, focusedNode, trailDepth) must go through writeNavStateMirror() / the canonical helpers.'
+)
 
 process.exit(1)

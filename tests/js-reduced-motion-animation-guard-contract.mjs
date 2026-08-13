@@ -190,7 +190,10 @@ console.log('\n[RUNTIME] Reduced-motion animation guard behavioral tests')
     }
     const { prefersReducedMotion } = await import('@lib/utils/environment')
     const result = prefersReducedMotion()
-    runtimeAssert(result === true, `prefersReducedMotion() returns true when OS prefers reduced motion (got: ${result})`)
+    runtimeAssert(
+        result === true,
+        `prefersReducedMotion() returns true when OS prefers reduced motion (got: ${result})`
+    )
 }
 
 // --- R3: prefersReducedMotion with mock matchMedia (reduce: no) ---
@@ -206,7 +209,10 @@ console.log('\n[RUNTIME] Reduced-motion animation guard behavioral tests')
     }
     const { prefersReducedMotion } = await import('@lib/utils/environment')
     const result = prefersReducedMotion()
-    runtimeAssert(result === false, `MQL cache rebuild: prefersReducedMotion() returns false after matchMedia swap (got: ${result})`)
+    runtimeAssert(
+        result === false,
+        `MQL cache rebuild: prefersReducedMotion() returns false after matchMedia swap (got: ${result})`
+    )
 }
 
 // --- R4: prefersReducedMotion canonical API surface ---
@@ -249,7 +255,10 @@ console.log('\n[RUNTIME] Reduced-motion animation guard behavioral tests')
 // --- R7: triggerSearchCorridorAnimation importable (corridor uTime guard anchor) ---
 {
     const mod = await import('@lib/engine/three-search-animations')
-    runtimeAssert(typeof mod.triggerSearchCorridorAnimation === 'function', 'triggerSearchCorridorAnimation is exported')
+    runtimeAssert(
+        typeof mod.triggerSearchCorridorAnimation === 'function',
+        'triggerSearchCorridorAnimation is exported'
+    )
     runtimeAssert(typeof mod.updateSearchCorridorAnimation === 'function', 'updateSearchCorridorAnimation is exported')
 }
 

@@ -17,26 +17,26 @@ const mockAppStateHolder = vi.hoisted(() => ({
             currentSearchSummary: null as null | {
                 query: string
                 resultIndices: number[]
-            },
+            }
         },
-        navState: { focusedIndex: null as number | null },
-    },
+        navState: { focusedIndex: null as number | null }
+    }
 }))
 
 vi.mock('@lib/state/app.svelte.ts', () => ({
-    appState: mockAppStateHolder.appState,
+    appState: mockAppStateHolder.appState
 }))
 
 // test-compat.svelte may or may not be importable in this env; if the import
 // throws it is caught inside getSearchSummary, so the module itself must load.
 vi.mock('@lib/stores/test-compat.svelte', () => ({
-    testCompatStore: () => ({ searchState: undefined }),
+    testCompatStore: () => ({ searchState: undefined })
 }))
 
 import {
     requestSearchInputFocus,
     consumeSearchInputFocusIntent,
-    getSearchSummary,
+    getSearchSummary
 } from '@lib/stores/search-react-selectors'
 
 beforeEach(() => {
@@ -82,7 +82,7 @@ describe('getSearchSummary (fallback contract)', () => {
         mockAppStateHolder.appState.searchState.currentSearchSummary = {
             id: 's1',
             query: 'coffee',
-            resultIndices: [1, 2],
+            resultIndices: [1, 2]
         }
         expect(getSearchSummary()?.query).toBe('coffee')
     })

@@ -462,7 +462,7 @@ test.describe('3D thread orchestration quality', () => {
             }
             return { targetIndex: targetIndex ?? 0 }
         })
-        await p.evaluate(({ idx }) => focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }), {
+        await p.evaluate(({ idx }) => window.__navActions__?.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }), {
             idx: focusResult.targetIndex
         })
         await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 })
@@ -550,14 +550,14 @@ test.describe('3D thread orchestration quality', () => {
                 }
             }
             if (targetIndex === null) targetIndex = 0
-            focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true })
-            setTrailDepth?.(1, { skipUrlSync: true })
+            window.__navActions__?.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true })
+            window.__navActions__?.setTrailDepth?.(1, { skipUrlSync: true })
         })
         await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 })
         await p.waitForTimeout(400)
 
         await p.evaluate(() => {
-            setTrailDepth?.(2, { fromUserGesture: true })
+            window.__navActions__?.setTrailDepth?.(2, { fromUserGesture: true })
         })
         // Wait for trailDepth=2 to actually settle (not just a fixed timeout)
         await p.waitForFunction(() => window.__TEST_STATE__?.trailDepth === 2, { timeout: 6000 }).catch(() => {})
@@ -739,7 +739,7 @@ test.describe('3D thread orchestration quality', () => {
             }
             return { targetIndex: 0 }
         })
-        await p.evaluate(({ idx }) => focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }), {
+        await p.evaluate(({ idx }) => window.__navActions__?.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }), {
             idx: focusResult.targetIndex
         })
         await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 })

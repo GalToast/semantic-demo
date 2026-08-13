@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { BASE_URL, probe, isValidNodeIndex } from './helpers/3d-interaction-helpers.js'
+import { assertNoUnexpected3dRuntimeErrors, capture3dRuntimeErrors } from './helpers/3d-runtime-errors.js'
 
 const HEALTH_OK = {
     ok: true,
@@ -15,6 +16,7 @@ async function openTouchPage(browser, viewport) {
         deviceScaleFactor: 2
     })
     const page = await context.newPage()
+    const runtimeCapture = capture3dRuntimeErrors(page)
     await page.route('**/api.php?action=semantic_lane_health**', (route) =>
         route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(HEALTH_OK) })
     )
@@ -47,7 +49,7 @@ async function openTouchPage(browser, viewport) {
         { timeout: 20000 }
     )
     // preceding waitForFunction handles settlement
-    return { page, context }
+    return { page, context, runtimeCapture }
 }
 
 async function projectedTouchTargets(page) {
@@ -130,15 +132,18 @@ test.describe('3D touch parity', () => {
         test.setTimeout(70000)
         let page
         let context
+        let runtimeCapture
         try {
-            ;({ page, context } = await openTouchPage(browser, { width: 390, height: 844 }))
+            ;({ page, context, runtimeCapture } = await openTouchPage(browser, { width: 390, height: 844 }))
             const { after } = await tapFirstValidTarget(page)
             expect(after.navMode, 'touch node tap should enter focus mode').toBe('focus')
             expect(
                 after.lastCanvasNodeFocusPick || after.lastCanvasNodePick,
                 'touch tap should record canvas pick evidence'
             ).not.toBeNull()
+            assertNoUnexpected3dRuntimeErrors(expect, runtimeCapture, test.info().title)
         } finally {
+            runtimeCapture?.detach()
             if (context) await context.close().catch(() => {})
         }
     })
@@ -147,8 +152,9 @@ test.describe('3D touch parity', () => {
         test.setTimeout(70000)
         let page
         let context
+        let runtimeCapture
         try {
-            ;({ page, context } = await openTouchPage(browser, { width: 844, height: 390 }))
+            ;({ page, context, runtimeCapture } = await openTouchPage(browser, { width: 844, height: 390 }))
             const { target } = await tapFirstValidTarget(page)
 
             await page.touchscreen.tap(Math.max(12, target.screenX - 160), Math.max(12, target.screenY - 90))
@@ -160,7 +166,9 @@ test.describe('3D touch parity', () => {
             const nullOrValid =
                 afterAwayTap.focusedNode === null || isValidNodeIndex(afterAwayTap.focusedNode, afterAwayTap.pointCount)
             expect(nullOrValid, 'tap away must leave focusedNode null or valid').toBe(true)
+            assertNoUnexpected3dRuntimeErrors(expect, runtimeCapture, test.info().title)
         } finally {
+            runtimeCapture?.detach()
             if (context) await context.close().catch(() => {})
         }
     })

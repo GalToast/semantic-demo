@@ -293,14 +293,16 @@ and N2 ×1 settled without deliverables even at level 1 — nested trees must no
 lower settle rate. Verdict standard stays: verify by disk-file + git log, not worker exit.
 
 ## Landmine classes — spec/test hygiene (consolidated 2026-08-11)
+
 Six failure classes this session cost the most debugging time. Each: class | symptom | prevention.
+
 1. **Phantom functions** (72-test regression, 5a8bde32): migration left CALL SITES while the
    DEFINITION was lost (demo abortDemoLifecycle/resetDemoLifecycle; never in git history —
    JS throws only when the caller runs). Prevention: after a migration, grep for
    called-but-never-defined identifiers (bare `name(` where `name` has no def + no import).
 2. **Spec-level @lib imports** (the 3d battery's real blocker, afc81073): specs importing
    `@lib/*.svelte.ts` at TOP-LEVEL crash the Node runner at LOAD (raw $state, no Svelte
-   transform). Prevention: specs drive the browser bridge (window.__navActions__) + load
+   transform). Prevention: specs drive the browser bridge (window.**navActions**) + load
    /dist/svelte/index.html — never import app source.
 3. **Full-mocks leaking into shared graphs** (2119c117): a full `vi.mock('@lib/utils/env')`
    (no importOriginal-spread) dropped exports other suites' transitive imports needed →
@@ -308,7 +310,7 @@ Six failure classes this session cost the most debugging time. Each: class | sym
    widely-imported modules; per-file isolation doesn't shield shared leaves.
 4. **Parallel-convergence** (×3: dead-re-exports, camera-poll, search): the fleet commits a
    byte-identical fix; re-applying wastes time + orphans. Prevention: `git merge-base
-   --is-ancestor <mine> HEAD` + `git diff <mine> HEAD -- <file>` before re-committing.
+--is-ancestor <mine> HEAD` + `git diff <mine> HEAD -- <file>` before re-committing.
 5. **Audit-staleness** (5 instances: F1/F2/F3/M3/O1): lane audits written against an earlier
    tree — their claims (identity-cache works, double-snapshot, zero-consumers, deps-free)
    failed live verification. Prevention: re-verify every audit claim against the CURRENT

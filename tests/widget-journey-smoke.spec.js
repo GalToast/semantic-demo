@@ -196,7 +196,7 @@ test.describe('Journey smoke (no WebGL engine)', () => {
 
         // Click through the splash so engineReady fires and the help dialog
         // can auto-open (HelpDialog.svelte:128-145 $effect on engineReady).
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 

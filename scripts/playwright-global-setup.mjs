@@ -3,10 +3,10 @@
  *
  * Opt-in strict-freshness guard for Playwright runs.
  *
- * Why this exists: the dev webServer (playwright.config.js) uses
- * `reuseExistingServer: true`, which SKIPS `npm run build` when port 8796 is
- * already bound. That means a stale dist (e.g. missing a CSS file after a
- * source change) can be served to tests, producing cryptic failures. The 5o
+ * Why this exists: the dev webServer (playwright.config.js) defaults to
+ * `reuseExistingServer: false`. When explicitly opted in via
+ * `PLAYWRIGHT_REUSE_SERVER=1`, Playwright reuses an existing server on 8796
+ * and SKIPS `npm run build`, which can serve stale dist. The 5o
  * keyboard-hint-panel z-index regression was exactly this: a stale dist
  * missing mobile_base.css let #info-panel eat #btn-replay-tour clicks.
  *

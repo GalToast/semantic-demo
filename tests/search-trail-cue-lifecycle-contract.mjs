@@ -37,7 +37,7 @@ console.log('\n[TEST 2] setSearchStatus(searching) advances the cue to the query
 assertContains(
     storeSrc,
     "updateSearchTrailCue({ stage: 'query' })",
-    'setSearchStatus must call updateSearchTrailCue({ stage: \'query\' }) when searching'
+    "setSearchStatus must call updateSearchTrailCue({ stage: 'query' }) when searching"
 )
 console.log('  PASS')
 
@@ -53,7 +53,7 @@ console.log('\n[TEST 4] setSearchError advances the cue to the empty stage')
 assertContains(
     storeSrc,
     "updateSearchTrailCue({ stage: 'empty' })",
-    'setSearchError must call updateSearchTrailCue({ stage: \'empty\' })'
+    "setSearchError must call updateSearchTrailCue({ stage: 'empty' })"
 )
 console.log('  PASS')
 
@@ -61,7 +61,7 @@ console.log('\n[TEST 5] clearSearch hides the cue')
 assertContains(
     storeSrc,
     "updateSearchTrailCue({ beat: 'idle' })",
-    'clearSearch must call updateSearchTrailCue({ beat: \'idle\' })'
+    "clearSearch must call updateSearchTrailCue({ beat: 'idle' })"
 )
 console.log('  PASS')
 
@@ -81,19 +81,28 @@ if (!globalThis.document) {
                     hidden: true,
                     classList: {
                         _classes: [],
-                        add(c) { if (!this._classes.includes(c)) this._classes.push(c) },
-                        remove(c) { this._classes = this._classes.filter(x => x !== c) },
-                        contains(c) { return this._classes.includes(c) },
+                        add(c) {
+                            if (!this._classes.includes(c)) this._classes.push(c)
+                        },
+                        remove(c) {
+                            this._classes = this._classes.filter((x) => x !== c)
+                        },
+                        contains(c) {
+                            return this._classes.includes(c)
+                        },
                         toggle(c, v) {
-                            if (v) { if (!this._classes.includes(c)) this._classes.push(c) }
-                            else { this._classes = this._classes.filter(x => x !== c) }
+                            if (v) {
+                                if (!this._classes.includes(c)) this._classes.push(c)
+                            } else {
+                                this._classes = this._classes.filter((x) => x !== c)
+                            }
                             return this._classes.includes(c)
                         }
                     },
                     querySelectorAll(sel) {
                         // Return fake step elements for the cue stages
                         if (sel === '.search-trail-cue-step') {
-                            return ['query', 'anchor', 'explore'].map(stage => ({
+                            return ['query', 'anchor', 'explore'].map((stage) => ({
                                 dataset: { cueStage: stage },
                                 classList: {
                                     _active: false,

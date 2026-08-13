@@ -46,7 +46,10 @@ describe('W47-Bite-Continued / semantic-overlay material + callback typing', () 
     // semantic-overlay-material.ts sibling; refresh/typing asserts on the
     // parent stay on semantic-overlay.ts.
     it('any count is reduced from 33 baseline to 0 (post-W48-Phase-3 baseline)', () => {
-        const source = readSource('src/lib/journey/semantic-overlay.ts') + '\n' + readSource('src/lib/journey/semantic-overlay-material.ts')
+        const source =
+            readSource('src/lib/journey/semantic-overlay.ts') +
+            '\n' +
+            readSource('src/lib/journey/semantic-overlay-material.ts')
         const count = countAnyOccurrences(source)
         expect(count, `overlay files have ${count} any occurrences (lock-in target 0)`).toBe(0)
     })
@@ -74,7 +77,10 @@ describe('W47-Bite-Continued / semantic-overlay material + callback typing', () 
         const body = buildFn![0]
         // 4 uniform copies to shader.uniforms.X use `!` after removal of `as any`
         const nonNullAsserts = body.match(/lineMaterial\.uniforms\.\w+!/g) || []
-        expect(nonNullAsserts.length, `expected ≥4 non-null assertions, got ${nonNullAsserts.length}`).toBeGreaterThanOrEqual(4)
+        expect(
+            nonNullAsserts.length,
+            `expected ≥4 non-null assertions, got ${nonNullAsserts.length}`
+        ).toBeGreaterThanOrEqual(4)
     })
 
     it('(candidate: any) callbacks are all replaced with typed ThreadCandidate/ThreadCandidateRef callbacks', () => {
@@ -88,7 +94,10 @@ describe('W47-Bite-Continued / semantic-overlay material + callback typing', () 
         expect(source).toMatch(/import\s+type\s*\{[^}]*\bThreadCandidate(Ref)?\b[^}]*\}\s+from\s+['"][^'"]+['"]/)
         // At least 3 typed callbacks must be present (ThreadCandidate or ThreadCandidateRef)
         const typedCallbacks = source.match(/\(candidate:\s*(ThreadCandidate|ThreadCandidateRef)\)/g) || []
-        expect(typedCallbacks.length, `expected ≥3 typed candidate callbacks, got ${typedCallbacks.length}`).toBeGreaterThanOrEqual(3)
+        expect(
+            typedCallbacks.length,
+            `expected ≥3 typed candidate callbacks, got ${typedCallbacks.length}`
+        ).toBeGreaterThanOrEqual(3)
     })
 
     it('(edge: any) callback in pairs.forEach is tightened (structural type or inferred)', () => {
@@ -97,7 +106,10 @@ describe('W47-Bite-Continued / semantic-overlay material + callback typing', () 
         // Either inline structural type, inferred from pairs Array<{...}>, or _edge prefix.
         // W48-Phase-3 uses `pairs.forEach((edge) => ...)` with `pairs` cast to Array<{...}>
         // — the inferred type satisfies the structural-intent.
-        const hasInlineStructural = /\(edge:\s*\{\s*t0:\s*number;\s*t1:\s*number;\s*cue:\s*number;\s*a:\s*number;\s*b:\s*number;\s*layer:\s*number/.test(source)
+        const hasInlineStructural =
+            /\(edge:\s*\{\s*t0:\s*number;\s*t1:\s*number;\s*cue:\s*number;\s*a:\s*number;\s*b:\s*number;\s*layer:\s*number/.test(
+                source
+            )
         const hasTypedArrayCast = /pairs[^\n]*as\s+Array\s*<\s*\{/.test(source)
         expect(hasInlineStructural || hasTypedArrayCast, 'pairs.forEach must use typed edge').toBe(true)
     })

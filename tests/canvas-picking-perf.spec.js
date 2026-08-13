@@ -14,7 +14,7 @@ test('canvas renders mycelium points after picking perf fix', async ({ page }) =
     await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
     // Splash gate: click "Enter 3D scene" if visible
-    const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+    const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
     if ((await explore.count()) > 0) {
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()

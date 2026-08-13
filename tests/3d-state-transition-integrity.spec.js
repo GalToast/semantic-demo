@@ -395,7 +395,7 @@ test.describe('3D semantic state transition integrity', () => {
             await mapBtn.click()
         } else {
             await page.evaluate(() => {
-                switchView?.('map')
+                window.__navActions__?.switchView?.('map')
             })
         }
 
@@ -592,7 +592,7 @@ test.describe('3D semantic state transition integrity', () => {
             await mapBtn.click()
         } else {
             await page.evaluate(() => {
-                switchView?.('map')
+                window.__navActions__?.switchView?.('map')
             })
         }
         await page.waitForFunction(() => window.__TEST_STATE__?.currentView === 'map', { timeout: 15000 })
@@ -673,7 +673,7 @@ test.describe('3D semantic state transition integrity', () => {
 
         // Step 5: map trail
         await page.evaluate(() => {
-            switchView?.('map')
+            window.__navActions__?.switchView?.('map')
         })
         await page.waitForFunction(() => window.__TEST_STATE__?.currentView === 'map', { timeout: 15000 })
         await page

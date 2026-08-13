@@ -27,6 +27,8 @@ const mocks = vi.hoisted(() => {
         cancelSearch: vi.fn(),
         setSearchStatus: vi.fn(),
         setSearchQuery: vi.fn(),
+        clearSearch: vi.fn(),
+        resetFocus: vi.fn(),
         dispatchNavTransition: vi.fn(),
         publish: vi.fn(),
         showExperienceToast: vi.fn(),
@@ -52,7 +54,8 @@ const mocks = vi.hoisted(() => {
 vi.mock('@lib/stores/search.svelte', () => ({
     runSearch: mocks.runSearch,
     setSearchStatus: mocks.setSearchStatus,
-    setSearchQuery: mocks.setSearchQuery
+    setSearchQuery: mocks.setSearchQuery,
+    clearSearch: mocks.clearSearch
 }))
 
 vi.mock('@lib/search/search-abort', async (importOriginal) => {
@@ -67,7 +70,8 @@ vi.mock('@lib/stores/navigation.svelte.ts', () => ({
     dispatchNavTransition: mocks.dispatchNavTransition,
     NAV_TRANSITION_ACTIONS: {
         SET_SURFACE: 'SET_SURFACE',
-        RETURN_OVERVIEW: 'RETURN_OVERVIEW'
+        RETURN_OVERVIEW: 'RETURN_OVERVIEW',
+        RESET_FOCUS: 'RESET_FOCUS'
     },
     // navStore: callable store-shaped read (navStore() or get(navStore))
     // with a minimal subscribe for svelte/store.get(). Default view is
@@ -83,6 +87,10 @@ vi.mock('@lib/orchestration/event-bus', () => ({
 
 vi.mock('@lib/orchestration/toast', () => ({
     showExperienceToast: mocks.showExperienceToast
+}))
+
+vi.mock('@lib/stores/focus.svelte', () => ({
+    resetFocus: mocks.resetFocus
 }))
 
 vi.mock('@lib/focus/focus-coordinator', () => ({
@@ -211,9 +219,22 @@ describe('SearchDispatch', () => {
         expect(mocks.showExperienceToast).not.toHaveBeenCalled()
     })
 
-    it('clearQuery cancels debounce and resets status', () => {
+    it('clearQuery stays in the search surface (does not return to overview)', () => {
         dispatch.clearQuery()
+        // Wipes stale results + status so the panel doesn't keep showing the
+        // previous query's rows once the input is blank.
+        expect(mocks.clearSearch).toHaveBeenCalledTimes(1)
         expect(mocks.setSearchStatus).toHaveBeenCalledWith('idle')
+        // Drops any auto-focused result that would strand the body in
+        // focus-search and hide/inert the search input.
+        expect(mocks.resetFocus).toHaveBeenCalledTimes(1)
+        expect(mocks.dispatchNavTransition).toHaveBeenCalledWith('RESET_FOCUS')
+        // Pins the surface back to 'search' so the user stays in the search
+        // surface ready to type a new query.
+        expect(mocks.dispatchNavTransition).toHaveBeenCalledWith('SET_SURFACE', { surface: 'search' })
+        // Must NOT teleport the user back to the galaxy/overview — that is the
+        // explicit exit affordance (back button → clear()).
+        expect(mocks.dispatchNavTransition).not.toHaveBeenCalledWith('RETURN_OVERVIEW')
     })
 
     it('clear returns to overview', () => {

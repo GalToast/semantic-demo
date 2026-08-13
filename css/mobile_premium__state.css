@@ -217,6 +217,25 @@
         padding: 8px;
     }
 
+    /* A populated peek needs room for its complete interaction: the result
+       count, one anchor card, and the 44px Show-more control. The old fixed
+       72px viewport only fit the card, leaving the control below the fixed
+       sheet and making it discoverable only through an accidental scroll. */
+    body.surface-search[data-panel-surface-detail='peek'] #info-panel.info-panel:has(#search-results.active) {
+        height: min(286px, max(218px, calc(100dvh - 90px)));
+        min-height: min(286px, max(218px, calc(100dvh - 90px)));
+        max-height: min(286px, max(218px, calc(100dvh - 90px)));
+    }
+
+    body.surface-search[data-panel-surface-detail='peek'] .search-container.has-query #search-results.active {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
+    }
+
     /* The peek result viewport is intentionally compact. The global loading
        card is sized for the full search sheet, so its 48px padding and 20px
        margins otherwise expand past the fixed info-panel and clip the page. */
@@ -870,6 +889,62 @@
         visibility: hidden;
         pointer-events: none;
     }
+
+    /* A short landscape viewport can keep detail="none" while the query is
+       already rendered. Key the sheet expansion to the actual query subtree
+       so the late desktop/mobile cascade cannot collapse the result area. */
+    body.surface-search #info-panel.info-panel:has(.search-container.has-query) {
+        top: auto;
+        bottom: max(10px, env(safe-area-inset-bottom, 0px));
+        height: min(var(--landscape-search-panel-height), calc(100dvh - 80px));
+        min-height: min(var(--landscape-search-panel-height), calc(100dvh - 80px));
+        max-height: min(var(--landscape-search-panel-height), calc(100dvh - 80px));
+    }
+
+    body.surface-search #info-panel.info-panel:has(.search-container.has-query) .info-content {
+        flex: 1 1 auto;
+        height: 100%;
+        min-height: 0;
+        max-height: none;
+        overflow: hidden;
+    }
+
+    body.surface-search .search-container.has-query {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    body.surface-search .search-container.has-query #search-results.active {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
+    }
+
+    /* Keep one complete anchor card visible above the sticky footer. The
+       landscape search-card minimum is sized for a taller viewport and leaves
+       its 44px footer painting over the card in a 390px viewport. */
+    body.surface-search .search-container.has-query .search-result-item {
+        min-height: 52px;
+        padding: 7px 9px;
+    }
+
+    body.surface-search .search-container.has-query .search-result-name {
+        font-size: 12px;
+        line-height: 1.1;
+    }
+
+    body.surface-search .search-container.has-query .search-result-what,
+    body.surface-search .search-container.has-query .search-result-bar {
+        display: none;
+    }
+
+    body.surface-search .search-container.has-query .search-show-more-btn {
+        margin-top: 4px;
+    }
 }
 /* Part of the mobile_premium cascade — see mobile_premium__components.css for the cascade header. */
 
@@ -1198,10 +1273,12 @@
         )
         .journey-compass-action.primary[data-journey-action='enter-inside'],
     body.surface-focus-search .journey-compass-action.primary[data-journey-action='open-map'] {
-        width: 48px;
-        min-width: 48px;
-        max-width: 48px;
-        flex: 0 0 48px;
+        /* Keep the compact action readable; "Step Inside" needs more than
+           the 48px touch floor once the label is rendered as text. */
+        width: 64px;
+        min-width: 64px;
+        max-width: 64px;
+        flex: 0 0 64px;
         height: 44px;
         min-height: 44px;
         padding: 0 8px;
@@ -2448,4 +2525,3 @@ body[data-panel-surface='focus-search'] #selected-name {
     font-weight: 450;
     letter-spacing: 0.01em;
 }
-

@@ -399,9 +399,18 @@ describe('computeParityAttributes IIFE derivations', () => {
 
             it('returns "semantic-dive" when semanticDiveMode is true', () => {
                 _nav.surface = 'idle'
+                _nav.focusedIndex = 42
                 _focus.semanticDiveMode = true
                 const result = computeParityAttributes()
                 expect(result.panelSurfaceMode).toBe('semantic-dive')
+            })
+
+            it('returns "idle" when a stale semanticDiveMode flag has no focus', () => {
+                _nav.surface = 'idle'
+                _focus.semanticDiveMode = true
+                const result = computeParityAttributes()
+                expect(result.panelSurfaceMode).toBe('idle')
+                expect(result.semanticDive).toBe('inactive')
             })
 
             it('returns "semantic-dive" over stale focus-search surface when semanticDiveMode is true', () => {

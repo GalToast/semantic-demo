@@ -32,7 +32,7 @@ import assert from 'node:assert/strict'
 
 const root = process.cwd()
 
-const SEARCH_STORE_PATH = path.join(root, 'src', 'lib', 'stores', 'search.svelte.ts')
+const SEARCH_STORE_PATH = path.join(root, 'src', 'lib', 'stores', 'search-core.ts')
 const SEARCH_RESULT_ITEM_PATH = path.join(root, 'src', 'components', 'SearchResultItem.svelte')
 const LOCAL_SEARCH_INDEX_PATH = path.join(root, 'src', 'lib', 'search', 'local-search-index.ts')
 
@@ -49,7 +49,7 @@ const localIndexSrc = fs.readFileSync(LOCAL_SEARCH_INDEX_PATH, 'utf8')
 // and looks up each result's score by index.
 
 const fnBodyStart = searchSrc.indexOf('function buildSearchResultsFromIndices')
-assert(fnBodyStart !== -1, 'buildSearchResultsFromIndices must exist in search.svelte.ts')
+assert(fnBodyStart !== -1, 'buildSearchResultsFromIndices must exist in search-core.ts')
 
 const fnBodyEnd = searchSrc.indexOf('\n/** Build a fresh SearchStoreState', fnBodyStart)
 assert(fnBodyEnd !== -1, 'Could not find end of buildSearchResultsFromIndices function')

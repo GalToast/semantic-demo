@@ -62,9 +62,12 @@ function cleanupFixture(dir) {
 // ---------------------------------------------------------------------------
 
 const DIRECT_NAV_MUTATION_RE = /\b(appState|legacyState)\.navState\.(\w+)\s*=(?!=)/
+// Mirror of the script's alias-door pattern (currentView/semanticDiveMode/
+// focusedNode/trailDepth flat aliases that write nested navState).
+const ALIAS_DOOR_RE = /\b(appState|legacyState)\.(currentView|semanticDiveMode|focusedNode|trailDepth)\s*=(?!=|>)/
 
 /** Re-implementation of the script's isInsideAllowedContext(). */
-function isInsideAllowedContext(absPath, line) {
+function isInsideAllowedContext(absPath, line, kind = 'navState') {
     let source
     try {
         source = readFileSync(absPath, 'utf-8')
@@ -76,17 +79,19 @@ function isInsideAllowedContext(absPath, line) {
     const contextEnd = Math.min(lines.length, line)
     const context = lines.slice(contextStart, contextEnd).join('\n')
 
-    if (/writeNavStateMirror\s*\(/.test(context)) return true
-    if (/writeFocusPocketMirror\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /writeNavStateMirror\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /writeFocusPocketMirror\s*\(/.test(context)) return true
+    if (/navMirror\.update\s*\(/.test(context)) return true
+    if (/navMirror\.set\s*\(/.test(context)) return true
     // The withMutation no-op has been removed — direct property writes are
     // validated by the appState proxy (state-validation.validation.ts).
-    if (/_navWritable\.update\s*\(/.test(context)) return true
-    if (/_journeyWritable\.update\s*\(/.test(context)) return true
-    if (/withJourneyNotify\s*\(/.test(context)) return true
-    if (/_focusWritable\.update\s*\(/.test(context)) return true
-    if (/withFocusNotify\s*\(/.test(context)) return true
-    if (/_searchWritable\.update\s*\(/.test(context)) return true
-    if (/withSearchNotify\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /_navWritable\.update\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /_journeyWritable\.update\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /withJourneyNotify\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /_focusWritable\.update\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /withFocusNotify\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /_searchWritable\.update\s*\(/.test(context)) return true
+    if (kind !== 'aliasDoor' && /withSearchNotify\s*\(/.test(context)) return true
     return false
 }
 
@@ -265,6 +270,79 @@ export function doLegacyBad() {
             expect(stdout).toContain('legacy-violation.svelte.ts')
             expect(stdout).toContain('navState.mode')
         })
+
+        // ── 6. Alias-door: bare currentView write is flagged ─────────────
+
+        it('exits 1 and reports bare appState.currentView alias-door writes', () => {
+            const dir = createFixtureDir()
+            dirsToClean.push(dir)
+
+            writeFixture(
+                dir,
+                'alias-door-violation.svelte.ts',
+                `
+import { appState } from './state.svelte.ts';
+
+export function doAliasBad() {
+  appState.currentView = 'map';
+}
+`
+            )
+
+            const { exitCode, stdout } = runCiCheck()
+            expect(exitCode).toBe(1)
+            expect(stdout).toContain('alias-door-violation.svelte.ts')
+            expect(stdout).toContain('aliasDoor.currentView')
+        })
+
+        // ── 7. A nearby writeNavStateMirror does not bless an alias door ──
+
+        it('reports an alias-door write merely near writeNavStateMirror()', () => {
+            const dir = createFixtureDir()
+            dirsToClean.push(dir)
+
+            writeFixture(
+                dir,
+                'alias-door-allowed.svelte.ts',
+                `
+import { appState } from './state.svelte.ts';
+
+export function mirror() {
+  writeNavStateMirror({ trailDepth: 2 });
+  appState.semanticDiveMode = true;
+}
+`
+            )
+
+            const { exitCode, stdout } = runCiCheck()
+            expect(exitCode).toBe(1)
+            expect(stdout).toContain('alias-door-allowed.svelte.ts')
+            expect(stdout).toContain('aliasDoor.semanticDiveMode')
+        })
+
+        // ── 8. Alias-door inside navMirror.update() is allowed ──────────
+
+        it('does not separately report alias-door writes inside navMirror.update()', () => {
+            const dir = createFixtureDir()
+            dirsToClean.push(dir)
+
+            writeFixture(
+                dir,
+                'alias-door-navmirror.svelte.ts',
+                `
+import { appState } from './state.svelte.ts';
+
+export function sync() {
+  navMirror.update(() => {
+    appState.currentView = 'map';
+  });
+}
+`
+            )
+
+            const { stdout } = runCiCheck()
+            expect(stdout).not.toContain('alias-door-navmirror.svelte.ts')
+        })
     })
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -422,6 +500,47 @@ export function doBadThing() {
             // mutation, so this is safe to document.
             expect(isInsideAllowedContext(absPath, 34)).toBe(false)
         })
+
+        it('returns true for mutations inside navMirror.update()', () => {
+            const dir = createFixtureDir()
+            dirsToClean.push(dir)
+
+            writeFixture(
+                dir,
+                'navmirror-update.svelte.ts',
+                `
+import { appState } from './state.svelte.ts';
+
+export function sync() {
+  navMirror.update(() => {
+    appState.currentView = 'map';
+  });
+}
+`
+            )
+            const absPath = join(dir, 'navmirror-update.svelte.ts')
+            expect(isInsideAllowedContext(absPath, 5)).toBe(true)
+        })
+
+        it('returns true for mutations inside navMirror.set()', () => {
+            const dir = createFixtureDir()
+            dirsToClean.push(dir)
+
+            writeFixture(
+                dir,
+                'navmirror-set.svelte.ts',
+                `
+import { appState } from './state.svelte.ts';
+
+export function sync() {
+  navMirror.set({ currentView: 'map' });
+  appState.trailDepth = 2;
+}
+`
+            )
+            const absPath = join(dir, 'navmirror-set.svelte.ts')
+            expect(isInsideAllowedContext(absPath, 5)).toBe(true)
+        })
     })
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -446,6 +565,17 @@ export function doBadThing() {
         it('returns false for files not in the allowlist', () => {
             const absPath = resolve(PROJECT_ROOT, 'src/lib/stores/focus.svelte.ts').replace(/\\/g, '/')
             expect(isAllowlisted(absPath, 100)).toBe(false)
+        })
+
+        it('url-restore.ts reset alias-door is resolved (NOT allowlisted)', () => {
+            // Regression: url-restore.ts:resetStateBeforeUrlRestore previously left a
+            // bare `appState.semanticDiveMode = false` alias-door write allowlisted.
+            // It was migrated to the canonical writeNavStateMirror({ trailDepth: 0 })
+            // path (semanticDiveMode is a derived alias over trailDepth === 2), so the
+            // allowlist entry must be gone. If it resurfaces, the alias-door is being
+            // hidden rather than fixed.
+            const absPath = resolve(PROJECT_ROOT, 'src/lib/orchestration/url-restore.ts').replace(/\\/g, '/')
+            expect(isAllowlisted(absPath, 87)).toBe(false)
         })
     })
 
@@ -495,6 +625,49 @@ export function doBadThing() {
             const m = '  appState.navState.mode ='.match(RE)
             expect(m).not.toBeNull()
             expect(m[2]).toBe('mode')
+        })
+    })
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Group E: Regex matching (ALIAS_DOOR_RE)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    describe('unit: ALIAS_DOOR_RE', () => {
+        const RE = ALIAS_DOOR_RE
+
+        it('matches appState.currentView = value', () => {
+            const m = "  appState.currentView = 'map';".match(RE)
+            expect(m).not.toBeNull()
+            expect(m[1]).toBe('appState')
+            expect(m[2]).toBe('currentView')
+        })
+
+        it('matches appState.semanticDiveMode = true', () => {
+            const m = '  appState.semanticDiveMode = true;'.match(RE)
+            expect(m).not.toBeNull()
+            expect(m[2]).toBe('semanticDiveMode')
+        })
+
+        it('matches legacyState.focusedNode = null', () => {
+            const m = '  legacyState.focusedNode = null;'.match(RE)
+            expect(m).not.toBeNull()
+            expect(m[1]).toBe('legacyState')
+            expect(m[2]).toBe('focusedNode')
+        })
+
+        it('does not match === comparison', () => {
+            const m = "  if (appState.currentView === 'map') {}".match(RE)
+            expect(m).toBeNull()
+        })
+
+        it('does not match === for semanticDiveMode', () => {
+            const m = '  if (appState.semanticDiveMode === true) {}'.match(RE)
+            expect(m).toBeNull()
+        })
+
+        it('does not match a property declaration', () => {
+            const m = "  currentView: 'galaxy',".match(RE)
+            expect(m).toBeNull()
         })
     })
 })

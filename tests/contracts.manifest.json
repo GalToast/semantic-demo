@@ -268,6 +268,7 @@
                 "3d-hidpi-click-accuracy.spec.js",
                 "3d-node-hit-accuracy.spec.js",
                 "3d-hover-affordance.spec.js",
+                "3d-hover-overlay-journey.spec.js",
                 "3d-real-pointer-playthrough.spec.js",
                 "3d-focus-pocket-selectability.spec.js",
                 "3d-cluster-readability.spec.js",
@@ -291,6 +292,7 @@
                 "3d-hidpi-click-accuracy.spec.js",
                 "3d-node-hit-accuracy.spec.js",
                 "3d-hover-affordance.spec.js",
+                "3d-hover-overlay-journey.spec.js",
                 "3d-real-pointer-playthrough.spec.js",
                 "3d-focus-pocket-selectability.spec.js"
             ]

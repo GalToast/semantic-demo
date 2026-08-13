@@ -333,6 +333,23 @@ export async function probeFocusPocket(page) {
 }
 
 /**
+ * Wait for the focus pocket's projected coordinates to become usable.
+ *
+ * The pocket state is published before the render loop has necessarily copied
+ * the latest camera/position matrices. A fixed pair of animation frames is
+ * therefore racy on slower software-GPU or D3D11 runs.
+ */
+export async function waitForReachableFocusPocket(page, { timeout = 8000, pollMs = 80 } = {}) {
+    const deadline = Date.now() + timeout
+    let snapshot = await probeFocusPocket(page)
+    while (snapshot.reachableCount === 0 && Date.now() < deadline) {
+        await page.waitForTimeout(pollMs)
+        snapshot = await probeFocusPocket(page)
+    }
+    return snapshot
+}
+
+/**
  * Returns true if the given screen coordinate hits the canvas and is not
  * blocked by any interactive overlay element.
  */

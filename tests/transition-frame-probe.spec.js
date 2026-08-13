@@ -15,7 +15,6 @@ import { test, expect } from '@playwright/test'
 
 const BASE = 'http://127.0.0.1:8796'
 const APP_PATH = '/dist/svelte/index.html'
-const OVERLAY_SELS = ['[role="dialog"]', '[class*="veil"]', '[class*="overlay"]']
 
 async function gotoApp(page, suffix) {
     await page.goto(`${BASE}${APP_PATH}${suffix}`, { waitUntil: 'load', timeout: 30000 }).catch(() => {})
@@ -24,19 +23,6 @@ async function gotoApp(page, suffix) {
         await page.waitForLoadState('load', { timeout: 5000 })
     } catch {
         // Proceed
-    }
-}
-
-async function waitForBodyClass(page, clsFragment, timeoutMs = 3000) {
-    try {
-        await page.waitForFunction(
-            (frag) => document.body.classList.toString().includes(frag),
-            frag,
-            { timeout: timeoutMs }
-        )
-        return true
-    } catch {
-        return false
     }
 }
 
@@ -90,7 +76,11 @@ async function drive(page, edge) {
             break
         case 'map->overview':
             await page.goBack({ timeout: 4000 }).catch(() => {})
-            try { await page.waitForLoadState('load', { timeout: 5000 }) } catch {}
+            try {
+                await page.waitForLoadState('load', { timeout: 5000 })
+            } catch {
+                // Navigation may already have reached the target history entry.
+            }
             // await waitForBodyClass(page, 'surface-idle', 1200)
             // await waitForBodyClass(page, 'view-galaxy', 1200)
             break

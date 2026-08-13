@@ -36,7 +36,7 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 
 - `src/lib/orchestration/app-init.ts`
 - `src/lib/orchestration/lifecycle.ts`
-- `src/lib/orchestration/responsive-renderer.ts` — canonical render-kind classifier (`getInitialRenderKind`) + canonical deep-link classification helper (`isDeepLinkParams`, added at `b33f35ba`; supersedes the duplicated deep-link check previously inlined inside `parseUrlParams` + `shouldRunDemo`).
+- `src/lib/orchestration/responsive-renderer.ts` — canonical render-kind classifier (`getInitialRenderKind`) + canonical deep-link classification helper (`isDeepLinkParams`, added at `b33f35ba`; supersedes the duplicated deep-link check previously inlined inside `parseUrlParams` + `shouldRunDemo`). Non-idle `surface=` share links count as explicit scene intent; the default `surface=idle` does not.
 - `src/lib/orchestration/view-controller.ts`
 - `src/lib/orchestration/event-bus.ts`
 - `src/lib/orchestration/toast.ts` — canonical toast path (Svelte store; replaces the DOM-direct version in `src/lib/ui/ui-feedback.ts`).

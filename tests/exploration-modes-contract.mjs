@@ -80,15 +80,15 @@ await test('STORY_DESCRIPTIONS is exported and non-empty', () => {
     assert(/(?:^|[\s,{])['"]?standard['"]?\s*:/.test(body), 'STORY_DESCRIPTIONS has standard key')
 })
 
-await test('setTrailDepth mirrors journey, nav, and legacy state', () => {
+await test('setTrailDepth uses the journey owner and canonical nav mirror', () => {
     const body = exportedFunctionSource(lifecycleSrc, 'setTrailDepth')
     assert(/_setTrailDepth\s*\(\s*nextDepth\s*\)/.test(body), 'setTrailDepth calls journey store owner')
     assert(
         /updateNavState\s*\(\s*\{\s*trailDepth:\s*nextDepth\s*\}\s*\)/.test(body),
-        'setTrailDepth mirrors navStore.trailDepth'
+        'setTrailDepth routes navigation through updateNavState'
     )
-    assert(/\b\w+\.trailDepth\s*=\s*nextDepth/.test(body), 'setTrailDepth mirrors legacy top-level trailDepth')
-    assert(/\b\w+\.navState\.trailDepth\s*=\s*nextDepth/.test(body), 'setTrailDepth mirrors legacy navState.trailDepth')
+    assert(!/\b(?:appState|legacyState)\.navState\.[A-Za-z_$][\w$]*\s*=/.test(body), 'setTrailDepth does not bypass the nav mirror')
+    assert(!/\blegacyState\.[A-Za-z_$][\w$]*\s*=/.test(body), 'setTrailDepth does not write legacy compatibility fields directly')
     assert(!/window\.setTrailDepth\s*\(/.test(body), 'setTrailDepth avoids window.setTrailDepth bridge')
 })
 

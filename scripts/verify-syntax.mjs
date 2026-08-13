@@ -60,7 +60,7 @@ for (const file of all) {
 
 if (diagnostics.length) {
     console.error(
-            `✗ PARSE FAIL — ${all.length} files checked, ${diagnostics.length} parse error(s) in ${
+        `✗ PARSE FAIL — ${all.length} files checked, ${diagnostics.length} parse error(s) in ${
             all.filter((f) => {
                 const t = readFileSync(f, 'utf8')
                 const sf = ts.createSourceFile(f, t, ts.ScriptTarget.Latest, true)

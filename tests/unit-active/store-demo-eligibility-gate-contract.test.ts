@@ -28,9 +28,7 @@ describe('shouldRunDemo — demo eligibility gate (stores-coverage gap #2)', () 
         // Empty params = not a deep link.
         expect(__shouldRunDemo_testOnly_isDeepLinkParams(new URLSearchParams())).toBe(false)
         // ?anchor=1 = deep link (the isDeepLink URL family).
-        expect(
-            __shouldRunDemo_testOnly_isDeepLinkParams(new URLSearchParams('anchor=1'))
-        ).toBe(true)
+        expect(__shouldRunDemo_testOnly_isDeepLinkParams(new URLSearchParams('anchor=1'))).toBe(true)
     })
 
     it('force=true always claims eligibility (bypasses other gates)', () => {

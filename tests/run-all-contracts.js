@@ -455,6 +455,9 @@ Options:
   --validate              Validate pinned/manifest coverage without running contracts.
   --dry-run               Print the resolved file list without running contracts.
   --stop-on-first-fail    Stop the runner after the first failing contract.
+  --batch-browser         Opt-in: batch all-Playwright group/single runs into one CLI process.
+                           Only activates when every resolved file is a *.spec.js or Playwright .mjs.
+                           Skips pinned default runs and mixed file types.
   --help                  Show this help text.
   NOTE: individual contracts resolve the @lib alias via ts-resolve-loader (see --single).
   Running a contract file directly (node tests/x.mjs) may fail with
@@ -699,6 +702,87 @@ function runContract(filename, timeoutMs, baseUrl = null) {
     })
 }
 
+function runBatchContract(files, timeoutMs, baseUrl = null) {
+    return new Promise((resolve) => {
+        const start = performance.now()
+        let settled = false
+
+        const exec = process.execPath
+        const execArgs = [
+            PLAYWRIGHT_CLI,
+            'test',
+            ...files.map((f) => `tests/${f}`),
+            ...PLAYWRIGHT_FLAGS
+        ]
+
+        const child = spawn(exec, execArgs, {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            cwd: PROJECT_ROOT,
+            env: {
+                ...process.env,
+                TEST_BASE_URL: process.env.TEST_BASE_URL || baseUrl || `http://127.0.0.1:${SERVER_PORT}`
+            }
+        })
+
+        let stdout = ''
+        let stderr = ''
+        const timeout = setTimeout(() => {
+            if (settled) return
+            settled = true
+            child.stdout?.destroy?.()
+            child.stderr?.destroy?.()
+            if (process.platform === 'win32') {
+                closeBrowserTree(child.pid)
+            } else {
+                child.kill('SIGKILL')
+            }
+            const duration = performance.now() - start
+            resolve({
+                filename: `batch:${files.length} files`,
+                duration,
+                passed: false,
+                code: -1,
+                stdout,
+                stderr: `${stderr}\n[RUNNER TIMEOUT] Batch timed out after ${timeoutMs}ms`.trim()
+            })
+        }, timeoutMs)
+
+        child.stdout.on('data', (chunk) => {
+            stdout += chunk.toString()
+        })
+        child.stderr.on('data', (chunk) => {
+            stderr += chunk.toString()
+        })
+
+        child.on('close', (code) => {
+            if (settled) return
+            settled = true
+            clearTimeout(timeout)
+            const duration = performance.now() - start
+            if (process.platform === 'win32') {
+                closeBrowserTree(child.pid)
+            }
+            const passed = code === 0 && !stdout.includes('FAIL') && !stdout.includes('[FAIL]')
+            resolve({ filename: `batch:${files.length} files`, duration, passed, code, stdout, stderr })
+        })
+
+        child.on('error', (err) => {
+            if (settled) return
+            settled = true
+            clearTimeout(timeout)
+            const duration = performance.now() - start
+            resolve({
+                filename: `batch:${files.length} files`,
+                duration,
+                passed: false,
+                code: -1,
+                stdout: '',
+                stderr: err.message
+            })
+        })
+    })
+}
+
 function isServerRelatedFailure(filename, result) {
     const output = `${result.stdout}\n${result.stderr}`
     return (
@@ -761,7 +845,22 @@ async function main() {
     // Intercept --dry-run before anything else: show what would run without executing.
     if (process.argv.includes('--dry-run')) {
         const { files, mode, groupTimeout } = resolveFiles()
-        console.log(`\n=== Dry Run: ${mode} ===`)
+        const batchBrowser = process.argv.includes('--batch-browser')
+        let batchNote = ''
+        if (batchBrowser && mode !== 'pinned') {
+            const allPlaywright = files.every((f) => {
+                const entry = join(TESTS_DIR, f)
+                return isPlaywrightTestFile(f, entry)
+            })
+            if (allPlaywright) {
+                batchNote = ' [batch-browser: would run as single Playwright process]'
+            } else {
+                batchNote = ' [batch-browser: skipped - mixed/non-Playwright files]'
+            }
+        } else if (batchBrowser && mode === 'pinned') {
+            batchNote = ' [batch-browser: skipped - pinned default run never batched]'
+        }
+        console.log(`\n=== Dry Run: ${mode}${batchNote ? ` (${batchNote.replace(/^ \[|\]$/g, '')})` : ''} ===`)
         console.log(`Would run ${files.length} contract(s):\n`)
         for (const file of files) {
             const note =
@@ -775,13 +874,41 @@ async function main() {
 
     const { files, mode, groupTimeout, groupName } = resolveFiles()
     const stopOnFirstFail = process.argv.includes('--stop-on-first-fail')
-    // Always scan for .spec.js files in the run list and start the server for them.
+    const batchBrowser = process.argv.includes('--batch-browser')
+    // Start the server for every browser spec, including Playwright .mjs files.
     // Pinned mode has no group context but still carries browser specs that need HTTP.
-    const needsServer = files.some((f) => f.endsWith('.spec.js'))
+    const needsServer = files.some((f) => isPlaywrightTestFile(f, join(TESTS_DIR, f)))
     const effectiveGroupName = needsServer && !groupName ? 'browser-interaction' : groupName
     const serverLease = effectiveGroupName ? createServerLease(effectiveGroupName) : null
+
+    // Determine whether the batch-browser opt-in can activate.
+    let useBatchBrowser = false
+    if (batchBrowser && mode !== 'pinned') {
+        const allPlaywright = files.every((f) => {
+            const entry = join(TESTS_DIR, f)
+            return isPlaywrightTestFile(f, entry)
+        })
+        if (allPlaywright) {
+            useBatchBrowser = true
+            console.log(`  [batch-browser] all ${files.length} resolved files are Playwright specs — batching\n`)
+        } else {
+            const nonPlaywright = files.filter((f) => {
+                const entry = join(TESTS_DIR, f)
+                return !isPlaywrightTestFile(f, entry)
+            })
+            console.log(
+                `  [batch-browser] skipped: ${nonPlaywright.length} non-Playwright file(s) in run (${nonPlaywright
+                    .slice(0, 3)
+                    .join(', ')}${nonPlaywright.length > 3 ? '...' : ''})`
+            )
+            console.log(`  [batch-browser] falling back to per-file runner\n`)
+        }
+    } else if (batchBrowser && mode === 'pinned') {
+        console.log(`  [batch-browser] skipped: pinned default run is never batched\n`)
+    }
+
     console.log(`\n=== QA Contract Runner ===`)
-    console.log(`Mode: ${mode}`)
+    console.log(`Mode: ${mode}${useBatchBrowser ? ' (batch-browser)' : ''}`)
     console.log(
         `Running ${files.length} contract file(s)${needsServer ? ' (browser specs detected — server will start)' : ''}\n`
     )
@@ -789,16 +916,19 @@ async function main() {
 
     const runContracts = async () => {
         const results = []
-        for (const file of files) {
+
+        if (useBatchBrowser) {
             const baseUrl = serverLease ? await serverLease.ensure() : null
             const timeoutMs = groupTimeout !== null ? groupTimeout : CONTRACT_TIMEOUT_MS
-            console.log(`  [run] ${file}${groupTimeout !== null ? ` (timeout=${timeoutMs}ms)` : ''}`)
-            let result = await runContract(file, timeoutMs, baseUrl)
-            if (!result.passed && serverLease && shouldRetryBrowserContract(file, result)) {
-                console.log(`  [retry] ${file} after transient browser/server failure`)
+            console.log(`  [batch] running ${files.length} Playwright spec(s) in one process`)
+            console.log(`  [batch] files: ${files.map((f) => `tests/${f}`).join(' ')}`)
+            console.log(`  [batch] timeout=${timeoutMs}ms`)
+            let result = await runBatchContract(files, timeoutMs, baseUrl)
+            if (!result.passed && serverLease && isServerRelatedFailure('batch', result)) {
+                console.log(`  [batch-retry] retrying batch after transient browser/server failure`)
                 serverLease.markFailed()
                 const retryBaseUrl = await serverLease.ensure()
-                const retryResult = await runContract(file, timeoutMs, retryBaseUrl)
+                const retryResult = await runBatchContract(files, timeoutMs, retryBaseUrl)
                 result = {
                     ...retryResult,
                     retried: true,
@@ -806,12 +936,31 @@ async function main() {
                 }
             }
             results.push(result)
-            if (!result.passed && serverLease && isServerRelatedFailure(file, result)) {
-                serverLease.markFailed()
-            }
-            if (stopOnFirstFail && !result.passed) {
-                console.log(`  [stop] first failure: ${file}`)
-                break
+        } else {
+            for (const file of files) {
+                const baseUrl = serverLease ? await serverLease.ensure() : null
+                const timeoutMs = groupTimeout !== null ? groupTimeout : CONTRACT_TIMEOUT_MS
+                console.log(`  [run] ${file}${groupTimeout !== null ? ` (timeout=${timeoutMs}ms)` : ''}`)
+                let result = await runContract(file, timeoutMs, baseUrl)
+                if (!result.passed && serverLease && shouldRetryBrowserContract(file, result)) {
+                    console.log(`  [retry] ${file} after transient browser/server failure`)
+                    serverLease.markFailed()
+                    const retryBaseUrl = await serverLease.ensure()
+                    const retryResult = await runContract(file, timeoutMs, retryBaseUrl)
+                    result = {
+                        ...retryResult,
+                        retried: true,
+                        firstFailure: result
+                    }
+                }
+                results.push(result)
+                if (!result.passed && serverLease && isServerRelatedFailure(file, result)) {
+                    serverLease.markFailed()
+                }
+                if (stopOnFirstFail && !result.passed) {
+                    console.log(`  [stop] first failure: ${file}`)
+                    break
+                }
             }
         }
 

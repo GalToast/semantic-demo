@@ -31,14 +31,23 @@ import {
     PARITY_ATTRIBUTE_KEYS,
     applyParityAttributes,
     setRenderKind,
-    resetParityAttributeCache
+    resetParityAttributeCache,
+    installParityAttributeSync
 } from '@lib/orchestration/parity-attrs.svelte'
 import type { ParityAttributeMap } from '@lib/orchestration/parity-attrs.svelte'
+import { appState } from '@lib/state/app.svelte'
+import { focusStore } from '@lib/stores/focus.svelte.ts'
+import { navStore, INITIAL_NAV_STATE } from '@lib/stores/navigation.svelte.ts'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function readBody(): Record<string, string | undefined> {
     return { ...document.body.dataset } as Record<string, string | undefined>
+}
+
+async function flushParitySync(): Promise<void> {
+    await Promise.resolve()
+    await Promise.resolve()
 }
 
 function readClasses(): string[] {
@@ -171,6 +180,28 @@ describe('applyParityAttributes — body data-* attrs', () => {
         } finally {
             Object.defineProperty(document, 'body', { value: saved, configurable: true, writable: true })
         }
+    })
+
+    it('emits a boolean-like surface-settled readiness flag', () => {
+        applyParityAttributes({
+            loadingOverlay: 'hidden',
+            sceneReady: 'true',
+            panelSurface: 'focus'
+        })
+
+        expect(readBody().surfaceSettled).toBe('true')
+    })
+
+    it('removes surface-settled when the overlay or route is not settled', () => {
+        document.body.dataset.surfaceSettled = 'true'
+
+        applyParityAttributes({
+            loadingOverlay: 'visible',
+            sceneReady: 'true',
+            panelSurface: 'focus'
+        })
+
+        expect(readBody().surfaceSettled).toBeUndefined()
     })
 })
 
@@ -360,5 +391,150 @@ describe('applyParityAttributes — full schema roundtrip', () => {
         expect(cls).toContain('view-map')
         expect(cls).toContain('navigation-map-trail-strip')
         expect(cls).toContain('surface-map-any') // map-* compound
+    })
+})
+
+// ── Semantic dive deadline timer ─────────────────────────────────────────
+
+describe('parity-attrs — semantic dive deadline expiry', () => {
+    beforeEach(() => {
+        vi.useFakeTimers()
+        document.body.replaceChildren()
+        for (const attr of Object.keys(document.body.dataset)) delete document.body.dataset[attr]
+        for (const cls of Array.from(document.body.classList)) document.body.classList.remove(cls)
+        resetParityAttributeCache()
+        // Start from a clean idle state for each run.
+        appState._semanticDiveTransitionDeadline = 0
+        focusStore.set({
+            ...focusStore(),
+            semanticDiveMode: false
+        })
+        navStore.update((s) => ({
+            ...s,
+            mode: 'focus',
+            surface: 'focus',
+            currentView: 'galaxy',
+            focusedIndex: 0
+        }))
+    })
+
+    afterEach(() => {
+        vi.useRealTimers()
+        document.body.replaceChildren()
+        for (const attr of Object.keys(document.body.dataset)) delete document.body.dataset[attr]
+        for (const cls of Array.from(document.body.classList)) document.body.classList.remove(cls)
+        resetParityAttributeCache()
+        navStore.set(INITIAL_NAV_STATE)
+    })
+
+    it('transitions from transitioning to active after the deadline without another store mutation', async () => {
+        const cleanup = installParityAttributeSync()
+        try {
+            // Arm the dive transition: semantic dive on, deadline in the future.
+            focusStore.set({
+                ...focusStore(),
+                semanticDiveMode: true
+            })
+            const now = Date.now()
+            appState._semanticDiveTransitionDeadline = now + 1200
+            await flushParitySync()
+
+            // Initial sync should see the transient window.
+            const transitioning = readBody()
+            expect(transitioning.semanticDive).toBe('transitioning')
+
+            // Advance past the deadline WITHOUT any store mutation.
+            await vi.advanceTimersByTimeAsync(1300)
+
+            // The one-shot timer should have triggered a recompute.
+            const active = readBody()
+            expect(active.semanticDive).toBe('active')
+        } finally {
+            cleanup()
+        }
+    })
+
+    it('cleanup cancels the pending deadline timer', async () => {
+        const cleanup = installParityAttributeSync()
+        try {
+            appState._semanticDiveTransitionDeadline = Date.now() + 5000
+
+            // Let the microtask queue drain so the timer is armed.
+            await flushParitySync()
+
+            cleanup()
+
+            // After cleanup, advancing past the original deadline should NOT
+            // mutate body attrs because the timer was disposed.
+            const before = readBody()
+            await vi.advanceTimersByTimeAsync(6000)
+            const after = readBody()
+            expect(after.semanticDive).toBe(before.semanticDive)
+        } finally {
+            cleanup()
+        }
+    })
+
+    it('re-arms the timer when the deadline changes', async () => {
+        const cleanup = installParityAttributeSync()
+        try {
+            focusStore.set({
+                ...focusStore(),
+                semanticDiveMode: true
+            })
+            const base = Date.now()
+            appState._semanticDiveTransitionDeadline = base + 1000
+
+            await flushParitySync()
+            await vi.advanceTimersByTimeAsync(900)
+            expect(readBody().semanticDive).toBe('transitioning')
+
+            // Re-arm with a later deadline before the first one fires.
+            appState._semanticDiveTransitionDeadline = base + 3000
+            await flushParitySync()
+
+            await vi.advanceTimersByTimeAsync(2000)
+            // Still within the new window.
+            expect(readBody().semanticDive).toBe('transitioning')
+
+            await vi.advanceTimersByTimeAsync(1000)
+            expect(readBody().semanticDive).toBe('active')
+        } finally {
+            cleanup()
+        }
+    })
+})
+
+describe('parity-attrs — bypass attribute reactivity', () => {
+    beforeEach(() => {
+        navStore.set({
+            ...INITIAL_NAV_STATE,
+            mode: 'search',
+            surface: 'search',
+            currentView: 'galaxy'
+        })
+    })
+
+    afterEach(() => {
+        navStore.set(INITIAL_NAV_STATE)
+        delete document.body.dataset.mobileSearchSheet
+    })
+
+    it('recomputes panelSurfaceDetail when mobileSearchSheet changes directly', async () => {
+        const cleanup = installParityAttributeSync()
+        try {
+            await flushParitySync()
+            expect(document.body.dataset.panelSurfaceDetail).toBe('none')
+
+            document.body.dataset.mobileSearchSheet = 'peek'
+            await new Promise<void>((resolve) => setTimeout(resolve, 0))
+            expect(document.body.dataset.panelSurfaceDetail).toBe('peek')
+
+            document.body.dataset.mobileSearchSheet = 'expanded'
+            await new Promise<void>((resolve) => setTimeout(resolve, 0))
+            expect(document.body.dataset.panelSurfaceDetail).toBe('expanded')
+        } finally {
+            cleanup()
+        }
     })
 })

@@ -13,7 +13,10 @@ SERIAL="${SERIAL:-77aeb8a8}"
 REMAP="$ROOT/scripts/parity-remap-local.py"
 
 echo "== [1/2] model registry parity =="
-[ -f "$SRC" ] || { echo "missing $SRC"; exit 1; }
+[ -f "$SRC" ] || {
+	echo "missing $SRC"
+	exit 1
+}
 REMAPPED="$(mktemp --suffix=.json)"
 python3 "$REMAP" "$SRC" "$REMAPPED"
 "$ADB" -s "$SERIAL" shell "su -c 'cp $REMOTE ${REMOTE}.bak-$(date +%Y%m%d-%H%M%S) 2>/dev/null || true'"

@@ -98,6 +98,19 @@ jobs:
             - run: npm ci
             - run: npm run test:contract:smoke
 
+    test-3d-admission:
+        name: 3D Test Admission
+        runs-on: ubuntu-latest
+        timeout-minutes: 2
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run verify:3d-tests
+
     test-integration:
         # Keep the automatic deploy gate deterministic and resource-bounded.
         # The full Playwright inventory remains available through
@@ -152,6 +165,7 @@ jobs:
             - test-integration
             - lint-nav-mirror
             - test-contract-smoke
+            - test-3d-admission
         steps:
             - name: Restore verified build artifact
               uses: actions/download-artifact@v4

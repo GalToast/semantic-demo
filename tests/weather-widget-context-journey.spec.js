@@ -38,7 +38,7 @@ test.describe('Weather widget context journey', () => {
         // (App.svelte:411). With __PLAYWRIGHT__ the production build auto-signals
         // ready and bypasses the CTA; if the CTA is present (older build / non-auto
         // path), dismiss it to boot WebGL. Mirrors the canonical widget-journey boot.
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
         try {
             await explore.waitFor({ state: 'visible', timeout: 3000 })
             await explore.click()

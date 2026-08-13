@@ -76,7 +76,7 @@ test.describe('Keyboard hint panel journey', () => {
         page.on('pageerror', (err) => consoleMessages.push(`pageerror: ${err.message}`))
 
         // Splash dismissal (mirrors the existing journey-test setup pattern).
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 

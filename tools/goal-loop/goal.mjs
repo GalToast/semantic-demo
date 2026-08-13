@@ -8,7 +8,7 @@
 import { writeFileSync } from 'node:fs'
 import { STATE_PATH, defaultState, readStateFile, writeStateFile, evaluateAndUpdate } from './evaluator.mjs'
 
-const CLI_STATE = process.env.GOAL_STATE_PATH || STATE_PATH
+const CLI_STATE = process.env.GOAL_STATE_PATH || process.env.PI_GOAL_STATE_PATH || STATE_PATH
 
 function usage() {
     console.log(`goal.mjs — condition checkpoint

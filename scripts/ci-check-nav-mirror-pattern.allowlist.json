@@ -21,6 +21,11 @@
             248,
             258,
             "Legacy window-state compatibility reset in reset function: legacyState.navState.* mirrors are intentional test-compat surface, not the canonical appState path"
+        ],
+        [
+            200,
+            204,
+            "Legacy window-state compatibility reset: legacyState.trailDepth / legacyState.semanticDiveMode / legacyState.focusedNode are flat alias mirrors (test-compat surface), not the canonical appState path. navState is canonicalized separately by the reset's writeNavStateMirror call, so these bare legacyState alias writes are intentional."
         ]
     ]
 }

@@ -28,6 +28,7 @@ import {
     isReachableScreenCoordinate,
     focusNodeViaApp
 } from './helpers/3d-interaction-helpers.js'
+import { assertNoUnexpected3dRuntimeErrors, capture3dRuntimeErrors } from './helpers/3d-runtime-errors.js'
 
 const FOCUS_NEIGHBORHOOD_TEST_TIMEOUT_MS = 120000
 
@@ -127,6 +128,18 @@ async function findHoverableNeighbor(page) {
 }
 
 test.describe('focus-neighborhood desktop-click-only lane', () => {
+    const runtimeCaptures = new WeakMap()
+
+    test.beforeEach(({ page }) => {
+        runtimeCaptures.set(page, capture3dRuntimeErrors(page))
+    })
+
+    test.afterEach(({ page }, testInfo) => {
+        const capture = runtimeCaptures.get(page)
+        assertNoUnexpected3dRuntimeErrors(expect, capture, testInfo.title)
+        capture?.detach()
+    })
+
     test('desktop: a non-anchor neighbor can be hovered independently without anchor re-selection', async ({
         page
     }) => {

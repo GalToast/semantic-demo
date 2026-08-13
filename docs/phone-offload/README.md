@@ -87,38 +87,47 @@ id list per lane (verified: nvidia/kilo/openrouter/logfare/modelscope/zenmux
 no blind probing needed — the same catalog serves the phone router.
 
 ## Full model parity laptop <-> phone (2026-08-13)
-Two registries have different jobs and both must be port-correct on the phone:
+The canonical flow has two files with different jobs:
 
-1. `~/.pi/agent/model-providers.json` is the broad catalog/metadata registry.
-   The current laptop and phone copies each contain 1,160 records and 1,140
-   unique `(model, route)` entries. Their normalized sets are identical; only
-   local router URLs differ (`127.0.0.1:8788` on the laptop versus
-   `127.0.0.1:8789` in the phone chroot).
+1. `~/.pi/agent/model-catalog.json` is the complete secret-free union of the
+   laptop's Qwen, Pi, model-cache, OpenCode, Cline, and live-router sources.
+   It keeps direct/external and failed routes visible with provenance and
+   phone reachability status.
 2. `~/.pi/agent/models.json` is the dispatch/picker registry that new Pi
-   processes actually load. `scripts/phone-model-parity.mjs` generates a
-   secret-free phone projection from laptop-configured models that are visible
-   in the phone router catalog. The deployed projection currently has 11
-   providers and 26 model entries.
+   processes actually load. `scripts/build-model-catalog.mjs` generates it
+   from every model whose exact ID is visible on a healthy phone route.
 
-The router catalogs themselves are already aligned across the 31 shared local
-routes. That is discovery parity, not response-health parity: cooldowns and
-provider quotas still need bounded chat/tool probes. The canonical registry
-must never retain laptop port `8788` in the phone chroot, and credentials are
-never copied between devices.
+Build both with `npm run models:canonical-catalog`, then deploy them together
+with `npm run phone:deploy-catalog` (the command still requires explicit paths,
+serial, and `--apply`). The deployed 2026-08-13 snapshot contains 3,938
+deduplicated catalogue route/model records and 1,997 unique active phone
+picker entries across 19 healthy routes. The full catalogue is present on the
+phone even when a model is not currently dispatchable there.
 
-## FULL PROVIDER-SURFACE PARITY (2026-08-13, the big one)
-The phone pi now lists the SAME ~1600-model / 28-provider surface as the laptop
-(router-infron 416, direct-airforce 303, router-zenmux 151, router-novita 144,
-router-zydit 95, router-nvidia 94, ...). What made it work (the 4-step unlock):
-1. pi-model-providers extension MUST exist in chroot local-packages/ (copy from
-   laptop ~/.pi/agent/local-packages/pi-model-providers).
-2. settings.json "packages" entries on the Linux chroot need FORWARD slashes
-   (laptop uses `local-packages\pi...` — unresolvable on the phone).
-3. The extension's providerIdForBaseUrl only recognized ports 8788/8790-93;
-   patch its copy to also accept 8789 (the phone router port) or router-*
-   providers never materialize from the synced model-providers.json.
-4. OPENCODE_KEY_ROUTER_CATALOG_URL=http://127.0.0.1:8789/catalog (env or
-   settings.json env block) so the catalog sweep hits the PHONE router.
-Automate everything with scripts/bootstrap-phone-surface.sh (idempotent);
-scripts/farm-sync.sh = registry parity + git push in one command.
-Verify: `pi --list-models` in chroot shows the router-* + direct-* surface.
+This is discovery and configuration parity, not response-health parity:
+cooldowns, provider quotas, and model-specific failures still need bounded
+chat/tool probes. The phone projection uses the phone router at `127.0.0.1:8789`
+and never retains the laptop router port `8788`. Raw provider/API keys are not
+copied; only the literal `apiKey: "router"` sentinel is used by the projection.
+
+## Provider-surface parity
+
+The old provider-surface bootstrap remains useful for repairing the Pi
+extension and router catalog URL, but it is no longer the source of truth for
+model completeness. The source of truth is now:
+
+1. `npm run models:canonical-catalog` on the laptop;
+2. `npm run phone:deploy-catalog -- --catalog=... --projection=... --serial=... --apply`;
+3. a remote SHA-256 check plus a fresh Pi startup.
+
+Run `npm run models:verify-catalog` before deployment to confirm canonical
+projection parity locally; add `--serial=77aeb8a8` to verify the physical
+chroot hashes as well. The check is read-only and performs no provider calls.
+
+The phone's `model-catalog.json` is the audit surface; `models.json` is the
+active dispatch surface. The projection is schema-pure (`providers` only), so
+Pi can load it without a repair/fallback rewrite. This prevents a stale synced
+`model-providers.json` or a temporarily cooldowned route from being mistaken
+for complete, usable parity. Keep the chroot `pi-model-providers` extension installed and keep
+`OPENCODE_KEY_ROUTER_CATALOG_URL=http://127.0.0.1:8789/catalog` pointed at the
+phone router, but do not bulk-copy laptop credentials into the chroot.

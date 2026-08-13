@@ -9,35 +9,25 @@ import { spawn } from 'node:child_process'
 
 const PORT = Number(process.argv[2] || 8793)
 
-// The cline "cline" provider free models (verified answering, keyless via CLI)
-// reasoning: max accepted effort per model (from cline catalog reasoningOptions).
-// laguna has NO reasoning option (omit --thinking); step caps at high.
+// Only expose models that are currently free in Cline's catalog and have a
+// usable route. Laguna is the verified default; DeepSeek remains cataloged but
+// can be temporarily quota-limited by Cline's daily free allowance.
 const MODELS = [
-    // NOTE 2026-08-10: deepseek-v4-flash is FIRST = the shim's default when no
-    // model is sent — verified live. glm-5.2's free promotion ENDED (cli errors
-    // "Free model promotion ended"); keep it listed for picker display but it is
-    // no longer dispatch-safe. Dispatch lanes with deepseek/deepseek-v4-flash.
+    {
+        id: 'poolside/laguna-s-2.1:free',
+        name: 'Laguna S 2.1 (free; verified)',
+        context: 262144,
+        maxTokens: 32768,
+        vision: false,
+        effort: null
+    },
     {
         id: 'deepseek/deepseek-v4-flash',
-        name: 'DeepSeek V4 Flash (free)',
+        name: 'DeepSeek V4 Flash (free; quota may be exhausted)',
         context: 1048576,
+        maxTokens: 131072,
         vision: false,
         effort: 'xhigh'
-    },
-    {
-        id: 'cline-free/glm-5.2',
-        name: 'GLM-5.2 (free — promo ENDED 2026-08-10, do NOT dispatch)',
-        context: 1048576,
-        vision: false,
-        effort: 'xhigh'
-    },
-    { id: 'poolside/laguna-s-2.1:free', name: 'Laguna S 2.1 (free)', context: 300000, vision: false, effort: null },
-    {
-        id: 'stepfun/step-3.7-flash',
-        name: 'Step 3.7 Flash (free, vision-capable)',
-        context: 256000,
-        vision: true,
-        effort: 'high'
     }
 ]
 
@@ -75,7 +65,7 @@ function callCline(model, prompt, maxTokens) {
         const clineBin =
             process.env.CLINE_BIN ||
             'C:/Users/HP/AppData/Roaming/npm/node_modules/cline/node_modules/@cline/cli-windows-x64/bin/cline.exe'
-        const args = ['-P', 'cline', '-m', model, '--json']
+        const args = ['-P', 'cline', '-m', model, '--json', '--auto-approve', 'true']
         const effort = EFFORT_BY_MODEL[model]
         if (effort) args.push('--thinking', effort)
         // cline CLI wants the prompt as a POSITIONAL quoted arg, not -p
@@ -86,12 +76,15 @@ function callCline(model, prompt, maxTokens) {
             stdio: ['ignore', 'pipe', 'pipe'],
             env: { ...process.env, PATH: process.env.PATH }
         })
-        let out = ''
+        let stdout = ''
+        let stderr = ''
         const t0 = Date.now()
-        child.stdout.on('data', (d) => (out += d))
-        child.stderr.on('data', (d) => (out += d))
+        child.stdout.on('data', (d) => (stdout += d))
+        child.stderr.on('data', (d) => (stderr += d))
+        let timedOut = false
         const timer = setTimeout(
             () => {
+                timedOut = true
                 try {
                     child.kill()
                 } catch {
@@ -103,35 +96,126 @@ function callCline(model, prompt, maxTokens) {
         child.on('close', (code) => {
             clearTimeout(timer)
             // --json emits lines: agent_event (content_delta etc) + run_result at end
-            const lines = out
+            const raw = `${stdout}\n${stderr}`
+            const lines = raw
                 .split('\n')
                 .map((l) => l.trim())
                 .filter(Boolean)
             let text = ''
-            let _cost = 0
             let inputTokens = 0
+            let failure = ''
+            const recordFailure = (value) => {
+                if (!value) return
+                if (typeof value === 'string') {
+                    failure = failure || value
+                    return
+                }
+                if (typeof value === 'object') {
+                    const message = value.message || value.error || value.detail || value.type
+                    if (message) failure = failure || String(message)
+                }
+            }
             for (const l of lines) {
                 try {
                     const obj = JSON.parse(l)
                     const e = obj.event || {}
                     if (e.type === 'content_delta' && e.contentType === 'text') text += e.text || ''
                     if (e.type === 'content_start' && e.contentType === 'text') text += e.text || ''
+                    if (obj.error || obj.errorMessage) recordFailure(obj.error || obj.errorMessage)
+                    if (e.type === 'error' || e.error || e.errorMessage) recordFailure(e.error || e.errorMessage || e.message)
                     if (obj.type === 'usage' || obj.event?.type === 'usage' || e.type === 'usage') {
                         inputTokens = obj.inputTokens ?? e.inputTokens ?? inputTokens
                     }
                     if (obj.type === 'run_result') {
                         const usage = obj.usage || {}
                         inputTokens = usage.inputTokens || usage.totalInputTokens || inputTokens
-                        text = text || obj.result || ''
+                        const resultText = obj.text || obj.result || ''
+                        if (typeof resultText === 'string') {
+                            try {
+                                const resultObject = JSON.parse(resultText)
+                                if (resultObject?.error) recordFailure(resultObject.error)
+                                else text = text || resultText
+                            } catch {
+                                text = text || resultText
+                            }
+                        } else {
+                            text = text || resultText
+                        }
+                        if (obj.error || obj.errorMessage) recordFailure(obj.error || obj.errorMessage)
                     }
                 } catch {
                     /* skip malformed line */
                 }
             }
-            resolve({ text, ms: Date.now() - t0, code, inputTokens, raw: out.slice(0, 400) })
+            // Some Cline failures arrive as a JSON-encoded run_result.text rather
+            // than a structured error event. Never return that envelope as model text.
+            if (text) {
+                try {
+                    const resultObject = JSON.parse(text)
+                    if (resultObject?.error) {
+                        recordFailure(resultObject.error)
+                        text = ''
+                    }
+                } catch {
+                    /* ordinary assistant text */
+                }
+            }
+            resolve({
+                text,
+                ms: Date.now() - t0,
+                code: code ?? (timedOut ? 124 : -1),
+                inputTokens,
+                failure,
+                timedOut,
+                raw: raw.slice(0, 8000)
+            })
         })
-        child.on('error', () => resolve({ text: '', ms: 0, code: -1, inputTokens: 0, raw: '' }))
+        child.on('error', (error) =>
+            resolve({ text: '', ms: Date.now() - t0, code: -1, inputTokens: 0, failure: error.message, timedOut: false, raw: error.stack || error.message })
+        )
     })
+}
+
+function failureResponse(model, result) {
+    const diagnostic = String(result.failure || result.raw || '').replace(/\s+/g, ' ').trim()
+    const detail = diagnostic.slice(0, 500)
+    if (result.timedOut) {
+        return { status: 504, body: { error: { type: 'timeout_error', code: 'CLINE_TIMEOUT', message: `Cline timed out for ${model}` } } }
+    }
+    if (/429|daily free limit|inference_cap_error|rate limit|quota/i.test(diagnostic)) {
+        return {
+            status: 429,
+            body: {
+                error: {
+                    type: 'rate_limit_error',
+                    code: 'CLINE_FREE_QUOTA',
+                    message: `Cline free quota is unavailable for ${model}${detail ? `: ${detail}` : ''}`
+                }
+            }
+        }
+    }
+    if (/not found|promotion ended|unknown model/i.test(diagnostic)) {
+        return {
+            status: 404,
+            body: {
+                error: {
+                    type: 'model_unavailable',
+                    code: 'CLINE_MODEL_UNAVAILABLE',
+                    message: `Cline does not currently serve ${model}${detail ? `: ${detail}` : ''}`
+                }
+            }
+        }
+    }
+    return {
+        status: 502,
+        body: {
+            error: {
+                type: 'upstream_error',
+                code: 'CLINE_UPSTREAM_ERROR',
+                message: `Cline exited ${result.code} for ${model}${detail ? `: ${detail}` : ''}`
+            }
+        }
+    }
 }
 
 const server = http.createServer(async (req, res) => {
@@ -142,12 +226,26 @@ const server = http.createServer(async (req, res) => {
     req.on('end', async () => {
         try {
             if (req.method === 'GET' && req.url.startsWith('/v1/models')) {
+                res.statusCode = 200
                 res.end(
                     JSON.stringify({
                         object: 'list',
-                        data: MODELS.map((m) => ({ id: m.id, object: 'model', owned_by: 'cline-free' }))
+                        data: MODELS.map((m) => ({
+                            id: m.id,
+                            object: 'model',
+                            owned_by: 'cline-free',
+                            name: m.name,
+                            context_window: m.context,
+                            max_tokens: m.maxTokens,
+                            vision: m.vision
+                        }))
                     })
                 )
+                return
+            }
+            if (req.method === 'GET' && req.url === '/health') {
+                res.statusCode = 200
+                res.end(JSON.stringify({ status: 'ok', provider: 'cline', default_model: MODELS[0].id, models: MODELS.map((m) => m.id) }))
                 return
             }
             const parsed = body ? JSON.parse(body) : {}
@@ -160,9 +258,10 @@ const server = http.createServer(async (req, res) => {
             const prompt = extractText(parsed.messages || [])
             const maxTokens = Number(parsed.max_tokens) || 2048
             const r = await callCline(model, prompt, maxTokens)
-            if (r.code !== 0 && !r.text) {
-                res.statusCode = 502
-                res.end(JSON.stringify({ error: { message: `cline exited ${r.code}: ${r.raw.slice(0, 200)}` } }))
+            if (!r.text) {
+                const failure = failureResponse(model, r)
+                res.statusCode = failure.status
+                res.end(JSON.stringify(failure.body))
                 return
             }
             res.end(

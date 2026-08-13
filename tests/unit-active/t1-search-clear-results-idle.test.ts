@@ -18,12 +18,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-import {
-    clearSearchResults,
-    setSearchResults,
-    searchStatus,
-    resetSearchForTests
-} from '@lib/stores/search.svelte.ts'
+import { clearSearchResults, setSearchResults, searchStatus, resetSearchForTests } from '@lib/stores/search.svelte.ts'
 
 const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf-8')
 

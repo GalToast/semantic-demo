@@ -1466,7 +1466,8 @@ but dead at this window; the LIVE free deck is logfare (minimax-m3/kiro-auto/kim
 OK). Re-probe before dispatching on kilo/openrouter; don't assume qwen3-coder-next exists.
 
 ### 2026-08-12: hy3-free lanes LIVE (26 workers) + conflation check
-- kilo/tencent/hy3:free — the new dispatchable free tier (route: /kilo/v1, model tencent/hy3:free; probed 200). Used for kilo-hy3-* lanes. NOTE from main lane: prefer THIS over opencode-zen.
+
+- kilo/tencent/hy3:free — the new dispatchable free tier (route: /kilo/v1, model tencent/hy3:free; probed 200). Used for kilo-hy3-\* lanes. NOTE from main lane: prefer THIS over opencode-zen.
 - poolside/laguna-s-2.1 + kilo/poolside/laguna-s-2.1:free — the fallback + mobile lanes (also live).
 - The opencode-zen zen route remains keyless/cooldown (dead at this window).
 - Fleet-landing state: 46 dirty src, origin-ahead 23 (divergence reconcile pending a calm-commit window); their deep-cut W1-W3 UI pins + qa-ready.mjs + fold-watch tools landed.

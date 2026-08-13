@@ -800,6 +800,29 @@
    ---------------------------------------------------------------- */
 /* canonical: --bp-landscape */
 @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
+    /* Clear the 60px header before positioning the short-landscape compass. */
+    .journey-compass {
+        top: calc(68px + env(safe-area-inset-top, 0px));
+    }
+
+    /* The viewport-specific galaxy rule below has a more specific selector;
+       keep the compass below the fixed header on active short-landscape
+       surfaces as well. */
+    body.view-galaxy:not(.surface-idle) .journey-compass {
+        top: calc(68px + env(safe-area-inset-top, 0px));
+    }
+
+    body:is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
+        .header-description {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     body:not(.surface-idle) .journey-compass {
         left: 376px;
         right: 16px;
@@ -1345,6 +1368,22 @@
         width: min(360px, calc(100vw - 320px));
         min-width: 0;
         max-width: calc(100vw - 320px);
+        transform: none;
+    }
+
+    /* Map focus-family and map-trail surfaces mount a floating SearchBar
+       while the JourneyCompass or in-map strip owns navigation. The generic
+       map rule used to let these layers occupy the same horizontal band,
+       making the search input cover the compass/strip at 896x414. Keep the
+       two owners in explicit columns with a stable touch-safe gap. */
+    body:is(.surface-map-trail, .surface-map-focus, .surface-map-focus-search)[data-journey-navigation-owner='map-trail-strip']
+        .search-container.search-container {
+        position: fixed;
+        top: calc(68px + env(safe-area-inset-top, 0px));
+        left: 16px;
+        right: auto;
+        width: min(344px, calc(100vw - 392px));
+        max-width: none;
         transform: none;
     }
 }

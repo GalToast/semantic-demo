@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { openApp, isValidNodeIndex, projectedCandidates } from './helpers/3d-interaction-helpers.js'
+import { assertNoUnexpected3dRuntimeErrors, capture3dRuntimeErrors } from './helpers/3d-runtime-errors.js'
 
 /**
  * Real-pointer proof for 3D interaction at short-landscape 844x390.
@@ -68,6 +69,18 @@ async function realMouseMoveTo(page, x, y, { steps = 6 } = {}) {
 }
 
 test.describe('3D real-pointer playthrough - short-landscape 844x390', () => {
+    const runtimeCaptures = new WeakMap()
+
+    test.beforeEach(({ page }) => {
+        runtimeCaptures.set(page, capture3dRuntimeErrors(page))
+    })
+
+    test.afterEach(({ page }, testInfo) => {
+        const capture = runtimeCaptures.get(page)
+        assertNoUnexpected3dRuntimeErrors(expect, capture, testInfo.title)
+        capture?.detach()
+    })
+
     // -------------------------------------------------------------------------
     // HOVER - page.mouse.move must flip hoverHighlightIndex
     // -------------------------------------------------------------------------

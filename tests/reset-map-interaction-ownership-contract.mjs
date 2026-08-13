@@ -110,7 +110,7 @@ async function waitReady(page) {
                 typeof setTrailDepth === 'function' &&
                 typeof returnToOverview === 'function' &&
                 state.applyingUrlState === false &&
-                                state.sceneRevealActive === false &&
+                state.sceneRevealActive === false &&
                 (document.body.dataset.sceneReveal === 'inactive' || document.body.dataset.sceneReady === 'true')
             )
         },
@@ -688,7 +688,15 @@ async function runMapTransitionScenario(browser) {
 
 // SwiftShader gate (see visual-state-audit.mjs)
 const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
-const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] })
+const browser = await chromium.launch({
+    headless: false,
+    args: [
+        '--use-gl=angle',
+        '--enable-webgl',
+        '--no-sandbox',
+        ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])
+    ]
+})
 
 try {
     const clearButton = await runClearButtonScenario(browser)

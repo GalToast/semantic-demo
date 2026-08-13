@@ -8,7 +8,7 @@ test.describe('Journey transition parity', () => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 

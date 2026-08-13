@@ -96,6 +96,17 @@ describe('A2-4: Ctrl+1-6 keyboard shortcuts for mode switching', () => {
         expect(block).toContain('NAV_TRANSITION_ACTIONS.SET_SURFACE')
     })
 
+    it('returns galaxy before Ctrl/Cmd+2-5 galaxy-panel surfaces', () => {
+        const shortcutIdx = appSrc.indexOf('(e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)')
+        const switchIdx = appSrc.indexOf('switch (e.key)', shortcutIdx)
+        expect(switchIdx).toBeGreaterThan(shortcutIdx)
+        const block = appSrc.slice(shortcutIdx, switchIdx)
+
+        expect(block).toMatch(
+            /if\s*\(modeId !== ['"]overview['"] && modeId !== ['"]map['"]\)\s*\{[\s\S]*?NAV_TRANSITION_ACTIONS\.SET_VIEW,\s*\{\s*view:\s*['"]galaxy['"]\s*\}/
+        )
+    })
+
     it('maps Ctrl+3 to SET_SURFACE with trail', () => {
         const shortcutIdx = appSrc.indexOf('(e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)')
         const block = appSrc.slice(shortcutIdx, shortcutIdx + 4000)

@@ -582,9 +582,7 @@ function testJourneyWebglLineShaderOwnership() {
     const webglSemanticSrc =
         fs.readFileSync(JOURNEY_SEMANTIC_OVERLAY_PATH, 'utf-8') +
         '\n' +
-        (fs.existsSync(JOURNEY_SEMANTIC_MATERIAL_PATH)
-            ? fs.readFileSync(JOURNEY_SEMANTIC_MATERIAL_PATH, 'utf-8')
-            : '')
+        (fs.existsSync(JOURNEY_SEMANTIC_MATERIAL_PATH) ? fs.readFileSync(JOURNEY_SEMANTIC_MATERIAL_PATH, 'utf-8') : '')
 
     // Route trace uses a plain ShaderMaterial with direct uniforms. It should
     // not depend on LineMaterial's late onBeforeCompile userData.shader path.

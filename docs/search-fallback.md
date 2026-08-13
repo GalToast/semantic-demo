@@ -18,7 +18,10 @@ Caller-initiated search cancellation does not mark the API unreachable; genuine 
 
 ## `?staticDev=0`
 
-Forces live API and surfaces failures as errors. Used by contract tests; do not use in normal dev flows.
+Forces live API and surfaces failures as errors. The orchestration path bypasses
+its seven-second local-index race in this mode, so contract tests observe the
+real API rejection rather than a locally synthesized result. Used by contract
+tests; do not use in normal dev flows.
 
 ## Dev with live data
 

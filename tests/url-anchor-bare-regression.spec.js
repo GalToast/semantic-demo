@@ -230,4 +230,23 @@ test.describe('URL-anchor bare regression (post-fix pinning)', () => {
         // URL garbage-anchor is preserved (we don't silently drop unknown params)
         expect(probe.urlParams.anchor).toBe('garbage-id')
     })
+
+    test('D: unknown ?record= is stripped after the not-found fallback', async ({ page }) => {
+        test.setTimeout(NAV_TIMEOUT_MS)
+        await page.setViewportSize({ width: 1440, height: 1000 })
+
+        await openAppWithUrl(page, 'record=missing-lead-id')
+
+        await page.waitForFunction(
+            () => !new URLSearchParams(location.search).has('record'),
+            null,
+            { timeout: NAV_TIMEOUT_MS }
+        )
+
+        const probe = await anchorProbe(page)
+        expect(probe.urlParams.anchor).toBeNull()
+        expect(new URL(probe.url).searchParams.has('record')).toBe(false)
+        expect(probe.body.activeView).toBe('galaxy')
+        expect(probe.body.graphicsMode).toBe('webgl')
+    })
 })

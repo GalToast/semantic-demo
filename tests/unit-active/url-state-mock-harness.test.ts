@@ -247,6 +247,11 @@ vi.mock('@lib/stores/navigation.svelte.ts', async () => {
             // Mirror real writeNavStateMirror side-effects on top-level appState fields
             if (typeof patch.trailDepth === 'number') {
                 mockState.appStateTrailDepth = patch.trailDepth
+                // `semanticDiveMode` is a derived alias over `navState.trailDepth === 2`
+                // (app.svelte.ts). The mock must model that derivation so reset tests
+                // prove the canonical trailDepth:0 patch leaves semanticDiveMode false
+                // WITHOUT a bare alias-door write in the product code.
+                mockState.appStateSemanticDiveMode = patch.trailDepth === 2
             }
             if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
                 mockState.appStateCurrentView = patch.currentView as string

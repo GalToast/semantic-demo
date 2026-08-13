@@ -29,7 +29,7 @@
 | Phase | Description | navState.mode | trailDepth | semanticDiveMode | currentView | currentSearchSummary |
 |-------|-------------|---------------|------------|-----------------|-------------|----------------------|
 | **overview** | Initial galaxy load. No search, no focus. | `'overview'` | 0 | false | `'galaxy'` | null |
-| **search** | Search submitted. Results rendered. Anchor may be set. | `'search'` | 0 or 1 | false | `'galaxy'` | non-null |
+| **search** | Search submitted. Results rendered. Anchor may be set by explicit selection. Typing a replacement query while the input owns focus must not create scene focus. | `'search'` | 0 or 1 | false | `'galaxy'` | non-null |
 | **focus** | A node is focused (selectedPoint / focusedNode set). Trail may or may not exist. | `'focus'` | 0 or 1 | false | `'galaxy'` | nullable |
 | **inside** | "Step Inside" — user entered semantic-dive / neighborhood walk. | `'inside'` | 2 | true | `'galaxy'` | non-null |
 | **map-trail** | Map view with active trail. | `'map'` | 1 or 2 | depends | `'map'` | non-null |
@@ -119,7 +119,7 @@ Managed by `updateUrlState()` in `js/modules/lifecycle.js`.
 | From | To | Trigger |
 |------|----|---------|
 | overview | search | `search(query)` — user types and submits |
-| search | focus | `focusOnNode(index)` — user clicks a result or anchor |
+| search | focus | `focusOnNode(index)` — user clicks a result or anchor; keyboard navigation only enters this path after the user moves into/selects the result list |
 | focus | inside | `setTrailDepth(2)` via `setSemanticDiveMode(true)` — user clicks "Step Inside" |
 | inside | map-trail | `switchView('map')` |
 | *(any)* | overview | `resetExperienceState()` / `returnToOverview()` / Esc — full clear |

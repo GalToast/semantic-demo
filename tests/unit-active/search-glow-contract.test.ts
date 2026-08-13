@@ -22,12 +22,7 @@ const mockState = vi.hoisted(() => ({
 }))
 
 const mockSearchState = vi.hoisted(() => {
-    const tracked = [
-        'searchGlowIndices',
-        'searchGlowTopIndex',
-        'searchGlowActive',
-        'searchVisibleCount'
-    ] as const
+    const tracked = ['searchGlowIndices', 'searchGlowTopIndex', 'searchGlowActive', 'searchVisibleCount'] as const
     const obj: Record<string, unknown> = {}
     for (const field of tracked) {
         Object.defineProperty(obj, field, {
@@ -89,12 +84,7 @@ vi.mock('src/lib/stores/search.svelte.ts', () => ({
 
 // ── Import under test (after mocks) ────────────────────────────────────────
 
-import {
-    setGlowIndices,
-    setGlowActive,
-    setSearchGlow,
-    clearSearchGlow
-} from '@lib/stores/search-glows'
+import { setGlowIndices, setGlowActive, setSearchGlow, clearSearchGlow } from '@lib/stores/search-glows'
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 

@@ -163,15 +163,15 @@ test.describe('Placeholder2D journey', () => {
 
         // Title + badge + subtitle copy (W47-C "Preview" framing).
         await expect(placeholder.locator('.placeholder-title')).toContainText('Semantic Explorer')
-        await expect(placeholder.locator('.placeholder-badge')).toHaveText('Preview')
+        await expect(placeholder.locator('.placeholder-badge')).toHaveText('Mobile preview')
         await expect(placeholder.locator('.placeholder-subtitle')).toContainText('Montgomery County')
 
         // CTA: aria-label uses the lowercase 'scene' phrase; visible text uses
         // 'Scene' (capital S). Tap target ≥ 44×44 + aria-describedby points to hint.
         const cta = placeholder.locator('[data-testid="placeholder-cta"]')
         await expect(cta).toHaveCount(1)
-        await expect(cta).toHaveAttribute('aria-label', 'Enter 3D scene')
-        await expect(cta).toContainText('Enter 3D Scene')
+        await expect(cta).toHaveAttribute('aria-label', 'Open full 3D experience')
+        await expect(cta).toContainText('Open full 3D experience')
         await expect(cta).toHaveAttribute('aria-describedby', 'placeholder-hint')
         // Poll for the CTA to settle at ≥44×44 before reading the rect.
         const ctaSettled = await page.waitForFunction(
@@ -205,7 +205,7 @@ test.describe('Placeholder2D journey', () => {
         }
 
         // Hint copy.
-        await expect(placeholder.locator('#placeholder-hint')).toContainText('load the full 3D scene')
+        await expect(placeholder.locator('#placeholder-hint')).toContainText('load the full 3D experience')
     })
 
     test('P2: clicking the CTA fires engineReady → renderKind flips to webgl', async ({ page }) => {

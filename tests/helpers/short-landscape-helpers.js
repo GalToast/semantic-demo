@@ -193,3 +193,54 @@ export async function openApp(page, viewport) {
         )
         .catch(() => {})
 }
+
+/**
+ * Establish the canonical map-trail parity state through the app's test
+ * bridge. This mirrors the user action path: open map, ensure the journey
+ * has trail context, then land on the map-trail surface.
+ */
+export async function setShortLandscapeMapTrail(page) {
+    const result = await page.evaluate(() => {
+        const actions = window.__navActions__ ?? window.__APP_ACTIONS__ ?? {}
+        const canonicalActions = []
+
+        if (typeof actions.switchView === 'function') {
+            actions.switchView('map')
+            canonicalActions.push('switchView')
+        }
+
+        if (typeof actions.setTrailDepth === 'function') {
+            actions.setTrailDepth(1)
+            canonicalActions.push('setTrailDepth')
+        }
+
+        if (typeof actions.setSurface === 'function') {
+            actions.setSurface('map-trail')
+            canonicalActions.push('setSurface')
+        }
+
+        if (typeof actions.refreshCompositionState === 'function') {
+            actions.refreshCompositionState()
+            canonicalActions.push('refreshCompositionState')
+        }
+
+        return { canonicalActions }
+    })
+
+    if (!result.canonicalActions.length) {
+        throw new Error('short-landscape map-trail setup did not use a canonical app action')
+    }
+
+    await page.waitForFunction(
+        () => {
+            return (
+                document.body?.dataset?.activeView === 'map' &&
+                document.body?.dataset?.panelSurface === 'map-trail' &&
+                document.body?.dataset?.journeyNavigationOwner === 'map-trail-strip'
+            )
+        },
+        null,
+        { timeout: 15000 }
+    )
+    await page.waitForTimeout(100)
+}

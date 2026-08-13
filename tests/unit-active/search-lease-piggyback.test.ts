@@ -103,6 +103,7 @@ const mockState = vi.hoisted(() => ({
     },
     searchResults: [] as Array<Record<string, unknown>>,
     performSearchCalls: [] as Array<{ query: string }>,
+    applyLocalNeighborhoodFocusCalls: [] as number[],
     publishCalls: [] as Array<{ type: string; payload: unknown }>,
     // Deferred performSearch: tests hold the search in flight, then resolve.
     deferred: null as null | {
@@ -417,5 +418,55 @@ describe('url-state restoration piggyback (runtime)', () => {
             expect(searchStore().status).toBe('results')
         })
         expect(mockState.publishCalls.filter((c) => c.type === 'SEARCH_SUCCESS').length).toBeGreaterThanOrEqual(1)
+    }, 60000)
+
+    it('a newer typed search superseding the restore lease performs no stale input/focus/camera writes', async () => {
+        // Highest-confidence lease fix: a deep-link URL restore (?q=coffee)
+        // opens a search LEASE via startSearch. If the user types a NEW query
+        // while that restore is still in flight, dispatchSearch aborts the
+        // restore's lease controller. The restore must NOT then rewrite the
+        // input to the stale query, publish SEARCH_FOCUS_REQUESTED, or rebuild
+        // the constellation/camera after the user has moved on.
+        const input = document.createElement('input')
+        input.id = 'search-input'
+        input.value = 'sentinel'
+        document.body.appendChild(input)
+
+        const deferred = createDeferred()
+        mockState.deferred = deferred
+        // Non-numeric anchor not present in results so the restore takes the
+        // no-focus branch (no SEARCH_FOCUS_REQUESTED publish on the happy path).
+        mockState.urlSearch = '?q=coffee&anchor=lead-404'
+
+        const { resetSearchAbort: resetLeases } = await import('@lib/search/search-abort')
+        resetLeases()
+        const { SearchDispatch } = await import('@lib/search/search-dispatch')
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        const { searchStore } = await import('@lib/stores/search.svelte')
+
+        // Deep-link URL restore ?q=coffee starts and awaits performSearch.
+        const restore = applyUrlState({})
+        await new Promise((r) => setTimeout(r, 20))
+        expect(mockState.performSearchCalls.length).toBe(1)
+        expect(mockState.performSearchCalls[0].query).toBe('coffee')
+
+        // A newer typed search for a DIFFERENT query supersedes the restore's
+        // search lease (startSearch aborts the previous controller).
+        new SearchDispatch().dispatchSearch('tea')
+        expect(mockState.performSearchCalls.length).toBe(2)
+        await new Promise((r) => setTimeout(r, 20))
+
+        // The superseded restore must NOT have written the stale query to the
+        // input, nor dispatched focus, nor rebuilt the constellation/camera.
+        expect(input.value).toBe('sentinel')
+        expect(
+            mockState.publishCalls.filter((c) => c.type === 'search:search-focus-requested').length
+        ).toBe(0)
+        expect(mockState.applyLocalNeighborhoodFocusCalls.length).toBe(0)
+
+        // Settle both in-flight searches so the test tears down cleanly.
+        deferred.resolve([{ id: 'r-1', name: 'Coffee Shop', index: 0, score: 1, category: 'Food', snippet: 'x' }])
+        await restore
+        await vi.waitFor(() => expect(searchStore().status).not.toBe('searching'))
     }, 60000)
 })

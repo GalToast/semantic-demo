@@ -19,7 +19,7 @@ const webServer = process.env.TEST_BASE_URL
     : {
           command: 'node scripts/playwright-web-server.mjs',
           port: 8796,
-          reuseExistingServer: true,
+          reuseExistingServer: process.env.PLAYWRIGHT_REUSE_SERVER === '1',
           timeout: 180_000
       }
 

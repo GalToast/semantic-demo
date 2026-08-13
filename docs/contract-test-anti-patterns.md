@@ -114,6 +114,7 @@ Design rules proven:
 
 When an audit finds a contract reading a barrel with NO sibling composite, classify
 before re-pointing:
+
 1. **live `import('@lib/...')`** → OK (the barrel re-exports the runtime surface; imports are the correct usage).
 2. **assert-absence** (retired-bridge/`must not contain window.X`) → OK by design.
 3. **source-read of a def/import that now lives in a sibling** → RE-POINT (composite the sibling into the readFileSync concat).

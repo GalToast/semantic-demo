@@ -122,6 +122,11 @@ describe('getActiveIndexForMode — chip-rail index lookup', () => {
         expect(getActiveIndexForMode('bridge', 'map')).toBe(5)
     })
 
+    it('keeps roving focus on the active chip when a map surface preserves chip mode', () => {
+        expect(getActiveIndexForMode('focus', 'map')).toBe(3)
+        expect(getActiveIndexForMode('inside', 'map')).toBe(4)
+    })
+
     it('returns 0 (Overview) as a safe default when nothing matches', () => {
         // bridge mode is not in the visible chip rail
         expect(getActiveIndexForMode('bridge', 'galaxy')).toBe(0)

@@ -52,8 +52,8 @@ Do not inject CSS custom properties from JavaScript. CSS root tokens stay in `cs
 | `--status-warning`           |                   `#ffd66b` | Semantic lane degraded / warning state                            |
 | `--status-danger`            |                   `#ff6b6b` | Semantic lane failure / error state                               |
 | `--status-info`              |                   `#bae6fd` | Semantic lane info / neutral update                               |
-| `--color-white`              |                   `#fff`    | Pure white — text/icon fills on dark chrome                      |
-| `--color-black`              |                   `#000`    | Pure black — mask/gradient stops, deep inset backgrounds          |
+| `--color-white`              |                      `#fff` | Pure white — text/icon fills on dark chrome                       |
+| `--color-black`              |                      `#000` | Pure black — mask/gradient stops, deep inset backgrounds          |
 | `--color-ink-deep`           |                   `#0a0a0f` | Near-black panel/inset background                                 |
 | `--color-white-warm`         |                   `#f7fffd` | Warm near-white text on dark surfaces                             |
 | `--color-ink`                |                   `#0d141c` | Dark ink text (e.g., focus-dive light surfaces)                   |
@@ -177,69 +177,69 @@ CSS custom properties cannot be used inside `@media` rules, so the short-landsca
 breakpoints below are documented as canonical media-query strings, not as `:root`
 custom properties.
 
-| Breakpoint             |                                                                                          Media query | Use                                    |
-| ---------------------- | ---------------------------------------------------------------------------------------------------: | -------------------------------------- |
-| `bp-landscape`         |                        `(max-width: 900px) and (max-height: 430px) and (orientation: landscape)` | Canonical short-landscape breakpoint   |
-| `bp-landscape-tall`    |                        `(max-width: 900px) and (max-height: 480px) and (orientation: landscape)` | Taller short-landscape breakpoint      |
-| `bp-landscape-compact` |                        `(max-width: 900px) and (max-height: 420px) and (orientation: landscape)` | Compact short-landscape breakpoint     |
+| Breakpoint             |                                                                                      Media query | Use                                     |
+| ---------------------- | -----------------------------------------------------------------------------------------------: | --------------------------------------- |
+| `bp-landscape`         |                        `(max-width: 900px) and (max-height: 430px) and (orientation: landscape)` | Canonical short-landscape breakpoint    |
+| `bp-landscape-tall`    |                        `(max-width: 900px) and (max-height: 480px) and (orientation: landscape)` | Taller short-landscape breakpoint       |
+| `bp-landscape-compact` |                        `(max-width: 900px) and (max-height: 420px) and (orientation: landscape)` | Compact short-landscape breakpoint      |
 | `bp-landscape-tablet`  | `(min-width: 769px) and (max-width: 900px) and (max-height: 430px) and (orientation: landscape)` | Tablet-width short-landscape breakpoint |
 
-| Token                                      |                                                                                            Value | Use                                                                      |
-| ------------------------------------------ | -----------------------------------------------------------------------------------------------: | ------------------------------------------------------------------------ |
-| `--landscape-info-panel-idle-max-height`   |                                                                 `min(calc(100vh - 86px), 178px)` | Short-landscape idle info panel                                          |
-| `--landscape-info-content-idle-max-height` |                                       `calc(var(--landscape-info-panel-idle-max-height) - 42px)` | Short-landscape idle info content                                        |
-| `--landscape-search-panel-height`          |                                                                 `min(calc(100vh - 82px), 308px)` | Short-landscape search panel                                             |
-| `--landscape-search-results-max-height`    |                                                               `min(250px, calc(100dvh - 390px))` | Short-landscape search results                                           |
-| `--landscape-weather-widget-height`        |                                                                                           `62px` | Short-landscape weather widget                                           |
-| `--landscape-focus-stage-card-max-height`  |                                                                               `min(72vh, 282px)` | Short-landscape focus card                                               |
-| `--top-chrome-mobile`                      |                                                                                           `82px` | Mobile top chrome vertical offset                                        |
-| `--app-header-height`                      |                                                                                 `60.8px` | Header strip height (source: css/base.css root)                            |
-| `--compass-top`                            |                                                                                           `78px` | Default mobile journey compass top position                              || `--view-toggle-right-mobile`               |                                                                                          `108px` | Mobile view-toggle right offset near top chrome                          |
-| `--z-canvas`                               |                                                                                              `0` | Canvas scene layer (baseline for 3D content)                             |
-| `--z-underlay`                             |                                                                                             `-1` | Decorative or scene-adjacent content below base UI                       |
-| `--z-base`                                 |                                                                                              `1` | Base UI layer                                                            |
-| `--z-base-raised`                          |                                                                                              `2` | Raised base UI layer                                                     |
-| `--z-content`                              |                                                                                              `5` | Primary content above the base layer                                     |
-| `--z-field-nodes`                          |                                                                                             `10` | Canvas field node overlay layer                                          |
-| `--z-chrome`                               |                                                                                             `10` | Standard app chrome                                                      |
-| `--z-chrome-raised`                        |                                                                                             `11` | Raised chrome controls                                                   |
-| `--z-chrome-overlay`                       |                                                                                             `12` | Chrome overlay above raised chrome                                       |
-| `--z-chrome-elevated`                      |                                                                                             `14` | Elevated chrome controls                                                 |
-| `--z-chrome-popover`                       |                                                                                             `20` | Chrome popover layer (menus, flyouts)                                    |
-| `--z-overlays`                             |                                                                                             `30` | General overlay content layer                                            |
-| `--z-legend`                               |                                                                                             `50` | Map legend panel layer                                                   |
-| `--z-trail-cue`                            |                                                                                             `50` | Search trail cue — above canvas/threads, below chrome                    |
-| `--z-focus-stage-card`                     |                                                                                             `70` | Mobile focus bottom-sheet — below panels so a11y toggle wins             |
-| `--z-panels`                               |                                                                                             `50` | Standard panel layer                                                     |
-| `--z-panels-elevated`                      |                                                                                             `90` | Raised or transient panel layer                                          |
-| `--z-search`                               |                                                                                            `100` | Search panel and chrome layer                                            |
-| `--z-search-bar`                           |                                                                                            `100` | Search bar container (info-panel-contained variant) — mirrors --z-search |
-| `--z-overlay`                              |                                                                                            `100` | Overlay stacking baseline                                                |
-| `--z-overlay-100`                          |                                                                                            `100` | Map overlay layer — alias of --z-overlay; resolves MapView.svelte:264    |
-| `--z-neighbor-rail`                        |                                                                                            `110` | Focus neighbor rail — above search, below journey chrome                 |
-| `--z-overlay-raised`                       |                                                                                            `101` | Raised overlay layer                                                     |
-| `--z-overlay-floating`                     |                                                                                            `102` | Floating overlay above raised overlays                                   |
-| `--z-overlay-elevated`                     |                                                                                            `150` | Elevated overlay layer                                                   |
-| `--z-tooltips`                             |                                                                                            `200` | Tooltip layer above overlays                                             |
-| `--z-journey-chrome`                       |                                                                                            `200` | Journey chrome and trail UI layer                                        |
-| `--z-modal`                                |                                                                                            `400` | Modal stacking baseline                                                  |
-| `--z-journey-active`                       |                                                                                            `500` | Active journey and exploration chrome layer                              |
-| `--z-focus-card`                           |                                                                                            `600` | Focus stage business card layer                                          |
-| `--z-compass`                              |                                                                                            `700` | Journey compass UI layer                                                 |
-| `--z-controls`                             |                                                                                            `800` | App controls and toolbar layer                                           |
-| `--z-journey-block`                        |                                                                                            `900` | Journey blocker overlay layer                                            |
-| `--z-blocker-backdrop`                     |                                                                                            `900` | Blocker backdrop layer                                                   |
-| `--z-blocker`                              |                                                                                           `1000` | Blocking interaction shield                                              |
-| `--z-inside-walk`                          |                                                                                           `1100` | Inside-walk HUD bars — above blocker, below toasts                       |
-| `--z-toast`                                |                                                                                           `1200` | Toast and urgent feedback layer                                          |
-| `--z-toast-plus`                           |                                                                                           `1201` | Toast layer above standard toasts                                        |
-| `--z-toast-above`                          |                                                                                           `1300` | Toast layer above standard toasts                                        |
-| `--z-journey-modal`                        |                                                                                           `2000` | Journey modal overlay layer                                              |
-| `--z-devtools`                             |                                                                                           `9000` | Dev telemetry / inspector HUD — above toasts, below loading              |
-| `--z-canvas-interaction`                   |                                                                                           `9998` | Click-pulse ring — just below the max tooltip layer                      |
-| `--z-loading`                              |                                                                                           `9999` | Loading and splash screen layer                                          |
-| `--z-max`                                  |                                                                                           `9999` | Last-resort diagnostic or emergency layer                                |
-| `--z-canvas-hover`                         |                                                                                          `10000` | Canvas hover-preview overlay — above the loading veil                    |
+| Token                                      |                                                      Value | Use                                                                      |
+| ------------------------------------------ | ---------------------------------------------------------: | ------------------------------------------------------------------------ | --- | ---------------------------- | ------- | ----------------------------------------------- |
+| `--landscape-info-panel-idle-max-height`   |                           `min(calc(100vh - 86px), 178px)` | Short-landscape idle info panel                                          |
+| `--landscape-info-content-idle-max-height` | `calc(var(--landscape-info-panel-idle-max-height) - 42px)` | Short-landscape idle info content                                        |
+| `--landscape-search-panel-height`          |                           `min(calc(100vh - 82px), 308px)` | Short-landscape search panel                                             |
+| `--landscape-search-results-max-height`    |                         `min(250px, calc(100dvh - 390px))` | Short-landscape search results                                           |
+| `--landscape-weather-widget-height`        |                                                     `62px` | Short-landscape weather widget                                           |
+| `--landscape-focus-stage-card-max-height`  |                                         `min(72vh, 282px)` | Short-landscape focus card                                               |
+| `--top-chrome-mobile`                      |                                                     `82px` | Mobile top chrome vertical offset                                        |
+| `--app-header-height`                      |                                                   `60.8px` | Header strip height (source: css/base.css root)                          |
+| `--compass-top`                            |                                                     `78px` | Default mobile journey compass top position                              |     | `--view-toggle-right-mobile` | `108px` | Mobile view-toggle right offset near top chrome |
+| `--z-canvas`                               |                                                        `0` | Canvas scene layer (baseline for 3D content)                             |
+| `--z-underlay`                             |                                                       `-1` | Decorative or scene-adjacent content below base UI                       |
+| `--z-base`                                 |                                                        `1` | Base UI layer                                                            |
+| `--z-base-raised`                          |                                                        `2` | Raised base UI layer                                                     |
+| `--z-content`                              |                                                        `5` | Primary content above the base layer                                     |
+| `--z-field-nodes`                          |                                                       `10` | Canvas field node overlay layer                                          |
+| `--z-chrome`                               |                                                       `10` | Standard app chrome                                                      |
+| `--z-chrome-raised`                        |                                                       `11` | Raised chrome controls                                                   |
+| `--z-chrome-overlay`                       |                                                       `12` | Chrome overlay above raised chrome                                       |
+| `--z-chrome-elevated`                      |                                                       `14` | Elevated chrome controls                                                 |
+| `--z-chrome-popover`                       |                                                       `20` | Chrome popover layer (menus, flyouts)                                    |
+| `--z-overlays`                             |                                                       `30` | General overlay content layer                                            |
+| `--z-legend`                               |                                                       `50` | Map legend panel layer                                                   |
+| `--z-trail-cue`                            |                                                       `50` | Search trail cue — above canvas/threads, below chrome                    |
+| `--z-focus-stage-card`                     |                                                       `70` | Mobile focus bottom-sheet — below panels so a11y toggle wins             |
+| `--z-panels`                               |                                                       `50` | Standard panel layer                                                     |
+| `--z-panels-elevated`                      |                                                       `90` | Raised or transient panel layer                                          |
+| `--z-search`                               |                                                      `100` | Search panel and chrome layer                                            |
+| `--z-search-bar`                           |                                                      `100` | Search bar container (info-panel-contained variant) — mirrors --z-search |
+| `--z-overlay`                              |                                                      `100` | Overlay stacking baseline                                                |
+| `--z-overlay-100`                          |                                                      `100` | Map overlay layer — alias of --z-overlay; resolves MapView.svelte:264    |
+| `--z-neighbor-rail`                        |                                                      `110` | Focus neighbor rail — above search, below journey chrome                 |
+| `--z-overlay-raised`                       |                                                      `101` | Raised overlay layer                                                     |
+| `--z-overlay-floating`                     |                                                      `102` | Floating overlay above raised overlays                                   |
+| `--z-overlay-elevated`                     |                                                      `150` | Elevated overlay layer                                                   |
+| `--z-tooltips`                             |                                                      `200` | Tooltip layer above overlays                                             |
+| `--z-journey-chrome`                       |                                                      `200` | Journey chrome and trail UI layer                                        |
+| `--z-modal`                                |                                                      `400` | Modal stacking baseline                                                  |
+| `--z-journey-active`                       |                                                      `500` | Active journey and exploration chrome layer                              |
+| `--z-focus-card`                           |                                                      `600` | Focus stage business card layer                                          |
+| `--z-compass`                              |                                                      `700` | Journey compass UI layer                                                 |
+| `--z-controls`                             |                                                      `800` | App controls and toolbar layer                                           |
+| `--z-journey-block`                        |                                                      `900` | Journey blocker overlay layer                                            |
+| `--z-blocker-backdrop`                     |                                                      `900` | Blocker backdrop layer                                                   |
+| `--z-blocker`                              |                                                     `1000` | Blocking interaction shield                                              |
+| `--z-inside-walk`                          |                                                     `1100` | Inside-walk HUD bars — above blocker, below toasts                       |
+| `--z-toast`                                |                                                     `1200` | Toast and urgent feedback layer                                          |
+| `--z-toast-plus`                           |                                                     `1201` | Toast layer above standard toasts                                        |
+| `--z-toast-above`                          |                                                     `1300` | Toast layer above standard toasts                                        |
+| `--z-journey-modal`                        |                                                     `2000` | Journey modal overlay layer                                              |
+| `--z-devtools`                             |                                                     `9000` | Dev telemetry / inspector HUD — above toasts, below loading              |
+| `--z-canvas-interaction`                   |                                                     `9998` | Click-pulse ring — just below the max tooltip layer                      |
+| `--z-loading`                              |                                                     `9999` | Loading and splash screen layer                                          |
+| `--z-max`                                  |                                                     `9999` | Last-resort diagnostic or emergency layer                                |
+| `--z-canvas-hover`                         |                                                    `10000` | Canvas hover-preview overlay — above the loading veil                    |
 
 Policy: docked bottom panel shells should be flush to the viewport bottom. Safe-area comfort should be handled with internal padding or content insets, not by detaching the shell with an exterior bottom gutter.
 
