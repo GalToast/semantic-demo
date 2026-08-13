@@ -37,7 +37,9 @@ router, write reports to /swarm/, and the laptop pulls + main-lane-verifies.
   production path.
 
 ## Model selection for workers (2026-08-13 investigation — user hypothesis CONFIRMED)
+
 NOT all router routes are equally agent-capable. Verified live over the phone router:
+
 - phone-mistral  -> 422 (upstream contract break; zero tokens). Unusable.
 - phone-gemini   -> silently routes to Qwen3-235B-Thinking-INITIAL; its thinking
   tool-calls lack Gemini thought_signature -> pi tool loop stalls (339-byte log).
@@ -51,3 +53,35 @@ responseModel is the expected model, not a thinking proxy: verify via the
 session JSON "responseModel" field after the first launch.
 Symptom to watch: worker log stuck at ~339 bytes with only a Gemini
 "thought_signature" warning line = thinking-model tool-loop stall.
+
+## VERIFIED free-agent lanes on the phone (2026-08-13, all live-tested)
+
+Register providers in the chroot `~/.pi/agent/models.json` under
+`providers.<name>` with baseUrl `http://127.0.0.1:8789/<lane>/v1`,
+apiKey `router`, api `openai-completions`. All 4 below completed a
+2-tool-call agent task with correct answers (LANE-OK 1 1):
+
+| pi provider  | lane path      | model id (exact)               | verdict |
+|---|---|---|---|
+| phone-agnes  | /agnes/v1      | agnes-2.0-flash                | ✅ live |
+| phone-agnes  | /agnes/v1      | agnes-2.5-flash                | ✅ live |
+| phone-kilo   | /kilo/v1       | poolside/laguna-s-2.1:free     | ✅ live |
+| phone-nvidia | /nvidia/v1     | meta/llama-3.1-8b-instruct     | ✅ live |
+
+Analysis rank (2026-08-13, real analysis task — read z-index.ts, report max layer):
+agnes-2.5-pro == laguna-s-2.1:free (both correctly picked loading:9999, tied
+for strongest on-phone agent). zenmux deepseek-v4-flash-free is NOT free on
+this router (402 credit-required — a mislabeled route); logfare kimi-k2.7-code
+is per-model-429 currently.
+
+Also present (per-model 429s / quota, not route-down): openrouter
+(nemotron-3.5-lightning:free etc.), logfare (kimi-k2.7-code).NVIDIA 429s are PER-MODEL (router cooldownScope
+returns model scope) — a cooldown on llama-3.1-8b does not block other nvidia
+models. NVIDIA route wants BARE ids (`meta/llama-3.1-8b-instruct`), not
+OpenRouter-style `:free` (that 404s on /nvidia/v1).
+
+Lane discovery: `curl -s http://127.0.0.1:8789/<lane>/v1/models -H
+"Authorization: Bearer router"` from inside the chroot gives the exact
+id list per lane (verified: nvidia/kilo/openrouter/logfare/modelscope/zenmux
+/agnes). Pick models our laptop benchmarks already rate strongest per family;
+no blind probing needed — the same catalog serves the phone router.
