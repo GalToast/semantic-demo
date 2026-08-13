@@ -44,3 +44,21 @@ delete per-item with a one-line justification commit. Highest-confidence initial
 - DEMO*TOTAL_DURATION_MS and 6 other DEMO*\* unused exports
 - NESTED*STATE_PATHS, PARITY_ATTRIBUTE_KEYS, VALID*\* (imported by nothing)
   Track as follow-up, not this commit.
+
+## Follow-up 2026-08-13 (post-repair): full 30-candidate re-sweep -> NOTHING DEAD
+
+Main-lane definitive sweep of all 30 residual candidates with corrected
+methodology (list EVERY external referencing file per candidate):
+- 0 candidates had zero external references.
+- Every one either (a) has a unit/contract test consumer (API_BYPASS_STICKY_MS,
+  CORRIDOR_TRAIL_SHADER_COLORS, DEMO_LIFETIME_KEY/SESSION_KEY/TIMING,
+  NESTED_STATE_PATHS, PARITY_ATTRIBUTE_KEYS, STORAGE_KEY, SUPPORT_BUCKET_ROLES,
+  ThreadSettler), or (b) is re-exported via barrel (getZIndex), or (c) used in
+  production paths (all the rest).
+- countRaw/expandRaw/fetchSemanticLaneHealth/isDebugProbesEnabled: not found as
+  exports in the current tree (removed by the parallel map-state refactor already).
+
+Conclusion: the dead-export cleanup for THIS wave = the 2 real removals from
+e9f48985 (recordCount, isMapPrefixedSurface). No further deletions warranted;
+the earlier "21 single-file" count was the same own-file-reference blind spot
+at file granularity, now corrected.
