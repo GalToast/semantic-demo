@@ -1,37 +1,19 @@
 import { test, expect } from '@playwright/test'
 import { BASE_URL } from './helpers/3d-interaction-helpers.js'
 
-// GPU cleanup between tests: close the entire browser context to force-release
-// the WebGL rendering context and GPU memory from the prior test's engine init.
-// Navigating to about:blank alone does not release GPU allocations because the
-// browser's GPU process retains them. Closing the context destroys the page and
-// its associated GPU resources, giving the next test a clean canvas.
+// GPU cleanup between tests: close the page and its entire browser context so
+// serial WebGL journeys do not accumulate renderer bookkeeping. Do not call
+// WEBGL_lose_context here: that deliberately fires the app's recovery path and
+// can race the next test while the context is being torn down.
 test.afterEach(async ({ page }) => {
     const context = page.context()
     try {
-        // Force-destroy the WebGL context so the GPU process can reclaim memory.
-        await page
-            .evaluate(() => {
-                const canvas = document.querySelector('canvas')
-                if (canvas) {
-                    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
-                    if (gl && !gl.isContextLost()) {
-                        const ext = gl.getExtension('WEBGL_lose_context')
-                        if (ext) ext.loseContext()
-                    }
-                }
-            })
-            .catch(() => {})
-        // Brief settle for the GPU process to reclaim resources.
-        await page.waitForTimeout(200)
+        await page.close().catch(() => {})
     } catch {
         // Cleanup is best-effort — don't mask the real test failure.
     } finally {
-        // The page fixture alone does not release the browser context's GPU
-        // bookkeeping. Close this exact per-test context so serial WebGL
-        // journeys cannot accumulate contexts until Chromium evicts a later
-        // test's canvas. Playwright fixture teardown tolerates this idempotent
-        // close when it runs again after the test.
+        // Close this exact per-test context. Playwright fixture teardown
+        // tolerates this idempotent close when it runs again after the test.
         await context.close().catch(() => {})
     }
 })

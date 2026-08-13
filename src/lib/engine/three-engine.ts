@@ -16,6 +16,7 @@
 
 export {
     initThreeJS,
+    invalidateInitGeneration,
     startRenderLoop,
     animate,
     deinit,

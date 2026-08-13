@@ -27,6 +27,7 @@ vi.mock('@lib/engine/three-engine', () => ({
     onWindowResize: vi.fn(),
     updateCameraViewportOffset: vi.fn(),
     invalidateRestoreMachine: vi.fn(),
+    invalidateInitGeneration: vi.fn(),
     animate: vi.fn(),
     cancelAnimate: vi.fn(),
     disposeInteractionVisuals: vi.fn(),

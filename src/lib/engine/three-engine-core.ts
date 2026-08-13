@@ -29,7 +29,7 @@ export {
 
 // ── Re-export: init orchestration ─────────────────────────────────────────────
 
-export { initThreeJS } from './three-engine-init'
+export { initThreeJS, invalidateInitGeneration } from './three-engine-init'
 
 // ── Re-export: teardown ───────────────────────────────────────────────────────
 

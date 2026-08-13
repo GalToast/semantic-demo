@@ -168,7 +168,7 @@
      compact focus surface also reserves the bottom dive strip for its CTA. */
   .focus-pocket-a11y.visible.lifted {
     height: fit-content;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 5.25rem);
   }
 
   .focus-pocket-a11y li {
@@ -244,8 +244,9 @@
   }
 
   .focus-pocket-list-toggle.lifted {
-    /* clear the bottom dive strip (48px) + margins: 12+48+20 = 80px */
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
+    /* Clear the current two-line dive strip (60px), its 12px inset, and a
+       12px touch-target gap. The old 48px reservation left a 4px overlap. */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 5.25rem);
   }
 
   .focus-pocket-list-toggle:hover,

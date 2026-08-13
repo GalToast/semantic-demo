@@ -35,12 +35,14 @@ describe('ensureDiveButton (W61 F3)', () => {
         const canonical = document.createElement('button')
         canonical.id = 'btn-focus-dive'
         document.body.appendChild(canonical)
+        const originalParent = canonical.parentElement
 
         ensureDiveButton()
         ensureDiveButton()
 
         expect(document.querySelectorAll('#btn-focus-dive').length).toBe(1)
         expect(document.querySelectorAll('#btn-focus-dive-legacy').length).toBe(0)
+        expect(canonical.parentElement).toBe(originalParent)
     })
 
     it('does not append a duplicate when a hidden legacy button already exists (JourneyCompass case)', () => {

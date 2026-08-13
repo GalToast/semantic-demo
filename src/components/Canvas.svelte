@@ -207,8 +207,15 @@
     const initLifecycle = async (): Promise<void> => {
       try {
         const lifecycle = await import('@lib/engine/lifecycle');
-        if (componentDestroyed || !canvasEl) return;
         engineLifecycle = lifecycle;
+        // The component can unmount while the lazy lifecycle chunk is still
+        // resolving. Assign the module before checking the flag so onDestroy
+        // and this continuation share the same teardown path; otherwise a
+        // renderer created by the late init can outlive its page/context.
+        if (componentDestroyed || !canvasEl) {
+          lifecycle.destroyEngine();
+          return;
+        }
         await lifecycle.initEngine(canvasEl, callbacks);
         if (componentDestroyed) {
           lifecycle.destroyEngine();

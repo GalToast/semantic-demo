@@ -267,7 +267,11 @@ export function ensureDiveButton(): void {
         }
         if (existingLegacy) return
         if (existing) {
-            if (!root.contains(existing)) root.appendChild(existing)
+            // The canonical button is owned by Svelte's CompassDiveSurface.
+            // Never reparent it into this imperative auxiliary root: moving a
+            // Svelte-managed node behind its fragment anchor lets the next
+            // reconciliation remove the live button, leaving only the legacy
+            // fallback in the DOM.
             return
         }
         appendDiveButton(root)

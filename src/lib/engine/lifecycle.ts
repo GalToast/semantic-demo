@@ -35,6 +35,7 @@ import type { EngineStatus } from '@lib/stores/engine.svelte.ts'
 // Engine sub-modules
 import {
     initThreeJS,
+    invalidateInitGeneration,
     startRenderLoop,
     onWindowResize,
     cancelAnimate,
@@ -522,6 +523,11 @@ export function resizeEngine(width: number, height: number): void {
 export function destroyEngine(): void {
     if (_destroyed) return
     _destroyed = true
+
+    // Invalidate any init that is still awaiting scene construction before
+    // cancelAnimate clears the engine-owned handles. Otherwise a late scene
+    // build can publish an orphan renderer after this teardown completes.
+    invalidateInitGeneration()
 
     // 0. Clear any pending dev-only WebGL context-loss restore timer so its
     //    callback cannot run against a disposed context (W53 M5).

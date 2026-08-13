@@ -6,6 +6,7 @@
  */
 
 import { engineState, ensureModules } from './three-engine-state'
+import type { SceneSetup } from './renderer/scene-init'
 import {
     buildThreeSceneOrFallback,
     applyReducedMotionGate,
@@ -22,6 +23,7 @@ import { syncSceneHandles, syncPointsHandles, syncMyceliumHandles } from './thre
 import { registerContextListeners } from './three-listener-registration'
 import { yieldToBrowser } from './three-engine-timers'
 import { ensurePostProcessing } from './three-pp-init'
+import { disposeObject3D } from '@lib/engine/resource-tracker'
 import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
@@ -33,6 +35,44 @@ import {
     snapshotRestoreGeneration,
     isStaleRestoreGeneration
 } from './three-engine-restore'
+
+// A manual init can be awaiting scene construction while teardown runs (page
+// close, HMR, or a rapid remount). The old init must not publish a renderer
+// after teardown has already disposed the state it would normally register in.
+let _initGeneration = 0
+
+/** Invalidate any in-flight scene build before the engine is torn down. */
+export function invalidateInitGeneration(): void {
+    _initGeneration += 1
+}
+
+function disposeAbandonedScene(setup: SceneSetup): void {
+    try {
+        setup.controls.dispose()
+    } catch {
+        // Best-effort cleanup for an init that never became engine-owned.
+    }
+    try {
+        disposeObject3D(setup.scene)
+    } catch {
+        // Scene disposal is idempotent for the partially initialized graph.
+    }
+    try {
+        setup.renderer.dispose()
+    } catch {
+        // Renderer may already have been torn down by a concurrent destroy.
+    }
+    try {
+        setup.renderer.forceContextLoss()
+    } catch {
+        // Context loss is best-effort when Chromium already closed the page.
+    }
+    try {
+        setup.renderer.domElement.parentNode?.removeChild(setup.renderer.domElement)
+    } catch {
+        // The canvas may already have been detached by normal teardown.
+    }
+}
 
 /**
  * Public entry — always a manual init. Restore-owned re-inits are routed
@@ -58,6 +98,7 @@ export async function initThreeJS(): Promise<boolean> {
  * survives across attempts within one cycle.
  */
 export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<boolean> {
+    const initGeneration = ++_initGeneration
     ensureModules()
     // T3-1: If the WebGL context was lost and restored, a full GPU resource
     // re-creation is needed. The C6 handler sets this flag; we log and
@@ -81,6 +122,9 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
     // Only restore attempts need this — manual init already bumped generation
     // above, so its own gen is always current.
     const restoreGen = isRestoreAttempt ? snapshotRestoreGeneration() : undefined
+    const initIsCurrent = (): boolean =>
+        _initGeneration === initGeneration &&
+        (restoreGen === undefined || !isStaleRestoreGeneration(restoreGen))
     cancelAnimate()
 
     // Reset circuit breaker so a fresh init can start the loop even if a
@@ -112,7 +156,10 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
     }
     markEngineInitPhase('scene-ready')
     // P1-2: teardown/manual-init may have fired while we awaited the scene build.
-    if (restoreGen !== undefined && isStaleRestoreGeneration(restoreGen)) return false
+    if (!initIsCurrent()) {
+        disposeAbandonedScene(sceneResult.setup)
+        return false
+    }
 
     const { scene, camera, renderer, controls, hemiLight, dirLight } = sceneResult.setup
 
@@ -139,7 +186,10 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
     // synchronous work that benefits from interleaved yield.
     await yieldToBrowser()
     // P1-2: generation guard — bail before mutating handles with stale syncs.
-    if (restoreGen !== undefined && isStaleRestoreGeneration(restoreGen)) return false
+    if (!initIsCurrent()) {
+        disposeAbandonedScene(sceneResult.setup)
+        return false
+    }
 
     // Inline createPoints logic (was engineDelegates.createPoints) to avoid
     // circular dependency with three-engine-mycelium.
@@ -158,7 +208,10 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
     // tasks under 200ms. createMycelium() uploads 100k+ edge line segments.
     await yieldToBrowser()
     // P1-2: generation guard — bail before stale mycelium creation.
-    if (restoreGen !== undefined && isStaleRestoreGeneration(restoreGen)) return false
+    if (!initIsCurrent()) {
+        disposeAbandonedScene(sceneResult.setup)
+        return false
+    }
 
     // Await createMyceliumPort() so the 5 mycelium handles are populated in
     // webglContext BEFORE syncMyceliumHandles mirrors them into appState. This
@@ -184,7 +237,10 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
     // material compilation and visual setup phases.
     await yieldToBrowser()
     // P1-2: generation guard — bail before stale material compilation.
-    if (restoreGen !== undefined && isStaleRestoreGeneration(restoreGen)) return false
+    if (!initIsCurrent()) {
+        disposeAbandonedScene(sceneResult.setup)
+        return false
+    }
 
     compilePointMaterialForReadinessPort()
     markEngineInitPhase('material-ready')
@@ -197,7 +253,10 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
     await yieldToBrowser()
     // P1-2: generation guard — teardown or a newer manual init may have fired
     // while we yielded; bail before starting the render loop (zombie-loop guard).
-    if (restoreGen !== undefined && isStaleRestoreGeneration(restoreGen)) return false
+    if (!initIsCurrent()) {
+        disposeAbandonedScene(sceneResult.setup)
+        return false
+    }
 
     // Defer the first render until the lifecycle publishes readiness. A cold
     // shader compile can block the browser thread in headless/software WebGL;
@@ -243,6 +302,13 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
     }
 
     exposeDevEngineBridge()
+
+    // Teardown can land in the final synchronous window after the last yield.
+    // Do not report success for an init that has already lost ownership.
+    if (!initIsCurrent()) {
+        disposeAbandonedScene(sceneResult.setup)
+        return false
+    }
 
     // F2: restore succeeded — clear the watchdog
     if (engineState.webglRestoreTimer) {
