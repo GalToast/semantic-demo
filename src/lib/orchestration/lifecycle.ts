@@ -111,15 +111,6 @@ export { dispatchNavTransition, NAV_TRANSITION_ACTIONS }
  * Derive a lifecycle panel surface context from search/focus intent flags.
  * Returns "idle", "search", "focus", or "focus-search".
  */
-export function deriveLifecyclePanelSurfaceContext(
-    opts: { hasSearchIntent?: boolean; hasFocus?: boolean } = {}
-): string {
-    const { hasSearchIntent = false, hasFocus = false } = opts
-    if (hasSearchIntent && hasFocus) return 'focus-search'
-    if (hasSearchIntent) return 'search'
-    if (hasFocus) return 'focus'
-    return 'idle'
-}
 // ── Semantic Dive Proxy (uses focus store) ────────────────────────────────────
 
 /**

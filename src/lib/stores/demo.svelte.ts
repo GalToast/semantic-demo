@@ -63,17 +63,6 @@ export const DEMO_TIMING = {
 } as const
 
 export const DEMO_START_DELAY_MS = 1500
-export const DEMO_TOTAL_DURATION_MS =
-    DEMO_TIMING.OVERVIEW_MS +
-    DEMO_TIMING.SEARCH_MS +
-    DEMO_TIMING.FOCUS_MS +
-    DEMO_TIMING.THREADS_MS +
-    DEMO_TIMING.NEIGHBORS_MS +
-    DEMO_TIMING.TRAIL_MS +
-    DEMO_TIMING.DIVE_MS +
-    DEMO_TIMING.FILTER_MS +
-    DEMO_TIMING.MAP_MS +
-    DEMO_TIMING.RETURN_MS
 export const DEMO_LIFETIME_KEY = 'moco_mycelium_demo_v1'
 export const DEMO_SESSION_KEY = 'moco_mycelium_demo_session_v1'
 export const MAX_START_RETRIES = 20
@@ -243,13 +232,6 @@ export function scheduleDemoTimer(callback: () => void, delay: number): ReturnTy
     }, delay)
     timers.set(id, Date.now())
     return id
-}
-
-export function clearDemoTimer(id: ReturnType<typeof setTimeout>): void {
-    if (id !== null && id !== undefined) {
-        clearTimeout(id)
-        timers.delete(id)
-    }
 }
 
 export function cancelAllDemoTimers(): void {

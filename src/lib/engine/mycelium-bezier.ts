@@ -53,10 +53,6 @@ export function refreshCachedBezierViewVector(): void {
         : new Vector3(0.28, 0.2, 1).normalize()
 }
 
-export function getCachedBezierViewVector(): Vector3 | null {
-    return _cachedBezierViewVector
-}
-
 export function hasDisposeBezierViewRefresh(): boolean {
     return _disposeBezierViewRefresh !== null
 }
