@@ -21,8 +21,7 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 - `src/lib/journey/journey.ts`
 - `src/lib/journey/compass-state.ts`
 - `src/lib/journey/selected-card.ts`
-- `src/lib/journey/thread-inspector-state.ts` — ThreadInspector state owner (the former `thread-inspector.ts` was split into `-state` / `-adapter` / `-render` / `-webgl`).
-- `src/lib/journey/thread-inspector-adapter.ts`
+- `src/lib/journey/thread-inspector-state.ts` — ThreadInspector state owner (the former `thread-inspector.ts` was split into `-state` / `-render` / `-webgl`; `thread-inspector-adapter.ts` was deleted in the split).
 - `src/lib/journey/thread-inspector-render.ts`
 - `src/lib/journey/thread-inspector-webgl.ts`
 
