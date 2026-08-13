@@ -59,7 +59,10 @@ const run = async () => {
     // 1. private foo: string
     const priv = new mod.TestParamPropPrivate('hello')
     assert(priv.getFoo() === 'hello', 'private foo: string → getFoo() === "hello"')
-    assert(priv.foo === 'hello', 'private param stored as own field (TS parameter-property semantics — loader must preserve)')
+    assert(
+        priv.foo === 'hello',
+        'private param stored as own field (TS parameter-property semantics — loader must preserve)'
+    )
 
     // 2. public x = 1, private y: number — explicit args
     const pub = new mod.TestParamPropPublicDefault(42, 99)
@@ -82,7 +85,10 @@ const run = async () => {
 
     // 6. multiple private params + body call still executes
     const multi = new mod.TestMultiParamProp('a', 1, true)
-    assert(multi.getA() === 'a' && multi.getB() === 1 && multi.getFlag() === true, 'multi private params (string, number, boolean) all mapped')
+    assert(
+        multi.getA() === 'a' && multi.getB() === 1 && multi.getFlag() === true,
+        'multi private params (string, number, boolean) all mapped'
+    )
 
     // 7. defaulted-parameter class (plain ctor preserved verbatim)
     const defOnly = new mod.TestDefaultThenPrivate('z')
