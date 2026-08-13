@@ -7,6 +7,7 @@ import { BASE_URL } from './helpers/3d-interaction-helpers.js'
 // browser's GPU process retains them. Closing the context destroys the page and
 // its associated GPU resources, giving the next test a clean canvas.
 test.afterEach(async ({ page }) => {
+    const context = page.context()
     try {
         // Force-destroy the WebGL context so the GPU process can reclaim memory.
         await page
@@ -25,6 +26,13 @@ test.afterEach(async ({ page }) => {
         await page.waitForTimeout(200)
     } catch {
         // Cleanup is best-effort — don't mask the real test failure.
+    } finally {
+        // The page fixture alone does not release the browser context's GPU
+        // bookkeeping. Close this exact per-test context so serial WebGL
+        // journeys cannot accumulate contexts until Chromium evicts a later
+        // test's canvas. Playwright fixture teardown tolerates this idempotent
+        // close when it runs again after the test.
+        await context.close().catch(() => {})
     }
 })
 
