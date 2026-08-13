@@ -87,17 +87,38 @@ id list per lane (verified: nvidia/kilo/openrouter/logfare/modelscope/zenmux
 no blind probing needed — the same catalog serves the phone router.
 
 ## Full model parity laptop <-> phone (2026-08-13)
-Two registries, both must be port-correct on the phone:
-1. `~/.pi/agent/model-providers.json` (canonical catalog: 970+ models, limits,
-   cost, scores) — keep a verified copy on the phone, but REWRITE baseUrl
-   127.0.0.1:8788 -> 127.0.0.1:8789 (phone router port). The lanes themselves
-   are identical (same opencode-key-router routes on both). parity-remap.py +
-   the remapped file live in the chroot /tmp + backup .bak-8789-*.
-2. `~/.pi/agent/models.json` (dispatch providers that `pi --provider` accepts).
-   Register provider names here with baseUrl 8789/<lane> — these are what
-   workers actually run. Verified working: phone-agnes (agnes-2.0/2.5/2.5-pro),
-   phone-kilo (poolside/laguna-s-2.1:free), phone-nvidia (llama-3.1-8b),
-   phone-logfare (kimi-k2.7-code), phone-zenmux, phone-router-openrouter.
-Rule: content parity = models.json on phone mirrors the laptop's dispatchable
-surface through the phone router; the canonical file must never leave 8788 in
-the phone chroot (pi on the phone cannot reach 8788).
+Two registries have different jobs and both must be port-correct on the phone:
+
+1. `~/.pi/agent/model-providers.json` is the broad catalog/metadata registry.
+   The current laptop and phone copies each contain 1,160 records and 1,140
+   unique `(model, route)` entries. Their normalized sets are identical; only
+   local router URLs differ (`127.0.0.1:8788` on the laptop versus
+   `127.0.0.1:8789` in the phone chroot).
+2. `~/.pi/agent/models.json` is the dispatch/picker registry that new Pi
+   processes actually load. `scripts/phone-model-parity.mjs` generates a
+   secret-free phone projection from laptop-configured models that are visible
+   in the phone router catalog. The deployed projection currently has 11
+   providers and 26 model entries.
+
+The router catalogs themselves are already aligned across the 31 shared local
+routes. That is discovery parity, not response-health parity: cooldowns and
+provider quotas still need bounded chat/tool probes. The canonical registry
+must never retain laptop port `8788` in the phone chroot, and credentials are
+never copied between devices.
+
+## FULL PROVIDER-SURFACE PARITY (2026-08-13, the big one)
+The phone pi now lists the SAME ~1600-model / 28-provider surface as the laptop
+(router-infron 416, direct-airforce 303, router-zenmux 151, router-novita 144,
+router-zydit 95, router-nvidia 94, ...). What made it work (the 4-step unlock):
+1. pi-model-providers extension MUST exist in chroot local-packages/ (copy from
+   laptop ~/.pi/agent/local-packages/pi-model-providers).
+2. settings.json "packages" entries on the Linux chroot need FORWARD slashes
+   (laptop uses `local-packages\pi...` — unresolvable on the phone).
+3. The extension's providerIdForBaseUrl only recognized ports 8788/8790-93;
+   patch its copy to also accept 8789 (the phone router port) or router-*
+   providers never materialize from the synced model-providers.json.
+4. OPENCODE_KEY_ROUTER_CATALOG_URL=http://127.0.0.1:8789/catalog (env or
+   settings.json env block) so the catalog sweep hits the PHONE router.
+Automate everything with scripts/bootstrap-phone-surface.sh (idempotent);
+scripts/farm-sync.sh = registry parity + git push in one command.
+Verify: `pi --list-models` in chroot shows the router-* + direct-* surface.
