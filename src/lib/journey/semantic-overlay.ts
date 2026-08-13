@@ -11,6 +11,7 @@ import { Vector3, Vector2, Color, Float32BufferAttribute } from 'three'
 import { Vec3 } from '@lib/utils/math-vec3'
 import { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { buildFocusThreadLineMaterial, type SemanticLineMaterial } from './semantic-overlay-material'
 import { isPointVisible } from '@lib/utils/geo-data'
 import { getNextExploreCandidateForIndex } from '@lib/journey/thread-model'
@@ -122,6 +123,7 @@ function getFocusCurvePointLocal(edge: ThreadEdge, t: number): Vector3 {
     const bz = Number.isFinite(b.z) ? b.z : 0
     return new Vector3(ax, ay, az).lerp(new Vector3(bx, by, bz), t)
 }
+
 
 function getActiveNextFocusIndex(): number | null {
     const focusedIndex = Number.isFinite(state.navState.focusedIndex)

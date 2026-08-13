@@ -324,6 +324,7 @@ export async function probeFocusPocket(page) {
             pocketSize: pocket.length,
             reachableCount: reachable.length,
             reachableIndices: reachable.map((n) => n.idx),
+            reachableCoords: reachable.map((n) => ({ idx: n.idx, x: n.screenX, y: n.screenY })),
             focusPocketMeta: state.focusPocketMeta ?? null,
             roles,
             focusedIndex: state.focusedIndex ?? null,
@@ -339,10 +340,23 @@ export async function probeFocusPocket(page) {
  * the latest camera/position matrices. A fixed pair of animation frames is
  * therefore racy on slower software-GPU or D3D11 runs.
  */
-export async function waitForReachableFocusPocket(page, { timeout = 8000, pollMs = 80 } = {}) {
+export async function waitForReachableFocusPocket(
+    page,
+    { timeoutMs = 30000, intervalMs = 150, timeout = timeoutMs, pollMs = intervalMs } = {}
+) {
     const deadline = Date.now() + timeout
     let snapshot = await probeFocusPocket(page)
-    while (snapshot.reachableCount === 0 && Date.now() < deadline) {
+    while (Date.now() < deadline) {
+        if (snapshot.reachableCount > 0) {
+            // A projected coordinate can still be covered by a visible overlay.
+            // Keep polling until at least one pocket node is actually clickable.
+            for (const coord of snapshot.reachableCoords ?? []) {
+                if (await isReachableScreenCoordinate(page, coord.x, coord.y)) return snapshot
+            }
+            // Preserve compatibility with older probe snapshots that only
+            // reported reachableCount and did not expose coordinates.
+            if (!Array.isArray(snapshot.reachableCoords)) return snapshot
+        }
         await page.waitForTimeout(pollMs)
         snapshot = await probeFocusPocket(page)
     }

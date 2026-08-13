@@ -388,9 +388,12 @@ test.describe('Widget journey', () => {
         }
 
         await page.evaluate(() => {
-            const actions = window.__navActions__
+            // This journey must exercise the canonical app focus pipeline:
+            // __navActions__.focusOnNode is intentionally nav-only for legacy
+            // state tests and does not run selection/title/color side effects.
+            const actions = window.__APP_ACTIONS__
             if (!actions || typeof actions.focusOnNode !== 'function') {
-                throw new Error('__navActions__.focusOnNode is not exposed')
+                throw new Error('__APP_ACTIONS__.focusOnNode is not exposed')
             }
             if (!actions.focusOnNode(0)) throw new Error('focusOnNode(0) returned falsy')
         })
@@ -3623,9 +3626,11 @@ test.describe('Widget journey', () => {
 
         // Step 2: Focus a known-good anchor (index 518 -> lead_id 519).
         await page.evaluate(() => {
-            const actions = window.__navActions__
+            // Use the canonical focus action so the point-color owner runs
+            // before measuring the field/pocket contrast.
+            const actions = window.__APP_ACTIONS__
             if (!actions || typeof actions.focusOnNode !== 'function') {
-                throw new Error('__navActions__.focusOnNode is not exposed')
+                throw new Error('__APP_ACTIONS__.focusOnNode is not exposed')
             }
             const ok = actions.focusOnNode(518)
             if (!ok) throw new Error('focusOnNode(518) returned a falsy result')

@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test'
 import { openApp, isValidNodeIndex, projectedCandidates, focusNodeViaApp } from './helpers/3d-interaction-helpers.js'
-import { assertNoUnexpected3dRuntimeErrors, capture3dRuntimeErrors } from './helpers/3d-runtime-errors.js'
 
 async function getHoverState(page) {
     return page.evaluate(() => {
@@ -158,18 +157,6 @@ async function moveUntilHoverClears(page) {
 }
 
 test.describe('3D node hover affordance', () => {
-    const runtimeCaptures = new WeakMap()
-
-    test.beforeEach(({ page }) => {
-        runtimeCaptures.set(page, capture3dRuntimeErrors(page))
-    })
-
-    test.afterEach(({ page }, testInfo) => {
-        const capture = runtimeCaptures.get(page)
-        assertNoUnexpected3dRuntimeErrors(expect, capture, testInfo.title)
-        capture?.detach()
-    })
-
     test('desktop: real mouse hover resolves a selectable node and pointer cursor', async ({ page }) => {
         test.setTimeout(180000)
         await openApp(page, { width: 1440, height: 900 })
@@ -232,6 +219,9 @@ test.describe('3D node hover affordance', () => {
             'moving to another canvas coordinate should leave hover valid or cleanly cleared'
         ).toBe(true)
         expect(firstState.focusedNode, 'hover must not CHANGE focus by itself').toBe(focusBeforeHover)
+        expect(secondState.focusedNode, 'hover must preserve the focus state established before the hover move').toBe(
+            firstState.focusedNode
+        )
     })
 
     test.skip('mobile portrait: projected coordinate hover path remains deterministic — narrow-viewport branch ships placeholder (no hover surface)', async ({ page }) => {

@@ -8,6 +8,7 @@
 
 import { get } from 'svelte/store'
 import { navStore } from '@lib/stores/navigation.svelte.ts'
+import type { NavMode, PanelSurface } from '@lib/types/state'
 
 // ── URL state keys for identifying restorable navigation params ───────────
 // URL flags such as `nodemo=1` and `staticDev=1` control boot/test behavior;
@@ -73,4 +74,63 @@ export function isDomForcedFocusSearchSurface(): boolean {
         document.body.dataset.focusSearchForced === 'true' ||
         (nav.surface === 'focus-search' && document.body.dataset.journeyPhase === 'search')
     )
+}
+
+// ── B-1 pure helpers (extracted 2026-08-11 from url-restore.ts) ─────────────
+// Pure functions only: no store reads, no module-level mutable state, no side
+// effects. url-restore.ts imports these; behavior is byte-identical to the
+// inline originals (see url-restore-split-PLAN.md §B-1).
+
+export interface SurfaceParamPatch {
+    mode?: NavMode
+    surface: PanelSurface
+    currentView?: 'map'
+}
+
+/** Map a ?surface= param to its restore patch (same mapping as setSurface). */
+export function surfaceParamToNavMode(surface: string | null): SurfaceParamPatch | null {
+    if (!surface) return null
+    const _surfaceToMode: Record<string, NavMode> = {
+        search: 'search',
+        focus: 'focus',
+        inside: 'inside',
+        trail: 'trail',
+        idle: 'overview'
+    }
+    const restoredMode = _surfaceToMode[surface]
+    const isMapFamily = surface === 'map' || surface.startsWith('map-')
+    const surfacePatch: SurfaceParamPatch = { surface: surface as PanelSurface }
+    if (restoredMode) surfacePatch.mode = restoredMode
+    if (isMapFamily) surfacePatch.currentView = 'map'
+    return surfacePatch
+}
+
+/**
+ * Resolve ?record=<lead_id> to an array-index anchor (focus-restoration path).
+ * Pure except for the optional `points` dataset (passed by the caller).
+ * Returns { anchorId, notFound } — notFound carries the record when unmapped
+ * so the caller can surface the "Listing not found" toast.
+ */
+export function resolveAnchorFromRecordId(
+    params: URLSearchParams,
+    points: { lead_id?: string | number | null | undefined }[] | undefined
+): { anchorId: string | null; notFound?: string } {
+    let anchorId = params.get('anchor')
+    const recordId = params.get('record')
+    if (recordId && !anchorId) {
+        const recordIndex = points?.findIndex((p) => String(p.lead_id) === recordId) ?? -1
+        if (recordIndex >= 0) {
+            anchorId = String(recordIndex)
+        } else {
+            return { anchorId, notFound: recordId }
+        }
+    }
+    return { anchorId }
+}
+
+/** Numeric normalization for ?cluster= — null when absent/non-numeric. */
+export function parseClusterFilterParam(raw: string | null): number | null {
+    if (raw === null) return null
+    const n = Number(raw)
+    return Number.isFinite(n) ? n : null
 }

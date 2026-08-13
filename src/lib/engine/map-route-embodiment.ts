@@ -184,11 +184,9 @@ export function centerMapOnRouteAnchor(): boolean {
         point.lng!
     ])
     if (routeLatLngs.length >= 2) {
-        const bounds = (
-            window.L! as {
-                latLngBounds: (latLngs: Array<[number, number]>) => unknown
-            }
-        ).latLngBounds(routeLatLngs)
+        const bounds = (window.L! as {
+            latLngBounds: (latLngs: Array<[number, number]>) => unknown
+        }).latLngBounds(routeLatLngs)
         getLeafletMap()?.fitBounds(bounds, {
             animate: true,
             maxZoom: 15,

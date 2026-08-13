@@ -9,8 +9,18 @@
  * Pattern mirrors tests/unit-active/three-engine-api-contract.test.ts
  * and tests/unit-active/semantic-overlay-api-contract.test.ts.
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import * as module from '../../src/lib/journey/focus-ui'
+
+// Mock-leak guard (2026-08-12): sibling files mock '@lib/utils/environment'
+// (wrapping importOriginal) and their mock can bleed into this file under the
+// vmThreads pool in full-suite runs. Defining our OWN envelope HERE makes the
+// module key owned by this file regardless of order — and preserves the real
+// exports by spreading importOriginal.
+vi.mock('@lib/utils/environment', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/utils/environment')>()
+    return { ...actual, isCompactLandscape: () => false }
+})
 
 describe('focus-ui.ts public API contract', () => {
     const expectedFunctions = [
