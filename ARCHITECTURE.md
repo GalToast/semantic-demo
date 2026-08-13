@@ -86,7 +86,7 @@ The repo-root `index.html` is a routing/front-door page only. It may link into t
 - **`src/lib/orchestration/app-init.ts`** — App initialization orchestrator replacing the legacy `js/modules/app.ts`. Sequence-sensitive (10-step init). Touch only after a visual regression pass.
 - **`src/lib/orchestration/lifecycle.ts`** — App orchestration, view handoff, window bindings, scene-reveal logic. 425 lines. Many no-op stubs for the legacy bridge compat path; **do not remove stubs until the adapter retirement phase** coordinated parity-attr discipline allows.
 - **`src/lib/orchestration/{url-state, view-controller, compass-controller, semantic-lane, parity-attrs.svelte, parity/parity-context, parity/parity-resolvers, adapters, adapter-deps, window-actions, cluster-filter-controller, triggers, responsive-renderer, event-bus}.ts(.svelte.ts)`** — Body URL sync, view controller, journey compass, parity (body dataset bridge), cycle-breaking adapters, event bus, triggers.
-- **`src/lib/orchestration/{focus-pocket, focus-pocket-geometry, legacy-state-adapter, three-engine-state, three-micro-demo-bridge}.ts`** — Engine-aware orchestration helpers and compat seams.
+- **`src/lib/orchestration/{focus-pocket, focus-pocket-geometry, three-engine-state, three-micro-demo-bridge}.ts`** — Engine-aware orchestration helpers and compat seams. (Former `legacy-state-adapter.ts` was deleted with legacy-state in `062b0035`.)
 
 ### Worker (`src/lib/workers/`)
 
