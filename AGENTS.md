@@ -66,7 +66,7 @@ Before starting multi-commit work that will touch files another Pi/Codex/subagen
 - **Checking if a mode is locked:** `isModeLocked(modeId, hasSelection)` from `@lib/navigation/mode-affordances`. `SELECTION_DEPENDENT_MODES` = (`trail`, `focus`, `inside`) — add new selection-dependent modes there.
 - **Toast:** import `showExperienceToast` from `@lib/orchestration/toast`. `@lib/ui/ui-feedback` is still live and provides `syncSearchStatusForFocus`.
 - **Header CSS** lives in `src/lib/components/header/header.css`, imported via `@import` inside the `<style>` block — same pattern ProximityLegend uses for `z-layers.css`.
-- **JourneyPhase type has 9 members** (truth: `src/lib/types/state.ts:141`): `idle, overview, search, focus, inside, map, thread-inspect, walking, arriving`. The old "6 phases" list (`overview → search → focus → trail → inside → map`) is stale — `trail` is not a JourneyPhase.
+- **JourneyPhase type has 12 members** (truth: `src/lib/types/state.ts:138`): `idle, overview, search, focus, inside, map, thread-inspect, walking, arriving, settling, trail, bridge`. The old "6 phases" list (`overview → search → focus → trail → inside → map`) is stale.
 - **Splash dismissal on deep-links (PR-B2 / PR-B4):** `parseUrlParams()` returns `isDeepLink: true` for `?anchor=N`, `?record=N`, `?view=map`, or `?q=...` (length >= 2). Deep-link + desktop → `engineReady.signalReady()` fires immediately at boot. Mobile 2D placeholder keeps the normal splash/CTA flow. `?record=N` maps to the array index with `lead_id === N` in `applyUrlState()`. `?story=` is intentionally NOT a deep-link. If you add a deep-link-shaped URL param, extend `parseUrlParams().isDeepLink`.
 
 ## Conventions (search fallback)

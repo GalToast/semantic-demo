@@ -42,7 +42,7 @@ export function setRestoreSuccessCb(cb: () => void): void {
 let _restoreRetryCount = 0
 let _restoreRetryTimer: number | null = null
 const _RESTORE_MAX_RETRIES = 2
-const _RESTORE_BACKOFF_MS = [1000, 3000]
+const _RESTORE_BACKOFF_MS = [1000, 3000] as const
 const _RESTORE_WATCHDOG_MS = 15000
 
 /**
@@ -57,6 +57,14 @@ const _RESTORE_WATCHDOG_MS = 15000
 let _restoreGeneration = 0
 /** Per-cycle escalation guard — the toast + degraded transition fire once. */
 let _restoreEscalated = false
+
+/**
+ * Stable id for the escalation toast (engine lifecycle audit F1). A late
+ * successful restore must be able to retract this specific toast without
+ * disturbing unrelated queued toasts, so it carries a stable id and is
+ * dismissed via `engineState.uiFeedback.dismissExperienceToast(id)` on reconcile.
+ */
+const RESTORE_FAILED_TOAST_ID = 'webgl-restore-failed'
 
 // ── Public API for init / teardown ─────────────────────────────────────────
 
@@ -153,7 +161,8 @@ function _escalateRestoreFailure() {
     // switch — it only degrades engine state. Reload is the real recovery.
     engineState.uiFeedback?.showExperienceToast(
         'Graphics unavailable',
-        'The 3D view could not be restored. Reload the page to retry.'
+        'The 3D view could not be restored. Reload the page to retry.',
+        RESTORE_FAILED_TOAST_ID
     )
 }
 
@@ -183,6 +192,17 @@ function _restoreReinitWithRetryInner() {
             _restoreEscalated = false
             _restoreRetryCount = 0
             _clearRetryTimer()
+            // Fix 1 (engine lifecycle audit 2026-08-12): a successful restore
+            // must also disarm the watchdog timer so the 15s bounded watchdog
+            // cannot fire LATER and falsely escalate a now-healthy scene to
+            // degraded/fallback. The retry/backoff timer is cleared above; the
+            // watchdog is the only remaining armed timer for this cycle. The
+            // watchdog callback self-nulls webglRestoreTimer on fire, so if it
+            // already escalated (wasEscalated) this is a harmless no-op.
+            if (engineState.webglRestoreTimer !== null) {
+                window.clearTimeout(engineState.webglRestoreTimer)
+                engineState.webglRestoreTimer = null
+            }
             // P2-3: clear stale fallback notice from a prior failed attempt
             // whose N+1 retry succeeded (notice over a live 3D scene).
             removeWebGLFallbackNotice()
@@ -190,6 +210,12 @@ function _restoreReinitWithRetryInner() {
                 engineState.circuitBreakerTripped = false
                 setEngineStatus('ready')
                 setGraphicsMode('webgl')
+                // F1 (engine lifecycle audit 2026-08-12): a false escalation was
+                // just reconciled by a now-successful restore. Retract the
+                // "Graphics unavailable — reload" toast by its stable id so the
+                // user is not left staring at a recovery prompt over a healthy
+                // scene. Targeted dismiss — unrelated queued toasts are untouched.
+                engineState.uiFeedback?.dismissExperienceToast?.(RESTORE_FAILED_TOAST_ID)
                 debugInfo('[three-engine] WebGL restore succeeded after watchdog escalation — reconciled state')
             }
             _restoreSuccessCb?.()
