@@ -20,6 +20,8 @@ import {
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { registerContextListeners } from '@lib/engine/three-listener-registration'
 import { setupWebglContextRestore } from '@lib/orchestration/app-init'
+import type { WebGLRenderer } from 'three'
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 // ── Test-only mock renderers/canvases ────────────────────────────────────────
 
@@ -27,12 +29,12 @@ function createMockCanvas(): HTMLCanvasElement {
     return document.createElement('canvas')
 }
 
-function createMockRenderer(): { domElement: HTMLCanvasElement } {
-    return { domElement: createMockCanvas() }
+function createMockRenderer(): WebGLRenderer {
+    return { domElement: createMockCanvas() } as unknown as WebGLRenderer
 }
 
-function createMockControls(): EventTarget {
-    return new EventTarget()
+function createMockControls(): OrbitControls {
+    return new EventTarget() as unknown as OrbitControls
 }
 
 function mountCanvas(containerId: string, canvas: HTMLCanvasElement): void {
@@ -58,11 +60,12 @@ function createTestSinks() {
     const engineState = {
         webglContextLost: false,
         webglNeedsRestoreReinit: false,
+        webglRestore: null,
         webglRestoreTimer: null,
         rafId: null,
         idleFrameTimerId: null,
         circuitBreakerTripped: false,
-        uiFeedback: { showExperienceToast: vi.fn() },
+        uiFeedback: { showExperienceToast: vi.fn(), syncSearchStatusForFocus: vi.fn() },
         cameraControls: null
     }
     return {
@@ -146,10 +149,12 @@ describe('webgl-restore-ownership — per-canvas ownership', () => {
         const fallbackCleanup = vi.fn()
         const engineOwner = new DisposableRegistry()
 
-        expect(claimRestoreOwnership(canvas, fallbackOwner, {
-            kind: 'fallback',
-            cleanup: fallbackCleanup
-        })).toBe(true)
+        expect(
+            claimRestoreOwnership(canvas, fallbackOwner, {
+                kind: 'fallback',
+                cleanup: fallbackCleanup
+            })
+        ).toBe(true)
         expect(takeRestoreOwnership(canvas, engineOwner)).toBe(true)
         expect(fallbackCleanup).toHaveBeenCalledOnce()
         expect(getRestoreOwner(canvas)).toBe(engineOwner)
@@ -245,14 +250,17 @@ describe('three-listener-registration — ownership integration', () => {
             scheduleAutoRotateResume: vi.fn()
         }
         sinks2.engineState.cameraControls = cameraControls
-        sinks2.webglContext = { renderer: {}, scene: {}, camera: {} }
+        sinks2.webglContext = { renderer: null, scene: null, camera: null }
 
         const registry1 = registerContextListeners({ renderer, controls: controls1, restartLoop: firstRestart }, sinks1)
-        const registry2 = registerContextListeners({ renderer, controls: controls2, restartLoop: secondRestart }, sinks2)
+        const registry2 = registerContextListeners(
+            { renderer, controls: controls2, restartLoop: secondRestart },
+            sinks2
+        )
 
         document.dispatchEvent(new window.Event('visibilitychange'))
-        controls2.dispatchEvent(new window.Event('start'))
-        controls2.dispatchEvent(new window.Event('end'))
+        controls2.dispatchEvent(new window.Event('start') as any)
+        controls2.dispatchEvent(new window.Event('end') as any)
 
         expect(secondRestart).not.toHaveBeenCalled()
         expect(cameraControls.releaseFocusCameraAssist).not.toHaveBeenCalled()
