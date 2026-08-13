@@ -40,19 +40,19 @@ router, write reports to /swarm/, and the laptop pulls + main-lane-verifies.
 
 NOT all router routes are equally agent-capable. Verified live over the phone router:
 
-- phone-mistral  -> 422 (upstream contract break; zero tokens). Unusable.
-- phone-gemini   -> silently routes to Qwen3-235B-Thinking-INITIAL; its thinking
+- phone-mistral -> 422 (upstream contract break; zero tokens). Unusable.
+- phone-gemini -> silently routes to Qwen3-235B-Thinking-INITIAL; its thinking
   tool-calls lack Gemini thought_signature -> pi tool loop stalls (339-byte log).
   Never use for agents that need tool calls.
 - phone-router-openrouter -> 429 when the key pool is quota-tapped (like zen
   free tier). Quota-dependent.
-Agent-worker gold standard: a **non-thinking model with tool-call + generous
-free quota** (e.g., laptop-side openrouter nemotron when fresh). Charge the
-phone route from the WORKER prompt (pi --provider) pick a route whose
-responseModel is the expected model, not a thinking proxy: verify via the
-session JSON "responseModel" field after the first launch.
-Symptom to watch: worker log stuck at ~339 bytes with only a Gemini
-"thought_signature" warning line = thinking-model tool-loop stall.
+  Agent-worker gold standard: a **non-thinking model with tool-call + generous
+  free quota** (e.g., laptop-side openrouter nemotron when fresh). Charge the
+  phone route from the WORKER prompt (pi --provider) pick a route whose
+  responseModel is the expected model, not a thinking proxy: verify via the
+  session JSON "responseModel" field after the first launch.
+  Symptom to watch: worker log stuck at ~339 bytes with only a Gemini
+  "thought_signature" warning line = thinking-model tool-loop stall.
 
 ## VERIFIED free-agent lanes on the phone (2026-08-13, all live-tested)
 
@@ -61,12 +61,12 @@ Register providers in the chroot `~/.pi/agent/models.json` under
 apiKey `router`, api `openai-completions`. All 4 below completed a
 2-tool-call agent task with correct answers (LANE-OK 1 1):
 
-| pi provider  | lane path      | model id (exact)               | verdict |
-|---|---|---|---|
-| phone-agnes  | /agnes/v1      | agnes-2.0-flash                | ✅ live |
-| phone-agnes  | /agnes/v1      | agnes-2.5-flash                | ✅ live |
-| phone-kilo   | /kilo/v1       | poolside/laguna-s-2.1:free     | ✅ live |
-| phone-nvidia | /nvidia/v1     | meta/llama-3.1-8b-instruct     | ✅ live |
+| pi provider  | lane path  | model id (exact)           | verdict |
+| ------------ | ---------- | -------------------------- | ------- |
+| phone-agnes  | /agnes/v1  | agnes-2.0-flash            | ✅ live |
+| phone-agnes  | /agnes/v1  | agnes-2.5-flash            | ✅ live |
+| phone-kilo   | /kilo/v1   | poolside/laguna-s-2.1:free | ✅ live |
+| phone-nvidia | /nvidia/v1 | meta/llama-3.1-8b-instruct | ✅ live |
 
 Analysis rank (2026-08-13, real analysis task — read z-index.ts, report max layer):
 agnes-2.5-pro == laguna-s-2.1:free (both correctly picked loading:9999, tied
@@ -85,3 +85,19 @@ Lane discovery: `curl -s http://127.0.0.1:8789/<lane>/v1/models -H
 id list per lane (verified: nvidia/kilo/openrouter/logfare/modelscope/zenmux
 /agnes). Pick models our laptop benchmarks already rate strongest per family;
 no blind probing needed — the same catalog serves the phone router.
+
+## Full model parity laptop <-> phone (2026-08-13)
+Two registries, both must be port-correct on the phone:
+1. `~/.pi/agent/model-providers.json` (canonical catalog: 970+ models, limits,
+   cost, scores) — keep a verified copy on the phone, but REWRITE baseUrl
+   127.0.0.1:8788 -> 127.0.0.1:8789 (phone router port). The lanes themselves
+   are identical (same opencode-key-router routes on both). parity-remap.py +
+   the remapped file live in the chroot /tmp + backup .bak-8789-*.
+2. `~/.pi/agent/models.json` (dispatch providers that `pi --provider` accepts).
+   Register provider names here with baseUrl 8789/<lane> — these are what
+   workers actually run. Verified working: phone-agnes (agnes-2.0/2.5/2.5-pro),
+   phone-kilo (poolside/laguna-s-2.1:free), phone-nvidia (llama-3.1-8b),
+   phone-logfare (kimi-k2.7-code), phone-zenmux, phone-router-openrouter.
+Rule: content parity = models.json on phone mirrors the laptop's dispatchable
+surface through the phone router; the canonical file must never leave 8788 in
+the phone chroot (pi on the phone cannot reach 8788).
