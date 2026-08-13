@@ -69,7 +69,7 @@ const MODULES = {
     threeSetup: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-render-loop.ts'),
     threeEngineCore: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-core.ts'),
     threeEngineState: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-state.ts'),
-    threeSearchAnimations: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-search-animations.ts'),
+    threeSearchAnimations: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-search-corridor-animations.ts'),
     threeInteractionVisuals: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-interaction-visuals.ts')
 }
 

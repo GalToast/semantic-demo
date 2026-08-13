@@ -48,7 +48,9 @@ import type { MeshBasicMaterialParameters, LineBasicMaterialParameters } from 't
 import { appState as _state } from '@lib/state/app.svelte'
 import { disposeFocusPocketSizeMesh } from './focus-pocket-size-mesh'
 const state = _state
-import { disposeHeroAnimation } from './three-search-animations'
+import { disposeHeroAnimation } from './three-search-hero-animations'
+import { disposeCorridorGlow } from './three-search-corridor-animations'
+import { disposeSemanticManifold } from './three-interaction-manifold'
 import { calculateSignalScore } from '@lib/utils/geo-data'
 import {
     createFocusAnchorIndicator,
@@ -171,6 +173,7 @@ export function disposeInteractionVisuals() {
     disposeSemanticLens()
     disposeFocusAnchorIndicator()
     disposeHeroAnimation()
+    disposeCorridorGlow()
 }
 
 export function disposeSemanticLens() {
@@ -187,9 +190,7 @@ export function disposeSemanticLens() {
         state.anchorBloomLight = null
     }
     if (state.semanticManifold) {
-        state.scene?.remove(state.semanticManifold)
-        disposeObject3D(state.semanticManifold)
-        state.semanticManifold = null
+        disposeSemanticManifold()
     }
     if (state.semanticLensGroup) {
         state.scene?.remove(state.semanticLensGroup)
@@ -244,71 +245,7 @@ export function disposeSemanticLens() {
     if (state.focusSemanticConnectionPairs) state.focusSemanticConnectionPairs.length = 0
 }
 
-export function initSemanticManifold() {
-    if (!state.scene) {
-        debugWarn('[three-interaction-visuals] initSemanticManifold: state.scene is null, skipping manifold init')
-        return
-    }
-    const manifoldGeo = new CircleGeometry(4, 64)
-    const manifoldMat = new ShaderMaterial({
-        uniforms: {
-            uTime: { value: 0 },
-            uRippleTime: { value: -1000.0 },
-            uRippleCenter: { value: new Vector3(0, 0, 0) },
-            uColor: { value: new Color(SCENE_PALETTE.threadTint) }
-        },
-        vertexShader: `
-            varying vec2 vUv;
-            varying vec3 vWorldPosition;
-            void main() {
-                vUv = uv;
-                vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform float uTime;
-            uniform float uRippleTime;
-            uniform vec3 uRippleCenter;
-            uniform vec3 uColor;
-            varying vec2 vUv;
-            varying vec3 vWorldPosition;
-            void main() {
-                vec2 centeredUv = vUv - 0.5;
-                float distToCenter = length(centeredUv) * 2.0;
-
-                // Ripple interaction
-                float d = distance(vWorldPosition, uRippleCenter);
-                float rippleWave = (uRippleTime - d * 2.0);
-                float rippleActive = (rippleWave > 0.0 && rippleWave < 1.0) ? (1.0 - rippleWave) : 0.0;
-
-                float horizonFade = smoothstep(1.0, 0.0, distToCenter);
-                float innerFade = smoothstep(0.08, 0.36, distToCenter);
-                float breathingMist = 0.5 + sin(uTime * 0.45 + distToCenter * 7.0) * 0.5;
-                float contourA = 1.0 - smoothstep(0.0, 0.016, abs(sin(distToCenter * 31.0 + uTime * 0.08)));
-                float contourB = 1.0 - smoothstep(0.0, 0.012, abs(sin((vWorldPosition.x * 0.85 + vWorldPosition.z * 0.42) * 7.0)));
-                float contours = contourA * 0.18 + contourB * 0.055;
-
-                float opacity = (0.012 + contours + breathingMist * 0.005) * horizonFade * innerFade;
-                vec3 finalColor = mix(vec3(0.1, 0.2, 0.2), uColor, 0.54 + breathingMist * 0.16);
-                if (rippleActive > 0.0) {
-                    opacity += rippleActive * 0.065;
-                    finalColor = mix(finalColor, vec3(1.0, 0.88, 0.48), rippleActive);
-                }
-
-                gl_FragColor = vec4(finalColor, opacity);
-            }
-        `,
-        transparent: true,
-        side: DoubleSide,
-        depthWrite: false,
-        blending: NormalBlending
-    })
-    state.semanticManifold = new Mesh(manifoldGeo, manifoldMat)
-    state.semanticManifold.rotation.x = -Math.PI / 2
-    state.semanticManifold.position.y = -0.8
-    state.scene.add(state.semanticManifold)
-}
+export { initSemanticManifold } from './three-interaction-manifold'
 
 export function initSemanticLens() {
     if (!state.scene) {

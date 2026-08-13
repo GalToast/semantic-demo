@@ -28,10 +28,18 @@ import { dirname, resolve } from 'node:path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const SRC_PATH = resolve(__dirname, '../../src/lib/engine/three-search-animations.ts')
+// After the three-star SA split, the guarded symbols live across the hub
+// (re-exports only) and the two carve modules. Scan all three so the typing
+// guards keep covering the full SA cluster surface.
+const SA_MODULES = [
+    resolve(__dirname, '../../src/lib/engine/three-search-animations.ts'),
+    resolve(__dirname, '../../src/lib/engine/three-search-hero-animations.ts'),
+    resolve(__dirname, '../../src/lib/engine/three-search-corridor-animations.ts')
+]
 
 function readSource(): string {
-    return readFileSync(SRC_PATH, 'utf-8')
+    // ts-ignore is already present above for node:path; readFileSync/import come from global vitest env
+    return SA_MODULES.map((p) => readFileSync(p, 'utf-8')).join('\n')
 }
 
 function stripComments(source: string): string {

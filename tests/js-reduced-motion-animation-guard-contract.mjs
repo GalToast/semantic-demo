@@ -70,16 +70,16 @@ assertContains(frameUpdatesSrc, 'if (!prefersReduced)', 'three-engine-frame-upda
 console.log('  ✓ three-engine-frame-updates.ts point uTime uniform gated under reduced motion')
 
 // 3. Search corridor shader pulse: uTime frozen under reduced motion.
-const searchAnimSrc = readSrc('src/lib/engine/three-search-animations.ts')
+const searchAnimSrc = readSrc('src/lib/engine/three-search-corridor-animations.ts')
 assertContains(
     searchAnimSrc,
     "import { prefersReducedMotion } from '@lib/utils/environment'",
-    'three-search-animations imports prefersReducedMotion'
+    'three-search-animations (corridor module) imports prefersReducedMotion'
 )
 assertContains(
     searchAnimSrc,
     'const reducedMotion = prefersReducedMotion()',
-    'three-search-animations computes reducedMotion'
+    'three-search-animations (corridor module) computes reducedMotion'
 )
 assertContains(
     searchAnimSrc,

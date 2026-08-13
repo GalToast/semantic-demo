@@ -1,3 +1,28 @@
+/**
+ * @lib/engine/three-search-hero-animations.ts — Hero moment (SA-1)
+ *
+ * Part of the three-star search-animation split. This module owns the hero
+ * moment (`triggerSearchHeroMoment`) — a brief bloom at the anchor node when
+ * search results land — plus its self-scheduled rAF loop and the hero-only
+ * teardown `disposeHeroAnimation`. It also arms the persistent anchor glow
+ * (`armAnchorGlow`, owned by the corridor module).
+ *
+ * The corridor cluster (per-node glow, path corridor animation, geometry /
+ * particle pipeline) lives in `three-search-corridor-animations.ts`. Consumers
+ * keep importing through the `three-search-animations.ts` hub, which re-exports
+ * this module alongside the corridor module.
+ */
+import { scheduleFrameTask } from './frame-scheduler'
+import { webglContext } from '@lib/engine/webgl-context'
+import { appState as _state } from '@lib/state/app.svelte'
+import { armAnchorGlow } from './three-search-corridor-animations'
+
+const state = _state
+
+// ── Private State ───────────────────────────────────────────────────────────
+
+// The only self-scheduled rAF handle in this file: created by
+// `scheduleFrameTask(animateHero)` in `triggerSearchHeroMoment` and consumed
 // by `disposeHeroAnimation`. All other per-frame search animation state
 // (corridor glow + path animation) lives in three-search-corridor-animations.ts.
 let _heroFrameTaskCancel: (() => void) | null = null
@@ -65,10 +90,3 @@ export function disposeHeroAnimation() {
     _heroFrameTaskCancel?.()
     _heroFrameTaskCancel = null
 }
-// ── Imports (extracted with the cluster) ──
-import { scheduleFrameTask } from './frame-scheduler'
-import { webglContext } from '@lib/engine/webgl-context'
-import { appState as _state } from '@lib/state/app.svelte'
-import { armAnchorGlow } from './three-search-corridor-animations'
-
-const state = _state
