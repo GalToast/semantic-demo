@@ -56,10 +56,9 @@ export function isActive(modeId: NavMode | 'map', activeMode: NavMode, activeVie
  * navState. Returns 0 (Overview) as a safe default when nothing matches.
  */
 export function getActiveIndexForMode(activeMode: NavMode, activeView: string): number {
-    const idx = modes.findIndex((m) => {
-        if (m.id === 'map') return activeView === 'map'
-        return activeMode === m.id
-    })
+    // Keep roving focus aligned with the same predicate that drives the
+    // visible/ARIA active state. Map surfaces can preserve a chip-rail mode.
+    const idx = modes.findIndex((m) => isActive(m.id, activeMode, activeView))
     return idx >= 0 ? idx : 0
 }
 

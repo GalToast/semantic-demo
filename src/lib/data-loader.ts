@@ -123,6 +123,13 @@ class DataLoaderAbortError extends Error {
     }
 }
 
+function isDataLoaderAbortError(error: unknown): boolean {
+    return (
+        error instanceof DataLoaderAbortError ||
+        (typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError')
+    )
+}
+
 const _activeDataWorkerAborters = new Set<() => void>()
 
 /** Cancel all data-worker requests owned by the current app instance. */
@@ -257,7 +264,7 @@ export async function loadBusinessData(): Promise<BusinessDataResult> {
 
     // Offload the heavy JSON.parse + typed-array construction to the Web Worker.
     const workerResult = await callDataWorker('LOAD_RECORDS', { url: dataUrl }).catch((err: unknown) => {
-        if (err instanceof DataLoaderAbortError) throw err
+        if (isDataLoaderAbortError(err)) throw err
         debugWarn('[data-loader] Worker load failed, falling back to main thread:', err)
         return null
     })
@@ -504,7 +511,7 @@ export async function loadLeadEnrichmentData(): Promise<Record<string, LeadEnric
         )
         return result.enrichment
     } catch (err: unknown) {
-        if (err instanceof DataLoaderAbortError) throw err
+        if (isDataLoaderAbortError(err)) throw err
         debugWarn('[data-loader] Worker enrichment load failed, falling back to main thread:', err)
         return fetchEnrichment(enrichmentUrl)
     }
@@ -538,4 +545,3 @@ function checkDataBounds(buffer: Float32Array): void {
         )
     }
 }
-

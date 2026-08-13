@@ -376,16 +376,15 @@ export function executeJourneyCompassAction(action: string): void {
             // the produce half of the dive-feedback feature (was always 0).
             appState._semanticDiveTransitionDeadline = Date.now() + 1200
             // Parity-attrs owns semanticDive, panelSurface, trailDepth.
-            // Mirror to test-compat globals via appState. The test-compat
-            // proxy forwards writes from __APP_STATE__ / __TEST_STATE__
-            // back to appState — a single direct write replaces the
-            // two-block mirror that previously duplicated per-global writes.
-            // See lifecycle.ts applyCompositionState() for the convergence contract.
-            // trailDepth is already mirrored to appState by the writeNavStateMirror
-            // above (single-writer: navigation-state funnel owns trailDepth).
-            if (typeof window !== 'undefined') {
-                appState.semanticDiveMode = true
-            }
+            // semanticDiveMode is a derived alias over `navState.trailDepth === 2`,
+            // so the canonical way to assert the dive flag is the trail-depth
+            // writer — NOT the `appState.semanticDiveMode = true` alias door, which
+            // writes navState.trailDepth without mirror notification. The
+            // writeNavStateMirror patch above already sets trailDepth: 2; this is
+            // the explicit canonical re-assert (single-writer: navigation-state
+            // funnel owns trailDepth). See lifecycle.ts applyCompositionState()
+            // for the convergence contract.
+            writeNavStateMirror({ trailDepth: 2 })
             return
 
         case JOURNEY_ACTIONS.SHOW_TRAIL_PANEL:

@@ -53,6 +53,7 @@
   let friendlyMapError = $derived(status === 'error' ? friendlyErrorMessage(rawError) : null);
   let mounted = false;
   let activationToken = 0;
+  let lastObservedView: string | null = null;
   // H5: observes #map-container so Leaflet recalculates tile layout on viewport
   // resizes (notably mobile orientation changes). Disconnected on teardown.
   let resizeObserver: ResizeObserver | null = null;
@@ -256,14 +257,20 @@
   // mapViewLazy.ensure(mapModeActive) effect only loads the chunk, it does
   // not remount). Real user clicks avoid the hole because they remount via
   // the view switch; only the URL-driven flip lands here. Watching currentView
-  // re-activates the shared controller exactly once — the status === 'loading'
-  // guard skips when an activation is already in flight, and appState.map
-  // being set means initMap already ran (idempotent second call is a no-op).
+  // re-activates the shared controller exactly once per map entry. A failed
+  // activation changes status to 'error'; without the transition guard below,
+  // that error would immediately trigger a second activation, which can attach
+  // to an already-failed Leaflet script and leave the surface loading forever.
   $effect(() => {
     if (!mounted) return
-    if (appState.currentView !== 'map') return
-    if (appState.map) return
-    if (status === 'loading') return
+    const currentView = appState.currentView
+    if (currentView !== 'map') {
+      lastObservedView = currentView
+      return
+    }
+    if (lastObservedView === 'map') return
+    lastObservedView = 'map'
+    if (appState.map || status === 'loading') return
     void activateLeafletMap()
   })
 </script>

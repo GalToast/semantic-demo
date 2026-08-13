@@ -29,6 +29,10 @@ interface SetupMobileSearchSheetToggleOptions {
     isCompactSearchViewport?: (() => boolean) | undefined
 }
 
+let compactViewportMediaQuery: MediaQueryList | null = null
+let compactViewportChangeBound = false
+let latestCompactViewportDetector: (() => boolean) | null = null
+
 // ── Functions ──────────────────────────────────────────────────────────────
 
 export function getSearchContainer(): HTMLElement | null {
@@ -120,6 +124,44 @@ export function clearMobileSearchSheetState(): void {
     delete document.body.dataset.mobileSearchSheet
     delete document.body.dataset.mobileSearchSheetUser
     syncPanelSurfaceDetailFromMobileSheet()
+    const label = document.querySelector('.search-label')
+    if (label) {
+        label.removeAttribute('aria-expanded')
+        label.removeAttribute('aria-label')
+    }
+}
+
+function syncMobileSearchSheetForViewport(isCompact: () => boolean): void {
+    const searchContainer = getSearchContainer()
+    const rawLabel = searchContainer?.querySelector?.('.search-label')
+    if (!searchContainer || !rawLabel) return
+    const label = rawLabel as HTMLElement
+
+    if (isCompact() && searchContainer.classList.contains('has-query')) {
+        if (!document.body.dataset.mobileSearchSheetUser) setMobileSearchSheetMode('peek')
+        else setMobileSearchSheetMode((document.body.dataset.mobileSearchSheet as MobileSearchSheetMode) || 'peek')
+    } else {
+        clearMobileSearchSheetState()
+        label.removeAttribute('aria-expanded')
+        label.removeAttribute('aria-label')
+    }
+}
+
+function bindCompactViewportChange(isCompact: () => boolean): void {
+    latestCompactViewportDetector = isCompact
+    if (compactViewportChangeBound || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+
+    compactViewportMediaQuery = window.matchMedia('(max-width: 768px)')
+    const handleChange = (): void => {
+        const detector = latestCompactViewportDetector
+        if (detector) syncMobileSearchSheetForViewport(detector)
+    }
+    if (typeof compactViewportMediaQuery.addEventListener === 'function') {
+        compactViewportMediaQuery.addEventListener('change', handleChange)
+    } else {
+        compactViewportMediaQuery.addListener(handleChange)
+    }
+    compactViewportChangeBound = true
 }
 
 export function setupMobileSearchSheetToggle({
@@ -130,6 +172,7 @@ export function setupMobileSearchSheetToggle({
     if (!searchContainer || !rawLabel) return
     const label = rawLabel as HTMLElement
     const isCompact = typeof isCompactSearchViewport === 'function' ? isCompactSearchViewport : () => false
+    bindCompactViewportChange(isCompact)
 
     label.setAttribute('aria-controls', 'search-results')
 
@@ -159,12 +202,5 @@ export function setupMobileSearchSheetToggle({
         label.dataset.mobileSheetToggleBound = 'true'
     }
 
-    if (isCompact() && searchContainer.classList.contains('has-query')) {
-        if (!document.body.dataset.mobileSearchSheetUser) setMobileSearchSheetMode('peek')
-        else setMobileSearchSheetMode((document.body.dataset.mobileSearchSheet as MobileSearchSheetMode) || 'peek')
-    } else {
-        clearMobileSearchSheetState()
-        label.removeAttribute('aria-expanded')
-        label.removeAttribute('aria-label')
-    }
+    syncMobileSearchSheetForViewport(isCompact)
 }

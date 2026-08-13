@@ -90,6 +90,7 @@ import type { Point } from '@lib/state/state-types'
 import type { SearchResult } from '@lib/types/state'
 import type { SearchContext } from '@lib/search/state'
 import { get } from 'svelte/store'
+import { clearMobileSearchSheetState } from '@lib/search/search-panel-adapter'
 
 // ── Search → Compass Subscriptions ────────────────────────────────────────────
 //
@@ -113,6 +114,7 @@ subscribeKeyed('triggers.ts:SEARCH_STARTED', EVENTS.SEARCH_STARTED, () => {
 })
 
 subscribeKeyed('triggers.ts:SEARCH_CLEARED', EVENTS.SEARCH_CLEARED, () => {
+    clearMobileSearchSheetState()
     refreshCompositionState()
     updateJourneyCompass()
 })

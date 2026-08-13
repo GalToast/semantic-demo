@@ -22,7 +22,7 @@
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { removeStaticPlaceholder, computeDevToolsVisible, isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts';
   import { createAppBootHandlers } from '@lib/app/app-event-handlers.ts';
-  import { focusSearchInput } from '@lib/app/app-render.ts';
+  import { focusSearchInputUntilLanded } from '@lib/app/app-render.ts';
 
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
@@ -308,26 +308,15 @@
   //
   // W50-A11y flake: a single rAF focus can race the Splash modal-trap teardown
   // / lazy hydration (or run before #search-input is focusable) and silently
-  // no-op, stranding focus on <body> ~1/3 of runs. Retry across frames for a
-  // short window (focusSearchInput is idempotent) until focus lands on the
-  // primary entry point.
+  // no-op, stranding focus on <body> ~1/3 of runs. The old loop retried every
+  // frame for a fixed 90-frame / 1500ms window even after focus had already
+  // landed (re-popping the mobile keyboard). focusSearchInputUntilLanded stops
+  // as soon as focus is stably on the input (a few consecutive frames), which
+  // also survives the one-time Splash restore race, and returns a teardown that
+  // cancels the pending rAF on effect cleanup / unmount (M11 hardening).
   $effect(() => {
     if (!engineReady.value) return
-    const start = performance.now()
-    let tries = 0
-    let rafId = 0
-    const retry = (): void => {
-      focusSearchInput()
-      tries++
-      if (performance.now() - start < 1500 && tries < 90) {
-        rafId = requestAnimationFrame(retry)
-      }
-    }
-    rafId = requestAnimationFrame(retry)
-    // M11: cancel the focus-retry rAF on effect cleanup / unmount so it
-    // cannot keep firing (idempotent no-op, but wasteful) after the
-    // component is gone. Matches the M9/M10 stale-cleanup hardening.
-    return () => cancelAnimationFrame(rafId)
+    return focusSearchInputUntilLanded()
   });
 
   $effect(() => legacyCompassSurfaceLazy.ensure(legacyCompassSurfaceActive));
@@ -672,7 +661,7 @@
     letter-spacing: 0.02em;
     color: rgba(224, 240, 240, 0.85);
     padding: 0 1rem 0.35rem;
-    margin: 56px 0 0;
+    margin: 60px 0 0;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -693,6 +682,22 @@
        - heading hierarchy preserved
      Mobile media query mirrors the .sr-only utility above. */
   @media (max-width: 768px) {
+    .app-title {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  }
+
+  /* Short landscape is outside the normal mobile width gate, but the 414px
+     viewport still has no room for a second page-title row under the header. */
+  @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
     .app-title {
       position: absolute;
       width: 1px;

@@ -4,7 +4,6 @@
  * Ported from:
  */
 
-import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { formatBusinessName, cleanOptionalValue, formatThreadSourceLabel } from '@lib/utils/dom-formatters'
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation'
 import { isPointVisible } from '@lib/utils/geo-data'

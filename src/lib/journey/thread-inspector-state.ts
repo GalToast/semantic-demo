@@ -111,7 +111,7 @@ const onCameraNodeFocused = (payload: Record<string, unknown>): void => {
 // Some Vitest namespace mocks may omit the keyed export. Read that property
 // defensively for those partial mocks, but let errors from a real keyed
 // subscription propagate so production cannot silently lose HMR deduplication.
-let unsubscribeCameraNodeFocused: () => void = () => {}
+let _unsubscribeCameraNodeFocused: () => void = () => {}
 
 let subscribeKeyed: typeof eventBus.subscribeKeyed | undefined
 try {
@@ -121,13 +121,13 @@ try {
 }
 
 if (typeof subscribeKeyed === 'function') {
-    unsubscribeCameraNodeFocused = subscribeKeyed(
+    _unsubscribeCameraNodeFocused = subscribeKeyed(
         'thread-inspector-state:camera-node-focused',
         eventBus.EVENTS.CAMERA_NODE_FOCUSED,
         onCameraNodeFocused
     )
 } else {
-    unsubscribeCameraNodeFocused = eventBus.subscribe(eventBus.EVENTS.CAMERA_NODE_FOCUSED, onCameraNodeFocused)
+    _unsubscribeCameraNodeFocused = eventBus.subscribe(eventBus.EVENTS.CAMERA_NODE_FOCUSED, onCameraNodeFocused)
 }
 
 let clearingThreadInspection = false

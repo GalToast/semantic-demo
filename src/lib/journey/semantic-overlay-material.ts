@@ -32,7 +32,7 @@ export interface SemanticShaderLike {
     uniforms: Record<string, { value: number }>
 }
 
-function buildFocusThreadLineMaterial(): LineMaterial {
+export function buildFocusThreadLineMaterial(): LineMaterial {
     const baseOpacity = state.navState.focusPocketMeta?.active ? 0.82 : 0.88
     const lineMaterial = new LineMaterial({
         linewidth: 2.6,

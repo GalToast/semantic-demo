@@ -13,7 +13,7 @@ import { formatBusinessName } from '@lib/utils/dom-formatters'
 import { getStrandContinuityManager } from '@lib/utils/strand-continuity'
 
 import { NAV_TRANSITION_ACTIONS } from '@lib/navigation-actions'
-import { navStore, dispatchNavTransition, writeNavStateMirror } from '@lib/stores/navigation.svelte'
+import { navStore, dispatchNavTransition, writeNavStateMirror, setFocusedIndex } from '@lib/stores/navigation.svelte'
 import { appState } from '@lib/state/app.svelte.ts'
 import { getBusinessRecords } from '@lib/data-store'
 
@@ -50,7 +50,12 @@ import { showExperienceToast } from '@lib/orchestration/toast'
  * normalizes non-finite values to null.
  */
 export function setFocusedNode(index: number | null): void {
-    appState.focusedNode = index
+    // Route through the canonical focused-index writer so the Svelte navStore
+    // mirror, drift baseline, and (when changed) focus events stay in sync. The
+    // bare `appState.focusedNode = index` alias door wrote navState.focusedIndex
+    // without mirror notification. The alias setter normalizes non-finite to
+    // null, so preserve that contract before delegating.
+    setFocusedIndex(Number.isFinite(index) ? Number(index) : null)
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────

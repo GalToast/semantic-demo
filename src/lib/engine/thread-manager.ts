@@ -585,8 +585,6 @@ export function syncMyceliumLineResolution(): void {
     }
 }
 
-
-
 export function updateMyceliumThreads(): void {
     // Early exit: no connection pairs at all — nothing to rebuild.
     if (!webglContext.myceliumConnectionPairs?.length) {

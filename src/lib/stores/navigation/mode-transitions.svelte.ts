@@ -11,6 +11,7 @@ import { clearSearch } from '../search.svelte.ts'
 import { resetFocus, setSemanticDiveMode } from '../focus.svelte.ts'
 import { resetJourney, setTrailDepth } from '../journey.svelte.ts'
 import { _readNavSnapshot, readNavMirrorValue, writeNavStateMirror, resetNavState } from './navigation-state.svelte.ts'
+import { clearMobileSearchSheetState } from '@lib/search/search-panel-adapter'
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ export interface NavTransitionResult {
 
 function returnToOverviewState(): void {
     clearSearch()
+    clearMobileSearchSheetState()
     resetFocus()
     resetJourney()
     writeNavStateMirror({

@@ -10,8 +10,8 @@
   implied the user was looking at the real product) when actually this is
   a static fallback. Now the title and subtitle explicitly label this as a
   "Preview" and invite the user to open on desktop for the full 3D
-  experience. The CTA stays the same ("Enter 3D Scene") because it's already
-  honest about what tapping it does.
+  experience. The CTA is reworded to "Open full 3D experience" so it's clearly
+  signals the mobile fallback (not a product demo) and the desktop trade-off.
 
   Visual contract:
     - Full-viewport (covers the WebGL canvas area)
@@ -21,7 +21,7 @@
       fallback, not the real product
    - "Click or tap to load the full scene, or open on desktop for the full 3D
      experience" subtitle (W47-C) gives the user a clear alternative path
-    - "Enter 3D Scene" CTA, large tap target (≥ 44×44 px), with subtle
+    - "Open full 3D experience" CTA, large tap target (≥ 44×44 px), with subtle
       drop shadow + cyan glow that wins the eye-test against the blurred
       orb cluster behind it
     - CSS-only scrim behind the title block ensures contrast regardless
@@ -196,26 +196,26 @@
   <div class="placeholder-overlay">
     <h1 class="placeholder-title">
       Semantic Explorer
-      <span class="placeholder-badge">Preview</span>
+      <span class="placeholder-badge">Mobile preview</span>
     </h1>
-    <p class="placeholder-subtitle">Preview · Montgomery County businesses</p>
+    <p class="placeholder-subtitle">Montgomery County businesses · full 3D on desktop</p>
 
     <button
       class="placeholder-cta"
       type="button"
       onclick={enter3d}
       data-testid="placeholder-cta"
-      aria-label="Enter 3D scene"
+      aria-label="Open full 3D experience"
       aria-describedby="placeholder-hint"
     >
       <span class="cta-icon" aria-hidden="true">◆</span>
-      Enter 3D Scene
+      Open full 3D experience
     </button>
 
     <PlaceholderCategoryLegend categories={previewCategories} />
 
     <p class="placeholder-hint" id="placeholder-hint">
-      Click or tap to load the full 3D scene.
+      Tap to load the full 3D experience — or open on desktop.
     </p>
   </div>
 </div>
@@ -239,7 +239,7 @@
 
   /* ─── SUPPRESS PREVIEW OVERLAY WHEN FOCUS/SEARCH IS ACTIVE ────────────
      When a focus card or search surface is active, the full-viewport
-     "Enter 3D Scene" preview must not present itself as the primary
+     "Open full 3D experience" preview must not present itself as the primary
      idle screen. It should fade to a subtle backdrop so the active
      surface (FocusCard, search results, JourneyChrome) reads clearly.
      The overlay/scrim/orbs recede visually and leave hit testing to the

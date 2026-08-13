@@ -62,7 +62,7 @@ export interface LaneUiOptions {
 
 // ── Module State ───────────────────────────────────────────────────────────
 
-let legendGuideStateUpdater: (() => void) | null = null
+const legendGuideStateUpdater: (() => void) | null = null
 let staticDevFallbackWarningShown = false
 
 type SemanticLaneRetryBinding = {

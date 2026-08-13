@@ -61,7 +61,9 @@ import { setupMobileSearchSheetToggle } from './search-panel-adapter'
 import { setActiveSearchResultRow } from './result-renderer'
 import { startSearch, cancelSearch, isRecentlyRestoredQuery } from './search-abort'
 import { performLocalIndexSearch, localHitsToResults } from '@lib/search/local-search-index'
+import { shouldSurfaceApiFailures } from '@lib/search/mock-search-fallback'
 import { showExperienceToast } from '@lib/orchestration/toast'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -84,11 +86,16 @@ interface SearchContext {
 
 // ── Focus Transition Timer Management ───────────────────────────────────────
 
-const _searchFocusTransitionTimers: ReturnType<typeof setTimeout>[] = []
+// ── Search Status Reset Timer ───────────────────────────────────────────────
+// Module-level DisposableRegistry for the short-query (1-char) status-reset
+// timer.  Disposed at the top of each search() call so a stale timer from a
+// superseded request cannot overwrite a newer search's status message.
+let _statusTimerRegistry: DisposableRegistry | null = null
 
-function _clearSearchFocusTimers(): void {
-    _searchFocusTransitionTimers.forEach(clearTimeout)
-    _searchFocusTransitionTimers.length = 0
+function _clearStatusTimerRegistry(): DisposableRegistry {
+    _statusTimerRegistry?.disposeAll()
+    _statusTimerRegistry = new DisposableRegistry({ label: 'search-status-timer' })
+    return _statusTimerRegistry
 }
 
 // ── Search Orchestration ───────────────────────────────────────────────────
@@ -115,6 +122,9 @@ export function clearPendingFocusTransitionToken(): void {
  * Single-track implementation using Svelte store and search engine.
  */
 export async function search(query: string, options: SearchOptions = {}): Promise<void> {
+    // Clear any status-reset timer left by a prior call so a stale timer
+    // cannot overwrite this search's status message.
+    const statusReg = _clearStatusTimerRegistry()
     try {
         sessionStorage.removeItem('searchVisibleCount')
     } catch (error) {
@@ -153,12 +163,11 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         cancelSearch()
         if (trimmedQuery && trimmedQuery.length > 0 && trimmedQuery.length < 2) {
             if (statusEl) statusEl.textContent = 'Type at least 2 characters to search'
-            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-            setTimeout(() => {
+            statusReg.schedule(2000, () => {
                 if (statusEl && !searchStore().summary) {
                     statusEl.textContent = 'Type to find businesses by need, place, or trade.'
                 }
-            }, 2000)
+            })
             if (resultsEl && statusEl) clearShortSemanticSearchState(resultsEl, statusEl)
         } else {
             clearSearch()
@@ -207,65 +216,78 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     startSearchVectorScramble()
 
     let searchResults: SearchResult[]
+    let reg: DisposableRegistry | null = null
+    let onPrimaryAbort: (() => void) | null = null
     try {
-        // ── Fast-fail wrapper ──────────────────────────────────────────
-        // Race performSearch against a timer so a slow/absent API does NOT
-        // leave the user staring at a spinner for ~25s (8s × 3 exponent retries
-        // with no feedback). After 3s we show a toast; after 7s we abort the
-        // API and fall back to the local index directly.
-        const FAST_FAIL_MS = 7000
-        const FEEDBACK_DELAY_MS = 3000
-
-        const fastFailController = new AbortController()
-        const onPrimaryAbort = () => fastFailController.abort()
-        signal.addEventListener('abort', onPrimaryAbort, { once: true })
-
-        let feedbackFired = false
-        let fallbackResolve: ((v: SearchResult[]) => void) | null = null
-
-        const feedbackTimer = setTimeout(() => {
-            feedbackFired = true
-            showExperienceToast(
-                'Searching local data',
-                `Live search is taking longer than expected. Using local data for "${trimmedQuery}"...`
+        // `?staticDev=0` is the explicit API-failure contract used by the
+        // search contract tests. It must not silently replace a slow/erroring
+        // API with local results, and it must not wait for the local fallback
+        // timer before surfacing the API error.
+        if (shouldSurfaceApiFailures()) {
+            searchResults = await performSearch(
+                trimmedQuery,
+                signal,
+                0,
+                options.offset ?? 0,
+                options.preferCachedResults
             )
-            if (statusEl) statusEl.textContent = `Searching local data for "${trimmedQuery}"...`
-        }, FEEDBACK_DELAY_MS)
+        } else {
+            // ── Fast-fail wrapper ──────────────────────────────────────────
+            // Race performSearch against a timer so a slow/absent API does NOT
+            // leave the user staring at a spinner for ~25s (8s × 3 exponent retries
+            // with no feedback). After 3s we show a toast; after 7s we abort the
+            // API and fall back to the local index directly.
+            const FAST_FAIL_MS = 7000
+            const FEEDBACK_DELAY_MS = 3000
 
-        const fallbackTimer = setTimeout(() => {
-            if (!feedbackFired) {
+            const fastFailController = new AbortController()
+            onPrimaryAbort = () => fastFailController.abort()
+            signal.addEventListener('abort', onPrimaryAbort, { once: true })
+
+            let feedbackFired = false
+            let fallbackResolve: ((v: SearchResult[]) => void) | null = null
+
+            reg = new DisposableRegistry()
+            void reg.schedule(FEEDBACK_DELAY_MS, () => {
+                feedbackFired = true
                 showExperienceToast(
                     'Searching local data',
                     `Live search is taking longer than expected. Using local data for "${trimmedQuery}"...`
                 )
                 if (statusEl) statusEl.textContent = `Searching local data for "${trimmedQuery}"...`
-            }
-            fastFailController.abort()
-            const localHits = performLocalIndexSearch(trimmedQuery, options.offset ?? 0, 18)
-            const localResults = localHits && localHits.length > 0 ? localHitsToResults(localHits) : []
-            fallbackResolve?.(localResults)
-        }, FAST_FAIL_MS)
+            })
+            void reg.schedule(FAST_FAIL_MS, () => {
+                if (!feedbackFired) {
+                    showExperienceToast(
+                        'Searching local data',
+                        `Live search is taking longer than expected. Using local data for "${trimmedQuery}"...`
+                    )
+                    if (statusEl) statusEl.textContent = `Searching local data for "${trimmedQuery}"...`
+                }
+                fastFailController.abort()
+                const localHits = performLocalIndexSearch(trimmedQuery, options.offset ?? 0, 18)
+                const localResults = localHits && localHits.length > 0 ? localHitsToResults(localHits) : []
+                fallbackResolve?.(localResults)
+            })
 
-        const fallbackPromise = new Promise<SearchResult[]>((resolve) => {
-            fallbackResolve = resolve
-        })
+            const fallbackPromise = new Promise<SearchResult[]>((resolve) => {
+                fallbackResolve = resolve
+            })
 
-        const apiPromise = performSearch(
-            trimmedQuery,
-            fastFailController.signal,
-            0,
-            options.offset ?? 0,
-            options.preferCachedResults
-        )
+            const apiPromise = performSearch(
+                trimmedQuery,
+                fastFailController.signal,
+                0,
+                options.offset ?? 0,
+                options.preferCachedResults
+            )
 
-        searchResults = await Promise.race([apiPromise, fallbackPromise])
+            searchResults = await Promise.race([apiPromise, fallbackPromise])
 
-        clearTimeout(feedbackTimer)
-        clearTimeout(fallbackTimer)
-        signal.removeEventListener('abort', onPrimaryAbort)
-        // Swallow late API rejection so an unhandled rejection doesn't
-        // surface when the fast-fail path resolves first.
-        apiPromise.catch(() => {})
+            // Swallow late API rejection so an unhandled rejection doesn't
+            // surface when the fast-fail path resolves first.
+            apiPromise.catch(() => {})
+        }
     } catch (error: unknown) {
         if (signal.aborted || !isRequestCurrent(requestId)) return
         stopSearchVectorScramble()
@@ -280,6 +302,10 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         }
         return
     } finally {
+        reg?.dispose()
+        if (onPrimaryAbort) {
+            signal.removeEventListener('abort', onPrimaryAbort)
+        }
         release()
     }
 
@@ -351,10 +377,13 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     if (!resultsEl || !statusEl) {
         const deadline = Date.now() + 2500
         while (Date.now() < deadline) {
+            if (signal.aborted || !isRequestCurrent(requestId)) break
             resultsEl = document.getElementById('search-results')
             statusEl = document.getElementById('search-status')
             if (resultsEl && statusEl) break
-            await new Promise<void>((resolve) => setTimeout(resolve, 40))
+            await new Promise<void>((resolve) =>
+                setTimeout(resolve, 40) // eslint-disable-line no-restricted-syntax -- 40ms DOM poll scoped to current request; lifecycle guarded by isRequestCurrent/signal checks above
+            )
         }
     }
     if (!resultsEl || !statusEl) {
@@ -454,7 +483,6 @@ export function beginSearchFocusTransition(
 ): void {
     if (!point || !searchStore().summary) return
     if (!el) return
-    _clearSearchFocusTimers()
     const token = incrementFocusTransitionToken()
     _pendingFocusTransitionToken = token
 

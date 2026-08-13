@@ -47,48 +47,11 @@ export { animate } from './three-engine-render-loop'
 import { engineState } from './three-engine-state'
 import { webglContext } from '@lib/engine/webgl-context'
 import { appState } from '@lib/state/app.svelte'
-import { sceneNeedsContinuousFrame, sceneVisualsNeedRender } from './three-engine-helpers'
-import { cameraControlsRestore } from '@lib/engine/camera-controls-restore.svelte.ts'
-import { sampleScenePerformance } from './renderer/renderer-diagnostics'
-import { debugWarn, debugError } from '@lib/utils/debug'
-import { prefersReducedMotion } from '@lib/utils/environment'
-import {
-    computeRevealProgress,
-    lerpNodesForFrame,
-    lerpCameraForReveal,
-    updateFogDensity,
-    updatePointsMaterial,
-    updateReferenceSphereOpacity,
-    updateSporeOpacity,
-    updateHoverEmissiveFlash,
-    updateMyceliumPulse,
-    updateThreadLayerOpacities,
-    updatePointsShaderHoverBoost
-} from './three-engine-frame-updates'
+import { animate } from './three-engine-render-loop'
+import { setRestoreAnimateCb, setRestoreSuccessCb } from './three-engine-restore'
 import { scheduleNextAnimationFrame } from './three-engine-timers'
-import {
-    clearScheduledFrameTasks,
-    hasScheduledFrameTasks,
-    runFrameTasks
-} from './frame-scheduler'
-import {
-    shouldSkipNextRender as shouldSkipNextRenderHelper,
-    type SceneStaticSnapshot
-} from './renderer/scene-static-tracker'
-import {
-    updateRouteTraceOverlayFrame,
-    updateArrivalHandoffOverlayFrame,
-    updateFocusSemanticOverlayFrame,
-    syncFocusSemanticOverlayResolutionPort,
-    updateFocusSemanticOverlayPositions
-} from '@lib/engine/journey-webgl-lazy'
-import { syncFocusPocketSizeMesh } from './focus-pocket-size-mesh'
-import {
-    updateMyceliumThreads as updateMyceliumThreadsPort,
-    drainMyceliumDirtyState as drainMyceliumDirtyStatePort,
-    shouldRenderThreads as shouldRenderThreadsPort,
-    syncMyceliumLineResolution as syncMyceliumLineResolutionPort
-} from '@lib/engine/thread-manager'
+import { syncMyceliumLineResolution as syncMyceliumLineResolutionPort } from '@lib/engine/thread-manager'
+import { syncFocusSemanticOverlayResolutionPort } from '@lib/engine/journey-webgl-lazy'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -178,3 +141,9 @@ export function startRenderLoop(): void {
 export function applyMapFlatteningLayout(enabled: boolean): void {
     engineState.mapFlattening?.applyMapFlatteningLayout(enabled)
 }
+
+// Wire the extracted render-loop callbacks after the core module has finished
+// initializing. Restore retries must be able to wake `animate`, and a late
+// restore success must release the deferred render-loop start gate.
+setRestoreAnimateCb(animate)
+setRestoreSuccessCb(startRenderLoop)

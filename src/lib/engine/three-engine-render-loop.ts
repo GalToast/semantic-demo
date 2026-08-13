@@ -27,7 +27,6 @@ import {
 } from './three-engine-frame-updates'
 import { scheduleNextAnimationFrame, setAnimateFn } from './three-engine-timers'
 import {
-    clearScheduledFrameTasks,
     hasScheduledFrameTasks,
     runFrameTasks,
     setFrameSchedulerWake
@@ -40,15 +39,13 @@ import {
     updateRouteTraceOverlayFrame,
     updateArrivalHandoffOverlayFrame,
     updateFocusSemanticOverlayFrame,
-    syncFocusSemanticOverlayResolutionPort,
     updateFocusSemanticOverlayPositions
 } from '@lib/engine/journey-webgl-lazy'
 import { syncFocusPocketSizeMesh } from './focus-pocket-size-mesh'
 import {
     updateMyceliumThreads as updateMyceliumThreadsPort,
     drainMyceliumDirtyState as drainMyceliumDirtyStatePort,
-    shouldRenderThreads as shouldRenderThreadsPort,
-    syncMyceliumLineResolution as syncMyceliumLineResolutionPort
+    shouldRenderThreads as shouldRenderThreadsPort
 } from '@lib/engine/thread-manager'
 import {
     _armRestoreWatchdog,

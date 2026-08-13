@@ -30,6 +30,11 @@ import { applyUrlState } from '@lib/orchestration/url-state'
 import { teardownViewController } from '@lib/orchestration/view-controller'
 import { teardownTriggers } from '@lib/orchestration/triggers'
 import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
+import {
+    claimRestoreOwnership,
+    isRestoreOwned,
+    releaseRestoreOwnership
+} from '@lib/engine/webgl-restore-ownership'
 
 // Side-effect: initializes journey state, canvas interaction adapter,
 // and thread-settler bindings. Must load before engine init so that
@@ -200,7 +205,7 @@ async function applyUrlStateAfterData(): Promise<void> {
  *
  * @returns A cleanup function that removes the event listeners.
  */
-function setupWebglContextRestore(): () => void {
+export function setupWebglContextRestore(): () => void {
     // H1 fix (Jul-10 bugsweep cross-seam): previously queried #engine-canvas
     // which is REMOVED by scene-init.ts:90 (all canvases != renderer.domElement
     // are stripped). So lost/restored listeners on detached #engine-canvas
@@ -228,6 +233,14 @@ function setupWebglContextRestore(): () => void {
     const canvas = liveCanvasFromDom
     if (!canvas) return () => {}
 
+    // Ownership check: if the engine registry already owns restore handling
+    // for this canvas, yield to it. The registry path is primary and handles
+    // the full re-init via webglNeedsRestoreReinit + animate() wakeup.
+    if (isRestoreOwned(canvas)) {
+        debugWarn('[app-init] Restore ownership claimed by engine registry; fallback yielding')
+        return () => {}
+    }
+
     const handleContextLost = (event: Event) => {
         event.preventDefault()
         debugWarn('[app-init] WebGL context lost (app-init fallback)')
@@ -243,13 +256,23 @@ function setupWebglContextRestore(): () => void {
         }
     }
 
+    const fallbackOwner = {}
+    const cleanup = () => {
+        canvas.removeEventListener('webglcontextlost', handleContextLost)
+        canvas.removeEventListener('webglcontextrestored', handleContextRestored)
+        releaseRestoreOwnership(canvas, fallbackOwner)
+    }
+
+    // Claim the fallback explicitly so a later engine init can remove this
+    // listener pair before installing its primary handlers on the same canvas.
+    if (!claimRestoreOwnership(canvas, fallbackOwner, { kind: 'fallback', cleanup })) {
+        return () => {}
+    }
+
     canvas.addEventListener('webglcontextlost', handleContextLost)
     canvas.addEventListener('webglcontextrestored', handleContextRestored)
 
-    return () => {
-        canvas.removeEventListener('webglcontextlost', handleContextLost)
-        canvas.removeEventListener('webglcontextrestored', handleContextRestored)
-    }
+    return cleanup
 }
 
 // ── Main Init ────────────────────────────────────────────────────────────────

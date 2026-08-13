@@ -63,7 +63,9 @@ export function refreshFocusSemanticOverlay(): void {
     ensureSemanticOverlayModule().then((mod) => mod.refreshFocusSemanticOverlay?.())
 }
 
-export function updateFocusSemanticOverlayPositions(now: number): void {
+export function updateFocusSemanticOverlayPositions(
+    now: number = typeof performance !== 'undefined' ? performance.now() : Date.now()
+): void {
     ensureSemanticOverlayModule().then((mod) => mod.updateFocusSemanticOverlayPositions?.(now))
 }
 

@@ -230,7 +230,9 @@ function _restoreReinitWithRetryInner() {
             _restoreRetryCount++
             if (_restoreRetryCount <= _RESTORE_MAX_RETRIES) {
                 const delay = _RESTORE_BACKOFF_MS[_restoreRetryCount - 1] ?? 3000
-                debugWarn(`[three-engine] WebGL restore retry ${_restoreRetryCount}/${_RESTORE_MAX_RETRIES} in ${delay}ms`)
+                debugWarn(
+                    `[three-engine] WebGL restore retry ${_restoreRetryCount}/${_RESTORE_MAX_RETRIES} in ${delay}ms`
+                )
                 _clearRetryTimer()
                 const backoffGeneration = _restoreGeneration
                 _restoreRetryTimer = window.setTimeout(() => {

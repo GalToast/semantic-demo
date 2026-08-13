@@ -1,10 +1,10 @@
 import {
     toastStore,
-    showToast,
     showWarningToast,
     showErrorToast,
     showToastSpec,
     dismissToast,
+    dismissToastById,
     clearToastQueue,
     type ToastSpec,
     type ToastVariant
@@ -27,12 +27,21 @@ export type { ToastSpec, ToastVariant }
 export { toastStore, showWarningToast, showErrorToast, showToastSpec, clearToastQueue }
 
 /** Show a transient info toast. Enqueues behind any currently visible toast. */
-export function showExperienceToast(title: string, copy: string): void {
-    showToast(title, copy)
+export function showExperienceToast(title: string, copy: string): void
+export function showExperienceToast(title: string, copy: string, id: string): void
+export function showExperienceToast(title: string, copy: string, id?: string): void {
+    showToastSpec({ title, copy, variant: 'info', id })
 }
 
 /** Dismiss the visible toast and advance the queue. */
 export { dismissToast }
+
+/**
+ * Dismiss a specific toast by id without disturbing unrelated queued toasts
+ * (engine lifecycle audit F1). Aliased as `dismissExperienceToast` so it lands
+ * on `engineState.uiFeedback` via the toast-orchestration merge.
+ */
+export { dismissToastById, dismissToastById as dismissExperienceToast }
 
 /**
  * Test/dev affordance: expose the toast trigger functions on `window` so

@@ -158,7 +158,9 @@
   function showFallbackHint(): void {
     // Phase 2: suppress if the user is already exploring (Scout B Rec #4).
     // A hint on top of active exploration is noise, not guidance.
-    if (userInteractedSinceMount) return;
+    const panelSurface = document.body?.dataset?.panelSurface;
+    const isActiveExplorationSurface = ['focus', 'focus-search', 'semantic-dive'].includes(panelSurface ?? '');
+    if (userInteractedSinceMount || isActiveExplorationSurface) return;
     showToastSpec({
       title: 'Getting started',
       copy: 'Search for a business type above, or click any dot to explore connections.',

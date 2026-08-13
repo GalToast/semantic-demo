@@ -78,6 +78,7 @@
   id="focus-pocket-a11y"
   class="focus-pocket-a11y"
   class:visible={isVisible}
+  class:lifted={shouldLift}
   role="list"
   aria-label="Neighborhood businesses"
   tabindex={isVisible ? -1 : undefined}
@@ -156,8 +157,18 @@
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
     border-radius: var(--radius-tight);
-    z-index: var(--z-panels);
+    /* The opened list must sit above the mobile focus card (z-600's
+       composited stage stack) while remaining below the journey controls. */
+    z-index: var(--z-journey-active, 500);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Fixed panels with only `bottom` set otherwise resolve their auto height
+     from the static flow position, collapsing to a one-line strip. The
+     compact focus surface also reserves the bottom dive strip for its CTA. */
+  .focus-pocket-a11y.visible.lifted {
+    height: fit-content;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
   }
 
   .focus-pocket-a11y li {
@@ -253,6 +264,10 @@
     bottom: auto;
     top: 0.75rem;
     right: 0.75rem;
+  }
+
+  .focus-pocket-list-toggle[aria-expanded='true'].lifted {
+    top: calc(10px + 58px + 8px);
   }
 
   .focus-keyboard-hint {

@@ -22,6 +22,14 @@ export const FOCUSABLE_SELECTORS = [
 const trapStack: string[][] = []
 let isTrapping = false
 
+/** Order-independent structural equality of two selector sets. */
+function selectorsEqual(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) return false
+    const sa = [...a].sort()
+    const sb = [...b].sort()
+    return sa.every((s, i) => s === sb[i])
+}
+
 /**
  * Maximum nesting depth for the focus-trap stack. Guards against unbounded
  * growth from a push/pop imbalance (a trap pushed but never popped). Legitimate
@@ -37,6 +45,16 @@ const MAX_TRAP_DEPTH = 8
 export function setupFocusTrap(containerSelectors: string | string[]): void {
     if (!Array.isArray(containerSelectors)) {
         containerSelectors = [containerSelectors]
+    }
+
+    // Idempotent activation (audit 2026-08-12, finding #3): if the exact same
+    // selector set is already the top (active) layer, do not push a duplicate.
+    // This makes repeated trap requests for a single surface a no-op, so the
+    // stack never grows stale layers or leaks the keydown listener. The active
+    // mobile search/focus trap is re-asserted by a MutationObserver on every
+    // body[data-panel-surface] change; identical re-assertions must not stack.
+    if (trapStack.length > 0 && selectorsEqual(trapStack[trapStack.length - 1]!, containerSelectors)) {
+        return
     }
 
     if (trapStack.length >= MAX_TRAP_DEPTH) {
@@ -115,6 +133,10 @@ function handleKeydown(e: KeyboardEvent): void {
     const activeIndex = focusableEls.indexOf(document.activeElement as Element)
 
     if (activeIndex === -1) {
+        // Outside-focus detection (audit 2026-08-12): the focused element is
+        // not inside any active trap layer. Pull focus back into the trap's
+        // first visible focusable so keyboard users can never get stranded
+        // outside the active surface.
         e.preventDefault()
         ;(first as HTMLElement).focus()
         return
@@ -131,4 +153,20 @@ function handleKeydown(e: KeyboardEvent): void {
             ;(first as HTMLElement).focus()
         }
     }
+}
+
+/** Current trap stack depth (0 when no trap is active). Test/diagnostic helper. */
+export function getTrapStackDepth(): number {
+    return trapStack.length
+}
+
+/** The selector set of the currently-active (top) trap layer, or null. */
+export function getActiveTrapSelectors(): string[] | null {
+    if (trapStack.length === 0) return null
+    return [...trapStack[trapStack.length - 1]!]
+}
+
+/** True while a focus-trap keydown listener is installed. */
+export function isFocusTrapping(): boolean {
+    return isTrapping
 }

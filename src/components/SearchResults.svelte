@@ -165,7 +165,14 @@
       lastQuery = currentQuery;
       // Defer to next tick so resultSlice has updated with new results.
       void tick().then(() => {
-        if (resultSlice.length > 0) {
+        // `focusedIndex` is also the scene-focus source of truth. Do not write
+        // the first result there merely because a typed query changed while
+        // the input owns focus: that promotes the search surface to
+        // `focus-search` and steals the mobile search layout. Only preserve
+        // roving-list behavior when the user is already navigating inside the
+        // list; typing remains a search-only interaction.
+        const list = document.getElementById('search-result-list');
+        if (resultSlice.length > 0 && list?.contains(document.activeElement)) {
           setActiveResultByIndex(0);
         }
       });

@@ -6,7 +6,7 @@
  */
 import { mount, unmount } from 'svelte'
 import { get } from 'svelte/store'
-import { navStore, setFocusedIndex } from '@lib/stores/navigation.svelte'
+import { navStore, setFocusedIndex, setCurrentView } from '@lib/stores/navigation.svelte'
 import { setSearchSummary } from '@lib/stores/search.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
 import type { NavState } from '@lib/types/state'
@@ -436,7 +436,12 @@ function createTestCompatProxy(): Record<string, unknown> {
                                 stalenessMsg: string
                             }
                         } else if (prop === 'currentView') {
-                            appState.currentView = value as ViewName
+                            // Route the test-compat currentView write through the
+                            // canonical view-transition helper so the navStore
+                            // mirror + VIEW_CHANGED event stay in sync. The bare
+                            // `appState.currentView = …` alias door bypassed the
+                            // mirror (wrote navState.currentView directly).
+                            setCurrentView(value as ViewName)
                         } else if (prop === 'weather') {
                             appState.weather = value
                         } else if (prop === 'currentSearchSummary') {

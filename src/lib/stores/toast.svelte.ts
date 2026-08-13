@@ -29,6 +29,13 @@ export interface ToastSpec {
      * Useful for spam-prone messages like "Trail locked".
      */
     dedupeKey?: string
+    /**
+     * Stable identity for this toast. Enables targeted dismissal via
+     * `dismissToastById` without touching unrelated queued toasts (engine
+     * lifecycle audit F1: the WebGL restore-failure toast must be retractable
+     * when a late restore succeeds, without clearing other toasts).
+     */
+    id?: string
 }
 
 interface ToastState {
@@ -48,6 +55,8 @@ interface ToastState {
      * the queue preview.
      */
     nextTitle: string
+    /** Stable id of the currently visible toast (see ToastSpec.id). Empty when inactive. */
+    id: string
 }
 
 const DEFAULT_DURATIONS: Record<ToastVariant, number> = {
@@ -63,7 +72,8 @@ const defaultState: ToastState = {
     variant: 'info',
     active: false,
     queueLength: 0,
-    nextTitle: ''
+    nextTitle: '',
+    id: ''
 }
 
 export const toastStore = writable<ToastState>({ ...defaultState })
@@ -71,6 +81,7 @@ export const toastStore = writable<ToastState>({ ...defaultState })
 // Internal queue + timer. Held in module scope for the app lifetime.
 const queue: ToastSpec[] = []
 let autoTimer: ReturnType<typeof setTimeout> | null = null
+// Id of the toast currently shown (mirrors ToastSpec.id of the visible spec).
 
 function clearAuto(): void {
     if (autoTimer !== null) {
@@ -81,6 +92,7 @@ function clearAuto(): void {
 
 function emitVisible(spec: ToastSpec): void {
     const variant: ToastVariant = spec.variant ?? 'info'
+    visibleToastId = spec.id ?? null
     toastStore.set({
         message: `${spec.title}\n${spec.copy}`,
         title: spec.title,
@@ -88,11 +100,13 @@ function emitVisible(spec: ToastSpec): void {
         variant,
         active: true,
         queueLength: queue.length,
-        nextTitle: queue[0]?.title ?? ''
+        nextTitle: queue[0]?.title ?? '',
+        id: spec.id ?? ''
     })
 }
 
 function emitInactive(): void {
+    visibleToastId = null
     toastStore.set({ ...defaultState })
 }
 
@@ -105,6 +119,8 @@ function startAuto(spec: ToastSpec): void {
         advance()
     }, duration)
 }
+
+let visibleToastId: string | null = null
 
 /** Remove the currently visible toast and surface the next queued one. */
 function advance(): void {
@@ -170,9 +186,32 @@ export function dismissToast(): void {
     advance()
 }
 
+/**
+ * Dismiss a specific toast by its `ToastSpec.id`, leaving all other queued
+ * toasts untouched. No-op when that id is not the visible toast nor queued.
+ * Used by the engine lifecycle to retract the WebGL restore-failure toast
+ * when a late restore succeeds (F1) without disturbing unrelated toasts.
+ */
+export function dismissToastById(id: string): void {
+    if (visibleToastId === id) {
+        advance()
+        return
+    }
+    const idx = queue.findIndex((s) => s.id === id)
+    if (idx >= 0) {
+        queue.splice(idx, 1)
+        toastStore.update((s) => ({
+            ...s,
+            queueLength: queue.length,
+            nextTitle: queue[0]?.title ?? ''
+        }))
+    }
+}
+
 /** Drop every queued toast without firing another auto-dismiss cycle. */
 export function clearToastQueue(): void {
     queue.length = 0
+    visibleToastId = null
     emitInactive()
     clearAuto()
 }

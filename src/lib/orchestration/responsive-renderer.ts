@@ -39,7 +39,14 @@ export const MOBILE_MAX_WIDTH = 768
  */
 export function isDeepLinkParams(params: URLSearchParams): boolean {
     const queryLen = params.get('q')?.trim().length ?? 0
-    return params.has('anchor') || params.has('record') || params.get('view') === 'map' || queryLen >= 2
+    const surface = params.get('surface')?.trim()
+    return (
+        params.has('anchor') ||
+        params.has('record') ||
+        params.get('view') === 'map' ||
+        (surface != null && surface !== '' && surface !== 'idle') ||
+        queryLen >= 2
+    )
 }
 
 /**

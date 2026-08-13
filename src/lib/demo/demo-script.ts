@@ -8,6 +8,7 @@
  * the next step after step.durationMs.
  */
 import type { DemoPhase } from '@lib/stores/demo.svelte.ts'
+import { demoPhase, getDemoLifecycleSignal, isDemoActive } from '@lib/stores/demo.svelte.ts'
 import { toggleAutoRotate, exploreInsideToNextStop, returnToCountyView } from '@lib/orchestration/lifecycle'
 import { search, getFirstSearchHit } from '@lib/search/state'
 import { focusOnNode } from '@lib/engine/camera-choreography/cursor'
@@ -37,13 +38,38 @@ export { getFirstSearchHit } from '@lib/search/state'
  * SEARCH phase awaits its action (bounded), but in slow envs the search may
  * still be settling when FOCUS runs — this holds FOCUS until the state is real.
  */
-async function waitForSearchHit(timeoutMs: number): Promise<number | null> {
+export async function waitForSearchHit(timeoutMs: number): Promise<number | null> {
     const deadline = Date.now() + timeoutMs
+    const entryPhase = demoPhase()
+    const lifecycleSignal = getDemoLifecycleSignal()
     while (Date.now() < deadline) {
+        if (!isDemoActive()) return null
+        if (demoPhase() !== entryPhase) return null
         const hit = getFirstSearchHit()
         if (hit !== null) return hit
-        await new Promise((r) => setTimeout(r, 250))
+        await new Promise<void>((r) => {
+            let settled = false
+            let timer: ReturnType<typeof setTimeout> | null = null
+            const finish = () => {
+                if (settled) return
+                settled = true
+                if (timer !== null) clearTimeout(timer)
+                lifecycleSignal?.removeEventListener('abort', finish)
+                r()
+            }
+            // eslint-disable-next-line no-restricted-syntax -- lifecycle-owned bounded poll
+            timer = setTimeout(finish, 250)
+            if (lifecycleSignal) {
+                if (lifecycleSignal.aborted) finish()
+                else lifecycleSignal.addEventListener('abort', finish, { once: true })
+            }
+        })
+        if (lifecycleSignal?.aborted) return null
+        if (!isDemoActive()) return null
+        if (demoPhase() !== entryPhase) return null
     }
+    if (!isDemoActive()) return null
+    if (demoPhase() !== entryPhase) return null
     return getFirstSearchHit()
 }
 

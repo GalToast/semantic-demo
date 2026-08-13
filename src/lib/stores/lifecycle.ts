@@ -11,7 +11,6 @@
  */
 import { get } from 'svelte/store'
 import {
-    navStore,
     updateNavState,
     writeNavStateMirror,
     switchView,
@@ -33,16 +32,6 @@ export function setTrailDepth(depth: number, _options?: unknown): void {
     const nextDepth = Math.max(0, Number(depth) || 0)
     _setTrailDepth(nextDepth)
     updateNavState({ trailDepth: nextDepth })
-
-    // Mirror to test-compat globals via legacyState. See applyCompositionState()
-    // for the test-compat proxy convergence. window.state was retired
-    // 2026-05-27; window.__semanticState is never set.
-    if (typeof window !== 'undefined') {
-        legacyState.trailDepth = nextDepth
-        if (legacyState.navState) {
-            legacyState.navState.trailDepth = nextDepth
-        }
-    }
 }
 export const setSemanticDiveMode = _setSemanticDiveMode
 export const setMyceliumMode = _setMyceliumMode
@@ -105,11 +94,9 @@ export function derivePanelSurface(opts: {
  * info-panel-state). This function does not call it.
  */
 export function applyCompositionState(): void {
-    const $nav = get(navStore)
     const $focus = get(focusStore)
     const $search = get(searchStore)
 
-    const hasFocus = !!($nav.focusedIndex != null || $focus.selectedBusiness)
     // graphContext, activeView, hasSearchIntent are no longer needed in this
     // function (W47+ parity migration moved mobileRoutePeek clear-on-non-idle
     // logic to parity-attrs). The deriveGraphContext helper was deleted
@@ -121,32 +108,13 @@ export function applyCompositionState(): void {
         root.dataset.searchGlow = $search.glowActive ? 'active' : 'inactive'
     }
 
-    // Mirror to the test-compat global state. The test-compat proxy in
-    // main.ts forwards writes back to legacyState — i.e. setting
-    // `legacyState.x = y` here mirrors to all live window globals
-    // (`__APP_STATE__`, `__TEST_STATE__`, `__LEGACY_APP_STATE__`) in one go.
-    // `window.state` was retired 2026-05-27 and `window.__semanticState` is
-    // never set, so the previous 5-element iteration contained two dead
-    // entries. See docs/window-global-allowlist.md for the deprecation
-    // record. See tests/widget-journey.spec.js for the test-compat surface.
+    // Keep the focus-store compatibility view current for the test bridge.
+    // Navigation fields are already synchronized by writeNavStateMirror();
+    // writing legacyState.navState here would bypass that canonical funnel and
+    // reintroduce the state drift this function is meant to expose.
     if (typeof window !== 'undefined') {
-        legacyState.focusedNode = hasFocus
-            ? ($nav.focusedIndex ??
-              ($focus.selectedBusiness ? ($focus.selectedBusiness as { index?: number }).index : null) ??
-              null)
-            : null
         if (legacyState.focusState) {
             legacyState.focusState.selectedPoint = $focus.selectedBusiness
-        }
-        // NOTE: do not mirror semanticDiveMode here. appState.semanticDiveMode
-        // is a getter derived from trailDepth, so writing to it (via the
-        // legacyState adapter, which is just appState cast) would re-set
-        // trailDepth and create a circular reset. Parity-attrs owns the body
-        // data-attr; the legacy test surface can read appState.semanticDiveMode
-        // directly.
-        if (legacyState.navState) {
-            legacyState.navState.focusedIndex = legacyState.focusedNode
-            legacyState.navState.mode = $nav.mode
         }
     }
 }

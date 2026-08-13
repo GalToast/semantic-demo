@@ -19,4 +19,3 @@ export function focusSearchInput(): void {
         if (input && document.activeElement !== input) input.focus()
     })
 }
-

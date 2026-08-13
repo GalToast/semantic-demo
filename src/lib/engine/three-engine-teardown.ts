@@ -22,7 +22,6 @@ import { invalidateRestoreMachine } from './three-engine-restore'
 import { debugWarn } from '@lib/utils/debug'
 import { pauseRenderLoopTimers } from './three-engine-timers'
 import { clearScheduledFrameTasks } from './frame-scheduler'
-import { setEngineStatus } from '@lib/stores/engine.svelte.ts'
 import { webglContext } from '@lib/engine/webgl-context'
 
 // ── Teardown ────────────────────────────────────────────────────────────────
@@ -108,6 +107,23 @@ export function cancelAnimate() {
     } catch (ppErr) {
         debugWarn('[three-engine] postprocessing dispose failed:', ppErr)
     }
+    // Fix 2 (engine lifecycle audit 2026-08-12): clear the cached
+    // postprocessing module + in-flight load promise so a subsequent
+    // re-init's ensurePostProcessing() re-acquires a fresh composer instead
+    // of reusing the just-disposed one. engineState.ppModule survives
+    // disposePostProcessing() (its cached function refs persist while the
+    // underlying EffectComposer is nulled), which would let the render loop's
+    // `if (pp) pp.renderPostProcessing()` or a re-init treat a disposed
+    // composer as live. ppLoading is also nulled so a pending import promise
+    // cannot resolve into the stale cached module object.
+    engineState.ppModule = null
+    engineState.ppLoading = null
+    // F3 (engine lifecycle audit 2026-08-12): advance the postprocessing cache
+    // epoch so any import still in flight (started before this teardown) drops
+    // its result instead of re-populating ppModule/ppLoading above. cancelAnimate
+    // runs on every re-init too, so a fresh init's ensurePostProcessing() reads
+    // the new epoch and caches cleanly.
+    engineState.ppEpoch++
     if (renderer) {
         renderer.dispose()
         // W53 WebGL-context leak fix: Three.js r163+ `dispose()` frees GPU

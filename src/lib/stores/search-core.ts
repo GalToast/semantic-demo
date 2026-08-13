@@ -13,6 +13,8 @@ import type { BusinessRecord } from '@lib/types/business'
 import { type Readable } from 'svelte/store'
 import { getBusinessRecords } from '@lib/data-store'
 import { performSearch } from '@lib/search-engine'
+import { performLocalIndexSearch, localHitsToResults } from '@lib/search/local-search-index'
+import { shouldSurfaceApiFailures } from '@lib/search/mock-search-fallback'
 import { appState } from '@lib/state/app.svelte.ts'
 import { createStateMirror } from '@lib/state/create-state-mirror'
 import { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
@@ -23,6 +25,14 @@ import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
 const MAX_QUERY_LENGTH = 200
 const MIN_QUERY_LENGTH = 2
+
+// Fast-fail window for the local-index fallback when the live API is slow or
+// unreachable. Mirrors FAST_FAIL_MS (7000) used by the orchestration search
+// path so the product shares one "give up on the API and use local data"
+// budget instead of hanging through the full API retry budget (8s × 3).
+const LOCAL_FALLBACK_FAST_FAIL_MS = 7000
+// First page of local-index results (matches performSearch's PAGE_SIZE).
+const LOCAL_FALLBACK_LIMIT = 18
 
 // ── Initial State ────────────────────────────────────────────────────────────
 
@@ -575,7 +585,29 @@ export function setSearchResults(results: SearchResult[]): void {
 }
 
 /**
+ * Write a result set to the store and publish the matching outcome event.
+ * Shared by the fast-API, local-fallback, and staticDev paths so the
+ * success/empty publish contract stays identical across all routes.
+ */
+function commitSearch(query: string, results: SearchResult[]): void {
+    setSearchResults(results)
+    if (results.length > 0) {
+        publish(EVENTS.SEARCH_SUCCESS, { query, count: results.length })
+    } else {
+        publish(EVENTS.SEARCH_EMPTY, { query })
+    }
+}
+
+/**
  * Execute a search and update the store. Used by URL restoration and search input.
+ *
+ * Bounded fast-fail: the live API is raced against a local-index fallback that
+ * resolves within LOCAL_FALLBACK_FAST_FAIL_MS. A slow/unreachable API therefore
+ * cannot keep the typed-search promise pending through the full API retry budget
+ * (~24s: 8s × 3). The fast path preserves: caller cancellation, stale-request
+ * protection (request sequencing), the cache/dedup semantics owned by
+ * performSearch, and the explicit ?staticDev=0 API-failure contract (which must
+ * NOT be silently replaced by local results).
  */
 export async function runSearch(query: string, signal: AbortSignal): Promise<void> {
     // Clear any persisted visible count from a prior search so the
@@ -599,26 +631,114 @@ export async function runSearch(query: string, signal: AbortSignal): Promise<voi
     setSearchStatus('searching')
     const requestId = incrementRequestSequence()
 
-    try {
-        const results = await performSearch(trimmed, signal)
-        // A newer runSearch may have superseded this request while the
-        // search was in flight. Only the latest request may write results
-        // or publish success/empty — a slower superseded request must not
-        // overwrite the newer query's results.
-        if (!isRequestCurrent(requestId)) return
-        setSearchResults(results)
-        if (results.length > 0) {
-            publish(EVENTS.SEARCH_SUCCESS, { query: trimmed, count: results.length })
-        } else {
-            publish(EVENTS.SEARCH_EMPTY, { query: trimmed })
+    // ── staticDev=0 contract ────────────────────────────────────────────────
+    // When the project explicitly surfaces API failures, do NOT silently
+    // replace that error with local results. Delegate to performSearch
+    // unchanged so the explicit error state propagates (contract tests verify
+    // .search-error-state appears). The fast-fail/local fallback below is
+    // skipped entirely for this path.
+    if (shouldSurfaceApiFailures()) {
+        try {
+            const results = await performSearch(trimmed, signal)
+            if (!isRequestCurrent(requestId)) return
+            if (signal.aborted) return
+            commitSearch(trimmed, results)
+        } catch (err) {
+            if (err instanceof DOMException && err.name === 'AbortError') return
+            if (signal.aborted) return
+            // Errors from a superseded request must not create a visible error
+            // state — the newer request owns the status/error fields now.
+            if (!isRequestCurrent(requestId)) return
+            setSearchError(trimmed, err)
         }
-    } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') return
-        // Errors from a superseded request must not create a visible error
-        // state — the newer request owns the status/error fields now.
-        if (!isRequestCurrent(requestId)) return
-        setSearchError(trimmed, err)
+        return
     }
+
+    // ── Bounded fast-fail (non-staticDev) ────────────────────────────────────
+    // Race the live API against a local-index fallback timer. The API promise
+    // keeps its normal cache/dedup/retry semantics; the fallback only kicks in
+    // if the API hasn't resolved within the window.
+    const apiPromise = performSearch(trimmed, signal)
+
+    let fallbackTimer: ReturnType<typeof setTimeout> | undefined
+    const fallbackPromise = new Promise<SearchResult[] | null>((resolve) => {
+        fallbackTimer = globalThis.setTimeout(() => {
+            try {
+                // null => index genuinely unavailable (#6). [] (empty array) is
+                // a legitimate successful-empty result and is handled as such
+                // by commitSearch; the two must not be conflated. A defensive
+                // catch keeps a future local-index bug from escaping the timer
+                // callback and leaving the fallback promise pending.
+                const hits = performLocalIndexSearch(trimmed, 0, LOCAL_FALLBACK_LIMIT)
+                resolve(hits === null ? null : localHitsToResults(hits))
+            } catch {
+                resolve(null)
+            }
+        }, LOCAL_FALLBACK_FAST_FAIL_MS)
+    })
+
+    const apiOutcome = apiPromise.then(
+        (results) => ({ kind: 'api' as const, results }),
+        (err) => ({ kind: 'api-error' as const, err })
+    )
+
+    const outcome = await Promise.race([
+        apiOutcome,
+        fallbackPromise.then((local) => ({ kind: 'fallback' as const, local }))
+    ])
+    // Clear the dangling timer when the API won the race (#2: no leak).
+    if (fallbackTimer !== undefined) {
+        clearTimeout(fallbackTimer)
+    }
+
+    if (outcome.kind === 'api') {
+        // Fast API response wins — the local fallback never runs its write.
+        if (!isRequestCurrent(requestId)) return
+        if (signal.aborted) return
+        commitSearch(trimmed, outcome.results)
+        return
+    }
+
+    if (outcome.kind === 'api-error') {
+        // Fast API rejection stays authoritative (original behavior).
+        if (outcome.err instanceof DOMException && outcome.err.name === 'AbortError') return
+        if (signal.aborted) return
+        if (!isRequestCurrent(requestId)) return
+        setSearchError(trimmed, outcome.err)
+        return
+    }
+
+    // ── Fallback branch: API exceeded the fast-fail window ───────────────────
+    const local = outcome.local
+    if (local === null) {
+        // Index genuinely unavailable: fall through to the API so it can use its
+        // own mock/error path. We must NOT treat null as an empty success.
+        try {
+            const results = await apiPromise
+            if (!isRequestCurrent(requestId)) return
+            if (signal.aborted) return
+            commitSearch(trimmed, results)
+        } catch (err) {
+            if (err instanceof DOMException && err.name === 'AbortError') return
+            if (signal.aborted) return
+            if (!isRequestCurrent(requestId)) return
+            setSearchError(trimmed, err)
+        }
+        return
+    }
+
+    // Local fallback committed. Suppress any late API resolution so it cannot
+    // write a second/stale result set for this request (#3). A newer runSearch
+    // (higher requestId) still owns the store if it arrives.
+    if (!isRequestCurrent(requestId)) return
+    if (signal.aborted) return
+    commitSearch(trimmed, local)
+    // Swallow the late API outcome for THIS request — neither a slow success
+    // nor an eventual error may overwrite the committed local result.
+    apiPromise.then(
+        () => {},
+        () => {}
+    )
 }
 
 /** Utility to clean and cast search results from a service payload. */

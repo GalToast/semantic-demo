@@ -19,6 +19,7 @@ import { webglContext, type WebGLContextState } from '@lib/engine/webgl-context'
 import { pauseRenderLoopTimers } from './three-engine-timers'
 import { cancelRouteAnimations } from '@lib/engine/camera-choreography/routes'
 import { debugError } from '@lib/utils/debug'
+import { releaseRestoreOwnership, takeRestoreOwnership } from './webgl-restore-ownership'
 import type { WebGLRenderer } from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
@@ -88,9 +89,32 @@ export function registerContextListeners(
 ): DisposableRegistry {
     const { renderer, controls, restartLoop } = input
     const registry = input.registry ?? new DisposableRegistry({ label: 'three-engine' })
+    const canvas = renderer.domElement
+
+    // Claim ownership of the paired context lost/restored listeners. A fresh
+    // engine registry may replace an app-init fallback, but it must not stack
+    // another engine listener set on a canvas already owned by a live registry.
+    const owned = takeRestoreOwnership(canvas, registry)
+    if (!owned) {
+        sinks.debugError('[three-engine] Restore ownership already claimed for this canvas')
+        // Restore, visibility, and control listeners are one engine-owned set.
+        // A duplicate registry must not retain a partial listener set while the
+        // original registry remains authoritative for this canvas.
+        return registry
+    }
+
+    const listen = (
+        target: EventTarget,
+        type: string,
+        handler: EventListener,
+        options?: EventListenerOptions | boolean
+    ): void => {
+        target.addEventListener(type, handler, options)
+        registry.listener(target, type, handler, options)
+    }
 
     // C5 — WebGL context lost
-    registry.listener(renderer.domElement, 'webglcontextlost', (event: Event) => {
+    listen(canvas, 'webglcontextlost', (event: Event) => {
         event.preventDefault()
         sinks.engineState.webglContextLost = true
         sinks.pauseRenderLoopTimers({ clearRestoreTimer: true })
@@ -100,13 +124,8 @@ export function registerContextListeners(
     // C6 — WebGL context restored (moved from app-init.ts H1 fix Jul-10)
     // H1 root cause: app-init queried #engine-canvas (removed by scene-init)
     // and attached restored there, so real context restores on renderer.domElement
-    // never fired. Now registry owns BOTH C5+C6 on renderer.domElement.
-    registry.listener(renderer.domElement, 'webglcontextrestored', () => {
-        // The app-init re-init path also exists; this registry path handles
-        // the common case without needing the global #engine-canvas query.
-        // If app-init installed its own handler it will also fire, but the
-        // init guard (_initCalled) prevents double-init. We log here for
-        // visibility and let app-init's async restore run if needed.
+    // never fired. The owning registry handles BOTH C5+C6 on this canvas.
+    listen(canvas, 'webglcontextrestored', () => {
         sinks.engineState.webglContextLost = false
         // T3-1: Signal that a full GPU resource re-creation is needed.
         // WebGL context loss invalidates ALL GPU resources (buffers,
@@ -122,13 +141,13 @@ export function registerContextListeners(
         // _shouldSkipFrame(), so the re-init fires even though the loop was
         // paused.
         restartLoop()
-        // The app-init layer also re-runs appInit() on restore (its cleanup
-        // removes stale listeners). This direct listener ensures the flag
-        // resets even when app-init is torn down.
     })
 
+    // Release ownership when this registry is disposed.
+    registry.add(() => releaseRestoreOwnership(canvas, registry))
+
     // C7 — document visibility change
-    registry.listener(sinks.document, 'visibilitychange', () => {
+    listen(sinks.document, 'visibilitychange', () => {
         if (
             !sinks.document.hidden &&
             sinks.engineState.rafId === null &&
@@ -144,7 +163,7 @@ export function registerContextListeners(
     })
 
     // C10 — OrbitControls start/end
-    registry.listener(controls as unknown as EventTarget, 'start', () => {
+    listen(controls as unknown as EventTarget, 'start', () => {
         // P1-3 (fleet 0731 sweep 2026-08-07): a user drag/zoom must cancel an
         // in-flight route tween (search-corridor / centroid), otherwise the tween's
         // per-frame writes fight the gesture for its full 1.6s duration.
@@ -152,7 +171,7 @@ export function registerContextListeners(
         sinks.engineState.cameraControls?.releaseFocusCameraAssist('user-control')
         sinks.engineState.cameraControls?.noteSceneInteraction(sinks.cameraAssistMs)
     })
-    registry.listener(controls as unknown as EventTarget, 'end', () => {
+    listen(controls as unknown as EventTarget, 'end', () => {
         sinks.engineState.cameraControls?.scheduleAutoRotateResume(sinks.cameraAssistMs)
     })
 

@@ -33,6 +33,7 @@ import { cameraStore } from '@lib/stores/camera.svelte'
 import { demoStore } from '@lib/stores/demo.svelte'
 import { graphicsModeStore, loadingPhaseStore } from '@lib/data-store'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
+import { appState } from '@lib/state/app.svelte'
 
 // ── Decomposition: pure resolvers for computeParityAttributes() ───────────
 //
@@ -359,9 +360,11 @@ function applySurfaceSettledSignal(map: ParityAttributeMap): void {
         map.cameraAssist === 'free' ||
         map.graphicsMode === 'fallback'
     if (overlayHidden && routeSettled) {
-        const settled = map.panelSurface ?? map.navSurface ?? 'true'
-        if (document.body.dataset.surfaceSettled !== settled) {
-            document.body.dataset.surfaceSettled = settled
+        // This is a readiness flag, not a second surface-name channel. The
+        // active surface already has its own data-panel-surface mirror, while
+        // consumers intentionally wait for the literal boolean-like value.
+        if (document.body.dataset.surfaceSettled !== 'true') {
+            document.body.dataset.surfaceSettled = 'true'
         }
     } else if (document.body.dataset.surfaceSettled !== undefined) {
         delete document.body.dataset.surfaceSettled
@@ -524,6 +527,7 @@ const _bypassSnapshot: Record<BypassAttrKey, string | null> = $state<Record<Bypa
 })
 
 let _bypassObserver: MutationObserver | null = null
+let _requestParitySync: (() => void) | null = null
 
 /**
  * Read a bypass attr's current value reactively.
@@ -609,6 +613,10 @@ function installBypassObserver(): void {
         _bypassSnapshot.insideWalkState = document.body.dataset.insideWalkState ?? null
         _bypassSnapshot.renderKind = document.body.dataset.renderKind ?? null
         _bypassSnapshot.mobileSearchSheet = document.body.dataset.mobileSearchSheet ?? null
+        // Bypass writers are outside the Svelte stores that normally drive
+        // parity. Keep the rune map and body mirrors in step when one of
+        // those writers changes an attribute directly.
+        _requestParitySync?.()
     }
     syncBypassSnapshot()
     _bypassObserver = new MutationObserver(syncBypassSnapshot)
@@ -630,6 +638,32 @@ function installBypassObserver(): void {
  */
 function createParitySyncEffectBody(initialSync: boolean): () => void {
     let scheduled = false
+    let deadlineTimer: ReturnType<typeof setTimeout> | null = null
+
+    const clearDeadlineTimer = (): void => {
+        if (deadlineTimer !== null) {
+            clearTimeout(deadlineTimer)
+            deadlineTimer = null
+        }
+    }
+
+    const armDeadlineTimer = (deadline: number | null): void => {
+        clearDeadlineTimer()
+        if (typeof deadline !== 'number' || !Number.isFinite(deadline) || deadline <= 0) return
+        const delay = Math.max(0, deadline - Date.now())
+        if (delay <= 0) {
+            scheduleSync()
+            return
+        }
+        // effect-owned timer: $effect.root disposer calls clearDeadlineTimer();
+        // a DisposableRegistry would add accidental lifetime coupling between module-level and effect-local state.
+        // eslint-disable-next-line no-restricted-syntax
+        deadlineTimer = setTimeout(() => {
+            deadlineTimer = null
+            scheduleSync()
+        }, delay)
+    }
+
     // Phase 1 timing-maze fix: the mirror's single timing layer is
     // queueMicrotask(syncNow). This gives Svelte 5 reactivity time to
     // settle (Object.assign(parityMap, map) triggers $derived/$effect
@@ -680,6 +714,15 @@ function createParitySyncEffectBody(initialSync: boolean): () => void {
         queueMicrotask(syncNow)
     }
 
+    _requestParitySync = scheduleSync
+
+    // Track the live dive-transition deadline and re-arm the timer whenever
+    // it changes, so the parity attr expires even when no other store fires.
+    $effect(() => {
+        const deadline = appState._semanticDiveTransitionDeadline
+        armDeadlineTimer(deadline)
+    })
+
     // Explicit .subscribe() per store. Plain function-call reads
     // (e.g. `navStore()`) inside $effect are transient in Svelte 5 and
     // do NOT establish a dependency; .subscribe() does.
@@ -701,6 +744,7 @@ function createParitySyncEffectBody(initialSync: boolean): () => void {
     }
 
     return () => {
+        if (_requestParitySync === scheduleSync) _requestParitySync = null
         unsubNav()
         unsubJourney()
         unsubFocus()
@@ -712,6 +756,7 @@ function createParitySyncEffectBody(initialSync: boolean): () => void {
         unsubLoadingPhase()
         unsubGraphicsMode()
         unsubEngineReady()
+        clearDeadlineTimer()
     }
 }
 
@@ -750,6 +795,10 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
         if (_effectRoot) {
             _effectRoot()
             _effectRoot = null
+        }
+        if (_bypassObserver) {
+            _bypassObserver.disconnect()
+            _bypassObserver = null
         }
         _lastSnapshot = null
     }

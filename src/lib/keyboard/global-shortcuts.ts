@@ -126,6 +126,14 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
             // before the switch because Ctrl+5's ENTER_INSIDE mirror reads it.
             setJourneyPhase(modeId === 'map' ? 'overview' : modeId)
 
+            // Match the header mode funnel: search, trail, focus, and inside
+            // are galaxy-panel modes. Without this explicit view transition,
+            // pressing Ctrl/Cmd+2-5 from map preserves currentView='map' and
+            // serializes an incoherent map+galaxy-surface combination.
+            if (modeId !== 'overview' && modeId !== 'map') {
+                dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'galaxy' })
+            }
+
             switch (e.key) {
                 case '1':
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)
@@ -235,7 +243,11 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
             // also hits the global handler below → RETURN_OVERVIEW wipes the query
             // the user was reading. Guard: a visible toast owns Esc.
             const activeToast = document.getElementById('experience-reset-toast')
-            if (activeToast && !activeToast.hasAttribute('inert')) {
+            // `inert` is an IDL property here, not a reliable serialized
+            // attribute across browsers. The component's reactive `active`
+            // class is the canonical visible-state contract.
+            const eventStartedInToast = e.target instanceof Element && !!e.target.closest('#experience-reset-toast')
+            if (eventStartedInToast || activeToast?.classList.contains('active')) {
                 return
             }
             // W10 bugsweep (BS-B#2): when focus is inside the search results list

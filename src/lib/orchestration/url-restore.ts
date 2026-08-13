@@ -16,10 +16,7 @@ import { debugWarn } from '@lib/utils/debug'
 import { clearSearch, runSearch, searchStore, setSearchError } from '@lib/stores/search.svelte'
 import { focusStore, setSemanticDiveMode } from '@lib/stores/focus.svelte'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
-import {
-    restoreActiveClusterFilterFromUrl,
-    restoreActiveFiltersFromUrl
-} from '@lib/stores/filter.svelte'
+import { restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '@lib/stores/filter.svelte'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { animateCameraToNode } from '@lib/engine/camera-choreography/focus'
@@ -87,7 +84,14 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
         trailDepthFromExploration: 0,
         trailDepth: 0
     })
-    appState.semanticDiveMode = false
+    // NOTE: do NOT reset the `semanticDiveMode` alias here with a bare
+    // `appState.semanticDiveMode = false` write. `semanticDiveMode` is a derived
+    // alias over `navState.trailDepth === 2` (app.svelte.ts), and the
+    // writeNavStateMirror({ trailDepth: 0 }) above already leaves it false
+    // through the canonical mirror path (navStore mirror + drift baseline).
+    // A bare alias-door write would bypass that mirror and trip the
+    // ci-check-nav-mirror-pattern guard. focusStore.semanticDiveMode is reset
+    // separately below via focusStore.update.
     appState.myceliumMode = 'default'
     clearSearch()
     focusStore.update((s) => {
@@ -247,6 +251,15 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
             } else {
                 debugWarn('[url-state] record', recordId, 'not found in dataset; ignoring')
                 showExperienceToast('Listing not found', `Listing ${recordId} isn't available in this dataset.`)
+                // Remove an unresolvable record deep link so a refresh does not
+                // replay the same toast and failed restore indefinitely.
+                try {
+                    const url = new URL(window.location.href)
+                    url.searchParams.delete('record')
+                    window.history.replaceState(window.history.state ?? {}, '', `${url.pathname}${url.search}`)
+                } catch {
+                    // URL rewrite is best-effort.
+                }
             }
         }
 
@@ -682,16 +695,35 @@ async function _restoreSearchFromParams(
     restoreToken: number,
     signal: AbortSignal
 ): Promise<void> {
-    // Compose the caller's restore signal with a 30s deadline so a hung
-    // runSearch cannot block URL restore forever. The restore signal aborts
-    // when a newer applyUrlState supersedes this restore.
-    const searchSignal = AbortSignal.any([signal, AbortSignal.timeout(30000)])
+    // Acquire the search LEASE for this query BEFORE composing the restore
+    // signal, so the lease signal is in scope below. A newer typed search
+    // aborts this lease (startSearch for the new query aborts the controller
+    // we own here); threading that abort into the restore signal makes the
+    // post-runSearch DOM/event/camera writes cancel when the user moves on.
+    const { signal: leaseSignal, isNew, release } = startSearch(query)
+    // Compose the caller's restore signal, the search LEASE signal, and a 30s
+    // deadline so a hung runSearch cannot block URL restore forever. The
+    // restore signal aborts when a newer applyUrlState supersedes this
+    // restore. The lease signal aborts when a newer typed search supersedes
+    // this restore's query.
+    const searchSignal = AbortSignal.any([signal, leaseSignal, AbortSignal.timeout(30000)])
     // True only when the 30s deadline fired. A caller supersession aborts
-    // `signal` (not the deadline) and must stay silent below.
+    // `signal` (not the deadline) and a newer typed search aborts the lease
+    // signal — both must stay silent below.
     let restoreTimedOut = false
     let rejectDeadline: ((reason: unknown) => void) | undefined
     const onSearchAbort = (): void => {
-        restoreTimedOut = !signal.aborted
+        // Caller supersession (newer applyUrlState / popstate / re-init): the
+        // restore controller aborted `signal`. Stay silent — the newer restore
+        // drives state.
+        if (signal.aborted) return
+        // Search-lease supersession: a newer typed search aborted the lease
+        // controller this restore opened via startSearch(). The user moved on
+        // to a new query, so the post-runSearch writes must not fire. Stay
+        // silent — no timeout error, no false error card.
+        if (leaseSignal.aborted) return
+        // Neither the caller nor the lease aborted: the 30s deadline fired.
+        restoreTimedOut = true
         rejectDeadline?.(
             searchSignal.reason instanceof Error
                 ? searchSignal.reason
@@ -724,7 +756,10 @@ async function _restoreSearchFromParams(
         // re-fire, constellation rebuild, camera frame) must still run once the
         // in-flight search settles, or shared links like ?q=coffee&anchor=519
         // silently fail to focus when the typed-input path is mid-flight.
-        const { isNew, release } = startSearch(query)
+        // Capture the lease SIGNAL (not just isNew/release): a newer typed
+        // search will abort it, and that abort must derail the post-await
+        // writes below rather than let a stale restore rewrite the input,
+        // publish focus, or move the camera after the user moved on.
         // W71b mark: this restore is the one serving ?q= for this page load;
         // a parallel mount-time hydration search for the same query should
         // dedup against it (see orchestration.search's isRecentlyRestoredQuery
@@ -741,8 +776,9 @@ async function _restoreSearchFromParams(
             // where runSearch settles instead of the deadline losing the race.
             await Promise.race([runSearch(query, searchSignal), restoreDeadline])
 
-            if (searchSignal.aborted && !signal.aborted) {
+            if (searchSignal.aborted && !signal.aborted && !leaseSignal.aborted) {
                 // runSearch swallowed the deadline abort and resolved normally.
+                // (A lease abort is covered by the lease-signal guard, not a timeout.)
                 restoreTimedOut = true
             }
         } else {
@@ -758,7 +794,7 @@ async function _restoreSearchFromParams(
                 // restoreTimedOut=false; this catch must NOT clobber it back to
                 // true or a legitimately-running piggybacked search gets a spurious
                 // error card (contract: supersession stays silent).
-                if (signal.aborted) return
+                if (signal.aborted || leaseSignal.aborted) return
                 restoreTimedOut = true
             }
         }
@@ -784,10 +820,12 @@ async function _restoreSearchFromParams(
             return
         }
 
-        // Token-abort: bail before post-runSearch writes (DOM mutation,
-        // SEARCH_FOCUS_REQUESTED publish, preserveDomForcedFocusSearchSurface)
-        // if a newer applyUrlState bumped the token while runSearch was in flight.
-        if (_isRestoreStale(restoreToken)) return
+        // Token-abort + lease-supersession: bail before post-runSearch writes
+        // (DOM input mutation, SEARCH_FOCUS_REQUESTED publish, pocket rebuild,
+        // camera frame) if a newer applyUrlState bumped the token OR a newer
+        // typed search aborted this restore's search lease while runSearch was
+        // in flight. Both mean the user has moved on; stay silent.
+        if (_isRestoreStale(restoreToken) || leaseSignal.aborted) return
 
         // UI-7: Directly populate the search input from the URL ?q= param.
         // runSearch sets the store query, but the SearchInput component may not
@@ -852,7 +890,7 @@ async function _restoreSearchFromParams(
         // aborted (and the token was bumped). Stay silent — the newer restore
         // drives state. This preserves the intentional cancellation semantics:
         // a supersession abort must NOT surface as a search error.
-        if (signal.aborted) return
+        if (signal.aborted || leaseSignal.aborted) return
         // The 30s restore deadline expired. Same settle-as-error handling as
         // the post-await path above (this branch covers runSearch rejecting
         // with the deadline reason instead of resolving).

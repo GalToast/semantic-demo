@@ -1,7 +1,8 @@
-import { runSearch, setSearchStatus, setSearchQuery } from '@lib/stores/search.svelte'
+import { runSearch, setSearchStatus, setSearchQuery, clearSearch } from '@lib/stores/search.svelte'
 import { requestEntryFocus } from '@lib/focus/focus-coordinator'
 import { pendingSearch } from '@lib/stores/pending-search.svelte'
 import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts'
+import { resetFocus } from '@lib/stores/focus.svelte'
 import { get } from 'svelte/store'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { showExperienceToast } from '@lib/orchestration/toast'
@@ -184,7 +185,25 @@ export class SearchDispatch {
     clearQuery(): void {
         this.searchDebounce.cancel()
         cancelSearch()
+        // Regression #1 (tmp/shittiest-ui-journey-20260812/report.md): clearing
+        // the query must keep the user in the search surface, NOT teleport them
+        // back to the galaxy/overview. That exit behavior is the explicit back
+        // button affordance (handleClear → clear() → RETURN_OVERVIEW).
+        //
+        // Wipe the stale result set + summary so the results panel doesn't keep
+        // showing the previous query's rows now that the input is blank.
+        clearSearch()
         setSearchStatus('idle')
+        // Break the focus-trap: a previously auto-focused result pins
+        // nav.surface at 'focus-search' (the panel-surface resolver re-asserts it
+        // from nav.surface even after focus/search intent is gone), which
+        // hides/inerts the search input and strands keyboard focus. Dropping the
+        // focus + pinning the surface back to 'search' keeps the input visible
+        // and focused so the user can immediately type a new query.
+        resetFocus()
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESET_FOCUS)
+        this.surfaceSwitchedToSearch = false
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
     }
 
     dispose(): void {

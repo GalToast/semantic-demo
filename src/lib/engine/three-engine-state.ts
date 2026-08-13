@@ -40,7 +40,11 @@ type MapStateModule = typeof import('@lib/engine/map-state')
 type UiFeedbackModule = typeof import('@lib/ui/ui-feedback') &
     // PR-D7 merged in the Svelte toastOrchMod to expose showExperienceToast
     // after the legacy DOM-direct implementation was retired from ui-feedback.
-    { showExperienceToast(title: string, message?: string): void }
+    {
+        showExperienceToast(title: string, message?: string, id?: string): void
+        /** Targeted toast removal used when a late restore supersedes an escalation. */
+        dismissExperienceToast?: (id: string) => void
+    }
 type MapFlatteningModule = typeof import('../utils/map-flattening-layout')
 type WebGLRestoreModule = {
     setWebGLContextRestoreHandler: (fn: (() => Promise<unknown> | unknown) | null) => void
@@ -105,6 +109,13 @@ export interface ThreeEngineState {
     consecutiveSkippedFrames: number
     /** W49-H: total render-skip opportunities since engine init. */
     renderSkipOpportunities: number
+    /**
+     * Monotonic epoch for the postprocessing dynamic-import cache. Bumped by
+     * cancelAnimate() on every teardown/re-init so an in-flight
+     * `ensurePostProcessing()` import cannot resurrect `ppModule`/`ppLoading`
+     * after teardown nulled them (engine lifecycle audit F3).
+     */
+    ppEpoch: number
 }
 
 // ── WebGL context restore handler (inlined from webgl-restore-adapter.ts) ────
@@ -152,7 +163,8 @@ export const engineState: ThreeEngineState = {
     // W49-H: initialize the camera-snapshot tracker.
     lastCameraSnapshot: null,
     consecutiveSkippedFrames: 0,
-    renderSkipOpportunities: 0
+    renderSkipOpportunities: 0,
+    ppEpoch: 0
 }
 
 // ── Module Bootstrap ─────────────────────────────────────────────────────────

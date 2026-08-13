@@ -20,12 +20,11 @@ import type { NavState } from '@lib/types/state'
  */
 type NavStateWithStory = NavState & { activeStoryPrompt?: string | null }
 import { debugWarn } from '@lib/utils/debug'
-import { clearSearch } from '@lib/stores/search.svelte'
 import { appState } from '@lib/state/app.svelte'
 import { setFocusedNode } from '@lib/journey/thread-settler'
 import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import { getFilterState } from '@lib/stores/filter.svelte'
-import { getSearchParams, getLocationPathname, isDomForcedFocusSearchSurface } from '@lib/orchestration/url-params'
+import { getSearchParams, getLocationPathname } from '@lib/orchestration/url-params'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

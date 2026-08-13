@@ -25,7 +25,6 @@ import {
     getFocusConstellationViewportProfile,
     getFocusConstellationPlacement,
     applyRelationshipRolePlacementBias,
-    type PlacementParams,
     type ConstellationMotif,
     type ViewportProfile
 } from './focus-pocket-profiles'

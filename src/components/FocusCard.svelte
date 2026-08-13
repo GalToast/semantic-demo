@@ -17,7 +17,8 @@
 <script lang="ts">
   import { activeResult } from '@lib/stores/search.svelte';
   import { businessRecords } from '@lib/data-store';
-  import { parityMap, getBypassAttr } from '@lib/orchestration/parity-attrs.svelte';
+  import { parityMap, getBypassAttr } from '@lib/orchestration/parity-attrs.svelte'
+  import { viewport } from '@lib/stores/viewport.svelte';
   import { appState } from '@lib/state/app.svelte';
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, describeCluster } from '@lib/utils';
@@ -217,13 +218,25 @@
     };
   }
 
+  // Audit #2 (2026-08-12): on compact viewports / the 2D placeholder fallback
+  // there is no interactive map to click, so the empty-state copy must not tell
+  // the user to "click the map". Gate the hint on the active surface.
+  let isMobileFallback = $derived(
+    getBypassAttr('renderKind') === 'placeholder2d' || !!$viewport.isCompact
+  )
+  let emptyExploreHint = $derived(
+    isMobileFallback
+      ? 'Tap a business to explore the network.'
+      : 'Click a business on the map to explore.'
+  )
+
   // ── View Model (mirrors InfoPanel fallback path) ──────────────────────────────
   let viewModel = $derived.by((): Record<string, unknown> => {
     if (!selectedRecord) return {
       name: 'Select a business',
       filedAs: '',
       showFiledAs: false,
-      what: 'Click a business on the map to explore.',
+      what: emptyExploreHint,
       role: 'Listing',
       theme: 'Theme',
       status: 'Business status',
@@ -369,7 +382,7 @@
         <path d="M12 16v-4M12 8h.01"/>
       </svg>
       <p class="selected-empty-headline">Select a business</p>
-      <p class="selected-empty-sub">Click a business on the map to explore.</p>
+      <p class="selected-empty-sub">{emptyExploreHint}</p>
     </div>
     {/if}
 

@@ -166,4 +166,10 @@
     /* PR-E1: Hint text fades alongside the badge (desktop only). */
     animation: overlay-out 0.3s ease-in 4s forwards;
   }
+
+  @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
+    .semantic-overlay {
+      top: 9rem;
+    }
+  }
 </style>

@@ -145,10 +145,14 @@
   function handleClearQuery(): void {
     queryInput = '';
     setSearchQuery('');
-    // The clear affordance must also remove any auto-focused result. Keeping
-    // that focus while blanking the query promotes the body to focus-search,
-    // which can hide or inert the search surface and strand keyboard focus.
-    dispatch.clear();
+    // Stay in the search surface: wipe the query but keep the user where they
+    // are so they can immediately type a new one. The previous code routed this
+    // through dispatch.clear() (RETURN_OVERVIEW), which teleported the user back
+    // to the galaxy on every clear — a surprising UX regression
+    // (tmp/shittiest-ui-journey-20260812/report.md #1). clearQuery() cancels
+    // the in-flight search, drops any auto-focused result, and pins the surface
+    // back to 'search' so the input stays visible and focused.
+    dispatch.clearQuery();
     // Return focus after the navigation reset has flushed.
     requestAnimationFrame(() => inputEl?.focus());
   }

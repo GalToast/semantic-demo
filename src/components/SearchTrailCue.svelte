@@ -121,4 +121,18 @@
     line-height: 1.4;
     overflow-wrap: break-word;
   }
+
+  /* A short-landscape focus surface already has the journey rail and the
+     selected business card competing for the lower canvas band. The cue is
+     useful on regular mobile search, but redundant here; suppress only this
+     constrained focus/search composition so the rail remains readable. */
+  @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
+    :global(body.surface-focus) .search-trail-cue,
+    :global(body.surface-focus-search) .search-trail-cue,
+    :global(body.surface-semantic-dive) .search-trail-cue {
+      display: none !important;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  }
 </style>

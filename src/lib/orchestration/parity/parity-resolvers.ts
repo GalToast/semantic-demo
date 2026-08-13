@@ -82,7 +82,7 @@ export function resolveGraphContext(ctx: ParityContext, hasFocus: boolean, hasSe
     if (hasFocus && hasSearch) return { graphContext: 'focus-search' }
     if (hasFocus) return { graphContext: 'focus' }
     if (hasSearch) return { graphContext: 'corridor' }
-    if (ctx.nav.mode === 'search' || ctx.search.summary) return { graphContext: 'corridor' }
+    if (ctx.nav.mode === 'search' || hasSearch) return { graphContext: 'corridor' }
     if (ctx.nav.mode === 'overview') return { graphContext: 'idle' }
     return { graphContext: 'idle' }
 }
@@ -106,14 +106,17 @@ export function resolvePanelSurfaceMode(
         if (nav.surface === 'map-trail') return { panelSurfaceMode: 'map-trail' }
         if (hasFocus && hasSearch) return { panelSurfaceMode: 'map-focus-search' }
         if (hasFocus) return { panelSurfaceMode: 'map-focus' }
-        if (nav.surface === 'focus-search' || nav.surface === 'search' || ctx.search.summary) {
+        if (nav.surface === 'focus-search' || nav.surface === 'search' || hasSearch) {
             return { panelSurfaceMode: 'map-search' }
         }
         if (nav.surface === 'focus') return { panelSurfaceMode: 'map-focus' }
         if (nav.surface === 'map') return { panelSurfaceMode: 'map' }
         return { panelSurfaceMode: 'map-idle' }
     }
-    if (focus.semanticDiveMode) return { panelSurfaceMode: 'semantic-dive' }
+    // A stale dive flag without a focused business must not expose the
+    // semantic-dive surface. resolveSemanticDive applies the same focus guard;
+    // keep panel selection and the public semanticDive attribute in lockstep.
+    if (focus.semanticDiveMode && hasFocus) return { panelSurfaceMode: 'semantic-dive' }
     if (hasFocus && hasSearch) return { panelSurfaceMode: 'focus-search' }
     if (hasFocus) return { panelSurfaceMode: 'focus' }
     if (hasSearch) return { panelSurfaceMode: 'search' }
@@ -160,7 +163,7 @@ export function resolveMapTrailState(
     const hasMapTrailIntent =
         ctx.nav.currentView === 'map' &&
         (ctx.nav.focusedIndex != null ||
-            Boolean(ctx.search.summary) ||
+            _hasSearch ||
             ctx.nav.surface === 'map-focus-search' ||
             ctx.nav.surface === 'map-trail')
     const trailState: 'active' | 'inactive' =
@@ -314,8 +317,7 @@ export function resolveJourneyPhase(ctx: ParityContext, hasFocus: boolean, hasSe
     const derivedHasFocus =
         (typeof focusedIdx === 'number' && Number.isFinite(focusedIdx)) ||
         (typeof selBiz === 'object' && selBiz !== null)
-    const q = ctx.search.query
-    const derivedHasSearch = !!ctx.search.summary || (typeof q === 'string' && q.trim().length >= 2)
+    const derivedHasSearch = resolveSearchContext(ctx).hasSearchContext
     const explicit = ctx.journey.phase as string
 
     let journeyPhase: string

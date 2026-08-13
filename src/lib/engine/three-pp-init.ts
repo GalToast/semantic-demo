@@ -23,15 +23,27 @@ import { debugWarn } from '@lib/utils/debug'
 export async function ensurePostProcessing(engineState: ThreeEngineState): Promise<PostProcessingModule> {
     if (engineState.ppModule) return engineState.ppModule
     if (engineState.ppLoading) return engineState.ppLoading
+    // Capture the cache epoch at call entry. cancelAnimate() bumps ppEpoch on
+    // every teardown/re-init, so an import that resolves after a teardown must
+    // not re-populate the cache the teardown just cleared (engine lifecycle
+    // audit F3).
+    const epoch = engineState.ppEpoch
     engineState.ppLoading = import('@lib/engine/three-postprocessing')
         .then((m) => {
-            engineState.ppModule = {
+            const wrapper: PostProcessingModule = {
                 initPostProcessing: m.initPostProcessing,
                 renderPostProcessing: m.renderPostProcessing,
                 disposePostProcessing: m.disposePostProcessing,
                 resizePostProcessing: m.resizePostProcessing
             }
-            return engineState.ppModule!
+            // Only cache when the epoch still matches. Otherwise the in-flight
+            // import would resurrect engineState.ppModule / ppLoading; we still
+            // return a usable wrapper to the (now superseded) caller so its
+            // post-init hook can't throw on null, but the cache stays cleared.
+            if (engineState.ppEpoch === epoch) {
+                engineState.ppModule = wrapper
+            }
+            return wrapper
         })
         .catch((e: unknown) => {
             // Module-load failure (transient network or broken chunk): log + clear
