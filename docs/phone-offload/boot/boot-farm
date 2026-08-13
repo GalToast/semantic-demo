@@ -1,0 +1,39 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# FARM START - boot/node/ssh runner for the McLaren dev box
+# Place at usr/bin/farm_start and run at boot (Termux:Boot or adb root)
+export LD_LIBRARY_PATH=/data/data/com.termux/files/usr/lib
+export PATH=/data/data/com.termux/files/usr/bin:/data/local/bin:$PATH
+export HOME=/data/data/com.termux/files/home
+export PREFIX=/data/data/com.termux/files/usr
+export TMPDIR=/data/data/com.termux/files/usr/tmp
+mkdir -p "$TMPDIR"
+cd "$HOME" || exit 1
+
+# Start sshd if not running (bind 8022)
+if ! pgrep -f 'sshd.*8022' >/dev/null 2>&1; then
+  /data/data/com.termux/files/usr/bin/sshd -p 8022
+  echo "sshd up on 8022"
+else
+  echo "sshd already up"
+fi
+
+# Restore the chroot bind-mount for the git mirror (reboot drops mounts).
+# NB: su -c resets HOME, so HARDCODE the termux home here (never $HOME inside su).
+TH=/data/data/com.termux/files/home
+ROOTFS=/data/data/com.termux/files/usr/var/lib/proot-distro/containers/ubuntu/rootfs
+REPOS="$TH/repos"
+BIND="$ROOTFS/mnt/phonerepos"
+su -c "umount \"$BIND\" 2>/dev/null; mkdir -p \"$BIND\"; mount --bind \"$REPOS\" \"$BIND\"; echo bind-rc=\$?"
+# safe.directory: broker adds it; ensure root trusts the host-owned mirror
+su -c "chroot \"$ROOTFS\" /bin/sh -c 'export PATH=/usr/bin:/bin HOME=/root; git config --global --add safe.directory /mnt/phonerepos/semantic-explorer.git 2>/dev/null; true'"
+
+# git daemon so LAN clones work (optional, unauthed, LAN-local only)
+if ! pgrep -f 'git daemon' >/dev/null 2>&1; then
+  su 10246 -c "LD_LIBRARY_PATH=\"$PREFIX/lib\" HOME=\"$TH\" nohup \"$PREFIX/bin/git\" daemon --reuseaddr --base-path=\"$TH/repos\" --export-all --listen=0.0.0.0 --port=9418 >/dev/null 2>&1 &"
+  echo "git-daemon up on 9418"
+else
+  echo "git-daemon already up"
+fi
+
+echo "IP: $(ip addr show wlan0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)"
+echo "farm boot complete"
