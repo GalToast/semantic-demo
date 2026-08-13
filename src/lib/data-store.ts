@@ -130,10 +130,7 @@ class DerivedRuneStore<T> {
     // Semantically identical to the parameter-property form.
     private compute: () => T
 
-    constructor(
-        compute: () => T,
-        base: { subscribe(run: () => void): () => void }
-    ) {
+    constructor(compute: () => T, base: { subscribe(run: () => void): () => void }) {
         this.compute = compute
         this.#derivedSource = deriveState(() => this.compute())
         // Permanent base subscription: the base shim pushes on every change,
@@ -395,17 +392,11 @@ export function setGraphicsMode(mode: 'webgl' | 'fallback'): void {
 /** Number of loaded business records */
 
 /** Whether all data is ready */
-const _isDataReady = new DerivedRuneStore<boolean>(
-    () => dataLoadState.getSnapshot().status === 'ready',
-    dataLoadState
-)
+const _isDataReady = new DerivedRuneStore<boolean>(() => dataLoadState.getSnapshot().status === 'ready', dataLoadState)
 export const isDataReady: Readable<boolean> = _isDataReady
 
 /** Whether data is currently loading */
-const _isLoading = new DerivedRuneStore<boolean>(
-    () => dataLoadState.getSnapshot().status === 'loading',
-    dataLoadState
-)
+const _isLoading = new DerivedRuneStore<boolean>(() => dataLoadState.getSnapshot().status === 'loading', dataLoadState)
 export const isLoading: Readable<boolean> = _isLoading
 
 // ── Getter wrappers (match the .svelte.ts API for compatibility) ──────────
@@ -457,13 +448,6 @@ export function getIsLoading(): boolean {
  *
  * Returns null until both underlying stores are populated.
  */
-export function getPositionBufferDescriptor(): PositionBufferDescriptor | null {
-    const buffer = positionBuffer.getSnapshot()
-    const clusters = clustersBuffer.getSnapshot()
-    if (!buffer || !clusters) return null
-    return { buffer, count: buffer.length / 3, clusters }
-}
-
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 /**

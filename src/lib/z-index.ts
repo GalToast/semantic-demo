@@ -158,10 +158,3 @@ export const Z_LAYERS = {
 /** Z-index layer key type for type-safe access */
 export type ZLayerKey = keyof typeof Z_LAYERS
 
-/**
- * Get a z-index value by layer name.
- * Useful when the layer name is dynamic (e.g., from a config).
- */
-export function getZIndex(layer: ZLayerKey): number {
-    return Z_LAYERS[layer]
-}

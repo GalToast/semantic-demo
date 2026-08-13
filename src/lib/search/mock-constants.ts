@@ -27,8 +27,6 @@ export const MOCK_QUERY_NAICS_DENY: Readonly<Record<string, string[]>> = Object.
     roof: ['722515', '624410', '812910']
 })
 
-export const EXPLICIT_EMPTY_QUERY_PATTERN: RegExp = /^(?:__no_results__|none|empty|xj9k2l|nil|void|error)$/i
-
 export function normalizeMockSearchText(value: unknown): string {
     return String(value || '')
         .toLowerCase()

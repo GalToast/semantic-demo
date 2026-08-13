@@ -75,11 +75,6 @@ export function emitFocusLifecycleSignal(signal: FocusLifecycleSignal): void {
     lifecycleSignalsFired.add(signal)
 }
 
-/** Has a given lifecycle signal fired this session? */
-export function hasFocusLifecycleSignalFired(signal: FocusLifecycleSignal): boolean {
-    return lifecycleSignalsFired.has(signal)
-}
-
 /** True when a typing surface or interactive control already owns focus. */
 export function isMeaningfulActiveElement(): boolean {
     if (typeof document === 'undefined') return false
@@ -171,13 +166,6 @@ function scheduleFocus(
     registry.raf(id)
 }
 
-/** Read the current DOM focus owner (test/diagnostic helper). */
-export function getDomFocusOwner(): { id: string; tag: string } | null {
-    if (typeof document === 'undefined') return null
-    const ae = document.activeElement as HTMLElement | null
-    if (!ae) return null
-    return { id: ae.id || '', tag: ae.tagName.toLowerCase() }
-}
 
 /* ── Focus-trap routing (a11y) ───────────────────────────────────────────────
  * Keep `focus-trap.ts` as the implementation, but route activation through this
