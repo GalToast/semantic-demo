@@ -20,11 +20,3 @@ export function focusSearchInput(): void {
     })
 }
 
-/**
- * Check if the given surface string starts with 'map-'.
- * Extracted for use in $derived computations that check map trail
- * search lane activity.
- */
-export function isMapPrefixedSurface(surface: string): boolean {
-    return surface.startsWith('map-')
-}

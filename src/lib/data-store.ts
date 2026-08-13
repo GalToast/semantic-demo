@@ -393,11 +393,6 @@ export function setGraphicsMode(mode: 'webgl' | 'fallback'): void {
 // exactly as the previous derived() result (Readable).
 
 /** Number of loaded business records */
-const _recordCount = new DerivedRuneStore<number>(
-    () => businessRecords.getSnapshot().length,
-    businessRecords
-)
-export const recordCount: Readable<number> = _recordCount
 
 /** Whether all data is ready */
 const _isDataReady = new DerivedRuneStore<boolean>(
