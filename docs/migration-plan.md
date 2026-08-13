@@ -5,7 +5,7 @@
 **Baseline:** Post-W42 (thread-inspector fix + a11y sweep complete)
 **Previous:** `docs/archive/migration-docs/phase56-migration-plan.md` (historical reference only)
 
-> **Note (2026-06-29):** Two compat shims that this plan originally classified as "retired" still survive as load-bearing code: `src/lib/state/legacy-state.ts` and `src/lib/state/legacy-state-adapter.ts`. They are deliberate compat seams, not part of the bridge-retirement arc. A third candidate — `src/lib/engine/three-micro-demo-bridge.ts` — was audited under a separate decision in W52 (see `tmp/w52-three-micro-demo-bridge-REPORT.md`) and **retired 2026-08-07 (commit `4da700a0`)**: the file was deleted, since `initMicroDemoBridge()` was a no-op never wired and `disposeMicroDemoBridge()` removed listeners nobody registered.
+> **Note (2026-06-29):** Two compat shims that this plan originally classified as "retired" still survive as load-bearing code — **superseded**: both (`legacy-state.ts`, `legacy-state-adapter.ts`) were **deleted** in `062b0035` (P1-F LegacyState → AppState reconciliation, 2026-08). State readers now route through `src/lib/state/app.svelte.ts`.te/legacy-state.ts` and `src/lib/state/legacy-state-adapter.ts`. They are deliberate compat seams, not part of the bridge-retirement arc. A third candidate —`src/lib/engine/three-micro-demo-bridge.ts` — was audited under a separate decision in W52 (see `tmp/w52-three-micro-demo-bridge-REPORT.md`) and **retired 2026-08-07 (commit`4da700a0`)**: the file was deleted, since`initMicroDemoBridge()` was a no-op never wired and `disposeMicroDemoBridge()` removed listeners nobody registered.
 
 ---
 

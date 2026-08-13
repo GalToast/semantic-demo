@@ -19,7 +19,7 @@ The enforcement contract is [tests/window-global-allowlist-contract.mjs](../test
 | `js/modules/camera-controls.js` | `src/lib/engine/camera-controls.ts` (+ `camera-controls-core.ts`, `camera-controls-restore.svelte.ts`, `camera-choreography/*`) |
 | `js/modules/lifecycle.js` | `src/lib/orchestration/lifecycle.ts` + `src/lib/stores/lifecycle.ts` |
 | `js/modules/journey.js` | `src/lib/journey/journey.ts` (+ 30+ satellites in `src/lib/journey/`) |
-| `js/state.js` | `src/lib/state/app.svelte.ts` (state class) + `src/lib/state/legacy-state.ts` (compat shim) |
+| `js/state.js` | `src/lib/state/app.svelte.ts` (state class; former `legacy-state.ts` compat shim deleted in `062b0035` — `__LEGACY_APP_STATE__` still published at boot from AppState) |
 | `js/modules/bridge-registry.js` | deprecated — dewindowed; modern equivalent is direct imports from the typed stores |
 | `js/modules/thread-inspector.js` | `src/lib/journey/thread-inspector-{state,render,adapter}.ts` |
 | `js/modules/search-state.js` | `src/lib/stores/search.svelte.ts` (+ `src/lib/search/orchestration.ts`) |
@@ -152,7 +152,7 @@ Classification: `migration-debt`. These exist but have no desired long-term owne
 
 | Global | Owner | Notes |
 |---|---|---|
-| _none_ | — | Migration-debt bare globals are currently retired. |
+| *none* | — | Migration-debt bare globals are currently retired. |
 
 ## `_ti` Debug-Probe Planned Contract
 
