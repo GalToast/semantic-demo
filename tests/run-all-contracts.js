@@ -262,7 +262,6 @@ const PINNED_FILES = [
     'focus-pocket-composition-contract.mjs',
     'journey-event-bindings-contract.mjs',
     'reset-callsite-routing-contract.mjs',
-    'demo-camera-retirement-contract.mjs',
     'cluster-labels-contract.mjs',
     'journey-thread-inspector-contract.mjs',
     'journey-walk-thread-neighbor-timer-contract.mjs',
