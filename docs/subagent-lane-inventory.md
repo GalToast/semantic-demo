@@ -6,6 +6,17 @@ Moved out of `AGENTS.md` (Prompt Budget: no large reference tables in the hot-pa
 
 Probed 2026-07-27. Updated 2026-08-06 (live catalogue refresh; vision lanes refreshed by 670-probe sweep — see Vision Capability Matrix in `docs/subagent-delegation.md`; evidence `tmp/vision-probe/`). **See also `docs/subagent-models.md`** for the quick-reference version (verified table, conditional/avoid list, and untested backlog).
 
+## Dispatch-route status probe 2026-08-14 (lifecycle-split-plan spawns)
+
+Live-verified dispatch truth as of this morning — the "free" surface has shifted:
+
+- `kilo/agnes-2.5-flash` ❌ **402 Paid Model - Credits Required** (kilo balance -0.00002, no credits on that key). Use `agnes/agnes-2.5-flash` (direct router-agnes) or an openrouter `:free` route instead. The kilo gateway is NOT free even for models billed free on the origin provider.
+- `openrouter/ling-3.0-flash:free` → ❌ 404 "No endpoints found for ling-3.0-flash:free" — **must include the provider segment**: `openrouter/inclusionai/ling-3.0-flash:free`.
+- `openrouter/inclusionai/ling-3.0-flash:free` → ❌ 404 "This model is unavailable for free. The paid version is available now - use this slug instead: inclusionai/ling-3.0-flash" — **ling-3.0-flash free tier retired by OpenRouter (2026-08-14)**. Update the older "verified free" note: ling free is DEAD on both kilo and openrouter.
+- `opencode-zen/deepseek-v4-flash-free` → starts clean (launch + prompt deliver), then **429 FreeUsageLimitError (Console rate limit)** — free tier on OpenCode Zen is quota-gated; one-shot retry may succeed in a calmer window.
+
+Actionable: for free read-only planner/audit work prefer `opencode-zen/deepseek-v4-flash-free` (works, just rate-limited) or the paid-optional poolside laguna route (`poolside/laguna-s-2.1` via router-poolside, verified ~$0.003) rather than ling (dead). Verify with `mcp external_subagent_free_models free_only=true` before any paid-key routing.
+
 ## Cline free lane health (2026-08-12)
 
 - `clinefree/poolside/laguna-s-2.1:free` ✅ verified through native Cline and the local `router-clinefree` shim; zero-cost, 262K context, 32K max output, no exposed reasoning ladder. It is the shim and native Cline default.
