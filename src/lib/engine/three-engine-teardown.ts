@@ -23,6 +23,7 @@ import { debugWarn } from '@lib/utils/debug'
 import { pauseRenderLoopTimers } from './three-engine-timers'
 import { clearScheduledFrameTasks } from './frame-scheduler'
 import { webglContext } from '@lib/engine/webgl-context'
+import { disposeCorridorGlow } from './three-search-corridor-animations'
 
 // ── Teardown ────────────────────────────────────────────────────────────────
 
@@ -207,6 +208,13 @@ export function deinit() {
     engineState.cameraControls?.cancelFocusCameraAnimation()
     engineState.loadingUi?.cancelLoadingHide()
     engineState.threeSearchAnimations?.disposeHeroAnimation()
+    // Corridor/anchor glow teardown MUST run here, before disposeNodeVisualsPort:
+    // pre-carve the fat disposeHeroAnimation cleared corridor state inline; after
+    // the split it lives in disposeCorridorGlow (inside disposeInteractionVisuals,
+    // which runs after the unguarded disposeNodeVisualsPort below). Re-running it
+    // here restores the pre-carve safety window — a throw there cannot leak glow
+    // timers. Idempotent: disposeInteractionVisuals re-clears empty state later.
+    disposeCorridorGlow()
     if (engineState.state) {
         engineState.state.sceneRevealActive = false
         engineState.state.sceneRevealCameraStart = null
