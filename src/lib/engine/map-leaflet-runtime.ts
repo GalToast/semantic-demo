@@ -43,6 +43,13 @@ export function getLeafletMap(): LeafletMapWithFitBounds | null {
 let leafletAssetsPromise: Promise<unknown> | null = null
 
 export async function loadLeafletAssets(): Promise<unknown> {
+    // SSR/jsdom guard — window/document are browser-only; mirror the sibling
+    // pattern (three-engine-restore.ts:96, three-engine-timers.ts:46). Loading
+    // Leaflet outside a browser is a no-op reject-compatible signal, not a
+    // DOM-creation attempt (leaflet script/css would never be reachable).
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+        return null
+    }
     if (window.L) return window.L
     if (leafletAssetsPromise) return leafletAssetsPromise
 
