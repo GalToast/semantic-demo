@@ -12,12 +12,8 @@ import { cancelOverviewCameraAnimation } from '@lib/demo/camera'
 import { disposeCanvasNodeInteractionBindings } from '@lib/journey/canvas-interaction'
 import { cancelRouteAnimations } from '@lib/engine/camera-choreography/routes'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
-import {
-    disposeNodeVisuals as disposeNodeVisualsPort
-} from '@lib/engine/node-manager'
-import {
-    disposeMycelium as disposeMyceliumPort
-} from '@lib/engine/thread-manager'
+import { disposeNodeVisuals as disposeNodeVisualsPort } from '@lib/engine/node-manager'
+import { disposeMycelium as disposeMyceliumPort } from '@lib/engine/thread-manager'
 import { invalidateRestoreMachine } from './three-engine-restore'
 import { debugWarn } from '@lib/utils/debug'
 import { pauseRenderLoopTimers } from './three-engine-timers'
