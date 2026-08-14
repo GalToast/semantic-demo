@@ -129,21 +129,6 @@ export {
     getGroupLineSegmentCount
 } from './thread-manager'
 
-// ── Demo choreography ────────────────────────────────────────────────────────
-
-export {
-    PHASE as DemoChoreographyPhase,
-    getDemoPhase,
-    getDemoNodeIndex,
-    isDemoCancelled,
-    setDemoNodeIndex,
-    clearDemoTimers,
-    resetRetryState,
-    runDemo,
-    cancelChoreography,
-    isMicroDemoRunning
-} from './demo-choreography'
-
 // ── Camera choreography (legacy wrappers) ────────────────────────────────────
 
 export {

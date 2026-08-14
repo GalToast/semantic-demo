@@ -149,12 +149,13 @@ describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
             expect(src).toMatch(/from ['"]@lib\/stores\/lifecycle['"]/)
         })
 
-        it('lifecycle bridge is retired; consumers import @lib/orchestration/lifecycle directly', () => {
+        it('lifecycle bridge is retired; demo-choreography.ts retired alongside it', () => {
             const bridge = join(PROJECT_ROOT, 'src/lib/engine/lifecycle-bridge.ts')
             expect(existsSync(bridge), 'src/lib/engine/lifecycle-bridge.ts should stay retired').toBe(false)
-            const demo = readFileSync(join(PROJECT_ROOT, 'src/lib/engine/demo-choreography.ts'), 'utf-8')
-            expect(demo).toContain("from '@lib/orchestration/lifecycle'")
-            expect(demo).not.toContain("from '@lib/engine/lifecycle-bridge'")
+            const demoChoreography = join(PROJECT_ROOT, 'src/lib/engine/demo-choreography.ts')
+            expect(existsSync(demoChoreography), 'src/lib/engine/demo-choreography.ts was retired in the W20 sweep').toBe(false)
+            const barrel = readFileSync(join(PROJECT_ROOT, 'src/lib/engine/index.ts'), 'utf-8')
+            expect(barrel).not.toContain("from './demo-choreography'")
         })
     })
 

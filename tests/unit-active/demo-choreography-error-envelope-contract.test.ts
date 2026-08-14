@@ -1,198 +1,40 @@
 /**
- * demo-choreography-error-envelope-contract.test.ts
+ * demo-choreography-error-envelope-contract.test.ts — assert-ABSENCE.
  *
- * Structural + behavioral lock-in for the W47 error-envelope pass on
- * src/lib/engine/demo-choreography.ts.
- *
- * What this guards:
- *   1. Every async exported/internal function in the file has a try/catch
- *      envelope at the outer level (so a thrown error doesn't bubble as an
- *      unhandled rejection).
- *   2. The runDemo function has an outer try/catch (NOT per-setTimeout
- *      callbacks — see the W47-stripped comment below).
- *   3. The _demoNodeIndex "as number" silent null→0 coercion bug is gone.
- *   4. debugWarn is imported from @lib/utils/diagnostic-adapter.
- *
- * W47-stripped (2026-06-25, commit 8c2377c5 "refactor(slop): delete noop
- * initClusterFilterAdapter, strip defensive try/catch in demo-choreography"):
- *   - Per-setTimeout try/catch was removed from runDemo's 9 phase timers.
- *     The setTimeouts all begin with `if (_demoCancelled) return` which
- *     already short-circuits after demo cancellation. The outer try/catch
- *     in runDemo catches any errors that escape the synchronous setTimeout
- *     bodies; per-callback try/catch was defensive slop.
- *
- * What this does NOT guard:
- *   - The caller's (choreography.ts) retry-loop race — owned by a
- *     separate migration wave per the file's own JSDoc.
- *   - Runtime correctness of the choreography phases — covered by
- *     demo-phase-timing.test.ts and component-DemoChoreography.test.ts.
+ * The W47 error-envelope contract locked the try/catch shape of functions
+ * inside src/lib/engine/demo-choreography.ts. That module is retired. This
+ * test asserts the source file is gone (and the barrel no longer references
+ * it) so the structural contract can neither be satisfied nor silently
+ * regressed by a re-import. Mirrors t1 absence-guard
+ * (tests/unit-active/t1-keyboard-help-replay-no-stack.test.ts).
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
-import { readFileSync } from 'node:fs'
-// @ts-ignore
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-// @ts-ignore
 import { dirname, resolve } from 'node:path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const SRC_PATH = resolve(__dirname, '../../src/lib/engine/demo-choreography.ts')
 
-function readSource(): string {
-    return readFileSync(SRC_PATH, 'utf-8')
-}
+const DOOMED_PATH = resolve(__dirname, '../../src/lib/engine/demo-choreography.ts')
+const BARREL_PATH = resolve(__dirname, '../../src/lib/engine/index.ts')
 
-// Extract the body of a function declaration: from `async function NAME`
-// up to its matching closing brace at column 0.
-function extractFunctionBody(src: string, name: string): string {
-    const re = new RegExp(`(async\\s+function\\s+${name}\\b[^{]*\\{)`, 'm')
-    const m = re.exec(src)
-    if (!m) throw new Error(`Could not find function ${name} in source`)
-    const start = m.index + m[0].length
-    let depth = 1
-    let i = start
-    while (i < src.length && depth > 0) {
-        const c = src[i]
-        if (c === '{') depth++
-        else if (c === '}') depth--
-        i++
-    }
-    return src.slice(start, i - 1)
-}
-
-describe('demo-choreography — error-envelope contract (W47)', () => {
-    const src = readSource()
-
-    it('imports debugWarn from @lib/utils/debug', () => {
-        // The canonical debugWarn export lives at @lib/utils/debug
-        // (not @lib/utils/diagnostic-adapter, which is a different
-        // diagnostic-adapter surface). Updated from the W47 stub path.
-        expect(src).toMatch(/import\s*\{[^}]*\bdebugWarn\b[^}]*\}\s*from\s*['"]@lib\/utils\/debug['"]/)
+describe('demo-choreography — retired error-envelope contract absence', () => {
+    it('src/lib/engine/demo-choreography.ts no longer exists', () => {
+        expect(
+            existsSync(DOOMED_PATH),
+            'demo-choreography.ts should have been removed (W47 contract retired with it)'
+        ).toBe(false)
     })
 
-    it('has zero unchecked "as number" casts coercing _demoNodeIndex to number', () => {
-        // The bug: `const demoNode = _demoNodeIndex as number` silently
-        // converted null to 0. A future regression that re-adds the cast
-        // (without the explicit null-guard) would fail this test.
-        const coercionPattern = /_demoNodeIndex\s+as\s+number(?!.*null)/
-        const badCoercions = src.match(coercionPattern)
-        expect(badCoercions).toBeNull()
+    it('the W47 source-read path no longer resolves', () => {
+        // The old contract read this file to assert try/catch envelopes. With
+        // the module retired, the read target must not exist.
+        expect(existsSync(DOOMED_PATH)).toBe(false)
     })
 
-    it('runDemo guards against null _demoNodeIndex (no silent null→0)', () => {
-        const body = extractFunctionBody(src, 'runDemo')
-        expect(body).toMatch(/_demoNodeIndex/)
-        // Explicit null/finiteness check must precede any use of demoNode
-        expect(body).toMatch(/demoNode\s*===\s*null|!Number\.isFinite/)
-    })
-
-    it('runDemo body is wrapped in try/catch', () => {
-        const body = extractFunctionBody(src, 'runDemo')
-        // First non-whitespace statements should be the try block
-        const stripped = body.replace(/^\s+/, '')
-        expect(stripped.startsWith('try {')).toBe(true)
-        expect(body).toMatch(/}\s*catch\s*\(/)
-    })
-
-    it('demoReset body is wrapped in try/catch', () => {
-        const body = extractFunctionBody(src, 'demoReset')
-        expect(body.trimStart().startsWith('try {')).toBe(true)
-    })
-
-    it('demoFocusSetup body is wrapped in try/catch', () => {
-        const body = extractFunctionBody(src, 'demoFocusSetup')
-        expect(body.trimStart().startsWith('try {')).toBe(true)
-    })
-
-    it('cleanup body is wrapped in try/catch', () => {
-        const body = extractFunctionBody(src, 'cleanup')
-        expect(body.trimStart().startsWith('try {')).toBe(true)
-    })
-
-    it('endDemo body is wrapped in try/catch', () => {
-        const body = extractFunctionBody(src, 'endDemo')
-        expect(body.trimStart().startsWith('try {')).toBe(true)
-    })
-
-    it('cancelChoreography body is wrapped in try/catch (terminal-state check is outside)', () => {
-        // The function has an early-return for terminal states, then
-        // a try block for the cancel work.
-        const body = extractFunctionBody(src, 'cancelChoreography')
-        expect(body).toMatch(/try\s*\{/)
-        expect(body).toMatch(/catch\s*\(/)
-    })
-
-    it('all 9 phase-timer setTimeout callbacks exist with _demoCancelled short-circuit (no per-callback try/catch)', () => {
-        // W47-stripped (commit 8c2377c5): per-setTimeout try/catch is gone.
-        // Each callback still starts with `if (_demoCancelled) return` which
-        // short-circuits after demo cancellation. The outer runDemo try/catch
-        // catches anything that escapes the synchronous setTimeout bodies.
-        const body = extractFunctionBody(src, 'runDemo')
-
-        const callbacks: string[] = []
-        // Match either `window.setTimeout(...)` or bare `setTimeout(...)` —
-        // the migration to DisposableRegistry.timer() drops the `window.`
-        // prefix to align with loading.ts and avoid DOM-vs-Node setTimeout
-        // type-resolution drift.
-        const re = /(?:window\.)?setTimeout\(\s*\(\)\s*=>\s*\{/g
-        let m: RegExpExecArray | null
-        while ((m = re.exec(body)) !== null) {
-            const start = m.index + m[0].length
-            let depth = 1
-            let i = start
-            while (i < body.length && depth > 0) {
-                const c = body[i]
-                if (c === '{') depth++
-                else if (c === '}') depth--
-                i++
-            }
-            callbacks.push(body.slice(start, i - 1))
-        }
-
-        expect(callbacks).toHaveLength(9)
-        for (let i = 0; i < callbacks.length; i++) {
-            const cb = callbacks[i]
-            // Each callback must short-circuit if the demo was cancelled
-            expect(cb, `setTimeout callback #${i + 1} missing _demoCancelled short-circuit`).toMatch(
-                /if\s*\(\s*_demoCancelled\s*\)\s*return/
-            )
-            // Guard: per-callback try/catch is GONE (deliberately stripped)
-            expect(
-                cb,
-                `setTimeout callback #${i + 1} has per-callback try/catch — should have been stripped (8c2377c5)`
-            ).not.toMatch(/try\s*\{/)
-        }
-    })
-
-    it('runDemo catch block resets scratch state and tears down DOM', () => {
-        const body = extractFunctionBody(src, 'runDemo')
-        // The outer catch is the LAST one in runDemo (inner setTimeout
-        // catches come first; the function-level catch is at the end).
-        const allCatches = [...body.matchAll(/}\s*catch\s*\([^)]*\)\s*\{([\s\S]*?)\n\s*\}/g)]
-        expect(allCatches.length, 'runDemo should have multiple catches').toBeGreaterThan(0)
-        const outerCatch = allCatches[allCatches.length - 1][1]
-        expect(outerCatch).toMatch(/_demoPhase\s*=\s*PHASE\.CANCELLED/)
-        expect(outerCatch).toMatch(/_demoCancelled\s*=\s*true/)
-        expect(outerCatch).toMatch(/clearDemoTimers\(\)/)
-        expect(outerCatch).toMatch(/data-demo-active/)
-    })
-
-    it('all error-envelopes use debugWarn (not console.warn) for consistency with debug-probe gating', () => {
-        // Find every catch ( ... ) block and verify it contains debugWarn,
-        // not a raw console.warn/error that would leak in production.
-        // W47-stripped (commit 8c2377c5): per-setTimeout catch blocks removed.
-        // The 6 top-level function catches remain: demoReset, endDemo,
-        // runDemo (outer), and 3 others. Total >= 6.
-        const catchBodyMatches = src.matchAll(/\}\s*catch\s*\([^)]*\)\s*\{([\s\S]*?)\n\s*\}/g)
-        let total = 0
-        for (const m of catchBodyMatches) {
-            total++
-            const block = m[1]
-            expect(block, `catch block #${total} does not call debugWarn — raw console would leak in prod`).toMatch(
-                /debugWarn/
-            )
-        }
-        expect(total).toBeGreaterThanOrEqual(6) // 6 top-level functions
+    it('barrel index.ts no longer references the doomed module', () => {
+        const barrel = readFileSync(BARREL_PATH, 'utf-8')
+        expect(barrel).not.toContain('./demo-choreography')
     })
 })

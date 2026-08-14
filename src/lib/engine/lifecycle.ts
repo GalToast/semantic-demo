@@ -51,6 +51,7 @@ import {
 import { disposeHeroAnimation } from '@lib/engine/three-search-animations'
 import { disposeAudio } from '@lib/audio/audio-scape'
 import { cancelOverviewCameraAnimation } from '@lib/demo/camera'
+import { cancelDemo, cancelAllDemoTimers, resetDemo, isDemoActive } from '@lib/stores/demo.svelte.ts'
 import { disposeEventListeners } from '@lib/ui/global-bindings'
 import { destroyMap } from '@lib/engine/map-state'
 import { createMycelium } from '@lib/engine/thread-manager'
@@ -645,14 +646,13 @@ export function destroyEngine(): void {
             debugWarn('[engine/lifecycle] semantic-threads worker terminate failed:', error)
         })
 
-    // M-2 (engine lifecycle bugsweep 2026-08-07): dispose the demo-choreography
-    // registry on teardown so its phase timers/callbacks don't survive a
-    // destroy->re-init. clearDemoTimers() is idempotent (registry re-created).
-    import('@lib/engine/demo-choreography')
-        .then((m) => m.clearDemoTimers())
-        .catch((error) => {
-            debugWarn('[engine/lifecycle] demo choreography timer dispose failed:', error)
-        })
+    // M-2: dispose the canonical demo timers/state on teardown so the
+    // 10-phase choreography timers/state don't survive a destroy->re-init.
+    // Mirrors DemoChoreography.svelte requestReplay()/onDestroy() cancel path
+    // (cancelAllDemoTimers + cancelDemo + resetDemo) from @lib/stores/demo.svelte.ts.
+    cancelAllDemoTimers()
+    if (isDemoActive()) cancelDemo()
+    try { resetDemo() } catch { /* no-op: teardown race */ }
 
     // 5. Null out engine THREE-object references so a hot remount never sees
     //    disposed refs (W47 M1). Mirrors three-engine-core deinit() cleanup but
