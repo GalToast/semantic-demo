@@ -600,6 +600,9 @@ export function destroyEngine(): void {
     } catch (error) {
         debugWarn('[engine/lifecycle] interaction visuals dispose failed:', error)
     }
+    // Corridor/anchor glow teardown (disposeCorridorGlow) is covered by
+    // disposeInteractionVisuals() above — it is NOT named directly here, so
+    // keep the call above: dropping it would silently leak corridor glow.
     try {
         disposeHeroAnimation()
     } catch (error) {
