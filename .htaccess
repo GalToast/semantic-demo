@@ -2,6 +2,9 @@ DirectoryIndex index.html
 
 RedirectMatch 301 ^/semantic-demo/?$ https://mccullough.cloud/semantic-demo/case-study.html
 
+# ── Dual-URL normalization (2026-08) ──────────────────────────────────
+# Legacy shell now redirects (308) to the canonical entry; same build.
+Redirect 308 /semantic-demo/vector-explorer-polished.html /semantic-demo/index.html
 # ── Block development artifacts ──────────────────────────────────────
 # Source maps
 <FilesMatch "\.map$">
