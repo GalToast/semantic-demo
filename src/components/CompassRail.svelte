@@ -20,7 +20,7 @@
   import { compassPhase, transitionCompass, setJourneyPhase } from '@lib/stores/journey.svelte';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
 
-  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
+  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
   import { selectMode as applyModeSelect, type SelectModeContext } from '@lib/components/header/mode-nav';
   import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller';
   import { JOURNEY_ACTIONS } from '@lib/journey/compass-state';
@@ -37,8 +37,7 @@
   let { visible = false }: Props = $props();
 
   // ── Parity-attrs reactive reads (replaces inline parity computation) ────
-  let panelSurface = $derived(parityMap.panelSurface || '');
-  let graphContext = $derived(parityMap.graphContext || '');
+  const parity = useParityAttrs();
 
   // Whether a business node is currently focused (enables selection-dependent modes).
   let hasSelection = $derived(
@@ -161,7 +160,7 @@
     {#each compassSteps() as step, idx (step.phase)}
       <button
         class="compass-step"
-        class:primary={step.phase === 'search' && (panelSurface === 'focus-search' || graphContext === 'focus-search') || step.state === 'current' || step.state === 'done'}
+        class:primary={step.phase === 'search' && (parity.focusSearchForced) || step.state === 'current' || step.state === 'done'}
         class:current={step.state === 'current'}
         class:done={step.state === 'done'}
         onclick={() => handleAction(step.phase)}
