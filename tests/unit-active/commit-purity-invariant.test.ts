@@ -93,6 +93,18 @@ const EXEMPTED_SHAS = new Set<string>([
     '2ebdd2b8422a6d1242051a04758a4012631503ad',
     // 7ca2e1d0 — test(css): Option C ownership redesign. Bundled docs/subagent-lane-inventory.md addendum = measured delegation evidence (process/evidence-bank class, same shape as f0840f8). selector-baseline retirement (delegation-wave-2).
     '7ca2e1d0305245c682c397ddca4cff70bdff042e',
+    // 53b75c84 — docs(engine): corridor-glow dispose indirection note. The
+    // src/lib/engine/lifecycle.ts edit is COMMENT-ONLY (+3 comment lines, zero
+    // runtime change) — same semantic-docs pattern as e886d25d/dbe026a (verdict
+    // from swarm carve audit, comment documenting the dispose coupling).
+    '53b75c84d1f7dbb6ef95b3f2e35467c07778666c',
+    // 8d9bfa3 — test(loader): parameter-property regression contract. The
+    // bundled src/lib/engine/three-search-animations.ts + three-search-hero
+    // hunks are PURE EOF-newline normalization (verified zero semantic change,
+    // same whitespace-only class as 83b5e70), and package.json adds the
+    // check:param-prop script the test requires (same loader-infra shape as
+    // dd36c3a8's script-bundle). Deliberate evidence-bank bundle.
+    '8d9bfa333ed0aa9aa7939b7d90bc34d47555b198',
     // --- Historical context (motivating failure, NOT a live exemption) ---
     // b5ad93e — docs(roadmap): ... — THE failure mode that motivated
     // this test. Bundled 6 Svelte components + 1 test under a docs
