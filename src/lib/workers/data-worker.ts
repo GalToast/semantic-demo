@@ -7,6 +7,10 @@
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
+// Runtime payload validation lives in a pure sibling module (unit-testable
+// without a Worker global; farm audit 2026-08-14 regression pin).
+import { requireRecordUrl, requireThreadPayload, type AttemptConfig } from './data-worker-payload'
+
 interface PointRecord {
     cluster: number
     name: string | null
@@ -72,10 +76,6 @@ interface LeadEnrichment {
     cluster_assignment?: string
 }
 
-interface AttemptConfig {
-    cache?: string
-}
-
 // ── Inline retry helpers (self-contained; workers can't import from Vite aliases) ────
 
 /** HTTP status codes considered permanent (not worth retrying). */
@@ -113,16 +113,46 @@ function computeBackoffDelay(attempt: number, baseDelay = 200): number {
     return Math.round(capped * (0.5 + Math.random() * 0.5))
 }
 
-function delayInWorker(ms: number): Promise<void> {
-    // eslint-disable-next-line no-restricted-syntax
-    return new Promise((resolve) => setTimeout(resolve, ms))
+function isAbortError(err: unknown): boolean {
+    return typeof err === 'object' && err !== null && 'name' in err && err.name === 'AbortError'
 }
 
-async function retryFetch(url: string, options?: RequestInit, maxRetries = 1, label = 'fetch'): Promise<Response> {
+function delayInWorker(ms: number, signal?: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+            reject(new DOMException('Worker request aborted', 'AbortError'))
+            return
+        }
+        const timerRef: { current?: ReturnType<typeof setTimeout> } = {}
+        const cleanup = (): void => {
+            if (timerRef.current !== undefined) clearTimeout(timerRef.current)
+            signal?.removeEventListener('abort', onAbort)
+        }
+        const onAbort = (): void => {
+            cleanup()
+            reject(new DOMException('Worker request aborted', 'AbortError'))
+        }
+        // eslint-disable-next-line no-restricted-syntax -- worker-local backoff timer
+        timerRef.current = setTimeout(() => {
+            cleanup()
+            resolve()
+        }, ms)
+        signal?.addEventListener('abort', onAbort, { once: true })
+    })
+}
+
+async function retryFetch(
+    url: string,
+    options: RequestInit | undefined,
+    maxRetries: number,
+    label: string,
+    signal?: AbortSignal
+): Promise<Response> {
     let lastError: Error | null = null
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-            const response = await fetch(url, options)
+            if (signal?.aborted) throw new DOMException('Worker request aborted', 'AbortError')
+            const response = await fetch(url, signal ? { ...(options ?? {}), signal } : options)
             if (!response.ok) {
                 // Attach status code to the error so isTransientError / isPermanentError
                 // can classify it via the `.status` property.
@@ -135,6 +165,7 @@ async function retryFetch(url: string, options?: RequestInit, maxRetries = 1, la
             const error = err instanceof Error ? err : new Error(String(err))
             lastError = error
 
+            if (isAbortError(err)) throw error
             if (isPermanentError(err)) {
                 throw error
             }
@@ -151,7 +182,7 @@ async function retryFetch(url: string, options?: RequestInit, maxRetries = 1, la
                     error.message
                 )
             }
-            await delayInWorker(backoffMs)
+            await delayInWorker(backoffMs, signal)
         }
     }
     throw lastError ?? new Error(`${label}: all retries exhausted`)
@@ -160,6 +191,7 @@ async function retryFetch(url: string, options?: RequestInit, maxRetries = 1, la
 // ── Worker body ─────────────────────────────────────────────────────────────
 
 let _activeRequestId = 0
+let _activeRequestController: AbortController | null = null
 
 self.onmessage = async (event: MessageEvent) => {
     const data = event.data
@@ -191,6 +223,10 @@ self.onmessage = async (event: MessageEvent) => {
     // The incomingRequestId from the main thread, if provided, is used
     // only for logging/tracing — never for counter assignment.
     const requestId = ++_activeRequestId
+    _activeRequestController?.abort()
+    const requestController = new AbortController()
+    _activeRequestController = requestController
+    const signal = requestController.signal
     if (incomingRequestId !== undefined && incomingRequestId <= _activeRequestId) {
         // Stale or duplicate requestId from main thread — reject silently.
         // The worker's own monotonic counter already advanced past it.
@@ -198,25 +234,28 @@ self.onmessage = async (event: MessageEvent) => {
 
     try {
         if (type === 'LOAD_RECORDS') {
-            const result = await handleLoadRecords(payload as { url: string })
+            const result = await handleLoadRecords({ url: requireRecordUrl(payload, 'LOAD_RECORDS') }, signal)
             // Superseded by a newer request — drop silently without replying.
-            if (requestId !== _activeRequestId) return
-            // F4 (data-pipeline bugsweep 2026-08-08): this postMessage is the
-            // actual transfer point — buffers move to the main thread here,
-            // eliminating structured-clone overhead (the guard above transfers nothing).
+            if (requestId !== _activeRequestId)
+                return // F4 (data-pipeline bugsweep 2026-08-08): this postMessage is the
+                // actual transfer point — buffers move to the main thread here,
+                // eliminating structured-clone overhead (the guard above transfers nothing).
             ;(self as unknown as { postMessage(message: unknown, transfer?: Transferable[]): void }).postMessage(
                 { type: 'LOAD_RECORDS_SUCCESS', payload: result, requestId },
                 [result.positionsBuffer.buffer, result.clustersBuffer.buffer] as Transferable[]
             )
         } else if (type === 'LOAD_THREADS') {
-            const result = await handleLoadThreads(
-                payload as { urls: string[]; attemptConfigs: (string | AttemptConfig)[] },
-                requestId
-            )
+            // Validate shape up-front so a malformed payload surfaces as an
+            // ERROR reply (farm audit: previously `payload as {...}` blindly).
+            const result = await handleLoadThreads(requireThreadPayload(payload), requestId, signal)
             if (requestId !== _activeRequestId) return
             self.postMessage({ type: 'LOAD_THREADS_SUCCESS', payload: result, requestId })
         } else if (type === 'LOAD_LEAD_ENRICHMENT') {
-            const result = await handleLoadLeadEnrichment(payload as { url: string }, requestId)
+            const result = await handleLoadLeadEnrichment(
+                { url: requireRecordUrl(payload, 'LOAD_LEAD_ENRICHMENT') },
+                requestId,
+                signal
+            )
             if (requestId !== _activeRequestId) return
             self.postMessage({ type: 'LOAD_LEAD_ENRICHMENT_SUCCESS', payload: result, requestId })
         } else {
@@ -239,11 +278,13 @@ self.onmessage = async (event: MessageEvent) => {
             payload: { message: err.message, stack: err.stack },
             requestId
         })
+    } finally {
+        if (_activeRequestController === requestController) _activeRequestController = null
     }
 }
 
-async function handleLoadRecords({ url }: { url: string }): Promise<LoadRecordsResult> {
-    const response = await retryFetch(url, undefined, 3, 'load-records')
+async function handleLoadRecords({ url }: { url: string }, signal: AbortSignal): Promise<LoadRecordsResult> {
+    const response = await retryFetch(url, undefined, 3, 'load-records', signal)
 
     let raw: unknown
     try {
@@ -347,7 +388,8 @@ function isValidThreadArtifact(bundle: unknown): boolean {
 
 async function handleLoadThreads(
     { urls, attemptConfigs }: { urls: string[]; attemptConfigs: (string | AttemptConfig)[] },
-    requestId: number
+    requestId: number,
+    signal: AbortSignal
 ): Promise<LoadThreadsResult | null> {
     let bundle: unknown = null
     let loadedArtifactName: string | null = null
@@ -363,7 +405,8 @@ async function handleLoadThreads(
                     url,
                     cacheMode ? { cache: cacheMode as RequestCache } : undefined,
                     2,
-                    'load-threads'
+                    'load-threads',
+                    signal
                 )
                 if (requestId !== _activeRequestId) throw new Error('Request superseded by newer request')
                 if (!response.ok) throw new Error(`Thread artifact unavailable (${response.status})`)
@@ -489,9 +532,10 @@ function artifactNameFromUrl(url: string): string {
  */
 async function handleLoadLeadEnrichment(
     { url }: { url: string },
-    requestId: number
+    requestId: number,
+    signal: AbortSignal
 ): Promise<LoadLeadEnrichmentResult> {
-    const response = await retryFetch(url, undefined, 2, 'load-enrichment')
+    const response = await retryFetch(url, undefined, 2, 'load-enrichment', signal)
     if (requestId !== _activeRequestId) return { enrichment: null }
 
     const text = await response.text()
