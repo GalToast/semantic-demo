@@ -26,12 +26,6 @@ export type DemoStep = {
     action: () => void | Promise<void>
 }
 
-/**
- * Read the first search hit's point index from the canonical search-state facade.
- * Re-exported here for the few demo files that haven't migrated to @lib/search/state.
- * @deprecated Prefer `import { getFirstSearchHit } from '@lib/search/state'`.
- */
-export { getFirstSearchHit } from '@lib/search/state'
 
 /**
  * Poll getFirstSearchHit() until a hit appears or the cap expires. The demo's
