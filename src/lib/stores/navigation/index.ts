@@ -66,5 +66,9 @@ export {
     setNavSurface,
     dispatchNavTransition
 } from './mode-transitions.svelte.ts'
+
+// ── Surface ↔ Mode mapping ───────────────────────────────────────────────────
+export { getSurfaceModePatch, isMapFamilySurface, isPanelSurface, PANEL_SURFACES } from './surface-mode-map'
+export type { SurfaceModePatch } from './surface-mode-map'
 export type { NavTransitionAction } from './mode-transitions.svelte.ts'
 export type { NavTransitionPayload, NavTransitionResult } from './mode-transitions.svelte.ts'

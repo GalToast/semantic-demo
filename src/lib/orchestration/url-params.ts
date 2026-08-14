@@ -9,6 +9,7 @@
 import { get } from 'svelte/store'
 import { navStore } from '@lib/stores/navigation.svelte.ts'
 import type { NavMode, PanelSurface } from '@lib/types/state'
+import { getSurfaceModePatch, isPanelSurface } from '@lib/stores/navigation/surface-mode-map'
 
 // ── URL state keys for identifying restorable navigation params ───────────
 // URL flags such as `nodemo=1` and `staticDev=1` control boot/test behavior;
@@ -87,21 +88,19 @@ export interface SurfaceParamPatch {
     currentView?: 'map'
 }
 
-/** Map a ?surface= param to its restore patch (same mapping as setSurface). */
+/** Map a ?surface= param to its restore patch (canonical mapping from surface-mode-map). */
 export function surfaceParamToNavMode(surface: string | null): SurfaceParamPatch | null {
     if (!surface) return null
-    const _surfaceToMode: Record<string, NavMode> = {
-        search: 'search',
-        focus: 'focus',
-        inside: 'inside',
-        trail: 'trail',
-        idle: 'overview'
+    // Preserve unknown values as a surface-only patch for backwards-compatible
+    // URL restoration; only known surfaces receive mode/view derivation.
+    if (!isPanelSurface(surface)) {
+        // Unknown surface: return patch with surface only, no mode/view assumption
+        return { surface: surface as PanelSurface }
     }
-    const restoredMode = _surfaceToMode[surface]
-    const isMapFamily = surface === 'map' || surface.startsWith('map-')
-    const surfacePatch: SurfaceParamPatch = { surface: surface as PanelSurface }
-    if (restoredMode) surfacePatch.mode = restoredMode
-    if (isMapFamily) surfacePatch.currentView = 'map'
+    const patch = getSurfaceModePatch(surface)
+    const surfacePatch: SurfaceParamPatch = { surface }
+    if (patch.mode !== undefined) surfacePatch.mode = patch.mode
+    if (patch.viewFamily === 'map') surfacePatch.currentView = 'map'
     return surfacePatch
 }
 

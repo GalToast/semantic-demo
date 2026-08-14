@@ -12,6 +12,7 @@ import { resetFocus, setSemanticDiveMode } from '../focus.svelte.ts'
 import { resetJourney, setTrailDepth } from '../journey.svelte.ts'
 import { _readNavSnapshot, readNavMirrorValue, writeNavStateMirror, resetNavState } from './navigation-state.svelte.ts'
 import { clearMobileSearchSheetState } from '@lib/search/search-panel-adapter'
+import { getSurfaceModePatch } from './surface-mode-map'
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
 
@@ -88,36 +89,13 @@ export const setCurrentView = switchView
 /** Set the active panel surface. */
 export function setSurface(surface: PanelSurface): void {
     const cur = _readNavSnapshot()
-    const mode: NavMode =
-        surface === 'search'
-            ? 'search'
-            : surface === 'focus'
-              ? 'focus'
-              : surface === 'inside'
-                ? 'inside'
-                : (surface as string) === 'trail'
-                  ? 'trail'
-                  : surface === 'idle'
-                    ? 'overview'
-                    : cur.mode
-    // L2 (w12 journey bugsweep): for plain 'map', the mode stays at cur.mode
-    // until the caller's setJourneyPhase('overview') corrects it same-tick.
-    // The fallthrough is required for map-family variants ('map-trail' etc.).
-    // Map-family surfaces ('map', 'map-trail', 'map-focus', 'map-focus-search')
-    // carry the map view; every other surface is a galaxy-panel surface. The
-    // prefix check fixes the latent bug where map-prefixed surfaces silently
-    // fell through the exact-match `=== 'map'` predicate and forced galaxy.
-    // The SET_SURFACE action preserves currentView by omitting it from its
-    // patch; writeNavStateMirror merges unmentioned fields. That behavior is
-    // independent of whether a caller also dispatches SET_VIEW. The standalone
-    // setSurface() bridge helper below intentionally derives currentView from
-    // the surface family for test/setup callers.
-    const isMapFamilySurface = surface === 'map' || surface.startsWith('map-')
+    const patch = getSurfaceModePatch(surface)
+    const mode = patch.mode ?? cur.mode
     writeNavStateMirror({
         previousSurface: cur.surface,
         surface,
         mode,
-        currentView: isMapFamilySurface ? 'map' : 'galaxy'
+        currentView: patch.viewFamily
     })
 }
 
@@ -174,28 +152,14 @@ export function dispatchNavTransition(
         case NAV_TRANSITION_ACTIONS.SET_SURFACE: {
             const surface = payload.surface ?? 'idle'
             const current = _readNavSnapshot()
-            const newMode: NavMode =
-                surface === 'search'
-                    ? 'search'
-                    : surface === 'focus'
-                      ? 'focus'
-                      : surface === 'inside'
-                        ? 'inside'
-                        : (surface as string) === 'trail'
-                          ? 'trail'
-                          : surface === 'idle'
-                            ? 'overview'
-                            // L2 (w12 journey bugsweep): plain 'map' surface falls through to
-            // cur.mode here, but all three callers (chip/keyboard/rail) follow up
-            // with setJourneyPhase('overview') in the same tick, so the intermediate
-            // write is dead-but-harmless. The fallthrough is intentionally preserved
-            // because map-family surfaces ('map-trail', 'map-focus', etc.) depend on
-            // it to change the surface without forcing a mode switch.
-            : (current.mode as NavMode)
+            const patch = getSurfaceModePatch(surface)
+            const newMode = patch.mode ?? current.mode
             writeNavStateMirror({
                 previousSurface: current.surface,
                 surface: surface as PanelSurface,
                 mode: newMode
+                // currentView intentionally omitted — SET_SURFACE preserves currentView
+                // (the bridge helper setSurface() sets it for test/setup callers)
             })
             // M2 (w12 journey bugsweep): tear down dive state only when leaving
             // an actual dive. Depth 1 is a normal focused/search state; resetting
