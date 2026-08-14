@@ -95,6 +95,22 @@ const run = async () => {
     assert(defOnly.opt === 'z', 'plain ctor (defaulted param) passes value through unchanged')
     assert(defOnly.getFlag() === true, 'plain ctor non-param-property path unaffected by normalizer')
 
+    // 8-11. loader-fragile edge shapes (Q3 coverage from external audit): combined
+    // modifiers, protected, arrow-type params, and type+default-on-modifier.
+    const comb = new mod.EdgeCombinedMods(42)
+    assert(comb.get() === 42, 'combined private readonly id: number → preserved and readable')
+
+    const prot = new mod.EdgeProtectedParam('guard')
+    assert(prot.getName() === 'guard', 'protected param → method reads it correctly')
+
+    const arrow = new mod.EdgeArrowFnParam(() => 7)
+    assert(arrow.run() === 7, 'arrow-fn param (() => number) → parens-scanner handles it')
+
+    const suff = new mod.EdgeTypedDefault(9)
+    assert(suff.getY() === 9, 'type+default param with explicit arg')
+    const bare = new mod.EdgeTypedDefault()
+    assert(bare.getY() === 5, 'type+default param with no arg → default 5')
+
     console.log(`\n[RESULT] param-prop-loader-contract: ${passed} passed, ${failed} failed`)
     if (failed > 0) process.exitCode = 1
 }

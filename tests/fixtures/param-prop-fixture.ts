@@ -62,3 +62,31 @@ export class TestDefaultThenPrivate {
         return this.flag
     }
 }
+
+export class EdgeCombinedMods {
+    constructor(private readonly id: number) {}
+    get(): number {
+        return this.id
+    }
+}
+
+export class EdgeProtectedParam {
+    constructor(protected name: string) {}
+    getName(): string {
+        return this.name
+    }
+}
+
+export class EdgeArrowFnParam {
+    constructor(private compute: () => number) {}
+    run(): number {
+        return this.compute()
+    }
+}
+
+export class EdgeTypedDefault {
+    constructor(private y: number = 5) {}
+    getY(): number {
+        return this.y
+    }
+}
