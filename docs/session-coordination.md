@@ -352,6 +352,37 @@ Peers may only use the file lock, not the switchboard bus. If `list_agents` retu
 
 Full API surface + parameter-level recipes: `docs/tool-guide.md` §4 + §5.
 
+## Delegation shaping: invariants, not a fixed doctrine (measured 2026-08-14)
+
+Which execution shape to use — main-lane serial, swarm-parallel-edits, a
+read-only review fleet, or a mix — is a **per-task judgment call made at
+dispatch time**, not a global rule. A recent session shows all of them winning
+at different moments: serial main-lane was right for the carve; a parallel
+read-only review swarm caught two real bugs the editor-then-self-check loop
+missed; forced parallel *edits* on one seam caused the wipe/merge-dup
+incidents. So: keep the shape flexible and adapt on the fly, but keep these
+four hard invariants (rails, not a doctrine):
+
+1. **No two lanes edit the same working seam concurrently.** Same file / same
+   dirty tree + parallel editors = the wipe/merge-dup class. Either serialize,
+   or split into genuinely disjoint file sets, each owned by one editor.
+2. **Claim → verify → commit.** A lane lands only what it claimed; the commit
+   is the review gate (purity + reland-guard run there). Never `git
+   reset/stash/restore/checkout` of the whole tree (wipes everyone), and never
+   `git add .` (index pollution swept another lane's file into this session's
+   commit).
+3. **Stale-check before dispatching a swarm.** Search for whether the task is
+   already done (export / commit / pin) before spending lanes on it; two of
+   the first six swarms re-did already-landed work because of stale task state.
+4. **The dispatcher owns integration.** Split work feeds back through one
+   pair of eyes + the deterministic gates before it is called done.
+   Sub-agents return disk evidence (report.md), never exit codes.
+
+When in doubt about shape, the cheap default is: main-lane executes the risky
+or high-coupling part; delegate the read-only and clearly-disjoint slices.
+That choice is what produced this session's two real bugfinds (Q3 loader gap,
+corridor-glow teardown leak) from the parallel review lanes.
+
 ## Gate-failure playbook (measured 2026-08-10)
 
 Three repeatable RED-GATE classes found this session, in order of frequency:
