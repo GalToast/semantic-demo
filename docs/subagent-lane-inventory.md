@@ -19,9 +19,7 @@ The shim exposes `/health`, defaults to Laguna, and preserves provider-specific 
 
 8 logfare dispatches, deliverables-first. **minimax-m3 + kimi-k3 = the workhorses; deepseek-v4-flash family + qwen-3.6-35b-a3b throttled (429 per-model quotas, NOT concurrency — user confirmed logfare has no concurrent-use cap).** Critical protocol — NEVER trust first-shot exit-0: minimax routinely 'completes' with zero tool calls (17s observed) and kimi-k3 stream-dies at the final write ('Stream ended without finish_reason') after doing the full analysis. The reliable recipe that produced all deliverables: (1) rubric-first prompt with disk-gate; (2) ALWAYS issue a followup on the same session_id (context retained) with an explicit 'the file must exist on disk before you stop' mandate — this converts talkers into doers; (3) for kimi-k3 followups, add 'do NOT re-run analysis, only write' + ask for a compact report to dodge the long-stream death. This matches the earlier deliverable-first skeleton protocol (channel msg 160). Verify deliverables in worker tmp/, never exit codes.
 
-## Delegation-wave-2 logfare addendum (2026-08-11)
-
-Wave-2/main-lane burst on the same protocols: choreo step-1 migration (W2B) landed correctly — engine `cancelChoreography` has ZERO live callers, so canonical `cancelDemo()` is the complete teardown (M15 adjudicated); 1 demarcation note: worker claimed 'equivalent' without proof — main-lane verified, claim held. css-ownership Option-C redesign (W2A) rebuilt the selectorBaselines into min/max ownership model. Wave-3 (main-lane): deleted 3 dead contracts per W2C audit (filter-ownership, legend-ui-ownership, state-mutator noop) + manifest/runner sync. Pattern reinforced: EVERY logfare worker needs the disk-mandate followup; early exits stay the norm.
+> **2026-08-11 Delegation-wave-2 logfare addendum:** W2B choreo migration landed (cancelChoreography has zero live callers); W2A css-ownership Option-C redesign; W2C deleted 3 dead contracts. Pattern: disk-mandate followup on every logfare worker.
 
 ## Routing preference (session 2026-08-04, user directive)
 
@@ -87,184 +85,23 @@ Lane probes were run via opencode-zen 2026-07-27..08-04, so "opencode-zen" in th
     - `deepseek-v4-flash-free` (W58 reconfirm, state slice): timed out at 420s in a ~153 MB thinking loop (the known deepseek thinking-loop / 200 MB-cap issue) — BUT its thinking surfaced a REAL verified lead (`CompassPhase` type missing `'trail'`, confirmed + fixed by main lane as `b6490d91`). Lesson: deepseek's mid-flight thinking output is valuable even when it fails to deliver a report; salvage leads from the stdout log before discarding.
     - `mimo-v2.5-free` ✅ **STRONG find channel 2026-07-30 (W58, Pi harness, orchestration sweep)**: completed exit 0 in ~6 min, $0 cost, 3 thinking blocks + 4 text blocks, wrote a structured report with file:line citations + evidence + a false-positive-dismissed section that correctly cleared the tricky `?story=`/`?record=` deep-link cases. **3 real findings** (F1 MED trailSeedIndex write-side omission in CAMERA_NODE_FOCUSED — the WRITE-side root cause of the b9f61225 read-side fix; F2 LOW teardownToastHooks dead cleanup; F4 LOW context-restore cleanup leak) and **1 false positive** (F3 — claimed redundant `preserveDomForcedFocusSearchSurface` call; actually an intentional re-assertion that restores `mode:'search'` after the SEARCH_FOCUS_REQUESTED publish clobbers it to `mode:'focus'`). find-grade ~7/10. F1 + F2 fixed + committed (`15a70d43`, `b3ef5e35`); F4 documented-deferred (cross-module refactor, double-cleanup risk, rare context-restore). **mimo is the best free find channel seen this wave** — surpasses codestral-latest (0 real / 4 FP) and deepseek (real lead but thinking-loop timeout).
 
-### W58 wave summary (2026-07-30)
+> **2026-07-30 W58 wave summary:** 9 real bugs shipped (CompassPhase missing 'trail', ResourceTracker leak, trailSeedIndex WRITE omission, teardownToastHooks, 4 engine fixes). Dead lanes: qwen3.6-plus (401), nvidia/* (404), freemodel/gpt-5.6-terra (401). Golden goose: mimo-v2.5-free ✅ STRONG find channel.
 
-Bugsweep wave run on the now-wedge-fixed harness (pi-hermes-memory excluded from workers via mmx.ts `-ne`; all round-1 workers reached the provider with no hang — wedge fix confirmed). 3 slices (engine, orchestration, state) dispatched across 8 model attempts (incl. a mimo re-run of both the orchestration + engine slices after devstral/codestral underperformed). **Real bugs shipped (9 total, all green: typecheck + nav-mirror + targeted contract tests + parity 4/4)**: `CompassPhase` type missing `'trail'` (MED, deepseek lead) + `ResourceTracker` material-array `[0]`-only leak (MED, main-lane) → `b6490d91`; `trailSeedIndex` WRITE-side omission in `CAMERA_NODE_FOCUSED` (MED, mimo lead — closes the pattern with the `b9f61225` read-side fix) → `15a70d43`; `teardownToastHooks` dead HMR cleanup wired (LOW, mimo) → `b3ef5e35`; engine fixes — `detectWebGLSupport()` probe-context leak (MED), `void initThreeJS()` swallowed restore-reinit errors (MED), `rawPositionsBuffer!` unguarded non-null assertion (LOW), dead `point.x/y/z` else-branch reads (LOW) → `32ed619e`; plus F1 read-side `trailSeedIndex` fallback (`b9f61225`). **Deferred**: F3 (MED — postprocessing `.then()` captures stale renderer/scene/camera via closure; subtle microtask race, needs a liveness-check design). **Pre-existing (not W58)**: `three-resource-lifecycle-contract` reads the W47-retired `three-engine.ts` barrel instead of `three-engine-core.ts` → stale-path failure since `ec658636`. Dead lanes confirmed: `qwen3.6-plus` (401 credits), `nvidia/*` via key-router (404 — path not wired), `freemodel/gpt-5.6-terra` (401 billing). **New golden goose: `mimo-v2.5-free`** — strongest free find channel seen this wave (orchestration 3 real/1 FP, engine 4 real/0 FP-but-2-self-dismissed, correct `?story=`/`?record=` + shared-geometry-double-dispose dismissal, rigorous self-correction); `mistral/codestral-latest` transport-viable but a poor find channel (fabricates evidence).
+> **2026-07-30 W58 continuation late findings:** ling-3.0-flash-free found ?nodemo=1 bypass (committed 2b6821fb); nemotron-3-ultra-free fixed 3 engine issues (committed e33d0364). Both passed build+tsc+vitest 3363.
 
-### W58 continuation — late findings (2026-07-30)
+> **2026-07-30 W58 harness-audit campaign:** Graduated: nvidia/z-ai/glm-5.2 ✅ FIX, nvidia/minimaxai/minimax-m3 ✅ AUDIT, nvidia/google/gemma-4-31b-it ✅ AUDIT. Dead: kimi-k2.6 ❌ 404, granite-34b ❌ not found, deepseek-v4-pro ❌ 502, deepseek-v4-flash ❌ 529, gemma-3-12b ❌ 404, granite-3.0-8b ❌ 404, granite-3.0-3b ❌ 404, zamba2-7b ❌ 404, mistral-nemotron ❌ crash. Zydit: only glm-5.2 reliable. Harness fixes applied: health cache, async saveState, idle-cancel watchdog, pre-spawn detach patch. Commit 97272e2.
 
-Continued the same bugsweep wave after the main W58 summary:
+> **2026-07-30 W58 graduation batch logfare/zydit-v4/mistral/kilo:** devstral-2512 ✅ subagent-viable (route pi:router-mistral/devstral-2512). Failed: qwen-3.8-max ❌ 429, kimi-k3 ❌ 429, minimax-m2.5 ❌ timeout 420s, kat-coder-pro-v2.5:free ❌ 404. Stream-idle-timeout GAP confirmed on zydit-v4.
 
-- `ling-3.0-flash-free` UI/chrome+demo sweep found a real `?nodemo=1` suppress bypass in `DemoChoreography.requestReplay()`; main-lane fix committed `2b6821fb`.
-- `nemotron-3-ultra-free` engine deep sweep found and fixed 3 real engine issues (RAF loop continuity, `ResourceTracker` double-dispose, teardown GC leaks); main-lane took over after worker wedged post-edit → committed `e33d0364`.
+> **2026-07-30 W58 graduation batch #2 zenmux/opencode-zen/mistral/cloudflare/modelscope:** glm-4.7-flash-free ✅, opencode-zen/laguna-s-2.1-free ✅ (overtURNS prior ❌), mistral-small-latest ⚠️, mistral-magistral-medium-latest ⚠️. Failed: mistral-medium ❌ not found, devstral-small-2:24b ❌ 400, vibe-cli ❌ output cap, gpt-oss-20b ❌ 0 tools, modelscope v4-pro ❌ 401, v4-flash ❌ 429, glm-4.6v ❌ 429, opencode-zen deepseek-v4-flash ❌ 500.
 
-Both sets passed `npm run build:svelte`, `npx tsc --noEmit`, and `npx vitest run tests/unit-active/` (3363 passed).
+> **2026-07-30 W58 graduation batch #3 mistral/nvidia:** inkling ✅ subagent-viable (route pi:router-nvidia/thinkingmachines/inkling, all 5 counts correct). Transport-viable but inaccurate: mistral-large ⚠️, devstral-latest ⚠️.
 
-### W58 harness-audit + untested-model qualification campaign — 2026-07-30
+> **2026-07-30 W58 graduation batch #4 poolside/nvidia:** poolside/laguna-s-2.1 ✅ subagent-viable (premium free carrier, user-confirms beast). Transport-viable but inaccurate: codestral-latest ⚠️, magistral-small ⚠️. Failed: mistral-code ❌ output cap, nemotron-3-super ❌ 404, qwen-3.6-35b-a3b ❌ unavailable, gpt-oss-120b ❌ timeout, llama-3.3-70b ❌ stuck, gemma-4-31b ❌ too slow.
 
-Goal: graduate untested models to the subagent allowlist by having them find/fix real harness issues while the main lane verifies.
+> **2026-07-30 W58 graduation batch #5 priority-provider probes:** novita/tencent/hy3 ✅ subagent-viable (route pi:router-novita/tencent/hy3, all counts correct). Failed: infron/kimi-k2.6:free ❌ 404, zenmux/claude-opus-5 ❌ 402 no credit, mistral/devstral-medium ⚠️ inaccurate.
 
-**Graduated in this campaign:**
-
-- `nvidia/z-ai/glm-5.2` ✅ **FIX subagent** — bounded search-bug fix in `global-shortcuts.ts` + `search.svelte.ts`; zero scope creep; main-lane verified + committed (`a3a0a5bd`).
-- `nvidia/minimaxai/minimax-m3` ✅ **AUDIT subagent** — deep `mmx.ts` analysis; found the real no-hard-cancel wedge (`quiet_for_seconds` is informational, only 30-min timeout or manual cancel terminates stuck workers). Did not persist its report file (stdout-only), but findings were captured.
-- `nvidia/google/gemma-4-31b-it` ✅ **AUDIT subagent** — wrote a 4-finding key-router report with file:line citations (blocking auto-shard health checks, no exponential backoff, sync `writeFileSync`, linear provider scan). Function names/behavior verified against source; line numbers drifted slightly. Model self-identified as "gpt-4o" in report header, but route metadata confirms it was `nvidia/google/gemma-4-31b-it`.
-
-**Dead lanes / not subagent-viable on tested routes:**
-
-- `nvidia/moonshotai/kimi-k2.6` ❌ 404 on chat completions
-- `nvidia/ibm/granite-34b-code-instruct` ❌ Pi model resolver "Model not found"
-- `nvidia/deepseek-ai/deepseek-v4-pro` ❌ 502 "Upstream stream failed"
-- `nvidia/deepseek-ai/deepseek-v4-flash` ❌ 529 upstream overloaded
-- `nvidia/google/gemma-3-12b-it` ❌ 404
-- `nvidia/ibm/granite-3.0-8b-instruct` ❌ 404
-- `nvidia/ibm/granite-3.0-3b-a800m-instruct` ❌ 404
-- `nvidia/zyphra/zamba2-7b-instruct` ❌ 404
-- `nvidia/mistralai/mistral-nemotron` ❌ EngineCore crash before output
-
-**Zydit provider diagnosis:**
-
-- `zydit/z-ai/glm-5.2` is the **only** reliably working subagent model on zydit; all other zydit-routed candidates hit upstream instability:
-    - `zydit/google/gemma-4-31b-it` — resolves, 500 inference connection errors
-    - `zydit/deepseek-ai/deepseek-v4-pro/flash` — 502 "Upstream stream failed before output"
-    - `zydit/moonshotai/kimi-k2.6` — 404 (catalog lists it, upstream doesn't serve that exact ID)
-    - `zydit/mistralai/mistral-nemotron` — resolves, produced a plan but did not complete the patch
-- Key-router recent failure signature for `zydit` v1: `z-ai/glm-5.2` occasionally returns status 200 with message `"Stream ended after reasoning without content/tool output"` (provider streams reasoning then stops before content/tools). glm-5.2 usually retries through this; other models do not.
-- Root cause: upstream Zydit capacity/backoff/flakiness, not our key-router config. All tested model IDs are listed in `/zydit/v1/models` or `/zydit/v4/models`.
-
-**Harness issues found (verified):**
-
-1. **key-router HIGH**: `chooseAutoShard` blocks every sharded request on `await Promise.all(candidates.map(fetchAutoShardHealth...))` (~1.2s/request).
-2. **key-router MEDIUM**: `saveState()` uses sync `fs.writeFileSync`/`fs.renameSync` on the hot path.
-3. **mmx HIGH**: No hard cancel for stuck workers — only 30-min timeout or manual cancel.
-4. **Pi 0.83.0 race**: `_wrapDetachableTool` inline patch can be missing when external-subagent Pi workers spawn after a `pi update`.
-
-**Applied + verified (2026-07-30):** All four harness fixes applied to live source and verified. Proven-model workers produced reviewable unified-diff patches; main lane reviewed, applied, and verified each.
-
-**Deployed + verified live (2026-07-30):** Harness commit `97272e2` (phase3-restoration-clean) selectively staged the 4 fix hunks in `mmx.ts` (out of 18 total) + 20 key-router hunks (out of 32 total), excluding parallel-session mmx.ts changes (novita/infron providers, logfare quota-2056 detector, shell quoting, kimi-k3 phantom removal). `dist/mmx.js` rebuilt (07:36) with both mmx fixes present. Key-router restarted (PID 28972→23144, `/health` ok). Old external-subagents MCP instances (PIDs 8040+11340) killed; fresh instance launched from rebuilt `dist`. Remaining 2 workers ended (kiro-auto — canceled after logfare 429 storm; glm-5.2 — killed after 8h hung interactive-session state). 3 pre-existing TS2367 errors in `mmx.ts` (provider-type union comparisons at lines 1282/1310) are NOT from these fixes; `npx tsc` still emits `dist/` despite them (no `--noEmit`).
-
-1. **key-router health cache** (HIGH) — `fetchAutoShardHealthCached()` wrapper with short-TTL in-memory cache (`AUTOSHARD_HEALTH_CACHE_MS`, default 3000ms). Null results intentionally not cached. Worker: `nvidia/minimaxai/minimax-m3` (valid patch, applied). Canonical patch: `tmp/harness-fix-keyrouter-healthcache-canonical.patch`. `node --check` passes.
-2. **key-router async saveState** (MEDIUM) — `saveState()` converted to async via `fs.promises.writeFile`/`rename` with a serialized promise chain (`saveStateChain`) to prevent concurrent temp-file corruption. All 18 call sites updated to `await saveState()`. Worker: `nvidia/z-ai/glm-5.2` (valid patch, applied — superior serialization design vs main-lane canonical). Canonical patch: `tmp/harness-fix-keyrouter-asyncstate-canonical.patch`. `node --check` passes.
-3. **mmx idle-cancel watchdog** (HIGH) — `EXTERNAL_SUBAGENT_IDLE_CANCEL_SECONDS` (default 600s) auto-cancel in `refreshMetadata`: if `quietForSeconds` exceeds the threshold and the worker is still starting/running, kills both PIDs via `killExactPid` and marks as stale. Worker: `nvidia/minimaxai/minimax-m3` (produced placeholder patch — main lane wrote canonical). Canonical patch: `tmp/harness-fix-mmx-idlecancel-canonical.patch`. `tsc --noEmit` passes (only pre-existing TS2367 errors).
-4. **mmx pre-spawn background-detach patch** (Pi 0.83.0 race) — `ensureBackgroundDetachPatch()` called before every Pi worker spawn (idempotent, try/catch, non-blocking). Fixes the `_wrapDetachableTool is not a function` crash when workers spawn after `pi update` overwrites `agent-session.js`. Worker: `nvidia/minimaxai/minimax-m3` (valid patch, applied). Canonical patch: `tmp/harness-fix-mmx-prespawnpatch-minimax.patch`. `tsc --noEmit` passes.
-
-**Model qualification results:** `nvidia/minimaxai/minimax-m3` ✅ FIX subagent (produced 3/4 valid patches — healthcache, prespawn, idle-cancel placeholder), `nvidia/z-ai/glm-5.2` ✅ FIX subagent (produced superior async saveState patch with serialization chain). Both graduated for harness fix work. `nvidia/google/gemma-4-31b-it` ✅ AUDIT subagent (findings verified against source). All nvidia-routed.
-
-### W58 graduation batch — logfare/zydit-v4/mistral/kilo (2026-07-30T12:09Z)
-
-Spawn-path re-verification post hermes `session_start` FULL-DEFER patch + DB shrink (4.75GB→2.29GB). **All 5 workers booted + reached providers within ~33s — the previous spawn-wedge (no assistant tokens, no provider_request events) is FIXED.** Root cause was hermes `session_start` DB contention on 4.5GB sessions.db, not key-router/LSP/MCP-init layers. `mcp_profile=subagent` (doctor-recommended default) used for all.
-
-**Graduated:**
-
-- `mistral/devstral-2512` ✅ **subagent-viable 2026-07-30** (Pi harness, route `pi:router-mistral/devstral-2512`, FREE to us; cost tracking shows ~$0.0074/task but no budget constraint). Full e2e: boot (18s) → `read package.json` → `write` report (163 bytes) → sentinel `GRAD TRIAL DONE devstral-2512`, `exit_code: 0`, 2 tool calls, ~2min total. Minor accuracy issue (undercounted devDeps 27 vs 28, scripts 100 vs 136) but agent loop perfect. mistral lane healthy (2/2 active keys, 0 cooling). Launch ref: `mistral/devstral-2512`.
-
-**Failed / not viable:**
-
-- `logfare/qwen-3.8-max` ❌ **429 rate-limited** across 6 retries (2s→64s exponential backoff) — logfare provider capacity issue, NOT spawn issue. Spawn path confirmed working (API calls succeeded, responses received). Retry when logfare recovers.
-- `logfare/kimi-k3` ❌ **429 rate-limited** across 6 retries (same logfare throttle). Same diagnosis. Both logfare models were cancelled at attempt 6/10 to free slots for healthy-provider trials.
-- `zydit-v4/minimax-m2.5` ❌ **TIMED OUT** (`exit_code: 124`, 420s). 6+ min to first response — reasoning model too slow for subagent use. The provider eventually returned "Request timed out" at ~12:16:53, but the worker's 420s timeout killed it first.
-- `kilo/kwaipilot/kat-coder-pro-v2.5:free` ❌ **404** — "The free period of this model ended. Please use kilo-auto/balanced for affordable inference or kilo-auto/free for limited free inference." Free tier gone; not viable.
-
-**Stream-idle-timeout GAP confirmed:** The 60s `withIdleTimeout` patch in `proxySseWithoutComments` did NOT fire during the 6min zydit-v4 silence. The "Request timed out" came from the provider's own timeout, not the key-router patch. Likely cause: zydit-v4 sends SSE keepalive frames (`:`) that reset the idle timer (each `iterator.next()` resolves on keepalive data), OR the zydit-v4 route bypasses `proxySseWithoutComments`. **Action item:** investigate whether keepalive-sending providers defeat the idle timeout, and consider a content-aware idle timer (reset only on actual content chunks, not comment/keepalive frames).
-
-### W58 graduation batch #2 — zenmux / opencode-zen / mistral / cloudflare / modelscope (2026-07-30T13:09Z)
-
-Continuation of the model-qualification campaign after the first batch. Task: read `package.json`, report 5 counts, write report to `tmp/`, end with sentinel.
-
-**Graduated (clean e2e):**
-
-- `zenmux/z-ai/glm-4.7-flash-free` ✅ **subagent-viable 2026-07-30** (Pi harness, route `pi:router-zenmux/z-ai/glm-4.7-flash-free`, genuinely free). Boot → `read package.json` → `write` report → sentinel `GRAD TRIAL DONE glm-4.7-flash-free`, `exit_code: 0`, `stop_reason: stop`, ~210-byte report, all 5 answers correct (deps=1, devDeps=28, scripts=136). zenmux lane has 2 free GLM variants; this one is accurate and fast.
-- `opencode-zen/laguna-s-2.1-free` ✅ **subagent-viable 2026-07-30** (Pi harness, route `pi:router-opencode-zen/laguna-s-2.1-free`, genuinely free). Boot → `read` → `write` → sentinel, `exit_code: 0`, `stop_reason: stop`, 226-byte report, all 5 answers correct. 27 text blocks, no thinking blocks, ~2.5 min. **OVERTURNS prior 2026-07-29 ❌** on OpenCode Zen (reasoning-loop / 200MB cap) — that failure was the hermes `session_start` DB-contention wedge misattributed to laguna.
-- `mistral/mistral-small-latest` ⚠️ **transport-viable 2026-07-30** (Pi harness, route `pi:router-mistral/mistral-small-latest`, free to us). Completed `exit_code: 0`, `stop_reason: stop`, wrote report, sentinel emitted. BUT accuracy is poor: devDeps 35 vs 28, scripts 140 vs 136. Use for quick tasks where exact counts are not critical; avoid for precision audits.
-- `mistral/magistral-medium-latest` ⚠️ **transport-viable 2026-07-30** (Pi harness, route `pi:router-mistral/magistral-medium-latest`, free to us). Completed `exit_code: 0`, `stop_reason: stop`, wrote report, sentinel emitted. Accuracy poor: devDeps 26 vs 28, scripts 162 vs 136. Same caveat as mistral-small: loop works, counting is unreliable.
-
-**Completed-but-already-known:**
-
-- `kilo/kilo-auto/free` ✅ completed `exit_code: 0` with all 5 answers correct (deps=1, devDeps=28, scripts=136), but runtime `response_model` resolved to `inclusionai/ling-3.0-flash:free`. Confirms the kilo auto/free route is healthy but routes to an already-graduated model; not a new model graduation.
-
-**Failed / not viable:**
-
-- `mistral/mistral-medium-latest` ❌ **"Model not found"** — Pi CLI cannot resolve `router-mistral/mistral-medium-latest` even though the mistral provider catalog lists it. Registration/key mismatch in the Pi model-providers extension; other mistral models resolve fine on the same route prefix.
-- `mistral/devstral-small-2:24b` ❌ **400 status code (no body)** — mistral API rejected the model ID (likely the `:` in `2:24b`), `willRetry: false`.
-- `mistral/mistral-vibe-cli-latest` ⚠️ **output-length-limit** — booted, called `bash`, produced 19 text blocks, but hit `stopReason: length` mid-report ("semantic-expl"). Output token cap too low for this task. Not viable without a higher `maxTokens` harness config.
-- `cloudflare/@cf/openai/gpt-oss-20b` ❌ **no real tool calls** — model emitted 21 thinking blocks explaining the plan and even printed tool-call JSON as thinking content, but never executed a real `read` or `write`. No report file. Cost $0.0024 wasted. Not viable for tool-use subagents.
-- `modelscope/deepseek-ai/DeepSeek-V4-Pro` ❌ **401 Authentication failed** — "valid ModelScope token is supplied." Keys appear misconfigured or quota-related for this specific model.
-- `modelscope/deepseek-ai/DeepSeek-V4-Flash` ❌ **429 insufficient_quota** — retest with the proven 2026-07-29 model ID also failed: "You exceeded your current quota, please check your plan and billing details." Modelscope lane is currently dead due to exhausted quota, not missing keys.
-- `zenmux/z-ai/glm-4.6v-flash-free` ❌ **429 → 400** — zenmux free-tier usage cap reached ("You have reached the usage limit for the current free model"). Agent loop did engage (`read` tool call) before the cap tripped. Retry when zenmux caps reset.
-- `opencode-zen/deepseek-v4-flash-free` ❌ **Internal server error → timeout** — provider returned 500-class error, retried, then worker timed out at 420s (`exit_code: 124`). Differs from prior thinking-loop failure; the opencode-zen deepseek-v4-flash-free route is currently failing outright.
-
-### W58 graduation batch #3 — mistral / nvidia (2026-07-30T14:29Z)
-
-Third continuation of the model-qualification campaign. Same package.json audit task.
-
-**Graduated (clean e2e):**
-
-- `nvidia/thinkingmachines/inkling` ✅ **subagent-viable 2026-07-30** (Pi harness, route `pi:router-nvidia/thinkingmachines/inkling`, FREE). Boot → `read` → `bash` (cwd) → `write` report → sentinel, `exit_code: 0`, `stop_reason: stop`, 158-byte report, **all 5 answers correct** (deps=1, devDeps=28, scripts=136). 7 thinking blocks, 7 text blocks, ~1 min. Strong new free carrier on the nvidia lane.
-
-**Transport-viable but inaccurate:**
-
-- `mistral/mistral-large-latest` ⚠️ (Pi harness, route `pi:router-mistral/mistral-large-latest`, FREE to us). Completed `exit_code: 0`, `stop_reason: stop`, wrote report, sentinel emitted. Accuracy poor: devDeps 30 vs 28, scripts 130 vs 136. Loop works; counting is unreliable.
-- `mistral/devstral-latest` ⚠️ (Pi harness, route `pi:router-mistral/devstral-latest`, FREE to us). Completed `exit_code: 0`, `stop_reason: stop`, wrote report, sentinel emitted. Same inaccuracy as `devstral-2512`: devDeps 26 vs 28, scripts 100 vs 136. Alias behaves identically to `devstral-2512`.
-
-### W58 graduation batch #4 — poolside / nvidia (2026-07-30T14:33Z)
-
-Fourth continuation; same package.json audit task.
-
-**Graduated (clean e2e):**
-
-- `poolside/laguna-s-2.1` ✅ **subagent-viable 2026-07-30** (Pi harness, route `pi:router-poolside/poolside/laguna-s-2.1`, FREE to us). Boot → `read` → `bash` (mkdir) → `write` report → sentinel `GRAD TRIAL DONE laguna-poolside-direct`, `exit_code: 0`, `stop_reason: stop`, 226-byte report, **all 5 answers correct** (deps=1, devDeps=28, scripts=136). ~1.5 min. Heavy reasoning (35 thinking blocks) but accurate and cheap. **Direct poolside route is the premium free carrier** — user confirms "a beast".
-
-**Transport-viable but inaccurate:**
-
-- `mistral/codestral-latest` ⚠️ (Pi harness, route `pi:router-mistral/codestral-latest`, FREE to us). Completed `exit_code: 0`, `stop_reason: stop`, wrote report, sentinel emitted. Accuracy very poor: devDeps 26 vs 28, scripts 182 vs 136. Confirms earlier assessment: codestral transports well but is not a precise audit carrier.
-- `mistral/magistral-small-latest` ⚠️ (Pi harness, route `pi:router-mistral/magistral-small-latest`, FREE to us). Completed `exit_code: 0`, `stop_reason: stop`, wrote 207-byte report, sentinel emitted. Transport excellent (~7s). Accuracy off-by-one: devDeps 29 vs 28, scripts 137 vs 136 (deps=1 correct). Same pattern as other mistral graduates: reliable loop, imprecise counting.
-
-**Failed / not viable:**
-
-- `mistral/mistral-code-latest` ❌ **output-token cap too low** — assistant emitted a `read` tool call but `stopReason: length` after only 16 output tokens, truncating the path to `C:\Users\HP\repos\`. Could not complete even the first `read`. Same family of cap issue as `mistral/mistral-vibe-cli-latest`.
-- `nvidia/nemotron-3-super-120b-a12b` ❌ **404 page not found** — `router-nvidia` does not expose this model path, even though it appears in the NVIDIA catalog. `exit_code: 0` but provider returned 404 with no output. Not launchable via current router path.
-- `logfare/qwen-3.6-35b-a3b` ❌ **Service temporarily unavailable** — logfare lane still degraded ~3.5h after the earlier 429 burst. Not viable right now. **2026-08-04 degradation note:** logfare upstream (logfare.ai/v1) had a 500 Internal Server Error storm + /v1/models + chat completions both hanging ≥40s (root 200 but slow ~5s); router cooldowns expired so this is upstream-side, not router-imposed. Router automically retries (`logfare quota-2056 detector` patched). Check before dispatching logfare lanes.
-- `nvidia/openai/gpt-oss-120b` ❌ **Request timed out** — provider returned timeout after ~5.5 min of silence; auto-retry also failed. Same family as the cloudflare `gpt-oss-20b` that never emitted real tool calls. Not viable for subagent use.
-- `nvidia/meta/llama-3.3-70b-instruct` ❌ **too slow / stuck** — successfully called `read` and retrieved package.json, but then sat at `turn_start` for >2 min without emitting the `write` tool call. Not a reliable carrier.
-- `nvidia/google/gemma-4-31b-it` ❌ **too slow** — prompt delivered, no assistant output after >2 min. Same nvidia free-tier overload that stalled llama-3.3-70b. Not a reliable carrier today.
-
-### W58 graduation batch #5 — priority-provider probes (2026-07-30T15:07Z)
-
-User-requested quick probes across the five priority groups: `infron` free tiers, `zenmux` free frontier, `novita` free, `mistral` remaining free IDs, and `cloudflare`. Same package.json audit task (read `package.json`, report 5 counts, write report, emit sentinel).
-
-**Graduated:**
-
-- `novita/tencent/hy3` ✅ **subagent-viable 2026-07-30** (Pi harness, route `pi:router-novita/tencent/hy3`, FREE). Boot → `read` → `write` → sentinel `GRAD TRIAL DONE novita-hy3`, `exit_code: 0`, `stop_reason: stop`, all 5 answers correct (deps=1, devDeps=28, scripts=136). Fast and accurate. The OpenCode Zen bare `hy3-free` route remains degraded (429), but the Novita-qualified route works.
-
-**Failed / not viable / inaccurate:**
-
-- `infron/moonshotai/kimi-k2.6:free` ❌ **404** — route returns 404 with no body; model not served on this path right now. Infron's `:free` models may require a balance gate or be phantom listings.
-- `zenmux/anthropic/claude-opus-5` ❌ **402 `reject_no_credit`** — requires account balance >0 (anti-abuse gate), not genuinely free to us on this route.
-- `mistral/devstral-medium-latest` ⚠️ **transport-viable but inaccurate** — completed exit 0 and wrote the report, but reported scripts=100 vs ground-truth 136. Same count-drift pattern as other Mistral IDs.
-
-### Mistral bugsweep bake-off (2026-07-30, W61 stale-closure class)
-
-Controlled bake-off: same prompt + same scope (`WeatherWidget`/`InfoPanel`/`FocusPocket`/`AppBoot` — main-lane ground truth: **0 stale-closure bugs + 1 LOW missing-cleanup** in AppBoot's `requestIdleCallback` no-`cancelIdleCallback`) + anti-over-reasoning guardrails + an explicit "fetch→global-store is NOT stale-closure" KEY DISTINCTION. Ranked by false-positive rate (precision is king — main-lane verifies every finding):
-
-| Model                            | Real    | FP    | Verdict                                                                                                                                                                                               |
-| -------------------------------- | ------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mistral/magistral-small-latest` | 0\*     | **0** | 🏆 **BEST mistral bugsweep channel** — perfect precision, correct reasoning on all 8 callbacks, followed the global-store + `$effect`-reads-live distinctions. Open-source 24B reasoning model, free. |
-| `mistral/devstral-latest`        | 1 (LOW) | 2     | found AppBoot but fabricated a HIGH "async WebGL" in FocusPocket (`applyLocalNeighborhoodFocus` is synchronous)                                                                                       |
-| `mistral/devstral-medium-latest` | 1 (LOW) | 2     | same — even ADMITTED "captures no component-scoped state" then flagged it HIGH, ignoring the KEY DISTINCTION prompt                                                                                   |
-| `mistral/magistral-medium-2509`  | 0       | 1     | terse 649B, missed AppBoot, cleared nothing                                                                                                                                                           |
-| `mistral/devstral-2512`          | 0       | 4     | poor (prior W61-G run, same class)                                                                                                                                                                    |
-| `mistral/codestral-latest`       | 0       | 4     | fabricated a `setTimeout` in `toggleExpanded` (it's just `expanded=!expanded`) + hallucinated an `AbortController` "Cleared" section. Useless.                                                        |
-| `mistral/mistral-code-latest`    | —       | —     | **wedged 2/2** (output-token cap truncates `read` path → `stopReason: length`) — confirms the line-190 smoke on a real task. Unusable on current harness.                                             |
-
-\*0 real because the scope had 0 stale-closure bugs; the AppBoot LOW is missing-cleanup (a different class), which magistral-small correctly excluded.
-
-**Key insight:** for careful stale-closure/reasoning bugsweeps, **reasoning models (Magistral-small, glm-5.2) >> coding models (Devstral/Codestral)**. The entire Devstral family (2512/latest/medium) is consistently imprecise — flags the fetch→global-store trap + fabricates async/WebGL concerns + misunderstands `$effect` reactivity, _even with explicit guidance_. **Default mistral-lane bugsweep channel = `mistral/magistral-small-latest`** (0 FP, cheap, correct). Caveat: recall untested here (scope had 0 real stale-closure bugs) — pair with `nvidia/z-ai/glm-5.2` (best recall: found M10 + M12) on fresh scopes; glm-5.2 over-reasons to death on >2-file scopes so keep its scope tight + timeout ≤600s.
-
-- `cloudflare/@cf/moonshotai/kimi-k2.6` ❌ **403** — not launchable today; Cloudflare Workers AI route rejects this model ID.
-
-### Strong free/shadow routes for coding
-
-| Model                    | Route                 | Best for                                      | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+> **2026-07-30 Mistral bugsweep bake-off W61 stale-closure:** magistral-small-latest best (0 FP); devstral family inconsistent (2-4 FP); codestral-latest useless (4 FP); mistral-code wedged 2/2. Reasoning models >> coding models for stale-closure sweeps. Default: mistral/magistral-small-latest. cloudflare/kimi-k2.6 403.
 | ------------------------ | --------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `mimo-v2.5-free`         | `router-opencode-zen` | UI code edits, component extractions          | Long reasoning; set tight scope and steer for conciseness.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `deepseek-v4-flash-free` | `router-opencode-zen` | Multi-step coding, bugsweep, read-only audits | Proven on L1/L2/L4/L5 sweep tasks.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -317,29 +154,7 @@ Probed from main lane via `/v1/models` and completion calls.
 
 OpenCode Zen load: 4 workers (3 mimo + 1 deepseek), within the ~3–4 safe zone but at the edge. If any mimo worker stalls due to long reasoning, it will be steered/canceled and relaunched on another provider.
 
-## Orchestration bugsweep trial — 2026-07-29 (free routes, max reasoning)
-
-Goal: trial untrialed free-catalogue models (max reasoning where supported) on a real bugsweep of 5 orchestration files. Route-health barriers blocked every free subagent from completing the trial end-to-end; the main lane finished the sweep manually (`tmp/trial-2026-07-29/main-lane-findings.md` — 1 MED + 4 LOW + 1 investigated-resolved). Trial detail: `tmp/trial-2026-07-29/trial-summary.md`.
-
-| Route                                          | Health                                                                                            | Launchable?                                                                                                                                                                                                                                                                             | Verdict                                                                             |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **OpenRouter key-router** `/openrouter/v1`     | ✅ alive (direct API + key-router 200 for `openai/gpt-oss-20b:free` `reasoning_effort:max`, 1-3s) | ❌ workers exit 124 (120s timeout); 0 assistant output                                                                                                                                                                                                                                  | upstream works, launch harness times out — NOT viable                               |
-| **NVIDIA upstream** `integrate.api.nvidia.com` | ✅ alive (direct API 200, 370-850ms, all reasoning variants)                                      | ❌ key-router `/nvidia/v1/chat/completions` → **404** (path listed but not wired). 5 workers stalled 7+ min, cancelled.                                                                                                                                                                 | upstream alive, key-router broken — NOT viable                                      |
-| **ModelScope** `/modelscope/v1`                | ✅ alive (after warmup)                                                                           | ⚠️ partial. **Qwen3-30B-A3B-Thinking-2507** produced 23 tool calls but an **off-task** report (project-wide `any` grep). PROMPT-v3 got it on-task but it **completed without writing the report**; followup rescue stalled. DeepSeek-V4-Flash hit **429 insufficient_quota** ~9 min in. | route works; models lack report-writing discipline — NOT viable without heavy steer |
-| **Cloudflare** `/cloudflare/v1`                | ✅ alive (`@cf/qwen/qwen3-30b-a3b-fp8` chat OK)                                                   | ⚠️ `qwq-32b` produced reasoning text but **0 tool calls** — can't read files                                                                                                                                                                                                            | NOT viable for code-intelligence sweep                                              |
-| **kilo** `*/kilo*`                             | ❌ HTTP 402 (balance -0.00003)                                                                    | ❌ all models fail                                                                                                                                                                                                                                                                      | dead                                                                                |
-| **zenmux**                                     | ❌ HTTP 000                                                                                       | ❌ down                                                                                                                                                                                                                                                                                 | dead                                                                                |
-| **airforce**                                   | ✅ alive                                                                                          | ❌ not a key-router provider lane — not launchable via external_subagents                                                                                                                                                                                                               | not launchable                                                                      |
-| **freeinference.org**                          | ✅ alive (7 models, 292K tokens/6.3s)                                                             | untested as Pi harness provider                                                                                                                                                                                                                                                         | candidate, untested                                                                 |
-
-Cross-cutting:
-
-- `--thinking max` is applied to ALL subagent workers regardless of model reasoning support (gemma got it too); no override exposed by `external_subagent_start`. User confirmed: keep it.
-- NVIDIA `nvidia/*` free nemotron models are NOT exposed via OpenRouter in this subagent catalogue — they only reach the broken nvidia key-router lane.
-- The one model that produced output (ModelScope Qwen3-30B) went off-task — a prompt-discipline problem surfaced, not just a route problem; PROMPT-v3 (ordered read→find→report, forbid project-wide grep) fixed on-task-ness but the model still didn't deliver the report artifact.
-- 2026-07-27 bench ground truth (`docs/bugsweep-bench-2026-07-27.md`) had no orchestration entries → all main-lane findings are NEW.
-
-Next lane to trial (not yet done): freeinference.org as a direct Pi harness provider — alive, fast, has reasoning-capable models; only untested piece remaining.
+> **2026-07-29 Orchestration bugsweep trial:** all free routes blocked by route-health barriers (OpenRouter 120s timeout, NVIDIA key-router 404, ModelScope off-task, Cloudflare 0 tool calls, kilo 402, zenmux down). Main lane finished sweep manually (1 MED + 4 LOW). `--thinking max` applied to all workers; no override exposed.
 
 ### 2026-07-30 late qualification (Pi harness 0.83.0)
 
@@ -356,19 +171,7 @@ Goal: graduate `nvidia/z-ai/glm-5.2`, `nvidia/minimaxai/minimax-m3`, `logfare/mi
 
 **Note on `logfare/kiro-auto`:** Launched on a bounded FIX task; immediately hit logfare upstream `429 "Logfare upstream rate-limited model kiro-auto"` (auto-retry up to 10× with 128s+ delays) and never produced assistant output. Completion probes previously accepted `max`, but the subagent dispatch path is rate-blocked right now. Retry after logfare quota/cap resets.
 
-## Free-lane billing investigation — 2026-07-29
-
-Probed all alternate free providers for Macaron-V1-Venti subagent access. Findings:
-
-| Provider             | Free models?                      | Verdict               | Details                                                                                                                                                                                                                                                                                  |
-| -------------------- | --------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Modelscope**       | 49 models, 3 keys                 | ✅ **best free lane** | No balance/credit/rate-limit issues. DeepSeek-V4-Flash returns `reasoning_content`, Qwen3-Coder-30B clean responses. 75 entries seeded in settings.json. Launch-ready.                                                                                                                   |
-| **Novita**           | 0 of 143 models free              | ❌ dead end           | All 143 models have pricing; `403 NOT_ENOUGH_BALANCE` on $0 account. "Free" Macaron listing was misleading — Novita requires balance for every model.                                                                                                                                    |
-| **Infron**           | `:free` models exist but need $5+ | ❌ dead end           | `:free`-suffixed models (kimi-k2.6:free, macaron-v1-venti:free, etc.) require account balance > $4.999999. Not truly free. Also `insufficient_user_quota` (credits exhausted).                                                                                                           |
-| **Zenmux**           | 5 genuinely free (`-free` suffix) | ⚠️ rate-limited       | `z-ai/glm-4.7-flash-free`, `z-ai/glm-4.6v-flash-free`, `x-ai/grok-4.5-free`, `moonshotai/kimi-k3-free`, `stepfun/step-3.7-flash-free`. Usage-capped (429 "usage limit reached"), NOT balance-required — resets periodically. 152 entries seeded. Infra ready when caps reset.            |
-| **Macaron-V1-Venti** | infra fixed, upstream blocked     | ⚠️ pending billing    | Routing pipeline fixed (mmx.js piModelRef + extension providerIdForBaseUrl patched for novita/infron). Both Infron ($5 balance) and Novita (balance) need account top-up. When billing clears, re-launch with `infron/mindai/macaron-v1-venti:free` or `novita/mindai/macaron-v1-venti`. |
-
-**Recommendation:** Use **Modelscope** (49 models, no billing wall) + **Logfare** (3 confirmed viable) for free subagents. Avoid Novita/Infron until accounts are topped up. Zenmux free models are a secondary option when rate caps reset.
+> **2026-07-29 Free-lane billing investigation:** Modelscope ✅ best free lane (49 models, no billing wall); Novita ❌ all 143 models paid; Infron ❌ `:free` models need $5+ balance; Zenmux ⚠️ 5 genuinely free but rate-capped; Macaron-V1-Venti ⚠️ infra fixed, upstream blocked. Recommendation: Modelscope + Logfare for free subagents.
 
 ## W57 subagent cold-stall root cause — 2026-07-29 19:18 UTC
 
@@ -384,27 +187,9 @@ Follow-up to the earlier "Orchestration bugsweep trial" openrouter/nvidia/cloudf
 
 User steer: "those models don't support max reasoning flag? We should still launch with THEIR highest reasoning level" + "ensure they don't expose xhigh and max reasoning settings that we just configured poorly" + "same check on logfare models". Probed every route with the full candidate set `{max, xhigh, high, medium, low, default}` AND the OpenRouter-native nested `reasoning:{effort}` field. `external_subagent_start` exposes NO reasoning/thinking override (confirmed in live schema: only cwd/name/model/harness/timeout/mode/mcp\_\*/live_steer/keepalive params) — so harness hardcodes flat `reasoning_effort:"max"` and we cannot route per-model ceilings from the launch API.
 
-### Non-logfare (cold-stall suspects)
+> **2026-07-29 Non-logfare cold-stall suspects:** Groq llama-3.3-70b genuinely non-reasoning (all reasoning_effort 400); ModelScope DeepSeek-V3.2 confirmed configured poorly (needs nested reasoning field, not flat); V3.1 works both ways; V4-Flash streaming works; gemma-4-26b+ling cold-stall is Cause 2 (adapter), not config; mistral-nemotron flaky timeout; cloudflare llama-3.3-70b accepts all levels.
 
-| Model                                                 | max                                            | xhigh                 | high                                | Verdict                                                                                                                                                                                                                                                                                          |
-| ----------------------------------------------------- | ---------------------------------------------- | --------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Groq `llama-3.3-70b-versatile`                        | 400 allowed:[none,default,low,medium,high]     | 400 same allowed-list | 400 "not supported with this model" | **Genuinely non-reasoning** — ALL `reasoning_effort` values 400. There is no "their highest"; harness must OMIT the field. Blocked at harness level today.                                                                                                                                       |
-| ModelScope `DeepSeek-V3.2`                            | flat → 200 `choices:null` (empty)              | flat → empty          | flat → empty                        | **"Configured poorly" CONFIRMED.** Flat `reasoning_effort` returns empty; nested `reasoning:{effort:"max"}` (and `"high"`) → 200 with valid output. V3.2 wants the OpenRouter-native **nested `reasoning` field**, not flat. Harness sends flat → cold-stall. Wrong FIELD NAME, not wrong level. |
-| ModelScope `DeepSeek-V3.1`                            | flat → 200 ok                                  | flat → 200 ok         | flat → 200 ok                       | Works with BOTH field names at all levels. No config issue — harness flat `max` already works.                                                                                                                                                                                                   |
-| ModelScope `DeepSeek-V4-Flash`                        | flat → 200 empty (non-stream); streaming works | —                     | —                                   | Non-stream returns empty but streaming (the harness path) works. Level fine.                                                                                                                                                                                                                     |
-| OpenRouter `gemma-4-26b:free` + `ling-3.0-flash:free` | 200 (ling returns content)                     | 200                   | 200                                 | Accept `max`/`xhigh`. Cold-stall is Cause 2 (streaming tool_call adapter), NOT reasoning config.                                                                                                                                                                                                 |
-| NVIDIA `mistral-nemotron`                             | flaky TIMEOUT                                  | 200 ok                | flaky TIMEOUT                       | Accepts `xhigh`; `max` times out intermittently. Not a config lever.                                                                                                                                                                                                                             |
-| Cloudflare `llama-3.3-70b`                            | 200 ok                                         | 200 ok                | 200 ok                              | Accepts every level. Cold-stall = Cause 2 (adapter) + genuinely flaky (gibberish w/o reasoning).                                                                                                                                                                                                 |
-
-**`xhigh` is NOT a higher ceiling we're missing anywhere** — on every route where `xhigh` returns 200, `max` also works; on groq BOTH `max` and `xhigh` are rejected with the same allowed-values 400.
-
-### Logfare (10 models) — the actual ask
-
-Clean signal on 4 of 10 (rest 429 rate-limited this run): `kiro-auto`, `minimax-m3`, `kimi-k2.7-code`, `glm-5.2`.
-
-- **All 4 accept `max` → HTTP 200 with content or tool_calls.** None 400-reject `max`/`xhigh`. No `xhigh`-only-higher tier to chase.
-- **`minimax-m3`** returned tool calls at `max`/`xhigh`/`default` but EMPTY at `high`/`medium`/`low` → so for the workhorse, sending `max` is materially correct; `high` would produce nothing.
-- **Conclusion: for logfare we ARE using the max the models accept. Not misconfigured.** Rate-limited logfare models (deepseek-v4-pro/flash, kimi-k2.6/k3, qwen-3.8-max, qwen-3.6-35b-a3b) to re-probe after upstream quota resets.
+> **2026-07-29 Logfare 10-models ask:** clean signal on 4 of 10 (kiro-auto, minimax-m3, kimi-k2.7-code, glm-5.2). All 4 accept max → HTTP 200. minimax-m3 returns tool calls at max/xhigh/default but EMPTY at high/medium/low. Conclusion: for logfare we ARE using the max the models accept.
 
 ### Actionable levers
 
@@ -416,32 +201,17 @@ Clean signal on 4 of 10 (rest 429 rate-limited this run): `kiro-auto`, `minimax-
 
 User: "kimi k3 from zydit and from logfare but we haven't got it to work, not sure we have them set correctly." Live key-router source inspection (`C:\Users\HP\Desktop\Temp while my comp is at the shop\harness\servers\key-router\src\opencode-key-router.mjs`) + streaming tool_call probes against all three paths. **Verdict: NOT a pi-config bug.**
 
-### [Logfare] Kimi K3 (`https://logfare.ai/v1`, direct-logfare)
+> **2026-07-30 [Logfare] Kimi K3:** pi config CORRECT (fixed 2026-07-29). Per-key opt-in audit: 2 elevated keys get 503 (not 403) for k3 — logfare-side transient capacity wobble, not training-gate. logfare chat/completions in sustained 503 outage. Non-opted-in #2 key is dead probe account (flag for removal).
 
-- **pi config CORRECT (fixed 2026-07-29).** Key-router `providerModelRequestProfiles.logfare["kimi-k3"]` was added 2026-07-29 (was MISSING → that alone caused cold-stall: no `stripToolStream` → streaming tool_calls not parsed, W57 Cause 2). Mirrors kimi-k2.6 (stripToolStream + thinking + retries + finish-reason synthesis). Regenerated catalog has `supportsTools:true`, `supportsReasoningEffort:true`, per-entry `thinkingLevelMap` max→max.
-- **Per-key opt-in audit (direct, 7 keys):** #3 `...UgCfWR` + #4 `...p_rZpc` → **ELEVATED/opted-in** (kimi-k2.6 = 200). #2 `...zkTYT8` (acct `pi-probe-5357606`, the singular `LOGFARE_API_KEY`) → **NOT opted-in** (403 `training_optin_required` for both k2.6+k3). ~4 others indeterminate (503/timeout).
-- **kimi-k3 on the ELEVATED keys → 503 (NOT 403)** → **kimi-k3 is NOT training-gated on the elevated keys.** Retry x5: kimi-k3 503 all 5; `deepseek-v4-flash` (known-deployed) ALSO 503s on those same keys while kimi-k2.6 was 200 two minutes earlier → **logfare-side transient 503 capacity wobble**, not a k3 deployment gap and not an opt-in issue.
-- **logfare chat/completions is currently in a sustained 503 outage** (all models, all elevated keys, all body shapes; `/v1/models` still 200). Upstream issue — nothing config-side fixes it. The non-opted-in #2 key is a dead probe account that 403s every premium model and wastes a router slot (flag for removal).
+> **2026-07-30 [Zydit] Kimi K3 PHANTOM:** key-router synthetically injects kimi-k3 into zydit/v4 /models roster via hardcoded `addKimiK3ToZyditV4ModelsListing()`. zydit upstream REJECTS kimi-k3 — live probe returns All router keys failed. Dead end — recommend removing [Zydit] Kimi K3 catalog entry.
 
-### [Zydit] Kimi K3 (`http://127.0.0.1:8788/zydit/v4`) — PHANTOM
-
-- Key-router SYNTHETICALLY injects `kimi-k3` into the zydit/v4 `/models` roster via `addKimiK3ToZyditV4ModelsListing()` (hardcoded `created:1700000000` — matches roster entry; real zydit models use `created:1`/`1785361801`). zydit upstream `https://api.zydit.in/v4` **REJECTS kimi-k3** — live probe: `data: {"error":"All router keys failed"}`. Catalog note "probe-confirmed working 2026-07-16 + stream-strip shim" is STALE — the only shim is the listing injection, not a stream handler. No `providerModelRequestProfiles.zyditv4["kimi-k3"]` entry either. **Dead end — recommend removing the [Zydit] Kimi K3 catalog entry + `addKimiK3ToZyditV4ModelsListing`.**
-
-### Key-router watchdog + logfare lane infra (2026-07-30)
-
-- **Watchdog was DOWN ~1 day** (last log 2026-07-28T10:02); router unsupervised so the logfare lane failure never auto-recovered. **Started watchdog** (pid 29256, running) via `control.ps1 -Action watchdog-start`. Watchdog runs `ensure` every 20s.
-- **Restarted router** (new PID, fresh process) — logfare lane did NOT recover because the router wasn't the problem: logfare chat/completions is upstream-503. The router's "fetch failed" = all-keys-non-200 (elevated 503 + probe 403 + others timeout), NOT a network wedge.
-- **Watchdog health check probes nvidia kimi-k2.6 ONLY** → a logfare-only lane outage does NOT trip it, so the watchdog won't restart for logfare. logfare lane recovery is handled by the router's own ~30s route-backoff retry → **auto-recovers promptly once logfare restores chat capacity** (no manual action needed).
+> **2026-07-30 Key-router watchdog + logfare lane infra:** watchdog was DOWN ~1 day (last log 2026-07-28T10:02). Started watchdog (pid 29256). Restarted router — logfare lane did NOT recover because upstream 503, not router. Watchdog probes nvidia kimi-k2.6 ONLY — logfare outage does not trip it. logfare auto-recovers via 30s route-backoff retry.
 
 ### Bottom line (corrected)
 
 - "Not set correctly" was PARTLY true historically (logfare kimi-k3 had no key-router request profile → cold-stall). **Fixed 2026-07-29.** Remaining blockers: (1) **logfare chat/completions upstream 503 outage** (all models, waits itself out; auto-recovers via 30s backoff retry), (2) **zydit-v4 kimi-k3 phantom** (dead end). **Training-optin is NOT the kimi-k3 blocker on elevated keys** (they 503, not 403). Once logfare recovers, kimi-k3 should stream via router-logfare (config already correct, elevated keys cover it) → run find-and-fix-bug trial.
 
-### Zydit v1/v4 untested graduation candidates
-
-zydit-v4 is viable for profiled models (minimax-m3 graduated via it). Unprofiled models cold-stall (no stripToolStream). **Catalog cleaned 2026-07-30:** phantom `kimi-k3`/`kimi-k3-thinking` injection removed from key-router source + `settings.json` + `model-providers.json`; roster now 36 real bare-id models. A roster cross-ref also removed 53 dead phantom entries pointed at `/zydit/v4` and fixed 97 mis-pointed `/zydit/v4` entries to `/zydit/v1` (they are served by zydit v1, not v4). Added `providerModelRequestProfiles.zyditv4` entries for graduation candidates: `qwen3-coder-next`, `qwen3-coder:480b`, `devstral-2:123b`, `kimi-k2.5-thinking`, `glm-4.7`, `gpt-oss:120b`. Still to profile/trial once rate-limits clear: `kimi-k2-thinking`, `kimi-2.6-thinking`, `minimax-m2.5`, `nemotron-3-super`, `nemotron-3-ultra`.
-
-Full breakdown: `tmp/w57-kimi-k3-diagnosis-2026-07-29.md` (updated with corrected per-key audit). Probe artifacts: `tmp/w57-kimi-k3-streaming-probe.mjs`, `tmp/w57-kimi-k3-followup-probe.mjs`, `tmp/w57-logfare-perkey-optin-probe.mjs`, `tmp/w57-logfare-body-shape-probe.mjs`.
+> **2026-07-30 Zydit v1/v4 untested graduation candidates:** zydit-v4 viable for profiled models (minimax-m3 graduated). Unprofiled models cold-stall (no stripToolStream). Catalog cleaned 2026-07-30: phantom kimi-k3/kimi-k3-thinking injection removed; roster now 36 real bare-id models. Added providerModelRequestProfiles.zyditv4 entries for: qwen3-coder-next, qwen3-coder:480b, devstral-2:123b, kimi-k2.5-thinking, glm-4.7, gpt-oss:120b.
 
 ## W71f-gate verification wave — 2026-08-04 (pathc-verify evidence)
 
@@ -485,12 +255,7 @@ User directive: health-test every available model/provider and graduate the viab
 | mistral (4)                                                                     | mistral-medium-3.5 PONG 657ms, magistral-small-latest PONG 1.1s, codestral-2508 PONG 361ms, devstral-latest PONG 418ms                                                                                                                   | All healthy; medium-3.5/codestral-2508 are new confirmed IDs                                                                                                              |
 | opencode-zen / nvidia / kilo / openrouter / zydit / agnes / poolside / zydit-v4 | n/a this sweep (already documented)                                                                                                                                                                                                      | see existing entries                                                                                                                                                      |
 
-### Notes
-
-- `max_tokens: 24` produces `finish=length` empty content on reasoning models (thinking burns the budget) — re-probe at 256 tokens before declaring a 200 dead. `zydit` inkling/glm-5.2/step-3.7-flash looked empty at 24 and PONGed cleanly at 256.
-- groq 413 message pins the exact ceiling: "Limit 12000, Requested 43330" — a documented, stable limit worth remembering before anyone tries groq again.
-- `z-ai/glm-5.2-fast` (bare) routes to **infron**; if a fast glm-5.2 variant is needed, prefer `nvidia/z-ai/glm-5.2` (graduated) or accept infron routing.
-- Sweep scripts + outputs archived under `tmp/health-sweep-*.mjs`; grad reports under `tmp/grad-*-report.md`.
+> **2026-08-04 Notes:** max_tokens:24 produces empty content on reasoning models — re-probe at 256 tokens. groq 413 ceiling: Limit 12000 TPM. z-ai/glm-5.2-fast routes to infron.
 
 ### Gap-sweep addendum (2026-08-04 16:10Z) — providers missed by the first pass
 
@@ -503,43 +268,9 @@ First sweep missed four keyed providers (gemini's `/v1/models` uses a different 
 - **9 configured-but-keyless providers (0 keys — dead until keys are added):** `bazaarlink`, `ainative`, `deepseek`, `siliconflow`, `together`, `cerebras`, `cohere`, `hyperbolic`, `aimlapi`. Router exposes the routes (404/empty catalogs) but there are no API keys to serve them. Do not attempt dispatch on these; re-check router `/health` if keys ever appear.
 - Also confirmed: `gemini-3.5-flash` and `modelscope/zai-org/GLM-5.2` looked empty at 24 tokens and PONG cleanly at 256 (same reasoning-burn pattern as zydit — the 256-token rule applies everywhere).
 
-### Vision worker-path re-probe (2026-08-05, post pi-model-providers harness fix)
+> **2026-08-05 Vision worker-path re-probe:** after visionInputFromModelId fallback fix — WORKER-VISION ✅ modelscope/Qwen3-VL + zenmux/step-3.7-flash; TEXT-ONLY zenmux/agnes-2.0-flash; DEAD 404 openrouter/nemotron-3-nano; INVALID 400 zenmux/mimo-v2.5; 429 upstream openrouter/gemma-4-26b.
 
-The subagent worker `read`-path was silently dropping images before 2026-08-05 (bare {id}
-catalog rows -> input:[text] -> openai-completions stripped image parts). After the
-visionInputFromModelId fallback fix, a 6-lane worker-path probe found:
-
-- WORKER-VISION ✅ `modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct` — PIXELS OK ×2 (real phone # read)
-- WORKER-VISION ✅ `zenmux/stepfun/step-3.7-flash` — PIXELS OK (real phone # read)
-- TEXT-ONLY (worker path) `zenmux/sapiens-ai/agnes-2.0-flash` — VISION UNAVAILABLE (read says image/bytes)
-- BILLING/LANE `zenmux/z-ai/glm-4.6v-flash-free` — 429 insufficient_quota (Aliyun)
-- DEAD 404 `openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`
-- INVALID 400 `zenmux/mimo-v2.5-free` model not valid this routing
-- 429-UPSTREAM `openrouter/google/gemma-4-26b-a4b-it:free`
-
-Rule change: with the harness fixed, "VISION UNAVAILABLE" now means TEXT-PATH, and provider
-errors (429/400/404) are honest failures. The earlier confounded "19 stable lanes" sweep
-should be re-validated on the worker path before trusting a lane for subagent vision work.
-
-### Registry coverage correction (2026-08-05)
-
-The external-subagents broker previously described the Qwen settings plus the parent-router
-catalog as exhaustive. That was incomplete. The current inventory contract reads seven local
-registry surfaces: Qwen settings, Pi model providers, Pi native models, the Pi model store, and
-the three OpenCode config locations. It reports source provenance, duplicate records, unmapped
-entries, protocol type, catalog status, and Pi launch status separately.
-
-The broker also parses the key-router source definition: 31 carrier routes, including the
-keyless welfare lanes (`deepseek`, `siliconflow`, `together`, `cerebras`, `cohere`, `hyperbolic`,
-and `aimlapi`) plus the `clinefree` route, and the 8-entry V2 routing overlay. Overlay quality
-labels are advisory and do not establish live model availability.
-
-Important routing rule: a provider-qualified ref must resolve to a registered Pi provider/model
-pair. If it does not, the broker refuses to substitute another provider with the same model ID.
-FreeInference remains visible in inventory but excluded from external-subagent launch refs;
-Anthropic-only records are not probed as OpenAI `/models` routes. Re-run the broker inventory
-smoke after provider-registry or router changes, then restart the external-subagents MCP before
-using the live tool descriptions.
+> **2026-08-05 Registry coverage correction:** external-subagents broker reads 7 local registry surfaces; reports source provenance, duplicates, unmapped entries. Key routing rule: provider-qualified ref must resolve to registered Pi provider/model pair. Re-run broker inventory smoke after provider-registry or router changes.
 
 The inventory now also reports the active auto-shard policy, disk-backed router cooldown/
 rotation/failure state (counts and observed model IDs only), the broker's static fallback
@@ -606,18 +337,11 @@ main-lane.
 
 ### Provider lockout symptom 2026-08-07 (flight-recorder evidence)
 
-Three simultaneous wave-5 workers settled with ZERO deliverables (no report / no docs write)
-at ~10 min. `flight_recorder status/tail` revealed deepseek-v4-flash-0731 provider responses
-struck at 408s / 161s / 5,414s (90 min) — the workers were starved into empty settles, not
-model failures. Recovery: `external_subagent_followup` on the SAME session_id with a firm
-"you DO have tools, execute now" directive. If the provider remains hot, prefer main-lane for
-small deterministic docs tasks (do docs yourself rather than re-dispatching).
+> **2026-08-07 Provider lockout symptom:** flight-recorder evidence showed provider lockout patterns during fleet sweeps.
 
 ### Provider metric: doc-writing / small deterministic edits
 
-Flash-class models (deepseek-v4-flash) drift on multi-paragraph docs (one drifted into
-explaining OpenCode Zen billing instead of writing the doc). For doc updates < 1 page, do
-them main-lane or give the worker a byte-budget + a paste-only target.
+> **2026-08-07 Provider metric: doc-writing** — flash-class models drift on multi-paragraph docs; for docs < 1 page, do main-lane or give byte-budget + paste-only target.
 
 ### Dead-model roster (do NOT re-add; measured 2026-08-06/07)
 
@@ -641,33 +365,11 @@ them main-lane or give the worker a byte-budget + a paste-only target.
 
 ### Task-shape lemma (measured 2026-08-08, w28-w32)
 
-Delegation success is dominated by TASK SHAPE, not rail or model:
-
-- w11-w25 (bounded per-finding fixes: "close M1-M6", "second safety valve",
-  "converge surface+phase") — all committed, verified, green.
-- w28-w31 (open-ended sweeps: "split 1138-line file", "hunt 6 categories
-  across 7 files") — ALL failed on both rails (logfare flash: 0 tools + settle;
-  cline flash: narration-only; cline glm-5.2: launch 502; pro: pending).
-- The swarm mirrors the prompt's premise. Verify the task's premise against
-  the real module graph BEFORE dispatch (url-state.ts "pure helpers" were
-  store-entangled — the split was a bad task, not just a bad model).
-- Rule: dispatch = per-finding bounded fixes with file:line targets + exact
-  verify commands. Open-ended sweeps = main-lane, or pre-hunt the seam
-  main-lane first and delegate only the confirmed findings.
+> **2026-08-08 Task-shape lemma (w28-w32):** delegation success dominated by task shape, not rail/model. Bounded per-finding fixes committed; open-ended sweeps failed on all models+rails.
 
 ### Camera-choreography sweep result (main-lane, 2026-08-08)
 
-Main-lane sweep of all 7 camera files (the w29/w32 delegation target):
-
-- All 16 public exports have callers (no dead code).
-- Events all via typed EVENTS bus (no orphan/string events).
-- zoomCamera: finite-guards + distance clamping correct.
-- Two-writer race: only choreography writes camera.position; controls only
-  read (no external writers). The P1 centroid re-arm guard already landed
-  2026-08-07. NO new HIGH/MED findings — subsystem is clean.
-- Lesson: w29/w32 "let me verify" narration chased a recently-hardened
-  subsystem. Sweep verdicts must be main-lane-confirmed; a negative sweep is
-  a valid deliverable.
+> **2026-08-08 Camera-choreography sweep:** all 16 public exports have callers; events via typed EVENTS bus; zoomCamera guards correct; two-writer race handled. NO new HIGH/MED findings.
 
 ### CORRECTION: prescription vs discovery (2026-08-08, supersedes task-shape lemma)
 
@@ -781,105 +483,31 @@ still contend; 1 at a time is safest for heavy reasoning work.
 
 ### Wave-g live roster check (2026-08-09, sequential probe)
 
-Re-probed all known models; logfare account reportedly unlimited now.
-
-| Model                                 | Probe                   | Verdict                                                                                               |
-| ------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| **grape-2-pro**                       | LIVE (11.4s TTF)        | 🆕 **NEW model** — trial lane this wave (dead-import audit of src/components, main-lane jury via w45) |
-| deepseek-v4-flash                     | LIVE (6.5s)             | healthy base lane                                                                                     |
-| deepseek-v4-flash-0731                | proven (quality survey) | primary workhorse                                                                                     |
-| minimax-m3 / kimi-k3 / pro / qwen-3.6 | proven                  | quality lanes                                                                                         |
-| kimi-k2.7-code                        | 45s timeout             | ❌ throttled/backed-off                                                                               |
-| qwen-3.8-max                          | 45s timeout             | ❌ throttled/backed-off                                                                               |
-| glm-5.2                               | 45s timeout             | ❌ still silent no-op                                                                                 |
-
-Roaster decision policy: launch the new model on a REAL bounded task + independent
-jury review (grape-2-pro ← w45 minimax review of its report/diff); replace an inept
-lane with proven quality lanes. Dead now: grape-2-pro verdict pending; k2.7/qwen-3.8/glm
-removed from dispatch rotation until probes recover.
+> **2026-08-09 Wave-g live roster check:** re-probed known models; grape-2-pro verdict pending; k2.7/qwen-3.8/glm removed from dispatch until probes recover.
 
 ### grape-2-pro trial verdict (2026-08-09, w43)
 
-NEW model on logfare (created 2026-08-07). FIRST REAL TASK = dead-import audit
-trial. Result: **ZERO tool calls across TWO launch attempts** — both instances
-emitted an opening narration block ("I'll perform a comprehensive dead-import
-audit...") then agent_end'd without invoking read/grep/bash, produced no report,
-no commit, exited "completed". stderr clean; willRetry=false; no provider error.
-
-VERDICT: **not a tool-executing lane yet** — "claims-not-executes" confirmed by
-task evidence (not probe prediction). The 0731 lesson stands reversed: 0731
-Eventually executes and commits; grape never did in 2 trials. REPLACED in wave-h
-by deepseek-v4-flash (w46, same task). Re-trial grape-2-pro only after a model
-update / with a trivial tool-forcing prompt (e.g. "run ls and report"), and judge
-on whether it executes.
+> **2026-08-09 grape-2-pro trial verdict (w43):** ZERO tool calls across TWO launch attempts — claims-not-executes confirmed. Replaced by deepseek-v4-flash (w46).
 
 ### Provider wall at 3-way concurrency (2026-08-09, wave w44+w45+w46 — measured)
 
-User said "don't worry, provider is unlimited"; the same shared logfare account
-was run with 3 concurrent lanes anyway to measure. Result — **all 3 froze at the
-same instant** (all stdout.logs mtime-identical at 17:40:30):
-
-- w44 (0731, trail contract): frozen on bare `{"type":"turn_start"}` — mid turn.
-- w45 (minimax, components audit): `auto_retry_start attempt 1/3, "Request timed out."` never advanced.
-- w46 (deepseek-v4-flash, engine audit): same `auto_retry_start 1/3` freeze.
-  All drivers CLIENT-ENDed at their 900s timebox after that. ZERO deliverables
-  from the whole wave (no commits left, no test file on disk).
-  LESSON (measured, 3rd occurrence): 3 concurrent logfare lanes = all-land
-  freeze, even when the account reports unlimited. The "unlimited" claim does
-  not extend to concurrent agent turns surviving. **Correct op: logfare lanes
-  run SEQUENTIALLY (1 at a time), relaunching losers as singles.** w44-again
-  relaunched solo as w44b (0731) — the proven workhorse.
+> **2026-08-09 Provider wall at 3-way concurrency:** 3 concurrent logfare lanes = all-land freeze. Logfare lanes run SEQUENTIALLY, not in parallel.
 
 ### Router odown — the "rotate" directive needs a provider-health pre-check (2026-08-09)
 
-After the w44b (0731) mute (thinking streamed, 0 tool calls) and w44c (minimax)
-boot-stall, probe of 127.0.0.1:8788/logfare/v1/chat/completions timed out at 15s
-while :8788 stayed LISTENING (pid 32524). Conclusive: the logfare router's
-upstream completion calls hung — a PROVIDER failure, not a model failure.
-ROTATION RULE UPDATE: "when a model doesn't work, rotate" MUST first confirm
-the provider answers a trivial probe (models endpoint OK ≠ completions OK —
-completions were the hang). If the router is wedged, no model rotation helps;
-pause the fleet and retry the probe until it recovers (or restart the router
-process if owned). Keep ONE parked slot, don't spin lanes into a dead upstream.
+> **2026-08-09 Router odown:** rotate directive needs provider-health pre-check. If completions endpoint hangs, no model rotation helps; pause fleet and retry probe.
 
 ### Flapping provider (2026-08-09, 2 wedges in 40min — measured)
 
-18:39 local: w44d (0731) was GENUINELY executing (23 tool_call, real reads of
-lifecycle/a3-2-focus-trap/vitest-config) when its stream died mid-thinking
-(process gone, log frozen at 1.56MB). Direct probe right after: completions
-timeout 15s. This is the 2nd wedge of the session (~23:09 recovery, then re-wedge
-~23:40). Earlier "rotate" wins (0731 fruit) only because the router was UP then.
-
-FAILURE-MODE MAP (3 distinct, all measured):
-
-1. WEDGE-freeze: router accepts, completions hang; worker process STAYS alive,
-   thinking streams, tool calls invisible → looks like "prose-loop" (w44b).
-   Fix: probe completions (not models), wait for recovery.
-2. WEDGE-kill: same upstream hang kills the worker process itself → log frozen
-   mid-delta, 0 mmx procs (w23.4). Fix: relaunch after sustained recovery.
-3. Model non-execution: no tool use even with router healthy → real rotate signal.
-   So far only grape-2-pro showed this (0/2 attempts).
-   Date: two router tests at interval; DO NOT spend a token on a rotation while
-   completions endpoint answers with timeout. Park until 2 consecutive probes OK.
+> **2026-08-09 Flapping provider:** 2 wedges in 40min measured. Failure-mode map: wedge-freeze, wedge-kill, model non-execution.
 
 ### Provider gate at dispatch time (2026-08-10, 00:49 UTC)
 
-Two consecutive completion probes FAILED (20s/15s timeouts) right when the
-url-state audit (w47, k3) was about to dispatch. Applied the recorded rule:
-DO NOT launch into a flapping endpoint. The url-state prompt is written at
-tmp/w47-urlstart-prompt.txt and waits; dispatch resumes on 2 consecutive OK.
-Third wedge of the session — the logfare completion upstream is in a
-sustained bad window (00:40-00:50 UTC span, previously recovered 23:09-23:40).
-No lanes spinning, no tokens wasted.
+> **2026-08-10 Provider gate at dispatch:** two consecutive completion probes FAILED; applied rule: DO NOT launch into flapping endpoint.
 
 ### Pro's orphan sweep is a DEAD END (2026-08-10)
 
-tmp/\_orphans.json (pro css sweep artifact) lists 18 "orphan modules" — but
-12 of the paths DO NOT EXIST in this repo (src/lib/focus/anchor-indicator.ts,
-state/mutators.ts, search/mock-catalog.ts, types/events.ts, ui-renderers.ts
-etc. all absent with a clean find). The list was generated against an
-imagined/stale tree. Do NOT dispatch lanes on that file. The real orphan-hunt
-(if wanted) must regenerate from a correct file inventory first.
+> **2026-08-10 Pro orphan sweep DEAD END:** tmp/_orphans.json lists 18 orphan modules — 12 paths DO NOT EXIST in repo. Do NOT dispatch on that file.
 
 ### Logfire slow-not-dead: the 45s first-token trap (2026-08-10, root-caused)
 
@@ -925,96 +553,27 @@ verifies gates once.
 
 ### Provider landscape (2026-08-10, gate wave)
 
-- **logfare**: flapping all session — OK windows ~20-40min, then wedges kill
-  long runs (w44b/w44d/w48/w50/w51 all died mid-2); solo short tasks OK in
-  healthy windows. Parked fast lanes on it; smoke (scripts/logfare-per-model
-  -smoke.mjs) will quantify which models survive a bounded launch NOW.
-- **NVIDIA NIM** (/nvidia/v1): healthy 200/0.7s — used for the gate wave
-  (w50b minimax, w51b glm). Route string nvidia/<model>.
-- **cline** shim: fallback for tool-free/simple lanes.
-- Smoke runner committed 4ab8b471: 11 logfare models × bounded getViewportSize-
-  export verification worker, sequential, judge by tm2/smoke-REPORT.md.
+> **2026-08-10 Provider landscape (gate wave):** logfare flapping; NVIDIA NIM /nvidia/v1 healthy 200/0.7s used for gate wave; cline shim fallback.
 
 ### Logfare auth-wall (2026-08-10 ~03:25, measured): 9/11 models HTTP 403/401
 
-Full per-model live probe: minimax-m3 403, deepseek-v4-pro 403, deepseek-v4-flash
-401, deepseek-v4-flash-0731 401, kimi-k3 403, kiro-auto 403, glm-5.2 403,
-kimi-k2.7-code 403, qwen-3.8-max 403, grape-2-pro 403, qwen-3.6 timeout.
-So the earlier "flapping" was likely the BEGINNING of an auth/credit deplete;
-now the router rejects launches outright. The per-model smoke (4ab8b471) will
-record this as UNAVAILABLE for most, EXECUTING only if a window reopens.
-Action when smoke runs: treat any live model as the current usable lane; file
-the auth-state to the user; NVIDIA stays the fleet workhorse until restored.
+> **2026-08-10 Logfare auth-wall:** 9/11 models HTTP 403/401. Premium tier not unlocked for these models right now.
 
 ### Logfare state — SERVICE-side (200-403 + SSE "Service temporarily unavailable") 03:31 UTC
 
-Deeper diagnosis via router log: health probes return "Logfare upstream status
-200 on key slot 1/6", but real generation streams error "SSE error ... Service
-temporarily unavailable", and direct HTTP probes return 403/401 (this is
-logfire rejecting its key slots / quota state — NOT a missing credential in our
-router config; the status-2056 'Token Plan 用量上限' classifier (apply-key-router
--status-2056-patch.mjs) does NOT match this shape — this is service-side
-degradation, not the known quota cap).
-ACTION: can't be restored from our side. Poll periodically; when 2 consecutive
-completions return 200, logfare lanes are usable again. Until then NVIDIA
-(/nvidia/v1, 200/0.7s) is the fleet workhorse; cline shim is next fallback.
+> **2026-08-10 Logfare state SERVICE-side:** health probes return 200 but real generation streams Service temporarily unavailable. Cannot restore from our side.
 
 ### CORRECTED: premium-unlock gate (not service outage) — 03:35 UTC, fresh 11-model probe
 
-Error body on 8 models is explicit: HTTP 403 "Model 'X' is a premium..." —
-the logfare ACCOUNT's premium tier is not unlocked for these models right now
-(metadata: `premium_unlocked:false`). deepseek-v4-flash/flash-0731/qwen-3.6
-(formerly tier-1 free) FAIL/time out — same gate, different path.
-So: MODELS ARE HEALTHY; the premium-unlock/tier on the account is the blocker
-(kind of thing that "needs auth restore"). Earlier success (w47c completed on
-logfare/0731 ~02:00) means the gate was open then and closed since.
-ACTION: restore/log-in the premium tier (or key rotation) on the logfare
-account side; the fleet then returns. Poll probe until "Model X" premium errors
-disappear. NVIDIA remains the intermediate workhorse.
+> **2026-08-10 Premium-unlock gate (CORRECTED):** HTTP 403 Model X is a premium — account premium tier not unlocked. Restore/log-in on logfare account side.
 
 ### Wedge-timing lesson (2026-08-10 04:24): check mtime DIFFERENTIAL, not byte counts
 
-Both NVIDIA gate engineers died/froze silently an hour ago (w50b failed 03:23
-retry-abort; w51b frozen at 03:15 mid-thought, processes gone now). My check
-cadence watched tool-counts/bytes and used sleep-detached intervals that didn't
-advance real time, so I mistook fresh-file-ms for liveness. All three (logfire,
-nvidia) have the same failure shape on long runs — provider upstream wedges.
-DURABLE RULE: verify worker liveness by `stat mtime` (must be < 25 min old for
-a 900s lane) AND check metadata.updated_at (must move). Dating by bytes is how
-we carry dead lanes.
+> **2026-08-10 Wedge-timing lesson:** verify worker liveness by stat mtime (must be < 25 min old for 900s lane) AND metadata.updated_at (must move). Dating by bytes carries dead lanes.
 
 ### /goal cross-tool truth (verified via websearch 2026-08-10)
 
-Pi's lightweight `goal` tool is a single-active-goal tracker (set/status/note/
-pause/resume/clear + bounded auditable history + todo linkage). The frontier
-tools are RICHER, and verified (websearch):
-
-- **Claude Code /goal** (v2.1.139+): sets a COMPLETION CONDITION; after every
-  turn a SEPARATE SMALL FAST MODEL (haiku default) evaluates whether the
-  condition holds → No = Claude takes the reason + starts another turn; Yes =
-  goal clears. "Completion is decided by a fresh model rather than the one
-  doing the work." Status shows condition, duration, evaluated-turn count,
-  token spend, evaluator's most recent reason. /goal is a session-scoped
-  wrapper around a prompt-based Stop hook. Effective conditions: one
-  measurable end state (test exit 0, git clean, file count), a stated check,
-  constraints ("no other test file modified"), optional turn/time bound.
-  Pairs with auto mode to run unattended. /goal still active on --resume.
-
-- **Codex /goal** (CLI 0.128.0+, app/IDE): autonomous multi-hour/multi-day loop
-  — goals/continuation.md + goals/budget_limit.md prompts injected each turn;
-  reported solo 14-of-18-features over 18h at ~$0.30/feature. Strong goal =
-  explicit lifecycle + command surface + two acceptance criteria. Model can
-  also create goals when asked ("use goals with the goal of X").
-
-STEAL for our fleet (what their versions do that ours should):
-
-1. GOAL = CONDITION, not a sentence: write "gate green = 10 red / 4 files
-   fixed; svelte-check 0/0" not "fix the gate".
-2. EVALUATE FROM OUTSIDE: run the check ourselves / plan the reviewer-lane to
-   re-gate (fresh judge), not trusting the worker's own "done".
-3. AUTO-CLEAR pattern: our goal tool needs the same discipline — clear when
-   the condition objectively holds, don't carry achieved goals.
-4. BUDGET/TURN SENSE: count turns/tokens in the goal status like their loops.
+> **2026-08-10 /goal cross-tool truth:** Pi goal tool is single-active-goal tracker. Frontier tools (Claude Code/Codex) are richer with completion conditions + autonomous loops. Steal: goal = condition not sentence; evaluate from outside; auto-clear when met.
 
 ### Dispatch policy — SPAM THE POOL (user directive 2026-08-10 04:55)
 
@@ -1028,314 +587,92 @@ glm), harvest the survivor's deliverable, wait for the rest.
 
 ### Router crash root-cause + fix (2026-08-10 05:12) — nvidia works, logfare still timeouts
 
-SYMPTOM: all lanes died irrespective of provider; direct fetch showed connect-fail
-("TypeError: fetch failed") — the ROUTER (opencode-key-router.mjs) was DEAD, crashed
-on boot with `TypeError: provider.getKeys is not a function` at publicStatus
-during listen (server boots, fires publicStatus, crashes, leaving a zombie port).
-ROOT CAUSE: runtime providers map contains an entry whose getKeys is not a function
-(trace shows provider 'nvidia' — believed to be an object-with-shape quirk in the
-providers map; the source block HAS getKeys yet runtime flagged it). FIX APPLIED:
-boot-guard in publicStatus + listen-loop `typeof getKeys !== 'function' → skip+log`
-(main file backupped to /tmp/key-router.bak.mjs). VERIFIED: router listens, nvidia
-route 200/3s completions.
-BUT logfire route STILL times out (completions 20s+) — that's the logfire-side
-premium/unavailable state (independent of the router fix). Fleet = NVIDIA works.
-Action: don't fight logfare route until upstream answers; use nvidia for real work.
-
-### ROOT-CAUSE (2026-08-10 05:2x): the router crash was the whole day's flapping
-
-THE ORIGINAL BUG (found + fixed): providers map had TWO `nvidia:` keys — line 82
-(real provider w/ getKeys) + line 465 (a model-profile block mistakenly keyed
-`nvidia:` at top level, no getKeys). JS last-wins → providers.nvidia became the
-profile object → every publicStatus()/listen-loop `provider.getKeys()` threw →
-router crashed on EVERY boot (bind → fire → TypeError → zombie port refusing
-fetch). That killed every lane all day (logfire + nvidia alike) and made
-"provider unstable" look like the models' fault.
-FIX: rename shadow key `nvidia:`→`nvidia_model_profiles:` at line 465 (self-
-contained, no consumer). Router now boots, binds, serves (OpenCode Zen 200s,
-nvidia route attempts). Verified BOOT-OK + no boot TypeErrors; z-ai shadow now
-shows as benign skipped provider. The demon- "flapping" since 02:00 = the
-router crash-loop cycling.
-Remaining (independent): nvidia/logfire upstreams still slow/flaky per-request
-(connection-level hangs) — separate concern from the router crash. Keep the
-router guard for OPS safety.
+> **2026-08-10 Router crash root-cause:** providers map had TWO nvidia: keys — line 82 (real) + line 465 (shadow profile, no getKeys). JS last-wins — router crashed on EVERY boot. FIX: rename shadow key nvidia_model_profiles.
 
 ### goal-tool audit (2026-08-10): 4 real downsides, fix plan
 
-1. NOT sticky in lean profile — tool_profile add isn't persisted; re-add each session.
-2. GOAL LOST across session boundary (active goal vanished; no on-disk state).
-3. No condition-syntax / no deterministic check (text only).
-4. No autonomous loop / auto-clear / budget (the extension we're building fixes #3/#4).
-   FIX: the goal-loop extension owns a persistent state file (~/.pi/agent/extensions/goal-state.json)
-
-- deterministic evaluator (landed: tools/goal-loop/evaluator.mjs, verified exit0/exit1 both branches).
-  Remaining: goal.mjs CLI + the extension assembler.
+> **2026-08-10 goal-tool audit:** 4 real downsides — not sticky in lean profile, goal lost across session, no condition-syntax, no autonomous loop. FIX: goal-loop extension with persistent state + deterministic evaluator.
 
 ### Model picker: zen free models missing — FIXED (2026-08-10 ~05:4x)
 
-SYMPTOM: opencode-zen free models (deepseek-v4-flash-free, mimo-v2.5-free, etc)
-didn't show in pi's model picker. Chain root-cause:
-
-1. router /catalog handler calls publicCatalog() → Object.entries(providers)
-   .map(providerCatalogRoute) which calls provider.getKeys() unconditionally.
-2. The crashed-router fix renaming nvidia shadow→nvidia_model_profiles left a
-   top-level FAKE provider (no getKeys) that publicCatalog still iterated →
-   getKeys TypeError → the whole /catalog response became EMPTY (200 0 bytes).
-3. pi-model-providers cachedFetchJson cached the EMPTY catalog
-   (~/.pi/agent/.cache/router-catalog-cache.json, 118 bytes) → picker served
-   routes:[] → zen free models invisible.
-   FIXES: (a) guard providerCatalogRoute for non-function getKeys (disabled route
-   instead of throw); (b) purged the empty picker cache (backed up to .bak-empty);
-   verified: /catalog=41KB/32 routes incl opencode-zen baseUrl; zen /models 61
-   models incl 8 free; picker cold-fetch path returns them. ALSO noted:
-   logfare /models now shows premium_unlocked:true (!) — logfare may be usable again.
+> **2026-08-10 Model picker zen free models missing — FIXED:** router /catalog returned EMPTY due to fake provider without getKeys. FIX: guard providerCatalogRoute + purged empty cache. Zen free models now visible.
 
 ### Model-picker gap: catalog didn't enumerate models (2026-08-10, fixed)
 
-pi's model picker reads the key-router `http://127.0.0.1:8788/catalog` route.
-`publicCatalog` returned only metadata per provider with NO `models` array (the
-per-route /models endpoints served fine but were never wired into the catalog).
-So zen free models existed (61 incl deepseek-v4-flash-free, mimo-v2.5-free,
-gemini-3.5-flash-lite) but NEVER appeared in the picker.
-FIX: boot-prefetch each provider's /models into CATALOG_MODELS_CACHE
-(refreshCatalogModels on listen + catalogModelsFor in providerCatalogRoute).
-VERIFIED: /catalog now returns 61 zen / 100 nvidia / 349 kilo / 419 infron etc.
-Fleet-wide benefit: every live provider's models appear in the picker now.
+> **2026-08-10 Model-picker gap catalog enumeration — FIXED:** publicCatalog returned metadata per provider with NO models array. FIX: boot-prefetch each provider models /models into CATALOG_MODELS_CACHE.
 
 ### Logfire route status (2026-08-10 05:4x, measured conclusively)
 
-- Router: HEALTHY (boots, binds, forwards). Log: "Logfare request model=X ... Logfare trying key slot N/6" — forwarding WORKS.
-- Logfire upstream: generation endpoint HANGS after request forward — 3 majors (flash-0731, minimax, k3) ALL 30s-timeout on direct probes; router log shows forward sent, no reply. This is logfire-side generation outage (not router, not the account premium — even flash-0731 times out).
-- Every logfire lane this session dies at exactly this point (launch ok → request forwarded → hang → retry exhaust → failed).
-- Earlier w47c DID complete on logfire (~02:00) → the outage began after; intermittent windows exist. Re-check with a 30s direct probe before any logfire dispatch; when a probe returns 200 sustained, lanes will land.
-- OpenCode Zen route continues to serve 200s (router logs) — the working fallback per user's "if not logfire" caveat.
+> **2026-08-10 Logfire route status:** router HEALTHY but logfire upstream generation endpoint HANGS after request forward. 3 majors (flash-0731, minimax, k3) ALL 30s-timeout. OpenCode Zen route continues 200s.
 
-### cline = deepseek-v4-flash lane (user directive, verified live 2026-08-10)
 
-User: "deepseek-v4-flash through cline will be the best subagents". Verified live:
 
-- cline shim (scripts/shims/cline-shim.mjs, port 8793): models = cline-free/glm-5.2,
-  deepseek/deepseek-v4-flash (OK 15.6s), poolside/laguna-s-2.1:free (OK 22.4s),
-  stepfun/step-3.7-flash. glm-5.2 = 502 (CLI error).
-- router /clinefree/v1 → cline shim: 200/35.8s (full path works).
-- harness mmx.ts maps clinefree→router-clinefree (routeMap 1129 + resolver 6559) —
-  the worker START string is clinefree/deepseek/deepseek-v4-flash.
-- GAP at worker-boot: pi's local model-providers registry lacks router-clinefree
-  → worker stderr "Model router-clinefree/... not found". FIX staged: added
-  "router-clinefree" to REASONING_EFFORT_MAPS in local-packages/pi-model-providers
-  /index.ts (needs pi runtime reload to take effect).
-  NEXT STEP when cline lane wanted: reload pi (/reload-runtime or restart) then
-  dispatch model=clinefree/deepseek/deepseek-v4-flash.
+> **2026-08-10 cline = deepseek-v4-flash lane:** verified live. cline shim (port 8793) serves deepseek-v4-flash + glm-5.2-free + laguna/stepfun free. GAP: pi local model-providers registry lacks router-clinefree.
 
-### Route policy update (2026-08-10 06:10, user directive): CLINE preferred over zen
 
-cline (local shim, port 8793, keyless CLI lane) serves deepseek/deepseek-v4-flash
-(the 0731 top-OSS build) + glm-5.2-free + laguna/stepfun free. VERIFIED: cline
-completion answered "OK" ~24s. Use clinefree/<model> route for fleet lanes when
-logfare stalls; zen free is a further fallback (picker-fixed). Route precedent:
-pi:router-clinefree/cline-free/glm-5.2.
 
-### Goal-loop review adjudication (2026-08-10, k2-review nvidia + main-lane)
+> **2026-08-10 Route policy update:** CLINE preferred over zen. cline (local shim, port 8793, keyless CLI lane) serves deepseek-v4-flash + glm-5.2-free + laguna/stepfun free. VERIFIED: cline completion answered OK ~24s.
 
-k2 (nvidia llama) reviewed the loop: 3 prelim concerns — (1) deliverAs
 'nextTurn' may not exist on real sendMessage; (2) no budget/infinite-loop
-escape; (3) compaction safety. NOTE: k2 couldn't run the self-check (its
-sandbox path ENOENT) and reviewed a PRE-upgrade file. Main-lane adjudication:
 
-# 1 VERIFIED-OK — types.d.ts:300+926 show deliverAs?: "steer"|"followUp"|"nextTurn" exactly
+> **2026-08-10 Goal-loop review adjudication:** k2 (nvidia llama) reviewed loop — 3 prelim concerns. Main-lane adjudication: all 3 VERIFIED-OK. Reviewer must run actual self-test, not just read code.
 
-# 2 VERIFIED-OK — budget + wall-clock maxMinutes + ledger implemented since (fd92cf02)
-
-# 3 VERIFIED-OK — state flushed evaluate-condition (each check) + on the extension's session_before_compact
-
-Self-check rerun main-lane: CASE1 nextTurn fires / CASE2 silent on met / CASE3 budget-clear — 3/3.
-So the loop stands review-cleared. Lesson: reviewer lanes reviewing a live-built artifact must run the actual self-test in THEIR sandbox (copy the file), not just read code — code-only review drifted on 2/3.
-
-### goal-loop stack = two complementary extensions (2026-08-10 06:15 audit)
-
-- goal.ts (567 lines, AUTO-discovered from ~/.pi/agent/extensions/ — pi docs say
-  extensions auto-load from trusted locations; flight-recorder/code-repl prove .ts loads)
-  = the interactive /goal tool (set/status/clear/pause/resume/note/tick + branch-aware
-  state replay via details/appendEntry + compaction-safe).
 - goal-loop.mjs (explicit in settings.json) = the autonomous loop: pi.on(agent_end)
-  → deterministic evaluator (spawnSync cmd) → sendMessage deliverAs nextTurn when
-  unmet; auto-clear on met; budget-bound; session_before_compact flush.
-- Adversarial review (REPORT-minimax.md) approved goal.ts; its ONE finding
-  ("no continuation evaluator") is exactly what goal-loop.mjs supplies — the pair
-  is the full /goal parity stack (tool + loop), better than frontier (deterministic
-  eval vs Claude transcript-only; budget vs Codex).
 
-### goal-loop PROVEN end-to-end (2026-08-10 13:40 main-lane, 11/11 fake-pi test)
+> **2026-08-10 goal-loop stack = two complementary extensions:** goal.ts (interactive /goal tool) + goal-loop.mjs (autonomous loop). Pair is full /goal parity stack.
 
-tools/goal-loop/fake-pi-test.mjs fires the extension's agent_end handler with a
-stubbed pi: 11/11 PASS — hooks register; met→silent(auto-clear); unmet→nextTurn
-w/evidence; budget-exhausted→stop; cleared→stop; malformed/missing state→graceful;
-state transitions met. The flagship /goal parity loop is now proven, not just
-landed. (The adversarial subagent lane died; main-lane ran the proof instead.)
 OPEN: cline-as-worker path still produces 0 output (worker harness→shim route
-differs from direct curl; w82c CLIENT-END 0 bytes) — separate debug thread.
 
-### Logfire RECOVERED (2026-08-10 ~13:45) — verified live
-
-Direct probes: minimax-m3 200/19s (real completion), deepseek-v4-flash-0731
-HTTP429 (reachable = throttled, not hang). The 30s hard-timeout outage ended.
-Fleet resumed: m1-smoke (per-model smoke, 24 tools running), m2-validator,
-m3-gatewatch (goal-loop demo INSIDE a real worker — observed goal-state flip
-running→met via auto-loaded extension; second live confirmation).
+> **2026-08-10 goal-loop PROVEN end-to-end:** fake-pi-test.mjs: 11/11 PASS. Flagship /goal parity loop proven, not just landed.
 
 ### Fresh lane-viability table (2026-08-10 13:56 all-11 sweep, post-router-fix)
 
-LIVE (200, 1-3s): minimax-m3, kiro-auto, grape-2-pro ← the fleet's logfare set
-THROTTLED (429, 18s): qwen-3.8-max (works with backoff)
-TIMEOUT (20s): deepseek-v4-pro, deepseek-v4-flash, deepseek-v4-flash-0731, kimi-k3,
-qwen-3.6-35b-a3b, glm-5.2, kimi-k2.7-code (upstream generation wedged)
-The premium-gate 403s from the crash era are GONE (router fix). The current
+> **2026-08-10 Logfire RECOVERED:** direct probes minimax-m3 200/19s, deepseek-v4-flash-0731 HTTP429 (throttled, not hang). Fleet resumed.
+
 decomposed wave (w91 minimax, w92 kiro) correctly selected live models.
 
-### Session wrap 2026-08-10 ~14:55 (main-lane checkpoint)
+> **2026-08-10 Fresh lane-viability table (superseded):** post-router-fix all-11 sweep. Superseded by later rosters.
 
-LOCKED: gate green 3687/3687 · goal-loop proven 11/11 (fake-pi) + live-observed 2×
-(extension auto-continues agents) · router crash fixed (nvidia shadow-key) ·
-model picker: zen free models now served (catalog guard + cache purge) ·
-cline shim fixed (positional prompt; direct curl verified).
-LANE VIABILITY (all-11 sweep): minimax-m3/kiro-auto/grape-2-pro LIVE 1-3s;
 qwen-3.8-max 429-throttled; others 20s timeout (logfire flapping upstream).
-OPEN: my w90-clineforensics/w91-lfsmoke/w92-seamhunt reports still landing
-(parallel session active); cline-as-WORKER path still 0-output (shim OK via
-curl, harness route differs — debug thread); remaining spots watch the
-m1-smoke/m2-validator/m3-gatewatch lanes from the parallel session.
 
-### cline-worker 0-output ROOT-CAUSED (2026-08-10 15:33): glm-5.2 free promo ended
+> **2026-08-10 Session wrap checkpoint:** gate green 3687/3687; goal-loop proven 11/11 + live-observed 2x; router crash fixed; model picker zen free models served; cline shim fixed.
 
-Symptoms: workers on clinefree/cline-free/glm-5.2 produced 0 output; direct curl
-'deepseek/deepseek-v4-flash' worked (200 OK ~24s). Root cause (full CLI repro):
-cline's 'cline-free/glm-5.2' free promo ENDED — CLI: "Free model promotion ended;
-The free promotion for this model has ended" (finishReason error) — plus a
-secondary 'hook dispatch failed: session.hook requires valid payload' noise.
-FIX: cline-shim MODELS[0] default → deepseek/deepseek-v4-flash (verified live,
-model="deepseek/deepseek-v4-flash"). VERIFIED: fresh shim, NO-model request →
 "OK", finish stop, model deepseek-v4-flash. Consume cline lanes as
-clinefree/deepseek/deepseek-v4-flash (or rely on shim default).
 
-### God-file decomposition state (2026-08-10)
+> **2026-08-10 cline-worker 0-output ROOT-CAUSED:** clinefree/cline-free/glm-5.2 produced 0 output; direct curl deepseek-v4-flash worked. Root cause: cline free promo ended. FIX: cline-shim MODELS[0] default to deepseek-v4-flash.
 
-- focus-pocket-geometry.ts (was 1,014L) — ✅ SPLIT DONE + committed (16a6e24b):
-  pure-barrel hub + math/profiles/thread-curve/builder/personality siblings.
-  Adopted main-lane from dead lane g100's complete-on-disk work (verify-before-kill: never abort on
-  lane death without checking the tree; the split was finished, just uncommitted).
-- three-engine-core.ts (was 974L) — ⚠️ SPLIT IN-FLIGHT: g101 created init/restore/teardown
-  (696L moved) but died missing three-engine-render-loop.ts → 22 svelte errors.
-  Contract verified main-lane: init.ts binds restartLoop:i, imports animate (line 34); core
-  re-exports `export { animate } from './three-engine-render-loop'`; infinite loop the
   \_renderLoopStartPending + markEngineInitPhase integration. g105 (kiro) is building the module.
-- Gate reds NOT mine: those 3 ptsMaterial/2-writer tests are the swarm's in-flight state cut
-  (pointsMaterial/nodeSporeMaterial) + three-engine suites; analysis appended.
 
-### Coordination notes 2026-08-10 ~18:5x (main-lane during swarm)
+> **2026-08-10 God-file decomposition state:** focus-pocket-geometry.ts SPLIT DONE (16a6e24b); three-engine-core.ts SPLIT IN-FLIGHT (g101 created init/restore/teardown but died missing render-loop).
 
-- Engine test-alignment (3 files: scene-static-tracker/animate-regression repointed
-  to render-loop by me, then REVERTED by a concurrent writer; three-engine-core.test
-  webgl-restore: 6 fails) → handed to g106-testalign (owning the mock-path fixes).
   Lesson: concurrent writers can revert main-lane edits same-tree — checks via
-  `git log -2 -- <file>` before re-committing; hand single-owner seams to one lane.
-- Stray cleanup: three-micro-demo-bridge.ts (retired in 4da700a0, no consumers) was
-  re-added untracked on disk → removed main-lane.
-- 3d boot fix (lightningcss errorRecovery, 30528d20) is real: specs now RUN 4/4
-  (4 fail on WebGL assertion env — separate from boot). Swarm's 180s-budget bandages
-  remain until the WebGL-env cause is fixed.
 
-- goal-loop live-verified 2026-08-10: unified goal.ts extension (goal-loop contract merged) — fake-pi-test 11/11 PASS, re-run clean at session start. Handoff deleted.
+> **2026-08-10 Coordination notes:** engine test-alignment (3 files) handed to g106-testalign; stray three-micro-demo-bridge.ts removed; 3d boot fix (lightningcss errorRecovery, 30528d20) is real.
 
-### 3d-test stability thread (2026-08-11, main-lane) — 3 real root causes
-
-- **Parity-clobber**: tests that MANUALLY write `document.body.dataset.panelSurface` then
-  WAIT on `!== 'focus'` will hang — parity-attrs owns that attr (derived from nav store,
-  written parity-attrs.svelte.ts:343) and re-clobbers the manual write a tick later.
-  Fix: drive the canonical `window.__navActions__.returnToOverview()` (test-globals.ts).
-  Class: AGP39 asymmetric-gate. Commits 5ee2ac35.
 - **Shared-context sessionStorage leak**: playwright.config.js uses fullyParallel:false +
-  workers:1 → one browser context for all tests. engine-ready's `READY_SESSION_KEY`
-  sessionStorage persisted from test 1 into test 2's boot → different splash/init timing
-  → flaky hover/click. Fix: `page.addInitScript(() => sessionStorage.removeItem('...'))`
-  in the shared openApp helpers. Commit 796fca2a.
-- **Click-drift race**: hover-probe coords go stale when camera drifts between find and
-  mouse.down. Fix: re-move + rAF settle immediately before click (commit 79b016eb).
-- Fleet parity-resolvers refactor (their side, orthogonal; no collision).
-- Result: 3d-camera-orbit-resilience 4/4 green in 1.6m (was 2 fails + 180s timeouts).
 
-### Build-server inconsistency noticed 2026-08-11 (main-lane, sibling 3d run)
+> **2026-08-11 3d-test stability thread:** 3 real root causes — parity-clobber (AGP39, 5ee2ac35), shared-context sessionStorage leak (796fca2a), click-drift race (79b016eb). 3d-camera-orbit-resilience 4/4 green.
 
-- Sibling 3d runs (canvas-hit-test, focus-pocket) failed with `ReferenceError: $state is
-not defined` at src/lib/state/app.svelte.ts:74 — served page executed RAW source `$state`
-  instead of the compiled dist chunk.
-- Root: src/lib/state/app.svelte.ts is FLEET-UNCOMMITTED WIP (dirty, search-mirror migration
-  at line 74); dist built 20:33 predates it; webServer (reuseExistingServer:true) appears to
-  be mixing dev-source transforms for that file. Works for committed-state tests (4/4 green).
-- Action: fleet should commit OR rebase dist after landing app.svelte.ts search-mirror WIP;
-  NOT a defect in the 3d-test fixes (all test-side, verified).
-
-- **2026-08-11 goal-loop live-verified** (per AGENTS.txt transient-handoff item-1 gate):
   fake-pi 11/11 PASS + live running→met/ACHIEVED transitions confirmed on the CURRENT
-  harness (report: tmp/goal-loop-live-REPORT.md). Active extension = goal.ts (v2 unified);
-  goal-loop.mjs deprecated-2026-08-10. Handoff item-2 (cline deepseek-v4-flash lane)
-  remains tracked separately under cline-shim entries.
 
-- **2026-08-11 goal-loop fleet proof:** root Pi worker
-  `ocw_594df4d4-553e-4dff-9d4a-25e91808cd05` and nested Pi worker
-  `ocw_d5594762-2c99-49ef-8a62-4cceb7753455` each reached `status:met` in isolated
-  per-worker state files. The bounded nested profile exposed six lifecycle tools and
-  depth admission prevented unbounded recursion. Rebuilt Cline lane
-  `ocw_be8f72da-2b8e-4442-88e8-0cacec03c5ac` returned `CLINE_LANE_OK 0` with the
-  native `deepseek/deepseek-v4-flash` ref after stripping the `clinefree/` catalog
-  prefix. Evidence: `tmp/goal-loop-fleet-REPORT.md`. The live MCP broker still
-  needs one restart to load the rebuilt nested-profile implementation.
+> **2026-08-11 Build-server inconsistency:** $state is not defined at app.svelte.ts:74 — fleet-uncommitted WIP (dirty search-mirror migration). Fleet should commit OR rebase dist.
 
-- **2026-08-11 goal-loop terminal-turn handoff proof:** the broker now protects both
-  managed one-shot and live-RPC Pi workers from being killed before `goal.ts`
-  persists `status:met`. One-shot probe `ocw_e91c2cb0-a42f-4408-b490-9a1d0c389f29`
-  and live-RPC probe `ocw_6314cc14-3b1d-43f1-b0d4-bbb35b8dc411` both reached
-  `status:met`; the latter ran with `live_steer:true`. The handoff window polls
   per-worker `goal-state.json`, exits as soon as the state settles, cancels on a
-  new turn, and expires after 30 seconds. Evidence: `tmp/goal-loop-fleet-REPORT.md`.
 
-- **2026-08-11 post-restart live proof:** the rebuilt broker reported
-  `restart_required:false`; a fresh nested-profile smoke on `logfare/kiro-auto`
-  called `goal` plus the namespaced lifecycle tool
-  `external_subagents_external_subagent_list`, returned `NESTED_GOAL_SMOKE_DONE`,
-  and exited 0. No disposable smoke worker remained running. Evidence:
-  `tmp/goal-loop-fleet-REPORT.md`.
+> **2026-08-11 Coordination notes session tail:** purity gate — docs/subagent-lane-inventory.md now COORDINATION_LEDGER_FILES (exempt, 664af176); fleet nested-delegation claim EVIDENCED (50+ workers); parallel-duplicate convergence byte-identical.
 
-### Coordination notes 2026-08-11 (main-lane, session tail)
 
-- Purity gate mechanics: docs/subagent-lane-inventory.md is now COORDINATION_LEDGER_FILES
-  (exempt both directions, sha-independent — commit 664af176). Fleet's test(css) 7ca2e1d
-  mixed-commit (doc append in a test-prefix commit) tripped it; the ledger carve-out is the
-  durable fix. NOTE: a parallel writer edited the same test file mid-fix (added their own
-  inline carveout); both coexist harmlessly — surfaced, not reverted.
-- The fleet's nested-delegation claim is EVIDENCED: 50+ workers with mcp_profile:'subagent'
+
+> **2026-08-11 ambient-zombie cleanup:** python -m http.server 8796 (PID 16748, 0 connections 6h) occupying playwright webServer port. Stopped by exact PID.
+
   incl. a literal nested-proof2-parent (completed, deepseek-v4-flash-0731, 457KB log).
-- Parallel-duplicate convergence (dead re-exports): fleet's 72a5f9c9 + my 6659339e byte-
-  identical; HEAD kept theirs. Check merge-base before re-applying.
-- Gate baseline at this point: 4 failed | 3688 passed — A-class 0; reds = demo×2 + parity
-    - purity (purity now fixed via ledger exemption; re-verify in flight).
 
-### 2026-08-11 ambient-zombie cleanup
+> **2026-08-11 Zombie-metadata finding:** O2-threadaudit/grp-p4 showed status: running with logs frozen 2-3.7h. 4 of 5 were GHOSTS. Lesson: always tasklist-verify PID before killing.
 
-- `python -m http.server 8796` (PID 16748, created 04:58, 0 connections for 6h) was occupying
-  the playwright webServer port — bare http.server is NOT the playwright webServer (which needs
-  the built app + reuse gate PLAYWRIGHT_REUSE_SERVER=1). Stopped by exact PID after verifying
   identity + idleness. Lesson: ambient `python -m http.server` zombies on 8796 break every
-  playwright run; check `netstat -ano | grep :8796` + tasklist/wmic identity before acting.
 
-### Zombie-metadata finding (2026-08-11, main-lane sweep)
+> **2026-08-11 Port-8796 collision recurrence:** node scripts/test-server.mjs (fleet lane leftover) bound 8796 and broke playwright runs. Check netstat BEFORE any playwright run.
 
-- O2-threadaudit/grp-p4/goal-loop-worker-race-probe showed `status: running` with logs
-  frozen 2-3.7h. Verify-by-PID (tasklist) showed: 4 of 5 were GHOSTS (process long dead,
-  harness metadata stale — mmx status not updated when its own process died); only grp-p4
-  was a live zombie (killed by exact PID 2164).
-- Lesson: before killing a "running" lane, ALWAYS tasklist-verify the PID — most long-frozen
-  "running" lanes are metadata ghosts, not live processes. The sweep tooling should treat
-  frozen+pid-gone as 'reap metadata' not 'kill'.
 
 ### Port-8796 collision recurrence (2026-08-11, ×2)
 
