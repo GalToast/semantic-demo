@@ -89,6 +89,8 @@
             "description": "Short-landscape deterministic proof - constrained layout plus interactive transition behavior. Visual screenshot proof remains qa:surface:short-landscape.",
             "contracts": [
                 "short-landscape-layout-contract.mjs",
+                "short-landscape-focus-map-parity.spec.js",
+                "short-landscape-map-trail-parity.spec.js",
                 "short-landscape-contract.spec.js",
                 "short-landscape-transition-ui-paths.spec.js"
             ]
@@ -589,7 +591,10 @@
                 "semantic-thread-worker-browser-fault.spec.js",
                 "transition-frame-probe.spec.js",
                 "widget-journey-keyboard-history.spec.js",
-                "widget-journey-smoke.spec.js"
+                "widget-journey-smoke.spec.js",
+                "keyboard-shortcuts-journey.spec.js",
+                "search-clear-keeps-search-surface.spec.js",
+                "search-sheet-adversarial.spec.js"
             ]
         },
         "manual-risk": {
