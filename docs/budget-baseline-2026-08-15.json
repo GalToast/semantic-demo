@@ -1,0 +1,156 @@
+{
+  "timestamp": "2026-08-15T15:44:03.551Z",
+  "chunks": [
+    {
+      "name": "mode-transition-deps-BgJ9Ilac.js",
+      "size": 1269460
+    },
+    {
+      "name": "index-Drf6lFAr.js",
+      "size": 136615
+    },
+    {
+      "name": "three-postprocessing-UHx5DLQD.js",
+      "size": 81549
+    },
+    {
+      "name": "three-engine-core-BLr9w_5e.js",
+      "size": 81288
+    },
+    {
+      "name": "three-C_7pVJuN.js",
+      "size": 18951
+    },
+    {
+      "name": "SearchResults-CA27hbCk.js",
+      "size": 15800
+    },
+    {
+      "name": "JourneyCompass-DVilbnWh.js",
+      "size": 12906
+    },
+    {
+      "name": "data-worker-DvI9IRxj.js",
+      "size": 10284
+    },
+    {
+      "name": "data-worker.js",
+      "size": 10284
+    },
+    {
+      "name": "lifecycle-CtaftgOY.js",
+      "size": 8101
+    },
+    {
+      "name": "ThreadInspector-fW8ZNTus.js",
+      "size": 7115
+    },
+    {
+      "name": "ErrorState-qfCv6AyP.js",
+      "size": 6194
+    },
+    {
+      "name": "DemoChoreography-DKQLOYE0.js",
+      "size": 5513
+    },
+    {
+      "name": "Canvas-DhvxfoxS.js",
+      "size": 5416
+    },
+    {
+      "name": "MapView-EpEQ86Yz.js",
+      "size": 4756
+    },
+    {
+      "name": "audio-scape-CvcRARUt.js",
+      "size": 4534
+    },
+    {
+      "name": "WeatherWidget-CsaOoD82.js",
+      "size": 4188
+    },
+    {
+      "name": "global-bindings-CFJa2tqC.js",
+      "size": 999
+    },
+    {
+      "name": "webgl-DgBbtpIE.js",
+      "size": 809
+    },
+    {
+      "name": "pocket-CYjha5q4.js",
+      "size": 740
+    },
+    {
+      "name": "humanize-DwZaZkA_.js",
+      "size": 723
+    },
+    {
+      "name": "route-arrival-overlay-adapter-TRTKyFjv.js",
+      "size": 618
+    },
+    {
+      "name": "thread-inspector-webgl-DR5w3_HB.js",
+      "size": 384
+    },
+    {
+      "name": "compass.svelte-O9Lyn0qQ.js",
+      "size": 366
+    },
+    {
+      "name": "semantic-overlay-COkOS_dd.js",
+      "size": 358
+    },
+    {
+      "name": "semantic-threads-C4lVurDc.js",
+      "size": 348
+    },
+    {
+      "name": "svelte-vendor-Bwrbj9II.js",
+      "size": 311
+    },
+    {
+      "name": "scene-ready.svelte-Dq8oc6tt.js",
+      "size": 303
+    },
+    {
+      "name": "rolldown-runtime-H_PjY6_i.js",
+      "size": 163
+    },
+    {
+      "name": "audio-scape-DiwuDMHs.js",
+      "size": 143
+    },
+    {
+      "name": "thread-manager-D2ETFBxs.js",
+      "size": 136
+    },
+    {
+      "name": "route-trace-SQ95TWUf.js",
+      "size": 131
+    },
+    {
+      "name": "point-color-Cb894zFw.js",
+      "size": 100
+    },
+    {
+      "name": "weather-Biq6x8qt.js",
+      "size": 97
+    },
+    {
+      "name": "disposable-registry-CmyE5RAq.js",
+      "size": 96
+    },
+    {
+      "name": "data-worker-B2mDDzAP.js",
+      "size": 86
+    },
+    {
+      "name": "triggers-NhVR9GCA.js",
+      "size": 86
+    }
+  ],
+  "totalBytes": 1689951,
+  "cssBytes": 107153,
+  "grandBytes": 1797104
+}
