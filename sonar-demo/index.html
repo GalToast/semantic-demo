@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Sonar Lab — active acoustic echolocation</title>
+        <style>
+            :root {
+                --ink: #e8dcc8;
+                --dim: #8f8677;
+                --accent: #ffb787;
+            }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                background: #14100c;
+                color: var(--ink);
+                font:
+                    14px/1.5 ui-sans-serif,
+                    system-ui;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 22px;
+                letter-spacing: 0.05em;
+                margin-bottom: 4px;
+            }
+            .sub {
+                color: var(--dim);
+                margin-bottom: 16px;
+            }
+            .row {
+                display: flex;
+                gap: 14px;
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+            .card {
+                background: #1b1510;
+                border: 1px solid #2c2418;
+                border-radius: 12px;
+                padding: 14px 16px;
+                min-width: 280px;
+            }
+            .card h2 {
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: var(--dim);
+                margin-bottom: 10px;
+            }
+            #dist {
+                font-size: 42px;
+                font-weight: 800;
+                font-variant-numeric: tabular-nums;
+            }
+            #dist span {
+                font-size: 16px;
+                color: var(--dim);
+                font-weight: 400;
+            }
+            #spectro {
+                width: 100%;
+                height: 140px;
+                background: #080503;
+                border-radius: 8px;
+            }
+            .btn {
+                background: var(--accent);
+                color: #241506;
+                border: 0;
+                border-radius: 8px;
+                padding: 10px 18px;
+                font: 700 14px inherit-family;
+                cursor: pointer;
+            }
+            .btn:disabled {
+                opacity: 0.4;
+            }
+            #log {
+                font-family: ui-monospace, monospace;
+                font-size: 12px;
+                color: var(--dim);
+                white-space: pre-wrap;
+                margin-top: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>S O N A R &nbsp; L A B</h1>
+        <p class="sub">
+            we emit, we listen, we decode our own echo — distance &amp; reflectivity from wave interference
+        </p>
+        <div class="row">
+            <div class="card">
+                <h2>Range (nearest echo)</h2>
+                <div id="dist">— <small>m</small></div>
+                <p id="mat" style="color: var(--dim); margin-top: 6px">no sweep yet</p>
+                <div style="margin-top: 12px"><button class="btn" id="go">START SWEEP</button></div>
+            </div>
+            <div class="card">
+                <h2>Doppler Watch — passive ambient pulses</h2>
+                <div id="dop">idle — listen for passing machinery</div>
+                <div style="margin-top: 12px"><button class="btn" id="dopGo">DOPPLER WATCH</button></div>
+            </div>
+            <div class="card" style="flex: 1">
+                <h2>Chip capture — echo waveform (reflection strength vs delay)</h2>
+                <canvas id="spectro"></canvas>
+                <p style="color: var(--dim); margin-top: 8px; font-size: 12px">
+                    x = time-of-flight (→meters) · y = window; bright = strong reflection
+                </p>
+            </div>
+        </div>
+        <script type="module" src="sonar.js"></script>
+    </body>
+</html>
