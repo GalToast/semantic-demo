@@ -56,7 +56,7 @@ export function initKeyboardShortcutsHint(): void {
         { key: 'w', desc: 'Toggle weather widget' },
         { key: 'm', desc: 'Toggle audio mute' },
         { key: 'Ctrl/Cmd+1-6', desc: 'Switch view mode' },
-        { key: 'Esc', desc: 'Return to overview' },
+        { key: 'Esc', desc: 'Return to overview — also closes this panel / the help dialog' },
         { key: '?', desc: 'Open this help panel' }
     ]
 
