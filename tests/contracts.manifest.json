@@ -14,12 +14,12 @@
                 "semantic-lane-contract.mjs",
                 "connection-analysis-contract.mjs",
                 "exploration-modes-contract.mjs",
-                "focus-selection-owner-contract.mjs",
                 "journey-event-bindings-contract.mjs",
                 "state-store-sync-contract.mjs",
                 "semantic-demo-css-contract.mjs",
                 "event-bus-subscription-ownership-contract.mjs",
-                "search-result-item-real-impl-contract.mjs"
+                "search-result-item-real-impl-contract.mjs",
+                "state-owner-sweep.mjs"
             ]
         },
         "navigation": {
@@ -27,24 +27,19 @@
             "contracts": [
                 "journey-compass-state-contract.mjs",
                 "journey-thread-inspector-contract.mjs",
-                "thread-inspector-dewindowing-contract.mjs",
-                "thread-inspector-state-owner-contract.mjs",
-                "selected-card-state-owner-contract.mjs",
                 "journey-event-bindings-contract.mjs",
                 "journey-walk-candidate-contract.mjs",
                 "journey-walk-thread-neighbor-timer-contract.mjs",
-                "journey-ui-ownership-contract.mjs"
+                "journey-ui-ownership-contract.mjs",
+                "state-owner-sweep.mjs",
+                "dewindowing-sweep.mjs"
             ]
         },
         "scene": {
             "description": "Scene atmosphere and visual polish - reveal, atmosphere, three.js polish, reduced-motion variants.",
             "contracts": [
                 "scene-reveal-contract.mjs",
-                "scene-reveal-camera-dewindowing-contract.mjs",
-                "webgl-restore-dewindowing-contract.mjs",
-                "three-setup-init-dewindowing-contract.mjs",
                 "cancel-animate-dewindowing-contract.mjs",
-                "three-setup-loop-dewindowing-contract.mjs",
                 "three-setup-zero-caller-dewindowing-contract.mjs",
                 "scene-atmosphere-contract.mjs",
                 "three-visual-polish-contract.mjs",
@@ -55,7 +50,8 @@
                 "node-interaction-contract.spec.js",
                 "dynamic-lighting-contract.spec.js",
                 "focus-transition-contract.mjs",
-                "camera-state-owner-contract.mjs"
+                "state-owner-sweep.mjs",
+                "dewindowing-sweep.mjs"
             ]
         },
         "browser": {
@@ -166,13 +162,10 @@
                 "reset-callsite-routing-contract.mjs",
                 "semantic-guide-payload-contract.mjs",
                 "weather-lifecycle-contract.mjs",
-                "residual-window-bridge-inventory-contract.mjs",
                 "app-node-import-contract.mjs",
                 "next-explore-candidate-contract.mjs",
                 "ui-renderers-helper-contract.mjs",
                 "lifecycle-semantic-guide-residual-bridge-contract.mjs",
-                "semantic-dive-ui-dewindowing-contract.mjs",
-                "semantic-dive-active-owner-contract.mjs",
                 "state-ownership-contract.mjs",
                 "cluster-filter-contract.mjs",
                 "keyboard-reset-ownership-contract.mjs",
@@ -181,21 +174,20 @@
                 "search-focus-transition-timer-contract.mjs",
                 "search-state-ui-adapter-contract.mjs",
                 "search-panel-adapter-contract.mjs",
-                "focus-selection-owner-contract.mjs",
-                "focus-pocket-state-owner-contract.mjs",
                 "journey-focus-constellation-viewport-contract.mjs",
-                "journey-focus-pocket-state-contract.mjs",
                 "journey-focus-personality-contract.mjs",
                 "journey-focus-runtime-state-contract.mjs",
                 "journey-strand-continuity-contract.mjs",
                 "journey-neighborhood-manifest-contract.mjs",
                 "journey-walk-thread-neighbor-timer-contract.mjs",
-                "bootstrap-window-export-contract.mjs",
                 "lifecycle-search-panel-ownership-contract.mjs",
                 "lifecycle-journey-quick-dewindowing-contract.mjs",
                 "search-lifecycle-adapter-contract.mjs",
                 "search-trail-cue-lifecycle-contract.mjs",
-                "view-controller-ownership-contract.mjs"
+                "view-controller-ownership-contract.mjs",
+                "state-owner-sweep.mjs",
+                "dewindowing-sweep.mjs",
+                "focus-pocket-sweep.mjs"
             ]
         },
         "quality": {
@@ -231,14 +223,12 @@
             "timeout": 600000,
             "contracts": [
                 "async-integrity-stress-contract.mjs",
-                "composition-state-owner-contract.mjs",
                 "focus-camera-ownership-contract.mjs",
                 "focus-camera-readability-contract.mjs",
                 "focus-interaction-ownership-contract.mjs",
                 "info-panel-surface-ownership-contract.mjs",
                 "js-design-token-contract.mjs",
                 "live-semantic-roles-contract.mjs",
-                "map-focus-search-content-owner-contract.mjs",
                 "mobile-focus-search-surface-ownership-contract.mjs",
                 "mobile-route-ownership-contract.mjs",
                 "package-script-targets-contract.mjs",
@@ -248,7 +238,8 @@
                 "ui-perfection-contract.mjs",
                 "reduced-motion-interruption-proof.spec.js",
                 "config-topology-env-contract.mjs",
-                "data-schema-contract.mjs"
+                "data-schema-contract.mjs",
+                "state-owner-sweep.mjs"
             ]
         },
         "3d-engine": {
