@@ -813,3 +813,8 @@ OK). Re-probe before dispatching on kilo/openrouter; don't assume qwen3-coder-ne
 - The opencode-zen zen route remains keyless/cooldown (dead at this window).
 - Fleet-landing state: 46 dirty src, origin-ahead 23 (divergence reconcile pending a calm-commit window); their deep-cut W1-W3 UI pins + qa-ready.mjs + fold-watch tools landed.
 - **2026-08-14 wave (se-perf-7) flake note:** poolside/laguna-s-2.1 was 2/4 clean — p2 (bundle audit) died silently (deliverable absent), p4 (gate script) "completed" but shipped zero files (classic talker-finisher; main lane rebuilt it in ~20 min). Lesson reinforced: verify deliverables, not exit codes; for measurement/report lanes, prefer main-lane takedown when the kernel task is small and fast.
+- **2026-08-15 CORRECTION (tencent/hy3:free):** route answers HTTP-200 but has now
+  produced **ZERO output tokens** on a trivial 4-tool write probe (metadata: content:[], totalTokens:0).
+  Wire-UP ≠ generation. Do NOT dispatch real work on hy3 until a probe lands a NON-EMPTY artifact;
+  poolside/laguna + agnes-2.5-flash remain the dispatchable lanes (measured today: a 6-wave).
+  [hy3-route-probe ocw_3c747cfd 2026-08-15 — FAILED]
