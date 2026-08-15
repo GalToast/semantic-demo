@@ -13,3 +13,6 @@ Sense-Tissue room daemon (2026-08-14 build): room-sense/roomd.mjs <-> ~/roomsens
 Termux:API = blocked-as-built: abstract socket com.termux.api://listen -> EACCES (SELinux-policy-internal; chmod/whitelist/appops neutral).
   Last-fence one-liner (user OK required; opens sandbox): magiskpolicy --live allow untrusted_app * unix_dgram_socket { connect sendto }
 Quirks: phone DNS fails external hostnames; install Termux .debs offline via scp+dpkg; use /system/bin/am.
+
+### Firmware vault status (2026-08-15)
+Two baseband/campaign firmware blobs identified: `qdsp6sw.mbn` (ELF32 Hexagon, 29 segments, no symtab — non-Ghidra) and `549_0_2.mbn` (ELF32 ARM carrier SO, Ghidra-importable). GHIDRA import requires absolute `-import` paths + pre-created output dir; `strings` absent in Git Bash (use `grep -aob`); pyelftools lives in `tmp/qcvenv/`. qdsp6sw.mbn best scanned with pyelftools/objdump; 549_0_2.mbn is the real decompile target.
