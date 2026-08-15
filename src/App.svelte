@@ -16,7 +16,7 @@
   import { onMount, type Snippet } from 'svelte';
   import { get } from 'svelte/store';
   import { navStore } from '@lib/stores/navigation.svelte.ts';
-  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
+  import { useParityAttrs, isFocusSurfaceActive } from '@lib/ui/use-parity-attrs.svelte';
   import { useNavState } from '@lib/ui/use-nav-state.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
@@ -234,9 +234,7 @@
   // surface contract times out at `#btn-focus-path` because JourneyChrome never
   // mounts in the focus-search fallback path even though URL hydration routes
   // nav.surface = 'focus-search' through the production chain.
-  let focusActive = $derived(
-    nav.mode === 'focus' || nav.mode === 'inside' || nav.mode === 'trail' || nav.focusedIndex != null || parity.focusPanelMode === 'field-node' || parity.panelSurface === 'focus' || parity.panelSurface === 'inside' || parity.panelSurface === 'trail' || parity.panelSurface === 'focus-search' || parity.panelSurface === 'map-trail' || parity.focusSearchForced || parity.panelSurface === 'semantic-dive'
-  );
+  let focusActive = $derived(isFocusSurfaceActive(nav.mode, nav.focusedIndex ?? null, parity));
   let focusStageActive = $derived(focusActive && !mapModeActive);
 
   // Idle owns the full header. Search/focus keep only utility chrome so the

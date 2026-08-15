@@ -19,7 +19,7 @@
   import { journeyStore } from '@lib/stores/journey.svelte.ts';
   import { getJourneyCompassState } from '@lib/journey/compass-state';
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
-  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
+  import { useParityAttrs, isFocusSurfaceActive } from '@lib/ui/use-parity-attrs.svelte';
 
   import { walkThreadNeighbor } from '@lib/journey/thread-settler';
   import { normalizeRelationshipRole, getRelationshipRoleLabel } from '@lib/utils/relationship-roles';
@@ -136,20 +136,7 @@
   // map-trail surface contract times out at `#btn-focus-path` (30s).
   const parity = useParityAttrs();
 
-  const chromeHasFocus = $derived(
-    navSnapshot.mode === 'focus' ||
-    navSnapshot.mode === 'inside' ||
-    navSnapshot.mode === 'trail' ||
-    currentFocusedIndex != null ||
-    parity.focusPanelMode === 'field-node' ||
-    parity.panelSurface === 'focus' ||
-    parity.panelSurface === 'inside' ||
-    parity.panelSurface === 'trail' ||
-    parity.panelSurface === 'focus-search' ||
-    parity.panelSurface === 'map-trail' ||
-    parity.focusSearchForced ||
-    parity.panelSurface === 'semantic-dive'
-  );
+  const chromeHasFocus = $derived(isFocusSurfaceActive(navSnapshot.mode, currentFocusedIndex ?? null, parity));
   const chromeHasTrail = $derived(currentTrailDepth > 0);
 
   // ── Idle gate: hide chrome when journey and compass are both idle ───────

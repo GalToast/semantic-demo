@@ -71,6 +71,35 @@ export interface ParityAttrs {
  * components call this, they get two independent bundles — each with its
  * own dependency tracking, so updates don't double-fire.
  */
+/**
+ * Shared focus-surface-active predicate — single source of truth for the
+ * `focusActive` (App.svelte) / `chromeHasFocus` (JourneyChrome.svelte) lockstep
+ * gate. W53 foot-gun: these two `$derived`s must stay identical or JourneyChrome
+ * mounts while `chromeHasFocus` is false → `#btn-focus-path` never renders →
+ * 30s e2e timeout on the map-trail surface contract. Route both through this so
+ * widening the predicate is a one-line change.
+ */
+export function isFocusSurfaceActive(
+    navMode: string,
+    focusedIndex: number | null,
+    parity: ParityAttrs
+): boolean {
+    return (
+        navMode === 'focus' ||
+        navMode === 'inside' ||
+        navMode === 'trail' ||
+        focusedIndex != null ||
+        parity.focusPanelMode === 'field-node' ||
+        parity.panelSurface === 'focus' ||
+        parity.panelSurface === 'inside' ||
+        parity.panelSurface === 'trail' ||
+        parity.panelSurface === 'focus-search' ||
+        parity.panelSurface === 'map-trail' ||
+        parity.focusSearchForced ||
+        parity.panelSurface === 'semantic-dive'
+    )
+}
+
 export function useParityAttrs(): ParityAttrs {
     return {
         get focusPanelMode(): string {
