@@ -179,6 +179,21 @@ export function subscribeKeyed<K extends EventName>(
     return keyedUnsubscribe
 }
 
+/**
+ * Remove a single keyed subscription by its key.
+ * @param key - The key used when the subscription was registered.
+ */
+export function unsubscribeKeyed(key: string): void {
+    const entry = _keyedSubscribers.get(key)
+    if (!entry) return
+    try {
+        entry.unsubscribe()
+    } catch (error) {
+        debugWarn(`[EventBus] unsubscribeKeyed('${key}') failed:`, error)
+    }
+    _keyedSubscribers.delete(key)
+}
+
 // ── Publish ───────────────────────────────────────────────────────────────
 
 /**

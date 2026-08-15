@@ -7,7 +7,7 @@
  */
 import { appState } from '@lib/state/app.svelte.ts'
 import type { Point, ActiveFilters } from '@lib/state/state-types'
-import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
+import { subscribeKeyed, unsubscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
 import { showExperienceToast } from '@lib/orchestration/toast'
@@ -38,6 +38,17 @@ import {
     getRouteAnchorIndex
 } from './map-route-embodiment'
 import { getRouteDirectorState, syncRouteDirectorState, setTerrainHandoffState } from './map-director'
+
+const MAP_STATE_SUBSCRIPTION_KEYS = [
+    'map-state:camera-node-focused',
+    'map-state:search-success',
+    'map-state:search-cleared',
+    'map-state:view-changed',
+    'map-state:state-reset',
+    'map-state:filter-changed',
+    'map-state:composition-updated',
+    'map-state:exploration-depth-changed'
+]
 
 export function initMapStateSubscriptions(): void {
     const sync = (payload: Record<string, unknown> = {}): void => {
@@ -203,6 +214,14 @@ export function destroyMap(): void {
         } catch (error) {
             debugWarn('destroyMap failed:', error)
         }
+    }
+
+    // M2 (engine-teardown audit): tear down the keyed event-bus subscriptions
+    // registered in initMapStateSubscriptions so they don't keep firing as
+    // no-ops after the map is destroyed. Without this, a destroy->re-init cycle
+    // accumulates stale subscribers on the bus.
+    for (const key of MAP_STATE_SUBSCRIPTION_KEYS) {
+        unsubscribeKeyed(key)
     }
 
     mapState.mapInitialized = false
