@@ -1,20 +1,24 @@
 /**
- * Gates-vs-Canonical-Surface-Map contract (parity-report.md §5 / §6.1).
+ * Gates-vs-Canonical-Surface-Map contract (parity-report.md §5 / §6.1;
+ * upgraded 2026-08-15 after A1 predicate extraction, commit `52f285d6`).
  *
  * Pins App.svelte `focusActive` and JourneyChrome.svelte `chromeHasFocus`
  * to the canonical surface set exported by surface-mode-map.ts
- * (PANEL_SURFACES / isPanelSurface) — the gap the existing
- * focus-gate-lockstep-contract.test.ts leaves: it enforces gate-vs-gate
- * predicate *equality* via a hardcoded PREDICATES array of String.includes()
- * substrings, but never cross-checks that the `panelSurface === '<x>'`
- * literals in either gate are members of the canonical PANEL_SURFACES enum
- * (a phantom limb like 'focus-search' misspelled as 'focuss-earch' would
- * still `.includes()`-match) nor that the documented focus-relevant
- * surfaces all appear in BOTH gates.
+ * (PANEL_SURFACES / isPanelSurface) AND to the shared predicate helper
+ * `isFocusSurfaceActive()` in src/lib/ui/use-parity-attrs.svelte.ts.
  *
- * Drop-in: tests/unit-active/gates-vs-surfacemap.test.ts
- * Path alias `@lib` and relative `../../src/...` resolve from both
- * tests/unit-active/ and tmp/swarm-audit/.
+ * Why the upgrade: A1 moved the gate logic OUT of the `$derived` expressions
+ * into the shared helper, so a `$derived`-only text probe went empty
+ * (trivially-passing gate-vs-gate equality + phantom-literal checks).
+ * The durable contract is now: (a) the helper's `panelSurface ===` literal
+ * set exactly equals the documented W53 focus set, and (b) BOTH components
+ * wire their focus gate through that single helper call (no inlined
+ * derivative predicates that could drift asymmetrically — the W53 lockstep
+ * /em 30s-e2e-timeout landmine).
+ *
+ * Existing call-site truths (asserted by wire-in test):
+ *   App.svelte:237         focusActive      = $derived(isFocusSurfaceActive(nav.mode, nav.focusedIndex ?? null, parity))
+ *   JourneyChrome.svelte:139 chromeHasFocus = $derived(isFocusSurfaceActive(navSnapshot.mode, currentFocusedIndex ?? null, parity))
  */
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -24,50 +28,53 @@ import { isPanelSurface, PANEL_SURFACES } from '@lib/stores/navigation/surface-m
 
 const APP_PATH = resolve(import.meta.dirname, '../../src/App.svelte')
 const CHROME_PATH = resolve(import.meta.dirname, '../../src/components/JourneyChrome.svelte')
+const PARITY_PATH = resolve(import.meta.dirname, '../../src/lib/ui/use-parity-attrs.svelte.ts')
 
-/**
- * Documented W53 lockstep focus-surface set (AGENTS.md lockstep predicate set:
- * `panelSurface in {focus, inside, trail, focus-search, map-trail, semantic-dive}`
- * plus the focusPanelMode === 'field-node' and focusSearchForced branches, which
- * are handled by the sibling lockstep test, not this surface-only contract).
- * Of these, all except 'semantic-dive' are members of PANEL_SURFACES;
- * 'semantic-dive' is a parity-only bypass body-attr by design, so it is the
- * single documented exception to the canonical-enum pinning.
- */
-const EXPECTED_FOCUS_SURFACES = [
-    'focus',
-    'inside',
-    'trail',
-    'focus-search',
-    'map-trail',
-    'semantic-dive'
-] as const
+/** Source-of-truth W53 focus surface set (AGENTS.md lockstep predicate set
+ *  `panelSurface in {focus, inside, trail, focus-search, map-trail,
+ *  semantic-dive}`). 'semantic-dive' remains the parity-only exception that
+ *  is intentionally NOT a member of PANEL_SURFACES (body-attr bypass). */
+const EXPECTED_FOCUS_SURFACES = ['focus', 'inside', 'trail', 'focus-search', 'map-trail', 'semantic-dive'] as const
 
-/** Reused verbatim from focus-gate-lockstep-contract.test.ts so the two
- *  tests agree on how the $derived( gate expression is sliced from source. */
-function readDerivedExpression(path: string, declaration: string): string {
-    const source = readFileSync(path, 'utf8')
-    const start = source.indexOf(declaration)
-    if (start < 0) throw new Error(`Missing ${declaration} in ${path}`)
-
-    const open = source.indexOf('$derived(', start)
-    if (open < 0) throw new Error(`Missing $derived expression for ${declaration}`)
-
+/** Slice from `needle` to the matching close paren of the first '(' after it. */
+function sliceCall(source: string, needle: string): string {
+    const start = source.indexOf(needle)
+    if (start < 0) throw new Error(`Missing ${needle} in source`)
+    const open = source.indexOf('(', start)
+    if (open < 0) throw new Error(`No '(' following ${needle}`)
     let depth = 0
-    for (let i = open + '$derived('.length; i < source.length; i++) {
-        const char = source[i]
-        if (char === '(') depth++
-        if (char === ')') {
-            if (depth === 0) return source.slice(open, i + 1)
+    for (let i = open; i < source.length; i++) {
+        if (source[i] === '(') depth++
+        else if (source[i] === ')') {
             depth--
+            if (depth === 0) return source.slice(open + 1, i)
         }
     }
-    throw new Error(`Unclosed $derived expression for ${declaration}`)
+    throw new Error(`Unclosed paren after ${needle}`)
 }
 
-/** Strip store prefixes + collapse whitespace so the two gate dialects
- *  (navSnapshot / nav, parity.* inlined vs getter, currentFocusedIndex /
- *  focusedIndex, parity. prefixed) reduce to the same literal surface form. */
+/** SelectorSlice for a function BODY: slice `export function isFocusSurfaceActive(`'s {...} block. */
+function readCallExpression(source: string, needle: string): string {
+    return sliceCall(source, needle)
+}
+
+function readFunctionBody(source: string, fnName: string): string {
+    const start = source.indexOf(`function ${fnName}(`)
+    if (start < 0) throw new Error(`Missing function ${fnName} in parity module`)
+    const open = source.indexOf('{', start)
+    if (open < 0) throw new Error(`Missing body brace for ${fnName}`)
+    let depth = 0
+    for (let i = open; i < source.length; i++) {
+        if (source[i] === '{') depth++
+        else if (source[i] === '}') {
+            depth--
+            if (depth === 0) return source.slice(open + 1, i)
+        }
+    }
+    throw new Error(`Unclosed body for ${fnName}`)
+}
+
+/** Normalize: strip nav dialects + store prefixes + whitespace. */
 function normalize(source: string): string {
     return source
         .replace(/navSnapshot/g, 'nav')
@@ -77,55 +84,55 @@ function normalize(source: string): string {
         .trim()
 }
 
-/** Pull every `panelSurface === '<x>'` literal out of a normalized gate expr. */
-function extractPanelSurfaceLiterals(gate: string): string[] {
-    return [...gate.matchAll(/\bpanelSurface\s*===\s*'([^']+)'/g)].map((m) => m[1])
+/** Pull every `panelSurface === '<x>'` literal out of a normalized source expr. */
+function extractPanelSurfaceLiterals(source: string): string[] {
+    return [...source.matchAll(/\bpanelSurface\s*===\s*'([^']+)'/g)].map((m) => m[1])
+}
+
+function hasCall(source: string, fnName: string): boolean {
+    return source.includes(fnName) && source.includes(`${fnName}(`)
 }
 
 function sortedUnique(values: string[]): string[] {
     return [...new Set(values)].sort()
 }
 
-describe('focus gates pinned to canonical surface-mode-map', () => {
-    const appGate = normalize(readDerivedExpression(APP_PATH, 'let focusActive = $derived('))
-    const chromeGate = normalize(readDerivedExpression(CHROME_PATH, 'const chromeHasFocus = $derived('))
-    const appSurfaces = extractPanelSurfaceLiterals(appGate)
-    const chromeSurfaces = extractPanelSurfaceLiterals(chromeGate)
-    const expected = sortedUnique([...EXPECTED_FOCUS_SURFACES])
+const parityBody = readFunctionBody(readFileSync(PARITY_PATH, 'utf8'), 'isFocusSurfaceActive')
+const helperSurfaces = extractPanelSurfaceLiterals(normalize(parityBody))
+const expected = sortedUnique([...EXPECTED_FOCUS_SURFACES])
+
+describe('focus gates pinned to canonical surface-mode-map (via shared helper)', () => {
+    const appGate = normalize(readCallExpression(readFileSync(APP_PATH, 'utf8'), 'let focusActive = $derived('))
+    const chromeGate = normalize(readCallExpression(readFileSync(CHROME_PATH, 'utf8'), 'const chromeHasFocus = $derived('))
 
     it('documents which canonical surfaces the focus mount gate depends on', () => {
-        // Guards against surface-mode-map.ts silently dropping a surface the
-        // gates are pinned to: every EXPECTED focus surface (except the
-        // parity-only 'semantic-dive') must still be a canonical enum member.
         for (const surface of EXPECTED_FOCUS_SURFACES) {
             if (surface === 'semantic-dive') {
-                expect(isPanelSurface(surface), `"semantic-dive" is intentionally parity-only, not in PANEL_SURFACES`).toBe(false)
+                expect(isPanelSurface(surface), '"semantic-dive" is intentionally parity-only, not in PANEL_SURFACES').toBe(false)
             } else {
-                expect(
-                    isPanelSurface(surface),
-                    `expected focus surface "${surface}" to be a canonical PANEL_SURFACE`
-                ).toBe(true)
+                expect(isPanelSurface(surface), `expected focus surface "${surface}" to be a canonical PANEL_SURFACE`).toBe(true)
             }
         }
         expect(PANEL_SURFACES.length).toBeGreaterThan(0)
     })
 
-    it('references only canonical surfaces — no typo/phantom panelSurface literals', () => {
-        const invalid = [...new Set([...appSurfaces, ...chromeSurfaces])].filter(
-            (s) => !isPanelSurface(s) && s !== 'semantic-dive'
-        )
+    it('keeps the shared helper\'s `panelSurface` literals canonical — no typo/phantom', () => {
+        const invalid = helperSurfaces.filter((s) => !isPanelSurface(s) && s !== 'semantic-dive')
         expect(
             invalid,
-            `non-canonical panelSurface literal(s) in a focus gate; add to PANEL_SURFACES in surface-mode-map.ts or document as parity-only`
+            `non-canonical panelSurface literal(s) in isFocusSurfaceActive; add to PANEL_SURFACES or document as parity-only`
         ).toEqual([])
     })
 
-    it('keeps App.svelte focusActive and JourneyChrome.svelte chromeHasFocus on the same panelSurface literal set', () => {
-        expect(sortedUnique(appSurfaces)).toEqual(sortedUnique(chromeSurfaces))
+    it('wires BOTH gates through the shared isFocusSurfaceActive helper (no inlined asymmetric derivation)', () => {
+        expect(appGate, 'App.svelte focusActive must call isFocusSurfaceActive').toMatch(/isFocusSurfaceActive\(/)
+        expect(chromeGate, 'JourneyChrome chromeHasFocus must call isFocusSurfaceActive').toMatch(/isFocusSurfaceActive\(/)
+        // dialect-normalized (navSnapshot→nav, currentFocusedIndex→focusedIndex, no store
+        // prefixes): both gates must reduce to the SAME call — true lockstep.
+        expect(appGate, 'dialect-normalized gates must be literally identical').toEqual(chromeGate)
     })
 
-    it('pins both gates to exactly the documented W53 focus-surface set', () => {
-        expect(sortedUnique(appSurfaces)).toEqual(expected)
-        expect(sortedUnique(chromeSurfaces)).toEqual(expected)
+    it('pins the shared helper to exactly the documented W53 focus-surface set', () => {
+        expect(sortedUnique(helperSurfaces)).toEqual(expected)
     })
 })
