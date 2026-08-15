@@ -119,38 +119,24 @@
     }
   }
 
-  // ── W48-C keyboard navigation — H1 fix (Jul-10) ────────────────────────────
+  // ── W48-C keyboard navigation — L3 AbortController (Aug-2026 sweep) ───────
   // Previous code bound keydown to canvasEl (#engine-canvas) which is
   // REMOVED by scene-init.ts:90 (orphan sweep) and replaced by
   // renderer.domElement. So the handler lived on a detached node, OrbitControls
   // on the real canvas stole arrows, and 6 aria-keyshortcuts were inert.
-  type CanvasWithKeyHandler = HTMLCanvasElement & {
-    _canvasKeyHandler?: ((_e: KeyboardEvent) => void) | null
-  }
-  let liveCanvasBound: HTMLCanvasElement | null = null
+  // L3: replaced manual _canvasKeyHandler element-ref with AbortController
+  // (house style: src/lib/journey/canvas-interaction.ts). abort() is idempotent
+  // and cleanly tears down all listeners across placeholder↔live-canvas switches.
+  let _canvasKbdAbort: AbortController | null = null
   function bindKeysToLiveCanvas(el: HTMLCanvasElement | null, handler: (_e: KeyboardEvent) => void): void {
     if (!el) return
-    if (el === liveCanvasBound) return
-    if (liveCanvasBound && liveCanvasBound !== canvasEl) {
-      const prev = (liveCanvasBound as CanvasWithKeyHandler)._canvasKeyHandler
-      if (prev) liveCanvasBound.removeEventListener('keydown', prev)
-      ;(liveCanvasBound as CanvasWithKeyHandler)._canvasKeyHandler = null
-    }
-    if (el === canvasEl) {
-      liveCanvasBound = el
-      return
-    }
-    const typed = el as CanvasWithKeyHandler
-    typed._canvasKeyHandler = handler
-    el.addEventListener('keydown', handler)
-    liveCanvasBound = el
+    _canvasKbdAbort?.abort()
+    _canvasKbdAbort = new AbortController()
+    el.addEventListener('keydown', handler, { signal: _canvasKbdAbort.signal })
   }
   function unbindLiveCanvasKeys(): void {
-    if (!liveCanvasBound) return
-    const prev = (liveCanvasBound as CanvasWithKeyHandler)._canvasKeyHandler
-    if (prev) liveCanvasBound.removeEventListener('keydown', prev)
-    ;(liveCanvasBound as CanvasWithKeyHandler)._canvasKeyHandler = null
-    liveCanvasBound = null
+    _canvasKbdAbort?.abort()
+    _canvasKbdAbort = null
   }
 
   onMount(() => {
@@ -165,13 +151,12 @@
 
     const keyHandler = (e: KeyboardEvent): void => handleCanvasKeydown(e)
     // Early binding for placeholder / test path (surface-contract tests that never init WebGL)
-    ;(canvasEl as CanvasWithKeyHandler)._canvasKeyHandler = keyHandler
-    canvasEl.addEventListener('keydown', keyHandler)
+    bindKeysToLiveCanvas(canvasEl, keyHandler)
     // Also try live canvas immediately in case engine already mounted (HMR)
     const liveNow =
       (_canvasAppState.renderer?.domElement as HTMLCanvasElement | null) ??
       (typeof document !== 'undefined' ? (document.querySelector('#canvas-container canvas') as HTMLCanvasElement | null) : null)
-    if (liveNow && liveNow !== canvasEl) { canvasEl.removeEventListener('keydown', keyHandler); bindKeysToLiveCanvas(liveNow, keyHandler); }
+    if (liveNow && liveNow !== canvasEl) { bindKeysToLiveCanvas(liveNow, keyHandler); }
 
     // Check for data-overlay-timeout override on the canvas container
     if (containerEl) {
@@ -232,9 +217,6 @@
           (_canvasAppState.renderer?.domElement as HTMLCanvasElement | null) ??
           (typeof document !== 'undefined' ? (document.querySelector('#canvas-container canvas') as HTMLCanvasElement | null) : null)
         if (liveAfterInit && liveAfterInit !== canvasEl) {
-          // W53 fix: remove the placeholder keydown binding before binding the
-          // live canvas (previously left a dead listener on the detached placeholder).
-          canvasEl.removeEventListener('keydown', keyHandler)
           bindKeysToLiveCanvas(liveAfterInit, keyHandler)
         }
         lifecycle.resizeEngine(viewportWidth(), viewportHeight());
@@ -319,14 +301,7 @@
   });
 
   onDestroy(() => {
-    // H1a: clean up BOTH placeholder and live canvas bindings (idempotent via _canvasKeyHandler ref)
-    if (canvasEl) {
-      const handler = (canvasEl as CanvasWithKeyHandler)._canvasKeyHandler
-      if (handler) {
-        canvasEl.removeEventListener('keydown', handler)
-        ;(canvasEl as CanvasWithKeyHandler)._canvasKeyHandler = null
-      }
-    }
+    // L3: AbortController teardown covers both placeholder and live-canvas bindings in one call.
     unbindLiveCanvasKeys()
 
     componentDestroyed = true;
