@@ -26,7 +26,6 @@
 import { test, expect } from '@playwright/test'
 import { mutate } from './helpers/state-harness.js'
 
-
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
 const SEARCH_RESULT_SELECTOR =
@@ -459,6 +458,9 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
         // First: do a valid search so we have results
         await page.locator('#search-input').fill('coffee')
+        await page.evaluate(() => {
+            window.__navActions__?.search('coffee', { preferCachedResults: false })
+        })
         await page.waitForFunction(
             (selector) => {
                 const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
@@ -505,23 +507,32 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
             .catch(() => {})
 
         // While request is in flight the search input should still be functional and
-        // the results area should not be blank-crashed (search status message shown)
-        const statusText = await page.evaluate(() => {
-            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
-            const el =
-                document.getElementById('search-status-message') ??
-                document.getElementById('search-status') ??
-                document.getElementById('search-status-live') ??
-                document.querySelector('.search-status') ??
-                document.querySelector('.search-loading-text') ??
-                document.querySelector('[aria-busy="true"]')
-            const text = el ? el.textContent : ''
-            if (text?.trim()) return text
-            return state.isSearching || document.querySelector('[aria-busy="true"]') ? 'Searching...' : ''
-        })
+        // the results area should not be blank-crashed. The local-data fallback can
+        // remount the search chrome while retaining the in-flight status, so assert
+        // the stable user-facing status contract instead of one transient spinner
+        // node.
+        await page.waitForFunction(
+            () => {
+                const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+                const searchStatus = state.searchState?.searchStatus ?? state.searchStatus
+                const hasStatusText = [...document.querySelectorAll('[role="status"], .search-status')].some((node) =>
+                    node.textContent?.trim()
+                )
+                const spinner = document.getElementById('search-spinner')
+                const spinnerState = spinner?.getAttribute('aria-hidden')
+                return (
+                    searchStatus === 'searching' &&
+                    hasStatusText &&
+                    (spinnerState === undefined || spinnerState === 'false')
+                )
+            },
+            { timeout: 10_000 }
+        )
+        
+        // DOM-level assertion: verify status element is present and visible
+        const statusElement = page.locator('#search-status, [role="status"]').first()
+        await expect(statusElement).toBeVisible()
 
-        // App should show some status (not an empty blank panel)
-        expect(statusText.trim().length, 'search status message must be shown during slow request').toBeGreaterThan(0)
         // We verify the page is alive by checking canvas is still visible
         const canvas = page.locator('canvas').first()
         await expect(canvas).toBeVisible()

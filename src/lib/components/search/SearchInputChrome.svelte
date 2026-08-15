@@ -207,13 +207,24 @@
   .search-input-wrap:focus-within .search-shortcut-hint {
     opacity: 0;
   }
+  /* Active search exposes back/clear/cancel controls. The shortcut is
+     decorative here, and opacity: 0 alone would still reserve flex space on
+     narrow screens. */
+  .search-input-wrap.search-active .search-shortcut-hint {
+    display: none;
+  }
 
+  /* Touch target 44px / WCAG 2.5.8 */
   .search-clear {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     background: none;
     border: none;
     color: rgba(224, 240, 240, 0.85); /* a11y-ok: decorative icon, aria-label on button */
     cursor: pointer;
-    padding: 0.25rem;
+    padding: 0;
     border-radius: 0.25rem;
     display: flex;
     align-items: center;
@@ -225,12 +236,15 @@
   }
 
   /* ── Back button (visible only in search state) ──────────────────────────── */
+  /* Touch target 44px / WCAG 2.5.8 */
   .search-back-btn {
     display: none;               /* hidden in idle */
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     padding: 0;
     background: rgba(var(--color-primary-alt-rgb), 0.1);
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
@@ -259,6 +273,8 @@
 
   /* ── Cancel button (visible only when searching) ────────────────────────── */
   .search-cancel {
+    min-width: 44px;
+    min-height: 44px;
     background: none;
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.4);
     color: var(--color-primary-alt);
