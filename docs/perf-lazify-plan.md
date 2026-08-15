@@ -43,3 +43,20 @@ re-run gate → expect mobile LCP 11.7s → ~3–5s (bytes-bound recovery).
 
 `url-params.ts`, `navigation/*`, `App.svelte`, `JourneyChrome.svelte`,
 `data-worker.ts` are the parallel lane's files — do NOT touch while live.
+
+## w1 preflight inventory (2026-08-15, tmp/perf/lazify-inventory.md) — findings folded
+
+- **Seam 1 undermine (highest priority):** `app-init.ts:31` statically imports
+  `{ teardownTriggers }`, breaking AppBoot's rIC-deferred triggers. Move behind
+  lazy `await import('@lib/orchestration/triggers')` in teardown path; note
+  `teardownAppShell()` is sync → needs async guard; re-entry via `appInit()`
+  calls `_lastCleanup` synchronously (risk row).
+- **Seam 2 shape confirmed:** `applyUrlStateAfterData()` calls `applyUrlState`
+  from the url-state barrel (url-state.ts:18-27). Replace with
+  `if (isDeepLink) { const {applyUrlState} = await import('@lib/orchestration/url-state'); ... }`
+  — mains.ts:39 `isDeepLinkParams` predicate gates; non-deeplink skips import.
+  ⚠️ url-state barrel also serves interactive sites (copyCurrentViewLink, mode-nav
+  updateUrlState) — verify none of those boot-eagerly before removing statics.
+- Chunk reality: URL-state/app-init/adapters sit in SHELL chunk; journey/compass/
+  search/lifecycle runtime in mode-transition-deps; three value-tokens present in
+  the 1,240KB chunk (Vector3/ShaderMaterial/Raycaster/…) → revisit three tree-shake.
