@@ -36,7 +36,8 @@ const mock = vi.hoisted(() => ({
     disposeJourneyFocusTimers: vi.fn<() => void>(),
     debugWarn: vi.fn<() => void>(),
     debugError: vi.fn<(...args: unknown[]) => void>(),
-    initAudio: vi.fn<() => void>()
+    initAudio: vi.fn<() => void>(),
+    teardownViewController: vi.fn<() => void>()
 }))
 
 // ── Module mocks (isolate every downstream consumer) ─────────────────────────
@@ -125,6 +126,15 @@ vi.mock('@lib/journey/selected-card', () => ({
 
 vi.mock('@lib/audio/audio-scape', () => ({
     initAudio: mock.initAudio
+}))
+
+vi.mock('@lib/orchestration/view-controller', () => ({
+    teardownViewController: mock.teardownViewController
+}))
+
+// Mock triggers for the lazy teardownAppShell path (seam-1).
+vi.mock('@lib/orchestration/triggers', () => ({
+    teardownTriggers: mock.teardownViewController
 }))
 
 // ── Import the SUT AFTER all mocks are registered ───────────────────────────
@@ -219,10 +229,17 @@ describe('appInit — happy path', () => {
         cleanup()
     })
 
-    it('calls applyUrlState exactly once', async () => {
+    it('calls applyUrlState exactly once when isDeepLink is true', async () => {
+        const { appInit: freshInit } = await freshAppInit()
+        const cleanup = await freshInit({ isDeepLink: true })
+        expect(mock.applyUrlState).toHaveBeenCalledTimes(1)
+        cleanup()
+    })
+
+    it('does not call applyUrlState when isDeepLink is false (default)', async () => {
         const { appInit: freshInit } = await freshAppInit()
         const cleanup = await freshInit({})
-        expect(mock.applyUrlState).toHaveBeenCalledTimes(1)
+        expect(mock.applyUrlState).not.toHaveBeenCalled()
         cleanup()
     })
 
@@ -278,7 +295,7 @@ describe('appInit — call order (phase invariant)', () => {
             callOrder.push('initAudio')
         })
 
-        const cleanup = await freshInit({})
+        const cleanup = await freshInit({ isDeepLink: true })
 
         // The documented order:
         //   Phase 1: safety timers (not mocked — setTimeout)
@@ -286,7 +303,7 @@ describe('appInit — call order (phase invariant)', () => {
         //   Phase 2.5: initViewportListeners + installParityAttributeSync
         //   Phase 3: initData (async, but not awaited yet)
         //   Phase 3.5: buildAdapterDeps + initAdapters
-        //   Phase 4: applyUrlState (awaits dataReadyPromise first)
+        //   Phase 4: applyUrlState (awaits dataReadyPromise first; gated by isDeepLink)
         //   Phase 5: WebGL restore handler (DOM query)
         //   Phase 6: clear timers
         //   Phase 7: initAudio (dynamic import)
@@ -345,7 +362,7 @@ describe('appInit — initData rejection path', () => {
         // treats it as non-fatal and continues the init sequence.
         mock.initData.mockRejectedValue(new Error('network failure'))
 
-        const cleanup = await freshInit({})
+        const cleanup = await freshInit({ isDeepLink: true })
 
         // debugError should have been called with the rejection
         expect(mock.debugError).toHaveBeenCalledWith('[app-init] initData failed:', expect.any(Error))

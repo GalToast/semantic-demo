@@ -26,9 +26,7 @@ import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
 import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts'
 import { installTestStoreGlobals } from '@lib/orchestration/test-globals'
 import { debugError } from '@lib/utils/debug'
-import { applyUrlState } from '@lib/orchestration/url-state'
 import { teardownViewController } from '@lib/orchestration/view-controller'
-import { teardownTriggers } from '@lib/orchestration/triggers'
 import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
 import {
     claimRestoreOwnership,
@@ -59,6 +57,8 @@ interface AppInitOptions {
     forceDemo?: boolean
     /** Suppress demo entirely */
     noDemo?: boolean
+    /** Whether the current URL is a deep-link (anchor/record/view=q/search). Gates lazy url-state import. */
+    isDeepLink?: boolean
 }
 
 // ── Configuration ────────────────────────────────────────────────────────────
@@ -186,8 +186,10 @@ function scheduleSearchIndexPrewarm(): void {
  * params (view, focusedIndex, filters, search query) that need the data
  * layer to be ready before they can be resolved.
  */
-async function applyUrlStateAfterData(): Promise<void> {
+async function applyUrlStateAfterData(isDeepLink: boolean): Promise<void> {
+    if (!isDeepLink) return
     try {
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
         await applyUrlState()
     } catch (err) {
         debugError('[app-init] applyUrlState failed during init:', err)
@@ -362,7 +364,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     // Run it fire-and-forget so the loading overlay / safety valve clears
     // immediately; the focus pocket still rebuilds when the restore resolves
     // (and Fix A guarantees it's non-empty even before then).
-    void applyUrlStateAfterData()
+    void applyUrlStateAfterData(options.isDeepLink ?? false)
 
     // ── Phase 5: WebGL context restore handler ────────────────────────────────
     // F6 fix: prior-handler teardown is now handled by _lastCleanup at the top.
@@ -424,5 +426,11 @@ export function teardownAppShell(): void {
     _unsubParity?.()
     _unsubParity = null
     teardownViewController()
-    teardownTriggers()
+    // Lazify seam-1: fire-and-forget dynamic import so teardownTriggers
+    // (and its closure) leave the boot-side module graph entirely.
+    // teardownAppShell() stays sync; callers (AppBoot.svelte onMount cleanup)
+    // do not await.
+    void import('@lib/orchestration/triggers')
+        .then((m) => m.teardownTriggers())
+        .catch((err) => console.warn('[lazify] trigger teardown failed', err))
 }

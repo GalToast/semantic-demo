@@ -157,7 +157,7 @@ if (mountTarget) {
 // This replaces the ad-hoc initData() + applyUrlState() that previously
 // lived in App.svelte onMount.
 let appInitCleanup: (() => void) | undefined
-appInit({ forceDemo, noDemo })
+appInit({ forceDemo, noDemo, isDeepLink })
     .then((cleanup) => {
         appInitCleanup = cleanup
     })
