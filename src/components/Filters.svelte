@@ -360,7 +360,7 @@ function handleContactToggle(id: string): void {
     /* Hide native <details> disclosure triangle */
     list-style: none;
   }
-  /* WebKit legacy: hide the disclosure marker */
+
   .filter-toggle::-webkit-details-marker {
     display: none;
   }

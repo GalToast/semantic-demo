@@ -28,11 +28,7 @@
   import { sceneReady } from '@lib/stores/scene-ready.svelte';
   import { debugWarn } from '@lib/utils/debug';
 
-  // M12-M15 demo-cleanup: canonical 10-phase is the sole entry now.
-  // initMicroDemo() (legacy 6-phase) is deprecated (M12). Keyboard-help's
-  // replay dispatches 'demo-replay-requested' consumed here — cancels any
-  // active veil, clears session gate, resets guards, re-runs attemptStart
-  // after sceneReady so veils don't stack (M15) and guard doesn't latch (M13).
+
 
   interface Props {
     force?: boolean;

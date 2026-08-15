@@ -12,10 +12,7 @@
 let _onDemoNodeHighlight: ((e: Event) => void) | null = null
 let _onDemoNamePulse: (() => void) | null = null
 
-/**
- * @deprecated No-op. The 10-phase DemoChoreography.svelte owns the micro-demo.
- * Retained only as a stable no-op seam; do not rely on it registering listeners.
- */
+
 export function initMicroDemoBridge(): void {
     // Intentionally a no-op. The legacy 6-phase demo that needed these
     // document event listeners was retired in favor of the Svelte store.
