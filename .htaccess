@@ -79,3 +79,51 @@ RewriteRule ^reports/ - [F,L]
     #   No reranker hosted, so ai.api.nvidia.com is intentionally excluded.
     Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self'; img-src 'self' data: https://*.basemaps.cartocdn.com; connect-src 'self' https://api.open-meteo.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; object-src 'none';"
 </IfModule>
+
+# ── Precompressed static assets (dist/assets/*.gz / *.br) ──────────────────
+# Vite emits gzip+brotli twins for every hashed asset. Serve them directly
+# (precompressed) instead of letting the server re-compress on the fly:
+# keeps LCP payload bytes minimal on slow mobile links (measured 11.7s LCP
+# is transfer-bound). Falls back to mod_deflate output only when neither
+# twin exists.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # brotli twin (preferred)
+    RewriteCond %{HTTP:Accept-Encoding} br
+    RewriteCond %{REQUEST_FILENAME}\.br -f
+    RewriteCond %{REQUEST_FILENAME} \.(js|css|json|svg|woff2|html)$ [NC]
+    RewriteRule ^(.*)$ $1.br [L,QSA]
+    # gzip twin
+    RewriteCond %{HTTP:Accept-Encoding} gzip
+    RewriteCond %{REQUEST_FILENAME}\.gz -f
+    RewriteCond %{REQUEST_FILENAME} \.(js|css|json|svg|woff2|html)$ [NC]
+    RewriteRule ^(.*)$ $1.gz [L,QSA]
+</IfModule>
+<IfModule mod_headers.c>
+    # keep per-extension, per-encoding headers: correct &lt;Content-Encoding&gt;
+    # (browsers fail modules on MIME/encoding mismatch) + Vary triples.
+    <FilesMatch "\.br$">
+        Header set Content-Encoding br
+        Header append Vary Accept-Encoding
+        <FilesMatch "\.js\.br$"><Header set Content-Type application/javascript></FilesMatch>
+        <FilesMatch "\.css\.br$"><Header set Content-Type text/css></FilesMatch>
+        <FilesMatch "\.json\.br$"><Header set Content-Type application/json></FilesMatch>
+        <FilesMatch "\.svg\.br$"><Header set Content-Type image/svg+xml></FilesMatch>
+        <FilesMatch "\.woff2\.br$"><Header set Content-Type font/woff2></FilesMatch>
+        <FilesMatch "\.html\.br$"><Header set Content-Type text/html></FilesMatch>
+    </FilesMatch>
+    <FilesMatch "\.gz$">
+        Header set Content-Encoding gzip
+        Header append Vary Accept-Encoding
+        <FilesMatch "\.js\.gz$"><Header set Content-Type application/javascript></FilesMatch>
+        <FilesMatch "\.css\.gz$"><Header set Content-Type text/css></FilesMatch>
+        <FilesMatch "\.json\.gz$"><Header set Content-Type application/json></FilesMatch>
+        <FilesMatch "\.svg\.gz$"><Header set Content-Type image/svg+xml></FilesMatch>
+        <FilesMatch "\.woff2\.gz$"><Header set Content-Type font/woff2></FilesMatch>
+        <FilesMatch "\.html\.gz$"><Header set Content-Type text/html></FilesMatch>
+    </FilesMatch>
+</IfModule>
+<IfModule mod_mime.c>
+    AddEncoding gzip .gz
+    AddEncoding br   .br
+</IfModule>
