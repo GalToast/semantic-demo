@@ -96,7 +96,7 @@ Lane probes were run via opencode-zen 2026-07-27..08-04, so "opencode-zen" in th
     - `deepseek-v4-flash-free` (W58 reconfirm, state slice): timed out at 420s in a ~153 MB thinking loop (the known deepseek thinking-loop / 200 MB-cap issue) — BUT its thinking surfaced a REAL verified lead (`CompassPhase` type missing `'trail'`, confirmed + fixed by main lane as `b6490d91`). Lesson: deepseek's mid-flight thinking output is valuable even when it fails to deliver a report; salvage leads from the stdout log before discarding.
     - `mimo-v2.5-free` ✅ **STRONG find channel 2026-07-30 (W58, Pi harness, orchestration sweep)**: completed exit 0 in ~6 min, $0 cost, 3 thinking blocks + 4 text blocks, wrote a structured report with file:line citations + evidence + a false-positive-dismissed section that correctly cleared the tricky `?story=`/`?record=` deep-link cases. **3 real findings** (F1 MED trailSeedIndex write-side omission in CAMERA_NODE_FOCUSED — the WRITE-side root cause of the b9f61225 read-side fix; F2 LOW teardownToastHooks dead cleanup; F4 LOW context-restore cleanup leak) and **1 false positive** (F3 — claimed redundant `preserveDomForcedFocusSearchSurface` call; actually an intentional re-assertion that restores `mode:'search'` after the SEARCH_FOCUS_REQUESTED publish clobbers it to `mode:'focus'`). find-grade ~7/10. F1 + F2 fixed + committed (`15a70d43`, `b3ef5e35`); F4 documented-deferred (cross-module refactor, double-cleanup risk, rare context-restore). **mimo is the best free find channel seen this wave** — surpasses codestral-latest (0 real / 4 FP) and deepseek (real lead but thinking-loop timeout).
 
-> **2026-07-30 W58 wave summary:** 9 real bugs shipped (CompassPhase missing 'trail', ResourceTracker leak, trailSeedIndex WRITE omission, teardownToastHooks, 4 engine fixes). Dead lanes: qwen3.6-plus (401), nvidia/* (404), freemodel/gpt-5.6-terra (401). Golden goose: mimo-v2.5-free ✅ STRONG find channel.
+> **2026-07-30 W58 wave summary:** 9 real bugs shipped (CompassPhase missing 'trail', ResourceTracker leak, trailSeedIndex WRITE omission, teardownToastHooks, 4 engine fixes). Dead lanes: qwen3.6-plus (401), nvidia/\* (404), freemodel/gpt-5.6-terra (401). Golden goose: mimo-v2.5-free ✅ STRONG find channel.
 
 > **2026-07-30 W58 continuation late findings:** ling-3.0-flash-free found ?nodemo=1 bypass (committed 2b6821fb); nemotron-3-ultra-free fixed 3 engine issues (committed e33d0364). Both passed build+tsc+vitest 3363.
 
@@ -113,18 +113,18 @@ Lane probes were run via opencode-zen 2026-07-27..08-04, so "opencode-zen" in th
 > **2026-07-30 W58 graduation batch #5 priority-provider probes:** novita/tencent/hy3 ✅ subagent-viable (route pi:router-novita/tencent/hy3, all counts correct). Failed: infron/kimi-k2.6:free ❌ 404, zenmux/claude-opus-5 ❌ 402 no credit, mistral/devstral-medium ⚠️ inaccurate.
 
 > **2026-07-30 Mistral bugsweep bake-off W61 stale-closure:** magistral-small-latest best (0 FP); devstral family inconsistent (2-4 FP); codestral-latest useless (4 FP); mistral-code wedged 2/2. Reasoning models >> coding models for stale-closure sweeps. Default: mistral/magistral-small-latest. cloudflare/kimi-k2.6 403.
-| ------------------------ | --------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mimo-v2.5-free`         | `router-opencode-zen` | UI code edits, component extractions          | Long reasoning; set tight scope and steer for conciseness.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `deepseek-v4-flash-free` | `router-opencode-zen` | Multi-step coding, bugsweep, read-only audits | Proven on L1/L2/L4/L5 sweep tasks.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `deepseek-v4-pro`        | `router-logfare`      | Complex UI refactor / extraction              | Reliable workhorse; 900s timeout may be needed for large tasks.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `qwen-3.6-35b-a3b`       | `router-logfare`      | Audits, copy fixes, small scoped edits        | Graduated 2026-07-29; cold start ~1-2s, fast tools, $0 cost.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `deepseek-v4-flash`      | `router-modelscope`   | **Focused bug fixes, scoped engine edits**    | ✅ **VIABLE 2026-07-29**: fixed 4 engine bugs (CRITICAL+HIGH+2×MEDIUM), build+lint passed, clean report, $0.005 cost, ~6 min, 22 thinking blocks. 49 models, 3 keys, no balance/credit issues. Launch ref: `modelscope/deepseek-ai/DeepSeek-V4-Flash`. Note: earlier bugsweep trial (open-ended) went off-task — best for well-scoped fix tasks with precise instructions, not open-ended exploration. Also passed a simple `onMount` removal trial with lint clean, but the provider returned `429 insufficient_quota` mid-test-run; rerun needed for clean graduation record. |
-| `devstral-2512`          | `router-mistral`      | Scoped coding tasks, file audits (FREE to us) | ✅ **VIABLE 2026-07-30**: full e2e graduation (boot→read→write→sentinel, exit 0), 18s boot, ~2min total. Minor count inaccuracy on large package.json (undercounted scripts). Launch ref: `mistral/devstral-2512`. mistral lane: 2/2 active keys, 0 cooling.                                                                                                                                                                                                                                                                                                                    |
-| `laguna-s-2.1-free`      | `router-opencode-zen` | Read-only audits, quick code edits            | ✅ **VIABLE 2026-07-30**: free gateway tier, accurate package.json counts, exit 0 in ~2.5 min. Overturns prior reasoning-loop ❌ (was hermes wedge). Launch ref: `opencode-zen/laguna-s-2.1-free`.                                                                                                                                                                                                                                                                                                                                                                              |
-| `glm-4.7-flash-free`     | `router-zenmux`       | Read-only audits, quick code edits            | ✅ **VIABLE 2026-07-30**: zenmux free tier, all 5 counts correct, exit 0. Fast and disciplined. Launch ref: `zenmux/z-ai/glm-4.7-flash-free`.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `inkling`                | `router-nvidia`       | Read-only audits, quick code edits            | ✅ **VIABLE 2026-07-30**: nvidia free tier, all 5 counts correct, exit 0 in ~1 min. 7 thinking blocks. Launch ref: `nvidia/thinkingmachines/inkling`.                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `poolside/laguna-s-2.1`  | `router-poolside`     | Read-only audits, complex coding tasks        | ✅ **VIABLE 2026-07-30**: direct poolside route, FREE to us, all 5 counts correct, exit 0 in ~1.5 min. 35 thinking blocks. User-confirmed "beast" carrier. Launch ref: `poolside/laguna-s-2.1`.                                                                                                                                                                                                                                                                                                                                                                                 |
-| `tencent/hy3`            | `router-novita`       | Read-only audits, quick code edits            | ✅ **VIABLE 2026-07-30**: Novita free route, all 5 counts correct, exit 0, fast. Avoid OpenCode Zen `hy3-free` route. Launch ref: `novita/tencent/hy3`.                                                                                                                                                                                                                                                                                                                                                                                                                         |
+> | ------------------------ | --------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | `mimo-v2.5-free` | `router-opencode-zen` | UI code edits, component extractions | Long reasoning; set tight scope and steer for conciseness. |
+> | `deepseek-v4-flash-free` | `router-opencode-zen` | Multi-step coding, bugsweep, read-only audits | Proven on L1/L2/L4/L5 sweep tasks. |
+> | `deepseek-v4-pro` | `router-logfare` | Complex UI refactor / extraction | Reliable workhorse; 900s timeout may be needed for large tasks. |
+> | `qwen-3.6-35b-a3b` | `router-logfare` | Audits, copy fixes, small scoped edits | Graduated 2026-07-29; cold start ~1-2s, fast tools, $0 cost. |
+> | `deepseek-v4-flash` | `router-modelscope` | **Focused bug fixes, scoped engine edits** | ✅ **VIABLE 2026-07-29**: fixed 4 engine bugs (CRITICAL+HIGH+2×MEDIUM), build+lint passed, clean report, $0.005 cost, ~6 min, 22 thinking blocks. 49 models, 3 keys, no balance/credit issues. Launch ref: `modelscope/deepseek-ai/DeepSeek-V4-Flash`. Note: earlier bugsweep trial (open-ended) went off-task — best for well-scoped fix tasks with precise instructions, not open-ended exploration. Also passed a simple `onMount` removal trial with lint clean, but the provider returned `429 insufficient_quota` mid-test-run; rerun needed for clean graduation record. |
+> | `devstral-2512` | `router-mistral` | Scoped coding tasks, file audits (FREE to us) | ✅ **VIABLE 2026-07-30**: full e2e graduation (boot→read→write→sentinel, exit 0), 18s boot, ~2min total. Minor count inaccuracy on large package.json (undercounted scripts). Launch ref: `mistral/devstral-2512`. mistral lane: 2/2 active keys, 0 cooling. |
+> | `laguna-s-2.1-free` | `router-opencode-zen` | Read-only audits, quick code edits | ✅ **VIABLE 2026-07-30**: free gateway tier, accurate package.json counts, exit 0 in ~2.5 min. Overturns prior reasoning-loop ❌ (was hermes wedge). Launch ref: `opencode-zen/laguna-s-2.1-free`. |
+> | `glm-4.7-flash-free` | `router-zenmux` | Read-only audits, quick code edits | ✅ **VIABLE 2026-07-30**: zenmux free tier, all 5 counts correct, exit 0. Fast and disciplined. Launch ref: `zenmux/z-ai/glm-4.7-flash-free`. |
+> | `inkling` | `router-nvidia` | Read-only audits, quick code edits | ✅ **VIABLE 2026-07-30**: nvidia free tier, all 5 counts correct, exit 0 in ~1 min. 7 thinking blocks. Launch ref: `nvidia/thinkingmachines/inkling`. |
+> | `poolside/laguna-s-2.1` | `router-poolside` | Read-only audits, complex coding tasks | ✅ **VIABLE 2026-07-30**: direct poolside route, FREE to us, all 5 counts correct, exit 0 in ~1.5 min. 35 thinking blocks. User-confirmed "beast" carrier. Launch ref: `poolside/laguna-s-2.1`. |
+> | `tencent/hy3` | `router-novita` | Read-only audits, quick code edits | ✅ **VIABLE 2026-07-30**: Novita free route, all 5 counts correct, exit 0, fast. Avoid OpenCode Zen `hy3-free` route. Launch ref: `novita/tencent/hy3`. |
 
 ## Provider health snapshot — 2026-07-29
 
@@ -518,7 +518,7 @@ still contend; 1 at a time is safest for heavy reasoning work.
 
 ### Pro's orphan sweep is a DEAD END (2026-08-10)
 
-> **2026-08-10 Pro orphan sweep DEAD END:** tmp/_orphans.json lists 18 orphan modules — 12 paths DO NOT EXIST in repo. Do NOT dispatch on that file.
+> **2026-08-10 Pro orphan sweep DEAD END:** tmp/\_orphans.json lists 18 orphan modules — 12 paths DO NOT EXIST in repo. Do NOT dispatch on that file.
 
 ### Logfire slow-not-dead: the 45s first-token trap (2026-08-10, root-caused)
 
@@ -616,11 +616,7 @@ glm), harvest the survivor's deliverable, wait for the rest.
 
 > **2026-08-10 Logfire route status:** router HEALTHY but logfire upstream generation endpoint HANGS after request forward. 3 majors (flash-0731, minimax, k3) ALL 30s-timeout. OpenCode Zen route continues 200s.
 
-
-
 > **2026-08-10 cline = deepseek-v4-flash lane:** verified live. cline shim (port 8793) serves deepseek-v4-flash + glm-5.2-free + laguna/stepfun free. GAP: pi local model-providers registry lacks router-clinefree.
-
-
 
 > **2026-08-10 Route policy update:** CLINE preferred over zen. cline (local shim, port 8793, keyless CLI lane) serves deepseek-v4-flash + glm-5.2-free + laguna/stepfun free. VERIFIED: cline completion answered OK ~24s.
 
@@ -652,11 +648,11 @@ qwen-3.8-max 429-throttled; others 20s timeout (logfire flapping upstream).
 
 > **2026-08-10 cline-worker 0-output ROOT-CAUSED:** clinefree/cline-free/glm-5.2 produced 0 output; direct curl deepseek-v4-flash worked. Root cause: cline free promo ended. FIX: cline-shim MODELS[0] default to deepseek-v4-flash.
 
-  \_renderLoopStartPending + markEngineInitPhase integration. g105 (kiro) is building the module.
+\_renderLoopStartPending + markEngineInitPhase integration. g105 (kiro) is building the module.
 
 > **2026-08-10 God-file decomposition state:** focus-pocket-geometry.ts SPLIT DONE (16a6e24b); three-engine-core.ts SPLIT IN-FLIGHT (g101 created init/restore/teardown but died missing render-loop).
 
-  Lesson: concurrent writers can revert main-lane edits same-tree — checks via
+Lesson: concurrent writers can revert main-lane edits same-tree — checks via
 
 > **2026-08-10 Coordination notes:** engine test-alignment (3 files) handed to g106-testalign; stray three-micro-demo-bridge.ts removed; 3d boot fix (lightningcss errorRecovery, 30528d20) is real.
 
@@ -664,26 +660,23 @@ qwen-3.8-max 429-throttled; others 20s timeout (logfire flapping upstream).
 
 > **2026-08-11 3d-test stability thread:** 3 real root causes — parity-clobber (AGP39, 5ee2ac35), shared-context sessionStorage leak (796fca2a), click-drift race (79b016eb). 3d-camera-orbit-resilience 4/4 green.
 
-  fake-pi 11/11 PASS + live running→met/ACHIEVED transitions confirmed on the CURRENT
+fake-pi 11/11 PASS + live running→met/ACHIEVED transitions confirmed on the CURRENT
 
 > **2026-08-11 Build-server inconsistency:** $state is not defined at app.svelte.ts:74 — fleet-uncommitted WIP (dirty search-mirror migration). Fleet should commit OR rebase dist.
 
-  per-worker `goal-state.json`, exits as soon as the state settles, cancels on a
+per-worker `goal-state.json`, exits as soon as the state settles, cancels on a
 
 > **2026-08-11 Coordination notes session tail:** purity gate — docs/subagent-lane-inventory.md now COORDINATION_LEDGER_FILES (exempt, 664af176); fleet nested-delegation claim EVIDENCED (50+ workers); parallel-duplicate convergence byte-identical.
 
-
-
 > **2026-08-11 ambient-zombie cleanup:** python -m http.server 8796 (PID 16748, 0 connections 6h) occupying playwright webServer port. Stopped by exact PID.
 
-  incl. a literal nested-proof2-parent (completed, deepseek-v4-flash-0731, 457KB log).
+incl. a literal nested-proof2-parent (completed, deepseek-v4-flash-0731, 457KB log).
 
 > **2026-08-11 Zombie-metadata finding:** O2-threadaudit/grp-p4 showed status: running with logs frozen 2-3.7h. 4 of 5 were GHOSTS. Lesson: always tasklist-verify PID before killing.
 
-  identity + idleness. Lesson: ambient `python -m http.server` zombies on 8796 break every
+identity + idleness. Lesson: ambient `python -m http.server` zombies on 8796 break every
 
 > **2026-08-11 Port-8796 collision recurrence:** node scripts/test-server.mjs (fleet lane leftover) bound 8796 and broke playwright runs. Check netstat BEFORE any playwright run.
-
 
 ### Port-8796 collision recurrence (2026-08-11, ×2)
 
@@ -819,3 +812,4 @@ OK). Re-probe before dispatching on kilo/openrouter; don't assume qwen3-coder-ne
 - poolside/laguna-s-2.1 + kilo/poolside/laguna-s-2.1:free — the fallback + mobile lanes (also live).
 - The opencode-zen zen route remains keyless/cooldown (dead at this window).
 - Fleet-landing state: 46 dirty src, origin-ahead 23 (divergence reconcile pending a calm-commit window); their deep-cut W1-W3 UI pins + qa-ready.mjs + fold-watch tools landed.
+- **2026-08-14 wave (se-perf-7) flake note:** poolside/laguna-s-2.1 was 2/4 clean — p2 (bundle audit) died silently (deliverable absent), p4 (gate script) "completed" but shipped zero files (classic talker-finisher; main lane rebuilt it in ~20 min). Lesson reinforced: verify deliverables, not exit codes; for measurement/report lanes, prefer main-lane takedown when the kernel task is small and fast.
