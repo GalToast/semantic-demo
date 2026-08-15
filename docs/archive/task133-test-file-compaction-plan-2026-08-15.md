@@ -1,0 +1,43 @@
+# Task-133: Test-File Compaction Plan (Evidence Only — No Deletions)
+
+Generated from read-only audit of 16 orphaned test files flagged in `tmp/swarm-L1-testarch.md`.
+Checks performed: (1) Playwright default glob `tests/**/*.spec.js` via config discovery, (2) vitest discovery `tests/unit-active/**/*.{test,spec}.{js,mjs,ts}` + `tests/scripts/**/*.{test,spec}.{js,mjs,ts}` from `vitest.config.js:17`, (3) `tests/run-all-contracts.js` PINNED_FILES (`tests/run-all-contracts.js:249`) + `tests/contracts.manifest.json` groups, (4) `package.json` scripts refs.
+
+## Verdict Table
+
+| file | verdict | evidence (file:line) | risk if deleted |
+|------|---------|----------------------|-----------------|
+| controls-rail-dom-regression.mjs | CONFIRMED-DELETE | 0 code refs outside itself; not in `tests/run-all-contracts.js:249` PINNED_FILES; not in `tests/contracts.manifest.json`; not in `package.json` scripts. Plain Node audit script with no Playwright/vitest API. | Low — historical regression note only; no active runner. |
+| csp-static-check.mjs | CONFIRMED-DELETE | 0 code refs outside itself (1 doc ref in `docs/archive/deploy-svelte-build-checklist.md` only); not in PINNED_FILES/manifest/scripts. Plain Node audit script. | Low — documentation-only reference; no active runner. |
+| css-ownership-loss.test.mjs | CONFIRMED-DELETE | 0 refs outside itself; not in PINNED_FILES/manifest/scripts. Not vitest-discoverable (`vitest.config.js:17` limits to `tests/unit-active` and `tests/scripts`). No Playwright API usage. | Low — standalone Node assert script; no imports or callers. |
+| interaction-audit-deep.mjs | CONFIRMED-DELETE | 0 refs outside itself; not in PINNED_FILES/manifest/scripts. Plain Node audit script. | Low — no active runner or callers. |
+| interaction-audit.mjs | CONFIRMED-DELETE | 0 refs outside itself; not in PINNED_FILES/manifest/scripts. Plain Node audit script. | Low — no active runner or callers. |
+| panel-bindings-leak-regression.mjs | CONFIRMED-DELETE | 0 code refs outside itself (1 doc ref in `docs/archive/notes/strand-legend-retirement-postmortem-2026-06-16.md` only); not in PINNED_FILES (`tests/run-all-contracts.js:249`) nor manifest (`tests/contracts.manifest.json`); not in scripts. | Low — historical postmortem reference only; no active runner. |
+| parity-attrs-semantic-dive-race-regression.mjs | CONFIRMED-DELETE | 0 code refs outside itself (1 doc ref in `docs/archive/notes/w21-test-consolidation-audit-2026-06-17.md` only); not in PINNED_FILES/manifest/scripts. | Low — historical audit reference only; no active runner. |
+| search-input-narrow-layout.spec.js | HOLD-GLOB | User-verified wired via Playwright default glob `tests/**/*.spec.js`. Referenced in `docs/perf-campaign-status.md`. | None — actively discovered and documented as in-use. |
+| source-path.mjs | NEEDS-REVIEW | Imported by 17 files including 10 PINNED contracts (`tests/run-all-contracts.js:249`): `camera-auto-rotate-settle-contract.mjs`, `exploration-modes-contract.mjs`, `journey-thread-inspector-contract.mjs`, `scene-reveal-contract.mjs`, `motion-state-contract.mjs`, `scene-atmosphere-contract.mjs`, `state-transition-table-contract.mjs`, `view-controller-ownership-contract.mjs`, `weather-surface-ownership-contract.mjs`, `weather-lifecycle-contract.mjs`, `journey-event-bindings-contract.mjs`, `journey-walk-thread-neighbor-timer-contract.mjs`. Not a standalone test but a shared utility. | High — deleting breaks 10 PINNED contracts. Should be moved to `tests/helpers/` or kept as a utility, not deleted. |
+| state-bypass-silenced-regression.mjs | CONFIRMED-DELETE | 0 refs outside itself; not in PINNED_FILES/manifest/scripts. | Low — no active runner or callers. |
+| svelte-deep-analysis.mjs | CONFIRMED-DELETE | 0 refs outside itself; not in PINNED_FILES/manifest/scripts. | Low — no active runner or callers. |
+| svelte-targeted-checks.mjs | CONFIRMED-DELETE | 0 refs outside itself; not in PINNED_FILES/manifest/scripts. | Low — no active runner or callers. |
+| svelte-visual-audit.mjs | CONFIRMED-DELETE | 0 refs outside itself; not in PINNED_FILES/manifest/scripts. | Low — no active runner or callers. |
+| visual-audit-svelte.mjs | CONFIRMED-DELETE | 0 refs outside itself; not in PINNED_FILES/manifest/scripts. | Low — no active runner or callers. |
+| visual-state-registry.mjs | NEEDS-REVIEW | Imported by `tests/surface-style-matrix-contract.mjs` (listed in `tests/contracts.manifest.json:199`) and `tests/visual-state-audit.mjs`. Not a standalone test but a dependency of manifest-listed contracts. | High — deleting breaks `surface-style-matrix-contract.mjs` (manifest group member) and `visual-state-audit.mjs`. |
+| worker-contract.spec.mjs | CONFIRMED-DELETE | 0 refs outside itself; not in PINNED_FILES/manifest/scripts. Not vitest-discoverable (`vitest.config.js:17`). Extension `.spec.mjs` matches Playwright default glob, but file contains no Playwright API (`test()`/`expect()`/`@playwright/test` import) — it is plain Node + `assert`. | Low — misnamed Node script with no active runner. |
+
+## Summary Counts
+
+- CONFIRMED-DELETE: 13
+- HOLD-GLOB: 1
+- HOLD-PINNED: 0
+- NEEDS-REVIEW: 2
+
+## Safest Deletes (Top 3)
+
+1. `state-bypass-silenced-regression.mjs` — zero references, no runner, no imports.
+2. `svelte-deep-analysis.mjs` — zero references, no runner, no imports.
+3. `interaction-audit.mjs` — zero references, no runner, no imports.
+
+## Next Step
+
+- **NEEDS-REVIEW** items (`source-path.mjs`, `visual-state-registry.mjs`) should be promoted to `tests/helpers/` or explicitly wired into PINNED_FILES/manifest before any deletion.
+- No files were moved, edited, or deleted.
