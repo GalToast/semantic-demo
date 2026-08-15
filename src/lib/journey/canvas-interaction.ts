@@ -27,6 +27,11 @@ let _emptyClickHintShown = false
 let _dragState: { startX: number; startY: number; isDragging: boolean } | null = null
 const DRAG_THRESHOLD_PX = 4
 
+// L1 (engine-teardown audit): track active click-pulse timers so a teardown
+// (disposeCanvasNodeInteractionBindings) before the 550ms animation finishes
+// can remove the stray <div> instead of leaving it orphaned in document.body.
+const _activeClickPulses = new Set<{ timer: ReturnType<typeof setTimeout>; el: HTMLDivElement }>()
+
 function setCanvasDragCursor(canvas: HTMLCanvasElement, isDragging: boolean): void {
     canvas.style.cursor = isDragging ? 'grabbing' : ''
 }
@@ -49,8 +54,16 @@ function showClickPulse(x: number, y: number): void {
         pulse.style.transform = 'scale(6)'
         pulse.style.opacity = '0'
     })
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    setTimeout(() => pulse.remove(), 550)
+    // L1: track the timer so disposeCanvasNodeInteractionBindings can clear it
+    // (and remove the element) if teardown happens mid-animation.
+    const entry = {
+        timer: setTimeout(() => {
+            pulse.remove()
+            _activeClickPulses.delete(entry)
+        }, 550),
+        el: pulse
+    }
+    _activeClickPulses.add(entry)
 }
 
 export { initJourneyCanvasInteractionAdapter, isThreadCandidateVisibleOnCanvas }
@@ -181,6 +194,13 @@ export function disposeCanvasNodeInteractionBindings(): void {
         _canvasInteractionAbort.abort()
         _canvasInteractionAbort = null
     }
+    // L1: clear any in-flight click-pulse timers and remove their elements so a
+    // teardown mid-animation doesn't leave stray <div>s in document.body.
+    for (const { timer, el } of _activeClickPulses) {
+        clearTimeout(timer)
+        el.remove()
+    }
+    _activeClickPulses.clear()
     const canvas = appState.renderer?.domElement
     if (canvas) {
         delete canvas.dataset.threadInteractionBound
