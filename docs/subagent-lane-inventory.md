@@ -813,8 +813,13 @@ OK). Re-probe before dispatching on kilo/openrouter; don't assume qwen3-coder-ne
 - The opencode-zen zen route remains keyless/cooldown (dead at this window).
 - Fleet-landing state: 46 dirty src, origin-ahead 23 (divergence reconcile pending a calm-commit window); their deep-cut W1-W3 UI pins + qa-ready.mjs + fold-watch tools landed.
 - **2026-08-14 wave (se-perf-7) flake note:** poolside/laguna-s-2.1 was 2/4 clean — p2 (bundle audit) died silently (deliverable absent), p4 (gate script) "completed" but shipped zero files (classic talker-finisher; main lane rebuilt it in ~20 min). Lesson reinforced: verify deliverables, not exit codes; for measurement/report lanes, prefer main-lane takedown when the kernel task is small and fast.
-- **2026-08-15 CORRECTION (tencent/hy3:free):** route answers HTTP-200 but has now
-  produced **ZERO output tokens** on a trivial 4-tool write probe (metadata: content:[], totalTokens:0).
-  Wire-UP ≠ generation. Do NOT dispatch real work on hy3 until a probe lands a NON-EMPTY artifact;
-  poolside/laguna + agnes-2.5-flash remain the dispatchable lanes (measured today: a 6-wave).
-  [hy3-route-probe ocw_3c747cfd 2026-08-15 — FAILED]
+- **2026-08-15 hy3:free FORENSICS (balanced verdict):** RAW + worker probes show the lane is
+  **functional but balance-bound and flaky**. Evidence: direct chat to 127.0.0.1:8788/kilo/v1 works
+  (200, 3.9s, real reasoning tokens); streaming works; identical 4-tool worker probe#1 returned
+  **ZERO output tokens** (metadata content:null, totalTokens:0 — free-carve-out flap at dispatch);
+  probe#2 (11 min later) LANDED a non-empty artifact (“hy3-alive … 14:25:14Z”). Canonical
+  “ tencent/hy3” (non-:free id) fails at the kilo balance layer:
+  {“title”:“Paid Model - Credits Required”,“balance”:-0.00002,“error_type”:“usage_limit_exceeded”}.
+  → Route is usable but NOT dependable for tool-heavy/real work: prefer poolside / agnes;
+  hy3 = calm-window retry lane only; re-probe before any swarm relies on it.
+  [probe#1 ocw_3c74 — ZERO-TOKEN FAILED; probe#2 ocw_f29f — LANDED 2026-08-15 14:25:14Z]
