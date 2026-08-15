@@ -27,7 +27,6 @@ import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svel
 import { installTestStoreGlobals } from '@lib/orchestration/test-globals'
 import { debugError } from '@lib/utils/debug'
 import { teardownViewController } from '@lib/orchestration/view-controller'
-import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
 import {
     claimRestoreOwnership,
     isRestoreOwned,
@@ -397,7 +396,10 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
         clearSafetyTimers(_safetyTimers)
         _safetyTimers = null
         clearPrewarmTimer()
-        disposeJourneyFocusTimers()
+        // Lazify seam-3: fire-and-forget dynamic import (same pattern as seam-1).
+        void import('@lib/journey/journey-focus-timers')
+            .then((m) => m.disposeJourneyFocusTimers())
+            .catch((err) => console.warn('[lazify] journey-focus-timers teardown failed', err))
         _unsubWindowGlobals?.()
         _unsubViewport?.()
         _unsubParity?.()

@@ -30,7 +30,6 @@ import type { BusinessRecord } from '@lib/types/business'
 import { appInit } from '@lib/orchestration/app-init'
 import { teardownToastHooks } from '@lib/orchestration/toast'
 import { registerUrlStateEventListeners } from '@lib/orchestration/url-state'
-import { setFocusedNode } from '@lib/journey/thread-settler'
 import { registerClusterFilterEventListeners } from '@lib/orchestration/cluster-filter-controller'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import { webglContext } from '@lib/engine/webgl-context'
@@ -453,7 +452,9 @@ function createTestCompatProxy(): Record<string, unknown> {
                         } else if (prop === 'points') {
                             appState.points = value as Point[]
                         } else if (prop === 'focusedNode') {
-                            setFocusedNode(value === null ? null : (value as number))
+                            void import('@lib/journey/thread-settler')
+                                .then((m) => m.setFocusedNode(value === null ? null : (value as number)))
+                                .catch((err) => console.warn('[lazify] thread-settler focus failed', err))
                             // Keep navStore in sync for parity-attrs.
                             setFocusedIndex(value === null ? null : (value as number))
                         } else if (prop === 'selectedPoint') {
