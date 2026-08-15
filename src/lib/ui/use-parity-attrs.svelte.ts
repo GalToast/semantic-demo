@@ -79,11 +79,7 @@ export interface ParityAttrs {
  * 30s e2e timeout on the map-trail surface contract. Route both through this so
  * widening the predicate is a one-line change.
  */
-export function isFocusSurfaceActive(
-    navMode: string,
-    focusedIndex: number | null,
-    parity: ParityAttrs
-): boolean {
+export function isFocusSurfaceActive(navMode: string, focusedIndex: number | null, parity: ParityAttrs): boolean {
     return (
         navMode === 'focus' ||
         navMode === 'inside' ||
