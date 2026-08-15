@@ -11,6 +11,7 @@
   import type { LoadingPhase } from '@lib/types/state';
   import { handleCanvasKeydown } from '@lib/journey/canvas-keyboard-nav';
   import { appState as _canvasAppState } from '@lib/state/app.svelte.ts';
+  import { friendlyErrorMessage } from '@lib/utils/error-messages';
 
   interface Props {
     interactive?: boolean;
@@ -60,7 +61,10 @@
   });
   let canvasError = $state(false);
   let canvasErrorMessage = $state('');
-
+  // W-D1: normalize the raw engine error through the friendly-error pipeline so
+  // the overlay surfaces human copy (title/detail) with the raw message
+  // collapsed in a <details> instead of leaking tech strings into the UI.
+  let friendlyCanvasError = $derived(canvasErrorMessage ? friendlyErrorMessage(canvasErrorMessage) : null);
   // W52: Overlay timeout — 15s in dev (slow engine init on HMR/hot reload +
   // slower devices), 5s in prod.  Override via data-overlay-timeout on
   // #canvas-container (e.g. <div data-overlay-timeout="12000">) or via
@@ -386,8 +390,14 @@
   {#if canvasError}
     <div class="canvas-error-overlay" role="alert" aria-live="assertive">
       <div class="error-content">
-        <p class="error-title">3D scene unavailable</p>
-        <p class="error-message">{canvasErrorMessage || 'WebGL could not be initialized.'}</p>
+        <p class="error-title">{friendlyCanvasError?.title ?? '3D scene unavailable'}</p>
+        <p class="error-message">{friendlyCanvasError?.detail ?? 'Something went wrong launching the scene.'}</p>
+        {#if friendlyCanvasError?.technical}
+          <details class="error-technical">
+            <summary>Technical details</summary>
+            {friendlyCanvasError.technical}
+          </details>
+        {/if}
         <button type="button" class="error-dismiss" onclick={() => { canvasError = false; canvasEl?.focus(); }}>
           Continue in 2D
         </button>
