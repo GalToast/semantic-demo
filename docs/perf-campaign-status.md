@@ -171,6 +171,7 @@ Mobile LCP sits at 11.7s (perf score 29) against a desktop baseline of 38 — bo
 _Generated: 2026-08-15. Read-only source docs: `docs/`, `scripts/`, `tmp/perf/`. No lane files edited; no commits made._
 
 ## Swarm-9 closeout (measured 2026-08-16)
+
 - **Lighthouse re-baseline (b2):** desktop perf 38→86, TBT 3310→130ms, LCP 5.1→2.0s; mobile 29→34, LCP 11.7→10.5s. GATE ✓ BOTH. Root cause of the old low desktop was ENV, not code (EPERM in chrome-launcher cleanup noted as flake).
-- **Dyno measure (a2 verdict):** ranks 4/5 (compass/cluster fire-and-forget at module eval) are economically NEGATIVE (+8.1KB preload cost vs 2.3KB split); RECOMMENDATION: skip them; pursue rank-1 = app-init → journey ENTRY-LAZY — the cascade root in OUR file (app-init.ts). 
-- **Route pool (c1):** lagoon-EEXVEE llama-xs-2.1 via nvidia/v1 VERIFIED ALIVE (262k ctx, free) — may join the pool; FreeInference + others skip-listed.
+- **Dyno measure (a2 verdict):** ranks 4/5 (compass/cluster fire-and-forget at module eval) are economically NEGATIVE (+8.1KB preload cost vs 2.3KB split); RECOMMENDATION: skip them; pursue rank-1 = app-init → journey ENTRY-LAZY — the cascade root in OUR file (app-init.ts).
+- **Route pool (c1):** poolside/laguna-xs-2.1 via nvidia/v1 VERIFIED ALIVE (262k ctx, free) — may join the pool; FreeInference + others skip-listed.
