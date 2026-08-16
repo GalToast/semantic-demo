@@ -17,6 +17,18 @@ Live-verified dispatch truth as of this morning — the "free" surface has shift
 
 Actionable: for free read-only planner/audit work prefer `opencode-zen/deepseek-v4-flash-free` (works, just rate-limited) or the paid-optional poolside laguna route (`poolside/laguna-s-2.1` via router-poolside, verified ~$0.003) rather than ling (dead). Verify with `mcp external_subagent_free_models free_only=true` before any paid-key routing.
 
+## Logfare swarm 2026-08-15 (11-model availability probe)
+
+11 parallel one-shot workers (campaign `logfare-avail-2026-08-15`, trivial "Reply PONG", route form `logfare/<id>` -> `pi:router-logfare/<id>`):
+
+- ✅ UP: `logfare/glm-5.2` (free, resp `zai-org/GLM-5.2`, text_blocks=1), `logfare/minimax-m3` (~$0.004, resp `minimaxai/minimax-m3`, text_blocks=2).
+- ❌ DOWN — 429 router-key cooldown: `grape-2-pro`, `kiro-auto`, `deepseek-v4-flash-0731` (Logfare/ZenMux gateway keys rate-limited; the _router_ is the bottleneck, not the models — may recover when keys cool down).
+- ❌ DOWN — 410 gone upstream: `qwen-3.6-35b-a3b`, `deepseek-v4-pro`, `qwen-3.8-max` (retired from logfare catalog; will not recover).
+- ❌ DOWN — 404 not found: `kimi-k2.7-code`, `kimi-k3` (not in logfare routing table).
+- ❌ DOWN — 401 CreditsError (opencode route, no payment method): `deepseek-v4-flash`.
+
+Verdict: only 2/11 logfare models reachable right now (`glm-5.2`, `minimax-m3`). Full report: `pi-mobile-app/reports/06-logfare-swarm.md`. Context: the Pi Mobile phone-probe default `router-agnes/agnes-2.5-flash` returned an EMPTY response (input:0/output:0 — agnes flakiness, separate from logfare); `logfare/glm-5.2` is the recommended free default for phone-driven Pi.
+
 ## Cline free lane health (2026-08-12)
 
 - `clinefree/poolside/laguna-s-2.1:free` ✅ verified through native Cline and the local `router-clinefree` shim; zero-cost, 262K context, 32K max output, no exposed reasoning ladder. It is the shim and native Cline default.
@@ -823,3 +835,11 @@ OK). Re-probe before dispatching on kilo/openrouter; don't assume qwen3-coder-ne
   → Route is usable but NOT dependable for tool-heavy/real work: prefer poolside / agnes;
   hy3 = calm-window retry lane only; re-probe before any swarm relies on it.
   [probe#1 ocw_3c74 — ZERO-TOKEN FAILED; probe#2 ocw_f29f — LANDED 2026-08-15 14:25:14Z]
+
+## 2026-08-16: CLINE-HARNESS LANE OPEN (probe-certified)
+- **Use:** external_subagent_start({ harness: "cline", model: "poolside/laguna-s-2.1:free" }) — the
+  launcher shells the Cline CLI (its own OAuth session) → FREE + working, zero shim/router.
+- Probe: `cline-alive` file landed (~2 min). Marker kept: tmp/perf9/cline-lane-probe.txt.
+- The router /clinefree story (8788 → :8793 shim) is the INTERACTIVE-only path and its
+  8793 shim is gone; use the harness lane for all subagent work. If the shim returns,
+  the router route is ready (keys:1 loaded).
