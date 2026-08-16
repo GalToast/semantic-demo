@@ -27,7 +27,8 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- focusStore import retained per w46-c2-compass-controller-contract.test.ts pattern assertion (L53); removal would break the contract even though we no longer read it after W63 dead-code cleanup of strandContinuityPhase 'exploring' guard + disabled-predicate dead clause.
 import { focusStore, setSemanticDiveMode } from '@lib/stores/focus.svelte.ts'
 import { isMapSummarySurface, isSemanticDiveSurface } from '@lib/stores/viewport.svelte.ts'
-import { resetExplorationFocus } from '@lib/orchestration/lifecycle'
+// Lazify seam: lifecycle's resetExplorationFocus loads on demand at first
+// settle-hook invocation, keeping the lifecycle closure out of this static graph.
 import {
     getJourneyCompassState,
     getFocusedJourneyPoint,
@@ -442,7 +443,9 @@ export function executeJourneyCompassAction(action: string): void {
         case JOURNEY_ACTIONS.COUNTY_OVERVIEW:
             // County overview is a calm reset surface; do not preserve the
             // search corridor or the map keeps competing search chrome alive.
-            resetExplorationFocus({ preserveSearch: false })
+            void import('@lib/orchestration/lifecycle')
+                .then((m) => m.resetExplorationFocus({ preserveSearch: false }))
+                .catch((err) => console.warn('[lazify] resetExplorationFocus failed', err))
             return
 
         default:
