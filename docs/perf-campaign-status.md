@@ -9,12 +9,12 @@
 
 ### 1a. Baselines
 
-| File | Date | Platform | Perf | LCP (ms) | TBT (ms) |
-|---|---|---|---|---|---|
-| `docs/lighthouse-baseline-mobile-1786741775195.json` | 2026-08-14 | mobile (moto g Power) | 29 | 11 706 | 1 553 |
-| `docs/lighthouse-baseline-desktop-1786741775195.json` | 2026-08-14 | desktop | 38 | 5 061 | 3 310 |
-| `docs/lighthouse-baseline-2026-06-20.json` | 2026-06-20 | desktop (older) | 80 | 3 799 | 0 |
-| `docs/lighthouse-baseline-2026-06-18.json` | 2026-06-18 | desktop (older) | 33 | 17 118 | 1 793 |
+| File                                                  | Date       | Platform              | Perf | LCP (ms) | TBT (ms) |
+| ----------------------------------------------------- | ---------- | --------------------- | ---- | -------- | -------- |
+| `docs/lighthouse-baseline-mobile-1786741775195.json`  | 2026-08-14 | mobile (moto g Power) | 29   | 11 706   | 1 553    |
+| `docs/lighthouse-baseline-desktop-1786741775195.json` | 2026-08-14 | desktop               | 38   | 5 061    | 3 310    |
+| `docs/lighthouse-baseline-2026-06-20.json`            | 2026-06-20 | desktop (older)       | 80   | 3 799    | 0        |
+| `docs/lighthouse-baseline-2026-06-18.json`            | 2026-06-18 | desktop (older)       | 33   | 17 118   | 1 793    |
 
 The two timestamped files are the current gates. Older June files are historical reference only.
 
@@ -80,6 +80,20 @@ node scripts/qa-deploy-verify.mjs https://mccullough.cloud/semantic-demo \
 
 **Known result:** deploy 4/6 FAIL w/ br-pass (brobability: two non-br checks fail on current host config). The runbook (`tmp/perf/deploy-verify-runbook.md`) shows 6/6 PASS on a correctly-configured Apache host and 1/6 FAIL when `.htaccess` rewrite is inactive (`Content-Encoding: identity`).
 
+### 1e. Track B — Hexagon Boundary / RF Map
+
+**Status:** measured 2026-08-16.
+
+- Hexagon boundary: measured (polygon extent confirmed against live mycelium positions).
+- RF map: banked (render bank stable across smoke runs; no regression vs 2026-08-14 baseline).
+
+### 1f. Logfare Duty Class
+
+**Class:** glm-5.2 light only · m3 flaky
+
+- glm-5.2: passes light-duty class (budget, validate contracts, smoke, vitest gates all green).
+- m3: flaky — fails the `disposes deferred journey focus timers during cleanup` assertion consistently (0 calls vs expected 1); timeout-based second failure cleared 2026-08-16.
+
 ---
 
 ## 2. Open Asks
@@ -88,11 +102,11 @@ node scripts/qa-deploy-verify.mjs https://mccullough.cloud/semantic-demo \
 
 **Status:** patch forged, unapplied, awaiting lane window.
 
-| Artifact | Path | Status |
-|---|---|---|
-| Forge patch | `tmp/perf/lazify-forge.patch` | ✅ exists; `git apply --check` clean against HEAD |
-| Apply runbook | `tmp/perf/lazify-apply-runbook.md` | ❌ not yet written |
-| Forge report | `tmp/perf/lazify-forge-REPORT.md` | ✅ exists; 23/23 unit tests pass, smoke 9/9 |
+| Artifact      | Path                               | Status                                            |
+| ------------- | ---------------------------------- | ------------------------------------------------- |
+| Forge patch   | `tmp/perf/lazify-forge.patch`      | ✅ exists; `git apply --check` clean against HEAD |
+| Apply runbook | `tmp/perf/lazify-apply-runbook.md` | ❌ not yet written                                |
+| Forge report  | `tmp/perf/lazify-forge-REPORT.md`  | ✅ exists; 23/23 unit tests pass, smoke 9/9       |
 
 **What the patch does:**
 
@@ -120,27 +134,27 @@ No in-repo reference found for "host-6/6" or "#273". This ask is tracked externa
 
 Source: `tmp/perf/intel-handoff.md` (§1, census taken 2026-08-14, 36 dirty/untracked paths).
 
-| Lane-owned (16) | Ours (20) |
-|---|---|
-| `AGENTS.md` | `.github/workflows/ci.yml` |
-| `docs/migration-plan.md` | `css/mobile_premium__components.css` |
-| `package.json` | `css/mobile_premium__state.css` |
-| `scripts/prewarm-catalog.sh` | `docs/audit-2026-08-14.md` |
-| `tests/run-all-contracts.js` | `docs/dev-commands.md` |
-| `src/lib/orchestration/url-restore.ts` | `docs/phone-pi-termux.md` |
-| `src/lib/stores/lifecycle.ts` | `docs/swarm-shittiest-parts-DOSSIER.md` |
-| `tests/live-state-transition-ui-paths.spec.js` | `docs/window-global-allowlist.md` |
-| `tests/live-ui-reset-interaction.spec.js` | `scripts/fleet-pulse.mjs` |
-| `tests/live-url-state-reconstruction.spec.js` | `scripts/qa-lighthouse-gate.mjs` |
-| `tests/search-input-escape-cancel-journey.spec.js` | `scripts/smoke-gate.mjs` |
-| `tests/short-landscape-transition-ui-paths.spec.js` | `scripts/test-server.mjs` |
-| `tests/ui-quality-contract.mjs` | `scripts/verify-lane-wave.sh` |
-| `tests/unit-active/focus-gate-lockstep-contract.test.ts` | `src/lib/journey/canvas-interaction.ts` |
-| `tests/unit-active/gates-vs-surfacemap.test.ts` | `tests/reduced-motion-transition-contract.mjs` |
-| `tests/unit-active/header-mode-nav.test.ts` | `tests/dewindowing-sweep.mjs` (untracked) |
-| `tests/unit-active/store-lifecycle-composition-contract.test.ts` | `tests/qa-android-contract.mjs` (untracked) |
-| | `tests/scripts/*.mjs` × 3 (untracked) |
-| | `tests/search-input-narrow-layout.spec.js` (untracked) |
+| Lane-owned (16)                                                  | Ours (20)                                              |
+| ---------------------------------------------------------------- | ------------------------------------------------------ |
+| `AGENTS.md`                                                      | `.github/workflows/ci.yml`                             |
+| `docs/migration-plan.md`                                         | `css/mobile_premium__components.css`                   |
+| `package.json`                                                   | `css/mobile_premium__state.css`                        |
+| `scripts/prewarm-catalog.sh`                                     | `docs/audit-2026-08-14.md`                             |
+| `tests/run-all-contracts.js`                                     | `docs/dev-commands.md`                                 |
+| `src/lib/orchestration/url-restore.ts`                           | `docs/phone-pi-termux.md`                              |
+| `src/lib/stores/lifecycle.ts`                                    | `docs/swarm-shittiest-parts-DOSSIER.md`                |
+| `tests/live-state-transition-ui-paths.spec.js`                   | `docs/window-global-allowlist.md`                      |
+| `tests/live-ui-reset-interaction.spec.js`                        | `scripts/fleet-pulse.mjs`                              |
+| `tests/live-url-state-reconstruction.spec.js`                    | `scripts/qa-lighthouse-gate.mjs`                       |
+| `tests/search-input-escape-cancel-journey.spec.js`               | `scripts/smoke-gate.mjs`                               |
+| `tests/short-landscape-transition-ui-paths.spec.js`              | `scripts/test-server.mjs`                              |
+| `tests/ui-quality-contract.mjs`                                  | `scripts/verify-lane-wave.sh`                          |
+| `tests/unit-active/focus-gate-lockstep-contract.test.ts`         | `src/lib/journey/canvas-interaction.ts`                |
+| `tests/unit-active/gates-vs-surfacemap.test.ts`                  | `tests/reduced-motion-transition-contract.mjs`         |
+| `tests/unit-active/header-mode-nav.test.ts`                      | `tests/dewindowing-sweep.mjs` (untracked)              |
+| `tests/unit-active/store-lifecycle-composition-contract.test.ts` | `tests/qa-android-contract.mjs` (untracked)            |
+|                                                                  | `tests/scripts/*.mjs` × 3 (untracked)                  |
+|                                                                  | `tests/search-input-narrow-layout.spec.js` (untracked) |
 
 **Totals:** Lane 16 · Ours 20 · Grand total 36.
 
@@ -154,4 +168,4 @@ Mobile LCP sits at 11.7s (perf score 29) against a desktop baseline of 38 — bo
 
 ---
 
-*Generated: 2026-08-15. Read-only source docs: `docs/`, `scripts/`, `tmp/perf/`. No lane files edited; no commits made.*
+_Generated: 2026-08-15. Read-only source docs: `docs/`, `scripts/`, `tmp/perf/`. No lane files edited; no commits made._

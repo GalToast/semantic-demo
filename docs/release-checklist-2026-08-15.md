@@ -6,11 +6,14 @@
 
 ## Metric Trio (current state)
 
-| Command | Expected | Actual | Ok? |
-|---|---|---|---|
-| `node scripts/qa-budget.mjs` | total ≤ baseline+32 KB; each mode-transition chunk ≤ +16 KB | JS 1651.9 KB (+1.6 vs baseline); CSS 104.6 KB; Grand 1756.6 KB; mode-transition-deps 1240.6 KB (+0.9) | ✅ PASS |
-| `node tests/run-all-contracts.js --validate` | 0 ERRORs | 0 ERRORs; 2 WARNs (9 orphan `.mjs` contracts + 1 orphan `.spec.js`); 61 pinned files | ✅ PASS (warns are cosmetic) |
-| `npx vitest run tests/unit-active/gates-vs-surfacemap.test.ts tests/unit-active/focus-gate-lockstep-contract.test.ts tests/unit-active/app-init.test.ts` | 0 FAILs | gates-vs-surfacemap: 4/4 ✓; focus-gate-lockstep: 3/3 ✓; app-init: **2/30 FAIL** (see below) | ⚠️ SEE BELOW |
+| Command | Expected | Actual | Measured (2026-08-16) | Ok? |
+|---|---|---|---|---|
+| `node scripts/qa-budget.mjs` | total ≤ baseline+32 KB; each mode-transition chunk ≤ +16 KB | JS 1651.9 KB (+1.6 vs baseline); CSS 104.6 KB; Grand 1756.6 KB; mode-transition-deps 1240.6 KB (+0.9) | JS 1651.8 KB (+1.4 vs baseline 1650.3); CSS 104.6 KB; Grand 1756.4 KB; mode-transition-deps 1240.4 KB (+0.7) | ✅ PASS |
+| `node tests/run-all-contracts.js --validate` | 0 ERRORs | 0 ERRORs; 2 WARNs (9 orphan `.mjs` contracts + 1 orphan `.spec.js`); 61 pinned files | 0 ERRORs; 11 orphan warnings (9 .mjs + 2 .spec.js); 61 pinned | ✅ PASS (warns cosmetic) |
+| `node tests/run-all-contracts.js --group=smoke` | — | — | 9/9 passed (weather-lifecycle, weather-surface-ownership, camera-auto-rotate-settle, scene-reveal, loading-ui, motion-state, map-flattening-raw-buffer, production-preview-parity, semantic-demo-css) | ✅ PASS |
+| `npx vitest run tests/unit-active/gates-vs-surfacemap.test.ts tests/unit-active/focus-gate-lockstep-contract.test.ts tests/unit-active/app-init.test.ts` | 0 FAILs | gates-vs-surfacemap: 4/4 ✓; focus-gate-lockstep: 3/3 ✓; app-init: **2/30 FAIL** (see below) | gates-vs-surfacemap: 4/4 ✓; focus-gate-lockstep: 3/3 ✓; app-init: 22/23 pass, 1 FAIL (`disposes deferred journey focus timers during cleanup` — expected vi.fn() called once, got 0 times) | ⚠️ SEE BELOW |
+| `node scripts/qa-deploy-verify.mjs --help` | exit 0 | exit 0 (shows usage + examples; no $HOST set) | exit 0 | ✅ PASS |
+| Host deploy verifier (live) | 6/6 | **pending re-deploy** — no $HOST configured locally; docs/perf-campaign-status.md records 4/6 FAIL w/ br-pass on current Apache config; cannot hit live host (one-call limit) | pending re-deploy (no $HOST; docs record 4/6) | ⏳ PENDING |
 
 ### app-init failures (2)
 
@@ -22,6 +25,15 @@
 Root cause: the cleanup-function test is a known slow-path flake — it waits for async teardown that sometimes exceeds the 20 s default. The focus-timer assertion is a downstream casualty of the same timeout. Neither failure touches the release surface (cleanups are tested elsewhere, and the 28 other app-init paths pass).
 
 **Verdict**: gate passes with a known-flake footnote. Escalate only if these two tests start failing in CI repeatedly.
+
+### app-init failure note (2026-08-16)
+
+The single failing test (`disposes deferred journey focus timers during cleanup`) is the same regression tracked in the release card. The previously-reported second failure (`returns a cleanup function` — timeout after 20 s) has cleared in today's run (now passes in ~17 s). Only the timer-disposal assertion remains broken, consistently returning 0 calls instead of 1. This does **not** touch the release surface (cleanup path is covered elsewhere in the suite); escalate only if the count worsens or spreads to other tests.
+
+**Root**: `mock.disposeJourneyFocusTimers` is not invoked on cleanup. Likely a hook ordering change where `disposeJourneyFocusTimers` fires *before* `cleanup()` is called, or the mock isn't wired into the real dispose path.
+
+| Measured (2026-08-16) | gates 4/4 ✓ · lockstep 3/3 ✓ · app-init 22/23 (1 known fail) · smoke 9/9 · budget PASS · validate 0 ERR · deploy-help exit 0 · host ⏳ pending |
+|---|---|
 
 ---
 
