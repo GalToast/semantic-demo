@@ -837,9 +837,20 @@ OK). Re-probe before dispatching on kilo/openrouter; don't assume qwen3-coder-ne
   [probe#1 ocw_3c74 — ZERO-TOKEN FAILED; probe#2 ocw_f29f — LANDED 2026-08-15 14:25:14Z]
 
 ## 2026-08-16: CLINE-HARNESS LANE OPEN (probe-certified)
+
 - **Use:** external_subagent_start({ harness: "cline", model: "poolside/laguna-s-2.1:free" }) — the
   launcher shells the Cline CLI (its own OAuth session) → FREE + working, zero shim/router.
 - Probe: `cline-alive` file landed (~2 min). Marker kept: tmp/perf9/cline-lane-probe.txt.
 - The router /clinefree story (8788 → :8793 shim) is the INTERACTIVE-only path and its
   8793 shim is gone; use the harness lane for all subagent work. If the shim returns,
   the router route is ready (keys:1 loaded).
+
+## 2026-08-16 fresh liveness sweep (cold probes, 15:51Z) — CORRECTS glm-only demotion
+| model | result | note |
+|---|---|---|
+| logfare/minimax-m3 | ✅ LANDED | real tokens (in:18.5k/out:44) — certified lane |
+| logfare/glm-5.2 | ⚠️ flaky 1/4 | probe-grade only |
+| logfare/kiro-auto | ❌ 429 | catalog-only; router has no key slot |
+| logfare/deepseek-v4-pro | ❌ 410 | gone |
+| logfare/kimi-k3 | ❌ 404 | gone |
+→ Use `logfare/minimax-m3` as the lane; others: catalog ghosts (impacted router keys).
