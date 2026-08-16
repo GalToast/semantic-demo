@@ -19,11 +19,11 @@ Baseband dig resolved today. Two firmware images, different ISAs, different Ghid
 
 ### Infra lessons (from the attempt)
 
-| Problem | Fix |
-|---|---|
+| Problem                             | Fix                                                                                                  |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `analyzeHeadless` needs import file | Pre-create the target dir **and** pass an **absolute** `-import` path; relative paths silently fail. |
-| `strings` not available in Git Bash | Use `grep -aob '.\{4,\}' <file>` as the portable fallback. |
-| pyelftools not on PATH | Install in `tmp/qcvenv/` virtualenv; invoke via `tmp/qcvenv/bin/python` (not bare `python`). |
+| `strings` not available in Git Bash | Use `grep -aob '.\{4,\}' <file>` as the portable fallback.                                           |
+| pyelftools not on PATH              | Install in `tmp/qcvenv/` virtualenv; invoke via `tmp/qcvenv/bin/python` (not bare `python`).         |
 
 ### Line-level effort
 
@@ -38,12 +38,23 @@ Baseband dig resolved today. Two firmware images, different ISAs, different Ghid
 - Capture any Ghidra project outputs under `docs/evidence/ghidra-*` for traceability.
 
 ## WAVE-2: RF INTF table harvest (lf1 takeover, main lane, 2026-08-15)
+
 Largest protocol-dense PT_LOAD (vma 0xc43f1000; 4,295 marker hits) → 600 unique
 tokens → tmp/firmware-lab/proto-tables/{proto-table.csv, proto-summary.md}.
 Top RF-interface names (count × first-offset):
+
 - sdr865_dtr_rx_fw_intf.cpp ×185 @0x2a1588 · sdr865_dtr_tx ×89 @0x241520
 - smr526_dtr_rx_fw_intf.cpp ×39 · rflm_dtr_pll_fw_intf.cpp ×19
 - fw_llc.c ×24 · rflm_vswr_fw_proc.c · rfe_nr5g_rx_fw_intf.c · rflm_diag_log.cc
-Architecture read: modem offloads RF front-end handling to DSP "intf" objects
-(RFLM = RF Low-level Manager; DTR = digital transceiver; RFE = RF front-end,
-5G NR). DIAG hooks present on rflm_* — per-name filter addresses live in the CSV.
+  Architecture read: modem offloads RF front-end handling to DSP "intf" objects
+  (RFLM = RF Low-level Manager; DTR = digital transceiver; RFE = RF front-end,
+  5G NR). DIAG hooks present on rflm_* — per-name filter addresses live in the CSV.
+
+## WAVE-3 (swarm-7): tool verdicts
+- **Hexagon disasm: Capstone-5.0.7 ships ZERO Hexagon/QDSP6 ISA** — the 64KB slices
+  disassemble as bogus ARM (rsbne/stclpl blobs). For QDSP6 code we need a real
+  Hexagon toolchain (llvm/hexagon, QEMU hexagon, or qurt-aware dumper). ADDRESSING
+  WORK CONTINUES via the RF-intf VMA map (rf-intf-vma.csv), not raw disasm.
+- **RF-INTF VMA map banked** (swarm64 s7): top entries → real addresses:
+  sdr865_dtr_rx @0xc4692588 · smr526_dtr_rx @0xc468f3e0 · PLL/tx intfs nearby —
+  exact filter/patch sites for future observability.
