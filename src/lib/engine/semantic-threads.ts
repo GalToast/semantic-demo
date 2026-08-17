@@ -305,6 +305,12 @@ function _validateSemanticSpaceLayoutManifest(
     const edges = Number(manifest.edges)
     const manifestThreadName = basenameUtil(manifest.thread_path)
     const loadedThreadName = artifactName ? basenameUtil(artifactName) : ''
+    // Label-plane fallback warn: a core (directed, score-only) artifact winning
+    // the load means thread_type/role/axis render as defaults. The UI pair-form
+    // carries the label plane; surface the degradation instead of accepting it.
+    if (artifactName && /threads(?:\.dat)?\.bin$/.test(loadedThreadName)) {
+        console.warn('[semantic-threads] label plane unavailable: loaded', loadedThreadName)
+    }
 
     const failures: string[] = []
     if (!Number.isFinite(rows) || rows <= 0) failures.push('rows must be a positive number')

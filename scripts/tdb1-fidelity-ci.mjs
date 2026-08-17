@@ -10,8 +10,14 @@ const JSON_SRC = 'public/data/semantic_threads.dat'
 const TRIPWIRE = ['npx', 'vitest', 'run', 'tests/unit-active/semantic-tdb-fidelity.test.ts']
 
 if (!existsSync(BIN)) {
-    console.log('[tdb-fidelity] SKIP (no .bin — run scripts/tdb1-ensure.mjs to enable)')
-    process.exit(0)
+    // Self-heal: a dist churn (parallel rebuilds) can silently evict the bin;
+    // the gate heals once before declaring SKIP vs real checks.
+    const heal = spawnSync(process.execPath, ['scripts/tdb1-ensure.mjs'], { stdio: 'inherit' })
+    if (!existsSync(BIN) || heal.status !== 0) {
+        console.log('[tdb-fidelity] SKIP (no .bin — ensure could not produce one; run scripts/tdb1-ensure.mjs manually)')
+        process.exit(0)
+    }
+    console.log('[tdb-fidelity] self-healed: ensure regenerated the .bin')
 }
 
 // 1) tripwire suite (lead-set / parity / checksum)
