@@ -14,6 +14,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
+  import { appState } from '@lib/state/app.svelte';
   import { resetSemanticThreadWorker } from '@lib/engine/semantic-threads';
   import { teardownAppShell } from '@lib/orchestration/app-init';
   import { setupGlobalShortcuts } from '@lib/keyboard/global-shortcuts';
@@ -48,6 +49,18 @@
     // onMount fires. Tests polling for testReady see it set by parity-attrs.
     const contractWindow = window as ContractWindow;
     contractWindow.__forceSemanticDiveContractSurface = () => {
+      // Declare the forced surface to the parity layer BEFORE flipping the
+      // dive flag. parity-attrs owns every `surface-*` body class and
+      // data-panel-surface: setSemanticDiveMode() notifies focusStore, which
+      // schedules a parity resync in a microtask. That resync recomputes
+      // panelSurface from the stores — and because the hook never runs a real
+      // selection flow, resolveFocusContext() sees no focused business, so
+      // panelSurface resolved to 'idle' and the sync stripped the
+      // `surface-semantic-dive` class + dataset written below. This flag makes
+      // computeParityAttributes() treat the forced contract surface as a focus
+      // context, so parity re-asserts the SAME surface the hook wants instead
+      // of reverting it. Test-only; no production path sets it.
+      appState._semanticDiveContractForced = true;
       setSemanticDiveMode(true);
       onContractSurfaceForced();
       document.body.classList.add('is-active');
@@ -122,6 +135,10 @@
     return () => {
       errorHandlerHandle.uninstall();
       delete contractWindow.__forceSemanticDiveContractSurface;
+      // Clear the forced-surface override with the hook that sets it, so an
+      // HMR remount can't keep parity pinned to the semantic-dive surface
+      // after the test-only door is gone.
+      appState._semanticDiveContractForced = false;
       teardownAppShell();
       resetSemanticThreadWorker();
       // W49c: previously a dynamic import inside teardown — race condition

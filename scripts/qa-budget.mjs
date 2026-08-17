@@ -2,8 +2,11 @@
 /**
  * qa-budget.mjs — deterministic chunk-size meter for the perf campaign.
  *
- * Scans dist/svelte/assets (+ subdirs) for *.js and *.css, reports top-15,
- * totals, and can write/compare against baseline JSON files.
+ * Scans dist/svelte/assets (+ subdirs) for *.js and *.css, AND the CSS the
+ * browser loads eagerly via <link rel=stylesheet> in dist/svelte/index.html
+ * (e.g. dist/svelte/css/*.css, semantic-demo.css). The meter previously only
+ * saw dist/svelte/assets/*.css and under-reported first-load CSS by ~4x.
+ * Reports top-15, totals, and can write/compare against baseline JSON files.
  *
  * Usage:
  *   node scripts/qa-budget.mjs                          # compare vs newest baseline
@@ -28,6 +31,7 @@ function kb(n) {
 
 async function scanAssets() {
     const chunks = []
+    const seen = new Set()
     async function walk(dir) {
         const entries = await readdir(dir, { withFileTypes: true })
         for (const e of entries) {
@@ -37,16 +41,56 @@ async function scanAssets() {
             } else if (/\.(js|css)$/.test(e.name) && !/\.br$/.test(e.name) && !/\.gz$/.test(e.name)) {
                 try {
                     const s = await stat(full)
-                    chunks.push({ path: full, name: e.name, size: s.size })
-        } catch {
-          return null; // readdir or path-join failure → no baseline
-        }
-      }
+                    if (!seen.has(full)) {
+                        seen.add(full)
+                        chunks.push({ path: full, name: e.name, size: s.size })
+                    }
+                } catch {
+                    return null // readdir or path-join failure → no baseline
+                }
+            }
         }
     }
     await walk(ASSETS_DIR)
+    // Also scan CSS the browser loads eagerly via <link> in index.html
+    // (dist/svelte/css/*.css, semantic-demo.css, etc.). Without this the meter
+    // only saw dist/svelte/assets/*.css and under-reported first-load CSS ~4x.
+    for (const c of await scanLinkedCss()) {
+        if (!seen.has(c.path)) {
+            seen.add(c.path)
+            chunks.push(c)
+        }
+    }
     chunks.sort((a, b) => b.size - a.size)
     return chunks
+}
+
+// CSS the browser pulls on first paint via <link rel=stylesheet> in
+// dist/svelte/index.html. These are NOT in dist/svelte/assets/ and were
+// previously invisible to the meter.
+async function scanLinkedCss() {
+    const out = []
+    const htmlPath = resolve(ROOT, 'dist', 'svelte', 'index.html')
+    let html
+    try {
+        html = await readFile(htmlPath, 'utf8')
+    } catch {
+        return out
+    }
+    const base = resolve(ROOT, 'dist', 'svelte')
+    const re = /<link\b[^>]*?href\s*=\s*["']([^"']*?\.css[^"']*?)["'][^>]*?>/gi
+    let m
+    while ((m = re.exec(html)) !== null) {
+        const href = m[1].replace(/^\.\//, '')
+        const full = resolve(base, href)
+        try {
+            const s = await stat(full)
+            out.push({ path: full, name: 'linked:' + href, size: s.size })
+        } catch {
+            // linked file missing from the build → skip
+        }
+    }
+    return out
 }
 
 function summary(chunks) {

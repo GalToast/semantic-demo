@@ -50,6 +50,13 @@ export interface ParityContext {
     semanticDiveDeadline: number | null
     /** Legacy fallback from window.__APP_STATE__.navState.focusedIndex */
     legacyFocusedIndex: number | null
+    /**
+     * Test-only: `window.__forceSemanticDiveContractSurface` (AppBoot.svelte)
+     * declares a forced semantic-dive contract surface. Never true in
+     * production. Consumed by computeParityAttributes() to widen the focus
+     * context so the forced surface survives the next parity sync.
+     */
+    semanticDiveContractForced: boolean
 }
 
 // ── Resolver ───────────────────────────────────────────────────────────────
@@ -122,6 +129,7 @@ export function resolveParityContext(): ParityContext {
         focus,
         search,
         filters,
+        semanticDiveContractForced: appState._semanticDiveContractForced === true,
         viewport: vp,
         demoPhase: demoPhaseValue,
         camera,

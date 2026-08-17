@@ -247,7 +247,21 @@ export function computeParityAttributes(): ParityAttributeMap {
     // testable and the orchestrator is now a thin wiring layer.
 
     const ctx = resolveParityContext()
-    const { focusedNode, hasFocusContext } = resolveFocusContext(ctx)
+    const { focusedNode, hasFocusContext: resolvedFocusContext } = resolveFocusContext(ctx)
+    // Test-only contract override — AppBoot.svelte's
+    // `window.__forceSemanticDiveContractSurface` flips the dive flag WITHOUT a
+    // real selection flow, so resolveFocusContext() finds no focused business.
+    // resolvePanelSurfaceMode() then falls through its `hasFocus` guard to
+    // 'idle', and applyBodyClassMirrors() removes the `surface-semantic-dive`
+    // class the hook just added (prefix-sibling removal) while
+    // applyDataAttributes() rewrites data-panel-surface back to 'idle' — the
+    // hook's DOM write and the parity map fight each other. Widening the focus
+    // context for the forced surface keeps body classes, body dataset, and
+    // `parityMap` in agreement instead. `_semanticDiveContractForced` is only
+    // ever set by the test hook, so production behavior is unchanged and the
+    // "stale dive flag without a focused business" guard (parity-resolvers.ts)
+    // stays intact for every real code path.
+    const hasFocusContext = resolvedFocusContext || ctx.semanticDiveContractForced
     const { hasSearchContext } = resolveSearchContext(ctx)
     const { graphContext } = resolveGraphContext(ctx, hasFocusContext, hasSearchContext)
     const { panelSurfaceMode } = resolvePanelSurfaceMode(ctx, hasFocusContext, hasSearchContext)

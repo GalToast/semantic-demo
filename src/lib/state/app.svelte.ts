@@ -473,6 +473,15 @@ export class AppState {
     pointIndexByLeadId = $state<Map<string | number, number>>(new Map())
     deferredHydrationStarted = $state<boolean>(false)
     _semanticDiveTransitionDeadline = $state<number>(0)
+    /**
+     * Test-only: set by `window.__forceSemanticDiveContractSurface`
+     * (src/components/AppBoot.svelte). The hook forces the semantic-dive
+     * surface without a real selection flow, so parity's focus-context
+     * resolver finds nothing to anchor the dive surface to. parity-attrs
+     * reads this flag to treat the forced contract surface as a focus
+     * context; never set on any production code path.
+     */
+    _semanticDiveContractForced = $state<boolean>(false)
     lastSuccessfulFetch = $state<string | null>(null)
 
     // ==== VIEWPORT / ENVIRONMENT STATE ====
