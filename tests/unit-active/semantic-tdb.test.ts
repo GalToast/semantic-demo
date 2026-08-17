@@ -6,17 +6,19 @@ import { parseTdb } from '@lib/loaders/semantic-tdb'
 
 const bin = readFileSync('tmp/perf9/semantic_threads.dat.bin')
 const j = JSON.parse(readFileSync('public/data/semantic_threads.dat', 'utf8'))
+// Plain ArrayBuffer (vitest/jsdom-safe; avoids Buffer-pool slicing quirks)
+const ab = Uint8Array.from(bin).buffer
 
-const { nodes, count } = parseTdb(bin.buffer.slice(bin.byteOffset, bin.byteOffset + bin.byteLength))
+const { nodes, count } = parseTdb(ab)
 
 test('magic/parse: count matches json node map', () => {
   expect(count).toBe(Object.keys(j.nodes ?? {}).length)
-  expect(Object.keys(nodes).length).toBe(count)
+  expect(nodes.size).toBe(count)
 })
 
 test('sample node shape matches json oracle (lead_id/signal)', () => {
   const src = Object.values(j.nodes)[0] as any
-  const binNode = nodes[String(src.lead_id)]
+  const binNode = nodes.get(String(src.lead_id))
   expect(binNode).toBeDefined()
   expect(Math.abs(binNode.signal_score - (src.signal_score ?? 0))).toBeLessThan(1e-3)
   expect(binNode.neighbors.length).toBe((src.neighbors ?? []).length)
@@ -25,7 +27,7 @@ test('sample node shape matches json oracle (lead_id/signal)', () => {
 test("first neighbor's score round-trips", () => {
   const src = Object.values(j.nodes)[0] as any
   const nb = (src.neighbors ?? [])[0]
-  const bn = nodes[String(src.lead_id)].neighbors[0]
+  const bn = nodes.get(String(src.lead_id)).neighbors[0]
   expect(bn).toBeDefined()
   expect(Math.abs(bn.score - (nb.score ?? 0))).toBeLessThan(1e-3)
 })
