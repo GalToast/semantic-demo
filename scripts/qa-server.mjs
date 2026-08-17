@@ -298,10 +298,19 @@ async function cmdStart() {
         process.exit(3)
     }
 
-    // 3. Start server
+    // 3. Start server (hard start-deadline: parallel storms wedged this forever;
+    // fail fast with diagnosis instead of hanging silent).
     const server = createServer()
+    const startDeadline = setTimeout(() => {
+        console.error(
+            'qa-server: START TIMED OUT (30s) — host under load or a zombie holds :8795; run `tasklist | findstr node` to check.'
+        )
+        process.exit(2)
+    }, 30_000)
+    startDeadline.unref?.()
     await new Promise((resolve, reject) => {
         server.listen(PORT, HOST, () => {
+            clearTimeout(startDeadline)
             writePidfile(process.pid)
             console.log(`qa-server: ready on http://${HOST}:${PORT} (pid ${process.pid})`)
             resolve()
