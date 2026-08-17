@@ -50,6 +50,12 @@ const COMPRESSION_ALLOWLIST = new Set([
 // assets/*.css — all of them are text with high redundancy.
 const COMPRESS_CSS = true
 
+// J52 (2026-08-17, simplex1-br): JS chunks are the last uncompressed family:
+// 1,690,770 raw → 387,362 br (77.1% on the elephant; ~1.3 MB transfer saved).
+// .htaccess already rewrites .js.br/.js.gz + sets Content-Encoding (L103-116);
+// only the twins were missing on disk. Enable → build writes them everywhere.
+const COMPRESS_JS = true
+
 // Brotli/gzip frame headers are ~30-50 bytes; files smaller than this produce
 // compressed output LARGER than the original. Skip them.
 const COMPRESSION_MIN_BYTES = 100
@@ -343,7 +349,8 @@ function w44AssetCompressionPlugin(): Plugin {
                     if (!entry.isFile()) return
                     const isAllowlisted = COMPRESSION_ALLOWLIST.has(entry.name)
                     const isCss = COMPRESS_CSS && entry.name.endsWith('.css')
-                    if (!isAllowlisted && !isCss) return
+                    const isJs = COMPRESS_JS && entry.name.endsWith('.js')
+                    if (!isAllowlisted && !isCss && !isJs) return
                     const filePath = join(entry.parentPath, entry.name)
                     const fileSize = (await stat(filePath)).size
                     if (fileSize < COMPRESSION_MIN_BYTES) return
