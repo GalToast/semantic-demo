@@ -27,3 +27,25 @@ test('demo: engine fell back to local index/mock', () => {
 test('live default when rail unknown but api live and not degraded', () => {
     expect(railBanner('api', null, null)).toEqual({ key: 'live', copy: 'Live search' })
 })
+
+test('fallback: api up + rail down + degraded both signals', () => {
+    expect(railBanner('api', false, true)).toMatchObject({ key: 'fallback' })
+})
+
+test('demo: api fallback dominates even when rail reports healthy', () => {
+    expect(railBanner('fallback', true, null)).toEqual({
+        key: 'demo',
+        copy: 'Demo data — live API unreachable'
+    })
+})
+
+test('fallback: api up + rail unknown + degraded flag', () => {
+    expect(railBanner('api', null, true)).toMatchObject({ key: 'fallback' })
+})
+
+test('demo: api fallback + rail down + degraded', () => {
+    expect(railBanner('fallback', false, true)).toEqual({
+        key: 'demo',
+        copy: 'Demo data — live API unreachable'
+    })
+})

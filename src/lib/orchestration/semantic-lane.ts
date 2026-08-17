@@ -14,6 +14,7 @@ import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback
 import { readApiUnreachable } from '@lib/search/mock-search-fallback'
 import { debugWarn } from '@lib/utils/debug'
 import { apiUrl } from '@lib/utils/api-url'
+import { railBanner } from '@lib/rail/rail-status'
 
 // ── Window augmentation (semantic-lane helpers attached by lifecycle.js) ────
 
@@ -483,19 +484,22 @@ export function setSemanticLaneUiState(laneState: string, options: LaneUiOptions
     }
 
     const pillEl = pill as HTMLElement
-    pillEl.dataset.state = laneState
-    // Truth-split (2026-08-17): when the engine marked the API unreachable, the
-    // lane must NOT look healthy (the static-dev mock path returned well while
-    // search served demo data — the conflation this split kills).
-    const apiDown = readApiUnreachable() !== null
-    if (apiDown) {
-        pillEl.dataset.state = 'demo'
-        pillEl.textContent = 'Demo data — live API unreachable'
-        pillEl.title = 'Live API unreachable; showing the local demo data'
-        pillEl.setAttribute('aria-label', 'Demo data — live API unreachable')
-        pillEl.hidden = false
-        return
-    }
+    // Truth-split (2026-08-17 → 2026-08-18): wire railBanner so the pill
+    // renders the full source×rail×degraded matrix instead of the ad-hoc
+    // apiDown-only override.
+    const source: 'api' | 'fallback' = readApiUnreachable() !== null ? 'fallback' : 'api'
+    const railAlive: boolean | null =
+        state.semanticLaneState === 'healthy' ? true
+        : state.semanticLaneState === 'degraded' || state.semanticLaneState === 'reconnecting' || state.semanticLaneState === 'stuck' ? false
+        : null
+    const degraded: boolean | null = state.semanticLaneState === 'degraded' ? true : null
+    const banner = railBanner(source, railAlive, degraded)
+    pillEl.dataset.state = banner.key
+    pillEl.textContent = banner.copy
+    pillEl.title = banner.key === 'demo' ? 'Live API unreachable; showing the local demo data' : title
+    pillEl.setAttribute('aria-label', banner.copy)
+    pillEl.hidden = false
+    if (banner.key === 'demo') return
     syncSemanticLaneRetryBinding(pillEl, laneState === 'stuck')
     const assistEl = doc?.getElementById?.('semantic-lane-assist') || null
     if (assistEl) {
