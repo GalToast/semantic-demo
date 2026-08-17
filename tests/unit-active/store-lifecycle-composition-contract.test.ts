@@ -8,7 +8,7 @@ const _navSnapshot = vi.hoisted(() => ({
     surface: 'idle' as const
 }))
 
-const _focusState = vi.hoisted(() => ({ selectedBusiness: null as null }))
+const _focusState = vi.hoisted(() => ({ selectedBusiness: null as null, semanticDiveMode: false }))
 
 const _searchState = vi.hoisted(() => ({ glowActive: false }))
 
@@ -26,7 +26,9 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
 }))
 
 vi.mock('@lib/stores/focus.svelte.ts', () => ({
-    setSemanticDiveMode: () => {},
+    setSemanticDiveMode: (active: boolean) => {
+        _focusState.semanticDiveMode = active
+    },
     focusStore: {
         subscribe: (run: (v: unknown) => void) => {
             run(_focusState)
@@ -116,6 +118,7 @@ describe('store-lifecycle-composition-contract (lifecycle.ts 17% coverage pin)',
         _navSnapshot.mode = 'overview'
         _navSnapshot.surface = 'idle'
         _focusState.selectedBusiness = null
+        _focusState.semanticDiveMode = false
         _searchState.glowActive = false
         vi.clearAllMocks()
         if (!document.body) {
@@ -145,12 +148,20 @@ describe('store-lifecycle-composition-contract (lifecycle.ts 17% coverage pin)',
         }
     })
 
-    it('(c) applyCompositionState + refreshCompositionState are callable without throwing on cold baseline', () => {
+    it('(c) setTrailDepth keeps the semantic-dive mirror aligned at depth 2', () => {
+        setTrailDepth(2)
+        expect(_focusState.semanticDiveMode).toBe(true)
+
+        setTrailDepth(1)
+        expect(_focusState.semanticDiveMode).toBe(false)
+    })
+
+    it('(d) applyCompositionState + refreshCompositionState are callable without throwing on cold baseline', () => {
         expect(() => applyCompositionState()).not.toThrow()
         expect(() => refreshCompositionState()).not.toThrow()
     })
 
-    it('(d) updateExplorationUi is callable without throwing', () => {
+    it('(e) updateExplorationUi is callable without throwing', () => {
         expect(() => updateExplorationUi()).not.toThrow()
     })
 })

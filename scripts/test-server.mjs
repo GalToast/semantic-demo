@@ -106,7 +106,8 @@ const server = createServer((req, res) => {
         return
     }
 
-    const filePath = resolve(ROOT, pathname.replace(/^\//, ''))
+    const relativePath = pathname === '/' ? 'index.html' : pathname.replace(/^\//, '')
+    const filePath = resolve(ROOT, relativePath)
     // Prevent traversal outside repo root.
     if (!filePath.startsWith(ROOT + '\\') && filePath !== ROOT) {
         sendError(res, 403, 'Forbidden')

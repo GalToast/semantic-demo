@@ -162,6 +162,7 @@ jobs:
             - svelte-check
             - test-unit
             - build
+            - bundle-size
             - test-integration
             - lint-nav-mirror
             - test-contract-smoke

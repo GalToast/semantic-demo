@@ -146,7 +146,7 @@ test.describe('short-landscape viewport transitions', () => {
             expect(phase.body.semanticDive, '[search] semanticDive').toBe('inactive')
         })
 
-        await test.step('clear search from pre-focus state', async () => {
+        await test.step('clear query while staying on the search surface', async () => {
             const clearBtn = page.locator('#search-clear-btn')
             await expect(clearBtn).toBeVisible({ timeout: 10000 })
 
@@ -155,12 +155,19 @@ test.describe('short-landscape viewport transitions', () => {
             await page.waitForFunction(
                 () => {
                     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
-                    return appState?.navState?.mode === 'overview' && appState?.focusedNode === null
+                    return (
+                        appState?.navState?.mode === 'search' &&
+                        appState?.navState?.surface === 'search' &&
+                        appState?.focusedNode === null &&
+                        document.body.dataset.panelSurface === 'search'
+                    )
                 },
                 { timeout: 15000 }
             )
 
             const after = await probe(page)
+            expect(after.state.navMode, 'clear query keeps the search mode').toBe('search')
+            expect(after.body.panelSurface, 'clear query keeps the search surface').toBe('search')
             expect(after.inputValue, 'search input must be empty after clear').toBe('')
             expect(after.resultCount, 'result count must be 0 after clear').toBe(0)
 

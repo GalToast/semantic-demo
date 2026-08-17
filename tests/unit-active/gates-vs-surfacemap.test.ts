@@ -103,20 +103,28 @@ const expected = sortedUnique([...EXPECTED_FOCUS_SURFACES])
 
 describe('focus gates pinned to canonical surface-mode-map (via shared helper)', () => {
     const appGate = normalize(readCallExpression(readFileSync(APP_PATH, 'utf8'), 'let focusActive = $derived('))
-    const chromeGate = normalize(readCallExpression(readFileSync(CHROME_PATH, 'utf8'), 'const chromeHasFocus = $derived('))
+    const chromeGate = normalize(
+        readCallExpression(readFileSync(CHROME_PATH, 'utf8'), 'const chromeHasFocus = $derived(')
+    )
 
     it('documents which canonical surfaces the focus mount gate depends on', () => {
         for (const surface of EXPECTED_FOCUS_SURFACES) {
             if (surface === 'semantic-dive') {
-                expect(isPanelSurface(surface), '"semantic-dive" is intentionally parity-only, not in PANEL_SURFACES').toBe(false)
+                expect(
+                    isPanelSurface(surface),
+                    '"semantic-dive" is intentionally parity-only, not in PANEL_SURFACES'
+                ).toBe(false)
             } else {
-                expect(isPanelSurface(surface), `expected focus surface "${surface}" to be a canonical PANEL_SURFACE`).toBe(true)
+                expect(
+                    isPanelSurface(surface),
+                    `expected focus surface "${surface}" to be a canonical PANEL_SURFACE`
+                ).toBe(true)
             }
         }
         expect(PANEL_SURFACES.length).toBeGreaterThan(0)
     })
 
-    it('keeps the shared helper\'s `panelSurface` literals canonical — no typo/phantom', () => {
+    it("keeps the shared helper's `panelSurface` literals canonical — no typo/phantom", () => {
         const invalid = helperSurfaces.filter((s) => !isPanelSurface(s) && s !== 'semantic-dive')
         expect(
             invalid,
@@ -126,7 +134,9 @@ describe('focus gates pinned to canonical surface-mode-map (via shared helper)',
 
     it('wires BOTH gates through the shared isFocusSurfaceActive helper (no inlined asymmetric derivation)', () => {
         expect(appGate, 'App.svelte focusActive must call isFocusSurfaceActive').toMatch(/isFocusSurfaceActive\(/)
-        expect(chromeGate, 'JourneyChrome chromeHasFocus must call isFocusSurfaceActive').toMatch(/isFocusSurfaceActive\(/)
+        expect(chromeGate, 'JourneyChrome chromeHasFocus must call isFocusSurfaceActive').toMatch(
+            /isFocusSurfaceActive\(/
+        )
         // dialect-normalized (navSnapshot→nav, currentFocusedIndex→focusedIndex, no store
         // prefixes): both gates must reduce to the SAME call — true lockstep.
         expect(appGate, 'dialect-normalized gates must be literally identical').toEqual(chromeGate)

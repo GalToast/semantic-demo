@@ -51,6 +51,7 @@ Top RF-interface names (count × first-offset):
   5G NR). DIAG hooks present on rflm_* — per-name filter addresses live in the CSV.
 
 ## WAVE-3 (swarm-7): tool verdicts
+
 - **Hexagon disasm: Capstone-5.0.7 ships ZERO Hexagon/QDSP6 ISA** — the 64KB slices
   disassemble as bogus ARM (rsbne/stclpl blobs). For QDSP6 code we need a real
   Hexagon toolchain (llvm/hexagon, QEMU hexagon, or qurt-aware dumper). ADDRESSING

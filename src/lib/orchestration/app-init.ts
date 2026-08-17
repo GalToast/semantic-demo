@@ -27,11 +27,7 @@ import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svel
 import { installTestStoreGlobals } from '@lib/orchestration/test-globals'
 import { debugError } from '@lib/utils/debug'
 import { teardownViewController } from '@lib/orchestration/view-controller'
-import {
-    claimRestoreOwnership,
-    isRestoreOwned,
-    releaseRestoreOwnership
-} from '@lib/engine/webgl-restore-ownership'
+import { claimRestoreOwnership, isRestoreOwned, releaseRestoreOwnership } from '@lib/engine/webgl-restore-ownership'
 
 // Side-effect: initializes journey state, canvas interaction adapter,
 // and thread-settler bindings. Must load before engine init so that
@@ -399,7 +395,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
         // Lazify seam-3: fire-and-forget dynamic import (same pattern as seam-1).
         void import('@lib/journey/journey-focus-timers')
             .then((m) => m.disposeJourneyFocusTimers())
-            .catch((err) => console.warn('[lazify] journey-focus-timers teardown failed', err))
+            .catch((err) => debugWarn('[lazify] journey-focus-timers teardown failed', err))
         _unsubWindowGlobals?.()
         _unsubViewport?.()
         _unsubParity?.()
@@ -434,5 +430,5 @@ export function teardownAppShell(): void {
     // do not await.
     void import('@lib/orchestration/triggers')
         .then((m) => m.teardownTriggers())
-        .catch((err) => console.warn('[lazify] trigger teardown failed', err))
+        .catch((err) => debugWarn('[lazify] trigger teardown failed', err))
 }

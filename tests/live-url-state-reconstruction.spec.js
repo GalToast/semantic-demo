@@ -2,10 +2,11 @@ import { test, expect } from '@playwright/test'
 import { setupMockSearch } from './helpers/mock-semantic-search.js'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
+const APP_PATH = '/dist/svelte/index.html'
 
 async function openApp(page) {
     await setupMockSearch(page)
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`)
+    await page.goto(`${BASE_URL}${APP_PATH}?nodemo=1&webgl=1&view=galaxy`)
     await page.waitForFunction(
         () =>
             document.body.dataset.graphicsMode === 'webgl' &&
@@ -20,6 +21,13 @@ async function openApp(page) {
         .catch(() => {})
 }
 
+async function dismissHelpDialogIfOpen(page) {
+    const helpDialog = page.locator('dialog.help-dialog[open]')
+    if ((await helpDialog.count()) === 0) return
+    await page.keyboard.press('Escape')
+    await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+}
+
 /**
  * stateProbe() — captures the three-way sync surface:
  *   URL search params  (parsed from location.href)
@@ -29,6 +37,8 @@ async function openApp(page) {
 async function stateProbe(page) {
     return page.evaluate(() => {
         const url = new URL(location.href)
+        const appState = window.__APP_STATE__ ?? window.__TEST_STATE__
+        const summary = appState?.searchState?.currentSearchSummary
         return {
             url: location.href,
             params: {
@@ -37,7 +47,8 @@ async function stateProbe(page) {
                 record: url.searchParams.get('record'),
                 anchor: url.searchParams.get('anchor'),
                 depth: url.searchParams.get('depth'),
-                mode: url.searchParams.get('mode')
+                mode: url.searchParams.get('mode'),
+                surface: url.searchParams.get('surface')
             },
             body: {
                 activeView: document.body.dataset.activeView || '',
@@ -47,17 +58,15 @@ async function stateProbe(page) {
                 trailDepth: document.body.dataset.trailDepth || ''
             },
             state: {
-                currentView: window.__TEST_STATE__?.currentView || '',
-                trailDepth: window.__TEST_STATE__?.trailDepth ?? null,
-                semanticDiveMode: window.__TEST_STATE__?.semanticDiveMode ?? null,
-                selectedPoint: window.__TEST_STATE__?.selectedPoint
-                    ? String((window.__APP_STATE__ ?? window.__TEST_STATE__).selectedPoint.lead_id)
+                currentView: appState?.currentView || '',
+                trailDepth: appState?.trailDepth ?? null,
+                semanticDiveMode: appState?.semanticDiveMode ?? null,
+                focusedIndex: appState?.navState?.focusedIndex ?? null,
+                selectedPoint: appState?.focusState?.selectedPoint
+                    ? String(appState.focusState.selectedPoint.lead_id)
                     : null,
-                currentSearchSummary: window.__TEST_STATE__?.currentSearchSummary
-                    ? {
-                          query: (window.__APP_STATE__ ?? window.__TEST_STATE__).currentSearchSummary.query,
-                          anchorIndex: (window.__APP_STATE__ ?? window.__TEST_STATE__).currentSearchSummary.anchorIndex
-                      }
+                currentSearchSummary: summary
+                    ? { query: summary.query, anchorIndex: summary.anchorIndex }
                     : null
             }
         }
@@ -68,7 +77,7 @@ test.describe('Live URL State Reconstruction', () => {
     /**
      * Q1/Q2/Q3: Load with a full-parameter URL and verify all three layers agree.
      *
-     * Params: view=galaxy & q=coffee & record=1 & depth=2 & mode=trail
+     * Params: view=galaxy & q=coffee & record=1 & anchor=1 & depth=2 & surface=inside
      *
      * Expected after init:
      *   - state.trailDepth  = 2  (depth=2 was written by updateUrlState on Step Inside)
@@ -77,20 +86,18 @@ test.describe('Live URL State Reconstruction', () => {
      *   - body.dataset.trailDepth = '2'
      *   - URL depth param   = '2'  (should still be in URL after reconstruction)
      *
-     * Gap this test exposes: depth=2 is NOT parsed by applyUrlState().
-     * If the reconstruction path doesn't go through focusOnPoint → setSemanticDiveMode,
-     * trailDepth stays 0 and body.dataset.semanticDive stays 'inactive' even though
-     * the URL contains depth=2.
+     * `surface=inside` is the canonical serialized Step Inside marker. `mode`
+     * is reserved for the mycelium mode field and is not the navigation mode.
      */
     test('full-parameter URL reconstructs depth=2 dive mode correctly', async ({ page }) => {
         test.setTimeout(60000)
         await page.setViewportSize({ width: 1440, height: 1000 })
         await openApp(page)
 
-        // Simulate a pre-built shared link from a prior Step Inside session:
-        // view=galaxy (default) + q=coffee + record=1 (lead_id of first search result)
-        // + depth=2 + mode=trail — all params as they would exist after Step Inside
-        const urlWithParams = `${BASE_URL}/vector-explorer-polished.html?view=galaxy&q=coffee&record=1&anchor=1&depth=2&mode=trail`
+        // Simulate a pre-built shared link from a prior Step Inside session.
+        // `surface=inside` is what updateUrlState serializes for the navigation
+        // surface; `depth=2` remains an explicit legacy/deep-link depth signal.
+        const urlWithParams = `${BASE_URL}${APP_PATH}?nodemo=1&webgl=1&view=galaxy&q=coffee&record=1&anchor=1&depth=2&surface=inside`
 
         // Reload the page with those params — this is the shared-link restoration path
         await setupMockSearch(page)
@@ -111,12 +118,13 @@ test.describe('Live URL State Reconstruction', () => {
         expect(probe.body.trailDepth).toBe('2')
         expect(probe.body.semanticDive).toBe('active')
 
-        // URL should still contain depth=2 after restoration
+        // URL should still contain the canonical dive/depth params after restoration
         expect(probe.params.depth).toBe('2')
-        expect(probe.params.mode).toBe('trail')
+        expect(probe.params.surface).toBe('inside')
 
-        // graphContext should be 'focus' (has focus + search intent)
-        expect(probe.body.graphContext).toBe('focus')
+        // The canonical inside route owns the graph context once the dive is
+        // restored, even though it arrived through the focus/search pipeline.
+        expect(probe.body.graphContext).toBe('inside')
 
         // panelSurface should be 'semantic-dive' (dive mode active)
         expect(probe.body.panelSurface).toBe('semantic-dive')
@@ -135,13 +143,13 @@ test.describe('Live URL State Reconstruction', () => {
         await page.setViewportSize({ width: 1440, height: 1000 })
         await openApp(page)
 
-        const urlWithParams = `${BASE_URL}/vector-explorer-polished.html?view=galaxy&q=coffee&record=1&anchor=1&depth=2&mode=trail`
+        const urlWithParams = `${BASE_URL}${APP_PATH}?nodemo=1&webgl=1&view=galaxy&q=coffee&record=1&anchor=1&depth=2&surface=inside`
         await setupMockSearch(page)
         await page.goto(urlWithParams)
 
         await page.waitForFunction(
             () =>
-                window.__TEST_STATE__?.selectedPoint &&
+                window.__APP_STATE__?.navState?.focusedIndex === 1 &&
                 window.__TEST_STATE__?.trailDepth === 2 &&
                 window.__TEST_STATE__?.semanticDiveMode === true,
             { timeout: 20000 }
@@ -149,22 +157,22 @@ test.describe('Live URL State Reconstruction', () => {
 
         const probe = await stateProbe(page)
 
-        expect(probe.state.selectedPoint).toBeTruthy()
+        expect(probe.state.focusedIndex).toBe(1)
         expect(probe.body.semanticDive).toBe('active')
     })
 
     /**
-     * Test orphaned depth: navigate directly to a URL with depth=2 but NO record.
-     * mode=trail may restore the visible trail shell at depth=1, but depth=2
-     * must not activate without a focused record/anchor.
+     * Test orphaned depth: navigate directly to a URL with surface=inside but
+     * NO record/anchor. The invalid inside route must fall back to overview and
+     * remove the unusable depth marker instead of leaving a dead-end surface.
      */
     test('depth=2 without record anchor is silently ignored', async ({ page }) => {
         test.setTimeout(60000)
         await page.setViewportSize({ width: 1440, height: 1000 })
         await openApp(page)
 
-        // depth=2 without a record param — no focus anchor exists
-        const orphanedUrl = `${BASE_URL}/vector-explorer-polished.html?view=galaxy&depth=2&mode=trail`
+        // depth=2 without a record/anchor param — no focus anchor exists
+        const orphanedUrl = `${BASE_URL}${APP_PATH}?nodemo=1&webgl=1&view=galaxy&depth=2&surface=inside`
         await setupMockSearch(page)
         await page.goto(orphanedUrl)
         await page.waitForFunction(() => document.body.dataset.graphicsMode === 'webgl', { timeout: 20000 })
@@ -174,18 +182,25 @@ test.describe('Live URL State Reconstruction', () => {
                 { timeout: 8000 }
             )
             .catch(() => {})
+        await page.waitForFunction(
+            () => {
+                const url = new URL(location.href)
+                return !url.searchParams.has('depth') && !url.searchParams.has('surface')
+            },
+            { timeout: 8000 }
+        )
 
         const probe = await stateProbe(page)
 
-        // Without a record anchor, the dive focus chain never fires, so:
-        // - trailDepth may restore to 1 from mode=trail
-        // - semanticDiveMode stays false
-        // - depth=2 is ignored because there is no focused record to dive into
-        expect(probe.state.trailDepth).toBe(1)
+        // Without a record/anchor, the dive focus chain never fires, so the
+        // restore path collapses to a clean overview state.
+        expect(probe.state.trailDepth).toBe(0)
         expect(probe.state.semanticDiveMode).toBe(false)
         expect(probe.body.semanticDive).toBe('inactive')
-        // URL state is canonicalized back to depth=1 because no record focus exists.
-        expect(probe.params.depth).toBe('1')
+        expect(probe.body.panelSurface).toBe('idle')
+        // URL state is canonicalized without the invalid inside/depth route.
+        expect(probe.params.depth).toBeNull()
+        expect(probe.params.surface).toBeNull()
     })
 
     /**
@@ -198,6 +213,7 @@ test.describe('Live URL State Reconstruction', () => {
 
         // Step 1: Open app in galaxy view
         await openApp(page)
+        await dismissHelpDialogIfOpen(page)
 
         // Step 2: Do a search — this writes q and anchor to URL
         const input = page.locator('#search-input')
@@ -217,6 +233,7 @@ test.describe('Live URL State Reconstruction', () => {
             })
             await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 })
         }
+        await dismissHelpDialogIfOpen(page)
         await page.locator('.search-result-item').first().click()
         await page.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 15000 })
         await page
@@ -230,7 +247,7 @@ test.describe('Live URL State Reconstruction', () => {
         expect(paramsAfterFocus.get('anchor')).toBeTruthy()
 
         // Step 3: Navigate away (simple back to about:blank equivalent)
-        await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`)
+        await page.goto(`${BASE_URL}${APP_PATH}?nodemo=1&webgl=1&view=galaxy`)
         await page
             .waitForFunction(
                 () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
@@ -247,6 +264,16 @@ test.describe('Live URL State Reconstruction', () => {
                 { timeout: 8000 }
             )
             .catch(() => {}) // allow full restoration
+        await page.waitForFunction(
+            () => {
+                const appState = window.__APP_STATE__ ?? window.__TEST_STATE__
+                return (
+                    appState?.searchState?.currentSearchSummary?.query === 'coffee' &&
+                    appState?.navState?.focusedIndex != null
+                )
+            },
+            { timeout: 20000 }
+        )
 
         const probe = await stateProbe(page)
 

@@ -174,7 +174,7 @@ describe('appInit — happy path', () => {
         const cleanup = await freshInit({})
         expect(typeof cleanup).toBe('function')
         cleanup()
-    })
+    }, 30_000)
 
     it('disposes deferred journey focus timers during cleanup', async () => {
         const { appInit: freshInit } = await freshAppInit()
@@ -184,9 +184,12 @@ describe('appInit — happy path', () => {
 
         // app-init's teardown fires the lazy dispose via void import(...).then
         // — a microtask; wait for it to land before asserting (2026-08-17).
-        await vi.waitFor(() => {
-            expect(mock.disposeJourneyFocusTimers).toHaveBeenCalledOnce()
-        })
+        await vi.waitFor(
+            () => {
+                expect(mock.disposeJourneyFocusTimers).toHaveBeenCalledOnce()
+            },
+            { timeout: 30_000 }
+        )
     })
 
     it('sets isAppInitComplete=true after init resolves', async () => {

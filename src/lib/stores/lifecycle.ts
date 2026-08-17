@@ -6,8 +6,9 @@
  * for CSS composition.  The event-bus publish() call keeps the legacy
  * engine bridge subscribers in sync.
  *
- * The 3 working delegates (setTrailDepth, setMyceliumMode,
- * setSemanticDiveMode) remain unchanged.
+ * The lifecycle delegates keep navigation, focus, and composition state
+ * aligned; setTrailDepth also repairs the semantic-dive mirror at the depth-2
+ * boundary.
  */
 import { get } from 'svelte/store'
 import {
@@ -30,7 +31,24 @@ import { computeParityAttributes, applyParityAttributes } from '../orchestration
 
 export function setTrailDepth(depth: number, _options?: unknown): void {
     const nextDepth = Math.max(0, Number(depth) || 0)
+    // G1/G2 state-coverage audit: `semanticDiveMode` is a separate writable
+    // on focusStore — focus.svelte.ts _readFocusSnapshot reads the mirror, not
+    // appState.navState.trailDepth. setSemanticDiveMode updates BOTH the mirror
+    // and trailDepth, but callers of this delegate funnel that set trailDepth
+    // directly — ThreadInspectorPanel's setTrailDepth(max(1, depth)) and the
+    // test-bridge window.__navActions__.setTrailDepth — never touch the mirror,
+    // leaving parity-attrs (reads the mirror) stale vs appState / semantic-dive.ts
+    // (read navState.trailDepth). Close the seam at the canonical funnel: sync
+    // the mirror whenever the dive-active state transitions (enter depth 2, or
+    // leave depth 2), but only when the mirror actually differs, so the explicit
+    // setSemanticDiveMode(true) in ENTER_INSIDE is a no-op here. Recursion-safe:
+    // _setSemanticDiveMode -> withFocusNotify -> writeNavStateMirror({trailDepth})
+    // never re-enters this function.
     _setTrailDepth(nextDepth)
+    const targetDive = nextDepth === 2
+    if (get(focusStore).semanticDiveMode !== targetDive) {
+        _setSemanticDiveMode(targetDive)
+    }
     updateNavState({ trailDepth: nextDepth })
 }
 export const setSemanticDiveMode = _setSemanticDiveMode
@@ -193,14 +211,11 @@ export function resetExplorationFocus(options?: {
         publish(EVENTS.STATE_RESET, { reason: 'manual-reset', options })
     }
 
-    // Mirror to test-compat globals via legacyState. The test-compat proxy
-    // forwards writes from __APP_STATE__ / __TEST_STATE__ back to
-    // legacyState; a single direct write here is equivalent to iterating
-    // the live globals. window.state was retired 2026-05-27.
+    // Mirror the reset through the canonical navigation helper. legacyState is
+    // the same appState object, so trailDepth, semanticDiveMode, and
+    // focusedNode aliases all follow the navState patch while subscribers see
+    // one ordered write. window.state was retired 2026-05-27.
     if (typeof window !== 'undefined') {
-        legacyState.trailDepth = 0
-        legacyState.semanticDiveMode = false
-        legacyState.focusedNode = null
         if (legacyState.navState) {
             writeNavStateMirror({
                 focusedIndex: null,

@@ -12,10 +12,7 @@
  * Replaces 4 source-grep test files retired in PR-D1.
  */
 import { describe, it, expect } from 'vitest'
-import {
-    MODE_DESCRIPTIONS,
-    modes
-} from '@lib/components/header/mode-constants'
+import { MODE_DESCRIPTIONS, modes } from '@lib/components/header/mode-constants'
 import { SELECTION_DEPENDENT_MODES } from '@lib/navigation/mode-affordances'
 import {
     isModeLocked,
@@ -43,14 +40,7 @@ describe('header-mode-constants — module shape', () => {
     })
 
     it('MODE_DESCRIPTIONS is keyed by every NavMode except map (inline in modes[])', () => {
-        const expectedKeys: NavMode[] = [
-            'overview',
-            'search',
-            'trail',
-            'focus',
-            'inside',
-            'bridge'
-        ]
+        const expectedKeys: NavMode[] = ['overview', 'search', 'trail', 'focus', 'inside', 'bridge']
         for (const k of expectedKeys) {
             expect(MODE_DESCRIPTIONS[k]).toBeDefined()
             expect(MODE_DESCRIPTIONS[k].length).toBeGreaterThan(0)
@@ -263,7 +253,7 @@ describe('selectMode — action dispatch + URL sync', () => {
     } {
         const calls: string[] = []
         // @ts-ignore — harness: literal type inference issue
-    const navActions = { RETURN_OVERVIEW: "RET" as const, SET_VIEW: "SETV" as const, SET_SURFACE: "SETS" as const }
+        const navActions = { RETURN_OVERVIEW: 'RET' as const, SET_VIEW: 'SETV' as const, SET_SURFACE: 'SETS' as const }
         return {
             navActions,
             calls,
@@ -294,22 +284,14 @@ describe('selectMode — action dispatch + URL sync', () => {
         const t = makeCtx()
         const idx = selectMode('search', false, t.ctx)
         expect(idx).toBe(1)
-        expect(t.calls).toEqual([
-            'SETV:{"view":"galaxy"}',
-            'SETS:{"surface":"search"}',
-            'URL'
-        ])
+        expect(t.calls).toEqual(['SETV:{"view":"galaxy"}', 'SETS:{"surface":"search"}', 'URL'])
     })
 
     it('map dispatches SET_VIEW then SET_SURFACE (view-level switch)', () => {
         const t = makeCtx()
         const idx = selectMode('map', false, t.ctx)
         expect(idx).toBe(5)
-        expect(t.calls).toEqual([
-            'SETV:{"view":"map"}',
-            'SETS:{"surface":"map"}',
-            'URL'
-        ])
+        expect(t.calls).toEqual(['SETV:{"view":"map"}', 'SETS:{"surface":"map"}', 'URL'])
     })
 
     it('locked modes short-circuit (no dispatch, no URL sync)', () => {

@@ -41,7 +41,8 @@ vi.mock('@lib/orchestration/event-bus', () => ({
 }))
 
 // Import AFTER mocks are in scope so the navigation store sees them.
-import { writeNavStateMirror, navStore } from '../../src/lib/stores/navigation.svelte'
+import { writeNavStateMirror, navStore, getLastCommittedView } from '../../src/lib/stores/navigation.svelte'
+import { appState } from '../../src/lib/state/app.svelte'
 
 const publishSpy = mocks.publish
 
@@ -126,6 +127,111 @@ describe('writeNavStateMirror VIEW_CHANGED publish (W49-F)', () => {
             (c: unknown[]) => c[0] === 'VIEW_CHANGED'
         ).length
         expect(firstPublishCount).toBe(1)
+    })
+})
+
+// ─────────────────────────────────────────────────────────────────────────
+// navStore.update: regression coverage for the canonical-mirror delegation fix.
+// Before the fix, navStore.update bypassed writeNavStateMirror entirely, so
+// VIEW_CHANGED never fired and _lastCommittedView was never tracked.
+// ─────────────────────────────────────────────────────────────────────────
+describe('navStore.update VIEW_CHANGED publish (nav-mirror update fix)', () => {
+    beforeEach(() => {
+        publishSpy.mockClear()
+        // Reset nav state to galaxy via writeNavStateMirror so the drift
+        // baseline is clean before each test.
+        writeNavStateMirror({ currentView: 'galaxy' })
+        publishSpy.mockClear()
+    })
+
+    it('publishes VIEW_CHANGED when currentView transitions galaxy → map via .update()', () => {
+        navStore.update((s) => ({ ...s, currentView: 'map' }))
+        const payload = viewChangedPayload()
+        expect(payload).toEqual(
+            expect.objectContaining({
+                view: 'map',
+                previousView: 'galaxy'
+            })
+        )
+        expect(navStore().currentView).toBe('map')
+    })
+
+    it('publishes VIEW_CHANGED when currentView transitions map → galaxy via .update()', () => {
+        navStore.update((s) => ({ ...s, currentView: 'map' }))
+        publishSpy.mockClear()
+        navStore.update((s) => ({ ...s, currentView: 'galaxy' }))
+        const payload = viewChangedPayload()
+        expect(payload).toEqual(
+            expect.objectContaining({
+                view: 'galaxy',
+                previousView: 'map'
+            })
+        )
+    })
+
+    it('does NOT publish VIEW_CHANGED on a same-value .update() reassertion', () => {
+        navStore.update((s) => ({ ...s, currentView: 'map' }))
+        publishSpy.mockClear()
+        navStore.update((s) => ({ ...s, currentView: 'map' }))
+        expect(viewChangedCall()).toBeUndefined()
+    })
+
+    it('does NOT publish VIEW_CHANGED when only non-view fields change via .update()', () => {
+        navStore.update((s) => ({ ...s, currentView: 'map' }))
+        publishSpy.mockClear()
+        navStore.update((s) => ({ ...s, focusedIndex: 7, mode: 'focus', trailDepth: 2 }))
+        expect(viewChangedCall()).toBeUndefined()
+    })
+
+    it('.update() commits non-view fields correctly', () => {
+        navStore.update((s) => ({ ...s, focusedIndex: 42, mode: 'focus', surface: 'focus' }))
+        expect(navStore().focusedIndex).toBe(42)
+        expect(navStore().mode).toBe('focus')
+        expect(navStore().surface).toBe('focus')
+        expect(navStore().currentView).toBe('galaxy') // unchanged
+    })
+
+    it('.update() commits view field correctly', () => {
+        navStore.update((s) => ({ ...s, currentView: 'map' }))
+        expect(navStore().currentView).toBe('map')
+    })
+
+    it('.update() protects the canonical state from an in-place top-level updater', () => {
+        navStore.update((s) => {
+            s.currentView = 'map'
+            return s
+        })
+        expect(viewChangedPayload()).toEqual(
+            expect.objectContaining({
+                view: 'map',
+                previousView: 'galaxy'
+            })
+        )
+        expect(navStore().currentView).toBe('map')
+    })
+
+    it('.set() synchronizes appState before notifying subscribers', () => {
+        const observedViews: Array<'galaxy' | 'map'> = []
+        const unsubscribe = navStore.subscribe(() => {
+            observedViews.push(appState.navState.currentView)
+        })
+        try {
+            navStore.set({ ...navStore(), currentView: 'map' })
+        } finally {
+            unsubscribe()
+        }
+        expect(observedViews.at(-1)).toBe('map')
+        expect(appState.navState.currentView).toBe('map')
+    })
+
+    it('tracks _lastCommittedView through .update() (regression vs bypass)', () => {
+        // getLastCommittedView is exported and must reflect the last view
+        // committed via the canonical path — both writeNavStateMirror and
+        // navStore.update route there now.
+        navStore.update((s) => ({ ...s, currentView: 'map' }))
+        expect(getLastCommittedView()).toBe('map')
+        navStore.update((s) => ({ ...s, currentView: 'galaxy' }))
+        expect(getLastCommittedView()).toBe('galaxy')
     })
 })
 

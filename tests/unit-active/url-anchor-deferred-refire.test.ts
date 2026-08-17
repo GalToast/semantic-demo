@@ -40,6 +40,8 @@ const mockState = vi.hoisted(() => ({
     neighborMap: new Map<string, unknown>(),
     publishCalls: [] as Array<{ type: string; payload: unknown }>,
     applyLocalNeighborhoodFocusCalls: [] as Array<number>,
+    animateCameraCalls: [] as Array<number>,
+    cameraReady: false,
     urlSearch: ''
 }))
 
@@ -96,6 +98,12 @@ vi.mock('@lib/state/app.svelte', () => ({
         // lookup in applyUrlState and the range check in _restoreAnchorFromParams)
         // and appState.navState.focusedIndex (for the staleness guard).
         points: Array.from({ length: 100 }, (_, i) => ({ lead_id: String(i), name: `Biz ${i}` })),
+        get camera() {
+            return mockState.cameraReady ? {} : null
+        },
+        get controls() {
+            return mockState.cameraReady ? {} : null
+        },
         get navState() {
             return { focusedIndex: mockState.navStore.focusedIndex }
         },
@@ -150,6 +158,18 @@ vi.mock('@lib/focus/pocket', () => ({
         return true
     }
 }))
+vi.mock('@lib/engine/camera-choreography/focus', () => ({
+    animateCameraToNode: (index: number) => {
+        mockState.animateCameraCalls.push(index)
+    }
+}))
+vi.mock('@lib/journey/webgl', () => ({
+    refreshFocusSemanticOverlay: () => {},
+    updateFocusSemanticOverlayPositions: () => {}
+}))
+vi.mock('@lib/journey/point-color', () => ({
+    applyPointFilterColors: () => {}
+}))
 
 // Capture publish calls so we can assert the deferred re-fire.
 vi.mock('@lib/orchestration/event-bus', () => ({
@@ -201,6 +221,8 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
         mockState.neighborMap = new Map()
         mockState.publishCalls = []
         mockState.applyLocalNeighborhoodFocusCalls = []
+        mockState.animateCameraCalls = []
+        mockState.cameraReady = false
         mockState.urlSearch = ''
         // Reset the writable to an empty map.
         semanticNeighborMapSet(new Map())
@@ -284,6 +306,60 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
         expect(focusCount).toBe(1)
         expect(focusCountAfter).toBe(1)
     }, 60000)
+
+    it('does not frame a stale anchor when focus changes before the delayed camera settle', async () => {
+        vi.useFakeTimers()
+        try {
+            mockState.cameraReady = true
+            mockState.urlSearch = '?anchor=42'
+            window.history.replaceState({}, '', '/?anchor=42')
+
+            const { applyUrlState } = await import('@lib/orchestration/url-state')
+            await applyUrlState({})
+
+            expect(mockState.navStore.focusedIndex).toBe(42)
+            // The camera is ready, so _frameCameraOnAnchor has scheduled its
+            // 500ms settle callback. A normal in-app focus change does not bump
+            // the URL restore token; the focused-index guard must stop it.
+            mockState.navStore.focusedIndex = 99
+            await vi.advanceTimersByTimeAsync(500)
+
+            expect(mockState.animateCameraCalls).toEqual([])
+        } finally {
+            vi.useRealTimers()
+        }
+    })
+
+    it('supersedes stale camera settle when a newer applyUrlState replaces the anchor', async () => {
+        vi.useFakeTimers()
+        try {
+            mockState.cameraReady = true
+
+            // Restore anchor 42; its 500ms camera settle is pending.
+            mockState.urlSearch = '?anchor=42'
+            window.history.replaceState({}, '', '/?anchor=42')
+
+            const { applyUrlState } = await import('@lib/orchestration/url-state')
+            await applyUrlState({})
+
+            expect(mockState.animateCameraCalls).toEqual([])
+
+            // Supersede with anchor 99 before the 500ms settle fires.
+            mockState.urlSearch = '?anchor=99'
+            window.history.replaceState({}, '', '/?anchor=99')
+            await applyUrlState({})
+
+            // Advance past both 500ms settle callbacks.
+            await vi.advanceTimersByTimeAsync(1000)
+
+            // Stale anchor 42 must never animate.
+            expect(mockState.animateCameraCalls).not.toContain(42)
+            // Current anchor 99 must animate exactly once.
+            expect(mockState.animateCameraCalls).toEqual([99])
+        } finally {
+            vi.useRealTimers()
+        }
+    })
 
     it('cancels the deferred re-fire if the user navigates away before threads load', async () => {
         mockState.urlSearch = '?anchor=42'

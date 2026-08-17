@@ -129,7 +129,13 @@ test.describe('live reset interaction proof', () => {
         await expect(page.locator('#search-clear-btn')).toBeVisible({ timeout: 10000 })
         await page.locator('#search-clear-btn').click()
 
-        const after = await expectOverviewReset(page, 'clear button')
+        await expect
+            .poll(async () => probe(page), { message: 'clear query keeps the search surface', timeout: 8000 })
+            .toMatchObject({
+                state: { navMode: 'search', focusedNode: null },
+                body: { panelSurface: 'search' }
+            })
+        const after = await probe(page)
         expect(after.inputValue, 'clear button empties input').toBe('')
         expect(after.resultCount, 'clear button removes rendered results').toBe(0)
         const url = new URL(after.url)

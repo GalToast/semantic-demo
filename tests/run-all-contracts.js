@@ -600,6 +600,15 @@ function runValidation() {
 // Playwright test flags for browser-interaction specs.
 const PLAYWRIGHT_CLI = join(PROJECT_ROOT, 'node_modules', '@playwright', 'test', 'cli.js')
 const PLAYWRIGHT_FLAGS = ['--browser=chromium']
+// When the runner owns the single-threaded test server (i.e. no external
+// TEST_BASE_URL was supplied and the runner spun up its own python server),
+// force a single Playwright worker. The python http.server is single-threaded;
+// multiple workers would contend for its connection slots and cause cascade
+// hangs. When an external TEST_BASE_URL is provided the caller owns the server
+// topology, so we defer to their Playwright config.
+function playwrightWorkerFlags() {
+    return process.env.TEST_BASE_URL ? [] : ['--workers=1']
+}
 if (process.env.CONTRACT_HEADED === '1' || process.env.PLAYWRIGHT_HEADED === '1' || process.env.PWDEBUG === '1') {
     PLAYWRIGHT_FLAGS.push('--headed')
 }
@@ -625,7 +634,7 @@ function runContract(filename, timeoutMs, baseUrl = null) {
         const TS_LOADER = './' + join('tests', 'helpers', 'ts-resolve-loader.mjs').replace(/\\/g, '/')
         const SVELTE_RUNE_SHIM = './' + join('tests', 'helpers', 'svelte-rune-shim.mjs').replace(/\\/g, '/')
         const execArgs = isPlaywrightSpec
-            ? [PLAYWRIGHT_CLI, 'test', `tests/${filename}`, ...PLAYWRIGHT_FLAGS]
+            ? [PLAYWRIGHT_CLI, 'test', `tests/${filename}`, ...PLAYWRIGHT_FLAGS, ...playwrightWorkerFlags()]
             : ['--experimental-transform-types', '--import', SVELTE_RUNE_SHIM, '--loader', TS_LOADER, entry]
 
         const child = spawn(exec, execArgs, {
@@ -707,12 +716,7 @@ function runBatchContract(files, timeoutMs, baseUrl = null) {
         let settled = false
 
         const exec = process.execPath
-        const execArgs = [
-            PLAYWRIGHT_CLI,
-            'test',
-            ...files.map((f) => `tests/${f}`),
-            ...PLAYWRIGHT_FLAGS
-        ]
+        const execArgs = [PLAYWRIGHT_CLI, 'test', ...files.map((f) => `tests/${f}`), ...PLAYWRIGHT_FLAGS, ...playwrightWorkerFlags()]
 
         const child = spawn(exec, execArgs, {
             stdio: ['ignore', 'pipe', 'pipe'],

@@ -652,7 +652,11 @@ export function destroyEngine(): void {
     // (cancelAllDemoTimers + cancelDemo + resetDemo) from @lib/stores/demo.svelte.ts.
     cancelAllDemoTimers()
     if (isDemoActive()) cancelDemo()
-    try { resetDemo() } catch { /* no-op: teardown race */ }
+    try {
+        resetDemo()
+    } catch {
+        /* no-op: teardown race */
+    }
 
     // 5. Null out engine THREE-object references so a hot remount never sees
     //    disposed refs (W47 M1). Mirrors three-engine-core deinit() cleanup but

@@ -36,6 +36,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
 
 const LAYER1_ONLY = process.env.REDUCED_MOTION_LAYER1_ONLY === '1';
 
@@ -43,8 +44,6 @@ const LAYER1_ONLY = process.env.REDUCED_MOTION_LAYER1_ONLY === '1';
 const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
-
-const OUT_DIR = resolve(root, 'tmp', 'reduced-motion-video-proof-2026-05-20');
 
 const CSS_FILES = readdirSync(resolve(root, 'css')).filter(
   (f) => extname(f) === '.css'
@@ -177,6 +176,8 @@ async function startServer(port) {
   const mimeTypes = {
     '.html': 'text/html',
     '.css': 'text/css',
+    '.js': 'application/javascript',
+    '.mjs': 'application/javascript',
     '.ts': 'application/javascript',
     '.png': 'image/png',
   };
@@ -221,12 +222,15 @@ async function waitForReady(page) {
 
 async function runBrowserProof(port) {
   const server = await startServer(port);
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
+  // This proof only inspects DOM/computed styles. Keep Chromium headless by
+  // default so the gate does not compete with interactive browser sessions;
+  // set PLAYWRIGHT_HEADED=1 when a visible run is specifically needed.
+  const browser = await chromium.launch({ headless: process.env.PLAYWRIGHT_HEADED !== '1', args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
 
   const desktopPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await desktopPage.emulateMedia({ reducedMotion: 'reduce' });
 
-  const url = `http://127.0.0.1:${port}/index.html?nodemo=1`;
+  const url = `http://127.0.0.1:${port}/dist/svelte/index.html?nodemo=1`;
   await desktopPage.goto(url, { waitUntil: 'commit', timeout: 15000 });
   await waitForReady(desktopPage);
 
@@ -455,7 +459,17 @@ async function run() {
 
   const staticFailed = staticResult.owner.passed ? 0 : 1;
   const browserFailed = failures.length;
-  const coverageFailed = passes.length < 20 ? 1 : 0;
+  // Most of the probe selectors are intentionally absent or hidden on the
+  // idle route. Require evidence from both viewports and at least two visible
+  // selectors instead of a fixed pass count that treats hidden markup as a
+  // missing assertion.
+  const observed = [
+    ...(browserResult.desktop || []).map((item) => ({ ...item, viewport: 'desktop' })),
+    ...(browserResult.mobile || []).map((item) => ({ ...item, viewport: 'mobile' })),
+  ].filter((item) => item.present && item.display !== 'none' && item.visibility !== 'hidden');
+  const observedViewportCount = new Set(observed.map((item) => item.viewport)).size;
+  const observedSelectorCount = new Set(observed.map((item) => item.selector)).size;
+  const coverageFailed = observedViewportCount < 2 || observedSelectorCount < 2 ? 1 : 0;
   const totalFailed = staticFailed + browserFailed + coverageFailed;
 
   const report = {
@@ -474,6 +488,8 @@ async function run() {
       failures: failures.length,
       failureDetails: failures,
       coverageFailed: coverageFailed === 1,
+      observedViewportCount,
+      observedSelectorCount,
       desktopElements: (browserResult.desktop || []).length,
       mobileElements: (browserResult.mobile || []).length,
     },

@@ -30,7 +30,8 @@
 import { test, expect } from '@playwright/test'
 import { ONBOARDING_STORAGE_KEY } from '@lib/onboarding/onboarding-storage'
 
-const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:5183').replace(/\/$/, '')
+const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8796').replace(/\/$/, '')
+const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
 
 test.describe('SearchInput Escape→cancel', () => {
     test('Escape while searching cancels and preserves query', async ({ page }) => {
@@ -60,7 +61,7 @@ test.describe('SearchInput Escape→cancel', () => {
         })
 
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`${BASE_URL}/?nodemo=1&webgl=1`)
+        await page.goto(`${BASE_URL}${APP_PATH}?nodemo=1&webgl=1`)
 
         // Wait for the legacy data layer to populate with business records.
         await page.waitForFunction(
@@ -94,11 +95,19 @@ test.describe('SearchInput Escape→cancel', () => {
         // Inject status='searching' via the test global. This updates the
         // searchMirror writable, which flows to $searchState.status →
         // showLoading = $derived(status === 'searching').
+        // Fail fast if the required test store global is absent instead of
+        // silently skipping setup (which would let Escape route to the
+        // wrong handler and produce a misleading pass).
         await page.evaluate((query) => {
             const store = /** @type {any} */ (window).__searchStore__
-            if (store) {
-                store.set({ status: 'searching', query })
+            if (!store) {
+                throw new Error(
+                    'Required test global window.__searchStore__ is absent; ' +
+                        'cannot drive Escape→cancel journey. The app did not ' +
+                        'expose the search store (check test-globals registration).'
+                )
             }
+            store.set({ status: 'searching', query })
         }, UNIQUE_QUERY)
 
         // Wait for the cancel button to become visible (confirming Svelte

@@ -46,7 +46,6 @@ results.push(run('npm run test:static', 'static checks'))
 
 // 2. smoke contracts — server-free mjs contracts (~15s)
 results.push(run('node tests/run-all-contracts.js --group=smoke', 'smoke contracts'))
-results.push(run('node', 'tests/run-all-contracts.js --group=smoke', 'smoke contracts'))
 
 // 3. pure-logic unit subset (vitest, no server) — the regression-critical core
 const unitFiles = [

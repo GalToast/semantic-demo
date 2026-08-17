@@ -16,39 +16,62 @@
 ### Tier A — High value, low risk (do first)
 
 1. **~~Lockstep focus predicate duplication~~ — DONE (committed `52f285d6` + prettier follow-up `e915d055`).** Extracted `isFocusSurfaceActive(navMode, focusedIndex, parity)` into `use-parity-attrs.svelte.ts`; rewired `App.svelte:237 focusActive` + `JourneyChrome.svelte:139 chromeHasFocus`. Kills the W53 30s-timeout landmine; `svelte-check` clean. [url-parity #1]
-   - *Coordination:* `App.svelte` + `JourneyChrome.svelte` are **NOT** in current lane WIP → safe to touch now.
-2. **~~Dead no-op demo bridge~~ — WITHDRAWN (worker error).** The dual-demo audit claimed `three-micro-demo-bridge.ts` is "safe to delete — zero runtime callers." TRUE at static scope, but **FALSE as a delete**: it is pinned by `tests/unit-active/svelte-bridge-import-contract.test.ts:193` (import-contract allowlist) and `tests/unit-active/commit-purity-invariant.test.ts:152` (exempts merge `be9d4f42` that *intentionally kept* it — live-referenced at runtime by `three-interaction-visuals` even though no static import exists). A static `rg` misses the runtime reference. **Do not delete** without also updating both contract tests + understanding the merge-resolution. [correction to dual-demo §7]
+    - _Coordination:_ `App.svelte` + `JourneyChrome.svelte` are **NOT** in current lane WIP → safe to touch now.
+2. **~~Dead no-op demo bridge~~ — WITHDRAWN (worker error).** The dual-demo audit claimed `three-micro-demo-bridge.ts` is "safe to delete — zero runtime callers." TRUE at static scope, but **FALSE as a delete**: it is pinned by `tests/unit-active/svelte-bridge-import-contract.test.ts:193` (import-contract allowlist) and `tests/unit-active/commit-purity-invariant.test.ts:152` (exempts merge `be9d4f42` that _intentionally kept_ it — live-referenced at runtime by `three-interaction-visuals` even though no static import exists). A static `rg` misses the runtime reference. **Do not delete** without also updating both contract tests + understanding the merge-resolution. [correction to dual-demo §7]
 
 ### Tier B — High LOC, low risk (mechanical)
 
-3. **Static-contract sprawl** — ~50 near-identical source-regex `*.mjs` contracts testing "X imports Y from Z".
-   - P0 deletes: `tests/_tmp_*.mjs` (2 scratch) — DONE (`fd1f3efb`). `tests/retired/*` **REVERTED** — active contract `tests/residual-window-bridge-inventory-contract.mjs` TEST 15 asserts `tests/retired/window-bridge-gaps-contract.mjs` stays available as a historical archive (audit's 'zero refs' claim was WRONG). 3 stale dewindowing contracts (`cancel-animate-`, `three-setup-zero-caller-`, `lifecycle-journey-quick-`) **HELD** — deletion requires editing `run-all-contracts.js` line 282/297/299, which carries uncommitted lane WIP at line 707. [test-sprawl P0 — partial]
-   - Consolidate (~220K → ~53K): 9 `*-state-owner-*` → 1 manifest-driven sweep; 11 `*-dewindowing-*` → 1; 4 `focus-pocket-*` → 1. Touch `contracts.manifest.json` (34 stale entries). [test-sprawl P0/P1/P2]
+1. **Static-contract sprawl** — ~50 near-identical source-regex `*.mjs` contracts testing "X imports Y from Z".
+    - P0 deletes: `tests/_tmp_*.mjs` (2 scratch) — DONE (`fd1f3efb`). `tests/retired/*` **REVERTED** — active contract `tests/residual-window-bridge-inventory-contract.mjs` TEST 15 asserts `tests/retired/window-bridge-gaps-contract.mjs` stays available as a historical archive (audit's 'zero refs' claim was WRONG). 3 stale dewindowing contracts (`cancel-animate-`, `three-setup-zero-caller-`, `lifecycle-journey-quick-`) **HELD** — deletion requires editing `run-all-contracts.js` line 282/297/299, which carries uncommitted lane WIP at line 707. [test-sprawl P0 — partial]
+    - Consolidate (~220K → ~53K): 9 `*-state-owner-*` → 1 manifest-driven sweep; 11 `*-dewindowing-*` → 1; 4 `focus-pocket-*` → 1. Touch `contracts.manifest.json` (34 stale entries). [test-sprawl P0/P1/P2]
 
 ### Tier C — Medium risk (structural; needs lane coordination)
 
-4. **`url-restore.ts` monolith (874 LOC, 6 responsibilities)** — split deep-link + search helpers into `url-restore-deep-link.ts` / `url-restore-search.ts`; keep orchestrator ~200 LOC. Medium risk (shares `_isRestoreStale` / `restoreToken` bookkeeping). [url-parity #2]
-   - *Coordination flag:* `url-restore.ts` **IS** in current lane WIP (modified, uncommitted). Do NOT start until lane clears, or coordinate with owning lane.
+1. **`url-restore.ts` monolith (874 LOC, 6 responsibilities)** — split deep-link + search helpers into `url-restore-deep-link.ts` / `url-restore-search.ts`; keep orchestrator ~200 LOC. Medium risk (shares `_isRestoreStale` / `restoreToken` bookkeeping). [url-parity #2]
+    - _Coordination flag:_ `url-restore.ts` **IS** in current lane WIP (modified, uncommitted). Do NOT start until lane clears, or coordinate with owning lane.
 
 ### Tier D — Cosmetic / defer
 
-5. **Legacy doc-comment cruft** — ~10 `deprecated|legacy` doc comments, zero consumers. Safe delete. [legacy-cruft Tier 1]
+1. **Legacy doc-comment cruft** — ~10 `deprecated|legacy` doc comments, zero consumers. Safe delete. [legacy-cruft Tier 1]
 2. **`data-store.ts` dual-write** — migration bridge (rune stores → `appState.*` mirrors). Not a bug; add a dev-only consistency assertion (`points.length` vs snapshot). Defer. [god-component P3]
 3. **Lifecycle barrel + `__LEGACY_APP_STATE__` shim** — LOAD-BEARING (41 refs / ~30 lines). Retire only after data-store legacy fallback removal. **DO NOT TOUCH.** [legacy-cruft Tier 4]
 
 ### Tier F — Engine teardown / disposal correctness (audit re-run completed 2026-08-14, 🟢 GREEN w/ minor notes)
 
-8. **Engine teardown/dispose correctness** — ASSESSED (re-run). Verdict: solid `DisposableRegistry` + `forceContextLoss()` + RAF/timer/AbortController discipline; no high-severity leaks. **2 medium + 3 low** findings:
-   - **M1 (medium, hygiene — RE-VERIFIED, KEEP AS-IS)** `src/lib/engine/lifecycle.ts:600/608`. Two calls: `disposeInteractionVisuals()` (line 600, own try/catch) internally calls `disposeHeroAnimation()` (three-interaction-visuals.ts:175); a standalone `disposeHeroAnimation()` (line 608, SEPARATE try/catch) follows. The standalone is NOT pure redundancy — it is a **defensive fail-safe**: if `disposeInteractionVisuals()` throws before its internal `disposeHeroAnimation()`, the standalone still disposes. Removing it would lose the fail-safe. Worker's 'remove it' advice is incomplete. **Leave as-is.** (file NOT in lane WIP)
-   - **M2 (medium, low-impact)** `map-state.ts:42-56` vs `:197-209` — `initMapStateSubscriptions()` registers 8 `subscribeKeyed()` listeners never unsubscribed in `destroyMap()`. Fix: add `unsubscribeKeyed(key)` to `event-bus.ts` + call in `destroyMap`. **Both files NOT in lane WIP → clean pick-up candidate.**
-   - **L1 (low)** `canvas-interaction.ts:57-68` — `showClickPulse` `setTimeout` not tracked by AbortController (transient `<div>` leak only on unmount-mid-pulse).
-   - **L2 (low)** `lifecycle.ts:639-646` — semantic-threads worker reset is fire-and-forget dynamic import (brief dual-worker window on rapid re-init/HMR).
-   - **L3 (low)** `Canvas.svelte` keyboard binding uses manual flag vs AbortController (pattern inconsistency, no leak).
+1. **Engine teardown/dispose correctness** — ASSESSED (re-run). Verdict: solid `DisposableRegistry` + `forceContextLoss()` + RAF/timer/AbortController discipline; no high-severity leaks. **2 medium + 3 low** findings:
+    - **M1 (medium, hygiene — RE-VERIFIED, KEEP AS-IS)** `src/lib/engine/lifecycle.ts:600/608`. Two calls: `disposeInteractionVisuals()` (line 600, own try/catch) internally calls `disposeHeroAnimation()` (three-interaction-visuals.ts:175); a standalone `disposeHeroAnimation()` (line 608, SEPARATE try/catch) follows. The standalone is NOT pure redundancy — it is a **defensive fail-safe**: if `disposeInteractionVisuals()` throws before its internal `disposeHeroAnimation()`, the standalone still disposes. Removing it would lose the fail-safe. Worker's 'remove it' advice is incomplete. **Leave as-is.** (file NOT in lane WIP)
+    - **M2 (medium, low-impact)** `map-state.ts:42-56` vs `:197-209` — `initMapStateSubscriptions()` registers 8 `subscribeKeyed()` listeners never unsubscribed in `destroyMap()`. Fix: add `unsubscribeKeyed(key)` to `event-bus.ts` + call in `destroyMap`. **Both files NOT in lane WIP → clean pick-up candidate.**
+    - **L1 (low)** `canvas-interaction.ts:57-68` — `showClickPulse` `setTimeout` not tracked by AbortController (transient `<div>` leak only on unmount-mid-pulse).
+    - **L2 (low)** `lifecycle.ts:639-646` — semantic-threads worker reset is fire-and-forget dynamic import (brief dual-worker window on rapid re-init/HMR).
+    - **L3 (low)** `Canvas.svelte` keyboard binding uses manual flag vs AbortController (pattern inconsistency, no leak).
 
 ## Coordination flags (parallel lane)
 
 - Lane WIP currently modifies `src/lib/orchestration/url-restore.ts` + `src/lib/stores/lifecycle.ts` + a stack of `tests/live-*` specs. Strikes A1, A2 are safe (those files not in WIP). Strike C4 MUST wait for lane-clear.
 - `AUDIT-LANE-SWEEP-REVIEW.md` (main-lane verification, 2026-08-14) flagged 2 SEV1 items needing owning-lane confirmation: `SearchInputChrome.svelte` 28px→44px touch-target change; `3d-data-edge-cases.spec.js` coverage weakening (state-only check replacing DOM assertion). Neither blocks the swarm strikes.
+
+## W5 — Swarm round 2 (2026-08-17): decomposed findings + 4-worker dispatch
+
+**Trigger:** user asked to decompose and delegate the findings.
+
+**New finding not in this dossier (highest-signal):**
+
+- **W5-1 — The lazy-loading is theater.** `npm run build` emits 6 `INEFFECTIVE_DYNAMIC_IMPORT` warnings. Each is a module `import()`'d somewhere but also statically imported elsewhere, so the dynamic import can never split it into a separate chunk. The code _looks_ like code-splitting for perceived perf but delivers zero bytes. Modules: `webgl.ts`, `point-color.ts`, `url-state.ts`, `lifecycle.ts`, `journey-focus-timers.ts`, `route-trace.ts`. Root cause: `url-restore.ts` statically imports `webgl.ts`/`point-color.ts`/`url-state.ts` while `app-init.ts`/`compass-controller.ts`/`adapters.ts`/`main.ts` also `import()` them — the static edge wins, the dynamic edge is dead. **This is worse than cosmetic**: it means the `journey-webgl-lazy.ts` lazy wrapper (a whole module of promise/catch/ensure* machinery) is pure overhead.
+- **W5-2 — Dossier Tier C4 understates the monolith.** It says `url-restore.ts` is "874 LOC, 6 responsibilities". Actual: **866 LOC, 14 functions** (`_isRestoreStale`, `resetStateBeforeUrlRestore`, `applyUrlState`, `restoreExplicitInsideSurface`, `_restoreFiltersFromParams`, `_restoreClusterFilter`, `preserveDomForcedFocusSearchSurface`, `_validateAnchorIndex`, `_restoreFocusStateForAnchor`, `_frameCameraOnAnchor`, `_applyFocusPocketForAnchor`, `_setupDeferredNeighborRefire`, `_restoreAnchorFromParams`, `_restoreSearchFromParams`). The dossier's 6 was a coarse grouping; the split design must account for all 14.
+- **W5-3 — Engine hygiene: M2 and L3 are ALREADY FIXED in the working tree** (verified 2026-08-17 against live files, not the dossier). `map-state.ts:220-226` already iterates `MAP_STATE_SUBSCRIPTION_KEYS` calling `unsubscribeKeyed(key)` in `destroyMap()`; `Canvas.svelte:122-135,304` already uses `_canvasKbdAbort` AbortController. `event-bus.ts:186` already exports `unsubscribeKeyed`. So the dossier's Tier F M2/L3 strikes are **done-but-uncommitted** — they're in the working tree, not in git history. M1 (`lifecycle.ts:600/608` defensive fail-safe) and L1 (`canvas-interaction.ts` click-pulse timer) and L2 (`lifecycle.ts:639-646` fire-and-forget semantic-threads) are **lane WIP** — handoffs, not main-lane work.
+
+**Swarm dispatch (2026-08-17, 4 workers, all `agnes/agnes-2.5-flash`, pre-warmed catalog):**
+
+| Worker | ID             | Task                                                          | Deliverable                                |
+| ------ | -------------- | ------------------------------------------------------------- | ------------------------------------------ |
+| W1     | `ocw_1fed46a5` | Dead dynamic-import audit + classify A/B/C per module         | `tmp/swarm-W1-dynamic-imports/report.md`   |
+| W2     | `ocw_a581bf5b` | Test-sprawl consolidation inventory + plan                    | `tmp/swarm-W2-test-sprawl/report.md`       |
+| W3     | `ocw_9d1e79ec` | `url-restore.ts` split design (no edits)                      | `tmp/swarm-W3-url-restore-split/report.md` |
+| W4     | `ocw_c56bfad3` | Engine hygiene + asset footprint + CSS dead-code (audit only) | `tmp/swarm-W4-engine-hygiene/report.md`    |
+
+All four use the **deliverable-first protocol** (write skeleton with all rows `PENDING` before any tool work; rewrite after each item; never batch to end). All four are read-only on source; none may touch lane-WIP files (`url-restore.ts`, `lifecycle.ts`, `navigation-state.svelte.ts`, `canvas-interaction.ts`, `tests/live-*`, `tests/short-*`, `tests/reduced-*`, `tests/search-input-*`, `tests/ui-quality-*`, `tests/run-all-contracts.js`).
+
+**Session lock:** acquired (`node scripts/session-lock.mjs acquire "swarm-decompose-shittiest-parts"`).
 
 ## Recommended strike order
 

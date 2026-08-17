@@ -12,30 +12,30 @@ The enforcement contract is [tests/window-global-allowlist-contract.mjs](../test
 
 ## Modern → Legacy Owner Map
 
-| Legacy path cited in this doc | Modern home |
-|---|---|
-| `js/modules/app.js` | `src/lib/orchestration/app-init.ts` (+ `src/main.ts` entry) |
-| `js/modules/micro-demo.js` | `src/lib/demo/choreography.ts` (+ `camera.ts`, `guards.ts`, `ui.ts`, `demo-script.ts`) |
-| `js/modules/camera-controls.js` | `src/lib/engine/camera-controls.ts` (+ `camera-controls-core.ts`, `camera-controls-restore.svelte.ts`, `camera-choreography/*`) |
-| `js/modules/lifecycle.js` | `src/lib/orchestration/lifecycle.ts` + `src/lib/stores/lifecycle.ts` |
-| `js/modules/journey.js` | `src/lib/journey/journey.ts` (+ 30+ satellites in `src/lib/journey/`) |
-| `js/state.js` | `src/lib/state/app.svelte.ts` (state class; former `legacy-state.ts` compat shim deleted in `062b0035` — `__LEGACY_APP_STATE__` still published at boot from AppState) |
-| `js/modules/bridge-registry.js` | deprecated — dewindowed; modern equivalent is direct imports from the typed stores |
-| `js/modules/thread-inspector.js` | `src/lib/journey/thread-inspector-{state,render,adapter}.ts` |
-| `js/modules/search-state.js` | `src/lib/stores/search.svelte.ts` (+ `src/lib/search/orchestration.ts`) |
-| `js/modules/view-controller.js` | `src/lib/orchestration/view-controller.ts` |
-| `js/modules/event-bindings.js` | folded into `src/lib/orchestration/lifecycle.ts` and per-domain stores |
-| `js/modules/cluster-labels.js` | not re-introduced; cluster labelling lives in `src/lib/journey/point-color.ts` + `src/lib/utils/design-tokens.ts` |
-| `js/modules/map-state.js` | `src/lib/engine/map-state.ts` |
-| `js/modules/legend-ui.js` | `src/lib/journey/legend-ui.ts` (+ `src/lib/stores/legend.svelte.ts`) |
+| Legacy path cited in this doc    | Modern home                                                                                                                                                            |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `js/modules/app.js`              | `src/lib/orchestration/app-init.ts` (+ `src/main.ts` entry)                                                                                                            |
+| `js/modules/micro-demo.js`       | `src/lib/demo/choreography.ts` (+ `camera.ts`, `guards.ts`, `ui.ts`, `demo-script.ts`)                                                                                 |
+| `js/modules/camera-controls.js`  | `src/lib/engine/camera-controls.ts` (+ `camera-controls-core.ts`, `camera-controls-restore.svelte.ts`, `camera-choreography/*`)                                        |
+| `js/modules/lifecycle.js`        | `src/lib/orchestration/lifecycle.ts` + `src/lib/stores/lifecycle.ts`                                                                                                   |
+| `js/modules/journey.js`          | `src/lib/journey/journey.ts` (+ 30+ satellites in `src/lib/journey/`)                                                                                                  |
+| `js/state.js`                    | `src/lib/state/app.svelte.ts` (state class; former `legacy-state.ts` compat shim deleted in `062b0035` — `__LEGACY_APP_STATE__` still published at boot from AppState) |
+| `js/modules/bridge-registry.js`  | deprecated — dewindowed; modern equivalent is direct imports from the typed stores                                                                                     |
+| `js/modules/thread-inspector.js` | `src/lib/journey/thread-inspector-{state,render,adapter}.ts`                                                                                                           |
+| `js/modules/search-state.js`     | `src/lib/stores/search.svelte.ts` (+ `src/lib/search/orchestration.ts`)                                                                                                |
+| `js/modules/view-controller.js`  | `src/lib/orchestration/view-controller.ts`                                                                                                                             |
+| `js/modules/event-bindings.js`   | folded into `src/lib/orchestration/lifecycle.ts` and per-domain stores                                                                                                 |
+| `js/modules/cluster-labels.js`   | not re-introduced; cluster labelling lives in `src/lib/journey/point-color.ts` + `src/lib/utils/design-tokens.ts`                                                      |
+| `js/modules/map-state.js`        | `src/lib/engine/map-state.ts`                                                                                                                                          |
+| `js/modules/legend-ui.js`        | `src/lib/journey/legend-ui.ts` (+ `src/lib/stores/legend.svelte.ts`)                                                                                                   |
 
 ## Categories
 
-| Category | Meaning | Current merge rule |
-|---|---|---|
-| `live-product` | Runtime bridges still used by app modules, third-party setup, or compatibility paths. | Allowed, but prefer imported adapters for new work. |
-| `debug-probe` | DevTools, Playwright, or visual-audit inspection surfaces. | Allowed while tests/tools depend on them; future work should gate them. |
-| `migration-debt` | Legacy globals with no desired long-term ownership. | Allowed only because they already exist; do not add more. |
+| Category         | Meaning                                                                               | Current merge rule                                                      |
+| ---------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `live-product`   | Runtime bridges still used by app modules, third-party setup, or compatibility paths. | Allowed, but prefer imported adapters for new work.                     |
+| `debug-probe`    | DevTools, Playwright, or visual-audit inspection surfaces.                            | Allowed while tests/tools depend on them; future work should gate them. |
+| `migration-debt` | Legacy globals with no desired long-term ownership.                                   | Allowed only because they already exist; do not add more.               |
 
 Any unclassified direct assignment, such as `window.someNewBridge = ...`, fails
 the contract. Classify it in both the contract and this doc before merging, or
@@ -50,39 +50,42 @@ Introduced: 2026-05-28. Replaces one-off window bridges as the single classified
 
 **Purpose:** Consolidates one-off `window.*` action bridges into a single explicitly classified namespace. It is the compatibility owner for Playwright specs, visual-audit helpers, manual DevTools probing, and external callers still crossing the app boundary through `window`. Retired migration-debt bare globals like `window.focusOnNode` and `window.setTrailFromSeed` now route through `window.__APP_ACTIONS__`.
 
-## Micro-Demo Globals
+## Micro-Demo Status (retired globals) — canonical demo API
 
 Classification: `live-product`.
 
-**Owner:** `src/lib/demo/choreography.ts` (legacy: `js/modules/micro-demo.js`)
+**Owner:** `src/lib/stores/demo.svelte.ts` (canonical demo state; `cancelDemo` / `isDemoActive`).
 
-**Purpose:** Replaces the retired `window.demoController` namespace. These two globals are the only remaining surface for first-visit demo eligibility and cancellation now that the dedicated controller module is gone.
+**Status note (2026-08-14, verified):** the legacy `window.isMicroDemoRunning` /
+`window.cancelMicroDemo` globals and their owner `src/lib/demo/choreography.ts` were
+removed in the choreography retirement (`cac49662`). They are NOT published window
+globals; the remaining text references are retirement comments / negative asserts
+(`tests/unit-active/demo-choreography-exports.test.ts:42` asserts the barrel does NOT
+contain `isMicroDemoRunning`). The first-visit demo eligibility + cancellation
+surface is the canonical store API: `src/lib/stores/demo.svelte.ts`.
 
-| Global | Notes |
-|---|---|
-| `window.isMicroDemoRunning` | Boolean check; replaces `window.demoController.isRunning` for test/dev probes. |
-| `window.cancelMicroDemo` | Cancel an in-progress micro-demo with a reason; replaces `window.demoController.cancel`. |
+No `window.*` entries in this section are live product bridges anymore.
 
 **Namespace contract:**
 
-| Key | Source | Notes |
-|---|---|---|
-| `search` | `src/lib/stores/search.svelte.ts` | Search entry point for test specs |
-| `clearSearch` | `src/lib/stores/search.svelte.ts` | Search reset for test specs |
-| `switchView` | `src/lib/orchestration/view-controller.ts` | Classified view handoff for test/dev harnesses that need map/galaxy transitions |
-| `focusOnNode` | `src/lib/engine/camera-controls.ts` | Primary focus navigation action |
-| `setTrailFromSeed` | `src/lib/journey/journey.ts` | Seeded trail setup for route/focus tests |
-| `setTrailDepth` | `src/lib/orchestration/lifecycle.ts` | Trail depth control |
-| `setSemanticDiveMode` | `src/lib/stores/focus.svelte.ts` | Dive mode toggle |
-| `returnToOverview` | `src/lib/orchestration/lifecycle.ts` | Overview reset |
-| `resetExplorationFocus` | `src/lib/stores/lifecycle.ts` | Exploration state reset |
-| `refreshCompositionState` | `src/lib/orchestration/lifecycle.ts` | Composition refresh |
-| `traverseNeighbor` | `src/lib/journey/journey.ts` | Prev/next focus-stage traversal |
-| `inspectThreadNeighbor` | `src/lib/journey/journey.ts` | Thread preview/relationship inspector |
-| `pinThreadNeighbor` | `src/lib/journey/journey.ts` | Pin a relationship for comparison |
-| `unpinThreadInspection` | `src/lib/journey/journey.ts` | Clear pinned relationship state |
-| `clearThreadInspection` | `src/lib/journey/journey.ts` | Clear preview/pin/follow inspector state |
-| `walkThreadNeighbor` | `src/lib/journey/journey.ts` | Follow a semantic connection to the next focused stop |
+| Key                       | Source                                     | Notes                                                                           |
+| ------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------- |
+| `search`                  | `src/lib/stores/search.svelte.ts`          | Search entry point for test specs                                               |
+| `clearSearch`             | `src/lib/stores/search.svelte.ts`          | Search reset for test specs                                                     |
+| `switchView`              | `src/lib/orchestration/view-controller.ts` | Classified view handoff for test/dev harnesses that need map/galaxy transitions |
+| `focusOnNode`             | `src/lib/engine/camera-controls.ts`        | Primary focus navigation action                                                 |
+| `setTrailFromSeed`        | `src/lib/journey/journey.ts`               | Seeded trail setup for route/focus tests                                        |
+| `setTrailDepth`           | `src/lib/orchestration/lifecycle.ts`       | Trail depth control                                                             |
+| `setSemanticDiveMode`     | `src/lib/stores/focus.svelte.ts`           | Dive mode toggle                                                                |
+| `returnToOverview`        | `src/lib/orchestration/lifecycle.ts`       | Overview reset                                                                  |
+| `resetExplorationFocus`   | `src/lib/stores/lifecycle.ts`              | Exploration state reset                                                         |
+| `refreshCompositionState` | `src/lib/orchestration/lifecycle.ts`       | Composition refresh                                                             |
+| `traverseNeighbor`        | `src/lib/journey/journey.ts`               | Prev/next focus-stage traversal                                                 |
+| `inspectThreadNeighbor`   | `src/lib/journey/journey.ts`               | Thread preview/relationship inspector                                           |
+| `pinThreadNeighbor`       | `src/lib/journey/journey.ts`               | Pin a relationship for comparison                                               |
+| `unpinThreadInspection`   | `src/lib/journey/journey.ts`               | Clear pinned relationship state                                                 |
+| `clearThreadInspection`   | `src/lib/journey/journey.ts`               | Clear preview/pin/follow inspector state                                        |
+| `walkThreadNeighbor`      | `src/lib/journey/journey.ts`               | Follow a semantic connection to the next focused stop                           |
 
 Migration: `window.focusOnNode` and `window.setTrailFromSeed` are retired as bare globals. The namespace is the intended target for test/dev harness calls.
 
@@ -100,7 +103,7 @@ Classification: `live-product`.
 
 **Owner:** `src/lib/state/app.svelte.ts`
 
-**Purpose:** Cross-chunk singleton synchronisation. When Vite code-splits `app.svelte.ts` into multiple chunks, each chunk gets its own module-level `_appStateInstance`. This window property stores the validation Proxy wrapper so other chunks can reuse the same guarded object rather than creating a new empty one. It is a plain *data* property (not a getter) to avoid the infinite recursion that would occur if it used the `window[GLOBAL_APP_STATE_KEY]` getter inside `getAppState()`.
+**Purpose:** Cross-chunk singleton synchronisation. When Vite code-splits `app.svelte.ts` into multiple chunks, each chunk gets its own module-level `_appStateInstance`. This window property stores the validation Proxy wrapper so other chunks can reuse the same guarded object rather than creating a new empty one. It is a plain _data_ property (not a getter) to avoid the infinite recursion that would occur if it used the `window[GLOBAL_APP_STATE_KEY]` getter inside `getAppState()`.
 
 **Note:** The key is held in the module-private constant `APP_STATE_DIRECT_KEY` and written as a computed property (`window[...] =`). The contract scanner resolves this constant to the literal key via P4/P7 + `resolveConstant`.
 
@@ -108,51 +111,51 @@ Classification: `live-product`.
 
 Classification: `debug-probe`. These are devtools, Playwright, or visual-audit inspection surfaces.
 
-| Global | Owner | Notes |
-|---|---|---|
-| `window.__APP_STATE__` | `js/modules/bridge-registry.js` | **Primary app state hook.** Preferred neutral state surface for runtime inspection. |
-| `window.__ERROR_RING__` | `src/main.ts` | **Global error sink.** Circular buffer of recent unhandled errors/rejections, installed via `Object.defineProperty`. Read-only getter (no setter). |
-| `window.__spectorStatus` | `src/components/SpectorInspector.svelte` | **SpectorJS lifecycle snapshot.** Published read-only status (phase, loadError, bridgeReady, etc.) for headless tests and dev panel; assigned via `getSpectorDevWindow()` alias. |
-| `window.__forceSemanticDiveContractSurface` | `src/components/AppBoot.svelte` | **Test contract hook.** Forces semantic-dive visibility for contract tests; installed unconditionally in `onMount` via `contractWindow` alias. **⚠️ Prod-gate bug: installed unconditionally (not dev-gated).** See F1 report. |
-| `window.withStateMutation` | `js/state.js` | **State mutation gate.** Allows testing/DevTools to bypass the critical keys mutation lock. |
-| `window.__TEST_STATE__` | `js/modules/bridge-registry.js` | **Legacy test bridge fallback.** Preserved for existing Playwright tests. Migrate consumers to `__APP_STATE__`. |
-| `window.__initTimings` | `js/modules/app.js` | **Init timing diagnostics.** Exposes the boot-phase timing object for DevTools/perf inspection. |
-| `window._getSelectedBusinessRoleLabel` | `js/modules/bridge-registry.js` | Compatibility/debug helper for selected-business role labels while older UI/test callers migrate to module/action access. |
-| `window._ti` | `js/modules/thread-inspector.js` | **Debug-probe inspection namespace.** 17 thread-inspection functions. Not a product API. |
-| `window.__semanticCanvasThreadProbe` | — | Debug probe. **Retired from journey.js shim 2026-05-28.** |
-| `window.__semanticFocusCueProbe` | — | Debug probe (exposed via journey-webgl.js). |
-| `window.__semanticJourneyProbe` | — | Debug probe. **Retired 2026-05-28.** |
-| `window.__semanticThreadInspectorProbe` | — | Debug probe. **Retired from journey.js shim 2026-05-28.** |
+| Global                                      | Owner                                    | Notes                                                                                                                                                                                                                          |
+| ------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `window.__APP_STATE__`                      | `js/modules/bridge-registry.js`          | **Primary app state hook.** Preferred neutral state surface for runtime inspection.                                                                                                                                            |
+| `window.__ERROR_RING__`                     | `src/main.ts`                            | **Global error sink.** Circular buffer of recent unhandled errors/rejections, installed via `Object.defineProperty`. Read-only getter (no setter).                                                                             |
+| `window.__spectorStatus`                    | `src/components/SpectorInspector.svelte` | **SpectorJS lifecycle snapshot.** Published read-only status (phase, loadError, bridgeReady, etc.) for headless tests and dev panel; assigned via `getSpectorDevWindow()` alias.                                               |
+| `window.__forceSemanticDiveContractSurface` | `src/components/AppBoot.svelte`          | **Test contract hook.** Forces semantic-dive visibility for contract tests; installed unconditionally in `onMount` via `contractWindow` alias. **⚠️ Prod-gate bug: installed unconditionally (not dev-gated).** See F1 report. |
+| `window.withStateMutation`                  | `js/state.js`                            | **State mutation gate.** Allows testing/DevTools to bypass the critical keys mutation lock.                                                                                                                                    |
+| `window.__TEST_STATE__`                     | `js/modules/bridge-registry.js`          | **Legacy test bridge fallback.** Preserved for existing Playwright tests. Migrate consumers to `__APP_STATE__`.                                                                                                                |
+| `window.__initTimings`                      | `js/modules/app.js`                      | **Init timing diagnostics.** Exposes the boot-phase timing object for DevTools/perf inspection.                                                                                                                                |
+| `window._getSelectedBusinessRoleLabel`      | `js/modules/bridge-registry.js`          | Compatibility/debug helper for selected-business role labels while older UI/test callers migrate to module/action access.                                                                                                      |
+| `window._ti`                                | `js/modules/thread-inspector.js`         | **Debug-probe inspection namespace.** 17 thread-inspection functions. Not a product API.                                                                                                                                       |
+| `window.__semanticCanvasThreadProbe`        | —                                        | Debug probe. **Retired from journey.js shim 2026-05-28.**                                                                                                                                                                      |
+| `window.__semanticFocusCueProbe`            | —                                        | Debug probe (exposed via journey-webgl.js).                                                                                                                                                                                    |
+| `window.__semanticJourneyProbe`             | —                                        | Debug probe. **Retired 2026-05-28.**                                                                                                                                                                                           |
+| `window.__semanticThreadInspectorProbe`     | —                                        | Debug probe. **Retired from journey.js shim 2026-05-28.**                                                                                                                                                                      |
 
 ### `src/`-tree debug-probe globals (enforced by contract)
 
 These are assigned in the modern `src/lib/**` tree and classified `debug-probe` by `tests/window-global-allowlist-contract.mjs` (each is gated behind a `__DEV_TOOLS__` / environment / build-flag check).
 
-| Global | Owner |
-|---|---|
-| `window.__semanticPostprocessing` | `src/lib/engine/*` post-processing tuning hook |
-| `window.__toastHooks__` | `src/lib/orchestration/toast*` test/dev hooks |
-| `window.__SEMANTIC_GUIDE_TIMEOUT_MS__` | `src/lib/orchestration/*` guide timeout probe |
-| `window.__telemetry_devtoolsVisible` | `src/lib/*` telemetry devtools-visibility flag |
-| `window.__telemetry__` | `src/components/DevToolsMount.svelte` telemetry store + handle probe (DEV-gated) |
-| `window.__spector` | dev inspection (SpectorJS) |
-| `window.__navStore__` | `src/lib/navigation/*` store probe |
-| `window.__focusStore__` | `src/lib/stores/focus*` store probe |
-| `window.__journeyStore__` | `src/lib/stores/*` journey store probe |
-| `window.__searchStore__` | `src/lib/stores/search*` store probe |
-| `window.__navActions__` | `src/lib/navigation/*` action probe |
-| `window.__dataLoadState__` | `src/lib/state/*` data-load probe |
-| `window.__publishCameraNodeFocused__` | camera-focus publish probe |
-| `window.__semanticExplorerSessionSeed` | session-seed probe |
-| `window.syncTestStateFromBody` / `window.__refreshTestCompatState__` | test-compat state sync (Playwright/test harness) |
+| Global                                                               | Owner                                                                            |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `window.__semanticPostprocessing`                                    | `src/lib/engine/*` post-processing tuning hook                                   |
+| `window.__toastHooks__`                                              | `src/lib/orchestration/toast*` test/dev hooks                                    |
+| `window.__SEMANTIC_GUIDE_TIMEOUT_MS__`                               | `src/lib/orchestration/*` guide timeout probe                                    |
+| `window.__telemetry_devtoolsVisible`                                 | `src/lib/*` telemetry devtools-visibility flag                                   |
+| `window.__telemetry__`                                               | `src/components/DevToolsMount.svelte` telemetry store + handle probe (DEV-gated) |
+| `window.__spector`                                                   | dev inspection (SpectorJS)                                                       |
+| `window.__navStore__`                                                | `src/lib/navigation/*` store probe                                               |
+| `window.__focusStore__`                                              | `src/lib/stores/focus*` store probe                                              |
+| `window.__journeyStore__`                                            | `src/lib/stores/*` journey store probe                                           |
+| `window.__searchStore__`                                             | `src/lib/stores/search*` store probe                                             |
+| `window.__navActions__`                                              | `src/lib/navigation/*` action probe                                              |
+| `window.__dataLoadState__`                                           | `src/lib/state/*` data-load probe                                                |
+| `window.__publishCameraNodeFocused__`                                | camera-focus publish probe                                                       |
+| `window.__semanticExplorerSessionSeed`                               | session-seed probe                                                               |
+| `window.syncTestStateFromBody` / `window.__refreshTestCompatState__` | test-compat state sync (Playwright/test harness)                                 |
 
 ## Migration-Debt Globals
 
 Classification: `migration-debt`. These exist but have no desired long-term owner.
 
-| Global | Owner | Notes |
-|---|---|---|
-| *none* | — | Migration-debt bare globals are currently retired. |
+| Global | Owner | Notes                                              |
+| ------ | ----- | -------------------------------------------------- |
+| _none_ | —     | Migration-debt bare globals are currently retired. |
 
 ## `_ti` Debug-Probe Planned Contract
 
@@ -164,33 +167,33 @@ Classification: `migration-debt`. These exist but have no desired long-term owne
 
 ### Tools currently exposed via `window._ti`
 
-| Function | Consumer |
-|---|---|
-| `getSemanticThreadCandidates` | `visual-state-audit.mjs` |
-| `getGeometricThreadCandidates` | `visual-state-audit.mjs` |
-| `getThreadCandidatesForIndex` | `visual-state-audit.mjs` |
-| `setStrandContinuityState` | `visual-state-audit.mjs` |
-| `clearStrandContinuityState` | `visual-state-audit.mjs` |
-| `getStrandArrivalNote` | `visual-state-audit.mjs` |
-| `getThreadInspectionState` | `visual-state-audit.mjs` |
-| `renderThreadInspection` | `visual-state-audit.mjs` |
-| `inspectThreadNeighbor` | `visual-state-audit.mjs` |
-| `pinThreadNeighbor` | `visual-state-audit.mjs` |
-| `unpinThreadInspection` | `visual-state-audit.mjs` |
-| `scheduleCanvasThreadInspectionClear` | `visual-state-audit.mjs` |
-| `clearThreadInspection` | `visual-state-audit.mjs` |
-| `exploreThreadNeighbor` | `thread-inspector-dewindowing-contract.mjs` (diagnostic assertion) |
+| Function                              | Consumer                                                           |
+| ------------------------------------- | ------------------------------------------------------------------ |
+| `getSemanticThreadCandidates`         | `visual-state-audit.mjs`                                           |
+| `getGeometricThreadCandidates`        | `visual-state-audit.mjs`                                           |
+| `getThreadCandidatesForIndex`         | `visual-state-audit.mjs`                                           |
+| `setStrandContinuityState`            | `visual-state-audit.mjs`                                           |
+| `clearStrandContinuityState`          | `visual-state-audit.mjs`                                           |
+| `getStrandArrivalNote`                | `visual-state-audit.mjs`                                           |
+| `getThreadInspectionState`            | `visual-state-audit.mjs`                                           |
+| `renderThreadInspection`              | `visual-state-audit.mjs`                                           |
+| `inspectThreadNeighbor`               | `visual-state-audit.mjs`                                           |
+| `pinThreadNeighbor`                   | `visual-state-audit.mjs`                                           |
+| `unpinThreadInspection`               | `visual-state-audit.mjs`                                           |
+| `scheduleCanvasThreadInspectionClear` | `visual-state-audit.mjs`                                           |
+| `clearThreadInspection`               | `visual-state-audit.mjs`                                           |
+| `exploreThreadNeighbor`               | `thread-inspector-dewindowing-contract.mjs` (diagnostic assertion) |
 
 ### Migration steps
 
 1. ✅ ~~Establish `window.__DEBUG_PROBES__` gate~~ — documented in this doc (step 1 complete).
 2. ✅ **Gate `window._ti` assignment** — `if (typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true) { window._ti = { ... }; }` in thread-inspector.js (step 2 complete).
-   - Gate-off: `_ti` is not created; no bare window function exports escape thread-inspector.js.
-   - Gate-on (default): all 17 thread-inspection functions available for diagnostics.
-   - `_ti` uses the same `window.__DEBUG_PROBES__` default-on guard pattern.
+    - Gate-off: `_ti` is not created; no bare window function exports escape thread-inspector.js.
+    - Gate-on (default): all 17 thread-inspection functions available for diagnostics.
+    - `_ti` uses the same `window.__DEBUG_PROBES__` default-on guard pattern.
 
 3. ✅ **Gate `window._ti` assignment with default-on** — refined guard to `typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true` so gate-on is the default in dev/test environments where **DEBUG_PROBES** is often unset.
-   - Source contracts are gate-aware and pass regardless of whether the gate is on or off.
+    - Source contracts are gate-aware and pass regardless of whether the gate is on or off.
 
 4. **Verify contract** — run `node tests/thread-inspector-dewindowing-contract.mjs tests/journey-window-surface-contract.mjs tests/journey-thread-inspector-contract.mjs` with gate both on and off; both must pass.
 
@@ -202,13 +205,13 @@ Classification: `migration-debt`. These exist but have no desired long-term owne
 
 ### Acceptance checks
 
-| Check | Condition |
-|---|---|
-| Gate-off clean | `window._ti` is `undefined` with `__DEBUG_PROBES__=false`; no console errors in visual audit |
-| Contract gate-on | `thread-inspector-dewindowing-contract.mjs` passes with `__DEBUG_PROBES__=true` |
-| Contract gate-off | `thread-inspector-dewindowing-contract.mjs` passes with `__DEBUG_PROBES__=false` |
-| No bare window assignments | `thread-inspector.js` makes no `window.fn = ...` assignments outside the `_ti` block |
-| Visual audit degrades gracefully | `visual-state-audit.mjs` skips `_ti`-backed paths when gate is off without throwing |
+| Check                            | Condition                                                                                    |
+| -------------------------------- | -------------------------------------------------------------------------------------------- |
+| Gate-off clean                   | `window._ti` is `undefined` with `__DEBUG_PROBES__=false`; no console errors in visual audit |
+| Contract gate-on                 | `thread-inspector-dewindowing-contract.mjs` passes with `__DEBUG_PROBES__=true`              |
+| Contract gate-off                | `thread-inspector-dewindowing-contract.mjs` passes with `__DEBUG_PROBES__=false`             |
+| No bare window assignments       | `thread-inspector.js` makes no `window.fn = ...` assignments outside the `_ti` block         |
+| Visual audit degrades gracefully | `visual-state-audit.mjs` skips `_ti`-backed paths when gate is off without throwing          |
 
 ### Out of scope here
 
@@ -249,40 +252,40 @@ then retire `window.__TEST_STATE__` once all consumers use the replacement.
 
 ## Retired Globals
 
-| Global | Retired | Replacement |
-|---|---|---|
-| `window.state` | 2026-05-27 | `window.__APP_STATE__` |
-| `window.recenterFocusedNode` | 2026-05-27 | Direct `recenterFocusedNode` imports from `event-bindings.js` |
-| `window._cam` | 2026-05-28 | Direct named imports from `camera-controls.js` |
-| `window.focusOnPoint` | 2026-05-28 | Direct `focusOnPoint` imports from `lifecycle.js` |
-| `window.updateJourneyCompass` | 2026-05-28 | Direct `updateJourneyCompass` imports/adapters |
-| `window._findSemanticPath` | 2026-05-27 | Direct `findSemanticPath` module import |
-| `window.syncRuntimeState` | 2026-05-28 | Direct `syncRuntimeState` import from `camera-controls.js` — still a named export |
-| `window.getRuntimeStateSnapshot` | 2026-05-28 | Direct `getRuntimeStateSnapshot` import from `camera-controls.js` — still a named export |
-| `window.syncOrbitAutoRotate` | 2026-05-28 | Direct `syncOrbitAutoRotate` import from `camera-controls.js` — still a named export |
-| `window.setRouteExplorationState` | 2026-05-28 | Direct `setRouteExplorationState` import from `camera-controls.js` — still a named export |
-| `window.clearRouteExploration` | 2026-05-28 | Direct `clearRouteExploration` import from `camera-controls.js` — still a named export |
-| `window.markRouteExploration` | 2026-05-28 | Direct `markRouteExploration` import from `camera-controls.js` — still a named export |
-| `window.shouldMarkRouteExploration` | 2026-05-28 | Direct `shouldMarkRouteExploration` import from `camera-controls.js` — still a named export |
-| `window._fp` | 2026-05-28 | Retired by removing focus-pocket debug namespace after no module/runtime consumers were found. |
-| `window.clearMobileRouteFieldPeek` | 2026-05-28 | Direct search-state ownership and event-bus requests; retired `composition-adapter.js` and `search-lifecycle-adapter.js` must not be restored |
-| `window.getBoundedNeighborhoodWalkCandidate` | 2026-05-28 | Internal journey.js calls only |
-| `window.isBoundedNeighborhoodActive` | 2026-05-28 | Internal journey.js calls only |
-| `window.primeBoundedSemanticNeighborhoodForTraversal` | 2026-05-28 | Internal journey.js calls only |
-| `window.ensureBoundedNeighborhoodFromActivePocket` | 2026-05-28 | Internal journey.js calls only |
-| `window.getNeighborhoodRouteIndices` | 2026-05-28 | Internal journey.js calls only |
-| `window.getNeighborhoodCandidateForIndex` | 2026-05-28 | Internal journey.js calls only |
-| `window.buildNeighborhoodManifest` | 2026-05-28 | Internal journey.js calls only |
-| `window.getSemanticNeighborRecordBetween` | 2026-05-28 | Internal journey.js calls only |
-| `window.initClusterLabels` | 2026-05-28 | Direct `initClusterLabels` import from `cluster-labels.js` |
-| `window.updateClusterLabels` | 2026-05-28 | Direct `updateClusterLabels` import from `cluster-labels.js` |
-| `window.zoomMap` | 2026-05-28 | Direct `zoomMap` import from `map-state.js` |
-| `window._previouslyFocusedInfoPanel` | 2026-05-28 | Module-scoped `_previouslyFocusedInfoPanel` in `event-bindings.js` closure |
-| `window._previouslyFocusedLegend` | 2026-05-28 | Module-scoped `_previouslyFocusedLegend` in `legend-ui.js` via `setPreviouslyFocusedLegend()`/`getPreviouslyFocusedLegend()` |
-| `window.updateLegendGuideState` | 2026-05-28 | Direct `updateLegendGuideState` imports from `legend-ui.js` |
-| `window.__semanticJourneyProbe` | 2026-05-28 | Retired unused journey compass debug probe; `installSemanticJourneyProbe()` now returns presentation state |
-| `window.setTrailFromSeed` | 2026-05-28 | Direct imports and `window.__APP_ACTIONS__.setTrailFromSeed` for test/dev harnesses |
-| `window.demoController` | 2026-06-01 | Module retired. Tests use `window.isMicroDemoRunning` and `window.cancelMicroDemo` from `micro-demo.js`. |
+| Global                                                | Retired    | Replacement                                                                                                                                   |
+| ----------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `window.state`                                        | 2026-05-27 | `window.__APP_STATE__`                                                                                                                        |
+| `window.recenterFocusedNode`                          | 2026-05-27 | Direct `recenterFocusedNode` imports from `event-bindings.js`                                                                                 |
+| `window._cam`                                         | 2026-05-28 | Direct named imports from `camera-controls.js`                                                                                                |
+| `window.focusOnPoint`                                 | 2026-05-28 | Direct `focusOnPoint` imports from `lifecycle.js`                                                                                             |
+| `window.updateJourneyCompass`                         | 2026-05-28 | Direct `updateJourneyCompass` imports/adapters                                                                                                |
+| `window._findSemanticPath`                            | 2026-05-27 | Direct `findSemanticPath` module import                                                                                                       |
+| `window.syncRuntimeState`                             | 2026-05-28 | Direct `syncRuntimeState` import from `camera-controls.js` — still a named export                                                             |
+| `window.getRuntimeStateSnapshot`                      | 2026-05-28 | Direct `getRuntimeStateSnapshot` import from `camera-controls.js` — still a named export                                                      |
+| `window.syncOrbitAutoRotate`                          | 2026-05-28 | Direct `syncOrbitAutoRotate` import from `camera-controls.js` — still a named export                                                          |
+| `window.setRouteExplorationState`                     | 2026-05-28 | Direct `setRouteExplorationState` import from `camera-controls.js` — still a named export                                                     |
+| `window.clearRouteExploration`                        | 2026-05-28 | Direct `clearRouteExploration` import from `camera-controls.js` — still a named export                                                        |
+| `window.markRouteExploration`                         | 2026-05-28 | Direct `markRouteExploration` import from `camera-controls.js` — still a named export                                                         |
+| `window.shouldMarkRouteExploration`                   | 2026-05-28 | Direct `shouldMarkRouteExploration` import from `camera-controls.js` — still a named export                                                   |
+| `window._fp`                                          | 2026-05-28 | Retired by removing focus-pocket debug namespace after no module/runtime consumers were found.                                                |
+| `window.clearMobileRouteFieldPeek`                    | 2026-05-28 | Direct search-state ownership and event-bus requests; retired `composition-adapter.js` and `search-lifecycle-adapter.js` must not be restored |
+| `window.getBoundedNeighborhoodWalkCandidate`          | 2026-05-28 | Internal journey.js calls only                                                                                                                |
+| `window.isBoundedNeighborhoodActive`                  | 2026-05-28 | Internal journey.js calls only                                                                                                                |
+| `window.primeBoundedSemanticNeighborhoodForTraversal` | 2026-05-28 | Internal journey.js calls only                                                                                                                |
+| `window.ensureBoundedNeighborhoodFromActivePocket`    | 2026-05-28 | Internal journey.js calls only                                                                                                                |
+| `window.getNeighborhoodRouteIndices`                  | 2026-05-28 | Internal journey.js calls only                                                                                                                |
+| `window.getNeighborhoodCandidateForIndex`             | 2026-05-28 | Internal journey.js calls only                                                                                                                |
+| `window.buildNeighborhoodManifest`                    | 2026-05-28 | Internal journey.js calls only                                                                                                                |
+| `window.getSemanticNeighborRecordBetween`             | 2026-05-28 | Internal journey.js calls only                                                                                                                |
+| `window.initClusterLabels`                            | 2026-05-28 | Direct `initClusterLabels` import from `cluster-labels.js`                                                                                    |
+| `window.updateClusterLabels`                          | 2026-05-28 | Direct `updateClusterLabels` import from `cluster-labels.js`                                                                                  |
+| `window.zoomMap`                                      | 2026-05-28 | Direct `zoomMap` import from `map-state.js`                                                                                                   |
+| `window._previouslyFocusedInfoPanel`                  | 2026-05-28 | Module-scoped `_previouslyFocusedInfoPanel` in `event-bindings.js` closure                                                                    |
+| `window._previouslyFocusedLegend`                     | 2026-05-28 | Module-scoped `_previouslyFocusedLegend` in `legend-ui.js` via `setPreviouslyFocusedLegend()`/`getPreviouslyFocusedLegend()`                  |
+| `window.updateLegendGuideState`                       | 2026-05-28 | Direct `updateLegendGuideState` imports from `legend-ui.js`                                                                                   |
+| `window.__semanticJourneyProbe`                       | 2026-05-28 | Retired unused journey compass debug probe; `installSemanticJourneyProbe()` now returns presentation state                                    |
+| `window.setTrailFromSeed`                             | 2026-05-28 | Direct imports and `window.__APP_ACTIONS__.setTrailFromSeed` for test/dev harnesses                                                           |
+| `window.demoController`                               | 2026-06-01 | Module retired. Tests use `window.isMicroDemoRunning` and `window.cancelMicroDemo` from `micro-demo.js`.                                      |
 
 ## Running The Ratchet
 

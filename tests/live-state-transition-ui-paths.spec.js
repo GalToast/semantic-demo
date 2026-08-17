@@ -286,11 +286,11 @@ test('mobile full path search → focus → semantic-dive → reset', async ({ p
     expect(afterReset.body.panelSurface, 'panelSurface must be idle after mobile Escape').toBe('idle')
 })
 
-// Test 3: desktop search → clear-search-btn resets from pre-focus state
+// Test 3: desktop search → clear-search-btn clears the query in place
 // The clear button appears when search results are visible, BEFORE entering focus.
 // After clicking a result, the results panel is replaced by the focus detail panel
 // and #search-clear-btn is hidden. The Escape key is the reset path from focus mode.
-test('desktop search → clear-search-btn resets from pre-focus state', async ({ page }) => {
+test('desktop search → clear-search-btn clears query without leaving search', async ({ page }) => {
     test.setTimeout(60000)
     await page.setViewportSize({ width: 1440, height: 900 })
     await openApp(page)
@@ -302,15 +302,22 @@ test('desktop search → clear-search-btn resets from pre-focus state', async ({
     const clearBtn = page.locator('#search-clear-btn')
     await expect(clearBtn).toBeVisible({ timeout: 10000 })
 
-    // Clear button resets to overview from pre-focus state
+    // The X clears only the query. The adjacent back button and Escape own the
+    // return-to-overview path.
     await clearBtn.click()
 
     await page.waitForFunction(
-        () => window.__TEST_STATE__?.navState?.mode === 'overview' && window.__TEST_STATE__?.focusedNode === null,
+        () =>
+            window.__TEST_STATE__?.navState?.mode === 'search' &&
+            window.__TEST_STATE__?.navState?.surface === 'search' &&
+            window.__TEST_STATE__?.focusedNode === null &&
+            document.body.dataset.panelSurface === 'search',
         { timeout: 15000 }
     )
 
     const after = await probe(page)
+    expect(after.state.navMode, 'clear button keeps nav mode on search').toBe('search')
+    expect(after.body.panelSurface, 'clear button keeps the search surface').toBe('search')
     expect(after.inputValue, 'search input must be empty after clear button').toBe('')
     expect(after.resultCount, 'result count must be 0 after clear button').toBe(0)
 

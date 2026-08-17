@@ -445,7 +445,7 @@ export function executeJourneyCompassAction(action: string): void {
             // search corridor or the map keeps competing search chrome alive.
             void import('@lib/orchestration/lifecycle')
                 .then((m) => m.resetExplorationFocus({ preserveSearch: false }))
-                .catch((err) => console.warn('[lazify] resetExplorationFocus failed', err))
+                .catch((err) => debugWarn('[lazify] resetExplorationFocus failed', err))
             return
 
         default:

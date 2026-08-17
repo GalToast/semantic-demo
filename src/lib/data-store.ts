@@ -275,21 +275,39 @@ export function hydrateFromLegacyState(): boolean {
         businessRecords.set(windowAppState.points)
         didHydrate = true
     }
-    if (windowAppState.semanticNeighborMapByLeadId instanceof Map) {
+    // appState initializes this field to an empty Map, so emptiness is not a
+    // readiness signal. An empty artifact is finalized as failed, and treating
+    // the default Map as hydrated would stop main.ts's retry loop too early.
+    if (
+        windowAppState.semanticNeighborMapByLeadId instanceof Map &&
+        windowAppState.semanticNeighborMapByLeadId.size > 0
+    ) {
         semanticNeighborMap.set(windowAppState.semanticNeighborMapByLeadId)
         didHydrate = true
     }
+
+    // Null optional fields are terminal only after thread loading settles.
+    const status = windowAppState.semanticThreadsStatus
+    const threadsSettled = status === 'ready' || status === 'failed'
+
     if (windowAppState.semanticThreadBundle !== undefined) {
-        semanticThreadBundle.set(windowAppState.semanticThreadBundle)
-        didHydrate = true
+        // Preserve meaningful payloads during loading; defer null defaults.
+        if (windowAppState.semanticThreadBundle !== null || threadsSettled) {
+            semanticThreadBundle.set(windowAppState.semanticThreadBundle)
+            didHydrate = true
+        }
     }
     if (windowAppState.semanticThreadArtifactName !== undefined) {
-        semanticThreadArtifactName.set(windowAppState.semanticThreadArtifactName)
-        didHydrate = true
+        if (windowAppState.semanticThreadArtifactName !== null || threadsSettled) {
+            semanticThreadArtifactName.set(windowAppState.semanticThreadArtifactName)
+            didHydrate = true
+        }
     }
     if (windowAppState.semanticSpaceLayoutManifest !== undefined) {
-        layoutManifest.set(windowAppState.semanticSpaceLayoutManifest)
-        didHydrate = true
+        if (windowAppState.semanticSpaceLayoutManifest !== null || threadsSettled) {
+            layoutManifest.set(windowAppState.semanticSpaceLayoutManifest)
+            didHydrate = true
+        }
     }
     return didHydrate
 }

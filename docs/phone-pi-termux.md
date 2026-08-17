@@ -41,6 +41,23 @@ The reverse mapping is transport only. Phone-side Pi still needs an explicit pro
 configuration pointing at `http://127.0.0.1:8788/<provider>/v1`; Windows `.pi` config,
 extensions, MCP servers, and credentials are intentionally not copied to the phone.
 
+## Real-device UI smoke
+
+Semantic Explorer stays a web app for device QA; an APK is not required. The
+`qa:android` runner uses the USB-connected phone, forwards the existing QA server,
+opens Chrome, and can expose Chrome CDP without stopping any process:
+
+```powershell
+$env:ANDROID_SERIAL = "77aeb8a8"
+npm run qa:android -- --smoke
+```
+
+The runner leaves the forwards active for manual inspection at
+`chrome://inspect`. Use `--serial=<id>` when another Android device is attached,
+`--no-launch` to configure forwarding only, or `--url=<http(s) URL>` to test a
+specific route. The smoke check verifies the real page title, URL, search input,
+viewport, device-pixel ratio, and panel surface through Chrome CDP.
+
 ## Operational limits
 
 - This is a standalone Pi runtime, not a clone of the Windows interactive sessions.

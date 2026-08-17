@@ -53,11 +53,11 @@ Before starting multi-commit work that will touch files another Pi/Codex/subagen
 
 ## Key Product Invariants
 
-- The 8,406-point mycelium data lives in `state.rawPositionsBuffer` as `[0,1]^3` positions, via the canonical `seededUnit` re-export from `@lib/utils/seeded-random`.
+- The 8,406-point mycelium data is loaded from `data.dat` by the data worker (`src/lib/workers/data-worker.ts`) and surfaced as `state.rawPositionsBuffer`, a `[0,1]^3` position buffer. `seededUnit` from `@lib/utils/seeded-random` is NOT in the data-load path — it only drives per-node visual determinism (jitter, spore radius, orbital angles) in `src/lib/engine/node-manager.ts`.
 - `getPointBoundsCenter(points, positionBuffer)` in `src/lib/engine/node-manager.ts` requires a non-null `Float32Array` `positionBuffer` (TypeScript-enforced). The legacy `point.x/y/z` fallback was removed because `state.points` is `BusinessRecord[]` at runtime and never carries those fields.
 - `src/lib/state/app.svelte.ts` is the Svelte 5 global state source of truth.
 - `src/lib/workers/data-worker.ts` is active runtime via `src/lib/workers/data-worker-url.ts` (Vite worker URL import boundary).
-- `src/components/DemoChoreography.svelte` + `src/lib/stores/demo.svelte.ts` (10-phase) is the canonical demo; `choreography.ts` is the deprecated micro-demo but still live-wired — all 5 exports have callers (`cancelMicroDemo` from keyboard-help/panel-bindings/demo-choreography; `initMicroDemo`/`startMicroDemo`/`isMicroDemoRunning`/`shouldRunMicroDemo` 2-4 callers each) — do NOT delete without a migration. Eligibility lives in `shouldRunDemo()` (checks isDeepLink, seen, session, reduced-motion). Replay dispatches `demo-replay-requested` → DemoChoreography re-runs attemptStart after sceneReady (prevents stacked veils, M15).
+- `src/components/DemoChoreography.svelte` + `src/lib/stores/demo.svelte.ts` (10-phase) is the canonical demo. The deprecated micro-demo engine survives only as `src/lib/engine/demo-choreography.ts` (576 LOC; old `src/lib/demo/choreography.ts` no longer exists): only `clearDemoTimers` has a live caller (`src/lib/engine/lifecycle.ts:652`); `isMicroDemoRunning` is exported (index.ts:144) with zero runtime callers; the rest are re-exports. Full sweep is safe once `clearDemoTimers`/lifecycle wiring is re-pointed (see `tmp/swarm-audit/demo-migration-plan.md`). Eligibility lives in `shouldRunDemo()` (checks isDeepLink, session, reduced-motion). Replay dispatches `demo-replay-requested` → DemoChoreography re-runs attemptStart after sceneReady (prevents stacked veils, M15).
 - CSS ownership is split by ordered modules under `css/`; use the ownership docs before editing mobile/surface styles.
 
 ## Conventions (header / mode / toast)

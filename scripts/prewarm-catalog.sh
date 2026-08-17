@@ -16,9 +16,21 @@
 # Usage: scripts/prewarm-catalog.sh   (exit 0 = warm, 1 = pi unavailable)
 set -euo pipefail
 
-if ! timeout 90 pi --list-models >/dev/null 2>&1; then
-  echo "PREWARM-FAIL: \`pi --list-models\` failed — is the router up? Do not dispatch yet." >&2
-  exit 1
+# Git Bash can resolve the Windows `timeout.exe` before GNU timeout. The
+# Windows command has incompatible arguments and makes a healthy Pi catalog
+# look unavailable, so prefer the POSIX binary when it is present.
+if [[ -x /usr/bin/timeout ]]; then
+	timeout_bin=/usr/bin/timeout
+elif command -v timeout >/dev/null 2>&1; then
+	timeout_bin=$(command -v timeout)
+else
+	echo "PREWARM-FAIL: no timeout command is available." >&2
+	exit 1
+fi
+
+if ! "$timeout_bin" 90s pi --list-models >/dev/null 2>&1; then
+	echo "PREWARM-FAIL: \`pi --list-models\` failed — is the router up? Do not dispatch yet." >&2
+	exit 1
 fi
 
 echo "catalog pre-warmed ✓ (subagent spawns should now resolve router model refs)"

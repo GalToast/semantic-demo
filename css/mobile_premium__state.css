@@ -181,7 +181,7 @@
         max-height: calc(218px + env(safe-area-inset-bottom, 0px));
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] #info-panel.info-panel {
+    body:is(.surface-search, [data-panel-surface='search'])[data-panel-surface-detail='peek'] #info-panel.info-panel {
         top: auto;
         bottom: 0;
     }
@@ -1383,6 +1383,20 @@
             border-radius 0.35s cubic-bezier(0.16, 1, 0.3, 1),
             max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         z-index: var(--z-panels-elevated);
+    }
+
+    /* Search peek is a full-width bottom sheet. Keep the panel's geometry
+       internally consistent when the legacy mobile surface rule contributes
+       10px side offsets; width:100% plus those offsets otherwise overflows
+       the phone viewport by the gutter amount. Content keeps its inset via
+       .info-panel-surface padding. */
+    body.surface-search[data-panel-surface-detail='peek'] #info-panel.info-panel,
+    body[data-panel-surface='search'][data-panel-surface-detail='peek'] #info-panel.info-panel {
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     /* Standardized Typography Reset */

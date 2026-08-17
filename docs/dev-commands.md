@@ -12,6 +12,7 @@ npm run test:unit
 npm run test:contract
 npm run qa:contract                            # all surface-contract checks (desktop + mobile)
 npm run qa:contract:mobile-critical             # 12 mobile-critical surfaces (includes mobile-idle)
+npm run qa:android -- --smoke                   # real Android Chrome smoke via ADB/CDP
 # single-surface: node scripts/qa.mjs contract --surface=mobile-idle --headed
 npm run test:microdemo
 npm run serve

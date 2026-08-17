@@ -252,14 +252,29 @@ export type NavStoreState = NavStoreApi
  */
 function _applyNavUpdate(fn: (_current: NavState) => NavState): void {
     const current = _readNavSnapshot()
-    const next = fn(current)
-    navMirror.update(() => next)
-    Object.assign(appState.navState, next)
-    if (typeof next.trailDepth === 'number') appState.trailDepth = next.trailDepth
-    if (next.currentView === 'galaxy' || next.currentView === 'map') {
-        appState.currentView = next.currentView
+    // Give the updater a top-level draft so an in-place assignment such as
+    // `state.currentView = 'map'; return state` cannot mutate appState before
+    // the diff reaches the canonical mirror path. Nested collections remain
+    // intentionally reference-based; navigation updates should replace them.
+    const next = fn({ ...current })
+    // Compute the diff patch and route through writeNavStateMirror so that
+    // all canonical side effects fire: noop detection, _lastCommittedView
+    // tracking, and EVENTS.VIEW_CHANGED publish on currentView transitions.
+    // This closes the divergence where navStore.update previously skipped
+    // writeNavStateMirror entirely (the root cause of the 2026-08-04
+    // 'unwritable-view' alarm class).
+    const patch: Record<string, unknown> = {}
+    const currentRecord = current as unknown as Record<string, unknown>
+    const nextRecord = next as unknown as Record<string, unknown>
+    for (const key in next) {
+        if (currentRecord[key] !== nextRecord[key]) {
+            // Write through a plain record: writing a string index on
+            // Partial<NavState> collapses the target to the union and TS cannot
+            // prove the unknown is assignable to an `undefined`-typed member.
+            patch[key] = nextRecord[key]
+        }
     }
-    refreshNavDriftBaseline(_readNavSnapshot())
+    writeNavStateMirror(patch as Partial<NavState>)
 }
 
 function _createNavStore(): NavStoreApi {
@@ -267,13 +282,24 @@ function _createNavStore(): NavStoreApi {
     fn.subscribe = navMirror.subscribe
     fn.update = _applyNavUpdate
     fn.set = (value: NavState) => {
-        navMirror.set(value)
-        Object.assign(appState.navState, value)
-        if (typeof value.trailDepth === 'number') appState.trailDepth = value.trailDepth
-        if (value.currentView === 'galaxy' || value.currentView === 'map') {
-            appState.currentView = value.currentView
+        const current = _readNavSnapshot()
+        const changed = Object.keys(value).some(
+            (key) =>
+                (value as unknown as Record<string, unknown>)[key] !==
+                (current as unknown as Record<string, unknown>)[key]
+        )
+
+        // Use the canonical path so appState is updated before navMirror
+        // subscribers run. This prevents callbacks that read appState.navState
+        // from observing the previous snapshot during .set().
+        writeNavStateMirror(value)
+
+        // Preserve Writable.set semantics for same-value assignments: the
+        // canonical path intentionally short-circuits no-op patches, while a
+        // direct store .set() still notifies subscribers.
+        if (!changed) {
+            navMirror.set(value)
         }
-        refreshNavDriftBaseline(_readNavSnapshot())
     }
     return fn
 }

@@ -454,7 +454,7 @@ function createTestCompatProxy(): Record<string, unknown> {
                         } else if (prop === 'focusedNode') {
                             void import('@lib/journey/thread-settler')
                                 .then((m) => m.setFocusedNode(value === null ? null : (value as number)))
-                                .catch((err) => console.warn('[lazify] thread-settler focus failed', err))
+                                .catch((err) => debugWarn('[lazify] thread-settler focus failed', err))
                             // Keep navStore in sync for parity-attrs.
                             setFocusedIndex(value === null ? null : (value as number))
                         } else if (prop === 'selectedPoint') {

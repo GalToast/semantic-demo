@@ -90,7 +90,6 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
         trailDepthFromExploration: 0,
         trailDepth: 0
     })
-    appState.semanticDiveMode = false
     appState.myceliumMode = 'default'
     clearSearch()
     focusStore.update((s) => {
@@ -455,6 +454,13 @@ function _frameCameraOnAnchor(index: number, restoreToken: number): void {
             reg.disposeAll()
             return
         }
+        // The user can change focus without starting another URL restore. Stop
+        // polling in that case so a delayed frame cannot resurrect the old
+        // anchor after an ordinary in-app navigation.
+        if (appState.navState.focusedIndex !== index) {
+            reg.disposeAll()
+            return
+        }
         attempts += 1
         if (!appState.camera || !appState.controls) {
             if (attempts <= maxAttempts) {
@@ -472,7 +478,9 @@ function _frameCameraOnAnchor(index: number, restoreToken: number): void {
             reg.disposeAll()
             // M10: re-check staleness after the 500ms settle — the user may
             // have navigated between camera-ready and this callback firing.
-            if (_isRestoreStale(restoreToken)) return
+            // A normal focus change does not necessarily bump the restore
+            // token, so the focused-index guard is required as well.
+            if (_isRestoreStale(restoreToken) || appState.navState.focusedIndex !== index) return
             try {
                 animateCameraToNode(index, { transitionStyle: 'focus' })
             } catch (e) {

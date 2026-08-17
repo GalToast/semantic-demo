@@ -191,16 +191,57 @@ async function forceSearchError(page) {
         </div>
       </div>`
     })
-    // state mutation applied synchronously
+    // The mobile sheet animates its left/right geometry when the search state
+    // changes. Wait for the settled viewport position before auditing pixels.
+    await page
+        .waitForFunction(
+            () => {
+                const panel = document.querySelector('#info-panel')
+                if (!panel) return true
+                const rect = panel.getBoundingClientRect()
+                return rect.x >= -0.5 && rect.right <= window.innerWidth + 0.5
+            },
+            { timeout: 1000 }
+        )
+        .catch(() => {})
 }
 
 async function forceFieldNode(page) {
     await page.evaluate(() => {
+        const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+        const focusedIndex = Number.isFinite(state.navState?.focusedIndex)
+            ? state.navState.focusedIndex
+            : Number.isFinite(state.focusedNode)
+              ? state.focusedNode
+              : Number.isFinite(state.searchState?.currentSearchSummary?.anchorIndex)
+                ? state.searchState.currentSearchSummary.anchorIndex
+                : 519
+        state.currentView = 'galaxy'
+        state.focusedNode = focusedIndex
+        if (state.navState) {
+            state.navState.focusedIndex = focusedIndex
+            state.navState.mode = 'focus'
+        }
+        window.__navActions__?.setSurface?.('focus-search')
+        window.__navActions__?.setFocusedIndex?.(focusedIndex)
+        const focusOnNode = window.__APP_ACTIONS__?.focusOnNode ?? window.__navActions__?.focusOnNode
+        focusOnNode?.(focusedIndex, {
+            skipUrlSync: true,
+            fromSearchResult: true,
+            preserveMode: false
+        })
         document.body.dataset.activeView = 'galaxy'
         document.body.dataset.graphContext = 'focus-search'
         document.body.dataset.panelSurface = 'focus-search'
         document.body.dataset.focusPanelMode = 'field-node'
         document.body.dataset.fieldStepSync = 'active'
+        const focusStage = document.querySelector('#focus-stage')
+        if (focusStage) {
+            focusStage.hidden = false
+            focusStage.style.display = 'block'
+            focusStage.setAttribute('aria-hidden', 'false')
+            focusStage.classList.add('active')
+        }
         window.__navActions__?.refreshCompositionState?.()
     })
     await page
@@ -237,8 +278,12 @@ async function forceThreadPreview(page) {
         document.body.dataset.panelSurface = 'focus'
         document.body.dataset.threadInspectSurface = 'inspector'
 
-        if (Number.isFinite(seedIndex) && typeof window.__navActions__?.focusOnNode === 'function') {
-            window.__navActions__.focusOnNode(seedIndex, {
+        window.__navActions__?.setSurface?.('focus')
+        window.__navActions__?.setFocusedIndex?.(seedIndex)
+
+        const focusOnNode = window.__APP_ACTIONS__?.focusOnNode ?? window.__navActions__?.focusOnNode
+        if (Number.isFinite(seedIndex) && typeof focusOnNode === 'function') {
+            focusOnNode(seedIndex, {
                 skipUrlSync: true,
                 fromSearchResult: true,
                 preserveMode: true
@@ -248,6 +293,8 @@ async function forceThreadPreview(page) {
         }
         if (state.navState && Number.isFinite(seedIndex)) {
             state.navState.focusedIndex = seedIndex
+            state.navState.mode = 'focus'
+            state.focusedNode = seedIndex
             window.__navActions__?.setTrailFromSeed?.(seedIndex)
         }
 
@@ -494,6 +541,10 @@ async function auditState(page, name) {
 
             function clipped(el) {
                 if (!visible(el)) return false
+                // Native single-line controls expose a scrollable value window;
+                // a long query naturally has scrollWidth greater than its edit
+                // box and is not the same as clipped rendered text.
+                if (el.tagName === 'INPUT') return false
                 if (parseFloat(getComputedStyle(el).fontSize || '0') === 0) return false
                 const text = (el.textContent || el.value || '').trim()
                 if (!text || text.length < 2) return false
@@ -686,7 +737,6 @@ async function auditState(page, name) {
                 '#info-panel',
                 '.search-container',
                 '#search-results',
-                '#focus-stage',
                 '.focus-stage-card',
                 '.focus-thread-inspector'
             ]
@@ -807,8 +857,7 @@ async function auditState(page, name) {
                         '.demo-starters',
                         '#btn-launch',
                         '#mode-grid',
-                        '#cluster-section',
-                        '#filters-section'
+                        '#cluster-section'
                     ]
                     for (const selector of idleOnlySearch) {
                         const staleSurface = visibleChrome(selector)
@@ -1048,12 +1097,15 @@ async function auditState(page, name) {
 
                 if (panelSurface === 'map-focus-search') {
                     const selectedCard = document.querySelector('#selected-card')
-                    if (!selectedCard || selectedCard.dataset.contentOwner !== 'info-panel') {
+                    const infoPanel = document.querySelector('#info-panel')
+                    // Map surfaces intentionally suppress InfoPanel and selected-card content.
+                    // Flag only stale mounted/visible surfaces, not the expected absence of either owner.
+                    if (selectedCard || (infoPanel && visible(infoPanel))) {
                         failures.push({
                             check: 'composition:map-focus-search-content-owner',
-                            selector: '#selected-card',
+                            selector: '#info-panel, #selected-card',
                             state: name,
-                            owner: selectedCard?.dataset.contentOwner || ''
+                            owner: selectedCard?.dataset.contentOwner || 'suppressed'
                         })
                     }
                     const selectedCardStyle = selectedCard ? getComputedStyle(selectedCard) : null

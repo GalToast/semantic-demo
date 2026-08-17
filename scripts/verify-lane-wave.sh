@@ -26,10 +26,10 @@ git log "${BASE}"..master --format='%h %ad %s' --date=short | head -20 || true
 log ""
 log "per-commit files (real content only; pollution check)"
 git log "${BASE}"..master --format='%H %s' | grep -vE '^(index on master|checkpoint)' | while read -r sha rest; do
-files="$(git diff-tree --no-commit-id --name-only -r "${sha}" 2>/dev/null | wc -l)"
-if [ "${files}" -gt 0 ]; then
-log "  ${sha:0:7} (${files} files): $(echo "${rest}" | cut -c1-70)"
-fi
+	files="$(git diff-tree --no-commit-id --name-only -r "${sha}" 2>/dev/null | wc -l)"
+	if [ "${files}" -gt 0 ]; then
+		log "  ${sha:0:7} (${files} files): $(echo "${rest}" | cut -c1-70)"
+	fi
 done
 
 log ""

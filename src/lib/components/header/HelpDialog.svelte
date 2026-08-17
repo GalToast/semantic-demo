@@ -206,6 +206,7 @@
     </ul>
     <p class="help-dialog-hint">
       Press <kbd aria-label="Question mark">?</kbd> anytime for keyboard shortcuts.
+      Close the dialog with any outside click or keypress (including /) to start exploring.
     </p>
     <button
       class="help-dialog-close"

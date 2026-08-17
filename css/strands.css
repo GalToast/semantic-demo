@@ -327,16 +327,6 @@
         pointer-events: none;
     }
 
-    body.surface-focus:not([data-panel-surface='focus-search']) .info-panel,
-    body.surface-semantic-dive .info-panel {
-        background: transparent;
-        border-color: transparent;
-        box-shadow: none;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-        pointer-events: none;
-    }
-
     body.surface-focus:not([data-panel-surface='focus-search']) .info-panel *,
     body.surface-semantic-dive .info-panel * {
         pointer-events: auto;
@@ -372,8 +362,6 @@
         padding: 0 9px;
     }
 
-    body.surface-semantic-dive .trail-controls,
-    body.surface-semantic-dive .trail-controls,
     body.surface-semantic-dive .trail-controls,
     body.surface-focus .startup-recovery-notice,
     body.surface-focus-search .startup-recovery-notice,

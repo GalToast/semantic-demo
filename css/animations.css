@@ -3,7 +3,6 @@
 @media (prefers-reduced-motion: reduce) {
     body #loading-overlay,
     body #loading-overlay *,
-    body #micro-demo-veil,
     body #weather-overlay,
     body #canvas-container,
     body #map-container,

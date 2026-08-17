@@ -770,36 +770,6 @@ body.surface-semantic-dive::after {
    owner provides the shared non-map .journey-compass rule this block duplicated).
    focus-search overrides remain at pcss:1243+ below. */
 
-/* micro-demo: full-screen overlay veil */
-.micro-demo-veil {
-    position: fixed;
-    inset: 0;
-    z-index: var(--z-tooltips);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    background: var(--shadow-umbra);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.micro-demo-veil.active {
-    opacity: 1;
-}
-
-/* micro-demo: spotlight ring on demo node */
-@keyframes microDemoPulse {
-    0%,
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.6);
-        opacity: 0.7;
-    }
-}
-
 /* Stage 3 hygiene: scrollbar hiding — migrated from mobile_base.css:56-79 (info-panel block) */
 @media (max-width: 768px) {
     .info-panel {

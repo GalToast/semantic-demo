@@ -6,7 +6,11 @@
  * Re-exports core adapters from extracted modules and owns canvas DOM event binding lifecycle.
  */
 import { appState } from '@lib/state/app.svelte'
-import { focusOnNode as _focusOnNode, noteSceneInteraction, releaseFocusCameraAssist } from '@lib/engine/camera-controls'
+import {
+    focusOnNode as _focusOnNode,
+    noteSceneInteraction,
+    releaseFocusCameraAssist
+} from '@lib/engine/camera-controls'
 import {
     initJourneyCanvasInteractionAdapter,
     isThreadCandidateVisibleOnCanvas,

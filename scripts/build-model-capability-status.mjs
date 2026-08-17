@@ -22,6 +22,16 @@ const SENSITIVE_KEY = /^(?:api[_-]?key|authorization|cookie|credential|headers?|
 const SECRET_PATTERN = /(?:bearer\s+\S{12,}|sk-[a-z0-9]{16,}|rk-[a-z0-9]{16,}|pk-[a-z0-9]{16,}|AIza[a-z0-9]{20,}|gh[pousr]_[a-z0-9]{20,}|xox[baprs]-[a-z0-9-]{20,})/i
 
 const STATUS_FIELDS = ['catalog', 'chat', 'tool', 'vision']
+const LEDGER_DEPLOYABILITIES = new Set([
+    'deployable',
+    'ready-unverified',
+    'stale',
+    'cooldown',
+    'degraded',
+    'blocked',
+    'unlaunchable',
+    'unknown'
+])
 
 function argValue(name, fallback = null) {
     const prefix = `--${name}=`
@@ -159,6 +169,43 @@ function normalizeExternalEvidence(payload) {
     return map
 }
 
+// Accept an optional schemaVersion-1 evidence ledger (the output shape of
+// model-health-ledger.mjs). Only schemaVersion 1 is indexed; any other shape is
+// treated as no ledger so a mismatched payload can never silently promote proof.
+function normalizeLedger(ledger) {
+    if (!ledger || typeof ledger !== 'object') return null
+    if (ledger.schemaVersion !== 1) return null
+    const map = new Map()
+    const entries = ledger.entries && typeof ledger.entries === 'object' ? ledger.entries : {}
+    for (const entry of Object.values(entries)) {
+        if (!entry || typeof entry !== 'object') continue
+        const target = String(entry.target || '')
+        const route = routePath(entry.route || '')
+        const modelId = String(entry.modelId || '')
+        const rawDeployability = typeof entry.deployability === 'string' ? entry.deployability : null
+        const deployability = LEDGER_DEPLOYABILITIES.has(rawDeployability) ? rawDeployability : 'unknown'
+        if (!target || !route || !modelId || !deployability) continue
+        const reason = LEDGER_DEPLOYABILITIES.has(rawDeployability)
+            ? (typeof entry.deployabilityReason === 'string' ? entry.deployabilityReason : null)
+            : 'ledger-deployability-invalid'
+        map.set(routeModelKey(target, route, modelId), { deployability, deployabilityReason: reason })
+    }
+    return map
+}
+
+// Project a ledger deployability verdict onto a target. The sidecar never
+// promotes evidence: it passes the ledger verdict through verbatim and treats
+// any unmatched target as conservatively unknown. Only schemaVersion-1 ledger
+// values reach this point, where 'deployable' is the single positive verdict and
+// every other value (missing, stale, cooldown, blocked, ready-unverified, ...) is
+// already non-deployable by construction.
+function ledgerDeployability(ledgerMap, target, route, modelId) {
+    if (!ledgerMap) return null
+    const match = ledgerMap.get(routeModelKey(target, route, modelId))
+    if (match) return { deployability: match.deployability, deployabilityReason: match.deployabilityReason }
+    return { deployability: 'unknown', deployabilityReason: 'ledger-entry-missing' }
+}
+
 function externalCapabilityEvidence(map, target, route, modelId, field, observedAt) {
     const entry = map.get(routeModelKey(target, route, modelId))
     if (!entry) return null
@@ -210,7 +257,7 @@ function collectHealthRoutes(health) {
     return routes
 }
 
-function buildTargetStatus(model, target, route, observedAt, externalEvidence) {
+function buildTargetStatus(model, target, route, observedAt, externalEvidence, ledgerMap) {
     const routeName = routePath(model.path || model.baseUrl)
     const catalog = routeCatalogEvidence(route, model, target, observedAt)
     const chat = externalCapabilityEvidence(externalEvidence, target, routeName, model.id, 'chat', observedAt)
@@ -219,25 +266,36 @@ function buildTargetStatus(model, target, route, observedAt, externalEvidence) {
         || smokeEvidence(route, model.id, 'tool', 'tool-proven', 'tool', observedAt)
     const vision = externalCapabilityEvidence(externalEvidence, target, routeName, model.id, 'vision', observedAt)
         || smokeEvidence(route, model.id, 'vision', 'vision-proven', 'vision', observedAt)
-    return {
+    const targetStatus = {
         target,
         route: routeName,
         routeProvider: route?.provider || null,
         capabilities: { catalog, chat, tool, vision }
     }
+    // Deployability is a separate target-level projection from the ledger. It is
+    // never merged into catalog/chat/tool/vision proof fields, and a missing
+    // ledger (ledgerMap === null) leaves the field absent so existing callers are
+    // unchanged.
+    if (ledgerMap) {
+        const projection = ledgerDeployability(ledgerMap, target, routeName, model.id)
+        targetStatus.deployability = projection.deployability
+        targetStatus.deployabilityReason = projection.deployabilityReason
+    }
+    return targetStatus
 }
 
-export function buildCapabilityStatus({ catalog, health, visionEvidence = null } = {}) {
+export function buildCapabilityStatus({ catalog, health, visionEvidence = null, ledger = null } = {}) {
     if (!catalog || !Array.isArray(catalog.models)) throw new Error('catalog.models must be an array')
     if (!health || !Array.isArray(health.routers)) throw new Error('health.routers must be an array')
 
     const observedAt = health.generatedAt || null
     const healthRoutes = collectHealthRoutes(health)
     const externalEvidence = normalizeExternalEvidence(visionEvidence)
+    const ledgerMap = normalizeLedger(ledger)
     const entries = catalog.models.map((model) => {
         const route = modelRoutePath(model)
         const matchingRoutes = healthRoutes.filter((item) => item.route.route === route)
-        const targets = matchingRoutes.map((item) => buildTargetStatus(model, item.target, item.route, observedAt, externalEvidence))
+        const targets = matchingRoutes.map((item) => buildTargetStatus(model, item.target, item.route, observedAt, externalEvidence, ledgerMap))
         return {
             provider: model.provider || null,
             modelId: model.id,
@@ -267,13 +325,15 @@ export function buildCapabilityStatus({ catalog, health, visionEvidence = null }
             chatProvenRequiresExplicitChatSmoke: true,
             toolProvenRequiresExplicitToolEvidence: true,
             visionProvenRequiresExplicitVisionEvidence: true,
-            declaredCapabilityNeverPromotesProof: true
+            declaredCapabilityNeverPromotesProof: true,
+            ledgerDeployabilityProjectedNotPromoted: true
         },
         sources: {
             catalogGeneratedAt: catalog.generatedAt || null,
             healthGeneratedAt: health.generatedAt || null,
             healthSchemaVersion: health.schemaVersion || null,
-            externalEvidenceProvided: Boolean(visionEvidence)
+            externalEvidenceProvided: Boolean(visionEvidence),
+            ledgerProvided: Boolean(ledger)
         },
         summary: {
             modelCount: entries.length,
@@ -327,12 +387,14 @@ function main() {
     const catalogPath = argValue('catalog', DEFAULT_CATALOG)
     const healthPath = argValue('health', DEFAULT_HEALTH)
     const evidencePath = argValue('vision-evidence', null)
+    const ledgerPath = argValue('ledger', null)
     const outputPath = argValue('output', DEFAULT_OUTPUT)
     const reportPath = hasFlag('markdown') ? argValue('report', DEFAULT_REPORT) : argValue('report', null)
     const catalog = readJson(catalogPath)
     const health = readJson(healthPath)
     const visionEvidence = evidencePath ? readJson(evidencePath) : null
-    const status = buildCapabilityStatus({ catalog, health, visionEvidence })
+    const ledger = ledgerPath ? readJson(ledgerPath) : null
+    const status = buildCapabilityStatus({ catalog, health, visionEvidence, ledger })
     ensureParent(outputPath)
     fs.writeFileSync(path.resolve(outputPath), `${JSON.stringify(status, null, 2)}\n`, 'utf8')
     if (reportPath) {

@@ -16,7 +16,9 @@ const providerFilter = providerArg ? new Set(providerArg.slice('--provider='.len
 const limitArg = process.argv.find((arg) => arg.startsWith('--limit='))
 const perProviderLimit = limitArg ? Number(limitArg.slice('--limit='.length)) : 12
 const smokeDelayArg = process.argv.find((arg) => arg.startsWith('--smoke-delay='))
-const smokeDelayMs = smokeDelayArg ? Number(smokeDelayArg.slice('--smoke-delay='.length)) : 0
+const smokeDelayMs = smokeDelayArg
+    ? Number(smokeDelayArg.slice('--smoke-delay='.length))
+    : 250
 
 // Reasoning-emission check (opt-in, key-rate-limited). Detects models wired for reasoning that no
 // longer stream a reasoning_content/reasoning delta (the DeepSeek V4 Pro hang class).
