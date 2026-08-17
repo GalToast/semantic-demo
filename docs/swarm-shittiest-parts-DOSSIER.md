@@ -168,7 +168,9 @@ All four use the **deliverable-first protocol** (write skeleton with all rows `P
 | **W3** (url-restore split) | 4-file split complete (866 → 690 LOC). All gates green. Duplicate-export bug caught by the contract suite.                                                                                                                              |
 | **W4** (engine hygiene)    | **Both deferred items are false positives / already-done.** Asset compression already live in `vite.config.ts` (data.dat 1.8M → .br 380K, −79%). CSS dead-code rejected — every flagged selector is live via dynamically-generated DOM. |
 
-**Net: 4 commits on master** (`59b1947d`, `94381517`, `ae998b0f`, plus the W2/W3 wave commits `c1de29eb`/`79f368ea`/`0d964dff`/`c1401416`/`fb3caa06`), ~10,000 LOC of dead test code removed, ~175 LOC of orchestrator monolith split, 6 build warnings eliminated.
+**Net: 5+ commits on master** (`59b1947d`, `94381517`, `ae998b0f`, `a3a7b7d0` [W2-RUNNER], plus the W2/W3 wave commits `c1de29eb`/`79f368ea`/`0d964dff`/`c1401416`/`fb3caa06`), ~10,000 LOC of dead test code removed, ~175 LOC of orchestrator monolith split, 6 build warnings eliminated, `PINNED_FILES` hand-maintained duplicate permanently eliminated.
+
+**2026-08-18 addendum (main-lane, task 122 closure):** SEV1-1 touch targets verified fixed (44px on both `.search-clear` and `.search-back-btn`, `SearchInputChrome.svelte:205-267`). SEV1-2 hybrid DOM+state assertions present in `3d-data-edge-cases.spec.js` (not purely state-only). Tier D L1/L2/L3 all already fixed in tree. Tier D1 legacy cruft pinned by tests (false positive).
 
 ## Cross-worker findings
 
