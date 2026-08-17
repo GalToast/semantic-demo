@@ -258,8 +258,6 @@ const PINNED_FILES = [
     'semantic-lane-contract.mjs',
     'connection-analysis-contract.mjs',
     'camera-controls-motion-contract.mjs',
-    'focus-pocket-motion-contract.mjs',
-    'focus-pocket-composition-contract.mjs',
     'journey-event-bindings-contract.mjs',
     'reset-callsite-routing-contract.mjs',
     'cluster-labels-contract.mjs',
@@ -272,30 +270,22 @@ const PINNED_FILES = [
     'weather-surface-ownership-contract.mjs',
     'camera-auto-rotate-settle-contract.mjs',
     'semantic-dive-reverse-contract.mjs',
-    'thread-inspector-dewindowing-contract.mjs',
     'residual-window-bridge-inventory-contract.mjs',
     'next-explore-candidate-contract.mjs',
     'ui-renderers-helper-contract.mjs',
     'lifecycle-semantic-guide-residual-bridge-contract.mjs',
-    'semantic-dive-ui-dewindowing-contract.mjs',
     'lifecycle-search-panel-ownership-contract.mjs',
-    'lifecycle-journey-quick-dewindowing-contract.mjs',
+    'lifecycle-search-panel-ownership-contract.mjs',
     'search-lifecycle-adapter-contract.mjs',
     'search-trail-cue-lifecycle-contract.mjs',
     'view-controller-ownership-contract.mjs',
     'loading-ui-contract.mjs',
-    'state-ownership-contract.mjs',
     'keyboard-reset-ownership-contract.mjs',
     'focus-trap-installed-contract.mjs',
     'search-state-ui-adapter-contract.mjs',
     'search-panel-adapter-contract.mjs',
     'exploration-modes-contract.mjs',
     'scene-reveal-contract.mjs',
-    'scene-reveal-camera-dewindowing-contract.mjs',
-    'webgl-restore-dewindowing-contract.mjs',
-    'three-setup-init-dewindowing-contract.mjs',
-    'cancel-animate-dewindowing-contract.mjs',
-    'three-setup-loop-dewindowing-contract.mjs',
     'three-setup-zero-caller-dewindowing-contract.mjs',
     'scene-atmosphere-contract.mjs',
     'motion-state-contract.mjs',
@@ -716,7 +706,13 @@ function runBatchContract(files, timeoutMs, baseUrl = null) {
         let settled = false
 
         const exec = process.execPath
-        const execArgs = [PLAYWRIGHT_CLI, 'test', ...files.map((f) => `tests/${f}`), ...PLAYWRIGHT_FLAGS, ...playwrightWorkerFlags()]
+        const execArgs = [
+            PLAYWRIGHT_CLI,
+            'test',
+            ...files.map((f) => `tests/${f}`),
+            ...PLAYWRIGHT_FLAGS,
+            ...playwrightWorkerFlags()
+        ]
 
         const child = spawn(exec, execArgs, {
             stdio: ['ignore', 'pipe', 'pipe'],

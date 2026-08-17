@@ -24,7 +24,4 @@ export {
     resetStateBeforeUrlRestore,
     type UrlStateOptions
 } from './url-restore'
-export {
-    updateUrlState,
-    type UpdateUrlStateOptions
-} from './url-writer'
+export { updateUrlState, type UpdateUrlStateOptions } from './url-writer'

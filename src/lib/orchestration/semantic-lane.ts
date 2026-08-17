@@ -11,6 +11,7 @@
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
 import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback } from '@lib/utils/ui-presentation'
+import { readApiUnreachable } from '@lib/search/mock-search-fallback'
 import { debugWarn } from '@lib/utils/debug'
 import { apiUrl } from '@lib/utils/api-url'
 
@@ -439,7 +440,8 @@ export function scheduleSemanticLaneMonitor(): void {
 
     state.semanticLaneMonitorTimer =
         typeof win?.setInterval === 'function'
-            ? setInterval(() => { // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneMonitorTimer
+            ? setInterval(() => {
+                  // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneMonitorTimer
                   if (isStaticDevLaneFallbackActive()) return
                   probeSemanticLane({
                       warm: shouldWarmSemanticLane('interval'),
@@ -482,6 +484,18 @@ export function setSemanticLaneUiState(laneState: string, options: LaneUiOptions
 
     const pillEl = pill as HTMLElement
     pillEl.dataset.state = laneState
+    // Truth-split (2026-08-17): when the engine marked the API unreachable, the
+    // lane must NOT look healthy (the static-dev mock path returned well while
+    // search served demo data — the conflation this split kills).
+    const apiDown = readApiUnreachable() !== null
+    if (apiDown) {
+        pillEl.dataset.state = 'demo'
+        pillEl.textContent = 'Demo data — live API unreachable'
+        pillEl.title = 'Live API unreachable; showing the local demo data'
+        pillEl.setAttribute('aria-label', 'Demo data — live API unreachable')
+        pillEl.hidden = false
+        return
+    }
     syncSemanticLaneRetryBinding(pillEl, laneState === 'stuck')
     const assistEl = doc?.getElementById?.('semantic-lane-assist') || null
     if (assistEl) {
@@ -572,7 +586,8 @@ export function setSemanticLaneOpsMode(enabled: boolean): void {
         return
     }
     if (!state.semanticLaneOpsRefreshTimer && typeof win?.setInterval === 'function') {
-        state.semanticLaneOpsRefreshTimer = setInterval(() => { // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneOpsRefreshTimer
+        state.semanticLaneOpsRefreshTimer = setInterval(() => {
+            // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneOpsRefreshTimer
             refreshSemanticLaneOpsSummary()
         }, 60000)
     }
