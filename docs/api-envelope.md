@@ -50,30 +50,34 @@ This closes the "which path actually ran" ambiguity the UI admits (`?staticDev=0
 ## Second half (verified 2026-08-17, pass 3)
 
 ### Router — `api.php` (`?action=`)
+
 - `stats` (default), `semantic_guide_worker` (CLI-only; 403 for web), `semantic_lane_health` (requires same-host referrer), + dataset boot.
 - Dataset load (api.php): `data.dat` candidates → JSON array-of-rows (≥7 cols / row8 with `count($row) < 7` skipped) → **canonical mapper** (PRODUCER-VERIFIED tuple contract):
 
-| tuple col | point field | | note |
-|---|---|---|---|
-| 0–2 | x/y/z | | [0,1]³ |
-| 3 | cluster | | 0..20 |
-| 4 | name | | cleanText |
-| 5 | what | | default "Montgomery County business" |
-| 6 | city | | |
-| 7 | lead_id | | the ?record=N basis |
-| 10 | website | | validWebsite-filtered |
-| 13 | public_note | | |
-| 14 | status | | lowercased; default 'active' |
-| 15 | naics | | added by scripts/augment_data.py; fallthrough → text match |
+| tuple col | point field |     | note                                                       |
+| --------- | ----------- | --- | ---------------------------------------------------------- |
+| 0–2       | x/y/z       |     | [0,1]³                                                     |
+| 3         | cluster     |     | 0..20                                                      |
+| 4         | name        |     | cleanText                                                  |
+| 5         | what        |     | default "Montgomery County business"                       |
+| 6         | city        |     |                                                            |
+| 7         | lead_id     |     | the ?record=N basis                                        |
+| 10        | website     |     | validWebsite-filtered                                      |
+| 13        | public_note |     |                                                            |
+| 14        | status      |     | lowercased; default 'active'                               |
+| 15        | naics       |     | added by scripts/augment_data.py; fallthrough → text match |
 
 ### Cache layer (api/search.php)
+
 - `loadSemanticSearchCache(file, ttlSeconds)`: age check → decoded array gains `cached:true, cache_age_seconds, cache_source:'file'`.
 - `waitForSemanticSearchCache(cacheFile, ttl, waitMs)`: poll loop for a fresh cache (semantic warm path).
 - `persistSemanticSearchCache`: strips transient flags before `file_put_contents(LOCK_EX)`.
 
 ### Supervisor (api/supervisor.php)
+
 - `serviceHealthy(url, t)` / `fetchServiceHealthSnapshot` / `readServiceRuntimeState(stateFile)` / `summarizeServiceSnapshot` (`worker_answered_health`…) — the **semantic-lane health + warm-restart machinery** (`logSemanticLaneEvent`, `saveSemanticLaneState`).
 - This is the seam the frontend's `semantic_lane_health` gate reads → the "boosted lane alive?" truth the UI banner should eventually name.
 
 ### Honest remainder
+
 - The **semantic engine process** itself (the service the supervisor probes; its true retrieval_source=real scores path) lives outside this PHP tree (the service in python/rust lane per health URLs). Not dissected yet — that's the only seam left before the envelope is whole.
