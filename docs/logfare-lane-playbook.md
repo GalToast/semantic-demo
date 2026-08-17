@@ -1,28 +1,34 @@
-# Logfare Lane Ops — validated 2026-08-15
+# Logfare Lane Ops — validated 2026-08-17
 
-**Status: logfare is a WORKING but FINITE lane.** 3 of 8 upstream models produce
-real content through the router; the rest are quota/instability gated. Use the
-oversubscribe-harvest pattern, never assume a model is up.
+**Status: logfare is a WORKING lane with 10 confirmed chat models.** The
+oversubscribe-harvest pattern still applies — never assume a model is up — but
+the "dead model" list was mostly a probe artifact (reasoning models starved by
+single-digit max_tokens), not deadness.
 
 ## Upstream / models
 
--   Base: `https://logfare.ai/v1` (keys: `~/.config/opencode/logfare-keys.json`, 5× `lfu_` keys)
--   Real catalog (GET /models): `kiro-auto, minimax-m3, deepseek-v4-pro, kimi-k3,
-glm-5.2, deepseek-v4-flash-0731, grape-2-pro, qwen-3.8-27b`
--   The router's model id REWRITE `deepseek-v4-flash-0731 → deepseek-v4-flash`
-    was a bug (fixed 2026-07-15): the upstream 404'd the bare name. Do NOT re-add.
+- Base: `https://logfare.ai/v1` (keys: `~/.config/opencode/logfare-keys.json`, 5× `lfu_` keys)
+- Real catalog (GET /models, 10 working chat models): `kiro-auto, minimax-m3,
+deepseek-v4-pro, deepseek-v4-pro-0813, deepseek-v4-flash-0731, glm-5.2, kimi-k3,
+kimi-k3.5?, grape-2-pro, qwen-3.8-27b, gemma-4-26b`
+- The router's model id REWRITE `deepseek-v4-flash-0731 → deepseek-v4-flash`
+  was a bug (fixed 2026-07-15): the upstream 404'd the bare name. Do NOT re-add.
 
-## Model reliability (measured 2026-07-15, direct stream probes + real worker runs)
+## Model reliability (as of 2026-08-17, 10 working chat models)
 
 | Model                    | Use         | Notes                                                                                                 |
 | ------------------------ | ----------- | ----------------------------------------------------------------------------------------------------- |
-| `kiro-auto`              | **PRIMARY** | Streams content, sustained 100+ msg sessions, delivered `tmp/swarm-L3-gap.md` (real audit). Reliable. |
-| `grape-2-pro`            | secondary   | Leaky reasoning into content; occasional missing file at "completed".                                 |
-| `deepseek-v4-flash-0731` | ok          | Fast (1s), clean. But hits **429 per-model rate-limit** under concurrent load.                        |
-| `glm-5.2`                | flaky       | Mid-stream SSE drops ("Service temporarily unavailable"), 200-with-no-content in non-stream.          |
-| `qwen-3.8-27b`           | slow        | 18-25s/turn, 200 but often silent-empty.                                                              |
-| `minimax-m3`, `kimi-k3`  | ❌ dead     | 200 + finish=DONE but ZERO content (quota). Do not use.                                               |
-| `deepseek-v4-pro`        | ❌          | 503 consistently.                                                                                     |
+| `kiro-auto`              | **PRIMARY** | Reliable; streams content.                                                                              |
+| `grape-2-pro`            | secondary   | Leaky reasoning into content (`<reasoning>` blocks); occasional missing file at "completed".          |
+| `deepseek-v4-flash-0731` | ok          | Fast; 429 per-model rate-limit under concurrent load.                                                  |
+| `glm-5.2`                | flaky       | Mid-stream SSE drops ("Service temporarily unavailable"), 200-with-no-content in non-stream.           |
+| `qwen-3.8-27b`           | slow        | 18-25s/turn; often silent-empty.                                                                        |
+| `minimax-m3`             | ok          | Working (reasoning, max effort). Earlier "dead" was a max_tokens-starvation artifact.                  |
+| `kimi-k3`                | ok          | Working. Earlier "dead" was a probe artifact; transient 429s possible.                                  |
+| `deepseek-v4-pro`        | ok          | Working (1M ctx, 384K out). Earlier 503s were transient upstream.                                       |
+| `deepseek-v4-pro-0813`   | ok          | Working (reasoning; needs max_tokens >= ~50 or content is starved by thinking). Added 2026-08-16.      |
+| `gemma-4-26b`            | ok          | Working (reasoning; same budget artifact -- max_tokens >= ~50). Added 2026-08-16.                      |
+| `moondream3.1`           | not-in-config | GENUINELY BROKEN (stub null response, 0 completion tokens across text/image variants). Removed from all 3 config layers 2026-08-17. |
 
 ## Launch recipe (the WHOLE lesson)
 
@@ -40,24 +46,49 @@ glm-5.2, deepseek-v4-flash-0731, grape-2-pro, qwen-3.8-27b`
 
 ## Router is a runtime dependency
 
--   Models resolve via `127.0.0.1:8788` key-router (`OPENCODE_KEY_ROUTER_PORT=8788`).
--   Router can die silently; logfare lanes die with it. Start it as a MANAGED
-    background job or via `Startup/key-router-watchdog.lnk` (registry: watchdog
-    PS1 lives in `harness/servers/key-router/router-watchdog.ps1`, heartbeats to
-    `~/.harness/router/`).
--   After a router restart: wait for catalog 200 + first `Logfare request` in
-    the router log before resuming workers.
+- Models resolve via `127.0.0.1:8788` key-router (`OPENCODE_KEY_ROUTER_PORT=8788`).
+- Router can die silently; logfare lanes die with it. Start it as a MANAGED
+  background job or via `Startup/key-router-watchdog.lnk` (registry: watchdog
+  PS1 lives in `harness/servers/key-router/router-watchdog.ps1`, heartbeats to
+  `~/.harness/router/`).
+- After a router restart: wait for catalog 200 + first `Logfare request` in
+  the router log before resuming workers.
 
 ## Config layers to keep in sync
 
--   **Authority:** `~/.config/opencode/opencode.json` → provider.logfare.models
-    (limits + tool/reasoning flags). Keep == `GET /models`.
--   **Worker picker:** `~/.pi/agent/model-providers.json` → modelProviders.logfare
-    (list of {id, baseUrl, envKey}). Regenerated by pi-model-providers; stale ids
-    here show in the picker but 404 at the route.
--   **Router profile:** `harness/servers/key-router/src/opencode-key-router.mjs`
-    (logfareAliases + per-model retry/thinking profiles). Alias map must not
-    rename live models.
+- **Authority:** `~/.config/opencode/opencode.json` → provider.logfare.models
+  (limits + tool/reasoning flags). Keep == `GET /models`.
+- **Worker picker:** `~/.pi/agent/model-providers.json` → modelProviders.logfare
+  (list of {id, baseUrl, envKey}). Regenerated by pi-model-providers; stale ids
+  here show in the picker but 404 at the route.
+- **Router profile:** `harness/servers/key-router/src/opencode-key-router.mjs`
+  (logfareAliases + per-model retry/thinking profiles). Alias map must not
+  rename live models.
+
+### 2026-08-17 config audit — context windows + max tokens
+
+The three layers had DISAGREING limits for several models. Corrected against
+websearch ground truth + the router's runtime enforcer:
+
+| Model            | wrong (picker) | correct |
+| ---------------- | -------------- | ------- |
+| `kimi-k3`        | ctx 262144     | **1M**  |
+| `gemma-4-26b`    | ctx 1M         | **256K**|
+| `deepseek-v4-pro`| ctx 128K       | **1M**  |
+
+- **`moondream3.1` was in opencode.json + the picker but NOT the router** — an
+  inconsistency that only made sense because the model is genuinely broken.
+  Removed from all three layers. Never add a model that returns a null stub.
+- **Output caps:** opencode.json now matches the router's `defaultMaxTokens`
+  (131072) for the 7 capped models. The picker keeps the richer provenance
+  (e.g. minimax-m3 declares 512000 with `reasoning_effort:max`) — the router
+  overrides it at runtime, so that split is intentional, not stale.
+- **Cross-check script:** `tmp/logfare-crosscheck.cjs` — catalog vs opencode
+  vs picker vs router-prof, plus a context+output consistency matrix. Run it
+  after any model add/remove.
+- **Lesson:** never trust a layer's numbers at face value. The picker was
+  auto-synced from the catalog and inherited stale context windows; opencode
+  had cosmetic output overrides that disagreed with the router enforcer.
 
 ## Evidence contract for workers
 

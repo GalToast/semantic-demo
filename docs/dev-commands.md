@@ -54,7 +54,7 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
       npx playwright test <file> --browser=chromium --workers=1 --timeout=30000
     ```
 
-  When killing a playwright job, kill its Vite child too (or set `PLAYWRIGHT_REUSE_SERVER=1`). If loopback HTTP is already hung, the machine needs a **reboot** before any browser test will run — there is no in-place fix.
+    When killing a playwright job, kill its Vite child too (or set `PLAYWRIGHT_REUSE_SERVER=1`). If loopback HTTP is already hung, the machine needs a **reboot** before any browser test will run — there is no in-place fix.
 
 - **Recovery — stop the exact PID on 8796 (never broad node groups), then re-run:**
 
