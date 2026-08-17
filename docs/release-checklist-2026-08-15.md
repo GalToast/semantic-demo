@@ -14,6 +14,9 @@
 | `npx vitest run tests/unit-active/gates-vs-surfacemap.test.ts tests/unit-active/focus-gate-lockstep-contract.test.ts tests/unit-active/app-init.test.ts` | 0 FAILs | gates-vs-surfacemap: 4/4 ✓; focus-gate-lockstep: 3/3 ✓; app-init: **2/30 FAIL** (see below) | gates-vs-surfacemap: 4/4 ✓; focus-gate-lockstep: 3/3 ✓; app-init: 22/23 pass, 1 FAIL (`disposes deferred journey focus timers during cleanup` — expected vi.fn() called once, got 0 times) | ⚠️ SEE BELOW |
 | `node scripts/qa-deploy-verify.mjs --help` | exit 0 | exit 0 (shows usage + examples; no $HOST set) | exit 0 | ✅ PASS |
 | Host deploy verifier (live) | 6/6 | **pending re-deploy** — no $HOST configured locally; docs/perf-campaign-status.md records 4/6 FAIL w/ br-pass on current Apache config; cannot hit live host (one-call limit) | pending re-deploy (no $HOST; docs record 4/6) | ⏳ PENDING |
+| Lighthouse re-seed (2026-08-17) | fresh baselines | **mobile perf 35 (+6) · LCP 10.5 s (−1.2) — desktop perf 74 (+36) · LCP 2.2 s (−2.9)**; baselines committed 448c | mobile 35 / desktop 74 | ✅ PASS |
+| Elephant campaign (4 probes 2026-08-17) | — | ceiled 4× (entry-lazy +6.2, facade-defer +3.9, teardown 0, thread-manager −0.2 KB) — module-share saturation; remaining levers = delivery mechanics | docs 20d405b0, 616c27a1 | ✅ CLOSED |
+| Host realism (2026-08-17) | — | Defender scan-CPU cap 20 (elevated) · NODE_OPTIONS 2048 heap cap (verified 2240 MB) · telemetry JSONL cadence | throttles | ✅ DONE |
 
 ### app-init failures (2)
 
@@ -80,6 +83,7 @@ The single failing test (`disposes deferred journey focus timers during cleanup`
 ## Appendix: Raw Output Snapshots
 
 ### qa-budget
+
 ```
 TOTAL JS KB : 1651.9 KB
 TOTAL CSS KB: 104.6 KB
@@ -90,6 +94,7 @@ PASSED (total grew ≤ +32.0 KB; mode-transition chunks within +16 KB each)
 ```
 
 ### contracts validate
+
 ```
 === Runner Validation ===
 WARNINGS:
@@ -101,6 +106,7 @@ Unlisted orphans: 10 file(s)
 ```
 
 ### vitest summary
+
 ```
 gates-vs-surfacemap.test.ts   — 1 file, 4 tests, ALL PASS
 focus-gate-lockstep-contract.test.ts — 1 file, 3 tests, ALL PASS
