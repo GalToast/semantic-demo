@@ -36,9 +36,9 @@ node scripts/qa-lighthouse-gate.mjs
 
 **Current limits (hardcoded in script):**
 
-- perf ≥ baseline − 5
-- tbt ≤ baseline + 100 ms
-- lcp ≤ baseline + 300 ms
+-   perf ≥ baseline − 5
+-   tbt ≤ baseline + 100 ms
+-   lcp ≤ baseline + 300 ms
 
 **Known results:** mobile perf 29 / LCP 11.7s (regression from desktop baseline of 80; expected — phone track).
 
@@ -84,15 +84,15 @@ node scripts/qa-deploy-verify.mjs https://mccullough.cloud/semantic-demo \
 
 **Status:** measured 2026-08-16.
 
-- Hexagon boundary: measured (polygon extent confirmed against live mycelium positions).
-- RF map: banked (render bank stable across smoke runs; no regression vs 2026-08-14 baseline).
+-   Hexagon boundary: measured (polygon extent confirmed against live mycelium positions).
+-   RF map: banked (render bank stable across smoke runs; no regression vs 2026-08-14 baseline).
 
 ### 1f. Logfare Duty Class
 
 **Class:** glm-5.2 light only · m3 flaky
 
-- glm-5.2: passes light-duty class (budget, validate contracts, smoke, vitest gates all green).
-- m3: flaky — fails the `disposes deferred journey focus timers during cleanup` assertion consistently (0 calls vs expected 1); timeout-based second failure cleared 2026-08-16.
+-   glm-5.2: passes light-duty class (budget, validate contracts, smoke, vitest gates all green).
+-   m3: flaky — fails the `disposes deferred journey focus timers during cleanup` assertion consistently (0 calls vs expected 1); timeout-based second failure cleared 2026-08-16.
 
 ---
 
@@ -110,8 +110,8 @@ node scripts/qa-deploy-verify.mjs https://mccullough.cloud/semantic-demo \
 
 **What the patch does:**
 
-- **Seam 1:** replaces static `import { teardownTriggers }` with fire-and-forget dynamic import in `teardownAppShell()` (`app-init.ts:31`).
-- **Seam 2:** gates `applyUrlState` behind `isDeepLink` predicate; non-deeplink boots skip the import entirely.
+-   **Seam 1:** replaces static `import { teardownTriggers }` with fire-and-forget dynamic import in `teardownAppShell()` (`app-init.ts:31`).
+-   **Seam 2:** gates `applyUrlState` behind `isDeepLink` predicate; non-deeplink boots skip the import entirely.
 
 **Target:** shrink `mode-transition-deps` chunk from ~1 240 KB to < 350 KB (source: `docs/perf-lazify-plan.md`).
 
@@ -172,13 +172,15 @@ _Generated: 2026-08-15. Read-only source docs: `docs/`, `scripts/`, `tmp/perf/`.
 
 ## Swarm-9 closeout (measured 2026-08-16)
 
-- **Lighthouse re-baseline (b2):** desktop perf 38→86, TBT 3310→130ms, LCP 5.1→2.0s; mobile 29→34, LCP 11.7→10.5s. GATE ✓ BOTH. Root cause of the old low desktop was ENV, not code (EPERM in chrome-launcher cleanup noted as flake).
-- **Dyno measure (a2 verdict):** ranks 4/5 (compass/cluster fire-and-forget at module eval) are economically NEGATIVE (+8.1KB preload cost vs 2.3KB split); RECOMMENDATION: skip them; pursue rank-1 = app-init → journey ENTRY-LAZY — the cascade root in OUR file (app-init.ts).
-- **Route pool (c1):** poolside/laguna-xs-2.1 via nvidia/v1 VERIFIED ALIVE (262k ctx, free) — may join the pool; FreeInference + others skip-listed.
-- **RANK-1 verdict (e1, measured):** app-init entry-lazy = FLAT (+6.8KB growth). Root cause: boot-time void import() doesn't defer fetch (rolldown + other boot refs still absorb; wrapper overhead).
-- **Fresh re-seed + host clinical (2026-08-16, t3/t1):** lighthouse re-seeded EPERM-free (fresh CHROME_USER_DATA_DIR): mobile perf 35, desktop 74 (+36), LCP 10.5/2.2. Gate = numeric compare (t3's parseFloat-flag was a stale-log artifact). Host: Defender realtime throttled (elevated, ScanAvgCPULoadFactor 20); heap cap for future spawns (setx NODE_OPTIONS=2048, verified 2240MB); telemetry tmp/perf9/heap-telemetry.mjs (append-only JSONL; tune: flat-rss healthy, GC-CPU/OOM → raise, far-under → lower). Session whale = pi-agent spikes to 2.6GB under full LH runs.
-  **THE winning move (rank-2): BEHAVIOURAL deferral** — gate journey-adapter init inside first-need: Canvas composable onMount → import journey before initEngine in the same tick; or move initJourneyCanvasInteractionAdapter call OUT of journey.ts queueMicrotask INTO canvas-interaction/lifecycle.engineHeavy (both OUR files). Recipe exists in tmp/perf9/rank1-measure.md §Step-4.
+-   **Lighthouse re-baseline (b2):** desktop perf 38→86, TBT 3310→130ms, LCP 5.1→2.0s; mobile 29→34, LCP 11.7→10.5s. GATE ✓ BOTH. Root cause of the old low desktop was ENV, not code (EPERM in chrome-launcher cleanup noted as flake).
+-   **Dyno measure (a2 verdict):** ranks 4/5 (compass/cluster fire-and-forget at module eval) are economically NEGATIVE (+8.1KB preload cost vs 2.3KB split); RECOMMENDATION: skip them; pursue rank-1 = app-init → journey ENTRY-LAZY — the cascade root in OUR file (app-init.ts).
+-   **Route pool (c1):** poolside/laguna-xs-2.1 via nvidia/v1 VERIFIED ALIVE (262k ctx, free) — may join the pool; FreeInference + others skip-listed.
+-   **RANK-1 verdict (e1, measured):** app-init entry-lazy = FLAT (+6.8KB growth). Root cause: boot-time void import() doesn't defer fetch (rolldown + other boot refs still absorb; wrapper overhead).
+-   **Fresh re-seed + host clinical (2026-08-16, t3/t1):** lighthouse re-seeded EPERM-free (fresh CHROME_USER_DATA_DIR): mobile perf 35, desktop 74 (+36), LCP 10.5/2.2. Gate = numeric compare (t3's parseFloat-flag was a stale-log artifact). Host: Defender realtime throttled (elevated, ScanAvgCPULoadFactor 20); heap cap for future spawns (setx NODE_OPTIONS=2048, verified 2240MB); telemetry tmp/perf9/heap-telemetry.mjs (append-only JSONL; tune: flat-rss healthy, GC-CPU/OOM → raise, far-under → lower). Session whale = pi-agent spikes to 2.6GB under full LH runs.
+    **THE winning move (rank-2): BEHAVIOURAL deferral** — gate journey-adapter init inside first-need: Canvas composable onMount → import journey before initEngine in the same tick; or move initJourneyCanvasInteractionAdapter call OUT of journey.ts queueMicrotask INTO canvas-interaction/lifecycle.engineHeavy (both OUR files). Recipe exists in tmp/perf9/rank1-measure.md §Step-4.
 
-- **Rank-2 verdict (t2, measured): SKIP landing.** The behavioural deferral WORKS (journey facade: 0 preload bytes, fetched only at first Canvas mount — grep-verified) but is NET-NEGATIVE: rolldown thin-import overhead +6.7 KB vs 2.8 KB deferred (fire card over-estimated 25–35 KB; sub-graph was already chunk-split). Verdict: do NOT apply rank2.patch; the true boot mass left = the engine/lifecycle dynamic-import seam (lane-owned) + adapter-CODE move (Option-P, not facade).
+-   **Rank-2 verdict (t2, measured): SKIP landing.** The behavioural deferral WORKS (journey facade: 0 preload bytes, fetched only at first Canvas mount — grep-verified) but is NET-NEGATIVE: rolldown thin-import overhead +6.7 KB vs 2.8 KB deferred (fire card over-estimated 25–35 KB; sub-graph was already chunk-split). Verdict: do NOT apply rank2.patch; the true boot mass left = the engine/lifecycle dynamic-import seam (lane-owned) + adapter-CODE move (Option-P, not facade).
 
 -   **ELEPHANT CAMPAIGN FINAL VERDICT (3 measured rounds):** rank-1 (entry-lazy, +6.8KB — rolldown overhead), rank-2 (facade-defer, +3.9KB — facade was already thin; subgraph pre-split), teardown-carve (0 net — every teardown module already statically anchored at boot via AppBoot/three-engine-state/adapters/MapView). Conclusions: the ~1.24MB mode-transition chunk IS the first-frame canvas scaffold (ThreadManager renderer + mycelium); deferring it = deferring the first 3D frame itself. Probes (e1,t2,w1,w2) all confirm: LAZIFY CEILING REACHED by body-code surgery. The real balance remaining = HTTP/CDN caching, image/simplex strategy, worker-buffer reuse — budget-simplex track (fresh baselines 35/74).
+
+-   **FOURTH probe (w2, measured):** thread-manager static→dynamic inside _onDataReady (CPR-RE1): mode-transition-deps **−222 B (−0.2 KB)** net. Root cause: createMycelium module is SHARED (anchored by three-engine-state/other boot consumers) — moving 1 import doesn.t move the module; rolldown overhead eats residual. All 4 probes now measured: entry-lazy +6.8 KB, facade-defer +3.9 KB, teardown-carve 0, thread-manager −0.2 KB ⇒ **lazify ceiling = real (module-share saturation), verified 4×.**
