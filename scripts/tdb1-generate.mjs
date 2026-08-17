@@ -1,59 +1,41 @@
-// tdb1-gen.mjs — TDB1 binary prototype (semantic graph): nodes × neighbors.
+// tdb1-generate.mjs — semantic graph → TDB1 binary (v2, explicit record layout).
+// NODE = u32 lead | f32 signal | u16 nbrCount | nbr[ u32 lead | f32 score | f32 sem | u8 flags ]
 import { readFileSync, writeFileSync, statSync } from 'node:fs'
-import { gzipSync, brotliCompressSync } from 'node:zlib'
+import { brotliCompressSync } from 'node:zlib'
 
-const P = 'public/data/semantic_threads.dat'
+const SRC = 'public/data/semantic_threads.dat'
 const OUT = 'tmp/perf9/semantic_threads.dat.bin'
 
-const t0 = Date.now()
-const raw = readFileSync(P, 'utf8')
-const j = JSON.parse(raw)
+const j = JSON.parse(readFileSync(SRC, 'utf8'))
 const nodes = Object.values(j.nodes ?? {})
-const jsonBytes = statSync(P).size
-console.log('nodes:', nodes.length, '| parse-ms:', Date.now() - t0, '| json-MB:', (jsonBytes / 1048576).toFixed(1))
 
-const strtab = []
-const strIdx = new Map()
-function intern(s) {
-  let i = strIdx.get(s)
-  if (i === undefined) {
-    i = strtab.length
-    strtab.push(String(s))
-    strIdx.set(s, i)
-  }
-  return i
-}
+const out = []
+out.push(Buffer.from('TDB1'))
 
-const chunks = []
+const meta = Buffer.alloc(8)
+meta.writeUInt32LE(nodes.length, 0)
+let strBuf = Buffer.alloc(0) // v2: no string table needed (graph is numeric-only)
+meta.writeUInt32LE(strBuf.length, 4)
+out.push(meta)
+
 let edges = 0
 for (const n of nodes) {
+  const rec = Buffer.alloc(10)
+  rec.writeUInt32LE(Number(n.lead_id) || 0, 0)
+  rec.writeFloatLE(Number(n.signal_score) || 0, 4)
   const nb = n.neighbors ?? []
+  rec.writeUInt16LE(nb.length, 8)
+  out.push(rec)
   edges += nb.length
-  chunks.push(Buffer.from(Uint32Array.from([n.lead_id ?? 0])))
-  chunks.push(Buffer.from(Float32Array.of(Number(n.signal_score ?? 0))))
-  chunks.push(Buffer.from(Uint16Array.from([nb.length])))
   for (const b of nb) {
-    chunks.push(Buffer.from(Uint32Array.from([b.lead_id ?? 0])))
-    chunks.push(Buffer.from(Float32Array.of(Number(b.score ?? 0))))
-    chunks.push(Buffer.from(Float32Array.of(Number(b.semantic_score ?? 0))))
-    const flags = (b.same_city ? 1 : 0) | (b.same_status ? 2 : 0) | (b.bridge ? 4 : 0)
-    chunks.push(Buffer.from([flags]))
+    const e = Buffer.alloc(13)
+    e.writeUInt32LE(Number(b.lead_id) || 0, 0)
+    e.writeFloatLE(Number(b.score) || 0, 4)
+    e.writeFloatLE(Number(b.semantic_score) || 0, 8)
+    e.writeUInt8((b.same_city ? 1 : 0) | (b.same_status ? 2 : 0) | (b.bridge ? 4 : 0), 12)
+    out.push(e)
   }
 }
-const payload = Buffer.concat(chunks)
-const strBuf = Buffer.from(strtab.join('\u0000') + '\u0000', 'utf8')
-
-const header = Buffer.alloc(8)
-header.writeUInt32LE(nodes.length, 0)
-header.writeUInt32LE(strBuf.length, 4)
-const bin = Buffer.concat([Buffer.from('TDB1'), header, payload, strBuf])
-
-writeFileSync(OUT, bin)
-const binBr = brotliCompressSync(bin).length
-const jsonBr = brotliCompressSync(raw).length
-
-console.log('bin-MB: ' + (bin.length / 1048576).toFixed(2))
-console.log('ratio raw: ' + (jsonBytes / bin.length).toFixed(2) + 'x smaller')
-console.log('bin.br: ' + (binBr / 1048576).toFixed(2) + 'MB | json.br: ' + (jsonBr / 1048576).toFixed(2) + 'MB')
-console.log('edges: ' + edges + ' | strtab: ' + strtab.length)
-console.log('total-ms: ' + (Date.now() - t0))
+writeFileSync(OUT, Buffer.concat(out))
+const binBr = brotliCompressSync(readFileSync(OUT)).length
+console.log(`TDB1 v2: ${(statSync(OUT).size / 1048576).toFixed(2)}MB | edges ${edges} | br ${(binBr / 1048576).toFixed(2)}MB | raw-json ${(statSync(SRC).size / 1048576).toFixed(1)}MB`)
