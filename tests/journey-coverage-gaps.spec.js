@@ -238,19 +238,24 @@ test.describe('CompassStepIndicators journey', () => {
                 /* ignore */
             }
         })
-        // Use deep-link to focus-search so #journey-compass is NOT hidden-by-nodemo
-        // (hidden-by-nodemo only applies when noDemo && phase==='overview').
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, {
+        // The ?anchor=519 deep-link is non-deterministic — it lands in whatever
+        // stage anchor 519 maps to (observed as 'trail' as often as 'focus-search'),
+        // so #selected-name does not reliably attach and the surface-focus-search
+        // wait flakes. Boot at overview and enter focus programmatically instead;
+        // this is deterministic and matches the probe-confirmed setSurface('focus')
+        // path that mounts #journey-compass with its 6 indicators.
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, {
             waitUntil: 'domcontentloaded'
         })
-
-        const selectedName = page.locator('#selected-name')
-        await selectedName.waitFor({ state: 'attached', timeout: 30000 })
-        await page.waitForFunction(() => document.body.classList.contains('surface-focus-search'), null, {
-            timeout: 30000,
-            polling: 100
-        })
+        await waitForBootSettled(page)
         await dismissHelpDialog(page)
+        await page.waitForFunction(() => !!window.__navActions__?.setSurface, { timeout: 5000 })
+        await page.evaluate(() => window.__navActions__.setSurface('focus'))
+        await page.waitForFunction(
+            () => document.querySelector('#journey-compass [data-journey-step]') !== null,
+            null,
+            { timeout: 15000, polling: 100 }
+        )
 
         // The indicators live inside #journey-compass. Each span has
         // data-journey-step=<phase> and class .journey-compass-step.
@@ -263,7 +268,7 @@ test.describe('CompassStepIndicators journey', () => {
         const firstAria = await indicators.nth(0).getAttribute('aria-label')
         expect(firstAria, 'first indicator must have aria-label with step number + phase').toMatch(/\d+\.\s+\w+:/)
 
-        // At focus-search, the active phase is 'search', so exactly one indicator
+        // In focus mode the active phase is 'search', so exactly one indicator
         // (the search step) is .current. Use a self-matching compound selector
         // (locator('.current') would query DESCENDANTS of the steps, not the
         // .current class on the step spans themselves).
