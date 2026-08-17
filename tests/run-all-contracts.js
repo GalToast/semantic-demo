@@ -246,7 +246,15 @@ function createServerLease(groupName) {
 }
 
 // Pinned ordered list: this is the authoritative default run.
-const PINNED_FILES = [
+//
+// The canonical copy lives in contracts.manifest.json `groups.full`; this
+// array is the fallback used only when the manifest is absent (pre-manifest
+// checkouts). resolvePinnedFiles() prefers the manifest so the two can never
+// drift — the old hand-maintained duplicate was the source of the "sweep
+// header lie" class of bug (shittiest-parts W2): a consolidator's header
+// claimed merges that were never executed because the pinned list still
+// pointed at the originals.
+const PINNED_FILES_FALLBACK = [
     'semantic-dive-ui-surface-contract.mjs',
     'search-state-surface-contract.mjs',
     'lifecycle-composition-contract.mjs',
@@ -310,6 +318,15 @@ function loadManifest() {
         return null
     }
 }
+
+/** Resolve the active pinned list — manifest `full` group wins, fallback last. */
+function resolvePinnedFiles() {
+    const manifest = loadManifest()
+    const full = manifest?.groups?.full?.contracts
+    return Array.isArray(full) && full.length > 0 ? full : PINNED_FILES_FALLBACK
+}
+
+const PINNED_FILES = resolvePinnedFiles()
 
 function getGroupFromManifest(groupName) {
     const manifest = loadManifest()
@@ -524,27 +541,23 @@ function runValidation() {
                 }
             }
 
-            // 5. The 'full' group must exactly match PINNED_FILES.
+            // 5. The 'full' group is the single source of PINNED_FILES
+            //    (resolvePinnedFiles). A count/order mismatch between the two
+            //    is structurally impossible � what remains is that the group
+            //    exists, is non-empty, and every listed file is on disk.
             const fullGroup = manifest.groups['full']
-            if (fullGroup && Array.isArray(fullGroup.contracts)) {
-                if (fullGroup.contracts.length !== PINNED_FILES.length) {
-                    errors.push(
-                        `FULL_GROUP_COUNT_MISMATCH: full group has ${fullGroup.contracts.length} files, pinned list has ${PINNED_FILES.length}`
-                    )
-                    exitCode = 1
-                } else {
-                    for (let i = 0; i < PINNED_FILES.length; i++) {
-                        if (fullGroup.contracts[i] !== PINNED_FILES[i]) {
-                            errors.push(
-                                `FULL_GROUP_ORDER_MISMATCH: full group[${i}]='${fullGroup.contracts[i]}' != PINNED_FILES[${i}]='${PINNED_FILES[i]}'`
-                            )
-                            exitCode = 1
-                        }
+            if (!fullGroup || !Array.isArray(fullGroup.contracts) || fullGroup.contracts.length === 0) {
+                errors.push(`FULL_GROUP_MISSING: manifest 'full' group is missing or empty`)
+                exitCode = 1
+            } else {
+                for (const file of fullGroup.contracts) {
+                    if (!existsSync(join(TESTS_DIR, file))) {
+                        errors.push(
+                            `FULL_GROUP_FILE_MISSING: 'full' group lists '${file}' which does not exist on disk`
+                        )
+                        exitCode = 1
                     }
                 }
-            } else if (!fullGroup) {
-                errors.push(`FULL_GROUP_MISSING: manifest is missing the 'full' group`)
-                exitCode = 1
             }
         }
     }
