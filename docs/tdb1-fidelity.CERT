@@ -1,0 +1,9 @@
+TDB1 Full-Fidelity Certificate
+nodes_checked: 8406
+edges_checked: 25218
+mismatches: 0
+verdict: PASS
+json_parse_ms: 713
+bin_bytes_consumed: 2706744/2706744
+bin_lead_set_size: 8406
+json_lead_set_size: 8406
