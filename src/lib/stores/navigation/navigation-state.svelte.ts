@@ -8,6 +8,7 @@
 import type { NavState, NavMode } from '@lib/types/state'
 import { get, type Readable } from 'svelte/store'
 import { debugWarn } from '@lib/utils/debug'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { appState } from '@lib/state/app.svelte.ts'
 import { createStateMirror } from '@lib/state/create-state-mirror'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
@@ -500,7 +501,6 @@ export function setFocusPocketMeta(_meta: unknown): void {
         let warnedAt = 0
         ;(async () => {
             try {
-                const { DisposableRegistry } = await import('@lib/utils/disposable-registry')
                 const reg = new DisposableRegistry({ label: 'nav-drift-audit', warnAfterDispose: false })
                 reg.scheduleInterval(3000, () => {
                     const report = describeNavDrift(_readNavSnapshot())
