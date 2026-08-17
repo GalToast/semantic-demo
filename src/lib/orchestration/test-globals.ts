@@ -50,6 +50,7 @@ import { setTrailFromSeed } from '@lib/journey/neighborhood'
 import { setFocusedIndex, setSurface } from '@lib/stores/navigation.svelte'
 import { inspectThreadNeighbor } from '@lib/journey/thread-inspector-state'
 import { search } from '@lib/search/state'
+import { setSearchError } from '@lib/stores/search-core'
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 
 interface NavActions {
@@ -77,6 +78,7 @@ declare global {
         __focusStore__?: typeof focusStore
         __journeyStore__?: typeof journeyStore
         __searchStore__?: typeof searchStore
+        __searchActions__?: { setSearchError: typeof setSearchError }
         __navActions__?: NavActions
         __publishCameraNodeFocused__?: (index: number | null) => void
         __dataLoadState__?: {
@@ -124,6 +126,13 @@ export function installTestStoreGlobals(): () => void {
     window.__journeyStore__ = journeyStore
     window.__searchStore__ = searchStore
     window.__navActions__ = navActions
+
+    // ── Search error — journey tests drive SearchErrorState directly. The
+    //    draft assumed window.__searchActions__.setSearchError existed; it did
+    //    not (setSearchError was never wired to any window global). Expose it
+    //    so the SearchErrorState journey can be exercised without routing
+    //    through the real search worker.
+    window.__searchActions__ = { setSearchError }
 
     // ── Data load state — used by journey tests to drive the boot-time load
     //    failure transition so LoadingOverlay's role=alert path can be tested
@@ -179,6 +188,7 @@ export function installTestStoreGlobals(): () => void {
         delete window.__journeyStore__
         delete window.__searchStore__
         delete window.__navActions__
+        delete window.__searchActions__
         delete window.__dataLoadState__
         delete window.__publishCameraNodeFocused__
         delete window.THREE
