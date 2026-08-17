@@ -16,18 +16,18 @@ kimi-k3.5?, grape-2-pro, qwen-3.8-27b, gemma-4-26b`
 
 ## Model reliability (as of 2026-08-17, 10 working chat models)
 
-| Model                    | Use         | Notes                                                                                                 |
-| ------------------------ | ----------- | ----------------------------------------------------------------------------------------------------- |
-| `kiro-auto`              | **PRIMARY** | Reliable; streams content.                                                                              |
-| `grape-2-pro`            | secondary   | Leaky reasoning into content (`<reasoning>` blocks); occasional missing file at "completed".          |
-| `deepseek-v4-flash-0731` | ok          | Fast; 429 per-model rate-limit under concurrent load.                                                  |
-| `glm-5.2`                | flaky       | Mid-stream SSE drops ("Service temporarily unavailable"), 200-with-no-content in non-stream.           |
-| `qwen-3.8-27b`           | slow        | 18-25s/turn; often silent-empty.                                                                        |
-| `minimax-m3`             | ok          | Working (reasoning, max effort). Earlier "dead" was a max_tokens-starvation artifact.                  |
-| `kimi-k3`                | ok          | Working. Earlier "dead" was a probe artifact; transient 429s possible.                                  |
-| `deepseek-v4-pro`        | ok          | Working (1M ctx, 384K out). Earlier 503s were transient upstream.                                       |
-| `deepseek-v4-pro-0813`   | ok          | Working (reasoning; needs max_tokens >= ~50 or content is starved by thinking). Added 2026-08-16.      |
-| `gemma-4-26b`            | ok          | Working (reasoning; same budget artifact -- max_tokens >= ~50). Added 2026-08-16.                      |
+| Model                    | Use           | Notes                                                                                                                               |
+| ------------------------ | ------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `kiro-auto`              | **PRIMARY**   | Reliable; streams content.                                                                                                          |
+| `grape-2-pro`            | secondary     | Leaky reasoning into content (`<reasoning>` blocks); occasional missing file at "completed".                                        |
+| `deepseek-v4-flash-0731` | ok            | Fast; 429 per-model rate-limit under concurrent load.                                                                               |
+| `glm-5.2`                | flaky         | Mid-stream SSE drops ("Service temporarily unavailable"), 200-with-no-content in non-stream.                                        |
+| `qwen-3.8-27b`           | slow          | 18-25s/turn; often silent-empty.                                                                                                    |
+| `minimax-m3`             | ok            | Working (reasoning, max effort). Earlier "dead" was a max_tokens-starvation artifact.                                               |
+| `kimi-k3`                | ok            | Working. Earlier "dead" was a probe artifact; transient 429s possible.                                                              |
+| `deepseek-v4-pro`        | ok            | Working (1M ctx, 384K out). Earlier 503s were transient upstream.                                                                   |
+| `deepseek-v4-pro-0813`   | ok            | Working (reasoning; needs max_tokens >= ~50 or content is starved by thinking). Added 2026-08-16.                                   |
+| `gemma-4-26b`            | ok            | Working (reasoning; same budget artifact -- max_tokens >= ~50). Added 2026-08-16.                                                   |
 | `moondream3.1`           | not-in-config | GENUINELY BROKEN (stub null response, 0 completion tokens across text/image variants). Removed from all 3 config layers 2026-08-17. |
 
 ## Launch recipe (the WHOLE lesson)
@@ -68,27 +68,42 @@ kimi-k3.5?, grape-2-pro, qwen-3.8-27b, gemma-4-26b`
 ### 2026-08-17 config audit — context windows + max tokens
 
 The three layers had DISAGREING limits for several models. Corrected against
-websearch ground truth + the router's runtime enforcer:
+websearch ground truth + live upstream probes:
 
-| Model            | wrong (picker) | correct |
-| ---------------- | -------------- | ------- |
-| `kimi-k3`        | ctx 262144     | **1M**  |
-| `gemma-4-26b`    | ctx 1M         | **256K**|
-| `deepseek-v4-pro`| ctx 128K       | **1M**  |
+| Model             | wrong (picker) | correct  |
+| ----------------- | -------------- | -------- |
+| `kimi-k3`         | ctx 262144     | **1M**   |
+| `gemma-4-26b`     | ctx 1M         | **256K** |
+| `deepseek-v4-pro` | ctx 128K       | **1M**   |
+
+**Max tokens are set to the TOP EDGE of each model's true max output, not a
+conservative default.** Verified live at upstream (200 + real content):
+
+| Model                               | top edge | source                                             |
+| ----------------------------------- | -------- | -------------------------------------------------- |
+| `deepseek-v4-pro`, `-0813`, `flash`  | 384000   | DeepSeek V4: 384K max output (Pro and Flash)       |
+| `minimax-m3`                        | 524288   | MiniMax M3: hard max 524288 (recommends 131072)    |
+| `kimi-k3`                           | 1048576  | Moonshot: configurable up to full 1M                |
+| `glm-5.2`                           | 131072   | Z.ai: 131072 output cap                            |
+| `qwen-3.8-27b`                      | 131072   | Qwen3.8: 131072 output                             |
+| `gemma-4-26b`                       | 131072   | no authoritative source; Google class default      |
+| `grape-2-pro`                       | 131072   | no public spec; picker value                        |
+| `kiro-auto`                         | 131072   | no public spec (Logfare routing label)              |
 
 - **`moondream3.1` was in opencode.json + the picker but NOT the router** — an
   inconsistency that only made sense because the model is genuinely broken.
   Removed from all three layers. Never add a model that returns a null stub.
-- **Output caps:** opencode.json now matches the router's `defaultMaxTokens`
-  (131072) for the 7 capped models. The picker keeps the richer provenance
-  (e.g. minimax-m3 declares 512000 with `reasoning_effort:max`) — the router
-  overrides it at runtime, so that split is intentional, not stale.
+- **The key-router's `defaultMaxTokens` is a runtime enforcer and is NOT
+  touched by config edits.** It clips max_tokens at request time as a safety
+  net; the config values declare intent, the router enforces. Bumping the
+  config cap does not weaken the router's clip.
 - **Cross-check script:** `tmp/logfare-crosscheck.cjs` — catalog vs opencode
   vs picker vs router-prof, plus a context+output consistency matrix. Run it
   after any model add/remove.
 - **Lesson:** never trust a layer's numbers at face value. The picker was
   auto-synced from the catalog and inherited stale context windows; opencode
-  had cosmetic output overrides that disagreed with the router enforcer.
+  had cosmetic output overrides that disagreed with the router enforcer. And
+  never set a max_tokens to a "safe default" — the whole point is the top edge.
 
 ## Evidence contract for workers
 
