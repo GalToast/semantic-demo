@@ -1,5 +1,27 @@
+#!/usr/bin/env node
+/**
+ * model-capability-status-sweep.mjs
+ *
+ * Consolidated capability-status contract — replaces
+ * model-capability-status-contract.mjs (100 LOC → ~80 LOC).
+ *
+ * Run: node tests/model-capability-status-sweep.mjs
+ */
+
+'use strict'
+
 import assert from 'node:assert/strict'
 import { buildCapabilityStatus, markdownReport } from '../scripts/build-model-capability-status.mjs'
+
+let failures = 0
+let passed = 0
+
+function pass(msg) { passed++; console.log(`  ✓ ${msg}`) }
+function fail(msg) { failures++; console.error(`  ✗ ${msg}`) }
+function assertEqual(actual, expected, msg) {
+    if (actual !== expected) { fail(`${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`) }
+    else { pass(msg) }
+}
 
 const catalog = {
     schemaVersion: 2,
@@ -82,19 +104,22 @@ const alpha = status.entries.find((entry) => entry.modelId === 'alpha').targets[
 const beta = status.entries.find((entry) => entry.modelId === 'beta').targets[0].capabilities
 const gamma = status.entries.find((entry) => entry.modelId === 'gamma')
 
-assert.equal(alpha.catalog.status, 'catalog-visible')
-assert.equal(alpha.chat.status, 'chat-proven')
-assert.equal(alpha.tool.status, 'tool-proven')
-assert.equal(alpha.vision.status, 'not-tested')
-assert.equal(beta.catalog.status, 'catalog-visible')
-assert.equal(beta.chat.status, 'cooldown')
-assert.equal(beta.tool.status, 'not-tested')
-assert.equal(beta.vision.status, 'vision-proven')
-assert.deepEqual(gamma.targets, [])
-assert.equal(status.policy.nativePickerSchemaUnchanged, true)
-assert.equal(status.policy.noProviderCalls, true)
-assert.equal(JSON.stringify(status).includes('toolEvidence'), false)
-assert.equal(JSON.stringify(status).includes('sk-'), false)
-assert.match(markdownReport(status), /Catalog visibility is discovery evidence only/)
+assertEqual(alpha.catalog.status, 'catalog-visible', 'alpha catalog')
+assertEqual(alpha.chat.status, 'chat-proven', 'alpha chat')
+assertEqual(alpha.tool.status, 'tool-proven', 'alpha tool')
+assertEqual(alpha.vision.status, 'not-tested', 'alpha vision')
+assertEqual(beta.catalog.status, 'catalog-visible', 'beta catalog')
+assertEqual(beta.chat.status, 'cooldown', 'beta chat')
+assertEqual(beta.tool.status, 'not-tested', 'beta tool')
+assertEqual(beta.vision.status, 'vision-proven', 'beta vision')
+assert.deepEqual(gamma.targets, [], 'gamma no targets')
+assertEqual(status.policy.nativePickerSchemaUnchanged, true, 'policy nativePickerSchemaUnchanged')
+assertEqual(status.policy.noProviderCalls, true, 'policy noProviderCalls')
+assertEqual(JSON.stringify(status).includes('toolEvidence'), false, 'no toolEvidence in JSON')
+assertEqual(JSON.stringify(status).includes('sk-'), false, 'no sk- in JSON')
+assert.match(markdownReport(status), /Catalog visibility is discovery evidence only/, 'markdown report matches')
 
-console.log('model-capability-status-contract: ok')
+console.log(`\n=== model-capability-status-sweep COMPLETE ===`)
+console.log(`Passed: ${passed}, Failed: ${failures}`)
+if (failures === 0) { console.log('All assertions verified.'); process.exit(0) }
+else { console.error(`${failures} failure(s)`); process.exit(1) }

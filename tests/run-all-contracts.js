@@ -275,7 +275,7 @@ const PINNED_FILES = [
     'ui-renderers-helper-contract.mjs',
     'lifecycle-semantic-guide-residual-bridge-contract.mjs',
     'lifecycle-search-panel-ownership-contract.mjs',
-    'lifecycle-search-panel-ownership-contract.mjs',
+    'lifecycle-journey-quick-dewindowing-contract.mjs',
     'search-lifecycle-adapter-contract.mjs',
     'search-trail-cue-lifecycle-contract.mjs',
     'view-controller-ownership-contract.mjs',
@@ -286,18 +286,21 @@ const PINNED_FILES = [
     'search-panel-adapter-contract.mjs',
     'exploration-modes-contract.mjs',
     'scene-reveal-contract.mjs',
+    'cancel-animate-dewindowing-contract.mjs',
     'three-setup-zero-caller-dewindowing-contract.mjs',
     'scene-atmosphere-contract.mjs',
     'motion-state-contract.mjs',
     'three-visual-polish-contract.mjs',
-    'reduced-motion-coverage-contract.mjs',
-    'js-reduced-motion-animation-guard-contract.mjs',
     'search-peek-expanded-render-contract.mjs',
     'semantic-guide-payload-contract.mjs',
     'connection-analysis-render-state-contract.mjs',
-    'reduced-motion-interruption.spec.js',
     'gemma-fallback-error.spec.js',
-    'selected-card-dom-ownership-contract.mjs'
+    'selected-card-dom-ownership-contract.mjs',
+    'css-ownership-sweep.mjs',
+    'svelte-css-sweep.mjs',
+    'design-token-sweep.mjs',
+    'reduced-motion-sweep.mjs',
+    'reduced-motion-interruption-sweep.mjs'
 ]
 
 function loadManifest() {

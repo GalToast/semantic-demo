@@ -18,10 +18,5 @@
 export { registerUrlStateEventListeners } from './url-event-registration'
 export { copyCurrentViewLink } from './share-copy'
 export { getRequestedUrlDepth } from './url-params'
-export {
-    applyUrlState,
-    clearExplorationFocusSelection,
-    resetStateBeforeUrlRestore,
-    type UrlStateOptions
-} from './url-restore'
-export { updateUrlState, type UpdateUrlStateOptions } from './url-writer'
+export { applyUrlState, resetStateBeforeUrlRestore, type UrlStateOptions } from './url-restore'
+export { updateUrlState, clearExplorationFocusSelection, type UpdateUrlStateOptions } from './url-writer'

@@ -28,6 +28,7 @@ import { currentSurface } from '@lib/stores/navigation.svelte'
 import { syncFocusStage, updateSelectedBusiness } from '@lib/journey/selected-card'
 import { unpinThreadInspection } from '@lib/journey/thread-inspector-state'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
+import { applyPointFilterColors } from '@lib/journey/point-color'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { clearRouteExploration } from '../camera-controls-core'
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
@@ -138,7 +139,7 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     publish(EVENTS.CAMERA_MOVED, { reason: 'focus-node', index })
     publish(EVENTS.CAMERA_NODE_FOCUSED, { index, point, options })
 
-    import('@lib/journey/point-color').then((m) => m.applyPointFilterColors())
+    applyPointFilterColors()
     updateExplorationUi()
 
     syncFocusStage(point)

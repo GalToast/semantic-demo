@@ -17,7 +17,8 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 function readUrlState(): string {
-    const p = resolve(__dirname, '../../src/lib/orchestration/url-restore.ts')
+    // 2026-08-17: pointer moved to the split search-restore file (refactor landed).
+    const p = resolve(__dirname, '../../src/lib/orchestration/url-restore-search.ts')
     return readFileSync(p, 'utf-8')
 }
 

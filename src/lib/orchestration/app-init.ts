@@ -28,6 +28,7 @@ import { installTestStoreGlobals } from '@lib/orchestration/test-globals'
 import { debugError } from '@lib/utils/debug'
 import { teardownViewController } from '@lib/orchestration/view-controller'
 import { claimRestoreOwnership, isRestoreOwned, releaseRestoreOwnership } from '@lib/engine/webgl-restore-ownership'
+import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
 
 // Side-effect: initializes journey state, canvas interaction adapter,
 // and thread-settler bindings. Must load before engine init so that
@@ -181,10 +182,11 @@ function scheduleSearchIndexPrewarm(): void {
  * params (view, focusedIndex, filters, search query) that need the data
  * layer to be ready before they can be resolved.
  */
+import { applyUrlState } from '@lib/orchestration/url-state'
+
 async function applyUrlStateAfterData(isDeepLink: boolean): Promise<void> {
     if (!isDeepLink) return
     try {
-        const { applyUrlState } = await import('@lib/orchestration/url-state')
         await applyUrlState()
     } catch (err) {
         debugError('[app-init] applyUrlState failed during init:', err)
@@ -392,10 +394,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
         clearSafetyTimers(_safetyTimers)
         _safetyTimers = null
         clearPrewarmTimer()
-        // Lazify seam-3: fire-and-forget dynamic import (same pattern as seam-1).
-        void import('@lib/journey/journey-focus-timers')
-            .then((m) => m.disposeJourneyFocusTimers())
-            .catch((err) => debugWarn('[lazify] journey-focus-timers teardown failed', err))
+        disposeJourneyFocusTimers()
         _unsubWindowGlobals?.()
         _unsubViewport?.()
         _unsubParity?.()

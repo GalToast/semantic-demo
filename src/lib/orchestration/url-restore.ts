@@ -98,11 +98,6 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
     }
 }
 
-// Re-export from url-writer so the barrel surface is preserved (lifecycle.ts
-// imports this symbol from url-restore; the canonical definition lives in
-// url-writer.ts).
-export { clearExplorationFocusSelection } from './url-writer'
-
 // ── Apply URL State ───────────────────────────────────────────────────────────
 
 /**

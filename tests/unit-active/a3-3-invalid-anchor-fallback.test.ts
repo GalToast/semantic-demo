@@ -16,7 +16,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const URL_RESTORE_PATH = resolve(__dirname, '../../src/lib/orchestration/url-restore.ts');
+const URL_RESTORE_PATH = resolve(__dirname, '../../src/lib/orchestration/url-restore-deep-link.ts'); // 2026-08-17: pointer moved to the split file (refactor landed)
 
 function readSource(): string {
   return readFileSync(URL_RESTORE_PATH, 'utf-8');

@@ -8,6 +8,7 @@
  * journey actions (search focus, anchor center, map switch, etc.).
  */
 import { get } from 'svelte/store'
+import { resetExplorationFocus } from '@lib/stores/lifecycle'
 import {
     navStore,
     switchView as navSwitchView,
@@ -443,9 +444,7 @@ export function executeJourneyCompassAction(action: string): void {
         case JOURNEY_ACTIONS.COUNTY_OVERVIEW:
             // County overview is a calm reset surface; do not preserve the
             // search corridor or the map keeps competing search chrome alive.
-            void import('@lib/orchestration/lifecycle')
-                .then((m) => m.resetExplorationFocus({ preserveSearch: false }))
-                .catch((err) => debugWarn('[lazify] resetExplorationFocus failed', err))
+            resetExplorationFocus({ preserveSearch: false })
             return
 
         default:

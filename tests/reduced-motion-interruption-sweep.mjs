@@ -1,50 +1,21 @@
 /**
- * reduced-motion-interruption-contract.mjs
+ * reduced-motion-interruption-sweep.mjs
  *
- * Deterministic proof of state-consistency for the reduced-motion
- * path: search/focus → Step Inside → interruption/recovery.
+ * Consolidated sweep: merges reduced-motion-interruption-contract.mjs +
+ * reduced-motion-interruption.spec.js + reduced-motion-interruption-proof.spec.js
+ * (W2 Phase 3+4). Proves state-consistency for the reduced-motion path:
+ * search/focus → Step Inside → interruption/recovery.
  *
- * What it proves:
- *   After a reduced-motion search + focus sequence, pressing Escape
- *   (or otherwise clearing the search) leaves camera/canvas/journey/UI
- *   state fully consistent — without relying on long transition timers.
+ * Sweep sources (loc before/after):
+ *   tests/reduced-motion-interruption-contract.mjs      587 LOC
+ *   tests/reduced-motion-interruption.spec.js            309 LOC
+ *   tests/reduced-motion-interruption-proof.spec.js      116 LOC
+ *   Total originals: 1,012 LOC → ~580 LOC in this sweep
  *
- * Determinism strategy:
- *   - Uses reducedMotion:'reduce' media emulation so all camera/animation
- *     paths collapse to instant/inline state updates (no rAF wait needed)
- *   - After each state-changing action, waits only for the NEXT animation
- *     frame tick (~0ms in headless), not for any duration-based timeout
- *   - Each state assertion is checked immediately after action; failures
- *     indicate broken state wiring, not timing noise
+ * The mobile-viewport device-emulation test from proof.spec.js is preserved
+ * as a second browser context within the same run.
  *
- * Exit:
- *   0  — all checks pass
- *   1  — one or more failures (with JSON report)
- *
- * Evidence dir: tmp/reduced-motion-interruption-proof/
- *
- * WAVE-9A REPAIR (2026-08-08): this contract previously crashed at load
- * (`ERR_MODULE_NOT_FOUND` on @lib/orchestration Vite-alias imports) and then
- * silently failed page.evaluate reads of __TEST_STATE__ because (a) it served
- * the Vite SOURCE index.html (never boots) with a MIME table lacking .js
- * (bundle blocked → the app never published __TEST_STATE__) and (b) the
- * shipped build cold-boots render-kind-placeholder2d without __PLAYWRIGHT__
- * seeding. Fixed by: removing the two unresolvable alias imports (their
- * guarded call sites already fall back to proxy writes), serving
- * dist/svelte/index.html as the entry, a complete MIME table, D3D11/real-GPU
- * launch support (SEMANTIC_USE_D3D11=1), and __PLAYWRIGHT__=true seeding.
- * State writes now route through window.withStateMutation (the canonical
- * single-writer) so nested proxy writes are not dropped.
- *
- * WAVE-9C UPDATE (2026-08-08): all parity assertions are now GREEN (29/29)
- * by driving the REAL UI (mode-chip clicks, search fill, result select,
- * Escape, overview chip) so the app's $effects/parity recompute run — the
- * only mechanism that updates body.dataset.panelSurface/graphContext/
- * focusStage. The transient searchGlow marker resets to 'inactive' once
- * search settles; the durable search-succeeded contract is the summary +
- * rendered results. focusStage is a persistent container (active-class
- * driven, no hidden attr) — asserts use the app's own signal (not-active
- * at idle). No parity probes remain as known-failures.
+ * Pass-fail criterion: exit 0 = no violations; exit 1 + error messages = fail.
  */
 
 import { createServer } from 'node:http'
@@ -52,22 +23,11 @@ import { readFileSync, mkdirSync } from 'node:fs'
 import { resolve, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
-// The two Svelte-module imports below were Vite-alias-only (`@lib/*`) and
-// crashed the contract at load time in standalone ESM (`ERR_MODULE_NOT_FOUND`).
-// Their guarded call sites ALREADY fall back to equivalent page-driven state
-// writes via window.__APP_STATE__/__TEST_STATE__ (see the `else` branches), so
-// removing the imports preserves intent with zero dead code.
-// (Removed: refreshCompositionState from '@lib/orchestration/lifecycle',
-//  setTrailDepth from '@lib/stores/journey.svelte')
-// SwiftShader gate (see visual-state-audit.mjs)
+
 const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const ROOT = resolve(__dirname, '..')
-// Serve the BUILT app (dist), not the Vite source index.html. The source entry
-// is an un-transformed dev shell — served statically it never runs main.ts, so
-// window.__TEST_STATE__/__APP_STATE__ (published at main.ts:503-505) never
-// exist and every page.evaluate state read fails with TypeError.
 const HTML_FILE = 'dist/svelte/index.html'
 const OUT_DIR = resolve(ROOT, 'tmp', 'reduced-motion-interruption-proof')
 
@@ -99,10 +59,6 @@ function startServer() {
             if (urlPath === '/' || !extname(urlPath)) {
                 urlPath = `/${HTML_FILE}`
             }
-            // The built app uses RELATIVE asset/css/font paths (./css/...,
-            // ./fonts/...) resolves against the dist/svelte dir. Resolve any
-            // /dist/svelte/... path against ROOT; all other paths against the
-            // web root = ROOT/dist/svelte.
             const isFullDistPath = urlPath.startsWith(`/${HTML_FILE.split('/')[0]}/`)
             const base = isFullDistPath ? ROOT : join(ROOT, 'dist', 'svelte')
             const filePath = join(base, urlPath.replace(/^\//, '').replace(/^dist\//, ''))
@@ -144,32 +100,24 @@ async function waitForReady(page) {
             { timeout: 12000 }
         )
         .catch(() => {})
-    // Give scene-reveal a moment to settle under reduced-motion
     await page
         .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
         .catch(() => {})
 }
 
 async function executeSearch(page, term) {
-    // Use page.fill for reliable text input into the search field
     await page.fill('#search-input', term)
-
-    // Wait for the search debounce to fire and results to appear
     await page
         .waitForFunction(() => window.__TEST_STATE__?.currentSearchSummary?.query != null, { timeout: 8000 })
         .catch(() => {})
-
-    // Press Enter to commit the search and trigger focus-on-node path
     await page.focus('#search-input')
     await page.keyboard.press('Enter')
-    // Wait for focus state to propagate
     await page
         .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
         .catch(() => {})
 }
 
 async function clearSearch(page) {
-    // Focus the input first so keyboard events go to the right handler
     const focused = await page.evaluate(() => {
         const input = document.getElementById('search-input')
         if (!input) return false
@@ -192,7 +140,6 @@ async function collectState(page) {
         const searchInput = document.getElementById('search-input')
         const s = window.__TEST_STATE__ || {}
         return {
-            // UI / DOM state
             searchGlow: body.searchGlow,
             graphContext: body.graphContext,
             panelSurface: body.panelSurface,
@@ -201,13 +148,10 @@ async function collectState(page) {
             focusTransitionPhase: body.focusTransitionPhase,
             semanticDive: body.semanticDive,
             routeMotion: body.routeMotion,
-            // Focus stage visibility
             focusStageHidden: focusStage?.hidden ?? true,
             focusStageActive: focusStage?.classList?.contains('active') ?? false,
-            // Search UI
             searchResultsActive: searchResults?.classList?.contains('active') ?? false,
             searchInputValue: searchInput?.value ?? '',
-            // JS state snapshot
             js: {
                 currentSearchSummary: s.currentSearchSummary ? 'present' : null,
                 focusedNode: s.focusedNode,
@@ -230,69 +174,28 @@ function assertEqual(actual, expected, label) {
     }
 }
 
-function assertNullOrUndefined(value, label) {
-    if (value !== null && value !== undefined) {
-        throw new Error(`ASSERTION FAILED [${label}]: expected null/undefined, got "${value}"`)
-    }
-}
-
 function assertNotNull(value, label) {
     if (value === null || value === undefined) {
         throw new Error(`ASSERTION FAILED [${label}]: expected non-null value, got ${value}`)
     }
 }
 
-// ── Test sequence ─────────────────────────────────────────────────────────────
+// ── Test sequence (shared across viewports) ────────────────────────────────────
 
-async function run() {
-    mkdirSync(OUT_DIR, { recursive: true })
-
-    const { server, port } = await startServer()
-
-    const browser = await chromium.launch({
-        headless: false,
-        args: [
-            '--use-gl=angle',
-            '--enable-webgl',
-            '--no-sandbox',
-            ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : []),
-            ...(process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : [])
-        ]
-    })
-    const context = await browser.newContext({
-        viewport: { width: 1440, height: 900 },
-        // Emulate reduced-motion so all animation/camera paths collapse to instant
-        reducedMotion: 'reduce'
-    })
-    const page = await context.newPage()
-    // Seed __PLAYWRIGHT__ so App.svelte forces render-kind=webgl + auto-signals
-    // engineReady (the app otherwise cold-boots render-kind-placeholder2d in
-    // headless frames, which never publishes __TEST_STATE__.renderer — the
-    // readiness gate below). Same mechanism the journey suite relies on.
-    await page.addInitScript(() => {
-        window.__PLAYWRIGHT__ = true
-    })
-
-    const url = `http://127.0.0.1:${port}/index.html?nodemo=1`
-    await page.goto(url, { waitUntil: 'commit', timeout: 15000 })
-    await waitForReady(page)
-
+async function runTestSequence(page, viewportLabel) {
     const failures = []
     const passes = []
 
     function record(name, ok, detail = '') {
         if (ok) {
-            passes.push(name)
+            passes.push(`${viewportLabel}: ${name}`)
         } else {
-            failures.push({ name, detail })
+            failures.push({ name: `${viewportLabel}: ${name}`, detail })
         }
     }
 
-    // ── Phase 1: Baseline ────────────────────────────────────────────────────────
+    // ── Phase 1: Baseline ────────────────────────────────────────────────────
     const baseline = await collectState(page)
-    // searchGlow: the app signals absence by NO data-search-glow attribute (not the
-    // literal 'inactive'); asserting the literal string is harness-thought, not the
-    // app contract. Missing attr === inactive.
     record(
         'baseline: searchGlow is inactive',
         !baseline.searchGlow || baseline.searchGlow === 'inactive',
@@ -300,10 +203,6 @@ async function run() {
     )
     record('baseline: graphContext is idle', baseline.graphContext === 'idle', `got ${baseline.graphContext}`)
     record('baseline: panelSurface is idle', baseline.panelSurface === 'idle', `got ${baseline.panelSurface}`)
-    // focusStage: #focus-stage is the app's persistent journey container — it is
-    // never removed and does NOT use the HTML hidden attribute. The real idle
-    // signal is the absence of its 'active' class (no focused business). Assert
-    // the app's actual semantics: stage present, NOT active, at baseline.
     record(
         'baseline: focusStage is not active (idle)',
         baseline.focusStageActive === false,
@@ -316,11 +215,7 @@ async function run() {
     )
     record('baseline: focusedNode null', baseline.js.focusedNode === null, `got ${baseline.js.focusedNode}`)
 
-    // ── Phase 2: Search → Focus via REAL UI interaction ─────────────────────────
-    // Drive the actual app (mode-chip click → search fill → result select) so the
-    // app's Svelte $effects + parity recompute RUN — the only path that updates
-    // body.dataset.panelSurface/graphContext. Same selectors the journey suite
-    // exercises (F-search-8 core).
+    // ── Phase 2: Search → Focus via REAL UI interaction ─────────────────────
     const searchChip = page.locator('.mode-chip[data-mode="search"]')
     await searchChip.waitFor({ state: 'visible', timeout: 15000 })
     await searchChip.click({ force: true })
@@ -328,21 +223,15 @@ async function run() {
     const searchInput = page.locator('#search-input').first()
     await searchInput.waitFor({ state: 'visible', timeout: 20000 })
     await searchInput.fill('coffee')
-    // Debounced runSearch → local index / API results render as .search-result-item
     await page.waitForFunction(() => document.querySelectorAll('.search-result-item').length >= 1, null, {
         timeout: 25000,
         polling: 100
     })
 
-    // Click the first result → real transition into focus (parity updates)
     const firstResult = page.locator('.search-result-item button, [id^="search-result-"] button').first()
     await firstResult.waitFor({ state: 'visible', timeout: 10000 })
     await firstResult.click({ force: true })
 
-    // Let parity $effects recompute from the real transition, AND settle the
-    // focus transition phase (arriving/entering → idle) before collecting — a
-    // mid-transition capture asserts a transitory 'entering' instead of the
-    // settled 'idle' the contract intends.
     await page
         .waitForFunction(
             () => ['focus', 'focus-search'].includes(document.body.dataset.panelSurface),
@@ -357,14 +246,8 @@ async function run() {
             { timeout: 12000, polling: 100 }
         )
         .catch(() => {})
-    // focusTransitionMode lives in appState (focusState sub-aggregate), which the
-    // parity dataset may not mirror; give the settle a beat before reading js.
     await page.waitForTimeout(350)
     const afterSearch = await collectState(page)
-    // searchGlow is a TRANSIENT animation marker the app clears once the search
-    // settles (results syndicated) — asserting it is 'active' post-settle is a
-    // mid-animation timing check, not the steady-state invariant. The real search-
-    // succeeded contract is results present. Keep glow as a soft secondary.
     record(
         'search: results rendered (search settled)',
         afterSearch.js.currentSearchSummary === 'present',
@@ -402,14 +285,11 @@ async function run() {
         `got ${afterSearch.js.focusTransitionMode}`
     )
 
-    // ── Phase 3: Step Inside via real Inside-mode chip ─────────────────────────
-    // After Phase 2 leaves us in focus, click the real Inside mode-chip so the
-    // app's own mode-transition effects set trailDepth + parity, not a write.
+    // ── Phase 3: Step Inside via real Inside-mode chip ───────────────────────
     const insideChip = page.locator('.mode-chip[data-mode="inside"]')
     try {
         await insideChip.waitFor({ state: 'visible', timeout: 10000 })
         await insideChip.click({ force: true })
-        // When a business is focused, Inside unlocks; parity recomputes trailDepth
         await page
             .waitForFunction(() => document.body.dataset.panelSurface === 'semantic-dive', null, {
                 timeout: 15000,
@@ -417,8 +297,7 @@ async function run() {
             })
             .catch(() => {})
     } catch {
-        // Inside may be locked without a selection in some boot paths; fall back to
-        // asserting the closest honest parity surface rather than a raw store write.
+        // Inside may be locked without a selection in some boot paths.
     }
 
     await page
@@ -447,10 +326,7 @@ async function run() {
         `cameraAssist=${afterFocus.js.cameraAssist} focusTransition=${afterFocus.focusTransition}`
     )
 
-    // ── Phase 4: Interruption — real Escape (app-level clear) ───────────────────
-    // Press Escape in the real app — the actual reset path users hit — then
-    // return to overview via the Overview mode-chip. Everything asserted after
-    // this reflects genuine app-driven reset (parity + store), not raw writes.
+    // ── Phase 4: Interruption — real Escape (app-level clear) ────────────────
     await page.keyboard.press('Escape')
     await page
         .waitForFunction(() => document.body.dataset.panelSurface === 'idle', null, {
@@ -459,8 +335,6 @@ async function run() {
         })
         .catch(() => {})
 
-    // Belt-and-suspenders public reset: press Escape again if Surface is idle-bound
-    // (some boot paths need a second nudge after a deep focus).
     const overviewChip = page.locator('.mode-chip[data-mode="overview"]')
     try {
         await overviewChip.waitFor({ state: 'visible', timeout: 6000 })
@@ -472,14 +346,13 @@ async function run() {
             })
             .catch(() => {})
     } catch {
-        // Overview chip may be covered in focus-search; Escape already returned us.
+        // Overview chip may be covered in focus-search.
     }
 
     await page
         .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
         .catch(() => {})
     const afterInterrupt = await collectState(page)
-    // core contract: search glow and summary must be fully cleared after interrupt
     record(
         'interrupt: searchGlow is inactive',
         afterInterrupt.searchGlow === 'inactive',
@@ -490,21 +363,17 @@ async function run() {
         afterInterrupt.js.currentSearchSummary === null,
         `got ${afterInterrupt.js.currentSearchSummary}`
     )
-    // After explicit setTrailDepth(0) reset, trailDepth must be 0
     record('interrupt: trailDepth is 0', afterInterrupt.js.trailDepth === 0, `got ${afterInterrupt.js.trailDepth}`)
-    // focus should be fully cleared after returning to overview
     record(
         'interrupt: focusedNode null',
         afterInterrupt.js.focusedNode === null,
         `got ${afterInterrupt.js.focusedNode}`
     )
-    // navState.mode should return to overview after explicit setMyceliumMode('default')
     record(
         'interrupt: navState.mode is overview',
         afterInterrupt.js.navStateMode === 'overview',
         `got ${afterInterrupt.js.navStateMode}`
     )
-    // graphContext and panelSurface should return to idle after reset
     record(
         'interrupt: graphContext is idle',
         afterInterrupt.graphContext === 'idle',
@@ -515,13 +384,11 @@ async function run() {
         afterInterrupt.panelSurface === 'idle',
         `got ${afterInterrupt.panelSurface}`
     )
-    // focus stage must be hidden after returning to overview
     record(
         'interrupt: focusStage not active after reset',
         afterInterrupt.focusStageActive === false,
         `got active=${afterInterrupt.focusStageActive}`
     )
-    // search results and input must be cleared
     record(
         'interrupt: searchResults inactive',
         afterInterrupt.searchResultsActive === false,
@@ -533,18 +400,179 @@ async function run() {
         `got "${afterInterrupt.searchInputValue}"`
     )
 
+    return { failures, passes }
+}
+
+// ── Mobile viewport proof (from proof.spec.js) ────────────────────────────────
+
+async function runMobileProof(page) {
+    const failures = []
+    const passes = []
+
+    function record(name, ok, detail = '') {
+        if (ok) {
+            passes.push(`mobile: ${name}`)
+        } else {
+            failures.push({ name: `mobile: ${name}`, detail })
+        }
+    }
+
+    await page.addInitScript(() => {
+        window.__PLAYWRIGHT__ = true
+    })
+    // Use same path as desktop server — the sweep server resolves /index.html
+    // against dist/svelte/. Using /dist/svelte/index.html would hit the ROOT
+    // base and look for svelte/index.html which does not exist.
+    const url = `http://127.0.0.1:${globalThis._sweepPort}/index.html?nodemo=1`
+    await page.goto(url, { waitUntil: 'domcontentloaded' })
+    // Use a lenient readiness check for mobile (matches proof.spec.js): only
+    // require graphicsMode=webgl + canvas + pointsMesh, not the full __TEST_STATE__.
+    await page.waitForFunction(
+        () =>
+            document.body?.dataset?.graphicsMode === 'webgl' &&
+            document.querySelector('#canvas-container canvas') &&
+            (window.__APP_STATE__ || window.__TEST_STATE__)?.pointsMesh,
+        { timeout: 30000 }
+    )
+
+    // Verify baseline
+    await page.waitForFunction(
+        () => {
+            const body = document.body?.dataset
+            const canvas = document.querySelector('#canvas-container canvas')
+            return body?.graphicsMode === 'webgl' && canvas
+        },
+        { timeout: 60000 }
+    )
+
+    // Mobile: search and focus
+    const input = page.locator('#search-input')
+    await input.focus()
+    await input.fill('restaurant')
+    await page.keyboard.press('Enter')
+    await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 })
+
+    const first = page.locator('.search-result-item').first()
+    await first.click({ force: true })
+    await page.waitForFunction(
+        () =>
+            document.body.dataset.panelSurface === 'focus-search' &&
+            (window.__APP_STATE__ || window.__TEST_STATE__)?.focusedNode !== null,
+        { timeout: 8000 }
+    )
+
+    const surface = await page.evaluate(() => document.body.dataset.panelSurface)
+    record('mobile: panelSurface is focus-search', surface === 'focus-search', `got ${surface}`)
+
+    // Mobile: Step Inside via dive button
+    const diveBtn = page.locator('#btn-focus-dive')
+    await diveBtn.waitFor({ state: 'visible', timeout: 10000 })
+    await diveBtn.click({ force: true })
+
+    await page.waitForFunction(
+        () => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true,
+        { timeout: 2000 }
+    )
+    record('mobile: semanticDiveMode is true after dive click', true, '')
+
+    // Mobile: Interrupt via Escape and verify clean recovery
+    await page.keyboard.press('Escape')
+    await page.waitForFunction(
+        () =>
+            document.body.dataset.panelSurface === 'idle' && document.body.dataset.semanticDive === 'inactive',
+        { timeout: 8000 }
+    )
+
+    const finalState = await page.evaluate(() => {
+        const s = window.__APP_STATE__ || window.__TEST_STATE__
+        return {
+            mode: s.navState.mode,
+            diveMode: s.semanticDiveMode,
+            panelSurface: document.body.dataset.panelSurface
+        }
+    })
+    record('mobile: mode is overview after interrupt', finalState.mode === 'overview', `got ${finalState.mode}`)
+    record('mobile: diveMode is false after interrupt', finalState.diveMode === false, `got ${finalState.diveMode}`)
+    record('mobile: panelSurface is idle after interrupt', finalState.panelSurface === 'idle', `got ${finalState.panelSurface}`)
+
+    return { failures, passes }
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
+async function run() {
+    mkdirSync(OUT_DIR, { recursive: true })
+
+    const { server, port } = await startServer()
+    globalThis._sweepPort = port // shared across both viewports
+
+    const browser = await chromium.launch({
+        headless: false,
+        args: [
+            '--use-gl=angle',
+            '--enable-webgl',
+            '--no-sandbox',
+            ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : []),
+            ...(process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : [])
+        ]
+    })
+
+    // Desktop viewport (from contract.mjs)
+    const desktopContext = await browser.newContext({
+        viewport: { width: 1440, height: 900 },
+        reducedMotion: 'reduce'
+    })
+    const desktopPage = await desktopContext.newPage()
+    await desktopPage.addInitScript(() => {
+        window.__PLAYWRIGHT__ = true
+    })
+    const url = `http://127.0.0.1:${port}/index.html?nodemo=1`
+    await desktopPage.goto(url, { waitUntil: 'commit', timeout: 15000 })
+    await waitForReady(desktopPage)
+
+    const desktopResult = await runTestSequence(desktopPage, 'desktop')
+
+    // Mobile viewport (from proof.spec.js) — run in a SEPARATE browser to avoid
+    // context pollution from the desktop run. The original proof.spec.js launches
+    // its own browser; we replicate that here.
+    const mobileBrowser = await chromium.launch({
+        headless: false,
+        args: [
+            '--use-gl=angle',
+            '--enable-webgl',
+            '--no-sandbox',
+            ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : []),
+            ...(process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : [])
+        ]
+    })
+    const mobileContext = await mobileBrowser.newContext({
+        viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 2,
+        isMobile: true,
+        hasTouch: true,
+        reducedMotion: 'reduce'
+    })
+    const mobilePage = await mobileContext.newPage()
+    const mobileResult = await runMobileProof(mobilePage)
+    await mobileBrowser.close()
+
     await browser.close()
     server.close()
 
-    // ── Report ───────────────────────────────────────────────────────────────────
-    const total = passes.length + failures.length
-    const allPassed = failures.length === 0
+    // ── Report ───────────────────────────────────────────────────────────────
+    const allPasses = [...desktopResult.passes, ...mobileResult.passes]
+    const allFailures = [...desktopResult.failures, ...mobileResult.failures]
+    const total = allPasses.length + allFailures.length
+    const allPassed = allFailures.length === 0
 
-    console.log(`\n=== reduced-motion-interruption-contract ===`)
-    console.log(`Results: ${passes.length}/${total} passed`)
-    if (failures.length > 0) {
-        console.log(`\nFAILURES (${failures.length}):`)
-        for (const f of failures) {
+    console.log(`\n=== reduced-motion-interruption-sweep ===`)
+    console.log(`Desktop: ${desktopResult.passes.length}/${desktopResult.passes.length + desktopResult.failures.length} passed`)
+    console.log(`Mobile:  ${mobileResult.passes.length}/${mobileResult.passes.length + mobileResult.failures.length} passed`)
+    console.log(`Total:   ${allPasses.length}/${total} passed`)
+
+    if (allFailures.length > 0) {
+        console.log(`\nFAILURES (${allFailures.length}):`)
+        for (const f of allFailures) {
             console.log(`  ✗ ${f.name}${f.detail ? ` — ${f.detail}` : ''}`)
         }
     }
@@ -552,26 +580,20 @@ async function run() {
     const report = {
         timestamp: new Date().toISOString(),
         overall: allPassed ? 'PASS' : 'FAIL',
-        passes: passes.length,
-        failures: failures.length,
-        failureDetails: failures,
-        phases: {
-            baseline: {
-                pass: passes.filter((p) => p.startsWith('baseline')).length,
-                fail: failures.filter((f) => f.name.startsWith('baseline')).length
-            },
-            search: {
-                pass: passes.filter((p) => p.startsWith('search')).length,
-                fail: failures.filter((f) => f.name.startsWith('search')).length
-            },
-            'step-inside': {
-                pass: passes.filter((p) => p.startsWith('step-inside')).length,
-                fail: failures.filter((f) => f.name.startsWith('step-inside')).length
-            },
-            interrupt: {
-                pass: passes.filter((p) => p.startsWith('interrupt')).length,
-                fail: failures.filter((f) => f.name.startsWith('interrupt')).length
-            }
+        passes: allPasses.length,
+        failures: allFailures.length,
+        failureDetails: allFailures,
+        desktop: {
+            pass: desktopResult.passes.length,
+            fail: desktopResult.failures.length,
+            passes: desktopResult.passes,
+            failures: desktopResult.failures
+        },
+        mobile: {
+            pass: mobileResult.passes.length,
+            fail: mobileResult.failures.length,
+            passes: mobileResult.passes,
+            failures: mobileResult.failures
         }
     }
 
