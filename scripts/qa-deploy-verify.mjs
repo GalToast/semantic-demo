@@ -47,6 +47,9 @@ Options:
                    after build). Must start with /. Examples:
                      --asset=/dist/svelte/assets/Canvas-DhvxfoxS.js
                      --asset=/dist/svelte/assets/Canvas-7ek6LVry.css
+  --via-origin     Run the SAME checks over SSH to the origin host using
+                   curl --resolve HOST:443:127.0.0.1 -k. Prints the ssh command used.
+                   Requires ssh config for mccullough-cloud on port 65002.
   --help, -h       Show this help text and exit 0.
 
 Exit codes:
@@ -58,6 +61,7 @@ Examples:
   node scripts/qa-deploy-verify.mjs https://mccullough.cloud/semantic-demo
   node scripts/qa-deploy-verify.mjs https://mccullough.cloud/semantic-demo \\
       --asset=/dist/svelte/assets/Canvas-DhvxfoxS.js
+  node scripts/qa-deploy-verify.mjs https://mccullough.cloud/semantic-demo --via-origin
 `)
   process.exit(0)
 }
@@ -74,6 +78,7 @@ function getFlagValue(name) {
 const hasFlag = (name) => args.includes(name)
 
 const overrideAsset = getFlagValue('--asset')
+const viaOrigin = hasFlag('--via-origin')
 
 // Resolve base URL
 let baseURL = ''
@@ -102,6 +107,186 @@ try {
 } catch (e) {
   console.error(`ERROR: Invalid base URL "${baseURL}": ${e.message}`)
   process.exit(2)
+}
+
+// ── --via-origin mode: SSH-based probing ────────────────────────────────────
+
+const SSH_CMD = 'ssh -p 65002 mccullough-cloud'
+const HOST = 'mccullough.cloud'
+
+/**
+ * Build the remote shell script that curls each URL and prints machine-readable facts.
+ * Facts are on their own lines: CODE:xxx  or  HEADER:name:value
+ */
+function buildRemoteScript(base, assetPath) {
+  const lines = []
+  // Helper: curl and emit facts
+  const curlFacts = (label, url) => [
+    `echo "--- ${label} ---"`,
+    `curl -sI --resolve ${HOST}:443:127.0.0.1 -k -H 'Accept-Encoding: br,gzip' -H 'User-Agent: qa-deploy-verify/1.0' '${url}' | while IFS= read -r line; do`,
+    `  case "$line" in`,
+    `    HTTP/*) code=$(echo "$line" | awk '{print $2}'); echo "CODE:$code" ;;`,
+    `    *:*) echo "HEADER:$line" ;;`,
+    `  esac`,
+    `done`,
+  ]
+
+  // 1. index.html
+  lines.push(...curlFacts('index', `${base}/`))
+
+  // 2. asset GET (for CE + CT + Vary)
+  if (assetPath) {
+    lines.push(...curlFacts('asset', `${base}${assetPath}`))
+  }
+
+  // 3. .br twin HEAD
+  if (assetPath) {
+    lines.push(...curlFacts('br-twin', `${base}${assetPath}.br`))
+  }
+
+  // 4. legacy routes
+  for (const route of ['/semantic-demo/vector-explorer-polished.html', '/view']) {
+    lines.push(...curlFacts(`legacy-${route.replace(/\//g, '-')}`, `${base}${route}`))
+  }
+
+  return lines.join('\n')
+}
+
+/**
+ * Parse curl -I output lines into per-probe { code, headers }.
+ * Expects lines like: CODE:200  and  HEADER:Content-Encoding: br
+ */
+function parseFacts(output) {
+  const perProbe = new Map() // label -> { code, headers }
+  let currentLabel = null
+  let currentCode = null
+  const currentHeaders = {}
+
+  for (const line of output.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    if (trimmed.startsWith('--- ')) {
+      // Flush previous
+      if (currentLabel) perProbe.set(currentLabel, { code: currentCode, headers: currentHeaders })
+      currentLabel = trimmed.replace(/^--- | ---$/g, '')
+      currentCode = null
+      currentHeaders.length = 0
+      continue
+    }
+    if (trimmed.startsWith('CODE:')) {
+      currentCode = parseInt(trimmed.slice(5), 10)
+      continue
+    }
+    if (trimmed.startsWith('HEADER:')) {
+      const rest = trimmed.slice(7)
+      const colonIdx = rest.indexOf(':')
+      if (colonIdx !== -1) {
+        const name = rest.slice(0, colonIdx).toLowerCase()
+        const val = rest.slice(colonIdx + 1).trim()
+        currentHeaders[name] = val
+      }
+      continue
+    }
+    // Fallback: try to parse as HTTP status line
+    const m = trimmed.match(/^HTTP\/[\d.]+\s+(\d+)/)
+    if (m) currentCode = parseInt(m[1], 10)
+  }
+  // Flush last
+  if (currentLabel) perProbe.set(currentLabel, { code: currentCode, headers: currentHeaders })
+  return perProbe
+}
+
+/**
+ * Run --via-origin mode: pipe the remote script via stdin to ssh bash.
+ * Prints the ssh command used, parses machine-readable facts, scores checks.
+ */
+async function runViaOrigin(baseURL, assetPath) {
+  const { execSync, spawn } = await import('node:child_process')
+  const remoteScript = buildRemoteScript(baseURL, assetPath)
+  // Build a single ssh command that reads the script from stdin
+  const sshCmd = `${SSH_CMD} bash`
+  console.log(`SSH CMD: ${sshCmd}`)
+
+  // Use spawn for stdin piping (execSync can't pipe stdin easily)
+  const proc = spawn('ssh', ['-p', '65002', 'mccullough-cloud', 'bash'], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
+
+  let stdout = ''
+  let stderr = ''
+  proc.stdout.on('data', (d) => { stdout += d })
+  proc.stderr.on('data', (d) => { stderr += d })
+
+  proc.stdin.write(remoteScript)
+  proc.stdin.end()
+
+  await new Promise((resolve, reject) => {
+    proc.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`ssh exited ${code}`))
+      } else {
+        resolve()
+      }
+    })
+    proc.on('error', reject)
+  })
+
+  if (stderr) {
+    console.error(`SSH STDERR:\n${stderr}`)
+  }
+
+  const facts = parseFacts(stdout)
+
+  // 1. index.html 200
+  const idx = facts.get('index')
+  record('index.html', idx?.code === 200, idx ? `HTTP ${idx.code}` : 'no facts')
+
+  // 2. asset Content-Encoding + Content-Type
+  const asset = facts.get('asset')
+  if (asset) {
+    const ce = (asset.headers['content-encoding'] || '').toLowerCase()
+    const ct = (asset.headers['content-type'] || '').toLowerCase()
+    record('asset Content-Encoding', ce === 'br' || ce === 'gzip', `got "${ce}"`)
+    record('asset Content-Type (module MIME)', ct.startsWith('application/javascript'), `got "${ct}"`)
+  } else {
+    record('asset Content-Encoding', false, 'no asset facts')
+    record('asset Content-Type', false, 'no asset facts')
+  }
+
+  // 3. .br twin exists
+  const brTwin = facts.get('br-twin')
+  if (brTwin) {
+    record('asset .br twin exists', brTwin.code !== 404, `HTTP ${brTwin.code}`)
+  } else {
+    record('asset .br twin exists', false, 'no br-twin facts')
+  }
+
+  // 4. legacy map URL → 308
+  const legacyRoutes = [
+    '/semantic-demo/vector-explorer-polished.html',
+    '/view',
+  ]
+  let legacyFound308 = false
+  let legacyDetail = []
+  for (const route of legacyRoutes) {
+    const key = `legacy-${route.replace(/\//g, '-')}`
+    const r = facts.get(key)
+    if (r?.code === 308) {
+      legacyFound308 = true
+      legacyDetail.push(`${route} → 308`)
+    } else {
+      legacyDetail.push(`${route} → ${r?.code ?? 'NO-FACTS'}`)
+    }
+  }
+  record('legacy map URL → 308', legacyFound308, legacyDetail.join(' | '))
+
+  // 5. Vary includes Accept-Encoding
+  if (asset) {
+    const vary = (asset.headers['vary'] || '').toLowerCase()
+    record('Vary includes Accept-Encoding', vary.includes('accept-encoding'), `got "${asset.headers['vary'] || '(none)'}"`)
+  } else {
+    record('Vary', false, 'no asset facts')
+  }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -235,6 +420,18 @@ function record(check, pass, detail = '') {
 async function main() {
   // 0. Discover asset to probe
   const assetPath = await findDefaultAsset()
+
+  // Dispatch: --via-origin runs the same checks over SSH to the origin
+  if (viaOrigin) {
+    await runViaOrigin(baseURL, assetPath)
+    const failCount = results.filter((r) => !r.pass).length
+    if (failCount > 0) {
+      console.log(`\nFAILED: ${failCount}/${results.length} checks (via-origin)`)
+      process.exit(1)
+    }
+    console.log(`\nPASSED: ${results.length}/${results.length} checks (via-origin)`)
+    process.exit(0)
+  }
 
   // 1. Check (a): index.html 200
   const idx = await head(`${baseURL}/`)
