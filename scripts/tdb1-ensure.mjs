@@ -9,6 +9,11 @@ const PAIRS = [
         gen: 'scripts/tdb1-generate.mjs',
         src: 'public/data/semantic_threads.dat'
     },
+    {
+        bin: 'dist/svelte/data/semantic_threads_ui.dat.bin',
+        gen: 'scripts/tdb1-ui.mjs',
+        src: 'public/data/semantic_threads_ui.dat'
+    },
     { bin: 'dist/svelte/data/rows.bin', gen: 'scripts/tdb1-rows.mjs', src: 'src/data.dat' }
 ]
 

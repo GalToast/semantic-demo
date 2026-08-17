@@ -648,6 +648,7 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
     const cacheBust = Math.floor(Date.now() / (1000 * 60 * 60))
     const requestUrls = [
         buildAssetUrl(`data/semantic_threads.dat.bin?v=${cacheBust}`),
+        buildAssetUrl(`data/semantic_threads_ui.dat.bin?v=${cacheBust}`),
         buildAssetUrl(`data/semantic_threads_ui.dat?v=${cacheBust}`),
         buildAssetUrl(`data/semantic_threads.dat?v=${cacheBust}`)
     ]

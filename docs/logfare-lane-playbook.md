@@ -79,24 +79,37 @@ websearch ground truth + live upstream probes:
 **Max tokens are set to the TOP EDGE of each model's true max output, not a
 conservative default.** Verified live at upstream (200 + real content):
 
-| Model                               | top edge | source                                             |
-| ----------------------------------- | -------- | -------------------------------------------------- |
-| `deepseek-v4-pro`, `-0813`, `flash`  | 384000   | DeepSeek V4: 384K max output (Pro and Flash)       |
-| `minimax-m3`                        | 524288   | MiniMax M3: hard max 524288 (recommends 131072)    |
-| `kimi-k3`                           | 1048576  | Moonshot: configurable up to full 1M                |
-| `glm-5.2`                           | 131072   | Z.ai: 131072 output cap                            |
-| `qwen-3.8-27b`                      | 131072   | Qwen3.8: 131072 output                             |
-| `gemma-4-26b`                       | 131072   | no authoritative source; Google class default      |
-| `grape-2-pro`                       | 131072   | no public spec; picker value                        |
-| `kiro-auto`                         | 131072   | no public spec (Logfare routing label)              |
+| Model                               | top edge | source                                          |
+| ----------------------------------- | -------- | ----------------------------------------------- |
+| `deepseek-v4-pro`, `-0813`, `flash` | 384000   | DeepSeek V4: 384K max output (Pro and Flash)    |
+| `minimax-m3`                        | 524288   | MiniMax M3: hard max 524288 (recommends 131072) |
+| `kimi-k3`                           | 1048576  | Moonshot: configurable up to full 1M            |
+| `glm-5.2`                           | 131072   | Z.ai: 131072 output cap                         |
+| `qwen-3.8-27b`                      | 131072   | Qwen3.8: 131072 output                          |
+| `gemma-4-26b`                       | 131072   | no authoritative source; Google class default   |
+| `grape-2-pro`                       | 131072   | no public spec; picker value                    |
+| `kiro-auto`                         | 131072   | no public spec (Logfare routing label)          |
 
 - **`moondream3.1` was in opencode.json + the picker but NOT the router** — an
   inconsistency that only made sense because the model is genuinely broken.
   Removed from all three layers. Never add a model that returns a null stub.
-- **The key-router's `defaultMaxTokens` is a runtime enforcer and is NOT
-  touched by config edits.** It clips max_tokens at request time as a safety
-  net; the config values declare intent, the router enforces. Bumping the
-  config cap does not weaken the router's clip.
+- **The key-router enforces max_tokens at request time via TWO different
+  knobs, and they are NOT the same thing** (handler at line ~4421-4441 of
+  `opencode-key-router.mjs`):
+    - `defaultMaxTokens` — fills in ONLY when the client sends no `max_tokens`
+      at all. It is a fallback, not a clamp. It is NOT touched by config edits
+      and does not weaken anything.
+    - `maxTokensCeiling` — the real runtime clamp. Any `max_tokens` the client
+      sends is clamped DOWN to the ceiling. This is what silently undoes config
+      caps.
+
+    **2026-08-17: kimi-k3 was the only logfare model carrying a
+    `maxTokensCeiling` (131072), and it was clipping the 1M config value back
+    to 128K on every request.** Bumped to 1048576. No other logfare model had a
+    ceiling, so the other top-edge raises (deepseek 384000, minimax 524288) were
+    passing through untouched — verified live. When editing a model's max tokens,
+    check BOTH knobs in the router profile, not just the config.
+
 - **Cross-check script:** `tmp/logfare-crosscheck.cjs` — catalog vs opencode
   vs picker vs router-prof, plus a context+output consistency matrix. Run it
   after any model add/remove.

@@ -71,5 +71,6 @@ audit lives here; implementation = the next wave's #1.
 - VERDICT: proceed binary (TDB1 spec above). Generator reads nodes once -> .bin + brotli twin (W44 allowlist: semantic_threads.dat.bin); loader = fetch -> ArrayBuffer views; JSON stays as oracle through the loader flip.
 
 ## v2 CORRECTION (13:41Z) — verify caught v1 truncation
+
 - v1 0.79MB/99x = corrupted writer artifact. **Real v2: 2.58MB raw (30.5x) / br 0.83MB / json.br 1.88MB (wire ~2.3x)**; parse still ~100x (6.3s -> ~50ms). VERIFY: 23-sample / 0 mismatches / PASS (scripts/tdb1-verify.mjs).
 - Layout: NODE = u32 lead | f32 signal | u16 nbrs | nbr[ u32|f32|f32|u8 ]; no string table (graph numeric-only).

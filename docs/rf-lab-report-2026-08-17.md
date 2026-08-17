@@ -4,14 +4,14 @@ Track-B status: **the baseband's operator surface is mapped, executed, and debou
 
 ## Verified artifacts (reproducible paths)
 
-| Artifact | Location/state |
-|---|---|
-| Hexagon function corpus | `tmp/firmware-lab/ghidra-out/corpus.txt` — **23,710 functions** (Ghidra 12.1.2 headless, project `sdx55_swarm13`) |
-| String corpus w/ holders | `corpus2.txt` (60,906 strings, 3.7 MB) |
-| RF operator table | `tmp/firmware-lab/rf-operator-table.md` — **9,534 string↔function rows**, function-joined |
-| Annotated family map | `tmp/firmware-lab/rf-annotated.md` — 28 string families with purposes |
-| Emulator proof | `emulator-proof.md` — **Hexagon instructions executed** via `EmulatorHelper` (PC c1601e80→c1601e84; megahandler stepped c1cb8f64), register ABI captured (R1R0 pairs) |
-| Carrier 549 | `…/modem_pr/so/549_0_{1,2,4}.mbn` — ELF32-LE **e_machine 164 (Hexagon)**, 3-variant family, 555-669 strings, "San Diego" lineage |
+| Artifact                 | Location/state                                                                                                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hexagon function corpus  | `tmp/firmware-lab/ghidra-out/corpus.txt` — **23,710 functions** (Ghidra 12.1.2 headless, project `sdx55_swarm13`)                                                     |
+| String corpus w/ holders | `corpus2.txt` (60,906 strings, 3.7 MB)                                                                                                                                |
+| RF operator table        | `tmp/firmware-lab/rf-operator-table.md` — **9,534 string↔function rows**, function-joined                                                                             |
+| Annotated family map     | `tmp/firmware-lab/rf-annotated.md` — 28 string families with purposes                                                                                                 |
+| Emulator proof           | `emulator-proof.md` — **Hexagon instructions executed** via `EmulatorHelper` (PC c1601e80→c1601e84; megahandler stepped c1cb8f64), register ABI captured (R1R0 pairs) |
+| Carrier 549              | `…/modem_pr/so/549_0_{1,2,4}.mbn` — ELF32-LE **e_machine 164 (Hexagon)**, 3-variant family, 555-669 strings, "San Diego" lineage                                      |
 
 ## Key findings (measured)
 

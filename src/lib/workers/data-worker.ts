@@ -10,7 +10,7 @@
 // Runtime payload validation lives in a pure sibling module (unit-testable
 // without a Worker global; farm audit 2026-08-14 regression pin).
 import { requireRecordUrl, requireThreadPayload, type AttemptConfig } from './data-worker-payload'
-import { parseTdb } from '@lib/loaders/semantic-tdb'
+import { parseTdb, parseTdbU } from '@lib/loaders/semantic-tdb'
 
 interface PointRecord {
     cluster: number
@@ -237,10 +237,9 @@ self.onmessage = async (event: MessageEvent) => {
         if (type === 'LOAD_RECORDS') {
             const result = await handleLoadRecords({ url: requireRecordUrl(payload, 'LOAD_RECORDS') }, signal)
             // Superseded by a newer request — drop silently without replying.
-            if (requestId !== _activeRequestId)
-                return // F4 (data-pipeline bugsweep 2026-08-08): this postMessage is the
-                // actual transfer point — buffers move to the main thread here,
-                // eliminating structured-clone overhead (the guard above transfers nothing).
+            if (requestId !== _activeRequestId) return // F4 (data-pipeline bugsweep 2026-08-08): this postMessage is the
+            // actual transfer point — buffers move to the main thread here,
+            // eliminating structured-clone overhead (the guard above transfers nothing).
             ;(self as unknown as { postMessage(message: unknown, transfer?: Transferable[]): void }).postMessage(
                 { type: 'LOAD_RECORDS_SUCCESS', payload: result, requestId },
                 [result.positionsBuffer.buffer, result.clustersBuffer.buffer] as Transferable[]
@@ -415,13 +414,15 @@ async function handleLoadThreads(
                 // shape; the extractor below is untouched (JSON fallback intact).
                 if (artifactName.endsWith('.bin')) {
                     const binBuf = await response.arrayBuffer()
-                    const { nodes } = parseTdb(binBuf)
+                    const bytes = new Uint8Array(binBuf)
+                    const magic = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3])
+                    const { nodes } = magic === 'TDBU' ? parseTdbU(binBuf) : parseTdb(binBuf)
                     const nodesRecord: Record<string, unknown> = {}
                     for (const [leadId, node] of nodes) {
                         nodesRecord[leadId] = {
                             lead_id: node.lead_id,
                             signal_score: node.signal_score,
-                            neighbors: node.neighbors,
+                            neighbors: node.neighbors
                         }
                     }
                     bundle = { nodes: nodesRecord }

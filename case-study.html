@@ -1,807 +1,920 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Montgomery County Semantic Explorer | Case Study</title>
-  <meta
-    name="description"
-    content="A case study for an interactive semantic explorer over 8,406 Montgomery County business records."
-  />
-  <meta property="og:title" content="Montgomery County Semantic Explorer" />
-  <meta
-    property="og:description"
-    content="8,406 local business records organized by what they do, not just where they are."
-  />
-  <link rel="canonical" href="https://mccullough.cloud/semantic-demo/case-study.html" />
-  <meta property="og:url" content="https://mccullough.cloud/semantic-demo/case-study.html" />
-  <meta property="og:image" content="https://mccullough.cloud/semantic-demo/recruiter-assets/semantic-demo-case-study-og-motion410-clean.png" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Montgomery County Semantic Explorer" />
-  <meta
-    name="twitter:description"
-    content="8,406 local business records organized by what they do, not just where they are."
-  />
-  <meta name="twitter:image" content="https://mccullough.cloud/semantic-demo/recruiter-assets/semantic-demo-case-study-og-motion410-clean.png" />
-  <meta name="theme-color" content="#07100f" />
-  <meta name="robots" content="index, follow" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2306100f'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%2361d8ca' stroke-width='6'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23e2c66a'/%3E%3C/svg%3E" />
-  <style>
-    :root {
-      color-scheme: dark;
-      --ink: #06100f;
-      --panel: rgba(10, 23, 24, 0.82);
-      --panel-strong: rgba(14, 31, 32, 0.94);
-      --panel-soft: rgba(10, 23, 24, 0.5);
-      --line: rgba(150, 220, 206, 0.2);
-      --text: #edf7f2;
-      --muted: rgba(237, 247, 242, 0.7);
-      --quiet: rgba(237, 247, 242, 0.52);
-      --cyan: #61d8ca;
-      --gold: #e2c66a;
-      --coral: #ff8e78;
-      --moss: #8bbf76;
-      --shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      min-height: 100%;
-      background: var(--ink);
-      color: var(--text);
-      font-family: "Segoe UI", "Aptos", sans-serif;
-      line-height: 1.5;
-      letter-spacing: 0;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100%;
-      background:
-        linear-gradient(180deg, rgba(6, 16, 15, 0.1), rgba(6, 16, 15, 0.96) 42%, #06100f 100%),
-        #06100f;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    img,
-    video {
-      max-width: 100%;
-      display: block;
-    }
-
-    .shell {
-      width: min(1160px, calc(100% - 36px));
-      margin: 0 auto;
-    }
-
-    .hero {
-      position: relative;
-      min-height: min(860px, 88vh);
-      display: grid;
-      align-items: center;
-      overflow: hidden;
-      isolation: isolate;
-    }
-
-    .hero::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(180deg, rgba(6, 16, 15, 0.98) 0, rgba(6, 16, 15, 0.86) 12%, transparent 34%),
-        linear-gradient(90deg, rgba(6, 16, 15, 0.92), rgba(6, 16, 15, 0.58) 48%, rgba(6, 16, 15, 0.76)),
-        url("recruiter-assets/semantic-demo-county-view-motion410-clean.png") center 44% / cover no-repeat;
-      filter: saturate(1.06) contrast(1.08);
-      transform: scale(1.02);
-      z-index: -2;
-    }
-
-    .hero::after {
-      content: "";
-      position: absolute;
-      inset: auto 0 0;
-      height: 28%;
-      background: linear-gradient(180deg, transparent, var(--ink));
-      z-index: -1;
-    }
-
-    .nav {
-      position: absolute;
-      top: 24px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 18px;
-      z-index: 2;
-    }
-
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      min-height: 44px;
-      color: rgba(237, 247, 242, 0.86);
-      font-weight: 700;
-    }
-
-    .nav-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-
-    .button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 44px;
-      padding: 0 18px;
-      border-radius: 999px;
-      border: 1px solid rgba(237, 247, 242, 0.16);
-      background: rgba(8, 16, 18, 0.72);
-      color: var(--text);
-      font-weight: 800;
-      font-size: 14px;
-      letter-spacing: 0.01em;
-      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-    }
-
-    .button:hover,
-    .button:focus-visible {
-      transform: translateY(-1px);
-      border-color: rgba(97, 216, 202, 0.62);
-      outline: none;
-    }
-
-    .button.primary {
-      background: var(--cyan);
-      border-color: rgba(97, 216, 202, 0.8);
-      color: #041111;
-    }
-
-    .hero-content {
-      padding: 118px 0 76px;
-      max-width: 900px;
-    }
-
-    .eyebrow {
-      color: var(--gold);
-      font-size: 13px;
-      font-weight: 900;
-      text-transform: uppercase;
-      margin: 0 0 16px;
-    }
-
-    h1,
-    h2,
-    h3,
-    p {
-      margin-top: 0;
-    }
-
-    h1 {
-      margin-bottom: 18px;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(46px, 5.8vw, 78px);
-      line-height: 0.98;
-      font-weight: 700;
-      max-width: 1020px;
-      text-wrap: balance;
-    }
-
-    .hero-lede {
-      margin-bottom: 28px;
-      max-width: 720px;
-      color: rgba(237, 247, 242, 0.86);
-      font-size: clamp(18px, 2.1vw, 25px);
-      line-height: 1.35;
-    }
-
-    .hero-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 34px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-      max-width: 860px;
-    }
-
-    .stat {
-      border-top: 1px solid rgba(237, 247, 242, 0.22);
-      padding-top: 12px;
-    }
-
-    .stat strong {
-      display: block;
-      color: var(--text);
-      font-size: clamp(20px, 3vw, 30px);
-      line-height: 1;
-    }
-
-    .stat span {
-      display: block;
-      margin-top: 7px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    section {
-      padding: 78px 0;
-    }
-
-    .section-head {
-      max-width: 780px;
-      margin-bottom: 30px;
-    }
-
-    .section-kicker {
-      margin-bottom: 9px;
-      color: var(--coral);
-      font-size: 13px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
-    h2 {
-      margin-bottom: 14px;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(34px, 4.2vw, 54px);
-      line-height: 1.04;
-      text-wrap: balance;
-    }
-
-    .section-head p {
-      color: var(--muted);
-      font-size: 18px;
-      max-width: 700px;
-    }
-
-    .demo-reel {
-      display: grid;
-      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
-      gap: 22px;
-      align-items: start;
-    }
-
-    .media-frame {
-      align-self: start;
-      border: 1px solid rgba(97, 216, 202, 0.26);
-      border-radius: 8px;
-      overflow: hidden;
-      background: rgba(0, 0, 0, 0.32);
-      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
-      line-height: 0;
-    }
-
-    .media-frame video,
-    .media-frame img {
-      display: block;
-      width: 100%;
-      height: auto;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      background: #030909;
-    }
-
-    .path {
-      display: grid;
-      gap: 10px;
-      align-content: start;
-    }
-
-    .step {
-      padding: 22px 24px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel-soft);
-    }
-
-    .step b {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--gold);
-    }
-
-    .step p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 15px;
-    }
-
-    .proof-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .proof {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      overflow: hidden;
-      background: var(--panel);
-      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.2);
-      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
-    }
-
-    .proof img {
-      width: 100%;
-      aspect-ratio: 16 / 10;
-      object-fit: cover;
-      border-bottom: 1px solid rgba(237, 247, 242, 0.1);
-      filter: brightness(1.08) contrast(1.04);
-      transition: transform 240ms ease;
-    }
-
-    .proof:hover,
-    .proof:focus-within {
-      transform: translateY(-3px);
-      border-color: rgba(97, 216, 202, 0.34);
-      box-shadow: 0 22px 64px rgba(0, 0, 0, 0.34);
-    }
-
-    .proof:hover img,
-    .proof:focus-within img {
-      transform: scale(1.025);
-    }
-
-    .proof-copy {
-      padding: 18px;
-      min-height: 120px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .proof-copy h3 {
-      margin-bottom: 7px;
-      font-size: 18px;
-    }
-
-    .proof-copy p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 15px;
-    }
-
-    .build-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-      gap: 26px;
-      align-items: start;
-    }
-
-    .build-narrative .section-head {
-      margin-bottom: 24px;
-    }
-
-    .callout {
-      padding: 28px;
-      border: 1px solid rgba(226, 198, 106, 0.28);
-      border-radius: 8px;
-      background:
-        radial-gradient(circle at 100% 0, rgba(226, 198, 106, 0.12), transparent 42%),
-        var(--panel-strong);
-    }
-
-    .callout p {
-      margin-bottom: 0;
-      color: rgba(237, 247, 242, 0.82);
-      font-size: 18px;
-    }
-
-    .callout p + p {
-      margin-top: 18px;
-      padding-top: 18px;
-      border-top: 1px solid rgba(237, 247, 242, 0.1);
-      color: var(--muted);
-      font-size: 16px;
-    }
-
-    .build-points {
-      margin-top: 28px;
-      width: min(860px, calc(100% - 36px));
-    }
-
-    .bullets {
-      display: grid;
-      gap: 12px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .bullets li {
-      display: grid;
-      grid-template-columns: 18px minmax(0, 1fr);
-      gap: 12px;
-      color: var(--muted);
-    }
-
-    .bullets li::before {
-      content: "";
-      width: 9px;
-      height: 9px;
-      margin-top: 8px;
-      border-radius: 50%;
-      background: var(--moss);
-      box-shadow: 0 0 18px rgba(139, 191, 118, 0.4);
-    }
-
-    .launch-band {
-      padding: 76px 0;
-      border-top: 1px solid rgba(97, 216, 202, 0.18);
-      border-bottom: 1px solid rgba(97, 216, 202, 0.12);
-      background:
-        linear-gradient(135deg, rgba(97, 216, 202, 0.1), rgba(226, 198, 106, 0.05)),
-        rgba(7, 19, 19, 0.72);
-    }
-
-    .launch {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 28px;
-      align-items: center;
-    }
-
-    .launch h2 {
-      margin-bottom: 12px;
-    }
-
-    .launch p {
-      width: min(720px, 100%);
-      margin: 0;
-      color: var(--muted);
-      font-size: 18px;
-    }
-
-    footer {
-      padding: 30px 0 38px;
-      border-top: 1px solid rgba(150, 220, 206, 0.14);
-      color: var(--quiet);
-      font-size: 14px;
-      text-align: center;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .button {
-        transition: none;
-      }
-
-      .proof,
-      .proof img {
-        transition: none;
-      }
-    }
-
-    @media (max-width: 880px) {
-      .hero {
-        min-height: auto;
-      }
-
-      .nav {
-        align-items: flex-start;
-      }
-
-      .hero-content {
-        padding: 118px 0 70px;
-      }
-
-      .stats,
-      .proof-grid,
-      .build-grid,
-      .demo-reel {
-        grid-template-columns: 1fr;
-      }
-
-      .stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .launch {
-        grid-template-columns: 1fr;
-        gap: 20px;
-      }
-    }
-
-    @media (max-width: 540px) {
-      .shell {
-        width: min(100% - 24px, 1160px);
-      }
-
-      .nav {
-        position: static;
-        padding-top: 16px;
-        align-items: center;
-      }
-
-      .brand {
-        min-width: 0;
-      }
-
-      .brand span:last-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .nav-actions {
-        display: none;
-      }
-
-      .hero-content {
-        padding: 68px 0 50px;
-      }
-
-      h1 {
-        font-size: clamp(36px, 10.2vw, 48px);
-      }
-
-      .hero-lede,
-      .section-head p,
-      .launch p {
-        font-size: 16px;
-      }
-
-      section {
-        padding: 58px 0;
-      }
-
-      .stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .stat strong {
-        font-size: 28px;
-      }
-
-      .stat span {
-        font-size: 12px;
-      }
-
-      .launch-band {
-        padding: 58px 0;
-      }
-    }
-
-    @media (max-width: 360px) {
-      .hero-content {
-        padding: 44px 0 34px;
-      }
-
-      h1 {
-        font-size: clamp(32px, 9.8vw, 40px);
-        line-height: 1.02;
-      }
-
-      .hero-lede {
-        margin-bottom: 20px;
-        font-size: 15px;
-        line-height: 1.35;
-      }
-
-      .hero-actions .button:not(.primary),
-      .stats {
-        display: none;
-      }
-    }
-  </style>
-</head>
-<body>
-  <nav class="nav" aria-label="Primary">
-    <a class="brand" href="/">
-      <span class="brand-mark">MC</span>
-      <span>McCullough Cloud</span>
-    </a>
-    <div class="nav-actions">
-      <a href="/#work">Work</a>
-      <a href="/#systems">Operating Model</a>
-      <a href="/cloudscan/">CloudScan</a>
-      <a href="https://github.com/GalToast" target="_blank" rel="noopener noreferrer">GitHub</a>
-      <a href="https://www.linkedin.com/in/fred-mccullough-02981a38a" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-      <a href="https://mccullough.digital/" target="_blank" rel="noopener noreferrer">Studio</a>
-      <a class="nav-contact" href="https://mccullough.digital/contact/" target="_blank" rel="noopener noreferrer">Contact</a>
-    </div>
-  </nav>
-
-  <header class="hero">
-    <div class="shell hero-content">
-      <p class="eyebrow">Portfolio case study</p>
-      <h1>Montgomery County Semantic Explorer</h1>
-      <p class="hero-lede">
-        A browser-based semantic explorer over 8,406 local business records. Search by need, focus one business, walk similar neighborhoods, and carry that record into a live map.
-      </p>
-      <div class="hero-actions">
-        <a class="button primary" href="vector-explorer-polished.html">Open the live explorer</a>
-        <a class="button" href="#how">Read the build notes</a>
-        <a class="button" href="https://github.com/GalToast/semantic-demo" target="_blank" rel="noopener noreferrer">View the repo</a>
-      </div>
-      <div class="stats" aria-label="Project facts">
-        <div class="stat"><strong>8,406</strong><span>local business records</span></div>
-        <div class="stat"><strong>4</strong><span>ways to read the network</span></div>
-        <div class="stat"><strong>Mobile</strong><span>small-screen layout pass</span></div>
-        <div class="stat"><strong>QA</strong><span>visual + runtime passes</span></div>
-      </div>
-    </div>
-  </header>
-
-  <main>
-    <section id="walkthrough">
-      <div class="shell">
-        <div class="section-head">
-          <p class="section-kicker">The review path</p>
-          <h2>What to notice before you click.</h2>
-          <p>
-            The live app is intentionally dense. This is the shortest path through the experience: county context, search, focus, semantic neighborhood, and map handoff.
-          </p>
-        </div>
-        <div class="demo-reel">
-          <div class="media-frame">
-            <video
-              controls
-              playsinline
-              preload="metadata"
-              poster="recruiter-assets/semantic-demo-county-view-motion410-clean.png"
-              aria-label="Guided walkthrough of the live semantic explorer"
-            >
-              <source
-                src="recruiter-assets/semantic-demo-guided-walkthrough-motion414-websafe-candidate.mp4?v=20260505-motion414-websafe"
-                type="video/mp4"
-              />
-              <source
-                src="recruiter-assets/semantic-demo-guided-walkthrough-narrated-music.webm?v=20260509-webm-mime"
-                type="video/webm"
-              />
-              <a href="vector-explorer-polished.html">Open the live semantic explorer</a>
-            </video>
-          </div>
-          <div class="path" aria-label="Guided demo path">
-            <div class="step">
-              <b>1. Start with county context</b>
-              <p>All 8,406 records stay visible so the search result has a place in the larger network.</p>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <title>Montgomery County Semantic Explorer | Case Study</title>
+        <meta
+            name="description"
+            content="A case study for an interactive semantic explorer over 8,406 Montgomery County business records."
+        />
+        <meta property="og:title" content="Montgomery County Semantic Explorer" />
+        <meta
+            property="og:description"
+            content="8,406 local business records organized by what they do, not just where they are."
+        />
+        <link rel="canonical" href="https://mccullough.cloud/semantic-demo/case-study.html" />
+        <meta property="og:url" content="https://mccullough.cloud/semantic-demo/case-study.html" />
+        <meta
+            property="og:image"
+            content="https://mccullough.cloud/semantic-demo/recruiter-assets/semantic-demo-case-study-og-motion410-clean.png"
+        />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Montgomery County Semantic Explorer" />
+        <meta
+            name="twitter:description"
+            content="8,406 local business records organized by what they do, not just where they are."
+        />
+        <meta
+            name="twitter:image"
+            content="https://mccullough.cloud/semantic-demo/recruiter-assets/semantic-demo-case-study-og-motion410-clean.png"
+        />
+        <meta name="theme-color" content="#07100f" />
+        <meta name="robots" content="index, follow" />
+        <link
+            rel="icon"
+            href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2306100f'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%2361d8ca' stroke-width='6'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23e2c66a'/%3E%3C/svg%3E"
+        />
+        <style>
+            :root {
+                color-scheme: dark;
+                --ink: #06100f;
+                --panel: rgba(10, 23, 24, 0.82);
+                --panel-strong: rgba(14, 31, 32, 0.94);
+                --panel-soft: rgba(10, 23, 24, 0.5);
+                --line: rgba(150, 220, 206, 0.2);
+                --text: #edf7f2;
+                --muted: rgba(237, 247, 242, 0.7);
+                --quiet: rgba(237, 247, 242, 0.52);
+                --cyan: #61d8ca;
+                --gold: #e2c66a;
+                --coral: #ff8e78;
+                --moss: #8bbf76;
+                --shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html {
+                min-height: 100%;
+                background: var(--ink);
+                color: var(--text);
+                font-family: 'Segoe UI', 'Aptos', sans-serif;
+                line-height: 1.5;
+                letter-spacing: 0;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100%;
+                background:
+                    linear-gradient(180deg, rgba(6, 16, 15, 0.1), rgba(6, 16, 15, 0.96) 42%, #06100f 100%), #06100f;
+            }
+
+            a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+            img,
+            video {
+                max-width: 100%;
+                display: block;
+            }
+
+            .shell {
+                width: min(1160px, calc(100% - 36px));
+                margin: 0 auto;
+            }
+
+            .hero {
+                position: relative;
+                min-height: min(860px, 88vh);
+                display: grid;
+                align-items: center;
+                overflow: hidden;
+                isolation: isolate;
+            }
+
+            .hero::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background:
+                    linear-gradient(180deg, rgba(6, 16, 15, 0.98) 0, rgba(6, 16, 15, 0.86) 12%, transparent 34%),
+                    linear-gradient(90deg, rgba(6, 16, 15, 0.92), rgba(6, 16, 15, 0.58) 48%, rgba(6, 16, 15, 0.76)),
+                    url('recruiter-assets/semantic-demo-county-view-motion410-clean.png') center 44% / cover no-repeat;
+                filter: saturate(1.06) contrast(1.08);
+                transform: scale(1.02);
+                z-index: -2;
+            }
+
+            .hero::after {
+                content: '';
+                position: absolute;
+                inset: auto 0 0;
+                height: 28%;
+                background: linear-gradient(180deg, transparent, var(--ink));
+                z-index: -1;
+            }
+
+            .nav {
+                position: absolute;
+                top: 24px;
+                left: 0;
+                right: 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 18px;
+                z-index: 2;
+            }
+
+            .brand {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                min-height: 44px;
+                color: rgba(237, 247, 242, 0.86);
+                font-weight: 700;
+            }
+
+            .nav-actions {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                gap: 10px;
+            }
+
+            .button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 44px;
+                padding: 0 18px;
+                border-radius: 999px;
+                border: 1px solid rgba(237, 247, 242, 0.16);
+                background: rgba(8, 16, 18, 0.72);
+                color: var(--text);
+                font-weight: 800;
+                font-size: 14px;
+                letter-spacing: 0.01em;
+                transition:
+                    transform 160ms ease,
+                    border-color 160ms ease,
+                    background 160ms ease;
+            }
+
+            .button:hover,
+            .button:focus-visible {
+                transform: translateY(-1px);
+                border-color: rgba(97, 216, 202, 0.62);
+                outline: none;
+            }
+
+            .button.primary {
+                background: var(--cyan);
+                border-color: rgba(97, 216, 202, 0.8);
+                color: #041111;
+            }
+
+            .hero-content {
+                padding: 118px 0 76px;
+                max-width: 900px;
+            }
+
+            .eyebrow {
+                color: var(--gold);
+                font-size: 13px;
+                font-weight: 900;
+                text-transform: uppercase;
+                margin: 0 0 16px;
+            }
+
+            h1,
+            h2,
+            h3,
+            p {
+                margin-top: 0;
+            }
+
+            h1 {
+                margin-bottom: 18px;
+                font-family: Georgia, 'Times New Roman', serif;
+                font-size: clamp(46px, 5.8vw, 78px);
+                line-height: 0.98;
+                font-weight: 700;
+                max-width: 1020px;
+                text-wrap: balance;
+            }
+
+            .hero-lede {
+                margin-bottom: 28px;
+                max-width: 720px;
+                color: rgba(237, 247, 242, 0.86);
+                font-size: clamp(18px, 2.1vw, 25px);
+                line-height: 1.35;
+            }
+
+            .hero-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                margin-bottom: 34px;
+            }
+
+            .stats {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 14px;
+                max-width: 860px;
+            }
+
+            .stat {
+                border-top: 1px solid rgba(237, 247, 242, 0.22);
+                padding-top: 12px;
+            }
+
+            .stat strong {
+                display: block;
+                color: var(--text);
+                font-size: clamp(20px, 3vw, 30px);
+                line-height: 1;
+            }
+
+            .stat span {
+                display: block;
+                margin-top: 7px;
+                color: var(--muted);
+                font-size: 13px;
+            }
+
+            section {
+                padding: 78px 0;
+            }
+
+            .section-head {
+                max-width: 780px;
+                margin-bottom: 30px;
+            }
+
+            .section-kicker {
+                margin-bottom: 9px;
+                color: var(--coral);
+                font-size: 13px;
+                font-weight: 900;
+                text-transform: uppercase;
+            }
+
+            h2 {
+                margin-bottom: 14px;
+                font-family: Georgia, 'Times New Roman', serif;
+                font-size: clamp(34px, 4.2vw, 54px);
+                line-height: 1.04;
+                text-wrap: balance;
+            }
+
+            .section-head p {
+                color: var(--muted);
+                font-size: 18px;
+                max-width: 700px;
+            }
+
+            .demo-reel {
+                display: grid;
+                grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+                gap: 22px;
+                align-items: start;
+            }
+
+            .media-frame {
+                align-self: start;
+                border: 1px solid rgba(97, 216, 202, 0.26);
+                border-radius: 8px;
+                overflow: hidden;
+                background: rgba(0, 0, 0, 0.32);
+                box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+                line-height: 0;
+            }
+
+            .media-frame video,
+            .media-frame img {
+                display: block;
+                width: 100%;
+                height: auto;
+                aspect-ratio: 16 / 9;
+                object-fit: cover;
+                background: #030909;
+            }
+
+            .path {
+                display: grid;
+                gap: 10px;
+                align-content: start;
+            }
+
+            .step {
+                padding: 22px 24px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                background: var(--panel-soft);
+            }
+
+            .step b {
+                display: block;
+                margin-bottom: 6px;
+                color: var(--gold);
+            }
+
+            .step p {
+                margin: 0;
+                color: var(--muted);
+                font-size: 15px;
+            }
+
+            .proof-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 16px;
+            }
+
+            .proof {
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                overflow: hidden;
+                background: var(--panel);
+                box-shadow: 0 16px 44px rgba(0, 0, 0, 0.2);
+                transition:
+                    transform 180ms ease,
+                    box-shadow 180ms ease,
+                    border-color 180ms ease;
+            }
+
+            .proof img {
+                width: 100%;
+                aspect-ratio: 16 / 10;
+                object-fit: cover;
+                border-bottom: 1px solid rgba(237, 247, 242, 0.1);
+                filter: brightness(1.08) contrast(1.04);
+                transition: transform 240ms ease;
+            }
+
+            .proof:hover,
+            .proof:focus-within {
+                transform: translateY(-3px);
+                border-color: rgba(97, 216, 202, 0.34);
+                box-shadow: 0 22px 64px rgba(0, 0, 0, 0.34);
+            }
+
+            .proof:hover img,
+            .proof:focus-within img {
+                transform: scale(1.025);
+            }
+
+            .proof-copy {
+                padding: 18px;
+                min-height: 120px;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .proof-copy h3 {
+                margin-bottom: 7px;
+                font-size: 18px;
+            }
+
+            .proof-copy p {
+                margin: 0;
+                color: var(--muted);
+                font-size: 15px;
+            }
+
+            .build-grid {
+                display: grid;
+                grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+                gap: 26px;
+                align-items: start;
+            }
+
+            .build-narrative .section-head {
+                margin-bottom: 24px;
+            }
+
+            .callout {
+                padding: 28px;
+                border: 1px solid rgba(226, 198, 106, 0.28);
+                border-radius: 8px;
+                background:
+                    radial-gradient(circle at 100% 0, rgba(226, 198, 106, 0.12), transparent 42%), var(--panel-strong);
+            }
+
+            .callout p {
+                margin-bottom: 0;
+                color: rgba(237, 247, 242, 0.82);
+                font-size: 18px;
+            }
+
+            .callout p + p {
+                margin-top: 18px;
+                padding-top: 18px;
+                border-top: 1px solid rgba(237, 247, 242, 0.1);
+                color: var(--muted);
+                font-size: 16px;
+            }
+
+            .build-points {
+                margin-top: 28px;
+                width: min(860px, calc(100% - 36px));
+            }
+
+            .bullets {
+                display: grid;
+                gap: 12px;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            .bullets li {
+                display: grid;
+                grid-template-columns: 18px minmax(0, 1fr);
+                gap: 12px;
+                color: var(--muted);
+            }
+
+            .bullets li::before {
+                content: '';
+                width: 9px;
+                height: 9px;
+                margin-top: 8px;
+                border-radius: 50%;
+                background: var(--moss);
+                box-shadow: 0 0 18px rgba(139, 191, 118, 0.4);
+            }
+
+            .launch-band {
+                padding: 76px 0;
+                border-top: 1px solid rgba(97, 216, 202, 0.18);
+                border-bottom: 1px solid rgba(97, 216, 202, 0.12);
+                background:
+                    linear-gradient(135deg, rgba(97, 216, 202, 0.1), rgba(226, 198, 106, 0.05)), rgba(7, 19, 19, 0.72);
+            }
+
+            .launch {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 28px;
+                align-items: center;
+            }
+
+            .launch h2 {
+                margin-bottom: 12px;
+            }
+
+            .launch p {
+                width: min(720px, 100%);
+                margin: 0;
+                color: var(--muted);
+                font-size: 18px;
+            }
+
+            footer {
+                padding: 30px 0 38px;
+                border-top: 1px solid rgba(150, 220, 206, 0.14);
+                color: var(--quiet);
+                font-size: 14px;
+                text-align: center;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .button {
+                    transition: none;
+                }
+
+                .proof,
+                .proof img {
+                    transition: none;
+                }
+            }
+
+            @media (max-width: 880px) {
+                .hero {
+                    min-height: auto;
+                }
+
+                .nav {
+                    align-items: flex-start;
+                }
+
+                .hero-content {
+                    padding: 118px 0 70px;
+                }
+
+                .stats,
+                .proof-grid,
+                .build-grid,
+                .demo-reel {
+                    grid-template-columns: 1fr;
+                }
+
+                .stats {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .launch {
+                    grid-template-columns: 1fr;
+                    gap: 20px;
+                }
+            }
+
+            @media (max-width: 540px) {
+                .shell {
+                    width: min(100% - 24px, 1160px);
+                }
+
+                .nav {
+                    position: static;
+                    padding-top: 16px;
+                    align-items: center;
+                }
+
+                .brand {
+                    min-width: 0;
+                }
+
+                .brand span:last-child {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+
+                .nav-actions {
+                    display: none;
+                }
+
+                .hero-content {
+                    padding: 68px 0 50px;
+                }
+
+                h1 {
+                    font-size: clamp(36px, 10.2vw, 48px);
+                }
+
+                .hero-lede,
+                .section-head p,
+                .launch p {
+                    font-size: 16px;
+                }
+
+                section {
+                    padding: 58px 0;
+                }
+
+                .stats {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .stat strong {
+                    font-size: 28px;
+                }
+
+                .stat span {
+                    font-size: 12px;
+                }
+
+                .launch-band {
+                    padding: 58px 0;
+                }
+            }
+
+            @media (max-width: 360px) {
+                .hero-content {
+                    padding: 44px 0 34px;
+                }
+
+                h1 {
+                    font-size: clamp(32px, 9.8vw, 40px);
+                    line-height: 1.02;
+                }
+
+                .hero-lede {
+                    margin-bottom: 20px;
+                    font-size: 15px;
+                    line-height: 1.35;
+                }
+
+                .hero-actions .button:not(.primary),
+                .stats {
+                    display: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="nav" aria-label="Primary">
+            <a class="brand" href="/">
+                <span class="brand-mark">MC</span>
+                <span>McCullough Cloud</span>
+            </a>
+            <div class="nav-actions">
+                <a href="/#work">Work</a>
+                <a href="/#systems">Operating Model</a>
+                <a href="/cloudscan/">CloudScan</a>
+                <a href="https://github.com/GalToast" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a
+                    href="https://www.linkedin.com/in/fred-mccullough-02981a38a"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >LinkedIn</a
+                >
+                <a href="https://mccullough.digital/" target="_blank" rel="noopener noreferrer">Studio</a>
+                <a
+                    class="nav-contact"
+                    href="https://mccullough.digital/contact/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Contact</a
+                >
             </div>
-            <div class="step">
-              <b>2. Search for a need</b>
-              <p>Typing “coffee” brings the most relevant businesses forward without reducing the demo to a flat table.</p>
-            </div>
-            <div class="step">
-              <b>3. Enter a neighborhood</b>
-              <p>The selected business becomes an anchor, nearby businesses glow, and the lines show semantic connections.</p>
-            </div>
-            <div class="step">
-              <b>4. Open the map</b>
-              <p>The focused record carries into terrain mode, then returns to the network without losing context.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+        </nav>
 
-    <section>
-      <div class="shell">
-        <div class="section-head">
-          <p class="section-kicker">Working surfaces</p>
-          <h2>Built as a real interactive system.</h2>
-          <p>
-            The point is not a static chart. The explorer has separate states for full-network browsing, search focus, neighborhood walking, and map return.
-          </p>
-        </div>
-        <div class="proof-grid">
-          <article class="proof">
-            <img src="recruiter-assets/semantic-demo-county-view-motion410-clean.png" alt="County-wide semantic network view with thousands of business nodes." />
-            <div class="proof-copy">
-              <h3>County view</h3>
-              <p>A dense overview keeps the full record set visible while the interface explains what each mode changes.</p>
+        <header class="hero">
+            <div class="shell hero-content">
+                <p class="eyebrow">Portfolio case study</p>
+                <h1>Montgomery County Semantic Explorer</h1>
+                <p class="hero-lede">
+                    A browser-based semantic explorer over 8,406 local business records. Search by need, focus one
+                    business, walk similar neighborhoods, and carry that record into a live map.
+                </p>
+                <div class="hero-actions">
+                    <a class="button primary" href="vector-explorer-polished.html">Open the live explorer</a>
+                    <a class="button" href="#how">Read the build notes</a>
+                    <a
+                        class="button"
+                        href="https://github.com/GalToast/semantic-demo"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >View the repo</a
+                    >
+                </div>
+                <div class="stats" aria-label="Project facts">
+                    <div class="stat"><strong>8,406</strong><span>local business records</span></div>
+                    <div class="stat"><strong>4</strong><span>ways to read the network</span></div>
+                    <div class="stat"><strong>Mobile</strong><span>small-screen layout pass</span></div>
+                    <div class="stat"><strong>QA</strong><span>visual + runtime passes</span></div>
+                </div>
             </div>
-          </article>
-          <article class="proof">
-            <img src="recruiter-assets/semantic-demo-neighborhood.png" alt="Focused semantic neighborhood around a coffee business." />
-            <div class="proof-copy">
-              <h3>Similarity walk</h3>
-              <p>Focused neighborhoods make semantic relationships inspectable instead of leaving the graph as a decorative cluster.</p>
+        </header>
+
+        <main>
+            <section id="walkthrough">
+                <div class="shell">
+                    <div class="section-head">
+                        <p class="section-kicker">The review path</p>
+                        <h2>What to notice before you click.</h2>
+                        <p>
+                            The live app is intentionally dense. This is the shortest path through the experience:
+                            county context, search, focus, semantic neighborhood, and map handoff.
+                        </p>
+                    </div>
+                    <div class="demo-reel">
+                        <div class="media-frame">
+                            <video
+                                controls
+                                playsinline
+                                preload="metadata"
+                                poster="recruiter-assets/semantic-demo-county-view-motion410-clean.png"
+                                aria-label="Guided walkthrough of the live semantic explorer"
+                            >
+                                <source
+                                    src="recruiter-assets/semantic-demo-guided-walkthrough-motion414-websafe-candidate.mp4?v=20260505-motion414-websafe"
+                                    type="video/mp4"
+                                />
+                                <source
+                                    src="recruiter-assets/semantic-demo-guided-walkthrough-narrated-music.webm?v=20260509-webm-mime"
+                                    type="video/webm"
+                                />
+                                <a href="vector-explorer-polished.html">Open the live semantic explorer</a>
+                            </video>
+                        </div>
+                        <div class="path" aria-label="Guided demo path">
+                            <div class="step">
+                                <b>1. Start with county context</b>
+                                <p>
+                                    All 8,406 records stay visible so the search result has a place in the larger
+                                    network.
+                                </p>
+                            </div>
+                            <div class="step">
+                                <b>2. Search for a need</b>
+                                <p>
+                                    Typing “coffee” brings the most relevant businesses forward without reducing the
+                                    demo to a flat table.
+                                </p>
+                            </div>
+                            <div class="step">
+                                <b>3. Enter a neighborhood</b>
+                                <p>
+                                    The selected business becomes an anchor, nearby businesses glow, and the lines show
+                                    semantic connections.
+                                </p>
+                            </div>
+                            <div class="step">
+                                <b>4. Open the map</b>
+                                <p>
+                                    The focused record carries into terrain mode, then returns to the network without
+                                    losing context.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="shell">
+                    <div class="section-head">
+                        <p class="section-kicker">Working surfaces</p>
+                        <h2>Built as a real interactive system.</h2>
+                        <p>
+                            The point is not a static chart. The explorer has separate states for full-network browsing,
+                            search focus, neighborhood walking, and map return.
+                        </p>
+                    </div>
+                    <div class="proof-grid">
+                        <article class="proof">
+                            <img
+                                src="recruiter-assets/semantic-demo-county-view-motion410-clean.png"
+                                alt="County-wide semantic network view with thousands of business nodes."
+                            />
+                            <div class="proof-copy">
+                                <h3>County view</h3>
+                                <p>
+                                    A dense overview keeps the full record set visible while the interface explains what
+                                    each mode changes.
+                                </p>
+                            </div>
+                        </article>
+                        <article class="proof">
+                            <img
+                                src="recruiter-assets/semantic-demo-neighborhood.png"
+                                alt="Focused semantic neighborhood around a coffee business."
+                            />
+                            <div class="proof-copy">
+                                <h3>Similarity walk</h3>
+                                <p>
+                                    Focused neighborhoods make semantic relationships inspectable instead of leaving the
+                                    graph as a decorative cluster.
+                                </p>
+                            </div>
+                        </article>
+                        <article class="proof">
+                            <img
+                                src="recruiter-assets/semantic-demo-map.png"
+                                alt="Focused business carried into map mode."
+                            />
+                            <div class="proof-copy">
+                                <h3>Map handoff</h3>
+                                <p>
+                                    The selected business can land on terrain and return to the network, preserving the
+                                    visitor’s place.
+                                </p>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section id="how">
+                <div class="shell build-grid">
+                    <div class="build-narrative">
+                        <div class="section-head">
+                            <p class="section-kicker">Technical scope</p>
+                            <h2>What this exercised.</h2>
+                            <p>
+                                This is a portfolio artifact for dense data UX: semantic search, browser rendering,
+                                state choreography, mobile hardening, and live deployment discipline.
+                            </p>
+                        </div>
+                        <ul class="bullets">
+                            <li>
+                                <span
+                                    >Rendered a high-density local business graph with responsive overlays and
+                                    touch-safe controls.</span
+                                >
+                            </li>
+                            <li>
+                                <span
+                                    >Separated exploration modes so website/contact signals, connector records, and
+                                    semantic neighborhoods are understandable to a first-time visitor.</span
+                                >
+                            </li>
+                            <li>
+                                <span
+                                    >Hardened the live interface with visual, control, runtime, and small-screen layout
+                                    checks before presenting it publicly.</span
+                                >
+                            </li>
+                            <li>
+                                <span
+                                    >Kept the public story honest: this is a working technical demo over real local
+                                    records, not a sales page.</span
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="callout">
+                        <p>
+                            The core achievement is simple: public business records become a navigable network, and the
+                            interface keeps the visitor oriented while moving between search, graph, neighborhood, and
+                            map.
+                        </p>
+                        <p>
+                            Stack: HTML, CSS, JavaScript, Three.js, Leaflet, public record data, and generated semantic
+                            thread artifacts.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="shell build-grid">
+                    <div class="build-narrative">
+                        <div class="section-head">
+                            <p class="section-kicker">Under the hood</p>
+                            <h2>The visual layer sits on a data pipeline.</h2>
+                            <p>
+                                The explorer is the public surface of a LeadOps workflow: local records are cleaned,
+                                public-safe fields are exported, semantic artifacts are generated, and the browser
+                                renders those artifacts as searchable neighborhoods.
+                            </p>
+                        </div>
+                        <ul class="bullets">
+                            <li>
+                                <span
+                                    >LeadOps keeps the raw business corpus, research notes, and audit signals separate
+                                    from the public demo export.</span
+                                >
+                            </li>
+                            <li>
+                                <span
+                                    >The public artifact exposes safe names, locations, categories, summaries, and
+                                    semantic neighbors for 8,406 records.</span
+                                >
+                            </li>
+                            <li>
+                                <span
+                                    >Generated thread files give each record nearby candidates so the app can show
+                                    relationships instead of isolated search results.</span
+                                >
+                            </li>
+                            <li>
+                                <span
+                                    >Three.js handles the dense graph, Leaflet handles terrain handoff, and the UI keeps
+                                    state when visitors move between modes.</span
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="callout">
+                        <p>
+                            The technical takeaway: this is not just a polished front end. It is a shipped interface
+                            over a structured data workflow with public/private boundaries, generated semantic context,
+                            and browser-level QA.
+                        </p>
+                        <p>
+                            Proof path: LeadOps corpus → public-safe export → semantic search and thread artifacts →
+                            live WebGL explorer.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="launch-band">
+                <div class="shell launch">
+                    <div>
+                        <h2>Try the live explorer.</h2>
+                        <p>
+                            Start in County View, search for a familiar need like “coffee” or “roof repair,” then enter
+                            the neighborhood around any result.
+                        </p>
+                    </div>
+                    <a class="button primary" href="vector-explorer-polished.html">Launch semantic demo</a>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="shell">
+                Built by Fred McCullough as a case study for a live semantic visualization demo. Internal verification
+                logs are kept separately from this public page.
+                <a href="https://github.com/GalToast/semantic-demo" target="_blank" rel="noopener noreferrer"
+                    >View the repo</a
+                >.
             </div>
-          </article>
-          <article class="proof">
-            <img src="recruiter-assets/semantic-demo-map.png" alt="Focused business carried into map mode." />
-            <div class="proof-copy">
-              <h3>Map handoff</h3>
-              <p>The selected business can land on terrain and return to the network, preserving the visitor’s place.</p>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section id="how">
-      <div class="shell build-grid">
-        <div class="build-narrative">
-          <div class="section-head">
-            <p class="section-kicker">Technical scope</p>
-            <h2>What this exercised.</h2>
-            <p>
-              This is a portfolio artifact for dense data UX: semantic search, browser rendering, state choreography, mobile hardening, and live deployment discipline.
-            </p>
-          </div>
-          <ul class="bullets">
-            <li><span>Rendered a high-density local business graph with responsive overlays and touch-safe controls.</span></li>
-            <li><span>Separated exploration modes so website/contact signals, connector records, and semantic neighborhoods are understandable to a first-time visitor.</span></li>
-            <li><span>Hardened the live interface with visual, control, runtime, and small-screen layout checks before presenting it publicly.</span></li>
-            <li><span>Kept the public story honest: this is a working technical demo over real local records, not a sales page.</span></li>
-          </ul>
-        </div>
-        <div class="callout">
-          <p>
-            The core achievement is simple: public business records become a navigable network, and the interface keeps the visitor oriented while moving between search, graph, neighborhood, and map.
-          </p>
-          <p>
-            Stack: HTML, CSS, JavaScript, Three.js, Leaflet, public record data, and generated semantic thread artifacts.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="shell build-grid">
-        <div class="build-narrative">
-          <div class="section-head">
-            <p class="section-kicker">Under the hood</p>
-            <h2>The visual layer sits on a data pipeline.</h2>
-            <p>
-              The explorer is the public surface of a LeadOps workflow: local records are cleaned,
-              public-safe fields are exported, semantic artifacts are generated, and the browser renders
-              those artifacts as searchable neighborhoods.
-            </p>
-          </div>
-          <ul class="bullets">
-            <li><span>LeadOps keeps the raw business corpus, research notes, and audit signals separate from the public demo export.</span></li>
-            <li><span>The public artifact exposes safe names, locations, categories, summaries, and semantic neighbors for 8,406 records.</span></li>
-            <li><span>Generated thread files give each record nearby candidates so the app can show relationships instead of isolated search results.</span></li>
-            <li><span>Three.js handles the dense graph, Leaflet handles terrain handoff, and the UI keeps state when visitors move between modes.</span></li>
-          </ul>
-        </div>
-        <div class="callout">
-          <p>
-            The technical takeaway: this is not just a polished front end. It is a shipped interface over a structured
-            data workflow with public/private boundaries, generated semantic context, and browser-level QA.
-          </p>
-          <p>
-            Proof path: LeadOps corpus → public-safe export → semantic search and thread artifacts → live WebGL explorer.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <section class="launch-band">
-      <div class="shell launch">
-        <div>
-          <h2>Try the live explorer.</h2>
-          <p>
-            Start in County View, search for a familiar need like “coffee” or “roof repair,” then enter the neighborhood around any result.
-          </p>
-        </div>
-        <a class="button primary" href="vector-explorer-polished.html">Launch semantic demo</a>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <div class="shell">
-      Built by Fred McCullough as a case study for a live semantic visualization demo. Internal verification logs are kept separately from this public page. <a href="https://github.com/GalToast/semantic-demo" target="_blank" rel="noopener noreferrer">View the repo</a>.
-    </div>
-  </footer>
-</body>
+        </footer>
+    </body>
 </html>

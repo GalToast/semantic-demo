@@ -14,29 +14,29 @@ const READER_FILES = readdirSync(UNIT).filter((f) => f.endsWith('.test.ts'))
 
 // Registry: reader-basename → the url-restore source file it MUST reference.
 const REGISTRY: Record<string, string> = {
-  'a3-3-invalid-anchor-fallback.test.ts': 'url-restore-deep-link.ts',
-  'url-state-no-synthetic-input.test.ts': 'url-restore-search.ts',
-  'url-state-options-contract.test.ts': '@lib/orchestration/url-restore',
+    'a3-3-invalid-anchor-fallback.test.ts': 'url-restore-deep-link.ts',
+    'url-state-no-synthetic-input.test.ts': 'url-restore-search.ts',
+    'url-state-options-contract.test.ts': '@lib/orchestration/url-restore'
 }
 const SELF = 'url-split-protocol-registry.test.ts'
 
 test('every url-restore reader is registered (no silent readers)', () => {
-  const readers = READER_FILES.filter((f) => {
-    if (f === SELF) return false
-    const src = readFileSync(join(UNIT, f), 'utf8')
-    return src.includes('url-restore')
-  })
-  for (const r of readers) {
-    expect(Object.keys(REGISTRY), `unregistered reader ${r} — add it to REGISTRY`).toContain(r)
-  }
+    const readers = READER_FILES.filter((f) => {
+        if (f === SELF) return false
+        const src = readFileSync(join(UNIT, f), 'utf8')
+        return src.includes('url-restore')
+    })
+    for (const r of readers) {
+        expect(Object.keys(REGISTRY), `unregistered reader ${r} — add it to REGISTRY`).toContain(r)
+    }
 })
 
 test('registered readers still point at their registered file (drift detector)', () => {
-  for (const [reader, expectedFile] of Object.entries(REGISTRY)) {
-    const src = readFileSync(join(UNIT, reader), 'utf8')
-    expect(
-      src.includes(expectedFile),
-      `${reader} no longer references ${expectedFile} — the split moved: update REGISTRY + the pointer in ${reader}`,
-    ).toBe(true)
-  }
+    for (const [reader, expectedFile] of Object.entries(REGISTRY)) {
+        const src = readFileSync(join(UNIT, reader), 'utf8')
+        expect(
+            src.includes(expectedFile),
+            `${reader} no longer references ${expectedFile} — the split moved: update REGISTRY + the pointer in ${reader}`
+        ).toBe(true)
+    }
 })
