@@ -520,6 +520,55 @@ export function setBusinessData(result: BusinessDataResult): void {
         businessLoaded: true,
         error: null
     }))
+
+    // W67-D1: dev-only dual-write consistency assertion. setBusinessData is the
+    // ONLY writer to both the rune stores AND the appState mirrors; if a future
+    // refactor updates one side without the other, legacy selectors (getPoints,
+    // focusOnNode) and the rune consumers diverge silently. Catch it here
+    // rather than in production. Gated on import.meta.env.DEV so it never
+    // ships.
+    if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+        verifyDataMirrorConsistency(result)
+    }
+}
+
+/**
+ * W67-D1: Assert the rune stores and appState mirrors agree after a dual-write.
+ * Reads the SAME fields setBusinessData writes — if the lists diverge in
+ * length or content, legacy engine selectors and rune consumers see different
+ * data. Dev-only; throws so a refactor that breaks the mirror fails loudly
+ * instead of shipping a silent split-brain.
+ */
+function verifyDataMirrorConsistency(result: BusinessDataResult): void {
+    const checks: Array<[string, unknown, unknown]> = [
+        ['businessRecords', businessRecords.getSnapshot(), appState.points],
+        ['positionBuffer', positionBuffer.getSnapshot(), appState.rawPositionsBuffer],
+        ['clustersBuffer', clustersBuffer.getSnapshot(), appState.rawClustersBuffer],
+        ['pointIndexByLeadId', pointIndexByLeadId.getSnapshot(), appState.pointIndexByLeadId],
+        ['leadEnrichment', leadEnrichment.getSnapshot(), appState.leadEnrichment]
+    ]
+    for (const [name, runeVal, mirrorVal] of checks) {
+        if (runeVal !== mirrorVal) {
+            throw new Error(
+                `[data-store] Dual-write split-brain: ${name} rune store (${describeValue(runeVal)}) ` +
+                    `!= appState mirror (${describeValue(mirrorVal)}). setBusinessData must write both sides.`
+            )
+        }
+    }
+}
+
+function describeValue(v: unknown): string {
+    if (v == null) return 'null'
+    if (Array.isArray(v)) return `array[${v.length}]`
+    if (v instanceof Map) return `map[${v.size}]`
+    if (v instanceof Set) return `set[${v.size}]`
+    if (
+        v instanceof ArrayBuffer ||
+        (v && typeof v === 'object' && 'length' in v && typeof (v as { length: number }).length === 'number')
+    ) {
+        return `typedarray[${(v as { length: number }).length}]`
+    }
+    return typeof v
 }
 
 /**
@@ -547,9 +596,7 @@ export async function loadLeadEnrichment(): Promise<Record<string, LeadEnrichmen
     // Cross-chunk singleton (W72-H3): read the in-flight promise from the
     // window slot so a duplicated module shares one fetch instead of N.
     const pending = getWindowSlot(LEAD_ENRICHMENT_PROMISE_SLOT) as
-        | Promise<Record<string, LeadEnrichment> | null>
-        | null
-        | undefined
+        Promise<Record<string, LeadEnrichment> | null> | null | undefined
     if (pending) return pending
 
     const promise = loadLeadEnrichmentData()
