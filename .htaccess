@@ -91,12 +91,12 @@ RewriteRule ^reports/ - [F,L]
     # brotli twin (preferred)
     RewriteCond %{HTTP:Accept-Encoding} br
     RewriteCond %{REQUEST_FILENAME}\.br -f
-    RewriteCond %{REQUEST_FILENAME} \.(js|css|json|svg|woff2|html)$ [NC]
+    RewriteCond %{REQUEST_FILENAME} \.(js|css|json|svg|woff2|html|dat)$ [NC]
     RewriteRule ^(.*)$ $1.br [L,QSA]
     # gzip twin
     RewriteCond %{HTTP:Accept-Encoding} gzip
     RewriteCond %{REQUEST_FILENAME}\.gz -f
-    RewriteCond %{REQUEST_FILENAME} \.(js|css|json|svg|woff2|html)$ [NC]
+    RewriteCond %{REQUEST_FILENAME} \.(js|css|json|svg|woff2|html|dat)$ [NC]
     RewriteRule ^(.*)$ $1.gz [L,QSA]
 </IfModule>
 <IfModule mod_headers.c>
@@ -110,6 +110,7 @@ RewriteRule ^reports/ - [F,L]
         <FilesMatch "\.json\.br$"><Header set Content-Type application/json></FilesMatch>
         <FilesMatch "\.svg\.br$"><Header set Content-Type image/svg+xml></FilesMatch>
         <FilesMatch "\.woff2\.br$"><Header set Content-Type font/woff2></FilesMatch>
+        <FilesMatch "\.dat\.br$"><Header set Content-Type application/octet-stream></FilesMatch>
         <FilesMatch "\.html\.br$"><Header set Content-Type text/html></FilesMatch>
     </FilesMatch>
     <FilesMatch "\.gz$">
@@ -120,6 +121,7 @@ RewriteRule ^reports/ - [F,L]
         <FilesMatch "\.json\.gz$"><Header set Content-Type application/json></FilesMatch>
         <FilesMatch "\.svg\.gz$"><Header set Content-Type image/svg+xml></FilesMatch>
         <FilesMatch "\.woff2\.gz$"><Header set Content-Type font/woff2></FilesMatch>
+        <FilesMatch "\.dat\.gz$"><Header set Content-Type application/octet-stream></FilesMatch>
         <FilesMatch "\.html\.gz$"><Header set Content-Type text/html></FilesMatch>
     </FilesMatch>
 </IfModule>
