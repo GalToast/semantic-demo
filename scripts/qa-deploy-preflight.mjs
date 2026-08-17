@@ -200,10 +200,31 @@ function checkGateCompare() {
   }
 }
 
+// ── (6) dist self-consistency (split-brain detector, 2026-08-17) ────────────
+// Parallel builds that race the same tree can leave index.html pointing at a
+// DIFFERENT build's assets — every JS 404s and the app is a shell. This gate
+// cross-checks every src/href in index.html against the on-disk tree.
+
+function checkDistIntegrity() {
+  const idx = join(DIST, 'index.html')
+  if (!existsSync(idx)) {
+    check('dist integrity', false, 'index.html missing')
+    return
+  }
+  const html = readFileSync(idx, 'utf8')
+  const refs = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css|woff2?))"[^"]*/g)]
+    .map((m) => m[1])
+    .filter((u) => !u.startsWith('data:'))
+  const missing = refs.filter((u) => !existsSync(join(DIST, u)))
+  const ok = missing.length === 0
+  check('dist integrity', ok, ok ? `${refs.length} refs all present` : `MISSING: ${missing.join(', ')}`)
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 ensureDist()
 checkTwins()
+checkDistIntegrity()
 checkHtaccess()
 checkVerifyScript()
 checkGateCompare()
