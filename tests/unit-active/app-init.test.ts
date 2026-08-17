@@ -182,7 +182,11 @@ describe('appInit — happy path', () => {
 
         cleanup()
 
-        expect(mock.disposeJourneyFocusTimers).toHaveBeenCalledOnce()
+        // app-init's teardown fires the lazy dispose via void import(...).then
+        // — a microtask; wait for it to land before asserting (2026-08-17).
+        await vi.waitFor(() => {
+            expect(mock.disposeJourneyFocusTimers).toHaveBeenCalledOnce()
+        })
     })
 
     it('sets isAppInitComplete=true after init resolves', async () => {
