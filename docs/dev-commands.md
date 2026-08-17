@@ -44,6 +44,18 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
   must copy them (`cp <main>/src/data.dat src/` + `.gz`) and `npm run build` before
   data-based suites (3D/journey/hover) — otherwise `GET /data.dat` → 404 → `points:0`
   and every data-dependent test dies at the boot gate with no obvious cause.
+- **Orphan-safe pattern (2026-08-16 lesson):** killing the parent bash job can ORPHAN the Vite child on 8796 → the next run hits "port already used" and hangs. Worse, an 18-min hung run wedged the machine's loopback HTTP stack (localhost probes hang, `netstat`/`Get-NetTCPConnection` hang, `fuser` not installed, `taskkill` needs the PID). Avoid the whole problem by making Playwright NOT spawn its own server:
+
+    ```bash
+    # 1. Start the test server manually (or npm run qa:server:start)
+    node scripts/playwright-web-server.mjs &
+    # 2. TEST_BASE_URL set => playwright.config.js webServer=undefined, no own child spawned
+    TEST_BASE_URL=http://127.0.0.1:8796 SEMANTIC_FORCE_WEBGL_SOFTWARE=1 \
+      npx playwright test <file> --browser=chromium --workers=1 --timeout=30000
+    ```
+
+  When killing a playwright job, kill its Vite child too (or set `PLAYWRIGHT_REUSE_SERVER=1`). If loopback HTTP is already hung, the machine needs a **reboot** before any browser test will run — there is no in-place fix.
+
 - **Recovery — stop the exact PID on 8796 (never broad node groups), then re-run:**
 
     ```bash
@@ -135,6 +147,7 @@ PLAYWRIGHT_REUSE_SERVER=1 ONLY if you're certain the existing server serves a
 fresh dist. The `qa:3d:fresh` (build-first) variant remains the correctness gate.
 
 ### deep-link journey specs need the Vite DEV server (port 5173, IPv6 ::1)
+
 `tests/deep-link-focus-card-hit-journey.spec.js` hardcodes
 `TEST_BASE_URL || 'http://[::1]:5173'` — it does NOT use the 8796 test server.
 Running it needs a live Vite dev server:
@@ -145,6 +158,7 @@ restore verified GREEN under this oracle (2026-08-11: journey=focus-search, canv
 0×4xx). Don't "fix" the record path on the strength of this spec without 5173 up.
 
 ### qa:3d on Windows: the npm script env syntax breaks under cmd.exe
+
 `npm run qa:3d` sets `SEMANTIC_USE_D3D11=1 PLAYWRIGHT_STRICT_FRESH=1` UNIX-style →
 cmd.exe: "'SEMANTIC_USE_D3D11' is not recognized". Use the bash-native equivalent:
 `SEMANTIC_USE_D3D11=1 PLAYWRIGHT_STRICT_FRESH=1 npx playwright test tests/3d-*.spec.js --browser=chromium --workers=1`
