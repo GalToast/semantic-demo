@@ -647,8 +647,11 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
 
     const cacheBust = Math.floor(Date.now() / (1000 * 60 * 60))
     const requestUrls = [
-        buildAssetUrl(`data/semantic_threads.dat.bin?v=${cacheBust}`),
+        // UI-first: the pair-form 100,872-edge graph = the MANIFEST's contract
+        // (the manifest expects 100,872) AND carries the full label plane
+        // (thread_type/relationship_role/axis) that the thread UI renders.
         buildAssetUrl(`data/semantic_threads_ui.dat.bin?v=${cacheBust}`),
+        buildAssetUrl(`data/semantic_threads.dat.bin?v=${cacheBust}`),
         buildAssetUrl(`data/semantic_threads_ui.dat?v=${cacheBust}`),
         buildAssetUrl(`data/semantic_threads.dat?v=${cacheBust}`)
     ]
