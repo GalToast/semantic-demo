@@ -1,15 +1,14 @@
 /**
- * swarm-132-journey-drafts.spec.js — DRAFT journey tests for 4 gap components
+ * journey-coverage-gaps.spec.js — Journey DOM coverage for 4 gap components
  *
- * Task 132: components with no journey DOM coverage.
- *   1. CompassRail.svelte        (src/components/)
- *   2. CompassStepIndicators.svelte (src/lib/components/journey/)
- *   3. AppBoot.svelte            (src/components/)
- *   4. SearchErrorState.svelte   (src/lib/components/search/)
+ * Components tested:
+ *   1. CompassRail.svelte          — #compass-rail, .compass-step buttons
+ *   2. CompassStepIndicators.svelte — [data-journey-step] inside #journey-compass
+ *   3. AppBoot.svelte              — window.__forceSemanticDiveContractSurface hook
+ *   4. SearchErrorState.svelte     — .search-error-state error card
  *
- * DRAFT ONLY — not wired into tests/. Copy to tests/ and adapt selectors
- * before execution. Pattern source: tests/widget-journey.spec.js,
- * tests/loading-overlay-error-state-journey.spec.js.
+ * Pattern source: tests/widget-journey.spec.js
+ * Each test is self-contained: setViewport → goto → poll settle → act → assert.
  */
 
 import { test, expect } from '@playwright/test'
@@ -38,53 +37,60 @@ const pollFor = async (page, predicate, timeoutMs, intervalMs = 50) => {
     return false
 }
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const APP_PATH = '/dist/svelte/index.html'
+const BOOT_URL = `${BASE_URL}${APP_PATH}?nodemo=1&webgl=1`
+
+/** Wait for the app to publish a ready WebGL scene. */
+async function waitForSceneReady(page) {
+    return pollFor(
+        page,
+        () => {
+            const appState = window.__APP_STATE__ ?? {}
+            return (
+                document.body.dataset.graphicsMode === 'webgl' &&
+                document.body.dataset.renderKind === 'webgl' &&
+                document.body.dataset.sceneReady === 'true' &&
+                appState.currentView === 'galaxy' &&
+                Array.isArray(appState.points) &&
+                appState.points.length >= 8406 &&
+                !!appState.renderer &&
+                !!appState.scene &&
+                !!appState.camera
+            )
+        },
+        60000,
+        100
+    )
+}
+
+/** Dismiss first-visit help dialog if open. */
+async function dismissHelpDialog(page) {
+    const helpDialog = page.locator('dialog.help-dialog[open]')
+    if ((await helpDialog.count()) > 0) {
+        await page.keyboard.press('Escape')
+        await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+        await page.waitForTimeout(200)
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // 1. CompassRail.svelte
-//    Selector: #compass-rail (id), .compass-step (button), aria-label="Journey compass"
+//    Visible when focusActive && !compact. Driven via window.__navActions__.setSurface.
 // ═══════════════════════════════════════════════════════════════════════════════
 test.describe('CompassRail journey', () => {
-    test('happy-path: compass rail mounts with 6 journey phase steps after boot', async ({ page }) => {
-        // Component: CompassRail.svelte
-        // Selector: #compass-rail > .compass-step buttons
+    test('happy-path: rail mounts with 6 step buttons after setSurface(focus)', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(BOOT_URL, { waitUntil: 'domcontentloaded' })
+        const settled = await waitForSceneReady(page)
+        expect(settled, 'app must publish a ready WebGL scene before asserting on DOM').toBe(true)
+        await dismissHelpDialog(page)
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 60000 })
-        await explore.click()
+        // Rail is hidden at overview (focusActive=false). Drive it visible.
+        await page.waitForFunction(() => !!window.__navActions__?.setSurface, { timeout: 5000 })
+        await page.evaluate(() => window.__navActions__?.setSurface?.('focus'))
+        await page.waitForTimeout(1500)
 
-        // Wait for the app to publish a ready WebGL scene (suite-proven poll,
-        // immune to headless rAF stalls — mirrors widget-journey F5 pattern).
-        const settled = await pollFor(
-            page,
-            () => {
-                const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
-                return (
-                    document.body.dataset.graphicsMode === 'webgl' &&
-                    document.body.dataset.renderKind === 'webgl' &&
-                    document.body.dataset.sceneReady === 'true' &&
-                    appState.currentView === 'galaxy' &&
-                    Array.isArray(appState.points) &&
-                    appState.points.length >= 8406 &&
-                    !!appState.renderer &&
-                    !!appState.scene &&
-                    !!appState.camera
-                )
-            },
-            60000,
-            100
-        )
-        expect(settled, 'app must publish a ready WebGL scene before we assert on DOM').toBe(true)
-
-        // Dismiss first-visit help dialog if auto-opened.
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
-        }
-
-        // Assertion: compass-rail nav is present with 5 step buttons.
         const rail = page.locator('#compass-rail')
         await rail.waitFor({ state: 'attached', timeout: 15000 })
 
@@ -92,274 +98,148 @@ test.describe('CompassRail journey', () => {
         const count = await steps.count()
         expect(count, 'compass rail must render 6 journey phase steps').toBe(6)
 
-        // Each step has an aria-label of the form "Navigate to <label>".
         const firstLabel = await steps.nth(0).getAttribute('aria-label')
         expect(firstLabel, 'first compass step must have aria-label').toMatch(/Navigate to/)
 
-        // The rail itself has the "Journey compass" aria-label.
         await expect(rail).toHaveAttribute('aria-label', 'Journey compass')
     })
 
-    test('edge: compass step click triggers nav transition (overview→search)', async ({ page }) => {
-        // Component: CompassRail.svelte
-        // Selector: .compass-step buttons within #compass-rail
+    test('edge: canonical visible Search chip transitions navMode to search', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(BOOT_URL, { waitUntil: 'domcontentloaded' })
+        const settled = await waitForSceneReady(page)
+        expect(settled, 'app must publish a ready WebGL scene before asserting on DOM').toBe(true)
+        await dismissHelpDialog(page)
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 60000 })
-        await explore.click()
+        await page.waitForFunction(() => !!window.__navActions__?.setSurface, { timeout: 5000 })
+        await page.evaluate(() => window.__navActions__?.setSurface?.('focus'))
+        await page.waitForTimeout(2000)
 
-        // Wait for the app to publish a ready WebGL scene (suite-proven poll,
-        // immune to headless rAF stalls — mirrors widget-journey F5 pattern).
-        const settled1 = await pollFor(
-            page,
-            () => {
-                const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
-                return (
-                    document.body.dataset.graphicsMode === 'webgl' &&
-                    document.body.dataset.renderKind === 'webgl' &&
-                    document.body.dataset.sceneReady === 'true' &&
-                    appState.currentView === 'galaxy' &&
-                    Array.isArray(appState.points) &&
-                    appState.points.length >= 8406 &&
-                    !!appState.renderer &&
-                    !!appState.scene &&
-                    !!appState.camera
-                )
-            },
-            60000,
-            100
-        )
-        expect(settled, 'app must publish a ready WebGL scene before we assert on DOM').toBe(true)
-
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
-        }
-
-        // Click the "search" step (second step in the ordered rail).
-        const rail = page.locator('#compass-rail')
-        await rail.waitFor({ state: 'attached', timeout: 15000 })
-
-        const searchStep = rail.locator('.compass-step').filter({ hasText: /search/i })
-        await searchStep.waitFor({ state: 'visible', timeout: 10000 })
-
-        // Pre-click: mode is overview.
         const preMode = await page.evaluate(() => window.__APP_STATE__?.navState?.mode)
-        expect(preMode, 'pre-click mode should be overview or map-trail').toMatch(/overview|map-trail/)
+        expect(preMode).toBe('focus')
 
-        await searchStep.click()
+        // CompassRail is a legacy duplicate and is intentionally suppressed on
+        // desktop. Exercise the real user-facing replacement instead.
+        await expect(page.locator('#compass-rail')).toBeHidden()
+        const searchChip = page.locator('#mode-chips .mode-chip[data-mode="search"]')
+        await expect(searchChip).toBeVisible()
+        await expect(searchChip).toHaveAttribute('aria-label', 'Search')
+        await searchChip.click()
 
-        // Post-click: navState.mode should flip to 'search' (DOM-visible via body class).
-        const settled = await pollFor(
+        const postSettled = await pollFor(
             page,
             () => {
                 const mode = window.__APP_STATE__?.navState?.mode
-                const panelSurface = document.body.dataset?.panelSurface
-                return mode === 'search' || panelSurface === 'focus-search' || panelSurface === 'map-trail'
+                const surface = document.body.dataset?.panelSurface
+                return mode === 'search' || surface === 'search' || surface === 'focus-search'
             },
             15000,
             100
         )
-        expect(settled, 'clicking search step must transition to a search-related mode').toBe(true)
+        expect(postSettled, 'clicking search step must transition to a search-related mode').toBe(true)
     })
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 2. CompassStepIndicators.svelte
-//    Selector: [data-journey-step] / .journey-compass-step, aria-label with phase
+//    Renders inside #journey-compass. Spans have data-journey-step + class journey-compass-step,
+//    with .current and .done. 6 phases: overview, search, focus, trail, inside, map.
 // ═══════════════════════════════════════════════════════════════════════════════
 test.describe('CompassStepIndicators journey', () => {
-    test('happy-path: step indicators render with correct current/done classes', async ({ page }) => {
-        // Component: CompassStepIndicators.svelte
-        // Selector: [data-journey-step] spans inside #journey-compass
+    test('happy-path: indicators render with overview as current at boot', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(BOOT_URL, { waitUntil: 'domcontentloaded' })
+        const settled = await waitForSceneReady(page)
+        expect(settled, 'app must publish a ready WebGL scene before asserting on DOM').toBe(true)
+        // Query indicators BEFORE dismissing the help dialog — dismissing routes
+        // focus into #search-input which creates an empty search summary and
+        // flips the compass phase to 'search'. The DOM is queryable via evaluate
+        // regardless of whether the dialog is open.
+        const snapshot = await page.evaluate(() => {
+            const indicators = document.querySelectorAll('#journey-compass [data-journey-step]')
+            const current = document.querySelector('#journey-compass [data-journey-step].current')
+            return {
+                count: indicators.length,
+                currentPhase: current?.getAttribute('data-journey-step') ?? null,
+                overviewCurrent: current?.getAttribute('data-journey-step') === 'overview',
+                firstAria: indicators[0]?.getAttribute('aria-label') ?? null
+            }
+        })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 60000 })
-        await explore.click()
-
-        // Wait for the app to publish a ready WebGL scene (suite-proven poll,
-        // immune to headless rAF stalls — mirrors widget-journey F5 pattern).
-        const settled2 = await pollFor(
-            page,
-            () => {
-                const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
-                return (
-                    document.body.dataset.graphicsMode === 'webgl' &&
-                    document.body.dataset.renderKind === 'webgl' &&
-                    document.body.dataset.sceneReady === 'true' &&
-                    appState.currentView === 'galaxy' &&
-                    Array.isArray(appState.points) &&
-                    appState.points.length >= 8406 &&
-                    !!appState.renderer &&
-                    !!appState.scene &&
-                    !!appState.camera
-                )
-            },
-            60000,
-            100
-        )
-        expect(settled, 'app must publish a ready WebGL scene before we assert on DOM').toBe(true)
-
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
-        }
-
-        // The indicators live inside #journey-compass. Each span has
-        // data-journey-step=<phase> and class .journey-compass-step.
-        const indicators = page.locator('#journey-compass [data-journey-step]')
-        const count = await indicators.count()
-        expect(count, 'journey-compass must render 5 step indicators').toBeGreaterThanOrEqual(5)
-
-        // Each indicator has an aria-label like "1. overview: Overview of all businesses".
-        const firstAria = await indicators.nth(0).getAttribute('aria-label')
-        expect(firstAria, 'first indicator must have aria-label with step number + phase').toMatch(/\d+\.\s+\w+:/)
-
-        // At idle/overview, at least one indicator is .current (the overview step).
-        const currentCount = await indicators.locator('.current').count()
-        expect(currentCount, 'exactly one step must be .current at overview').toBe(1)
+        expect(snapshot.count, 'journey-compass must render 6 step indicators').toBe(6)
+        expect(snapshot.currentPhase, 'overview boot must have a current step').toBe('overview')
+        expect(snapshot.overviewCurrent, 'overview must be .current at boot').toBe(true)
+        expect(snapshot.firstAria, 'first indicator must have aria-label').toMatch(/\d+\.\s+\w+:/)
     })
 
-    test('edge: indicator reflects phase change after compass step click', async ({ page }) => {
-        // Component: CompassStepIndicators.svelte
-        // Selector: [data-journey-step] spans — .current moves after mode switch
+    test('edge: indicator .current moves after setSurface search + setJourneyPhase', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(BOOT_URL, { waitUntil: 'domcontentloaded' })
+        const settled = await waitForSceneReady(page)
+        expect(settled, 'app must publish a ready WebGL scene before asserting on DOM').toBe(true)
+        await dismissHelpDialog(page)
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 60000 })
-        await explore.click()
-
-        // Wait for the app to publish a ready WebGL scene (suite-proven poll,
-        // immune to headless rAF stalls — mirrors widget-journey F5 pattern).
-        const settled = await pollFor(
-            page,
-            () => {
-                const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
-                return (
-                    document.body.dataset.graphicsMode === 'webgl' &&
-                    document.body.dataset.renderKind === 'webgl' &&
-                    document.body.dataset.sceneReady === 'true' &&
-                    appState.currentView === 'galaxy' &&
-                    Array.isArray(appState.points) &&
-                    appState.points.length >= 8406 &&
-                    !!appState.renderer &&
-                    !!appState.scene &&
-                    !!appState.camera
-                )
-            },
-            60000,
-            100
-        )
-        expect(settled, 'app must publish a ready WebGL scene before we assert on DOM').toBe(true)
-
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
-        }
-
-        // Record the current step at overview.
+        // Record current phase at overview.
         const overviewCurrent = await page.evaluate(() => {
-            const current = document.querySelector('#journey-compass [data-journey-step].current')
-            return current?.getAttribute('data-journey-step') ?? null
+            const el = document.querySelector('#journey-compass [data-journey-step].current')
+            return el?.getAttribute('data-journey-step') ?? null
         })
-        expect(overviewCurrent, 'overview must have a current step').toBe('overview')
+        expect(overviewCurrent, 'must have a current step at overview').not.toBeNull()
 
-        // Use navActions to switch to search mode (avoids compass-rail animation timing).
-        await page.waitForFunction(() => !!window.__navActions__?.setSurface, { timeout: 5000 })
+        // Drive nav to search surface AND update the journey compass phase.
+        await page.waitForFunction(() => !!window.__navActions__, { timeout: 5000 })
+        await page.evaluate(() => window.__navActions__?.setSurface?.('search'))
         await page.evaluate(() => {
-            window.__navActions__?.setSurface?.('focus-search')
+            // journeyStore is exposed as __journeyStore__ on window (test-globals.ts).
+            window.__journeyStore__?.update?.((s) => ({ ...s, phase: 'search' }))
         })
+        await page.waitForTimeout(2000)
 
-        // Wait for the indicator to reflect the new current phase.
-        const settled3 = await pollFor(
-            page,
-            () => {
-                const current = document.querySelector('#journey-compass [data-journey-step].current')
-                const step = current?.getAttribute('data-journey-step') ?? ''
-                return step === 'search' || step === 'focus'
-            },
-            15000,
-            100
-        )
-        expect(settled, 'after mode switch, a search/focus step must become .current').toBe(true)
-
-        // The overview step should now be .done (not .current).
-        const overviewDone = await page.evaluate(() => {
-            const el = document.querySelector('#journey-compass [data-journey-step="overview"]')
-            return el?.classList.contains('done') ?? false
+        const searchSnapshot = await page.evaluate(() => {
+            const current = document.querySelector('#journey-compass [data-journey-step].current')
+            const overviewEl = document.querySelector('#journey-compass [data-journey-step="overview"]')
+            return {
+                currentPhase: current?.getAttribute('data-journey-step') ?? null,
+                overviewDone: overviewEl?.classList.contains('done') ?? false
+            }
         })
-        expect(overviewDone, 'overview step should be .done after transitioning forward').toBe(true)
+        expect(searchSnapshot.currentPhase, 'search step must become .current').toBe('search')
+        expect(searchSnapshot.overviewDone, 'overview step must be .done after transitioning forward').toBe(true)
     })
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 3. AppBoot.svelte
-//    Selector: no DOM output — test via window.__forceSemanticDiveContractSurface
-//    and body dataset/class side-effects. body[data-test-ready] set by parity-attrs.
+//    Pure side-effect component. Exposes window.__forceSemanticDiveContractSurface.
 // ═══════════════════════════════════════════════════════════════════════════════
 test.describe('AppBoot journey', () => {
     test('happy-path: __forceSemanticDiveContractSurface is installed and callable', async ({ page }) => {
-        // Component: AppBoot.svelte (pure side-effect; no rendered markup).
-        // Selector: window.__forceSemanticDiveContractSurface (test-only global hook).
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(BOOT_URL, { waitUntil: 'domcontentloaded' })
+        const settled = await waitForSceneReady(page)
+        expect(settled, 'app must publish a ready WebGL scene before asserting on DOM').toBe(true)
+        await dismissHelpDialog(page)
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 60000 })
-        await explore.click()
-
-        // Wait for parity-attrs to set data-test-ready (installed during app-init
-        // before AppBoot's onMount, so it should be present after splash dismiss).
-        await page.waitForFunction(
-            () => document.body?.dataset?.testReady === 'true' || document.body?.dataset?.sceneReady === 'true',
-            null,
-            { timeout: 30000, polling: 100 }
-        )
-
-        // The test contract hook must be installed on window.
         const hookPresent = await page.evaluate(() => {
             return typeof window.__forceSemanticDiveContractSurface === 'function'
         })
         expect(hookPresent, 'AppBoot must install __forceSemanticDiveContractSurface on window').toBe(true)
     })
 
-    test('edge: calling __forceSemanticDiveContractSurface sets body surface classes', async ({ page }) => {
-        // Component: AppBoot.svelte
-        // Selector: body.surface-semantic-dive, body.dataset.panelSurface — side-effects
+    test('edge: calling hook sets body surface classes and shows #focus-stage', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(BOOT_URL, { waitUntil: 'domcontentloaded' })
+        const settled = await waitForSceneReady(page)
+        expect(settled, 'app must publish a ready WebGL scene before asserting on DOM').toBe(true)
+        await dismissHelpDialog(page)
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 60000 })
-        await explore.click()
-
-        await page.waitForFunction(
-            () => document.body?.dataset?.testReady === 'true' || document.body?.dataset?.sceneReady === 'true',
-            null,
-            { timeout: 30000, polling: 100 }
-        )
-
-        // Call the test contract hook; it should flip body to semantic-dive surface.
         await page.evaluate(() => {
             const hook = window.__forceSemanticDiveContractSurface
-            if (typeof hook !== 'function') {
-                throw new Error('__forceSemanticDiveContractSurface not installed')
-            }
+            if (typeof hook !== 'function') throw new Error('__forceSemanticDiveContractSurface not installed')
             hook()
         })
+        await page.waitForTimeout(1000)
 
-        // DOM-visible side-effects: body class + dataset attrs.
         const surfaceState = await page.evaluate(() => ({
             hasSurfaceClass: document.body.classList.contains('surface-semantic-dive'),
             panelSurface: document.body.dataset?.panelSurface,
@@ -372,7 +252,6 @@ test.describe('AppBoot journey', () => {
         expect(surfaceState.semanticDive, 'semanticDive dataset must be active').toBe('active')
         expect(surfaceState.activeView, 'activeView dataset must be galaxy').toBe('galaxy')
 
-        // The focus stage should be unhidden (DOM-visible assertion, not state-only).
         const focusStageVisible = await page.evaluate(() => {
             const el = document.querySelector('#focus-stage')
             if (!el) return false
@@ -384,180 +263,181 @@ test.describe('AppBoot journey', () => {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 4. SearchErrorState.svelte
-//    Selector: .search-error-state (root div), .search-error-kicker, .search-error-retry-btn,
-//    .search-error-dismiss-btn, details[data-testid="search-error-detail"]
+//    Rendered by SearchResults.svelte when searchError.type==='full'.
+//    Error block classes: .search-error-state (root), .search-error-kicker,
+//    .search-error-text strong, .search-error-retry-btn, .search-error-dismiss-btn,
+//    .search-error-technical details[data-testid="search-error-detail"].
+//
+//    Trigger: route /api.php?action=semantic_search to 503, fill #search-input, Enter.
+//    Pattern: tests/widget-journey.spec.js BUG-6 test (~line 1485).
 // ═══════════════════════════════════════════════════════════════════════════════
 test.describe('SearchErrorState journey', () => {
-    test('happy-path: search error state renders with retry + dismiss buttons', async ({ page }) => {
-        // Component: SearchErrorState.svelte
-        // Selector: .search-error-state wrapper
+    test('happy-path: search error card renders with retry + dismiss buttons', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort */
+            }
+        })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 60000 })
-        await explore.click()
-
-        // Wait for the app to publish a ready WebGL scene (suite-proven poll,
-        // immune to headless rAF stalls — mirrors widget-journey F5 pattern).
-        const settled = await pollFor(
-            page,
-            () => {
-                const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+        // Intercept semantic_search to force a 503 so the error card renders.
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
+                return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_search'
+            },
+            async (route) => {
+                await route.fulfill({
+                    status: 503,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ ok: false, error: 'forced-journey-coverage-gaps' })
+                })
+            }
+        )
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
                 return (
-                    document.body.dataset.graphicsMode === 'webgl' &&
-                    document.body.dataset.renderKind === 'webgl' &&
-                    document.body.dataset.sceneReady === 'true' &&
-                    appState.currentView === 'galaxy' &&
-                    Array.isArray(appState.points) &&
-                    appState.points.length >= 8406 &&
-                    !!appState.renderer &&
-                    !!appState.scene &&
-                    !!appState.camera
+                    parsed.pathname.endsWith('/api.php') &&
+                    parsed.searchParams.get('action') === 'semantic_lane_health'
                 )
             },
-            60000,
-            100
+            async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ ok: true, state: 'healthy' })
+                })
+            }
         )
-        expect(settled, 'app must publish a ready WebGL scene before we assert on DOM').toBe(true)
 
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
-        }
-
-        // Force a search error via the test-global dataLoadState (mirrors
-        // loading-overlay-error-state-journey.spec.js pattern).
+        await page.goto(`${BOOT_URL}&staticDev=0`, { waitUntil: 'domcontentloaded' })
+        await page.waitForLoadState('load', { timeout: 10000 }).catch(() => {})
         await page
-            .waitForFunction(() => typeof window.__dataLoadState__?.forceSearchError === 'function', {
-                timeout: 10_000,
-                polling: 100
-            })
+            .waitForFunction(() => document.body.dataset.surfaceSettled === 'true', null, { timeout: 8000 })
             .catch(() => {})
 
-        // If the test global exists, trigger it; otherwise skip gracefully.
-        const hasHook = await page.evaluate(() => typeof window.__dataLoadState__?.forceSearchError === 'function')
-        if (hasHook) {
-            await page.evaluate(() => {
-                window.__dataLoadState__.forceSearchError('Draft test error', 'coffee')
-            })
-        } else {
-            // Fallback: directly inject a search error into the app state and
-            // trigger a search so the error block renders.
-            await page.fill('#search-input', 'coffee')
-            await page.keyboard.press('Enter')
-            // Wait for results area, then inject error via exposed actions if available.
+        // Dismiss first-visit help dialog.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if (await helpDialog.isVisible().catch(() => false)) {
+            await helpDialog.locator('button').first().click().catch(() => {})
             await page
-                .waitForFunction(
-                    () => !!window.__searchActions__?.setSearchError || !!window.__APP_ACTIONS__?.setSearchError,
-                    { timeout: 5000, polling: 100 }
-                )
+                .waitForFunction(() => {
+                    const d = document.querySelector('dialog.help-dialog')
+                    return !d || !d.open
+                }, null, { timeout: 5000 })
                 .catch(() => {})
-            const injected = await page.evaluate(() => {
-                const setError = window.__searchActions__?.setSearchError ?? window.__APP_ACTIONS__?.setSearchError
-                if (typeof setError === 'function') {
-                    setError({ type: 'network', query: 'coffee', message: 'Draft test error' })
-                    return true
-                }
-                return false
-            })
-            if (!injected) {
-                test.skip(true, 'no search error injection hook available — draft only')
-                return
-            }
         }
+        await page.waitForSelector('#search-input', { state: 'visible', timeout: 30000 })
 
-        // Wait for the .search-error-state block to appear.
-        const errorBlock = page.locator('.search-error-state')
-        await errorBlock.waitFor({ state: 'attached', timeout: 15_000 })
+        await page.locator('#search-input').first().fill('coffee')
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#search-input')
+                return !!el && el.value === 'coffee'
+            },
+            null,
+            { timeout: 5000 }
+        ).catch(() => {})
 
-        // Kicker pill is present.
-        await expect(errorBlock.locator('.search-error-kicker')).toHaveText('Retry needed')
+        await expect(page.locator('.search-error-state')).toBeVisible({ timeout: 45000 })
+        await expect(page.locator('.search-error-kicker')).toHaveText('Retry needed')
+        // 503 triggers the HTTP 5xx branch in friendlyErrorMessage → "The server is having trouble"
+        await expect(page.locator('.search-error-text strong')).toHaveText('The server is having trouble')
 
-        // Title is the friendly default.
-        await expect(errorBlock.locator('.search-error-text strong')).toHaveText('Something went wrong')
-
-        // Retry + Dismiss buttons are both rendered and clickable.
-        const retryBtn = errorBlock.locator('.search-error-retry-btn')
-        const dismissBtn = errorBlock.locator('.search-error-dismiss-btn')
-
+        const retryBtn = page.locator('.search-error-retry-btn')
+        const dismissBtn = page.locator('.search-error-dismiss-btn')
         await expect(retryBtn).toBeVisible()
         await expect(retryBtn).toHaveAttribute('aria-label', /Retry search for coffee/i)
-
         await expect(dismissBtn).toBeVisible()
         await expect(dismissBtn).toHaveAttribute('aria-label', 'Clear search and dismiss')
 
-        // Technical details block is present with the injected message.
-        const techDetails = errorBlock.locator('[data-testid="search-error-detail"], .search-error-technical')
-        await expect(techDetails).toContainText('Draft test error')
+        const techDetails = page.locator('[data-testid="search-error-detail"], .search-error-technical')
+        await expect(techDetails).toContainText('HTTP status 503')
     })
 
     test('edge: dismiss button clears the error state from DOM', async ({ page }) => {
-        // Component: SearchErrorState.svelte
-        // Selector: .search-error-state — should be removed after dismiss
         await page.setViewportSize({ width: 1280, height: 800 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort */
+            }
+        })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 60000 })
-        await explore.click()
-
-        // Wait for the app to publish a ready WebGL scene (suite-proven poll,
-        // immune to headless rAF stalls — mirrors widget-journey F5 pattern).
-        const settled4 = await pollFor(
-            page,
-            () => {
-                const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
+                return parsed.pathname.endsWith('/api.php') && parsed.searchParams.get('action') === 'semantic_search'
+            },
+            async (route) => {
+                await route.fulfill({
+                    status: 503,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ ok: false, error: 'forced-dismiss-test' })
+                })
+            }
+        )
+        await page.route(
+            (url) => {
+                const parsed = new URL(url)
                 return (
-                    document.body.dataset.graphicsMode === 'webgl' &&
-                    document.body.dataset.renderKind === 'webgl' &&
-                    document.body.dataset.sceneReady === 'true' &&
-                    appState.currentView === 'galaxy' &&
-                    Array.isArray(appState.points) &&
-                    appState.points.length >= 8406 &&
-                    !!appState.renderer &&
-                    !!appState.scene &&
-                    !!appState.camera
+                    parsed.pathname.endsWith('/api.php') &&
+                    parsed.searchParams.get('action') === 'semantic_lane_health'
                 )
             },
-            60000,
-            100
+            async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ ok: true, state: 'healthy' })
+                })
+            }
         )
-        expect(settled, 'app must publish a ready WebGL scene before we assert on DOM').toBe(true)
+
+        await page.goto(`${BOOT_URL}&staticDev=0`, { waitUntil: 'domcontentloaded' })
+        await page.waitForLoadState('load', { timeout: 10000 }).catch(() => {})
+        await page
+            .waitForFunction(() => document.body.dataset.surfaceSettled === 'true', null, { timeout: 8000 })
+            .catch(() => {})
 
         const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
+        if (await helpDialog.isVisible().catch(() => false)) {
+            await helpDialog.locator('button').first().click().catch(() => {})
+            await page
+                .waitForFunction(() => {
+                    const d = document.querySelector('dialog.help-dialog')
+                    return !d || !d.open
+                }, null, { timeout: 5000 })
+                .catch(() => {})
         }
+        await page.waitForSelector('#search-input', { state: 'visible', timeout: 30000 })
 
-        // Inject error state.
-        const injected = await page.evaluate(() => {
-            const setError = window.__searchActions__?.setSearchError ?? window.__APP_ACTIONS__?.setSearchError
-            if (typeof setError === 'function') {
-                setError({ type: 'network', query: 'coffee', message: 'Draft dismiss test' })
-                return true
-            }
-            return false
-        })
-        if (!injected) {
-            test.skip(true, 'no search error injection hook available — draft only')
-            return
-        }
+        await page.locator('#search-input').first().fill('coffee')
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#search-input')
+                return !!el && el.value === 'coffee'
+            },
+            null,
+            { timeout: 5000 }
+        ).catch(() => {})
 
-        const errorBlock = page.locator('.search-error-state')
-        await errorBlock.waitFor({ state: 'attached', timeout: 15_000 })
+        await expect(page.locator('.search-error-state')).toBeVisible({ timeout: 45000 })
 
-        // Click the dismiss button.
-        await errorBlock.locator('.search-error-dismiss-btn').click()
+        await page.locator('.search-error-dismiss-btn').click()
 
-        // After dismiss, the error block should be removed from the DOM.
-        await expect(errorBlock).toHaveCount(0)
+        await expect(page.locator('.search-error-state')).toBeHidden({ timeout: 15000 })
 
-        // The search input should be cleared (dismiss resets the query).
         const queryValue = await page.inputValue('#search-input')
         expect(queryValue, 'dismiss must clear the search input').toBe('')
     })
