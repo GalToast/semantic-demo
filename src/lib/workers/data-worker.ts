@@ -10,6 +10,7 @@
 // Runtime payload validation lives in a pure sibling module (unit-testable
 // without a Worker global; farm audit 2026-08-14 regression pin).
 import { requireRecordUrl, requireThreadPayload, type AttemptConfig } from './data-worker-payload'
+import { parseTdb } from '@lib/loaders/semantic-tdb'
 
 interface PointRecord {
     cluster: number
@@ -410,6 +411,23 @@ async function handleLoadThreads(
                 )
                 if (requestId !== _activeRequestId) throw new Error('Request superseded by newer request')
                 if (!response.ok) throw new Error(`Thread artifact unavailable (${response.status})`)
+                // TDB1 flip (2026-06-17): binary sibling feeds the same bundle
+                // shape; the extractor below is untouched (JSON fallback intact).
+                if (artifactName.endsWith('.bin')) {
+                    const binBuf = await response.arrayBuffer()
+                    const { nodes } = parseTdb(binBuf)
+                    const nodesRecord: Record<string, unknown> = {}
+                    for (const [leadId, node] of nodes) {
+                        nodesRecord[leadId] = {
+                            lead_id: node.lead_id,
+                            signal_score: node.signal_score,
+                            neighbors: node.neighbors,
+                        }
+                    }
+                    bundle = { nodes: nodesRecord }
+                    loadedArtifactName = artifactName
+                    break outer
+                }
                 const parsed = await response.json()
                 // A malformed (but valid-JSON) ~40MB artifact would otherwise
                 // yield an empty neighbor map and silently lose every
