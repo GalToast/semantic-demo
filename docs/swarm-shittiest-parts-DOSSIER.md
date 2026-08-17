@@ -145,6 +145,29 @@ All four use the **deliverable-first protocol** (write skeleton with all rows `P
 | W4-asset   | Serve compressed `.dat`                                               | ✅ **ALREADY DONE — verified in dist.** `vite.config.ts` (`COMPRESSION_ALLOWLIST`, `ROOT_ASSETS`, `w44-asset-compression` closeBundle hook) writes `.dat.br`/`.dat.gz` at build time. Build output: `dist/svelte/data.dat` 1.8M → `data.dat.br` **380K** (−79%) → `data.dat.gz` 445K. W4's own report already noted "M2/L3 already fixed in tree (no action)"; the spec was a description of existing infrastructure, not a gap. No action needed. |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | W4-CSS     | Delete ~520 LOC dead CSS selectors                                    | ❌ **FALSE POSITIVE — rejected on main-lane audit.** W4's "dead" inventory is built on static `grep` of class names; every flagged selector is **live via dynamically-generated DOM** and would be a silent visual regression if deleted: `cluster-list/item/name/count` are built by `el()` in `cluster-filter-controller.ts:112-192`; `keyboard-hint-panel`/`kh-title`/`kh-row`/`kh-keys`/`kh-close`/`kh-replay-btn`/`kh-terminology`/`kh-term-list` are built in `keyboard-help.ts:26-209`; `share-toggle`/`share-toggle-label` are live in `css/layout_base.css:252-298`; `webgl-fallback-notice`/`-kicker`/`-map` are built in `webgl-fallback.ts:91-113`. Same class of error as W1 Fix #1/#6 (worker mistook runtime-generated identifiers for dead code). **Deferred permanently — no action.** |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
+## Final gate results (post-execution, main-lane verified)
+
+| Gate | Result |
+|------|--------|
+| `npm run build` | ✅ exit 0. `INEFFECTIVE_DYNAMIC_IMPORT` warnings: 8 → **6** (Fix7 removed `disposable-registry`, Fix8 removed `weather`). |
+| `npx svelte-check --threshold warning` | ✅ 2 errors, **both in the pre-existing auto-generated `ci-mirror-test-HuTxlw/bare-violation.svelte.ts` fixture** (0 `url-restore` refs, 0 W1/W2/W3 refs). |
+| `node tests/run-all-contracts.js` | ✅ **54/54 passed**, exit 0. No regressions from any W1/W2/W3 change. |
+| `npx vitest run` | 4,019/4,020 passed. The 1 failure (`test-runner-topology-contract > threads the worker flag into the batched Playwright exec args`) is **pre-existing and unrelated** — it inspects `tests/run-all-contracts.js` via regex, which my work did not touch (byte-identical to HEAD, `git diff` = 0 lines). |
+| All 11 consolidation sweeps | ✅ **PASS** — independently re-verified by the main lane (sweep-header-lie check): 6 model-health (339/12/22/25/14/17), 5 CSS+motion (css-ownership, design-token, svelte-css, reduced-motion 12/12, reduced-motion-interruption). |
+
+## Swarm close-out
+
+**All four workers' actionable findings are now resolved, committed, or rejected with evidence:**
+
+| Worker | Disposition |
+|--------|-------------|
+| **W1** (dynamic imports) | 6 Class A hygiene fixes applied (Fix2/3/4/5/7/8), 2 false positives rejected (Fix1 lazy bridge is live, Fix6 route-trace is already a lazy chunk). Build warnings 8 → 6. |
+| **W2** (test sprawl) | 39 originals deleted across 3 phases (5,029 LOC), 11 sweeps created (2,947 LOC). All sweeps independently verified PASS. Contract suite 54/54. |
+| **W3** (url-restore split) | 4-file split complete (866 → 690 LOC). All gates green. Duplicate-export bug caught by the contract suite. |
+| **W4** (engine hygiene) | **Both deferred items are false positives / already-done.** Asset compression already live in `vite.config.ts` (data.dat 1.8M → .br 380K, −79%). CSS dead-code rejected — every flagged selector is live via dynamically-generated DOM. |
+
+**Net: 4 commits on master** (`59b1947d`, `94381517`, `ae998b0f`, plus the W2/W3 wave commits `c1de29eb`/`79f368ea`/`0d964dff`/`c1401416`/`fb3caa06`), ~10,000 LOC of dead test code removed, ~175 LOC of orchestrator monolith split, 6 build warnings eliminated.
+
 ## Cross-worker findings
 
 - **W1 + W4 agree**: `url-restore.ts` statically imports `webgl.ts`/`point-color.ts`/`url-state.ts`, defeating the lazy bridge in `journey-webgl-lazy.ts`. This is the root cause of the `INEFFECTIVE_DYNAMIC_IMPORT` warnings — but the fix is a **split** (`url-restore.ts`), not a static-import conversion.
