@@ -71,8 +71,9 @@ describe('contract runner — single worker when owning the server', () => {
 
     it('threads the worker flag into the batched Playwright exec args', () => {
         // runBatchContract branch must also spread playwrightWorkerFlags().
+        // Regex is whitespace-tolerant because the array may be multiline.
         expect(RUNNER_SRC).toMatch(
-            /\[PLAYWRIGHT_CLI, 'test', \.\.\.files\.map\(\(f\) => `tests\/\$\{f\}`\), \.\.\.PLAYWRIGHT_FLAGS, \.\.\.playwrightWorkerFlags\(\)\]/
+            /\[\s*PLAYWRIGHT_CLI,\s*'test',\s*\.\.\.files\.map\(\(f\) => `tests\/\$\{f\}`\),\s*\.\.\.PLAYWRIGHT_FLAGS,\s*\.\.\.playwrightWorkerFlags\(\)\s*\]/
         )
     })
 })
