@@ -98,9 +98,10 @@ src/lib/keyboard/*.ts)
             tests/widget-journey.spec.js|\
 tests/*-journey*.spec.js|\
 tests/*-journey*.spec.ts|\
+tests/journey-*.spec.js|\
+tests/journey-*.spec.ts|\
 tests/journey/*.spec.js|\
-tests/journey/*.spec.ts)
-                journeyFiles="$journeyFiles $file"
+tests/journey/*.spec.ts)                journeyFiles="$journeyFiles $file"
                 ;;
         esac
     done
