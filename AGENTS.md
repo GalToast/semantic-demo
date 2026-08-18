@@ -27,6 +27,7 @@ This file is loaded into every Pi model call. Keep it concise. Detailed referenc
 - **Finish all N sites of an established pattern, not just the high-ROI one.** Partial pattern fixes create drift. Stop only on user request or genuine risk.
 - **User-visible features need a journey test.** Svelte/DOM-touching features → add a test in `tests/widget-journey.spec.js` + run `npm run qa:journey:headless`. Pre-commit hook warns on unstaged-journey-test for `*.svelte`/`App.svelte`/`lib/ui`/`lib/keyboard`; `--SkipTestStrategyGapCheck` for pure refactors. Full rule: `docs/session-coordination.md` § test-strategy gap.
 - **Audit before "done".** Enumerate every data source (files/fields/code paths), verify each with rg/git. Cheap to audit, expensive to ship half.
+- **Investigate to conclusion before acting (2026-08-17):** for any multi-part product/process criticism, investigate each claim ONE-BY-ONE to a conclusive verdict (evidence: files, timestamps, logs, measurements) before proposing or making the fix. Record each conclusion as it lands; never act on a half-read. Rabbit holes get a bounded budget, then the verdict is documented as the blocker.
 - **Polish to 10/10; delegating parts doesn't delegate ownership.** Subagent plans AND outputs must both be main-lane-polished to the real success criteria before done.
 
 ## Session Lock Protocol
