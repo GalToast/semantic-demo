@@ -24,6 +24,7 @@
         "check:phone-model-parity": "node tests/phone-model-parity-contract.mjs",
         "check:tdb-fidelity": "node scripts/tdb1-fidelity-ci.mjs",
         "check:dist-integrity": "node scripts/qa-deploy-preflight.mjs --dist-only",
+        "check:journey": "node scripts/qa-journey-gate.mjs",
         "check:model-capability-status": "node tests/model-capability-status-contract.mjs",
         "check:model-catalog": "node tests/build-model-catalog-contract.mjs && node tests/deploy-phone-model-catalog-contract.mjs && node tests/verify-model-catalog-contract.mjs",
         "check:phone-farm": "node tests/phone-model-parity-contract.mjs && node tests/phone-model-health-contract.mjs && node tests/model-capability-status-contract.mjs && node tests/deploy-phone-model-projection-contract.mjs && npm run check:model-catalog",
