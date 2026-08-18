@@ -42,7 +42,6 @@
   // importPending flag + $effect pattern is no longer needed.
 
   import Splash from '@components/Splash.svelte';
-  import Placeholder2D from '@components/Placeholder2D.svelte';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { signalSceneReady, signalSceneError } from '@lib/stores/scene-ready.svelte';
   import Legend from '@components/Legend.svelte';
@@ -59,11 +58,7 @@
   import SemanticGuideCard from '@components/SemanticGuideCard.svelte';
   import SearchTrailCue from '@components/SearchTrailCue.svelte';
   import ProximityLegend from '@components/ProximityLegend.svelte';
-  import InfoPanel from '@components/InfoPanel.svelte';
-  import FocusCard from '@components/FocusCard.svelte';
-  import JourneyChrome from '@components/JourneyChrome.svelte';
-  import FocusPocket from '@components/FocusPocket.svelte';
-  import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
+  import FocusPocket from '@components/FocusPocket.svelte';  import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
   import { ErrorFallback } from '@lib/error-boundary';
   import { legendOpen, setLegendOpen } from '@lib/stores/legend.svelte';
 
@@ -96,6 +91,16 @@
     () => import('@components/JourneyCompass.svelte')
   )
 
+  // [2026-08-18] CSS-budget chunking: convert the four heaviest static imports
+  // (InfoPanel 14.4KB, JourneyChrome 13.2KB, Placeholder2D 9.7KB, FocusCard
+  // 7.6KB of bundled CSS) to lazy handles so Vite splits their CSS into per-
+  // chunk assets instead of the entry index-*.css. They are contract-pinned at
+  // boot, so the __PLAYWRIGHT__ block and idle prewarm below load them eagerly
+  // exactly like canvasLazy/mapViewLazy. Render sites use the {#if c} pattern.
+  const infoPanelLazy = createLazyComponent(() => import('@components/InfoPanel.svelte'))
+  const journeyChromeLazy = createLazyComponent(() => import('@components/JourneyChrome.svelte'))
+  const placeholder2DLazy = createLazyComponent(() => import('@components/Placeholder2D.svelte'))
+  const focusCardLazy = createLazyComponent(() => import('@components/FocusCard.svelte'))
   // Pre-warm the engine module tree during splash so Vite's dev server
   // compiles the heavy Three.js + engine dependency graph in the background.
   // The import() result is cached by Vite; when Canvas.svelte later calls
@@ -132,8 +137,16 @@
     // and does not block the DOM element creation.
     engineReady.signalReady()
     canvasLazy.ensure(true)
+    // [2026-08-18] CSS chunking: contract-pinned components must be in the DOM
+    // for surface-contract checks (#focus-stage, .focus-card, #journey-chrome,
+    // placeholder CTA). Eager-load them exactly like Canvas/MapView so the
+    // tests see them synchronously — the lazy conversion must not break the
+    // boot-time surface contracts.
+    infoPanelLazy.ensure(true)
+    journeyChromeLazy.ensure(true)
+    placeholder2DLazy.ensure(true)
+    focusCardLazy.ensure(true)
   }
-
   const isPlaywright = isPlaywrightEnvironment();
 
   // W46-B2b: scheduleIdleComponentImport was moved to lazy-component.svelte.ts
@@ -146,6 +159,15 @@
   $effect(() => threadInspectorLazy.ensure(threadInspectorActive()));
 
   $effect(() => demoChoreographyLazy.ensure(true));
+
+  // [2026-08-18] CSS chunking: these four are boot-visible chrome (info panel,
+  // journey chrome, 2D placeholder, focus card). Pre-warm for everyone at idle
+  // so real users don't pay fetch latency on first interaction — same treatment
+  // as legacyCompassSurfaceLazy (DIVE-BUTTON GAP note).
+  $effect(() => infoPanelLazy.ensure(true));
+  $effect(() => journeyChromeLazy.ensure(true));
+  $effect(() => placeholder2DLazy.ensure(true));
+  $effect(() => focusCardLazy.ensure(true));
 
   $effect(() => weatherWidgetLazy.ensure(weatherVisible));
 
@@ -389,9 +411,11 @@
         {/if}
       </div>
       <div class="layer placeholder-layer" class:active={!s3dSceneReady && !s3dSceneError}>
-        <Placeholder2D />
-      </div>
-    </div>
+        {#if placeholder2DLazy.current}
+          {@const Cmp = placeholder2DLazy.current}
+          <Cmp />
+        {/if}
+      </div>    </div>
   {:else}
     {#if engineReady.value && canvasLazy.current}
       {@const Cmp = canvasLazy.current}
@@ -434,10 +458,10 @@
   {/if}
 
   <!-- Layer 80: Info panel -->
-  {#if !mapModeActive}
-    <InfoPanel open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
+  {#if !mapModeActive && infoPanelLazy.current}
+    {@const Cmp = infoPanelLazy.current}
+    <Cmp open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
   {/if}
-
   {#if mapTrailSearchLaneActive}
     <!--
       Layer 100: Map-trail floating search bar.
@@ -471,8 +495,10 @@
     data-strand-journey={parity.strandJourney}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
-    <FocusCard visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
-
+    {#if focusCardLazy.current}
+      {@const Cmp = focusCardLazy.current}
+      <Cmp visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
+    {/if}
     <!-- Layer 200: Journey chrome (breadcrumb, trail indicators).
          Gate the mount on focusStageActive (not just the lazy chunk being
          loaded) so it is never rendered inside the aria-hidden #focus-stage
@@ -481,9 +507,11 @@
          FocusCard's `visible={focusStageActive}` and the wrapper's
          aria-hidden predicate. Normal (non-map) focus rendering is unchanged. -->
     {#if focusStageActive}
-      <JourneyChrome visible={true} />
+        {#if journeyChromeLazy.current}
+            {@const Cmp = journeyChromeLazy.current}
+            <Cmp visible={true} />
+        {/if}
     {/if}
-
     <!-- Layer 500: Active journey visualization — rendered by Three.js -->
 
     <!--

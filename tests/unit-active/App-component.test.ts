@@ -82,11 +82,14 @@ describe('App.svelte — lazy component surface', () => {
         const names = new Set<string>()
         let m: RegExpExecArray | null
         while ((m = lazyRe.exec(appSrc)) !== null) names.add(m[1])
-        expect(names.size).toBe(6)
+        // W2-CSSBUD (2026-08-18): InfoPanel / JourneyChrome / Placeholder2D /
+        // FocusCard converted to lazies for per-chunk CSS. Count now 10.
+        expect(names.size).toBe(10)
     })
 })
 
 // ---------------------------------------------------------------------------
+// (B) Parity plumbing// ---------------------------------------------------------------------------
 // (B) Parity plumbing — guarded in the useParityAttrs composable
 // ---------------------------------------------------------------------------
 //
@@ -215,25 +218,30 @@ describe('App.svelte — scene-ready wiring', () => {
 describe('App.svelte — composition root shape', () => {
     const requiredChildren = [
         'AppBoot',
-        'Placeholder2D',
-        'Canvas', // lazy-loaded but present in template
+        'Placeholder2D', // lazy (CSS-budget chunking W2-CSSBUD)
+        'Canvas', // lazy
         'Header',
         'SemanticOverlay',
         'Legend',
-        'InfoPanel', // lazy-loaded
+        'InfoPanel', // lazy (CSS-budget chunking W2-CSSBUD)
         'CompassRail',
         'Controls',
         'LoadingOverlay',
         'Toast'
     ]
 
+    // Components rendered via createLazyComponent + {@const Cmp = xLazy.current}
+    // instead of a literal <x> tag in the template.
+    const lazyHandled = new Set(['Canvas', 'InfoPanel', 'JourneyChrome', 'Placeholder2D', 'FocusCard'])
+
     it.each(requiredChildren)('template contains <%s', (name) => {
-        // Match <ComponentName or <Cmp (lazy) — for lazy ones we check the
-        // lazy handle + {@const Cmp = nameLazy.current} pattern.
-        if (name === 'Canvas') {
-            // Lazy: verify the lazy handle exists and is used in an {@const}
+        if (lazyHandled.has(name)) {
+            // Lazy: verify the handle is declared and referenced via .current
+            // (the render site uses {@const Cmp = <handle>.current}).
             const handleRe = new RegExp(`${name.charAt(0).toLowerCase() + name.slice(1)}Lazy\\s*=`)
             expect(appSrc).toMatch(handleRe)
+            const useRe = new RegExp(`${name.charAt(0).toLowerCase() + name.slice(1)}Lazy\\.current`)
+            expect(appSrc).toMatch(useRe)
         } else {
             // Direct component reference in template
             const re = new RegExp(`<${name}[\\s/>]`)

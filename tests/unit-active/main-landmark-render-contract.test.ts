@@ -85,7 +85,8 @@ describe('A2-1 + A2-2: main#main-content landmark', () => {
         const mainStart = appSrc.indexOf('<main id="main-content"')
         const mainEnd = appSrc.indexOf('</main>', mainStart)
         const mainContent = appSrc.substring(mainStart, mainEnd)
-        // InfoPanel is now statically imported and rendered directly.
-        expect(mainContent).toContain('<InfoPanel')
+        // W2-CSSBUD (2026-08-18): InfoPanel is now lazy-loaded via
+        // createLazyComponent + {@const Cmp = infoPanelLazy.current}.
+        expect(mainContent).toContain('infoPanelLazy.current')
     })
 })
