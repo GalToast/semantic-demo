@@ -288,32 +288,41 @@ if (gzipDataRows) {
         `data.dat.gz coordinates must match data.dat coordinates; mismatched rows: ${gzipCoordinateMismatches}`
     )
 }
-assert(layoutManifest.index_dir, 'semantic_space_layout_manifest index_dir must be present')
-assert(fs.existsSync(indexDir), `layout index_dir must exist: ${indexDir}`)
-assert(fs.existsSync(indexManifestPath), `index manifest must exist: ${indexManifestPath}`)
-assert(fs.existsSync(indexMetadataPath), `index metadata must exist: ${indexMetadataPath}`)
-assert(fs.existsSync(indexEmbeddingsPath), `index embeddings must exist: ${indexEmbeddingsPath}`)
-assert(
-    indexMetadata.length === dataRows.length,
-    `index metadata rows must match data.dat: ${indexMetadata.length} != ${dataRows.length}`
-)
-assert(
-    Number(indexManifest.count) === dataRows.length,
-    `index manifest count must match data.dat: ${indexManifest.count} != ${dataRows.length}`
-)
-assert(Number(indexManifest.dimensions) === 1024, `index dimensions must stay at 1024, got ${indexManifest.dimensions}`)
-assert(
-    indexOrderMismatches === 0,
-    `data.dat lead order must match index metadata order; mismatches: ${indexOrderMismatches}`
-)
-assert(
-    normalizePath(threadIndexManifest.embeddings_path) === normalizePath(indexEmbeddingsPath),
-    `semantic_threads_ui.dat source embeddings must match layout index_dir embeddings: ${threadIndexManifest.embeddings_path || 'missing'}`
-)
-assert(
-    normalizePath(threadIndexManifest.metadata_path) === normalizePath(indexMetadataPath),
-    `semantic_threads_ui.dat source metadata must match layout index_dir metadata: ${threadIndexManifest.metadata_path || 'missing'}`
-)
+// The index dir is generation-time provenance data (built on the generating
+// machine by the now-orphaned re-embed-corpus.py pipeline, deleted in 79620583).
+// It is NOT required for the data-level promise: every semantic-quality assert
+// below derives from data.dat + thread refs alone. When the index is absent
+// (fresh clone / other machine), WARN and skip the provenance gate instead of
+// hard-failing — mirrors the null-safe `if (scriptEmbeddingHash)` pattern above.
+const indexAvailable =
+    Boolean(layoutManifest.index_dir) &&
+    fs.existsSync(indexDir) &&
+    fs.existsSync(indexManifestPath) &&
+    fs.existsSync(indexMetadataPath) &&
+    fs.existsSync(indexEmbeddingsPath)
+if (indexAvailable) {
+    assert(
+        indexMetadata.length === dataRows.length,
+        `index metadata rows must match data.dat: ${indexMetadata.length} != ${dataRows.length}`
+    )
+    assert(
+        Number(indexManifest.count) === dataRows.length,
+        `index manifest count must match data.dat: ${indexManifest.count} != ${dataRows.length}`
+    )
+    assert(Number(indexManifest.dimensions) === 1024, `index dimensions must stay at 1024, got ${indexManifest.dimensions}`)
+    assert(
+        indexOrderMismatches === 0,
+        `data.dat lead order must match index metadata order; mismatches: ${indexOrderMismatches}`
+    )
+    assert(
+        normalizePath(threadIndexManifest.embeddings_path) === normalizePath(indexEmbeddingsPath),
+        `semantic_threads_ui.dat source embeddings must match layout index_dir embeddings: ${threadIndexManifest.embeddings_path || 'missing'}`
+    )
+    assert(
+        normalizePath(threadIndexManifest.metadata_path) === normalizePath(indexMetadataPath),
+        `semantic_threads_ui.dat source metadata must match layout index_dir metadata: ${threadIndexManifest.metadata_path || 'missing'}`
+    )
+}
 assert(
     Number(threadIndexManifest.count) === dataRows.length,
     `thread source index count must match data.dat: ${threadIndexManifest.count} != ${dataRows.length}`
@@ -323,7 +332,7 @@ assert(
     threadToLayoutLagMs <= MAX_THREAD_TO_LAYOUT_LAG_MS,
     `layout/thread generated_at gap is too large: ${Math.round(threadToLayoutLagMs / 1000)}s`
 )
-if (scriptEmbeddingHash) {
+if (scriptEmbeddingHash && indexEmbeddingHash) {
     assert(indexEmbeddingHash === scriptEmbeddingHash, 'index embeddings.npy must match scripts/qwen3_embeddings.npy')
 }
 assert(
@@ -358,5 +367,13 @@ assert(
     summary.neighborhoodPreservation.anyAt24 >= 0.45,
     `semantic any@24 too low: ${summary.neighborhoodPreservation.anyAt24}`
 )
+
+if (!indexAvailable) {
+    console.warn(
+        `WARN: layout index_dir absent (${layoutManifest.index_dir || 'unset'}) — index provenance checks skipped. ` +
+        'The data-level semantic-quality asserts still ran. To restore the index gate, place the index build ' +
+        '(manifest.json, metadata.json, embeddings.npy) at that path.'
+    )
+}
 
 console.log('Semantic space audit passed.')
