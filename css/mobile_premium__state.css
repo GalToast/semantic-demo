@@ -2130,7 +2130,7 @@
     body.surface-map-focus-search #filters-section,
     body.surface-map-focus-search #cluster-section,
     body.surface-map-focus-search #mode-grid,
-    body.surface-map-focus-search .mode-grid,
+    body.surface-map-focus-search #mode-chips,
     body.surface-map-focus-search #trail-controls,
     body.surface-map-focus-search .trail-controls,
     body.surface-map-focus-search #trail-context,
@@ -2307,7 +2307,7 @@
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
-        .mode-grid,
+        #mode-chips,
     body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],

@@ -4,6 +4,7 @@
 -->
 <script lang="ts">
   import { appState } from '@lib/state/app.svelte.ts'
+  import { getPointIndexByLeadId } from '@lib/data-store'
   import { hideSummaryCard, requestSemanticGuide } from '@lib/journey/semantic-guide'
   import { focusOnNode } from '@lib/engine/camera-choreography'
   import { syncSvelteNavFromLegacy } from '@lib/orchestration/window-actions'
@@ -34,7 +35,7 @@
    * dead code (no import graph), and even if registered its [data-action]
    * selector wouldn't match the rendered `data-lead-id` attribute.
    *
-   * Now: lookup the lead_id in `appState.pointIndexByLeadId` and call
+   * Now: lookup the lead_id via `getPointIndexByLeadId()` and call
    * focusOnNode(idx). The summary card stays open so the user can chain
    * clicks (Trail anchor → Next stop → Side trail). The `fromCanvasNode: true`
    * flag tells focusOnNode to use the field-node focus panel mode.
@@ -42,7 +43,7 @@
   function handleSuggestionClick(event: MouseEvent): void {
     const leadKey = (event.currentTarget as HTMLButtonElement).dataset.leadId
     if (leadKey == null) return
-    const idx = appState.pointIndexByLeadId?.get?.(leadKey)
+    const idx = getPointIndexByLeadId().get(leadKey)
     if (!Number.isFinite(idx)) return
     focusOnNode(idx as number, { fromCanvasNode: true })
     syncSvelteNavFromLegacy()

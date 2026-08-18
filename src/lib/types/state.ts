@@ -306,31 +306,6 @@ export interface ThreadInspectorState {
     endpointCount: number
 }
 
-// ── Demo State Machine ────────────────────────────────────────────────────────
-
-export type DemoPhase =
-    | 'IDLE'
-    | 'OVERVIEW'
-    | 'SEARCH'
-    | 'FOCUS'
-    | 'THREADS'
-    | 'NEIGHBORS'
-    | 'TRAIL'
-    | 'DIVE'
-    | 'FILTER'
-    | 'MAP'
-    | 'RETURN'
-    | 'COMPLETE'
-    | 'CANCELLED'
-
-export interface DemoState {
-    phase: DemoPhase
-    startedAt: number
-    selectedNodeIndex: number | null
-    /** Tracked timer IDs — keyed by purpose for safe cleanup (fixes timer-ID drop bug) */
-    timers: Map<string, number>
-}
-
 // ── Camera State ──────────────────────────────────────────────────────────────
 
 export type CameraTransitionPhase = 'idle' | 'transitioning' | 'arrived'

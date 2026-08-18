@@ -436,7 +436,7 @@
     /* ----------------------------------------------------------------
        E. Global mobile actions (Share, Legend, Help, Controls)
        ---------------------------------------------------------------- */
-    body:not(.surface-idle)[data-panel-surface] :is(.share-toggle, .help-toggle, .legend-toggle) {
+    body:not(.surface-idle)[data-panel-surface]:is(.share-toggle, .help-toggle, .legend-toggle) {
         position: fixed;
         right: 14px;
         width: 44px;
@@ -456,13 +456,13 @@
     }
 
     /* W54-M1: extend the utility-rail-to-fixed treatment to the placeholder
-       (idle) surface. The existing rule above is gated on :not(.surface-idle),
+       (idle) surface. The existing rule above is gated on:not(.surface-idle),
        which left brand + 3 inline utility buttons + 6 chips in one
        non-wrapping flex row that overflowed at 375/768px. Per F4 design
        memo Option A: mirror the same fixed-rail treatment in idle so the
        chip row fits. data-panel-surface='idle' is the body's surface attr
        on the placeholder view (set by JourneyCompass.svelte:347). */
-    body.surface-idle[data-panel-surface='idle'] :is(.share-toggle, .help-toggle, .legend-toggle) {
+    body.surface-idle[data-panel-surface='idle']:is(.share-toggle, .help-toggle, .legend-toggle) {
         position: fixed;
         right: 14px;
         width: 44px;
@@ -760,13 +760,13 @@
         display: none;
     }
 
-    body.navigation-map-trail-strip :is(.controls, #btn-legend, #btn-keyboard-help, .panel-toggle, .time-display) {
+    body.navigation-map-trail-strip:is(.controls, #btn-legend, #btn-keyboard-help, .panel-toggle, .time-display) {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body.surface-focus :is(#btn-legend, #btn-keyboard-help) {
+    body.surface-focus:is(#btn-legend, #btn-keyboard-help) {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -872,7 +872,7 @@
        matching comment in css/progressive_disclosure.css. On mobile
        idle the <details>/<summary> toggle in Filters.svelte stays
        visible so users can tap to expand the filter rail. */
-    body.surface-idle .mode-grid,
+    body.surface-idle #mode-chips,
     body.surface-idle .semantic-lane-assist,
     body.surface-idle .search-trail-cue,
     body.surface-idle #selected-card {
@@ -1204,7 +1204,7 @@
    and wide logic live in separate @media blocks already; merging
    them into a single query would conflate the tightening rules
    (narrow) with the re-show rules (escape hatch).
-   Specificity: the :not(.surface-map-any) pseudo-class
+   Specificity: the:not(.surface-map-any) pseudo-class
    is added to match the hide rule at line 76 (specificity 0,3,1)
    so source order wins the tie. */
 @media (max-width: 360px) {
@@ -1217,7 +1217,7 @@
         opacity: 1;
     }
     /* Undo the narrow compass hide (line 76) for focus states.
-       The :not(.surface-map-any) matches the hide rule's
+       The:not(.surface-map-any) matches the hide rule's
        specificity so source order wins. */
     body.surface-focus:not(.surface-map-any) .journey-compass,
     body.surface-focus-search:not(.surface-map-any) .journey-compass,

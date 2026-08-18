@@ -1,7 +1,7 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { createReadStream } from 'node:fs'
-import { copyFile, cp, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
+import { copyFile, cp, mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'url'
@@ -254,9 +254,26 @@ function serveRootAssets(middlewares: RootAssetMiddlewareStack): void {
             return
         }
 
-        const filePath = normalize(resolve(PROJECT_ROOT, relativePath))
+        // Resolve from PROJECT_ROOT first (dev server), then SVELTE_OUT_DIR
+        // (preview server). The ROOT_ASSETS map points to src/ paths; in preview
+        // mode the files live in dist/svelte/.
+        let filePath = normalize(resolve(PROJECT_ROOT, relativePath))
+        try {
+            const fileStat = await stat(filePath)
+            if (!fileStat.isFile()) {
+                filePath = normalize(resolve(SVELTE_OUT_DIR, relativePath.replace(/^src\//, '')))
+            }
+        } catch {
+            filePath = normalize(resolve(SVELTE_OUT_DIR, relativePath.replace(/^src\//, '')))
+        }
+
         const normalizedRoot = normalize(PROJECT_ROOT)
-        const isInsideRoot = filePath === normalizedRoot || filePath.startsWith(`${normalizedRoot}${normalize('/')}`)
+        const normalizedOut = normalize(SVELTE_OUT_DIR)
+        const isInsideRoot =
+            filePath === normalizedRoot ||
+            filePath.startsWith(`${normalizedRoot}${normalize('/')}`) ||
+            filePath === normalizedOut ||
+            filePath.startsWith(`${normalizedOut}${normalize('/')}`)
 
         if (!isInsideRoot) {
             next()
@@ -285,6 +302,38 @@ function serveRootAssets(middlewares: RootAssetMiddlewareStack): void {
         // handler. Browser sends Accept-Encoding; we honor it.
         const acceptEncoding = (req.headers['accept-encoding'] || '').toLowerCase()
         const isCompressible = /\.(css|js|mjs|json|html?|svg)$/.test(filePath)
+
+        // W44 Phase F: prefer pre-compressed .br/.gz siblings for .dat assets
+        // when the browser supports them. The build writes semantic_threads.dat
+        // (79 MB) + semantic_threads_ui.dat (40 MB) + leadEnrichment.json
+        // (18 MB) alongside their brotli/gzip twins; serving the raw files
+        // means 137 MB transfer for what should be a ~10 MB payload.
+        if (!isCompressible && acceptEncoding) {
+            for (const ext of ['br', 'gz'] as const) {
+                if (acceptEncoding.includes(ext)) {
+                    // Check both PROJECT_ROOT (dev) and SVELTE_OUT_DIR (preview)
+                    // for pre-compressed twins — the build writes them to dist/.
+                    const candidates = [
+                        `${filePath}.${ext}`,
+                        normalize(resolve(SVELTE_OUT_DIR, relativePath.replace(/^public\//, '').replace(/^src\//, '') + `.${ext}`))
+                    ]
+                    for (const compressedPath of candidates) {
+                        try {
+                            const cstat = await stat(compressedPath)
+                            if (cstat.isFile()) {
+                                res.setHeader('Content-Encoding', ext)
+                                res.setHeader('Vary', 'Accept-Encoding')
+                                createReadStream(compressedPath).pipe(res)
+                                return
+                            }
+                        } catch {
+                            // Try next candidate
+                        }
+                    }
+                }
+            }
+        }
+
         if (isCompressible && acceptEncoding) {
             try {
                 const raw = await readFile(filePath)
@@ -333,12 +382,21 @@ function contentType(filePath: string): string {
 
 /* W44 Phase F — brotli/gzip precompression of large runtime-data assets during build.
  * The `apply: 'build'` gate ensures dev work never pays the cost.
+ *
+ * W44 perf (2026-08-18, build-time-optimizer swarm): this plugin compresses
+ * ~136 MB of data assets (semantic_threads.dat 78.7 MB + semantic_threads_ui.dat
+ * 39.5 MB + leadEnrichment.json 17.8 MB) on every build — ~2-4s of the total.
+ * For rapid iteration, gate behind VITE_COMPRESS_ASSETS=false to skip it.
+ * CI/release builds keep it on (default).
  */
+const COMPRESS_ASSETS = process.env.VITE_COMPRESS_ASSETS !== 'false'
+
 function w44AssetCompressionPlugin(): Plugin {
     return {
         name: 'w44-asset-compression',
         apply: 'build',
         async closeBundle() {
+            if (!COMPRESS_ASSETS) return
             const entries = await readdir(SVELTE_OUT_DIR, { recursive: true, withFileTypes: true })
             // First pass: stat each candidate to filter by size threshold.
             // Files smaller than COMPRESSION_MIN_BYTES produce compressed output
@@ -388,6 +446,25 @@ function w44AssetCompressionPlugin(): Plugin {
                 })
             )
             await Promise.all(tasks)
+            // W44 Phase F: after writing .br/.gz twins, remove the uncompressed
+            // originals for data assets. The serveRootAssets middleware serves
+            // the compressed twins when the browser supports them; the raw
+            // 79 MB / 40 MB / 18 MB files are never needed at runtime.
+            // This runs in closeBundle (after writeBundle copied the files),
+            // so the twins exist when we check.
+            // W44 Phase F: after writing .br/.gz twins, remove the uncompressed
+            // originals for data assets. The serveRootAssets middleware serves
+            // the compressed twins when the browser supports them; the raw
+            // 79 MB / 40 MB / 18 MB files are never needed at runtime.
+            for (const { filePath } of candidates) {
+                if (/(\.dat|\.json)$/.test(filePath) && !/\.(br|gz)$/.test(filePath)) {
+                    try {
+                        await unlink(filePath)
+                    } catch {
+                        /* already gone or not ours */
+                    }
+                }
+            }
         }
     }
 }
@@ -542,12 +619,21 @@ export default defineConfig({
         // every module in the production bundle. Open in any browser to read.
         // Tree-shaking still applies (it's a build-time plugin), so the stats
         // reflect exactly what ships. Gated to `npm run build:svelte` (not dev).
-        visualizer({
-            filename: 'dist/svelte/stats.html',
-            gzipSize: true,
-            brotliSize: true,
-            template: 'treemap'
-        })
+        //
+        // W44 perf (2026-08-18, build-time-optimizer): the visualizer is
+        // the most variable single hook (3.2s → 8.3s measured across 6 builds).
+        // It is not needed for production deploys — only for bundle analysis.
+        // Gate behind VITE_VISUALIZER=true so regular builds skip it entirely.
+        ...(process.env.VITE_VISUALIZER === 'true'
+            ? [
+                  visualizer({
+                      filename: 'dist/svelte/stats.html',
+                      gzipSize: true,
+                      brotliSize: true,
+                      template: 'treemap'
+                  })
+              ]
+            : [])
     ],
     resolve: {
         alias: {
@@ -707,7 +793,7 @@ export default defineConfig({
                 }
                 defaultHandler(warning)
             }
-        },
+        }
         // Vite auto-discovers index.html in the root directory (which is src/)
     }
 })

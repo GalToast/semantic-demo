@@ -7,6 +7,7 @@
 
 import type { BusinessRecord } from '@lib/types/business'
 import { appState } from '@lib/state/app.svelte.ts'
+import { getLeadEnrichment } from '@lib/data-store'
 
 /** Blocklist for filtering business trivia. */
 export const TRIVIA_BLOCKLIST = Object.freeze({
@@ -86,7 +87,7 @@ export function getInterestingBusinessNote(point: BusinessRecord | null): string
     // Bug Sweep 33: prefer the lead's own one-liner from the enrichment
     // (snapshot > business_overview > observations) over the database
     // trivia field, which is often database noise.
-    const enrichment = appState.leadEnrichment
+    const enrichment = getLeadEnrichment()
     if (enrichment && point.lead_id !== undefined) {
         const enr = enrichment[String(point.lead_id)] as Record<string, unknown> | undefined
         if (enr) {

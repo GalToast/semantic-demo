@@ -939,7 +939,7 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-nex
     body.surface-focus-search #info-panel #selected-card,
     body.surface-focus-search #info-panel .selected-empty,
     body.surface-search #info-panel .search-container #mode-grid,
-    body.surface-focus-search #info-panel .search-container .mode-grid,
+    body.surface-focus-search #info-panel .search-container #mode-chips,
     body.surface-focus-search #info-panel .search-container #mode-grid,
     body.surface-focus-search #info-panel #trail-controls,
     body.surface-focus-search #info-panel .trail-controls,

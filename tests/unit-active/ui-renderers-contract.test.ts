@@ -21,16 +21,14 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock('@lib/state/app.svelte.ts', () => ({
     appState: {
-        get leadEnrichment() {
-            return mockState.leadEnrichment
-        },
-        set leadEnrichment(v) {
-            mockState.leadEnrichment = v
-        },
         get searchState() {
             return mockState.searchState
         }
     }
+}))
+
+vi.mock('@lib/data-store', () => ({
+    getLeadEnrichment: () => mockState.leadEnrichment
 }))
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

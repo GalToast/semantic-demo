@@ -13,6 +13,7 @@
  * map-state.ts, journey-bindings.ts, view-bindings.ts (was `ui-feedback`).
  */
 import { appState } from '@lib/state/app.svelte'
+import { getPointIndexByLeadId } from '@lib/data-store'
 import type { Point } from '@lib/state/state-types'
 
 import { isCompactMapViewport, isCompactSearchViewport } from '@lib/utils/ui-presentation'
@@ -50,7 +51,7 @@ export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatus
 
     const pointIndexByLeadId =
         point?.lead_id !== null && point?.lead_id !== undefined
-            ? (appState.pointIndexByLeadId as Map<string | number, number> | undefined)?.get?.(String(point.lead_id))
+            ? getPointIndexByLeadId().get(String(point.lead_id))
             : undefined
     const pointIndex = Number.isFinite(pointIndexByLeadId)
         ? pointIndexByLeadId

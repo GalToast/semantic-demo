@@ -70,6 +70,11 @@ test.describe('Widget journey', () => {
         await expect(page.locator('canvas').first()).toBeVisible()
         await expect(page.locator('text=3D scene unavailable')).toHaveCount(0)
         await expect(page.locator('text=Unable to load')).toHaveCount(0)
+        // Demo-phase ribbon: with nodemo=1 the demo is disabled so phase stays IDLE.
+        expect(
+            await page.evaluate(() => document.body.dataset.demoPhase),
+            'body.dataset.demoPhase must be set (not undefined) after splash dismissal',
+        ).toMatch(/^(IDLE|OVERVIEW|SEARCH|FOCUS|THREADS|NEIGHBORS|TRAIL|DIVE|FILTER|MAP|RETURN|COMPLETE|CANCELLED)$/)
     })
 
     test('combined deep-link ?surface=inside&anchor=518&q=coffee&nodemo=1 settles semantic dive with focused anchor', async ({

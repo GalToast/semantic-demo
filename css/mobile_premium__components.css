@@ -203,7 +203,7 @@
     }
 
     body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) #mode-grid,
-    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) .mode-grid {
+    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) #mode-chips {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -693,7 +693,7 @@
             [data-focus-panel-mode='field-node']
         )
         .focus-stage-neighbor-list
-        > :nth-child(n + 2) {
+        >:nth-child(n + 2) {
         display: none;
     }
 
@@ -1107,7 +1107,7 @@
 
     body.surface-semantic-dive
         #focus-stage-auxiliary-surfaces
-        > :not(#focus-stage-inside-status):not(#focus-stage-inside-controls) {
+        >:not(#focus-stage-inside-status):not(#focus-stage-inside-controls) {
         display: none;
     }
 
@@ -1428,7 +1428,7 @@
             [data-panel-surface='semantic-dive']
         )
         .journey-compass[data-density='compact']
-        > :not(.journey-compass-copy) {
+        >:not(.journey-compass-copy) {
         display: none;
     }
 
@@ -1637,7 +1637,7 @@
 
     body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
         .focus-stage-neighbor-list
-        > :nth-child(n + 2) {
+        >:nth-child(n + 2) {
         display: none;
     }
 
@@ -1913,7 +1913,7 @@
         pointer-events: none;
     }
 
-    body:is(.surface-focus, .surface-focus-search, .surface-semantic-dive) :is(#btn-legend, #btn-keyboard-help) {
+    body:is(.surface-focus, .surface-focus-search, .surface-semantic-dive):is(#btn-legend, #btn-keyboard-help) {
         display: flex;
         visibility: visible;
         pointer-events: auto;
@@ -2079,7 +2079,7 @@
 
     /* Idle composition budget: the overview sheet and compact compass own
        mobile idle chrome; the desktop zoom/reset rail is redundant here. */
-    body.surface-idle :is(.controls, #camera-controls) {
+    body.surface-idle:is(.controls, #camera-controls) {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -2087,13 +2087,13 @@
 
     /* canonical: --bp-landscape */
     @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
-        body.surface-idle :is(.controls.controls-rail, .controls.controls-info) {
+        body.surface-idle:is(.controls.controls-rail, .controls.controls-info) {
             display: contents;
             visibility: visible;
             pointer-events: auto;
         }
 
-        body.surface-idle :is(.controls.controls-view, .controls-divider) {
+        body.surface-idle:is(.controls.controls-view, .controls-divider) {
             display: none;
             visibility: hidden;
             pointer-events: none;

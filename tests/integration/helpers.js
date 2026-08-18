@@ -119,6 +119,7 @@ export async function readBodyAttrs(page) {
             searchGlow: d.searchGlow ?? null,
             loadingOverlay: d.loadingOverlay ?? null,
             sceneReady: d.sceneReady ?? null,
+            demoPhase: d.demoPhase ?? null,
         }
     })
 }

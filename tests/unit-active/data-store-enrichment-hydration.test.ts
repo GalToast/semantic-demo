@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { loadLeadEnrichment, resetDataStores, setLeadEnrichmentData } from '../../src/lib/data-store.ts'
-import { appState as state } from '../../src/lib/state/app.svelte.ts'
 import { getLeadEnrichment } from '../../src/lib/data-store.ts'
 import type { LeadEnrichment } from '../../src/lib/types/business'
 
@@ -28,7 +27,7 @@ describe('lead enrichment hydration seam', () => {
         setLeadEnrichmentData(enrichment)
 
         expect(getLeadEnrichment()).toBe(enrichment)
-        expect(state.leadEnrichment).toStrictEqual(enrichment)
+        expect(getLeadEnrichment()).toStrictEqual(enrichment)
     })
 
     it('deduplicates concurrent lazy enrichment fetches', async () => {

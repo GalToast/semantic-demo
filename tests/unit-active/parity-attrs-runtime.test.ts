@@ -361,7 +361,7 @@ describe('applyParityAttributes — full schema roundtrip', () => {
             inspectedThreadIndex: null,
             journeyPhase: 'idle',
             terrainHandoff: 'idle',
-            demoPhase: 'overview',
+            demoPhase: 'OVERVIEW',
             filtersActive: 'false',
             reducedMotion: 'false',
             compact: 'false',

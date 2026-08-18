@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { get } from 'svelte/store'
 import type { LeadEnrichment } from '@lib/types/business'
-import { appState as legacyState } from '@lib/state/app.svelte'
 
 const originalGlobalWorker = globalThis.Worker
 const originalWindowWorker = (window as Window & { Worker?: unknown }).Worker
@@ -10,6 +9,7 @@ const originalRequestIdleCallback = (window as Window & { requestIdleCallback?: 
 import {
     businessRecords,
     dataLoadState,
+    getBusinessRecords,
     getLeadEnrichment,
     getPointIndexByLeadId,
     initData,
@@ -159,14 +159,6 @@ function makeEnrichment(): Record<string, LeadEnrichment> {
     }
 }
 
-function resetLegacyDataState(): void {
-    ;(legacyState as any).points = []
-    ;(legacyState as any).rawPositionsBuffer = null
-    ;(legacyState as any).rawClustersBuffer = null
-    ;(legacyState as any).leadEnrichment = null
-    ;(legacyState as any).pointIndexByLeadId = new Map()
-}
-
 describe('lead enrichment hydration seam in data-store', () => {
     let fetchMock: ReturnType<typeof vi.fn>
 
@@ -184,7 +176,6 @@ describe('lead enrichment hydration seam in data-store', () => {
         vi.stubGlobal('fetch', fetchMock)
 
         installIdleCallbackNoop()
-        resetLegacyDataState()
         resetDataStores()
     })
 
@@ -209,8 +200,8 @@ describe('lead enrichment hydration seam in data-store', () => {
         expect(get(pointIndexByLeadId).get('lead-1')).toBe(0)
         expect(get(leadEnrichment)).toBeNull()
         expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining('leadEnrichment.public.json'))
-        expect(legacyState.points).toHaveLength(1)
-        expect(legacyState.leadEnrichment).toBeNull()
+        expect(getBusinessRecords()).toHaveLength(1)
+        expect(getLeadEnrichment()).toBeNull()
     })
 
     it('hydrates optional enrichment later without replacing business consumers', async () => {
@@ -240,7 +231,7 @@ describe('lead enrichment hydration seam in data-store', () => {
             threadsLoaded: false,
             error: null
         })
-        expect(legacyState.leadEnrichment).toEqual(enrichment)
+        expect(getLeadEnrichment()).toEqual(enrichment)
 
         await loadLeadEnrichment()
         expect(fetchMock).toHaveBeenCalledTimes(1)

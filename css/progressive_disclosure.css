@@ -430,7 +430,7 @@ body.surface-semantic-dive .selected-card {
     .loading-spore,
     .rain-drop,
     .snow-flake,
-    .mode-grid.computing,
+    #mode-chips.computing,
     .loading-thread,
     .search-spinner {
         animation-name: none;
@@ -845,7 +845,7 @@ body.surface-map-search .selected-empty {
 body.surface-focus .search-container:not(.has-query) .search-results.active,
 body.surface-focus .synthesize-trigger,
 body.surface-focus .search-trail-cue,
-body.surface-focus .mode-grid,
+body.surface-focus #mode-chips,
 body.surface-focus .stats-row,
 body.surface-focus .launch-btn,
 body.surface-focus .rail-section#cluster-section,

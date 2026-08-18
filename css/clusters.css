@@ -80,12 +80,6 @@
     opacity: 0;
 }
 
-.selected-card.reveal-focus {
-    border-color: rgb(var(--cluster-rgb) / 0.56);
-    box-shadow:
-        0 0 0 1px rgb(var(--cluster-rgb) / 0.18),
-        0 18px 34px rgba(6, 18, 24, 0.36);
-}
 
 /* Empty/populated visibility is renderer-owned; this file owns the empty composition. */
 .selected-empty {

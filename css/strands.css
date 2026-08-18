@@ -83,7 +83,7 @@
 
     .search-clear-btn,
     #map-container .leaflet-control-zoom.leaflet-bar a,
-    .mode-grid .mode-chip,
+    #mode-chips .mode-chip,
     .focus-stage-action-btn {
         min-width: 44px;
         min-height: 44px;
@@ -93,7 +93,7 @@
 
 @media (forced-colors: active) {
     button:focus-visible,
-    .mode-grid .mode-chip:focus-visible,
+    #mode-chips .mode-chip:focus-visible,
 
     .loading-overlay {
         transition: none;
@@ -227,7 +227,7 @@
     body .search-input-wrapper,
     body .search-input,
     body .search-clear-btn,
-    body .mode-grid .mode-chip,
+    body #mode-chips .mode-chip,
     body #map-container .leaflet-control-zoom.leaflet-bar a {
         min-width: 44px;
         min-height: 44px;
@@ -467,7 +467,7 @@
     body.surface-idle .semantic-lane-pill,
     body.surface-idle .semantic-lane-assist,
     body.surface-idle .search-hint,
-    body.surface-idle .mode-grid,
+    body.surface-idle #mode-chips,
     body.surface-idle .rail-section {
         display: none;
     }
@@ -502,7 +502,7 @@
     body.surface-search .semantic-lane-pill,
     body.surface-search .search-trail-cue,
     body.surface-search .synthesize-trigger,
-    body.surface-search .mode-grid,
+    body.surface-search #mode-chips,
     body.surface-search .surprise-btn {
         display: none;
     }
@@ -665,9 +665,9 @@ body.surface-focus-search .controls .control-btn {
         transform: none;
     }
 
-    html body.view-galaxy[data-panel-surface='focus'] :is(.controls.controls-view, .controls-divider),
-    html body.view-galaxy[data-panel-surface='focus-search'] :is(.controls.controls-view, .controls-divider),
-    html body.view-galaxy[data-panel-surface='semantic-dive'] :is(.controls.controls-view, .controls-divider) {
+    html body.view-galaxy[data-panel-surface='focus']:is(.controls.controls-view, .controls-divider),
+    html body.view-galaxy[data-panel-surface='focus-search']:is(.controls.controls-view, .controls-divider),
+    html body.view-galaxy[data-panel-surface='semantic-dive']:is(.controls.controls-view, .controls-divider) {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -941,7 +941,7 @@ body.surface-focus-search .controls .control-btn {
     body.surface-search .selected-card,
     body.surface-search #selected-card,
     body.surface-search .selected-empty,
-    body.surface-search .mode-grid {
+    body.surface-search #mode-chips {
         display: none;
     }
 
@@ -1005,17 +1005,17 @@ body.surface-focus-search .controls .control-btn {
         color: rgba(213, 255, 250, 0.94);
     }
 
-    body.view-galaxy .mode-grid .mode-chip {
+    body.view-galaxy #mode-chips .mode-chip {
         border-radius: 12px;
     }
 
-    body.view-galaxy .mode-grid .mode-chip.active {
+    body.view-galaxy #mode-chips .mode-chip.active {
         border-color: rgba(var(--color-primary-alt-rgb), 0.55);
         background: rgba(var(--color-primary-alt-rgb), 0.16);
         color: rgba(201, 255, 248, 0.98);
     }
 
-    body.view-galaxy .mode-grid .mode-chip:disabled {
+    body.view-galaxy #mode-chips .mode-chip:disabled {
         border-color: rgba(255, 255, 255, 0.11);
         border-style: dashed;
         opacity: 0.38;
@@ -1050,7 +1050,7 @@ body.surface-focus-search .controls .control-btn {
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #story-section,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #cluster-section,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #filters-section,
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .mode-grid,
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #mode-chips,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .semantic-lane-assist,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .search-trail-cue,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .synthesize-trigger {
@@ -1183,7 +1183,7 @@ body.surface-focus-search .controls .control-btn {
         display: none;
     }
 
-    body.surface-idle .mode-grid {
+    body.surface-idle #mode-chips {
         display: none;
     }
 
@@ -1268,7 +1268,7 @@ body.surface-focus-search .controls .control-btn {
 }
 
 /* Mode chip state variants must survive legacy cluster/strand styling at every viewport. */
-body .mode-grid .mode-chip.is-waiting,
+body #mode-chips .mode-chip.is-waiting,
 body #mode-chips .mode-chip.is-waiting {
     opacity: 0.75;
     border-style: solid;
@@ -1278,11 +1278,11 @@ body #mode-chips .mode-chip.is-waiting {
     box-shadow: 0 0 0 1px rgba(255, 176, 30, 0.15);
 }
 
-body .mode-grid .mode-chip.is-locked,
+body #mode-chips .mode-chip.is-locked,
 body #mode-chips .mode-chip.is-locked {
     /* W49b Punch 3: locked chips use a desaturated gray palette so they are
        instantly distinguishable from active chips (teal). Added a subtle
-       dashed border + the unicode 🔒 glyph via ::after so users see at a
+       dashed border + the unicode 🔒 glyph via::after so users see at a
        glance which views are gated behind an action (select a business). */
     border-color: rgba(180, 195, 205, 0.4);
     border-style: dashed;
@@ -1293,7 +1293,7 @@ body #mode-chips .mode-chip.is-locked {
     padding-right: calc(1ch + 0.5rem);
 }
 
-body .mode-grid .mode-chip.is-locked::after,
+body #mode-chips .mode-chip.is-locked::after,
 body #mode-chips .mode-chip.is-locked::after {
     /* Lock indicator moved to an inline SVG (aria-hidden) inside the component
        button markup. The pseudo-element is retired so screen readers no longer
@@ -1301,7 +1301,7 @@ body #mode-chips .mode-chip.is-locked::after {
     content: none;
 }
 
-body .mode-grid .mode-chip.is-locked .chip-icon,
+body #mode-chips .mode-chip.is-locked .chip-icon,
 body #mode-chips .mode-chip.is-locked .chip-icon {
     opacity: 0.7;
     filter: grayscale(0.6);
@@ -1313,7 +1313,7 @@ body #mode-chips .mode-chip.is-locked .chip-icon {
    The CSS shell (strands.css) is loaded before strands.css in the cascade
    so this rule wins over earlier mobile overrides. */
 @media (max-width: 768px) {
-    body .mode-grid .mode-chip.is-locked::after,
+    body #mode-chips .mode-chip.is-locked::after,
     body #mode-chips .mode-chip.is-locked::after {
         /* Lock indicator is an inline SVG (aria-hidden) in the component markup.
            Removing the pseudo-element prevents the emoji from being exposed as
@@ -1322,14 +1322,14 @@ body #mode-chips .mode-chip.is-locked .chip-icon {
     }
 }
 
-body .mode-grid .mode-chip:disabled,
+body #mode-chips .mode-chip:disabled,
 body #mode-chips .mode-chip:disabled {
     cursor: not-allowed;
     opacity: 0.7;
     pointer-events: none;
 }
 
-body.view-map .mode-grid .mode-chip.active,
+body.view-map #mode-chips .mode-chip.active,
 body.view-map #mode-chips .mode-chip.active {
     border-color: rgba(120, 200, 255, 0.4);
     background: rgba(120, 200, 255, 0.15);

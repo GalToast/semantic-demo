@@ -392,7 +392,7 @@ body:is(
         [data-panel-surface='map-focus-search']
     )
     .search-container.has-query
-    .search-result-item:is(:hover, :focus-visible, .active-focus)
+    .search-result-item:is(:hover,:focus-visible, .active-focus)
     .search-result-badges {
     color: rgba(185, 244, 238, 0.85);
     opacity: 1;
@@ -537,7 +537,7 @@ body.surface-focus-search .search-container:not(.info-panel-contained) {
 }
 
 /* Mode grid inside search container: visually separated from results above */
-.search-container .mode-grid {
+.search-container #mode-chips {
     margin-top: 6px;
     padding-top: 6px;
     border-top: 1px solid var(--glass-reflection-muted);
@@ -1142,14 +1142,14 @@ body.searching .search-container.has-query .search-clear-btn {
         background: rgba(5, 10, 16, 0.82);
     }
 
-    body.surface-map-search .search-container .mode-grid {
+    body.surface-map-search .search-container #mode-chips {
         gap: 7px;
         margin-top: 8px;
         padding-top: 8px;
         border-top-color: rgba(var(--color-primary-tint-rgb), 0.1);
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-chip {
+    body.surface-map-search .search-container #mode-chips .mode-chip {
         position: relative;
         min-height: 58px;
         padding: 8px 10px 8px 12px;
@@ -1164,7 +1164,7 @@ body.searching .search-container.has-query .search-clear-btn {
         overflow: hidden;
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-chip::before {
+    body.surface-map-search .search-container #mode-chips .mode-chip::before {
         content: '';
         position: absolute;
         inset: 8px auto 8px 6px;
@@ -1173,15 +1173,15 @@ body.searching .search-container.has-query .search-clear-btn {
         background: rgba(var(--color-primary-tint-rgb), 0.2);
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-chip:hover,
-    body.surface-map-search .search-container .mode-grid .mode-chip:focus-visible {
+    body.surface-map-search .search-container #mode-chips .mode-chip:hover,
+    body.surface-map-search .search-container #mode-chips .mode-chip:focus-visible {
         border-color: rgba(var(--color-primary-tint-rgb), 0.26);
         background:
             linear-gradient(90deg, rgba(var(--color-primary-tint-rgb), 0.11), transparent 58%),
             linear-gradient(180deg, rgba(16, 32, 38, 0.9), rgba(7, 15, 21, 0.94));
     }
 
-    body.surface-map-search[data-active-view='map'] .search-container .mode-grid .mode-chip.active {
+    body.surface-map-search[data-active-view='map'] .search-container #mode-chips .mode-chip.active {
         border-color: rgba(255, 226, 132, 0.34);
         background:
             linear-gradient(90deg, rgba(255, 226, 132, 0.14), transparent 52%),
@@ -1193,18 +1193,18 @@ body.searching .search-container.has-query .search-clear-btn {
             0 9px 18px rgba(0, 0, 0, 0.22);
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-chip.active::before {
+    body.surface-map-search .search-container #mode-chips .mode-chip.active::before {
         background: linear-gradient(180deg, rgba(255, 226, 132, 0.96), rgba(var(--color-primary-tint-rgb), 0.78));
         box-shadow: 0 0 12px rgba(255, 226, 132, 0.22);
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-name {
+    body.surface-map-search .search-container #mode-chips .mode-name {
         font-size: 11.5px;
         line-height: 1.05;
         letter-spacing: 0;
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-chip::after {
+    body.surface-map-search .search-container #mode-chips .mode-chip::after {
         display: block;
         min-width: 0;
         margin-top: 4px;
@@ -1219,23 +1219,23 @@ body.searching .search-container.has-query .search-clear-btn {
         text-overflow: ellipsis;
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-chip[data-mode='default']::after {
+    body.surface-map-search .search-container #mode-chips .mode-chip[data-mode='default']::after {
         content: 'County field';
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-chip[data-mode='bloom']::after {
+    body.surface-map-search .search-container #mode-chips .mode-chip[data-mode='bloom']::after {
         content: 'Signal rich';
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-chip[data-mode='bridge']::after {
+    body.surface-map-search .search-container #mode-chips .mode-chip[data-mode='bridge']::after {
         content: 'Cross cluster';
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-chip[data-mode='trail']::after {
+    body.surface-map-search .search-container #mode-chips .mode-chip[data-mode='trail']::after {
         content: 'Route walk';
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-caption {
+    body.surface-map-search .search-container #mode-chips  {
         max-height: 1.3em;
         color: rgba(202, 222, 219, 0.85);
         font-size: 9.5px;
@@ -1245,12 +1245,12 @@ body.searching .search-container.has-query .search-clear-btn {
         text-overflow: ellipsis;
     }
 
-    body.surface-map-search .search-container .mode-grid .mode-chip.active .mode-caption,
-    body.surface-map-search .search-container .mode-grid .mode-chip:hover .mode-caption,
-    body.surface-map-search .search-container .mode-grid .mode-chip:focus-visible .mode-caption,
-    body.surface-map-search .search-container .mode-grid .mode-chip.active::after,
-    body.surface-map-search .search-container .mode-grid .mode-chip:hover::after,
-    body.surface-map-search .search-container .mode-grid .mode-chip:focus-visible::after {
+    body.surface-map-search .search-container #mode-chips .mode-chip.active,
+    body.surface-map-search .search-container #mode-chips .mode-chip:hover,
+    body.surface-map-search .search-container #mode-chips .mode-chip:focus-visible,
+    body.surface-map-search .search-container #mode-chips .mode-chip.active::after,
+    body.surface-map-search .search-container #mode-chips .mode-chip:hover::after,
+    body.surface-map-search .search-container #mode-chips .mode-chip:focus-visible::after {
         color: rgba(231, 244, 241, 0.85);
     }
 

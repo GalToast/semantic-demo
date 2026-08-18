@@ -204,8 +204,8 @@
 .launch-btn:hover,
 .launch-btn:hover,
 .launch-btn:focus-visible,
-.mode-grid .mode-chip:hover .mode-caption,
-.mode-grid .mode-chip:focus-visible .mode-caption,
+#mode-chips .mode-chip:hover,
+#mode-chips .mode-chip:focus-visible,
 body.surface-focus .info-panel,
 body.surface-focus-search .info-panel {
     border-color: rgba(var(--color-primary-tint-rgb), 0.14);
@@ -441,10 +441,6 @@ body:has(.info-panel.active) .panel-toggle {
     outline: 2px solid rgba(var(--color-primary-rgb), 0.6);
     outline-offset: 2px;
 }
-.legend-item.is-focus-cluster {
-    border-color: rgba(255, 217, 61, 0.25);
-    box-shadow: inset 0 0 0 1px rgba(255, 217, 61, 0.08);
-}
 .legend-label {
     font-size: 11px;
     line-height: 1.25;
@@ -563,7 +559,7 @@ body:has(.info-panel.active) .panel-toggle {
     body.surface-focus-search .info-panel .info-header,
     body.surface-focus-search .info-panel #story-section,
     body.surface-focus-search .info-panel #cluster-section,
-    body.surface-focus-search .info-panel .mode-grid,
+    body.surface-focus-search .info-panel #mode-chips,
     body.surface-focus-search .info-panel .semantic-lane-assist,
     body.surface-focus-search .info-panel .search-trail-cue,
     body.surface-focus-search .info-panel .synthesize-trigger {
@@ -580,7 +576,7 @@ body:has(.info-panel.active) .panel-toggle {
 
     /* Mode chip base styles */
 
-    .mode-grid .mode-chip:focus-visible,
+    #mode-chips .mode-chip:focus-visible,
 
 
 
@@ -856,8 +852,8 @@ body.render-kind-placeholder2d.surface-idle .info-panel {
     .info-toggle-icon,
     .info-toggle-icon .ui-icon,
     .launch-btn,
-    .mode-grid .mode-chip,
-    .mode-grid .mode-caption,
+    #mode-chips .mode-chip,
+    #mode-chips,
     .info-panel.collapsed,
     .panel-toggle,
     .share-toggle,

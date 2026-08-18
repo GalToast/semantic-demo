@@ -62,6 +62,7 @@ import type { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { validateStateProperty, STATE_VALIDATION_STRICT, validateAppStateEnumFields } from './state-validation'
+import { businessRecords } from '@lib/data-store'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
@@ -161,7 +162,12 @@ export class AppState {
     semanticLaneWarmingCounter = $state<number>(0)
 
     // ==== POSITION / GEOMETRY STATE ====
-    points = $state<Point[]>([])
+    get points(): Point[] {
+        return businessRecords.getSnapshot() as unknown as Point[]
+    }
+    set points(value: Point[]) {
+        businessRecords.set(value as unknown as readonly BusinessRecord[])
+    }
     map = $state<LeafletLayer>(null)
     markersLayer = $state<LeafletLayer>(null)
     mapRouteLayer = $state<LeafletLayer>(null)
@@ -175,10 +181,7 @@ export class AppState {
     pointsMaterial = $state<PointsMaterial | null>(null)
     nodeSporeMesh = $state<InstancedMesh | null>(null)
     nodeSporeMaterial = $state<Material | null>(null)
-    rawPositionsBuffer = $state<Float32Array | null>(null)
-    rawClustersBuffer = $state<Uint16Array | null>(null)
     overviewBounds = $state<Record<string, unknown> | null>(null)
-    leadEnrichment = $state<Record<string, unknown> | null>(null)
     myceliumGroup = $state<Group | null>(null)
     searchCorridorGroup = $state<Group | null>(null)
     myceliumCoreLines = $state<LineSegments2 | null>(null)
@@ -470,7 +473,6 @@ export class AppState {
     trailIndices = $state<Set<number>>(new Set())
     projectedNeighborGrid = $state<SpatialGrid | null>(null)
     projectedNeighborCache = $state<Map<number, unknown>>(new Map())
-    pointIndexByLeadId = $state<Map<string | number, number>>(new Map())
     deferredHydrationStarted = $state<boolean>(false)
     _semanticDiveTransitionDeadline = $state<number>(0)
     /**

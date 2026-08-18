@@ -26,7 +26,7 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import {
-    _installMockFetch,
+    installMockFetch,
     captureConsoleErrors,
     withRetry,
     readBodyAttrs,
@@ -61,6 +61,7 @@ test.describe('W15 body-attr live probe', () => {
                 expect(attrs.trailState, 'data-trail-state should be inactive').toBe('inactive')
                 expect(attrs.semanticDive, 'data-semantic-dive should be inactive').toBe('inactive')
                 expect(attrs.sceneReady, 'data-scene-ready should be true').toBe('true')
+                expect(attrs.demoPhase, 'data-demo-phase should be IDLE (nodemo=1)').toBe('IDLE')
             },
             { maxAttempts: 3, backoffMs: 1000, label: 'idle' }
         )
@@ -158,6 +159,9 @@ test.describe('W15 body-attr live probe', () => {
                 expect(attrs.panelSurface, 'data-panel-surface should be focus-search').toBe('focus-search')
                 expect(attrs.journeyPhase, 'data-journey-phase should be focus-search').toBe('focus-search')
                 expect(attrs.trailState, 'data-trail-state should be active').toBe('active')
+                expect(attrs.demoPhase, 'data-demo-phase should be a valid DemoPhase (nodemo=1)').toMatch(
+                    /^(IDLE|OVERVIEW|SEARCH|FOCUS|THREADS|NEIGHBORS|TRAIL|DIVE|FILTER|MAP|RETURN|COMPLETE|CANCELLED)$/,
+                )
             },
             { maxAttempts: 3, backoffMs: 1000, label: 'focus-search' }
         )

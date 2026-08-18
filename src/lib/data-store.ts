@@ -17,6 +17,7 @@
  * from svelte/internal/client), wrapped in a small typed facade.
  */
 
+import { appState } from '@lib/state/app.svelte'
 import type { Readable } from 'svelte/store'
 // @ts-expect-error — svelte/internal/client is a runtime-only entry without published
 // type declarations (verified: exports map has no "types" entry). The shapes
@@ -36,7 +37,6 @@ import type {
 import type { LoadingPhase } from '@lib/types/state'
 import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/debug'
-import { appState } from '@lib/state/app.svelte'
 import { debugError } from '@lib/utils/debug'
 
 // ── Rune-backed store shim ───────────────────────────────────────────────────
@@ -482,11 +482,6 @@ export function setBusinessData(result: BusinessDataResult): void {
     // and focus flows (focusOnNode) see the data.
     try {
         {
-            appState.points = result.records
-            appState.rawPositionsBuffer = result.positionsBuffer
-            appState.rawClustersBuffer = result.clustersBuffer
-            appState.leadEnrichment = result.enrichment
-            appState.pointIndexByLeadId = result.pointIndexByLeadId
         }
 
         // Derive originalPositions/nodePositions from the raw buffer so
@@ -527,34 +522,6 @@ export function setBusinessData(result: BusinessDataResult): void {
     // focusOnNode) and the rune consumers diverge silently. Catch it here
     // rather than in production. Gated on import.meta.env.DEV so it never
     // ships.
-    if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
-        verifyDataMirrorConsistency(result)
-    }
-}
-
-/**
- * W67-D1: Assert the rune stores and appState mirrors agree after a dual-write.
- * Reads the SAME fields setBusinessData writes — if the lists diverge in
- * length or content, legacy engine selectors and rune consumers see different
- * data. Dev-only; throws so a refactor that breaks the mirror fails loudly
- * instead of shipping a silent split-brain.
- */
-function verifyDataMirrorConsistency(result: BusinessDataResult): void {
-    const checks: Array<[string, unknown, unknown]> = [
-        ['businessRecords', businessRecords.getSnapshot(), appState.points],
-        ['positionBuffer', positionBuffer.getSnapshot(), appState.rawPositionsBuffer],
-        ['clustersBuffer', clustersBuffer.getSnapshot(), appState.rawClustersBuffer],
-        ['pointIndexByLeadId', pointIndexByLeadId.getSnapshot(), appState.pointIndexByLeadId],
-        ['leadEnrichment', leadEnrichment.getSnapshot(), appState.leadEnrichment]
-    ]
-    for (const [name, runeVal, mirrorVal] of checks) {
-        if (runeVal !== mirrorVal) {
-            throw new Error(
-                `[data-store] Dual-write split-brain: ${name} rune store (${describeValue(runeVal)}) ` +
-                    `!= appState mirror (${describeValue(mirrorVal)}). setBusinessData must write both sides.`
-            )
-        }
-    }
 }
 
 function describeValue(v: unknown): string {
@@ -577,13 +544,6 @@ function describeValue(v: unknown): string {
  */
 export function setLeadEnrichmentData(enrichment: Record<string, LeadEnrichment> | null): void {
     leadEnrichment.set(enrichment)
-    try {
-        {
-            appState.leadEnrichment = enrichment
-        }
-    } catch (e) {
-        debugWarn('[data-store] Legacy enrichment sync failed:', e)
-    }
 }
 
 /**
@@ -628,17 +588,6 @@ export function setSemanticThreadData(result: SemanticThreadDataResult): void {
     semanticThreadArtifactName.set(result.artifactName)
     semanticNeighborMap.set(result.neighborMap)
     layoutManifest.set(result.layoutManifest)
-
-    // Sync back to legacy state so legacy neighborhood / thread builders see the data.
-    try {
-        {
-            appState.semanticNeighborMapByLeadId = result.neighborMap
-            appState.semanticThreadBundle = result.bundle
-            appState.semanticThreadArtifactName = result.artifactName
-        }
-    } catch (e) {
-        debugWarn('[data-store] Legacy semantic thread sync failed:', e)
-    }
 
     dataLoadState.update((s) => ({
         ...s,

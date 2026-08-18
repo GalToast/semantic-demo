@@ -74,7 +74,7 @@ const mockState = vi.hoisted(() => ({
         isShort: false,
         isTiny: false
     },
-    demoPhase: 'idle' as string,
+    demoPhase: 'IDLE' as string,
     cameraState: {
         position: [0, 0, 3] as [number, number, number],
         target: [0, 0, 0] as [number, number, number],
@@ -228,7 +228,7 @@ vi.mock('@lib/stores/demo.svelte', () => ({
         }
     }),
     demoPhase: () => mockState.demoPhase,
-    isDemoActive: () => mockState.demoPhase !== 'idle'
+    isDemoActive: () => mockState.demoPhase !== 'IDLE'
 }))
 
 vi.mock('@lib/stores/engine-ready.svelte', () => ({
@@ -333,7 +333,7 @@ function resetAllMockState(): void {
         isShort: false,
         isTiny: false
     }
-    mockState.demoPhase = 'idle'
+    mockState.demoPhase = 'IDLE'
     mockState.cameraState = {
         position: [0, 0, 3],
         target: [0, 0, 0],
@@ -470,9 +470,9 @@ describe('parity-attrs.svelte.ts — Svelte 5 mock harness (Phase 6f)', () => {
         })
 
         it('reads demoPhase into demoPhase attribute', () => {
-            mockState.demoPhase = 'narrating'
+            mockState.demoPhase = 'NARRATING'
             const map = computeParityAttributes()
-            expect(map['demoPhase']).toBe('narrating')
+            expect(map['demoPhase']).toBe('NARRATING')
         })
 
         it('reads loadingPhase into loadingPhase attribute', () => {
