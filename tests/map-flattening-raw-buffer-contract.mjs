@@ -2,8 +2,8 @@
  * map-flattening-raw-buffer-contract.mjs
  *
  * Source-only contract test for map-flattening-layout.js.
- * Ensures the map-view flattening reads from state.rawPositionsBuffer
- * (added by the data-worker refactor, commit cc2c576) instead of the
+ * Ensures the map-view flattening reads from the canonical positionBuffer
+ * store (populated by setBusinessData from the data-worker result) instead of the
  * (now-stale) point.x / point.y fields on each point.
  *
  * Background: before this contract, applyMapFlatteningLayout(true) read
@@ -51,11 +51,11 @@ check('module:exports:applyMapFlatteningLayout', /export\s+function\s+applyMapFl
 // Contract 2: enabled path uses state.rawPositionsBuffer (the fix)
 // ---------------------------------------------------------------------------
 check(
-    'enabled-path:reads rawPositionsBuffer',
+    'enabled-path:reads positionBuffer store',
     /hasRawBuffer/.test(targetSrc) &&
-        /(?:state|appState)\.rawPositionsBuffer\s*\[\s*i\s*\*\s*3\s*\]/.test(targetSrc) &&
-        /(?:state|appState)\.rawPositionsBuffer\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(targetSrc),
-    'map-flattening-layout.js must read rawPositionsBuffer[i*3] and [i*3+1] in the enabled branch'
+        /positionBuffer\.getSnapshot\(\)\s*\[\s*i\s*\*\s*3\s*\]/.test(targetSrc) &&
+        /positionBuffer\.getSnapshot\(\)\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(targetSrc),
+    'map-flattening-layout.js must read positionBuffer.getSnapshot()[i*3] and [i*3+1] in the enabled branch'
 )
 
 // ---------------------------------------------------------------------------
@@ -72,8 +72,8 @@ check(
 )
 check(
     'enabled-path:primary read is from buffer',
-    /(?:state|appState)\.rawPositionsBuffer\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(enabledBranch),
-    'the enabled branch must read y from rawPositionsBuffer[i*3+1], not point.y'
+    /positionBuffer\.getSnapshot\(\)\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(enabledBranch),
+    'the enabled branch must read y from positionBuffer.getSnapshot()[i*3+1], not point.y'
 )
 
 // ---------------------------------------------------------------------------
@@ -81,9 +81,9 @@ check(
 // ---------------------------------------------------------------------------
 const dataLoaderSrc = readFileSync(DATA_LOADER_PATH, 'utf8')
 check(
-    'data-loader:writes state.rawPositionsBuffer',
-    /rawPositionsBuffer\s*=\s*result\.positionsBuffer/.test(dataLoaderSrc),
-    'data-store.ts must assign state.rawPositionsBuffer from the typed array'
+    'data-loader:writes positionBuffer store',
+    /positionBuffer\.set\(result\.positionsBuffer\s*\)/.test(dataLoaderSrc),
+    'data-store.ts must write the typed array to the positionBuffer store'
 )
 
 // ---------------------------------------------------------------------------
@@ -107,7 +107,7 @@ check(
 let failed = 0
 console.log('\n=================================================================')
 console.log('map-flattening-raw-buffer-contract.mjs')
-console.log('Contract: map-flattening-layout must read state.rawPositionsBuffer')
+console.log('Contract: map-flattening-layout must read the canonical positionBuffer store')
 console.log('=================================================================\n')
 
 for (const { name, pass, detail } of checks) {

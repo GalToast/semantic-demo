@@ -309,7 +309,7 @@ function _validateSemanticSpaceLayoutManifest(
     // the load means thread_type/role/axis render as defaults. The UI pair-form
     // carries the label plane; surface the degradation instead of accepting it.
     if (artifactName && /threads(?:\.dat)?\.bin$/.test(loadedThreadName)) {
-        console.warn('[semantic-threads] label plane unavailable: loaded', loadedThreadName)
+        debugWarn('[semantic-threads] label plane unavailable: loaded', loadedThreadName)
     }
 
     const failures: string[] = []

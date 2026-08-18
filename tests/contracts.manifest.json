@@ -50,7 +50,8 @@
         "state-owner-sweep.mjs",
         "dewindowing-sweep.mjs",
         "reduced-motion-sweep.mjs",
-        "reduced-motion-interruption-sweep.mjs"
+        "reduced-motion-interruption-sweep.mjs",
+        "three-scene-playtest.mjs"
       ]
     },
     "browser": {
@@ -133,7 +134,9 @@
         "mobile-visual-qa-contract.mjs",
         "real-route-contract.mjs",
         "landscape-896x414-audit.spec.js",
-        "critical-visual-layout-regression.spec.js"
+        "critical-visual-layout-regression.spec.js",
+        "qa-android-contract.mjs",
+        "search-input-narrow-layout.spec.js"
       ]
     },
     "motion": {
@@ -143,7 +146,8 @@
         "motion-state-contract.mjs",
         "camera-auto-rotate-settle-contract.mjs",
         "semantic-dive-reverse-contract.mjs",
-        "focus-transition-contract.mjs"
+        "focus-transition-contract.mjs",
+        "reduced-motion-scene-diagnostic.mjs"
       ]
     },
     "lifecycle": {
@@ -209,7 +213,14 @@
         "playwright-dist-freshness-contract.mjs",
         "css-ownership-sweep.mjs",
         "svelte-css-sweep.mjs",
-        "design-token-sweep.mjs"
+        "design-token-sweep.mjs",
+        "css-import-linkage-check.mjs",
+        "css-self-reference-check.mjs",
+        "surface-contract-check.mjs",
+        "visual-state-audit.mjs",
+        "visual-state-registry.mjs",
+        "semantic-space-audit.mjs",
+        "product-playthrough-audit.mjs"
       ]
     },
     "supplemental": {
@@ -232,7 +243,8 @@
         "config-topology-env-contract.mjs",
         "data-schema-contract.mjs",
         "state-owner-sweep.mjs",
-        "design-token-sweep.mjs"
+        "design-token-sweep.mjs",
+        "verify-svelte-migration.mjs"
       ]
     },
     "3d-engine": {
@@ -571,7 +583,8 @@
         "widget-journey-smoke.spec.js",
         "keyboard-shortcuts-journey.spec.js",
         "search-clear-keeps-search-surface.spec.js",
-        "search-sheet-adversarial.spec.js"
+        "search-sheet-adversarial.spec.js",
+        "journey-coverage-gaps.spec.js"
       ]
     },
     "manual-risk": {

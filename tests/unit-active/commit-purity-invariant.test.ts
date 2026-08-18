@@ -49,6 +49,12 @@ const EXEMPTED_SHAS = new Set<string>([
     // own mixed commit, exempted on takeover 2026-08-17 (same evidence-class as the
     // harness precedents below).
     '4994322851dbd2d9c7348fe9e9503791a9632721',
+    // 2bb6e12 — test(unit): component-DevTelemetry + component-SpectorInspector
+    // (task 132 gaps 8-9). The bundled DevTelemetry.svelte IS the production
+    // surface the suite tests (dev-only telemetry overlay, gated on
+    // import.meta.env.DEV); SpectorInspector likewise. Test+subject-in-one
+    // commit, same evidence-bank shape as the DevTools exemptions above.
+    '2bb6e12c720fb7819247b8fab9f647eea11add47',
     // f2ce289c — test(app-init) lazy journey + the release-sheet row: test-class
     // commit carrying a doc line — legit mixed, exempted on takeover 2026-08-17.
     'f2ce289c575a3238b6b3eecc75115c5df45573b0',

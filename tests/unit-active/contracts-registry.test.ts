@@ -21,8 +21,12 @@ try {
     // left empty; tests will surface the unreadable manifest
 }
 
+// Helper/utility modules that are NOT contract entries (mirrors
+// run-all-contracts.js discoverUnlistedContracts exclusions).
+const NON_CONTRACT_HELPERS = new Set(['source-path.mjs'])
 const onDisk = readdirSync(TESTS_DIR)
     .filter((f) => /\.(mjs|spec\.(js|mjs)|contract\.mjs)$/.test(f))
+    .filter((f) => !NON_CONTRACT_HELPERS.has(f))
     .map((f) => f)
 
 function manifestHas(name: string): boolean {
@@ -42,7 +46,20 @@ test('every contract-ish file on disk is registered in the manifest', () => {
 })
 
 test('every manifest entry resolves to a file on disk', () => {
-    const missing = manifestEntries.filter((e) => !existsSync(join(REPO_ROOT, e)))
+    // Entries are tests/-relative bare filenames (see readdirSync(TESTS_DIR)
+    // in the on-disk scan). Resolve against TESTS_DIR first, with a REPO_ROOT
+    // fallback for any future root-prefixed entries — so a lone extra entry
+    // can't silently fail both.
+    const resolveEntry = (e: string) => {
+        if (e.startsWith('tests/') || e.startsWith('src/') || e.includes('/')) {
+            const rootPath = join(REPO_ROOT, e)
+            if (existsSync(rootPath)) return rootPath
+            return join(TESTS_DIR, basename(e))
+        }
+        const testsPath = join(TESTS_DIR, e)
+        return existsSync(testsPath) ? testsPath : join(REPO_ROOT, e)
+    }
+    const missing = manifestEntries.filter((e) => !existsSync(resolveEntry(e)))
     expect(missing, `manifest entries missing on disk: ${missing.join(', ')}`).toEqual([])
 })
 

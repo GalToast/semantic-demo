@@ -29,6 +29,7 @@ import {
     Material
 } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
+import { positionBuffer, clustersBuffer } from '@lib/data-store'
 import type { Point } from '@lib/state/state-types'
 const state = _state
 import { webglContext } from './webgl-context'
@@ -59,7 +60,7 @@ export const SCENE_ATMOSPHERE = Object.freeze({
     fogColor: SCENE_PALETTE.fog,
     fogDensity: 0.0028,
     clearAlpha: 0.96,
-    toneExposure: 0.95,
+    toneExposure: 1.15,
     pointOpacityScale: 1.0,
     sporeOpacity: 0.65
 })
@@ -476,8 +477,12 @@ export function createPoints() {
     // `webglContext.rawX || state.rawX` always fell through to the appState
     // value. PR-2 retired both fields; this now reads directly from appState.
     // See tmp/outstanding-cleanup-audit-2026-06-29.md Item 2.
-    const rawPositionsBuffer = state.rawPositionsBuffer
-    const rawClustersBuffer = state.rawClustersBuffer
+    // W67-D1 migration: the legacy appState.rawPositionsBuffer /
+    // rawClustersBuffer mirrors were retired by the rune-store bridge; the
+    // canonical source is the positionBuffer / clustersBuffer stores populates
+    // by setBusinessData (data-store.ts).
+    const rawPositionsBuffer = positionBuffer.getSnapshot()
+    const rawClustersBuffer = clustersBuffer.getSnapshot()
     // Defensive guard: setBusinessData populates the buffer alongside the
     // points, but if createPoints() is ever called before the data worker
     // finishes (test/edge-case), bail rather than crash on the reads below
