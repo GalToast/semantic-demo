@@ -42,6 +42,7 @@
   // importPending flag + $effect pattern is no longer needed.
 
   import Splash from '@components/Splash.svelte';
+  import Placeholder2D from '@components/Placeholder2D.svelte';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { signalSceneReady, signalSceneError } from '@lib/stores/scene-ready.svelte';
   import Legend from '@components/Legend.svelte';
@@ -91,15 +92,16 @@
     () => import('@components/JourneyCompass.svelte')
   )
 
-  // [2026-08-18] CSS-budget chunking: convert the four heaviest static imports
-  // (InfoPanel 14.4KB, JourneyChrome 13.2KB, Placeholder2D 9.7KB, FocusCard
-  // 7.6KB of bundled CSS) to lazy handles so Vite splits their CSS into per-
-  // chunk assets instead of the entry index-*.css. They are contract-pinned at
-  // boot, so the __PLAYWRIGHT__ block and idle prewarm below load them eagerly
-  // exactly like canvasLazy/mapViewLazy. Render sites use the {#if c} pattern.
+  // [2026-08-18] CSS-budget chunking: convert heavy static imports
+  // (InfoPanel 14.4KB, JourneyChrome 13.2KB, FocusCard 7.6KB of bundled CSS) to
+  // lazy handles so Vite splits their CSS into per-chunk assets instead of the
+  // entry index-*.css. Placeholder2D (9.7KB) was tried lazily but is FIRST-PAINT
+  // critical on the placeholder2d renderKind (W51/W54/W55 regressions) - reverted
+  // to static 2026-08-18. The remaining three are contract-pinned at boot, so the
+  // __PLAYWRIGHT__ block and idle prewarm below load them eagerly exactly like
+  // canvasLazy/mapViewLazy. Render sites use the {#if c} pattern.
   const infoPanelLazy = createLazyComponent(() => import('@components/InfoPanel.svelte'))
   const journeyChromeLazy = createLazyComponent(() => import('@components/JourneyChrome.svelte'))
-  const placeholder2DLazy = createLazyComponent(() => import('@components/Placeholder2D.svelte'))
   const focusCardLazy = createLazyComponent(() => import('@components/FocusCard.svelte'))
   // Pre-warm the engine module tree during splash so Vite's dev server
   // compiles the heavy Three.js + engine dependency graph in the background.
@@ -144,7 +146,6 @@
     // boot-time surface contracts.
     infoPanelLazy.ensure(true)
     journeyChromeLazy.ensure(true)
-    placeholder2DLazy.ensure(true)
     focusCardLazy.ensure(true)
   }
   const isPlaywright = isPlaywrightEnvironment();
@@ -166,7 +167,6 @@
   // as legacyCompassSurfaceLazy (DIVE-BUTTON GAP note).
   $effect(() => infoPanelLazy.ensure(true));
   $effect(() => journeyChromeLazy.ensure(true));
-  $effect(() => placeholder2DLazy.ensure(true));
   $effect(() => focusCardLazy.ensure(true));
 
   $effect(() => weatherWidgetLazy.ensure(weatherVisible));
@@ -411,10 +411,7 @@
         {/if}
       </div>
       <div class="layer placeholder-layer" class:active={!s3dSceneReady && !s3dSceneError}>
-        {#if placeholder2DLazy.current}
-          {@const Cmp = placeholder2DLazy.current}
-          <Cmp />
-        {/if}
+        <Placeholder2D />
       </div>    </div>
   {:else}
     {#if engineReady.value && canvasLazy.current}

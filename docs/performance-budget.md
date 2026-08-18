@@ -9,18 +9,19 @@ This document defines hard performance ceilings for the Semantic Explorer. All P
 
 ## 1. Bundle Size Budget
 
-| Metric               | Current (measured)    | Live ceiling (script) | Slack          |
-| -------------------- | --------------------- | --------------------- | -------------- |
-| **Total JS (raw)**   | 1,398.44 KB (1.40 MB) | 2,500 KB (2.5 MB)     | 1,101 KB (44%) |
-| **Total JS (gzip)**  | 398.63 KB             | 650 KB                | 251 KB (39%)   |
-| **Total CSS (raw)**  | 63.49 KB              | 65 KB                 | 1.5 KB (2%)    |
-| **Total CSS (gzip)** | 15.06 KB              | 16 KB                 | -0.9 KB (6%)   |
+| Metric                 | Current (measured) | Live ceiling (script) | Slack         |
+| ---------------------- | ------------------ | --------------------- | ------------- |
+| **Total JS (raw)**     | 1,687.76 KB        | 2,500 KB (2.5 MB)     | 812 KB (32%)  |
+| **Total JS (gzip)**    | 496.06 KB          | 650 KB                | 154 KB (24%)  |
+| **CSS initial (raw)**  | 58.34 KB           | 65 KB                 | 6.66 KB (10%) |
+| **CSS initial (gzip)** | 10.60 KB           | 16 KB                 | 5.40 KB (34%) |
 
 ### Budget Rationale
 
 - **Live ceiling (2.5 MB JS raw / 650 KB JS gzip)**: Enforced by `node scripts/check-bundle-size.mjs` in CI. Exceeding this is a regression.
-- **Current headroom**: 44% slack on JS raw, 39% on JS gzip — generous margin. CSS raw at 2% slack (tight after 13-surface matrix growth).
-- **CSS ceiling (65 KB raw / 16 KB gzip)**: Raised 2026-06-29 from 60/12 to account for the full surface-matrix complexity (13 states × desktop + mobile). Monitor.
+- **CSS budget measured on initial-load only (2026-08-18)**: `scripts/check-bundle-size.mjs` now counts only stylesheets linked from the built `index.html` (entry `index-*.css` + `ErrorState-*.css`) against the CSS ceiling; lazy chunks (InfoPanel, JourneyChrome, FocusCard, Placeholder2D, MapView, Canvas — deferred to first-interaction via `createLazyComponent`) are excluded because they are NOT fetched on initial paint, matching the "code-split / lazy-load mode-specific components" intent below. Full `assets/` totals still print for reference.
+- **2026-08-18 chunking win**: converted the four heaviest static imports in `src/App.svelte` (InfoPanel 14.4 KB, JourneyChrome 13.2 KB, Placeholder2D 9.7 KB, FocusCard 7.6 KB CSS) to lazy handles with `ensure(true)` eager-loading for contract tests + idle prewarm. Entry CSS dropped 86.7 KB → 57.6 KB (−33%); initial-load CSS is now 58.34 KB raw / ~11 KB gzip — **both under the 65/16 budget since the split**.
+- **CSS ceiling (65 KB initial raw / 16 KB initial gzip)**: Raised 2026-06-29 from 60/12 to account for the full surface-matrix complexity (13 states × desktop + mobile); re-baselined to initial-load measurement on 2026-08-18 when per-route lazy CSS chunking landed (entry dropped 86.7 → 58.3 KB). Monitor.
 
 ### Proposed Next-Ceiling (requires script + CI update)
 
@@ -63,15 +64,15 @@ These are **not live** — the script still enforces 2,500 / 650 / 65 / 16.
 
 ## 3. WebGL / GPU Budget
 
-| Metric                                 | Budget                      | Current          | Notes                                                                                                      |
-| -------------------------------------- | --------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------- |
-| **Frame rate**                         | ≥ 60 fps on mid-tier mobile | 60 fps (desktop) | Target: Pixel 7 / iPhone 13 class                                                                          |
-| **Draw calls / frame**                 | < 200                       | ~150 (est.)      | InstancedMesh for node rendering                                                                           |
-| **Triangles / frame**                  | < 5.0M                      | ~3.9M (measured) | 16×15 instanced spore geometry plus mycelium threads                                                        |
-| **Texture GPU memory**                 | < 50 MB                     | ~30 MB (est.)    | Canvas textures + postprocessing                                                                           |
-| **Node count**                         | 8,406                       | 8,406            | Fixed dataset; no growth expected                                                                          |
-| **Thread CPU (updateMyceliumThreads)** | —                           | runtime sampled  | `scenePerformanceDiagnostics.lastThreadUpdateMs` records the last dirty rebuild and its dirty-node/pair counts |
-| **Overlay CPU (focus semantic overlay)** | —                         | runtime sampled  | `focusFrameDiagnostics.lastOverlayMs` records synchronous buffer writes; averages/maxima are visible in the diagnostics state |
+| Metric                                   | Budget                      | Current          | Notes                                                                                                                         |
+| ---------------------------------------- | --------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Frame rate**                           | ≥ 60 fps on mid-tier mobile | 60 fps (desktop) | Target: Pixel 7 / iPhone 13 class                                                                                             |
+| **Draw calls / frame**                   | < 200                       | ~150 (est.)      | InstancedMesh for node rendering                                                                                              |
+| **Triangles / frame**                    | < 5.0M                      | ~3.9M (measured) | 16×15 instanced spore geometry plus mycelium threads                                                                          |
+| **Texture GPU memory**                   | < 50 MB                     | ~30 MB (est.)    | Canvas textures + postprocessing                                                                                              |
+| **Node count**                           | 8,406                       | 8,406            | Fixed dataset; no growth expected                                                                                             |
+| **Thread CPU (updateMyceliumThreads)**   | —                           | runtime sampled  | `scenePerformanceDiagnostics.lastThreadUpdateMs` records the last dirty rebuild and its dirty-node/pair counts                |
+| **Overlay CPU (focus semantic overlay)** | —                           | runtime sampled  | `focusFrameDiagnostics.lastOverlayMs` records synchronous buffer writes; averages/maxima are visible in the diagnostics state |
 
 ### GPU Profiling
 
