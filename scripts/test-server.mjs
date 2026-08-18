@@ -58,6 +58,37 @@ function sendError(res, status, message) {
 }
 
 function serveStatic(req, res, filePath) {
+    // W44 Phase F parity: the production build DELETES raw .dat/.json assets
+    // after writing .br/.gz twins (see copyRuntimeAssets closeBundle in
+    // vite.config.ts). The Vite dev/preview middleware serves the compressed
+    // twins with Content-Encoding negotiation; a plain static server 404s the
+    // raw path, so the built app errors on the `records` load phase in every
+    // Playwright/QA run (W54/W55 were flaky from exactly this). Mirror the
+    // negotiation here: when the raw file is absent but a .br/.gz sibling
+    // exists and the client accepts it, serve the twin with Content-Encoding.
+    const acceptEncoding = (req.headers['accept-encoding'] || '').toLowerCase()
+    const isDatOrJson = /\.(dat|json)$/.test(filePath)
+    if (isDatOrJson && acceptEncoding) {
+        for (const ext of ['br', 'gz']) {
+            if (!acceptEncoding.includes(ext)) continue
+            try {
+                const cstat = statSync(`${filePath}.${ext}`)
+                if (cstat.isFile()) {
+                    res.writeHead(200, {
+                        'Content-Type': guessMime(filePath),
+                        'Content-Encoding': ext,
+                        'Content-Length': cstat.size,
+                        Vary: 'Accept-Encoding',
+                        'Cache-Control': 'no-cache'
+                    })
+                    createReadStream(`${filePath}.${ext}`).pipe(res)
+                    return
+                }
+            } catch {
+                // try next ext
+            }
+        }
+    }
     try {
         const st = statSync(filePath)
         if (!st.isFile()) {
