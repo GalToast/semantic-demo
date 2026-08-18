@@ -104,9 +104,9 @@ const CHROMATIC_ABERRATION_DEFAULTS = {
 
 /** Conservative atmospheric glow — subtle on the focus pocket, not Las Vegas. */
 const BLOOM_DEFAULTS = {
-    luminanceThreshold: 0.6,
-    intensity: 0.5,
-    radius: 0.6,
+    luminanceThreshold: 0.25,
+    intensity: 0.85,
+    radius: 0.8,
     mipmapBlur: true
 }
 

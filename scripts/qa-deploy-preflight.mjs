@@ -226,9 +226,9 @@ function checkDistIntegrity() {
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 if (process.argv.includes('--dist-only')) {
-  checkDistIntegrity()
-  emitCard()
-  process.exit(0)
+    checkDistIntegrity()
+    emitCard()
+    process.exit(0)
 }
 
 ensureDist()

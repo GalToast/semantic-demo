@@ -327,7 +327,7 @@ export function getMyceliumPresentationProfile() {
         // opacity appeared nearly invisible). Bumped to ~3-5× the previous
         // base opacities so the mycelium reads as a clear ambient texture while
         // still staying subordinate to points and spore materials.
-        return { core: 0.58, wispy: 0.28, bridge: 0.42, pulse: 0.04, linewidth: { core: 2.5, wispy: 1.0, bridge: 1.8 } }
+        return { core: 0.75, wispy: 0.42, bridge: 0.58, pulse: 0.08, linewidth: { core: 3.0, wispy: 1.4, bridge: 2.2 } }
     }
     // Semantic-dive mode needs its own profile because the downstream
     // `semanticDiveThreadScale` multiplier (0.42 in three-engine-core) applies
@@ -489,7 +489,7 @@ export async function createMycelium() {
             state.nodePositions,
             state.points,
             (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-            semanticEdges ? 0.38 : 0.28
+            semanticEdges ? 0.5 : 0.4
         )
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 0 })
     })
@@ -501,7 +501,7 @@ export async function createMycelium() {
             state.nodePositions,
             state.points,
             (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-            semanticEdges ? 0.22 : 0.16
+            semanticEdges ? 0.3 : 0.22
         )
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 1 })
     })
@@ -513,7 +513,7 @@ export async function createMycelium() {
             state.nodePositions,
             state.points,
             (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-            semanticEdges ? 0.32 : 0.24
+            semanticEdges ? 0.42 : 0.32
         )
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 2 })
     })

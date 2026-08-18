@@ -18,7 +18,7 @@ function startServer() {
     const child = spawn(process.execPath, ['scripts/qa-server.mjs', 'start'], {
         stdio: QUIET ? 'ignore' : 'inherit',
         cwd: ROOT,
-        detached: true,
+        detached: true
     })
     child.unref()
 }
@@ -28,23 +28,31 @@ function stopServer() {
 }
 
 function runSuite() {
-    return spawnSync('npx', ['playwright', 'test', 'tests/widget-journey.spec.js'], {
-        stdio: 'inherit',
-        env: {
-            ...process.env,
-            SEMANTIC_FORCE_WEBGL_SOFTWARE: '1',
-            TEST_BASE_URL: `${BASE}`,
-        },
-        timeout: 600_000,
-        cwd: ROOT,
-    }).status ?? 1
+    return (
+        spawnSync('npx', ['playwright', 'test', 'tests/widget-journey.spec.js'], {
+            stdio: 'inherit',
+            env: {
+                ...process.env,
+                SEMANTIC_FORCE_WEBGL_SOFTWARE: '1',
+                TEST_BASE_URL: `${BASE}`
+            },
+            timeout: 600_000,
+            cwd: ROOT
+        }).status ?? 1
+    )
 }
 
 function probe() {
     return new Promise((resolve) => {
-        const req = http.get(BASE, (res) => { res.resume(); resolve(res.statusCode === 200) })
-        req.setTimeout(2000, () => { req.destroy(); resolve(false) })
-        req.on("error", () => resolve(false))
+        const req = http.get(BASE, (res) => {
+            res.resume()
+            resolve(res.statusCode === 200)
+        })
+        req.setTimeout(2000, () => {
+            req.destroy()
+            resolve(false)
+        })
+        req.on('error', () => resolve(false))
     })
 }
 

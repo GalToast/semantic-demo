@@ -5,7 +5,7 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 100dvh;
     transition: opacity 0.4s ease;
 }
 #canvas-container {
@@ -401,8 +401,6 @@ body[data-trail-depth='2'] #canvas-container::after {
 body.view-map .canvas-color-legend {
     display: none;
 }
-
-
 
 @media (max-width: 768px) {
     .canvas-color-legend {

@@ -199,6 +199,18 @@ All four use the **deliverable-first protocol** (write skeleton with all rows `P
 - **`tests/run-all-contracts.js` had a hardcoded contract list** duplicating the manifest with 11 stale entries (focus-pocket, dewindowing, state-ownership). It crashed with ENOENT on deleted files. Cleaned — this was the blocker the dossier flagged as "stale-dewindowing".
 - **`url-state-no-synthetic-input.test.ts` is a contract for the W3 split itself** — it reads `url-restore-search.ts` and asserts no `dispatchEvent('input')`, `input.value = query`, and a `PR-O5` audit comment. All 3 assertions pass in the split file; the test failure is a false positive in its `extractSearchRestoreBlock` heuristic (it looks for `\nfunction _showToast` as the next function, but that symbol doesn't exist in the split file).
 
+## Disk footprint CI gate (2026-08-18)
+
+**What:** `scripts/check-data-compression.mjs` + `npm run check:data-compression`.
+
+**Why:** The W44 asset-compression plugin deletes uncompressed `.dat`/`.json` originals in `closeBundle` after writing `.br`/`.gz` twins. Without a gate, a future maintainer who disables `VITE_COMPRESS_ASSETS`, breaks the deletion loop, or upgrades Vite in a way that skips `closeBundle` would silently restore the 157 MB footprint.
+
+**How:** Scans `dist/svelte/` recursively for `.dat`/`.json` files that are NOT `.br`/`.gz` twins. Fails the build if any are found.
+
+**Wired into:** `npm run build:svelte` now chains `vite build && npm run check:data-compression`.
+
+**Verified:** Gate passes on clean build (exit 0), catches a synthetic uncompressed `.dat` file (exit 1), survives a full `npm run build:svelte` cycle. Disk footprint remains 19 MB.
+
 ## CSS budget seam — third attempt verdict (2026-08-18)
 
 **Outcome:** 1 verified safe cut landed (`5753e027`, −0.74 KB bundled CSS), 108 of 115 worker-flagged candidates REJECTED as live.
