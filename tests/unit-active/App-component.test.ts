@@ -82,9 +82,12 @@ describe('App.svelte — lazy component surface', () => {
         const names = new Set<string>()
         let m: RegExpExecArray | null
         while ((m = lazyRe.exec(appSrc)) !== null) names.add(m[1])
-        // W2-CSSBUD (2026-08-18): InfoPanel / JourneyChrome / Placeholder2D /
-        // FocusCard converted to lazies for per-chunk CSS. Count now 10.
-        expect(names.size).toBe(10)
+        // W2-CSSBUD (2026-08-18): InfoPanel / JourneyChrome / FocusCard converted
+        // to lazies for per-chunk CSS. Placeholder2D was tried but REVERTED to
+        // static 2026-08-18 (cf15a68f): it is first-paint critical on the
+        // placeholder2d renderKind; lazy gating broke W51/W54/W55 (0 H1).
+        // Net count 9 lazy handles.
+        expect(names.size).toBe(9)
     })
 })
 
@@ -218,7 +221,7 @@ describe('App.svelte — scene-ready wiring', () => {
 describe('App.svelte — composition root shape', () => {
     const requiredChildren = [
         'AppBoot',
-        'Placeholder2D', // lazy (CSS-budget chunking W2-CSSBUD)
+        'Placeholder2D', // static (first-paint critical; revert 2026-08-18 cf15a68f)
         'Canvas', // lazy
         'Header',
         'SemanticOverlay',
@@ -232,7 +235,8 @@ describe('App.svelte — composition root shape', () => {
 
     // Components rendered via createLazyComponent + {@const Cmp = xLazy.current}
     // instead of a literal <x> tag in the template.
-    const lazyHandled = new Set(['Canvas', 'InfoPanel', 'JourneyChrome', 'Placeholder2D', 'FocusCard'])
+    // Placeholder2D reverted to static 2026-08-18 (cf15a68f) — first-paint critical.
+    const lazyHandled = new Set(['Canvas', 'InfoPanel', 'JourneyChrome', 'FocusCard'])
 
     it.each(requiredChildren)('template contains <%s', (name) => {
         if (lazyHandled.has(name)) {
