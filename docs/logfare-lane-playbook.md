@@ -131,16 +131,16 @@ conservative default.** Verified live at upstream (200 + real content):
     **2026-08-18: a missing profile is a real gap, but NOT always a bug.** The
     cross-check flags three working models that have a config entry (opencode
     - picker) but no router profile: `grape-2-pro`, `qwen-3.8-27b`,
-    `gemma-4-26b`. Without a profile they default to `preOutputStreamRetries: 0`
-    and `synthesizeMissingFinishReason: false` — the same defaults that left
-    `deepseek-v4-pro` exposed to its in-stream 429s before it got a profile.
-    **Probed live (18/18 serial requests, 6 per model): all three returned
-    HTTP 200 / `finish=stop` with no 429.** The retry machinery only matters
-    when a 429 actually lands, and none did. So: the gap is real (the three
-    models are inconsistent with their siblings) but empirically harmless
-    right now — do NOT add profiles speculatively. Re-run
-    `tmp/probe-logfare-noprofile.mjs` before deciding; if a model starts
-    throwing pre-output 429s, it is the moment to add a profile, not before.
+      `gemma-4-26b`. Without a profile they default to `preOutputStreamRetries: 0`
+      and `synthesizeMissingFinishReason: false` — the same defaults that left
+      `deepseek-v4-pro` exposed to its in-stream 429s before it got a profile.
+      **Probed live (18/18 serial requests, 6 per model): all three returned
+      HTTP 200 / `finish=stop` with no 429.** The retry machinery only matters
+      when a 429 actually lands, and none did. So: the gap is real (the three
+      models are inconsistent with their siblings) but empirically harmless
+      right now — do NOT add profiles speculatively. Re-run
+      `tmp/probe-logfare-noprofile.mjs` before deciding; if a model starts
+      throwing pre-output 429s, it is the moment to add a profile, not before.
 
     **Side note on the same probe:** `gemma-4-26b` at `max_tokens:64` returned
     `finish=length` with the entire budget eaten by `reasoning_content` — the

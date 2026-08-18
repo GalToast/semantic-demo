@@ -690,7 +690,24 @@ export default defineConfig({
                     }
                 }
             }
-        }
+        },
+        // W1 (2026-08-18): Suppress INEFFECTIVE_DYNAMIC_IMPORT for webgl.ts and
+        // route-trace.ts. Both are dynamically imported for lazy-load gating but
+        // also statically imported by peers in the same deps chunk, so Rollup's
+        // chunk-splitting cannot move them anywhere else. Converting to static
+        // imports would be a regression (eager-path coupling). Evidence: chunk
+        // graph shows both modules land in mode-transition-deps-nCuiURFI.js
+        // regardless; the empty wrapper chunks (webgl-DmIg9fI0.js,
+        // route-trace-BmJcpUHp.js) have zero modules. See
+        // tmp/build-warning-resolution/report.md for full audit.
+        rolldownOptions: {
+            onwarn(warning, defaultHandler) {
+                if (warning.code === 'INEFFECTIVE_DYNAMIC_IMPORT') {
+                    return
+                }
+                defaultHandler(warning)
+            }
+        },
         // Vite auto-discovers index.html in the root directory (which is src/)
     }
 })

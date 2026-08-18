@@ -5,24 +5,24 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <meta name="theme-color" content="#071018" />
         <meta name="robots" content="index, follow" />
-        <title>Montgomery County Semantic Explorer | Case Study</title>
+        <title>Montgomery County Semantic Explorer</title>
         <meta
             name="description"
-            content="A recruiter-facing case study for an interactive semantic explorer over 8,406 Montgomery County business records."
+            content="Explore 8,406 Montgomery County businesses in an interactive 3D semantic map. Built by Fred McCullough."
         />
-        <link rel="canonical" href="https://mccullough.cloud/semantic-demo/case-study.html" />
+        <link rel="canonical" href="https://mccullough.cloud/semantic-demo/" />
         <meta property="og:title" content="Montgomery County Semantic Explorer" />
         <meta
             property="og:description"
             content="8,406 local business records organized by what they do, not just where they are."
         />
-        <meta property="og:url" content="https://mccullough.cloud/semantic-demo/case-study.html" />
+        <meta property="og:url" content="https://mccullough.cloud/semantic-demo/" />
         <meta
             property="og:image"
             content="https://mccullough.cloud/semantic-demo/recruiter-assets/semantic-demo-case-study-og-motion410-clean.png"
         />
         <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:card" content="summary_large" />
         <meta name="twitter:title" content="Montgomery County Semantic Explorer" />
         <meta
             name="twitter:description"
@@ -36,27 +36,6 @@
             rel="icon"
             href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2306100f'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%2361d8ca' stroke-width='6'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23e2c66a'/%3E%3C/svg%3E"
         />
-        <script>
-            ;(function () {
-                const target = new URL('case-study.html', window.location.href)
-                const explorer = new URL('./', window.location.href)
-                target.search = window.location.search
-                target.hash = window.location.hash
-                explorer.search = window.location.search
-                explorer.hash = window.location.hash
-
-                window.addEventListener('DOMContentLoaded', function () {
-                    const caseStudyLink = document.getElementById('case-study-link')
-                    const explorerLink = document.getElementById('explorer-link')
-                    if (caseStudyLink) caseStudyLink.href = target.toString()
-                    if (explorerLink) explorerLink.href = explorer.toString()
-                })
-
-                window.setTimeout(function () {
-                    window.location.replace(target.toString())
-                }, 3200)
-            })()
-        </script>
         <style>
             :root {
                 color-scheme: dark;
@@ -74,16 +53,71 @@
                     sans-serif;
             }
             main {
-                max-width: 42rem;
-                padding: 2rem;
+                max-width: 36rem;
+                padding: 2.5rem 2rem;
                 text-align: center;
+            }
+            h1 {
+                font-size: 1.75rem;
+                font-weight: 700;
+                margin: 0 0 0.5rem;
+                letter-spacing: -0.01em;
             }
             .byline {
                 color: rgba(240, 240, 245, 0.68);
                 font-size: 0.95rem;
+                margin: 0 0 1rem;
             }
-            a {
+            .tagline {
+                color: rgba(240, 240, 245, 0.85);
+                font-size: 1.05rem;
+                margin: 0 0 2.5rem;
+                line-height: 1.5;
+            }
+            .buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+                align-items: center;
+            }
+            a.btn {
+                display: inline-block;
+                padding: 0.8rem 2rem;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-weight: 600;
+                text-decoration: none;
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
+                min-width: 220px;
+            }
+            a.btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            }
+            a.btn-primary {
+                background: #00f5d4;
+                color: #071018;
+            }
+            a.btn-secondary {
+                background: transparent;
                 color: #00f5d4;
+                border: 1.5px solid rgba(0, 245, 212, 0.4);
+            }
+            a.btn-secondary:hover {
+                border-color: #00f5d4;
+            }
+            .note {
+                margin-top: 2rem;
+                font-size: 0.82rem;
+                color: rgba(240, 240, 245, 0.4);
+                line-height: 1.5;
+            }
+            .note code {
+                background: rgba(240, 240, 245, 0.08);
+                padding: 0.1em 0.35em;
+                border-radius: 3px;
+                font-family: 'JetBrains Mono', 'Fira Code', monospace;
+                font-size: 0.9em;
             }
         </style>
     </head>
@@ -91,10 +125,18 @@
         <main>
             <h1>Montgomery County Semantic Explorer</h1>
             <p class="byline">Built by Fred McCullough.</p>
-            <p>Mapping 8,406 local businesses by what they do, not just where they are.</p>
-            <p>Taking you to the recruiter-facing case study in a moment.</p>
-            <p>If you came for the live app, <a id="explorer-link" href="./">open the live explorer</a>.</p>
-            <p><a id="case-study-link" href="case-study.html">Read the case study now</a>.</p>
+            <p class="tagline">
+                Mapping 8,406 local businesses by what they do, not just where they are.
+            </p>
+            <div class="buttons">
+                <a class="btn btn-primary" href="./dist/svelte/">Open the Explorer</a>
+                <a class="btn btn-secondary" href="./case-study.html">Read the Case Study</a>
+            </div>
+            <p class="note">
+                The Explorer requires a build first. Run <code>npm run build</code> then open
+                <code>dist/svelte/index.html</code> in a browser, or start the dev server with
+                <code>npm run dev:svelte</code>.
+            </p>
         </main>
     </body>
 </html>

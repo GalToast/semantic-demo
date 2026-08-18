@@ -8,11 +8,28 @@ A 3D semantic mycelium visualization for exploring business relationships in Mon
 
 ```bash
 npm install              # install dependencies
-npm run dev:svelte       # start dev server (Vite + HMR)
+npm run dev:svelte       # start dev server (Vite + HMR) on http://127.0.0.1:5173
 npm run build:svelte     # production build → dist/svelte/
 ```
 
-Then open `http://127.0.0.1:5173` (dev) or serve `dist/svelte/` statically.
+Then open the **repo-root `index.html`** in a browser — it's a hub linking to both the built app and the case study. Or go directly to `http://127.0.0.1:5173` for the live dev app.
+
+### Where things live
+
+| What | Where |
+|------|-------|
+| App source (Vite root) | `src/index.html` |
+| App build output | `dist/svelte/index.html` (serve this directory statically) |
+| Repo-root front door | `index.html` (hub — no auto-redirect) |
+| Case study page | `case-study.html` (untracked WIP, linked from hub) |
+
+### Quick start (< 30 s)
+
+```bash
+npm install && npm run build:svelte
+python3 -m http.server 8799 --bind 127.0.0.1   # from repo root
+# open http://127.0.0.1:8799 — hub page with two buttons
+```
 
 ## Architecture
 
