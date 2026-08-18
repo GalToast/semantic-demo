@@ -102,12 +102,18 @@ for (const requiredPath of [
     'dist/svelte/css/mobile_premium__layout.css',
     'dist/svelte/css/mobile_premium__state.css',
     'dist/svelte/css/modules/focus_stage.css',
-    'dist/svelte/data.dat',
+    'dist/svelte/data.dat.br',
     'dist/svelte/data.dat.gz',
-    'dist/svelte/data/semantic_threads.dat',
-    'dist/svelte/data/semantic_threads_ui.dat',
-    'dist/svelte/data/semantic_space_layout_manifest.json',
-    'dist/svelte/data/leadEnrichment.public.json'
+    // W44 Phase F: the production build DELETES raw data originals after
+    // writing .br/.gz twins (79MB semantic_threads.dat -> 2.7MB .br). Pin the
+    // twins, not the raws — matching the data-compression gate + .htaccess.
+    'dist/svelte/data/semantic_threads.dat.br',
+    'dist/svelte/data/semantic_threads.dat.gz',
+    'dist/svelte/data/semantic_threads_ui.dat.br',
+    'dist/svelte/data/semantic_threads_ui.dat.gz',
+    'dist/svelte/data/semantic_space_layout_manifest.json.br',
+    'dist/svelte/data/leadEnrichment.public.json.br',
+    'dist/svelte/data/leadEnrichment.public.json.gz'
 ]) {
     if (!fs.existsSync(path.join(root, requiredPath))) {
         fail(`${requiredPath} is missing from the production Svelte build output`)

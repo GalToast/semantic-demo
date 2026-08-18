@@ -11,7 +11,9 @@ import { execFileSync } from 'node:child_process';
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
-const ALLOWED_UNTRACKED_TARGETS = new Set([]);
+const ALLOWED_UNTRACKED_TARGETS = new Set([
+  'scripts/test-help.mjs', // canonical help entry point (added with the script-graveyard cleanup)
+]);
 
 const REQUIRED_SCRIPT_INCLUDES = [
   {
@@ -45,6 +47,8 @@ function scriptTargets(command) {
   const targets = new Set();
   const targetPattern = /(?:^|[\s"'=])((?:\.\/)?(?:tests|scripts)[/\\][^\s"'&|;()<>]+?\.(?:mjs|js|cjs|spec\.js))/g;
   for (const match of command.matchAll(targetPattern)) {
+    // Glob targets (e.g. tests/3d-*.spec.js — Playwright patterns) are not files
+    if (/[*[]/.test(match[1])) continue;
     targets.add(normalizePath(match[1]));
   }
   return [...targets];

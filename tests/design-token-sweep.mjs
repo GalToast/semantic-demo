@@ -138,7 +138,8 @@ assert(!('injectDesignTokens' in tokensMod), 'JS tokens must not inject or mutat
 assert(!('PALETTE' in tokensMod), 'Avoid broad PALETTE export; use explicit token groups to prevent accidental visual drift')
 
 assert(Object.isFrozen(SCENE_PALETTE), 'SCENE_PALETTE must be frozen')
-assert(SCENE_PALETTE.fog === 0x070a12, 'scene fog token must preserve existing fog color')
+// Fog deepened with the visual art-direction wave (6fb180a3): 0x070a12 -> 0x0b141e.
+assert(SCENE_PALETTE.fog === 0x0b141e, 'scene fog token must preserve existing fog color')
 assert(SCENE_PALETTE.sporeLift === 0xbffdf4, 'spore lift token must preserve existing color')
 assert(SCENE_PALETTE.threadTint === 0x4ecdc4, 'thread tint token must preserve existing color')
 

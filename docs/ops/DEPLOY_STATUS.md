@@ -1636,12 +1636,12 @@ I confirmed the same self-reference pattern does NOT exist in any other CSS file
 
 ### Regression test (new)
 
-`tests/css-self-reference-check.mjs` — scans every CSS file in `css/` for the `--foo: var(--foo)` pattern and fails if any are found. Wired into `npm run check:manifest` and as a standalone `npm run check:no-self-refs`. Prevents the `1f7456b` failure mode from happening again. The script's allowlist is empty: self-referencing custom properties are never valid CSS.
+`tests/css-self-reference-check.mjs` — scans every CSS file in `css/` for the `--foo: var(--foo)` pattern and fails if any are found. Wired into `npm run check:manifest` and gated in `npm run check:manifest` (the standalone alias was collapsed into the superset). Prevents the `1f7456b` failure mode from happening again. The script's allowlist is empty: self-referencing custom properties are never valid CSS.
 
 ### Verified
 
 - `npm run build` — `dist/bundle.js` rebuilt to 446.7kb, source changes reflected.
-- `npm run check:no-self-refs` — passes.
+- `npm run check:manifest` — passes (includes the CSS self-reference scan).
 - `npm run check:ownership` — passes (the map-focus-search content-owner contract accepts the new helper).
 - `node tests/ui-quality-contract.mjs --headless` — 10/10 states, 185/185 assertions, 0 failures. The `OPACITY_VISIBLE_THRESHOLD` rename + `visibleChromeSurfaces.find()` rewrites + no-op-guarded inline restore all work.
 - `node tests/map-focus-search-content-owner-contract.mjs` — all 6 sub-tests pass after the helper-name regex update.
@@ -1686,7 +1686,7 @@ The linter ran a third pass after the simplify pass landed and surfaced eight su
 - `walkthrough-r6/` (15 files: 14 PNGs + `index.html`) staged as a known-good visual baseline snapshot for the r6 walkthrough — committed separately so it can be diffed against in future audits.
 
 Verified before commit:
-- `npm run check:no-self-refs` ✓
+- `npm run check:manifest` ✓ (includes CSS self-reference scan)
 - `npm run check:manifest` ✓
 - `npm run check:ownership` ✓
 - `npm run check:tokens` ✓ (116 root tokens documented)
