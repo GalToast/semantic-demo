@@ -478,37 +478,26 @@ export function setBusinessData(result: BusinessDataResult): void {
     pointIndexByLeadId.set(result.pointIndexByLeadId)
     leadEnrichment.set(result.enrichment)
 
-    // Sync back to legacy state so legacy engine selectors (getPoints())
-    // and focus flows (focusOnNode) see the data.
-    try {
-        {
+    // Derive originalPositions/nodePositions from the raw buffer so
+    // focus-pocket and camera framing can work before/without WebGL init.
+    const positionsBuffer = result.positionsBuffer
+    if (positionsBuffer && positionsBuffer.length >= result.records.length * 3) {
+        const derived: { x: number; y: number; z: number }[] = []
+        for (let i = 0; i < result.records.length; i++) {
+            derived.push({
+                x: positionsBuffer[i * 3] as number,
+                y: positionsBuffer[i * 3 + 1] as number,
+                z: positionsBuffer[i * 3 + 2] as number
+            })
         }
-
-        // Derive originalPositions/nodePositions from the raw buffer so
-        // focus-pocket and camera framing can work before/without WebGL init.
-        const positionsBuffer = result.positionsBuffer
-        if (positionsBuffer && positionsBuffer.length >= result.records.length * 3) {
-            const derived: { x: number; y: number; z: number }[] = []
-            for (let i = 0; i < result.records.length; i++) {
-                derived.push({
-                    x: positionsBuffer[i * 3] as number,
-                    y: positionsBuffer[i * 3 + 1] as number,
-                    z: positionsBuffer[i * 3 + 2] as number
-                })
-            }
-            {
-                appState.originalPositions = derived
-                appState.nodePositions = derived.slice()
-            }
-            // W67: positions replaced -> invalidate the projected-neighbor grid +
-            // candidate cache. thread-model's buildProjectedNeighborGrid /
-            // getProjectedNeighborCandidates memoize forever and are never rebuilt
-            // otherwise, so post-load proximity queries would use stale cell buckets.
-            appState.projectedNeighborGrid = null
-            appState.projectedNeighborCache = new Map()
-        }
-    } catch (e) {
-        debugWarn('[data-store] Legacy state sync failed:', e)
+        appState.originalPositions = derived
+        appState.nodePositions = derived.slice()
+        // W67: positions replaced -> invalidate the projected-neighbor grid +
+        // candidate cache. thread-model's buildProjectedNeighborGrid /
+        // getProjectedNeighborCandidates memoize forever and are never rebuilt
+        // otherwise, so post-load proximity queries would use stale cell buckets.
+        appState.projectedNeighborGrid = null
+        appState.projectedNeighborCache = new Map()
     }
     dataLoadState.update((s) => ({
         ...s,

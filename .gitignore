@@ -150,3 +150,7 @@ tk-req.txt
 /out_dir/
 /AGENTS.md.bak*
 subagent-outbox/
+
+# test-only scaffold: audit reference, NOT a runtime/deploy asset (W44)
+public/data/qwen3_embeddings.npy
+public/data/qwen3_embeddings_meta.json
