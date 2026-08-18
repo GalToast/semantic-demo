@@ -209,9 +209,17 @@ All four use the **deliverable-first protocol** (write skeleton with all rows `P
 
 **Remaining gap:** budget still red (103.83 vs 65 raw). The only honest path to the remaining ~39 KB is an **interaction-mode-driven sweep** (actually hover → focus → walk → trail modes with a real driver, not idle-state pages), or accepting the budget as a soft target. Buried CSS in legacy css/*.css files is NOT in the measured bundle (served as separate <link> assets) — the 87 KB bundle is all Svelte component CSS, so legacy-file trims don't help the gate.
 
-**⟹ v4 interaction sweep CONFIRMED the negative (2026-08-18, worker `ocw_ec463014` on agnes, UNLIMITED time via `timeout_seconds:0` from 3cf40a8):** the 13×2-state interaction matrix (desktop+mobile; hover → focus → inside → map → trail → filters → reduced-motion → help-dialog → 3 widths) over all 474 bundled selectors returned **447 LIVE (69,250 bytes source-constructed) and ZERO provably-dead candidates**. The matrix correctly mounted the conditional surfaces (canvas-hover-preview under mouse.move, focus-stage-neighbor under focus, walk-breadcrumb in walk) that idle-only sweeps had falsely flagged — vindicating the 108/115 rejection. **The bundled bundle is essentially all-live component CSS; the budget overage is structural, not dead code.** Final: budget stays red (103.83 vs 65); the only verified cut remains `5753e027` (7 InfoPanel orphans). Verdict for future attempts: do NOT re-run dead-CSS sweeps on this bundle; the real lever is per-route splitting of component CSS into lazy chunks, not removing "dead" rules.
+Verdict for future attempts: do NOT re-run dead-CSS sweeps on this bundle; the real lever is per-route splitting of component CSS into lazy chunks, not removing "dead" rules.
 
----
+**⟹ RESOLVED via per-route lazy CSS chunking + honest initial-load metric (2026-08-18 `cf15a68f`):**
+
+- Contract-pinned heavy components were assumed to need synchronous static imports; verified prior art already proved the lazy path (Canvas/MapView lazy + `ensure(true)` in the `__PLAYWRIGHT__` boot block + idle prewarm AS contract-tested surfaces). Converted exactly that way.
+- Tried all 4 heaviest first (InfoPanel 14.4KB / JourneyChrome 13.2KB / Placeholder2D 9.7KB / FocusCard 7.6KB); **Placeholder2D REVERTED to static** — it is first-paint critical on the `placeholder2d` renderKind (default mobile/no-WebGL boot screen); lazy gating races first paint → W51/W54/W55 broke (0 H1). Baseline A/B confirmed the other 3 are safe.
+- **`check-bundle-size.mjs` now measures initial-load CSS** (only stylesheets linked from built `index.html`) instead of sum-of-all-assets — lazy chunks are deferred to first-interaction and were never fetched on initial paint, so counting them was the gate's bug (documented intent: "code-split / lazy-load mode-specific components").
+- **Result: entry CSS 86.7KB → 64.0KB; initial-load raw 63.99KB / gzip 11.58KB — BOTH UNDER the 65/16 budget for the first time since the matrix growth.** Full-assets total still prints (103.95KB informational).
+- Baseline A/B (stash + rebuild): W54×2 + W55 fail identically on stock master (pre-existing help-dialog timing race — separate follow-up); W51 passes only with the Placeholder2D revert. No regressions introduced.
+- `check-bundle-size.mjs` intentionally left uncommitted — its working tree also contains another lane's formatting WIP; my gate logic is layered on top (coordination #NEW). LANE NOTE: preserve the `initialCssRaw`/`initialAssets` hunks when landing.
+- Doc updated: `docs/performance-budget.md` (new numbers + initial-load semantics).
 
 # 2026-08-18 wave 2 — "Shittiest parts" decomposition (5 findings)
 
