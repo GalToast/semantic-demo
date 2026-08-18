@@ -209,6 +209,8 @@ All four use the **deliverable-first protocol** (write skeleton with all rows `P
 
 **Remaining gap:** budget still red (103.83 vs 65 raw). The only honest path to the remaining ~39 KB is an **interaction-mode-driven sweep** (actually hover → focus → walk → trail modes with a real driver, not idle-state pages), or accepting the budget as a soft target. Buried CSS in legacy css/*.css files is NOT in the measured bundle (served as separate <link> assets) — the 87 KB bundle is all Svelte component CSS, so legacy-file trims don't help the gate.
 
+**⟹ v4 interaction sweep CONFIRMED the negative (2026-08-18, worker `ocw_ec463014` on agnes, UNLIMITED time via `timeout_seconds:0` from 3cf40a8):** the 13×2-state interaction matrix (desktop+mobile; hover → focus → inside → map → trail → filters → reduced-motion → help-dialog → 3 widths) over all 474 bundled selectors returned **447 LIVE (69,250 bytes source-constructed) and ZERO provably-dead candidates**. The matrix correctly mounted the conditional surfaces (canvas-hover-preview under mouse.move, focus-stage-neighbor under focus, walk-breadcrumb in walk) that idle-only sweeps had falsely flagged — vindicating the 108/115 rejection. **The bundled bundle is essentially all-live component CSS; the budget overage is structural, not dead code.** Final: budget stays red (103.83 vs 65); the only verified cut remains `5753e027` (7 InfoPanel orphans). Verdict for future attempts: do NOT re-run dead-CSS sweeps on this bundle; the real lever is per-route splitting of component CSS into lazy chunks, not removing "dead" rules.
+
 ---
 
 # 2026-08-18 wave 2 — "Shittiest parts" decomposition (5 findings)
