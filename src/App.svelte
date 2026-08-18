@@ -59,7 +59,8 @@
   import SemanticGuideCard from '@components/SemanticGuideCard.svelte';
   import SearchTrailCue from '@components/SearchTrailCue.svelte';
   import ProximityLegend from '@components/ProximityLegend.svelte';
-  import FocusPocket from '@components/FocusPocket.svelte';  import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
+  import FocusPocket from '@components/FocusPocket.svelte';
+  import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
   import { ErrorFallback } from '@lib/error-boundary';
   import { legendOpen, setLegendOpen } from '@lib/stores/legend.svelte';
 
