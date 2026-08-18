@@ -784,12 +784,6 @@
     display: block;
   }
 
-  @media (min-width: 769px) {
-    :global(body:not(.is-compact) .compass-rail) {
-      display: none;
-    }
-  }
-
   @media (max-width: 768px) {
     :global(body.surface-focus-search .journey-compass) {
       display: grid;

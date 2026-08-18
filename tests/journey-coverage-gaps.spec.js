@@ -131,14 +131,12 @@ test.describe('CompassRail journey', () => {
         const preMode = await page.evaluate(() => window.__APP_STATE__?.navState?.mode)
         expect(preMode).toBe('focus')
 
-        // Click the Search step via evaluate — rail is positioned off-screen in headless,
-        // so a direct DOM click bypasses the Playwright visibility gate.
-        const clicked = await page.evaluate(() => {
-            const btn = document.querySelector('#compass-rail .compass-step[aria-label*="Search"]')
-            if (btn) { btn.click(); return true }
-            return false
-        })
-        expect(clicked, 'search step must exist on the rail').toBe(true)
+        // Click the Search step via normal Playwright click — the rail is natively
+        // visible at the test viewport (1280×800) after the App.svelte desktop-hide
+        // rule was removed (commit fixing compass-rail-headless).
+        const searchBtn = page.locator('#compass-rail .compass-step[aria-label*="Search"]')
+        await expect(searchBtn).toBeVisible()
+        await searchBtn.click()
         await page.waitForTimeout(1500)
 
         const postSettled = await pollFor(
