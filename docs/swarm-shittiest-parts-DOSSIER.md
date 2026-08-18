@@ -199,6 +199,16 @@ All four use the **deliverable-first protocol** (write skeleton with all rows `P
 - **`tests/run-all-contracts.js` had a hardcoded contract list** duplicating the manifest with 11 stale entries (focus-pocket, dewindowing, state-ownership). It crashed with ENOENT on deleted files. Cleaned — this was the blocker the dossier flagged as "stale-dewindowing".
 - **`url-state-no-synthetic-input.test.ts` is a contract for the W3 split itself** — it reads `url-restore-search.ts` and asserts no `dispatchEvent('input')`, `input.value = query`, and a `PR-O5` audit comment. All 3 assertions pass in the split file; the test failure is a false positive in its `extractSearchRestoreBlock` heuristic (it looks for `\nfunction _showToast` as the next function, but that symbol doesn't exist in the split file).
 
+## CSS budget seam — third attempt verdict (2026-08-18)
+
+**Outcome:** 1 verified safe cut landed (`5753e027`, −0.74 KB bundled CSS), 108 of 115 worker-flagged candidates REJECTED as live.
+
+**Method that finally worked (main-lane oracle, replaces both static-grep AND DOM-walk dead-code claims):** a class is PROVABLY dead only when all three hold: (1) `rg -l <class> src/ -g '!*.css'` returns zero (no source constructor anywhere); (2) the owning component's template never emits it (checked the .svelte directly); (3) a Playwright querySelectorAll sweep (desktop+mobile, all surfaces) counts 0. The 08-18 worker's Playwright-only sweep passed (3) but FAILED (1)/(2) for 108/115 — its "dead" list included `canvas-hover-preview` (App/Canvas), `focus-stage-neighbor-*` (FocusNeighborhood), `walk-breadcrumb` (WalkBreadcrumb), `focus-role-filter-*`, `legend-filtered-badge`, `proximity-legend-dismiss` — all LIVE conditional-surface classes the idle-state sweep never mounted. Same trap as W4-CSS (08-17) and the 08-16 swarm reject: never trust zero-DOM-matches for CSS in this app; surfaces need interaction to exist.
+
+**What survived the oracle:** 7 orphaned rules in `src/components/InfoPanel.css` (`selected-card-note`, `note-label`, `snippet-label`, `selected-card-note`, `note-text`, `snippet-text`, `snippet-score` — the dead 'Public note'/'Search snippet' blocks). Committed `5753e027`. Full reject/accept evidence: `tmp/subagent-css-budget/main-oracle.json` (108 live / 7 safe).
+
+**Remaining gap:** budget still red (103.83 vs 65 raw). The only honest path to the remaining ~39 KB is an **interaction-mode-driven sweep** (actually hover → focus → walk → trail modes with a real driver, not idle-state pages), or accepting the budget as a soft target. Buried CSS in legacy css/*.css files is NOT in the measured bundle (served as separate <link> assets) — the 87 KB bundle is all Svelte component CSS, so legacy-file trims don't help the gate.
+
 ---
 
 # 2026-08-18 wave 2 — "Shittiest parts" decomposition (5 findings)
