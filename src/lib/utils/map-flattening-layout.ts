@@ -8,7 +8,8 @@ import { positionBuffer } from '@lib/data-store'
 export function applyMapFlatteningLayout(enabled: boolean): void {
     if (!appState.points || !appState.originalPositions) return
 
-    const hasRawBuffer = positionBuffer.getSnapshot() && positionBuffer.getSnapshot().length >= appState.points.length * 3
+    const rawBuf = positionBuffer.getSnapshot()
+    const hasRawBuffer = rawBuf !== null && rawBuf.length >= appState.points.length * 3
 
     if (enabled) {
         const bounds = appState.overviewBounds as { sourceCenter: { x: number; y: number } } | undefined
@@ -17,9 +18,9 @@ export function applyMapFlatteningLayout(enabled: boolean): void {
 
         appState.points.forEach((_point, i: number) => {
             let rawX: number, rawY: number
-            if (hasRawBuffer && positionBuffer.getSnapshot()) {
-                rawX = positionBuffer.getSnapshot()[i * 3]!
-                rawY = positionBuffer.getSnapshot()[i * 3 + 1]!
+            if (hasRawBuffer && rawBuf) {
+                rawX = rawBuf[i * 3]!
+                rawY = rawBuf[i * 3 + 1]!
             } else {
                 const orig = appState.originalPositions[i]
                 rawX = Number.isFinite(orig?.x) ? orig!.x : 0

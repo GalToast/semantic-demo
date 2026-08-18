@@ -53,8 +53,8 @@ check('module:exports:applyMapFlatteningLayout', /export\s+function\s+applyMapFl
 check(
     'enabled-path:reads positionBuffer store',
     /hasRawBuffer/.test(targetSrc) &&
-        /positionBuffer\.getSnapshot\(\)\s*\[\s*i\s*\*\s*3\s*\]/.test(targetSrc) &&
-        /positionBuffer\.getSnapshot\(\)\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(targetSrc),
+        /(?:positionBuffer\.getSnapshot\(\)|rawBuf)\s*\[\s*i\s*\*\s*3\s*\]/.test(targetSrc) &&
+        /(?:positionBuffer\.getSnapshot\(\)|rawBuf)\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(targetSrc),
     'map-flattening-layout.js must read positionBuffer.getSnapshot()[i*3] and [i*3+1] in the enabled branch'
 )
 
@@ -72,7 +72,7 @@ check(
 )
 check(
     'enabled-path:primary read is from buffer',
-    /positionBuffer\.getSnapshot\(\)\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(enabledBranch),
+    /(?:positionBuffer\.getSnapshot\(\)|rawBuf)\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(enabledBranch),
     'the enabled branch must read y from positionBuffer.getSnapshot()[i*3+1], not point.y'
 )
 
