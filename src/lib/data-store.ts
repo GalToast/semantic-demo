@@ -522,6 +522,50 @@ export function setBusinessData(result: BusinessDataResult): void {
     // focusOnNode) and the rune consumers diverge silently. Catch it here
     // rather than in production. Gated on import.meta.env.DEV so it never
     // ships.
+    if (import.meta.env.DEV) {
+        const records = businessRecords.getSnapshot()
+        const recordCount = records.length
+        const issues: string[] = []
+
+        // Invariant 1: appState.nodePositions must be derived from the same
+        // record count. A future refactor that sets nodePositions from a
+        // different source (or forgets to slice) would silently break
+        // focus-pocket and camera framing that reads nodePositions.
+        if (appState.nodePositions.length !== recordCount) {
+            issues.push(`nodePositions.length=${appState.nodePositions.length} !== records.length=${recordCount}`)
+        }
+
+        // Invariant 2: appState.originalPositions must mirror nodePositions
+        // in length. They are set from the same derived array in this
+        // function; a drift means one was mutated after assignment.
+        if (appState.originalPositions.length !== recordCount) {
+            issues.push(
+                `originalPositions.length=${appState.originalPositions.length} !== records.length=${recordCount}`
+            )
+        }
+
+        // Invariant 3: positionBuffer (Float32Array) must hold at least
+        // recordCount * 3 components. A truncated buffer would produce
+        // NaN positions in the engine without any compile-time signal.
+        const buf = positionBuffer.getSnapshot()
+        if (buf && buf.length < recordCount * 3) {
+            issues.push(`positionBuffer.length=${buf.length} < records.length*3=${recordCount * 3}`)
+        }
+
+        // Invariant 4: pointIndexByLeadId must have one entry per record.
+        // A missing entry means a lead_id lookup returns undefined at runtime.
+        const indexMap = pointIndexByLeadId.getSnapshot()
+        if (indexMap.size !== recordCount) {
+            issues.push(`pointIndexByLeadId.size=${indexMap.size} !== records.length=${recordCount}`)
+        }
+
+        if (issues.length > 0) {
+            debugWarn('[data-store] W67-D1 dual-write consistency assertion FAILED:\n  -', issues.join('\n  -'))
+            if (import.meta.env.VITE_DEBUG_DATA_STORE === '1') {
+                throw new Error(`[data-store] W67-D1 dual-write consistency assertion FAILED:\n${issues.join('\n')}`)
+            }
+        }
+    }
 }
 
 function describeValue(v: unknown): string {
