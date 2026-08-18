@@ -49,3 +49,24 @@ test('demo: api fallback + rail down + degraded', () => {
         copy: 'Demo data — live API unreachable'
     })
 })
+
+// data-freshness truth (2026-08-18, product-audit #1): the data-age pill.
+import { describe, it } from 'vitest'
+import { dataFreshness } from '@lib/rail/rail-status'
+
+describe('dataFreshness', () => {
+    it('old graph gets a dated snapshot label', () => {
+        const r = dataFreshness({ generated_at: '2026-06-04T13:39:13Z', rows: 8406 })
+        if (!r.ageDays) throw new Error('expected age')
+        if (!r.label.includes('2026-06-04') || !r.label.includes('8406')) throw new Error(r.label)
+    })
+    it('recent graph reads as "as of"', () => {
+        const r = dataFreshness({ generated_at: new Date().toISOString() })
+        if (r.ageDays !== 0) throw new Error('expected fresh')
+    })
+    it('missing stamp is honest, not fake-fresh', () => {
+        const r = dataFreshness({})
+        expect(r.ageDays).toBeNull()
+        if (!r.label.includes('unknown')) throw new Error(r.label)
+    })
+})

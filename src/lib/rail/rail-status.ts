@@ -52,3 +52,22 @@ export async function probeSemanticRail(timeoutMs = 2500): Promise<boolean | nul
         return false
     }
 }
+
+// ── data freshness (2026-08-18): the semantic graph's moment, surfaced
+// truthfully instead of implied-fresh. The manifest carries the source age:
+//   generated_at   — the graph's build stamp (ISO)
+//   rows           — business count
+// The UI renders a gentle date; consumers decide how prominently.
+
+export function dataFreshness(manifest: { generated_at?: string; rows?: number | string }): {
+    label: string
+    ageDays: number | null
+} {
+    if (!manifest?.generated_at) return { label: 'Semantic graph: unknown build date', ageDays: null }
+    const at = new Date(manifest.generated_at)
+    if (Number.isNaN(at.getTime())) return { label: 'Semantic graph: unparsellable stamp', ageDays: null }
+    const days = Math.max(0, Math.floor((Date.now() - at.getTime()) / 86400_000))
+    const rows = manifest.rows ? `· ${manifest.rows} businesses` : ''
+    if (days < 31) return { label: `Data as of ${at.toISOString().slice(0, 10)}${rows}`, ageDays: 0 }
+    return { label: `Data snapshot ${at.toISOString().slice(0, 10)} (${days}d old)${rows}`, ageDays: days }
+}
