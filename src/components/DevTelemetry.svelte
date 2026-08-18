@@ -53,6 +53,11 @@
       const unsub = telemetryStore.subscribe(() => {
           snapshot = telemetryStore.getSnapshot()
       })
+      // Snapshot immediately. The subscribe callback only fires on the
+      // NEXT record()/clear(), so events buffered before this overlay
+      // mounted (the App.svelte subscriber has been running since boot)
+      // would otherwise render as an empty overlay until the next event.
+      snapshot = telemetryStore.getSnapshot()
       onDestroy(() => {
           unsub()
       })
