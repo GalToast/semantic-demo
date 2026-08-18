@@ -106,52 +106,6 @@
     border-radius: 0.4rem;
 }
 
-/* ── Public note ─────────────────────────────────────────────────────────── */
-.selected-card-note {
-    background: rgba(var(--color-primary-alt-rgb), 0.06);
-    border-radius: 0.375rem;
-    padding: 0.5rem 0.6rem;
-    margin-top: 0.15rem;
-}
-.note-label,
-.snippet-label {
-    font-size: 0.6rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: rgba(var(--color-primary-alt-rgb), 0.6);
-    margin: 0 0 0.2rem 0;
-}
-.note-text {
-    font-size: 0.75rem;
-    color: rgba(224, 240, 240, 0.85);
-    line-height: 1.4;
-    margin: 0;
-}
-
-/* ── Search snippet ──────────────────────────────────────────────────────── */
-.selected-card-snippet {
-    background: rgba(var(--color-primary-alt-rgb), 0.06);
-    border-left: 2px solid rgba(var(--color-primary-alt-rgb), 0.3);
-    border-radius: 0 0.375rem 0.375rem 0;
-    padding: 0.5rem 0.6rem;
-    margin-top: 0.15rem;
-}
-.snippet-text {
-    font-size: 0.75rem;
-    color: rgba(224, 240, 240, 0.85);
-    line-height: 1.4;
-    margin: 0;
-}
-.snippet-score {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: #96ceb4;
-    margin-top: 0.3rem;
-}
-
-/* loading + error + spinner styles apply at all viewport widths (moved out of @media max-width:768px — desktop needs them too) */
 /* ── Loading spinner ─────────────────────────────────────────────────────────── */
 /* ── Error state ────────────────────────────────────────────────────────────── */
 .info-panel-error {
