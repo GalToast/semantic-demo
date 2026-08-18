@@ -80,7 +80,7 @@ Read only when relevant (full module inventory: `docs/important-files.md`; full 
 
 ## Dev Commands & Surface Tests
 
-Core: `npm run build` · `lint` · `test:unit` · `qa:contract`. Full script list + a11y flags: `docs/dev-commands.md`. Surface tests: `tests/surface-contract-check.mjs` (DOM/layout assertions per named surface) + `tests/visual-state-audit.mjs` (screenshots).
+Core: `npm run build` · `lint` · `test:unit` · `qa:contract`. Full script list + a11y flags: `docs/dev-commands.md`; complete 136-script map: `docs/scripts-inventory.md`. Surface tests: `tests/surface-contract-check.mjs` (DOM/layout assertions per named surface) + `tests/visual-state-audit.mjs` (screenshots).
 
 ## Edit Safety
 
