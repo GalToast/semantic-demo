@@ -114,15 +114,20 @@ conservative default.** Verified live at upstream (200 + real content):
   vs picker vs router-prof, plus a context+output consistency matrix. Run it
   after any model add/remove.
 
-  **2026-08-17: the cross-check's router-profile regex was itself buggy.** It
-  anchored on `\n\t\},` but the logfare profile block closes with `}}`, so it
-  silently truncated the matrix to 10 of 13 profiles and then reported the
-  missing 3 as "stale". The reported staleness was a false positive — those
-  profiles (`gemini-3.5-flash`, `kimi-k2.6`, `kimi-k2.7-code`, `deepseek-v4-flash`,
-  `mimo-v2.5`, `qwen-3.8-max`, `qwen-3.6-35b-a3b`) are live, commented, and
-  referenced by `logfareAliases` in the same file. **A regex whose terminator
-  doesn't match the real terminator truncates the matrix — brace-match instead.**
-  The script now brace-matches from `logfare: {` and reports 13/13.
+    **2026-08-17: the cross-check's router-profile regex was itself buggy.** It
+    anchored on `\n\t\},` but the logfare profile block closes with `}}`, so it
+    silently truncated the matrix to 10 of 13 profiles. Brace-match from
+    `logfare: {` instead — now reports 13/13.
+
+    The STALE list still reports 7 router entries (`gemini-3.5-flash`,
+    `kimi-k2.6`, `kimi-k2.7-code`, `deepseek-v4-flash`, `mimo-v2.5`,
+    `qwen-3.8-max`, `qwen-3.6-35b-a3b`) that are absent from the live catalog.
+    **These are NOT a config inconsistency — they are the key-router's own WIP.**
+    Each carries an explanatory comment citing the router's own probe logs, and
+    each is referenced by `logfareAliases` in the same file. They route requests
+    to models the catalog no longer exposes. Do not delete them without
+    confirming the router is no longer serving them.
+
 - **Lesson:** never trust a layer's numbers at face value. The picker was
   auto-synced from the catalog and inherited stale context windows; opencode
   had cosmetic output overrides that disagreed with the router enforcer. And

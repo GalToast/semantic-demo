@@ -43,8 +43,14 @@ describe('search Escape journey — canonical Playwright port', () => {
 
     it('matches the playwright.config.js webServer default (8796)', () => {
         // The canonical server default must be consistent across the two files.
-        expect(CONFIG_SRC).toMatch(/TEST_BASE_URL\s*\|\|\s*'http:\/\/127\.0\.0\.1:8796'/)
-        expect(CONFIG_SRC).toMatch(/port:\s*8796/)
+        // The config derives the port from TEST_SERVER_PORT with a literal 8796
+        // default — assert the default resolves to 8796 rather than pinning the
+        // exact expression form (the variable indirection is intentional: it
+        // lets a second session bind the test server elsewhere without a
+        // port fight).
+        expect(CONFIG_SRC).toMatch(/TEST_SERVER_PORT\s*\|\|\s*8796/)
+        expect(CONFIG_SRC).toMatch(/port:\s*testServerPort/)
+        expect(CONFIG_SRC).toMatch(/TEST_BASE_URL\s*\|\|\s*`http:\/\/127\.0\.0\.1:\$\{testServerPort\}`/)
     })
 })
 

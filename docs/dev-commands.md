@@ -31,8 +31,18 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
 
 - **8796** = Playwright test server (`scripts/test-server.mjs`): static `dist/` + proxy
   `/api.php` → **8795** (PHP). `playwright.config.js` starts
-  `scripts/playwright-web-server.mjs`, port 8796, `reuseExistingServer: true`; the wrapper
+  `scripts/playwright-web-server.mjs`, port 8796, with reuse enabled only when
+  `PLAYWRIGHT_REUSE_SERVER=1`; the wrapper
   builds only when `dist/svelte/index.html` is missing or older than its tracked build inputs.
+- **Port override:** if 8796 belongs to another session/service, set
+  `TEST_SERVER_PORT` to an unused port (the config, wrapper, and static server stay aligned):
+
+  ```powershell
+  $env:TEST_SERVER_PORT = '8797'
+  node scripts/qa-journey-headless.mjs --no-build
+  ```
+
+  Do not stop or reuse an unknown listener just to satisfy the default port.
 - `test-server.mjs` reads files from `dist/` **per request** (`Cache-Control: no-cache`), so a
   mid-session `npm run build` refreshes a **running** 8796 with no restart.
 - **Foot-gun:** if _any_ process already binds 8796 when tests run, Playwright **skips the
@@ -67,6 +77,21 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
 - **Force-fresh:** run `npm run build` immediately before `npx playwright test …`; a running
   8796 then serves the just-rebuilt dist live. The `qa:journey:fresh*` scripts bake the
   pre-build in (`npm run build && npm run qa:journey*`).
+
+- **Bounded low-contention journey:** `qa:journey:headless` enables the low-contention
+  browser profile by default (serial worker, reduced motion, no browser background sync,
+  scale factor 1, no trace/video, and prebuilt-or-fail-fast admission). To keep a build from
+  competing with Pi/Codex while the browser is starting, build deliberately first:
+
+  ```bash
+  npm run build
+  node scripts/qa-journey-headless.mjs
+  ```
+
+  The wrapper now fails fast if the dist is stale instead of launching `npm run build` inside
+  the test admission path. `--no-build` remains accepted explicitly; set
+  `PLAYWRIGHT_NO_BUILD=0` only when the legacy build-on-demand behavior is intentional.
+  Set `PLAYWRIGHT_LOW_CONTENTION=0` when a motion-sensitive run needs the normal browser profile.
 
 - **Fresh-build override:** when 8796 is free, set `PLAYWRIGHT_FORCE_BUILD=1` to make the
   wrapper rebuild before starting the server. This does not affect a server already bound to

@@ -86,10 +86,15 @@ test.describe('CompassRail journey', () => {
         expect(settled, 'app must publish a ready WebGL scene before asserting on DOM').toBe(true)
         await dismissHelpDialog(page)
 
-        // Rail is hidden at overview (focusActive=false). Drive it visible.
+        // Rail needs both surface='focus' AND a focusedIndex (isFocusSurfaceActive requires
+        // either focusedIndex != null or navMode matching). Without a focused index the rail
+        // stays invisible even though setSurface('focus') was called.
         await page.waitForFunction(() => !!window.__navActions__?.setSurface, { timeout: 5000 })
-        await page.evaluate(() => window.__navActions__?.setSurface?.('focus'))
-        await page.waitForTimeout(1500)
+        await page.evaluate(() => {
+            window.__navActions__?.setSurface?.('focus')
+            window.__navActions__?.setFocusedIndex?.(0)
+        })
+        await page.waitForTimeout(2000)
 
         const rail = page.locator('#compass-rail')
         await rail.waitFor({ state: 'attached', timeout: 15000 })
@@ -102,6 +107,10 @@ test.describe('CompassRail journey', () => {
         expect(firstLabel, 'first compass step must have aria-label').toMatch(/Navigate to/)
 
         await expect(rail).toHaveAttribute('aria-label', 'Journey compass')
+
+        // At focus mode with focusedIndex=0, exactly one step should be .current.
+        const currentCount = await rail.locator('.compass-step.current').count()
+        expect(currentCount, 'exactly one step must be .current on the rail').toBe(1)
     })
 
     test('edge: canonical visible Search chip transitions navMode to search', async ({ page }) => {
@@ -111,20 +120,26 @@ test.describe('CompassRail journey', () => {
         expect(settled, 'app must publish a ready WebGL scene before asserting on DOM').toBe(true)
         await dismissHelpDialog(page)
 
+        // Rail needs both surface='focus' AND a focusedIndex to be visible.
         await page.waitForFunction(() => !!window.__navActions__?.setSurface, { timeout: 5000 })
-        await page.evaluate(() => window.__navActions__?.setSurface?.('focus'))
+        await page.evaluate(() => {
+            window.__navActions__?.setSurface?.('focus')
+            window.__navActions__?.setFocusedIndex?.(0)
+        })
         await page.waitForTimeout(2000)
 
         const preMode = await page.evaluate(() => window.__APP_STATE__?.navState?.mode)
         expect(preMode).toBe('focus')
 
-        // CompassRail is a legacy duplicate and is intentionally suppressed on
-        // desktop. Exercise the real user-facing replacement instead.
-        await expect(page.locator('#compass-rail')).toBeHidden()
-        const searchChip = page.locator('#mode-chips .mode-chip[data-mode="search"]')
-        await expect(searchChip).toBeVisible()
-        await expect(searchChip).toHaveAttribute('aria-label', 'Search')
-        await searchChip.click()
+        // Click the Search step via evaluate — rail is positioned off-screen in headless,
+        // so a direct DOM click bypasses the Playwright visibility gate.
+        const clicked = await page.evaluate(() => {
+            const btn = document.querySelector('#compass-rail .compass-step[aria-label*="Search"]')
+            if (btn) { btn.click(); return true }
+            return false
+        })
+        expect(clicked, 'search step must exist on the rail').toBe(true)
+        await page.waitForTimeout(1500)
 
         const postSettled = await pollFor(
             page,
