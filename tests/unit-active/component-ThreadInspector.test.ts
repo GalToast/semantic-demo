@@ -67,7 +67,7 @@ describe('ThreadInspector component', () => {
 
     it('header .inspector-header with kicker text and close button', () => {
         expect(panelSource).toContain('class="inspector-header"')
-        expect(panelSource).toContain('Connection Preview')
+        expect(panelSource).toContain('Similar-Business Preview')
         expect(panelSource).toContain('aria-label="Close inspector"')
         // PR-T1 changed the close button from &times; text to a CSS ::before pseudo-element
         expect(panelSource).toContain('.inspector-close::before')

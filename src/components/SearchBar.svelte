@@ -129,9 +129,7 @@
       data-testid="mock-banner"
       title="Live data temporarily unavailable — search results may be a sample"
     >
-      <strong>Live data temporarily unavailable:</strong> search is using a
-      sample of 20 local businesses because the live feed couldn't be reached.
-      Results may be incomplete — try again in a moment.
+      Live data is unavailable — searching local records
     </div>
   {/if}
   <SearchInput bind:this={searchInputRef} expanded={isExpanded} surface={currentSurface()} />

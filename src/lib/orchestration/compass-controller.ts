@@ -518,7 +518,7 @@ export function updateJourneyCompass(): void {
         search: 'Find and center on a business.',
         focus: 'Inspect a centered anchor.',
         trail: 'Project the connection trail onto the streets.',
-        inside: 'Explore the neighborhood.',
+        inside: 'Explore similar businesses.',
         map: 'View the geographic layer.'
     }
 

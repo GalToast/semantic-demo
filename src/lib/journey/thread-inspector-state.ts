@@ -200,7 +200,7 @@ export function getThreadInspectionState(
     const copy = truncateMicrocopy(rawCopy, 220)
     const meta = active
         ? `${relationshipTitle || 'Connection'} | ${source} | ${journeyPhase} connection`
-        : 'Preview connection'
+        : 'Preview similar businesses'
     const rawSurface = pinned
         ? 'pinned'
         : options.surface ||
@@ -306,9 +306,9 @@ export function pinThreadNeighbor(index: number, options: ThreadInspectionOption
             pinned: false,
             journeyPhase: 'idle',
             surface: null,
-            title: 'Connection Inspector',
+            title: 'Similar-Business Inspector',
             copy: 'Select a nearby stop to preview why it belongs here, then pin or follow.',
-            meta: 'Preview connection',
+            meta: 'Preview similar businesses',
             strandVisual: { active: false, source: 'none', segmentCount: 0, braidCount: 0, endpointCount: 0 },
             threadSource: null
         }

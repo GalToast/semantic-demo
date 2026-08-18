@@ -43,9 +43,8 @@
   const followDisabled = $derived(inspectedIndex === null || followTargetsCurrent || journeyPhaseIsExploring);
 
   const title = $derived(inspectedIndex != null
-    ? `Connection to ${appState.points[inspectedIndex]?.name ?? 'a nearby business'}`
-    : 'Connection Inspector');
-
+    ? `Similar to ${appState.points[inspectedIndex]?.name ?? 'a nearby business'}`
+    : 'Similar-Business Inspector');
   function localizeSource(source: string | undefined): string {
     switch (source) {
       case 'rail-hover': return 'hovering a neighbor';
@@ -119,7 +118,7 @@
   data-strand-journey={bodyStrandJourney}
 >
   <div class="inspector-header">
-    <span class="focus-thread-inspector-kicker">Connection Preview</span>
+    <span class="focus-thread-inspector-kicker">Similar-Business Preview</span>
     <button type="button" class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector"></button>
   </div>
   <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title inspector-title">
@@ -136,7 +135,7 @@
     </div>
   {:else if emptyMetaVisible}
     <div id="focus-thread-inspector-meta-empty" class="focus-thread-inspector-meta inspector-stats" role="list" aria-label={metaAriaLabel}>
-      <span role="listitem">Preview connection</span>
+      <span role="listitem">Preview similar businesses</span>
     </div>
   {/if}
   <div class="focus-thread-inspector-actions" aria-label="Connection actions">

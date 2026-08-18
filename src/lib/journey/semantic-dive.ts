@@ -267,7 +267,7 @@ export function syncSemanticDiveUi(): void {
             ? 'Entering neighborhood...'
             : active
               ? 'Inside Neighborhood, use Next Stop to continue or County to exit'
-              : 'Explore the neighborhood around this business'
+              : 'Explore similar businesses around this one'
     )
     diveButton.setAttribute('aria-busy', String(isTransitioning))
     if (label)
@@ -277,6 +277,6 @@ export function syncSemanticDiveUi(): void {
             ? 'Loading nearby connections.'
             : active
               ? 'Use Next Stop to continue or County to exit.'
-              : 'Explore related businesses in the neighborhood.'
+              : 'Explore similar businesses nearby.'
     }
 }

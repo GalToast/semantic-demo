@@ -180,7 +180,7 @@
     overview: 'See the whole county.',
     search: 'Find and center on a business.',
     focus: 'Inspect a centered anchor.',
-    inside: 'Explore the neighborhood.',
+    inside: 'Explore similar businesses.',
     map: 'View the geographic layer.'
   };
 

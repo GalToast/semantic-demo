@@ -118,3 +118,90 @@ describe('thread-lens friendly copy (W48-J)', () => {
         expect(src).toContain('All Montgomery County businesses')
     })
 })
+
+/**
+ * Copy-honesty strike (2026-08-17): the 5 rail/search/journey copy sites
+ * were updated to remove over-claim/engineering-jargon strings ('Demo data',
+ * 'Connection Preview', 'Explore the neighborhood'). These assertions lock
+ * in the new phrasing and forbid reversion of the old strings across those
+ * 5 files.
+ */
+const COPY_STRIKE_FILES = [
+    resolve(__dirname, '../../src/lib/rail/rail-status.ts'),
+    resolve(__dirname, '../../src/components/SearchBar.svelte'),
+    resolve(__dirname, '../../src/lib/components/journey/ThreadInspectorPanel.svelte'),
+    resolve(__dirname, '../../src/lib/components/journey/CompassDiveSurface.svelte'),
+    resolve(__dirname, '../../src/lib/journey/semantic-dive.ts'),
+    // DOM twin of semantic-dive: renders the same thread-inspector + dive
+    // surfaces (focus-stage-dom.ts:120-235) when the dive runs its DOM path.
+    resolve(__dirname, '../../src/lib/journey/focus-stage-dom.ts'),
+    // Compass step labels + inspector state carry the same over-claim family
+    // ('Explore the neighborhood', 'Preview connection', 'Connection Inspector').
+    resolve(__dirname, '../../src/components/JourneyCompass.svelte'),
+    resolve(__dirname, '../../src/lib/journey/thread-inspector-state.ts'),
+    resolve(__dirname, '../../src/lib/orchestration/compass-controller.ts'),
+] as const
+
+const OLD_OVERCLAIM_STRINGS = [
+    'Connection Preview',
+    'Preview connection',
+    'Connection Inspector',
+    'Explore the neighborhood',
+    'Demo data',
+] as const
+
+const NEW_APPROVED_STRINGS = [
+    'Local data — live feed unavailable',
+    'Live data is unavailable — searching local records',
+    'Similar-Business Preview',
+    'Explore similar businesses around this one',
+    'Explore similar businesses nearby',
+] as const
+
+function readMultiple(paths: readonly string[]): string {
+    return paths.map(p => readFileSync(p, 'utf8')).join('\n')
+}
+
+describe('copy-honesty strike (2026-08-17)', () => {
+    let combined: string
+
+    beforeAll(() => {
+        combined = readMultiple(COPY_STRIKE_FILES)
+    })
+
+    it('forbids reverted over-claim strings', () => {
+        const violations: { file: string; phrase: string }[] = []
+        for (const filePath of COPY_STRIKE_FILES) {
+            const src = readFileSync(filePath, 'utf8')
+            for (const phrase of OLD_OVERCLAIM_STRINGS) {
+                if (src.includes(phrase)) {
+                    violations.push({ file: filePath, phrase })
+                }
+            }
+        }
+        if (violations.length > 0) {
+            const msg = violations
+                .map((v) => `  - "${v.phrase}" found in ${v.file.split('/').pop()}`)
+                .join('\n')
+            throw new Error(
+                `Copy-honesty regression: old over-claim strings must not ` +
+                `reappear in the strike files:\n${msg}`
+            )
+        }
+    })
+
+    it('requires the new approved phrasings', () => {
+        const missing: string[] = []
+        for (const phrase of NEW_APPROVED_STRINGS) {
+            if (!combined.includes(phrase)) {
+                missing.push(phrase)
+            }
+        }
+        if (missing.length > 0) {
+            throw new Error(
+                `Copy-honesty regression: new approved phrases must appear ` +
+                `in the strike files:\n  ${missing.join('\n  ')}`
+            )
+        }
+    })
+})

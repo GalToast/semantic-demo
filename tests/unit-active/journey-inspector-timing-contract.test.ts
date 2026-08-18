@@ -45,7 +45,7 @@ const _renderThreadInspection = vi.hoisted(() =>
         surface: null,
         title: 'Select a nearby stop',
         copy: 'Click a neighbor below to preview why it belongs here, then pin or follow.',
-        meta: 'Preview connection',
+        meta: 'Preview similar businesses',
         strandVisual: { active: false, source: 'none', segmentCount: 0, braidCount: 0, endpointCount: 0 },
         threadSource: null
     }))

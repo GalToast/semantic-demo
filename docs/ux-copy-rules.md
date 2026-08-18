@@ -19,6 +19,7 @@ The following words must never appear in strings a user sees. Excluded locations
 | `trail`    | OK as a UI surface name (one of the 6 journey phases) but not copy | OK in url params and nav-state, not user strings |
 | `record`   | Database row                                                       | "listing"                                        |
 | `point`    | GeoJSON point                                                      | "location"                                       |
+| `demo`     | Legacy key used in rail-status.ts fallback path — copy says "Local data" now | Never as user-visible copy                      |
 
 A test in `tests/unit-active/thread-lens-friendly-copy.test.ts` enforces the string-literal contract for the highest-exposure site (`describeThreadLensForPoint`). The pattern is reusable: source-inspect the file, extract all string literals, fail if any contains a forbidden word. Add the same style of test for a new copy-heavy module.
 
@@ -49,7 +50,6 @@ The ids (`#selected-theme`, `#selected-status`, `#selected-map`, `#selected-thre
 
 | Surface                                                  | Why it's OK                                                                                                                                                         |
 | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Yellow "Showing demo data" banner                        | Intentionally developer-targeted so a confused dev doesn't ship a 20-row fake dataset. See AGENTS.md "Conventions (search fallback)".                               |
 | MapSummary mini-map (debug)                              | The visible label "Trail" matches the journey-phase name (`trail`). Internal jargon in DOM ids (`#map-trail`) is fine.                                              |
 | Engine internal error messages                           | Raw `error.message` strings are now hidden inside `<details>` collapsed by default in LoadingOverlay and MapView, with friendly summary above.                      |
 | LoadingOverlay / MapView `.loading-error-technical code` | Lives inside `<details>` collapsed by default; user has opted-in by expanding. Annotate with `/* a11y-ok: technical-only, ... */` to opt out of the contrast audit. |

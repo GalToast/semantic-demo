@@ -5198,10 +5198,10 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
             inspector.id = 'focus-thread-inspector'
             inspector.className = 'focus-thread-inspector'
             inspector.innerHTML = `
-        <div class="focus-thread-inspector-kicker">Connection Preview</div>
+        <div class="focus-thread-inspector-kicker">Similar-Business Preview</div>
         <div id="focus-thread-inspector-title" class="focus-thread-inspector-title">Select a nearby stop</div>
         <div id="focus-thread-inspector-copy" class="focus-thread-inspector-copy">Preview why this nearby stop belongs here.</div>
-        <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta">Preview connection</div>`
+        <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta">Preview similar businesses</div>`
             const host =
                 document.querySelector('#focus-stage-auxiliary-surfaces') ||
                 document.querySelector('.focus-stage-card') ||

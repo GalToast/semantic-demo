@@ -20,7 +20,7 @@ test('fallback: api up + degraded response flag', () => {
 test('demo: engine fell back to local index/mock', () => {
     expect(railBanner('fallback', null, null)).toEqual({
         key: 'demo',
-        copy: 'Demo data — live API unreachable'
+        copy: 'Local data — live feed unavailable'
     })
 })
 
@@ -35,7 +35,7 @@ test('fallback: api up + rail down + degraded both signals', () => {
 test('demo: api fallback dominates even when rail reports healthy', () => {
     expect(railBanner('fallback', true, null)).toEqual({
         key: 'demo',
-        copy: 'Demo data — live API unreachable'
+        copy: 'Local data — live feed unavailable'
     })
 })
 
@@ -46,7 +46,7 @@ test('fallback: api up + rail unknown + degraded flag', () => {
 test('demo: api fallback + rail down + degraded', () => {
     expect(railBanner('fallback', false, true)).toEqual({
         key: 'demo',
-        copy: 'Demo data — live API unreachable'
+        copy: 'Local data — live feed unavailable'
     })
 })
 

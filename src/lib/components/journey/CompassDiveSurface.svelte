@@ -138,7 +138,7 @@
   aria-hidden={!showDiveButton ? 'true' : 'false'}
   aria-pressed={semanticDiveActive ? 'true' : 'false'}
   aria-disabled={!canDive ? 'true' : 'false'}
-  aria-label="Explore the neighborhood around this business"
+  aria-label="Explore similar businesses around this one"
   onclick={handleStepInside}
 >
   <span class="focus-stage-dive-label">
@@ -147,7 +147,7 @@
   <span class="focus-stage-dive-copy">
     {semanticDiveActive
       ? 'Use Next Stop to continue or County to exit.'
-      : 'Explore related businesses in the neighborhood.'}
+      : 'Explore similar businesses nearby.'}
   </span>
 </button>
 

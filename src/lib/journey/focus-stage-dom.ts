@@ -117,7 +117,7 @@ function appendThreadInspector(root: HTMLElement): void {
         attributes: { 'aria-hidden': 'true' }
     })
     inspector.append(
-        makeElement('div', { className: 'focus-thread-inspector-kicker', text: 'Connection Preview' }),
+        makeElement('div', { className: 'focus-thread-inspector-kicker', text: 'Similar-Business Preview' }),
         makeElement('div', {
             id: 'focus-thread-inspector-title',
             className: 'focus-thread-inspector-title',
@@ -131,7 +131,7 @@ function appendThreadInspector(root: HTMLElement): void {
         makeElement('div', {
             id: 'focus-thread-inspector-meta',
             className: 'focus-thread-inspector-meta',
-            text: 'Preview connection'
+            text: 'Preview similar businesses'
         })
     )
 
@@ -222,7 +222,7 @@ function appendDiveButton(root: HTMLElement): void {
         hidden: true,
         attributes: {
             type: 'button',
-            'aria-label': 'Explore the neighborhood around this business',
+            'aria-label': 'Explore similar businesses around this one',
             'aria-pressed': 'false',
             'aria-disabled': 'true',
             tabindex: '-1'
@@ -232,7 +232,7 @@ function appendDiveButton(root: HTMLElement): void {
         makeElement('span', { className: 'focus-stage-dive-label', text: 'Explore Neighborhood' }),
         makeElement('span', {
             className: 'focus-stage-dive-copy',
-            text: 'Explore related businesses in the neighborhood.'
+            text: 'Explore similar businesses nearby.'
         })
     )
     root.appendChild(diveBtn)

@@ -18,7 +18,7 @@ export function railBanner(
     degraded: boolean | null
 ): RailBanner {
     if (source === 'fallback') {
-        return { key: 'demo', copy: 'Demo data — live API unreachable' }
+        return { key: 'demo', copy: 'Local data — live feed unavailable' }
     }
     // source === 'api': live round-trip worked.
     if (railAlive === false || degraded === true) {
