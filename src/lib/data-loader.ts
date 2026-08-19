@@ -14,6 +14,7 @@ import type {
 import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import { retryWithBackoff } from '@lib/utils/retry-with-backoff'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { workerUrl } from '@lib/workers/data-worker-url'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -274,10 +275,10 @@ export function callDataWorker<T>(type: string, payload: unknown, options?: Call
             worker.terminate()
             fn()
         }
-        // eslint-disable-next-line no-restricted-syntax -- local-scoped promise timeout, cleared in finally
-        const timeoutId = setTimeout(() => {
+        const reg = new DisposableRegistry({ label: 'data-loader' })
+        const timeoutId = reg.schedule(30_000, () => {
             settle(() => reject(new Error('Worker timeout')))
-        }, 30_000)
+        })
         const abortHandler = (): void => {
             // Aborted mid-flight: tear down the worker (cancels the in-flight
             // 8,406-record / 40 MB artifact fetch) and reject.

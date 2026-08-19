@@ -28,6 +28,7 @@ import { installTestStoreGlobals } from '@lib/orchestration/test-globals'
 import { debugError } from '@lib/utils/debug'
 import { teardownViewController } from '@lib/orchestration/view-controller'
 import { claimRestoreOwnership, isRestoreOwned, releaseRestoreOwnership } from '@lib/engine/webgl-restore-ownership'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
 
 // Side-effect: initializes journey state, canvas interaction adapter,
@@ -83,11 +84,13 @@ let _unsubParity: (() => void) | null = null
 let _lastCleanup: (() => void) | null = null
 let _prewarmTimer: ReturnType<typeof setTimeout> | null = null
 
+// Module-level registry: tracks all app-init timers as a safety net so teardown
+const _appInitReg = new DisposableRegistry({ label: 'app-init' })
+
 // ── Safety Valves ────────────────────────────────────────────────────────────
 
 function setupSafetyValves(): SafetyTimers {
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    const slowProgress = setTimeout(() => {
+    const slowProgress = _appInitReg.schedule(SLOW_PROGRESS_MS, () => {
         if (typeof document === 'undefined') return
         const overlay = document.getElementById('loading-overlay')
         // When the Svelte LoadingOverlay hides via {#if actuallyVisible}, the
@@ -101,10 +104,9 @@ function setupSafetyValves(): SafetyTimers {
         const footEl = document.getElementById('loading-foot')
         if (noteEl) noteEl.textContent = 'Still preparing the scene…'
         if (footEl) footEl.textContent = 'Taking longer than usual. Hold on a moment longer.'
-    }, SLOW_PROGRESS_MS)
+    })
 
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    const safetyValve = setTimeout(() => {
+    const safetyValve = _appInitReg.schedule(SAFETY_VALVE_MS, () => {
         if (typeof document === 'undefined') return
         const overlay = document.getElementById('loading-overlay')
         if (overlay?.classList.contains('hidden')) return
@@ -149,17 +151,19 @@ function setupSafetyValves(): SafetyTimers {
         // touched the DOM, leaving dataLoadState.status stuck at 'loading'
         // and LoadingOverlay blocking all subsequent clicks.
         setDataLoadError('Loading timed out after 15 seconds. Refresh after the connection recovers.')
-    }, SAFETY_VALVE_MS)
+    })
 
     return { slowProgress, safetyValve }
 }
 
 function clearSafetyTimers(timers: SafetyTimers | null): void {
+    _appInitReg.disposeAll()
     if (timers?.slowProgress) clearTimeout(timers.slowProgress)
     if (timers?.safetyValve) clearTimeout(timers.safetyValve)
 }
 
 function clearPrewarmTimer(): void {
+    _appInitReg.disposeAll()
     if (_prewarmTimer !== null) {
         clearTimeout(_prewarmTimer)
         _prewarmTimer = null
@@ -168,11 +172,10 @@ function clearPrewarmTimer(): void {
 
 function scheduleSearchIndexPrewarm(): void {
     clearPrewarmTimer()
-    // eslint-disable-next-line no-restricted-syntax -- one-shot defer is canceled by app cleanup
-    _prewarmTimer = setTimeout(() => {
+    _prewarmTimer = _appInitReg.schedule(0, () => {
         _prewarmTimer = null
         void prewarmLocalIndex()
-    }, 0)
+    })
 }
 
 // ── URL State Application ────────────────────────────────────────────────────

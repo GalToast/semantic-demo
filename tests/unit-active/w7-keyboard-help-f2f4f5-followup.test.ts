@@ -68,8 +68,8 @@ describe('W7: F2 — demo-cancelled once-listener removed; demo-replay-acknowled
         // slice the post-dispatch block for the setTimeout + not-acked fallback path.
         expect(helpSrc).toContain('acked = true')
         const slice = helpSrc.slice(ackIdx, ackIdx + 1100)
-        expect(slice).toMatch(/setTimeout\(\(\)\s*=>/)
-        const timeoutIdx = slice.indexOf('setTimeout(() =>')
+        expect(slice).toMatch(/khRegistry\.schedule\(\s*500,\s*\(\)\s*=>/)
+        const timeoutIdx = slice.indexOf('khRegistry.schedule(500, () =>')
         const timeoutBlock = slice.slice(timeoutIdx, timeoutIdx + 400)
         expect(timeoutBlock).toContain('if (acked) return')
         expect(timeoutBlock).toContain("removeEventListener('demo-replay-acknowledged'")

@@ -10,6 +10,12 @@
 
 import { cancelDemo } from '@lib/stores/demo.svelte.ts'
 import { showToast } from '@lib/stores/toast.svelte'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
+
+// Module-level registry tracks one-shot DOM timers (panel auto-dismiss, demo-replay
+// fallback) so they are never orphaned. Timers are one-shot; the cleanup functions
+// in the items array are no-ops after the timer fires.
+const khRegistry = new DisposableRegistry({ label: 'keyboard-help' })
 import { debugWarn } from '@lib/utils/debug'
 
 // ── DOM-heavy hint-panel functions (ported from legacy, no external deps) ────
@@ -140,15 +146,14 @@ export function initKeyboardShortcutsHint(): void {
             // Fallback: if DemoChoreography didn't ack within 500ms, show the
             // "Replay unavailable" toast. Previously this was wired to
             // demo-cancelled which false-positived on every active-demo cancel.
-            // eslint-disable-next-line no-restricted-syntax -- one-shot 500ms timer for demo-replay no-ack fallback; self-breaks via acked early-return OR no-ack removeEventListener + showToast.
-            setTimeout(() => {
+            khRegistry.schedule(500, () => {
                 if (acked) return
                 document.removeEventListener('demo-replay-acknowledged', onAck)
                 showToast(
                     'Replay unavailable',
                     'Search for a business type above, or click any dot to explore connections.'
                 )
-            }, 500)
+            })
             // Replay is handled by the canonical `demo-replay-requested` event,
             // which DemoChoreography consumes and re-runs attemptStart after
             // sceneReady (M15 — prevents stacked veils). No legacy setTimeout
@@ -378,8 +383,7 @@ export function showKeyboardShortcutsHint(): void {
         ;(panel.querySelector('.kh-close') as HTMLElement)?.focus({ preventScroll: true })
     }
     if (panel._autoDismissTimer) clearTimeout(panel._autoDismissTimer)
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    panel._autoDismissTimer = setTimeout(() => {
+    panel._autoDismissTimer = khRegistry.schedule(5000, () => {
         if (typeof panel._closeKeyboardHintPanel === 'function') {
             panel._closeKeyboardHintPanel()
         } else {
@@ -387,7 +391,7 @@ export function showKeyboardShortcutsHint(): void {
             panel.setAttribute('aria-hidden', 'true')
         }
         panel._autoDismissTimer = null
-    }, 5000)
+    })
 }
 
 /**
