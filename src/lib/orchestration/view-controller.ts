@@ -13,6 +13,7 @@ import { navStore, updateNavState } from '@lib/stores/navigation.svelte.ts'
 import { animateCameraToTerrainPrelude } from '@lib/engine/camera-controls'
 import { applyMapFlatteningLayout } from '@lib/utils/map-flattening-layout'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,11 @@ const CONFIG = {
 let _handoffDismissTimer: ReturnType<typeof setTimeout> | null = null
 let _viewTransitionTimer: ReturnType<typeof setTimeout> | null = null
 let _preludeTimer: ReturnType<typeof setTimeout> | null = null
+
+// Module-level registry: tracks all one-shot DOM timers so teardownViewController()
+// provides a safety-net disposeAll() in addition to the per-timer clearTimeout calls.
+const vcRegistry = new DisposableRegistry({ label: 'view-controller' })
+
 // Monotonically-increasing generation for the terrain-prelude timer. Each new
 // _startTerrainPrelude (or any clear of _preludeTimer) bumps it so a timer
 // callback that is ALREADY queued in the event loop cannot fire with stale
@@ -72,6 +78,7 @@ export function initViewControllerAdapter(opts: { refreshCompositionState?: () =
  * callback so HMR / unmount cannot fire orphaned timers.
  */
 export function teardownViewController(): void {
+    vcRegistry.disposeAll() // safety-net clear of all tracked timers
     if (_handoffDismissTimer !== null) {
         clearTimeout(_handoffDismissTimer)
         _handoffDismissTimer = null
@@ -155,13 +162,12 @@ export function showViewHandoff(view: ViewName): void {
         clearTimeout(_handoffDismissTimer)
         _handoffDismissTimer = null
     }
-    // eslint-disable-next-line no-restricted-syntax -- one-shot DOM timers wrapped for cancellation
-    _handoffDismissTimer = setTimeout(() => {
+    _handoffDismissTimer = vcRegistry.schedule(CONFIG.SHOW_VIEW_HANDOFF_DISMISS_MS, () => {
         _handoffDismissTimer = null
         handoff.classList.remove('active')
         handoff.setAttribute('aria-hidden', 'true')
         // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
-    }, CONFIG.SHOW_VIEW_HANDOFF_DISMISS_MS)
+    })
 }
 
 /**
@@ -214,13 +220,12 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
         clearTimeout(_viewTransitionTimer)
         _viewTransitionTimer = null
     }
-    // eslint-disable-next-line no-restricted-syntax -- one-shot DOM timers wrapped for cancellation
-    _viewTransitionTimer = setTimeout(() => {
+    _viewTransitionTimer = vcRegistry.schedule(CONFIG.VIEW_HANDOFF_OUT_MS, () => {
         _viewTransitionTimer = null
         const current = get(navStore).currentView
         if (current !== view) return // Guard against rapid switching
         document.body.classList.remove('view-transitioning')
-    }, CONFIG.VIEW_HANDOFF_OUT_MS)
+    })
 
     // Map-specific setup
     if (view === 'map') {
@@ -263,8 +268,7 @@ function _startTerrainPrelude(_view: ViewName, options: SwitchViewOptions, _nav:
         _preludeTimer = null
     }
     const generation = ++_preludeGeneration
-    // eslint-disable-next-line no-restricted-syntax -- one-shot DOM timers wrapped for cancellation
-    _preludeTimer = setTimeout(() => {
+    _preludeTimer = vcRegistry.schedule(CONFIG.MAP_HANDOFF_PRELUDE_MS, () => {
         _preludeTimer = null
         // Guard against a stale callback: if a counter-switch happened after this
         // timer was armed (or it was cleared and re-armed), the generation moved
@@ -277,7 +281,7 @@ function _startTerrainPrelude(_view: ViewName, options: SwitchViewOptions, _nav:
             skipTerrainPrelude: true,
             handoffFrom: options.handoffFrom
         })
-    }, CONFIG.MAP_HANDOFF_PRELUDE_MS)
+    })
 }
 
 function _syncContainerVisibility(view: ViewName): void {
