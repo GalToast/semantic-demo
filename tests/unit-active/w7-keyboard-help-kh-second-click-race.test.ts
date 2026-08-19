@@ -37,9 +37,7 @@
  * history at `df3f5c15` for the Option F contract that was superseded.
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'node:fs'
-// @ts-ignore
 import { resolve } from 'node:path'
 
 const HEADER_PATH = resolve(import.meta.dirname, '../../src/components/Header.svelte')

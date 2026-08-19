@@ -70,7 +70,6 @@ describe('tooltip / hover-preview bridge (W49-E)', () => {
     it('subscribe is wired to TOOLTIP_HIDE_REQUESTED with the key "tooltip:hide-requested"', () => {
         initTooltipEventBusSubscriptions()
         expect(subscribeKeyedMock).toHaveBeenCalledTimes(1)
-        // @ts-ignore — harness: mock call tuple has 3 elements but test destructures to 2
     const [key, eventName] = subscribeKeyedMock.mock.calls[0] as [string, string]
         expect(key).toBe('tooltip:hide-requested')
         expect(eventName).toBe('TOOLTIP_HIDE_REQUESTED')

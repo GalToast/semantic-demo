@@ -89,7 +89,6 @@ const { appState } = await import('../src/lib/state/app.svelte.ts')
 // R1: initWeather SSR guard — returns early when window is undefined
 {
     const saved = globalThis.window
-    // @ts-ignore
     delete globalThis.window
     try {
         initWeather()

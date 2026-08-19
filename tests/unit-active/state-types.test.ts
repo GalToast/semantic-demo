@@ -170,7 +170,6 @@ describe('state-types — Point (BusinessRecord shape, ~8406 instances at runtim
 describe('state-types — NavState (the 24-field navigation singleton)', () => {
     // NavState has 13+ required fields. If any become optional or are dropped,
     // this fixture no longer type-checks and the test fails to compile.
-    // @ts-ignore — harness: test uses minimal fixture, not full NavState
     const sampleNav: NavState = {
         mode: 'overview',
         focusedIndex: null,

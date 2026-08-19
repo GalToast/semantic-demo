@@ -1,4 +1,3 @@
-// @ts-ignore
 import { describe, it, expect } from 'vitest'
 import { Vector3 } from 'three'
 import { computeTravelVectorHeading, computeOrbitBiasHeading, computeCameraArcControlPoints } from '../../src/lib/utils/camera-math-utils'

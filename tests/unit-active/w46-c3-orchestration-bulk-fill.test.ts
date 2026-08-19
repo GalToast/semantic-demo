@@ -21,9 +21,7 @@
  * runtime pattern from W11-T8 / W46-B / W46-C1 / W46-C2.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'node:fs'
-// @ts-ignore
 import { resolve } from 'node:path'
 
 const ORCH = (file: string) => resolve(import.meta.dirname, `../../src/lib/orchestration/${file}`)

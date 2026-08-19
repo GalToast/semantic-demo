@@ -1710,15 +1710,12 @@ async function runVisibleSearch(page, query) {
     if (!filled) {
         await page.evaluate((nextQuery) => {
             const input = document.querySelector('#search-input')
-            // @ts-ignore
             if (!(input instanceof window.HTMLInputElement))
                 throw new Error('visible search input was not an input element')
             input.value = nextQuery
-            // @ts-ignore
             input.dispatchEvent(
                 new window.InputEvent('input', { bubbles: true, data: nextQuery, inputType: 'insertText' })
             )
-            // @ts-ignore
             input.dispatchEvent(new Event('change', { bubbles: true }))
         }, query)
     }

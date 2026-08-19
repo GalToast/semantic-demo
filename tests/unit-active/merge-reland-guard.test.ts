@@ -25,7 +25,6 @@
  */
 
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { execSync } from 'node:child_process'
 
 const MERGE_SCAN = 200

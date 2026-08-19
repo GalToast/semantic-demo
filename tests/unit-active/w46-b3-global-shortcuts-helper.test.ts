@@ -14,9 +14,7 @@
  * which would require a full Svelte init environment.
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'node:fs'
-// @ts-ignore
 import { resolve } from 'node:path'
 
 const HELPER_PATH = resolve(import.meta.dirname, '../../src/lib/keyboard/global-shortcuts.ts')

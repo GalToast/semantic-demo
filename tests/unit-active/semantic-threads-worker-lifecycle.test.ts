@@ -197,7 +197,6 @@ describe('semantic thread worker lifecycle', () => {
         })
 
         state = createState()
-        // @ts-ignore — harness: createState() returns partial shape, not full AppState
         attachLegacyState(state)
     })
 
@@ -540,7 +539,6 @@ describe('semantic thread worker — camelCase worker output (regression: empty-
         vi.stubGlobal('Worker', MockWorker)
         resetDataStores()
         state = createState()
-        // @ts-ignore — harness: createState() returns partial shape, not full AppState
         attachLegacyState(state)
 
         vi.spyOn(globalThis, 'fetch').mockImplementation((input: RequestInfo | URL) => {

@@ -73,7 +73,7 @@ test.describe('Widget journey', () => {
         // Demo-phase ribbon: with nodemo=1 the demo is disabled so phase stays IDLE.
         expect(
             await page.evaluate(() => document.body.dataset.demoPhase),
-            'body.dataset.demoPhase must be set (not undefined) after splash dismissal',
+            'body.dataset.demoPhase must be set (not undefined) after splash dismissal'
         ).toMatch(/^(IDLE|OVERVIEW|SEARCH|FOCUS|THREADS|NEIGHBORS|TRAIL|DIVE|FILTER|MAP|RETURN|COMPLETE|CANCELLED)$/)
     })
 
@@ -1167,7 +1167,9 @@ test.describe('Widget journey', () => {
             await page.setViewportSize({ width: 1440, height: 900 })
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+            const explore = page
+                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .first()
             // Raised from 40s: under the full-suite run this test shares the machine
             // with many concurrent WebGL + 8,406-record live-API contexts, and the
             // splash CTA can take longer to become visible. Verified: passes in
@@ -2492,7 +2494,9 @@ test.describe('Widget journey', () => {
             // WebGL canvas directly. If the CTA is present and enabled, click
             // through it; otherwise the scene is entering automatically and the
             // demo will start as soon as the scene is ready.
-            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+            const explore = page
+                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .first()
             const ctaVisible = await explore
                 .waitFor({ state: 'visible', timeout: 10000 })
                 .then(() => true)
@@ -2642,7 +2646,9 @@ test.describe('Widget journey', () => {
             await page.setViewportSize({ width: 1440, height: 900 })
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+            const explore = page
+                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
 
@@ -2853,7 +2859,9 @@ test.describe('Widget journey', () => {
             await page.setViewportSize({ width: 390, height: 844 })
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+            const explore = page
+                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
 
@@ -2897,7 +2905,9 @@ test.describe('Widget journey', () => {
             await page.setViewportSize({ width: 1440, height: 900 })
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+            const explore = page
+                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
 
@@ -2955,7 +2965,9 @@ test.describe('Widget journey', () => {
             await page.setViewportSize({ width: 390, height: 844 })
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+            const explore = page
+                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
 
@@ -3061,7 +3073,9 @@ test.describe('Widget journey', () => {
             await page.setViewportSize({ width: 390, height: 844 })
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+            const explore = page
+                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
 
@@ -3288,9 +3302,10 @@ test.describe('Widget journey', () => {
         expect(landscapeGeometry.results, 'landscape results viewport must render').not.toBeNull()
         expect(landscapeGeometry.firstResult, 'landscape anchor result must render').not.toBeNull()
         expect(landscapeGeometry.showMore, 'landscape Show-more control must render').not.toBeNull()
-        expect(landscapeGeometry.showMore.height, 'landscape Show-more must keep a 44px hit target').toBeGreaterThanOrEqual(
-            44
-        )
+        expect(
+            landscapeGeometry.showMore.height,
+            'landscape Show-more must keep a 44px hit target'
+        ).toBeGreaterThanOrEqual(44)
         expect(
             landscapeGeometry.showMore.bottom,
             'landscape Show-more must fit within the short viewport'
@@ -3342,15 +3357,18 @@ test.describe('Widget journey', () => {
         await enterSearch(844, 390)
         await page.setViewportSize({ width: 390, height: 844 })
         await page.waitForFunction(
-            () => document.body.dataset.mobileSearchSheet === 'peek' && document.body.dataset.panelSurfaceDetail === 'peek',
+            () =>
+                document.body.dataset.mobileSearchSheet === 'peek' &&
+                document.body.dataset.panelSurfaceDetail === 'peek',
             undefined,
             { timeout: 10000 }
         )
         const portraitAfterLandscape = await readSearchLayout()
         expect(portraitAfterLandscape.sheet, 'landscape-to-portrait must restore the compact peek sheet').toBe('peek')
-        expect(portraitAfterLandscape.panel?.height, 'restored portrait sheet must use the compact envelope').toBeLessThanOrEqual(
-            286 + 1
-        )
+        expect(
+            portraitAfterLandscape.panel?.height,
+            'restored portrait sheet must use the compact envelope'
+        ).toBeLessThanOrEqual(286 + 1)
         expect(
             portraitAfterLandscape.showMore?.bottom,
             'restored portrait Show-more must fit inside the viewport'
@@ -3366,7 +3384,9 @@ test.describe('Widget journey', () => {
         // change, otherwise the click leaves the UI visually stuck in peek.
         await page.locator('.search-label').click()
         await page.waitForFunction(
-            () => document.body.dataset.mobileSearchSheet === 'expanded' && document.body.dataset.panelSurfaceDetail === 'expanded',
+            () =>
+                document.body.dataset.mobileSearchSheet === 'expanded' &&
+                document.body.dataset.panelSurfaceDetail === 'expanded',
             undefined,
             { timeout: 10000 }
         )
@@ -6368,9 +6388,10 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         expect(openedLayout.listHeight, 'opened nearby list must contain its scroll content').toBeGreaterThanOrEqual(
             openedLayout.listScrollHeight
         )
-        expect(openedLayout.listZIndex, 'opened nearby list must paint above the focus card stack').toBeGreaterThanOrEqual(
-            500
-        )
+        expect(
+            openedLayout.listZIndex,
+            'opened nearby list must paint above the focus card stack'
+        ).toBeGreaterThanOrEqual(500)
         expect(openedLayout.togglePrimaryOverlap, 'expanded list toggle must not cover Step Inside').toBe(0)
         expect(openedLayout.listDiveOverlap, 'opened nearby list must clear the bottom dive strip').toBe(0)
         expect(runtimeErrors, 'mobile focus journey must not emit runtime or console errors').toEqual([])

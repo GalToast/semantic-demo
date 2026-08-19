@@ -157,7 +157,6 @@ describe('Controls component — zoom behavior', () => {
 describe('Controls component — shareLink feedback (regression: silent no-op)', () => {
     beforeEach(() => {
         // Reset toast state before each test.
-        // @ts-ignore — harness: ToastState type requires additional fields not in test fixture
         toastStore.set({ message: '', variant: 'info', active: false } as any)
     })
 

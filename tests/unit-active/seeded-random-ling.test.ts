@@ -6,7 +6,6 @@
  * This file covers every exported symbol with at least 1 positive + 1 edge case.
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { seededUnit } from '@lib/utils/seeded-random'
 
 describe('seededUnit — deterministic pseudo-random hash', () => {

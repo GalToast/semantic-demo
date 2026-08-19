@@ -34,11 +34,8 @@
  *   - `try { ... } catch (error) { debugWarn(...) }` — the post-audit pattern
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'node:fs'
-// @ts-ignore
 import { readdirSync, statSync } from 'node:fs'
-// @ts-ignore
 import { join } from 'node:path'
 
 const SRC_ROOT = join(__dirname, '../../src')

@@ -17,9 +17,7 @@
  * records 'overview' — the value all three entry paths converge on.
  */
 import { describe, it, expect, beforeAll } from 'vitest'
-// @ts-ignore — harness: node fs in vitest
 import { readFileSync } from 'node:fs'
-// @ts-ignore — harness: node path in vitest
 import { resolve } from 'node:path'
 import { selectMode } from '@lib/components/header/mode-nav'
 
@@ -68,7 +66,6 @@ describe('W12-L1 — CompassRail map-step converges with the Header chip map-ste
     it('selectMode("map") with the phase funnel records phase "overview" (chip/rail/keyboard converge)', () => {
         const calls: string[] = []
         const phases: string[] = []
-        // @ts-ignore — harness: literal type inference issue (same pattern as header-mode-nav.test.ts)
         const navActions = { RETURN_OVERVIEW: 'RET' as const, SET_VIEW: 'SETV' as const, SET_SURFACE: 'SETS' as const }
         const idx = selectMode('map', false, {
             navActions,

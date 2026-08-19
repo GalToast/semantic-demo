@@ -31,9 +31,7 @@
  * of the dispatching predicates instead").
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
-// @ts-ignore
 import { resolve, join } from 'node:path'
 
 const SRC_ROOT = resolve(import.meta.dirname, '../../src')

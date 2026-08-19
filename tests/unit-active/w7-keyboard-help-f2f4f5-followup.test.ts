@@ -28,9 +28,7 @@
  * (the F1/F3 regression test from earlier W7 wave) — avoids runtime DOM/Svelte imports.
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'node:fs'
-// @ts-ignore
 import { resolve } from 'node:path'
 
 const HELP_PATH = resolve(import.meta.dirname, '../../src/lib/keyboard/keyboard-help.ts')

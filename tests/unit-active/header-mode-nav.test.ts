@@ -252,7 +252,6 @@ describe('selectMode — action dispatch + URL sync', () => {
         ctx: Parameters<typeof selectMode>[2]
     } {
         const calls: string[] = []
-        // @ts-ignore — harness: literal type inference issue
         const navActions = { RETURN_OVERVIEW: 'RET' as const, SET_VIEW: 'SETV' as const, SET_SURFACE: 'SETS' as const }
         return {
             navActions,

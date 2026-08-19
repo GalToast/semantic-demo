@@ -11,9 +11,7 @@
  * where the helper is actually exercised end-to-end.
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'node:fs'
-// @ts-ignore
 import { resolve } from 'node:path'
 
 const HELPER_PATH = resolve(import.meta.dirname, '../../src/lib/utils/lazy-component.svelte.ts')

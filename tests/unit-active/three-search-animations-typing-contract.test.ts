@@ -35,7 +35,6 @@ const SA_MODULES = [
 ]
 
 function readSource(): string {
-    // ts-ignore is already present above for node:path; readFileSync/import come from global vitest env
     return SA_MODULES.map((p) => readFileSync(p, 'utf-8')).join('\n')
 }
 

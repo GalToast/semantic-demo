@@ -26,9 +26,7 @@
  * environment (the prior tests explicitly avoid that fragility).
  */
 import { describe, it, expect, beforeAll } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'node:fs'
-// @ts-ignore
 import { resolve } from 'node:path'
 
 const SRC_PATH = resolve(import.meta.dirname, '../../src/lib/keyboard/global-shortcuts.ts')

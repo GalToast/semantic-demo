@@ -65,9 +65,6 @@ describe('PR-T1: ThreadInspector close button + Escape key', () => {
 
     it('Escape key handler is removed on cleanup (no listener leak)', () => {
         // The $effect cleanup (removeEventListener) lives in the parent
-        // @ts-ignore — harness: regex match can return null
-    // @ts-ignore — harness: regex match can return null
-    // @ts-ignore — harness: regex match can return null
     const escapeEffect = parentSource.match(
             /\$effect\(\(\)\s*=>\s*\{[\s\S]{0,800}event\.key\s*===\s*['"]Escape['"][\s\S]{0,500}\}\)/
         )

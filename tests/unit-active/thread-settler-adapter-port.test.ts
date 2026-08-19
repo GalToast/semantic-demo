@@ -12,12 +12,9 @@
  */
 
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'fs'
-// @ts-ignore
 import { join } from 'path'
 
-// @ts-ignore
 const ROOT = join(import.meta.dirname, '..', '..')
 
 function readFile(relPath: string): string {

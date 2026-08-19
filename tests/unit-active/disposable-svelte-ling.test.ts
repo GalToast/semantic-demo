@@ -1,8 +1,5 @@
-// @ts-ignore
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-// @ts-ignore
 import { disposable } from '../../src/lib/utils/disposable.svelte'
-// @ts-ignore
 import { DisposableRegistry, createDisposableRegistry, assertDisposed } from '../../src/lib/utils/disposable-registry'
 
 /**

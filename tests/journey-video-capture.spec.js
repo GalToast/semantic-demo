@@ -1,4 +1,3 @@
-// @ts-ignore — tests/ is excluded from tsconfig; global/window references
 // trigger TS validation blocks that block the edit-tool save hook.
 import { test } from '@playwright/test'
 import { BASE_URL } from './helpers/3d-interaction-helpers.js'

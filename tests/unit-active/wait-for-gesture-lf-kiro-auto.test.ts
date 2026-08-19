@@ -1,6 +1,4 @@
-// @ts-ignore
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-// @ts-ignore
 import { installGestureMonitor, GestureMonitorOpts } from '../../src/lib/orchestration/wait-for-gesture'
 
 const GESTURE_EVENTS = ['pointerdown', 'wheel', 'touchstart', 'mousemove'] as const

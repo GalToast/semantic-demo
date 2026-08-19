@@ -1,8 +1,5 @@
-// @ts-ignore – tests/ is excluded from the workspace tsconfig; vitest + node builtins resolve at runtime.
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'fs'
-// @ts-ignore
 import { resolve } from 'path'
 
 // W48-J UX-copy audit: lock the HTML <head> (browser-tab title + search-snippet

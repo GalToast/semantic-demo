@@ -1,6 +1,4 @@
-// @ts-ignore
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-// @ts-ignore
 import { installGestureMonitor } from '@lib/orchestration/wait-for-gesture'
 
 /**

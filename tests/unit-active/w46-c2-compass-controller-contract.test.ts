@@ -20,9 +20,7 @@
  * component-mount tests.
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'node:fs'
-// @ts-ignore
 import { resolve } from 'node:path'
 
 const COMPASS_PATH = resolve(import.meta.dirname, '../../src/lib/orchestration/compass-controller.ts')

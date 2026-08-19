@@ -27,9 +27,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { execSync } from 'node:child_process'
-// @ts-ignore
 import process from 'node:process'
 
 // ---------------------------------------------------------------------------

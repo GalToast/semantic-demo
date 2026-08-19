@@ -28,9 +28,7 @@
  *   5. A W7 F2 marker comment annotates the fix (grep-arable for future audits).
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'node:fs'
-// @ts-ignore
 import { resolve } from 'node:path'
 
 const DEMO_CHOREOGRAPHY_PATH = resolve(import.meta.dirname, '../../src/components/DemoChoreography.svelte')

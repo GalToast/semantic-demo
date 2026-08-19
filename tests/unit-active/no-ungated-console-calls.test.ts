@@ -21,11 +21,8 @@
  * next wave from missing the next one.
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-// @ts-ignore
 import { join, relative, sep, dirname } from 'node:path'
-// @ts-ignore
 import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)

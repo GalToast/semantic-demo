@@ -1,6 +1,4 @@
-// @ts-ignore
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-// @ts-ignore
 import {
     initAudio,
     setAudioMuted,
@@ -10,7 +8,6 @@ import {
     play,
     disposeAudio
 } from '../../src/lib/audio/audio-scape'
-// @ts-ignore
 import { debugWarn } from '@lib/utils/debug'
 
 // ── Mock appState ──────────────────────────────────────────

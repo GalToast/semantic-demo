@@ -191,7 +191,6 @@ vi.mock('@lib/orchestration/compass-controller', () => ({
 
 // ── Import under test (must appear AFTER vi.mock) ───────────────────────────
 
-// @ts-ignore
 import { computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────

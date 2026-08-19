@@ -26,7 +26,6 @@ test('phase2 visual capture across surfaces + widths', async ({ page }) => {
     // {#if actuallyVisible} when phase === 'launch') or marked hidden via
     // CSS class (hideLoadingOverlay in lib/ui/loading.ts:200-205).
     // Returns true when the overlay is definitively gone or hidden.
-    // @ts-ignore — tests/ is excluded from tsconfig; document.querySelector
     // typing fails the edit-tool compile hook.
     const dataReady = () => {
         const el = document.querySelector('#loading-overlay')
