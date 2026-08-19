@@ -5,7 +5,7 @@ import { copyFile, cp, mkdir, readFile, readdir, stat, unlink, writeFile } from 
 import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'url'
-import { dirname, extname, join, normalize, resolve } from 'path'
+import { basename, dirname, extname, join, normalize, resolve } from 'path'
 import { promisify } from 'node:util'
 import { brotliCompress, gzip, constants as zlibConstants } from 'node:zlib'
 import { transform as lightningTransform } from 'lightningcss'
@@ -454,10 +454,19 @@ function w44AssetCompressionPlugin(): Plugin {
             // so the twins exist when we check.
             // W44 Phase F: after writing .br/.gz twins, remove the uncompressed
             // originals for data assets. The serveRootAssets middleware serves
-            // the compressed twins when the browser supports them; the raw
+            // the compressed twins when the browser origin supports them; the raw
             // 79 MB / 40 MB / 18 MB files are never needed at runtime.
+            //
+            // EXCEPTION — keep `data.dat` raw. The compression gate
+            // (scripts/check-data-compression.mjs `UNCOMPRESSED_EXEMPTIONS`)
+            // requires the uncompressed original on non-Vite origins (PHP 8795,
+            // visual-audit static server): those have no serveRootAssets
+            // middleware, so `data.dat` 404s, the data worker never resolves,
+            // and the engine renders an empty mycelium. Mirror the gate's
+            // exemption set here so the two rules stay in agreement.
+            const UNCOMPRESSED_RAW_KEEP = new Set(['data.dat'])
             for (const { filePath } of candidates) {
-                if (/(\.dat|\.json)$/.test(filePath) && !/\.(br|gz)$/.test(filePath)) {
+                if (/(\.dat|\.json)$/.test(filePath) && !/\.(br|gz)$/.test(filePath) && !UNCOMPRESSED_RAW_KEEP.has(basename(filePath))) {
                     try {
                         await unlink(filePath)
                     } catch {
