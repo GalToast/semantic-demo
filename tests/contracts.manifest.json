@@ -119,7 +119,21 @@
         "motion-state-contract.mjs",
         "map-flattening-raw-buffer-contract.mjs",
         "production-preview-parity-contract.mjs",
-        "semantic-demo-css-contract.mjs"
+        "semantic-demo-css-contract.mjs",
+        "engine-state-machine-contract.mjs",
+        "mycelium-bezier-contract.mjs",
+        "camera-choreography-routes-contract.mjs",
+        "journey-webgl-lazy-contract.mjs",
+        "orbit-slack-contract.mjs",
+        "focus-camera-animation-contract.mjs",
+        "webgl-fallback-contract.mjs",
+        "framing-utils-contract.mjs",
+        "frame-scheduler-contract.mjs",
+        "seeded-random-contract.mjs",
+        "three-engine-frame-updates-contract.mjs",
+        "cursor-contract.mjs",
+        "event-bus-contract.mjs",
+        "mode-affordances-contract.mjs"
       ]
     },
     "mobile-critical": {

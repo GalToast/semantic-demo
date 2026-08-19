@@ -8,21 +8,18 @@
 
   W47-C: copy was previously aspirational ("8,406 businesses · 4 clusters"
   implied the user was looking at the real product) when actually this is
-  a static fallback. Now the title and subtitle explicitly label this as a
-  "Preview" and invite the user to open on desktop for the full 3D
-  experience. The CTA is reworded to "Open full 3D experience" so it's clearly
-  signals the mobile fallback (not a product demo) and the desktop trade-off.
-
-  Visual contract:
+  a static fallback. The title/subtitle label it as a fast-paint preview;
+  tapping the CTA loads the full 3D scene ON this device (signalReady).
+  S5 (2026-08-19): the old desktop-only messaging was a lie — a tap always
+  booted the scene — so mobile copy now says "tap to explore in 3D".  Visual contract:
     - Full-viewport (covers the WebGL canvas area)
     - Reuses existing color tokens (--color-primary, --color-primary-alt,
       --color-accent, --color-text-strong)
     - "Preview" label in the title (W47-C) so the user knows this is the
       fallback, not the real product
-   - "Click or tap to load the full scene, or open on desktop for the full 3D
-     experience" subtitle (W47-C) gives the user a clear alternative path
-    - "Open full 3D experience" CTA, large tap target (≥ 44×44 px), with subtle
-      drop shadow + cyan glow that wins the eye-test against the blurred
+     - The subtitle tells the truth: "tap to explore in 3D" — the tap loads the
+       full scene on this device.
+     - "Open in 3D" CTA, large tap target (≥ 44×44 px), with subtle      drop shadow + cyan glow that wins the eye-test against the blurred
       orb cluster behind it
     - CSS-only scrim behind the title block ensures contrast regardless
       of where the orbs land
@@ -198,26 +195,25 @@
       Semantic Explorer
       <span class="placeholder-badge">Mobile preview</span>
     </h1>
-    <p class="placeholder-subtitle">Montgomery County businesses · full 3D on desktop</p>
+    <p class="placeholder-subtitle">Montgomery County businesses · tap to explore in 3D</p>
 
     <button
       class="placeholder-cta"
       type="button"
       onclick={enter3d}
       data-testid="placeholder-cta"
-      aria-label="Open full 3D experience"
+      aria-label="Open in 3D"
       aria-describedby="placeholder-hint"
     >
       <span class="cta-icon" aria-hidden="true">◆</span>
-      Open full 3D experience
+      Open in 3D
     </button>
 
     <PlaceholderCategoryLegend categories={previewCategories} />
 
     <p class="placeholder-hint" id="placeholder-hint">
-      Tap to load the full 3D experience — or open on desktop.
-    </p>
-  </div>
+      Tap to explore the full 3D scene — or keep this preview.
+    </p>  </div>
 </div>
 <style>
   .placeholder-2d {

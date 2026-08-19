@@ -31,6 +31,62 @@ export type RenderKind = 'webgl' | 'placeholder2d'
 export const MOBILE_MAX_WIDTH = 768
 
 /**
+ * S5 mobile posture (2026-08-19, docs/feature-depth-mobile-posture.md):
+ * OPT-IN auto-enter for capable phones. Default OFF — pieces flip to 1 only
+ * after a real-handset phone-farm smoke proves P95 LCP/thermal numbers.
+ * When OFF (default), narrow viewports behave exactly as before.
+ */
+export const S5_AUTO_ENTER_AFTER = import.meta.env.VITE_S5_AUTO_ENTER_3D === '1'
+
+/** Minimal environment seam for the probe (injectable in tests; the app never passes it). */
+export type ProbeEnv = {
+    window?: { innerWidth?: number }
+    document?: { createElement(tag: string): HTMLCanvasElement }
+    matchMedia?: (query: string) => { matches: boolean }
+    deviceMemory?: number
+    hardwareConcurrency?: number
+}
+
+/**
+ * Capability probe behind the auto-enter flag. Returns true only for devices
+ * that (a) actually produce a hardware-backed WebGL2 context
+ * (failIfMajorPerformanceCaveat rejects SwiftShader/llvmpipe — the exact
+ * buckets that never reach scene-ready in our test/low-end reality), (b) have
+ * enough memory/cores when the hints are present, and (c) are not in
+ * prefers-reduced-motion. Synchronous + cheap: called once at cold boot.
+ * Optional `env` is a test seam; production calls with no argument.
+ */
+export function supportsCapableWebGL(env?: ProbeEnv): boolean {
+    // Resolve the environment (test seam first, then real globals).
+    const win = env?.window ?? (typeof window === 'undefined' ? undefined : (window as unknown as ProbeEnv['window']))
+    const doc = env?.document ?? (typeof document === 'undefined' ? undefined : (document as unknown as ProbeEnv['document']))
+    if (!win || !doc) return false
+
+    const mm =
+        env?.matchMedia ??
+        (typeof matchMedia !== 'undefined' ? (matchMedia as unknown as ProbeEnv['matchMedia']) : undefined)
+    if (mm && mm('(prefers-reduced-motion: reduce)').matches) return false
+
+    const hints = navigator as Navigator & { deviceMemory?: number; hardwareConcurrency?: number }
+    const mem = env?.deviceMemory ?? hints.deviceMemory
+    if (typeof mem === 'number' && Number.isFinite(mem) && mem > 0 && mem < 4) return false
+    const cores = env?.hardwareConcurrency ?? hints.hardwareConcurrency
+    if (typeof cores === 'number' && Number.isFinite(cores) && cores > 0 && cores < 4) return false
+
+    try {
+        const canvas = doc.createElement('canvas')
+        const gl = canvas.getContext('webgl2', { failIfMajorPerformanceCaveat: true })
+        if (gl) {
+            ;(gl as WebGL2RenderingContext).getExtension('WEBGL_lose_context')?.loseContext()
+            return true
+        }
+        return false
+    } catch {
+        return false
+    }
+}
+
+/**
  * Canonical deep-link classification — single source of truth shared by
  * main.ts (parseUrlParams), demo.svelte.ts (shouldRunDemo), and this module.
  * A deep link expresses explicit scene intent and should land on the target
@@ -61,10 +117,14 @@ export function getInitialRenderKind(): RenderKind {
     if (params.get('webgl') === '1') return 'webgl'
     if (params.get('placeholder') === '1') return 'placeholder2d'
 
-    // Narrow viewport → placeholder. This MUST stay ahead of the webdriver
-    // branch so real mobile deep links keep the splash/CTA flow (W45-A mobile
-    // LCP invariant: the 587 KB three.js chunk stays off the cold-load path).
-    if (window.innerWidth <= MOBILE_MAX_WIDTH) return 'placeholder2d'
+    // Narrow viewport → placeholder by default (S5 flag can opt into a
+    // capable-phone auto-enter). MUST stay ahead of the webdriver branch so
+    // real mobile deep links keep the splash/CTA flow (W45-A mobile LCP
+    // invariant: the 587 KB three.js chunk stays off the cold-load path).
+    if (window.innerWidth <= MOBILE_MAX_WIDTH) {
+        if (S5_AUTO_ENTER_AFTER && supportsCapableWebGL()) return 'webgl'
+        return 'placeholder2d'
+    }
 
     // Automated browser sessions (Lighthouse, Playwright) → placeholder so the
     // LCP measurement captures a static SVG rather than the gated three.js

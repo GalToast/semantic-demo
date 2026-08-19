@@ -38,13 +38,70 @@ const VITE_ENV_RE = /import\.meta\.env\b/g
 // module to source files that use Svelte 5 runes or import.meta.env, so the
 // module evaluates safely under Node. The browser build still gets the real
 // Svelte 5 runtime.
-const RUNE_NAMES = ['$state.snapshot', '$state.frozen', '$state.raw', '$state', '$derived.by', '$derived', '$effect.pre', '$effect.root', '$effect', '$inspect', '$props', '$bindable']
+const RUNE_NAMES = [
+    '$state.snapshot',
+    '$state.frozen',
+    '$state.raw',
+    '$state',
+    '$derived.by',
+    '$derived',
+    '$effect.pre',
+    '$effect.root',
+    '$effect',
+    '$inspect',
+    '$props',
+    '$bindable'
+]
 
 function usesRune(source) {
+    // Strip comments and string/template literals first. The naive substring
+    // match below false-positives on any comment or string containing the
+    // literal "$state" (e.g. "the Svelte $state proxy"), which would inject a
+    // rune-stub import and push the file's shebang off line 1 → SyntaxError at
+    // line 2 in Node contract tests. Real runes live in code, so stripping
+    // trivia never misses a genuine rune user.
+    const code = codeOnly(source)
     for (const name of RUNE_NAMES) {
-        if (source.includes(name)) return true
+        if (code.includes(name)) return true
     }
     return false
+}
+
+// Walk `source`, replacing comments and string/template-literal bodies with
+// single spaces (positions are irrelevant — only substring membership is used).
+// Reuses the existing skip* helpers so nested template expressions, escaped
+// quotes, and block comments are handled exactly as the parameter-property
+// normalizer already handles them.
+function codeOnly(source) {
+    let out = ''
+    let i = 0
+    const N = source.length
+    while (i < N) {
+        const ch = source[i]
+        if (ch === '/' && source[i + 1] === '/') {
+            i = skipLineComment(source, i)
+            out += ' '
+            continue
+        }
+        if (ch === '/' && source[i + 1] === '*') {
+            i = skipBlockComment(source, i)
+            out += ' '
+            continue
+        }
+        if (ch === '"' || ch === "'") {
+            i = skipStringLiteral(source, i)
+            out += ' '
+            continue
+        }
+        if (ch === '`') {
+            i = skipTemplateLiteral(source, i)
+            out += ' '
+            continue
+        }
+        out += ch
+        i++
+    }
+    return out
 }
 
 // ── Parameter-property normalization (loader hardening, 2026-08-10) ──────────
@@ -97,7 +154,10 @@ function skipStringLiteral(text, i) {
     const quote = text[i]
     let j = i + 1
     while (j < text.length) {
-        if (text[j] === '\\') { j += 2; continue }
+        if (text[j] === '\\') {
+            j += 2
+            continue
+        }
         if (text[j] === quote) return j + 1
         j++
     }
@@ -109,7 +169,10 @@ function skipTemplateLiteral(text, i) {
     let j = i + 1
     while (j < text.length) {
         const ch = text[j]
-        if (ch === '\\') { j += 2; continue }
+        if (ch === '\\') {
+            j += 2
+            continue
+        }
         if (ch === '`') return j + 1
         if (ch === '$' && text[j + 1] === '{') {
             // Nested expression — find matching `}` at the same nesting depth
@@ -149,10 +212,22 @@ function skipBlockComment(text, i) {
 function skipTrivia(text, i) {
     while (i < text.length) {
         const ch = text[i]
-        if (ch === '"' || ch === "'") { i = skipStringLiteral(text, i); continue }
-        if (ch === '`') { i = skipTemplateLiteral(text, i); continue }
-        if (ch === '/' && text[i + 1] === '/') { i = skipLineComment(text, i); continue }
-        if (ch === '/' && text[i + 1] === '*') { i = skipBlockComment(text, i); continue }
+        if (ch === '"' || ch === "'") {
+            i = skipStringLiteral(text, i)
+            continue
+        }
+        if (ch === '`') {
+            i = skipTemplateLiteral(text, i)
+            continue
+        }
+        if (ch === '/' && text[i + 1] === '/') {
+            i = skipLineComment(text, i)
+            continue
+        }
+        if (ch === '/' && text[i + 1] === '*') {
+            i = skipBlockComment(text, i)
+            continue
+        }
         break
     }
     return i
@@ -260,8 +335,17 @@ function normalizeParameterProperties(source) {
             j = skipTrivia(source, j)
             if (j >= N) break
             const ch = source[j]
-            if (ch === '(') { depth++; j++; continue }
-            if (ch === ')') { depth--; if (depth === 0) break; j++; continue }
+            if (ch === '(') {
+                depth++
+                j++
+                continue
+            }
+            if (ch === ')') {
+                depth--
+                if (depth === 0) break
+                j++
+                continue
+            }
             j++
         }
         if (depth !== 0) {
@@ -294,8 +378,17 @@ function normalizeParameterProperties(source) {
             l = skipTrivia(source, l)
             if (l >= N) break
             const ch = source[l]
-            if (ch === '{') { bodyDepth++; l++; continue }
-            if (ch === '}') { bodyDepth--; if (bodyDepth === 0) break; l++; continue }
+            if (ch === '{') {
+                bodyDepth++
+                l++
+                continue
+            }
+            if (ch === '}') {
+                bodyDepth--
+                if (bodyDepth === 0) break
+                l++
+                continue
+            }
             l++
         }
         if (bodyDepth !== 0) {
@@ -337,7 +430,10 @@ function normalizeParameterProperties(source) {
         }
 
         if (modified) {
-            if (process.env.TS_RESOLVE_DEBUG) console.error(`[ts-resolve] norm MODIFIED branch ctorHeadEnd=${ctorHeadEnd} bodyEnd=${bodyEnd} newParams=${JSON.stringify(newParams)}`)
+            if (process.env.TS_RESOLVE_DEBUG)
+                console.error(
+                    `[ts-resolve] norm MODIFIED branch ctorHeadEnd=${ctorHeadEnd} bodyEnd=${bodyEnd} newParams=${JSON.stringify(newParams)}`
+                )
             // Re-emit the constructor with normalized parameters and an
             // assignment prologue in the body. We preserve the exact body
             // text so user formatting inside the constructor is untouched.
@@ -354,7 +450,10 @@ function normalizeParameterProperties(source) {
             // Reconstruct from the original source slice so the exact
             // constructor bytes (including the `(` we already pushed and the
             // trivia between `)` and `{`) are preserved.
-            if (process.env.TS_RESOLVE_DEBUG) console.error(`[ts-resolve] NO-MOD ctorHeadEnd=${ctorHeadEnd} bodyEnd=${bodyEnd} slice=${JSON.stringify(source.slice(ctorHeadEnd, bodyEnd + 1))}`)
+            if (process.env.TS_RESOLVE_DEBUG)
+                console.error(
+                    `[ts-resolve] NO-MOD ctorHeadEnd=${ctorHeadEnd} bodyEnd=${bodyEnd} slice=${JSON.stringify(source.slice(ctorHeadEnd, bodyEnd + 1))}`
+                )
             out.push(source.slice(ctorHeadEnd, bodyEnd + 1))
             i = bodyEnd + 1
         }
@@ -478,12 +577,12 @@ export async function load(url, context, nextLoad) {
         return result
     }
     if (result.source != null && typeof result.source !== 'string') {
-        result.source = Buffer.isBuffer(result.source)
-            ? result.source.toString('utf8')
-            : String(result.source)
+        result.source = Buffer.isBuffer(result.source) ? result.source.toString('utf8') : String(result.source)
     }
     if (process.env.TS_RESOLVE_DEBUG) {
-        console.error(`[ts-resolve] load ${url} sourceType=${typeof result.source} hasState=${typeof result.source === 'string' && result.source.includes('$state')}`)
+        console.error(
+            `[ts-resolve] load ${url} sourceType=${typeof result.source} hasState=${typeof result.source === 'string' && result.source.includes('$state')}`
+        )
     }
     if (typeof result.source !== 'string') {
         return result

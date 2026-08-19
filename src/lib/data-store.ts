@@ -549,9 +549,10 @@ export function setBusinessData(result: BusinessDataResult): void {
         }
 
         if (issues.length > 0) {
-            debugWarn('[data-store] W67-D1 dual-write consistency assertion FAILED:\n  -', issues.join('\n  -'))
+            const detail = issues.map((i) => `  - ${i}`).join('\n')
+            debugWarn(`[data-store] W67-D1 dual-write consistency assertion FAILED:\n${detail}`)
             if (import.meta.env.VITE_DEBUG_DATA_STORE === '1') {
-                throw new Error(`[data-store] W67-D1 dual-write consistency assertion FAILED:\n${issues.join('\n')}`)
+                throw new Error(`[data-store] W67-D1 dual-write consistency assertion FAILED:\n${detail}`)
             }
         }
     }
@@ -577,6 +578,16 @@ function describeValue(v: unknown): string {
  */
 export function setLeadEnrichmentData(enrichment: Record<string, LeadEnrichment> | null): void {
     leadEnrichment.set(enrichment)
+
+    // W67-D1: dev-only dual-write consistency assertion. setLeadEnrichmentData
+    // is the ONLY writer to the leadEnrichment rune store. If a future
+    // refactor adds a legacy appState.leadEnrichment mirror without keeping
+    // it in sync, enrichment lookups diverge silently. Gated on DEV.
+    if (import.meta.env.DEV) {
+        const snapshot = leadEnrichment.getSnapshot()
+        const count = snapshot ? Object.keys(snapshot).length : 0
+        debugInfo(`[data-store] setLeadEnrichmentData: ${count} enrichment records`)
+    }
 }
 
 /**
@@ -621,6 +632,20 @@ export function setSemanticThreadData(result: SemanticThreadDataResult): void {
     semanticThreadArtifactName.set(result.artifactName)
     semanticNeighborMap.set(result.neighborMap)
     layoutManifest.set(result.layoutManifest)
+
+    // W67-D1: dev-only dual-write consistency assertion. setSemanticThreadData
+    // is the ONLY writer to the semantic thread rune stores. If a future
+    // refactor adds a legacy appState.semanticThreadBundle mirror without
+    // keeping it in sync, thread rendering diverges silently. Gated on DEV.
+    if (import.meta.env.DEV) {
+        const bundle = semanticThreadBundle.getSnapshot()
+        const artifact = semanticThreadArtifactName.getSnapshot()
+        const neighbors = semanticNeighborMap.getSnapshot()
+        const manifest = layoutManifest.getSnapshot()
+        debugInfo(
+            `[data-store] setSemanticThreadData: bundle=${describeValue(bundle)} artifact=${describeValue(artifact)} neighbors=${describeValue(neighbors)} manifest=${describeValue(manifest)}`
+        )
+    }
 
     dataLoadState.update((s) => ({
         ...s,

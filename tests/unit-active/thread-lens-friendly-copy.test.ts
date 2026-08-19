@@ -37,9 +37,7 @@ function readSource(): string {
 function extractStringLiterals(src: string): string[] {
     // Remove block comments and line comments (cheap regex; sufficient
     // for our hand-written TS source).
-    const stripped = src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/^\s*\/\/.*$/gm, '')
+    const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
     const out: string[] = []
     // Single-quoted strings
     const single = /\$'([^'\\]|\\.)*'/g
@@ -86,12 +84,10 @@ describe('thread-lens friendly copy (W48-J)', () => {
             }
         }
         if (offenders.length > 0) {
-            const msg = offenders
-                .map((o) => `  - "${o.literal}" contains "${o.word}"`)
-                .join('\n')
+            const msg = offenders.map((o) => `  - "${o.literal}" contains "${o.word}"`).join('\n')
             throw new Error(
                 `thread-lens returned user-visible jargon. Strip these words ` +
-                `from the strings before release:\n${msg}`
+                    `from the strings before release:\n${msg}`
             )
         }
     })
@@ -139,7 +135,7 @@ const COPY_STRIKE_FILES = [
     // ('Explore the neighborhood', 'Preview connection', 'Connection Inspector').
     resolve(__dirname, '../../src/components/JourneyCompass.svelte'),
     resolve(__dirname, '../../src/lib/journey/thread-inspector-state.ts'),
-    resolve(__dirname, '../../src/lib/orchestration/compass-controller.ts'),
+    resolve(__dirname, '../../src/lib/orchestration/compass-controller.ts')
 ] as const
 
 const OLD_OVERCLAIM_STRINGS = [
@@ -147,7 +143,7 @@ const OLD_OVERCLAIM_STRINGS = [
     'Preview connection',
     'Connection Inspector',
     'Explore the neighborhood',
-    'Demo data',
+    'Demo data'
 ] as const
 
 const NEW_APPROVED_STRINGS = [
@@ -155,11 +151,11 @@ const NEW_APPROVED_STRINGS = [
     'Live data is unavailable — searching local records',
     'Similar-Business Preview',
     'Explore similar businesses around this one',
-    'Explore similar businesses nearby',
+    'Explore similar businesses nearby'
 ] as const
 
 function readMultiple(paths: readonly string[]): string {
-    return paths.map(p => readFileSync(p, 'utf8')).join('\n')
+    return paths.map((p) => readFileSync(p, 'utf8')).join('\n')
 }
 
 describe('copy-honesty strike (2026-08-17)', () => {
@@ -180,12 +176,9 @@ describe('copy-honesty strike (2026-08-17)', () => {
             }
         }
         if (violations.length > 0) {
-            const msg = violations
-                .map((v) => `  - "${v.phrase}" found in ${v.file.split('/').pop()}`)
-                .join('\n')
+            const msg = violations.map((v) => `  - "${v.phrase}" found in ${v.file.split('/').pop()}`).join('\n')
             throw new Error(
-                `Copy-honesty regression: old over-claim strings must not ` +
-                `reappear in the strike files:\n${msg}`
+                `Copy-honesty regression: old over-claim strings must not ` + `reappear in the strike files:\n${msg}`
             )
         }
     })
@@ -200,7 +193,7 @@ describe('copy-honesty strike (2026-08-17)', () => {
         if (missing.length > 0) {
             throw new Error(
                 `Copy-honesty regression: new approved phrases must appear ` +
-                `in the strike files:\n  ${missing.join('\n  ')}`
+                    `in the strike files:\n  ${missing.join('\n  ')}`
             )
         }
     })

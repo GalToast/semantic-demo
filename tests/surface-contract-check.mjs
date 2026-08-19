@@ -4610,16 +4610,14 @@ async function assert_global_spacing(page, ctx) {
                         const s = getComputedStyle(el)
                         if (s.display === 'none' || s.visibility === 'hidden') return false
                         const r = el.getBoundingClientRect()
-                        if (
-                            !(
-                                r.width > 0 &&
-                                r.height > 0 &&
-                                r.bottom > 0 &&
-                                r.right > 0 &&
-                                r.top < window.innerHeight &&
-                                r.left < window.innerWidth
-                            )
-                        )
+                        if (!(
+                            r.width > 0 &&
+                            r.height > 0 &&
+                            r.bottom > 0 &&
+                            r.right > 0 &&
+                            r.top < window.innerHeight &&
+                            r.left < window.innerWidth
+                        ))
                             return false
                         if (Number(s.opacity || 1) <= 0.05) return false
                         if (s.pointerEvents === 'none') return false

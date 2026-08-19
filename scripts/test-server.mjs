@@ -76,7 +76,7 @@ function serveStatic(req, res, filePath) {
                 if (cstat.isFile()) {
                     res.writeHead(200, {
                         'Content-Type': guessMime(filePath),
-                        'Content-Encoding': ext,
+                        'Content-Encoding': ext === 'gz' ? 'gzip' : ext,
                         'Content-Length': cstat.size,
                         Vary: 'Accept-Encoding',
                         'Cache-Control': 'no-cache'

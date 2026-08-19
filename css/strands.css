@@ -1183,9 +1183,12 @@ body.surface-focus-search .controls .control-btn {
         display: none;
     }
 
-    body.surface-idle #mode-chips {
-        display: none;
-    }
+    /* W55 (2026-08-18): removed `body.surface-idle #mode-chips { display:none }`.
+       It was resurrected by the `.mode-grid`→`#mode-chips` rename in 19c030c9
+       (the old `.mode-grid` selector matched nothing at runtime, so the rule
+       was dormant). A2-4 UX closure (mobile_premium__state.css:1836) establishes
+       that mode chips are always visible — the desktop idle-hide contradicts
+       that contract and blocked W55 chip clicks on desktop webgl idle. */
 
     @keyframes insideNextBusy {
         0%,
