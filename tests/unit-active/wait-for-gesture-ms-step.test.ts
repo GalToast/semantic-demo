@@ -1,6 +1,4 @@
-// @ts-ignore
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-// @ts-ignore
 import { installGestureMonitor } from '@lib/orchestration/wait-for-gesture'
 // ── helpers ──────────────────────────────────────────────────────────────
 function spyWindowEvents() {
@@ -58,63 +56,54 @@ describe('installGestureMonitor — listener registration', () => {
         ;({ addSpy: docAddSpy } = spyDocEvents())
     })
     it('registers 4 gesture listeners on window with { passive: true }', () => {
-        // @ts-ignore — harness: vi.fn() return type is complex Mock, not directly () => void
-        installGestureMonitor({ onReady: vi.fn() })
+                installGestureMonitor({ onReady: vi.fn() as () => void })
         expect(addSpy).toHaveBeenCalledTimes(4)
         for (const evt of ['pointerdown', 'wheel', 'touchstart', 'mousemove']) {
             expect(addSpy).toHaveBeenCalledWith(evt, expect.any(Function), { passive: true })
         }
     })
     it('registers 1 visibilitychange listener on document', () => {
-        // @ts-ignore — harness: vi.fn() return type is complex Mock, not directly () => void
-        installGestureMonitor({ onReady: vi.fn() })
+                installGestureMonitor({ onReady: vi.fn() as () => void })
         expect(docAddSpy).toHaveBeenCalledWith('visibilitychange', expect.any(Function))
     })
     it('returns a function (teardown)', () => {
-        // @ts-ignore — harness: vi.fn() return type is complex Mock, not directly () => void
-        const teardown = installGestureMonitor({ onReady: vi.fn() })
+        const teardown = installGestureMonitor({ onReady: vi.fn() as () => void })
         expect(typeof teardown).toBe('function')
     })
 })
 describe('handleReady — gating logic', () => {
-    // @ts-ignore — harness: vi.fn() return type is complex Mock, not assignable to () => void
-    let onReady: ReturnType<typeof vi.fn>
+        let onReady: () => void
     let teardown: () => void
     beforeEach(() => {
-        onReady = vi.fn()
+        onReady = vi.fn() as () => void
     })
     afterEach(() => {
         if (teardown) teardown()
     })
     it('calls onReady exactly once across 5 rapid pointerdown events', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         for (let i = 0; i < 5; i++) dispatchGesture('pointerdown')
         expect(onReady).toHaveBeenCalledTimes(1)
     })
     it('does NOT call onReady when dataset.renderKind === "placeholder2d"', () => {
         document.body.dataset.renderKind = 'placeholder2d'
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         dispatchGesture('pointerdown')
         expect(onReady).not.toHaveBeenCalled()
     })
     it('does NOT call onReady when event target is inside .splash[role="dialog"]', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         const splash = makeSplashElement()
         dispatchGesture('pointerdown', splash)
         expect(onReady).not.toHaveBeenCalled()
     })
     it('calls onReady once when closest(".splash[role="dialog"]") returns null', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         dispatchGesture('pointerdown')
         expect(onReady).toHaveBeenCalledTimes(1)
     })
     it('calls onReady when handleReady is triggered via hidden→visible (no event arg)', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         mockVisibilityState('hidden')
         document.dispatchEvent(new Event('visibilitychange')) // hidden → sets wasHidden
         currentVisibilityState = 'visible'
@@ -123,19 +112,17 @@ describe('handleReady — gating logic', () => {
     })
 })
 describe('onReady cooldown / auto-teardown', () => {
-    // @ts-ignore — harness: vi.fn() return type is complex Mock, not assignable to () => void
-    let onReady: ReturnType<typeof vi.fn>
+        let onReady: () => void
     let setTimeoutSpy: ReturnType<typeof vi.spyOn>
     beforeEach(() => {
-        onReady = vi.fn()
+        onReady = vi.fn() as () => void
         setTimeoutSpy = vi.spyOn(window, 'setTimeout')
     })
     afterEach(() => {
         setTimeoutSpy.mockRestore()
     })
     it('schedules setTimeout(dispose, 200) with default cooldown after onReady fires', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        installGestureMonitor({ onReady })
+                installGestureMonitor({ onReady })
         dispatchGesture('pointerdown')
         expect(onReady).toHaveBeenCalledTimes(1)
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 200)
@@ -143,8 +130,7 @@ describe('onReady cooldown / auto-teardown', () => {
     it('registry.disposeAll() fires after advancing timers past 200 ms', () => {
         const { addSpy, removeSpy } = spyWindowEvents()
         const { addSpy: docAddSpy, removeSpy: docRemoveSpy } = spyDocEvents()
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        installGestureMonitor({ onReady })
+                installGestureMonitor({ onReady })
         dispatchGesture('pointerdown')
         vi.advanceTimersByTime(201)
         // removeEventListener calls should now be present for all listeners
@@ -152,24 +138,21 @@ describe('onReady cooldown / auto-teardown', () => {
         expect(docRemoveSpy).toHaveBeenCalled()
     })
     it('schedules setTimeout with custom cooldownMs value', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        installGestureMonitor({ onReady, cooldownMs: 1000 })
+                installGestureMonitor({ onReady, cooldownMs: 1000 })
         dispatchGesture('pointerdown')
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 1000)
     })
     it('disposeAll fires after advancing timers past custom cooldownMs (1000)', () => {
         const { removeSpy } = spyWindowEvents()
         const { removeSpy: docRemoveSpy } = spyDocEvents()
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        installGestureMonitor({ onReady, cooldownMs: 1000 })
+                installGestureMonitor({ onReady, cooldownMs: 1000 })
         dispatchGesture('pointerdown')
         vi.advanceTimersByTime(1001)
         expect(removeSpy).toHaveBeenCalled()
         expect(docRemoveSpy).toHaveBeenCalled()
     })
     it('second gesture after cooldown expiry does NOT call onReady again', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        installGestureMonitor({ onReady })
+                installGestureMonitor({ onReady })
         dispatchGesture('pointerdown')
         expect(onReady).toHaveBeenCalledTimes(1)
         vi.advanceTimersByTime(201)
@@ -178,31 +161,27 @@ describe('onReady cooldown / auto-teardown', () => {
     })
 })
 describe('onVisibilityChange fallback', () => {
-    // @ts-ignore — harness: vi.fn() return type is complex Mock, not assignable to () => void
-    let onReady: ReturnType<typeof vi.fn>
+        let onReady: () => void
     let teardown: () => void
     beforeEach(() => {
-        onReady = vi.fn()
+        onReady = vi.fn() as () => void
     })
     afterEach(() => {
         if (teardown) teardown()
     })
     it('does NOT call onReady on initial load when visibilityState is already "visible"', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         window.dispatchEvent(new Event('visibilitychange'))
         expect(onReady).not.toHaveBeenCalled()
     })
     it('sets wasHidden and does NOT call onReady when visibilityState becomes "hidden"', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         mockVisibilityState('hidden')
         window.dispatchEvent(new Event('visibilitychange'))
         expect(onReady).not.toHaveBeenCalled()
     })
     it('calls onReady when transitioning from hidden to visible (wasHidden was set)', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         mockVisibilityState('hidden')
         document.dispatchEvent(new Event('visibilitychange')) // sets wasHidden
         currentVisibilityState = 'visible'
@@ -210,8 +189,7 @@ describe('onVisibilityChange fallback', () => {
         expect(onReady).toHaveBeenCalledTimes(1)
     })
     it('does NOT call onReady again after first visibility fire (idempotent)', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         mockVisibilityState('hidden')
         document.dispatchEvent(new Event('visibilitychange'))
         currentVisibilityState = 'visible'
@@ -226,11 +204,10 @@ describe('onVisibilityChange fallback', () => {
     })
 })
 describe('Playwright / test auto-fire', () => {
-    // @ts-ignore — harness: vi.fn() return type is complex Mock, not assignable to () => void
-    let onReady: ReturnType<typeof vi.fn>
+        let onReady: () => void
     let setTimeoutSpy: ReturnType<typeof vi.spyOn>
     beforeEach(() => {
-        onReady = vi.fn()
+        onReady = vi.fn() as () => void
         setTimeoutSpy = vi.spyOn(window, 'setTimeout')
     })
     afterEach(() => {
@@ -238,42 +215,36 @@ describe('Playwright / test auto-fire', () => {
     })
     it('schedules setTimeout(handleReady, 0) when window.__PLAYWRIGHT__ is true before install', () => {
         ;(window as any).__PLAYWRIGHT__ = true
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        installGestureMonitor({ onReady })
+                installGestureMonitor({ onReady })
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 0)
     })
     it('advancing timers by 1 ms after __PLAYWRIGHT__ install fires onReady', () => {
         ;(window as any).__PLAYWRIGHT__ = true
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        installGestureMonitor({ onReady })
+                installGestureMonitor({ onReady })
         vi.advanceTimersByTime(1)
         expect(onReady).toHaveBeenCalledTimes(1)
     })
     it('schedules setTimeout(handleReady, 0) when navigator.webdriver is true', () => {
         Object.defineProperty(navigator, 'webdriver', { configurable: true, value: true })
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        installGestureMonitor({ onReady })
+                installGestureMonitor({ onReady })
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 0)
     })
     it('advancing timers by 1 ms after webdriver install fires onReady', () => {
         Object.defineProperty(navigator, 'webdriver', { configurable: true, value: true })
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        installGestureMonitor({ onReady })
+                installGestureMonitor({ onReady })
         vi.advanceTimersByTime(1)
         expect(onReady).toHaveBeenCalledTimes(1)
     })
     it('does NOT schedule setTimeout(handleReady, 0) when neither flag is set', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        installGestureMonitor({ onReady })
+                installGestureMonitor({ onReady })
         expect(setTimeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 0)
     })
 })
 describe('Teardown', () => {
-    // @ts-ignore — harness: vi.fn() return type is complex Mock, not assignable to () => void
-    let onReady: ReturnType<typeof vi.fn>
+        let onReady: () => void
     let teardown: () => void
     beforeEach(() => {
-        onReady = vi.fn()
+        onReady = vi.fn() as () => void
     })
     afterEach(() => {
         if (teardown) teardown()
@@ -281,46 +252,36 @@ describe('Teardown', () => {
     it('removeEventListener called for all 4 gesture listeners + visibilitychange', () => {
         const { addSpy, removeSpy } = spyWindowEvents()
         const { addSpy: docAddSpy, removeSpy: docRemoveSpy } = spyDocEvents()
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         expect(addSpy).toHaveBeenCalledTimes(4)
         expect(docAddSpy).toHaveBeenCalledTimes(1)
         teardown()
         expect(removeSpy).toHaveBeenCalledTimes(4)
         // use type-based check — closure identity is not stable across spy boundaries
-        // @ts-ignore — harness: mock.calls tuples have 3 elements but test destructures to [string]
-        expect(removeSpy.mock.calls.some(([type]: [string]) => type === 'pointerdown')).toBe(true)
-        // @ts-ignore — harness: mock.calls tuples have 3 elements but test destructures to [string]
-        expect(removeSpy.mock.calls.some(([type]: [string]) => type === 'wheel')).toBe(true)
-        // @ts-ignore — harness: mock.calls tuples have 3 elements but test destructures to [string]
-        expect(removeSpy.mock.calls.some(([type]: [string]) => type === 'touchstart')).toBe(true)
-        // @ts-ignore — harness: mock.calls tuples have 3 elements but test destructures to [string]
-        expect(removeSpy.mock.calls.some(([type]: [string]) => type === 'mousemove')).toBe(true)
-        // @ts-ignore — harness: mock.calls tuples have 3 elements but test destructures to [string]
-        expect(docRemoveSpy.mock.calls.some(([type]: [string]) => type === 'visibilitychange')).toBe(true)
+                expect(removeSpy.mock.calls.some((call) => (call[0] as string) === 'pointerdown')).toBe(true)
+                expect(removeSpy.mock.calls.some((call) => (call[0] as string) === 'wheel')).toBe(true)
+                expect(removeSpy.mock.calls.some((call) => (call[0] as string) === 'touchstart')).toBe(true)
+                expect(removeSpy.mock.calls.some((call) => (call[0] as string) === 'mousemove')).toBe(true)
+        expect(docRemoveSpy.mock.calls.some((call) => (call[0] as string) === 'visibilitychange')).toBe(true)
     })
     it('teardown before any gesture fired does NOT throw', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         expect(() => teardown()).not.toThrow()
     })
     it('teardown called twice does NOT throw', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         expect(() => {
             teardown()
             teardown()
         }).not.toThrow()
     })
     it('gesture with non-Element target (window) fires onReady — gate returns false', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         dispatchGesture('pointerdown', window) // window is EventTarget, not Element
         expect(onReady).toHaveBeenCalledTimes(1)
     })
     it('gesture with Element whose closest(".splash[role="dialog"]") is truthy does NOT fire', () => {
-        // @ts-ignore — harness: Mock type not assignable to () => void
-        teardown = installGestureMonitor({ onReady })
+                teardown = installGestureMonitor({ onReady })
         const splash = makeSplashElement()
         dispatchGesture('pointerdown', splash)
         expect(onReady).not.toHaveBeenCalled()
