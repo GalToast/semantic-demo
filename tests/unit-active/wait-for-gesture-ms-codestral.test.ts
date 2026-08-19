@@ -1,8 +1,5 @@
-// @ts-ignore
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-// @ts-ignore
 import { installGestureMonitor } from '@lib/orchestration/wait-for-gesture'
-// @ts-ignore
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 describe('installGestureMonitor', () => {
@@ -200,9 +197,7 @@ describe('cooldown and auto-teardown', () => {
   })
 
   it('schedules teardown after cooldown', () => {
-    // @ts-ignore — harness: mockClear not on removeEventListener type
-    // @ts-ignore — harness: mockClear not on removeEventListener type
-    window.removeEventListener.mockClear()
+    (window.removeEventListener as any).mockClear()
     teardown = installGestureMonitor({ onReady })
     const event = new Event('pointerdown')
     window.dispatchEvent(event)

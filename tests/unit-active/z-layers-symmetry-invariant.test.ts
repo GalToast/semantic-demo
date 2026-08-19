@@ -9,13 +9,9 @@
  * not silently omitted from TS (and vice versa).
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore -- tests/ is excluded from the workspace tsconfig; node built-ins resolve at vitest runtime.
 import { readFileSync } from 'node:fs'
-// @ts-ignore -- tests/ is excluded from the workspace tsconfig.
 import { resolve, dirname } from 'node:path'
-// @ts-ignore -- tests/ is excluded from the workspace tsconfig.
 import { fileURLToPath } from 'node:url'
-// @ts-ignore -- tests/ is excluded from the workspace tsconfig; @lib alias resolves via vitest config.
 import { Z_LAYERS } from '@lib/z-index'
 
 const here = dirname(fileURLToPath(import.meta.url))
