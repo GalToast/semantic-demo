@@ -59,7 +59,8 @@ export type ProbeEnv = {
 export function supportsCapableWebGL(env?: ProbeEnv): boolean {
     // Resolve the environment (test seam first, then real globals).
     const win = env?.window ?? (typeof window === 'undefined' ? undefined : (window as unknown as ProbeEnv['window']))
-    const doc = env?.document ?? (typeof document === 'undefined' ? undefined : (document as unknown as ProbeEnv['document']))
+    const doc =
+        env?.document ?? (typeof document === 'undefined' ? undefined : (document as unknown as ProbeEnv['document']))
     if (!win || !doc) return false
 
     const mm =
