@@ -46,6 +46,7 @@ import {
 } from 'three'
 import type { MeshBasicMaterialParameters, LineBasicMaterialParameters } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
+import { pointIndexByLeadId } from '@lib/data-store'
 import { disposeFocusPocketSizeMesh } from './focus-pocket-size-mesh'
 const state = _state
 import { disposeHeroAnimation } from './three-search-hero-animations'
@@ -119,9 +120,9 @@ function getSemanticLensNeighborIndices(focusedNode: number): number[] {
     const leadId = point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id)
     if (!leadId) return []
     const semanticNode = state.semanticNeighborMapByLeadId ? state.semanticNeighborMapByLeadId.get(leadId) : null
-    if (!semanticNode?.neighbors?.length || !state.pointIndexByLeadId?.size) return []
+    if (!semanticNode?.neighbors?.length || !pointIndexByLeadId.getSnapshot().size) return []
     return semanticNode.neighbors
-        .map((neighbor: { leadId: string | number | null }) => state.pointIndexByLeadId.get(String(neighbor.leadId)))
+        .map((neighbor: { leadId: string | number | null }) => pointIndexByLeadId.getSnapshot().get(String(neighbor.leadId)))
         .filter(
             (index: number | undefined): index is number =>
                 Number.isFinite(index) && index !== focusedNode && Boolean(state.nodePositions?.[index as number])

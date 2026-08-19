@@ -15,6 +15,7 @@ import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { appState as state } from '@lib/state/app.svelte'
+import { pointIndexByLeadId } from '@lib/data-store'
 import { CONFIG } from './config'
 import { disposeObject3D } from './resource-tracker'
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
@@ -150,7 +151,7 @@ function buildGeometricMyceliumEdges(
 }
 
 async function buildSemanticMyceliumEdges(): Promise<MyceliumEdgeSets | null> {
-    if (!state.semanticNeighborMapByLeadId?.size || !state.pointIndexByLeadId?.size) return null
+    if (!state.semanticNeighborMapByLeadId?.size || !pointIndexByLeadId.getSnapshot().size) return null
     const seen = new Set<string>()
     const corePairs: EdgePair[] = []
     const wispyPairs: EdgePair[] = []
@@ -168,7 +169,7 @@ async function buildSemanticMyceliumEdges(): Promise<MyceliumEdgeSets | null> {
             .sort((a, b) => (b.semanticScore || 0) - (a.semanticScore || 0))
             .slice(0, 20)
         sortedNeighbors.forEach((neighbor: SemanticNeighborDetail) => {
-            const otherIndex = state.pointIndexByLeadId.get(String(neighbor.leadId))
+            const otherIndex = pointIndexByLeadId.getSnapshot().get(String(neighbor.leadId))
             if (otherIndex === undefined || otherIndex === index) return
             const key = pairKey(index, otherIndex)
             if (seen.has(key)) return

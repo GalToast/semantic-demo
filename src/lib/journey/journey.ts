@@ -196,7 +196,6 @@ export function initJourneyState(): void {
         state.projectedNeighborCache ??= new Map()
         state.canvasThreadInspectionClearTimer ??= null
         state.stableCanvasHover ??= null
-        state.pointIndexByLeadId ??= new Map()
         // signalScores / bridgeScores retired 2026-08-07 (semantic-signal component never wired)
         state.semanticDiveMode ??= false
         state.focusState.pocketTransitionStartedAt ??= 0

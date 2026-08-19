@@ -8,6 +8,7 @@
  */
 
 import { appState as _state } from '@lib/state/app.svelte'
+import { pointIndexByLeadId } from '@lib/data-store'
 const state = _state
 import { debugWarn } from '@lib/utils/debug'
 import type { NavState } from '@lib/types/state'
@@ -218,11 +219,11 @@ function updateAudio(): void {
 
     // Path Proximity (Phase 3)
     const navWithRoute = getNavStateWithRoute()
-    if (navWithRoute.activeRoutePath && navWithRoute.activeRoutePath.length > 0 && state.pointIndexByLeadId) {
+    if (navWithRoute.activeRoutePath && navWithRoute.activeRoutePath.length > 0 && pointIndexByLeadId.getSnapshot()) {
         const audioPoints = getAudioPoints()
         let minDist = Infinity
         navWithRoute.activeRoutePath.forEach((id: string | number) => {
-            const idx = state.pointIndexByLeadId.get(String(id))
+            const idx = pointIndexByLeadId.getSnapshot().get(String(id))
             if (idx !== undefined && audioPoints[idx]) {
                 const p = audioPoints[idx]
                 const target = { x: p.x ?? 0, y: p.y ?? 0, z: p.z ?? 0 }

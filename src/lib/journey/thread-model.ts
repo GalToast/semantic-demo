@@ -13,6 +13,7 @@
 import type { BusinessRecord, SemanticNeighborDetail } from '@lib/types/business'
 import type { Point3D } from '@lib/types/webgl'
 import { appState as state } from '@lib/state/app.svelte'
+import { pointIndexByLeadId } from '@lib/data-store'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
 import {
     normalizeRelationshipRole,
@@ -398,7 +399,7 @@ export function getSemanticThreadCandidates(index: number, ...args: unknown[]): 
                 roleReason?: string
                 reason?: string
             }) => {
-                const candidateIndex = (state.pointIndexByLeadId as Map<string, number>).get(neighbor.leadId ?? '')
+                const candidateIndex = pointIndexByLeadId.getSnapshot().get(neighbor.leadId ?? '')
                 if (candidateIndex === undefined || candidateIndex === index) return null
 
                 return {
