@@ -14,7 +14,7 @@ Generated from package.json (manually curated, update on script changes).
 | `test:fast` | npm run test:static                                                                    |
 | `check`     | npm run verify:syntax && npm run check:svelte && npm run build:svelte                  |
 | `lint`      | eslint "{js,tests}/**/\*.{js,ts}" && eslint "src/**/*.{ts,svelte}" --max-warnings=9999 |
-| `serve`     | python -m http.server 8795 --bind 127.0.0.1                                            |
+| `serve`     | php -S 127.0.0.1:8795 -t .                                                             |
 
 ## `audit:` family (3)
 
@@ -218,9 +218,9 @@ Generated from package.json (manually curated, update on script changes).
 
 ## `serve:` family (1)
 
-| Script  | Command (truncated)                           | Wired? |
-| ------- | --------------------------------------------- | ------ |
-| `serve` | `python -m http.server 8795 --bind 127.0.0.1` | manual |
+| Script  | Command (truncated)          | Wired? |
+| ------- | ---------------------------- | ------ |
+| `serve` | `php -S 127.0.0.1:8795 -t .` | manual |
 
 ## `sg:` family (1)
 

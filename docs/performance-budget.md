@@ -56,7 +56,7 @@ These are **not live** — the script still enforces 2,500 / 650 / 65 / 16.
 
 ### Measurement
 
-- Run Lighthouse via `npx lighthouse http://127.0.0.1:8795/vector-explorer-polished.html --output=json` after `npm run serve`.
+- Run Lighthouse via `npx lighthouse http://127.0.0.1:8795/ --output=json` after `npm run serve` (PHP CLI serves `index.html` and executes `/api.php`).
 - Core Web Vitals can also be sampled via Chrome DevTools Performance panel.
 - Budget failures should be filed as bugs with `perf-budget` label.
 

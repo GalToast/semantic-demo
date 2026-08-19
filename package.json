@@ -107,7 +107,7 @@
     "refresh:cache": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/cache-buster-check.js --fix",
     "build": "npm run build:svelte",
     "watch": "vite build --config vite.config.ts --watch",
-    "serve": "python -m http.server 8795 --bind 127.0.0.1",
+    "serve": "php -S 127.0.0.1:8795 -t .",
     "check:bridges": "node scripts/check-bridge-references.mjs",
     "test:static": "npm run check:shell && npm run check:skills && npm run check:manifest && npm run check:cache && npm run check:config-topology && npm run check:bridges && npm run check:ownership && npm run check:tokens && npm run check:surface-styles && npm run check:semantic-space && npm run typecheck",
     "test": "npm run test:static && npm run test:unit",
