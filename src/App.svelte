@@ -130,7 +130,7 @@
   if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
     requestIdleCallback(() => legacyCompassSurfaceLazy.ensure(true), { timeout: 3000 })
   }
-  if (typeof window !== 'undefined' && window.__PLAYWRIGHT__) {
+  if (isPlaywrightEnvironment()) {
     mapViewLazy.ensure(true)
     legacyCompassSurfaceLazy.ensure(true)
     threadInspectorLazy.ensure(true)    // Contract tests need #canvas-container and #map-container in the DOM.
