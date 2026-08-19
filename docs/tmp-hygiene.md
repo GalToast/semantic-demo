@@ -32,7 +32,7 @@ if [ -n "$TRACKED" ]; then
 fi
 ```
 
-Current tracked count at policy inception: **43 files** (see `tmp/swarm-tmp-audit-20260818/lane-a/cleanup-list.txt`).
+Current tracked count at policy inception: **43 files** (see `docs/tmp-audit-20260818/lane-a/cleanup-list.txt`).
 
 ## One-Command Sweep
 

@@ -1,0 +1,159 @@
+path	birth-commit	date	add-pattern-commit-msg
+tmp/landmine-fix2-REPORT.md	5a3ab701	2026-08-11	fix(tests): bridge-rewire 19 static @lib imports (the landmine class)
+tmp/parameter-property-REPORT.md	6c600b78	2026-08-11	fix(engine): strip-mode compatibility — data-store DerivedRuneStore parameter-property → explicit-field (https://aria-sync-contract + probe lifecycle import)
+tmp/0731-trail-contract-REPORT.md	ad4f7ee4	2026-08-09	test(a11y): make trail-review overlay focus contract runnable as a vitest suite
+tmp/probe-dead-lanes.mjs	f0840f81	2026-08-06	docs(lanes): verified-dead lane probe table (401/402/403/404 vs 429-live controls) + probe method note — do NOT prune config (map != deadness)
+tmp/probe-dead-lanes2.mjs	f0840f81	2026-08-06	docs(lanes): verified-dead lane probe table (401/402/403/404 vs 429-live controls) + probe method note — do NOT prune config (map != deadness)
+tmp/ui-issues-report-20260804.md	d81f0beb	2026-08-06	docs(ui): archive ui-issues-report-20260804 as closed — every item worked through across 08-04→08-06 wave
+tmp/surface-contract-runner-notes.md	eaffb497	2026-08-06	docs(qa): surface-contract runner broken — silent exit after 'Starting mobile-idle' in all 4 invocation variants; qa:contract signal untrustworthy until fixed
+tmp/baseline-emptyband.mjs	7f96a41c	2026-08-06	docs(ui): lane-parking clear — W3 empty-band verified (206→100px) + freshness landed + worker steering lesson
+tmp/baseline-enc.json	7f96a41c	2026-08-06	docs(ui): lane-parking clear — W3 empty-band verified (206→100px) + freshness landed + worker steering lesson
+tmp/mobile-band-verify.mjs	7f96a41c	2026-08-06	docs(ui): lane-parking clear — W3 empty-band verified (206→100px) + freshness landed + worker steering lesson
+tmp/sub-agent-emptyband-fix-prompt.md	be585c9e	2026-08-06	tool(probes): lane-parking clear prompts (empty-band fix + orphaned freshness commit) — dispatched, lane offline, claim-eligible
+tmp/sub-agent-freshness-fix-prompt.md	be585c9e	2026-08-06	tool(probes): lane-parking clear prompts (empty-band fix + orphaned freshness commit) — dispatched, lane offline, claim-eligible
+tmp/rail-reach-check.mjs	024b56f3	2026-08-06	test(ui): rail-width regression in dive journey test — neighbor buttons must be ≥120px on semantic-dive (was 3px collapse); passes on fixed dist, guards the grid-column fix
+tmp/rail-vs-trail.mjs	af949871	2026-08-06	docs(ui-sweep): rail grid-column fix collision-verified across focus/trail/dive — trail controls live in .focus-stage-auxiliary-surfaces, no overlap; probes committed
+tmp/trail-where.mjs	af949871	2026-08-06	docs(ui-sweep): rail grid-column fix collision-verified across focus/trail/dive — trail controls live in .focus-stage-auxiliary-surfaces, no overlap; probes committed
+tmp/audit-dive-2026-08-06.jsonl	dcbfb558	2026-08-06	evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+tmp/audit-dive-REPORT-WB.md	dcbfb558	2026-08-06	evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+tmp/audit-dive-bonus-2026-08-06.jsonl	dcbfb558	2026-08-06	evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+tmp/audit-dive-bonus.mjs	dcbfb558	2026-08-06	evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+tmp/audit-dive-probe.mjs	dcbfb558	2026-08-06	evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+tmp/audit-inside-2026-08-06.jsonl	dcbfb558	2026-08-06	evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+tmp/dive-slots.mjs	dcbfb558	2026-08-06	evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+tmp/probe-inside-audit.mjs	dcbfb558	2026-08-06	evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+tmp/rail-chain.mjs	dcbfb558	2026-08-06	evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+tmp/triage-worker-evidence.mjs	46f3ad6d	2026-08-06	tool(probes): evidence triage harness — auto-dismiss sr-only/ellipsis/off-canvas, list real worker findings
+tmp/sub-agent-dive-prompt.md	089d0017	2026-08-06	tool(probes): inside/dive surface audit worker prompts (read-only, rubric + sentinel + timeouts)
+tmp/sub-agent-inside-prompt.md	089d0017	2026-08-06	tool(probes): inside/dive surface audit worker prompts (read-only, rubric + sentinel + timeouts)
+tmp/btn-rule-chain.js	02fe82bc	2026-08-06	tool(probes): trail-button diagnostics (width A/B, rule-chain, tray snapshot) — reusable via probe-hub eval op
+tmp/btn-width-test.js	02fe82bc	2026-08-06	tool(probes): trail-button diagnostics (width A/B, rule-chain, tray snapshot) — reusable via probe-hub eval op
+tmp/probe-trail-dist.mjs	02fe82bc	2026-08-06	tool(probes): trail-button diagnostics (width A/B, rule-chain, tray snapshot) — reusable via probe-hub eval op
+tmp/trail-diagnose.js	02fe82bc	2026-08-06	tool(probes): trail-button diagnostics (width A/B, rule-chain, tray snapshot) — reusable via probe-hub eval op
+tmp/tray-snapshot.js	02fe82bc	2026-08-06	tool(probes): trail-button diagnostics (width A/B, rule-chain, tray snapshot) — reusable via probe-hub eval op
+tmp/probe-trail-fixed.mjs	7dd6ab16	2026-08-06	fix(ui): trail Prev/Next buttons clipped their labels at desktop — global .focus-stage-action-btn flex:1 1 0 + flex-basis-auto resolving to the clipped content box squeezed them to 54px. Fix: scoped .trail-btn width:max-content + flex:0 0 auto. Verified live (100px scroll==client, no clip) + shipped in dist CSS.
+tmp/trail-debug-notes.md	7dd6ab16	2026-08-06	fix(ui): trail Prev/Next buttons clipped their labels at desktop — global .focus-stage-action-btn flex:1 1 0 + flex-basis-auto resolving to the clipped content box squeezed them to 54px. Fix: scoped .trail-btn width:max-content + flex:0 0 auto. Verified live (100px scroll==client, no clip) + shipped in dist CSS.
+tmp/probe-hub.mjs	23d9aa3c	2026-08-06	tool(probe-hub): persistent Playwright page server on :8911 — reuse warm pages, probe cycles <10s instead of 60-90s cold boots; ops: searchNames/state/motionHost/route
+tmp/audit-reduced-motion.mjs	447b6a7d	2026-08-05	tool: reduce-motion keyframe audit (43 keyframes, 0 gaps after gate fixes) — reusable regression check
+tmp/probe-hover6.mjs	ecadebd6	2026-08-05	docs(ui-sweep): live-map geometry clean, micro-interaction findings = false positives (state-verification lesson), perf static-clean; probes committed
+tmp/probe-live-map.mjs	ecadebd6	2026-08-05	docs(ui-sweep): live-map geometry clean, micro-interaction findings = false positives (state-verification lesson), perf static-clean; probes committed
+tmp/probe-micro.mjs	ecadebd6	2026-08-05	docs(ui-sweep): live-map geometry clean, micro-interaction findings = false positives (state-verification lesson), perf static-clean; probes committed
+tmp/focus-rings2.found.jsonl	7202db65	2026-08-05	docs(ui-sweep): extreme-viewport + long-name + empty-state corners clean; probe-lib tooling; fade-in reduced-motion gap fixed earlier commit
+tmp/probe-lib.mjs	7202db65	2026-08-05	docs(ui-sweep): extreme-viewport + long-name + empty-state corners clean; probe-lib tooling; fade-in reduced-motion gap fixed earlier commit
+tmp/probe-sedge.mjs	7202db65	2026-08-05	docs(ui-sweep): extreme-viewport + long-name + empty-state corners clean; probe-lib tooling; fade-in reduced-motion gap fixed earlier commit
+tmp/vision-jury-findings-20260805.md	ee3300f5	2026-08-05	docs(vision-jury): V1-V4/V17/V18 all re-verified FIXED live (contrast 16.5:1, no clips; chip fix 6a8f0088 closed the sweep's one real find)
+tmp/probe-mobile-sweep.mjs	dfdc0b77	2026-08-05	docs(mobile-sweep): 390px sweep clean across surfaces; chip-overflow fix verified + show-more is scroll-reachable (not a bug)
+tmp/chatjimmy-verify.json	ccb7dd0f	2026-08-05	audit(final): chatjimmy disproven (TEXT_ONLY, zydit artifact); 14 mistral individually proven; register reconciled to TRUE 68
+tmp/mistral-spot-a.json	ccb7dd0f	2026-08-05	audit(final): chatjimmy disproven (TEXT_ONLY, zydit artifact); 14 mistral individually proven; register reconciled to TRUE 68
+tmp/mistral-spot-b.json	ccb7dd0f	2026-08-05	audit(final): chatjimmy disproven (TEXT_ONLY, zydit artifact); 14 mistral individually proven; register reconciled to TRUE 68
+tmp/vision-ask.mjs	ac3d4b71	2026-08-05	housekeep: commit vision-ask.mjs bridge (referenced by shim + runners) as part of toolkit
+tmp/vision-census-evidence/direct-vendor-verification.jsonl	9b944101	2026-08-05	audit: full tail closed — airforce auth-wall, freeinf kimi-k2.7 vision found, direct vendors verdict-filed; register 69 unique verified
+tmp/pi-probe-results-slice-2.json	4a80cbf6	2026-08-05	evidence: cline workers 2+6 confirm mistral-family vision independently (content-backed reads); gemini lanes = billing 429; register stays 68 unique verified
+tmp/pi-probe-results-slice-6.json	4a80cbf6	2026-08-05	evidence: cline workers 2+6 confirm mistral-family vision independently (content-backed reads); gemini lanes = billing 429; register stays 68 unique verified
+tmp/pi-worker-1.log	4a80cbf6	2026-08-05	evidence: cline workers 2+6 confirm mistral-family vision independently (content-backed reads); gemini lanes = billing 429; register stays 68 unique verified
+tmp/pi-worker-2.log	4a80cbf6	2026-08-05	evidence: cline workers 2+6 confirm mistral-family vision independently (content-backed reads); gemini lanes = billing 429; register stays 68 unique verified
+tmp/pi-worker-6.log	4a80cbf6	2026-08-05	evidence: cline workers 2+6 confirm mistral-family vision independently (content-backed reads); gemini lanes = billing 429; register stays 68 unique verified
+tmp/mistral-spot-verify.json	42060ee4	2026-08-05	major: 32 new verified vision lanes (28 mistral family + glm-5.2 trio + agnes alpha) from pi-direct tail sweep — register 36->68; spot-verify content-backed
+tmp/vision-census-evidence/pi-tail-local.jsonl	42060ee4	2026-08-05	major: 32 new verified vision lanes (28 mistral family + glm-5.2 trio + agnes alpha) from pi-direct tail sweep — register 36->68; spot-verify content-backed
+tmp/probe-results-slice-1.json	06863375	2026-08-05	feat(probe-tail): cline-worker batch closes never-probed fast gates — 23 verdicts, 0 new vision (16x404/3x410/1 EMPTY-pair/1 REFUSAL/1x402); act-mode requirement documented
+tmp/probe-results-slice-2.json	06863375	2026-08-05	feat(probe-tail): cline-worker batch closes never-probed fast gates — 23 verdicts, 0 new vision (16x404/3x410/1 EMPTY-pair/1 REFUSAL/1x402); act-mode requirement documented
+tmp/probe-results-slice-3.json	06863375	2026-08-05	feat(probe-tail): cline-worker batch closes never-probed fast gates — 23 verdicts, 0 new vision (16x404/3x410/1 EMPTY-pair/1 REFUSAL/1x402); act-mode requirement documented
+tmp/vision-census-evidence/round6-verification.jsonl	d49fa9f4	2026-08-05	audit: ROUND-6 + inkling claims re-verified live (pixtral/mistral-small/inkling all PIXELS-reads) — evidence filed; register consolidated to 36 unique verified
+tmp/cline-lane-audit-report.md	7c7d1d4c	2026-08-05	audit: worker-audited doc reconciliation — 33 evidence-verified ids (36 PIXELS_OK lines); shim vision fix verified; ROUND-6/inkling claims flagged unsupported
+tmp/vision-doc-audit-report.md	7c7d1d4c	2026-08-05	audit: worker-audited doc reconciliation — 33 evidence-verified ids (36 PIXELS_OK lines); shim vision fix verified; ROUND-6/inkling claims flagged unsupported
+tmp/cline-shim.mjs	70565a8c	2026-08-05	feat(cline-free-lane): local OpenAI shim over keyless cline free tier (glm-5.2/dsv4/laguna/step-3.7 verified); router stub + integration notes; freebuff assessed
+tmp/vision-census-evidence/strip-reprobe.jsonl	d5603876	2026-08-05	docs(vision): final consolidated register — verified list reconciled, stripping-law banked, sweep-starvation lesson, freemodel/groq gates documented
+tmp/vision-census-evidence/vision-v4-probe.mjs	d5603876	2026-08-05	docs(vision): final consolidated register — verified list reconciled, stripping-law banked, sweep-starvation lesson, freemodel/groq gates documented
+tmp/vision-census-evidence/zydit-v1-tail.jsonl	d5603876	2026-08-05	docs(vision): final consolidated register — verified list reconciled, stripping-law banked, sweep-starvation lesson, freemodel/groq gates documented
+tmp/vision-census-evidence/zydit-v4-strip.jsonl	d5603876	2026-08-05	docs(vision): final consolidated register — verified list reconciled, stripping-law banked, sweep-starvation lesson, freemodel/groq gates documented
+tmp/vision-census-evidence/quick-unprobed-routed.jsonl	1e423acc	2026-08-05	evidence(vision-tail): new verified mimo-v2.5-free@opencode-zen; patient tail runner + first results; 122-model zydit-v1 sweep running in background
+tmp/vision-census-evidence/vision-tail-runner.mjs	1e423acc	2026-08-05	evidence(vision-tail): new verified mimo-v2.5-free@opencode-zen; patient tail runner + first results; 122-model zydit-v1 sweep running in background
+tmp/model-superset.json	261691a3	2026-08-05	docs(vision): full-config superset audit — 1510 authoritative models, census covered 11.7%; pro 88.3% never-probed; methodology record + next-run plan
+tmp/vision-census-evidence/alt-gates.jsonl	1d1933d5	2026-08-05	docs(vision-census v3): 27 verified families (was 12->17->27); honest about 429-never-retried + alt-gate misses; rerun+matrix evidence
+tmp/vision-census-evidence/rerun-disputed.jsonl	1d1933d5	2026-08-05	docs(vision-census v3): 27 verified families (was 12->17->27); honest about 429-never-retried + alt-gate misses; rerun+matrix evidence
+tmp/vision-census-evidence/vision-census-final-v2.json	1d1933d5	2026-08-05	docs(vision-census v3): 27 verified families (was 12->17->27); honest about 429-never-retried + alt-gate misses; rerun+matrix evidence
+tmp/vision-census-evidence/vision-census-runner2.mjs	1d1933d5	2026-08-05	docs(vision-census v3): 27 verified families (was 12->17->27); honest about 429-never-retried + alt-gate misses; rerun+matrix evidence
+tmp/vision-census-evidence/gap-cloudflare-llm7.jsonl	c9446fa8	2026-08-05	docs(vision-census v2): 30-gate sweep closes 5 missed gateways — 17 verified VLMs (was 12); gap-audit evidence pack
+tmp/vision-census-evidence/gap-mistral.jsonl	c9446fa8	2026-08-05	docs(vision-census v2): 30-gate sweep closes 5 missed gateways — 17 verified VLMs (was 12); gap-audit evidence pack
+tmp/vision-census-evidence/gap-neuralwatt-agnes.jsonl	c9446fa8	2026-08-05	docs(vision-census v2): 30-gate sweep closes 5 missed gateways — 17 verified VLMs (was 12); gap-audit evidence pack
+tmp/vision-census-evidence/gap-qwen-novita-zenmux.jsonl	c9446fa8	2026-08-05	docs(vision-census v2): 30-gate sweep closes 5 missed gateways — 17 verified VLMs (was 12); gap-audit evidence pack
+tmp/vision-census-evidence/pass1.jsonl	f161c62e	2026-08-05	evidence(vision-census): full 278-model bridge probe pack (runner + 3 passes + final merge)
+tmp/vision-census-evidence/pass2.jsonl	f161c62e	2026-08-05	evidence(vision-census): full 278-model bridge probe pack (runner + 3 passes + final merge)
+tmp/vision-census-evidence/pass3.jsonl	f161c62e	2026-08-05	evidence(vision-census): full 278-model bridge probe pack (runner + 3 passes + final merge)
+tmp/vision-census-evidence/vision-census-final.json	f161c62e	2026-08-05	evidence(vision-census): full 278-model bridge probe pack (runner + 3 passes + final merge)
+tmp/vision-census-evidence/vision-census-runner.mjs	f161c62e	2026-08-05	evidence(vision-census): full 278-model bridge probe pack (runner + 3 passes + final merge)
+tmp/vision-lane-probe-prompt.md	f161c62e	2026-08-05	evidence(vision-census): full 278-model bridge probe pack (runner + 3 passes + final merge)
+tmp/s7-dispatch/W5-openrouter-reasoning-fix-report.md	9259810c	2026-07-26	docs(sprint7): W5b OpenRouter reasoning fix verified LIVE report + bench-log
+tmp/s7-dispatch/W5-openrouter-reasoning-fix-prompt.txt	579d00f9	2026-07-26	feat(sprint7): W-K2 + W4-rd3 deliverables
+tmp/s7-dispatch/W6-e2e-run-prompt.txt	579d00f9	2026-07-26	feat(sprint7): W-K2 + W4-rd3 deliverables
+tmp/s7-dispatch/W7-commit-prompt.txt	579d00f9	2026-07-26	feat(sprint7): W-K2 + W4-rd3 deliverables
+tmp/s7-dispatch/W8-cleanup-prompt.txt	579d00f9	2026-07-26	feat(sprint7): W-K2 + W4-rd3 deliverables
+tmp/s7-dispatch/bench-append-kimi-k3-salvage.mjs	579d00f9	2026-07-26	feat(sprint7): W-K2 + W4-rd3 deliverables
+tmp/s7-dispatch/matrix-load-report.md	579d00f9	2026-07-26	feat(sprint7): W-K2 + W4-rd3 deliverables
+tmp/s7-dispatch/v2-success-path-e2e-REPORT.md	579d00f9	2026-07-26	feat(sprint7): W-K2 + W4-rd3 deliverables
+tmp/s7-dispatch/v2-success-path-e2e.mjs	579d00f9	2026-07-26	feat(sprint7): W-K2 + W4-rd3 deliverables
+tmp/s7-dispatch/zydit-v4-batch-smoke-report.tsv	579d00f9	2026-07-26	feat(sprint7): W-K2 + W4-rd3 deliverables
+tmp/s7-dispatch/zydit-v4-batch-smoke-summary.txt	579d00f9	2026-07-26	feat(sprint7): W-K2 + W4-rd3 deliverables
+tmp/s7-dispatch/zydit-v4-batch-smoke.mjs	579d00f9	2026-07-26	feat(sprint7): W-K2 + W4-rd3 deliverables
+tmp/s7-dispatch/bench-append-kiro-auto-v2.mjs	87000c75	2026-07-26	feat(kiro-auto-golden-goose): live dispatch SUCCESS on logfare/kiro-auto lane
+tmp/s7-dispatch/bench-append-kiro-auto.mjs	87000c75	2026-07-26	feat(kiro-auto-golden-goose): live dispatch SUCCESS on logfare/kiro-auto lane
+tmp/s7-dispatch/kiro-auto-SMOKE-REPORT.md	87000c75	2026-07-26	feat(kiro-auto-golden-goose): live dispatch SUCCESS on logfare/kiro-auto lane
+tmp/s7-dispatch/W1-SLOT-HANDLE-FIX-prompt.txt	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/s7-dispatch/W2-MATRIX-LOAD-prompt.txt	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/s7-dispatch/W3-PI-MODEL-PROVIDERS-FIX-PROPOSAL-prompt.txt	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/s7-dispatch/W4-V2-SUCCESS-PATH-E2E-prompt.txt	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/s7-dispatch/WA-WELFARE-PATCH-prompt.txt	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/s7-dispatch/bench-append-s7-redispatch.mjs	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/s7-dispatch/bench-append-s7-success.mjs	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/s7-dispatch/pi-model-providers-fix-proposal.md	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/s7-dispatch/slot-handle-fix-report.md	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/s7-dispatch/sprint7-wave1-dispatch-2026-07-26T0244.md	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/s7-dispatch/welfare-providers-ADD-patch.diff	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/s7-dispatch/welfare-providers-signup-guide.md	8b9abeff	2026-07-26	chore(sprint7): welfare-provider artifacts + bench-log + W-D pi-model-providers proposal
+tmp/normalize-overlay.mjs	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/TIER-MATRIX-VERIFY-prompt.txt	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/W3-TIER-MATRIX-MERGE-prompt.txt	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/W4-PHASE-5B-SUCCESS-PATH-prompt.txt	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/W5-PHASE-5C-OVERLAY-HEADER-PATCH-prompt.txt	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/W6-ADVERSARIAL-RE-RUN-prompt.txt	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/W7-BENCH-LOG-APPEND-prompt.txt	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/W8-SESSION-SUMMARY-prompt.txt	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/ZYDIT-SYNC-INVESTIGATE-prompt.txt	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/adversarial-re-run-report.md	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/bench-append-report.md	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/bench-append-s6-w3-w8.mjs	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/bench-append.mjs	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/matrix-merge-report.md	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/p5c-overlay-header-patch-CORRECTION-MAIN-LANE.md	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/p5c-overlay-header-patch-report.md	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/phase5b-success-path.mjs	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/session-summary-2026-07-25.md	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/tier-matrix-deep-verify-report.md	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/s6-dispatch/zydit-sync-investigate-report.md	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/v2-impl-bench-log.md	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/v2-overlay-matrix.json	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/v2-sprint3-fx/polish/phase5b-success-path-report.md	7b158883	2026-07-25	feat(v2-failover): Sprint-6 wrap-up — TIER-MATRIX-MERGE + P5C patch live-verified + bench-log + session-summary
+tmp/model-tier-matrix.json	271fe111	2026-07-25	feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation
+tmp/spec-failover-v2.md	271fe111	2026-07-25	feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation
+tmp/v2-sprint3-fx/polish/item1-integration-prep.md	271fe111	2026-07-25	feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation
+tmp/v2-sprint3-fx/polish/item3-diff-audit.md	271fe111	2026-07-25	feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation
+tmp/v2-sprint3-fx/polish/item4-memory-text.txt	271fe111	2026-07-25	feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation
+tmp/v2-sprint3-fx/polish/item5-live-smoke.jsonl	271fe111	2026-07-25	feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation
+tmp/v2-sprint3-fx/polish/p5b-integration-patch-report.md	271fe111	2026-07-25	feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation
+tmp/v2-sprint3-fx/polish/p5b-live-activation.jsonl	271fe111	2026-07-25	feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation
+tmp/v2-sprint3-fx/polish/spec-merge-report.md	271fe111	2026-07-25	feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation
+tmp/v2-sprint3-fx/scout-report.md	271fe111	2026-07-25	feat(v2-failover): Sprint-4 fix-wave landing + Sprint-5 spec gap #11 merge + Phase-5B opt-in live activation
+tmp/w53-mobile-recapture.mjs	3818ddd5	2026-07-17	chore(audit): F0-b mobile dynamic-surface re-capture script (W53)
+tmp/w35-track-2-report.md	8611b699	2026-06-17	test(w35): capture visual regression baselines
+tmp/w24-track-2-report.md	683d24f5	2026-06-17	docs(w24): add track 2 component a11y hardening report
+tmp/commit-messages-2026-06-14/worker-ticket-A2-4-mode-chips-visibility.txt	637a1dc9	2026-06-14	docs(a11y): A2 audit — 8 tickets, 7 worker prompts
+tmp/commit-messages-2026-06-14/worker-ticket-A2-5-mode-chips-roving-tabindex.txt	637a1dc9	2026-06-14	docs(a11y): A2 audit — 8 tickets, 7 worker prompts
+tmp/commit-messages-2026-06-14/worker-ticket-A2-6-add-h1-heading.txt	637a1dc9	2026-06-14	docs(a11y): A2 audit — 8 tickets, 7 worker prompts
+tmp/commit-messages-2026-06-14/worker-ticket-A2-8-search-results-arrow-keys.txt	637a1dc9	2026-06-14	docs(a11y): A2 audit — 8 tickets, 7 worker prompts
+tmp/commit-messages-2026-06-14/worker-ticket-A2-1-skip-link-main-landmark.txt	42e986d9	2026-06-14	docs(a11y): accessibility audit + 8 worker ticket prompts (Audit A2)
+tmp/commit-messages-2026-06-14/worker-ticket-A2-3-legend-roving-tabindex.txt	42e986d9	2026-06-14	docs(a11y): accessibility audit + 8 worker ticket prompts (Audit A2)
+tmp/commit-messages-2026-06-14/worker-ticket-A2-4-mode-chips-keyboard.txt	42e986d9	2026-06-14	docs(a11y): accessibility audit + 8 worker ticket prompts (Audit A2)
+tmp/commit-messages-2026-06-14/worker-ticket-A2-6-h1-heading.txt	42e986d9	2026-06-14	docs(a11y): accessibility audit + 8 worker ticket prompts (Audit A2)
+tmp/commit-messages-2026-06-14/worker-ticket-A2-7-canvas-aria-keyshortcuts.txt	42e986d9	2026-06-14	docs(a11y): accessibility audit + 8 worker ticket prompts (Audit A2)
+tmp/commit-messages-2026-06-14/worker-ticket-A2-8-keyboard-help-panel.txt	42e986d9	2026-06-14	docs(a11y): accessibility audit + 8 worker ticket prompts (Audit A2)
+tmp/opencode-smell-audit-20260605/lane-d/adapter-manifest.md	b642ff97	2026-06-05	docs(audit): add per-adapter manifest for all 10 adapter modules

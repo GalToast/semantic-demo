@@ -1,0 +1,124 @@
+===REFS::tmp/0731-trail-contract-REPORT.md===
+  tok2=test:unit`. refs=
+===REFS::tmp/audit-dive-2026-08-06.jsonl===
+  tok1={"ts":"2026-08-06T10:13:00.777Z","kind":"beat","label":"launch","at":1786011180777} refs=
+  tok2=svelte-f57lza"}} refs=
+===REFS::tmp/audit-dive-REPORT-WB.md===
+===REFS::tmp/audit-dive-bonus-2026-08-06.jsonl===
+  tok1={"ts":"2026-08-06T10:15:45.671Z","kind":"dive-visible-controls","surface":"semantic-dive","vis":[{"sel":"#btn-focus-dive","text":"Explore refs=
+  tok2=Complete","w":191,"h":44},{"sel":"#btn-inside-map","text":"Map","w":191,"h":44}]} refs=
+===REFS::tmp/audit-dive-bonus.mjs===
+===REFS::tmp/audit-dive-probe.mjs===
+  tok2='http://localhost:5174' refs=
+===REFS::tmp/audit-inside-2026-08-06.jsonl===
+  tok1={"ts":"2026-08-06T10:25:29.234Z","kind":"beat","label":"launch","at":1786011929234} refs=
+  tok2={"ts":"2026-08-06T10:25:38.050Z","kind":"battery","tag":"dive-inside","counts":{"overflow":0,"clip":15,"short":18,"noname":0},"viewport":{"VW":1440,"VH":900}} refs=
+===REFS::tmp/audit-reduced-motion.mjs===
+  tok2=reduceBlocks refs=
+===REFS::tmp/baseline-emptyband.mjs===
+  tok2=innerHeight, refs=tests/critical-visual-layout-regression.spec.js
+tests/info-panel-collapsed-render-contract.mjs
+tests/mobile-visual-qa-contract.mjs
+tests/short-landscape-layout-contract.mjs
+tests/state-matrix-sweep.spec.js
+===REFS::tmp/baseline-enc.json===
+  tok2=}\n}\n" refs=
+===REFS::tmp/btn-rule-chain.js===
+  tok2=r.style refs=src/components/MapView.svelte
+src/lib/engine/lifecycle.ts
+src/lib/engine/map-state-lifecycle.ts
+src/lib/engine/map-state.ts
+src/lib/journey/canvas-hover-preview.ts
+===REFS::tmp/btn-width-test.js===
+  tok2=resolve({ refs=scripts/benchmark-all-models.mjs
+scripts/benchmark-models.mjs
+scripts/qa-deploy-verify.mjs
+scripts/shims/cline-shim.mjs
+src/components/SpectorInspector.svelte
+===REFS::tmp/dive-slots.mjs===
+===REFS::tmp/focus-rings2.found.jsonl===
+  tok1={"ts":"2026-08-06T03:19:59.627Z","kind":"start","url":"http://localhost:5174"} refs=
+  tok2={"ts":"2026-08-06T03:22:27.357Z","kind":"done"} refs=
+===REFS::tmp/landmine-fix2-REPORT.md===
+  tok2="import('./tests/camera-motion-visual-smoke.spec.js')"` refs=
+===REFS::tmp/mobile-band-verify.mjs===
+  tok2=}).catch(()=>{}) refs=
+===REFS::tmp/parameter-property-REPORT.md===
+  tok2=cause refs=.github/workflows/ci.yml
+.subagent-prompts/PROMPT-QUALITY-IMPROVEMENTS.md
+.subagent-prompts/SUBAGENT-IMPROVEMENTS.md
+.subagent-prompts/camera-controls.md
+.subagent-prompts/explore-w1-engine-2026-06-19.md
+===REFS::tmp/probe-dead-lanes.mjs===
+===REFS::tmp/probe-dead-lanes2.mjs===
+===REFS::tmp/probe-hover6.mjs===
+  tok2=splash refs=AGENTS.md
+BODY_DATASET_IPC_AUDIT.md
+css/shell.css
+docs/archive/_wave-charters-archive-README.md
+docs/archive/journey-test-modes.md
+===REFS::tmp/probe-hub.mjs===
+===REFS::tmp/probe-inside-audit.mjs===
+  tok2='http://localhost:5174' refs=
+===REFS::tmp/probe-lib.mjs===
+===REFS::tmp/probe-live-map.mjs===
+  tok2='node:fs' refs=docs/v2-failover/adversarial/test-driver.mjs
+docs/v2-failover/integration/v2-failover-overlay.mjs
+docs/v2-failover/sprint-1/telemetry-jsonl.ts
+docs/v2-failover/sprint-3-fixed/telemetry-jsonl.ts
+qa-screenshots/bugsweep/run-audit.mjs
+===REFS::tmp/probe-micro.mjs===
+  tok2='./probe-lib.mjs' refs=
+===REFS::tmp/probe-sedge.mjs===
+  tok2='@playwright/test' refs=playwright.config.js
+tests/3d-accessibility-fallback-performance.spec.js
+tests/3d-camera-orbit-resilience.spec.js
+tests/3d-cluster-readability.spec.js
+tests/3d-data-edge-cases.spec.js
+===REFS::tmp/probe-trail-dist.mjs===
+===REFS::tmp/probe-trail-fixed.mjs===
+===REFS::tmp/rail-chain.mjs===
+===REFS::tmp/rail-reach-check.mjs===
+===REFS::tmp/rail-vs-trail.mjs===
+===REFS::tmp/sub-agent-dive-prompt.md===
+  tok2=body[data-semantic-dive] refs=docs/ops/DEPLOY_STATUS.md
+===REFS::tmp/sub-agent-emptyband-fix-prompt.md===
+  tok2=sets refs=.gitignore
+.htaccess
+.subagent-prompts/mimo-with-state-mutation-ts.md
+AGENTS.md
+ARCHITECTURE.md
+===REFS::tmp/sub-agent-freshness-fix-prompt.md===
+  tok2=plus refs=.htaccess
+.subagent-prompts/w6-fix-wave4-perf-zindex-2026-06-19.md
+ARCHITECTURE.md
+LEGACY_COMPASS_SURFACE_MIGRATION_PLAN.md
+audit/wave-10-side-effect-imports-2026-06-14.md
+===REFS::tmp/sub-agent-inside-prompt.md===
+  tok2=screenshots). refs=AGENTS.md
+===REFS::tmp/surface-contract-runner-notes.md===
+  tok2=configuration refs=.env.example
+ARCHITECTURE.md
+api/config.php
+docs/archive/agents-full-reference-2026-06-19.md
+docs/archive/bugsweep-2026-07-26.md
+===REFS::tmp/trail-debug-notes.md===
+  tok2=empirically) refs=docs/archive/bash-tool-design-review-2026-06-12.md
+===REFS::tmp/trail-diagnose.js===
+  tok2=continue refs=.subagent-prompts/mimo-contract-test-fixes.md
+.subagent-prompts/w6-fix-wave1-cleanup-2026-06-19.md
+.subagent-prompts/w6-fix-wave3-state-2026-06-19.md
+api.php
+api/guide.php
+===REFS::tmp/trail-where.mjs===
+===REFS::tmp/tray-snapshot.js===
+  tok2=document.querySelector('.focus-stage-journey') refs=tests/surface-contract-check.mjs
+===REFS::tmp/triage-worker-evidence.mjs===
+  tok2='intentional-ellipsis' refs=
+===REFS::tmp/ui-issues-report-20260804.md===
+===REFS::tmp/vision-jury-findings-20260805.md===
+  tok2=row. refs=CHANGELOG.md
+css/clusters.css
+css/mobile_premium__state.css
+css/modules/focus_stage.css
+docs/archive/_wave-charters-archive-README.md

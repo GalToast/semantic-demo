@@ -1,0 +1,18 @@
+{
+  "SOURCES-UNRELATED": {
+    "bytes": 2826814626,
+    "count": 30
+  },
+  "SEMANTIC-SCRAP": {
+    "bytes": 395074115,
+    "count": 1593
+  },
+  "SAFETY-KEEP": {
+    "bytes": 59300485,
+    "count": 4
+  },
+  "UNKNOWN": {
+    "bytes": 4126827,
+    "count": 25
+  }
+}

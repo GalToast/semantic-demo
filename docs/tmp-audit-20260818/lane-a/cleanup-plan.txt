@@ -1,0 +1,96 @@
+# tmp/ Cleanup Plan
+
+**Generated:** 2026-08-18  
+**Source:** `git ls-files tmp/` (43 tracked files)  
+**Lane-a manifest check:** No `tmp/swarm-tmp-audit-20260818/lane-a-tracked/manifest.json` found — cleanup list is the full tracked set.
+
+---
+
+## Exact git rm --cached Command
+
+Run this single command to untrack all 43 files (files stay on disk):
+
+```bash
+git rm --cached $(git ls-files tmp/)
+```
+
+Or equivalently, line-by-line:
+
+```bash
+git rm --cached \
+  tmp/0731-trail-contract-REPORT.md \
+  tmp/audit-dive-2026-08-06.jsonl \
+  tmp/audit-dive-REPORT-WB.md \
+  tmp/audit-dive-bonus-2026-08-06.jsonl \
+  tmp/audit-dive-bonus.mjs \
+  tmp/audit-dive-probe.mjs \
+  tmp/audit-inside-2026-08-06.jsonl \
+  tmp/audit-reduced-motion.mjs \
+  tmp/baseline-emptyband.mjs \
+  tmp/baseline-enc.json \
+  tmp/btn-rule-chain.js \
+  tmp/btn-width-test.js \
+  tmp/dive-slots.mjs \
+  tmp/focus-rings2.found.jsonl \
+  tmp/landmine-fix2-REPORT.md \
+  tmp/mobile-band-verify.mjs \
+  tmp/parameter-property-REPORT.md \
+  tmp/probe-dead-lanes.mjs \
+  tmp/probe-dead-lanes2.mjs \
+  tmp/probe-hover6.mjs \
+  tmp/probe-hub.mjs \
+  tmp/probe-inside-audit.mjs \
+  tmp/probe-lib.mjs \
+  tmp/probe-live-map.mjs \
+  tmp/probe-micro.mjs \
+  tmp/probe-sedge.mjs \
+  tmp/probe-trail-dist.mjs \
+  tmp/probe-trail-fixed.mjs \
+  tmp/rail-chain.mjs \
+  tmp/rail-reach-check.mjs \
+  tmp/rail-vs-trail.mjs \
+  tmp/sub-agent-dive-prompt.md \
+  tmp/sub-agent-emptyband-fix-prompt.md \
+  tmp/sub-agent-freshness-fix-prompt.md \
+  tmp/sub-agent-inside-prompt.md \
+  tmp/surface-contract-runner-notes.md \
+  tmp/trail-debug-notes.md \
+  tmp/trail-diagnose.js \
+  tmp/trail-where.mjs \
+  tmp/tray-snapshot.js \
+  tmp/triage-worker-evidence.mjs \
+  tmp/ui-issues-report-20260804.md \
+  tmp/vision-jury-findings-20260805.md
+```
+
+## Verification After Run
+
+```bash
+# Should return 0 lines
+git ls-files tmp/
+
+# Should still show 1,603 files on disk (unchanged)
+ls tmp/ | wc -l
+```
+
+## Commit Message
+
+```
+chore(tmp): untrack 43 transient probe/report artifacts
+
+All files are gitignore'd (tmp/ in .gitignore since repo creation).
+None are referenced by tracked code (git grep -F verified).
+Durable evidence lives in docs/; transient probes belong on disk only.
+```
+
+## Optional One-Command Sweep for Stales (Post-Policy)
+
+```bash
+# Find and untrack all tmp/ files older than 7 days
+git rm --cached $(git ls-files tmp/ | xargs -I{} sh -c 'git log -1 --format=%ad --date=short -- {} 2>/dev/null | grep -q "^2026-0[1-7]" && echo {}')
+```
+
+Or simply:
+```bash
+git rm --cached $(git ls-files tmp/)
+```

@@ -1,0 +1,43 @@
+COMMIT::tmp/0731-trail-contract-REPORT.md::ad4f7ee4 2026-08-09 test(a11y): make trail-review overlay focus contract runnable as a vitest suite
+COMMIT::tmp/audit-dive-2026-08-06.jsonl::dcbfb558 2026-08-06 evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+COMMIT::tmp/audit-dive-REPORT-WB.md::dcbfb558 2026-08-06 evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+COMMIT::tmp/audit-dive-bonus-2026-08-06.jsonl::dcbfb558 2026-08-06 evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+COMMIT::tmp/audit-dive-bonus.mjs::dcbfb558 2026-08-06 evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+COMMIT::tmp/audit-dive-probe.mjs::dcbfb558 2026-08-06 evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+COMMIT::tmp/audit-inside-2026-08-06.jsonl::dcbfb558 2026-08-06 evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+COMMIT::tmp/audit-reduced-motion.mjs::447b6a7d 2026-08-05 tool: reduce-motion keyframe audit (43 keyframes, 0 gaps after gate fixes) — reusable regression check
+COMMIT::tmp/baseline-emptyband.mjs::7f96a41c 2026-08-06 docs(ui): lane-parking clear — W3 empty-band verified (206→100px) + freshness landed + worker steering lesson
+COMMIT::tmp/baseline-enc.json::7f96a41c 2026-08-06 docs(ui): lane-parking clear — W3 empty-band verified (206→100px) + freshness landed + worker steering lesson
+COMMIT::tmp/btn-rule-chain.js::02fe82bc 2026-08-06 tool(probes): trail-button diagnostics (width A/B, rule-chain, tray snapshot) — reusable via probe-hub eval op
+COMMIT::tmp/btn-width-test.js::02fe82bc 2026-08-06 tool(probes): trail-button diagnostics (width A/B, rule-chain, tray snapshot) — reusable via probe-hub eval op
+COMMIT::tmp/dive-slots.mjs::dcbfb558 2026-08-06 evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+COMMIT::tmp/focus-rings2.found.jsonl::7202db65 2026-08-05 docs(ui-sweep): extreme-viewport + long-name + empty-state corners clean; probe-lib tooling; fade-in reduced-motion gap fixed earlier commit
+COMMIT::tmp/landmine-fix2-REPORT.md::5a3ab701 2026-08-11 fix(tests): bridge-rewire 19 static @lib imports (the landmine class)
+COMMIT::tmp/mobile-band-verify.mjs::7f96a41c 2026-08-06 docs(ui): lane-parking clear — W3 empty-band verified (206→100px) + freshness landed + worker steering lesson
+COMMIT::tmp/parameter-property-REPORT.md::6c600b78 2026-08-11 fix(engine): strip-mode compatibility — data-store DerivedRuneStore parameter-property → explicit-field (https://aria-sync-contract + probe lifecycle import)
+COMMIT::tmp/probe-dead-lanes.mjs::f0840f81 2026-08-06 docs(lanes): verified-dead lane probe table (401/402/403/404 vs 429-live controls) + probe method note — do NOT prune config (map != deadness)
+COMMIT::tmp/probe-dead-lanes2.mjs::f0840f81 2026-08-06 docs(lanes): verified-dead lane probe table (401/402/403/404 vs 429-live controls) + probe method note — do NOT prune config (map != deadness)
+COMMIT::tmp/probe-hover6.mjs::ecadebd6 2026-08-05 docs(ui-sweep): live-map geometry clean, micro-interaction findings = false positives (state-verification lesson), perf static-clean; probes committed
+COMMIT::tmp/probe-hub.mjs::23d9aa3c 2026-08-06 tool(probe-hub): persistent Playwright page server on :8911 — reuse warm pages, probe cycles <10s instead of 60-90s cold boots; ops: searchNames/state/motionHost/route
+COMMIT::tmp/probe-inside-audit.mjs::dcbfb558 2026-08-06 evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+COMMIT::tmp/probe-lib.mjs::7202db65 2026-08-05 docs(ui-sweep): extreme-viewport + long-name + empty-state corners clean; probe-lib tooling; fade-in reduced-motion gap fixed earlier commit
+COMMIT::tmp/probe-live-map.mjs::ecadebd6 2026-08-05 docs(ui-sweep): live-map geometry clean, micro-interaction findings = false positives (state-verification lesson), perf static-clean; probes committed
+COMMIT::tmp/probe-micro.mjs::ecadebd6 2026-08-05 docs(ui-sweep): live-map geometry clean, micro-interaction findings = false positives (state-verification lesson), perf static-clean; probes committed
+COMMIT::tmp/probe-sedge.mjs::7202db65 2026-08-05 docs(ui-sweep): extreme-viewport + long-name + empty-state corners clean; probe-lib tooling; fade-in reduced-motion gap fixed earlier commit
+COMMIT::tmp/probe-trail-dist.mjs::02fe82bc 2026-08-06 tool(probes): trail-button diagnostics (width A/B, rule-chain, tray snapshot) — reusable via probe-hub eval op
+COMMIT::tmp/probe-trail-fixed.mjs::7dd6ab16 2026-08-06 fix(ui): trail Prev/Next buttons clipped their labels at desktop — global .focus-stage-action-btn flex:1 1 0 + flex-basis-auto resolving to the clipped content box squeezed them to 54px. Fix: scoped .trail-btn width:max-content + flex:0 0 auto. Verified live (100px scroll==client, no clip) + shipped in dist CSS.
+COMMIT::tmp/rail-chain.mjs::dcbfb558 2026-08-06 evidence(delegate): dive/inside surface audits — Worker B VERDICT NONE + 5 obs; Worker A/rail-chain caught the neighbor-rail 3px collapse (fixed); probes committed
+COMMIT::tmp/rail-reach-check.mjs::024b56f3 2026-08-06 test(ui): rail-width regression in dive journey test — neighbor buttons must be ≥120px on semantic-dive (was 3px collapse); passes on fixed dist, guards the grid-column fix
+COMMIT::tmp/rail-vs-trail.mjs::af949871 2026-08-06 docs(ui-sweep): rail grid-column fix collision-verified across focus/trail/dive — trail controls live in .focus-stage-auxiliary-surfaces, no overlap; probes committed
+COMMIT::tmp/sub-agent-dive-prompt.md::089d0017 2026-08-06 tool(probes): inside/dive surface audit worker prompts (read-only, rubric + sentinel + timeouts)
+COMMIT::tmp/sub-agent-emptyband-fix-prompt.md::be585c9e 2026-08-06 tool(probes): lane-parking clear prompts (empty-band fix + orphaned freshness commit) — dispatched, lane offline, claim-eligible
+COMMIT::tmp/sub-agent-freshness-fix-prompt.md::be585c9e 2026-08-06 tool(probes): lane-parking clear prompts (empty-band fix + orphaned freshness commit) — dispatched, lane offline, claim-eligible
+COMMIT::tmp/sub-agent-inside-prompt.md::089d0017 2026-08-06 tool(probes): inside/dive surface audit worker prompts (read-only, rubric + sentinel + timeouts)
+COMMIT::tmp/surface-contract-runner-notes.md::eaffb497 2026-08-06 docs(qa): surface-contract runner broken — silent exit after 'Starting mobile-idle' in all 4 invocation variants; qa:contract signal untrustworthy until fixed
+COMMIT::tmp/trail-debug-notes.md::7dd6ab16 2026-08-06 fix(ui): trail Prev/Next buttons clipped their labels at desktop — global .focus-stage-action-btn flex:1 1 0 + flex-basis-auto resolving to the clipped content box squeezed them to 54px. Fix: scoped .trail-btn width:max-content + flex:0 0 auto. Verified live (100px scroll==client, no clip) + shipped in dist CSS.
+COMMIT::tmp/trail-diagnose.js::02fe82bc 2026-08-06 tool(probes): trail-button diagnostics (width A/B, rule-chain, tray snapshot) — reusable via probe-hub eval op
+COMMIT::tmp/trail-where.mjs::af949871 2026-08-06 docs(ui-sweep): rail grid-column fix collision-verified across focus/trail/dive — trail controls live in .focus-stage-auxiliary-surfaces, no overlap; probes committed
+COMMIT::tmp/tray-snapshot.js::02fe82bc 2026-08-06 tool(probes): trail-button diagnostics (width A/B, rule-chain, tray snapshot) — reusable via probe-hub eval op
+COMMIT::tmp/triage-worker-evidence.mjs::46f3ad6d 2026-08-06 tool(probes): evidence triage harness — auto-dismiss sr-only/ellipsis/off-canvas, list real worker findings
+COMMIT::tmp/ui-issues-report-20260804.md::d81f0beb 2026-08-06 docs(ui): archive ui-issues-report-20260804 as closed — every item worked through across 08-04→08-06 wave
+COMMIT::tmp/vision-jury-findings-20260805.md::ee3300f5 2026-08-05 docs(vision-jury): V1-V4/V17/V18 all re-verified FIXED live (contrast 16.5:1, no clips; chip fix 6a8f0088 closed the sweep's one real find)
