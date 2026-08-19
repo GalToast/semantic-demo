@@ -591,8 +591,14 @@ export function setLeadEnrichmentData(enrichment: Record<string, LeadEnrichment>
             const enr = enrichment[String(rec.lead_id)]
             if (!enr) continue
             const applied = applyThinRowEnrichment(rec.what, rec.naics ?? null, enr)
-            if (applied.what !== rec.what) { rec.what = applied.what; changed = true }
-            if (applied.naics !== (rec.naics ?? null)) { rec.naics = applied.naics; changed = true }
+            if (applied.what !== rec.what) {
+                rec.what = applied.what
+                changed = true
+            }
+            if (applied.naics !== (rec.naics ?? null)) {
+                rec.naics = applied.naics
+                changed = true
+            }
         }
         if (changed) businessRecords.set(records)
     }

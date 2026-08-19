@@ -1,8 +1,41 @@
 # Changelog
 
-All notable changes to the semantic explorer are documented here. Each entry corresponds to a deployed bundle on `mccullough.cloud/semantic-demo`. For full per-session narrative (decisions, residual seams, design context), see `DEPLOY_STATUS.md`.
+All notable changes to the semantic explorer are documented here. Each entry corresponds to a deployed bundle on `mccullough.cloud/semantic-demo`. For full per-session narrative (decisions, residual seams, design context), see `docs/ops/DEPLOY_STATUS.md` (stale after 2026-06-03).
 
 Format: `[YYYY-MM-DD] — Bundle vN — short description`
+
+> **Revival note (2026-08-18):** bundle numbering lapsed after v132 (2026-06-04); 3,641 commits shipped since without changelog entries. The entries below recover the major waves from git history, grouped by phase. Bundle numbers for the post-June era were not tracked, so entries use phase labels instead. Per-session narrative lives in `docs/ops/DEPLOY_STATUS.md` (stale after 2026-06-03) and the wave dossiers in `docs/`.
+
+## [2026-08-18] — Phase S4/S5 — Data enrichment, mobile posture, and the 3D/columnar wave
+
+**The current era.** August shipped the data-quality and mobile work that had been living as "options docs" since June, plus a heavy 3D/engine and performance wave.
+
+- **Data enrichment (S4):** thin-row enrichment merge + identity-preserving hydration — snapshot/NAICS rescue on demand, no more wholesale record replacement. `docs/feature-depth-enrichment-options.md` (GO verdict) + `docs/feature-depth-option3-backfill.md` landed as shipped plans.
+- **Mobile posture (S5):** honest "mobile preview" placeholder copy replaces the old misleading text; capability-gated 3D auto-enter built and **flipped to default-ON** (opt-out via `VITE_S5_AUTO_ENTER_3D=0`) on 2026-08-19 — capable phones now cold-load the 3D scene, SwiftShader/low-memory/reduced-motion devices keep the placeholder + CTA. D3 phone-farm acceptance runbook committed; real-handset smoke remains the pre-release gate. `docs/feature-depth-mobile-posture.md`.
+- **Columnar data (TDBU):** the 100,872-pair manifest-contract bin flipped to a columnar format — UI bin 93% smaller, wired into loader+worker+ensure, label-plane decode restored (parseTdbU strtab).
+- **3D/engine:** dual-write bridge migration finished; journey demo cleanup; lazy-loading of InfoPanel/JourneyChrome/Placeholder2D/FocusCard for the CSS budget; 7 orphaned CSS rules removed; resource-tracking + disposal hygiene contracts.
+- **Perf campaign:** Lighthouse re-seed (mobile 35 / desktop 74), elephant campaign closed (module-share saturation), compressed `.br`/`.gz` data twins served in test-server, data-compression CI gate.
+- **Infra:** qa:serve persistent static server, deploy-verify `--via-origin` mode, prod-root align script, dist-integrity split-brain gate, check:journey tripwire suite.
+- **Housekeeping:** test-sprawl consolidation (38 swarm scratch files untracked, tmp/ hygiene policy), AGENTS.md demo-ghost claims removed, 19 previously-untested Svelte components covered (245 tests).
+
+## [2026-07-31] — Phase W — Stabilization, onboarding, and subagent routing
+
+- **Onboarding:** auto-open help dialog on first visit; demo-replay journey test; relationship context surfaced in FocusCard.
+- **State validation:** 6 phase machines wired into the dev nested audit (W66); state-validation.ts runtime safety net.
+- **Engine/state decomposition:** three-engine init/frame-update/store-sync concerns extracted into focused modules; 13 focus fields + 20 search fields partitioned into sub-aggregates (Phase 6b/6c).
+- **Subagent routing:** heavy wave of model-route probes + benchmarks (waves 18-27); lane inventory rotated; logfare route later found DEAD (2026-08-19) with opencode-zen verified as the free route.
+- **QA:** persistent qa:serve static server; visual-audit runner repair; reduced-motion coverage contracts.
+
+## [2026-06-30] — Phase 1.4–7 — JS→TS + Svelte 5 migration wave
+
+**The migration era.** The vanilla-JS app moved to TypeScript + Svelte 5 in a multi-wave effort.
+
+- **Wave 15 / Phase 1.4:** CSS ownership cleanup, stale doc fixes, TS port surface, Svelte scaffold; orphan islands and dead `.ts` shadows deleted.
+- **Svelte 5 islands:** search + filter chrome migrated (the v132 work above); more islands followed the same pattern.
+- **State class migration:** `state.js` → typed sub-aggregates (searchState, focusState, viewportState); state-validation.ts runtime safety net (Phase 6a).
+- **Legacy coexistence:** both-pattern `.js` shadows retired to `legacy-reference/`; `@legacy/*` runtime stubs + bridge modifications for full coverage; legacy bridge remains load-bearing (see AGENTS.md).
+- **Camera-choreography / lifecycle / micro-demo** decomposed into focused modules; demo engine later fully swept (2026-08-14).
+- **Test determinism:** 441 `page.waitForTimeout` calls replaced with deterministic waits; bulk `as-any` cast removal across 25+ files; all 48 unused var/import/interface warnings eliminated.
 
 ## [2026-06-04] — Bundle v132 — Filter + search chrome migrated to Svelte 5 islands
 

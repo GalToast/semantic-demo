@@ -252,6 +252,13 @@ async function createAuditPage(browser, options = {}) {
     })
     await page.addInitScript(() => {
         window.__semanticDemoProd = true
+        // W6-T1: the gesture monitor (wait-for-gesture.ts) calls
+        // isAutomatedBrowserSession() at INSTALL time (during app init, inside
+        // page.goto). Setting __PLAYWRIGHT__ here — before load — lets it
+        // auto-fire the gesture gate. Setting it later in waitForReady (after
+        // goto) is too late: the monitor already installed without the flag and
+        // waits forever for a real gesture in headed mode.
+        window.__PLAYWRIGHT__ = true
     })
     page.on('console', (msg) => {
         console.log(`[Browser Console] [${msg.type()}] ${msg.text()}`)
@@ -310,28 +317,39 @@ async function waitForReady(page, label = 'unknown') {
         }
     })
 
-    console.log(`[waitForReady:${label}] Waiting for WebGL state...`)
-    await page
-        .waitForFunction(
-            (mustUseWebgl) => {
-                const state = window.__APP_STATE__ ?? window.__TEST_STATE__
-                const canvas = document.querySelector('#canvas-container canvas')
-                if (!canvas) return false
-                const mode = document.body.dataset.graphicsMode
-                if (mode === 'fallback') return !mustUseWebgl // resolved via fallback only outside strict headed runs
-                if (mode !== 'webgl') return false
-                if (!state?.renderer || !state?.scene || !state?.camera) return false
-                if (!state?.pointsMesh?.geometry?.attributes?.position?.count) return false
-                return true
-            },
-            requireWebgl,
-            { timeout: 30000 }
-        )
-        .then(() => console.log(`[waitForReady:${label}] WebGL/fallback state resolved`))
-        .catch((err) => {
-            console.log(`[waitForReady:${label}] WebGL state timeout/failed: ${err.message}`)
-            if (requireWebgl) throw err
-        })
+    // W6-T1: software-WebGL context creation is probabilistic under load — this
+    // box runs 3+ concurrent Pi sessions, so the first init attempt can take
+    // longer than a 30s window. Use a single generous timeout (90s) instead of
+    // retries: the engine's 8s safety valve fires `onGraphicsStateChange('fallback')`
+    // when init hangs, so the wait resolves at ~8s when the valve works. A retry
+    // with page reload destabilizes the browser under contention (crashed the
+    // whole run with a stack overflow on the first reload), so one long window
+    // is both safer and sufficient.
+    const webglWait = () =>
+        page
+            .waitForFunction(
+                (mustUseWebgl) => {
+                    const state = window.__APP_STATE__ ?? window.__TEST_STATE__
+                    const canvas = document.querySelector('#canvas-container canvas')
+                    if (!canvas) return false
+                    const mode = document.body.dataset.graphicsMode
+                    if (mode === 'fallback') return !mustUseWebgl // resolved via fallback only outside strict headed runs
+                    if (mode !== 'webgl') return false
+                    if (!state?.renderer || !state?.scene || !state?.camera) return false
+                    if (!state?.pointsMesh?.geometry?.attributes?.position?.count) return false
+                    return true
+                },
+                requireWebgl,
+                { timeout: 90000 }
+            )
+            .then(() => console.log(`[waitForReady:${label}] WebGL/fallback state resolved`))
+
+    try {
+        await webglWait()
+    } catch (err) {
+        console.log(`[waitForReady:${label}] WebGL state timeout/failed: ${err.message}`)
+        if (requireWebgl) throw err
+    }
 
     console.log(`[waitForReady:${label}] Waiting timeout 2200ms...`)
     await page

@@ -107,7 +107,9 @@ test.describe('Journey smoke (no WebGL engine)', () => {
 
     test('W54 visual audit: map back button returns to overview from ?view=map deep-link', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map&webgl=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map&webgl=1`, {
+            waitUntil: 'domcontentloaded'
+        })
 
         await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'map', null, {
             timeout: 10000,
@@ -212,10 +214,14 @@ test.describe('Journey smoke (no WebGL engine)', () => {
         // racing the auto-open $effect. So on automated runs just wait for the
         // dialog. A real gesture session would click the CTA, but this test runs
         // headless by design (webgl=1 forces the webgl render kind).
-        await page.waitForFunction(
-            () => !!document.querySelector('dialog.help-dialog[open]') || document.body?.dataset?.sceneReady === 'true',
-            { timeout: 20000, polling: 100 },
-        ).catch(() => {})
+        await page
+            .waitForFunction(
+                () =>
+                    !!document.querySelector('dialog.help-dialog[open]') ||
+                    document.body?.dataset?.sceneReady === 'true',
+                { timeout: 20000, polling: 100 }
+            )
+            .catch(() => {})
 
         // Wait for engineReady + the dialog to be [open] in the DOM.
         // The auto-open $effect runs synchronously after engineReady.value flips,

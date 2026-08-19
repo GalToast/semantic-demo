@@ -21,7 +21,7 @@ const FILES = [
     '../../src/components/TrailControls.svelte',
     '../../src/components/WalkBreadcrumb.svelte',
     '../../src/components/JourneyCompass.svelte',
-    '../../src/lib/orchestration/compass-controller.ts',
+    '../../src/lib/orchestration/compass-controller.ts'
 ].map((p) => resolve(__dirname, p))
 
 const FORBIDDEN = ['semantic', 'mycelium', 'signal']
@@ -44,7 +44,7 @@ const EXCLUDE_LITERALS = new Set([
     'signalReady',
     'engineReady',
     'semantics',
-    '@lib/story/engine-ready.svelte',
+    '@lib/story/engine-ready.svelte'
 ])
 
 function readAll(): string {
@@ -69,9 +69,7 @@ function* extractLiterals(src: string): Generator<string> {
         // For template literals, strip embedded expressions so we only test the
         // rendered text (conditions/internal-state values like 'semantic' are
         // excluded, but real copy between expressions is still checked).
-        const rendered = quote === '\`'
-            ? inner.replace(/\$\{[^}]*\}/g, '')
-            : inner
+        const rendered = quote === '\`' ? inner.replace(/\$\{[^}]*\}/g, '') : inner
         yield rendered
     }
 }

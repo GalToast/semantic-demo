@@ -133,7 +133,9 @@ describe('A11y W42-B: Search results live announcement', () => {
         // Anchor to the live container tag — the legacy comment pin also
         // contains role="list" as text.
         const resultListSrc = read(SEARCH_RESULT_LIST)
-        expect(resultListSrc).toMatch(/id="search-result-list"[^>]*role="list"[^>]*aria-label="Search result businesses"/)
+        expect(resultListSrc).toMatch(
+            /id="search-result-list"[^>]*role="list"[^>]*aria-label="Search result businesses"/
+        )
     })
 
     it('result list has aria-keyshortcuts', () => {

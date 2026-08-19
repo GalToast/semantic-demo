@@ -1,6 +1,6 @@
 # S5 — Mobile Posture Decision (feature-depth audit, 2026-08-19)
 
-**Status:** DRAFT for owner decision · **Owner:** product (user) · **Author:** pi-main-lane
+**Status:** DECIDED — Option B shipped (flag ON 2026-08-19, opt-out) · **Owner:** product (user) · **Author:** pi-main-lane
 
 ## Current state (measured)
 
@@ -57,10 +57,21 @@ mid-tier handset (phone-farm, chrome-devtools protocol — patterns in
 
 Acceptance bar: LCP ≤ 2.5s on mid-tier; 60s of parked-and-panning shows zero black/blank
 frames (CDP video capture); thermal stays in normal range; a 2GB / reduced-motion device
-stays on placeholder (probe false). Flip = rebuild prod with env var; re-run
-`tests/mobile-placeholder-journey.spec.js` + the W51/W54/W55 journey specs on the
-flipped build before release. (D2 copy already shipped in the flag-OFF default: the
-placeholder copy is honest today regardless.)
+stays on placeholder (probe false).
+
+## Flip status (2026-08-19)
+
+**FLIPPED.** `S5_AUTO_ENTER_AFTER` is now default-ON (opt-out via `VITE_S5_AUTO_ENTER_3D=0`)
+in `src/lib/orchestration/responsive-renderer.ts`. A normal `npm run build` (what
+deploy.ps1 runs) ships the capability-gated auto-enter. The capability probe
+(`supportsCapableWebGL`) remains the real gate — SwiftShader/low-memory/reduced-motion
+devices still land on the placeholder + CTA, so the mobile journey specs stay green in
+headless (probe returns false there).
+
+Remaining pre-release gate per the D3 runbook above: a **real-phone smoke** (phone-farm,
+CDP) proving P95 LCP ≤ 2.5s on a mid-tier handset + zero black/blank frames + normal
+thermal. Until that runs, the flip is shipped-code but not release-certified — watch the
+first real-handset run. (D2 copy is honest regardless.)
 
 ## Owners
 

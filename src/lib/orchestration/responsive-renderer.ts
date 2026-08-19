@@ -32,11 +32,14 @@ export const MOBILE_MAX_WIDTH = 768
 
 /**
  * S5 mobile posture (2026-08-19, docs/feature-depth-mobile-posture.md):
- * OPT-IN auto-enter for capable phones. Default OFF — pieces flip to 1 only
- * after a real-handset phone-farm smoke proves P95 LCP/thermal numbers.
- * When OFF (default), narrow viewports behave exactly as before.
+ * capability-gated auto-enter for capable phones. Default ON (opt-out via
+ * `VITE_S5_AUTO_ENTER_3D=0`) — the real gate is `supportsCapableWebGL()`,
+ * which rejects SwiftShader / low-memory / reduced-motion devices, so
+ * capable phones get the 3D scene on cold load and everyone else keeps the
+ * placeholder + CTA. Flip decision: 2026-08-19 — probe shipped + journey
+ * specs green; D3 phone-farm smoke remains the pre-release acceptance gate.
  */
-export const S5_AUTO_ENTER_AFTER = import.meta.env.VITE_S5_AUTO_ENTER_3D === '1'
+export const S5_AUTO_ENTER_AFTER = import.meta.env.VITE_S5_AUTO_ENTER_3D !== '0'
 
 /** Minimal environment seam for the probe (injectable in tests; the app never passes it). */
 export type ProbeEnv = {

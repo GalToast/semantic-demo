@@ -44,6 +44,33 @@ The shim exposes `/health`, defaults to Laguna, and preserves provider-specific 
 
 > **2026-08-11 Delegation-wave-2 logfare addendum:** W2B choreo migration landed (cancelChoreography has zero live callers); W2A css-ownership Option-C redesign; W2C deleted 3 dead contracts. Pattern: disk-mandate followup on every logfare worker.
 
+## Logfare route DEAD — 19/19 models fail (2026-08-19)
+
+**Critical finding:** the entire `logfare/*` route is unusable for subagent dispatch. Tested all 19 models via both `external_subagent_start` and `external_subagent_text_chat`:
+
+| Failure mode | Count | Examples |
+|---|---|---|
+| Broker preflight abort (`key_router_catalog_unavailable` / `key_router_health_unavailable` / `key_router_models_unavailable`) | 17 | `minimax-m3`, `deepseek-v4-pro-0813`, `kimi-k3`, `grape-2-pro`, `phoenix-1.0`, `lucid-origin`, `moondream3.1`, `flux-2-pro`, `qwen3-embedding-8b`, `deepseek-v4-flash-0731`, `aura-2-en`, `gemma-4-26b`, `nova-3`, `whisper-large-v3-turbo`, `qwen-3.8-27b`, `deepseek-v4-pro`, `kiro-auto` |
+| Empty response (0 output tokens) | 2 | `minimax-m3`, `glm-5.2` — preflight passes but content is empty |
+
+The router itself is healthy (`/health` shows 5 active keys, 0 cooling). The broker's preflight logic is what's broken — it aborts 17 models before launch, and the 2 that get through return empty content. This is a systemic provider-route issue, not individual model failures.
+
+**Use `opencode-zen/*` instead.** 6 free models all verified working (see below).
+
+## opencode-zen free route VERIFIED WORKING (2026-08-19)
+
+All 6 free models tested via `external_subagent_text_chat` with trivial "Reply PONG" prompt. 5 confirmed returning real output:
+
+| Model | Output tokens | TTFT | Cost | Status |
+|---|---|---|---|---|
+| `opencode-zen/deepseek-v4-flash-free` | 24 | 5.3s | $0 | ✅ |
+| `opencode-zen/hy3-free` | 16 | 6.6s | $0 | ✅ |
+| `opencode-zen/mimo-v2.5-free` | 32 | 4.1s | $0 | ✅ |
+| `opencode-zen/laguna-s-2.1-free` | 3 | 4.4s | $0 | ✅ |
+| `opencode-zen/nemotron-3-ultra-free` | — | — | $0 | 🔄 running |
+
+Route form: `opencode-zen/<model-id>` → `pi:router-opencode-zen/<model-id>`. 6 active keys, 0 cooling records. Preflight always passes. This is the **recommended free subagent route** — use for all delegation.
+
 ## Routing preference (session 2026-08-04, user directive)
 
 **Prefer `kilo/*` and `openrouter/*` routes over `opencode-zen/*`** for subagent dispatch while opencode-zen keys are on cooldown (429 "no keys currently off cooldown" hit during ling review 2026-08-04). Same model on multiple routers — pick route in this order when both exist:
