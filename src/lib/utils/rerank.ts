@@ -15,6 +15,7 @@
 import type { SearchResult } from '@lib/types/state'
 import { debugWarn } from '@lib/utils/debug'
 import { getEnvFlag } from '@lib/utils/env-flag'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -102,8 +103,8 @@ export async function rerankResults(
 
     // Fetch with timeout via AbortController.
     const controller = new AbortController()
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+    const reg = new DisposableRegistry({ label: 'rerank' })
+    const timeoutId = reg.schedule(timeoutMs, () => controller.abort())
 
     try {
         const apiKey = getNimApiKey()
@@ -161,6 +162,7 @@ export async function rerankResults(
         return results
     } finally {
         clearTimeout(timeoutId)
+        reg.disposeAll()
     }
 }
 

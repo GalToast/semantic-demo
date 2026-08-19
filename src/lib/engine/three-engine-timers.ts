@@ -9,6 +9,7 @@
  */
 
 import { engineState } from './three-engine-state'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Module-level constants ──────────────────────────────────────────────────
 
@@ -44,8 +45,10 @@ function animate(): void {
 
 export function yieldToBrowser(_timeoutMs = 50): Promise<void> {
     if (typeof window === 'undefined') return Promise.resolve()
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    return new Promise<void>((resolve) => setTimeout(resolve, 0))
+    return new Promise<void>((resolve) => {
+        const reg = new DisposableRegistry({ label: 'three-engine-timers-yield' })
+        reg.schedule(0, resolve)
+    })
 }
 
 export function scheduleNextAnimationFrame(continuous: boolean): void {
