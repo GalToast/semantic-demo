@@ -7,10 +7,24 @@
 export interface TdbNode {
     lead_id: number
     signal_score: number
-    neighbors: Array<{ lead_id: number; score: number; sem: number; flags: number }>
+    neighbors: Array<{
+        lead_id: number
+        score: number
+        sem: number
+        flags: number
+        // label plane — the shared worker mapper reads these snake names:
+        semantic_score?: number
+        bridge_score?: number
+        signal_score?: number
+        same_city?: boolean
+        same_status?: boolean
+        thread_type?: string
+        relationship_role?: string
+        relationship_axis?: string
+    }>
 }
 
-type NodeMap = Record<string, TdbNode>
+type NodeMap = Map<string, TdbNode>
 
 export function parseTdb(buffer: ArrayBuffer): { nodes: NodeMap; count: number } {
     const bytes = new Uint8Array(buffer)
@@ -36,7 +50,7 @@ export function parseTdb(buffer: ArrayBuffer): { nodes: NodeMap; count: number }
                 lead_id: dv.getUint32(o, true),
                 score: dv.getFloat32(o + 4, true),
                 sem: dv.getFloat32(o + 8, true),
-                flags: bytes[o + 12]
+                flags: bytes[o + 12] ?? 0
             })
             o += 13
         }
@@ -82,7 +96,7 @@ export function parseTdbU(buffer: ArrayBuffer): { nodes: Map<string, TdbNode>; c
         o += 2
         const neighbors: TdbNode['neighbors'] = []
         for (let k = 0; k < n && o + 27 <= buffer.byteLength; k++) {
-            const flags = bytes[o + 20]
+            const flags = bytes[o + 20] ?? 0
             neighbors.push({
                 lead_id: dv.getUint32(o, true),
                 score: dv.getFloat32(o + 4, true),

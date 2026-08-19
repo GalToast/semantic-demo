@@ -415,7 +415,7 @@ async function handleLoadThreads(
                 if (artifactName.endsWith('.bin')) {
                     const binBuf = await response.arrayBuffer()
                     const bytes = new Uint8Array(binBuf)
-                    const magic = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3])
+                    const magic = String.fromCharCode(bytes[0] ?? 0, bytes[1] ?? 0, bytes[2] ?? 0, bytes[3] ?? 0)
                     const { nodes } = magic === 'TDBU' ? parseTdbU(binBuf) : parseTdb(binBuf)
                     const nodesRecord: Record<string, unknown> = {}
                     for (const [leadId, node] of nodes) {
