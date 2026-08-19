@@ -91,9 +91,7 @@ export function bindSuggestionControls(): void {
             btn.textContent = 'Finding...'
         }
 
-        _registry.timer(
-            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup, wrapped by _registry.timer
-            setTimeout(() => {
+        _registry.schedule(0, () => {
                 const eligible = _getEligiblePoints()
                 if (!eligible.length) {
                     const summaryEl = document.getElementById('summary-text')
@@ -126,7 +124,6 @@ export function bindSuggestionControls(): void {
                     focusOnNode(idx, { fromCanvasNode: true })
                 }
             })
-        )
     }
 
     bindClick('btn-launch', focusRandomBusiness, { optional: true })
@@ -150,8 +147,7 @@ export function bindSuggestionControls(): void {
                 if (btn) {
                     btn.classList.add('shake')
                     btn.title = 'Select a business first'
-                    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-                    _registry.timer(setTimeout(() => btn.classList.remove('shake'), 400))
+                    _registry.schedule(400, () => btn.classList.remove('shake'))
                 }
                 return
             }
@@ -170,8 +166,7 @@ export function bindSuggestionControls(): void {
                 if (btn) {
                     btn.classList.add('shake')
                     btn.title = 'Select a business first'
-                    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-                    _registry.timer(setTimeout(() => btn.classList.remove('shake'), 400))
+                    _registry.schedule(400, () => btn.classList.remove('shake'))
                 }
                 return
             }
