@@ -27,7 +27,8 @@ const _prefersReducedMotion = vi.hoisted(() => vi.fn())
 const _engineStateProxy = vi.hoisted(() => ({
     lastHoveredNode: null as number | null,
     hoverEmissiveFlash: 0,
-    state: null as null | Record<string, any>
+    state: null as null | Record<string, any>,
+    focusPocket: null as { applyFocusPocketBreathing?: (dt: number) => boolean; getFocusPocketMotionByIndex?: () => Map<number, unknown> } | null
 }))
 
 // ── Trackable webglContext proxy ──────────────────────────────────────────────
@@ -35,7 +36,9 @@ const _engineStateProxy = vi.hoisted(() => ({
 const _webglContextProxy = vi.hoisted(() => ({
     pointsMaterial: null as any,
     nodeSporeMaterial: null as any,
-    myceliumGroup: null as any
+    myceliumGroup: null as any,
+    nodeSporeMesh: null as any,
+    pointsMesh: null as any
 }))
 
 // ── Module mocks ─────────────────────────────────────────────────────────────
@@ -423,8 +426,7 @@ describe('updateMyceliumPulse (A12)', () => {
     it('sets myceliumGroup.visible from shouldRenderThreads return', () => {
         _shouldRenderThreads.mockReturnValue(true)
         const state = { pulsePhase: 0, weather: { windSpeed: 8.0 } }
-        // @ts-ignore — harness: test uses minimal weather shape
-        const visible = updateMyceliumPulse(state)
+        const visible = updateMyceliumPulse(state as any)
         expect(visible).toBe(true)
         expect(myceliumGroup.visible).toBe(true)
     })
@@ -432,8 +434,7 @@ describe('updateMyceliumPulse (A12)', () => {
     it('hides myceliumGroup when shouldRenderThreads returns false', () => {
         _shouldRenderThreads.mockReturnValue(false)
         const state = { pulsePhase: 0, weather: { windSpeed: 8.0 } }
-        // @ts-ignore — harness: test uses minimal weather shape
-        const visible = updateMyceliumPulse(state)
+        const visible = updateMyceliumPulse(state as any)
         expect(visible).toBe(false)
         expect(myceliumGroup.visible).toBe(false)
     })
@@ -441,8 +442,7 @@ describe('updateMyceliumPulse (A12)', () => {
     it('advances pulsePhase by (0.015 * (0.6 + wind/15)) for normal motion', () => {
         _shouldRenderThreads.mockReturnValue(false)
         const state = { pulsePhase: 0, weather: { windSpeed: 7.5 } }
-        // @ts-ignore — harness: test uses minimal weather shape
-        updateMyceliumPulse(state)
+        updateMyceliumPulse(state as any)
         // basePulseSpeed = 0.015, windSpeed = 7.5
         // increment = 0.015 * (0.6 + 7.5/15) = 0.015 * (0.6 + 0.5) = 0.015 * 1.1 = 0.0165
         expect(state.pulsePhase).toBeCloseTo(0.0165, 6)
@@ -452,8 +452,7 @@ describe('updateMyceliumPulse (A12)', () => {
         _prefersReducedMotion.mockReturnValue(true)
         _shouldRenderThreads.mockReturnValue(false)
         const state = { pulsePhase: 1.0, weather: { windSpeed: 12.0 } }
-        // @ts-ignore — harness: test uses minimal weather shape
-        updateMyceliumPulse(state)
+        updateMyceliumPulse(state as any)
         // basePulseSpeed = 0.0, so increment = 0 regardless of wind
         expect(state.pulsePhase).toBe(1.0)
     })
@@ -461,8 +460,7 @@ describe('updateMyceliumPulse (A12)', () => {
     it('wraps pulsePhase modulo 2π', () => {
         _shouldRenderThreads.mockReturnValue(false)
         const state = { pulsePhase: Math.PI * 2 - 0.01, weather: { windSpeed: 8.0 } }
-        // @ts-ignore — harness: test uses minimal weather shape
-        updateMyceliumPulse(state)
+        updateMyceliumPulse(state as any)
         expect(state.pulsePhase).toBeLessThan(Math.PI * 2)
         expect(state.pulsePhase).toBeGreaterThan(0)
     })
@@ -470,8 +468,7 @@ describe('updateMyceliumPulse (A12)', () => {
     it('uses default wind speed 8.0 when weather is undefined', () => {
         _shouldRenderThreads.mockReturnValue(false)
         const state = { pulsePhase: 0, weather: {} }
-        // @ts-ignore — harness: test uses minimal weather shape
-        updateMyceliumPulse(state)
+        updateMyceliumPulse(state as any)
         // windSpeed = 8.0, increment = 0.015 * (0.6 + 8/15) = 0.015 * 1.1333... = 0.017
         const expected = 0.015 * (0.0 + 0.6 + 8.0 / 15.0)
         // Wait, let me recalculate: basePulseSpeed is 0.015 (not reduced motion in jsdom)
@@ -492,8 +489,7 @@ describe('updateMyceliumPulse (A12)', () => {
         _webglContextProxy.myceliumGroup = null
         _shouldRenderThreads.mockReturnValue(true)
         const state = { pulsePhase: 0, weather: { windSpeed: 5.0 } }
-        // @ts-ignore — harness: test uses minimal weather shape
-        expect(() => updateMyceliumPulse(state)).not.toThrow()
+        expect(() => updateMyceliumPulse(state as any)).not.toThrow()
     })
 })
 
@@ -600,11 +596,8 @@ describe('lerpNodesForFrame (A5)', () => {
             focusState: { pocketMotionByIndex: new Map() },
             myceliumDirty: false
         }
-        // @ts-ignore — harness: proxy type does not include focusPocket
         _engineStateProxy.focusPocket = null
-        // @ts-ignore — harness: proxy type does not include nodeSporeMesh/pointsMesh
         _webglContextProxy.nodeSporeMesh = null
-        // @ts-ignore — harness: proxy type does not include nodeSporeMesh/pointsMesh
         _webglContextProxy.pointsMesh = null
     }
 
@@ -616,8 +609,6 @@ describe('lerpNodesForFrame (A5)', () => {
             [2, { frame: 0, delta: { x: 0.2, y: 0, z: 0 } }]
         ])
         _engineStateProxy.state!.focusState.pocketMotionByIndex = motionMap
-        // @ts-ignore — harness: proxy type does not include focusPocket
-        // @ts-ignore — harness: proxy type does not include focusPocket
         _engineStateProxy.focusPocket = {
             applyFocusPocketBreathing: vi.fn().mockReturnValue(true)
         }
@@ -636,8 +627,6 @@ describe('lerpNodesForFrame (A5)', () => {
     it('falls back to focusPocket.getFocusPocketMotionByIndex when state map is absent', () => {
         const fallbackMap = new Map([[0, { frame: 0, delta: { x: 0, y: 0.1, z: 0 } }]])
         _engineStateProxy.state!.focusState.pocketMotionByIndex = undefined
-        // @ts-ignore — harness: proxy type does not include focusPocket
-        // @ts-ignore — harness: proxy type does not include focusPocket
         _engineStateProxy.focusPocket = {
             applyFocusPocketBreathing: vi.fn().mockReturnValue(true),
             getFocusPocketMotionByIndex: vi.fn().mockReturnValue(fallbackMap)
