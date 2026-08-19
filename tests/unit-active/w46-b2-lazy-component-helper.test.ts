@@ -83,7 +83,11 @@ describe('W46-B2: scheduleIdleImport handles all browser environments', () => {
     })
 
     it('short-circuits in Playwright test environments', () => {
-        expect(src).toContain('__PLAYWRIGHT__')
+        // W60: the sibling-lane refactor (2efadd4d) collapsed the inline
+        // __PLAYWRIGHT__ check into isPlaywrightEnvironment(); assert the
+        // equivalent short-circuit still precedes the idle branch.
+        expect(src).toContain('isPlaywrightEnvironment')
+        expect(src).toMatch(/isPlaywrightEnvironment\(\)[\s\S]{0,120}?return run\(\)/)
     })
 
     it('uses requestIdleCallback when available (with timeout fallback)', () => {

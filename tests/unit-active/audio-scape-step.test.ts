@@ -24,6 +24,14 @@ const mockAppState = vi.hoisted(() => ({
 // @ts-ignore
 vi.mock('@lib/state/app.svelte', () => ({ appState: mockAppState }))
 // @ts-ignore
+const mockPointIndex = vi.hoisted(() => new Map<string, number>())
+// @ts-ignore
+vi.mock('@lib/data-store', () => ({
+    pointIndexByLeadId: {
+        getSnapshot: () => mockPointIndex
+    }
+}))
+// @ts-ignore
 const mockWarn = vi.hoisted(() => vi.fn())
 vi.mock('@lib/utils/debug', () => ({ debugWarn: mockWarn }))
 
@@ -105,6 +113,7 @@ const reset = () => {
     mockAppState.navState.focusedIndex = null
     mockAppState.semanticDiveMode = false
     mockAppState.pointIndexByLeadId = new Map()
+    mockPointIndex.clear()
     mockAppState.points = []
     activeCtx = null
     rafCb = null
@@ -263,7 +272,7 @@ describe('updateAudio', () => {
         expect(activeCtx.nodes[0].frequency.setTargetAtTime).toHaveBeenCalledWith(129, 0, 0.1)
     })
     it('honors activeRoutePath + pointIndexByLeadId pathProximity', () => {
-        mockAppState.pointIndexByLeadId = new Map([['1', 0]])
+        mockPointIndex.set('1', 0)
         // @ts-ignore — harness: test fixture shape is flexible; source accepts sparse point shapes
         mockAppState.points = [{ x: 0, y: 0, z: 0 } as any]
         mockAppState.navState.activeRoutePath = ['1']
@@ -280,7 +289,7 @@ describe('updateAudio', () => {
         expect(freq).toBeLessThan(85)
     })
     it('skips pathProximity when pointIndexByLeadId misses a route id', () => {
-        mockAppState.pointIndexByLeadId = new Map([['missing', 0]])
+        mockPointIndex.set('missing', 0)
         mockAppState.points = []
         mockAppState.navState.activeRoutePath = ['missing']
         mockAppState.camera = { position: { clone: () => ({ x: 0, y: 0, z: 0 }), distanceTo: () => 0 } }
