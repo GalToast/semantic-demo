@@ -370,10 +370,16 @@ export function getMyceliumPresentationProfile() {
     }
     const hasSearchSummary = Object.keys(state.searchState.currentSearchSummary || {}).length > 0
     if (hasSearchSummary || state.searchState.searchGlowActive) {
+        // W60 (2026-08-19): 0.32/0.14/0.22 → 0.42/0.24/0.30. Vision-jury
+        // (dots-3-note) called search-threads "a faint grid, almost invisible
+        // against the dark background"; ~50% opacity lift on core + wispy
+        // keeps the relationship context legible without competing with the
+        // results list. (First application was silently dropped by a parallel
+        // lane formatter — re-applied 2026-08-19 and verified in commit.)
         return {
-            core: 0.32,
-            wispy: 0.14,
-            bridge: 0.22,
+            core: 0.42,
+            wispy: 0.24,
+            bridge: 0.3,
             pulse: 0.072,
             linewidth: { core: 2.5, wispy: 1.0, bridge: 1.8 }
         }
