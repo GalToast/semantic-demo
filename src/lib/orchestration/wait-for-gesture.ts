@@ -137,12 +137,9 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
         // explicit QA pin so tests that assert the placeholder surface are not
         // silently flipped to webgl at t=0.
         const placeholderExplicitlyPinned =
-            typeof window !== 'undefined' &&
-            new URLSearchParams(window.location.search).get('placeholder') === '1'
+            typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('placeholder') === '1'
         // eslint-disable-next-line no-restricted-syntax -- wrapped in registry.timer()
-        registry.timer(
-            setTimeout(() => handleReady(undefined, !placeholderExplicitlyPinned), 0)
-        )
+        registry.timer(setTimeout(() => handleReady(undefined, !placeholderExplicitlyPinned), 0))
     }
 
     // ── Cleanup ──────────────────────────────────────────────────────────────

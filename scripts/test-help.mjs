@@ -13,7 +13,7 @@
 const LINES = [
     'npm test               - static checks + unit tests',
     'npm run test:fast      - alias for test:static',
-    'npm run test:unit      - Vitest unit tests (4059 test baseline)',
+    'npm run test:unit      - Vitest unit tests (single-flight guarded; 4059 baseline)',
     'npm run qa:contract    - ordered contract group run',
     'npm run qa:journey:headless - journey specs (GPU renderer)',
     'npm run build          - production build'
