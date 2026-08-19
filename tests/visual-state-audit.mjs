@@ -116,6 +116,9 @@ function contentTypeFor(filePath) {
     if (ext === '.png') return 'image/png'
     if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg'
     if (ext === '.webp') return 'image/webp'
+    if (ext === '.woff2') return 'font/woff2'
+    if (ext === '.woff') return 'font/woff'
+    if (ext === '.ttf') return 'font/ttf'
     if (ext === '.dat') return 'application/octet-stream'
     return 'application/octet-stream'
 }
