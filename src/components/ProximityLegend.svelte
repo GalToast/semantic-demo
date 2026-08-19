@@ -14,6 +14,7 @@
   import { ONBOARDING_STORAGE_KEY, markOnboardingSeen } from '@lib/onboarding/onboarding-storage';
   import { appState } from '@lib/state/app.svelte.ts';
   import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
+  import { isAutomatedBrowserSession } from '@lib/app/app-lifecycle.ts';
 
   // Top-8 category swatches for the color key
   const SWATCH_COUNT = 8;
@@ -51,10 +52,7 @@
     // timer and find the wrapper detached mid-click. The card is dismissed
     // explicitly via the dismiss button in tests, so the auto-dismiss
     // guard is not needed under automation.
-    const isAutomatedSession =
-      typeof window !== 'undefined' &&
-      (!!window.__PLAYWRIGHT__ ||
-        (typeof navigator !== 'undefined' && !!navigator.webdriver));
+    const isAutomatedSession = isAutomatedBrowserSession();
     if (!isAutomatedSession) {
       _registry.schedule(10000, () => {
         if (!dismissed) {

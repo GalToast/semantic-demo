@@ -19,6 +19,7 @@
  */
 
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
+import { isAutomatedBrowserSession } from '@lib/app/app-lifecycle'
 
 export interface GestureMonitorOpts {
     /** Called exactly once when a qualifying gesture or visibility event fires. */
@@ -44,13 +45,6 @@ const GESTURE_EVENTS: Array<keyof WindowEventMap> = ['pointerdown', 'wheel', 'to
 function isInsideGestureGate(target: EventTarget | null): boolean {
     if (!(target instanceof Element)) return false
     return Boolean(target.closest('.splash[role="dialog"]'))
-}
-
-function isAutomatedBrowserSession(): boolean {
-    return Boolean(
-        typeof window !== 'undefined' &&
-        (window.__PLAYWRIGHT__ || (typeof navigator !== 'undefined' && navigator.webdriver))
-    )
 }
 
 /**
@@ -97,8 +91,7 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
         opts.onReady()
         // Safety: dispose all listeners and timers after the cooldown even if
         // teardown wasn't called.
-        // eslint-disable-next-line no-restricted-syntax -- wrapped in registry.timer()
-        registry.timer(setTimeout(() => registry.disposeAll(), cooldown))
+                registry.schedule(cooldown, () => registry.disposeAll())
     }
 
     // ── Gesture listeners ────────────────────────────────────────────────────
@@ -138,8 +131,7 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
         // silently flipped to webgl at t=0.
         const placeholderExplicitlyPinned =
             typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('placeholder') === '1'
-        // eslint-disable-next-line no-restricted-syntax -- wrapped in registry.timer()
-        registry.timer(setTimeout(() => handleReady(undefined, !placeholderExplicitlyPinned), 0))
+                registry.schedule(0, () => handleReady(undefined, !placeholderExplicitlyPinned))
     }
 
     // ── Cleanup ──────────────────────────────────────────────────────────────

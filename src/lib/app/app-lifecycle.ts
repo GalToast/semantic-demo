@@ -39,3 +39,19 @@ export function computeDevToolsVisible(): boolean {
 export function isPlaywrightEnvironment(): boolean {
     return typeof window !== 'undefined' && !!window.__PLAYWRIGHT__;
 }
+
+/**
+ * Check if running in an automated browser session (Playwright
+ * __PLAYWRIGHT__ flag OR a WebDriver navigator.webdriver flag).
+ *
+ * Broader than isPlaywrightEnvironment(): also catches WebDriver-driven
+ * sessions (e.g. Selenium / non-Playwright harnesses). Single source of
+ * truth for the predicate shared by ProximityLegend auto-dismiss and the
+ * W6-T4 gesture-gate auto-fire.
+ */
+export function isAutomatedBrowserSession(): boolean {
+    return Boolean(
+        typeof window !== 'undefined' &&
+        (!!window.__PLAYWRIGHT__ || (typeof navigator !== 'undefined' && !!navigator.webdriver))
+    );
+}
