@@ -126,8 +126,23 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
     // Playwright test auto-fire: skip gesture wait in automated tests so
     // canvas mounts without requiring every test to simulate a gesture.
     if (isAutomatedBrowserSession()) {
+        // W51 (2026-08-19): only bypass the placeholder guard when the URL did
+        // NOT explicitly ask for the 2D placeholder. getInitialRenderKind()
+        // honors ?placeholder=1 as a hard override for QA/smoke pinning, but
+        // the unconditional bypass below clobbered it: auto-fire ->
+        // signalReady() -> setRenderKind('webgl') on FIRST load of a fresh
+        // session (readPersistedReady() is false -> signalReady proceeds). A
+        // second load of the same tab appeared to stick only because the
+        // persisted ready flag short-circuited signalReady(). Respect the
+        // explicit QA pin so tests that assert the placeholder surface are not
+        // silently flipped to webgl at t=0.
+        const placeholderExplicitlyPinned =
+            typeof window !== 'undefined' &&
+            new URLSearchParams(window.location.search).get('placeholder') === '1'
         // eslint-disable-next-line no-restricted-syntax -- wrapped in registry.timer()
-        registry.timer(setTimeout(() => handleReady(undefined, true), 0))
+        registry.timer(
+            setTimeout(() => handleReady(undefined, !placeholderExplicitlyPinned), 0)
+        )
     }
 
     // ── Cleanup ──────────────────────────────────────────────────────────────

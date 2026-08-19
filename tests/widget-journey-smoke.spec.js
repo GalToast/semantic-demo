@@ -38,11 +38,19 @@ test.describe('Journey smoke (no WebGL engine)', () => {
         // not two (App's "Semantic Explorer — ..." + Placeholder2D's
         // "Semantic Explorer Preview").
         await page.setViewportSize({ width: 375, height: 667 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        // 2026-08-19 (eacac9fe S5): capable mobile auto-enters 3D by default
+        // (S5_AUTO_ENTER_ON && supportsCapableWebGL); under SEMANTIC_USE_D3D11
+        // the headless probe sees the real GPU -> placeholder render kind is
+        // skipped. This test pins the 2D placeholder single-H1 contract, so
+        // force the placeholder branch with ?placeholder=1.
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&placeholder=1`, { waitUntil: 'domcontentloaded' })
 
-        // Wait for hydration + renderKind=placeholder2d to take effect
+        // Wait for hydration + renderKind=placeholder2d to take effect.
+        // 2026-08-19: on a fresh dist the placeholder class lands only after a
+        // D3D11 cold boot + Svelte hydration (failure snapshots show it present
+        // just after the old 10s budget). Keep the budget at 30s.
         await page.waitForFunction(() => document.body.classList.contains('render-kind-placeholder2d'), null, {
-            timeout: 10000,
+            timeout: 30000,
             polling: 100
         })
         await page.waitForTimeout(500)
