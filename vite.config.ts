@@ -2,7 +2,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { createReadStream } from 'node:fs'
 import { copyFile, cp, mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises'
-import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'url'
 import { dirname, extname, join, normalize, resolve } from 'path'
@@ -479,7 +479,7 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
         name: 'w44-preview-cache-headers',
         async configurePreviewServer(server) {
             const middlewares = server.middlewares as unknown as {
-                stack: Array<{ route?: string; handle: (req: any, res: any, next: (err?: unknown) => void) => void }>
+                stack: Array<{ route?: string; handle: (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => void }>
             }
             // Insert a properly-shaped connect Layer at index 0 (Vite's dispatcher reads
             // `route`/`handle` directly; passing a bare function crashes its internal
@@ -515,7 +515,7 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
                         else if (url.endsWith('.gz')) setHeader('Content-Encoding', 'gzip')
                     }
 
-                    res.writeHead = function patchedWriteHead(status: number, a?: any, b?: any) {
+                    res.writeHead = function patchedWriteHead(status: number, a?: string | OutgoingHttpHeaders, b?: OutgoingHttpHeaders) {
                         if (!patched) {
                             patched = true
                             applyPolicy()
@@ -523,7 +523,7 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
                         // Vite's static middleware may pass a headers object containing
                         // `Cache-Control: no-cache`; strip our policy keys before delegating
                         // so we win the final header merge.
-                        let headersObj: any
+                        let headersObj: OutgoingHttpHeaders | undefined
                         if (typeof a === 'string' || a === undefined) {
                             headersObj = b
                         } else {
@@ -541,7 +541,7 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
                             }
                         }
                         if (typeof a === 'string' || a === undefined) {
-                            return writeHead(status as any, a as any, headersObj)
+                            return writeHead(status, a, headersObj)
                         }
                         return writeHead(status, headersObj)
                     } as typeof res.writeHead
@@ -551,23 +551,23 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
                     // runtime-compressed HTML/JS, let Vite's compression middleware
                     // set Content-Encoding normally — without the header, the
                     // browser displays compressed bytes as raw text.
-                    res.setHeader = function patchedSetHeader(name: string, value: any) {
+                    res.setHeader = function patchedSetHeader(name: string, value: string | number | readonly string[]) {
                         if (name === 'Cache-Control' || name === 'Vary') return
                         if (name === 'Content-Encoding' && !url.endsWith('.br') && !url.endsWith('.gz')) {
                             // Let Vite's compression middleware set it for runtime-encoded responses.
-                            return setHeader(name as any, value as any)
+                            return setHeader(name, value)
                         }
                         if (name === 'Content-Encoding') return
-                        return setHeader(name as any, value as any)
+                        return setHeader(name, value)
                     } as typeof res.setHeader
 
                     res.removeHeader = function patchedRemoveHeader(name: string) {
                         if (name === 'Cache-Control' || name === 'Vary') return
                         if (name === 'Content-Encoding' && !url.endsWith('.br') && !url.endsWith('.gz')) {
-                            return removeHeader(name as any)
+                            return removeHeader(name)
                         }
                         if (name === 'Content-Encoding') return
-                        return removeHeader(name as any)
+                        return removeHeader(name)
                     } as typeof res.removeHeader
 
                     next()
@@ -582,7 +582,7 @@ function chunkGraphAnalyzerPlugin(): Plugin {
         name: 'chunk-graph-analyzer',
         apply: 'build',
         async generateBundle(_, bundle) {
-            const graph: Record<string, any> = {}
+            const graph: Record<string, { isEntry: boolean; imports: string[]; dynamicImports: string[]; modules: string[] }> = {}
             for (const [name, chunk] of Object.entries(bundle)) {
                 if (chunk.type === 'chunk') {
                     graph[name] = {

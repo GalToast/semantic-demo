@@ -29,6 +29,19 @@ const DIST = join(process.cwd(), 'dist', 'svelte')
 /** File extensions that must never ship uncompressed. */
 const PROTECTED_EXTENSIONS = ['.dat', '.json']
 
+/**
+ * Data assets exempted from the compression gate. `data.dat` (1.8 MB, the
+ * 8,406-point mycelium) is kept uncompressed as the reliable data path
+ * outside Vite — the PHP origin on 8795 and the visual-audit static server
+ * do not have Vite's `serveRootAssets` middleware, which is the only thing
+ * that can serve the `.gz`/`.br` twin with the right `Content-Encoding`
+ * header. Without the uncompressed file, `data.dat` 404s, the data worker
+ * never resolves, and the engine never builds. The `.gz`/`.br` twins are
+ * still written for Vite-served environments. Cost: ~0.4% of the dist
+ * budget. All other `.dat`/`.json` assets remain compressed.
+ */
+const UNCOMPRESSED_EXEMPTIONS = new Set(['data.dat'])
+
 async function findUncompressed(dir) {
     const violations = []
     let entries
@@ -47,6 +60,8 @@ async function findUncompressed(dir) {
             // Skip compressed twins — they're expected.
             if (name.endsWith('.br') || name.endsWith('.gz')) return
             if (!isProtected) return
+            // Skip exempted assets (see UNCOMPRESSED_EXEMPTIONS).
+            if (UNCOMPRESSED_EXEMPTIONS.has(name)) return
 
             const filePath = join(entry.parentPath, name)
             const fileSize = (await stat(filePath)).size
@@ -76,7 +91,8 @@ async function main() {
     }
     console.log('')
     console.log(`  ${BOLD}Fix:${RESET} rebuild with VITE_COMPRESS_ASSETS=true (default) so the`)
-    console.log(`  w44-asset-compression plugin writes .br/.gz twins and deletes originals.`)
+    console.log(`  w44-asset-compression plugin writes .br/.gz twins. Note: data.dat is`)
+    console.log(`  intentionally kept uncompressed (see UNCOMPRESSED_EXEMPTIONS).`)
     process.exit(1)
 }
 
