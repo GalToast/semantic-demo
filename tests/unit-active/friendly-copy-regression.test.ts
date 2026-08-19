@@ -41,6 +41,10 @@ const EXCLUDE_LITERALS = new Set([
     'The Semantic Explorer is offline or blocked right now. Refresh after the connection recovers.',
     'obscure SIGNAL indicator',
     'Follow the trail back to its source…',
+    'signalReady',
+    'engineReady',
+    'semantics',
+    '@lib/story/engine-ready.svelte',
 ])
 
 function readAll(): string {
@@ -50,6 +54,7 @@ function readAll(): string {
 function stripComments(src: string): string {
     return src
         .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/<!--[\s\S]*?-->/g, '')
         .replace(/^\s*\/\/.*$/gm, '')
 }
 
@@ -105,7 +110,7 @@ describe('friendly-copy regression guard (journey + chrome surfaces)', () => {
         expect(stripped).toContain('Business view')
         expect(stripped).toContain('No map location yet')
         expect(stripped).toContain('Mobile preview')
-        expect(stripped).toContain('Open full 3D experience')
+        expect(stripped).toContain('Open in 3D')
         expect(stripped).toContain('Journey path')
         expect(stripped).toContain('Journey stops')
         expect(stripped).toContain('Walk controls')

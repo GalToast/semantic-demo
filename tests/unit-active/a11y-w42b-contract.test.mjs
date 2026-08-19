@@ -86,9 +86,11 @@ describe('A11y W42-B: Thread inspector screen reader labels', () => {
         expect(listitemCount).toBeGreaterThanOrEqual(3)
     })
 
-    it('title is descriptive (not just "Node N thread")', () => {
-        // Renders as 'Connection to {name}' (when name present) or 'Connection to a nearby business'.
-        expect(src).toMatch(/Connection to \$?\{/)
+    it('title is descriptive — no just "Node N thread"', () => {
+        // Renders as 'Similar to {name}' (when name present) or the fallback
+        // 'Similar-Business Inspector' — never a raw lead_id / Node-number.
+        expect(src).toMatch(/Similar to \$?\{/)
+        expect(src).toMatch(/Similar-Business Inspector/)
     })
 
     it('close button has aria-label', () => {
