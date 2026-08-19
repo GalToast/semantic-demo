@@ -42,10 +42,32 @@ copy. Option C only if user research shows mobile users actually want in-line an
 Gate: `SEMANTIC_USE_D3D11`-disabled phones under SwiftShader still fall to placeholder
 (already true — that's the fallback path).
 
+## D3 Acceptance runbook (flip the flag only after this passes · 2026-08-19)
+
+Build the smoke: `VITE_S5_AUTO_ENTER_3D=1 npm run build:svelte` and serve dist to the
+mid-tier handset (phone-farm, chrome-devtools protocol — patterns in
+`docs/phone-farm-runbook.md` / `tmp/probe-cdp.log`):
+
+1. `Runtime.evaluate`: `'WebGL2RenderingContext' in window` → true.
+2. Hardware probe: `document.createElement('canvas').getContext('webgl2', {failIfMajorPerformanceCaveat:true})` → non-null (hardware path, NOT SwiftShader).
+3. Load `${BASE}/dist/svelte/index.html` mobile-UA with the flag build; record LCP
+   (`performance.getEntriesByType('paint')`), `navigator.deviceMemory`, `hardwareConcurrency`.
+4. With flag ON: render-kind lands `webgl` WITHOUT a tap; the placeholder overlay
+   disappears; first paint remains the SVG preview.
+
+Acceptance bar: LCP ≤ 2.5s on mid-tier; 60s of parked-and-panning shows zero black/blank
+frames (CDP video capture); thermal stays in normal range; a 2GB / reduced-motion device
+stays on placeholder (probe false). Flip = rebuild prod with env var; re-run
+`tests/mobile-placeholder-journey.spec.js` + the W51/W54/W55 journey specs on the
+flipped build before release. (D2 copy already shipped in the flag-OFF default: the
+placeholder copy is honest today regardless.)
+
 ## Owners
 
-- Implement: pi-main-lane (safe: does NOT touch `Placeholder2D`'s unapler paint path)
-- Verify: `mobile surface-contract-check` desktop+mobile; real-phone smoke (phone-farm
-  pipes exist).
-- Defer decision items: whether the CTA copy changes to "Enter 3D" vs "Open on desktop";
-  whether iOS prefers-reduced-motion forces placeholder (yes today via `media` gates).
+- Implement: pi-main-lane (D2+D1 landed 2026-08-19 — probe + copy in
+  `responsive-renderer.ts` / `Placeholder2D.svelte`, flag OFF; flipping is the
+  only remaining step per this runbook)
+- Verify: `tests/mobile-placeholder-journey.spec.js` (headless) + real-phone smoke
+  (phone-farm) per the steps above.
+- Done decisions (2026-08-19): CTA copy = "Open in 3D"; reduced-motion stays on the
+  placeholder path via the probe.
