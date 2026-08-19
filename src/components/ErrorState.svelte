@@ -219,6 +219,10 @@
     font-size: 0.8rem;
     font-weight: 600;
     padding: 0.5rem 1.25rem;
+    /* 2026-08-19: WCAG 2.5.5 touch-target (44px min) — the computed height at
+       0.8rem/0.5rem padding was ~35px, failing the surface contract's
+       touch-targets:all-44px check. min-height lifts it to the 44px floor. */
+    min-height: 44px;
     border: 1px solid var(--color-primary-alt, var(--color-primary-alt));
     border-radius: 0.375rem;
     background: transparent;
