@@ -20,7 +20,7 @@ import { BASE_URL } from './helpers/3d-interaction-helpers.js'
  */
 test('mobile placeholder: honest copy + CTA flips to the 3D surface', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
-    await page.goto(`${BASE_URL}/?nodemo=1`)
+    await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`)
 
     // Placeholder surface renders with honest copy.
     const placeholder = page.locator('.placeholder-overlay')

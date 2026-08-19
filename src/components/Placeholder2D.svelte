@@ -235,7 +235,7 @@
 
   /* ─── SUPPRESS PREVIEW OVERLAY WHEN FOCUS/SEARCH IS ACTIVE ────────────
      When a focus card or search surface is active, the full-viewport
-     "Open full 3D experience" preview must not present itself as the primary
+     "Open in 3D" preview must not present itself as the primary
      idle screen. It should fade to a subtle backdrop so the active
      surface (FocusCard, search results, JourneyChrome) reads clearly.
      The overlay/scrim/orbs recede visually and leave hit testing to the
