@@ -253,11 +253,11 @@ export async function acquireSearchLock(query: string, page: number, timeoutMs =
     }
 
     try {
-        const importNodeModule = new Function('specifier', 'return import(specifier)') as <T>(
-            specifier: string
-        ) => Promise<T>
-        const fs = await importNodeModule<typeof import('node:fs/promises')>('node:fs/promises')
-        const path = await importNodeModule<typeof import('node:path')>('node:path')
+        // Dynamic import of node: modules — Vite externalizes these in the
+        // browser bundle. The typeof-window guard above ensures these never
+        // execute client-side.
+        const fs = await import('node:fs/promises')
+        const path = await import('node:path')
         const lockDir = path.join('.cache', 'locks')
         const lockFile = path.join(lockDir, `${qHash(query)}-${page}.lock`)
 
