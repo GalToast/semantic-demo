@@ -2,6 +2,11 @@ import { defineConfig } from 'vitest/config'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
+import { acquireVitestSingleFlight } from './scripts/vitest-single-flight.mjs'
+
+// Prevent concurrent full Vitest runs from exhausting the workstation. This
+// is config-level so both `npm run test:unit` and direct `npx vitest run` use it.
+acquireVitestSingleFlight()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

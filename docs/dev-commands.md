@@ -21,6 +21,11 @@ npm run audit:a11y:strict    # same, exit 1 on any HIGH finding
 npm run audit:a11y:json      # same, machine-readable JSON
 ```
 
+`npm run test:unit` and direct repo-root `npx vitest run` commands use a
+single-flight lock at `tmp/vitest.single-flight.lock`. A second full Vitest run
+fails fast with the owning PID instead of competing for RAM; a lock whose owner
+process has exited is reclaimed automatically.
+
 ## a11y audit
 
 `scripts/audit-a11y.mjs` checks 8 rules: button type, button aria-label, form input id/aria, interactive non-semantic containers, image alt, low-alpha colors, outline suppression, aria-hidden wrapping focusable children.
