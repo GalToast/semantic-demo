@@ -131,7 +131,7 @@
     "dev:svelte": "vite --config vite.config.ts",
     "build:svelte": "vite build --config vite.config.ts && npm run check:data-compression",
     "preview:svelte": "vite preview --config vite.config.ts",
-    "git:hook:check": "node -e \"const {execSync}=require('child_process');const p=require('path');process.platform==='win32'?execSync('pwsh -NoLogo -NoProfile -File '+p.join('scripts','git-hooks','pre-commit.ps1')+' --AllowAnyBranch --SkipHighRiskCheck',{stdio:'inherit'}):execSync('bash '+p.join('scripts','git-hooks','pre-commit')+' --AllowAnyBranch --SkipHighRiskCheck',{stdio:'inherit'})\"",
+    "git:hook:check": "node scripts/git-hooks/run-check.mjs",
     "git:hook:install": "node scripts/git-hooks/install.mjs",
     "git:hook:uninstall": "node scripts/git-hooks/install.mjs --remove",
     "test:smoke": "npm run test:contract:smoke",
