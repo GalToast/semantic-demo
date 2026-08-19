@@ -5,6 +5,16 @@ export function walkDir(dir) {
     const files = []
     try {
         for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            if (entry.isDirectory() && entry.name.startsWith('ci-mirror-test-')) {
+                // Transient fixture dirs created by
+                // tests/scripts/ci-check-nav-mirror-pattern.test.mjs under
+                // src/lib/ (mkdtempSync with a ci-mirror-test- prefix; the
+                // CI script hardcodes its scan root to src/lib). They may be
+                // half-created or half-deleted when this freshness scan runs
+                // (concurrent/interrupted vitest), which previously poisoned
+                // whole suite runs with ENOENT scandir on the tmp dir.
+                continue
+            }
             const fullPath = path.join(dir, entry.name)
             if (entry.isDirectory()) files.push(...walkDir(fullPath))
             else files.push(fullPath)
