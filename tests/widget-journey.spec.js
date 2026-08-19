@@ -186,6 +186,58 @@ test.describe('Widget journey', () => {
         ).toBe(518)
     })
 
+    test('Narrow-portrait 320px semantic-dive: weather suppressed + focus card within proportion limit (W53 v6)', async ({
+        page
+    }) => {
+        await page.setViewportSize({ width: 320, height: 740 })
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&surface=inside&anchor=518&q=coffee`, {
+            waitUntil: 'domcontentloaded'
+        })
+
+        const settled = await pollFor(
+            page,
+            () => {
+                return (
+                    document.body.dataset.sceneReady === 'true' &&
+                    document.body.classList.contains('surface-semantic-dive')
+                )
+            },
+            60000,
+            100
+        )
+
+        expect(settled, 'narrow-portrait semantic-dive must settle into surface-semantic-dive').toBe(true)
+
+        // Weather widget must be hidden on narrow portrait: the z600 focus card
+        // bottom sheet spans full width, painting under the z50 weather pill.
+        // The @media(max-width:360px) rule sets display:none on .weather-widget.
+        const weatherHidden = await page.evaluate(() => {
+            const el = document.querySelector('.weather-widget')
+            if (!el) return true
+            return window.getComputedStyle(el).display === 'none'
+        })
+        expect(weatherHidden, 'weather widget must be hidden (display:none) on 320px semantic-dive').toBe(true)
+
+        // Focus card bottom-sheet height must stay within the 0.88 mobile
+        // surface-proportion limit. Effective viewport = 740px - 26px header =
+        // 714px; 0.88 x 714 = 628px. The @media(max-width:360px) rule caps
+        // max-height at calc(100dvh - 120px - safe-area) ~ 620px.
+        const focusCardOk = await page.evaluate(() => {
+            const card = document.querySelector('#focus-card-selected.focus-card')
+            if (!card) return true
+            const rect = card.getBoundingClientRect()
+            const headerEl = document.querySelector('header')
+            const headerH = headerEl ? headerEl.getBoundingClientRect().height : 0
+            const effectiveVh = window.innerHeight - headerH
+            const ratio = rect.height / effectiveVh
+            return ratio <= 0.89
+        })
+        expect(focusCardOk, 'focus card height must be within 0.88 mobile proportion limit on 320px').toBe(true)
+    })
+
     test('explicit inside deep-link survives anchor restoration', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.addInitScript(() => {

@@ -551,6 +551,21 @@
       padding: 18px 14px 10px;
     }
 
+    /* Narrow-portrait focus/dive (320–360 px wide, e.g. the 320×740
+       semantic-dive state): the focus card is a full-width bottom sheet.
+       With the default max-height (100dvh − 10px ≈ 730 px) the card renders
+       at 695 px — 0.974 of the effective viewport (714 px after the 26 px
+       header), exceeding the 0.88 mobile surface-proportion limit. Tighten
+       the max-height on narrow portrait so the card leaves room for the
+       header and stays within the proportion budget. The card scrolls
+       internally (overflow-y: auto) so no content is lost. */
+    @media (max-width: 360px) {
+      #focus-card-selected.focus-card.surface-semantic-dive,
+      #focus-card-selected.focus-card.surface-focus-search,
+      #focus-card-selected.focus-card.surface-focus {
+        max-height: calc(100dvh - 120px - max(0px, env(safe-area-inset-bottom, 0px)));
+      }
+    }
     /* Bottom-sheet radius for all mobile focus states */
     #focus-card-selected.focus-card.surface-focus-search,
     #focus-card-selected.focus-card.surface-focus {

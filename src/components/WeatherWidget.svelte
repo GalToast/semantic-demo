@@ -374,6 +374,23 @@
     }
   }
 
+  /* Narrow-portrait focus/dive (320–360 px wide, e.g. the 320×740 semantic-dive
+     state): the focus card is a full-width bottom sheet (z600, left:0, right:0,
+     bottom:0) that spans the entire viewport width — the weather pill (z50,
+     top-right, ~93×44 px) paints directly over it. Neither the short-landscape
+     rule (requires max-height:430px + landscape) nor the desktop rule
+     (requires min-width:901px) fires here, so the overlap is uncaught by the
+     existing suppression set. Hide weather on narrow-portrait focus/dive
+     surfaces to match. */
+  @media (max-width: 360px) {
+    :global(body.surface-focus) .weather-widget,
+    :global(body.surface-focus-search) .weather-widget,
+    :global(body.surface-semantic-dive) .weather-widget {
+      display: none;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  }
   /* Map surfaces: the map-trail search sheet (.search-container/.search-results,
      z99-150) overlays the weather pill (z50) top-right when search is open —
      same class of collision as the focus-card case above. Map mode already
