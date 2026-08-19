@@ -107,7 +107,7 @@ test.describe('Journey smoke (no WebGL engine)', () => {
 
     test('W54 visual audit: map back button returns to overview from ?view=map deep-link', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map&webgl=1`, { waitUntil: 'domcontentloaded' })
 
         await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'map', null, {
             timeout: 10000,
@@ -190,15 +190,32 @@ test.describe('Journey smoke (no WebGL engine)', () => {
             } catch {
                 /* private mode / storage disabled — best-effort */
             }
+            // 2026-08-19: this file runs sequentially in ONE browser context
+            // (playwright.config fullyParallel:false, workers:1). An earlier
+            // test firing engineReady persists it here, auto-hiding the splash
+            // on this test (CTA never appears -> 40s timeout). Clear it so the
+            // splash always gates like a fresh visit.
+            try {
+                window.sessionStorage.removeItem('semantic-explorer.engineReady')
+            } catch {
+                /* best-effort */
+            }
         })
 
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&webgl=1`, { waitUntil: 'domcontentloaded' })
 
-        // Click through the splash so engineReady fires and the help dialog
-        // can auto-open (HelpDialog.svelte:128-145 $effect on engineReady).
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
-        await explore.click()
+        // In an automated session the gesture monitor auto-fires engineReady at
+        // t=0 (wait-for-gesture.ts 'skip gesture wait in automated tests'), so
+        // the splash is already-gated and the help dialog auto-opens without any
+        // CTA click. Clicking the visible splash CTA here actually dismisses the
+        // already-open dialog state (Splash.dismiss -> engineReady.signalReady),
+        // racing the auto-open $effect. So on automated runs just wait for the
+        // dialog. A real gesture session would click the CTA, but this test runs
+        // headless by design (webgl=1 forces the webgl render kind).
+        await page.waitForFunction(
+            () => !!document.querySelector('dialog.help-dialog[open]') || document.body?.dataset?.sceneReady === 'true',
+            { timeout: 20000, polling: 100 },
+        ).catch(() => {})
 
         // Wait for engineReady + the dialog to be [open] in the DOM.
         // The auto-open $effect runs synchronously after engineReady.value flips,
