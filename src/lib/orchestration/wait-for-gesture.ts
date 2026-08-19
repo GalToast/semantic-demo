@@ -64,12 +64,25 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
     let fired = false
     let wasHidden = false
 
-    function handleReady(event?: Event): void {
+    function handleReady(event?: Event, bypassPlaceholderGuard = false): void {
         if (fired) return
         // W45-A: Skip auto-fire when the 2D placeholder is shown; the CTA is the
         // exclusive gate for entering the 3D scene. On desktop (webgl) this is a
         // no-op because the render kind is not 'placeholder2d'.
-        if (typeof document !== 'undefined' && document.body?.dataset?.renderKind === 'placeholder2d') {
+        //
+        // BUT: the Playwright auto-fire below calls handleReady() with no event
+        // and MUST bypass this guard — otherwise the auto-fire is blocked by
+        // the very placeholder state it exists to transition out of
+        // (renderKind === 'placeholder2d' → guard returns → signalReady never
+        // called → renderKind stays placeholder2d forever). Real gesture
+        // events (with an event arg) still respect the guard so a user
+        // interacting with the splash gate's own UI doesn't accidentally
+        // launch the engine. See bypassPlaceholderGuard param.
+        if (
+            !bypassPlaceholderGuard &&
+            typeof document !== 'undefined' &&
+            document.body?.dataset?.renderKind === 'placeholder2d'
+        ) {
             return
         }
         // The Splash gate is a fullscreen modal with explicit entry actions
@@ -114,7 +127,7 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
     // canvas mounts without requiring every test to simulate a gesture.
     if (isAutomatedBrowserSession()) {
         // eslint-disable-next-line no-restricted-syntax -- wrapped in registry.timer()
-        registry.timer(setTimeout(() => handleReady(), 0))
+        registry.timer(setTimeout(() => handleReady(undefined, true), 0))
     }
 
     // ── Cleanup ──────────────────────────────────────────────────────────────
