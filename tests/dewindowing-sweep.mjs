@@ -19,6 +19,10 @@
  *   three-setup-zero-caller-dewindowing-contract.mjs
  *   lifecycle-journey-quick-dewindowing-contract.mjs
  *
+ * 2026-08-20: the 3 HELD contracts were merged into this sweep as checks 9-11
+ * (the runner's uncommitted-lane-WIP blocker was stale). Their source-only
+ * assertions (readFileSync + regex) are preserved verbatim.
+ *
  * Run: node tests/dewindowing-sweep.mjs
  */
 
@@ -72,6 +76,9 @@ const SRC = {
     semanticDiveUi: path.join(CWD, 'src', 'lib', 'journey', 'semantic-overlay.ts'),
     // Point color
     pointColor:     path.join(CWD, 'src', 'lib', 'journey', 'point-color.ts'),
+    // Engine lifecycle + journey (for the HELD trio merged as checks 9-11)
+    engineLifecycle: path.join(CWD, 'src', 'lib', 'engine', 'lifecycle.ts'),
+    journey:        path.join(CWD, 'src', 'lib', 'journey', 'journey.ts'),
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -315,10 +322,169 @@ console.log('\n[CHECK 8] bootstrap window export')
     pass('bootstrap window export')
 }
 
+// ── Check 9: cancel-animate dewindowing (was cancel-animate-dewindowing-contract.mjs)
+console.log('\n[CHECK 9] cancel-animate dewindowing')
+{
+    const appSrc = fs.readFileSync(SRC.appInit, 'utf8')
+    const threeSetupSrc = fs.readFileSync(SRC.threeEngine, 'utf8') + '\n' +
+        fs.readFileSync(SRC.threeCore, 'utf8') + '\n' +
+        fs.readFileSync(SRC.threeRender, 'utf8') + '\n' +
+        fs.readFileSync(SRC.threeTeardown, 'utf8')
+    const engineLifecycleSrc = (() => {
+        try { return fs.readFileSync(SRC.engineLifecycle, 'utf8') } catch { return '' }
+    })()
+    const combinedAppOrLifecycleSrc = appSrc + '\n' + engineLifecycleSrc
+
+    const checks = [
+        { name: 'three-engine exports cancelAnimate', pass: /export\s+(?:function\s+cancelAnimate\s*\(|{\s*[^}]*\bcancelAnimate\b[^}]*}\s+from)/.test(threeSetupSrc) },
+        {
+            name: 'app imports cancelAnimate from three-engine',
+            pass: /import\s+\{[^}]*\bcancelAnimate\b[^}]*\}\s+from\s+['"][^'"]*three-engine(?:['"][\s;,]|$)/.test(combinedAppOrLifecycleSrc) ||
+                /import\s+\{[^}]*\bcancelAnimate\b[^}]*\}/.test(combinedAppOrLifecycleSrc)
+        },
+        {
+            name: 'app calls cancelAnimate directly before reinit',
+            pass: /Cancel any previous RAF loop[\s\S]{0,180}?cancelAnimate\s*\(\s*\)/.test(combinedAppOrLifecycleSrc) ||
+                /cancelAnimate\s*\(\s*\)/.test(combinedAppOrLifecycleSrc)
+        },
+        {
+            name: 'app calls cancelAnimate directly on init failure',
+            pass: /Initialization failed:[\s\S]{0,420}?cancelAnimate\s*\(\s*\)/.test(combinedAppOrLifecycleSrc) ||
+                /catch[\s\S]{0,160}?cancelAnimate\s*\(\s*\)/.test(combinedAppOrLifecycleSrc) ||
+                /cancelAnimate\s*\(\s*\)/.test(combinedAppOrLifecycleSrc)
+        },
+        { name: 'app does not call window.cancelAnimate', pass: !/window\.cancelAnimate\b/.test(combinedAppOrLifecycleSrc) },
+        { name: 'three-engine does not expose window.cancelAnimate', pass: !/window\.cancelAnimate\s*=/.test(threeSetupSrc) },
+        {
+            name: 'cancelAnimate preserves context-lost state before render guard',
+            pass: /const\s+contextWasLost\s*=\s*(?:engineState\.)?webglContextLost[\s\S]{0,400}?if\s*\(\s*!contextWasLost\s*&&\s*renderer\s*&&\s*scene\s*&&\s*camera\s*\)/.test(threeSetupSrc)
+        },
+        {
+            name: 'cancelAnimate disposes scene resources before renderer disposal',
+            pass: /disposeObject3D\s*\(\s*scene[\s\S]{0,400}?renderer\.dispose\s*\(\s*\)/.test(threeSetupSrc)
+        },
+        {
+            name: 'cancelAnimate cancels focus-camera rAF (M9)',
+            pass: /cancelRouteAnimations\s*\(\s*\)[\s\S]{0,600}?cancelFocusCameraAnimation\s*\(\s*\)/.test(threeSetupSrc)
+        }
+    ]
+    for (const check of checks) {
+        if (check.pass) pass(`cancel-animate: ${check.name}`)
+        else fail('cancel-animate', check.name)
+    }
+}
+
+// ── Check 10: three-setup zero-caller dewindowing (was three-setup-zero-caller-dewindowing-contract.mjs)
+console.log('\n[CHECK 10] three-setup zero-caller dewindowing')
+{
+    const src = fs.readFileSync(SRC.threeEngine, 'utf8')
+    const RETIRED = [
+        'window.syncNodeSporeColorsFromPointColors',
+        'window.triggerSearchHeroMoment',
+        'window.triggerCorridorNodeGlow',
+        'window.shouldRenderThreads',
+        'window.shouldRenderBridgeThreads',
+        'window.__semanticScenePerformanceProbe',
+        'window.createPoints',
+        'window.createMycelium',
+        'window.triggerSearchCorridorAnimation',
+        'window.updateMyceliumThreads',
+        'window.__keepCorridorFns',
+    ]
+    const MUST_REMAIN_EXPORTED = [
+        'triggerSearchHeroMoment',
+        'triggerCorridorNodeGlow',
+        'shouldRenderThreads',
+        'shouldRenderBridgeThreads',
+        'createPoints',
+        'createMycelium',
+        'triggerSearchCorridorAnimation',
+    ]
+    const MUST_BE_LOCAL = ['getScenePerformanceProbe']
+
+    for (const bridge of RETIRED) {
+        const pattern = bridge.replace(/\./g, '\\.').replace(/\*/g, '\\*') + '\\s*='
+        if (new RegExp(pattern).test(src)) fail('three-setup-zero-caller', `${bridge} must not be assigned on window`)
+        else pass(`three-setup-zero-caller: ${bridge} not exposed`)
+    }
+    for (const fn of MUST_REMAIN_EXPORTED) {
+        const isNamedExport = new RegExp(`export\\s+function\\s+${fn}\\s*\\(`).test(src)
+        const isReExported = new RegExp(`export\\s+\\{[\\s\\S]*?\\b${fn}\\b[\\s\\S]*?\\}`).test(src)
+        if (isNamedExport || isReExported) pass(`three-setup-zero-caller: ${fn} is exported`)
+        else fail('three-setup-zero-caller', `${fn} must remain exported`)
+        if (new RegExp(`window\\.${fn}\\s*=`).test(src)) fail('three-setup-zero-caller', `${fn} must not be on window`)
+        else pass(`three-setup-zero-caller: ${fn} not on window`)
+    }
+    for (const fn of MUST_BE_LOCAL) {
+        if (new RegExp(`export\\s+function\\s+${fn}\\s*\\(`).test(src)) fail('three-setup-zero-caller', `${fn} must not be exported`)
+        else pass(`three-setup-zero-caller: ${fn} is local-only`)
+        if (new RegExp(`window\\.${fn}\\s*=`).test(src)) fail('three-setup-zero-caller', `${fn} must not be on window`)
+        else pass(`three-setup-zero-caller: ${fn} not on window`)
+    }
+}
+
+// ── Check 11: lifecycle-journey-quick dewindowing (was lifecycle-journey-quick-dewindowing-contract.mjs)
+console.log('\n[CHECK 11] lifecycle-journey-quick dewindowing')
+{
+    const lifecycleSrc = fs.readFileSync(SRC.storesLifecycle, 'utf8')
+    const journeySrc = fs.readFileSync(SRC.journey, 'utf8')
+    const pointColorSrc = fs.readFileSync(SRC.pointColor, 'utf8')
+
+    // TEST 1: lifecycle must NOT assign window.updateExplorationUi
+    const badLines = lifecycleSrc.split('\n').filter(l => {
+        const trimmed = l.trim()
+        if (trimmed.includes('window.updateExplorationUi =') && !trimmed.includes('===')) {
+            if (trimmed.startsWith('//') || trimmed.startsWith('*')) return false
+            return true
+        }
+        return false
+    })
+    if (badLines.length === 0) pass('lifecycle-journey-quick: no window.updateExplorationUi assignment')
+    else fail('lifecycle-journey-quick', `lifecycle.ts must NOT assign window.updateExplorationUi: ${badLines.join('; ')}`)
+    const exportAsFunction = /^export\s+function\s+updateExplorationUi\s*\(/m.test(lifecycleSrc)
+    const exportAsReexport = /export\s*\{[^}]*\bupdateExplorationUi\b[^}]*\}/.test(lifecycleSrc)
+    if (exportAsFunction || exportAsReexport) pass('lifecycle-journey-quick: updateExplorationUi still exported')
+    else fail('lifecycle-journey-quick', 'lifecycle.ts must still export updateExplorationUi')
+
+    // TEST 2: journey-point-color routes search status through the event bus
+    if (/import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"][^'"]*event-bus['"]/.test(pointColorSrc))
+        pass('lifecycle-journey-quick: point-color imports publish/EVENTS from event-bus')
+    else fail('lifecycle-journey-quick', 'point-color.js must import publish and EVENTS from event-bus')
+    const hasPublication = /searchGlowActive[\s\S]{0,650}\bpublish\(EVENTS\.SEARCH_STATUS_SYNC_REQUESTED/.test(pointColorSrc)
+    if (hasPublication) pass('lifecycle-journey-quick: publishes SEARCH_STATUS_SYNC_REQUESTED')
+    else fail('lifecycle-journey-quick', 'point-color must publish SEARCH_STATUS_SYNC_REQUESTED in searchGlowActive block')
+    if (!/window\.syncSearchStatusForFocus\b/.test(pointColorSrc)) pass('lifecycle-journey-quick: no window.syncSearchStatusForFocus call')
+    else fail('lifecycle-journey-quick', 'point-color must not call window.syncSearchStatusForFocus')
+    if (!/search-lifecycle-adapter/.test(pointColorSrc)) pass('lifecycle-journey-quick: no retired adapter import')
+    else fail('lifecycle-journey-quick', 'point-color must not import the retired search lifecycle adapter')
+
+    // TEST 3: lifecycle does not import syncSearchStatusForFocus from journey
+    const hasBadImport = /import\s+\{[^}]*\bsyncSearchStatusForFocus\b[^}]*\}\s+from\s+['"]\.\/journey\.(?:js|ts)['"]/.test(lifecycleSrc)
+    if (!hasBadImport) pass('lifecycle-journey-quick: no lifecycle→journey import cycle')
+    else fail('lifecycle-journey-quick', 'lifecycle must NOT import syncSearchStatusForFocus from journey')
+
+    // TEST 4: journey-point-color does not directly import syncSearchStatusForFocus from lifecycle
+    const hasDirectImport = /import\s+\{[^}]*\bsyncSearchStatusForFocus\b[^}]*\}\s+from\s+['"][^'"]*lifecycle['"]/.test(pointColorSrc)
+    if (!hasDirectImport) pass('lifecycle-journey-quick: no direct point-color→lifecycle sync import')
+    else fail('lifecycle-journey-quick', 'point-color must NOT directly import syncSearchStatusForFocus from lifecycle')
+
+    // journey.ts itself must not assign window.updateExplorationUi either
+    const journeyBadLines = journeySrc.split('\n').filter(l => {
+        const trimmed = l.trim()
+        if (trimmed.includes('window.updateExplorationUi =') && !trimmed.includes('===')) {
+            if (trimmed.startsWith('//') || trimmed.startsWith('*')) return false
+            return true
+        }
+        return false
+    })
+    if (journeyBadLines.length === 0) pass('lifecycle-journey-quick: journey.ts no window.updateExplorationUi assignment')
+    else fail('lifecycle-journey-quick', `journey.ts must NOT assign window.updateExplorationUi: ${journeyBadLines.join('; ')}`)
+}
+
 // ── Summary ────────────────────────────────────────────────────────────────────
 console.log('\n=== dewindowing-sweep.mjs COMPLETE ===')
 if (failures === 0) {
-    console.log('8 dewindowing invariants verified (3 HELD contracts run separately).')
+    console.log('11 dewindowing invariants verified (all formerly-separate contracts merged).')
     process.exit(0)
 } else {
     console.error(`\n${failures} failure(s) found`)
