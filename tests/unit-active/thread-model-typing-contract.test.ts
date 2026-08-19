@@ -41,11 +41,8 @@
  *   5. No `as unknown as any` triple-cast remains
  */
 import { describe, it, expect } from 'vitest'
-// @ts-ignore
 import { readFileSync } from 'node:fs'
-// @ts-ignore
 import { fileURLToPath } from 'node:url'
-// @ts-ignore
 import { dirname, resolve } from 'node:path'
 
 const __filename = fileURLToPath(import.meta.url)

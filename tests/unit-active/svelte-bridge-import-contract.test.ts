@@ -22,11 +22,8 @@
  * + The 3-step retirement path sections).
  */
 import { describe, it, expect, beforeAll } from 'vitest'
-// @ts-ignore
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs'
-// @ts-ignore
 import { dirname, join, relative, resolve } from 'path'
-// @ts-ignore
 import { fileURLToPath } from 'url'
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url))
@@ -86,8 +83,7 @@ function isExcluded(file: string): boolean {
 }
 
 describe('Svelte-bridge import contract (S7)', () => {
-    // @ts-ignore
-    if (process.env.REFACTOR_BASELINE_OVERRIDE) {
+    if (process.env['REFACTOR_BASELINE_OVERRIDE']) {
         it('skips during active refactor wave (unset REFACTOR_BASELINE_OVERRIDE to re-enable)', () => {
             expect(true).toBe(true)
         })
