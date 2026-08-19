@@ -12,6 +12,7 @@
   import { handleCanvasKeydown } from '@lib/journey/canvas-keyboard-nav';
   import { appState as _canvasAppState } from '@lib/state/app.svelte.ts';
   import { friendlyErrorMessage } from '@lib/utils/error-messages';
+import { isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts';
 
   interface Props {
     interactive?: boolean;
@@ -236,7 +237,7 @@
         if (engineHasInit || componentDestroyed) return;
         // W6-T4: in Playwright tests, skip requestIdleCallback so surfaces
         // that assert on #canvas-container don't race the idle timeout.
-        if (typeof window !== 'undefined' && window.__PLAYWRIGHT__) {
+        if (isPlaywrightEnvironment()) {
           void initLifecycle();
           return;
         }

@@ -1,3 +1,5 @@
+import { isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts';
+
 /**
  * @lib/utils/lazy-component.svelte.ts
  *
@@ -82,7 +84,7 @@ export interface LazyComponentHandle<T> {
 export function scheduleIdleImport<T>(load: () => Promise<T>): Promise<T> {
     const run = (): Promise<T> => load()
 
-    if (typeof window !== 'undefined' && window.__PLAYWRIGHT__) {
+    if (isPlaywrightEnvironment()) {
         return run()
     }
 
