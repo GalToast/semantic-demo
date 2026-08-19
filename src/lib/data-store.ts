@@ -35,7 +35,7 @@ import type {
     PositionBufferDescriptor
 } from '@lib/types/business'
 import type { LoadingPhase } from '@lib/types/state'
-import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
+import { loadBusinessData, loadLeadEnrichmentData, enrichRecords } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { debugError } from '@lib/utils/debug'
 
@@ -578,6 +578,14 @@ function describeValue(v: unknown): string {
  */
 export function setLeadEnrichmentData(enrichment: Record<string, LeadEnrichment> | null): void {
     leadEnrichment.set(enrichment)
+
+    // S4 (2026-08-19): merge enrichment-derived values into existing records so
+    // thin placeholder what/naics fields are rescued on-demand when enrichment loads.
+    const records = businessRecords.getSnapshot()
+    if (records && enrichment) {
+        const enriched = enrichRecords(records as BusinessRecord[], enrichment)
+        businessRecords.set(enriched as ReadonlyArray<BusinessRecord>)
+    }
 
     // W67-D1: dev-only dual-write consistency assertion. setLeadEnrichmentData
     // is the ONLY writer to the leadEnrichment rune store. If a future

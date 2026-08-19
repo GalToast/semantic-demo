@@ -26,6 +26,8 @@ export interface BusinessRecord {
     email: string | null
     phone: string | null
     trivia?: string | null
+    /** NAICS code (6-digit), set by the data worker from COL 15; omitted on fallback paths (treated as null). */
+    naics?: string | null
     lat: number | null
     lng: number | null
     geocoded: boolean
@@ -110,6 +112,10 @@ export interface LeadEnrichment {
     email_verified?: boolean
     synergy_score?: number
     cluster_assignment?: string
+    /** Descriptive one-liner from public web presence; used to rescue thin "what" values. */
+    snapshot?: string | null
+    /** NAICS code from enrichment source. */
+    naics?: string | null
 }
 
 // ── Semantic Thread Types ──────────────────────────────────────────────────────

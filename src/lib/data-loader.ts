@@ -41,6 +41,71 @@ const COL = {
 /** Max retries for the main-thread fetch fallback. Each is exponential backoff with jitter. */
 const MAX_BUSINESS_RETRIES = 3
 
+/** Placeholder what-values that signal a "thin" record eligible for enrichment rescue. */
+export const THIN_WHAT_PLACEHOLDERS = [
+    'Local business',
+    'Registry or thin business record',
+    'Montgomery County business',
+    ''
+] as const
+
+/** Values in enrichment.snapshot that are NOT useful as a descriptive what. */
+const SNAPSHOT_NOT_USED = new Set(['-', 'Pending research'])
+
+/**
+ * Apply enrichment-derived values to a single record's `what` and `naics` fields.
+ *
+ * Rules (from Option-1 dry-run verdict, tmp/s4-enrichment-dry-run/REPORT.md):
+ * - `what`: when current value is a THIN_WHAT_PLACEHOLDER AND enrichment.snapshot is a
+ *   non-sentinel string (not "-" or "Pending research"), replace `what` with snapshot verbatim.
+ * - `naics`: when current naics is null AND enrichment has a non-null naics, adopt it.
+ * - Never overwrite a real (non-placeholder) what or an existing naics.
+ *
+ * Returns a NEW object — does not mutate input.
+ */
+export function applyThinRowEnrichment(
+    what: string,
+    naics: string | null,
+    enrichment: { snapshot?: string | null; naics?: string | null }
+): { what: string; naics: string | null } {
+    let finalWhat = what
+    let finalNaics = naics
+
+    if (
+        THIN_WHAT_PLACEHOLDERS.includes(what as typeof THIN_WHAT_PLACEHOLDERS[number]) &&
+        enrichment.snapshot != null &&
+        !SNAPSHOT_NOT_USED.has(enrichment.snapshot)
+    ) {
+        finalWhat = enrichment.snapshot
+    }
+
+    if (finalNaics == null && enrichment.naics != null) {
+        finalNaics = enrichment.naics
+    }
+
+    return { what: finalWhat, naics: finalNaics }
+}
+
+/**
+ * Re-process all records with available enrichment data.
+ *
+ * Used as the runtime enrichment hook: called from data-store.ts setLeadEnrichmentData
+ * after optional enrichment loads on demand. Does NOT modify input array in place.
+ */
+export function enrichRecords(
+    records: BusinessRecord[],
+    enrichment: Record<string, LeadEnrichment> | null
+): BusinessRecord[] {
+    if (!enrichment || enrichment === null) return records
+    return records.map((rec) => {
+        const enr = enrichment[String(rec.lead_id)]
+        if (!enr) return rec
+        const applied = applyThinRowEnrichment(rec.what, rec.naics ?? null, enr)
+        if (applied.what === rec.what && applied.naics === rec.naics) return rec
+        return { ...rec, what: applied.what, naics: applied.naics }
+    })
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function buildAssetUrl(path: string): string {
