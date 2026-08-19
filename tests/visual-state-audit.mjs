@@ -521,6 +521,14 @@ async function markVisualRouteEvidence(page, source, detail) {
     )
 }
 
+async function clearVisualRouteEvidence(page) {
+    await page.evaluate(() => {
+        window.__VISUAL_ROUTE_EVIDENCE__ = { source: '', detail: '', history: [] }
+        delete document.body.dataset.visualRouteSource
+        delete document.body.dataset.visualRouteDetail
+    })
+}
+
 function paethPredictor(a, b, c) {
     const p = a + b - c
     const pa = Math.abs(p - a)
@@ -2208,8 +2216,29 @@ async function forceFocusedVisualState(page) {
     await markVisualRouteEvidence(page, 'forced-state', 'forced focused visual state fixture')
 }
 
-async function enterSemanticDive(page) {
+async function enterSemanticDive(page, clearRouteEvidence = false) {
     await enterFocusFromSearch(page)
+
+    // Clear route evidence from the focus-search setup so the dive button
+    // click is the ONLY step in the history. Without this, the
+    // app-action/constructed-surface steps from enterFocusFromSearch pollute
+    // the proofLane (it checks for ANY constructed step in the history),
+    // forcing 'constructed-surface' even when the click itself was real.
+    //
+    // Only state 22 (320 px semantic-dive) needs this — state 15 is a
+    // constructed-surface state that EXPECTS the constructed-surface proof
+    // lane, so clearing would break its assertion.
+    if (clearRouteEvidence) {
+        await clearVisualRouteEvidence(page)
+    }
+
+    // Give the focus card layout a tick to settle so #btn-focus-dive is
+    // mounted and visible before we try to click it. Without this wait the
+    // button can still be transitioning out of the focus-search chrome and
+    // the click silently no-ops, falling through to the forced-state path.
+    if (clearRouteEvidence) {
+        await page.waitForTimeout(500)
+    }
 
     const diveButton = page.locator('#btn-focus-dive').first()
     if (await diveButton.isVisible().catch(() => false)) {
@@ -2291,6 +2320,13 @@ async function enterSemanticDive(page) {
             document.body.dataset.navMode = 'inside'
             document.body.dataset.navSurface = 'inside'
             document.body.dataset.mode = 'inside'
+            // Signal launch-complete so parity-attrs resolves loadingOverlay
+            // to 'hidden' (resolveLaunchState checks loadingPhase === 'launch').
+            // Without this the fallback path leaves the loading overlay
+            // painted over the semantic-dive surface.
+            document.body.dataset.loadingPhase = 'launch'
+            document.body.dataset.sceneReady = 'true'
+            document.body.dataset.viewHandoffActive = 'false'
         })
         await markVisualRouteEvidence(page, 'forced-state', 'forced semantic dive fallback in visual audit')
     }
@@ -3067,7 +3103,7 @@ async function run() {
                 // fallback (setSemanticDiveMode + setTrailDepth) which provably
                 // activates the semantic-dive surface.
                 try {
-                    await enterSemanticDive(divePage)
+                    await enterSemanticDive(divePage, true)
                 } catch (diveErr) {
                     console.error(`[22-mobile-semantic-dive-320] dive best-effort: ${diveErr.message}`)
                 }
