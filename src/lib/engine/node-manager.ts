@@ -59,13 +59,22 @@ export const MYCELIUM_FIELD_SCALE = Object.freeze({
 export const SCENE_ATMOSPHERE = Object.freeze({
     fogColor: SCENE_PALETTE.fog,
     fogDensity: 0.0028,
-    clearAlpha: 0.96,
-    toneExposure: 1.15,
+    clearAlpha: 0.9,
+    // W60 (2026-08-19): 1.15 → 1.35. Vision-jury read (dots-3-note, 3
+    // screenshots) rated the idle scene median-luminance ~7% (18/255) with
+    // thread/nodes reading as "faint" / "dust"; the judge's single best
+    // change was brighter field + higher node/thread opacity. Exposure lift
+    // brightens the whole ACES tone without per-material risk.
+    toneExposure: 1.35,
     pointOpacityScale: 1.0,
     sporeOpacity: 0.65
 })
-
-const NODE_SPORE_BASE_RADIUS = 0.0019
+// W60 (2026-08-19): 0.0019 → 0.0027 (~42% larger). Vision-jury flagged
+// idle/focus spores as "dust — sparse tiny stars" (~2.4-3.8 px on a
+// 1440×900 canvas: radius 0.0019 × ~1000 px/unit, ×0.62 off-pocket). At
+// 0.0027 the base reads ~5.4px and still stays subordinate to the focused
+// 8× hero spore.
+const NODE_SPORE_BASE_RADIUS = 0.0027
 const NODE_SPORE_COLOR_LIFT = new Color(SCENE_PALETTE.sporeLift)
 const NODE_SPORE_ROLE_TINT_PRIMARY = new Color(SCENE_PALETTE.threadTint) // teal - .direct
 const NODE_SPORE_ROLE_TINT_SUPPORT = new Color(0xffd93d) // amber - .support
@@ -156,7 +165,9 @@ export function getNodeSporeScale(index: number) {
                     break
                 }
             }
-            if (emphasis === 1) emphasis = 0.62
+            // W60: 0.62 → 0.75 — unfocused spores @2.4px read as "dust";
+            // 0.0027 × 0.75 ≈ 4.1px reads as an intentional node.
+            if (emphasis === 1) emphasis = 0.75
         }
     }
     if (index === state.hoverHighlightIndex) {
