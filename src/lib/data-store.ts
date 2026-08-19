@@ -35,7 +35,7 @@ import type {
     PositionBufferDescriptor
 } from '@lib/types/business'
 import type { LoadingPhase } from '@lib/types/state'
-import { loadBusinessData, loadLeadEnrichmentData, enrichRecords } from '@lib/data-loader'
+import { loadBusinessData, loadLeadEnrichmentData, applyThinRowEnrichment } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { debugError } from '@lib/utils/debug'
 
@@ -580,11 +580,21 @@ export function setLeadEnrichmentData(enrichment: Record<string, LeadEnrichment>
     leadEnrichment.set(enrichment)
 
     // S4 (2026-08-19): merge enrichment-derived values into existing records so
-    // thin placeholder what/naics fields are rescued on-demand when enrichment loads.
+    // thin placeholder what/naics fields are rescued on-demand when enrichment
+    // loads. IN-PLACE + identity-preserving: consumers (workers/bindings) hold
+    // the same array instance, satisfying the hydration-seam contract; .set(same)
+    // still notifies subscribers of the enriched fields.
     const records = businessRecords.getSnapshot()
     if (records && enrichment) {
-        const enriched = enrichRecords(records as BusinessRecord[], enrichment)
-        businessRecords.set(enriched as ReadonlyArray<BusinessRecord>)
+        let changed = false
+        for (const rec of businessRecords.getSnapshot() as BusinessRecord[]) {
+            const enr = enrichment[String(rec.lead_id)]
+            if (!enr) continue
+            const applied = applyThinRowEnrichment(rec.what, rec.naics ?? null, enr)
+            if (applied.what !== rec.what) { rec.what = applied.what; changed = true }
+            if (applied.naics !== (rec.naics ?? null)) { rec.naics = applied.naics; changed = true }
+        }
+        if (changed) businessRecords.set(records)
     }
 
     // W67-D1: dev-only dual-write consistency assertion. setLeadEnrichmentData
