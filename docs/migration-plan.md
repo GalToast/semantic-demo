@@ -1,5 +1,7 @@
 # Migration Plan — Post-W42 Baseline (updated 2026-06-29)
 
+> **Snapshot caveat (2026-08-19):** Point-in-time baseline as of 2026-06-29 (post-W42/W48). The repo has since advanced to W60+ (lane commits ff388fe3, 175d6abc, 960c527a, bcdf7dff). Component count, contract count, bundle size, and svelte-check figures below are stale -- read as historical, not current.
+
 **Created:** 2026-06-18
 **Last refresh:** 2026-06-29 (component count sync, legacy-island status resolution, bridge shim clarification)
 **Baseline:** Post-W42 (thread-inspector fix + a11y sweep complete)
@@ -193,7 +195,7 @@ For each high-risk surface, the following must hold before any edit:
 
 **Upstream report:** ~~`docs/svelte-5-strict-mode-bug-upstream-report-2026-06-17.md`~~ _(deleted)_ — paste-ready Svelte GitHub issue.
 
-**Prior sweep:** `docs/latent-!==-bug-sweep-2026-06-17.md` — 167 `!==` usages audited, 38 found risky and fixed.
+**Prior sweep:** ~~docs/latent-!==-bug-sweep-2026-06-17.md~~ _(deleted)_ — 167 `!==` usages audited, 38 found risky and fixed.
 
 **Rule:** Any new `.svelte` or `.svelte.ts` file should use one of the three patterns instead of raw `!==`. Add `// audit-ok:` comment if the usage is provably safe (plain function, non-reactive context).
 
