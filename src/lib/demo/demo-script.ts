@@ -18,6 +18,7 @@ import { switchView } from '@lib/orchestration/view-controller'
 import { getBusinessRecords } from '@lib/data-store'
 import { setLegendOpen } from '@lib/stores/legend.svelte'
 import { appState } from '@lib/state/app.svelte.ts'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 export type DemoStep = {
     phase: DemoPhase
@@ -41,6 +42,7 @@ export async function waitForSearchHit(timeoutMs: number): Promise<number | null
         if (demoPhase() !== entryPhase) return null
         const hit = getFirstSearchHit()
         if (hit !== null) return hit
+        const _pollReg = new DisposableRegistry({ label: 'demo-wait-for-search' })
         await new Promise<void>((r) => {
             let settled = false
             let timer: ReturnType<typeof setTimeout> | null = null
@@ -48,11 +50,11 @@ export async function waitForSearchHit(timeoutMs: number): Promise<number | null
                 if (settled) return
                 settled = true
                 if (timer !== null) clearTimeout(timer)
+                _pollReg.disposeAll()
                 lifecycleSignal?.removeEventListener('abort', finish)
                 r()
             }
-            // eslint-disable-next-line no-restricted-syntax -- lifecycle-owned bounded poll
-            timer = setTimeout(finish, 250)
+            timer = _pollReg.schedule(250, finish)
             if (lifecycleSignal) {
                 if (lifecycleSignal.aborted) finish()
                 else lifecycleSignal.addEventListener('abort', finish, { once: true })

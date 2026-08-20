@@ -23,6 +23,7 @@ import type { BusinessRecord } from '@lib/types/business'
 import { getBusinessRecords } from '@lib/data-store'
 import { guardReducedMotion } from '@lib/demo/guards'
 import { isDeepLinkParams } from '@lib/orchestration/responsive-renderer'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,7 @@ export const DEMO_SESSION_KEY = 'moco_mycelium_demo_session_v1'
 export const MAX_START_RETRIES = 20
 const SHOWCASE_POOL: readonly number[] = [50, 707, 1525, 2908, 3899, 4102, 6684, 7938]
 const timers = new Map<ReturnType<typeof setTimeout>, number>()
+let _demoReg = new DisposableRegistry({ label: 'demo' })
 
 /** Atomic start guard — prevents stacked retry loops from causing double-starts.
  *  Set synchronously when startDemo() is called; checked before any timer fires. */
@@ -225,11 +227,10 @@ export function trackDemoTimer(id: ReturnType<typeof setTimeout>): ReturnType<ty
 }
 
 export function scheduleDemoTimer(callback: () => void, delay: number): ReturnType<typeof setTimeout> {
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    const id = setTimeout(() => {
+    const id = _demoReg.schedule(delay, () => {
         timers.delete(id)
         callback()
-    }, delay)
+    })
     timers.set(id, Date.now())
     return id
 }
@@ -237,6 +238,7 @@ export function scheduleDemoTimer(callback: () => void, delay: number): ReturnTy
 export function cancelAllDemoTimers(): void {
     for (const id of timers.keys()) clearTimeout(id)
     timers.clear()
+    _demoReg = new DisposableRegistry({ label: 'demo' })
 }
 
 export function getActiveDemoTimerCount(): number {

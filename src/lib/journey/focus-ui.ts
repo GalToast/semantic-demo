@@ -26,6 +26,7 @@ import {
 import { isCompactLandscape, isUltraCompactPortrait } from '@lib/utils/environment'
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles'
 import { appState } from '@lib/state/app.svelte'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 export function isCondensedFocusStageViewport(): boolean {
     return appState.currentView === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait())
@@ -280,12 +281,12 @@ export function updateFocusNeighborRail(): void {
         }
         const scheduleInspect = () => {
             cancelNeighborHoverIntent()
-            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-            _neighborHoverIntentTimer = setTimeout(() => {
+            const reg = new DisposableRegistry({ label: 'focus-ui-hover' })
+            _neighborHoverIntentTimer = reg.schedule(80, () => {
                 const nextIndex = Number(btn.dataset.index)
                 if (!Number.isFinite(nextIndex)) return
                 inspectThreadNeighbor(nextIndex)
-            }, 80)
+            })
         }
 
         const walkToIndex = () => {

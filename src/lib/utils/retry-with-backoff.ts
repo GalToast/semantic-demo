@@ -12,6 +12,7 @@
  */
 
 import { debugWarn } from '@lib/utils/debug'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -293,15 +294,16 @@ export async function retryWithBackoff<T>(
  */
 async function delayWithSignal(ms: number, signal: AbortSignal): Promise<void> {
     if (signal.aborted) throw new DOMException('Aborted during retry backoff', 'AbortError')
+    const reg = new DisposableRegistry({ label: 'retry-with-backoff' })
     return new Promise<void>((resolve, reject) => {
-        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        const timer = setTimeout(() => {
+        const timer = reg.schedule(ms, () => {
             signal.removeEventListener('abort', onAbort)
             resolve()
-        }, ms)
+        })
 
         function onAbort(): void {
             clearTimeout(timer)
+            reg.disposeAll()
             signal.removeEventListener('abort', onAbort)
             reject(new DOMException('Aborted during retry backoff', 'AbortError'))
         }

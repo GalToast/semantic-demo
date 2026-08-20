@@ -21,6 +21,7 @@
 import { appState } from '@lib/state/app.svelte'
 import { prefersReducedMotion } from '@lib/utils/environment'
 import { easeInOutCubic } from '@lib/utils/math-easing'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -143,8 +144,8 @@ class CameraControlsRestore {
         )
             return
         this.autoRotateResumeDueAt = performance.now() + delay
-        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        this.autoRotateResumeTimer = setTimeout(() => {
+        const _reg = new DisposableRegistry({ label: 'camera-controls-restore' })
+        this.autoRotateResumeTimer = _reg.schedule(delay, () => {
             this.autoRotateResumeTimer = null
             this.autoRotateResumeDueAt = 0
             if (
@@ -159,7 +160,7 @@ class CameraControlsRestore {
             ) {
                 this.setAutoRotateSuspended(false)
             }
-        }, delay)
+        })
     }
 
     noteSceneInteraction(delay: number = AUTO_ROTATE_IDLE_MS): void {

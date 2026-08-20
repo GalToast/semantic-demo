@@ -38,6 +38,7 @@ import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store
 // stateProxy instance that diverges from the live one.
 import type { AppState } from '@lib/state/app.svelte'
 import { debugError } from '@lib/utils/debug'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 let _state: AppState | null = null
 // Promise gate: resolves when attachLegacyState() is called, so
@@ -184,7 +185,8 @@ async function getWorker(): Promise<Worker | null> {
                 err instanceof Error ? err.message : err
             )
             if (attempt < WORKER_RETRY_DELAYS.length - 1) {
-                await new Promise((r) => setTimeout(r, delay)) // eslint-disable-line no-restricted-syntax -- local Promise resolution
+                const _retryReg = new DisposableRegistry({ label: 'semantic-threads-worker-retry' })
+                await new Promise<void>((r) => _retryReg.schedule(delay ?? 0, () => r()))
             }
         }
     }
@@ -216,15 +218,16 @@ async function _pingWorker(worker: Worker, timeoutMs: number): Promise<boolean> 
             }
         }
 
-        // eslint-disable-next-line no-restricted-syntax -- local Promise resolution
-        const timer = setTimeout(() => {
+        const _pingReg = new DisposableRegistry({ label: 'semantic-threads-ping' })
+        const timer = _pingReg.schedule(timeoutMs, () => {
             cleanup()
             resolve(false)
-        }, timeoutMs)
+        })
 
         handlerRef.current = (event: MessageEvent): void => {
             if (event.data?.type === 'PONG' && event.data?.pingId === pingId) {
                 clearTimeout(timer)
+                _pingReg.disposeAll()
                 cleanup()
                 resolve(true)
             }
@@ -623,7 +626,8 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
     // Guard: if attachLegacyState() hasn't been called yet, await the promise
     // gate with a 500ms timeout, then degrade gracefully instead of throwing.
     if (_state === null) {
-        await Promise.race([_stateReady, new Promise<void>((resolve) => setTimeout(resolve, 500))]) // eslint-disable-line no-restricted-syntax -- local race timeout
+        const _gateReg = new DisposableRegistry({ label: 'semantic-threads-state-gate' })
+        await Promise.race([_stateReady, new Promise<void>((resolve) => _gateReg.schedule(500, () => resolve()))])
         if (_state === null) {
             debugWarn('[semantic-threads] loadSemanticThreads called before attachLegacyState(); degrading gracefully')
             return false
