@@ -63,7 +63,7 @@ describe('UI-6: legend/info-panel collision in map view', () => {
     it('App.svelte passes mapModeActive to Legend as mapView prop', () => {
         const appSrc = readAppSvelte()
         // Should pass mapView={mapModeActive} or similar reactive binding
-        expect(appSrc).toMatch(/mapView=\{mapModeActive\}/)
+        expect(appSrc).toMatch(/mapView=\{surface\.mapModeActive\}/)
     })
 
     it('default .legend rule has left: 1rem (collision position)', () => {

@@ -18,6 +18,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const APP_PATH = resolve(import.meta.dirname, '../../src/App.svelte')
+const SURFACE_COMPOSITION_PATH = resolve(import.meta.dirname, '../../src/lib/ui/use-surface-composition.svelte.ts')
 const CHROME_PATH = resolve(import.meta.dirname, '../../src/components/JourneyChrome.svelte')
 const PARITY_PATH = resolve(import.meta.dirname, '../../src/lib/ui/use-parity-attrs.svelte.ts')
 
@@ -66,7 +67,7 @@ function normalize(source: string): string {
 }
 
 describe('focus gate lockstep', () => {
-    const appGate = normalize(readGateExpression(APP_PATH, 'let focusActive = $derived('))
+    const appGate = normalize(readGateExpression(SURFACE_COMPOSITION_PATH, 'const focusActive = $derived('))
     const chromeGate = normalize(readGateExpression(CHROME_PATH, 'const chromeHasFocus = $derived('))
 
     it('wires App.svelte focusActive through the shared helper', () => {

@@ -16,8 +16,9 @@
   import { onMount, type Snippet } from 'svelte';
   import { get } from 'svelte/store';
   import { navStore } from '@lib/stores/navigation.svelte.ts';
-  import { useParityAttrs, isFocusSurfaceActive } from '@lib/ui/use-parity-attrs.svelte';
+  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
   import { useNavState } from '@lib/ui/use-nav-state.svelte';
+  import { useSurfaceComposition } from '@lib/ui/use-surface-composition.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { removeStaticPlaceholder, computeDevToolsVisible, isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts';
@@ -121,7 +122,7 @@
   // into module-internal $state holders (which no longer exist).
   // DIVE-BUTTON GAP (2026-08-06): the compass surface is the primary
   // chrome for search/focus/map, yet its lazy chunk only resolves AFTER
-  // legacyCompassSurfaceActive flips (line 317). On slow/cold starts that
+  // legacyCompassSurfaceActive (now surface.legacyCompassSurfaceActive) flips. On slow/cold starts that
   // leave the first focus entry with NO #btn-focus-dive for ~2-3s, and any
   // click in that window deadlocks the dive affordance. The Playwright block
   // below bypasses this for tests only; real users pay the fetch latency.
@@ -155,7 +156,7 @@
   // as scheduleIdleImport, used internally by createLazyComponent. No call
   // sites remain in App.svelte; deletion.
 
-  $effect(() => mapViewLazy.ensure(mapModeActive));
+  $effect(() => mapViewLazy.ensure(surface.mapModeActive));
 
   // W5-T3b: idle-schedule ThreadInspector — only mounts when Thread view is active.
   $effect(() => threadInspectorLazy.ensure(threadInspectorActive()));
@@ -188,17 +189,12 @@
   // W45-A: Decide initial render kind synchronously at mount time.
   // Mobile / narrow-viewport / automated sessions get the 2D placeholder
   // so the 587 KB three.js chunk stays off the cold-load critical path.
-  // The parity-attr composable returned below is the source of truth for
-  // `renderKind`; declare it here so the $derived initializer below is in
-  // scope (Svelte 5 will invalidate `renderKind` whenever `parity.renderKind`
-  // changes via the parityMap MutationObserver).
+  // The parity-attr composable (useParityAttrs) is the source of truth for
+  // all body data-* attributes including renderKind. The surface-composition
+  // composable (useSurfaceComposition) derives renderKind from parity.renderKind
+  // via the parityMap proxy - Svelte 5 runes invalidate it whenever the body
+  // dataset flips (e.g. Playwright auto-signal setRenderKind('webgl') on mount).
   const parity = useParityAttrs();
-  // Reactive render kind: read from the parity-attr snapshot so the {#if}
-  // branches below re-render when the body dataset flips (e.g., the
-  // Playwright auto-signal in this file calls setRenderKind('webgl') on
-  // mount, which would otherwise leave this local at 'placeholder2d'
-  // forever and keep <Placeholder2D> rendered on top of <SearchInput>).
-  let renderKind = $derived(parity.renderKind);
   let s3dSceneReady = $state(false);
   let s3dSceneError = $state(false);
 
@@ -217,100 +213,41 @@
   // from `parityMap` (reactive rune-backed proxy kept in sync by
   // parity-attrs.svelte.ts:installParityAttributeSync()).
   //
-  // Parity attribute bundle — replaces 9 separate $derived reads.
-  // The composable returns reactive getters; reads in the template and
-  // $derived/$effect below register dependencies on parityMap and the
-  // bypass-attr MutationObserver automatically.
-  // (parity is declared earlier — just above the renderKind $derived — so
-  //  the renderKind initializer has parity in scope.)
+  // Surface composition predicates (renderKind, mapModeActive, focusActive,
+  // headerVisible, controlsVisible, infoPanelOpen, legacyCompassSurfaceActive,
+  // etc.) now live in useSurfaceComposition().parity.renderKind is reactive
+  // through the parityMap proxy — the composable's $derived re-runs on body
+  // dataset flips (e.g., Playwright auto-signal setRenderKind('webgl') on mount).
   // ── Reactive nav store state ──
   // appState.navState is Svelte 5 rune-backed $state; reads in $derived
   // register reactive dependencies directly — no subscribe mirror needed.
   // After W48-T4 extraction, the 4 raw nav reads come from useNavState().
-  // Surface composition (mapModeActive, searchSurfaceActive, focusActive,
-  // etc.) stays here because it composes both nav + parity attrs and is
-  // tightly coupled to App.svelte's template-local predicates.
-  const nav = useNavState();
-  let weatherVisible = $state(true);
+  const nav = useNavState();  let weatherVisible = $state(true);
 
-  let mapModeActive = $derived(nav.view === 'map');
-  let searchSurfaceActive = $derived((nav.surface === 'search' || parity.panelSurface === 'search') && !parity.focusSearchForced);
-  let searchFamilySurfaceActive = $derived(searchSurfaceActive || parity.focusSearchForced);
-  let mapTrailSearchLaneActive = $derived(
-    mapModeActive &&
-    parity.journeyNavigationOwner === 'map-trail-strip' &&
-      parity.panelSurface.startsWith('map-') &&
-      parity.panelSurface !== 'map-idle' && // audit-ok: literal state check
-      parity.panelSurface !== 'map' // audit-ok: literal state check
-  );
-  let idleSurfaceActive = $derived(nav.surface === 'idle' && !searchSurfaceActive);
-
-  // Search only shows when explicitly in search AND has content
-  let _idleSearchVisible = $derived(idleSurfaceActive);
-
-  // Focus stage: only when in focus/inside/trail or a node is explicitly focused
-  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
-  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
-  // W49-c: include `parity.panelSurface === 'focus-search'` so the surface-contract
-  // test path (which falls back to body.dataset mutations when the bridge actions
-  // are racy) still mounts JourneyChrome and TrailControls. Without this, map-trail
-  // surface contract times out at `#btn-focus-path` because JourneyChrome never
-  // mounts in the focus-search fallback path even though URL hydration routes
-  // nav.surface = 'focus-search' through the production chain.
-  let focusActive = $derived(isFocusSurfaceActive(nav.mode, nav.focusedIndex ?? null, parity));
-  let focusStageActive = $derived(focusActive && !mapModeActive);
-
-  // Idle owns the full header. Search/focus keep only utility chrome so the
-  // escape affordances exist for the mobile/short-landscape CSS contracts.
-  let headerVisible = $derived(!mapModeActive && (idleSurfaceActive || searchFamilySurfaceActive || focusActive));
-  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
-  // inverts `!==` to `===`. Use positive equality + negation instead.
-  let controlsVisible = $derived(
-    s3dSceneReady &&
-      !(nav.surface === 'focus-search') &&
-      !parity.focusSearchForced &&
-      !($viewport.isCompact && (parity.panelSurface === 'idle' || nav.surface === 'idle')) &&
-      // A3: suppress camera controls on mobile search surface — the search
-      // results/focus-stage owns the cockpit; the zoom/rotate rail competes
-      // for the same right-edge viewport budget.
-      !($viewport.isCompact && (parity.panelSurface === 'search' || nav.surface === 'search'))
-  );
-  let infoPanelOpen = $derived(
-    (idleSurfaceActive || searchSurfaceActive || (focusActive && ($viewport.isCompact || parity.compact))) &&
-      !mapModeActive
-    // W46: On compact/mobile idle the search bar is hosted inside InfoPanel
-    // and is the primary entry point. The panel must be considered open so
-    // it receives pointer events and renders at full opacity (0.92) instead of
-    // the collapsed peek state (0.72 / pointer-events:none) which made the
-    // search input unreachable on mobile.
-  );
-
-  // W5-T3: idle-load JourneyCompass (legacy-compass parity surface)
-  let legacyCompassSurfaceActive = $derived(
-    searchFamilySurfaceActive ||
-    focusActive ||
-    mapModeActive ||
-    parity.panelSurface.startsWith('map-') ||
-    nav.surface.startsWith('map-')
-  );
+// Surface composition: all render-gate predicates (mapModeActive, focusActive,
+  // headerVisible, controlsVisible, etc.) now live in the useSurfaceComposition
+  // composable. The W53 lockstep gate for focusActive/focusStageActive is
+  // single-sourced via isFocusSurfaceActive() — JourneyChrome.svelte's
+  // chromeHasFocus uses the same predicate, so widening either is a one-line
+  // change in the composable.
+  const surface = useSurfaceComposition({ getSceneReady: () => s3dSceneReady });
 
   // Reactive panel cleanup: close panels that don't belong in the current view
   // (W46-C2b: reduces panel stacking clutter in search/trail/focus/inside/map)
   $effect(() => {
-    const surface = nav.surface;
+    const navSurface = nav.surface;
     const mode = nav.mode;
 
     // Close legend when entering search, trail, focus, inside, or map modes
     // The legend is only relevant in idle/overview and info-panel states
     if (
-      surface === 'search' ||
-      surface === 'focus-search' ||
+      navSurface === 'search' ||
+      navSurface === 'focus-search' ||
       mode === 'trail' ||
       mode === 'focus' ||
       mode === 'inside' ||
       nav.view === 'map'
-    ) {
-      if (get(legendOpen)) {
+    ) {      if (get(legendOpen)) {
         setLegendOpen(false);
       }
     }
@@ -340,11 +277,11 @@
     return focusSearchInputUntilLanded()
   });
 
-  $effect(() => legacyCompassSurfaceLazy.ensure(legacyCompassSurfaceActive));
+  $effect(() => legacyCompassSurfaceLazy.ensure(surface.legacyCompassSurfaceActive));
 </script>
 
 {#snippet searchPanelContent()}
-  {#if idleSurfaceActive || searchFamilySurfaceActive}
+  {#if surface.idleSurfaceActive || surface.searchFamilySurfaceActive}
     <SearchBar panelContained />
   {/if}
 {/snippet}
@@ -369,7 +306,7 @@
      announcer belongs inside the main landmark, not floating outside. -->
 <!-- (moved) -->
 
-{#if headerVisible}
+{#if surface.headerVisible}
   <!-- Header with mode chips — outside <main> as its own banner landmark -->
   <!-- A2-4: Always render mode chips for accessibility; CSS controls visibility per state -->
   <Header visible={true} utilityOnly={false} />
@@ -383,7 +320,7 @@
      (satisfies a11y-h1-page-title.test.ts via WCAG 2.4.6).
      W51-M2: hide this H1 when Placeholder2D is rendering so mobile
      doesn't expose two H1s (placeholder's own heading + this one). -->
-{#if renderKind !== 'placeholder2d'}
+{#if surface.renderKind !== 'placeholder2d'}
   <div role="region" aria-label="Application title" class="app-title-header">
     <h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
   </div>
@@ -403,7 +340,7 @@
   class:is-overview={$navStore.mode === 'overview'}
 >
   <!-- Layer 0: WebGL canvas / placeholder crossfade -->
-  {#if renderKind === 'placeholder2d'}
+  {#if surface.renderKind === 'placeholder2d'}
     <div class="layer-0-crossfade">
       <div class="layer canvas-layer" class:active={engineReady.value && canvasLazy.current}>
         {#if engineReady.value && canvasLazy.current}
@@ -436,19 +373,19 @@
   </section>
 
   <!-- Full-screen map view (Map chip) -->
-  {#if (mapModeActive || isPlaywright) && mapViewLazy.current}
+  {#if (surface.mapModeActive || isPlaywright) && mapViewLazy.current}
     {@const Cmp = mapViewLazy.current}
     <Cmp />
   {/if}
 
   <!-- Layer 50: Legend panel (UI-2: concealed in focus states to resolve bottom-left triple collision) -->
-  <Legend open={$legendOpen} mapView={mapModeActive} concealedByFocus={focusActive} />
+  <Legend open={$legendOpen} mapView={surface.mapModeActive} concealedByFocus={surface.focusActive} />
 
   <!-- Layer 50: Weather widget (top-right chrome, same layer as legend).
        Wrapped in `s3dSceneReady` so the pill doesn't render over the
        Placeholder2D splash — chrome is meaningless until the WebGL
        canvas paints. Matches the gate added to <Controls /> via
-       `controlsVisible` so camera controls and weather appear together
+       `surface.controlsVisible` so camera controls and weather appear together
        once the scene is ready. -->
   {#if s3dSceneReady && weatherWidgetLazy.current}
     {@const Cmp = weatherWidgetLazy.current}
@@ -456,11 +393,11 @@
   {/if}
 
   <!-- Layer 80: Info panel -->
-  {#if !mapModeActive && infoPanelLazy.current}
+  {#if !surface.mapModeActive && infoPanelLazy.current}
     {@const Cmp = infoPanelLazy.current}
-    <Cmp open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
+    <Cmp open={surface.infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
   {/if}
-  {#if mapTrailSearchLaneActive}
+  {#if surface.mapTrailSearchLaneActive}
     <!--
       Layer 100: Map-trail floating search bar.
       The primary search now lives inside InfoPanel as a single instance
@@ -485,9 +422,9 @@
   <div
     id="focus-stage"
     class="focus-stage"
-    class:active={focusStageActive}
-    aria-hidden={!focusStageActive ? 'true' : undefined}
-    style:pointer-events={focusStageActive ? 'none' : undefined}
+    class:active={surface.focusStageActive}
+    aria-hidden={!surface.focusStageActive ? 'true' : undefined}
+    style:pointer-events={surface.focusStageActive ? 'none' : undefined}
     data-trail-state={parity.trailState}
     data-inside-walk-state={parity.insideWalkState}
     data-strand-journey={parity.strandJourney}
@@ -495,16 +432,16 @@
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
     {#if focusCardLazy.current}
       {@const Cmp = focusCardLazy.current}
-      <Cmp visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
+      <Cmp visible={surface.focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
     {/if}
     <!-- Layer 200: Journey chrome (breadcrumb, trail indicators).
-         Gate the mount on focusStageActive (not just the lazy chunk being
+         Gate the mount on surface.focusStageActive (not just the lazy chunk being
          loaded) so it is never rendered inside the aria-hidden #focus-stage
-         wrapper in the map+focus edge (where focusStageActive is false but
-         focusActive is true). This keeps visibility/aria consistent with
-         FocusCard's `visible={focusStageActive}` and the wrapper's
+         wrapper in the map+focus edge (where surface.focusStageActive is false but
+         surface.focusActive is true). This keeps visibility/aria consistent with
+         FocusCard's `visible={surface.focusStageActive}` and the wrapper's
          aria-hidden predicate. Normal (non-map) focus rendering is unchanged. -->
-    {#if focusStageActive}
+    {#if surface.focusStageActive}
         {#if journeyChromeLazy.current}
             {@const Cmp = journeyChromeLazy.current}
             <Cmp visible={true} />
@@ -520,7 +457,7 @@
       rebuilds the pocket (via applyLocalNeighborhoodFocus) when focusedIndex
       changes. The keyboard/screen-reader surface lives in FocusPocketA11y.
     -->
-    {#if focusStageActive}
+    {#if surface.focusStageActive}
       <FocusPocket />
     {:else}
       <!-- W5-T3b: skeleton placeholder prevents CLS while FocusPocket idle-hydrates -->
@@ -529,7 +466,7 @@
   </div>
 
   <!-- Mini-map trail (self-gates via visible && hasTrail() && trail.length > 0) -->
-  <MapSummary visible={!mapModeActive} />
+  <MapSummary visible={!surface.mapModeActive} />
 
   <!--
     Focus pocket accessibility surface (Phase 4 of focus-pocket-rendering-decision-2026-06-12.md).
@@ -539,10 +476,10 @@
   <FocusPocketA11y />
 
   <!-- Layer 700: Compass rail -->
-  <CompassRail visible={focusActive && !$viewport.isCompact} />
+  <CompassRail visible={surface.focusActive && !$viewport.isCompact} />
 
   <!-- Layer 800: Camera controls -->
-  <Controls visible={controlsVisible} />
+  <Controls visible={surface.controlsVisible} />
 
   <!-- Filters (positioned at bottom center) -->
   <Filters open={false} />

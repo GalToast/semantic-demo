@@ -30,6 +30,11 @@ function readAppSvelte(): string {
     return readFileSync(p, 'utf-8')
 }
 
+function readSurfaceComposition(): string {
+    const p = resolve(__dirname, '../../src/lib/ui/use-surface-composition.svelte.ts')
+    return readFileSync(p, 'utf-8')
+}
+
 describe('UI-2: bottom-left triple collision in focus state', () => {
     const legendSrc = readComponent('Legend.svelte')
     const appSrc = readAppSvelte()
@@ -72,16 +77,16 @@ describe('UI-2: bottom-left triple collision in focus state', () => {
     // ── App.svelte: passes concealedByFocus to Legend ──
 
     it('App.svelte passes concealedByFocus={focusActive} to Legend', () => {
-        expect(appSrc).toMatch(/concealedByFocus=\{focusActive\}/)
+        expect(appSrc).toMatch(/concealedByFocus=\{surface\.focusActive\}/)
     })
 
     // ── App.svelte: focusActive derivation includes focus-search ──
 
     it('App.svelte derives focusActive covering focus-search surface', () => {
-        // focusActive is derived inline in App.svelte; the orchestrator
-        // that originally held this was deleted in W47 cleanup. Verify
-        // focusSearchForced is in App.svelte's $derived block instead.
-        expect(appSrc).toMatch(/focusSearchForced/)
+        // focusActive is now derived in the useSurfaceComposition composable.
+        // Verify focusSearchForced is referenced there.
+        const surfaceSrc = readSurfaceComposition()
+        expect(surfaceSrc).toMatch(/focusSearchForced/)
     })
 
     // ── JourneyChrome: no changes needed (self-gating) ──

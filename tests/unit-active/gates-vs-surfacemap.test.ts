@@ -17,7 +17,7 @@
  * /em 30s-e2e-timeout landmine).
  *
  * Existing call-site truths (asserted by wire-in test):
- *   App.svelte:237         focusActive      = $derived(isFocusSurfaceActive(nav.mode, nav.focusedIndex ?? null, parity))
+ *   use-surface-composition.svelte.ts  focusActive = $derived(isFocusSurfaceActive(nav.mode, nav.focusedIndex ?? null, parity))
  *   JourneyChrome.svelte:139 chromeHasFocus = $derived(isFocusSurfaceActive(navSnapshot.mode, currentFocusedIndex ?? null, parity))
  */
 import { describe, expect, it } from 'vitest'
@@ -27,6 +27,7 @@ import { resolve } from 'node:path'
 import { isPanelSurface, PANEL_SURFACES } from '@lib/stores/navigation/surface-mode-map'
 
 const APP_PATH = resolve(import.meta.dirname, '../../src/App.svelte')
+const SURFACE_COMPOSITION_PATH = resolve(import.meta.dirname, '../../src/lib/ui/use-surface-composition.svelte.ts')
 const CHROME_PATH = resolve(import.meta.dirname, '../../src/components/JourneyChrome.svelte')
 const PARITY_PATH = resolve(import.meta.dirname, '../../src/lib/ui/use-parity-attrs.svelte.ts')
 
@@ -102,7 +103,7 @@ const helperSurfaces = extractPanelSurfaceLiterals(normalize(parityBody))
 const expected = sortedUnique([...EXPECTED_FOCUS_SURFACES])
 
 describe('focus gates pinned to canonical surface-mode-map (via shared helper)', () => {
-    const appGate = normalize(readCallExpression(readFileSync(APP_PATH, 'utf8'), 'let focusActive = $derived('))
+    const appGate = normalize(readCallExpression(readFileSync(SURFACE_COMPOSITION_PATH, 'utf8'), 'const focusActive = $derived('))
     const chromeGate = normalize(
         readCallExpression(readFileSync(CHROME_PATH, 'utf8'), 'const chromeHasFocus = $derived(')
     )

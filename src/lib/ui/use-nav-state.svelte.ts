@@ -12,9 +12,8 @@
  *
  * This composable only owns the **raw nav reads with their defaults**.
  * Surface composition (mapModeActive, searchSurfaceActive, focusActive,
- * etc.) stays in App.svelte because it composes both nav + parity attrs
- * and template-local logic — moving it would couple this composable to
- * parity-attrs for no win.
+ * etc.) was extracted to `useSurfaceComposition` (App.svelte + this composable
+ * + useParityAttrs) — single-sourced the W53 lockstep gate for focusActive.
  *
  * Naming note: the interface is `NavStateSnapshot` (not `NavState`) to
  * avoid colliding with the existing `NavState` interface in

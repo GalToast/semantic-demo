@@ -40,6 +40,11 @@ const paritySrc = readFileSync(resolve(SRC_DIR, 'lib', 'orchestration', 'parity-
 // source so a new parity attribute added to PARITY_ATTRIBUTES still has
 // to be referenced (either in the composable or in another parity consumer).
 const parityAttrsSrc = readFileSync(resolve(SRC_DIR, 'lib', 'ui', 'use-parity-attrs.svelte.ts'), 'utf8')
+// Surface composition predicates (focusActive, mapModeActive, etc.) were
+// extracted from App.svelte into this composable. Rune-count checks include
+// both sources to verify the composition-root still carries rich Svelte 5
+// reactivity after the W58-T4 extraction.
+const surfaceCompositionSrc = readFileSync(resolve(SRC_DIR, 'lib', 'ui', 'use-surface-composition.svelte.ts'), 'utf8')
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -319,8 +324,11 @@ describe('App.svelte — no dead imports', () => {
 // ---------------------------------------------------------------------------
 
 describe('App.svelte — Svelte 5 rune count', () => {
+    // W58-T4: surface composition predicates extracted to use-surface-composition.svelte.ts
+    const combinedSrc = appSrc + surfaceCompositionSrc
+
     it('uses at least 30 $derived / $effect / $state runes', () => {
-        const derived = (appSrc.match(/\$derived/g) ?? []).length
+        const derived = (combinedSrc.match(/\$derived/g) ?? []).length
         const effect = (appSrc.match(/\$effect/g) ?? []).length
         const state = (appSrc.match(/\$state/g) ?? []).length
         const total = derived + effect + state
@@ -333,7 +341,8 @@ describe('App.svelte — Svelte 5 rune count', () => {
         // predicates (mapModeActive, searchSurfaceActive, focusActive,
         // headerVisible, controlsVisible, infoPanelOpen) — still rich
         // reactive composition, just no longer leaking raw schema reads.
-        const derived = (appSrc.match(/\$derived/g) ?? []).length
+        // W58-T4: 12 surface predicates extracted to use-surface-composition.
+        const derived = (combinedSrc.match(/\$derived/g) ?? []).length
         expect(derived).toBeGreaterThanOrEqual(10)
     })
 })
