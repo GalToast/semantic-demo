@@ -23,6 +23,7 @@ import { startSearch, markRestoredQuery } from '@lib/search/search-abort'
 import { waitForSearchSettle, clearExplorationFocusSelection } from './url-writer'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { isRestoreStale } from './url-restore-state'
+import { frameCameraOnRestoredAnchor } from './url-restore-deep-link'
 
 // ── Filter + cluster restore ──────────────────────────────────────────────────
 
@@ -223,6 +224,14 @@ async function _restoreSearchFromParams(
                 }
                 if (isRestoreStale(restoreToken)) return
                 _focusPocketMod.applyLocalNeighborhoodFocus(rebuildIndex)
+                // W61 (2026-08-20): mid-zoom camera framing seam — the
+                // search-restore path (unlike the click path) never flew the
+                // camera to the focused node; only SEARCH_FOCUS_REQUESTED was
+                // published (mirrors nav state) while animateCameraToNode runs
+                // from focusOnNode (click/keyboard) or _frameCameraOnAnchor
+                // (anchor deep-links). Reuse the guarded anchor-frame poll so
+                // ?q= restores land at the neighborhood, not the overview.
+                frameCameraOnRestoredAnchor(rebuildIndex, restoreToken)
             } catch (e) {
                 debugWarn('[url-state] applyLocalNeighborhoodFocus re-build failed after search restore', e)
             }

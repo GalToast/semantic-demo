@@ -348,3 +348,8 @@ async function _restoreAnchorFromParams(anchorId: string, restoreToken: number, 
  * this private surface.
  */
 export { _restoreAnchorFromParams }
+
+/** PUBLIC camera-frame wrapper for the search-restore path (W61). */
+export function frameCameraOnRestoredAnchor(index: number, restoreToken: number): void {
+    _frameCameraOnAnchor(index, restoreToken)
+}
