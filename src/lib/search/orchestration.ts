@@ -381,9 +381,8 @@ export async function search(query: string, options: SearchOptions = {}): Promis
             resultsEl = document.getElementById('search-results')
             statusEl = document.getElementById('search-status')
             if (resultsEl && statusEl) break
-            await new Promise<void>((resolve) =>
-                setTimeout(resolve, 40) // eslint-disable-line no-restricted-syntax -- 40ms DOM poll scoped to current request; lifecycle guarded by isRequestCurrent/signal checks above
-            )
+            const _domPollReg = new DisposableRegistry({ label: 'search-dom-mount-poll' })
+            await new Promise<void>((resolve) => _domPollReg.schedule(40, () => resolve()))
         }
     }
     if (!resultsEl || !statusEl) {

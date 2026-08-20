@@ -15,6 +15,7 @@ import { readApiUnreachable } from '@lib/search/mock-search-fallback'
 import { debugWarn } from '@lib/utils/debug'
 import { apiUrl } from '@lib/utils/api-url'
 import { railBanner } from '@lib/rail/rail-status'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Window augmentation (semantic-lane helpers attached by lifecycle.js) ────
 
@@ -379,7 +380,8 @@ export async function probeSemanticLane({
 
     state.semanticLaneProbePromise = (async () => {
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000) // eslint-disable-line no-restricted-syntax -- local Promise timeout, cleared in finally
+        const _probeReg = new DisposableRegistry({ label: 'semantic-lane-probe-timeout' })
+        const timeoutId = _probeReg.schedule(5000, () => controller.abort())
         try {
             const payload = await fetchSemanticLaneHealth({ warm: effectiveWarm, signal: controller.signal })
             applySemanticLaneHealthPayload(payload)
@@ -416,6 +418,7 @@ export async function probeSemanticLane({
             return null
         } finally {
             clearTimeout(timeoutId)
+            _probeReg.disposeAll()
             state.semanticLaneProbePromise = null
             if (typeof win?.updateSemanticLaneAssistUi === 'function') win.updateSemanticLaneAssistUi()
             if (state.semanticLanePendingWarm) {
