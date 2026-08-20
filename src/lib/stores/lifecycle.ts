@@ -26,6 +26,7 @@ import { publish, EVENTS } from '../orchestration/event-bus'
 import { applyPointFilterColors } from '../journey/point-color'
 import { registerOpenDialog, unregisterOpenDialog } from '@lib/utils/focus-trap-bindings'
 import { computeParityAttributes, applyParityAttributes } from '../orchestration/parity-attrs.svelte.ts'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Delegates to real stores ─────────────────────────────────────────────────
 
@@ -278,12 +279,12 @@ export function resetExperienceState(): void {
     const searchResults = document.getElementById('search-results')
     if (searchResults) {
         searchResults.classList.remove('active')
-        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        setTimeout(() => {
+        const reg = new DisposableRegistry({ label: 'store-lifecycle-search-results' })
+        reg.schedule(450, () => {
             if (!searchResults.classList.contains('active')) {
                 searchResults.hidden = true
             }
-        }, 450)
+        })
     }
 
     setSearchStatus('idle')

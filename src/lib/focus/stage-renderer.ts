@@ -23,9 +23,10 @@
  * Svelte component from the `selectedPointStore`.
  */
 
-import type { Point } from '@lib/state/state-types';
-import { appState } from '@lib/state/app.svelte';
-import { getPanelSurface, prefersReducedMotion } from '@lib/utils/environment';
+import type { Point } from '@lib/state/state-types'
+import { appState } from '@lib/state/app.svelte'
+import { getPanelSurface, prefersReducedMotion } from '@lib/utils/environment'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -55,91 +56,90 @@ export function resolvePointIndex(points: readonly Point[], point: Point | null)
 // ── Renderers ──────────────────────────────────────────────────────────────
 
 export function renderSignalBadges(point: Point | null): string {
-    if (appState.currentView === 'map') return '';
-    if (!point) return '';
-    const badges: string[] = [];
-    if (point.website) badges.push('<span class="signal-badge meta" title="Website present">Website present</span>');
-    if (point.email) badges.push('<span class="signal-badge fact" title="Email present">Email present</span>');
-    if (point.phone) badges.push('<span class="signal-badge ai" title="Phone present">Phone present</span>');
-    return badges.join('');
+    if (appState.currentView === 'map') return ''
+    if (!point) return ''
+    const badges: string[] = []
+    if (point.website) badges.push('<span class="signal-badge meta" title="Website present">Website present</span>')
+    if (point.email) badges.push('<span class="signal-badge fact" title="Email present">Email present</span>')
+    if (point.phone) badges.push('<span class="signal-badge ai" title="Phone present">Phone present</span>')
+    return badges.join('')
 }
 
 export function updateSelectedCardHeading(point: Point | null = null): void {
-    const titleEl = document.getElementById('selected-card-title');
-    if (!titleEl) return;
+    const titleEl = document.getElementById('selected-card-title')
+    if (!titleEl) return
 
-    const activePoint = point || appState.focusState.selectedPoint || null;
-    const points = Array.isArray(appState.points) ? (appState.points as Point[]) : [];
-    const activeIndex = activePoint ? resolvePointIndex(points, activePoint) : -1;
-    const summary = appState.searchState.currentSearchSummary;
-    const resultIndices = summary && Array.isArray(summary.resultIndices) ? (summary.resultIndices as number[]) : [];
+    const activePoint = point || appState.focusState.selectedPoint || null
+    const points = Array.isArray(appState.points) ? (appState.points as Point[]) : []
+    const activeIndex = activePoint ? resolvePointIndex(points, activePoint) : -1
+    const summary = appState.searchState.currentSearchSummary
+    const resultIndices = summary && Array.isArray(summary.resultIndices) ? (summary.resultIndices as number[]) : []
 
     if (!activePoint) {
-        titleEl.textContent = appState.currentView === 'map' ? 'Map Selection' : 'Selection';
+        titleEl.textContent = appState.currentView === 'map' ? 'Map Selection' : 'Selection'
     } else if (summary && Number.isFinite(summary.anchorIndex) && activeIndex === summary.anchorIndex) {
-        titleEl.textContent = 'Search Anchor';
+        titleEl.textContent = 'Search Anchor'
     } else if (resultIndices.includes(activeIndex)) {
-        titleEl.textContent = 'Related Match';
+        titleEl.textContent = 'Related Match'
     } else if (appState.currentView === 'map') {
-        titleEl.textContent = 'Map Selection';
+        titleEl.textContent = 'Map Selection'
     } else {
-        titleEl.textContent = 'Focused Business';
+        titleEl.textContent = 'Focused Business'
     }
 }
 
 export function renderSelectedMetaStrip(point: Point | null): void {
-    void point;
+    void point
     // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
 
 export function renderSelectedMatchPanel(point: Point | null): void {
-    void point;
+    void point
     // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
 
 export function renderSelectedActionRow(point: Point | null): void {
-    void point;
+    void point
     // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
 
 function setSurfaceHidden(el: HTMLElement | null, hidden: boolean): void {
-    if (!el) return;
+    if (!el) return
     if (hidden) {
-        el.hidden = true;
-        el.setAttribute('aria-hidden', 'true');
+        el.hidden = true
+        el.setAttribute('aria-hidden', 'true')
     } else {
-        el.hidden = false;
-        el.setAttribute('aria-hidden', 'false');
+        el.hidden = false
+        el.setAttribute('aria-hidden', 'false')
     }
 }
 
 function scheduleFrame(callback: FrameRequestCallback | (() => void)): void {
     if (typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(callback as FrameRequestCallback);
-        return;
+        requestAnimationFrame(callback as FrameRequestCallback)
+        return
     }
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    setTimeout(callback as TimerHandler, 0);
+    const reg = new DisposableRegistry({ label: 'stage-renderer-fallback' })
+    reg.schedule(0, callback as () => void)
 }
 
 export function triggerSelectedCardFade(cardEl: HTMLElement): void {
-    if (!cardEl) return;
+    if (!cardEl) return
     if (prefersReducedMotion()) {
-        cardEl.style.setProperty('--selected-card-fade-ms', '0ms');
-        return;
+        cardEl.style.setProperty('--selected-card-fade-ms', '0ms')
+        return
     }
-    cardEl.style.setProperty('--selected-card-fade-ms', `${appState.SELECTED_CARD_FADE_MS}ms`);
-    cardEl.classList.add('is-fading');
+    cardEl.style.setProperty('--selected-card-fade-ms', `${appState.SELECTED_CARD_FADE_MS}ms`)
+    cardEl.classList.add('is-fading')
     scheduleFrame(() => {
         scheduleFrame(() => {
-            cardEl.classList.remove('is-fading');
-        });
-    });
+            cardEl.classList.remove('is-fading')
+        })
+    })
 }
 
 function focusStageOwnsSelectedContent(surface: string): boolean {
-    return appState.currentView === 'galaxy'
-        && ['focus', 'focus-search', 'semantic-dive'].includes(surface);
+    return appState.currentView === 'galaxy' && ['focus', 'focus-search', 'semantic-dive'].includes(surface)
 }
 
 /**
@@ -156,61 +156,64 @@ function focusStageOwnsSelectedContent(surface: string): boolean {
  * journey-selected-card.js delegates container-slot toggling to this function
  * rather than doing its own DOM queries — preserving a single writer per slot.
  */
-export function syncSelectedCardContentVariant(point: Point | null = null, els?: {
-    cardEl?: HTMLElement | null;
-    emptyEl?: HTMLElement | null;
-    detailsEl?: HTMLElement | null;
-    titleEl?: HTMLElement | null;
-    cascadeEl?: HTMLElement | null;
-}): void {
-    const cardEl = els?.cardEl ?? document.getElementById('focus-card-selected');
-    const emptyEl = els?.emptyEl ?? document.getElementById('selected-empty');
-    const detailsEl = els?.detailsEl ?? document.getElementById('selected-details');
-    const titleEl = els?.titleEl ?? document.getElementById('selected-card-title');
-    const cascadeEl = els?.cascadeEl ?? document.getElementById('vector-cascade-bg');
-    const surface = getPanelSurface();
-    const isFocusStageOwner = Boolean(point) && focusStageOwnsSelectedContent(surface);
+export function syncSelectedCardContentVariant(
+    point: Point | null = null,
+    els?: {
+        cardEl?: HTMLElement | null
+        emptyEl?: HTMLElement | null
+        detailsEl?: HTMLElement | null
+        titleEl?: HTMLElement | null
+        cascadeEl?: HTMLElement | null
+    }
+): void {
+    const cardEl = els?.cardEl ?? document.getElementById('focus-card-selected')
+    const emptyEl = els?.emptyEl ?? document.getElementById('selected-empty')
+    const detailsEl = els?.detailsEl ?? document.getElementById('selected-details')
+    const titleEl = els?.titleEl ?? document.getElementById('selected-card-title')
+    const cascadeEl = els?.cascadeEl ?? document.getElementById('vector-cascade-bg')
+    const surface = getPanelSurface()
+    const isFocusStageOwner = Boolean(point) && focusStageOwnsSelectedContent(surface)
 
     if (cardEl) {
-        const isEmpty = !point;
-        cardEl.dataset.contentVariant = isFocusStageOwner ? 'focus-stage' : 'info-panel';
-        cardEl.dataset.contentOwner = isFocusStageOwner ? 'focus-stage' : 'info-panel';
+        const isEmpty = !point
+        cardEl.dataset.contentVariant = isFocusStageOwner ? 'focus-stage' : 'info-panel'
+        cardEl.dataset.contentOwner = isFocusStageOwner ? 'focus-stage' : 'info-panel'
         if (isFocusStageOwner || isEmpty) {
             // Empty / focus-stage variants carry only placeholder H3s ("Business
             // Name", "Semantic Connection Path"). Inert keeps them out of the
             // heading outline and tab order until a real point is selected.
-            cardEl.setAttribute('aria-hidden', 'true');
-            cardEl.inert = true;
+            cardEl.setAttribute('aria-hidden', 'true')
+            cardEl.inert = true
         } else {
-            cardEl.removeAttribute('aria-hidden');
-            cardEl.inert = false;
+            cardEl.removeAttribute('aria-hidden')
+            cardEl.inert = false
         }
     }
 
     if (cascadeEl) {
-        const suppressCascade = isFocusStageOwner || !point;
-        cascadeEl.hidden = suppressCascade;
+        const suppressCascade = isFocusStageOwner || !point
+        cascadeEl.hidden = suppressCascade
         if (suppressCascade) {
-            cascadeEl.classList.remove('active');
-            cascadeEl.replaceChildren();
+            cascadeEl.classList.remove('active')
+            cascadeEl.replaceChildren()
         }
     }
 
     if (isFocusStageOwner) {
-        setSurfaceHidden(titleEl as HTMLElement | null, true);
-        setSurfaceHidden(detailsEl as HTMLElement | null, true);
-        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, true);
-        return;
+        setSurfaceHidden(titleEl as HTMLElement | null, true)
+        setSurfaceHidden(detailsEl as HTMLElement | null, true)
+        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, true)
+        return
     }
 
-    setSurfaceHidden(titleEl as HTMLElement | null, false);
+    setSurfaceHidden(titleEl as HTMLElement | null, false)
 
     if (point) {
-        setSurfaceHidden(detailsEl as HTMLElement | null, false);
-        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, true);
+        setSurfaceHidden(detailsEl as HTMLElement | null, false)
+        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, true)
     } else {
-        setSurfaceHidden(detailsEl as HTMLElement | null, true);
-        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, false);
+        setSurfaceHidden(detailsEl as HTMLElement | null, true)
+        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, false)
     }
 }
 

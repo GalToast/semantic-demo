@@ -19,6 +19,7 @@
 import type { SearchResult } from '@lib/types/state'
 import { debugWarn } from '@lib/utils/debug'
 import { getEnvFlag } from '@lib/utils/env-flag'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 interface MockBusiness {
     id: string
@@ -198,10 +199,11 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
             reject(new DOMException('Aborted', 'AbortError'))
             return
         }
-        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        const timer = setTimeout(resolve, ms)
+        const reg = new DisposableRegistry({ label: 'mock-search-fallback' })
+        const timer = reg.schedule(ms, resolve)
         const onAbort = (): void => {
             clearTimeout(timer)
+            reg.disposeAll()
             signal.removeEventListener('abort', onAbort)
             reject(new DOMException('Aborted', 'AbortError'))
         }

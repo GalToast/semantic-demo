@@ -10,6 +10,7 @@
  */
 
 import type { SearchResult } from '@lib/types/state'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Cache Key ────────────────────────────────────────────────────────────────
 
@@ -272,8 +273,8 @@ export async function acquireSearchLock(query: string, page: number, timeoutMs =
                     fs.rm(lockFile, { recursive: true }).catch(() => {})
                 }
             } catch {
-                // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-                await new Promise((r) => setTimeout(r, 50))
+                const reg = new DisposableRegistry({ label: 'cache-fallback' })
+                await new Promise<void>((r) => reg.schedule(50, () => r()))
             }
         }
         // Timeout: yield gracefully, no error to caller
