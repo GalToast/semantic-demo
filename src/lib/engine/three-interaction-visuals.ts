@@ -606,8 +606,9 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
     updateFocusAnchorIndicator(now, focusedNode)
 }
 
-// ── Micro-demo Visual Bridge (retired 2026-08-07 W52) ─────────────────────
-// three-micro-demo-bridge.ts was deleted: initMicroDemoBridge() was a no-op and
-// never wired (the 10-phase DemoChoreography.svelte store owns the micro-demo),
-// so disposeMicroDemoBridge() removed listeners nobody registered. dead code — the
-// micro-demo events fired by demo-choreography.ts have no bridge listeners.
+// ── Micro-demo Visual Bridge ──────────────────────────────────────────────
+// three-micro-demo-bridge.ts was RETIRED in 4da700a0 (W52: initMicroDemoBridge()
+// was a no-op never wired; disposeMicroDemoBridge() removed listeners nobody
+// registered) but RESTORED in be9d4f42 — live-referenced here — so NOT dead code.
+// demo-choreography.ts was deleted in the 2026-08-14 dead-code sweep; the
+// micro-demo phase driver now lives in DemoChoreography.svelte + src/lib/demo/demo-script.ts.

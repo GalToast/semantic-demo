@@ -19,7 +19,7 @@
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Svelte UI**     | 39 `.svelte` source files in `src/components/` (incl. dev-tooling components like `DevGui` / `DevTelemetry` / `SpectorInspector`). `svelte-check` 0/0. All stores, types, and orchestration files in place.                                                                                                                                                                 |
 | **Engine kernel** | Fully migrated to `src/lib/`. Worker runtime lives at `src/lib/workers/data-worker.ts`; the Vite URL boundary lives at `src/lib/workers/data-worker-url.ts`. Legacy `js/modules/*` is gone from disk.                                                                                                                                                                       |
-| **Compat shims**  | `legacy-state.ts` + `legacy-state-adapter.ts` are **durable compat seams** (23 + 116 LOC, 9 + 6 importers respectively). `three-micro-demo-bridge.ts`: **RETIRED + DELETED 2026-08-07** (commit `4da700a0`); the file was dead code — `initMicroDemoBridge()` was a no-op never wired, so `disposeMicroDemoBridge()` removed listeners nobody registered. No inline needed. |
+| **Compat shims**  | `legacy-state.ts` + `legacy-state-adapter.ts` are **durable compat seams** (23 + 116 LOC, 9 + 6 importers respectively). `three-micro-demo-bridge.ts`: **retired** in `4da700a0` (W52) but **restored** in `be9d4f42` — a deprecated no-op seam live-referenced by `three-interaction-visuals.ts` (its `:610` inline comment is stale — see A2); **not** deleted. |
 | **BOTH pattern**  | `.js` shadows retired in W10 W2 (commit `7fc7b9d`). `@legacy/*` alias retired in 9D-Option-B (`cbc6509`). Legacy islands (`*-svelte-island.*`, `island-mount-helper.*`) deleted in m3 sweep, reverted `ec520da` on 2026-06-12; remaining on-disk copies live only under `docs/archive/legacy-reference/`.                                                                   |
 | **Contracts**     | 225 contract tests pass. Visual state audit 27 surface IDs.                                                                                                                                                                                                                                                                                                                 |
 | **Bundle**        | ~1,217 KB raw JS / ~338 KB gzip. CSS ~54 KB raw / ~10 KB gzip. Dead CSS modules pruned in W41 (`80e4224`).                                                                                                                                                                                                                                                                  |
@@ -177,7 +177,7 @@ For each high-risk surface, the following must hold before any edit:
 | `deploy.sh` / `deploy.ps1` | 1. End-to-end deploy verification against `dist/svelte/`. 2. Verify `../js/scanner.js` path resolves. 3. Test both dev and production preview.                                                                          |
 | Focus-stage renderers      | 1. M-flagged. Coordinate with parallel session. 2. After edit: `npm run check:bridges`, CSS ownership check (`docs/archive/semantic-demo-focus-stage-css-owner-matrix.md`), focus-pocket + compass-rail surface checks. |
 
-**Bridge candidate deletion rule:** Before deleting any file that _might_ be a bridge candidate, run `npm run check:bridges` and verify zero references in `rg <filename> src/ docs/ tests/`.
+**Bridge candidate deletion rule:** Before deleting any file that *might* be a bridge candidate, run `npm run check:bridges` and verify zero references in `rg <filename> src/ docs/ tests/`.
 
 ---
 
@@ -187,7 +187,7 @@ For each high-risk surface, the following must hold before any edit:
 
 **The bug:** In rune-mode `.svelte` and `.svelte.ts` files, `!==` is compiled to `$.strict_equals(a, b, false)` (equivalent to `===`), silently inverting the comparison. No warning at compile or runtime.
 
-**Cookbook pointer:** ~~`docs/svelte-5-strict-mode-cookbook.md`~~ _(deleted)_ — three workaround patterns:
+**Cookbook pointer:** ~~`docs/svelte-5-strict-mode-cookbook.md`~~ *(deleted)* — three workaround patterns:
 
 1. `typeof x === 'number'` guards (safest for type checks)
 2. Positive equality + `!` prefix: `!(x === 'idle')` instead of `x !== 'idle'`
@@ -195,9 +195,9 @@ For each high-risk surface, the following must hold before any edit:
 
 **CI guard:** `npm run lint:svelte5-strict-mode` (added W15, commit wave 2026-06-17).
 
-**Upstream report:** ~~`docs/svelte-5-strict-mode-bug-upstream-report-2026-06-17.md`~~ _(deleted)_ — paste-ready Svelte GitHub issue.
+**Upstream report:** ~~`docs/svelte-5-strict-mode-bug-upstream-report-2026-06-17.md`~~ *(deleted)* — paste-ready Svelte GitHub issue.
 
-**Prior sweep:** ~~docs/latent-!==-bug-sweep-2026-06-17.md~~ _(deleted)_ — 167 `!==` usages audited, 38 found risky and fixed.
+**Prior sweep:** ~~docs/latent-!==-bug-sweep-2026-06-17.md~~ *(deleted)* — 167 `!==` usages audited, 38 found risky and fixed.
 
 **Rule:** Any new `.svelte` or `.svelte.ts` file should use one of the three patterns instead of raw `!==`. Add `// audit-ok:` comment if the usage is provably safe (plain function, non-reactive context).
 
@@ -218,7 +218,7 @@ For each high-risk surface, the following must hold before any edit:
 | Design Tokens                 | `docs/semantic-demo-design-tokens.md`                        | Canonical token sheet                                             |
 | State Transition Table        | `docs/semantic-demo-state-transition-table.md`               | View-phase state machine                                          |
 | Surface Style Matrix          | `docs/semantic-demo-surface-style-matrix.md`                 | 26 visual audit states mapped to tokens                           |
-| Svelte 5 Strict-Mode Cookbook | ~~`docs/svelte-5-strict-mode-cookbook.md`~~ _(deleted)_      | `!==` inversion workaround patterns                               |
+| Svelte 5 Strict-Mode Cookbook | ~~`docs/svelte-5-strict-mode-cookbook.md`~~ *(deleted)*      | `!==` inversion workaround patterns                               |
 | Historical Migration Plan     | `docs/archive/migration-docs/phase56-migration-plan.md`      | Phase 5/6 reference (archived)                                    |
 | Nav State Ownership           | `docs/archive/nav-state-ownership.md`                        | Field-by-field ownership for NavState                             |
 | CSS Ownership Map             | `docs/archive/semantic-demo-css-authority-map.md`            | CSS selector ownership                                            |
@@ -245,4 +245,4 @@ None known in the living plan after Phase 7 closeout. Historical bridge audit do
 
 ---
 
-_Generated 2026-06-18. Commit: `docs: create migration-plan.md (post-W42 baseline)`_
+*Generated 2026-06-18. Commit: `docs: create migration-plan.md (post-W42 baseline)`*
