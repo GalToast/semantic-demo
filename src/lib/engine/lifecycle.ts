@@ -66,6 +66,7 @@ import {
 } from '@lib/journey/canvas-interaction'
 import { destroyCanvasHoverPreview } from '@lib/journey/canvas-hover-preview'
 import { initTooltipEventBusSubscriptions, disposeTooltipEventBusSubscriptions } from '@lib/ui/tooltip'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // Semantic threads are loaded in the heavy idle path to keep this chunk out of
 // the first-paint bundle.
@@ -98,6 +99,10 @@ let _webglContextLossTimer: ReturnType<typeof setTimeout> | null = null
 // w20 F2: track the engine-init safety-valve timer so it can be cleared on
 // teardown before it fires against a destroyed engine (f543c062 regression).
 let _engineInitSafetyTimer: ReturnType<typeof setTimeout> | null = null
+
+// Tracks all module-scoped setTimeout timers for centralized disposal on
+// destroyEngine(). Replaces 3 eslint-disable --no-restricted-syntax suppressions.
+const engineLifecycleReg = new DisposableRegistry({ label: 'engine-lifecycle' })
 
 // ── Data readiness subscription ─────────────────────────────────────────────
 
@@ -293,8 +298,7 @@ function yieldToBrowser(): Promise<void> {
             window.requestIdleCallback(() => resolve(), { timeout: 50 })
         })
     }
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    return new Promise<void>((resolve) => setTimeout(resolve, 0))
+    return new Promise<void>((resolve) => engineLifecycleReg.schedule(0, () => resolve()))
 }
 
 function engineInitStillActive(phase: string): boolean {
@@ -320,15 +324,14 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
     if (_engineInitSafetyTimer !== null) {
         clearTimeout(_engineInitSafetyTimer)
     }
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    _engineInitSafetyTimer = setTimeout(() => {
+    _engineInitSafetyTimer = engineLifecycleReg.schedule(8_000, () => {
         if (_getEngineStatus() !== 'loading') return // already resolved
         debugError('[engine/lifecycle] Engine init safety valve: GPU init timed out after 8s.')
         setDataLoadError('Scene initialization timed out. Your graphics hardware may not be supported.')
         setEngineStatus('degraded')
         callbacks.onGraphicsStateChange?.('fallback')
-        _engineInitSafetyTimer = null
-    }, 8_000)
+_engineInitSafetyTimer = null
+    })
 
     try {
         const _perf = typeof performance?.mark === 'function'
@@ -406,12 +409,11 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
                     }
                     debugLog('[simulateWebGLContextLoss] Triggering artificial context loss')
                     ext.loseContext()
-                    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-                    _webglContextLossTimer = setTimeout(() => {
+                    _webglContextLossTimer = engineLifecycleReg.schedule(500, () => {
                         debugLog('[simulateWebGLContextLoss] Triggering artificial context restoration')
                         ext.restoreContext()
                         _webglContextLossTimer = null
-                    }, 500)
+                    })
                     return true
                 }
             }
@@ -543,6 +545,9 @@ export function destroyEngine(): void {
         clearTimeout(_engineInitSafetyTimer)
         _engineInitSafetyTimer = null
     }
+
+    // 0a. Dispose all module-scoped timers tracked by the lifecycle registry
+    engineLifecycleReg.disposeAll()
 
     // 1. Cancel the animation loop
     cancelAnimate()

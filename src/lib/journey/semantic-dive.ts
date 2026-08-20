@@ -25,6 +25,7 @@ import { summarizeNeighborReason } from './thread-settler'
 
 import { getNextWalkCandidateForIndex } from '@lib/journey/neighborhood'
 import { ensureDiveButton, ensureFocusStageAuxiliaryDom } from '@lib/journey/focus-stage-dom'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 function truncateDiveStatusCopy(text: string | null | undefined, max = 74): string {
     const clean = cleanOptionalValue(text)
@@ -154,11 +155,11 @@ export function syncSemanticDiveUi(): void {
             insideControls.setAttribute('aria-hidden', 'true')
             insideControls.inert = true
             insideControls.dataset.nextState = 'inactive'
-            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-            setTimeout(() => {
+            const _reg = new DisposableRegistry({ label: 'semantic-dive-ui' })
+            _reg.schedule(450, () => {
                 if (insideControls.getAttribute('aria-hidden') === 'false') return
                 insideControls.hidden = true
-            }, 450)
+            })
         }
     }
     if (insideStatus) {
@@ -167,11 +168,11 @@ export function syncSemanticDiveUi(): void {
             insideStatus.setAttribute('aria-hidden', 'false')
         } else {
             insideStatus.setAttribute('aria-hidden', 'true')
-            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-            setTimeout(() => {
+            const _reg2 = new DisposableRegistry({ label: 'semantic-dive-ui' })
+            _reg2.schedule(450, () => {
                 if (insideStatus.getAttribute('aria-hidden') === 'false') return
                 insideStatus.hidden = true
-            }, 450)
+            })
         }
         insideStatus.setAttribute('role', 'status')
         insideStatus.setAttribute('aria-live', 'polite')

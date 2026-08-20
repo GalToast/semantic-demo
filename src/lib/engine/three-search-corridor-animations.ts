@@ -43,6 +43,7 @@ import { disposeObject3D } from '@lib/engine/resource-tracker'
 import { triggerCorridorBloom } from '@lib/audio/audio-scape'
 import { seededUnit } from '@lib/utils/seeded-random'
 import { prefersReducedMotion } from '@lib/utils/environment'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -95,6 +96,7 @@ export interface CorridorAnimState {
 let _corridorGlowToken = 0
 const _corridorGlowNodes: Record<number, CorridorGlowState | null> = {}
 const _corridorGlowTimers = new Set<ReturnType<typeof setTimeout>>()
+const _corridorGlowReg = new DisposableRegistry({ label: 'corridor-glow' })
 
 let _corridorAnimState: CorridorAnimState | null = null
 let _corridorAnimStartTime: number | null = null
@@ -392,8 +394,7 @@ export function triggerCorridorNodeGlow(anchorIndex: number, routeIndices: numbe
 
     allIndices.forEach((idx: number, order: number) => {
         const delay = idx === anchorIndex ? 0 : 80 + order * 40
-        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        const outerId = setTimeout(() => {
+        const outerId = _corridorGlowReg.schedule(delay, () => {
             _corridorGlowTimers.delete(outerId)
             if (token !== _corridorGlowToken) return
             if (!state.nodePositions[idx]) return
@@ -409,14 +410,13 @@ export function triggerCorridorNodeGlow(anchorIndex: number, routeIndices: numbe
             }
             shader.uniforms.uHoverBoost.value = targetBoost
 
-            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise...
-            const innerId = setTimeout(() => {
+            const innerId = _corridorGlowReg.schedule(fadeStartDelay + fadeDuration, () => {
                 _corridorGlowTimers.delete(innerId)
                 if (token !== _corridorGlowToken) return
                 _corridorGlowNodes[idx] = null
-            }, fadeStartDelay + fadeDuration)
+            })
             _corridorGlowTimers.add(innerId)
-        }, delay)
+        })
         _corridorGlowTimers.add(outerId)
     })
 }
@@ -614,6 +614,7 @@ export function disposeCorridorGlow(): void {
         clearTimeout(id)
     }
     _corridorGlowTimers.clear()
+    _corridorGlowReg.disposeAll()
     for (const k of Object.keys(_corridorGlowNodes)) {
         delete _corridorGlowNodes[Number(k)]
     }

@@ -1,4 +1,5 @@
-import { isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts';
+import { isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 /**
  * @lib/utils/lazy-component.svelte.ts
@@ -95,8 +96,8 @@ export function scheduleIdleImport<T>(load: () => Promise<T>): Promise<T> {
     }
 
     return new Promise((resolve, reject) => {
-        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        setTimeout(() => run().then(resolve, reject), 0)
+        const reg = new DisposableRegistry({ label: 'lazy-component' })
+        reg.schedule(0, () => run().then(resolve, reject))
     })
 }
 

@@ -10,6 +10,7 @@
 // next call re-opens the database instead of permanently blocking.
 
 import { debugWarn } from '@lib/utils/debug'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 const DB_NAME = 'SemanticExplorerDB'
 const STORE_NAME = 'SearchCache'
@@ -49,9 +50,8 @@ function withTxTimeout<T>(
 ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         let settled = false
-
-        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        const timer = setTimeout(() => {
+        const reg = new DisposableRegistry({ label: 'idb-service-tx' })
+        const timer = reg.schedule(TX_TIMEOUT_MS, () => {
             if (settled) return
             settled = true
             debugWarn('[idb-service] Transaction timed out after ' + TX_TIMEOUT_MS + 'ms — aborting')
@@ -62,7 +62,7 @@ function withTxTimeout<T>(
             }
             resetDB()
             reject(new Error('IndexedDB transaction timed out'))
-        }, TX_TIMEOUT_MS)
+        })
 
         const tx = db.transaction(STORE_NAME, mode)
         const store = tx.objectStore(STORE_NAME)
@@ -73,6 +73,7 @@ function withTxTimeout<T>(
             if (settled) return
             settled = true
             clearTimeout(timer)
+            reg.disposeAll()
             // Resolve with void-ish for mutations; callers that need
             // a result must resolve from their own request handler.
             resolve(undefined as T)
@@ -82,6 +83,7 @@ function withTxTimeout<T>(
             if (settled) return
             settled = true
             clearTimeout(timer)
+            reg.disposeAll()
             debugWarn('[idb-service] Transaction error:', tx.error)
             resetDB()
             reject(tx.error ?? new Error('IndexedDB transaction failed'))
@@ -91,6 +93,7 @@ function withTxTimeout<T>(
             if (settled) return
             settled = true
             clearTimeout(timer)
+            reg.disposeAll()
             debugWarn('[idb-service] Transaction aborted')
             resetDB()
             reject(new Error('IndexedDB transaction aborted'))
@@ -113,17 +116,17 @@ export function initDB(): Promise<IDBDatabase> {
             }
 
             let settled = false
+            const reg = new DisposableRegistry({ label: 'idb-service-open' })
 
             // Safety timeout for the open request itself (which can hang on
             // version upgrade conflicts in some browsers).
-            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-            const timer = setTimeout(() => {
+            const timer = reg.schedule(TX_TIMEOUT_MS, () => {
                 if (settled) return
                 settled = true
                 debugWarn('[idb-service] Database open timed out after ' + TX_TIMEOUT_MS + 'ms')
                 dbPromise = null
                 reject(new Error('IndexedDB open timed out'))
-            }, TX_TIMEOUT_MS)
+            })
 
             const request = window.indexedDB.open(DB_NAME, DB_VERSION)
 
@@ -131,6 +134,7 @@ export function initDB(): Promise<IDBDatabase> {
                 if (settled) return
                 settled = true
                 clearTimeout(timer)
+                reg.disposeAll()
                 debugWarn('[idb-service] Database error:', (event.target as IDBOpenDBRequest).error)
                 dbPromise = null
                 reject((event.target as IDBOpenDBRequest).error!)
@@ -140,6 +144,7 @@ export function initDB(): Promise<IDBDatabase> {
                 if (settled) return
                 settled = true
                 clearTimeout(timer)
+                reg.disposeAll()
                 resolve((event.target as IDBOpenDBRequest).result)
             }
 
