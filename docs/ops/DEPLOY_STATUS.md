@@ -1712,3 +1712,19 @@ Verified during the V9 pass:
 
 Residual seam: `.view-toggle` still has many legitimate CSS/test references because it is the canonical DOM control. Future cleanup should target selector duplication only when a concrete layout owner conflict appears; there is no shadowed view state to remove.
 
+
+## Deploy-verify 6/6 — .htaccess + fonts shipped to origin (2026-08-21)
+
+**State:** prod at mccullough.cloud/semantic-demo was still running the Aug 18 payload: the stale single-line `<FilesMatch>` blocks were ignored by LiteSpeed → `.js.br` served as text/plain (+nosniff) → shell never mounted (P1), and `fonts/` was absent entirely (P2). Commit 880bfb7a had the fixes but the last full deploy predated them.
+
+**Shipped directly to origin (backup at `semantic-demo/.htaccess.bak-20260821`):**
+- Current repo-root `.htaccess` (multi-line flat FilesMatch blocks, md5 2362684e) → asset now serves `application/javascript` + `Content-Encoding: br` under nosniff.
+- `dist/svelte/fonts/` (6 files) → woff2 serves `font/woff2`; fonts.css.br serves `text/css`+br.
+
+**Verification:** `node scripts/qa-deploy-verify.mjs https://mccullough.cloud/semantic-demo --via-origin` → **6/6 PASSED**, reproduced twice. Legacy 308 works; `/view` 404 is expected (never existed as a file; only the .html legacy route redirects).
+
+**Verifier fixed in the same pass (`scripts/qa-deploy-verify.mjs`):**
+1. Asset hash is now resolved from the DEPLOYED index.html server-side (`ASSET_REF:` fact) instead of local dist — local WIP builds have different hashes than prod.
+2. Legacy routes are joined to the ORIGIN root, not `${base}` (was double-joining `/semantic-demo/...` → always 404).
+3. Index check probes `/index.html` (canonical entry); bare prefix intentionally 301s to case-study.html.
+4. **parseFacts shared-reference bug:** `currentHeaders.length = 0` on a plain object is a no-op, so every probe label referenced the SAME headers object and all header checks read the LAST probe's response (/view 404 → "text/html"). Fresh object per probe now.

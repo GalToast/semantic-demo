@@ -131,22 +131,48 @@ function buildRemoteScript(base, assetPath) {
     `done`,
   ]
 
-  // 1. index.html
-  lines.push(...curlFacts('index', `${base}/`))
+  // 0. Resolve the DEPLOYED entry + its real hashed asset on the remote side.
+  // (Local dist hashes drift from prod whenever local WIP ≠ last deploy.)
+  lines.push(
+    `echo "--- asset-ref ---"`,
+    `REMOTE_ASSET=$(curl -s --resolve ${HOST}:443:127.0.0.1 -k '${base}/index.html' | grep -oE 'assets/[A-Za-z0-9_.-]+\\.js' | head -1)`,
+    `if [ -z "$REMOTE_ASSET" ] && [ -n '${assetPath || ''}' ]; then REMOTE_ASSET='${assetPath || ''}'; fi`,
+    `echo "ASSET_REF:$REMOTE_ASSET"`,
+  )
 
-  // 2. asset GET (for CE + CT + Vary)
-  if (assetPath) {
-    lines.push(...curlFacts('asset', `${base}${assetPath}`))
-  }
+  // 1. index.html — canonical entry (the bare /semantic-demo/ prefix 301s to
+  // case-study.html by design since the landing-page redirect landed).
+  lines.push(...curlFacts('index', `${base}/index.html`))
+
+  // 2. asset GET (for CE + CT + Vary) — double-quoted URL so the remote
+  // shell expands $REMOTE_ASSET resolved above.
+  lines.push(
+    `echo "--- asset ---"`,
+    `curl -sI --resolve ${HOST}:443:127.0.0.1 -k -H 'Accept-Encoding: br,gzip' -H 'User-Agent: qa-deploy-verify/1.0' "${base}/$REMOTE_ASSET" | while IFS= read -r line; do`,
+    `  case "$line" in`,
+    `    HTTP/*) code=$(echo "$line" | awk '{print $2}'); echo "CODE:$code" ;;`,
+    `    *:*) echo "HEADER:$line" ;;`,
+    `  esac`,
+    `done`,
+  )
 
   // 3. .br twin HEAD
-  if (assetPath) {
-    lines.push(...curlFacts('br-twin', `${base}${assetPath}.br`))
-  }
+  lines.push(
+    `echo "--- br-twin ---"`,
+    `curl -sI --resolve ${HOST}:443:127.0.0.1 -k -H 'Accept-Encoding: br' -H 'User-Agent: qa-deploy-verify/1.0' "${base}/$REMOTE_ASSET.br" | while IFS= read -r line; do`,
+    `  case "$line" in`,
+    `    HTTP/*) code=$(echo "$line" | awk '{print $2}'); echo "CODE:$code" ;;`,
+    `    *:*) echo "HEADER:$line" ;;`,
+    `  esac`,
+    `done`,
+  )
 
-  // 4. legacy routes
+  // 4. legacy routes — these are ORIGIN-rooted absolute paths; joining them
+  // onto ${base} (which already contains /semantic-demo) double-joined the
+  // path and always 404ed.
+  const origin = new URL(base).origin
   for (const route of ['/semantic-demo/vector-explorer-polished.html', '/view']) {
-    lines.push(...curlFacts(`legacy-${route.replace(/\//g, '-')}`, `${base}${route}`))
+    lines.push(...curlFacts(`legacy-${route.replace(/\//g, '-')}`, `${origin}${route}`))
   }
 
   return lines.join('\n')
@@ -160,7 +186,10 @@ function parseFacts(output) {
   const perProbe = new Map() // label -> { code, headers }
   let currentLabel = null
   let currentCode = null
-  const currentHeaders = {}
+  // NOTE: must be a FRESH object per probe — a module-level shared object
+  // made every label reference the SAME headers map, so all header checks
+  // read the LAST probe's response (the /view 404 page → "text/html").
+  let currentHeaders = {}
 
   for (const line of output.split('\n')) {
     const trimmed = line.trim()
@@ -170,7 +199,7 @@ function parseFacts(output) {
       if (currentLabel) perProbe.set(currentLabel, { code: currentCode, headers: currentHeaders })
       currentLabel = trimmed.replace(/^--- | ---$/g, '')
       currentCode = null
-      currentHeaders.length = 0
+      currentHeaders = {}
       continue
     }
     if (trimmed.startsWith('CODE:')) {
@@ -235,6 +264,8 @@ async function runViaOrigin(baseURL, assetPath) {
     console.error(`SSH STDERR:\n${stderr}`)
   }
 
+  const remoteAsset = (stdout.match(/ASSET_REF:(.*)/) || [])[1]?.trim()
+  if (remoteAsset) console.log(`Remote asset ref: ${remoteAsset}`)
   const facts = parseFacts(stdout)
 
   // 1. index.html 200
@@ -433,8 +464,9 @@ async function main() {
     process.exit(0)
   }
 
-  // 1. Check (a): index.html 200
-  const idx = await head(`${baseURL}/`)
+  // 1. Check (a): index.html 200 (canonical entry; the bare prefix
+  // intentionally 301s to case-study.html since the landing redirect landed)
+  const idx = await head(`${baseURL}/index.html`)
   record(
     'index.html',
     idx.status === 200,
@@ -487,8 +519,11 @@ async function main() {
   ]
   let legacyFound308 = false
   let legacyDetail = []
+  // Legacy routes are ORIGIN-rooted absolute paths — do NOT join onto
+  // baseURL (which already contains /semantic-demo). Same fix as via-origin.
+  const legacyOrigin = new URL(baseURL).origin
   for (const route of legacyRoutes) {
-    const r = await head(`${baseURL}${route}`)
+    const r = await head(`${legacyOrigin}${route}`)
     if (r.status === 308) {
       legacyFound308 = true
       legacyDetail.push(`${route} → 308`)
