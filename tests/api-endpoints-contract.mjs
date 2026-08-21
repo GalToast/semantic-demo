@@ -125,6 +125,25 @@ try {
     )
 }
 
+// ── 3b. error shapes + security headers ─────────────────────────────────────
+{
+    const unknown = await getJson(BASE + '?action=bogus_action')
+    check('unknown action: 400', unknown.status === 400, 'got ' + unknown.status)
+    check('unknown action: error body', unknown.body?.error === 'Unknown action')
+
+    const noId = await getJson(BASE + '?action=lead_context')
+    check('lead_context without id: 400', noId.status === 400, 'got ' + noId.status)
+    check('lead_context without id: ok:false + error string',
+        noId.body?.ok === false && typeof noId.body?.error === 'string')
+
+    const { contentType } = await getJson(BASE + '?action=stats')
+    check('responses are application/json', contentType.includes('application/json'), contentType)
+
+    const res = await fetch(BASE + '?action=stats')
+    check('nosniff set by api.php itself (dev server has no .htaccess)',
+        (res.headers.get('x-content-type-options') ?? '').toLowerCase() === 'nosniff')
+}
+
 // ── 4. referrer guard (W54 model: empty OK, cross-host 403) ──────────────────
 {
     const gated = BASE + '?action=semantic_lane_health'

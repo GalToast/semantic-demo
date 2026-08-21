@@ -5,6 +5,10 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Access-Control-Allow-Origin: *');
+// Defense-in-depth: JSON-only API must never be sniffed into HTML/JS.
+// The .htaccess sets this for static assets; the PHP response sets its own
+// because the built-in dev server (php -S) does not process .htaccess.
+header('X-Content-Type-Options: nosniff');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With');
 
