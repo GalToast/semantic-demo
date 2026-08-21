@@ -34,7 +34,13 @@ const REPO_ROOT = resolve(__dirname, '..', '..')
 const SRC_DIR = resolve(REPO_ROOT, 'src')
 
 const appSrc = readFileSync(resolve(SRC_DIR, 'App.svelte'), 'utf8')
-const paritySrc = readFileSync(resolve(SRC_DIR, 'lib', 'orchestration', 'parity-attrs.svelte.ts'), 'utf8')
+// The descriptor table lives in parity-attrs-manifest.ts (extracted from
+// parity-attrs.svelte.ts, which re-exports it); scan both so the guard
+// sees documented keys regardless of which module declares them.
+const paritySrc = [
+    readFileSync(resolve(SRC_DIR, 'lib', 'orchestration', 'parity-attrs.svelte.ts'), 'utf8'),
+    readFileSync(resolve(SRC_DIR, 'lib', 'orchestration', 'parity-attrs-manifest.ts'), 'utf8')
+].join('\n')
 // After useParityAttrs extraction, parity attribute reads live in the
 // composable, not in App.svelte. The drift guard now scans the composable
 // source so a new parity attribute added to PARITY_ATTRIBUTES still has
