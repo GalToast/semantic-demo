@@ -73,6 +73,11 @@ export interface SceneSyncSinks {
  */
 export interface PointsSyncSinks {
     appState: Pick<typeof appState, 'pointsMesh' | 'nodeSporeMesh'>
+    /** Legacy window-mirror — the test-compat proxy reads points handles from
+     * here (getCompatSources → __LEGACY_APP_STATE__), not from appState.
+     * Meshes only: materials stay engineState-only per the zombie cut.
+     * May be null like MyceliumSyncSinks. */
+    legacyState: Pick<AppState, 'pointsMesh' | 'nodeSporeMesh'> | null
     engineState: Pick<ThreeEngineState, 'state'>
 }
 
@@ -144,7 +149,7 @@ function defaultSceneSinks(): SceneSyncSinks {
 }
 
 function defaultPointsSinks(): PointsSyncSinks {
-    return { appState, engineState }
+    return { appState, legacyState, engineState }
 }
 
 function defaultMyceliumSinks(): MyceliumSyncSinks {
@@ -214,10 +219,22 @@ export function syncSceneHandles(setup: SceneMirrorInput, sinks: SceneSyncSinks 
  */
 export function syncPointsHandles(handles: PointsMirrorInput, sinks: PointsSyncSinks = defaultPointsSinks()): void {
     const app = sinks.appState
+    const legacy = sinks.legacyState
     const state = sinks.engineState.state
 
     app.pointsMesh = handles.pointsMesh
     app.nodeSporeMesh = handles.nodeSporeMesh
+
+    // C11 parity fix (2026-08-21): mirror mesh handles into the legacy
+    // window-state too. syncSceneHandles/syncMyceliumHandles write legacy.* but
+    // this sync didn't, so the test-compat proxy (__APP_STATE__/__TEST_STATE__ →
+    // getCompatSources → __LEGACY_APP_STATE__) never saw pointsMesh — the
+    // reduced-motion sweep's mobile-proof readiness gate timed out on BOTH
+    // viewports despite a fully-successful engine init.
+    if (legacy) {
+        legacy.pointsMesh = handles.pointsMesh
+        legacy.nodeSporeMesh = handles.nodeSporeMesh
+    }
 
     if (state) {
         state.pointsMesh = handles.pointsMesh

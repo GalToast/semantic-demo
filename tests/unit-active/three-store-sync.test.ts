@@ -99,6 +99,7 @@ function freshPointsSinks(): PointsSyncSinks & { legacyState: null } {
             nodeSporeMesh: null,
             nodeSporeMaterial: null
         },
+        legacyState: null,
         engineState: { state: null }
     } as any
 }
@@ -247,6 +248,18 @@ describe('syncPointsHandles (C11)', () => {
         expect(target.pointsMaterial).toBe(handles.pointsMaterial)
         expect(target.nodeSporeMesh).toBe(handles.nodeSporeMesh)
         expect(target.nodeSporeMaterial).toBe(handles.nodeSporeMaterial)
+    })
+
+    it('mirrors mesh handles to legacyState when present (C11 parity fix — test-compat proxy reads __LEGACY_APP_STATE__)', () => {
+        const legacy: Record<string, unknown> = {}
+        sinks.legacyState = legacy as any
+        const handles = fakePoints()
+        syncPointsHandles(handles, sinks)
+        expect(legacy.pointsMesh).toBe(handles.pointsMesh)
+        expect(legacy.nodeSporeMesh).toBe(handles.nodeSporeMesh)
+        // Zombie cut holds on legacy too: no material mirrors.
+        expect(legacy.pointsMaterial).toBeUndefined()
+        expect(legacy.nodeSporeMaterial).toBeUndefined()
     })
 
     it('tolerates null engineState.state', () => {
