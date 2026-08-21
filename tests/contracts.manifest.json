@@ -232,7 +232,8 @@
         "visual-state-audit.mjs",
         "visual-state-registry.mjs",
         "semantic-space-audit.mjs",
-        "product-playthrough-audit.mjs"
+        "product-playthrough-audit.mjs",
+        "deploy-surface-contract.mjs"
       ]
     },
     "supplemental": {
@@ -556,7 +557,7 @@
       ]
     },
     "journey": {
-      "description": "Playwright journey tests \u00e2\u20ac\u201d widget, keyboard, focus, splash, trail, weather, and accessibility interaction proofs across desktop and mobile viewports.",
+      "description": "Playwright journey tests â€” widget, keyboard, focus, splash, trail, weather, and accessibility interaction proofs across desktop and mobile viewports.",
       "contracts": [
         "a11y-round2-journey.spec.js",
         "canvas-picking-perf.spec.js",
