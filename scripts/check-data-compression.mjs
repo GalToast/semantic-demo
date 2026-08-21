@@ -72,8 +72,39 @@ async function findUncompressed(dir) {
     return violations
 }
 
+/**
+ * Required runtime assets that must exist in dist/svelte with a sane minimum
+ * size. `data.dat` is the canonical 8,406-point mycelium dataset copied from
+ * src/data.dat by vite's ROOT_ASSETS map; if the source goes missing (it is
+ * gitignored — see qa-ready.mjs "points:0 silently") the build must FAIL here
+ * instead of shipping an empty app.
+ */
+const REQUIRED_ASSETS = [{ path: 'data.dat', minBytes: 1024 * 1024 }]
+
+async function assertRequiredAssets() {
+    const missing = []
+    for (const { path, minBytes } of REQUIRED_ASSETS) {
+        try {
+            const st = await stat(join(DIST, path))
+            if (st.size < minBytes) {
+                missing.push(`${path} exists but is only ${(st.size / 1024).toFixed(1)} KB (< ${(minBytes / 1024).toFixed(0)} KB — truncated?)`)
+            }
+        } catch {
+            missing.push(`${path} MISSING from dist — src/data.dat absent at build time? Restore it (copy from another checkout or regenerate) and rebuild.`)
+        }
+    }
+    return missing
+}
+
 async function main() {
+    const assetFailures = await assertRequiredAssets()
     const violations = await findUncompressed(DIST)
+
+    if (assetFailures.length > 0) {
+        console.log(`${RED}✗${RESET} ${BOLD}data-compression gate FAILED${RESET} — required runtime assets:`)
+        for (const f of assetFailures) console.log(`  ${RED}→${RESET} ${f}`)
+        process.exit(1)
+    }
 
     if (violations.length === 0) {
         console.log(
