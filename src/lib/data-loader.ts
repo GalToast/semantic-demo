@@ -6,11 +6,7 @@
  * that the data-store populates into Svelte stores.
  */
 
-import type {
-    BusinessRecord,
-    BusinessDataResult,
-    LeadEnrichment
-} from '@lib/types/business'
+import type { BusinessRecord, BusinessDataResult, LeadEnrichment } from '@lib/types/business'
 import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import { retryWithBackoff } from '@lib/utils/retry-with-backoff'
@@ -73,7 +69,7 @@ export function applyThinRowEnrichment(
     let finalNaics = naics
 
     if (
-        THIN_WHAT_PLACEHOLDERS.includes(what as typeof THIN_WHAT_PLACEHOLDERS[number]) &&
+        THIN_WHAT_PLACEHOLDERS.includes(what as (typeof THIN_WHAT_PLACEHOLDERS)[number]) &&
         enrichment.snapshot != null &&
         !SNAPSHOT_NOT_USED.has(enrichment.snapshot)
     ) {
@@ -342,6 +338,21 @@ export async function loadBusinessData(): Promise<BusinessDataResult> {
     return loadBusinessDataMainThread(dataUrl, null)
 }
 
+/**
+ * Loud-failure guard for the business-data asset (2026-08-21 audit): when
+ * `data.dat` is missing/truncated the app used to boot with points:0 and every
+ * consumer swallowed the empty state. Throw instead — initData's catch feeds
+ * setDataLoadError, which LoadingOverlay renders.
+ */
+export function assertRecordsNonEmpty(count: number, source = 'data.dat'): void {
+    if (!Number.isFinite(count) || count <= 0) {
+        throw new Error(
+            `${source}: parsed 0 business records — the asset is missing or truncated. ` +
+                'Restore src/data.dat (canonical 8,406-point dataset; see public/data/README.md), rebuild, and hard-refresh.'
+        )
+    }
+}
+
 /** Build BusinessDataResult from the worker's raw result. */
 function buildBusinessDataResult(
     workerResult: LoadRecordsWorkerResult,
@@ -355,6 +366,7 @@ function buildBusinessDataResult(
         invalidPositionIndices
     } = workerResult
     const count = points.length
+    assertRecordsNonEmpty(count)
 
     // The worker returns typed arrays directly; no reconstruction needed.
     const positionsBuffer = rawPositions
