@@ -88,13 +88,11 @@
         min-width: 44px;
         min-height: 44px;
     }
-
 }
 
 @media (forced-colors: active) {
     button:focus-visible,
     #mode-chips .mode-chip:focus-visible,
-
     .loading-overlay {
         transition: none;
     }
@@ -1050,7 +1048,10 @@ body.surface-focus-search .controls .control-btn {
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #story-section,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #cluster-section,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #filters-section,
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #mode-chips,
+    /* A2-4 contract: #mode-chips is NOT hidden here. Was resurrected 2026-08-18 by
+       the .mode-grid→#mode-chips rename (19c030c9) from a dormant selector; hid the
+       desktop rail during focus and broke the reduced-motion sweep's step-inside
+       path (desktop's only visible Inside affordance). Removed 2026-08-21. */
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .semantic-lane-assist,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .search-trail-cue,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .synthesize-trigger {
@@ -1236,7 +1237,6 @@ body.surface-focus-search .controls .control-btn {
         padding: 10px 12px;
         border-radius: 18px;
     }
-
 
     body.view-galaxy[data-panel-surface='idle']
         .journey-compass[data-phase='overview'][data-density='expanded']

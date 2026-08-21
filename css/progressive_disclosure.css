@@ -733,7 +733,6 @@ body.surface-semantic-dive::after {
 
 /* 10/10 Polish: Glassmorphism Search Input */
 
-
 /* 10/10 Polish: Search Spinner Integration */
 /* 10/10 Polish: Search Result Processing Juice */
 .search-result-item.active-focus {
@@ -845,7 +844,8 @@ body.surface-map-search .selected-empty {
 body.surface-focus .search-container:not(.has-query) .search-results.active,
 body.surface-focus .synthesize-trigger,
 body.surface-focus .search-trail-cue,
-body.surface-focus #mode-chips,
+/* A2-4: #mode-chips stays visible in focus (resurrection guard, 2026-08-21 —
+   see strands.css focus-block note). */
 body.surface-focus .stats-row,
 body.surface-focus .launch-btn,
 body.surface-focus .rail-section#cluster-section,
