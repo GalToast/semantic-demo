@@ -90,7 +90,7 @@ const _appState = vi.hoisted(() => ({
         semanticGuideRequestSequence: 0,
         currentSemanticGuide: null,
         summaryCardTypeToken: 0,
-searchVisibleCount: 5
+        searchVisibleCount: 5
     },
     viewportState: {
         viewportWidth: 1280,
@@ -173,6 +173,18 @@ vi.mock('@lib/utils/diagnostic-adapter', async (importOriginal) => {
     return {
         ...actual,
         debugWarn: () => {}
+    }
+})
+
+// stage-renderer.syncSelectedCardContentVariant (reached via
+// clearExplorationFocusSelection → updateSelectedBusiness) reads getPanelSurface.
+// Provide a jsdom-safe explicit mock so the parity path can't hit an
+// environment-mock export gap regardless of transitive mock ownership.
+vi.mock('@lib/utils/environment', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/utils/environment')>()
+    return {
+        ...actual,
+        getPanelSurface: () => 'idle'
     }
 })
 

@@ -86,10 +86,10 @@ async function waitForReady(page) {
     await page
         .waitForFunction(
             () => {
-                const body = document.body?.dataset
                 const canvas = document.querySelector('#canvas-container canvas')
+                // 1fe9c8d0 moved data-graphics-mode from <body> to #canvas-container.
                 return (
-                    body?.graphicsMode === 'webgl' &&
+                    document.querySelector('#canvas-container')?.dataset?.graphicsMode === 'webgl' &&
                     canvas &&
                     window.__TEST_STATE__?.renderer &&
                     window.__TEST_STATE__?.scene &&
@@ -233,15 +233,16 @@ async function runTestSequence(page, viewportLabel) {
     await firstResult.click({ force: true })
 
     await page
-        .waitForFunction(
-            () => ['focus', 'focus-search'].includes(document.body.dataset.panelSurface),
-            null,
-            { timeout: 20000, polling: 100 }
-        )
+        .waitForFunction(() => ['focus', 'focus-search'].includes(document.body.dataset.panelSurface), null, {
+            timeout: 20000,
+            polling: 100
+        })
         .catch(() => {})
     await page
         .waitForFunction(
-            () => parseInt(document.body.dataset.focusTransitionPhase ?? '-1', 10) >= 3 || document.body.dataset.focusTransition === 'idle',
+            () =>
+                parseInt(document.body.dataset.focusTransitionPhase ?? '-1', 10) >= 3 ||
+                document.body.dataset.focusTransition === 'idle',
             null,
             { timeout: 12000, polling: 100 }
         )
@@ -429,7 +430,8 @@ async function runMobileProof(page) {
     // require graphicsMode=webgl + canvas + pointsMesh, not the full __TEST_STATE__.
     await page.waitForFunction(
         () =>
-            document.body?.dataset?.graphicsMode === 'webgl' &&
+            // 1fe9c8d0 moved data-graphics-mode from <body> to #canvas-container.
+            document.querySelector('#canvas-container')?.dataset?.graphicsMode === 'webgl' &&
             document.querySelector('#canvas-container canvas') &&
             (window.__APP_STATE__ || window.__TEST_STATE__)?.pointsMesh,
         { timeout: 30000 }
@@ -438,9 +440,9 @@ async function runMobileProof(page) {
     // Verify baseline
     await page.waitForFunction(
         () => {
-            const body = document.body?.dataset
             const canvas = document.querySelector('#canvas-container canvas')
-            return body?.graphicsMode === 'webgl' && canvas
+            // 1fe9c8d0 moved data-graphics-mode from <body> to #canvas-container.
+            return document.querySelector('#canvas-container')?.dataset?.graphicsMode === 'webgl' && canvas
         },
         { timeout: 60000 }
     )
@@ -469,17 +471,15 @@ async function runMobileProof(page) {
     await diveBtn.waitFor({ state: 'visible', timeout: 10000 })
     await diveBtn.click({ force: true })
 
-    await page.waitForFunction(
-        () => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true,
-        { timeout: 2000 }
-    )
+    await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true, {
+        timeout: 2000
+    })
     record('mobile: semanticDiveMode is true after dive click', true, '')
 
     // Mobile: Interrupt via Escape and verify clean recovery
     await page.keyboard.press('Escape')
     await page.waitForFunction(
-        () =>
-            document.body.dataset.panelSurface === 'idle' && document.body.dataset.semanticDive === 'inactive',
+        () => document.body.dataset.panelSurface === 'idle' && document.body.dataset.semanticDive === 'inactive',
         { timeout: 8000 }
     )
 
@@ -493,7 +493,11 @@ async function runMobileProof(page) {
     })
     record('mobile: mode is overview after interrupt', finalState.mode === 'overview', `got ${finalState.mode}`)
     record('mobile: diveMode is false after interrupt', finalState.diveMode === false, `got ${finalState.diveMode}`)
-    record('mobile: panelSurface is idle after interrupt', finalState.panelSurface === 'idle', `got ${finalState.panelSurface}`)
+    record(
+        'mobile: panelSurface is idle after interrupt',
+        finalState.panelSurface === 'idle',
+        `got ${finalState.panelSurface}`
+    )
 
     return { failures, passes }
 }
@@ -566,8 +570,12 @@ async function run() {
     const allPassed = allFailures.length === 0
 
     console.log(`\n=== reduced-motion-interruption-sweep ===`)
-    console.log(`Desktop: ${desktopResult.passes.length}/${desktopResult.passes.length + desktopResult.failures.length} passed`)
-    console.log(`Mobile:  ${mobileResult.passes.length}/${mobileResult.passes.length + mobileResult.failures.length} passed`)
+    console.log(
+        `Desktop: ${desktopResult.passes.length}/${desktopResult.passes.length + desktopResult.failures.length} passed`
+    )
+    console.log(
+        `Mobile:  ${mobileResult.passes.length}/${mobileResult.passes.length + mobileResult.failures.length} passed`
+    )
     console.log(`Total:   ${allPasses.length}/${total} passed`)
 
     if (allFailures.length > 0) {
