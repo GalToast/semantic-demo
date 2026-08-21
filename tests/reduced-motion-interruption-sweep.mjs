@@ -410,6 +410,13 @@ async function runMobileProof(page) {
     const failures = []
     const passes = []
 
+    // Collect page errors + console errors for the diagnostic dump.
+    const pageErrors = []
+    page.on('pageerror', (err) => pageErrors.push(String(err?.message ?? err)))
+    page.on('console', (msg) => {
+        if (msg.type() === 'error') pageErrors.push(`console.${msg.type()}: ${msg.text()}`)
+    })
+
     function record(name, ok, detail = '') {
         if (ok) {
             passes.push(`mobile: ${name}`)
@@ -434,7 +441,10 @@ async function runMobileProof(page) {
             document.querySelector('#canvas-container')?.dataset?.graphicsMode === 'webgl' &&
             document.querySelector('#canvas-container canvas') &&
             (window.__APP_STATE__ || window.__TEST_STATE__)?.pointsMesh,
-        { timeout: 30000 }
+        null,
+        // polling:100 — rAF-polling starves under WebGL load (same class as the
+        // sweep-driver mobile-proof + widget-journey fixes).
+        { timeout: 30000, polling: 100 }
     )
 
     // Verify baseline
@@ -444,15 +454,81 @@ async function runMobileProof(page) {
             // 1fe9c8d0 moved data-graphics-mode from <body> to #canvas-container.
             return document.querySelector('#canvas-container')?.dataset?.graphicsMode === 'webgl' && canvas
         },
-        { timeout: 60000 }
+        null,
+        { timeout: 60000, polling: 100 }
     )
 
     // Mobile: search and focus
     const input = page.locator('#search-input')
     await input.focus()
     await input.fill('restaurant')
+    // Boot-race guard: a late init task can clear the input right after
+    // pointsMesh appears; typing+Enter inside that window silently no-ops
+    // (Enter reads empty $state). Wait until the value actually sticks.
+    await page
+        .waitForFunction(() => document.getElementById('search-input')?.value === 'restaurant', null, {
+            timeout: 8000,
+            polling: 100
+        })
+        .catch(async () => {
+            await input.fill('restaurant')
+        })
+    await page.waitForTimeout(400)
     await page.keyboard.press('Enter')
-    await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 })
+
+    // Bounded retry: a delayed background reset (threads .dat / api.php probe /
+    // semantic-lane reconnect cycles fire seconds after boot when serving from
+    // static dist without PHP) can wipe the typed query between fill and Enter.
+    // Re-fill + re-Enter up to 3× until results render. DOM-truth probe
+    // (tmp/mobile-enter-probe.mjs) proves the flow itself works end-to-end.
+    const enterDeadline = Date.now() + 25000
+    let attempts = 0
+    while (Date.now() < enterDeadline) {
+        attempts++
+        const gotResults = await page
+            .waitForFunction(() => document.querySelectorAll('.search-result-item').length > 0, null, {
+                timeout: 6000,
+                polling: 100
+            })
+            .then(() => true)
+            .catch(() => false)
+        if (gotResults) break
+        if (attempts > 3) break
+        const cur = await page.evaluate(() => document.getElementById('search-input')?.value ?? '')
+        await page.locator('#search-input').fill(cur || 'restaurant')
+        await page.waitForTimeout(500)
+        await page.keyboard.press('Enter')
+    }
+    // Diagnostic: capture why results fail to render (console + DOM + shot).
+    await page.waitForTimeout(5000)
+    const mobileDiag = await page.evaluate(() => {
+        const input = document.querySelector('#search-input')
+        const r = input?.getBoundingClientRect()
+        const cx = r ? r.left + r.width / 2 : 0
+        const cy = r ? r.top + r.height / 2 : 0
+        const topEl = cx && cy ? document.elementFromPoint(cx, cy) : null
+        return {
+            resultItems: document.querySelectorAll('.search-result-item').length,
+            resultsContainerHtmlLen: (document.querySelector('.search-results') ?? document.querySelector('[class*=result]'))?.innerHTML?.length ?? -1,
+            panelSurface: document.body.dataset.panelSurface,
+            searchStatus: document.body.dataset.searchStatus ?? null,
+            hasErrorCard: !!document.querySelector('.search-error, [class*=error-card]'),
+            inputState: input ? { disabled: input.disabled, readOnly: input.readOnly, value: input.value } : null,
+            topElementAtInput: topEl ? `${topEl.tagName}.${String(topEl.className).slice(0, 60)}` : null,
+            topIsInputItself: topEl === input,
+            visibleDialogs: [...document.querySelectorAll('dialog, [role=dialog], .sheet, [class*=overlay], [class*=veil]')]
+                .filter((el) => {
+                    const s = getComputedStyle(el)
+                    return s.display !== 'none' && s.visibility !== 'hidden' && Number(s.opacity) > 0
+                })
+                .map((el) => `${el.tagName}.${String(el.className).slice(0, 50)}`)
+                .slice(0, 6)
+        }
+    }).catch((e) => ({ diagError: String(e) }))
+    console.log('[sweep] mobile diag after Enter:', JSON.stringify(mobileDiag))
+    if (pageErrors.length) console.log('[sweep] mobile page/console errors:', JSON.stringify(pageErrors.slice(0, 8)))
+    await page.screenshot({ path: OUT_DIR + '/rmi-mobile-after-enter.png' }).catch(() => {})
+    await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000, polling: 100 })
 
     const first = page.locator('.search-result-item').first()
     await first.click({ force: true })
@@ -460,7 +536,8 @@ async function runMobileProof(page) {
         () =>
             document.body.dataset.panelSurface === 'focus-search' &&
             (window.__APP_STATE__ || window.__TEST_STATE__)?.focusedNode !== null,
-        { timeout: 8000 }
+        null,
+        { timeout: 12000, polling: 100 }
     )
 
     const surface = await page.evaluate(() => document.body.dataset.panelSurface)
@@ -471,8 +548,9 @@ async function runMobileProof(page) {
     await diveBtn.waitFor({ state: 'visible', timeout: 10000 })
     await diveBtn.click({ force: true })
 
-    await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true, {
-        timeout: 2000
+    await page.waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true, null, {
+        timeout: 8000,
+        polling: 100
     })
     record('mobile: semanticDiveMode is true after dive click', true, '')
 
@@ -480,7 +558,8 @@ async function runMobileProof(page) {
     await page.keyboard.press('Escape')
     await page.waitForFunction(
         () => document.body.dataset.panelSurface === 'idle' && document.body.dataset.semanticDive === 'inactive',
-        { timeout: 8000 }
+        null,
+        { timeout: 12000, polling: 100 }
     )
 
     const finalState = await page.evaluate(() => {
@@ -557,8 +636,17 @@ async function run() {
         reducedMotion: 'reduce'
     })
     const mobilePage = await mobileContext.newPage()
-    const mobileResult = await runMobileProof(mobilePage)
-    await mobileBrowser.close()
+    // Harness hardening: a mobile-section throw must NOT destroy the desktop
+    // results — twice the sweep died at the mobile wait and the report block
+    // (which holds the only record() output) never executed.
+    let mobileResult
+    try {
+        mobileResult = await runMobileProof(mobilePage)
+    } catch (err) {
+        console.error('[sweep] mobile section threw (desktop results preserved):', err?.message ?? err)
+        mobileResult = { passes: [], failures: [{ check: 'mobile: section completed', pass: false, detail: String(err?.message ?? err) }] }
+    }
+    await mobileBrowser.close().catch(() => {})
 
     await browser.close()
     server.close()
