@@ -82,14 +82,14 @@ Invoke-Step @(
     "mkdir -p '$BackupDir/assets' '$BackupDir/css' '$BackupDir/data' '$BackupDir/js' '$BackupDir/scripts' && cp -p '$RemoteDir/index.html' '$BackupDir/index.html' 2>/dev/null || true && cp -p '$RemoteDir/semantic-demo.css' '$BackupDir/semantic-demo.css' 2>/dev/null || true && cp -p '$RemoteDir/vector-explorer-pandora.css' '$BackupDir/vector-explorer-pandora.css' 2>/dev/null || true && if [ -d '$RemoteDir/assets' ]; then cp -p '$RemoteDir/assets/'* '$BackupDir/assets/' 2>/dev/null || true; fi && if [ -d '$RemoteDir/css' ]; then cp -p '$RemoteDir/css/'*.css '$BackupDir/css/' 2>/dev/null || true; fi && cp -p '$RemoteDir/.htaccess' '$BackupDir/.htaccess' 2>/dev/null || true && cp -p '$RemoteDir/data/leadEnrichment.public.json' '$BackupDir/data/leadEnrichment.public.json' 2>/dev/null || true && cp -p '$RemoteDir/data.dat' '$BackupDir/data.dat' 2>/dev/null || true && cp -p '$RemoteDir/data.dat.gz' '$BackupDir/data.dat.gz' 2>/dev/null || true && cp -p '$RemoteDir/semantic_threads.dat' '$BackupDir/semantic_threads.dat' 2>/dev/null || true && cp -p '$RemoteDir/semantic_threads_ui.dat' '$BackupDir/semantic_threads_ui.dat' 2>/dev/null || true && cp -p '$RemoteDir/semantic_space_layout_manifest.json' '$BackupDir/semantic_space_layout_manifest.json' 2>/dev/null || true"
 )
 
-Invoke-Step @("ssh", "-p", $Port, $SshTarget, "mkdir -p '$RemoteDir/assets' '$RemoteDir/css' '$RemoteDir/data' '$RemoteDir/js'")
+Invoke-Step @("ssh", "-p", $Port, $SshTarget, "mkdir -p '$RemoteDir/assets' '$RemoteDir/css' '$RemoteDir/data' '$RemoteDir/js' '$RemoteDir/fonts'")
 
 # Keep the deploy payload explicit. Do not widen this to dist/svelte/*:
 # stale files such as local metadata must never be published.
 Invoke-Step @("scp", "-P", $Port, "dist/svelte/index.html", "${Target}index.html")
 Invoke-Step @("scp", "-P", $Port, "-r", "dist/svelte/assets", $Target)
 Invoke-Step @("scp", "-P", $Port, "-r", "dist/svelte/css", $Target)
-Invoke-Step @("scp", "-P", $Port, "dist/svelte/semantic-demo.css", $Target)
+Invoke-Step @("scp", "-P", $Port, "-r", "dist/svelte/fonts", $Target)Invoke-Step @("scp", "-P", $Port, "dist/svelte/semantic-demo.css", $Target)
 Invoke-Step @("scp", "-P", $Port, "dist/svelte/vector-explorer-pandora.css", $Target)
 foreach ($Artifact in $SemanticArtifacts) {
     $BuiltArtifact = "dist/svelte/$Artifact"
@@ -111,7 +111,7 @@ Invoke-Step @("scp", "-P", $Port, "dist/svelte/data/leadEnrichment.public.json",
 
 Invoke-Step @(
     "ssh", "-p", $Port, $SshTarget,
-    "find '$RemoteDir' -maxdepth 1 -type d -exec chmod 755 {} \; && find '$RemoteDir/assets' '$RemoteDir/css' '$RemoteDir/js' '$RemoteDir/data' -type d -exec chmod 755 {} \; 2>/dev/null || true && find '$RemoteDir/assets' '$RemoteDir/css' '$RemoteDir/js' '$RemoteDir/data' -type f -exec chmod 644 {} \; 2>/dev/null || true && chmod 644 '$RemoteDir/index.html' '$RemoteDir/data.dat' '$RemoteDir/data.dat.gz' '$RemoteDir/semantic_threads.dat' '$RemoteDir/semantic_threads_ui.dat' '$RemoteDir/semantic_space_layout_manifest.json' '$RemoteDir/semantic-demo.css' '$RemoteDir/vector-explorer-pandora.css' '$RemoteDir/.htaccess' 2>/dev/null || true"
+    "find '$RemoteDir' -maxdepth 1 -type d -exec chmod 755 {} \; && find '$RemoteDir/assets' '$RemoteDir/css' '$RemoteDir/js' '$RemoteDir/data' '$RemoteDir/fonts' -type d -exec chmod 755 {} \; 2>/dev/null || true && find '$RemoteDir/assets' '$RemoteDir/css' '$RemoteDir/js' '$RemoteDir/data' '$RemoteDir/fonts' -type f -exec chmod 644 {} \; 2>/dev/null || true && chmod 644 '$RemoteDir/index.html' '$RemoteDir/data.dat' '$RemoteDir/data.dat.gz' '$RemoteDir/semantic_threads.dat' '$RemoteDir/semantic_threads_ui.dat' '$RemoteDir/semantic_space_layout_manifest.json' '$RemoteDir/semantic-demo.css' '$RemoteDir/vector-explorer-pandora.css' '$RemoteDir/.htaccess' 2>/dev/null || true"
 )
 
 if ($DryRun) {

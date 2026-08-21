@@ -226,6 +226,9 @@ if ($action === 'semantic_search') {
         $fallback['cached'] = false;
         $fallback['cache_age_seconds'] = null;
         $fallback['cache_source'] = 'local-records';
+        // Persist the local-record fallback so subsequent requests skip the
+        // 1s serviceHealthy probe (semantic service is offline in dev).
+        persistSemanticSearchCache($cacheFile, $fallback);
         if ($lockAcquired && is_resource($lockHandle)) {
             @flock($lockHandle, LOCK_UN);
             @fclose($lockHandle);
@@ -249,6 +252,7 @@ if ($action === 'semantic_search') {
             $fallback['cache_age_seconds'] = null;
             $fallback['cache_source'] = 'local-records';
             $fallback['service_error'] = $serviceResponse['error'];
+            persistSemanticSearchCache($cacheFile, $fallback);
             respondSemanticSearch(200, $fallback);
         }
 
@@ -275,6 +279,7 @@ if ($action === 'semantic_search') {
             $fallback['cached'] = false;
             $fallback['cache_age_seconds'] = null;
             $fallback['cache_source'] = 'local-records';
+            persistSemanticSearchCache($cacheFile, $fallback);
             respondSemanticSearch(200, $fallback);
         }
 

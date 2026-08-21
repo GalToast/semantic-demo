@@ -100,32 +100,84 @@ RewriteRule ^reports/ - [F,L]
     RewriteRule ^(.*)$ $1.gz [L,QSA]
 </IfModule>
 <IfModule mod_headers.c>
-    # keep per-extension, per-encoding headers: correct &lt;Content-Encoding&gt;
-    # (browsers fail modules on MIME/encoding mismatch) + Vary triples.
-    <FilesMatch "\.br$">
+    # Force per-extension Content-Type on precompressed twins. FilesMatch
+    # sections CANNOT be nested in Apache/LiteSpeed — a nested <FilesMatch>
+    # is silently ignored, which previously left .js.br/.css.br twins served
+    # as text/plain (and .gz twins as application/gzip). Combined with the
+    # global X-Content-Type-Options: nosniff above, browsers refuse to run
+    # the module scripts/CSS — the app shell never mounted on prod. These
+    # flat, top-level blocks are the correct form.
+    <FilesMatch "\.js\.br$">
         Header set Content-Encoding br
+        Header set Content-Type application/javascript
         Header append Vary Accept-Encoding
-        <FilesMatch "\.js\.br$"><Header set Content-Type application/javascript></FilesMatch>
-        <FilesMatch "\.css\.br$"><Header set Content-Type text/css></FilesMatch>
-        <FilesMatch "\.json\.br$"><Header set Content-Type application/json></FilesMatch>
-        <FilesMatch "\.svg\.br$"><Header set Content-Type image/svg+xml></FilesMatch>
-        <FilesMatch "\.woff2\.br$"><Header set Content-Type font/woff2></FilesMatch>
-        <FilesMatch "\.dat\.br$"><Header set Content-Type application/octet-stream></FilesMatch>
-        <FilesMatch "\.html\.br$"><Header set Content-Type text/html></FilesMatch>
     </FilesMatch>
-    <FilesMatch "\.gz$">
+    <FilesMatch "\.css\.br$">
+        Header set Content-Encoding br
+        Header set Content-Type text/css
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.json\.br$">
+        Header set Content-Encoding br
+        Header set Content-Type application/json
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.svg\.br$">
+        Header set Content-Encoding br
+        Header set Content-Type image/svg+xml
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.woff2\.br$">
+        Header set Content-Encoding br
+        Header set Content-Type font/woff2
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.dat\.br$">
+        Header set Content-Encoding br
+        Header set Content-Type application/octet-stream
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.html\.br$">
+        Header set Content-Encoding br
+        Header set Content-Type text/html
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.js\.gz$">
         Header set Content-Encoding gzip
+        Header set Content-Type application/javascript
         Header append Vary Accept-Encoding
-        <FilesMatch "\.js\.gz$"><Header set Content-Type application/javascript></FilesMatch>
-        <FilesMatch "\.css\.gz$"><Header set Content-Type text/css></FilesMatch>
-        <FilesMatch "\.json\.gz$"><Header set Content-Type application/json></FilesMatch>
-        <FilesMatch "\.svg\.gz$"><Header set Content-Type image/svg+xml></FilesMatch>
-        <FilesMatch "\.woff2\.gz$"><Header set Content-Type font/woff2></FilesMatch>
-        <FilesMatch "\.dat\.gz$"><Header set Content-Type application/octet-stream></FilesMatch>
-        <FilesMatch "\.html\.gz$"><Header set Content-Type text/html></FilesMatch>
     </FilesMatch>
-</IfModule>
-<IfModule mod_mime.c>
+    <FilesMatch "\.css\.gz$">
+        Header set Content-Encoding gzip
+        Header set Content-Type text/css
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.json\.gz$">
+        Header set Content-Encoding gzip
+        Header set Content-Type application/json
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.svg\.gz$">
+        Header set Content-Encoding gzip
+        Header set Content-Type image/svg+xml
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.woff2\.gz$">
+        Header set Content-Encoding gzip
+        Header set Content-Type font/woff2
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.dat\.gz$">
+        Header set Content-Encoding gzip
+        Header set Content-Type application/octet-stream
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.html\.gz$">
+        Header set Content-Encoding gzip
+        Header set Content-Type text/html
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+</IfModule><IfModule mod_mime.c>
     AddEncoding gzip .gz
     AddEncoding br   .br
 </IfModule>

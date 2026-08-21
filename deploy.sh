@@ -72,10 +72,11 @@ run "ssh -p $PORT $SSH_TARGET 'mkdir -p \"$BACKUP_DIR/assets\" \"$BACKUP_DIR/css
 
 # Keep the deploy payload explicit. Do not widen this to dist/svelte/*:
 # stale files such as local metadata must never be published.
-run "ssh -p $PORT $SSH_TARGET 'mkdir -p ${REMOTE_DIR}/assets ${REMOTE_DIR}/css ${REMOTE_DIR}/scripts ${REMOTE_DIR}/js'"
+run "ssh -p $PORT $SSH_TARGET 'mkdir -p ${REMOTE_DIR}/assets ${REMOTE_DIR}/css ${REMOTE_DIR}/scripts ${REMOTE_DIR}/js ${REMOTE_DIR}/fonts'"
 run "scp -P $PORT dist/svelte/index.html '${DOMAIN_TARGET}index.html'"
 run "scp -P $PORT -r dist/svelte/assets '$DOMAIN_TARGET'"
 run "scp -P $PORT -r dist/svelte/css '$DOMAIN_TARGET'"
+run "scp -P $PORT -r dist/svelte/fonts '$DOMAIN_TARGET'"
 run "scp -P $PORT dist/svelte/semantic-demo.css '$DOMAIN_TARGET'"
 run "scp -P $PORT dist/svelte/vector-explorer-pandora.css '$DOMAIN_TARGET'"
 run "scp -P $PORT .htaccess '$DOMAIN_TARGET'"
@@ -110,7 +111,7 @@ run "scp -P $PORT dist/svelte/data/leadEnrichment.public.json ${DOMAIN_TARGET}da
 
 # Set file permissions on deployed assets. Mirror deploy.ps1's chmod step
 # so files are readable (644) and directories traversable (755).
-run "ssh -p $PORT $SSH_TARGET 'find \"$REMOTE_DIR\" -maxdepth 1 -type d -exec chmod 755 {} \; && find \"$REMOTE_DIR/assets\" \"$REMOTE_DIR/css\" \"$REMOTE_DIR/js\" \"$REMOTE_DIR/data\" -type d -exec chmod 755 {} \; 2>/dev/null || true && find \"$REMOTE_DIR/assets\" \"$REMOTE_DIR/css\" \"$REMOTE_DIR/js\" \"$REMOTE_DIR/data\" -type f -exec chmod 644 {} \; 2>/dev/null || true && chmod 644 \"$REMOTE_DIR/index.html\" \"$REMOTE_DIR/data.dat\" \"$REMOTE_DIR/data.dat.gz\" \"$REMOTE_DIR/semantic_threads.dat\" \"$REMOTE_DIR/semantic_threads_ui.dat\" \"$REMOTE_DIR/semantic_space_layout_manifest.json\" \"$REMOTE_DIR/semantic-demo.css\" \"$REMOTE_DIR/vector-explorer-pandora.css\" \"$REMOTE_DIR/.htaccess\" 2>/dev/null || true'"
+run "ssh -p $PORT $SSH_TARGET 'find \"$REMOTE_DIR\" -maxdepth 1 -type d -exec chmod 755 {} \; && find \"$REMOTE_DIR/assets\" \"$REMOTE_DIR/css\" \"$REMOTE_DIR/js\" \"$REMOTE_DIR/data\" \"$REMOTE_DIR/fonts\" -type d -exec chmod 755 {} \; 2>/dev/null || true && find \"$REMOTE_DIR/assets\" \"$REMOTE_DIR/css\" \"$REMOTE_DIR/js\" \"$REMOTE_DIR/data\" \"$REMOTE_DIR/fonts\" -type f -exec chmod 644 {} \; 2>/dev/null || true && chmod 644 \"$REMOTE_DIR/index.html\" \"$REMOTE_DIR/data.dat\" \"$REMOTE_DIR/data.dat.gz\" \"$REMOTE_DIR/semantic_threads.dat\" \"$REMOTE_DIR/semantic_threads_ui.dat\" \"$REMOTE_DIR/semantic_space_layout_manifest.json\" \"$REMOTE_DIR/semantic-demo.css\" \"$REMOTE_DIR/vector-explorer-pandora.css\" \"$REMOTE_DIR/.htaccess\" 2>/dev/null || true'"
 
 $DRYRUN && echo "==> Dry run complete — no files modified."
 $DRYRUN || echo "==> Deploy complete. Rollback backup: $BACKUP_DIR"
