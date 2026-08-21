@@ -233,7 +233,9 @@
         "visual-state-registry.mjs",
         "semantic-space-audit.mjs",
         "product-playthrough-audit.mjs",
-        "deploy-surface-contract.mjs"
+        "deploy-surface-contract.mjs",
+        "model-catalog-reconcile-sweep.mjs",
+        "api-endpoints-contract.mjs"
       ]
     },
     "supplemental": {
