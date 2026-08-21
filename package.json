@@ -26,10 +26,12 @@
     "check:journey": "node scripts/qa-journey-gate.mjs",
     "check:model-capability-status": "node tests/model-capability-status-sweep.mjs",
     "check:model-catalog": "node tests/model-catalog-sweep.mjs",
+    "check:model-catalog-runtime": "node tests/model-catalog-reconcile-sweep.mjs",
     "check:phone-farm": "node tests/phone-model-sweep.mjs && node tests/model-capability-status-sweep.mjs && node tests/model-catalog-sweep.mjs",
     "models:canonical-catalog": "node scripts/build-model-catalog.mjs --write-projection",
     "models:verify-catalog": "node scripts/verify-model-catalog.mjs",
     "models:capability-status": "node scripts/build-model-capability-status.mjs --catalog=tmp/phone-model-parity/canonical-model-catalog.json --health=tmp/phone-model-health/latest.json --markdown",
+    "models:reconcile-runtime": "node scripts/reconcile-model-catalog.mjs",
     "models:phone-parity": "node scripts/phone-model-parity.mjs",
     "models:phone-health": "node scripts/phone-model-health.mjs --phone-router=http://127.0.0.1:18789 --limit=8 --markdown",
     "phone:deploy-projection": "node scripts/deploy-phone-model-projection.mjs",
@@ -140,7 +142,8 @@
     "verify:syntax": "node scripts/verify-syntax.mjs",
     "verify:3d-tests": "node scripts/verify-3d-test-admission.mjs",
     "check:param-prop": "node tests/param-property-loader-sweep.mjs",
-    "check:data-compression": "node scripts/check-data-compression.mjs"
+    "check:data-compression": "node scripts/check-data-compression.mjs",
+    "report:drift": "node scripts/drift-report.mjs"
   },
   "keywords": [],
   "author": "",
