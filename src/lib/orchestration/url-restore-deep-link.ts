@@ -15,7 +15,9 @@ import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { animateCameraToNode } from '@lib/engine/camera-choreography/focus'
 import { refreshFocusSemanticOverlay, updateFocusSemanticOverlayPositions } from '@lib/engine/journey-webgl-lazy'
-import { applyPointFilterColors } from '@lib/journey/point-color'
+// P3-LCP: point-color → three; deep-link is post-data-load (still after LCP),
+// so lazify to keep three off the entry preload.
+function applyPointFilterColorsLazy(): void { void import('@lib/journey/point-color').then(m=>m.applyPointFilterColors()).catch(()=>{}) }
 import { appState } from '@lib/state/app.svelte'
 import { debugWarn } from '@lib/utils/debug'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
@@ -157,7 +159,7 @@ function _frameCameraOnAnchor(index: number, restoreToken: number): void {
                 debugWarn('[url-state] focus semantic overlay refresh failed', index, e)
             }
             try {
-                applyPointFilterColors()
+                applyPointFilterColorsLazy()
             } catch (e) {
                 debugWarn('[url-state] point-color refresh failed', index, e)
             }

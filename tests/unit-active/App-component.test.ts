@@ -98,7 +98,8 @@ describe('App.svelte — lazy component surface', () => {
         // static 2026-08-18 (cf15a68f): it is first-paint critical on the
         // placeholder2d renderKind; lazy gating broke W51/W54/W55 (0 H1).
         // Net count 9 lazy handles.
-        expect(names.size).toBe(9)
+        // focusPocketLazy joined (wave): 9 -> 10
+        expect(names.size).toBe(10)
     })
 })
 

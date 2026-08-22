@@ -646,7 +646,16 @@ function runContract(filename, timeoutMs, baseUrl = null) {
             cwd: PROJECT_ROOT,
             env: {
                 ...process.env,
-                TEST_BASE_URL: process.env.TEST_BASE_URL || baseUrl || `http://127.0.0.1:${SERVER_PORT}`
+                TEST_BASE_URL: process.env.TEST_BASE_URL || baseUrl || `http://127.0.0.1:${SERVER_PORT}`,
+                // F7-A/task-145 pattern: the reduced-motion-interruption sweep drives the
+                // corridor+focus cascade, which stalls under software WebGL before the
+                // selection commits (corridor never lands → step-inside never unlocks).
+                // Same environment evidence as task-145 (journey specs): run this sweep
+                // on the real-GPU D3D11 path unless software WebGL was explicitly forced.
+                ...(entry.includes('reduced-motion-interruption-sweep.mjs') &&
+                process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE !== '1'
+                    ? { SEMANTIC_USE_D3D11: '1' }
+                    : {})
             }
         })
 

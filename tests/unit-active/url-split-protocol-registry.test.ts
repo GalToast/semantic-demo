@@ -16,7 +16,9 @@ const READER_FILES = readdirSync(UNIT).filter((f) => f.endsWith('.test.ts'))
 const REGISTRY: Record<string, string> = {
     'a3-3-invalid-anchor-fallback.test.ts': 'url-restore-deep-link.ts',
     'url-state-no-synthetic-input.test.ts': 'url-restore-search.ts',
-    'url-state-options-contract.test.ts': '@lib/orchestration/url-restore'
+    'url-state-options-contract.test.ts': '@lib/orchestration/url-restore',
+    // Wave-added reader: asserts the anchor=null guard on the search restore path
+    'url-restore-search-anchor-null-guard.test.ts': 'url-restore-search.ts'
 }
 const SELF = 'url-split-protocol-registry.test.ts'
 

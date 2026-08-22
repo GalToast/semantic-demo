@@ -106,6 +106,34 @@ describe('data-loader worker settle/cleanup', () => {
         vi.restoreAllMocks()
     })
 
+    // One-point payload: the loud zero-records guard rejects empty results,
+    // so settle tests must feed a valid single record.
+    function makeNonEmptySuccess() {
+        return {
+            type: 'LOAD_RECORDS_SUCCESS',
+            payload: {
+                points: [{
+                    cluster: 0,
+                    name: 'settle-probe-business',
+                    what: 'Testing',
+                    city: 'Rockville',
+                    lead_id: 'lead-settle-0',
+                    lat: 39.0,
+                    lng: -77.0,
+                    website: 'https://example.test',
+                    email: 'contact@example.test',
+                    status: 'active',
+                    public_note: '',
+                    public_detail: ''
+                }],
+                pointIndexByLeadId: { 'lead-settle-0': 0 },
+                positionsBuffer: new Float32Array([0.1, 0.2, 0.3]),
+                clustersBuffer: new Uint16Array([0]),
+                invalidPositionIndices: []
+            }
+        }
+    }
+
     it('terminates worker exactly once on success', async () => {
         const promise = loadBusinessData()
         await Promise.resolve()
@@ -115,13 +143,7 @@ describe('data-loader worker settle/cleanup', () => {
 
         worker.dispatch('message', {
             type: 'LOAD_RECORDS_SUCCESS',
-            payload: {
-                points: [],
-                pointIndexByLeadId: {},
-                positionsBuffer: new Float32Array(),
-                clustersBuffer: new Uint16Array(),
-                invalidPositionIndices: []
-            }
+            payload: makeNonEmptySuccess().payload
         })
 
         await expect(promise).resolves.toBeDefined()
@@ -153,13 +175,7 @@ describe('data-loader worker settle/cleanup', () => {
         const worker = MockWorker.instances[0]
         worker.dispatch('message', {
             type: 'LOAD_RECORDS_SUCCESS',
-            payload: {
-                points: [],
-                pointIndexByLeadId: {},
-                positionsBuffer: new Float32Array(),
-                clustersBuffer: new Uint16Array(),
-                invalidPositionIndices: []
-            }
+            payload: makeNonEmptySuccess().payload
         })
 
         await promise
@@ -200,13 +216,7 @@ describe('data-loader worker settle/cleanup', () => {
         // Now fire the message (race condition)
         worker.dispatch('message', {
             type: 'LOAD_RECORDS_SUCCESS',
-            payload: {
-                points: [],
-                pointIndexByLeadId: {},
-                positionsBuffer: new Float32Array(),
-                clustersBuffer: new Uint16Array(),
-                invalidPositionIndices: []
-            }
+            payload: makeNonEmptySuccess().payload
         })
 
         await Promise.resolve()

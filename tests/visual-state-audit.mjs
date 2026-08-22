@@ -3344,7 +3344,20 @@ async function run() {
             const isFocusStageGroup =
                 (a.includes('focus-stage-neighbors') && b.includes('focus-stage-journey')) ||
                 (a.includes('focus-stage-journey') && b.includes('focus-stage-neighbors'))
-            return !isFocusStageGroup
+            // .search-container × #search-results: parent-child by design.
+            // #search-results (.search-results-wrapper) renders inside
+            // .search-container (SearchBar.svelte composes SearchInput +
+            // SearchResultsComponent within .search-container). In
+            // .info-panel-contained mode the wrapper uses position:relative
+            // (in-flow flow-as-continuation, W48-UX) instead of the absolute
+            // anchored dropdown — so the detector's anchoredDropdown exemption
+            // (requires position:absolute) doesn't match. The parent grows to
+            // contain the child; the full-coverage overlap is structural, not
+            // a layer slip. Mirrors the focus-stage exclusion pattern.
+            const isSearchGroup =
+                (a.includes('search-container') && b.includes('search-results')) ||
+                (a.includes('search-results') && b.includes('search-container'))
+            return !isFocusStageGroup && !isSearchGroup
         })
         if (unexpected.length === 0) {
             pass(state.name, 'surface-overlap-matrix:no-unexpected-overlap')

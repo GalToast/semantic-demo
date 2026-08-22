@@ -40,11 +40,15 @@ for (const line of raw.split('\n')) {
             for (const f of fs.readdirSync(p)) {
                 try {
                     newest = Math.max(newest, fs.statSync(path.join(p, f)).mtimeMs)
-                } catch { /* ignore */ }
+                } catch {
+                    /* ignore */
+                }
             }
         }
         ageH = (now - newest) / 36e5
-    } catch { /* deleted-but-reported */ }
+    } catch {
+        /* deleted-but-reported */
+    }
     rows.push({ status: st === ' ' ? 'M' : st.trim() || 'M', path: p, ageH })
 }
 
@@ -58,7 +62,9 @@ if (process.argv.includes('--json')) {
     console.log(JSON.stringify({ total: rows.length, ...out }, null, 2))
 } else {
     console.log(`Drift report — ${rows.length} uncommitted entr${rows.length === 1 ? 'y' : 'ies'}`)
-    console.log(`(STALE >${STALE_H}h = triage candidate · WARM ${WARM_H}-${STALE_H}h = paused wave · HOT <${WARM_H}h = active lane, hands off)\n`)
+    console.log(
+        `(STALE >${STALE_H}h = triage candidate · WARM ${WARM_H}-${STALE_H}h = paused wave · HOT <${WARM_H}h = active lane, hands off)\n`
+    )
     for (const b of BUCKET_ORDER) {
         const items = rows.filter((r) => bucketOf(r) === b).sort((a, z) => z.ageH - a.ageH)
         if (!items.length) continue
@@ -68,7 +74,9 @@ if (process.argv.includes('--json')) {
     }
     const stale = rows.filter((r) => bucketOf(r) === 'STALE').length
     if (stale > 0) {
-        console.log(`${stale} STALE file(s): owners likely gone. Triage: land coherent pieces,` +
-            ' git checkout the rest AFTER switchboard/ownership check (parallel-lane rule).')
+        console.log(
+            `${stale} STALE file(s): owners likely gone. Triage: land coherent pieces,` +
+                ' git checkout the rest AFTER switchboard/ownership check (parallel-lane rule).'
+        )
     }
 }

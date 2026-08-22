@@ -129,7 +129,11 @@ done
 # The internal enrichment (leadEnrichment.internal.json) stays in the repo
 # and is never deployed — it carries pipeline state that must not reach
 # the public demo.
-run "scp -P $PORT dist/svelte/data/leadEnrichment.public.json ${DOMAIN_TARGET}data/leadEnrichment.public.json"
+# GUARD: the build's compression gate may replace/remove the plain file;
+# twins are shipped separately above. Never let this kill the deploy tail.
+if [[ -f dist/svelte/data/leadEnrichment.public.json ]]; then
+	run "scp -P $PORT dist/svelte/data/leadEnrichment.public.json ${DOMAIN_TARGET}data/leadEnrichment.public.json"
+fi
 
 # Set file permissions on deployed assets. Mirror deploy.ps1's chmod step
 # so files are readable (644) and directories traversable (755).

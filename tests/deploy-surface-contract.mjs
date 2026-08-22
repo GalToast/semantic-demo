@@ -49,7 +49,7 @@ const TWIN_TYPES = [
     ['\\.js\\.br$', 'application/javascript'],
     ['\\.css\\.br$', 'text/css'],
     ['\\.json\\.br$', 'application/json'],
-    ['\\.dat\\.br$', 'application/octet-stream'],
+    ['\\.dat\\.br$', 'application/octet-stream']
 ]
 for (const [pattern, type] of TWIN_TYPES) {
     // The htaccess stores the Apache pattern verbatim (literal backslashes),
@@ -71,7 +71,12 @@ check('htaccess: .dat.gz flat block exists', /<FilesMatch\s+"\\.dat\\.gz\$">[\s\
 for (const script of ['deploy.sh', 'deploy.ps1']) {
     const src = fs.readFileSync(path.join(ROOT, script), 'utf8')
     check(script + ': mkdir includes fonts', /mkdir[^\n]*fonts/.test(src))
-    check(script + ': chmod sweep includes fonts', /find[^\n]*fonts[^\n]*chmod|chmod[^\n]*fonts/.test(src) || /fonts['"][^\n]*-type f/.test(src) || /\$RemoteDir\/fonts|\$\{REMOTE_DIR\}\/fonts/i.test(src))
+    check(
+        script + ': chmod sweep includes fonts',
+        /find[^\n]*fonts[^\n]*chmod|chmod[^\n]*fonts/.test(src) ||
+            /fonts['"][^\n]*-type f/.test(src) ||
+            /\$RemoteDir\/fonts|\$\{REMOTE_DIR\}\/fonts/i.test(src)
+    )
     check(script + ': scp -r dist/svelte/fonts', /scp[^\n]*-r[^\n]*dist\/svelte\/fonts/.test(src))
 }
 

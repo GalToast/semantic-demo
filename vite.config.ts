@@ -315,7 +315,12 @@ function serveRootAssets(middlewares: RootAssetMiddlewareStack): void {
                     // for pre-compressed twins — the build writes them to dist/.
                     const candidates = [
                         `${filePath}.${ext}`,
-                        normalize(resolve(SVELTE_OUT_DIR, relativePath.replace(/^public\//, '').replace(/^src\//, '') + `.${ext}`))
+                        normalize(
+                            resolve(
+                                SVELTE_OUT_DIR,
+                                relativePath.replace(/^public\//, '').replace(/^src\//, '') + `.${ext}`
+                            )
+                        )
                     ]
                     for (const compressedPath of candidates) {
                         try {
@@ -466,7 +471,11 @@ function w44AssetCompressionPlugin(): Plugin {
             // exemption set here so the two rules stay in agreement.
             const UNCOMPRESSED_RAW_KEEP = new Set(['data.dat'])
             for (const { filePath } of candidates) {
-                if (/(\.dat|\.json)$/.test(filePath) && !/\.(br|gz)$/.test(filePath) && !UNCOMPRESSED_RAW_KEEP.has(basename(filePath))) {
+                if (
+                    /(\.dat|\.json)$/.test(filePath) &&
+                    !/\.(br|gz)$/.test(filePath) &&
+                    !UNCOMPRESSED_RAW_KEEP.has(basename(filePath))
+                ) {
                     try {
                         await unlink(filePath)
                     } catch {
@@ -488,7 +497,10 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
         name: 'w44-preview-cache-headers',
         async configurePreviewServer(server) {
             const middlewares = server.middlewares as unknown as {
-                stack: Array<{ route?: string; handle: (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => void }>
+                stack: Array<{
+                    route?: string
+                    handle: (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => void
+                }>
             }
             // Insert a properly-shaped connect Layer at index 0 (Vite's dispatcher reads
             // `route`/`handle` directly; passing a bare function crashes its internal
@@ -524,7 +536,11 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
                         else if (url.endsWith('.gz')) setHeader('Content-Encoding', 'gzip')
                     }
 
-                    res.writeHead = function patchedWriteHead(status: number, a?: string | OutgoingHttpHeaders, b?: OutgoingHttpHeaders) {
+                    res.writeHead = function patchedWriteHead(
+                        status: number,
+                        a?: string | OutgoingHttpHeaders,
+                        b?: OutgoingHttpHeaders
+                    ) {
                         if (!patched) {
                             patched = true
                             applyPolicy()
@@ -560,7 +576,10 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
                     // runtime-compressed HTML/JS, let Vite's compression middleware
                     // set Content-Encoding normally — without the header, the
                     // browser displays compressed bytes as raw text.
-                    res.setHeader = function patchedSetHeader(name: string, value: string | number | readonly string[]) {
+                    res.setHeader = function patchedSetHeader(
+                        name: string,
+                        value: string | number | readonly string[]
+                    ) {
                         if (name === 'Cache-Control' || name === 'Vary') return
                         if (name === 'Content-Encoding' && !url.endsWith('.br') && !url.endsWith('.gz')) {
                             // Let Vite's compression middleware set it for runtime-encoded responses.
@@ -591,7 +610,10 @@ function chunkGraphAnalyzerPlugin(): Plugin {
         name: 'chunk-graph-analyzer',
         apply: 'build',
         async generateBundle(_, bundle) {
-            const graph: Record<string, { isEntry: boolean; imports: string[]; dynamicImports: string[]; modules: string[] }> = {}
+            const graph: Record<
+                string,
+                { isEntry: boolean; imports: string[]; dynamicImports: string[]; modules: string[] }
+            > = {}
             for (const [name, chunk] of Object.entries(bundle)) {
                 if (chunk.type === 'chunk') {
                     graph[name] = {
@@ -712,7 +734,10 @@ export default defineConfig({
         modulePreload: {
             resolveDependencies: (_filename, deps) => {
                 return deps.filter((dep) => {
-                    if (dep.includes('three-')) return false
+                    if (dep.includes('three')) return false
+                    if (dep.includes('point-color')) return false
+                    if (dep.includes('search-glows')) return false
+                    if (dep.includes('focus-pocket')) return false
                     // W44: Exclude non-critical chunks from eager preload to improve LCP
                     if (dep.includes('demo.svelte-')) return false
                     if (dep.includes('weather.svelte-')) return false
@@ -724,13 +749,48 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks(id) {
+                    const nid = id.replace(/\\/g, '/')
                     // (a) Three.js engine → isolated chunk. It is loaded eagerly by the
                     // WebGL scene path, but we keep it as its own named chunk and exclude
                     // it from module preload (see modulePreload.resolveDependencies) so the
                     // bytes are not inlined into the entry and are fetched on a dedicated
                     // request rather than bloating the initial parse.
-                    if (id.includes('node_modules/three/')) {
+                    if (nid.includes('node_modules/three/')) {
                         return 'three'
+                    }
+                    // (a.2) P3-LCP (2026-08-21): isolate all engine three-helpers so they never
+                    // co-bundle with boot chunks (parity-attrs, app.svelte, etc.) via shared deps.
+                    if (nid.includes('/src/lib/engine/')) {
+                        return 'engine-three'
+                    }
+                    if (
+                        nid.includes('/src/lib/journey/point-color') ||
+                        nid.includes('/src/lib/journey/focus-pocket') ||
+                        nid.includes('/src/lib/journey/route-trace') ||
+                        nid.includes('/src/lib/journey/semantic-overlay') ||
+                        nid.includes('/src/lib/journey/canvas-hit') ||
+                        nid.includes('/src/lib/journey/canvas-node') ||
+                        nid.includes('/src/lib/journey/thread-inspector-webgl') ||
+                        nid.includes('/src/lib/journey/arrival-handoff') ||
+                        nid.includes('/src/lib/journey/focus-anchor') ||
+                        nid.includes('/src/lib/journey/webgl-utils') ||
+                        nid.includes('/src/lib/journey/canvas-interaction')
+                    ) {
+                        return 'engine-three'
+                    }
+                    if (
+                        nid.includes('/src/lib/stores/search-glows.ts') ||
+                        nid.includes('/src/lib/journey/focus-ui.ts')
+                    ) {
+                        return 'ui-leaf'
+                    }
+                    if (
+                        nid.includes('/src/lib/utils/camera-math-utils') ||
+                        nid.includes('/src/lib/utils/three-textures') ||
+                        nid.includes('/src/lib/utils/ui-presentation-three') ||
+                        nid.includes('/src/lib/ui/cluster-labels')
+                    ) {
+                        return 'engine-three'
                     }
                     // (b) Heavy mode-transition transitive deps → isolated chunk. The
                     // mode-transitions dispatcher itself is tiny (~10KB src), but it
@@ -765,22 +825,22 @@ export default defineConfig({
                     // Audit details: harness failures.md key
                     //   w61-mode-transition-deps-lazify-rejected.
                     if (
-                        id.includes('/src/lib/stores/navigation.svelte.ts') ||
-                        id.includes('/src/lib/stores/navigation/') ||
-                        id.includes('/src/lib/stores/search.svelte') ||
-                        id.includes('/src/lib/stores/focus.svelte') ||
-                        id.includes('/src/lib/stores/journey.svelte') ||
-                        id.includes('/src/lib/orchestration/') ||
-                        id.includes('/src/lib/journey/') ||
-                        id.includes('/src/lib/search/') ||
-                        id.includes('/src/lib/navigation-actions')
+                        nid.includes('/src/lib/stores/navigation.svelte.ts') ||
+                        nid.includes('/src/lib/stores/navigation/') ||
+                        nid.includes('/src/lib/stores/search.svelte') ||
+                        nid.includes('/src/lib/stores/focus.svelte') ||
+                        nid.includes('/src/lib/stores/journey.svelte') ||
+                        nid.includes('/src/lib/orchestration/') ||
+                        nid.includes('/src/lib/journey/') ||
+                        nid.includes('/src/lib/search/') ||
+                        nid.includes('/src/lib/navigation-actions')
                     ) {
                         return 'mode-transition-deps'
                     }
                     // (c) Svelte runtime → isolated vendor chunk so it is not inlined into
                     // the entry chunk. This keeps the entry `index-*.js` file smaller while
                     // every Svelte component still shares one runtime chunk.
-                    if (id.includes('node_modules/svelte/')) {
+                    if (nid.includes('node_modules/svelte/')) {
                         return 'svelte-vendor'
                     }
                 }

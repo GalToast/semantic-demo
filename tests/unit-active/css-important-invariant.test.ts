@@ -70,7 +70,10 @@ const SKIP_PATTERNS = [
 //   Placeholder2D.svelte × 2   — reduced-motion animation/transition:none (sanctioned)
 //   InfoPanel.css × 1          — display:none hide (sanctioned)
 //   SearchTrailCue.svelte × 2  — display:flex row layout vs inherited hidden state + display:none collision-hide (W58 mobile search cue, 1→2 uses)
-const APPROVED_BASELINE = 27
+// +4 (2026-08-22): App.svelte <style> Fix #1/#2 hunks — map-title overlap
+// hide and inside-walk controls clipping; both need to beat inline/grid
+// layout styles (see commit landing the orphaned wave).
+const APPROVED_BASELINE = 31
 
 interface ImportantUse {
     file: string

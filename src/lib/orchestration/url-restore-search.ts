@@ -200,7 +200,11 @@ async function _restoreSearchFromParams(
         // without neighbor data. This re-fire runs after runSearch completes, so
         // resultIndices is populated. The subscriber guards addTrailStop against
         // duplicate trail stops. See docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md
-        const numericAnchor = Number.isFinite(Number(anchorId))
+        // numericAnchor MUST require a present anchorId: Number(null) and
+        // Number('') are both 0, so an unguarded isFinite() check treated
+        // anchor-less ?q= deep links as "numeric anchor 0" and phantom-focused
+        // dataset index 0 (1845 Solutions) on every shared search link.
+        const numericAnchor = !!anchorId && Number.isFinite(Number(anchorId))
         const results = searchStore().results
         const byId = results && results.length > 0 ? results.find((r: { id: string }) => r.id === anchorId) : null
         if (byId) {

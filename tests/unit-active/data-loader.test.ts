@@ -308,19 +308,16 @@ describe('data-loader direct coverage', () => {
             expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('data.dat'))
         })
 
-        it('with empty rows: returns BusinessDataResult with empty arrays (no crashes)', async () => {
+        it('with empty rows: throws the loud zero-records guard error', async () => {
+            // 2026-08-21 audit: zero-records used to boot silently empty; the
+            // loud guard now rejects so LoadingOverlay surfaces the bad asset.
             harness.responseQueue.push((w) => {
                 w.listeners.get('message')?.forEach((fn) =>
                     fn(new MessageEvent('message', { data: makeLoadRecordsSuccess([]) }))
                 )
             })
 
-            const result = await loadBusinessData()
-
-            expect(result.records).toEqual([])
-            expect(result.positionsBuffer).toHaveLength(0)
-            expect(result.clustersBuffer).toHaveLength(0)
-            expect(result.pointIndexByLeadId.size).toBe(0)
+            await expect(loadBusinessData()).rejects.toThrow(/parsed 0 business records/)
         })
 
         it('normalizes slug-style names (e.g. "coffee-shop" → "Coffee Shop")', async () => {

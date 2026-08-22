@@ -60,7 +60,6 @@
   import SemanticGuideCard from '@components/SemanticGuideCard.svelte';
   import SearchTrailCue from '@components/SearchTrailCue.svelte';
   import ProximityLegend from '@components/ProximityLegend.svelte';
-  import FocusPocket from '@components/FocusPocket.svelte';
   import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
   import { ErrorFallback } from '@lib/error-boundary';
   import { legendOpen, setLegendOpen } from '@lib/stores/legend.svelte';
@@ -105,6 +104,11 @@
   const infoPanelLazy = createLazyComponent(() => import('@components/InfoPanel.svelte'))
   const journeyChromeLazy = createLazyComponent(() => import('@components/JourneyChrome.svelte'))
   const focusCardLazy = createLazyComponent(() => import('@components/FocusCard.svelte'))
+  // P3-LCP (2026-08-21): FocusPocket statically imported engine.svelte.ts (→ Three.js)
+  // into the boot bundle; the mobile-2D surface never mounts it. Lazy-load like the
+  // other engine-coupled components (MapView/ThreadInspector) — it only renders above
+  // the 3D focus stage anyway (surface.focusStageActive gate below).
+  const focusPocketLazy = createLazyComponent(() => import('@components/FocusPocket.svelte'))
   // Pre-warm the engine module tree during splash so Vite's dev server
   // compiles the heavy Three.js + engine dependency graph in the background.
   // The import() result is cached by Vite; when Canvas.svelte later calls
@@ -162,6 +166,8 @@
   $effect(() => threadInspectorLazy.ensure(threadInspectorActive()));
 
   $effect(() => demoChoreographyLazy.ensure(true));
+  // P3-LCP: focus-stage gate drives FocusPocket's lazy load (3D-only overlay).
+  $effect(() => focusPocketLazy.ensure(surface.focusStageActive));
 
   // [2026-08-18] CSS chunking: these four are boot-visible chrome (info panel,
   // journey chrome, 2D placeholder, focus card). Pre-warm for everyone at idle
@@ -457,8 +463,9 @@
       rebuilds the pocket (via applyLocalNeighborhoodFocus) when focusedIndex
       changes. The keyboard/screen-reader surface lives in FocusPocketA11y.
     -->
-    {#if surface.focusStageActive}
-      <FocusPocket />
+    {#if surface.focusStageActive && focusPocketLazy.current}
+      {@const Cmp = focusPocketLazy.current}
+      <Cmp />
     {:else}
       <!-- W5-T3b: skeleton placeholder prevents CLS while FocusPocket idle-hydrates -->
       <div id="focus-pocket" class="focus-pocket-skeleton" aria-hidden="true"></div>
@@ -816,6 +823,28 @@
      and draw above the placeholder if they create their own stacking context. */
   @media (prefers-reduced-motion: reduce) {
     .layer { transition: none; }
+  }
+
+  /* Fix #1 Map layout: page title overlaps MapView header on map */
+  :global(body[data-active-view='map'] .app-title-header) {
+    display: none !important;
+  }
+
+  /* Fix #2 Inside walk controls clipped at viewport bottom */
+  :global(body.navigation-inside-walk .focus-stage-journey.active) {
+    height: auto !important;
+    max-height: calc(100vh - 140px) !important;
+    overflow: visible !important;
+    align-content: start;
+  }
+  :global(body.navigation-inside-walk .focus-stage-journey.active > #trail-controls) {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+  :global(body.navigation-inside-walk #trail-controls) {
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
   }
 
 </style>

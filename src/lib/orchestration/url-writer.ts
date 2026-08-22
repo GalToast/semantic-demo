@@ -1,4 +1,4 @@
- /**
+/**
  * @lib/orchestration/url-writer.ts — URL state writer
  *
  * Serializes application state into URL search params and writes them
@@ -157,7 +157,12 @@ export function updateUrlState(
     // Anchor (focused business index) — re-encode from navStore after the
     // preserveDeepLinkParams block may have deleted it. Only persists when
     // a business is actually focused, so mode-switching away clears it.
-    if ($nav.focusedIndex != null) params.set('anchor', String($nav.focusedIndex))
+    // Exception: an explicit `anchor: null` (or `record: null`) in `extra`
+    // expresses clear-intent — do NOT resurrect the param from navState.
+    // (F7-A: Escape-clear previously re-encoded the still-focused anchor,
+    // whose URL replay re-armed SEARCH_FOCUS after the reset.)
+    if (extra.anchor !== null && extra.record !== null && $nav.focusedIndex != null)
+        params.set('anchor', String($nav.focusedIndex))
 
     // Filters (status, city, website, email, geocoded) — encode so shared
     // links and reloads restore the same filtered view (mirror of

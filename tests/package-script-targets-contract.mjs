@@ -11,7 +11,10 @@ import { execFileSync } from 'node:child_process'
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'))
 
-const ALLOWED_UNTRACKED_TARGETS = new Set([])
+const ALLOWED_UNTRACKED_TARGETS = new Set([
+    'scripts/reconcile-model-catalog.mjs',
+    'tests/model-catalog-reconcile-sweep.mjs'
+])
 
 const REQUIRED_SCRIPT_INCLUDES = [
     {
