@@ -83,6 +83,13 @@ vi.mock('@lib/orchestration/parity-attrs.svelte.ts', async () => {
     }
 })
 
+vi.mock('@lib/app/app-lifecycle.ts', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@lib/app/app-lifecycle.ts')>()
+    return {
+        ...actual,
+        isPlaywrightEnvironment: () => true,
+    }
+})
 vi.mock('@lib/orchestration/test-globals', async () => {
     const actual = await vi.importActual('@lib/orchestration/test-globals')
     return {

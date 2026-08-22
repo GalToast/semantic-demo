@@ -43,6 +43,10 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
+    // eea3c242 — docs(engine) correcting the stale three-micro-demo-bridge comment;
+    // carried a 1-line comment correction inside three-interaction-visuals.ts.
+    // Comment-only code-file touch: doc-class intent, exempted 2026-08-20.
+    'eea3c2420de2a7bea58911016513ad6269ea8cee',
     // 499432285 — wave task-138 docs(ux) carrying the release-sheet row: the wave's
     // own mixed commit, exempted on takeover 2026-08-17 (same evidence-class as the
     // harness precedents below).

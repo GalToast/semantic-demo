@@ -25,7 +25,7 @@
   import { getBusinessNamePresentation, sanitizePublicFacingNote, getPublicRecordStatusLabel } from '@lib/utils';
   import { describeCluster } from '@lib/utils';
   import { getInterestingBusinessNote } from '@lib/ui/renderers';
-  import { describeThreadLensForPoint } from '@lib/journey/point-color';
+  import { describeThreadLensForPoint } from '@lib/journey/thread-lens';
   import { buildSelectedMatchNarrative as buildPointMatchNarrative } from '@lib/orchestration/lifecycle';
   import { buildSelectedBusinessProps, type SelectedCardAdapter, type BusinessPoint } from '@lib/view-models/selected-business-view-model';
   import { onMount, type Snippet } from 'svelte';

@@ -51,6 +51,9 @@ export default defineConfig({
         // setupFiles runs before any test file. Store tests import modules that
         // call window.matchMedia during module initialization.
         setupFiles: ['tests/unit-active/vitest.setup.js'],
+        // One-time TDB fixture ensure (no-op when fresh): regenerates the
+        // gitignored tmp/perf9/semantic_threads.dat.bin the semantic-tdb tests read.
+        globalSetup: ['scripts/tdb1-fixture-ensure.mjs'],
         sequence: {
             concurrent: false
         },

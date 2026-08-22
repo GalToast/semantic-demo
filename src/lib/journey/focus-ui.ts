@@ -13,8 +13,12 @@ import { setStrandContinuityState } from '@lib/utils/strand-continuity'
 import { summarizeNeighborReason, walkThreadNeighbor } from '@lib/journey/thread-settler'
 import { inspectThreadNeighbor, pinThreadNeighbor, clearThreadInspection } from '@lib/journey/thread-inspector-state'
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from '@lib/journey/neighborhood'
-import { ensureCanvasNodeInteractionBindings } from '@lib/journey/canvas-interaction'
-import { focusOnNode } from '@lib/engine/camera-controls'
+import { ensureCanvasNodeInteractionBindingsLazy } from '@lib/journey/canvas-interaction-lazy'
+// P3-LCP (2026-08-21): focusOnNode was statically pulled from @lib/engine/camera-controls
+// (→ camera-choreography → Three.js 717KB) into the boot chunk via this UI-only module
+// (called exclusively in click handlers). Same carve-out pattern as journey:
+// dynamically import the facade on first use so mobile-2D never loads three.
+import { focusOnNodeLazy } from '@lib/engine/focus-call-lazy'
 import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts'
 // ThreadCandidateLike removed (unused)
 import {
@@ -478,7 +482,7 @@ function updateWalkBreadcrumb(hasFocus: boolean = false): void {
                     restoreHistoryIndices: history.slice(0, targetOrder + 1),
                     appendHistory: false
                 })
-                focusOnNode(targetIndex, {
+                focusOnNodeLazy(targetIndex, {
                     fromTraversal: true,
                     restoreHistory: true,
                     historyMode: 'push'
@@ -667,7 +671,7 @@ export function updateTraversalUi(): void {
             ? 'Recenter camera on this business'
             : 'Select a business to recenter the camera on it'
     }
-    ensureCanvasNodeInteractionBindings()
+    ensureCanvasNodeInteractionBindingsLazy()
 
     if (!hasFocus) {
         updateWalkBreadcrumb(false)

@@ -96,7 +96,10 @@ export function ensureCanvasNodeInteractionBindings(): void {
     _ensureCanvasNodeInteractionBindings()
 }
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
-import { applyPointFilterColors, describeThreadLensForPoint } from './point-color'
+import { describeThreadLensForPoint } from './thread-lens'
+// P3-LCP: point-color lazified — see stores/lifecycle pattern. Journey is engine-lazy
+// (Canvas) so not boot-critical, but keep the same deferred shape for consistency.
+function applyPointFilterColorsLazy(): void { void import('./point-color').then(m=>m.applyPointFilterColors()).catch(()=>{}) }
 import {
     scheduleJourneyFocusTimer
 } from './journey-focus-timers'
@@ -247,7 +250,7 @@ function restoreFocusTrailState(priorFocused: number | null = state.focusedNode)
     updateTrailIndices(priorFocused!)
     refreshFocusSemanticOverlay()
     applyLocalNeighborhoodFocus(priorFocused!)
-    applyPointFilterColors()
+    applyPointFilterColorsLazy()
     const priorPoint = state.points[priorFocused!] || null
     syncFocusStage(priorPoint || state.focusState.selectedPoint || null)
     updateTraversalUi()
@@ -277,7 +280,7 @@ export {
     hasColdDegradedSemanticFallback,
     shouldUseFloatingFocusJourneyOnly,
     updateTraversalUi,
-    applyPointFilterColors,
+    applyPointFilterColorsLazy as applyPointFilterColors,
     describeThreadLensForPoint,
     truncateMicrocopy,
     getSharedTrailTopicLabel,

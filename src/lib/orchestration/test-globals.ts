@@ -29,8 +29,12 @@
  *   await page.evaluate(() => window.__navActions__.setSurface('focus'))
  */
 
-import * as THREE from 'three'
+// No runtime THREE dependency needed here — the window.THREE reference in
+// the docs below was never implemented, and pulling 'three' into this boot-
+// installed module drags the three chunk into the mobile critical path.
+
 import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte'
+import { isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { searchStore } from '@lib/stores/search.svelte'
 import { dataLoadState } from '@lib/data-store'
@@ -96,7 +100,17 @@ export function installTestStoreGlobals(): () => void {
     // can reuse the same math classes the app uses (Vector3, Matrix4, Color,
     // etc.). Many .spec.js and .mjs tests project node positions onto screen
     // coordinates using window.THREE.Vector3.
-    window.THREE = THREE
+    // P3-LCP (2026-08-21): only install in Playwright/test runs, and via a
+    // dynamic import — real users never read window.THREE. A static
+    // `import * as THREE` here pulled the Three.js graph onto the cold boot
+    // path of the mobile 2D surface.
+    if (isPlaywrightEnvironment()) {
+        import('three')
+            .then((t) => {
+                window.THREE = t
+            })
+            .catch(() => {})
+    }
 
     const navActions: NavActions = {
         setSurface,

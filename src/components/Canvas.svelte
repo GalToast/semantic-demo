@@ -196,8 +196,14 @@ import { isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts';
 
     const initLifecycle = async (): Promise<void> => {
       try {
-        const lifecycle = await import('@lib/engine/lifecycle');
-        engineLifecycle = lifecycle;
+        // P3-LCP (2026-08-21): journey.ts was previously statically imported by
+        // app-init at boot, dragging the Three.js graph onto the cold path of
+        // the mobile 2D surface. Load it here (engine boot seam, BEFORE
+        // lifecycle init) so its CAMERA_NODE_FOCUSED subscription and journey
+        // state are registered before the engine publishes events — while
+        // keeping Three.js off the no-engine boot.
+        await import('@lib/journey/journey')
+        const lifecycle = await import('@lib/engine/lifecycle');        engineLifecycle = lifecycle;
         // The component can unmount while the lazy lifecycle chunk is still
         // resolving. Assign the module before checking the flag so onDestroy
         // and this continuation share the same teardown path; otherwise a

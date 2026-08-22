@@ -24,17 +24,20 @@ import { debugWarn } from '@lib/utils/debug'
 import { initAdapters } from '@lib/orchestration/adapters'
 import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
 import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts'
-import { installTestStoreGlobals } from '@lib/orchestration/test-globals'
 import { debugError } from '@lib/utils/debug'
+import { isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts'
 import { teardownViewController } from '@lib/orchestration/view-controller'
 import { claimRestoreOwnership, isRestoreOwned, releaseRestoreOwnership } from '@lib/engine/webgl-restore-ownership'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
 
-// Side-effect: initializes journey state, canvas interaction adapter,
-// and thread-settler bindings. Must load before engine init so that
-// canvas hit-test and thread walking work on first user interaction.
-import '@lib/journey/journey'
+// P3-LCP (2026-08-21): the former static `import '@lib/journey/journey'`
+// pulled the Three.js engine graph (~570KB) into the cold boot path of the
+// mobile 2D-preview surface where the engine never runs. journey.ts is now
+// lazily loaded by Canvas.svelte's initLifecycle() (the engine boot seam),
+// which still satisfies the 'must load before engine init' contract (the
+// module registers the CAMERA_NODE_FOCUSED subscription + journey state).
+// The side-effect cancel path below only calls the timer helper statically.
 
 // ── Debug Window Extensions (Playwright test compat) ────────────────────────
 // `__APP_STATE__` and `__navActions__` are debug/test shims. Their types are
@@ -317,7 +320,19 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     _safetyTimers = setupSafetyValves()
 
     // ── Phase 2: Window globals (immediate, before async work) ────────────────
-    _unsubWindowGlobals = installTestStoreGlobals()
+    // P3-LCP (2026-08-21): test-globals transitively imports focus-pocket (Vector3/three)
+    // into the cold boot graph via app-init static import. Gate the entire module to
+    // Playwright so real users (esp. mobile 2D placeholder) never fetch it.
+    if (isPlaywrightEnvironment()) {
+        try {
+            const { installTestStoreGlobals: installTestGlobals } = await import('@lib/orchestration/test-globals')
+            _unsubWindowGlobals = installTestGlobals()
+        } catch (err) {
+            debugWarn('[app-init] test globals install failed', err)
+        }
+    } else {
+        _unsubWindowGlobals = () => {}
+    }
 
     // ── Phase 2.5: Viewport listeners + parity attribute sync ─────────────────
     // W46-B1: These were previously installed by App.svelte's onMount, which
