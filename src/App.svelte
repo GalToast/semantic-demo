@@ -845,6 +845,18 @@
   :global(body.navigation-inside-walk #trail-controls) {
     max-height: calc(100vh - 160px);
     overflow-y: auto;
+    /* Polish: the squeezed toolbar row reports ~39px invisible padding
+       overflow + a collapsed second row, producing chunky native scrollbars
+       over an otherwise-clean panel. All visible content fits — hide the
+       bars, keep wheel/touch scrolling. */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  :global(body.navigation-inside-walk #trail-controls::-webkit-scrollbar) {
+    display: none;
+  }
+  :global(body.navigation-inside-walk #trail-controls) {
+    overflow-x: hidden;
   }
 
 </style>
