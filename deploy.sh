@@ -93,11 +93,27 @@ if [[ -f dist/svelte/data.dat.gz ]]; then
 	run "scp -P $PORT dist/svelte/data.dat.gz '$DOMAIN_TARGET'"
 fi
 if [[ -f dist/svelte/semantic_threads.dat ]]; then
-	run "scp -P $PORT dist/svelte/semantic_threads.dat '$DOMAIN_TARGET'"
+	run "scp -P $PORT dist/svelte/semantic_threads.dat '${DOMAIN_TARGET}data/semantic_threads.dat'"
 fi
 if [[ -f dist/svelte/semantic_threads_ui.dat ]]; then
-	run "scp -P $PORT dist/svelte/semantic_threads_ui.dat '$DOMAIN_TARGET'"
+	run "scp -P $PORT dist/svelte/semantic_threads_ui.dat '${DOMAIN_TARGET}data/semantic_threads_ui.dat'"
 fi
+
+# Precompressed twins for the big data artifacts (P4, 2026-08-22): without
+# these the .htaccess rewrite has no twin to serve and prod ships 82.5MB of
+# semantic_threads.dat PLAIN over throttled mobile radios. br twins compress
+# it to 2.6MB (30x). Mirror names at REMOTE_DIR root exactly as built.
+for twin in semantic_threads.dat.br semantic_threads.dat.gz semantic_threads_ui.dat.br semantic_threads_ui.dat.gz; do
+	if [[ -f "dist/svelte/data/$twin" ]]; then
+		run "scp -P $PORT dist/svelte/data/$twin '$DOMAIN_TARGET'"
+	fi
+done
+# leadEnrichment twins live beside the json in dist/svelte/data/
+for twin in leadEnrichment.public.json.br leadEnrichment.public.json.gz; do
+	if [[ -f "dist/svelte/data/$twin" ]]; then
+		run "scp -P $PORT dist/svelte/data/$twin '${DOMAIN_TARGET}data/$twin'"
+	fi
+done
 if [[ -f dist/svelte/semantic_space_layout_manifest.json ]]; then
 	run "scp -P $PORT dist/svelte/semantic_space_layout_manifest.json '$DOMAIN_TARGET'"
 fi
