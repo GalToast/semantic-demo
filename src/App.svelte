@@ -476,7 +476,7 @@
   <FocusPocketA11y />
 
   <!-- Layer 700: Compass rail -->
-  <CompassRail visible={surface.focusActive && !$viewport.isCompact} />
+  <CompassRail visible={surface.focusActive && !surface.focusSearchPanelActive && !$viewport.isCompact} />
 
   <!-- Layer 800: Camera controls -->
   <Controls visible={surface.controlsVisible} />

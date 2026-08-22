@@ -52,6 +52,9 @@ export interface SurfaceComposition {
     controlsVisible: boolean
     infoPanelOpen: boolean
     legacyCompassSurfaceActive: boolean
+    /** focus-search surface: the search-results panel owns the left edge,
+     *  so left-edge chrome (journey compass rail) must yield. */
+    focusSearchPanelActive: boolean
 }
 
 export function useSurfaceComposition(opts: { getSceneReady: () => boolean }): SurfaceComposition {
@@ -74,6 +77,10 @@ export function useSurfaceComposition(opts: { getSceneReady: () => boolean }): S
     const idleSurfaceActive = $derived(nav.surface === 'idle' && !searchSurfaceActive)
     const focusActive = $derived(isFocusSurfaceActive(nav.mode, nav.focusedIndex ?? null, parity))
     const focusStageActive = $derived(focusActive && !mapModeActive)
+    // Deep-link/anchor restores land on panelSurface 'focus-search' where the
+    // results panel occupies the same left edge as the journey compass rail;
+    // the rail must yield or it occludes card text + intercepts clicks.
+    const focusSearchPanelActive = $derived(parity.panelSurface === 'focus-search')
     const headerVisible = $derived(!mapModeActive && (idleSurfaceActive || searchFamilySurfaceActive || focusActive))
     const controlsVisible = $derived(
         opts.getSceneReady() &&
@@ -123,6 +130,9 @@ export function useSurfaceComposition(opts: { getSceneReady: () => boolean }): S
         },
         get focusStageActive() {
             return focusStageActive
+        },
+        get focusSearchPanelActive() {
+            return focusSearchPanelActive
         },
         get headerVisible() {
             return headerVisible
