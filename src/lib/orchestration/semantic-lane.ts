@@ -76,7 +76,10 @@ type SemanticLaneRetryBinding = {
 const semanticLaneRetryBindings = new WeakMap<HTMLElement, SemanticLaneRetryBinding>()
 
 function requestSemanticLaneRetry(pillEl: HTMLElement, event: Event): void {
-    if (pillEl.dataset.state !== 'stuck') return
+    // Gate on the store truth, not the DOM banner key: since the truth-split
+    // (2026-08-17/18) pillEl.dataset.state carries railBanner()'s live|fallback|demo
+    // key and is never 'stuck' — gating on it made the stuck-pill retry dead.
+    if (state.semanticLaneState !== 'stuck') return
     event.preventDefault()
     void probeSemanticLane({ warm: true, reason: 'manual-retry' }).catch((error: unknown) => {
         debugWarn('[semantic-lane] Manual retry failed:', error)
@@ -492,9 +495,13 @@ export function setSemanticLaneUiState(laneState: string, options: LaneUiOptions
     // apiDown-only override.
     const source: 'api' | 'fallback' = readApiUnreachable() !== null ? 'fallback' : 'api'
     const railAlive: boolean | null =
-        state.semanticLaneState === 'healthy' ? true
-        : state.semanticLaneState === 'degraded' || state.semanticLaneState === 'reconnecting' || state.semanticLaneState === 'stuck' ? false
-        : null
+        state.semanticLaneState === 'healthy'
+            ? true
+            : state.semanticLaneState === 'degraded' ||
+                state.semanticLaneState === 'reconnecting' ||
+                state.semanticLaneState === 'stuck'
+              ? false
+              : null
     const degraded: boolean | null = state.semanticLaneState === 'degraded' ? true : null
     const banner = railBanner(source, railAlive, degraded)
     pillEl.dataset.state = banner.key

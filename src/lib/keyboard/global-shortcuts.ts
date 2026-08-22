@@ -264,7 +264,7 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
             // H-4 (bugsweep): clear the search query through the store, not
             // direct DOM mutation, so the Svelte $state and the DOM stay in sync.
             setSearchQuery('')
-            updateUrlState({ q: null, offset: null }, { reason: 'escape-clear' })
+            updateUrlState({ q: null, offset: null, anchor: null, record: null }, { reason: 'escape-clear' })
             const { mode, surface } = navStore()
             if (mode !== 'overview' || surface !== 'idle') {
                 dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)

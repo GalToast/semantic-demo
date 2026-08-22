@@ -111,7 +111,12 @@ describe('W46-B3: all 5 shortcut branches are preserved from the original App.sv
         expect(src).toContain('NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW')
         // W58 fix: Escape now unconditionally strips stale ?q=/?offset= so a reload
         // doesn't re-trigger the dismissed search (was updateUrlState({}, 'return-overview')).
-        expect(src).toContain("updateUrlState({ q: null, offset: null }, { reason: 'escape-clear' })")
+        // F7-A: also strips anchor/record with the SAME write so the URL replay cannot
+        // re-arm SEARCH_FOCUS after RETURN_OVERVIEW (the re-encode bug was resurrecting
+        // ?anchor= from navState.focusedIndex pre-reset).
+        expect(src).toContain(
+            "updateUrlState({ q: null, offset: null, anchor: null, record: null }, { reason: 'escape-clear' })"
+        )
     })
 })
 
