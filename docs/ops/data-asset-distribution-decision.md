@@ -4,11 +4,11 @@ Status question from prod-readiness-findings P4: "169MB static data assets — C
 
 ## What changed today (shipped to prod, verified)
 
-| Asset | Before (prod) | After (prod) | Reduction |
-|---|---|---|---|
-| `semantic_threads.dat` | 82.5MB plain at wrong path (**404** at app's fetch URL) | **2.7MB br** / 3.9MB gz at correct `data/` path | ~30× + feature un-broken |
-| `semantic_threads_ui.dat` | 41.4MB plain, wrong path | **1.9MB gz** / 1.3MB br in `data/` | ~20× |
-| `leadEnrichment.public.json` | 18MB plain | **1.7MB br** / 2.3MB gz | ~10× |
+| Asset                        | Before (prod)                                           | After (prod)                                    | Reduction                |
+| ---------------------------- | ------------------------------------------------------- | ----------------------------------------------- | ------------------------ |
+| `semantic_threads.dat`       | 82.5MB plain at wrong path (**404** at app's fetch URL) | **2.7MB br** / 3.9MB gz at correct `data/` path | ~30× + feature un-broken |
+| `semantic_threads_ui.dat`    | 41.4MB plain, wrong path                                | **1.9MB gz** / 1.3MB br in `data/`              | ~20×                     |
+| `leadEnrichment.public.json` | 18MB plain                                              | **1.7MB br** / 2.3MB gz                         | ~10×                     |
 
 Root cause discovered: the app fetches `data/semantic_threads*.dat` (`buildAssetUrl('data/…')`, semantic-threads.ts:664-666) but deploy.sh shipped the files to the REMOTE ROOT — so every threads request on prod **404ed** and features silently fell back ("0 related businesses" symptoms). Twins now sit beside the plains-in-waiting at `data/`; `.htaccess` rewrite serves them when `Accept-Encoding: br/gzip` (universal in browsers).
 

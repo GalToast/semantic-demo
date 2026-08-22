@@ -1919,6 +1919,7 @@ Residual seam: `.view-toggle` still has many legitimate CSS/test references beca
 **Deploy method:** isolated git worktree at HEAD (lane WIP excluded by design), npm install, deploy.sh --dryrun inspected → real run. One tail-step failure found+fixed en route: unguarded leadEnrichment plain scp (build's compression gate removes plains) killed set -e after 25/26 steps — guarded now; tail steps completed manually.
 
 **Post-deploy verification (all green):**
+
 - qa-deploy-verify --via-origin: **6/6** on fresh asset hash index-C8hNny7S.js
 - Live journey (tmp/prod-journey.mjs): coffee → Angel Fire Coffee #518 → **threadSource "semantic", neighborMap 8406/8406, threadCandidates 12** — semantic trails fully working on prod for the first time since the Svelte migration
 - Prod mobile CWV (CDP-throttled probe): FCP 2.4s / LCP 6.7s

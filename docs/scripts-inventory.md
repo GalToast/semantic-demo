@@ -2,7 +2,7 @@
 
 Generated from package.json (manually curated, update on script changes).
 
-**Scale:** 136 scripts \| 29 invoked-by-other-scripts \| 107 manual/orphan entries.
+**Scale:** 138 scripts \| 29 invoked-by-other-scripts \| 109 manual/orphan entries.
 
 ## Key entry points
 
@@ -116,12 +116,13 @@ Generated from package.json (manually curated, update on script changes).
 | ------------- | ----------------------------------------------------------------------------- | ------ |
 | `mcp:recover` | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mcp-recover.ps1` | manual |
 
-## `models:` family (5)
+## `models:` family (6)
 
 | Script                     | Command (truncated)                                                                                    | Wired? |
 | -------------------------- | ------------------------------------------------------------------------------------------------------ | ------ |
 | `models:canonical-catalog` | `node scripts/build-model-catalog.mjs --write-projection`                                              | manual |
 | `models:capability-status` | `node scripts/build-model-capability-status.mjs --catalog=tmp/phone-model-parity/canonical-model-c...` | manual |
+| `models:reconcile-runtime` | `node scripts/reconcile-model-catalog.mjs`                                                             | manual |
 | `models:phone-health`      | `node scripts/phone-model-health.mjs --phone-router=http://127.0.0.1:18789 --limit=8 --markdown`       | manual |
 | `models:phone-parity`      | `node scripts/phone-model-parity.mjs`                                                                  | manual |
 | `models:verify-catalog`    | `node scripts/verify-model-catalog.mjs`                                                                | manual |

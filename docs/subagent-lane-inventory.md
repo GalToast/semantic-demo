@@ -4,6 +4,155 @@
 
 Moved out of `AGENTS.md` (Prompt Budget: no large reference tables in the hot-path file). `docs/subagent-delegation.md` remains the source for lifecycle/rate/vision rules; this doc is just the live per-model viability table.
 
+## Current coordination snapshot — 2026-08-20
+
+This section is the current operational truth; the dated entries below are
+historical probes and must not be treated as a live allowlist. The broker health
+snapshot at 2026-08-20T10:14:43Z reported 3,680 configured model refs, 2,785
+catalog models, 900 subagent-launchable refs, 144 configured models missing
+from catalogs, 1,952 configured models unverified, 1,201 catalog-only refs,
+171 duplicate model routes, and 30 catalog routes failed. The configured
+surface was 48 provider routes across 38 providers; 15 routes cataloged
+successfully. Current high-signal examples included
+`zenmux/moonshotai/kimi-k3`, `deepseek-ai/deepseek-v4-pro`, and
+`openrouter/z-ai/glm-5.2:free`.
+
+During that check the local parent key-router at `127.0.0.1:8788` returned
+`fetch failed`, so route health, catalog presence, and worker viability must
+remain separate states. The repaired external-subagents source and dist were
+newer than the running MCP process; restart the MCP server after a rebuild.
+
+Catalog presence, launchability, and worker viability are separate states:
+`/models` returning 200 only proves discovery. On this snapshot OpenCode Zen
+worker launches were blocked by recent 429 key cooldowns, Zydit routes returned
+530 tunnel failures, and Logfare's catalog returned 200 but its older worker
+failure history still requires a fresh launch probe. Do not blindly retry a
+429 or connection abort; health-check the route and pivot.
+
+The catalog repair now makes parent-router `/catalog` + per-route `/models` the
+first source for Qwen sync, refreshes expired Pi catalog entries before
+registration, and raises broker Pi preflight's bounded default from 7.5s to
+15s. Retired `owl-alpha` refs are filtered at catalog ingestion, sync, and
+launch boundaries and removed from active broker defaults. After a fresh
+Codex restart, the external-subagents MCP transport is responsive with no
+workers running; the rebuilt dist is on disk. A direct sync against the live
+parent removed three stale Qwen entries and retained the live additions. The
+final retired-entry reporting fix still needs the next broker reload before
+the MCP tool process uses it.
+
+## Model catalogue propagation contract — 2026-08-20
+
+The ModelScope upstream origin is `https://api-inference.modelscope.cn/v1`.
+The managed router mesh on ports `8788`, `8791`, and `8792` now mirrors the
+live upstream catalogue: all three currently report 45 models, including
+`deepseek-ai/DeepSeek-V4-Flash-0731`, `deepseek-ai/DeepSeek-V4-Pro`, and
+`deepseek-ai/DeepSeek-V4-Pro-0813`.
+
+The shared manifest at `~/.pi/agent/model-catalog-manifest.json` is the
+cross-consumer handoff. It records provider URL, discovery source, checked and
+last-success timestamps, model provenance, capabilities, and lifecycle state.
+Successful omissions become `missing`, then `stale` after three consecutive
+successful catalogue passes; discovery failures become `unverified` and do
+not retire previously known models. This prevents a temporary 401/404/429 or
+router outage from deleting a picker entry.
+
+Qwen sync consumes the live router catalogue and manifest, deduplicates by
+model plus route, and currently contains exactly one ModelScope entry for each
+of the three sampled new IDs: the two DeepSeek IDs and Qwen 3.8 27B. Pi
+refreshes compatible providers on startup and
+every 15 minutes by default, with manifest fallback when the router or an
+individual `/models` route is temporarily unavailable. Set
+`PI_MODEL_PROVIDERS_REFRESH_MS` to tune or disable the timer and
+`PI_MODEL_CATALOG_MANIFEST_PATH` to relocate the manifest.
+
+FreeInference remains a direct Pi-harness lane; it is intentionally not added
+to the key-router provider surface. Catalogue visibility still does not prove
+launchability: route health and a bounded completion probe remain separate
+checks, and provider rate limits should be recorded and bypassed rather than
+blindly retried.
+
+## Live Pi picker activation — 2026-08-20
+
+The router was discovering the new ModelScope models before the interactive Pi
+picker showed them. The static Pi bootstrap contained 1,556 OpenAI-compatible
+entries and 52 ModelScope entries; a safe `refresh-model-picker.mjs --apply`
+materialization brought it to 1,590 total and 64 ModelScope entries. The
+materializer created a timestamped `.bak` beside the registry before writing.
+
+For an already-open Pi session, load the current provider extension once with
+`/reload`, then use `/refresh-models` to force an immediate parent-router
+refresh. Subsequent refreshes are automatic every 15 minutes. New Pi sessions
+fetch the live catalogue on startup; the static registry is only bootstrap and
+fallback state, not a second catalogue to maintain by hand.
+
+The sync boundary now canonicalizes the known ModelScope alias
+`Qwen-Ambassador/Qwen3.8-27B` to `Qwen/Qwen3.8-27B`, deduplicates it in Qwen
+settings, and applies conservative lifecycle states: active, missing after
+one or two successful omissions, stale after three, unverified on provider
+error, and retired only when explicitly marked. Deterministic inventory tests
+cover the alias, lifecycle, Qwen, and static-Pi-picker seams. Current provider
+errors are classified in the local evidence report
+`tmp/provider-error-classification-20260820.md`; they are not treated as
+catalogue disappearance.
+
+## Capability metadata drift audit — 2026-08-20
+
+Discovery freshness and capability accuracy are separate problems. ModelScope's
+current `/v1/models` response lists 45 IDs but exposes none of the checked
+capability fields (context, output limit, modalities, reasoning, or supported
+parameters). The static Pi refresh script therefore cannot truthfully mark
+those fields as verified or infer tool/structured-output support from absence.
+
+A bounded comparison found 660 route/model records shared by Qwen and static Pi;
+503 differed in at least one capability field: context window (205), max output
+(244), reasoning (294), tools (262), or structured output (177). The existing
+`model-config-sync` utility is useful as a report, but it is not a complete
+source of truth: it reads hand-curated router config, only patches selected Pi
+fields, and does not project to Qwen, the live Pi extension, router clipping, or
+route-specific templates. Do not run a mass `--apply` while these sources
+remain independent.
+
+The required capability contract is per route and model, with each field
+carrying `value`, `source`, `confidence`, and `checked_at`: upstream metadata
+first; bounded provider probe or official route contract second; explicit
+route-scoped compatibility profile third; conservative request fallback last.
+An absent upstream field must remain `unknown`, not become a verified `false`
+or a context-sized `max_tokens` value. Context window, maximum output, and
+transport/template compatibility are separate fields. The non-secret ledger at
+`harness/model-capabilities/ledger.json` is the canonical exception/evidence
+source; the generated manifest is the projection consumed by Qwen, Pi, and
+router clipping.
+
+The first corrected sparse-catalog case is ModelScope DeepSeek V4: the exact
+`DeepSeek-V4-Pro-0813`, `DeepSeek-V4-Pro`, and `DeepSeek-V4-Flash-0731` records
+now project `1,000,000` context, `384,000` maximum output, tools/JSON/reasoning
+support, and the official `low/high/max` effort ladder. Their model-level
+metadata is official, while `metadata_route_status: unverified` remains
+explicit because the bounded ModelScope completion probe returned HTTP 401.
+The projection tests assert these values in Qwen, static Pi, and the manifest;
+the key-router loader reads the manifest before static fallback limits.
+
+## Live sync evidence — 2026-08-20T11:06Z
+
+- Fresh MCP transport probe returned an empty active-worker list; the exact
+  external-subagents broker pair is alive and responsive after the Codex
+  restart.
+- Live `syncQwenDynamicModelCache()` completed against the restarted parent
+  router. The first post-restart sync discovered new free routes across the
+  live provider catalog, including NVIDIA `moonshotai/kimi-k3`, ModelScope
+  `Qwen-Ambassador/Qwen3.8-27B`, Zydit v4 `deepseek-v4-pro` / `glm-5.2`,
+  ZenMux `nex-agi/nex-n2-pro`, Logfare `gpt-5.6-luna`, and 193 OrcaRouter
+  entries. Provider errors remained visible for Cloudflare/Gemini fetch
+  failures, OpenProvider 429 backoff, BlazeAI 404, 888avi 401, FreeInference
+  404, and Meta 401; no blind retries were performed.
+- The rebuilt cleanup pass removed `removed_retired_count: 3` stale
+  `owl-alpha` entries from `C:\Users\HP\.qwen\settings.json`. Verification
+  found 3,337 OpenAI-compatible entries, zero `owl-alpha` entries, 579
+  OrcaRouter entries, and all sampled newly discovered model IDs present.
+- The external-subagents build and inventory smoke pass after the final
+  reporting fix. The running MCP process predates that last source change; a
+  future Codex/MCP reload is required to activate it in the tool process.
+
 Probed 2026-07-27. Updated 2026-08-06 (live catalogue refresh; vision lanes refreshed by 670-probe sweep — see Vision Capability Matrix in `docs/subagent-delegation.md`; evidence `tmp/vision-probe/`). **See also `docs/subagent-models.md`** for the quick-reference version (verified table, conditional/avoid list, and untested backlog).
 
 ## Dispatch-route status probe 2026-08-14 (lifecycle-split-plan spawns)

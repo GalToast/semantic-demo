@@ -87,10 +87,14 @@ async function assertRequiredAssets() {
         try {
             const st = await stat(join(DIST, path))
             if (st.size < minBytes) {
-                missing.push(`${path} exists but is only ${(st.size / 1024).toFixed(1)} KB (< ${(minBytes / 1024).toFixed(0)} KB — truncated?)`)
+                missing.push(
+                    `${path} exists but is only ${(st.size / 1024).toFixed(1)} KB (< ${(minBytes / 1024).toFixed(0)} KB — truncated?)`
+                )
             }
         } catch {
-            missing.push(`${path} MISSING from dist — src/data.dat absent at build time? Restore it (copy from another checkout or regenerate) and rebuild.`)
+            missing.push(
+                `${path} MISSING from dist — src/data.dat absent at build time? Restore it (copy from another checkout or regenerate) and rebuild.`
+            )
         }
     }
     return missing
