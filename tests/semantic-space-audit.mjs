@@ -22,7 +22,12 @@ const GZIP_DATA_PATH = fs.existsSync(path.join(ROOT, 'data.dat.gz'))
     : path.join(ROOT, 'src', 'data.dat.gz')
 const THREAD_PATH = path.join(ROOT, 'public', 'data', 'semantic_threads_ui.dat')
 const MANIFEST_PATH = path.join(ROOT, 'public', 'data', 'semantic_space_layout_manifest.json')
-const SCRIPT_EMBEDDINGS_PATH = path.join(ROOT, 'public', 'data', 'qwen3_embeddings.npy')
+const SCRIPT_EMBEDDINGS_PATH = fs.existsSync(path.join(ROOT, 'tmp', 'fixtures', 'qwen3_embeddings.npy'))
+    ? path.join(ROOT, 'tmp', 'fixtures', 'qwen3_embeddings.npy')
+    : path.join(ROOT, 'public', 'data', 'qwen3_embeddings.npy')
+// Audit-reference only (never fetched at runtime): moved to gitignored tmp/fixtures/ 2026-08-22
+// (F6 cleanup; the layout index_dir is machine-local, so this equality gate is typically
+// skipped — kept as a provenance check for the machine that owns the index build).
 const NEAREST_K = 48
 const MAX_THREAD_TO_LAYOUT_LAG_MS = 60 * 60 * 1000
 
@@ -333,7 +338,7 @@ assert(
     `layout/thread generated_at gap is too large: ${Math.round(threadToLayoutLagMs / 1000)}s`
 )
 if (scriptEmbeddingHash && indexEmbeddingHash) {
-    assert(indexEmbeddingHash === scriptEmbeddingHash, 'index embeddings.npy must match scripts/qwen3_embeddings.npy')
+    assert(indexEmbeddingHash === scriptEmbeddingHash, 'index embeddings.npy must match the qwen3_embeddings.npy audit reference (tmp/fixtures/)')
 }
 assert(
     summary.layoutManifest.rows === dataRows.length,

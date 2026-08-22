@@ -13,11 +13,13 @@ directly.
 | File                                  | Size   | Source                                | Consumed at runtime?                                         |
 | ------------------------------------- | ------ | ------------------------------------- | ------------------------------------------------------------ |
 | `leadEnrichment.public.json`          | ~18 MB | `scripts/extract-lead-enrichment.mjs` | yes — `data-loader.ts:505`                                   |
-| `qwen3_embeddings.npy`                | ~33 MB | `scripts/build-embeddings.py`         | yes — audit reference (`tests/semantic-space-audit.mjs:164`) |
-| `qwen3_embeddings_meta.json`          | tiny   | `scripts/build-embeddings.py`         | no (metadata only)                                           |
 | `semantic_threads.dat`                | ~79 MB | `scripts/build-semantic-threads.py`   | yes — `semantic-threads.ts:650-652`                          |
 | `semantic_threads_ui.dat`             | ~40 MB | `scripts/build-semantic-threads.py`   | yes — `semantic-threads.ts:650-651`                          |
 | `semantic_space_layout_manifest.json` | tiny   | `scripts/build-semantic-space.py`     | yes — `semantic-threads.ts:282`                              |
+
+### Moved (2026-08-22) — audit-reference artifacts
+
+`qwen3_embeddings.npy` (~33 MB) and `qwen3_embeddings_meta.json` were **never fetched at runtime** (zero `src/`/deploy consumers) and were **already gitignored** (`.gitignore:155-156`) — on 2026-08-22 they moved to gitignored `tmp/fixtures/` as the audit-reference copy for `tests/semantic-space-audit.mjs`. The referenced generator `scripts/build-embeddings.py` no longer exists in-tree; the real builder was the machine-local `index-rich-0.6b` pipeline (see the layout manifest's `index_dir`). If a future regeneration needs the reference embeddings, restore the fixture from `tmp/fixtures/`.
 
 ### Removed (2026-08-18) — 114 MB dead weight
 
@@ -54,10 +56,11 @@ python3 scripts/build-semantic-threads.py
 
 # 4. Build layout manifest (semantic_space_layout_manifest.json)
 python3 scripts/build-semantic-space.py
-
-# 5. Build Qwen3 embeddings (qwen3_embeddings.npy)
-python3 scripts/build-embeddings.py
 ```
+
+> **Qwen3 embeddings (retired):** `scripts/build-embeddings.py` is no longer in-tree.
+> The embeddings were a one-off external-pipeline product (Qwen3 0.6B, machine-local
+> index build) kept purely as the audit reference; the copy lives at `tmp/fixtures/`.
 
 > **Note:** Run these from the repo root. The extract scripts now write
 > directly to `public/data/` instead of `scripts/`.
