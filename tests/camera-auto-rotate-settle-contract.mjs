@@ -125,12 +125,12 @@ console.log('\n[TEST] scheduleAutoRotateResume blocks on all idle-orbit gates')
     '_trailZero'
 ].forEach((needle) => assertContains(scheduleResume, needle, `scheduleAutoRotateResume gate ${needle}`))
 assertContains(scheduleResume, '.autoRotateResumeDueAt = performance.now() + delay', 'resume due timestamp set')
-assertContains(scheduleResume, '.autoRotateResumeTimer = setTimeout', 'resume timer scheduled')
+assertContains(scheduleResume, '.autoRotateResumeTimer = _reg.schedule(', 'resume timer scheduled')
 assertContains(scheduleResume, 'setAutoRotateSuspended(false)', 'resume callback releases suspension')
 console.log('  OK scheduleAutoRotateResume gate set is intact')
 
 console.log('\n[TEST] resume callback rechecks gates before releasing')
-const callbackStart = scheduleResume.indexOf('.autoRotateResumeTimer = setTimeout')
+const callbackStart = scheduleResume.indexOf('.autoRotateResumeTimer = _reg.schedule(')
 const callbackBlock = scheduleResume.slice(callbackStart)
 ;[
     '.autoRotate',

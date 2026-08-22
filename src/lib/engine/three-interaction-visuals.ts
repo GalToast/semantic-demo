@@ -122,7 +122,9 @@ function getSemanticLensNeighborIndices(focusedNode: number): number[] {
     const semanticNode = state.semanticNeighborMapByLeadId ? state.semanticNeighborMapByLeadId.get(leadId) : null
     if (!semanticNode?.neighbors?.length || !pointIndexByLeadId.getSnapshot().size) return []
     return semanticNode.neighbors
-        .map((neighbor: { leadId: string | number | null }) => pointIndexByLeadId.getSnapshot().get(String(neighbor.leadId)))
+        .map((neighbor: { leadId: string | number | null }) =>
+            pointIndexByLeadId.getSnapshot().get(String(neighbor.leadId))
+        )
         .filter(
             (index: number | undefined): index is number =>
                 Number.isFinite(index) && index !== focusedNode && Boolean(state.nodePositions?.[index as number])

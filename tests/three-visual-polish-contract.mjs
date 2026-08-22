@@ -38,6 +38,10 @@ const interactionVisualsPath = path.join(repoRoot, 'src', 'lib', 'engine', 'thre
 const interactionVisuals = fs.readFileSync(interactionVisualsPath, 'utf8')
 const cameraRestorePath = path.join(repoRoot, 'src', 'lib', 'engine', 'camera-controls-restore.svelte.ts')
 const cameraRestore = fs.readFileSync(cameraRestorePath, 'utf8')
+// W58-DI (2026-08): computeLayerIntensityMap moved out of thread-manager.ts into
+// mycelium-bezier.ts (hasSemantic arg) — fade needles read the owning module.
+const myceliumBezierPath = path.join(repoRoot, 'src', 'lib', 'engine', 'mycelium-bezier.ts')
+const myceliumBezier = fs.readFileSync(myceliumBezierPath, 'utf8')
 const canvasPath = path.join(repoRoot, 'src', 'components', 'Canvas.svelte')
 const canvasSrc = fs.existsSync(canvasPath) ? fs.readFileSync(canvasPath, 'utf8') : ''
 const searchAnimationsPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-search-animations.ts')
@@ -88,8 +92,8 @@ includesAll(
 )
 
 includesAll(
-    threadManager,
-    ['semanticEdges ? 0.38 : 0.28', 'semanticEdges ? 0.22 : 0.16', 'semanticEdges ? 0.32 : 0.24'],
+    myceliumBezier,
+    ['hasSemantic ? 0.38 : 0.28', 'hasSemantic ? 0.22 : 0.16', 'hasSemantic ? 0.32 : 0.24'],
     'mycelium semantic/color fade coefficients'
 )
 
@@ -147,9 +151,9 @@ function hasOpacityProfile(source, values) {
     return re.test(source)
 }
 const opacityProfiles = [
-    { core: 0.58, wispy: 0.28, bridge: 0.42, pulse: 0.04 },
+    { core: 0.75, wispy: 0.42, bridge: 0.58, pulse: 0.08 },
     { core: 0.5, wispy: 0.24, bridge: 0.36, pulse: 0.012 },
-    { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 },
+    { core: 0.42, wispy: 0.24, bridge: 0.3, pulse: 0.072 },
     { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
 ]
 for (const profile of opacityProfiles) {
@@ -249,7 +253,7 @@ includesAll(
     semanticLensSource,
     [
         'state.semanticNeighborMapByLeadId.get(leadId)',
-        'state.pointIndexByLeadId.get(String(neighbor.leadId))',
+        'getSnapshot().get(String(neighbor.leadId))',
         'group.position.copy(worldPos)',
         'if (!isInside) {',
         'spokes.visible = false',

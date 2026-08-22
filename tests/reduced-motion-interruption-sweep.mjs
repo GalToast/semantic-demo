@@ -501,30 +501,36 @@ async function runMobileProof(page) {
     }
     // Diagnostic: capture why results fail to render (console + DOM + shot).
     await page.waitForTimeout(5000)
-    const mobileDiag = await page.evaluate(() => {
-        const input = document.querySelector('#search-input')
-        const r = input?.getBoundingClientRect()
-        const cx = r ? r.left + r.width / 2 : 0
-        const cy = r ? r.top + r.height / 2 : 0
-        const topEl = cx && cy ? document.elementFromPoint(cx, cy) : null
-        return {
-            resultItems: document.querySelectorAll('.search-result-item').length,
-            resultsContainerHtmlLen: (document.querySelector('.search-results') ?? document.querySelector('[class*=result]'))?.innerHTML?.length ?? -1,
-            panelSurface: document.body.dataset.panelSurface,
-            searchStatus: document.body.dataset.searchStatus ?? null,
-            hasErrorCard: !!document.querySelector('.search-error, [class*=error-card]'),
-            inputState: input ? { disabled: input.disabled, readOnly: input.readOnly, value: input.value } : null,
-            topElementAtInput: topEl ? `${topEl.tagName}.${String(topEl.className).slice(0, 60)}` : null,
-            topIsInputItself: topEl === input,
-            visibleDialogs: [...document.querySelectorAll('dialog, [role=dialog], .sheet, [class*=overlay], [class*=veil]')]
-                .filter((el) => {
-                    const s = getComputedStyle(el)
-                    return s.display !== 'none' && s.visibility !== 'hidden' && Number(s.opacity) > 0
-                })
-                .map((el) => `${el.tagName}.${String(el.className).slice(0, 50)}`)
-                .slice(0, 6)
-        }
-    }).catch((e) => ({ diagError: String(e) }))
+    const mobileDiag = await page
+        .evaluate(() => {
+            const input = document.querySelector('#search-input')
+            const r = input?.getBoundingClientRect()
+            const cx = r ? r.left + r.width / 2 : 0
+            const cy = r ? r.top + r.height / 2 : 0
+            const topEl = cx && cy ? document.elementFromPoint(cx, cy) : null
+            return {
+                resultItems: document.querySelectorAll('.search-result-item').length,
+                resultsContainerHtmlLen:
+                    (document.querySelector('.search-results') ?? document.querySelector('[class*=result]'))?.innerHTML
+                        ?.length ?? -1,
+                panelSurface: document.body.dataset.panelSurface,
+                searchStatus: document.body.dataset.searchStatus ?? null,
+                hasErrorCard: !!document.querySelector('.search-error, [class*=error-card]'),
+                inputState: input ? { disabled: input.disabled, readOnly: input.readOnly, value: input.value } : null,
+                topElementAtInput: topEl ? `${topEl.tagName}.${String(topEl.className).slice(0, 60)}` : null,
+                topIsInputItself: topEl === input,
+                visibleDialogs: [
+                    ...document.querySelectorAll('dialog, [role=dialog], .sheet, [class*=overlay], [class*=veil]')
+                ]
+                    .filter((el) => {
+                        const s = getComputedStyle(el)
+                        return s.display !== 'none' && s.visibility !== 'hidden' && Number(s.opacity) > 0
+                    })
+                    .map((el) => `${el.tagName}.${String(el.className).slice(0, 50)}`)
+                    .slice(0, 6)
+            }
+        })
+        .catch((e) => ({ diagError: String(e) }))
     console.log('[sweep] mobile diag after Enter:', JSON.stringify(mobileDiag))
     if (pageErrors.length) console.log('[sweep] mobile page/console errors:', JSON.stringify(pageErrors.slice(0, 8)))
     await page.screenshot({ path: OUT_DIR + '/rmi-mobile-after-enter.png' }).catch(() => {})
@@ -644,7 +650,10 @@ async function run() {
         mobileResult = await runMobileProof(mobilePage)
     } catch (err) {
         console.error('[sweep] mobile section threw (desktop results preserved):', err?.message ?? err)
-        mobileResult = { passes: [], failures: [{ check: 'mobile: section completed', pass: false, detail: String(err?.message ?? err) }] }
+        mobileResult = {
+            passes: [],
+            failures: [{ check: 'mobile: section completed', pass: false, detail: String(err?.message ?? err) }]
+        }
     }
     await mobileBrowser.close().catch(() => {})
 
