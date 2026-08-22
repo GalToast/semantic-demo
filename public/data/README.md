@@ -10,12 +10,12 @@ directly.
 
 ## Files
 
-| File                                  | Size   | Source                                | Consumed at runtime?                                         |
-| ------------------------------------- | ------ | ------------------------------------- | ------------------------------------------------------------ |
-| `leadEnrichment.public.json`          | ~18 MB | `scripts/extract-lead-enrichment.mjs` | yes — `data-loader.ts:505`                                   |
-| `semantic_threads.dat`                | ~79 MB | `scripts/build-semantic-threads.py`   | yes — `semantic-threads.ts:650-652`                          |
-| `semantic_threads_ui.dat`             | ~40 MB | `scripts/build-semantic-threads.py`   | yes — `semantic-threads.ts:650-651`                          |
-| `semantic_space_layout_manifest.json` | tiny   | `scripts/build-semantic-space.py`     | yes — `semantic-threads.ts:282`                              |
+| File                                  | Size   | Source                                | Consumed at runtime?                |
+| ------------------------------------- | ------ | ------------------------------------- | ----------------------------------- |
+| `leadEnrichment.public.json`          | ~18 MB | `scripts/extract-lead-enrichment.mjs` | yes — `data-loader.ts:505`          |
+| `semantic_threads.dat`                | ~79 MB | `scripts/build-semantic-threads.py`   | yes — `semantic-threads.ts:650-652` |
+| `semantic_threads_ui.dat`             | ~40 MB | `scripts/build-semantic-threads.py`   | yes — `semantic-threads.ts:650-651` |
+| `semantic_space_layout_manifest.json` | tiny   | `scripts/build-semantic-space.py`     | yes — `semantic-threads.ts:282`     |
 
 ### Moved (2026-08-22) — audit-reference artifacts
 
@@ -50,17 +50,7 @@ node --experimental-vm-modules scripts/extract-lead-enrichment.mjs
 
 ### Semantic Threads + Layout (requires embeddings + data.dat)
 
-```bash
-# 3. Build semantic thread bundles (semantic_threads*.dat)
-python3 scripts/build-semantic-threads.py
-
-# 4. Build layout manifest (semantic_space_layout_manifest.json)
-python3 scripts/build-semantic-space.py
-```
-
-> **Qwen3 embeddings (retired):** `scripts/build-embeddings.py` is no longer in-tree.
-> The embeddings were a one-off external-pipeline product (Qwen3 0.6B, machine-local
-> index build) kept purely as the audit reference; the copy lives at `tmp/fixtures/`.
+> **Retired (checked 2026-08-22):** `scripts/build-semantic-threads.py`, `scripts/build-semantic-space.py`, and `scripts/build-embeddings.py` are NOT in-tree — the corpus/embedding/layout pipeline was run on the original build machine (see `docs/archive/` + the layout manifest's `method` field). To regenerate the semantic plane, restore those builders from git history or the source machine. The manifest paths are portable basenames (`data.dat`, `semantic_threads_ui.dat`) — a future builder must write basenames, not absolute paths (learned 2026-08-22: a foreign-machine absolute `index_dir`/'data_path' leaked into the shipped manifest).
 
 > **Note:** Run these from the repo root. The extract scripts now write
 > directly to `public/data/` instead of `scripts/`.

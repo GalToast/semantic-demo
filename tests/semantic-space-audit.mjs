@@ -26,8 +26,11 @@ const SCRIPT_EMBEDDINGS_PATH = fs.existsSync(path.join(ROOT, 'tmp', 'fixtures', 
     ? path.join(ROOT, 'tmp', 'fixtures', 'qwen3_embeddings.npy')
     : path.join(ROOT, 'public', 'data', 'qwen3_embeddings.npy')
 // Audit-reference only (never fetched at runtime): moved to gitignored tmp/fixtures/ 2026-08-22
-// (F6 cleanup; the layout index_dir is machine-local, so this equality gate is typically
-// skipped — kept as a provenance check for the machine that owns the index build).
+// (F6 cleanup). The layout manifest's index_dir was a machine-local foreign path that made
+// this equality gate permanently dead on every machine except the builder's — removed from
+// the shipped manifest 2026-08-22, so the gate stays skipped; kept as a provenance check
+// for a future local index build. To reinstate: place indexDir (manifest.json, metadata.json,
+// embeddings.npy) at tmp/fixtures/ and re-add index_dir to the layout manifest.
 const NEAREST_K = 48
 const MAX_THREAD_TO_LAYOUT_LAG_MS = 60 * 60 * 1000
 
@@ -314,7 +317,10 @@ if (indexAvailable) {
         Number(indexManifest.count) === dataRows.length,
         `index manifest count must match data.dat: ${indexManifest.count} != ${dataRows.length}`
     )
-    assert(Number(indexManifest.dimensions) === 1024, `index dimensions must stay at 1024, got ${indexManifest.dimensions}`)
+    assert(
+        Number(indexManifest.dimensions) === 1024,
+        `index dimensions must stay at 1024, got ${indexManifest.dimensions}`
+    )
     assert(
         indexOrderMismatches === 0,
         `data.dat lead order must match index metadata order; mismatches: ${indexOrderMismatches}`
@@ -338,7 +344,10 @@ assert(
     `layout/thread generated_at gap is too large: ${Math.round(threadToLayoutLagMs / 1000)}s`
 )
 if (scriptEmbeddingHash && indexEmbeddingHash) {
-    assert(indexEmbeddingHash === scriptEmbeddingHash, 'index embeddings.npy must match the qwen3_embeddings.npy audit reference (tmp/fixtures/)')
+    assert(
+        indexEmbeddingHash === scriptEmbeddingHash,
+        'index embeddings.npy must match the qwen3_embeddings.npy audit reference (tmp/fixtures/)'
+    )
 }
 assert(
     summary.layoutManifest.rows === dataRows.length,
@@ -376,8 +385,8 @@ assert(
 if (!indexAvailable) {
     console.warn(
         `WARN: layout index_dir absent (${layoutManifest.index_dir || 'unset'}) — index provenance checks skipped. ` +
-        'The data-level semantic-quality asserts still ran. To restore the index gate, place the index build ' +
-        '(manifest.json, metadata.json, embeddings.npy) at that path.'
+            'The data-level semantic-quality asserts still ran. To restore the index gate, place the index build ' +
+            '(manifest.json, metadata.json, embeddings.npy) at that path.'
     )
 }
 
