@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* global process, console */
 /**
  * Lighthouse Performance Gate
  * Compares current Lighthouse results against stored baseline.
@@ -38,6 +37,14 @@ for (const [key, { threshold }] of Object.entries(categories)) {
     if (!pass) failed = true
 }
 
+// Parse Lighthouse displayValues robustly: "3,310 ms" must parse as 3310, not 3 —
+// bare parseFloat() stops at the thousands separator and INVERTED the TBT
+// comparison (a 20x improvement was being flagged as a regression).
+const lhNum = (v) => {
+    const n = parseFloat(String(v ?? '').replace(/,/g, ''))
+    return Number.isFinite(n) ? n : 0
+}
+
 // Key metrics
 const metrics = [
     { key: 'first-contentful-paint', label: 'FCP' },
@@ -49,8 +56,8 @@ const metrics = [
 for (const { key, label } of metrics) {
     const baseVal = baseline.audits[key]?.displayValue || '?'
     const currVal = current.audits[key]?.displayValue || '?'
-    const baseNum = parseFloat(baseVal) || 0
-    const currNum = parseFloat(currVal) || 0
+    const baseNum = lhNum(baseVal)
+    const currNum = lhNum(currVal)
     const pass = key === 'cumulative-layout-shift' ? currNum <= 0.1 : currNum <= baseNum * 1.1
     results.push({ key: label.padEnd(15), baseScore: baseVal, currScore: currVal, pass: pass ? 'PASS' : 'FAIL' })
     if (!pass) failed = true

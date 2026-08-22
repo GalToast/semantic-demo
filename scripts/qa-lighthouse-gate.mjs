@@ -54,10 +54,18 @@ let failures = 0
 for (const preset of ['mobile', 'desktop']) {
     console.log(`-- ${preset} gate --`)
     try {
-        execSync(`node scripts/qa-lighthouse-baseline.mjs`, { cwd: CWD, encoding: 'utf8', timeout: 300000 })
+        execSync(`node scripts/qa-lighthouse-baseline.mjs`, { cwd: CWD, encoding: 'utf8', timeout: 600000 })
     } catch (e) {
-        console.error(`  runner failed: ${e.message}`)
-        process.exit(2)
+        // qa-lighthouse-baseline exits 1 when its gates FAIL — a measured
+        // result, not an infra crash. Only other statuses/timeouts are
+        // genuine runner failures (exit 2 = infra, per header contract).
+        if (e.status !== 1) {
+            console.error(`  runner failed: ${e.message}`)
+            process.exit(2)
+        }
+        console.error(`  ${preset} gate FAILED (baseline-runner verdict)`)
+        failures += 1
+        continue
     }
     const base = newestBaseline(preset)
     const cur = readCurrentScores(preset)
