@@ -39,7 +39,9 @@ export async function copyCurrentViewLink(): Promise<string | null> {
     shareUrl.searchParams.delete('lead')
     shareUrl.searchParams.set('view', $nav.currentView || 'galaxy')
 
-    if ($nav.myceliumMode && $nav.myceliumMode !== 'default') {
+    // 'dormant' is the initial renderer state, not intent — never share it
+    // (mirrors the url-writer dormant carve-out).
+    if ($nav.myceliumMode && $nav.myceliumMode !== 'default' && $nav.myceliumMode !== 'dormant') {
         shareUrl.searchParams.set('mode', $nav.myceliumMode)
     }
 

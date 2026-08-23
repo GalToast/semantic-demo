@@ -124,8 +124,12 @@ export function updateUrlState(
     if (query) params.set('q', query)
     else params.delete('q')
 
-    // Mode
-    if ($nav.myceliumMode !== 'default') params.set('mode', $nav.myceliumMode)
+    // Mode — 'dormant' is the INITIAL renderer state (navigation-state.ts:62),
+    // not navigation intent: persisting it baked mode=dormant into URLs on the
+    // first sync of any boot that hadn't transitioned yet, and the param then
+    // rode along every subsequent pushState. Skip it like 'default' (matches
+    // hasRestorableUrlState's dormant carve-out in url-params.ts).
+    if ($nav.myceliumMode !== 'default' && $nav.myceliumMode !== 'dormant') params.set('mode', $nav.myceliumMode)
     else params.delete('mode')
 
     // Depth
