@@ -1,0 +1,368 @@
+{
+  "timestamp": "2026-08-23T00:29:49.535Z",
+  "chunks": [
+    {
+      "name": "three.module-DOYciGzp.js",
+      "size": 734023
+    },
+    {
+      "name": "parity-attrs.svelte-Ni7VsZ8e.js",
+      "size": 129224
+    },
+    {
+      "name": "index-CbE5Kers.js",
+      "size": 113926
+    },
+    {
+      "name": "app.svelte-pI7-2JoP.js",
+      "size": 99598
+    },
+    {
+      "name": "three-postprocessing-TOyUY8Bw.js",
+      "size": 81751
+    },
+    {
+      "name": "three-engine-core-BeWmi35F.js",
+      "size": 76369
+    },
+    {
+      "name": "lifecycle-C5SgVot1.js",
+      "size": 39017
+    },
+    {
+      "name": "mode-transitions.svelte-TTGQatJO.js",
+      "size": 37420
+    },
+    {
+      "name": "focus-pocket-DUDRz4YD.js",
+      "size": 24654
+    },
+    {
+      "name": "LineSegments2-Cwk_LGTu.js",
+      "size": 17666
+    },
+    {
+      "name": "JourneyChrome-CcUG0ib_.js",
+      "size": 16634
+    },
+    {
+      "name": "SearchResults-DISg1MEd.js",
+      "size": 16041
+    },
+    {
+      "name": "semantic-overlay-DddxKI3Y.js",
+      "size": 15373
+    },
+    {
+      "name": "focus-ui-BCS9jJrA.js",
+      "size": 14367
+    },
+    {
+      "name": "legend-panel.svelte-DarVtylb.js",
+      "size": 13956
+    },
+    {
+      "name": "three.module-JEMHRsIP.js",
+      "size": 13514
+    },
+    {
+      "name": "JourneyCompass-BCVte5iK.js",
+      "size": 13053
+    },
+    {
+      "name": "data-worker-cS80EeQd.js",
+      "size": 12879
+    },
+    {
+      "name": "data-worker.js",
+      "size": 12879
+    },
+    {
+      "name": "neighborhood-Dw0uzLDU.js",
+      "size": 11668
+    },
+    {
+      "name": "camera.svelte-0rWsfHLM.js",
+      "size": 11626
+    },
+    {
+      "name": "orchestration-DTxdjjmh.js",
+      "size": 11625
+    },
+    {
+      "name": "InfoPanel-Db1jM9bV.js",
+      "size": 11026
+    },
+    {
+      "name": "thread-model-C1nyCP5u.js",
+      "size": 10003
+    },
+    {
+      "name": "global-bindings-BKIRrPf-.js",
+      "size": 9753
+    },
+    {
+      "name": "semantic-threads-Dc9ePNFO.js",
+      "size": 9605
+    },
+    {
+      "name": "semantic-lane-CnPj9Wqj.js",
+      "size": 9309
+    },
+    {
+      "name": "Canvas-DN5wb1--.js",
+      "size": 8648
+    },
+    {
+      "name": "canvas-interaction-DKo-zUMi.js",
+      "size": 8608
+    },
+    {
+      "name": "focus.svelte-DNJRgkX8.js",
+      "size": 8330
+    },
+    {
+      "name": "SelectedBusinessDetails-DbajX_rn.js",
+      "size": 8128
+    },
+    {
+      "name": "FocusCard-B5CXQdSi.js",
+      "size": 7597
+    },
+    {
+      "name": "ThreadInspector-ByejcB5o.js",
+      "size": 7293
+    },
+    {
+      "name": "thread-inspector-webgl-Bmh9NZOV.js",
+      "size": 6527
+    },
+    {
+      "name": "route-trace-jqntEepH.js",
+      "size": 6103
+    },
+    {
+      "name": "journey-Daw66UHA.js",
+      "size": 5978
+    },
+    {
+      "name": "DemoChoreography-DkE13mth.js",
+      "size": 5782
+    },
+    {
+      "name": "cluster-filter-controller-piZzN1OG.js",
+      "size": 5652
+    },
+    {
+      "name": "canvas-hover-preview-CQC94_eg.js",
+      "size": 5617
+    },
+    {
+      "name": "map-state-lGzlNJMP.js",
+      "size": 5152
+    },
+    {
+      "name": "loading-BeyRz5UQ.js",
+      "size": 5043
+    },
+    {
+      "name": "MapView-CKeL45-a.js",
+      "size": 4995
+    },
+    {
+      "name": "navigation-state.svelte-Uvb9jVVm.js",
+      "size": 4907
+    },
+    {
+      "name": "weather.svelte-BM0usDsl.js",
+      "size": 4776
+    },
+    {
+      "name": "triggers-BtrRS0CL.js",
+      "size": 4656
+    },
+    {
+      "name": "audio-scape-DIirx2oV.js",
+      "size": 4547
+    },
+    {
+      "name": "WeatherWidget-BqkuisJa.js",
+      "size": 4307
+    },
+    {
+      "name": "test-compat.svelte-Csm7zcKL.js",
+      "size": 4187
+    },
+    {
+      "name": "ErrorState-Bloa-MXu.js",
+      "size": 3738
+    },
+    {
+      "name": "geo-data-DwJv-V4J.js",
+      "size": 3719
+    },
+    {
+      "name": "journey.svelte-BQejkAmU.js",
+      "size": 3499
+    },
+    {
+      "name": "route-arrival-overlay-adapter-B7p31fN3.js",
+      "size": 3488
+    },
+    {
+      "name": "point-color-9DjBNrbW.js",
+      "size": 3009
+    },
+    {
+      "name": "webgl-BYqc5qDK.js",
+      "size": 2979
+    },
+    {
+      "name": "search-dispatch-BCaxDupR.js",
+      "size": 2682
+    },
+    {
+      "name": "focus-pocket-thread-curve-iJIVvrj1.js",
+      "size": 2603
+    },
+    {
+      "name": "error-messages-Bbhd74tb.js",
+      "size": 2456
+    },
+    {
+      "name": "config-Ak1WXmI2.js",
+      "size": 2337
+    },
+    {
+      "name": "test-globals-BuPuPDS1.js",
+      "size": 2020
+    },
+    {
+      "name": "environment-CIpK0VY2.js",
+      "size": 1663
+    },
+    {
+      "name": "FocusPocket-BCK92_w-.js",
+      "size": 1580
+    },
+    {
+      "name": "math-vec3-RZz4dq2l.js",
+      "size": 1571
+    },
+    {
+      "name": "webgl-utils-0YHe53BT.js",
+      "size": 1204
+    },
+    {
+      "name": "preload-helper-DbYNonRq.js",
+      "size": 1189
+    },
+    {
+      "name": "camera-controls-ClrtY4Ud.js",
+      "size": 1170
+    },
+    {
+      "name": "use-parity-attrs.svelte-WdeYzutg.js",
+      "size": 1085
+    },
+    {
+      "name": "webgl-context-q7w9QnDN.js",
+      "size": 1076
+    },
+    {
+      "name": "thread-lens-CdroP2OR.js",
+      "size": 984
+    },
+    {
+      "name": "scene-ready.svelte-aIE_FRDc.js",
+      "size": 779
+    },
+    {
+      "name": "humanize-DwZaZkA_.js",
+      "size": 723
+    },
+    {
+      "name": "pocket-BPqu-S8G.js",
+      "size": 709
+    },
+    {
+      "name": "focus-panel-mode-DgVE1lEY.js",
+      "size": 573
+    },
+    {
+      "name": "legend.svelte-B1brqMPb.js",
+      "size": 538
+    },
+    {
+      "name": "engine.svelte-DzqfRgK8.js",
+      "size": 494
+    },
+    {
+      "name": "search-abort-CSAg1pqq.js",
+      "size": 440
+    },
+    {
+      "name": "app-lifecycle-Dxf76JWw.js",
+      "size": 386
+    },
+    {
+      "name": "semantic-threads-CsPoaTl_.js",
+      "size": 332
+    },
+    {
+      "name": "journey-focus-timers-CfqrVPd7.js",
+      "size": 256
+    },
+    {
+      "name": "search-react-selectors-Djv1FGee.js",
+      "size": 250
+    },
+    {
+      "name": "canvas-interaction-CBz4-KJk.js",
+      "size": 234
+    },
+    {
+      "name": "transition-B9eTy4k0.js",
+      "size": 177
+    },
+    {
+      "name": "thread-settler-XMynIL4J.js",
+      "size": 166
+    },
+    {
+      "name": "rolldown-runtime-H_PjY6_i.js",
+      "size": 163
+    },
+    {
+      "name": "debug-BZBSkmqm.js",
+      "size": 145
+    },
+    {
+      "name": "audio-scape-VXsZ-MBm.js",
+      "size": 143
+    },
+    {
+      "name": "thread-manager-COpHhtpb.js",
+      "size": 126
+    },
+    {
+      "name": "route-trace-BHV7kQ9M.js",
+      "size": 112
+    },
+    {
+      "name": "url-writer-Cu0hguRA.js",
+      "size": 104
+    },
+    {
+      "name": "data-worker-Dr99kNpy.js",
+      "size": 86
+    },
+    {
+      "name": "disclose-version-BvIhFN19.js",
+      "size": 74
+    }
+  ],
+  "totalBytes": 1744854,
+  "cssBytes": 447386,
+  "grandBytes": 2192240
+}
