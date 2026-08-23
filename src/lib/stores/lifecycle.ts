@@ -23,12 +23,13 @@ import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } f
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
 import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'
 import { publish, EVENTS } from '../orchestration/event-bus'
+import { debugWarn } from '@lib/utils/debug'
 // P3-LCP (2026-08-21): point-color uses three Color at runtime and dragged three into the
 // boot chain via window-actions → lifecycle. Lazify so mobile 2D does not fetch three.
 function applyPointFilterColorsLazy(): void {
     void import('../journey/point-color')
         .then((m) => m.applyPointFilterColors())
-        .catch(() => {})
+        .catch((err) => debugWarn('[lifecycle] point-color lazy load failed', err))
 }
 import { registerOpenDialog, unregisterOpenDialog } from '@lib/utils/focus-trap-bindings'
 import { computeParityAttributes, applyParityAttributes } from '../orchestration/parity-attrs.svelte.ts'

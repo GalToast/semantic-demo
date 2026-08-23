@@ -734,7 +734,15 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
                 thread_retry_count: state.semanticThreadsRetryAttempt
             })
             _syncSemanticThreadFailureToStores(errMessage)
-            _scheduleSemanticThreadsRetry(options.reason || 'artifact-load')
+            // Manifest 404 is deterministic in compression-only dist (plain deleted,
+            // only .br twins remain) — retrying the same hour-bucketed URL will
+            // 404 again. Fail fast instead of burning 3 retries + timers.
+            const isManifest404 = errMessage.includes('semantic space manifest unavailable (404)')
+            if (!isManifest404) {
+                _scheduleSemanticThreadsRetry(options.reason || 'artifact-load')
+            } else {
+                debugWarn('[semantic-threads] manifest 404 — skipping retry (deterministic missing plain)')
+            }
             _refreshFocusedSemanticState()
             return false
         }

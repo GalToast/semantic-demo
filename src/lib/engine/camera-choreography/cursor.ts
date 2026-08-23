@@ -29,8 +29,13 @@ import { syncFocusStage, updateSelectedBusiness } from '@lib/journey/selected-ca
 import { unpinThreadInspection } from '@lib/journey/thread-inspector-state'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 // P3-LCP: lazy to keep engine chunk off boot preload; cursor is engine-lazy (Canvas)
-function applyPointFilterColorsLazy(): void { void import('@lib/journey/point-color').then(m=>m.applyPointFilterColors()).catch(()=>{}) }
+function applyPointFilterColorsLazy(): void {
+    void import('@lib/journey/point-color')
+        .then((m) => m.applyPointFilterColors())
+        .catch((err) => debugWarn('[cursor] point-color lazy load failed', err))
+}
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
+import { debugWarn } from '@lib/utils/debug'
 import { clearRouteExploration } from '../camera-controls-core'
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 import { animateCameraToNode } from './focus'

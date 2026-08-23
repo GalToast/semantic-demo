@@ -11,6 +11,7 @@ import { appState as state } from '@lib/state/app.svelte'
 import { engineStatusStore } from '@lib/stores/engine.svelte.ts'
 
 import { subscribeKeyed, publish, EVENTS } from '@lib/orchestration/event-bus'
+import { debugWarn } from '@lib/utils/debug'
 import {
     resetRouteTraceDiagnostics,
     removeRouteTraceOverlay,
@@ -99,7 +100,11 @@ import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 import { describeThreadLensForPoint } from './thread-lens'
 // P3-LCP: point-color lazified — see stores/lifecycle pattern. Journey is engine-lazy
 // (Canvas) so not boot-critical, but keep the same deferred shape for consistency.
-function applyPointFilterColorsLazy(): void { void import('./point-color').then(m=>m.applyPointFilterColors()).catch(()=>{}) }
+function applyPointFilterColorsLazy(): void {
+    void import('./point-color')
+        .then((m) => m.applyPointFilterColors())
+        .catch((err) => debugWarn('[journey] point-color lazy load failed', err))
+}
 import {
     scheduleJourneyFocusTimer
 } from './journey-focus-timers'
