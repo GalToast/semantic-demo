@@ -38,7 +38,7 @@ masked by the timeout noise:
 
 | | Before | After |
 |---|---|---|
-| Failures | ~43–45 | **10** (F-search-8 fixed `049bf6f5`) |
+| Failures | ~43–45 | **8** (F-search-8 `049bf6f5`, B-S7 `22bc9ca1`) |
 | Passes | ~37–50 | **71** |
 | Runtime | ~50 min (software) | **15.8 min** (D3D11) |
 | Failure signature | 60s splash timeouts (noise) | fast assertion/layout timeouts (signal) |
@@ -54,7 +54,11 @@ confidence of root cause:
    PHP lexical scores (51.3 for "coffee") straight into `data-result-score`.
    `semantic-search-mapper.ts` now normalizes to `Math.min(1, score/100)`
    (PHP scorer is percentage-like: name exact = 28). Test passes in 7.4s.
-2. **B-S7** — mobile 375px: `mode-chips` overlap the legend toggle
+2. ~~**B-S7**~~ — FIXED (`22bc9ca1`). The idle (placeholder2d) surface
+   was missing the vertical-rail `top` values non-idle surfaces get, so
+   toggles fell back to top:10px and overlapped the chip rail. Added the
+   mirror rail in `mobile_premium__layout.css` (share 60px, legend 112px,
+   keyboard-help 164px, app-help 216px). Passes in 3.3s.
    (`chips {left:8, right:...}`). Real layout regression on the placeholder2d
    path.
 3. **desktop focus-search hides legacy dive sibling** — the legacy
