@@ -6,7 +6,7 @@
 
 import { formatBusinessName, cleanOptionalValue, formatThreadSourceLabel } from '@lib/utils/dom-formatters'
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation'
-import { isPointVisible } from '@lib/utils/geo-data'
+import { isPointVisible, calculateSignalScore } from '@lib/utils/geo-data'
 import type { NavState, ThreadCandidateRef } from '@lib/types/state'
 import { truncateMicrocopy } from '@lib/journey/text-helpers'
 import { setStrandContinuityState } from '@lib/utils/strand-continuity'
@@ -156,10 +156,30 @@ function _renderNeighborPill(candidate: ThreadCandidateRef, order: number, nav: 
     nameSpan.className = 'focus-stage-neighbor-name'
     nameSpan.textContent = name
 
-    const roleSpan = document.createElement('span')
-    roleSpan.className = 'focus-stage-neighbor-role'
-    roleSpan.textContent = relationshipLabel
-    nameSpan.appendChild(roleSpan)
+    // Neighbor-list signal fix (#6): every unclassified row showed the same
+    // generic "Connection" chip, so rows were visually indistinguishable.
+    // Show the per-business match strength (same 0-5 score the canvas hover
+    // preview uses) and only keep the role chip when it says something
+    // specific (Direct link, Vendor, ...).
+    const GENERIC_ROLE_LABEL = 'Connection'
+    if (relationshipLabel !== GENERIC_ROLE_LABEL) {
+        const roleSpan = document.createElement('span')
+        roleSpan.className = 'focus-stage-neighbor-role'
+        roleSpan.textContent = relationshipLabel
+        nameSpan.appendChild(roleSpan)
+    }
+
+    if (point) {
+        const signalScore = calculateSignalScore(point as unknown as Record<string, unknown>)
+        const barCount = Math.min(5, Math.max(1, Math.round(signalScore)))
+        const strengthSpan = document.createElement('span')
+        strengthSpan.className = 'focus-stage-neighbor-strength'
+        strengthSpan.textContent = '▪'.repeat(barCount) + '▫'.repeat(5 - barCount)
+        const strengthLabel = `Match strength ${barCount} of 5`
+        strengthSpan.setAttribute('aria-label', strengthLabel)
+        strengthSpan.title = strengthLabel
+        nameSpan.appendChild(strengthSpan)
+    }
 
     if (order === 0) {
         const badge = document.createElement('span')

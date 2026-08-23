@@ -2,7 +2,7 @@
   import { tick } from 'svelte';
   import { getRelationshipRoleLabel } from '@lib/utils/relationship-roles';
   import type { RelationshipRole } from '@lib/utils/relationship-roles';
-
+  import { calculateSignalScore } from '@lib/utils/geo-data';
   interface CandidateItem {
     index: number;
     relationshipRole: RelationshipRole;
@@ -97,14 +97,15 @@
       {@const isNextStop = i === 0}
       {@const relationshipRole = candidate.relationshipRole}
       {@const relationshipLabel = getRelationshipRoleLabel(relationshipRole, 'rail')}
-      {@const reasonLabel = getRelationshipRoleLabel(relationshipRole, 'rail') || candidate.reason || 'Neighborhood connection'}
-      <div
+      {@const strengthScore = point ? calculateSignalScore(point) : 0}
+      {@const strengthBars = Math.min(5, Math.max(1, Math.round(strengthScore)))}
+      {@const reasonText = candidate.reason || relationshipLabel || 'Neighborhood connection'}      <div
         class="focus-stage-neighbor-pill"
         class:is-next-stop={isNextStop}
         id={`neighbor-pill-${i}`}
         data-index={idx}
         data-relationship-role={relationshipRole}
-        data-reason={reasonLabel}
+        data-reason={reasonText}
       >
       <button
         class="focus-stage-neighbor-main"
@@ -118,13 +119,21 @@
           <span class="focus-stage-neighbor-name">
             {name}
             <span class="focus-stage-neighbor-city">{city}</span>
-            <span class="focus-stage-neighbor-role">{relationshipLabel}</span>
+            <!-- #6: the generic unclassified label ('Connection') appeared on
+                 every row — show the role chip only when it differentiates. -->
+            {#if relationshipLabel && relationshipLabel !== 'Connection'}
+              <span class="focus-stage-neighbor-role">{relationshipLabel}</span>
+            {/if}
+            <span
+              class="focus-stage-neighbor-strength"
+              aria-label="Match strength {strengthBars} of 5"
+              title="Match strength {strengthBars} of 5"
+            >{'▪'.repeat(strengthBars)}{'▫'.repeat(5 - strengthBars)}</span>
             {#if isNextStop}
               <span class="focus-stage-neighbor-next-stop-badge">Next stop</span>
             {/if}
           </span>
-          <span class="focus-stage-neighbor-reason">{reasonLabel}</span>
-        </span>
+          <span class="focus-stage-neighbor-reason">{reasonText}</span>        </span>
       </button>
       <span class="focus-stage-neighbor-actions" aria-label="Strand actions">
         <button

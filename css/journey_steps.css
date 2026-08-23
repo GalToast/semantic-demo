@@ -832,3 +832,14 @@ body[data-panel-surface]:not(.surface-map-any)[data-strand-journey='exploring']
         pointer-events: none;
     }
 }
+
+/* Neighbor strength bars (#6): per-row match strength, same 0-5 score the
+   canvas hover preview shows. Replaces the redundant generic role chip. */
+.focus-stage-neighbor-strength {
+    margin-left: 8px;
+    font-size: 9.5px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 2px;
+    color: rgba(var(--color-primary-tint-rgb), 0.85);
+    vertical-align: middle;
+}
