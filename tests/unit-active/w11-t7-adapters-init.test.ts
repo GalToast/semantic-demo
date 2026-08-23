@@ -5,8 +5,8 @@
  *
  * Verifies:
  *  - src/lib/orchestration/adapters.ts exists and exports initAdapters
- *  - adapters.ts imports all 9 adapter init functions from their canonical owners
- *  - adapters.ts body calls all 9 init functions
+ *  - adapters.ts imports all 8 adapter init functions from their canonical owners
+ *  - adapters.ts body calls all 8 init functions
  *  - calling initAdapters() with mock deps doesn't throw and invokes all 9
  *    adapter init functions exactly once
  *  - adapters.ts tracks initialization state via areAdaptersInitialized()
@@ -59,7 +59,9 @@ const ADAPTER_INIT_NAMES = [
     'initJourneySelectedCard',
     'initSemanticDiveUiSubscriptions',
     'initCanvasHoverPreviewSubscription',
-    'initRouteTraceSubscriptions',
+    // initRouteTraceSubscriptions REMOVED 2026-08-23: ownership moved to
+    // main.ts engineReady.subscribe so three.js stays off the pre-gesture
+    // cold-load path (see adapters.ts note 7).
     'initMapStateSubscriptions',
     'initViewControllerAdapter',
     'setupMobileSearchSheetToggle'
@@ -73,7 +75,6 @@ const ADAPTER_IMPORT_SOURCES: Record<AdapterInitName, string> = {
     initJourneySelectedCard: '@lib/journey/selected-card',
     initSemanticDiveUiSubscriptions: '@lib/journey/semantic-dive',
     initCanvasHoverPreviewSubscription: '@lib/journey/canvas-hover-preview',
-    initRouteTraceSubscriptions: '@lib/journey/route-trace',
     initMapStateSubscriptions: '@lib/engine/map-state',
     initViewControllerAdapter: '@lib/orchestration/view-controller',
     setupMobileSearchSheetToggle: '@lib/search/search-panel-adapter'
@@ -93,7 +94,7 @@ describe('W11-T7: adapters.ts exports initAdapters API', () => {
     })
 })
 
-describe('W11-T7: adapters.ts imports all 9 adapter init functions from canonical owners', () => {
+describe('W11-T7: adapters.ts imports all 8 adapter init functions from canonical owners', () => {
     const src = readOrchestrationSource()
 
     for (const name of ADAPTER_INIT_NAMES) {
@@ -101,9 +102,7 @@ describe('W11-T7: adapters.ts imports all 9 adapter init functions from canonica
             const source = ADAPTER_IMPORT_SOURCES[name]
             const escapedSource = source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
             // Accept either a static `import { name } from source` or a
-            // dynamic `import(source)` (the route-trace adapter is loaded
-            // dynamically as part of W45 perf work to keep three.js out of
-            // the cold-load modulepreload set).
+            // dynamic `import(source)` (map-state is loaded dynamically).
             const staticPattern = new RegExp(
                 `import\\s+\\{[^}]*\\b${name}\\b[^}]*\\}\\s+from\\s+['"]${escapedSource}['"]`
             )
@@ -113,7 +112,7 @@ describe('W11-T7: adapters.ts imports all 9 adapter init functions from canonica
     }
 })
 
-describe('W11-T7: adapters.ts body calls all 9 init functions', () => {
+describe('W11-T7: adapters.ts body calls all 8 init functions', () => {
     const src = readOrchestrationSource()
 
     for (const name of ADAPTER_INIT_NAMES) {
@@ -127,7 +126,7 @@ describe('W11-T7: adapters.ts body calls all 9 init functions', () => {
 
 // ── Runtime Test ─────────────────────────────────────────────────────────────
 
-describe('W11-T7: runtime — initAdapters() invokes all 9 adapters', () => {
+describe('W11-T7: runtime — initAdapters() invokes all 8 adapters', () => {
     beforeEach(async () => {
         // Reset the module state by re-importing (vitest module cache)
         vi.resetModules()
@@ -137,7 +136,7 @@ describe('W11-T7: runtime — initAdapters() invokes all 9 adapters', () => {
         }
     })
 
-    it('calls all 9 adapter init functions exactly once without throwing', async () => {
+    it('calls all 8 adapter init functions exactly once without throwing', async () => {
         for (const [name, source] of Object.entries(ADAPTER_IMPORT_SOURCES) as [AdapterInitName, string][]) {
             vi.doMock(source, () => ({ [name]: W11_MUTABLE_MOCK_FNS[name] }))
         }
@@ -198,11 +197,9 @@ describe('W11-T7: runtime — initAdapters() invokes all 9 adapters', () => {
         // Should not throw
         expect(() => initAdapters(mockDeps)).not.toThrow()
 
-        // W45: initRouteTraceSubscriptions is now loaded via dynamic import
-        // (route-trace statically imports three.js for WebGL overlay rendering;
-        // deferring keeps three out of the cold-load modulepreload set). The
-        // dynamic import is fire-and-forget inside initAdapters, so we poll
-        // for all 9 adapter inits to complete instead of a fixed 50ms wait.
+        // initAdapters is synchronous for all 8 remaining adapters, but we
+        // still poll to stay resilient to microtask ordering in the mock
+        // environment.
         await vi.waitFor(
             () => {
                 for (const name of ADAPTER_INIT_NAMES) {

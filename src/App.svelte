@@ -175,7 +175,15 @@
   // W5-T3b: idle-schedule ThreadInspector — only mounts when Thread view is active.
   $effect(() => threadInspectorLazy.ensure(threadInspectorActive()));
 
-  $effect(() => demoChoreographyLazy.ensure(true));
+  // P3-LCP: gate the demo pre-warm behind !noDemo. The demo chunk transitively
+  // imports @lib/orchestration/lifecycle (the engine barrel), which pulls
+  // three.js onto the cold-load path. main.ts already gates route-trace /
+  // preloadJourneyWebgl behind the first user gesture for exactly this reason
+  // (see the comment above engineReady.subscribe). An unconditional
+  // ensure(true) here undid that gating — measured: three.module downloaded
+  // at ~5.7 s on a real-phone ?nodemo=1 cold load. With ?nodemo=1 the demo
+  // never renders anyway, so pre-warming it only costs cold-load bytes.
+  $effect(() => demoChoreographyLazy.ensure(!noDemo));
   // P3-LCP: focus-stage gate drives FocusPocket's lazy load (3D-only overlay).
   $effect(() => focusPocketLazy.ensure(surface.focusStageActive));
 

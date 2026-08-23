@@ -15,7 +15,6 @@ import { initMapStateSubscriptions } from '@lib/engine/map-state'
 import { initViewControllerAdapter } from '@lib/orchestration/view-controller'
 import { initCanvasHoverPreviewSubscription } from '@lib/journey/canvas-hover-preview'
 import { setupMobileSearchSheetToggle } from '@lib/search/search-panel-adapter'
-import { handleError } from '@lib/utils/error-handler'
 import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-model'
 
 /**
@@ -182,21 +181,15 @@ export function initAdapters(deps: AdapterDeps): void {
     //    signal preview that mouse-hover users get.
     initCanvasHoverPreviewSubscription()
 
-    // 7. Route trace subscriptions (no deps)
-    // W45: dynamic import — route-trace statically imports three (ShaderMaterial,
-    // Color, etc.) for WebGL overlay rendering. Deferring keeps three out of the
-    // cold-load modulepreload set. Fire-and-forget: subscriptions register before
-    // the demo arrival phase (post-gesture) needs them.
-    import('@lib/journey/route-trace')
-        .then(({ initRouteTraceSubscriptions }) => initRouteTraceSubscriptions())
-        .catch(
-            handleError({
-                context: 'route-trace-import',
-                userFacing: true,
-                toastTitle: 'Feature unavailable',
-                toastMessage: 'Route tracing could not load. Try refreshing the page.'
-            })
-        )
+    // 7. Route trace subscriptions — MOVED to main.ts engineReady.subscribe.
+    // W45 correction (2026-08-23, mobile-LCP measurement): a boot-time dynamic
+    // import still downloads route-trace AND its static dependency three.js
+    // before any user gesture — measured three.module at ~5.7 s on a real-phone
+    // ?nodemo=1 cold load. The stale "keeps three out of the cold-load set"
+    // rationale only held for the static preload list in index.html, not for
+    // runtime bytes over the wire. main.ts already registers these
+    // subscriptions behind the first-gesture gate; that is now the single
+    // owner so three stays off the pre-gesture network path.
 
     // 8. Thread inspector adapter (4 deps).
     // Adapter was tightened to `Point3D` during W12-T8 but the dependency
