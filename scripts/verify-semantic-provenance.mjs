@@ -17,6 +17,20 @@
  *   3. index manifest count === metadata rows === shipped layout manifest rows
  *      (the geometric plane was built from THIS index's embeddings)
  *
+ * Verified 2026-08-23 (4 paths, tmp/fixtures/provenance-sim throwaway):
+ *   clean copy -> PASS exit 0; tampered embeddings -> FAIL hash; count 8405 ->
+ *   FAIL count; metadata 8405 rows -> FAIL; no env -> SKIP-FAIL loud guidance.
+ * Reference fixture: tmp/fixtures/qwen3_embeddings.npy, shape (8406,1024) f32,
+ *   sha256 6610beecf25d8d12fb3c30d990b55bc33a4b1183574ba326e8563d005b9278a5.
+ *
+ * HONEST LIMITATION: this gate's MECHANISM is verified, but the reference
+ * fixture's OWN provenance is NOT re-derivable on this machine — the builder
+ * machine's index build dir was purged (018c2d2a) and no other embeddings.npy
+ * survives. The gate anchors to this fixture; re-establish the anchor from the
+ * original embedding run / git history before treating a PASS as proof the
+ * shipped layout was built from the reference embeddings. Same audit-of-audits
+ * gap as F6 (a claim that can't be re-derived from disk).
+ *
  * Exit: 0 = provenance verified; 1 = mismatch/missing (read message).
  */
 import { existsSync, readFileSync } from 'node:fs'
