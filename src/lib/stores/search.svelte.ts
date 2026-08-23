@@ -51,44 +51,38 @@ export {
     consumeSearchInputFocusIntent
 } from './search-react-selectors'
 
-// P3-LCP (2026-08-21): search-glows chunk co-bundles three helpers → 717KB on boot.
-// Provide runtime-lazy wrappers so the chunk is never fetched on mobile 2D cold paint.
-// The real setters live in ./search-glows; this barrel dynamic-imports them on first use.
-let _glowMod: typeof import('./search-glows') | null = null
-let _glowProm: Promise<typeof import('./search-glows')> | null = null
-function _ensureGlow() {
-    if (_glowMod) return Promise.resolve(_glowMod)
-    if (!_glowProm) _glowProm = import('./search-glows').then((m) => (_glowMod = m, m)).catch((e) => { _glowProm = null; throw e })
-    return _glowProm
-}
-// Sync fallback while the glow chunk loads: mirror search-glows' exact
-// appState writes (withSearchNotify included) so first-call readers never see
-// stale state — the T4 migration contract asserts synchronously.
-function _glowFallback(forward: () => void): void {
-    if (_glowMod) { forward(); return }
+// P3-LCP (2026-08-21): a search-glows chunk extraction (S-2) originally planned
+// runtime-lazy wrappers here. Hardening pass (2026-08-23, bug catalog #7): the
+// extracted module turned out to be PURE DUPLICATION of these state writes —
+// no visual side effects — and nothing ever called the loader, so the 717KB
+// chunk was never fetched and the sync fallback below was already the complete
+// behavior. Removed the dead dynamic-import machinery instead of wiring it up:
+// wiring it would only add a pointless first-search fetch. If glow rendering
+// ever gains real canvas work again, re-extract WITH a call site + ordering
+// guarantee (re-apply latest state after load) from day one.
+function _applySearchGlowState(forward: () => void): void {
     withSearchNotify(forward)
 }
 export function setGlowIndices(indices: Set<number>): void {
-    _glowFallback(() => { appState.searchState.searchGlowIndices = new Set(indices) })
+    _applySearchGlowState(() => { appState.searchState.searchGlowIndices = new Set(indices) })
 }
 export function setGlowActive(active: boolean): void {
-    _glowFallback(() => { appState.searchState.searchGlowActive = active })
+    _applySearchGlowState(() => { appState.searchState.searchGlowActive = active })
 }
 export function setSearchGlow(indices: readonly number[], topIndex: number | null = indices[0] ?? null): void {
-    _glowFallback(() => {
+    _applySearchGlowState(() => {
         appState.searchState.searchGlowIndices = new Set(indices)
         appState.searchState.searchGlowTopIndex = topIndex
         appState.searchState.searchGlowActive = indices.length > 0
     })
 }
 export function clearSearchGlow(): void {
-    _glowFallback(() => {
+    _applySearchGlowState(() => {
         appState.searchState.searchGlowIndices = new Set()
         appState.searchState.searchGlowTopIndex = null
         appState.searchState.searchGlowActive = false
     })
 }
-
 export type { SearchStoreState, SearchStoreApi } from './search-core'
 
 export {

@@ -10,6 +10,7 @@
 
 let cameraModule: typeof import('@lib/engine/camera-controls') | null = null
 let cameraPromise: Promise<typeof import('@lib/engine/camera-controls')> | null = null
+import { debugWarn } from '@lib/utils/debug'
 
 function ensureCameraModule(): Promise<typeof import('@lib/engine/camera-controls')> {
     if (cameraModule) return Promise.resolve(cameraModule)
@@ -44,5 +45,9 @@ export function focusOnNodeLazy(index: number, options?: Record<string, unknown>
 
 /** Pre-load semantic (no-op). Used by boot paths that anticipate focus. */
 export function preloadFocusCameraModule(): void {
-    void ensureCameraModule().catch(() => {})
+    void ensureCameraModule().catch((err) => {
+        // #7 hardening: preload is best-effort, but log so a broken chunk
+        // surfaces instead of focus silently returning false forever.
+        debugWarn('[focus-call-lazy] camera module preload failed', err)
+    })
 }

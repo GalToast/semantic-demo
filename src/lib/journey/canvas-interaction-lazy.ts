@@ -9,6 +9,7 @@
 
 let mod: typeof import('@lib/journey/canvas-interaction') | null = null
 let promise: Promise<typeof import('@lib/journey/canvas-interaction')> | null = null
+import { debugWarn } from '@lib/utils/debug'
 
 function ensure(): Promise<typeof import('@lib/journey/canvas-interaction')> {
     if (mod) return Promise.resolve(mod)
@@ -34,7 +35,11 @@ export function ensureCanvasNodeInteractionBindingsLazy(): void {
     }
     void ensure()
         .then((m) => m.ensureCanvasNodeInteractionBindings())
-        .catch(() => {})
+        .catch((err) => {
+            // #7 hardening: best-effort stays best-effort, but never silently —
+            // a 404 here meant canvas node interactions quietly never attached.
+            debugWarn('[canvas-interaction-lazy] module load failed; bindings not attached', err)
+        })
 }
 
 /** Preload hint (optional). */
