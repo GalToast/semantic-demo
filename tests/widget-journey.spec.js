@@ -1476,6 +1476,15 @@ test.describe('Widget journey', () => {
         })
         await page.locator('.search-result-item').first().waitFor({ state: 'visible', timeout: 30000 })
 
+        // ?q= alone lands on the SEARCH surface (panelSurfaceDetail=none) - the
+        // JourneyChrome host (+ .focus-stage-neighbors rail) mounts only after a
+        // result is selected, when surface.focusStageActive flips. Select the
+        // mocked result so the focus-search surface under test actually exists.
+        await page
+            .locator('.search-result-listitem button, .search-result-item button')
+            .first()
+            .click({ timeout: 15000 })
+
         // Wait for the settled focus-search surface + rail before reading geometry.
         // Result visible ≠ focus-search surface/layout settled; the neighborhood rail
         // mounts after the surface flip. Also confirm legacy dive is hidden.
@@ -5585,9 +5594,20 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
         // Force the auto-demo and use webgl so the scene becomes ready.
         await page.context().clearCookies()
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?demo=force&webgl=1`, {
+        // contract-boot=1 (required since 682b3e82, 2026-08-23): bare automated
+        // sessions intentionally never auto-fire engineReady, so a passive
+        // ?demo=force load used to sit on the splash forever and time out here.
+        // This spec tests REPLAY, not the splash flow (covered elsewhere), so we
+        // opt into the documented boot shortcut.
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?demo=force&webgl=1&contract-boot=1`, {
             waitUntil: 'domcontentloaded'
         })
+        // Pin no-preference motion: the qa-journey-headless low-contention
+        // profile emulates prefers-reduced-motion:reduce suite-wide, and
+        // requestReplay() deliberately refuses under reduced motion (P2 guard).
+        // Without this override the replay click silently no-ops under the
+        // canonical wrapper even though the feature works for default users.
+        await page.emulateMedia({ reducedMotion: 'no-preference' })
         await page.evaluate(() => {
             try {
                 sessionStorage.clear()
@@ -6345,22 +6365,33 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         await page.setViewportSize({ width: 390, height: 844 })
         await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
         // Mobile cold-load entry depends on device capability since S5
-        // auto-enter: a capable device boots renderKind=webgl behind the Splash
-        // overlay ([data-testid="splash-cta"]); a non-capable one renders the
-        // 2D placeholder with its own CTA. Cover all three entry buttons so the
-        // test works on either path. Use a programmatic DOM click (not
-        // Playwright's hit-tested click) — same pattern as the legend dismiss
-        // test: the focus card may overlap the CTA mid-transition and
-        // pointer-events interception makes actionability retries loop.
-        await page
-            .locator('[data-testid="splash-cta"], [aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
-            .waitFor({ state: 'visible', timeout: 30000 })
-        await page.evaluate(() => {
-            const cta = document.querySelector(
-                '[data-testid="splash-cta"], [aria-label="Open in 3D"], [data-testid="placeholder-cta"]'
-            )
-            if (cta) cta.click()
-        })
+        // auto-enter AND on deep-link self-entry (main.ts fires signalReady at
+        // boot for ?anchor/?record/?q deep-links on non-placeholder2d boots).
+        // On a self-entered boot NO entry button is ever visible - the Splash
+        // is dismissed before we look. So: if the app already entered (webgl
+        // render kind, no visible splash CTA), skip the CTA stage entirely;
+        // otherwise wait for whichever entry button exists and click it
+        // programmatically (hit-tested clicks can loop on mid-transition
+        // pointer-events interception).
+        const selfEntered = await pollFor(
+            page,
+            () =>
+                document.body.dataset.renderKind === 'webgl' &&
+                !document.querySelector('[data-testid="splash-cta"]:not([hidden])'),
+            8000,
+            100
+        )
+        if (!selfEntered) {
+            await page
+                .locator('[data-testid="splash-cta"], [aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+                .waitFor({ state: 'visible', timeout: 30000 })
+            await page.evaluate(() => {
+                const cta = document.querySelector(
+                    '[data-testid="splash-cta"], [aria-label="Open in 3D"], [data-testid="placeholder-cta"]'
+                )
+                if (cta) cta.click()
+            })
+        }
         const webglFocusReady = await pollFor(
             page,
             () => {
