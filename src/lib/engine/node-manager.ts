@@ -58,16 +58,15 @@ export const MYCELIUM_FIELD_SCALE = Object.freeze({
 // the spores from "barely visible specks" to "self-illuminating nodes".
 export const SCENE_ATMOSPHERE = Object.freeze({
     fogColor: SCENE_PALETTE.fog,
-    fogDensity: 0.0028,
+    fogDensity: 0.0034,
     clearAlpha: 0.9,
-    // W60 (2026-08-19): 1.15 → 1.35. Vision-jury read (dots-3-note, 3
-    // screenshots) rated the idle scene median-luminance ~7% (18/255) with
-    // thread/nodes reading as "faint" / "dust"; the judge's single best
-    // change was brighter field + higher node/thread opacity. Exposure lift
-    // brightens the whole ACES tone without per-material risk.
-    toneExposure: 1.35,
-    pointOpacityScale: 1.0,
-    sporeOpacity: 0.65
+    // W60 (2026-08-19): 1.15 → 1.35 → 1.22 (2026-08-23): 1.35 pushed idle
+    // median to pastel fog — distinct dots merged into cotton-candy haze at
+    // overview distance (size 0.026 + opacity 1.0 + high exposure). Pull back
+    // exposure 10% and add depth fog so the cloud reads as points, not fog.
+    toneExposure: 1.22,
+    pointOpacityScale: 0.78,
+    sporeOpacity: 0.58
 })
 // W60 (2026-08-19): 0.0019 → 0.0027 (~42% larger). Vision-jury flagged
 // idle/focus spores as "dust — sparse tiny stars" (~2.4-3.8 px on a

@@ -843,3 +843,18 @@ body[data-panel-surface]:not(.surface-map-any)[data-strand-journey='exploring']
     color: rgba(var(--color-primary-tint-rgb), 0.85);
     vertical-align: middle;
 }
+
+/* Scrollbar polish: the neighbor rail + walk controls report invisible
+   padding overflow and show thin native bars in Focus/Inside. All visible
+   content fits — hide the bars, keep wheel/touch scroll. */
+#trail-controls,
+.focus-stage-neighbor-list,
+.focus-stage-neighbors {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+#trail-controls::-webkit-scrollbar,
+.focus-stage-neighbor-list::-webkit-scrollbar,
+.focus-stage-neighbors::-webkit-scrollbar {
+    display: none;
+}
