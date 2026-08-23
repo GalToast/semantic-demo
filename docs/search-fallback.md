@@ -25,7 +25,9 @@ tests; do not use in normal dev flows.
 
 ## Dev with live data
 
-Vite dev proxies `/api*` to `127.0.0.1:8795`; the system expects a PHP backend there (see `docs/ops/DEPLOY_STATUS.md`, `docs/ops/walkthrough-r7-findings.md`). For dev with live data: stop whatever's on 8795 (`python -m http.server` from `npm run serve` is the legacy JS track — see `memory/environment.md`, deleted 2026-06-07) and run `php -S 127.0.0.1:8795 -t .` from the repo root. PHP CLI server executes `/api.php` AND serves static files (replaces Python for both roles). PR-N makes `api.php` fall back to `src/data.dat` when no root-level `data.dat` exists, so a fresh checkout Just Works without copying.
+Vite dev proxies `/api*` to `127.0.0.1:8795`; the system expects a PHP backend there (see `docs/ops/DEPLOY_STATUS.md`, `docs/ops/walkthrough-r7-findings.md`). For dev with live data: stop whatever's on 8795 (`python -m http.server` from `npm run serve` is the legacy JS track — see `memory/environment.md`, deleted 2026-06-07) and run `php -S 127.0.0.1:8795 -t .` from the repo root (or `npm run serve`, which now restores plain data twins first). PHP CLI server executes `/api.php` AND serves static files (replaces Python for both roles). PR-N makes `api.php` fall back to `src/data.dat` when no root-level `data.dat` exists, so a fresh checkout Just Works without copying.
+
+**Data-twins gotcha (2026-08-23):** the build ships `dist/svelte/data/` as .br/.gz twins only (plains deleted except `data.dat`). PHP's built-in server does not negotiate encodings, so plain data URLs 404 → silent geometric-fallback. `npm run serve` now auto-runs `scripts/decompress-data-twins.mjs` to restore plains before starting PHP (idempotent).
 
 ## Debug
 
