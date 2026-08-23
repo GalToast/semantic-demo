@@ -587,8 +587,17 @@ function _renderTraversalContext(params: {
         contextEl.textContent = `Stop ${stepNumber}: ${currentName}. Why here: ${reason}. Matched by ${sourceLabel}. Use Prev to go back${
             neighborCount > 0 ? ' or Next to continue' : ', then return to Overview to find more connections'
         }.`
+        // Zero-walk guard (2026-08-22, mirrors JourneyChrome): a fresh deep link
+        // has an empty walkHistory until the user picks a stop — "Stop 0." read
+        // like a bug. Invite instead; the JourneyChrome twin carries the same rule.
         focusProgressEl.textContent =
-            neighborCount > 0 ? `Stop ${stepNumber}.` : `Stop ${stepNumber}. No more visible stops with these filters.`
+            stepNumber === 0
+                ? neighborCount > 0
+                    ? 'Choose a nearby stop to begin.'
+                    : 'No visible stops with these filters.'
+                : neighborCount > 0
+                  ? `Stop ${stepNumber}.`
+                  : `Stop ${stepNumber}. No more visible stops with these filters.`
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
                 ? `Next: ${nextWalkName} - ${nextWalkReason}.`

@@ -266,6 +266,24 @@ function _setupDeferredNeighborRefire(
             // Bail if the user navigated away or a newer restore superseded us.
             if (appState.navState.focusedIndex !== numericId) return
             if (isRestoreStale(restoreToken)) return
+            // 2026-08-22 convergence fix: with a ?q= deep link, threads and the
+            // URL-driven search settle in parallel. Firing on map-ready alone
+            // recomputed candidates WITHOUT search-result context (manifest saw
+            // resultIndices=[]) and pinned a thin set (1 candidate vs 12 in the
+            // natural flow); the later post-search publish then hit the W68-H3
+            // same-index guard and never upgraded. Wait briefly for the search
+            // to settle first so the single re-fire carries FULL restore context.
+            try {
+                const { waitForSearchSettle } = await import('./url-writer')
+                await waitForSearchSettle(() => {
+                    const ss = appState.searchState as unknown as { status?: string }
+                    return { status: ss.status ?? 'idle' }
+                }, 15_000)
+                if (appState.navState.focusedIndex !== numericId) return
+                if (isRestoreStale(restoreToken)) return
+            } catch {
+                // Search-settle wait is best-effort; the refire below still runs.
+            }
             try {
                 publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: numericId })
                 const _focusPocketMod = (await import('@lib/focus/pocket')) as {

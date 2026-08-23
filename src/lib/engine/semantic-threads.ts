@@ -30,6 +30,7 @@ import { normalizeRelationshipRole } from '@lib/utils/relationship-roles'
 import { debugWarn } from '@lib/utils/debug'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store'
+import { invalidateTrailSeedCache } from '@lib/journey/neighborhood'
 
 // ── Legacy state singleton ────────────────────────────────────────────────────
 // The state reference is injected by the engine bridge during init via
@@ -556,6 +557,13 @@ function finalizeThreadLoad(): void {
     }
 
     _updateSemanticThreadsStatus(state.semanticNeighborMapByLeadId.size > 0 ? 'ready' : 'failed')
+
+    // Trail-seed cache invalidation (step-counter drift fix): any walk seeded
+    // before the artifact landed pinned geometric-fallback candidates in
+    // neighborhood.ts's memo. Drop it so the next re-seed — including the
+    // deep-link deferred refire and ordinary refocus — recomputes with the
+    // now-available semantic neighbors instead of replaying stale fallbacks.
+    invalidateTrailSeedCache()
 
     _recordSemanticLaneSnapshot({
         thread_artifact_status: state.semanticThreadsStatus,

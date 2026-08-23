@@ -1,21 +1,21 @@
 /**
- * trail-progress-twin-contract.test.ts — Structural regression guarding the
- * journey trail "Step N of M" progress string against twin drift.
+ * trail-progress-twin-contract.test.ts - Structural regression guarding the
+ * journey trail progress string against twin drift.
  *
- * Background (2026-08-07, main-lane + delegated mimo worker diagnosis):
- *   currentWalkHistory ^= walkHistoryIndices includes the CURRENT node as its
- *   last element (thread-settler.ts walkThreadNeighbor pushes the target), so
- *   `.length` IS the current step number. JourneyChrome.svelte (Svelte twin)
- *   used `length + 1` — showing "Step 4 of 5" at node C of [A,B,C] — while
- *   focus-ui.ts (DOM twin) had already been fixed in W48 to use the bare
- *   length (`stepNumber = walkLength`). The +1 was the ONLY drift; no test
- *   pinned the string, so the bug shipped.
+ * Background (2026-08-07): currentWalkHistory includes the CURRENT node as its
+ * last element, so `.length` IS the current step number. JourneyChrome.svelte
+ * used `length + 1` while focus-ui.ts had been fixed in W48 to use bare length.
  *
- * This test asserts the DISPLAY RULE source-level in BOTH twins (the same
- * pattern as journey-chrome-empty-state.test.ts), so the two can never
- * diverge on this contract again. A runtime assertion on the live string is
- * impossible to mount generically (8,406-point graph has no naturally drained
- * walk), hence the source-level guarantee.
+ * 2026-08-22 contract change (step-counter stability, live finding):
+ *   The "of ${neighborCount}" total mixed two dimensions - steps TAKEN vs
+ *   next-hop candidates from the CURRENT stop - and neighborCount itself is
+ *   pipeline-dependent (triggers.ts manifest vs setTrailFromSeed memo,
+ *   semantic vs geometric fallback), so one anchor rendered "Step 1 of 17" /
+ *   "Step 1 of 18" / "Step 1 of 1" depending on which source won the boot
+ *   race. Fix: BOTH twins render the bare, truthful "Stop N."; availability
+ *   is carried by the Next-stop line. The setTrailFromSeed memo is
+ *   invalidated when the thread artifact lands so late-loaded semantic
+ *   neighbors converge instead of pinning a stale fallback.
  */
 import { describe, it, expect, beforeAll } from 'vitest'
 import { readFileSync } from 'fs'
@@ -23,6 +23,8 @@ import { resolve } from 'path'
 
 const JOURNEY_CHROME_PATH = resolve(__dirname, '../../src/components/JourneyChrome.svelte')
 const FOCUS_UI_PATH = resolve(__dirname, '../../src/lib/journey/focus-ui.ts')
+const NEIGHBORHOOD_PATH = resolve(__dirname, '../../src/lib/journey/neighborhood.ts')
+const THREADS_PATH = resolve(__dirname, '../../src/lib/engine/semantic-threads.ts')
 
 function readSource(p: string): string {
     return readFileSync(p, 'utf-8')
@@ -37,23 +39,35 @@ describe('trail progress string contract', () => {
         focusUi = readSource(FOCUS_UI_PATH)
     })
 
-    it('Svelte twin (JourneyChrome) renders Step with currentWalkHistory.length (no +1)', () => {
-        // `+ 1` after walkHistory.length would off-by-one the step counter
-        expect(chrome).toContain('Step ${currentWalkHistory.length} of ${neighborCount}')
-        // never the regressed form
+    it('Svelte twin renders bare Stop N - no "of ${neighborCount}" total', () => {
+        // Code-form only: comments may still cite the historical string.
+        expect(chrome).not.toMatch(/`Step \$\{currentWalkHistory\.length\} of \$\{neighborCount\}`/)
         expect(chrome).not.toContain('Step ${currentWalkHistory.length + 1}')
+        expect(chrome).toMatch(/`Stop \$\{currentWalkHistory\.length\}\./)
     })
 
-    it('DOM twin (focus-ui) renders the same rule — bare walkLength as stepNumber', () => {
+    it('DOM twin renders the same rule - bare walkLength as stepNumber', () => {
         expect(focusUi).toMatch(/const stepNumber = walkLength/)
-        // both twins derive the display from history length, never length+1
         expect(focusUi).not.toMatch(/stepNumber = walkLength \+ 1/)
+        expect(focusUi).toContain('`Stop ${stepNumber}.`')
     })
 
-    it('both twins carry the no-more-stops fallback without the +1 offset', () => {
+    it('both twins carry the no-more-stops fallback without offset or total', () => {
         expect(chrome).toContain('No more visible stops with these filters.')
-        // the Svelte fallback branch must not reintroduce a +1
+        expect(focusUi).toContain('No more visible stops with these filters.')
         expect(chrome).not.toContain('length + 1}. No more visible stops')
         expect(focusUi).not.toContain('stepNumber} of 0')
+    })
+
+    it('both twins guard walkLength 0 (fresh deep links) with an invite, not "Stop 0."', () => {
+        expect(chrome).toContain("'Choose a nearby stop to begin.'")
+        expect(focusUi).toContain("'Choose a nearby stop to begin.'")
+    })
+
+    it('seed memo invalidation exists so late thread loads converge', () => {
+        const neighborhood = readSource(NEIGHBORHOOD_PATH)
+        const threads = readSource(THREADS_PATH)
+        expect(neighborhood).toMatch(/export function invalidateTrailSeedCache/)
+        expect(threads).toMatch(/invalidateTrailSeedCache\(\)/)
     })
 })

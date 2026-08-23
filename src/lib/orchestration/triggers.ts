@@ -221,7 +221,48 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
     // trailDepth to 1 even when the user advanced deeper. Skip the mirror/manifest/setters
     // when the index is already current; the idempotent refreshCompositionState +
     // updateJourneyCompass still run below the guard.
-    const currentFocus = get(navStore) as { focusedIndex?: number | null }
+    const currentFocus = get(navStore) as {
+        focusedIndex?: number | null
+        threadCandidates?: readonly unknown[]
+    }
+    // 2026-08-22 deep-link convergence: W68-H3's same-index skip also swallowed
+    // _setupDeferredNeighborRefire's re-fire (url-restore-deep-link.ts), which
+    // exists precisely to repopulate candidates once the lazily-loaded semantic
+    // thread artifact lands — leaving ?q=&anchor=N deep links stuck at "0 related
+    // businesses" forever. Allow a same-index recompute ONLY when the candidate
+    // set is empty, and then write ONLY candidate fields: mode/surface/trailDepth
+    // stay untouched so a ?surface=inside deep link converges without being
+    // dragged back to focus-search (W68-H3's redundant-cascade protection is
+    // fully preserved for non-empty candidate sets).
+    const candidatesEmpty = !currentFocus.threadCandidates || currentFocus.threadCandidates.length === 0
+    if (currentFocus.focusedIndex === focusIndex && candidatesEmpty) {
+        const searchSummary = appState.searchState.currentSearchSummary
+        const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || []
+        const manifest = buildNeighborhoodManifest(focusIndex, resultIndices, {
+            displayLimit: getSemanticThreadDisplayLimit()
+        })
+        if (manifest && manifest.candidateIndices.length > 0) {
+            const candidateIndices: number[] = [...manifest.candidateIndices]
+            const threadSource = manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback'
+            const threadReasonByIndex = new Map<number, string>(
+                candidateIndices.map((candidateIndex: number) => [
+                    candidateIndex,
+                    threadSource === 'semantic' ? 'semantic neighbor' : 'geometric proximity'
+                ])
+            )
+            writeNavStateMirror({
+                trailSeedIndex: focusIndex,
+                trailNeighborIndices: candidateIndices,
+                threadCandidates: candidateIndices.map((idx) => ({
+                    index: idx,
+                    source: threadSource,
+                    reason: threadReasonByIndex.get(idx) ?? ''
+                })),
+                threadReasonByIndex,
+                threadSource
+            })
+        }
+    }
     if (currentFocus.focusedIndex !== focusIndex) {
         const searchSummary = appState.searchState.currentSearchSummary
         const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || []

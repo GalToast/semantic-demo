@@ -211,11 +211,22 @@
       // currentTrailDepth >= 1. Guard the "of ${neighborCount}" total so the progress line
       // never shows a total smaller than the current stop, and route to the "No more visible
       // stops in this slice." copy that already exists in the focus-ui.ts twin.
+      // Step-counter stability fix (2026-08-22): the "of ${neighborCount}" total mixed two
+      // dimensions — steps TAKEN vs next-hop candidates from the CURRENT stop — so the same
+      // anchor showed "1 of 17" / "1 of 18" / "1 of 1" depending on which candidate pipeline
+      // (triggers.ts manifest vs setTrailFromSeed cache, semantic vs geometric fallback) won
+      // the race. The focus-ui.ts twin never showed a total ("Stop N."); align with it and let
+      // the Next line carry availability instead of a contradictory total.
+      // Zero-walk guard: fresh deep links (?surface=inside) have an empty
+      // walkHistory until the user picks a stop — "Stop 0." read like a bug.
+      // Invite instead (copy rules: give a next step).
+      if (currentWalkHistory.length === 0) {
+        return neighborCount > 0 ? 'Choose a nearby stop to begin.' : 'No visible stops with these filters.';
+      }
       return neighborCount > 0
-        ? `Step ${currentWalkHistory.length} of ${neighborCount}`
-        : `Step ${currentWalkHistory.length}. No more visible stops with these filters.`;
-    }
-    return neighborCount
+        ? `Stop ${currentWalkHistory.length}.`
+        : `Stop ${currentWalkHistory.length}. No more visible stops with these filters.`;
+    }    return neighborCount
       ? `${neighborCount} nearby to explore`
       : `Start exploring.`;
   });

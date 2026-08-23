@@ -163,6 +163,41 @@ function createServer() {
         }
         fs.stat(filePath, (err, stat) => {
             if (err || !stat.isFile()) {
+                // Compression-only data distribution: data artifacts ship as
+                // .br/..gz WITHOUT plain twins (check-data-compression pipeline).
+                // tryPrecompressed below only runs once a plain file exists, so
+                // the plain-URL fetch 404'd before negotiation ever ran — every
+                // semantic_threads.dat / space-layout request failed locally and
+                // the app silently fell back to geometric neighbors. Negotiate
+                // the precompressed variant HERE on the stat-miss path.
+                const acceptEnc = String(req.headers['accept-encoding'] ?? '')
+                const missEncoding = acceptEnc.includes('br') ? 'br' : acceptEnc.includes('gzip') ? 'gz' : null
+                if (missEncoding) {
+                    const compressedPath = `${filePath}.${missEncoding}`
+                    return fs.stat(compressedPath, (cerr, cstat) => {
+                        if (!cerr && cstat.isFile()) {
+                            serveFile(req, res, filePath, cstat, serverStartTime, {
+                                preset: { filePath: compressedPath, stat: cstat, encoding: missEncoding }
+                            })
+                            return
+                        }
+                        // No compressed twin either — fall through to the
+                        // original ROOT/public-data fallback chain.
+                        if (urlPath.startsWith('/public/data/')) {
+                            const rootFallback = path.resolve(ROOT, urlPath.replace(/^[/\\]+/, ''))
+                            return fs.stat(rootFallback, (err2, stat2) => {
+                                if (err2 || !stat2.isFile()) {
+                                    res.writeHead(404, { 'Content-Type': 'text/plain' })
+                                    res.end('Not found: ' + urlPath)
+                                    return
+                                }
+                                serveFile(req, res, rootFallback, stat2, serverStartTime)
+                            })
+                        }
+                        res.writeHead(404, { 'Content-Type': 'text/plain' })
+                        res.end('Not found: ' + urlPath)
+                    })
+                }
                 // If the path didn't exist under either dist/svelte or ROOT,
                 // try ROOT directly as final fallback with the /data/ remap
                 if (urlPath.startsWith('/public/data/')) {
@@ -186,7 +221,7 @@ function createServer() {
     return server
 }
 
-function serveFile(req, res, filePath, stat, serverStartTime) {
+function serveFile(req, res, filePath, stat, serverStartTime, opts = {}) {
     // W5: Log a warning when a file was modified after the server started.
     // This helps catch rebuild-stale scenarios without forcing a restart.
     if (stat.mtimeMs > serverStartTime) {
@@ -233,7 +268,7 @@ function serveFile(req, res, filePath, stat, serverStartTime) {
     }
 
     const send = async () => {
-        const precompressed = await tryPrecompressed()
+        const precompressed = opts.preset ?? (await tryPrecompressed())
         const finalPath = precompressed?.filePath ?? filePath
         const finalStat = precompressed?.stat ?? stat
         // Content-Type describes the DECOMPRESSED payload, so it must come from the

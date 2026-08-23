@@ -91,6 +91,25 @@ let _lastSeedKey: SeedFilterKey | null = null
 let _lastSeedResult: CachedSeedResult | null = null
 
 /**
+ * Drop the memoized setTrailFromSeed result.
+ *
+ * Why this exists: the cache keys on seedIndex + activeFilters only — it
+ * cannot know that the semantic-thread artifact (40MB, loaded lazily via
+ * requestIdleCallback) has arrived. Without invalidation, a walk seeded
+ * before threads load pins the geometric-fallback candidate set for the
+ * whole session: the same anchor then shows "Matched by location · Step 1
+ * of 18" in surfaces fed by setTrailFromSeed while the pocket/banner show
+ * semantic neighbors — and the deep-link deferred refire
+ * (_setupDeferredNeighborRefire) re-fires focus but hits this cache and
+ * silently restores the stale fallback. Called from
+ * engine/semantic-threads.ts finalizeThreadLoad() when threads land.
+ */
+export function invalidateTrailSeedCache(): void {
+    _lastSeedKey = null
+    _lastSeedResult = null
+}
+
+/**
  * Build a stable cache key from the seed index and active filters.
  */
 function _seedKey(seedIndex: number): SeedFilterKey {
