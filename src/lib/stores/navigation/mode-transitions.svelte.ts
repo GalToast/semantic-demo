@@ -7,12 +7,13 @@
  */
 import type { NavState, NavMode, PanelSurface } from '@lib/types/state'
 import { NAV_TRANSITION_ACTIONS, type NavTransitionAction } from '@lib/navigation-actions'
-import { clearSearch } from '../search.svelte.ts'
-import { resetFocus, setSemanticDiveMode } from '../focus.svelte.ts'
-import { resetJourney, setTrailDepth } from '../journey.svelte.ts'
 import { _readNavSnapshot, readNavMirrorValue, writeNavStateMirror, resetNavState } from './navigation-state.svelte.ts'
-import { clearMobileSearchSheetState } from '@lib/search/search-panel-adapter'
 import { getSurfaceModePatch } from './surface-mode-map'
+// Sibling-store effects arrive via the registry (self-registered by
+// search-core/focus/journey/search-panel-adapter at module eval) so this
+// dispatcher stays decoupled from their module graphs and the shared
+// mode-transitions chunk stays under the qa-budget mode-transition allowance.
+import { lookupTransitionEffect } from './transition-effects'
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
 
@@ -53,10 +54,10 @@ export interface NavTransitionResult {
 // ── Internal helpers ─────────────────────────────────────────────────────────
 
 function returnToOverviewState(): void {
-    clearSearch()
-    clearMobileSearchSheetState()
-    resetFocus()
-    resetJourney()
+    lookupTransitionEffect('clearSearch')()
+    lookupTransitionEffect('clearMobileSearchSheetState')()
+    lookupTransitionEffect('resetFocus')()
+    lookupTransitionEffect('resetJourney')()
     writeNavStateMirror({
         focusedIndex: null,
         trailSeedIndex: null,
@@ -168,8 +169,8 @@ export function dispatchNavTransition(
                 surface !== 'inside' &&
                 (current.surface === 'inside' || current.mode === 'inside' || current.trailDepth >= 2)
             if (leavingDive) {
-                setSemanticDiveMode(false)
-                setTrailDepth(1)
+                lookupTransitionEffect('setSemanticDiveMode')(false)
+                lookupTransitionEffect('setTrailDepth')(1)
             }
             break
         }

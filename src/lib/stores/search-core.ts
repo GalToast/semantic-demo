@@ -762,3 +762,7 @@ export function castSearchResults(
         snippet: String(r.snippet ?? '')
     }))
 }
+
+// Arm nav-transition effects (see navigation/transition-effects.ts).
+import { registerTransitionEffects } from './navigation/transition-effects'
+registerTransitionEffects({ clearSearch })

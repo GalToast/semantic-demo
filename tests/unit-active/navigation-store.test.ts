@@ -24,6 +24,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { NavState } from '@lib/types/state'
+import { registerTransitionEffects } from '@lib/stores/navigation/transition-effects'
 
 // ── Hoisted mock handles ────────────────────────────────────────────────────
 const mockAppState = vi.hoisted(() => ({
@@ -146,6 +147,18 @@ const mockChainFns = vi.hoisted(() => ({
 const mockClearSearch = mockChainFns.clearSearch
 const mockResetFocus = mockChainFns.resetFocus
 const mockResetJourney = mockChainFns.resetJourney
+
+// The dispatcher reads side-effects from the transition-effect registry
+// (mode-transitions is decoupled from the store module graphs). vi.mock
+// replaces those modules wholesale, so their real self-registrations never
+// run — register the mocks directly.
+registerTransitionEffects({
+    clearSearch: mockChainFns.clearSearch,
+    resetFocus: mockChainFns.resetFocus,
+    resetJourney: mockChainFns.resetJourney,
+    setSemanticDiveMode: mockChainFns.setSemanticDiveMode,
+    setTrailDepth: mockChainFns.setTrailDepth
+})
 
 // ── Module mocks ───────────────────────────────────────────────────────────
 vi.mock('@lib/state/app.svelte.ts', () => ({

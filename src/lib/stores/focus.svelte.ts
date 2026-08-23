@@ -574,3 +574,7 @@ export function resetFocus(): void {
 /** Constellation motifs defined in the engine config. */
 export { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config'
 export type { ConstellationMotif } from '@lib/engine/config'
+// Arm nav-transition effects (see navigation/transition-effects.ts). Registry
+// import is dependency-free — no dispatcher cycle.
+import { registerTransitionEffects } from './navigation/transition-effects'
+registerTransitionEffects({ resetFocus, setSemanticDiveMode })

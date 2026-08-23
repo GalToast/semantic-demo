@@ -43,6 +43,12 @@ import { debugError, debugWarn } from '@lib/utils/debug'
 // pattern as registerUrlStateEventListeners above.
 import { bindFocusTrapObserver, disposeFocusTrapBindings } from '@lib/utils'
 
+// Arm nav-transition side-effects (search/focus/journey self-register at eval).
+// Entry-time arming keeps mode-transitions decoupled from the domain-store
+// module graphs (qa-budget mode-transition chunk rule) while guaranteeing the
+// registry is fully armed before App mounts and any UI can dispatch.
+import '@lib/stores/navigation/transition-effects-install'
+
 // ── Global error sink (ring buffer) ────────────────────────────────────────
 // Top-level catch for otherwise-uncaught errors / unhandled promise
 // rejections. Keeps a tiny ring buffer so recent failures are inspectable

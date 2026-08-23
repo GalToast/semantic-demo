@@ -204,3 +204,7 @@ export function setupMobileSearchSheetToggle({
 
     syncMobileSearchSheetForViewport(isCompact)
 }
+
+// Arm nav-transition effects (see stores/navigation/transition-effects.ts).
+import { registerTransitionEffects } from '@lib/stores/navigation/transition-effects'
+registerTransitionEffects({ clearMobileSearchSheetState })

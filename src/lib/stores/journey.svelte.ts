@@ -475,3 +475,7 @@ export function resetJourney(): void {
         trailDepth: 0
     })
 }
+
+// Arm nav-transition effects (see navigation/transition-effects.ts).
+import { registerTransitionEffects } from './navigation/transition-effects'
+registerTransitionEffects({ resetJourney, setTrailDepth })
