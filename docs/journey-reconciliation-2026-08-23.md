@@ -36,12 +36,12 @@ exposed`.
 
 ## Result
 
-|                   | Before                      | After                                          |
-| ----------------- | --------------------------- | ---------------------------------------------- |
-| Failures          | ~43–45                    | **7** of 83 (arc: F-search-8, B-S7, W55, W51-h1, T1-4, W63 fixed; latest HEAD run 75P/7F/7.5min) |
-| Passes            | ~37–50                      | **71**                                         |
-| Runtime           | ~50 min (software)          | **15.8 min** (D3D11)                           |
-| Failure signature | 60s splash timeouts (noise) | fast assertion/layout timeouts (signal)        |
+|                   | Before                      | After                                                                                            |
+| ----------------- | --------------------------- | ------------------------------------------------------------------------------------------------ |
+| Failures          | ~43–45                      | **7** of 83 (arc: F-search-8, B-S7, W55, W51-h1, T1-4, W63 fixed; latest HEAD run 75P/7F/7.5min) |
+| Passes            | ~37–50                      | **71**                                                                                           |
+| Runtime           | ~50 min (software)          | **15.8 min** (D3D11)                                                                             |
+| Failure signature | 60s splash timeouts (noise) | fast assertion/layout timeouts (signal)                                                          |
 
 Contract gate: **51/51** before and after.
 
@@ -132,9 +132,10 @@ sweep). (2) Replay: the qa-journey-headless low-contention profile emulates
 AND the component acked anyway, so even keyboard-help's 500ms fallback toast
 never fired (silent dead button for reduced-motion users). Fix:
 `requestReplay(): boolean` — ack dispatches only on accept (DemoChoreography.svelte
+
 - keyboard-help.ts comment); W7 F2 contract windows updated to pin the stronger
-conditional-ack invariant. Verified post-revert master: wrapper profile PASS
-19.5s, plain PASS. Remaining: W54-4486 (investigate first), C1, W64, B-A1.
+  conditional-ack invariant. Verified post-revert master: wrapper profile PASS
+  19.5s, plain PASS. Remaining: W54-4486 (investigate first), C1, W64, B-A1.
 
 Cosmetic-probe verdicts (`tmp/probe-overlap.mjs`, DOM rects): the 'County terrain'
 header overlap reproduces ONLY under isPlaywright — App.svelte force-mounts MapView
@@ -145,6 +146,24 @@ Suppressed via CSS inverse of Fix #1 (`body:not([data-active-view='map'])
 'Legend pill clips focus card': NOT reproduced desktop or mobile in deep-link
 flows (legend stays auto-hidden); likely healed by session-2 rail-top fixes —
 reopen only with an exact repro URL.
+
+Session-5 (same day, lock `fix-W54-4486-chip-info-panel-plus-C1-compass-phase`):
+triage of the remaining board on healthy-boot master, isolated D3D11 runs:
+
+- **W54-4486 — PHANTOM, healed.** Passes 3× isolated + full W54 block 2/2. It was
+  filed during the `60c2428d` non-booting window (see session-3 revert); nothing to fix.
+- **C1 — FIXED (test driver rot, product chain healthy).** The old Inside RADIO
+  locators match zero DOM (affordance is ModeChipRail chips), and the old evaluate()
+  fallback wrote plain fields into `window.__APP_STATE__`, which is NOT the live
+  $state proxy — both doors were dead, so the dive never armed and the 8s
+  `data-phase='inside'` wait timed out. Rewritten to boot galaxy-focus (`?record=519`
+  without view=map — chips are intentionally hidden on map composites per A2-4) and
+  drive the real door ladder: chip → `[data-journey-action="enter-inside"]` → Ctrl+5.
+  All three route through ENTER_INSIDE, which arms trailDepth=2 + semanticDiveMode via
+  the canonical funnel. PASS 9.5s.
+- **W53 #6 — confirmed flake.** PASS isolated (16.7s); matches session-3 suspicion.
+- **Still REAL: W64 sheet-resync and B-A1 count overshoot** — both fail isolated;
+  next digs.
 
 Original session-2 notes:
 Remaining 7 (fresh error-contexts under `test-results/` from the

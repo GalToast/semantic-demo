@@ -6533,20 +6533,25 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
     test('C1. semantic dive wins over trail in compass phase (insideActive-before-inTrailMode fix)', async ({
         page
     }) => {
-        // Fix C (2026-08-06) is unit-verified (a3-1/a3-2/t1 + structural diff). The
-        // journey-level dive assertion needs the app's real dive choreography
-        // (mode-nav cycling as in header-journey-component-contract.spec.js); direct
-        // state writes are non-reactive here. Kept as fixme so the intent is
-        // documented, not silently dropped.
         // Fix C (2026-08-06): compass evaluates insideActive before inTrailMode, so a
-        // dive in progress emits phase='inside' (not 'trail'). Drive a dive state and
-        // assert the compass DOM reflects it.
+        // dive in progress emits phase='inside' (not 'trail'). Session-4 rewrite of
+        // the driver: the old Inside RADIO locators match nothing (the affordance is
+        // ModeChipRail chips now), and the old evaluate() fallback wrote plain fields
+        // into window.__APP_STATE__, which is NOT the live $state proxy — both were
+        // dead doors. Real doors today, in preference order:
+        //   (a) Header chip `.mode-chip[data-mode="inside"]` — its selectMode() chains
+        //       executeJourneyCompassAction(ENTER_INSIDE) (Header.svelte Bug-2 fix),
+        //       which arms trailDepth=2 + semanticDiveMode via the canonical funnel.
+        //   (b) Compass dive button `[data-journey-action="enter-inside"]`.
+        //   (c) Ctrl+5 (global-shortcuts KH-INSIDE-SHORTCUT-FIX chains ENTER_INSIDE).
+        // Boot stays in GALAXY view: on ?view=map composites the chip rail is
+        // intentionally hidden (A2-4) and insideActive requires galaxy anyway.
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.addInitScript(() => {
             window.__PLAYWRIGHT__ = true
         })
         // Establish a real focused node (deep-link record) so the Inside mode is unlocked.
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map&record=519`, {
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, {
             waitUntil: 'domcontentloaded'
         })
         await page.waitForFunction(
@@ -6554,31 +6559,25 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
             null,
             { timeout: 20000, polling: 100 }
         )
-        // Drive a dive through the real mode nav (Inside radio) — the same path the
-        // header-journey spec uses to reach mode='inside' with real app state.
-        const insideRadio = page.locator('input[type=radio][value=inside], [role=radio]:has-text("Inside")').first()
-        await insideRadio.click({ timeout: 8000 }).catch(async () => {
-            // REACTIVE DRIVER (main-lane 2026-08-07, verified C1 green on D3D11): the
-            // old fallback set semanticDiveMode but left currentView='map' (deep-link
-            // view=map). insideActive (compass-state.ts:78) requires
-            // currentView==='galaxy', so the compass never emitted phase='inside'.
-            // Switch view to galaxy FIRST, then dive, so the compass re-reads to inside.
-            await page.evaluate(() => {
-                const nav = window.__APP_STATE__?.navigationStore
-                if (nav && typeof nav.switchView === 'function') {
-                    nav.switchView('galaxy')
-                } else if (window.__navActions__) {
-                    window.__navActions__.writeNavStateMirror({ view: 'galaxy', surface: 'inside' })
-                }
-                const st = window.__APP_STATE__
-                if (st) {
-                    if (st.currentView) st.currentView = 'galaxy'
-                    st.semanticDiveMode = true
-                    st.trailDepth = 2
-                }
-            })
-            await page.waitForTimeout(400)
-        })
+
+        // Dismiss the first-visit help dialog if it auto-opened over the chrome.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        const chip = page.locator('.mode-chip[data-mode="inside"]').first()
+        const diveBtn = page.locator('[data-journey-action="enter-inside"]').first()
+        if ((await chip.count()) > 0 && (await chip.isVisible().catch(() => false))) {
+            await chip.click({ timeout: 8000 })
+        } else if ((await diveBtn.count()) > 0 && (await diveBtn.isVisible().catch(() => false))) {
+            await diveBtn.click({ timeout: 8000 })
+        } else {
+            // Door (c): the keyboard shortcut routes through the same ENTER_INSIDE action.
+            await page.keyboard.press('Control+5')
+        }
         await page.waitForFunction(() => document.querySelector('#journey-compass')?.dataset.phase === 'inside', null, {
             timeout: 8000,
             polling: 100
