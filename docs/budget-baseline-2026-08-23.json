@@ -186,8 +186,8 @@
   "cssBytes": 447873,
   "grandBytes": 2159468,
   "blessed_at": "2026-08-23T20:35:26.767Z",
-  "note": "re-arm against landed 60c2428d dist: prior stamp accidentally captured a lane-intermediate dist built with reverted config (no named chunks). Current dist has full advancedChunks set; total unchanged at 1671.5KB vs original 1704.7 pre-fix baseline.",
-  "prior_baseline": "budget-baseline-2026-08-23.json",
-  "prior_blessed_at": "2026-08-23T04:18:16.263Z",
-  "delta_vs_prior_kb": -33.2
+  "note": "re-arm against landed 60c2428d dist: prior stamp accidentally captured a lane-intermediate dist built with reverted config (no named chunks). Current dist has full advancedChunks set; total unchanged at 1671.5KB vs original 1704.7 pre-fix baseline. | prior-link healed 2026-08-23: same-day re-stamp had self-referenced (old write flow); carried 08-22 forward per new chain rule.",
+  "prior_baseline": "budget-baseline-2026-08-22.json",
+  "prior_blessed_at": null,
+  "delta_vs_prior_kb": -32.5
 }

@@ -16,6 +16,8 @@
  */
 
 import { readdir, stat, readFile, writeFile } from 'fs/promises'
+import { existsSync } from 'node:fs'
+import { execSync } from 'node:child_process'
 import { resolve, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -220,10 +222,29 @@ Exit codes (comparison mode):
         const prior = await findNewestBaseline()
         let priorMeta = {}
         let deltaVsPriorKb = null
-        if (prior) {
+        const out = resolve(ROOT, baselineFile)
+        let priorPath = prior
+        // Same-file re-stamp: pointing prior_baseline at ourselves would break
+        // the trend chain (caught live 2026-08-23). Carry the OLD file's own
+        // prior forward instead, so lineage skips the self-generation.
+        if (prior && resolve(prior) === out) {
             try {
-                const p = await readBaseline(prior)
-                priorMeta = { blessed_at: p.blessed_at || null, name: basename(prior) }
+                const selfOld = await readBaseline(prior)
+                const carried = selfOld.prior_baseline
+                    ? resolve(dirname(out), selfOld.prior_baseline)
+                    : null
+                if (carried && existsSync(carried)) {
+                    priorPath = carried
+                    console.log('  NOTE: same-file re-stamp — prior chain carried from', basename(carried))
+                }
+            } catch {
+                /* unreadable old self — write without linkage */
+            }
+        }
+        if (priorPath) {
+            try {
+                const p = await readBaseline(priorPath)
+                priorMeta = { blessed_at: p.blessed_at || null, name: basename(priorPath) }
                 if (Number.isFinite(Number(p.totalBytes)) && Number.isFinite(Number(meter.totalBytes))) {
                     deltaVsPriorKb = Number(((meter.totalBytes - p.totalBytes) / 1024).toFixed(1))
                 }
@@ -231,14 +252,31 @@ Exit codes (comparison mode):
                 /* corrupted prior — write without linkage */
             }
         }
-        const out = resolve(ROOT, baselineFile)
+        // Dist provenance (2026-08-23 lesson: a stamp captured a lane-
+        // intermediate dist and mis-flagged a healthy chunk for hours).
+        let gitHeadSha = null
+        let gitDirtyCount = null
+        try {
+            gitHeadSha = execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim()
+            gitDirtyCount = execSync('git status --porcelain', { cwd: ROOT }).toString().split('\n').filter(Boolean).length
+        } catch {
+            /* outside git — record nulls */
+        }
         await writeBaseline(out, meter, {
             blessed_at: new Date().toISOString(),
             note,
             prior_baseline: priorMeta.name || null,
             prior_blessed_at: priorMeta.blessed_at || null,
-            delta_vs_prior_kb: deltaVsPriorKb
+            delta_vs_prior_kb: deltaVsPriorKb,
+            git_head_sha: gitHeadSha,
+            git_dirty_count: gitDirtyCount
         })
+        if (gitDirtyCount > 0) {
+            console.warn(
+                `  WARNING: stamped from a DIRTY tree (${gitDirtyCount} modified files). ` +
+                    'A lane-intermediate dist can poison the numbers — consider re-stamping from clean HEAD.'
+            )
+        }
         console.log(`\nWrote stamped baseline → ${out}`)
         console.log(`  blessed_at=${new Date().toISOString()}`)
         console.log(`  note=${note}`)

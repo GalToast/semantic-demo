@@ -117,7 +117,10 @@ check('Manifest: portable data_path', manifest.data_path === 'data.dat')
 // for a different reason).
 let provCommit
 try {
-    provCommit = execSync('git show 018c2d2a -- public/data/semantic_space_layout_manifest.json', { cwd: ROOT, encoding: 'utf8' }).trim()
+    provCommit = execSync('git show 018c2d2a -- public/data/semantic_space_layout_manifest.json', {
+        cwd: ROOT,
+        encoding: 'utf8'
+    }).trim()
 } catch (_e) {
     provCommit = ''
 }
@@ -137,8 +140,23 @@ check(
 // the re-arm policy. Verify the stamp + prior linkage, not just that the file
 // exists (an unstamped re-baseline would silently reset quarterly trending).
 const b23 = JSON.parse(read('docs/budget-baseline-2026-08-23.json'))
-check('Budget: 08-23 baseline is stamped (blessed_at + note)', !!b23.blessed_at && !!b23.note, `blessed_at=${b23.blessed_at || 'MISSING'} note=${b23.note ? 'present' : 'MISSING'}`)
-check('Budget: 08-23 baseline links prior (08-22)', b23.prior_baseline === 'budget-baseline-2026-08-22.json', `prior=${b23.prior_baseline || 'MISSING'}`)
+check(
+    'Budget: 08-23 baseline is stamped (blessed_at + note)',
+    !!b23.blessed_at && !!b23.note,
+    `blessed_at=${b23.blessed_at || 'MISSING'} note=${b23.note ? 'present' : 'MISSING'}`
+)
+// Prior linkage must form a real chain: an existing file that is NOT the
+// baseline itself (same-day re-stamps self-referenced, caught live 2026-08-23).
+const b23Prior = b23.prior_baseline
+const b23PriorOk =
+    typeof b23Prior === 'string' &&
+    b23Prior !== 'budget-baseline-2026-08-23.json' &&
+    existsSync(resolve(ROOT, 'docs', b23Prior))
+check(
+    'Budget: 08-23 baseline links a real prior (not itself)',
+    b23PriorOk,
+    `prior=${b23Prior || 'MISSING'}`
+)
 
 console.log(`\nWITNESS: ${failCount()} of ${results.length} checks drifted from disk truth`)
 process.exit(failCount() === 0 ? 0 : 1)
