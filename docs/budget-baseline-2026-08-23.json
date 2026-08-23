@@ -1,193 +1,373 @@
 {
-  "timestamp": "2026-08-23T20:35:26.755Z",
+  "timestamp": "2026-08-23T04:18:16.248Z",
   "chunks": [
     {
-      "name": "three-D-QRIIjd.js",
-      "size": 770774
+      "name": "three.module-DOYciGzp.js",
+      "size": 734023
     },
     {
-      "name": "engine-three-DLPxyjA3.js",
-      "size": 463314
+      "name": "search.svelte-Dwwe4ivB.js",
+      "size": 157801
     },
     {
-      "name": "app-core-DFMQL030.js",
-      "size": 149686
+      "name": "index-CGz2b59f.js",
+      "size": 113979
     },
     {
-      "name": "index-DfFI-NLN.js",
-      "size": 95947
+      "name": "app.svelte-riBUrYg-.js",
+      "size": 99598
     },
     {
-      "name": "svelte-vendor-DOdLhHSG.js",
-      "size": 51133
+      "name": "three-postprocessing-TOyUY8Bw.js",
+      "size": 81751
     },
     {
-      "name": "mode-transition-deps-B6_R64Km.js",
-      "size": 41672
+      "name": "three-engine-core-BytgLAQO.js",
+      "size": 76363
     },
     {
-      "name": "JourneyChrome-BXWYJGMV.js",
-      "size": 16674
+      "name": "lifecycle-D8G-Ss1q.js",
+      "size": 39006
     },
     {
-      "name": "SearchResults-DrLyWPEx.js",
-      "size": 15852
+      "name": "focus-pocket-CkE9Yx0e.js",
+      "size": 24654
     },
     {
-      "name": "three.module-CaLOIJsA.js",
-      "size": 13513
+      "name": "LineSegments2-Cwk_LGTu.js",
+      "size": 17666
     },
     {
-      "name": "JourneyCompass-B0PHPOjn.js",
-      "size": 12900
+      "name": "JourneyChrome-DekJSQ-9.js",
+      "size": 17067
+    },
+    {
+      "name": "SearchResults-CqcCrRGj.js",
+      "size": 15991
+    },
+    {
+      "name": "semantic-overlay-DvW2lN9c.js",
+      "size": 15373
+    },
+    {
+      "name": "focus-ui-CLY6XLzg.js",
+      "size": 14753
+    },
+    {
+      "name": "legend-panel.svelte-Cge0mNIN.js",
+      "size": 13901
+    },
+    {
+      "name": "three.module-JEMHRsIP.js",
+      "size": 13514
+    },
+    {
+      "name": "camera.svelte-B6igqTIy.js",
+      "size": 13491
+    },
+    {
+      "name": "JourneyCompass-d4xX9rQV.js",
+      "size": 13039
     },
     {
       "name": "data-worker-cS80EeQd.js",
       "size": 12879
     },
     {
-      "name": "InfoPanel-egvBqsQ7.js",
-      "size": 8311
+      "name": "data-worker.js",
+      "size": 12879
     },
     {
-      "name": "SelectedBusinessDetails-BGderxS0.js",
-      "size": 8051
+      "name": "neighborhood-DXBl4a4F.js",
+      "size": 11663
     },
     {
-      "name": "FocusCard-BPk9g9pq.js",
-      "size": 7360
+      "name": "orchestration-0MjV6OkQ.js",
+      "size": 11585
     },
     {
-      "name": "ThreadInspector-BNV-QwOH.js",
-      "size": 7134
+      "name": "InfoPanel-BflNedXM.js",
+      "size": 11016
     },
     {
-      "name": "DemoChoreography-gp6hc-IA.js",
-      "size": 5650
+      "name": "thread-model-37SsfGyq.js",
+      "size": 10003
     },
     {
-      "name": "Canvas-D6EI0QWH.js",
-      "size": 5447
+      "name": "semantic-threads-Dg6ZbC7N.js",
+      "size": 9747
     },
     {
-      "name": "MapView-CwXcDpfm.js",
-      "size": 4761
+      "name": "global-bindings-B7BchqNG.js",
+      "size": 9710
     },
     {
-      "name": "WeatherWidget-CAJG4HvZ.js",
-      "size": 4162
+      "name": "semantic-lane-OD97AZKa.js",
+      "size": 9302
     },
     {
-      "name": "ErrorState-DySawqDz.js",
-      "size": 3689
+      "name": "canvas-interaction-chdmCzJ8.js",
+      "size": 8607
     },
     {
-      "name": "journey-CgFUnmlV.js",
-      "size": 2933
+      "name": "Canvas-D74CO8OA.js",
+      "size": 8570
     },
     {
-      "name": "FocusPocket-BzQZRBl2.js",
-      "size": 1489
+      "name": "SelectedBusinessDetails-C8nFgsxs.js",
+      "size": 8117
     },
     {
-      "name": "camera-controls-BvLMBfQI.js",
-      "size": 1176
+      "name": "FocusCard-Bn5pw8Ub.js",
+      "size": 7584
     },
     {
-      "name": "use-parity-attrs.svelte-al1lAcgr.js",
-      "size": 1078
+      "name": "ThreadInspector-BX7l0HMV.js",
+      "size": 7280
     },
     {
-      "name": "webgl-nACuFcld.js",
-      "size": 786
+      "name": "thread-inspector-webgl-DaOeoB5d.js",
+      "size": 6527
+    },
+    {
+      "name": "focus.svelte-DnskwTnz.js",
+      "size": 6512
+    },
+    {
+      "name": "route-trace-K90Evfqc.js",
+      "size": 6103
+    },
+    {
+      "name": "journey-Ckn1vPmQ.js",
+      "size": 6013
+    },
+    {
+      "name": "viewport.svelte-DGzoNTYJ.js",
+      "size": 5852
+    },
+    {
+      "name": "DemoChoreography-DC7Lac8p.js",
+      "size": 5776
+    },
+    {
+      "name": "canvas-hover-preview-BNi95zWw.js",
+      "size": 5613
+    },
+    {
+      "name": "cluster-filter-controller-iWGNQkM5.js",
+      "size": 5593
+    },
+    {
+      "name": "transition-effects-DTTrF69E.js",
+      "size": 5153
+    },
+    {
+      "name": "map-state-CsDcX9pK.js",
+      "size": 5148
+    },
+    {
+      "name": "loading-Cz3hhVCk.js",
+      "size": 5019
+    },
+    {
+      "name": "MapView-umf1nrrV.js",
+      "size": 4977
+    },
+    {
+      "name": "weather.svelte-C2nm11tn.js",
+      "size": 4767
+    },
+    {
+      "name": "audio-scape-3tIIIYyv.js",
+      "size": 4547
+    },
+    {
+      "name": "triggers-D6X3Q6VV.js",
+      "size": 4357
+    },
+    {
+      "name": "WeatherWidget-DDhSeK8B.js",
+      "size": 4293
+    },
+    {
+      "name": "test-compat.svelte-B22YW_ic.js",
+      "size": 4176
+    },
+    {
+      "name": "ErrorState-CENe_j6o.js",
+      "size": 3738
+    },
+    {
+      "name": "geo-data-eynrv9N4.js",
+      "size": 3719
+    },
+    {
+      "name": "journey.svelte-BYfqfjzp.js",
+      "size": 3532
+    },
+    {
+      "name": "search-abort-CtpjknxJ.js",
+      "size": 3529
+    },
+    {
+      "name": "route-arrival-overlay-adapter-BG6o5oqg.js",
+      "size": 3488
+    },
+    {
+      "name": "point-color-IqRmZ9if.js",
+      "size": 3009
+    },
+    {
+      "name": "webgl-DiraXcJZ.js",
+      "size": 2974
+    },
+    {
+      "name": "search-dispatch-DZrEeBY_.js",
+      "size": 2708
+    },
+    {
+      "name": "focus-pocket-thread-curve-CWP_Sq2S.js",
+      "size": 2603
+    },
+    {
+      "name": "error-messages-Bbhd74tb.js",
+      "size": 2456
+    },
+    {
+      "name": "config-CSE2jQzM.js",
+      "size": 2337
+    },
+    {
+      "name": "test-globals-CEzpoAGf.js",
+      "size": 2002
+    },
+    {
+      "name": "environment-CIpK0VY2.js",
+      "size": 1663
+    },
+    {
+      "name": "FocusPocket-fkWh-qnR.js",
+      "size": 1580
+    },
+    {
+      "name": "math-vec3-RZz4dq2l.js",
+      "size": 1571
+    },
+    {
+      "name": "webgl-utils-Bmwt1S9r.js",
+      "size": 1204
+    },
+    {
+      "name": "preload-helper-DbYNonRq.js",
+      "size": 1189
+    },
+    {
+      "name": "camera-controls-BObwl6Ng.js",
+      "size": 1164
+    },
+    {
+      "name": "use-parity-attrs.svelte-0BE7aS2B.js",
+      "size": 1079
+    },
+    {
+      "name": "webgl-context-q7w9QnDN.js",
+      "size": 1076
+    },
+    {
+      "name": "thread-lens-C0C4sejT.js",
+      "size": 985
+    },
+    {
+      "name": "scene-ready.svelte-ep52OMmi.js",
+      "size": 765
     },
     {
       "name": "humanize-DwZaZkA_.js",
       "size": 723
     },
     {
-      "name": "pocket-BvsdbNSc.js",
-      "size": 710
+      "name": "pocket-D88_-F3W.js",
+      "size": 709
     },
     {
-      "name": "route-arrival-overlay-adapter-DJ_PIwFB.js",
-      "size": 658
+      "name": "focus-panel-mode-DgVE1lEY.js",
+      "size": 573
     },
     {
-      "name": "thread-inspector-webgl-DOtDoZWM.js",
-      "size": 371
+      "name": "legend.svelte-vC-332L6.js",
+      "size": 538
     },
     {
-      "name": "semantic-overlay-4aMa6wdw.js",
-      "size": 345
+      "name": "app-lifecycle-Dgr3SukQ.js",
+      "size": 512
     },
     {
-      "name": "semantic-threads-BriN2h8x.js",
-      "size": 340
+      "name": "engine.svelte-BM5hnOtW.js",
+      "size": 494
     },
     {
-      "name": "scene-ready.svelte-BlqMmpiA.js",
-      "size": 293
+      "name": "semantic-threads-MmF67yJa.js",
+      "size": 332
     },
     {
-      "name": "canvas-interaction-OQxgnZLa.js",
-      "size": 238
+      "name": "journey-focus-timers-BpyW_APY.js",
+      "size": 256
     },
     {
-      "name": "three-postprocessing-DEFdQewn.js",
-      "size": 221
+      "name": "search-react-selectors-CsZvzXPA.js",
+      "size": 250
     },
     {
-      "name": "thread-settler-BCDFf4mt.js",
-      "size": 172
+      "name": "canvas-interaction-Bvztxd6L.js",
+      "size": 234
+    },
+    {
+      "name": "transition-B9eTy4k0.js",
+      "size": 177
     },
     {
       "name": "rolldown-runtime-H_PjY6_i.js",
       "size": 163
     },
     {
-      "name": "audio-scape-4Z4Q9jzx.js",
-      "size": 156
+      "name": "thread-settler-BMXr3wvg.js",
+      "size": 155
     },
     {
-      "name": "lifecycle-C-J0gJci.js",
-      "size": 150
+      "name": "debug-BZBSkmqm.js",
+      "size": 145
     },
     {
-      "name": "thread-manager-DJyf6MLs.js",
-      "size": 132
+      "name": "audio-scape-CSHBt7AB.js",
+      "size": 143
     },
     {
-      "name": "route-trace-DKbjHgmX.js",
-      "size": 123
+      "name": "thread-manager-BEVwpC-n.js",
+      "size": 126
     },
     {
-      "name": "url-writer-BfxrbbWm.js",
-      "size": 97
+      "name": "route-trace-D0FP0n6Z.js",
+      "size": 112
     },
     {
-      "name": "test-globals-CeIliSeB.js",
-      "size": 92
+      "name": "url-writer-CBY6Wed3.js",
+      "size": 98
     },
     {
-      "name": "point-color-BvC-qriS.js",
-      "size": 91
+      "name": "data-worker-Dr99kNpy.js",
+      "size": 86
     },
     {
-      "name": "triggers-B22GF6mQ.js",
-      "size": 85
-    },
-    {
-      "name": "data-worker-C7ZMTN9m.js",
-      "size": 64
+      "name": "disclose-version-BvIhFN19.js",
+      "size": 74
     }
   ],
-  "totalBytes": 1711595,
-  "cssBytes": 447873,
-  "grandBytes": 2159468,
-  "blessed_at": "2026-08-23T20:35:26.767Z",
-  "note": "re-arm against landed 60c2428d dist: prior stamp accidentally captured a lane-intermediate dist built with reverted config (no named chunks). Current dist has full advancedChunks set; total unchanged at 1671.5KB vs original 1704.7 pre-fix baseline. | prior-link healed 2026-08-23: same-day re-stamp had self-referenced (old write flow); carried 08-22 forward per new chain rule.",
+  "totalBytes": 1745609,
+  "cssBytes": 447574,
+  "grandBytes": 2193183,
+  "blessed_at": "2026-08-23T04:18:16.263Z",
+  "note": "C-lite effect-registry landed (291bf066): mode-transitions dispatcher decoupled from domain-store graphs; per-chunk rule green on fresh build. Total 1704.7KB = +0.7KB vs 08-22 (pre-slim baseline). First STAMPED baseline under the 2026-08-23 re-arm policy — quarterly trending starts here.",
   "prior_baseline": "budget-baseline-2026-08-22.json",
   "prior_blessed_at": null,
-  "delta_vs_prior_kb": -32.5
+  "delta_vs_prior_kb": 0.7
 }

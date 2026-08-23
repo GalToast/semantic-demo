@@ -746,89 +746,116 @@ export default defineConfig({
                 })
             }
         },
-        rolldownOptions: {
-            // Vite 8 runs on rolldown, which IGNORES function-form manualChunks
-            // (silently — no warning; the key is not forwarded by the
-            // rollupOptions compat layer). Found 2026-08-23 while root-causing
-            // mobile LCP #3: every named chunk below was missing from dist, and
-            // camera-choreography/* colocated into the boot-loaded search.svelte
-            // chunk, putting a static three.module import back on the cold path
-            // (~5.7s fetch pre-gesture on throttled 3G). Ported to rolldown's
-            // advancedChunks API under rolldownOptions, which vite forwards.
-            // Groups match in order; first hit wins.
+        rollupOptions: {
             output: {
-                advancedChunks: {
-                    groups: [
-                        // (a) Three.js vendor → isolated chunk, excluded from module
-                        // preload below so bytes are fetched on a dedicated request.
-                        { name: 'three', test: /node_modules[\\/]three[\\/]/ },
-                        // (c) Svelte runtime → shared vendor chunk. MUST be assigned
-                        // BEFORE engine-three: rolldown drops unmatched modules into the
-                        // chunk of their first importer — grouping engine modules first
-                        // hoisted svelte/internal INTO engine-three, so every component
-                        // chunk statically imported it, dragging the three vendor back
-                        // onto cold load (ErrorState→engine-three→three @ ~3.4s on 3G).
-                        // (c) Svelte runtime → shared vendor chunk, keeps the entry
-                        // index-*.js lean while every component shares one runtime.
-                        { name: 'svelte-vendor', test: /node_modules[\\/]svelte[\\/]/ },
-                        // App-shared core -> deterministic boot-side chunk. Without
-                        // this, rolldown first-importer placement drops these into
-                        // engine-three (engine modules import them too), forcing boot
-                        // chunks to statically import engine-three and re-loading the
-                        // three vendor pre-gesture.
-                        {
-                            name: 'app-core',
-                            test: /[\/]src[\/]lib[\/]utils[\/](?!camera-math-utils|three-textures|ui-presentation-three)|[\/]src[\/]lib[\/](state|types|workers|navigation|focus)[\/]|[\/]src[\/]lib[\/]data-(store|loader)\.ts|[\/]src[\/]lib[\/]orchestration[\/](event-bus|url-params)\.ts|[\/]src[\/]lib[\/]engine[\/](config|webgl-restore-ownership|camera-controls-restore)\./
-                        },
-                        // (a.2) P3-LCP (2026-08-21): isolate engine three-helpers so they
-                        // never co-bundle with boot chunks via shared deps.
-                        {
-                            name: 'engine-three',
-                            test: /[\\/]src[\\/]lib[\\/]engine[\\/]|[\\/]src[\\/]lib[\\/]journey[\\/](point-color|focus-pocket|route-trace|semantic-overlay|canvas-hit|canvas-node|thread-inspector-webgl|arrival-handoff|focus-anchor|webgl-utils|canvas-interaction)|[\\/]src[\\/]lib[\\/]utils[\\/](camera-math-utils|three-textures|ui-presentation-three)|[\\/]src[\\/]lib[\\/]ui[\\/]cluster-labels/
-                        },
-                        {
-                            name: 'ui-leaf',
-                            test: /[\\/]src[\\/]lib[\\/]stores[\\/]search-glows\.ts|[\\/]src[\\/]lib[\\/]journey[\\/]focus-ui\.ts/
-                        },
-                        // (b) Heavy mode-transition transitive deps → isolated chunk. The
-                        // mode-transitions dispatcher itself is tiny (~10KB src), but it
-                        // statically pulls in the entire navigation/orchestration/journey/search
-                        // cluster (the 212KB `mode-transitions.svelte-*.js` balloon). Route that
-                        // transitive closure into its own chunk so the dispatcher stays lean and
-                        // the heavy deps live in a clearly separated, cacheable artifact.
-                        //
-                        // W61 perf note: splitting this cluster further (boot-core vs
-                        // journey/search) does NOT defer bytes — the boot orchestration layer
-                        // (triggers.ts, url-state.ts, adapters.ts, compass-controller.ts,
-                        // lifecycle.ts) statically subscribes into journey/search at startup,
-                        // so any journey/search chunk is modulepreloaded with the entry
-                        // regardless. Real deflation needs a designed lazification pass
-                        // (convert orchestrator imports to dynamic), which collides with
-                        // active orchestration work — deferred.
-                        //
-                        // W61 update (2026-07-31, audit at HEAD ~5222e684): an empirical
-                        // magistral-small-latest lazify audit (ocw_f376f0a5) confirmed the
-                        // source-level dynamic-import conversion is ALSO boot-unsafe for
-                        // deep-links. The url-state helpers
-                        //   _frameCameraOnAnchor, _restoreFocusStateForAnchor,
-                        //   _restoreSearchFromParams
-                        // run via the PR-B2/B4 splash bypass at COLD BOOT for ?anchor/
-                        // ?record/?q deep-links — so they execute before any user gesture,
-                        // not just inside post-boot handlers as the audit assumed.
-                        // `await import(...)` inside the `:void` reg.schedule(500, () => {...})
-                        // callback those helpers use is a TS compile-break (no async context),
-                        // and accepting a focus-overlay flash on deep-link cold-load would
-                        // be a UX regression. Designed-eager is final unless deep-link-aware
-                        // async gating (overlay-flash tolerance) is intentionally added.
-                        // Audit details: harness failures.md key
-                        //   w61-mode-transition-deps-lazify-rejected.
-                        {
-                            name: 'mode-transition-deps',
-                            test: /[\\/]src[\\/]lib[\\/]stores[\\/](navigation\.svelte\.ts|navigation[\\/]|search\.svelte|focus\.svelte|journey\.svelte)|[\\/]src[\\/]lib[\\/]orchestration[\\/]|[\\/]src[\\/]lib[\\/]journey[\\/]|[\\/]src[\\/]lib[\\/]search[\\/]|navigation-actions/
-                        },
-                    ]
+                manualChunks(id) {
+                    const nid = id.replace(/\\/g, '/')
+                    // (a) Three.js engine → isolated chunk. It is loaded eagerly by the
+                    // WebGL scene path, but we keep it as its own named chunk and exclude
+                    // it from module preload (see modulePreload.resolveDependencies) so the
+                    // bytes are not inlined into the entry and are fetched on a dedicated
+                    // request rather than bloating the initial parse.
+                    if (nid.includes('node_modules/three/')) {
+                        return 'three'
+                    }
+                    // (a.2) P3-LCP (2026-08-21): isolate all engine three-helpers so they never
+                    // co-bundle with boot chunks (parity-attrs, app.svelte, etc.) via shared deps.
+                    if (nid.includes('/src/lib/engine/')) {
+                        return 'engine-three'
+                    }
+                    if (
+                        nid.includes('/src/lib/journey/point-color') ||
+                        nid.includes('/src/lib/journey/focus-pocket') ||
+                        nid.includes('/src/lib/journey/route-trace') ||
+                        nid.includes('/src/lib/journey/semantic-overlay') ||
+                        nid.includes('/src/lib/journey/canvas-hit') ||
+                        nid.includes('/src/lib/journey/canvas-node') ||
+                        nid.includes('/src/lib/journey/thread-inspector-webgl') ||
+                        nid.includes('/src/lib/journey/arrival-handoff') ||
+                        nid.includes('/src/lib/journey/focus-anchor') ||
+                        nid.includes('/src/lib/journey/webgl-utils') ||
+                        nid.includes('/src/lib/journey/canvas-interaction')
+                    ) {
+                        return 'engine-three'
+                    }
+                    if (
+                        nid.includes('/src/lib/stores/search-glows.ts') ||
+                        nid.includes('/src/lib/journey/focus-ui.ts')
+                    ) {
+                        return 'ui-leaf'
+                    }
+                    if (
+                        nid.includes('/src/lib/utils/camera-math-utils') ||
+                        nid.includes('/src/lib/utils/three-textures') ||
+                        nid.includes('/src/lib/utils/ui-presentation-three') ||
+                        nid.includes('/src/lib/ui/cluster-labels')
+                    ) {
+                        return 'engine-three'
+                    }
+                    // (b) Heavy mode-transition transitive deps → isolated chunk. The
+                    // mode-transitions dispatcher itself is tiny (~10KB src), but it
+                    // statically pulls in the entire navigation/orchestration/journey/search
+                    // cluster (the 212KB `mode-transitions.svelte-*.js` balloon). Route that
+                    // transitive closure into its own chunk so the dispatcher stays lean and
+                    // the heavy deps live in a clearly separated, cacheable artifact.
+                    //
+                    // W61 perf note: splitting this cluster further (boot-core vs
+                    // journey/search) does NOT defer bytes — the boot orchestration layer
+                    // (triggers.ts, url-state.ts, adapters.ts, compass-controller.ts,
+                    // lifecycle.ts) statically subscribes into journey/search at startup,
+                    // so any journey/search chunk is modulepreloaded with the entry
+                    // regardless. Real deflation needs a designed lazification pass
+                    // (convert orchestrator imports to dynamic), which collides with
+                    // active orchestration work — deferred.
+                    //
+                    // W61 update (2026-07-31, audit at HEAD ~5222e684): an empirical
+                    // magistral-small-latest lazify audit (ocw_f376f0a5) confirmed the
+                    // source-level dynamic-import conversion is ALSO boot-unsafe for
+                    // deep-links. The url-state helpers
+                    //   _frameCameraOnAnchor, _restoreFocusStateForAnchor,
+                    //   _restoreSearchFromParams
+                    // run via the PR-B2/B4 splash bypass at COLD BOOT for ?anchor/
+                    // ?record/?q deep-links — so they execute before any user gesture,
+                    // not just inside post-boot handlers as the audit assumed.
+                    // `await import(...)` inside the `:void` reg.schedule(500, () => {...})
+                    // callback those helpers use is a TS compile-break (no async context),
+                    // and accepting a focus-overlay flash on deep-link cold-load would
+                    // be a UX regression. Designed-eager is final unless deep-link-aware
+                    // async gating (overlay-flash tolerance) is intentionally added.
+                    // Audit details: harness failures.md key
+                    //   w61-mode-transition-deps-lazify-rejected.
+                    if (
+                        nid.includes('/src/lib/stores/navigation.svelte.ts') ||
+                        nid.includes('/src/lib/stores/navigation/') ||
+                        nid.includes('/src/lib/stores/search.svelte') ||
+                        nid.includes('/src/lib/stores/focus.svelte') ||
+                        nid.includes('/src/lib/stores/journey.svelte') ||
+                        nid.includes('/src/lib/orchestration/') ||
+                        nid.includes('/src/lib/journey/') ||
+                        nid.includes('/src/lib/search/') ||
+                        nid.includes('/src/lib/navigation-actions')
+                    ) {
+                        return 'mode-transition-deps'
+                    }
+                    // (c) Svelte runtime → isolated vendor chunk so it is not inlined into
+                    // the entry chunk. This keeps the entry `index-*.js` file smaller while
+                    // every Svelte component still shares one runtime chunk.
+                    if (nid.includes('node_modules/svelte/')) {
+                        return 'svelte-vendor'
+                    }
                 }
-            },
+            }
+        },
+        // W1 (2026-08-18): Suppress INEFFECTIVE_DYNAMIC_IMPORT for webgl.ts and
+        // route-trace.ts. Both are dynamically imported for lazy-load gating but
+        // also statically imported by peers in the same deps chunk, so Rollup's
+        // chunk-splitting cannot move them anywhere else. Converting to static
+        // imports would be a regression (eager-path coupling). Evidence: chunk
+        // graph shows both modules land in mode-transition-deps-nCuiURFI.js
+        // regardless; the empty wrapper chunks (webgl-DmIg9fI0.js,
+        // route-trace-BmJcpUHp.js) have zero modules. See
+        // tmp/build-warning-resolution/report.md for full audit.
+        rolldownOptions: {
             onwarn(warning, defaultHandler) {
                 if (warning.code === 'INEFFECTIVE_DYNAMIC_IMPORT') {
                     return
