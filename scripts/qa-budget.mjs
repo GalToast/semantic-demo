@@ -16,7 +16,7 @@
  */
 
 import { readdir, stat, readFile, writeFile } from 'fs/promises'
-import { resolve, dirname } from 'path'
+import { resolve, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
 
 const __DIR__ = dirname(fileURLToPath(import.meta.url))
@@ -129,8 +129,9 @@ async function readBaseline(file) {
     return JSON.parse(raw)
 }
 
-async function writeBaseline(file, meter) {
-    await writeFile(file, JSON.stringify(meter, null, 2) + '\n', 'utf8')
+async function writeBaseline(file, meter, meta) {
+    const stamped = { ...meter, ...meta }
+    await writeFile(file, JSON.stringify(stamped, null, 2) + '\n', 'utf8')
 }
 
 async function findNewestBaseline() {
@@ -157,9 +158,14 @@ qa-budget.mjs — deterministic chunk-size meter
 
 Usage:
   node scripts/qa-budget.mjs                              # print table, compare vs newest baseline
-  node scripts/qa-budget.mjs --baseline write <file>      # write current meter JSON to <file>
+  node scripts/qa-budget.mjs --baseline write <file> --note '...'   # stamp + bless baseline
   node scripts/qa-budget.mjs --baseline read  <file>      # compare current vs <file>
   node scripts/qa-budget.mjs --help
+
+Baseline discipline (2026-08-23 re-arm): every baseline write is STAMPED
+(blessed_at, note, prior_baseline, prior_blessed_at, delta_vs_prior_kb).
+Re-blessing within 90 days of the prior bless prints a RAPID RE-BASELINE
+notice — budget growth is trended across blessings, not reset per event.
 
 Exit codes (comparison mode):
   0  total JS <= baseline + 32 KB  (perf slack)
@@ -205,9 +211,43 @@ Exit codes (comparison mode):
             console.error('ERROR: --baseline write requires a file path')
             process.exit(2)
         }
+        const noteIdx = args.indexOf('--note')
+        if (noteIdx === -1 || !args[noteIdx + 1]) {
+            console.error('ERROR: --baseline write requires --note "<review note>" (2026-08-23 policy)')
+            process.exit(2)
+        }
+        const note = args[noteIdx + 1]
+        const prior = await findNewestBaseline()
+        let priorMeta = {}
+        let deltaVsPriorKb = null
+        if (prior) {
+            try {
+                const p = await readBaseline(prior)
+                priorMeta = { blessed_at: p.blessed_at || null, name: basename(prior) }
+                if (Number.isFinite(Number(p.totalBytes)) && Number.isFinite(Number(meter.totalBytes))) {
+                    deltaVsPriorKb = Number(((meter.totalBytes - p.totalBytes) / 1024).toFixed(1))
+                }
+            } catch {
+                /* corrupted prior — write without linkage */
+            }
+        }
         const out = resolve(ROOT, baselineFile)
-        await writeBaseline(out, meter)
-        console.log(`\nWrote baseline → ${out}`)
+        await writeBaseline(out, meter, {
+            blessed_at: new Date().toISOString(),
+            note,
+            prior_baseline: priorMeta.name || null,
+            prior_blessed_at: priorMeta.blessed_at || null,
+            delta_vs_prior_kb: deltaVsPriorKb
+        })
+        console.log(`\nWrote stamped baseline → ${out}`)
+        console.log(`  blessed_at=${new Date().toISOString()}`)
+        console.log(`  note=${note}`)
+        console.log(`  prior_baseline=${priorMeta.name || 'none'}  delta_vs_prior_kb=${deltaVsPriorKb ?? 'n/a'}`)
+        if (priorMeta.blessed_at) {
+            const days = (Date.now() - Date.parse(priorMeta.blessed_at)) / 86400000
+            console.log(`  POLICY-INFO: prior blessed ${days.toFixed(0)} days ago` +
+                (days < 90 ? ' — RAPID RE-BASELINE within the quarterly policy window' : ' — within quarterly cadence'))
+        }
         process.exit(0)
     }
 
@@ -227,6 +267,20 @@ Exit codes (comparison mode):
         const diff = s.totalBytes - jSSize
 
         console.log(`\n── Baseline comparison: ${target} ──`)
+        if (!base.blessed_at) {
+            console.log(
+                '  POLICY-WARN: this baseline has no blessed_at stamp (pre-2026-08-23 write). ' +
+                    'Re-bless it with --baseline write --note to re-arm trend tracking.'
+            )
+            if (base.prior_baseline || base.prior_blessed_at) {
+                console.log('  POLICY-INFO: prior_baseline=', base.prior_baseline, ' prior_blessed_at=', base.prior_blessed_at)
+            }
+        } else if (base.prior_blessed_at) {
+            const days = (Date.parse(base.blessed_at) - Date.parse(base.prior_blessed_at)) / 86400000
+            if (days >= 0 && days < 90) {
+                console.log(`  POLICY-WARN: RAPID RE-BASELINE — ${days.toFixed(0)}d after prior bless (quarterly cadence policy); note=${JSON.stringify(base.note || '')}`)
+            }
+        }
         console.log(
             `Baseline JS total: ${kb(jSSize)} KB  |  Current JS total: ${kb(s.totalBytes)} KB  |  Delta: ${diff >= 0 ? '+' : ''}${kb(diff)} KB`
         )
