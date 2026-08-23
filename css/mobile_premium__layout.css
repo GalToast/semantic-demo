@@ -892,7 +892,9 @@
        matching comment in css/progressive_disclosure.css. On mobile
        idle the <details>/<summary> toggle in Filters.svelte stays
        visible so users can tap to expand the filter rail. */
-    body.surface-idle #mode-chips,
+    /* #mode-chips intentionally NOT hidden either (A2-4: nav rail always
+       rendered; F4 memo expects the chip row to fit on idle). Hiding it
+       made search unreachable from the placeholder (W63 chip-invisible). */
     body.surface-idle .semantic-lane-assist,
     body.surface-idle .search-trail-cue,
     body.surface-idle #selected-card {

@@ -465,7 +465,8 @@
     body.surface-idle .semantic-lane-pill,
     body.surface-idle .semantic-lane-assist,
     body.surface-idle .search-hint,
-    body.surface-idle #mode-chips,
+    /* #mode-chips NOT hidden on idle — A2-4 nav rail always rendered; hiding
+       here made search unreachable from the mobile placeholder (W63). */
     body.surface-idle .rail-section {
         display: none;
     }
@@ -500,7 +501,10 @@
     body.surface-search .semantic-lane-pill,
     body.surface-search .search-trail-cue,
     body.surface-search .synthesize-trigger,
-    body.surface-search #mode-chips,
+    /* #mode-chips NOT hidden here: A2-4 audit closure keeps the nav rail
+       visible on every surface. Hiding it here (and at the second
+       surface-search group below) made chips unclickable after entering
+       search and broke T1-4's map-chip nav-sync contract. */
     body.surface-search .surprise-btn {
         display: none;
     }
@@ -938,10 +942,10 @@ body.surface-focus-search .controls .control-btn {
     body.surface-search .surprise-btn,
     body.surface-search .selected-card,
     body.surface-search #selected-card,
-    body.surface-search .selected-empty,
-    body.surface-search #mode-chips {
+    body.surface-search .selected-empty {
         display: none;
     }
+    /* #mode-chips removed from this group: see A2-4 note above. */
 
     body.surface-search .search-container.has-query {
         display: flex;
