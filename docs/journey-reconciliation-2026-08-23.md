@@ -38,7 +38,7 @@ masked by the timeout noise:
 
 | | Before | After |
 |---|---|---|
-| Failures | ~43–45 | **11** |
+| Failures | ~43–45 | **10** (F-search-8 fixed `049bf6f5`) |
 | Passes | ~37–50 | **71** |
 | Runtime | ~50 min (software) | **15.8 min** (D3D11) |
 | Failure signature | 60s splash timeouts (noise) | fast assertion/layout timeouts (signal) |
@@ -50,9 +50,10 @@ Contract gate: **51/51** before and after.
 Each is now a *real* test-vs-product mismatch, not infra noise. Sorted by
 confidence of root cause:
 
-1. **F-search-8** — `expect(score).toBeLessThanOrEqual(1)` fails: a search
-   result score exceeds 1.0. Likely a normalization bug in the scorer, not a
-   test threshold issue. Highest-confidence fix.
+1. ~~**F-search-8**~~ — FIXED (`049bf6f5`). The live API path returned raw
+   PHP lexical scores (51.3 for "coffee") straight into `data-result-score`.
+   `semantic-search-mapper.ts` now normalizes to `Math.min(1, score/100)`
+   (PHP scorer is percentage-like: name exact = 28). Test passes in 7.4s.
 2. **B-S7** — mobile 375px: `mode-chips` overlap the legend toggle
    (`chips {left:8, right:...}`). Real layout regression on the placeholder2d
    path.
