@@ -38,7 +38,7 @@ exposed`.
 
 |                   | Before                      | After                                          |
 | ----------------- | --------------------------- | ---------------------------------------------- |
-| Failures          | ~43–45                      | **8** (F-search-8 `049bf6f5`, B-S7 `22bc9ca1`) |
+| Failures          | ~43–45                    | **7** of 83 (arc: F-search-8, B-S7, W55, W51-h1, T1-4, W63 fixed; latest HEAD run 75P/7F/7.5min) |
 | Passes            | ~37–50                      | **71**                                         |
 | Runtime           | ~50 min (software)          | **15.8 min** (D3D11)                           |
 | Failure signature | 60s splash timeouts (noise) | fast assertion/layout timeouts (signal)        |
@@ -86,6 +86,33 @@ confidence of root cause:
 Items 1–3 are the highest-ROI fixes (pure logic / layout). 4–5 share a
 likely common cause (help-dialog × placeholder). 6–10 are mobile-sheet
 stacking. 11 is the demo replayer.
+
+## Session-2 triage (2026-08-23 late)
+
+Fixed after fresh-context triage on a clean-HEAD build:
+- **W51-mobile-h1** (`387530b6`): test waited for placeholder2d boot, but S5
+  auto-enter boots webgl on capable devices. Pinned `?placeholder=1`.
+- **T1-4 + W63** (`387530b6` + `c260abec`): the `.mode-grid`→`#mode-chips`
+  rename (19c030c9, Aug-18) re-armed dormant hide rules at **five sites**
+  (mobile_premium__state surface-search, strands ×2 search, strands idle,
+  mobile_premium__layout idle) — contradicting the A2-4 audit closure
+  ("nav rail always rendered"). Chips were unclickable on search/idle.
+  Removed #mode-chips from all five groups; immersive surfaces
+  (focus-search / semantic-dive / map-composites) intentionally keep their
+  hides. Resurrection-guard lesson recorded: when a selector rename lands,
+  sweep ALL grouped hide-rules, not just the first match.
+
+Remaining 7 (fresh error-contexts under `test-results/` from the
+TEST_BASE_URL=worktree-server run): dive-sibling pair, W64 sheet-resync,
+B-A1 count overshoot, W53-#6 FocusCard dismiss (first appearance —
+flakiness candidate), 5o demo replay, mobile-focus list-toggle, C1.
+
+Isolated-run recipe (main repo contested by parallel lanes):
+```bash
+git worktree add ../se-journey-head HEAD && cd ../se-journey-head   && npm install && npm run build:svelte
+node tmp/journey-head-server.mjs &   # serves worktree on :8797
+TEST_BASE_URL=http://127.0.0.1:8797 SEMANTIC_USE_D3D11=1   npx playwright test tests/widget-journey.spec.js --workers=1
+```
 
 ## Known phantom signature: non-booting dist
 
