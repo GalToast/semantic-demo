@@ -154,3 +154,11 @@ subagent-outbox/
 # test-only scaffold: audit reference, NOT a runtime/deploy asset (W44)
 public/data/qwen3_embeddings.npy
 public/data/qwen3_embeddings_meta.json
+
+# privacy split (2026-08-23): business data assets live ONLY in the private
+# companion repo GalToast/semantic-explorer-data — restore via npm run fetch:data
+public/data/semantic_threads.dat
+public/data/semantic_threads_ui.dat
+public/data/leadEnrichment.public.json
+src/data.dat
+.data-repo-cache/
