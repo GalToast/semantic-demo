@@ -17,37 +17,37 @@ masked by the timeout noise:
 2. **Boot-shortcut clobbering** (W51). `__PLAYWRIGHT__` auto-fired
    `signalReady()` at boot, which forced `renderKind='webgl'` and skipped the
    real splash/placeholder flow — masking the fact that automated desktop
-   sessions are *designed* to boot into `placeholder2d`
+   sessions are _designed_ to boot into `placeholder2d`
    (`responsive-renderer.ts:133-146`), whose CTA is the entry point.
 3. **Test-globals gated too narrowly**. `app-init.ts` installed
    `window.__navActions__` behind `isPlaywrightEnvironment()` (explicit flag),
    so specs relying on `navigator.webdriver` alone never exposed the
    globals — 13 of the failures were `__navActions__.focusOnNode is not
-   exposed`.
+exposed`.
 
 ## What changed
 
-| Change | Where | Effect |
-|---|---|---|
-| Update stale CTA locator (12 files) | `tests/*.spec.js`, `tests/unit-active/*.test.ts` | CTA found again |
+| Change                                       | Where                                                                                                               | Effect                                                                                     |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Update stale CTA locator (12 files)          | `tests/*.spec.js`, `tests/unit-active/*.test.ts`                                                                    | CTA found again                                                                            |
 | Gate boot-shortcut behind `?contract-boot=1` | `src/App.svelte`, `src/lib/orchestration/wait-for-gesture.ts` (shared `isContractBootTest()` in `app-lifecycle.ts`) | Journeys run the real splash→CTA flow; the 10 contract consumers keep instant-mount chrome |
-| Broaden test-globals gate | `src/lib/orchestration/app-init.ts` `isPlaywrightEnvironment()` → `isAutomatedBrowserSession()` | `__navActions__` exposed for any WebDriver session |
-| Default gate to D3D11 | `scripts/qa-journey-headless.mjs` | Software-WebGL garbage (51 min) no longer the default |
+| Broaden test-globals gate                    | `src/lib/orchestration/app-init.ts` `isPlaywrightEnvironment()` → `isAutomatedBrowserSession()`                     | `__navActions__` exposed for any WebDriver session                                         |
+| Default gate to D3D11                        | `scripts/qa-journey-headless.mjs`                                                                                   | Software-WebGL garbage (51 min) no longer the default                                      |
 
 ## Result
 
-| | Before | After |
-|---|---|---|
-| Failures | ~43–45 | **8** (F-search-8 `049bf6f5`, B-S7 `22bc9ca1`) |
-| Passes | ~37–50 | **71** |
-| Runtime | ~50 min (software) | **15.8 min** (D3D11) |
-| Failure signature | 60s splash timeouts (noise) | fast assertion/layout timeouts (signal) |
+|                   | Before                      | After                                          |
+| ----------------- | --------------------------- | ---------------------------------------------- |
+| Failures          | ~43–45                      | **8** (F-search-8 `049bf6f5`, B-S7 `22bc9ca1`) |
+| Passes            | ~37–50                      | **71**                                         |
+| Runtime           | ~50 min (software)          | **15.8 min** (D3D11)                           |
+| Failure signature | 60s splash timeouts (noise) | fast assertion/layout timeouts (signal)        |
 
 Contract gate: **51/51** before and after.
 
 ## Remaining 11 — triaged worklist
 
-Each is now a *real* test-vs-product mismatch, not infra noise. Sorted by
+Each is now a _real_ test-vs-product mismatch, not infra noise. Sorted by
 confidence of root cause:
 
 1. ~~**F-search-8**~~ — FIXED (`049bf6f5`). The live API path returned raw
@@ -67,8 +67,10 @@ confidence of root cause:
 4. **W51-mobile-h1** — placeholder2d path renders two H1s (help-dialog +
    placeholder). Likely the help-dialog auto-open interacting with the
    placeholder title.
-5. **W55 help-dialog** (smoke) — auto-open/Escape/chip-click sequence times
-   out at 15s. Probably the same help-vs-splash interaction.
+5. ~~**W55 help-dialog**~~ — FIXED. The test was *designed* around the old
+   boot-shortcut auto-fire (its comment says clicking the CTA would race
+   the auto-open $effect). Added `&contract-boot=1` to its URL to restore
+   the behavior it depends on; passes in 29.8s.
 6. **T1-4** — mode chip clicks don't sync nav state (`setJourneyPhase` +
    `currentView`). Real nav-state drift.
 7. **C1** — semantic dive doesn't win over trail in compass phase

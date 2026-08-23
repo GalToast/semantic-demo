@@ -212,7 +212,7 @@ test.describe('Journey smoke (no WebGL engine)', () => {
             }
         })
 
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&webgl=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&webgl=1&contract-boot=1`, { waitUntil: 'domcontentloaded' })
 
         // In an automated session the gesture monitor auto-fires engineReady at
         // t=0 (wait-for-gesture.ts 'skip gesture wait in automated tests'), so
