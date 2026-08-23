@@ -102,6 +102,24 @@ Fixed after fresh-context triage on a clean-HEAD build:
   hides. Resurrection-guard lesson recorded: when a selector rename lands,
   sweep ALL grouped hide-rules, not just the first match.
 
+Session-3 (same day): **boot-blocker found + reverted.** Lane commit
+60c2428d (advancedChunks regroup) deadlocked rolldown-runtime silently -
+all assets 200, zero errors, main.ts never ran (see failure memory:
+'rolldown advancedChunks silent boot hang'). Reverted in `33169fb6` after
+A/B proof; lane's budget re-stamp against the non-booting dist was undone
+with it (`4ad8a825` re-aligned). Lesson: size/budget gates pass on a dist
+that never boots - add a boot smoke to the gate chain.
+
+Two more fixed after healthy-boot triage (`bcd08f5c`): list-toggle
+(deep-link self-entry skips any CTA stage) and dive-sibling (?q= lands on
+search surface; select the result before asserting focus-search chrome).
+
+Remaining 5: C1 compass-phase emission (real drift - Inside radio path
+does not flip #journey-compass[data-phase] to 'inside'; needs dedicated
+dive-choreography investigation), W64 sheet-resync, B-A1 count overshoot,
+W53-#6 FocusCard dismiss (flaky candidate), 5o demo replay.
+
+Original session-2 notes:
 Remaining 7 (fresh error-contexts under `test-results/` from the
 TEST_BASE_URL=worktree-server run): dive-sibling pair, W64 sheet-resync,
 B-A1 count overshoot, W53-#6 FocusCard dismiss (first appearance —
