@@ -60,8 +60,16 @@ check(
     existsSync(resolve(ROOT, 'docs', 'ops', 'data-asset-distribution-decision.md'))
 )
 const dataDir = resolve(ROOT, 'dist', 'svelte', 'data')
-check('P4: dist/svelte/data has .br twins', existsSync(resolve(dataDir, 'semantic_threads.dat.br')))
-check('P4: dist/svelte/data plains restored for dev', existsSync(resolve(dataDir, 'semantic_threads.dat')))
+// DURABLE check (2026-08-23): the plain .dat is build-DELETED by the
+// compression gate's closeBundle, so it only exists transiently after
+// `npm run serve`. What's durable is the MECHANISM: the decompress helper
+// exists, `npm run serve` wires it, and the .br twin ships in dist. Testing
+// the transient plain would fail in CI after every build - a mis-specified
+// claim, not a real regression.
+const pkgJson = read('package.json')
+check('P4: decompress-data-twins helper exists', existsSync(resolve(ROOT, 'scripts', 'decompress-data-twins.mjs')))
+check('P4: npm run serve wires the decompress helper', /"serve"[\s\S]*?decompress-data-twins/.test(pkgJson))
+check('P4: dist/svelte/data has .br twin', existsSync(resolve(dataDir, 'semantic_threads.dat.br')))
 
 // P6 — legacy URL redirect present (origin-verified 2026-08-23)
 check(
