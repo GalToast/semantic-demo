@@ -13,8 +13,14 @@ const testServerPort = Number(env.TEST_SERVER_PORT || 8796)
 if (!Number.isInteger(testServerPort) || testServerPort < 1024 || testServerPort > 65535) {
     throw new Error(`TEST_SERVER_PORT must be an integer between 1024 and 65535 (received ${testServerPort})`)
 }
-if (env.SEMANTIC_FORCE_WEBGL_SOFTWARE == null && env.SEMANTIC_USE_D3D11 !== '1') {
-    env.SEMANTIC_FORCE_WEBGL_SOFTWARE = '1'
+// Default to the hardware renderer. SwiftShader (software WebGL) is the
+// historical default "for determinism on laptops", but on this machine it
+// produces garbage: a full journey run balloons to ~51 min with the scene
+// never settling (verified via tmp/journey-full-*.log). D3D11 on the RTX
+// 4050 + Intel UHD settles in ~16 min. Software is still available as an
+// explicit opt-in for environments without a physical GPU.
+if (env.SEMANTIC_USE_D3D11 !== '0' && env.SEMANTIC_FORCE_WEBGL_SOFTWARE == null) {
+    env.SEMANTIC_USE_D3D11 = '1'
 }
 if (env.PLAYWRIGHT_LOW_CONTENTION == null) {
     env.PLAYWRIGHT_LOW_CONTENTION = '1'
