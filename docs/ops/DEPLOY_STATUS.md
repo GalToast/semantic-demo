@@ -6,6 +6,32 @@ type: project
 
 # Deploy Status (2026-06-03)
 
+> ## CURRENT STATE — 2026-08-22 (see tmp/prod-readiness-findings.md for the item register)
+>
+> **Host model:** origin-only deploy to mccullough.cloud (shared Apache/LiteSpeed); repo-root
+> `.htaccess` + `dist/` + `data/` artifacts + `fonts/`. Static precompressed twins (.br/.gz)
+> negotiated by flat top-level FilesMatch blocks (P1 shipped, verified 6/6 via origin-side
+> `qa-deploy-verify`); prod shell + fonts verified live (P2).
+>
+> **Data distribution (P4, decision: docs/ops/data-asset-distribution-decision.md):** twins ship
+> into remote `data/` (app fetch path) — `semantic_threads*.dat`, `leadEnrichment.public.json`,
+> `semantic_space_layout_manifest.json` (paths now portable basenames — do NOT re-introduce
+> absolute paths, see 018c2d2a). Prod journey verified green 2026-08-22 (threads 8406/8406,
+> focus + walk strip + neighbor cards; mobile FCP 1.9s / LCP 7.0s).
+>
+> **LOCAL GOTCHA (added by ui-bugfix lane 2026-08-23):** `dist/svelte/data/` ships
+> compression-only (.br/.gz), and the local PHP built-in server (port 8795) does NOT
+> negotiate encodings — plain data URLs 404 → `semanticThreadsStatus 'failed'` → silent
+> geometric-fallback that masquerades as UI bugs ("0 related businesses"). Until the lane
+> picks dev-plain-twins vs local-negotiation, decompress twins after each rebuild
+> (`node -e "...zlib.brotliDecompressSync..."`) — `scripts/qa-server.mjs` now negotiates on
+> the stat-miss path as a stopgap.
+>
+> **Registers:** campaign findings/decisions → `tmp/prod-readiness-findings.md` (F/P items with
+> owners); deploy verification → `scripts/qa-deploy-verify.mjs --via-origin` (WAF-host trusts
+> origin probes only). The entries BELOW are the historical sweep log (Sweep 32+, 2026-06) and
+> are archival — do not read them as current architecture (pre-Svelte-5 builds, `dist/bundle.js`).
+
 ## Bug Sweep 32 (2026-06-04) — NAICS-augmented data.dat
 
 **Scope:** Land Option A from the sweep 31 plan — add a NAICS column to `data.dat` so the local search code can disambiguate the cluster-12 misclassifications (aviation schools showing in childcare search). **Local work, no subagents.**
