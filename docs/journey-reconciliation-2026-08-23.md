@@ -87,6 +87,18 @@ Items 1–3 are the highest-ROI fixes (pure logic / layout). 4–5 share a
 likely common cause (help-dialog × placeholder). 6–10 are mobile-sheet
 stacking. 11 is the demo replayer.
 
+## Known phantom signature: non-booting dist
+
+If journey failures show `locator.click: element is not visible` on
+`.mode-chip` (or anything waiting on chrome that never appears), FIRST
+verify the served dist actually boots: load any page and check that
+`#app` has children beyond the static `#app-loading-placeholder`. A dirty
+parallel-lane working tree can produce a build where the app never mounts
+(verified 2026-08-23: lane WIP stuck boot at the placeholder on ALL
+viewports while clean HEAD mounted fine). Re-running the suite against a
+non-booting dist produces garbage failures — including re-failing tests
+that pass on a good build (W63/W64 did exactly that).
+
 ## How to run
 
 ```bash
