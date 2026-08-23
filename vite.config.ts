@@ -6,6 +6,7 @@ import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:
 import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'url'
 import { basename, dirname, extname, join, normalize, resolve } from 'path'
+import { tmpdir } from 'os'
 import { promisify } from 'node:util'
 import { brotliCompress, gzip, constants as zlibConstants } from 'node:zlib'
 import { transform as lightningTransform } from 'lightningcss'
@@ -625,7 +626,9 @@ function chunkGraphAnalyzerPlugin(): Plugin {
                 }
             }
             // Write outside project dir so parallel-session builds can't overwrite it.
-            await writeFile('C:/Users/HP/chunk-graph-latest.json', JSON.stringify(graph, null, 2))
+            // os.tmpdir() keeps that guarantee AND exists on CI runners — the hardcoded
+            // C:/Users/HP path ENOENT'd them (all Aug-12 runs red).
+            await writeFile(join(tmpdir(), 'semantic-chunk-graph-latest.json'), JSON.stringify(graph, null, 2))
         }
     }
 }
