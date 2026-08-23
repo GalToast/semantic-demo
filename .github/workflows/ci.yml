@@ -111,6 +111,37 @@ jobs:
             - run: npm ci
             - run: npm run verify:3d-tests
 
+    gates:
+        # Campaign gates re-armed 2026-08-23: the findings-register witness and
+        # the stamped budget baseline. These are the checks that had gone soft
+        # (a wrong cited fact shipped in F6; a re-baseline that silently reset
+        # the growth trend). Full history is required: the witness re-derives
+        # prose claims via `git ls-files` / `git show`.
+        # NOTE: verify-semantic-provenance.mjs is deliberately NOT here - it is
+        # an operator step on the builder machine (needs the index-build dir)
+        # and SKIP-FAILs (exit 1) when that env is absent.
+        name: Campaign Gates
+        runs-on: ubuntu-latest
+        needs: [build]
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+            - run: npm ci
+            - name: Restore build artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: dist-svelte
+                  path: dist/svelte/
+            - name: "Witness: re-derive every cited claim from disk + git"
+              run: npm run check:findings-witness
+            - name: Budget gate vs stamped baseline
+              run: node scripts/qa-budget.mjs
+
     test-integration:
         # Keep the automatic deploy gate deterministic and resource-bounded.
         # The full Playwright inventory remains available through
@@ -167,6 +198,7 @@ jobs:
             - lint-nav-mirror
             - test-contract-smoke
             - test-3d-admission
+            - gates
         steps:
             - name: Restore verified build artifact
               uses: actions/download-artifact@v4
