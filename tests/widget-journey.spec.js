@@ -2424,7 +2424,12 @@ test.describe('Widget journey', () => {
         // not two (App's "Semantic Explorer — ..." + Placeholder2D's
         // "Semantic Explorer Preview").
         await page.setViewportSize({ width: 375, height: 667 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        // Force the placeholder path explicitly (?placeholder=1). Since S5
+        // auto-enter landed, a capable device (D3D11 headless GL) boots
+        // renderKind=webgl on mobile, so waiting for the placeholder2d body
+        // class timed out every run. The invariant under test is the
+        // placeholder-path a11y contract (one visible H1), so pin the boot.
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&placeholder=1`, { waitUntil: 'domcontentloaded' })
 
         // Wait for hydration + renderKind=placeholder2d to take effect
         await page.waitForFunction(() => document.body.classList.contains('render-kind-placeholder2d'), null, {

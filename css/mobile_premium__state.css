@@ -1725,7 +1725,12 @@
     body.surface-search #btn-panel,
     body.surface-search #btn-share-view,
     body.surface-search #btn-legend,
-    body.surface-search #mode-chips,
+    /* #mode-chips intentionally NOT hidden here. Hiding the rail on
+       surface-search resurrected exactly what the A2-4 UX audit closure
+       removed (2026-06-16: "mode chips are always visible"), and made the
+       map chip unreachable after entering search (T1-4 waitFor-visible
+       timeout). Utility buttons may still yield the stage; the nav rail
+       stays. */
     body.surface-search #mode-grid,
     body.surface-search .controls {
         opacity: 0;
