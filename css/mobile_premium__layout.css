@@ -494,6 +494,26 @@
         top: 216px;
     }
 
+    // The idle (placeholder2d) surface was missing the vertical-rail `top`
+    // values that the non-idle surfaces get above. Without them the toggles
+    // fell back to layout_base.css' non-map rule (top:10px), landing inside
+    // the header band and overlapping the mode-chips rail (B-S7: chips
+    // {left:8,right:315,top:56,bottom:100} vs legend at right:14px).
+    // Mirror the non-idle rail so the toggles sit BELOW the chip row on the
+    // placeholder surface too.
+    body.surface-idle[data-panel-surface='idle'] .share-toggle {
+        top: 60px;
+    }
+    body.surface-idle[data-panel-surface='idle'] .legend-toggle {
+        top: 112px;
+    }
+    body.surface-idle[data-panel-surface='idle'] #btn-keyboard-help {
+        top: 164px;
+    }
+    body.surface-idle[data-panel-surface='idle'] #btn-app-help {
+        top: 216px;
+    }
+
     body.surface-idle[data-panel-surface='idle'] #btn-keyboard-help {
         top: 164px;
     }
