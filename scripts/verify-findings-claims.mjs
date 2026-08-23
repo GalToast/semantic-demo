@@ -10,9 +10,12 @@
  *   node scripts/verify-findings-claims.mjs
  *
  * Exit 0 = every checked claim matches disk truth; 1 = drift (read the FAIL lines).
- * NOTE: this checks the ARTIFACTS the register cites — not the register's prose.
+ * NOTE: this checks the ARTIFACTS the register cites AND the register's prose
+ * claims that are machine-derivable (git history, stamps) — the F6 failure was
+ * a wrong fact in the PROSE, so artifact-only coverage cannot catch it.
  */
 import { existsSync, readFileSync } from 'node:fs'
+import { execSync } from 'node:child_process'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -49,6 +52,12 @@ const gi = read('.gitignore')
 check('F6: qwen3 .npy still gitignored', /public\/data\/qwen3_embeddings\.npy/.test(gi))
 check('F6: qwen3 no longer in public/data', !existsSync(resolve(ROOT, 'public', 'data', 'qwen3_embeddings.npy')))
 check('F6: fixture preserved at tmp/fixtures', existsSync(resolve(ROOT, 'tmp', 'fixtures', 'qwen3_embeddings.npy')))
+// F6 (PROSE CLAIM — the fact that was WRONG in the register) — "qwen3 was
+// never git-tracked". Re-derive from git: the fixture's presence on disk only
+// proves it exists today, not that it was never committed. This is the exact
+// claim F6 got wrong, so it gets its own machine check.
+const gitTracked = execSync('git ls-files public/data/qwen3_embeddings.npy', { cwd: ROOT, encoding: 'utf8' }).trim()
+check('F6: qwen3 was never git-tracked (git ls-files empty)', gitTracked === '', `tracked=${gitTracked || '(none)'}`)
 
 // P1 — flat FilesMatch compression rules in deployed .htaccess
 const ht = read('.htaccess')
@@ -76,6 +85,20 @@ check(
     'P6: legacy 308 redirect in .htaccess',
     /Redirect 308 \/semantic-demo\/vector-explorer-polished\.html \/semantic-demo\/index\.html/.test(ht)
 )
+// P6 (PROSE CLAIM) — "already implemented (5841957a 308 redirect)". The redirect
+// being present today does not prove WHICH commit added it; verify the cited
+// commit exists and actually touched .htaccess.
+let p6Commit
+try {
+    p6Commit = execSync('git show --stat --oneline 5841957a -- .htaccess', { cwd: ROOT, encoding: 'utf8' }).trim()
+} catch (_e) {
+    p6Commit = ''
+}
+check(
+    'P6: commit 5841957a exists and touched .htaccess',
+    p6Commit.length > 0 && /\.htaccess/.test(p6Commit),
+    p6Commit || 'commit 5841957a not found / did not touch .htaccess'
+)
 
 // P7 — honest pill copy + guard test present
 check('P7: rail-status pill is honest (no "Demo data")', !/Demo data/.test(read('src/lib/rail/rail-status.ts')))
@@ -88,12 +111,34 @@ check(
 const manifest = JSON.parse(read('public/data/semantic_space_layout_manifest.json'))
 check('Manifest: no index_dir shipped', !('index_dir' in manifest))
 check('Manifest: portable data_path', manifest.data_path === 'data.dat')
+// Provenance (PROSE CLAIM) — "the honesty gate died by cleanup (018c2d2a)".
+// Verify the cited commit actually removed index_dir from the manifest, rather
+// than trusting that index_dir is absent today (it could have been absent
+// for a different reason).
+let provCommit
+try {
+    provCommit = execSync('git show 018c2d2a -- public/data/semantic_space_layout_manifest.json', { cwd: ROOT, encoding: 'utf8' }).trim()
+} catch (_e) {
+    provCommit = ''
+}
+check(
+    'Provenance: 018c2d2a removed index_dir from the manifest',
+    provCommit.length > 0 && /index_dir/.test(provCommit),
+    provCommit ? 'removed index_dir' : '018c2d2a did not touch the manifest / no index_dir diff'
+)
 
 // P5 — semantic lane supervisor knobs exist
 check(
     'P5: semantic lane restart cooldown exists',
     /SEMANTIC_LANE_RESTART_COOLDOWN_SECONDS/.test(read('api/config.php'))
 )
+
+// Budget (PROSE CLAIM) — the 2026-08-23 baseline is the first STAMPED one under
+// the re-arm policy. Verify the stamp + prior linkage, not just that the file
+// exists (an unstamped re-baseline would silently reset quarterly trending).
+const b23 = JSON.parse(read('docs/budget-baseline-2026-08-23.json'))
+check('Budget: 08-23 baseline is stamped (blessed_at + note)', !!b23.blessed_at && !!b23.note, `blessed_at=${b23.blessed_at || 'MISSING'} note=${b23.note ? 'present' : 'MISSING'}`)
+check('Budget: 08-23 baseline links prior (08-22)', b23.prior_baseline === 'budget-baseline-2026-08-22.json', `prior=${b23.prior_baseline || 'MISSING'}`)
 
 console.log(`\nWITNESS: ${failCount()} of ${results.length} checks drifted from disk truth`)
 process.exit(failCount() === 0 ? 0 : 1)
