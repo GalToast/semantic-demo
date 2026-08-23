@@ -19,7 +19,7 @@ async function bootApp(page) {
         waitUntil: 'domcontentloaded'
     })
 
-    const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+    const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]').first()
     await explore.waitFor({ state: 'visible', timeout: 40000 })
     await explore.click()
 

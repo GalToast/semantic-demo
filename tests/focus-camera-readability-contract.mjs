@@ -11,7 +11,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { inflateSync } from 'node:zlib';
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
+const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1&contract-boot=1';
 const TARGET_URL = process.env.FOCUS_CAMERA_URL || DEFAULT_URL;
 const KNOWN_FOCUS_INDEX = Number(process.env.FOCUS_CAMERA_INDEX || 42);
 const OUT_DIR = path.resolve(process.cwd(), 'tmp', 'focus-readability-contract');

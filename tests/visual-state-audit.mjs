@@ -56,6 +56,7 @@ const launchOptions = {
 function stableUrl(url) {
     const next = new URL(url)
     next.searchParams.set('nodemo', '1')
+    next.searchParams.set('contract-boot', '1')
     return next.toString()
 }
 

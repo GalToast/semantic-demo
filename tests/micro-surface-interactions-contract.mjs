@@ -36,6 +36,7 @@ const states = [
 function withParams(baseUrl, params) {
     const url = new URL(baseUrl)
     url.searchParams.set('nodemo', '1')
+    url.searchParams.set('contract-boot', '1')
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value)
     return url.toString()
 }

@@ -21,7 +21,7 @@
   import { useSurfaceComposition } from '@lib/ui/use-surface-composition.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
-  import { removeStaticPlaceholder, computeDevToolsVisible, isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts';
+  import { removeStaticPlaceholder, computeDevToolsVisible, isPlaywrightEnvironment, isContractBootTest } from '@lib/app/app-lifecycle.ts';
   import { createAppBootHandlers } from '@lib/app/app-event-handlers.ts';
   import { focusSearchInputUntilLanded } from '@lib/app/app-render.ts';
 
@@ -135,7 +135,15 @@
   if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
     requestIdleCallback(() => legacyCompassSurfaceLazy.ensure(true), { timeout: 3000 })
   }
-  if (isPlaywrightEnvironment()) {
+  // Contract-boot mode (F12 journey reconciliation): Playwright-driven
+  // CONTRACT/surface checks need every pinned component mounted + engineReady
+  // without a gesture, so they opt in via ?contract-boot=1. Journey specs
+  // deliberately do NOT — they exercise the real splash → CTA → search/focus
+  // flow, which was structurally unpassable while this shortcut fired on the
+  // bare __PLAYWRIGHT__ flag. Shared predicate also gates the gesture-monitor
+  // auto-fire (wait-for-gesture.ts).
+  const contractBoot = isContractBootTest()
+  if (contractBoot) {
     mapViewLazy.ensure(true)
     legacyCompassSurfaceLazy.ensure(true)
     threadInspectorLazy.ensure(true)    // Contract tests need #canvas-container and #map-container in the DOM.
@@ -154,7 +162,9 @@
     journeyChromeLazy.ensure(true)
     focusCardLazy.ensure(true)
   }
-  const isPlaywright = isPlaywrightEnvironment();
+  // Downstream template gates (MapView render fallback) follow the same
+  // narrowed contract-boot semantics.
+  const isPlaywright = contractBoot;
 
   // W46-B2b: scheduleIdleComponentImport was moved to lazy-component.svelte.ts
   // as scheduleIdleImport, used internally by createLazyComponent. No call

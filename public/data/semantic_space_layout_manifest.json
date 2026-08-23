@@ -1,1 +1,10 @@
-{"generated_at":"2026-06-04T13:39:36.993806+00:00","method":"qwen_embedding_pca_3d_with_semantic_neighbor_relaxation","data_path":"data.dat","thread_path":"semantic_threads_ui.dat","rows":8406,"edges":100872,"iterations":180,"edge_limit":12}
+{
+    "generated_at": "2026-06-04T13:39:36.993806+00:00",
+    "method": "qwen_embedding_pca_3d_with_semantic_neighbor_relaxation",
+    "data_path": "data.dat",
+    "thread_path": "semantic_threads_ui.dat",
+    "rows": 8406,
+    "edges": 100872,
+    "iterations": 180,
+    "edge_limit": 12
+}

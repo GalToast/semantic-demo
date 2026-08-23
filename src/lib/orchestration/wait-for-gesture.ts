@@ -19,7 +19,7 @@
  */
 
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
-import { isAutomatedBrowserSession } from '@lib/app/app-lifecycle'
+import { isContractBootTest } from '@lib/app/app-lifecycle'
 
 export interface GestureMonitorOpts {
     /** Called exactly once when a qualifying gesture or visibility event fires. */
@@ -91,7 +91,7 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
         opts.onReady()
         // Safety: dispose all listeners and timers after the cooldown even if
         // teardown wasn't called.
-                registry.schedule(cooldown, () => registry.disposeAll())
+        registry.schedule(cooldown, () => registry.disposeAll())
     }
 
     // ── Gesture listeners ────────────────────────────────────────────────────
@@ -116,9 +116,12 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
     document.addEventListener('visibilitychange', onVisibilityChange)
     registry.listener(document, 'visibilitychange', onVisibilityChange as EventListener)
 
-    // Playwright test auto-fire: skip gesture wait in automated tests so
-    // canvas mounts without requiring every test to simulate a gesture.
-    if (isAutomatedBrowserSession()) {
+    // Contract-boot auto-fire (F12 reconciliation, 2026-08-23): skip the
+    // gesture wait ONLY when the session explicitly opted into contract-boot
+    // (?contract-boot=1). Bare automated sessions (journey specs) keep the
+    // real splash → CTA flow — the old unconditional isAutomatedBrowserSession()
+    // auto-fire made every splash-flow journey spec structurally unpassable.
+    if (isContractBootTest()) {
         // W51 (2026-08-19): only bypass the placeholder guard when the URL did
         // NOT explicitly ask for the 2D placeholder. getInitialRenderKind()
         // honors ?placeholder=1 as a hard override for QA/smoke pinning, but
@@ -131,7 +134,7 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
         // silently flipped to webgl at t=0.
         const placeholderExplicitlyPinned =
             typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('placeholder') === '1'
-                registry.schedule(0, () => handleReady(undefined, !placeholderExplicitlyPinned))
+        registry.schedule(0, () => handleReady(undefined, !placeholderExplicitlyPinned))
     }
 
     // ── Cleanup ──────────────────────────────────────────────────────────────

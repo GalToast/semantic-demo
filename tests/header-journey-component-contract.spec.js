@@ -87,7 +87,7 @@ async function bootApp(page, url, { dismissHelp = true, clearOnboarding = false,
     await page.goto(url, { waitUntil: 'domcontentloaded' })
 
     // Wait for the splash CTA to be visible so we can dismiss it.
-    const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+    const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]').first()
     await explore.waitFor({ state: 'visible', timeout: 40000 })
     await explore.click()
 
@@ -149,7 +149,7 @@ test.describe('Header extracted components — HelpDialog + ModeChipRail', () =>
 
         // Click through the splash so engineReady fires and the help dialog
         // can auto-open (HelpDialog.svelte $effect on engineReady).
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 

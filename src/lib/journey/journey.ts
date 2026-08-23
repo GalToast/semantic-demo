@@ -105,9 +105,7 @@ function applyPointFilterColorsLazy(): void {
         .then((m) => m.applyPointFilterColors())
         .catch((err) => debugWarn('[journey] point-color lazy load failed', err))
 }
-import {
-    scheduleJourneyFocusTimer
-} from './journey-focus-timers'
+import { scheduleJourneyFocusTimer } from './journey-focus-timers'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from '@lib/journey/text-helpers'
 import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/orchestration/lifecycle'
 

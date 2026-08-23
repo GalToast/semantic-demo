@@ -11,7 +11,7 @@ import { setTrailDepth } from '@lib/stores/journey.svelte'
 import { clearSearch } from '@lib/search/state'
 import { resetExplorationFocus, switchView, refreshCompositionState } from '@lib/orchestration/lifecycle'
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
+const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1&contract-boot=1';
 const TARGET_URL = process.env.MOBILE_ROUTE_OWNERSHIP_URL || DEFAULT_URL;
 const QUERY = process.env.MOBILE_ROUTE_OWNERSHIP_QUERY || 'coffee';
 

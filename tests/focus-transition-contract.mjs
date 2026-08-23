@@ -511,7 +511,10 @@ async function run() {
     }
 
     const baseUrl = `http://127.0.0.1:${serverPort}`
-    const targetPage = TARGET_URL || `${baseUrl}/${HTML_FILE}`
+    // contract-boot=1: App.svelte's Playwright boot-shortcut (engineReady +
+    // pinned-component mounts) requires this opt-in so journey specs can
+    // exercise the real splash flow (F12 reconciliation).
+    const targetPage = TARGET_URL || `${baseUrl}/${HTML_FILE}?contract-boot=1`
 
     console.log('[browser] launching Chromium...')
     browser = await chromium.launch({

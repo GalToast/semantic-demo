@@ -10,7 +10,7 @@ test.describe('Round-2 mobile/a11y fixes (M1, M4, M6)', () => {
     async function enterScene(page) {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000, polling: 100 })

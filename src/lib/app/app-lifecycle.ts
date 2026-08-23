@@ -15,8 +15,8 @@
  */
 export function removeStaticPlaceholder(): void {
     if (typeof document !== 'undefined') {
-        const candidates = document.querySelectorAll<HTMLElement>('#app-loading-placeholder');
-        candidates.forEach((el) => el.remove());
+        const candidates = document.querySelectorAll<HTMLElement>('#app-loading-placeholder')
+        candidates.forEach((el) => el.remove())
     }
 }
 
@@ -25,19 +25,21 @@ export function removeStaticPlaceholder(): void {
  * should be visible. Checks environment mode and URL parameters.
  */
 export function computeDevToolsVisible(): boolean {
-    return import.meta.env.MODE === 'development'
-        && typeof window !== 'undefined'
-        && (() => {
-            const params = new URLSearchParams(window.location.search || '');
-            return params.has('debug') || params.has('devtools') || params.has('spector');
-        })();
+    return (
+        import.meta.env.MODE === 'development' &&
+        typeof window !== 'undefined' &&
+        (() => {
+            const params = new URLSearchParams(window.location.search || '')
+            return params.has('debug') || params.has('devtools') || params.has('spector')
+        })()
+    )
 }
 
 /**
  * Check if running in a Playwright test environment.
  */
 export function isPlaywrightEnvironment(): boolean {
-    return typeof window !== 'undefined' && !!window.__PLAYWRIGHT__;
+    return typeof window !== 'undefined' && !!window.__PLAYWRIGHT__
 }
 
 /**
@@ -53,5 +55,26 @@ export function isAutomatedBrowserSession(): boolean {
     return Boolean(
         typeof window !== 'undefined' &&
         (!!window.__PLAYWRIGHT__ || (typeof navigator !== 'undefined' && !!navigator.webdriver))
-    );
+    )
+}
+
+/**
+ * Contract-boot test mode (F12 journey reconciliation, 2026-08-23).
+ *
+ * Automated session that explicitly opted into the contract-boot shortcut
+ * via ?contract-boot=1: engineReady auto-fires at boot and every pinned
+ * component mounts synchronously so surface/contract checks see the full
+ * chrome without a gesture.
+ *
+ * Journey specs deliberately do NOT pass the param: they exercise the real
+ * splash → CTA → search/focus flow. Before this gate existed, the gesture-
+ * monitor auto-fire + App.svelte shortcut made every splash-flow journey
+ * spec structurally unpassable (~40 reds).
+ */
+export function isContractBootTest(): boolean {
+    return (
+        isAutomatedBrowserSession() &&
+        typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).get('contract-boot') === '1'
+    )
 }

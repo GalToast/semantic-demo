@@ -17,7 +17,9 @@ import { animateCameraToNode } from '@lib/engine/camera-choreography/focus'
 import { refreshFocusSemanticOverlay, updateFocusSemanticOverlayPositions } from '@lib/engine/journey-webgl-lazy'
 // P3-LCP: point-color → three; deep-link is post-data-load (still after LCP),
 // so lazify to keep three off the entry preload.
-function applyPointFilterColorsLazy(): void { void import('@lib/journey/point-color').then(m=>m.applyPointFilterColors()).catch(()=>{}) }
+function applyPointFilterColorsLazy(): void {
+    void import('@lib/journey/point-color').then((m) => m.applyPointFilterColors()).catch(() => {})
+}
 import { appState } from '@lib/state/app.svelte'
 import { debugWarn } from '@lib/utils/debug'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'

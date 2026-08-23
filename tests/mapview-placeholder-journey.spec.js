@@ -170,8 +170,8 @@ test.describe('Placeholder2D journey', () => {
         // 'Scene' (capital S). Tap target ≥ 44×44 + aria-describedby points to hint.
         const cta = placeholder.locator('[data-testid="placeholder-cta"]')
         await expect(cta).toHaveCount(1)
-        await expect(cta).toHaveAttribute('aria-label', 'Open full 3D experience')
-        await expect(cta).toContainText('Open full 3D experience')
+        await expect(cta).toHaveAttribute('aria-label', 'Open in 3D')
+        await expect(cta).toContainText('Open in 3D')
         await expect(cta).toHaveAttribute('aria-describedby', 'placeholder-hint')
         // Poll for the CTA to settle at ≥44×44 before reading the rect.
         const ctaSettled = await page.waitForFunction(

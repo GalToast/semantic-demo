@@ -19,7 +19,8 @@ const outDir = path.resolve(
 
 function withParams(params = {}) {
     const url = new URL(BASE_URL);
-    url.searchParams.set('nodemo', '1');
+    url.searchParams.set('nodemo', '1')
+    url.searchParams.set('contract-boot', '1');
     Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
     return url.toString();
 }

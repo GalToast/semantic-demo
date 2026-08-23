@@ -25,7 +25,7 @@ import { initAdapters } from '@lib/orchestration/adapters'
 import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
 import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts'
 import { debugError } from '@lib/utils/debug'
-import { isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts'
+import { isAutomatedBrowserSession } from '@lib/app/app-lifecycle.ts'
 import { teardownViewController } from '@lib/orchestration/view-controller'
 import { claimRestoreOwnership, isRestoreOwned, releaseRestoreOwnership } from '@lib/engine/webgl-restore-ownership'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
@@ -190,6 +190,7 @@ function scheduleSearchIndexPrewarm(): void {
  */
 import { applyUrlState } from '@lib/orchestration/url-state'
 
+
 async function applyUrlStateAfterData(isDeepLink: boolean): Promise<void> {
     if (!isDeepLink) return
     try {
@@ -323,7 +324,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     // P3-LCP (2026-08-21): test-globals transitively imports focus-pocket (Vector3/three)
     // into the cold boot graph via app-init static import. Gate the entire module to
     // Playwright so real users (esp. mobile 2D placeholder) never fetch it.
-    if (isPlaywrightEnvironment()) {
+    if (isAutomatedBrowserSession()) {
         try {
             const { installTestStoreGlobals: installTestGlobals } = await import('@lib/orchestration/test-globals')
             _unsubWindowGlobals = installTestGlobals()

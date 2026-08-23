@@ -64,10 +64,14 @@ function _applySearchGlowState(forward: () => void): void {
     withSearchNotify(forward)
 }
 export function setGlowIndices(indices: Set<number>): void {
-    _applySearchGlowState(() => { appState.searchState.searchGlowIndices = new Set(indices) })
+    _applySearchGlowState(() => {
+        appState.searchState.searchGlowIndices = new Set(indices)
+    })
 }
 export function setGlowActive(active: boolean): void {
-    _applySearchGlowState(() => { appState.searchState.searchGlowActive = active })
+    _applySearchGlowState(() => {
+        appState.searchState.searchGlowActive = active
+    })
 }
 export function setSearchGlow(indices: readonly number[], topIndex: number | null = indices[0] ?? null): void {
     _applySearchGlowState(() => {

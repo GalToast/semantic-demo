@@ -143,8 +143,8 @@
         "verify:3d-tests": "node scripts/verify-3d-test-admission.mjs",
         "check:param-prop": "node tests/param-property-loader-sweep.mjs",
         "check:data-compression": "node scripts/check-data-compression.mjs",
-    "check:findings-witness": "node scripts/verify-findings-claims.mjs",
-    "check:semantic-provenance": "node scripts/verify-semantic-provenance.mjs",
+        "check:findings-witness": "node scripts/verify-findings-claims.mjs",
+        "check:semantic-provenance": "node scripts/verify-semantic-provenance.mjs",
         "report:drift": "node scripts/drift-report.mjs"
     },
     "keywords": [],

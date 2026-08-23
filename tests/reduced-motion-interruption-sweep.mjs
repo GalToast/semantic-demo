@@ -431,7 +431,7 @@ async function runMobileProof(page) {
     // Use same path as desktop server — the sweep server resolves /index.html
     // against dist/svelte/. Using /dist/svelte/index.html would hit the ROOT
     // base and look for svelte/index.html which does not exist.
-    const url = `http://127.0.0.1:${globalThis._sweepPort}/index.html?nodemo=1`
+    const url = `http://127.0.0.1:${globalThis._sweepPort}/index.html?nodemo=1&contract-boot=1`
     await page.goto(url, { waitUntil: 'domcontentloaded' })
     // Use a lenient readiness check for mobile (matches proof.spec.js): only
     // require graphicsMode=webgl + canvas + pointsMesh, not the full __TEST_STATE__.
@@ -615,7 +615,7 @@ async function run() {
     await desktopPage.addInitScript(() => {
         window.__PLAYWRIGHT__ = true
     })
-    const url = `http://127.0.0.1:${port}/index.html?nodemo=1`
+    const url = `http://127.0.0.1:${port}/index.html?nodemo=1&contract-boot=1`
     await desktopPage.goto(url, { waitUntil: 'commit', timeout: 15000 })
     await waitForReady(desktopPage)
 

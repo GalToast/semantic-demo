@@ -1008,7 +1008,7 @@ async function assert_search_error(page, ctx) {
     // 2026-07-30). Mirror the proven `search-no-results` pattern instead: TYPE the
     // query so the app's search handler fires the request, which the `page.route`
     // mocks above intercept as 503 → setSearchError → `.search-error-state`
-    // renders visibly. `loadIdleAndTypeSearch` already sets nodemo=1 + view=galaxy,
+    // renders visibly. `loadIdleAndTypeSearch` already sets nodemo=1&contract-boot=1 + view=galaxy,
     // dismisses the mobile CTA + first-visit help dialog, and fills #search-input.
     await loadIdleAndTypeSearch(page, 'forced-surface-contract-search-error', { staticDev: '0' })
     await page.waitForSelector('.search-error-state', { state: 'visible', timeout: 20000 })
@@ -2977,7 +2977,7 @@ async function assert_filters(page, ctx) {
 
 async function assert_thread_inspector(page, ctx) {
     const base = positionalUrl.includes('?') ? '&' : '?'
-    const focusedUrl = `${positionalUrl}${base}view=galaxy&q=coffee&anchor=519&nodemo=1`
+    const focusedUrl = `${positionalUrl}${base}view=galaxy&q=coffee&anchor=519&nodemo=1&contract-boot=1`
     await loadAndWait(page, focusedUrl)
 
     const info = await page.evaluate(() => {

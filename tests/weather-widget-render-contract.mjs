@@ -19,7 +19,7 @@ import { spawn } from 'node:child_process'
 import { chromium } from 'playwright'
 
 const PORT = Number(process.env.SEMANTIC_WEATHER_WIDGET_PORT || 8795)
-const BASE_URL = `http://127.0.0.1:${PORT}/dist/svelte/index.html?nodemo=1`
+const BASE_URL = `http://127.0.0.1:${PORT}/dist/svelte/index.html?nodemo=1&contract-boot=1`
 // SwiftShader gate (see visual-state-audit.mjs)
 const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 

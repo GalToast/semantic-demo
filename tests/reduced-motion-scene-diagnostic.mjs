@@ -250,7 +250,7 @@ async function run() {
         // Emulate reduced motion
         await page.emulateMedia({ reducedMotion: 'reduce' })
 
-        const targetUrl = `${SERVER_URL}/index.html?nodemo=1&webgl=1`
+        const targetUrl = `${SERVER_URL}/index.html?nodemo=1&contract-boot=1&webgl=1`
         await page.goto(targetUrl, { waitUntil: 'commit', timeout: 15000 })
         await waitForReady(page)
 

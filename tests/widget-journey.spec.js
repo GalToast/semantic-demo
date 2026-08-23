@@ -42,7 +42,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -316,7 +318,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -473,7 +477,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         // Raised 40s->60s: this initial-boot splash-CTA render is the first GPU/stall
         // exposure after prior suite WebGL tests; under serial accumulation the
         // engineReady signal gating the CTA can push past 40s (full-suite L56).
@@ -600,7 +606,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -649,7 +657,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 375, height: 812 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -797,7 +807,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -930,7 +942,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&offline=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -982,7 +996,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 375, height: 667 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -1168,7 +1184,7 @@ test.describe('Widget journey', () => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page
-                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
                 .first()
             // Raised from 40s: under the full-suite run this test shares the machine
             // with many concurrent WebGL + 8,406-record live-API contexts, and the
@@ -1253,7 +1269,9 @@ test.describe('Widget journey', () => {
         })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -1856,7 +1874,9 @@ test.describe('Widget journey', () => {
         })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -1937,7 +1957,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -2094,7 +2116,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -2173,7 +2197,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -2250,7 +2276,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -2314,7 +2342,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -2428,7 +2458,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
         await page.waitForTimeout(1000)
@@ -2495,7 +2527,7 @@ test.describe('Widget journey', () => {
             // through it; otherwise the scene is entering automatically and the
             // demo will start as soon as the scene is ready.
             const explore = page
-                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
                 .first()
             const ctaVisible = await explore
                 .waitFor({ state: 'visible', timeout: 10000 })
@@ -2647,7 +2679,7 @@ test.describe('Widget journey', () => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page
-                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
                 .first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
@@ -2747,7 +2779,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -2860,7 +2894,7 @@ test.describe('Widget journey', () => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page
-                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
                 .first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
@@ -2906,7 +2940,7 @@ test.describe('Widget journey', () => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page
-                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
                 .first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
@@ -2966,7 +3000,7 @@ test.describe('Widget journey', () => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page
-                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
                 .first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
@@ -3074,7 +3108,7 @@ test.describe('Widget journey', () => {
             await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
             const explore = page
-                .locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]')
+                .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
                 .first()
             await explore.waitFor({ state: 'visible', timeout: 60000 })
             await explore.click()
@@ -3533,7 +3567,9 @@ test.describe('Widget journey', () => {
         })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -3656,7 +3692,9 @@ test.describe('Widget journey', () => {
             waitUntil: 'domcontentloaded'
         })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -3942,7 +3980,9 @@ test.describe('Widget journey', () => {
             waitUntil: 'domcontentloaded'
         })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -4237,7 +4277,9 @@ test.describe('Widget journey', () => {
             waitUntil: 'domcontentloaded'
         })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -4303,7 +4345,9 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -4842,7 +4886,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 820, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
         // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -4948,7 +4994,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -5022,7 +5070,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -5318,7 +5368,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -5463,7 +5515,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -5605,7 +5659,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -5661,7 +5717,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -5728,7 +5786,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -5788,7 +5848,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -5931,7 +5993,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -6068,7 +6132,9 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Open full 3D experience"]').first()
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
@@ -6280,9 +6346,11 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         // click (not Playwright's hit-tested click) — same pattern as the legend
         // dismiss test: the focus card may overlap the CTA mid-transition and
         // pointer-events interception makes actionability retries loop.
-        await page.locator('[aria-label="Open full 3D experience"]').waitFor({ state: 'visible', timeout: 30000 })
+        await page
+            .locator('[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .waitFor({ state: 'visible', timeout: 30000 })
         await page.evaluate(() => {
-            const cta = document.querySelector('[aria-label="Open full 3D experience"]')
+            const cta = document.querySelector('[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
             if (cta) cta.click()
         })
         const webglFocusReady = await pollFor(

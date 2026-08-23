@@ -34,7 +34,10 @@ const vitestCfg = read('vitest.config.js')
 check('F1: vitest globalSetup uses tdb1-fixture-ensure', /tdb1-fixture-ensure/.test(vitestCfg))
 
 // F2 — commit-purity exemption for eea3c242 present
-check('F2: commit-purity EXEMPTED_SHAS holds eea3c242...', /eea3c242/.test(read('tests/unit-active/commit-purity-invariant.test.ts')))
+check(
+    'F2: commit-purity EXEMPTED_SHAS holds eea3c242...',
+    /eea3c242/.test(read('tests/unit-active/commit-purity-invariant.test.ts'))
+)
 
 // F5 — budget baseline blessed state (gate re-arm landed 2026-08-23)
 const budgetTxt = read('scripts/qa-budget.mjs')
@@ -52,17 +55,26 @@ const ht = read('.htaccess')
 check('P1: .htaccess ships FilesMatch twin negotiation', /<FilesMatch/.test(ht) && /br|gz/.test(ht))
 
 // P4 — decision doc + twins in the build tree
-check('P4: data-asset-distribution decision doc exists', existsSync(resolve(ROOT, 'docs', 'ops', 'data-asset-distribution-decision.md')))
+check(
+    'P4: data-asset-distribution decision doc exists',
+    existsSync(resolve(ROOT, 'docs', 'ops', 'data-asset-distribution-decision.md'))
+)
 const dataDir = resolve(ROOT, 'dist', 'svelte', 'data')
 check('P4: dist/svelte/data has .br twins', existsSync(resolve(dataDir, 'semantic_threads.dat.br')))
 check('P4: dist/svelte/data plains restored for dev', existsSync(resolve(dataDir, 'semantic_threads.dat')))
 
 // P6 — legacy URL redirect present (origin-verified 2026-08-23)
-check('P6: legacy 308 redirect in .htaccess', /Redirect 308 \/semantic-demo\/vector-explorer-polished\.html \/semantic-demo\/index\.html/.test(ht))
+check(
+    'P6: legacy 308 redirect in .htaccess',
+    /Redirect 308 \/semantic-demo\/vector-explorer-polished\.html \/semantic-demo\/index\.html/.test(ht)
+)
 
 // P7 — honest pill copy + guard test present
 check('P7: rail-status pill is honest (no "Demo data")', !/Demo data/.test(read('src/lib/rail/rail-status.ts')))
-check('P7: friendly-copy guard test exists', existsSync(resolve(ROOT, 'tests', 'unit-active', 'thread-lens-friendly-copy.test.ts')))
+check(
+    'P7: friendly-copy guard test exists',
+    existsSync(resolve(ROOT, 'tests', 'unit-active', 'thread-lens-friendly-copy.test.ts'))
+)
 
 // Manifest purge (018c2d2a) — foreign paths gone, portable basenames
 const manifest = JSON.parse(read('public/data/semantic_space_layout_manifest.json'))
@@ -70,7 +82,10 @@ check('Manifest: no index_dir shipped', !('index_dir' in manifest))
 check('Manifest: portable data_path', manifest.data_path === 'data.dat')
 
 // P5 — semantic lane supervisor knobs exist
-check('P5: semantic lane restart cooldown exists', /SEMANTIC_LANE_RESTART_COOLDOWN_SECONDS/.test(read('api/config.php')))
+check(
+    'P5: semantic lane restart cooldown exists',
+    /SEMANTIC_LANE_RESTART_COOLDOWN_SECONDS/.test(read('api/config.php'))
+)
 
 console.log(`\nWITNESS: ${failCount()} of ${results.length} checks drifted from disk truth`)
 process.exit(failCount() === 0 ? 0 : 1)

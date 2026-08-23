@@ -245,8 +245,12 @@ Exit codes (comparison mode):
         console.log(`  prior_baseline=${priorMeta.name || 'none'}  delta_vs_prior_kb=${deltaVsPriorKb ?? 'n/a'}`)
         if (priorMeta.blessed_at) {
             const days = (Date.now() - Date.parse(priorMeta.blessed_at)) / 86400000
-            console.log(`  POLICY-INFO: prior blessed ${days.toFixed(0)} days ago` +
-                (days < 90 ? ' — RAPID RE-BASELINE within the quarterly policy window' : ' — within quarterly cadence'))
+            console.log(
+                `  POLICY-INFO: prior blessed ${days.toFixed(0)} days ago` +
+                    (days < 90
+                        ? ' — RAPID RE-BASELINE within the quarterly policy window'
+                        : ' — within quarterly cadence')
+            )
         }
         process.exit(0)
     }
@@ -273,12 +277,19 @@ Exit codes (comparison mode):
                     'Re-bless it with --baseline write --note to re-arm trend tracking.'
             )
             if (base.prior_baseline || base.prior_blessed_at) {
-                console.log('  POLICY-INFO: prior_baseline=', base.prior_baseline, ' prior_blessed_at=', base.prior_blessed_at)
+                console.log(
+                    '  POLICY-INFO: prior_baseline=',
+                    base.prior_baseline,
+                    ' prior_blessed_at=',
+                    base.prior_blessed_at
+                )
             }
         } else if (base.prior_blessed_at) {
             const days = (Date.parse(base.blessed_at) - Date.parse(base.prior_blessed_at)) / 86400000
             if (days >= 0 && days < 90) {
-                console.log(`  POLICY-WARN: RAPID RE-BASELINE — ${days.toFixed(0)}d after prior bless (quarterly cadence policy); note=${JSON.stringify(base.note || '')}`)
+                console.log(
+                    `  POLICY-WARN: RAPID RE-BASELINE — ${days.toFixed(0)}d after prior bless (quarterly cadence policy); note=${JSON.stringify(base.note || '')}`
+                )
             }
         }
         console.log(
