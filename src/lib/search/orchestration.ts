@@ -24,6 +24,8 @@
  * states) are testable without a full Svelte runtime.
  */
 import type { SearchResult } from '@lib/types/state'
+import { registerTransitionEffects } from '@lib/stores/navigation/transition-effects'
+import { clearMobileSearchSheetState } from './search-panel-adapter'
 import {
     searchStore,
     setSearchStatus,
@@ -437,6 +439,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     updateSearchTrailCue({ stage: 'explore' })
     setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true })
     setupMobileSearchSheetToggle({ isCompactSearchViewport })
+    registerTransitionEffects({ clearMobileSearchSheetState })
     setActiveSearchResultRow(resultsEl, anchorIndex)
 }
 
