@@ -114,9 +114,12 @@ Two more fixed after healthy-boot triage (`bcd08f5c`): list-toggle
 (deep-link self-entry skips any CTA stage) and dive-sibling (?q= lands on
 search surface; select the result before asserting focus-search chrome).
 
-Remaining 5: C1 compass-phase emission (real drift - Inside radio path
-does not flip #journey-compass[data-phase] to 'inside'; needs dedicated
-dive-choreography investigation), W64 sheet-resync, B-A1 count overshoot,
+Final HEAD run (78P/4F/8.2min): W53-#6 FocusCard dismiss PASSED (confirmed
+flaky). NEW failure to investigate FIRST next session:
+**W54-4486** 'placeholder2d Search chip reveals #info-panel' (2min cap) -
+newly failing AFTER the idle/search chip-unhide sweep (387530b6+c260abec);
+possible self-inflicted collateral. Then: C1 compass-phase emission (real drift - Inside radio path
+does not flip #journey-compass[data-phase] to 'inside'; dedicated dive-choreography dig), W64 sheet-resync, B-A1 count overshoot,
 W53-#6 FocusCard dismiss (flaky candidate), 5o demo replay.
 
 Original session-2 notes:
