@@ -78,9 +78,10 @@ import {
     getLastCommittedView
 } from '@lib/stores/navigation.svelte'
 import { addTrailStop, setThreadCandidates, setTrailDepth, setTrailNeighborIndices } from '@lib/stores/journey.svelte'
+import { debugWarn } from '@lib/utils/debug'
 import { getBusinessRecords } from '@lib/data-store'
 import { appState } from '@lib/state/app.svelte.ts'
-import { buildNeighborhoodManifest, getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood'
+import { buildNeighborhoodManifest, getSemanticThreadDisplayLimit, setTrailFromSeed } from '@lib/journey/neighborhood'
 import {
     bindSearchResultInteractions,
     getPendingFocusTransitionToken,
@@ -236,31 +237,19 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
     // fully preserved for non-empty candidate sets).
     const candidatesEmpty = !currentFocus.threadCandidates || currentFocus.threadCandidates.length === 0
     if (currentFocus.focusedIndex === focusIndex && candidatesEmpty) {
-        const searchSummary = appState.searchState.currentSearchSummary
-        const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || []
-        const manifest = buildNeighborhoodManifest(focusIndex, resultIndices, {
-            displayLimit: getSemanticThreadDisplayLimit()
-        })
-        if (manifest && manifest.candidateIndices.length > 0) {
-            const candidateIndices: number[] = [...manifest.candidateIndices]
-            const threadSource = manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback'
-            const threadReasonByIndex = new Map<number, string>(
-                candidateIndices.map((candidateIndex: number) => [
-                    candidateIndex,
-                    threadSource === 'semantic' ? 'semantic neighbor' : 'geometric proximity'
-                ])
-            )
-            writeNavStateMirror({
-                trailSeedIndex: focusIndex,
-                trailNeighborIndices: candidateIndices,
-                threadCandidates: candidateIndices.map((idx) => ({
-                    index: idx,
-                    source: threadSource,
-                    reason: threadReasonByIndex.get(idx) ?? ''
-                })),
-                threadReasonByIndex,
-                threadSource
-            })
+        // 2026-08-23 thin-set fix: converging through buildNeighborhoodManifest
+        // (routeIndices=search results) keeps only query results that ALSO have
+        // a direct anchor edge — for ?q=coffee&anchor=<coffee shop> that is
+        // typically ONE business, while the anchor's true semantic neighborhood
+        // (17) lives in the seed pipeline. setTrailFromSeed is the SAME source
+        // the natural focus flow uses post-thread-load; its memo was invalidated
+        // when the artifact landed (invalidateTrailSeedCache), so this recomputes
+        // fresh. It writes ONLY candidate/trail-seed fields via the mirror —
+        // mode/surface/trailDepth stay untouched.
+        try {
+            setTrailFromSeed(focusIndex)
+        } catch (e) {
+            debugWarn('[triggers] deferred same-index seed rebuild failed', e)
         }
     }
     if (currentFocus.focusedIndex !== focusIndex) {
