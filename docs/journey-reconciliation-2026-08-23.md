@@ -67,7 +67,7 @@ confidence of root cause:
 4. **W51-mobile-h1** — placeholder2d path renders two H1s (help-dialog +
    placeholder). Likely the help-dialog auto-open interacting with the
    placeholder title.
-5. ~~**W55 help-dialog**~~ — FIXED. The test was *designed* around the old
+5. ~~**W55 help-dialog**~~ — FIXED. The test was _designed_ around the old
    boot-shortcut auto-fire (its comment says clicking the CTA would race
    the auto-open $effect). Added `&contract-boot=1` to its URL to restore
    the behavior it depends on; passes in 29.8s.
@@ -90,6 +90,7 @@ stacking. 11 is the demo replayer.
 ## Session-2 triage (2026-08-23 late)
 
 Fixed after fresh-context triage on a clean-HEAD build:
+
 - **W51-mobile-h1** (`387530b6`): test waited for placeholder2d boot, but S5
   auto-enter boots webgl on capable devices. Pinned `?placeholder=1`.
 - **T1-4 + W63** (`387530b6` + `c260abec`): the `.mode-grid`→`#mode-chips`
@@ -122,6 +123,29 @@ possible self-inflicted collateral. Then: C1 compass-phase emission (real drift 
 does not flip #journey-compass[data-phase] to 'inside'; dedicated dive-choreography dig), W64 sheet-resync, B-A1 count overshoot,
 W53-#6 FocusCard dismiss (flaky candidate), 5o demo replay.
 
+Session-4 (same day, lock `fix-demo-replay-m15-plus-cosmetic-overlaps`): **5o FIXED** —
+two stacked root causes. (1) Boot: `682b3e82` gated engineReady auto-fire behind
+`?contract-boot=1`, so 5o's passive `?demo=force` load sat on the splash forever;
+spec now boots via `&contract-boot=1` (that test hunk landed inside `bcd08f5c`'s
+sweep). (2) Replay: the qa-journey-headless low-contention profile emulates
+`prefers-reduced-motion:reduce` suite-wide; `requestReplay()` silently refused
+AND the component acked anyway, so even keyboard-help's 500ms fallback toast
+never fired (silent dead button for reduced-motion users). Fix:
+`requestReplay(): boolean` — ack dispatches only on accept (DemoChoreography.svelte
+- keyboard-help.ts comment); W7 F2 contract windows updated to pin the stronger
+conditional-ack invariant. Verified post-revert master: wrapper profile PASS
+19.5s, plain PASS. Remaining: W54-4486 (investigate first), C1, W64, B-A1.
+
+Cosmetic-probe verdicts (`tmp/probe-overlap.mjs`, DOM rects): the 'County terrain'
+header overlap reproduces ONLY under isPlaywright — App.svelte force-mounts MapView
+via `|| isPlaywright`, so automated probes see a ghost map identity overlapping the
+app header (220x54px measured in focus-search); real users never mount it there.
+Suppressed via CSS inverse of Fix #1 (`body:not([data-active-view='map'])
+.map-view-header{display:none}`), which leaves `?view=map` chrome untouched.
+'Legend pill clips focus card': NOT reproduced desktop or mobile in deep-link
+flows (legend stays auto-hidden); likely healed by session-2 rail-top fixes —
+reopen only with an exact repro URL.
+
 Original session-2 notes:
 Remaining 7 (fresh error-contexts under `test-results/` from the
 TEST_BASE_URL=worktree-server run): dive-sibling pair, W64 sheet-resync,
@@ -129,6 +153,7 @@ B-A1 count overshoot, W53-#6 FocusCard dismiss (first appearance —
 flakiness candidate), 5o demo replay, mobile-focus list-toggle, C1.
 
 Isolated-run recipe (main repo contested by parallel lanes):
+
 ```bash
 git worktree add ../se-journey-head HEAD && cd ../se-journey-head   && npm install && npm run build:svelte
 node tmp/journey-head-server.mjs &   # serves worktree on :8797

@@ -848,6 +848,19 @@
     display: none !important;
   }
 
+  /* Fix #1b (2026-08-23) — the inverse seam: MapView is force-mounted under
+     isPlaywright (template gate `surface.mapModeActive || isPlaywright`,
+     App.svelte ~L400), so automated probes get the fallback container on
+     EVERY surface. On header-visible surfaces that are NOT true map mode,
+     its identity block collides with the real app header (measured 220x54px
+     overlap in focus-search). The map-view header owns the top-left ONLY
+     when activeView is 'map' (real users never mount MapView elsewhere;
+     mapview-placeholder-journey.spec asserts it via ?view=map, which this
+     rule leaves untouched). */
+  :global(body:not([data-active-view='map']) .map-view-header) {
+    display: none !important;
+  }
+
   /* Fix #2 Inside walk controls clipped at viewport bottom */
   :global(body.navigation-inside-walk .focus-stage-journey.active) {
     height: auto !important;

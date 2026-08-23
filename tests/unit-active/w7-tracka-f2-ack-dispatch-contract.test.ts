@@ -76,9 +76,12 @@ describe('W7 Track A — F2 ack dispatch contract (DemoChoreography.svelte repla
         // `W7 F2 fix` comment immediately above the changed code so future grep audits
         // (e.g. `rg -n "W7 F2"`) surface them. If a future mechanical edit removes
         // the dispatch + the marker together, this assertion catches the regression.
+        // Window widened 250→450 (session-4): the F2 marker now annotates the
+        // CONDITIONAL ack (`if (!requestReplay()) return`) and sits a few lines further
+        // above the dispatch; invariant unchanged, radius only.
         const dispatchIdx = demoSrc.indexOf("new CustomEvent('demo-replay-acknowledged')")
         expect(dispatchIdx).toBeGreaterThan(-1)
-        const commentSlice = demoSrc.slice(Math.max(0, dispatchIdx - 250), dispatchIdx)
+        const commentSlice = demoSrc.slice(Math.max(0, dispatchIdx - 450), dispatchIdx)
         expect(commentSlice).toContain('F2')
     })
 })

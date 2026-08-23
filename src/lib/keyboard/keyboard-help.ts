@@ -131,9 +131,11 @@ export function initKeyboardShortcutsHint(): void {
             // DemoChoreography.svelte:412), so this is equivalent for the canonical demo path.
             cancelDemo()
             // W7 F2 fix: listen for the canonical-path ack BEFORE dispatching.
-            // If DemoChoreography picks up demo-replay-requested, it dispatches
-            // demo-replay-acknowledged synchronously after calling requestReplay().
-            // If no ack arrives within 500ms, surface a friendly fallback message.
+            // If DemoChoreography picks up demo-replay-requested AND accepts
+            // it, it dispatches demo-replay-acknowledged synchronously after
+            // requestReplay() returns true. A refusal (?nodemo=1 suppress,
+            // reduced motion) sends NO ack, so the 500ms fallback below
+            // surfaces the friendly message instead of a silent dead button.
             let acked = false
             const onAck = (): void => {
                 acked = true

@@ -270,17 +270,21 @@
     runDemoSequence();
   }
 
-  // Replay helper: canonical path that prevents stacked veils (M15)
-  function requestReplay(): void {
+  // Replay helper: canonical path that prevents stacked veils (M15).
+  // Returns true when the replay was ACCEPTED (teardown + restart begun),
+  // false when refused (?nodemo=1 suppress, reduced motion) so the
+  // replayListener can withhold the ack and keyboard-help's fallback toast
+  // can inform the user instead of leaving a silent dead button.
+  function requestReplay(): boolean {
     // W58: replay must respect the explicit suppress (?nodemo=1) guard.
     // Without this check, keyboard-help "Replay tour" can start the demo
     // even when the user explicitly opted out via URL param.
-    if (suppress) return
+    if (suppress) return false
     // P2 (fleet wave 3 sweep 2026-08-07): replay must ALSO respect the
     // reduced-motion guard — shouldRunDemo deliberately blocks reduced-motion
     // users (demo.svelte.ts:271-275), but requestReplay bypassed it, giving them
     // exactly the frozen confusing sequence the guard exists to prevent.
-    if (!guardReducedMotion()) return
+    if (!guardReducedMotion()) return false
     cancelAllDemoTimers()
     if (isDemoActive()) cancelDemo()
     try { resetDemo() } catch { /* no-op: teardown race */ }
@@ -297,16 +301,18 @@
       scheduleDemoTimer(() => wait(), 200)
     }
     scheduleDemoTimer(() => wait(), 300)
+    return true
   }
-
   let replayListener: ((_e: Event) => void) | null = null
 
   onMount(() => {
     replayListener = () => {
-      requestReplay()
-      // W7 F2 fix: ack the canonical replay path so the keyboard-help side
-      // knows the replay actually started (avoids the 500ms no-ack fallback
-      // toast that previously fired on every demo-cancelled during replay).
+      // W7 F2 fix (session-4 amendment): ack ONLY when requestReplay accepts.
+      // Refusals (?nodemo=1, reduced motion) send no ack, so keyboard-help's
+      // 500ms fallback toast informs the user instead of a silent dead button.
+      if (!requestReplay()) return
+      // Ack the canonical replay path so the keyboard-help side knows the
+      // replay actually started (avoids the stale no-ack fallback toast).
       document.dispatchEvent(new CustomEvent('demo-replay-acknowledged'))
     }
     document.addEventListener('demo-replay-requested', replayListener as EventListener)

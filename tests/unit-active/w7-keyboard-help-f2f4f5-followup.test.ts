@@ -80,9 +80,14 @@ describe('W7: F2 — demo-cancelled once-listener removed; demo-replay-acknowled
         // The replayListener previously only called requestReplay(). F2 update wraps the body so
         // requestReplay() runs FIRST, then demo-replay-acknowledged is dispatched synchronously.
         // The replayListener site lives inside the onMount() block at line ~235.
+        // Session-4 amendment: the ack is now CONDITIONAL — `if (!requestReplay()) return`
+        // gates the dispatch so refusals (?nodemo=1, reduced motion) reach keyboard-help's
+        // fallback toast instead of a false ack. Window widened 500→800 for the amended
+        // comment; both pinned strings and their order are unchanged.
         const listenerIdx = choreoSrc.indexOf('replayListener = ')
         expect(listenerIdx).toBeGreaterThan(-1)
-        const body = choreoSrc.slice(listenerIdx, listenerIdx + 500)
+        const body = choreoSrc.slice(listenerIdx, listenerIdx + 800)
+        expect(body).toContain('if (!requestReplay()) return')
         expect(body).toContain('requestReplay()')
         expect(body).toContain('demo-replay-acknowledged')
     })
