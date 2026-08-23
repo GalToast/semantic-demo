@@ -13,8 +13,6 @@
 import { get, type Unsubscriber } from 'svelte/store'
 import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
-import { animateCameraToNode } from '@lib/engine/camera-choreography/focus'
-import { refreshFocusSemanticOverlay, updateFocusSemanticOverlayPositions } from '@lib/engine/journey-webgl-lazy'
 // P3-LCP: point-color → three; deep-link is post-data-load (still after LCP),
 // so lazify to keep three off the entry preload.
 function applyPointFilterColorsLazy(): void {
@@ -149,17 +147,21 @@ function _frameCameraOnAnchor(index: number, restoreToken: number): void {
             // A normal focus change does not necessarily bump the restore
             // token, so the focused-index guard is required as well.
             if (isRestoreStale(restoreToken) || appState.navState.focusedIndex !== index) return
-            try {
-                animateCameraToNode(index, { transitionStyle: 'focus' })
-            } catch (e) {
-                debugWarn('[url-state] camera frame on anchor failed', index, e)
-            }
-            try {
-                refreshFocusSemanticOverlay()
-                updateFocusSemanticOverlayPositions(performance.now())
-            } catch (e) {
-                debugWarn('[url-state] focus semantic overlay refresh failed', index, e)
-            }
+            // Task 186 / P3-LCP: dynamic imports instead of static. These run
+            // >=500ms AFTER camera/controls exist, so on deep-link boots the
+            // engine chunks are already in the module map and the import
+            // resolves instantly; on non-deep-link cold loads this function is
+            // never called, keeping three.js off the wire entirely (same
+            // pattern as applyPointFilterColorsLazy above).
+            import('@lib/engine/camera-choreography/focus')
+                .then((m) => m.animateCameraToNode(index, { transitionStyle: 'focus' }))
+                .catch((e) => debugWarn('[url-state] camera frame on anchor failed', index, e))
+            import('@lib/engine/journey-webgl-lazy')
+                .then((m) => {
+                    m.refreshFocusSemanticOverlay()
+                    m.updateFocusSemanticOverlayPositions(performance.now())
+                })
+                .catch((e) => debugWarn('[url-state] focus semantic overlay refresh failed', index, e))
             try {
                 applyPointFilterColorsLazy()
             } catch (e) {

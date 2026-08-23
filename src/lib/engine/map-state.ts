@@ -11,7 +11,6 @@ import { subscribeKeyed, unsubscribeKeyed, EVENTS } from '@lib/orchestration/eve
 import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
 import { showExperienceToast } from '@lib/orchestration/toast'
-import { focusOnPoint } from '@lib/orchestration/lifecycle'
 import { hideViewHandoff } from '@lib/orchestration/view-controller'
 import { isMobileViewport } from '@lib/utils/environment'
 import { debugWarn } from '@lib/utils/debug'
@@ -168,7 +167,10 @@ export async function initMap(): Promise<void> {
                     )
                     return
                 }
-                focusOnPoint(point, { revealCard: true })
+                // Task 186 / P3-LCP: lifecycle barrel statically reaches
+                // three.js; this runs on map-marker CLICK (post-boot by
+                // definition), so import lazily at use-time.
+                void import('@lib/orchestration/lifecycle').then((m) => m.focusOnPoint(point, { revealCard: true }))
             })
 
             mapState.pointMarkers.push({ marker, index })
