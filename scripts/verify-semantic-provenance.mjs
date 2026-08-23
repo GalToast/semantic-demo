@@ -68,21 +68,8 @@ const embeddingsPath = join(INDEX_DIR, 'embeddings.npy')
 for (const p of [manifestPath, metadataPath, embeddingsPath]) {
     if (!existsSync(p)) fail(`missing ${p}`)
 }
-if (!existsSync(REFERENCE)) {
-    fail(
-        `reference missing: ${REFERENCE}. Restore tmp/fixtures/qwen3_embeddings.npy ` +
-            '(gitignored fixture — rebuild it from the original embedding run or git history).'
-    )
-}
 
 const embHash = sha256(embeddingsPath)
-const refHash = sha256(REFERENCE)
-if (embHash !== refHash) {
-    fail(
-        `index embeddings.npy hash ${embHash.slice(0, 16)} != reference ${refHash.slice(0, 16)}. ` +
-            'The layout was NOT built from the reference embeddings — provenance broken.'
-    )
-}
 
 const indexManifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
 const layout = JSON.parse(readFileSync(LAYOUT_MANIFEST, 'utf8'))
@@ -94,5 +81,36 @@ if (metaLen !== 8406) errs.push(`index metadata rows ${metaLen} != 8406`)
 if (Number(layout.rows) !== 8406) errs.push(`shipped layout rows ${layout.rows} != 8406`)
 if (errs.length) fail(errs.join('; '))
 
-console.log('[provenance] PASS — index build embeddings match the reference fixture; counts 8406/8406/8406.')
-console.log(`[provenance] reference sha256: ${refHash}`)
+// SELF-DESCRIBING PROVENANCE (2026-08-23): when the shipped manifest declares
+// embeddings_sha256 (requirement documented in public/data/README.md), that
+// declared value is authoritative and no external fixture is needed. Older
+// manifests fall back to the tmp/fixtures reference comparison.
+const declaredSha = typeof layout.embeddings_sha256 === 'string' ? layout.embeddings_sha256.toLowerCase() : ''
+if (declaredSha) {
+    if (declaredSha !== embHash) {
+        fail(
+            `index embeddings.npy hash ${embHash.slice(0, 16)} != manifest-declared ${declaredSha.slice(0, 16)}. ` +
+                'The layout was NOT built from these embeddings — provenance broken.'
+        )
+    }
+    console.log('[provenance] PASS — index build matches the manifest-declared embeddings_sha256; counts 8406/8406/8406.')
+    console.log(`[provenance] declared+verified sha256: ${declaredSha}`)
+} else {
+    if (!existsSync(REFERENCE)) {
+        fail(
+            `reference missing: ${REFERENCE}. Restore tmp/fixtures/qwen3_embeddings.npy ` +
+                '(gitignored fixture), or regenerate the layout with an embeddings_sha256 field ' +
+                '(self-describing provenance — see public/data/README.md).'
+        )
+    }
+    const refHash = sha256(REFERENCE)
+    if (embHash !== refHash) {
+        fail(
+            `index embeddings.npy hash ${embHash.slice(0, 16)} != reference ${refHash.slice(0, 16)}. ` +
+                'The layout was NOT built from the reference embeddings — provenance broken.'
+        )
+    }
+    console.log('[provenance] PASS — index build embeddings match the reference fixture; counts 8406/8406/8406.')
+    console.log(`[provenance] reference sha256: ${refHash}`)
+    console.log('[provenance] NOTE: manifest lacks embeddings_sha256 (pre-self-describing build); fixture anchor in use.')
+}

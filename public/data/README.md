@@ -19,7 +19,9 @@ directly.
 
 ### Moved (2026-08-22) — audit-reference artifacts
 
-`qwen3_embeddings.npy` (~33 MB) and `qwen3_embeddings_meta.json` were **never fetched at runtime** (zero `src/`/deploy consumers) and were **already gitignored** (`.gitignore:155-156`) — on 2026-08-22 they moved to gitignored `tmp/fixtures/` as the audit-reference copy for `tests/semantic-space-audit.mjs`. The referenced generator `scripts/build-embeddings.py` no longer exists in-tree; the real builder was the machine-local `index-rich-0.6b` pipeline (see the layout manifest's `index_dir`). If a future regeneration needs the reference embeddings, restore the fixture from `tmp/fixtures/`.
+`qwen3_embeddings.npy` (~33 MB) and `qwen3_embeddings_meta.json` were **never fetched at runtime** (zero `src/`/deploy consumers) and were **already gitignored** (`.gitignore:155-156`) — on 2026-08-22 they moved to gitignored `tmp/fixtures/` as the audit-reference copy for `tests/semantic-space-audit.mjs`. The referenced generator `scripts/build-embeddings.py` no longer exists in-tree; the real builder was the machine-local `index-rich-0.6b` pipeline (the manifest's machine-local `index_dir` field was purged in `018c2d2a`; see that commit's diff for what it pointed at). If a future regeneration needs the reference embeddings, restore the fixture from `tmp/fixtures/`.
+
+**Provenance requirement for future layout builds (2026-08-23):** every regenerated `semantic_space_layout_manifest.json` MUST embed `embeddings_sha256` (sha256 hex of the exact embeddings.npy the layout was computed from), plus `method` and `generated_at` as today. This makes the artifact self-describing: `scripts/verify-semantic-provenance.mjs` then verifies the index build against the manifest's own declared hash instead of an out-of-band fixture copy. The current shipped manifest predates this rule — until a regeneration lands, the gate anchors to `tmp/fixtures/qwen3_embeddings.npy` (shape 8406×1024 f32, sha256 `6610beec…9278a5`), whose own provenance rests on the Jun-18 batch export noted above.
 
 ### Removed (2026-08-18) — 114 MB dead weight
 
