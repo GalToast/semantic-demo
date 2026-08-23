@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+#
+# Git pre-push hook — fast campaign gates (witness + budget).
+# Local-CI Stage 1 (2026-08-23): makes the re-armed gates EXECUTE on every
+# push instead of living only in .github/workflows/ci.yml, which has no
+# Actions-capable remote (origin is a local dir; see findings register).
+#
+# Install (this file is tracked; the active copy is not):
+#   cp scripts/hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+#
+# Scope: witness STRICT (deterministic, catches register lies). Budget
+# WARN-ONLY here: per-chunk failures can stem from another lane's legitimate
+# chunk restructure and need a re-baseline decision, not an instant push
+# block. Full strictness = `npm run ci`. Budget needs a built dist/svelte;
+# skipped with a warning when absent.
+
+set -uo pipefail
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    exit 0
+fi
+
+fail=0
+
+echo "[pre-push] witness: re-deriving cited claims from disk + git..."
+if ! node scripts/verify-findings-claims.mjs; then
+    echo "[pre-push] BLOCKED: findings-register witness failed (read FAIL lines above)." >&2
+    fail=1
+fi
+
+if [ -f dist/svelte/index.html ]; then
+    echo "[pre-push] budget: comparing dist against stamped baseline (WARN-only)..."
+    if ! node scripts/qa-budget.mjs; then
+        echo "[pre-push] BUDGET WARNING: dist over stamped budget — run 'npm run ci' / review before relying on this push. NOT blocking." >&2
+    fi
+else
+    echo "[pre-push] budget: SKIPPED (no dist/svelte build present)."
+fi
+
+exit $fail
