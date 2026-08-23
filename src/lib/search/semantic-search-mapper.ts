@@ -60,7 +60,17 @@ export function mapServiceRow(row: RawServiceRow, order: number, leadToIndex?: M
         id: String(row.lead_id ?? row.name ?? `result-${order}`),
         name: String(row.name || row.lead_id || 'Unknown'),
         index: resolvedIndex,
-        score: Number(row.score ?? row.semantic_score ?? 0),
+        // Normalize the PHP lexical score to [0,1]. The API scorer
+        // (api/search.php scoreLocalSemanticRecord) is percentage-like: an
+        // exact name match is worth 28, whole-word field hits 7-13, and
+        // per-token matches 2-8 each -- so a strong single-token query can
+        // reach ~50-70 (verified: 51.3 for "coffee"). Raw scores flow
+        // straight into data-result-score (SearchResultItem.svelte) and are
+        // asserted in F-search-8, so they must be scaled. 100 is the
+        // ceiling: strong multi-token matches saturate at 1.0 rather than
+        // overshooting, ordering is preserved, and the common 0.3-0.7 range
+        // keeps granularity. Mirrors localHitsToResults' Math.min(1, /3.0).
+        score: Math.min(1, Number(row.score ?? row.semantic_score ?? 0) / 100),
         category: String(row.category ?? ''),
         snippet: String(row.public_note ?? row.public_detail ?? row.address ?? ''),
         point: {

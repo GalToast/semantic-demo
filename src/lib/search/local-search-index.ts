@@ -221,6 +221,9 @@ export function scoreRecord(record: BusinessRecord, query: string, queryTokens: 
     // doesn't dominate. Short records with the term in the name are best.
     const nameLength = nameLower.length || 1
     const lengthPenalty = Math.min(1.0, 18 / Math.max(18, nameLength))
+    // Return the RAW score. Normalization to [0,1] happens in
+    // localHitsToResults (Math.min(1, score / 3.0)); normalizing here would
+    // double-scale substring-fallback hits that flow through that path.
     return {
         score: total * lengthPenalty,
         fieldBoost: 1
