@@ -6344,18 +6344,21 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         })
         await page.setViewportSize({ width: 390, height: 844 })
         await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
-        // Mobile cold-load renders the 2D placeholder (render-kind-placeholder2d):
-        // WebGL does NOT auto-boot on mobile deep-links (desktop only), so the
-        // bottom dive strip (#btn-focus-dive) never mounts until the user enters
-        // the 3D scene. Enter it explicitly when present. Use a programmatic DOM
-        // click (not Playwright's hit-tested click) — same pattern as the legend
-        // dismiss test: the focus card may overlap the CTA mid-transition and
+        // Mobile cold-load entry depends on device capability since S5
+        // auto-enter: a capable device boots renderKind=webgl behind the Splash
+        // overlay ([data-testid="splash-cta"]); a non-capable one renders the
+        // 2D placeholder with its own CTA. Cover all three entry buttons so the
+        // test works on either path. Use a programmatic DOM click (not
+        // Playwright's hit-tested click) — same pattern as the legend dismiss
+        // test: the focus card may overlap the CTA mid-transition and
         // pointer-events interception makes actionability retries loop.
         await page
-            .locator('[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .locator('[data-testid="splash-cta"], [aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
             .waitFor({ state: 'visible', timeout: 30000 })
         await page.evaluate(() => {
-            const cta = document.querySelector('[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            const cta = document.querySelector(
+                '[data-testid="splash-cta"], [aria-label="Open in 3D"], [data-testid="placeholder-cta"]'
+            )
             if (cta) cta.click()
         })
         const webglFocusReady = await pollFor(
