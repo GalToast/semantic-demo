@@ -40,10 +40,11 @@
       _registry.schedule(100, () => { visible = true; });
     }
     // W49b Punch 2: demote the proximity legend from pinned onboarding
-    // overlay to peek/popover. Auto-dismiss after 10s if the user has not
-    // closed it manually — the card stays available via btn-help if they
-    // want to re-read it. Auto-dismiss fires from the reveal() call so it
-    // does not stack with re-reveals after demo completion.
+    // overlay to peek/popover. Auto-dismiss after 30s (was 10s — too short
+    // for first-run reading, especially with SR) if the user has not closed
+    // it manually — the card stays available via btn-help if they want to
+    // re-read it. Auto-dismiss fires from the reveal() call so it does not
+    // stack with re-reveals after demo completion.
     //
     // W61-F5.3 test-fix: skip the auto-dismiss schedule under automated
     // sessions (window.__PLAYWRIGHT__ flag OR navigator.webdriver) so
@@ -54,8 +55,7 @@
     // guard is not needed under automation.
     const isAutomatedSession = isAutomatedBrowserSession();
     if (!isAutomatedSession) {
-      _registry.schedule(10000, () => {
-        if (!dismissed) {
+      _registry.schedule(30000, () => {        if (!dismissed) {
           dismissed = true;
           visible = false;
         }

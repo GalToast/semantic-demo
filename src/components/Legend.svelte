@@ -29,18 +29,19 @@
   const legendRegistry = new DisposableRegistry({ label: 'Legend', warnAfterDispose: false });
 
   /**
-   * Auto-hide the category legend after 10s of inactivity.
-   * Mirrors the ProximityLegend behavior: users who want to keep reading
-   * can hover / focus the panel to reset the timer; otherwise the panel
-   * closes automatically so it doesn't overlap the canvas.
+   * Auto-hide the category legend after 30s of inactivity.
+   * Was 10s (mirrored ProximityLegend) — too short for first-run reading
+   * of 12 categories + counts, especially with screen readers. Hover /
+   * focus resets the timer; otherwise the panel closes so it doesn't
+   * permanently overlap the canvas. 30s gives slow readers + SR users time
+   * without pinning the overlay forever.
    */
   function scheduleLegendAutoHide(): void {
     legendRegistry.dispose();
-    legendRegistry.schedule(10000, () => {
+    legendRegistry.schedule(30000, () => {
       legendOpen.set(false);
     });
   }
-
   function resetLegendAutoHide(): void {
     scheduleLegendAutoHide();
   }
