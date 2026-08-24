@@ -41,6 +41,14 @@ export default defineConfig({
         // Use vmThreads pool to avoid process-fork hangs with large Svelte/JSDOM
         // suites while keeping test isolation via VM modules.
         pool: 'vmThreads',
+        // Cap workers: at default parallelism (8+ threads on this box) the
+        // fake-timer timing tests (search-slow-api-timing et al.) fail
+        // deterministically in the full suite while passing isolated —
+        // advanceTimersByTimeAsync flushes real microtasks between virtual
+        // steps, and saturated threads starve them past assertion windows.
+        // Measured 2026-08-24: maxWorkers=2 -> 22F->5F (only lane-WIP
+        // app-init remains), duration neutral (~125s).
+        maxWorkers: 2,
         // Inline the Svelte package so its ESM internals resolve correctly inside
         // the vmThreads runner (avoids "Cannot use import statement outside a module").
         server: {
