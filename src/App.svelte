@@ -331,8 +331,13 @@
 <!-- (moved) -->
 
 {#if surface.headerVisible}
-  <!-- Header with mode chips — outside <main> as its own banner landmark -->
-  <!-- A2-4: Always render mode chips for accessibility; CSS controls visibility per state -->
+  <!-- Header with mode chips — outside <main> as its own banner landmark.
+       NOT unconditionally rendered (despite the old A2-4 note): surface.headerVisible
+       is false on map surfaces (the map panel owns the viewport and provides its own
+       full "Navigate to <mode>" rail with aria-current marking) and on pure
+       trail/inside surfaces (their own chrome takes over). Verified 2026-08-24:
+       map mode exposes every mode via the map rail, so this is composition,
+       not an affordance blackout. -->
   <Header visible={true} utilityOnly={false} />
 {/if}
 
