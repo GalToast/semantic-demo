@@ -23,8 +23,10 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(__dirname, '..')
-const PIDFILE = path.join(ROOT, 'tmp', 'qa-server.pid')
-const PORT = 8795
+// PIDFILE is port-suffixed when QA_SERVER_PORT overrides the default, so a
+// CI journey server on another port never fights the local 8795 singleton.
+const PORT = Number(process.env.QA_SERVER_PORT) || 8795
+const PIDFILE = PORT === 8795 ? path.join(ROOT, 'tmp', 'qa-server.pid') : path.join(ROOT, 'tmp', `qa-server-${PORT}.pid`)
 const HOST = '127.0.0.1'
 
 const MIME = {
