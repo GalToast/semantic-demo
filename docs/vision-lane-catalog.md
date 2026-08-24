@@ -309,3 +309,28 @@ Self-audit found 3 discrepancies from the "69" claim; closed them:
 chatjimmy/llama3.1-8B: SUPERSEDED — second-method shows TEXT_ONLY (zydit model: "I need a card to look at... can you please provide the text strings"; novita 404, neuralwatt 402, modelscope 400). Its earlier PIXELS_OK was a zydit-parsing artifact. DROPPED.
 All 14 previously-batch-confident mistral ids individually re-verified (content: "Angel Fire Coffee" + Coffee shop/CLEVELAND/FOOD & HOSPITALITY/ACTIVE"). No remaining family-confidence-only entries.
 REGISTER FINAL: **68 unique PIXELS_OK models** (all individually second-method or content-proven; chatjimmy corrected to TEXT_ONLY). Session arc: 12 -> 27 -> 33 -> 36 -> 68 (peak 71 incl. chatjimmy) -> 68 true.
+
+## Refresh 2026-08-24T01:06Z
+
+Router catalog schema changed since Aug-4: parent `/catalog` now returns
+`routes[]` with per-provider metadata only (`catalog.modelCount`, status,
+keys) — model id lists moved to per-route `<baseUrl>/v1/models`, and several
+providers (notably nvidia) return plain OpenAI list shape **without**
+`input_modalities`, so modality filtering is no longer possible from the
+router alone. Counts below are raw listed models per provider whose
+/models endpoint answered within timeout.
+
+| provider | listed models | notes |
+|---|---|---|
+| infron | 137 | catalog-listed again (was 403-quota dead Aug-04); not live-probed |
+| zenmux | 107 | qwen3-vl-plus observed 410 EOL on 2026-08-23 |
+| novita | 44 | |
+| groq | 1 | qwen3.6-27b |
+| nvidia | (modality unknown) | **llama-3.2-11b-vision-instruct LIVE-PROBED OK** (real screenshot accepted, text returned) |
+
+Providers absent/timed out during sweep: kilo (410 EOL confirmed 08-23),
+logfare, freemodel, mistral, cloudflare, modelscope (timeout >6s — retry
+before declaring dead).
+
+Verified-lane recommendation unchanged for quick vision QA:
+nvidia/meta/llama-3.2-11b-vision-instruct.
