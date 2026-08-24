@@ -11,7 +11,38 @@
 import { test, expect } from '@playwright/test'
 import { BASE_URL } from './helpers/3d-interaction-helpers.js'
 
-test.afterEach(async ({ page }) => {
+// Boot-failure black box (2026-08-24): CI journey failures showed the static
+// pre-hydration shell with zero JS evidence, and the spec had no console/error
+// capture — every stall shipped blind. Collect page errors + console errors +
+// failed requests per test; attach to the report ONLY on failure so passing
+// runs stay quiet.
+test.beforeEach(async ({ page }, testInfo) => {
+    const boot = { pageErrors: [], consoleErrors: [], failedRequests: [] }
+    page.on('pageerror', (e) =>
+        boot.pageErrors.push(String(e.message).slice(0, 200) + ' :: ' + String(e.stack ?? '').split('\n').slice(1, 4).join(' | ').slice(0, 300))
+    )
+    page.on('console', (m) => {
+        if (m.type() === 'error') boot.consoleErrors.push(m.text().slice(0, 220))
+    })
+    page.on('requestfailed', (r) =>
+        boot.failedRequests.push(r.url().slice(-100) + ' :: ' + String(r.failure()?.errorText ?? '').slice(0, 60))
+    )
+    page.on('response', (r) => {
+        if (r.status() >= 400) boot.failedRequests.push('HTTP ' + r.status() + ' ' + r.url().slice(-100))
+    })
+    testInfo.boot = boot
+})
+
+test.afterEach(async ({ page }, testInfo) => {
+    const b = testInfo.boot
+    if (testInfo.status === 'failed' && b && b.pageErrors.length + b.consoleErrors.length + b.failedRequests.length > 0) {
+        const lines = [
+            ...b.pageErrors.map((s) => '[pageerror] ' + s),
+            ...b.consoleErrors.map((s) => '[console.error] ' + s),
+            ...b.failedRequests.map((s) => '[request] ' + s)
+        ]
+        await testInfo.attach('boot-blackbox.txt', { body: lines.join('\n'), contentType: 'text/plain' })
+    }
     try {
         await page
             .evaluate(() => {
