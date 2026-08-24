@@ -180,6 +180,11 @@ triage of the remaining board on healthy-boot master, isolated D3D11 runs:
 - **W53 #6 sub-pixel flake root-caused**: dismiss box measures 43.99998…px against a bare
   `>= 44`; assertion now compares Math.round.
 
+**FULL-SUITE CONFIRMATION (session-5 close):** `npm run qa:journey:headless` on master
+`c7868e33` → **82 passed / 0 failed / 1 skipped** (the skip is 5h's standing
+`test.fixme` placeholder) in **6.8 min** D3D11 low-contention. First fully-green run of
+this suite; prior best this week was 75P/7F/7.5min. C1 6.3s, B-A1 6.3s in-suite.
+
 Original session-2 notes:
 Remaining 7 (fresh error-contexts under `test-results/` from the
 TEST_BASE_URL=worktree-server run): dive-sibling pair, W64 sheet-resync,
