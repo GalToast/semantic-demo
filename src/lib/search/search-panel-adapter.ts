@@ -32,6 +32,7 @@ interface SetupMobileSearchSheetToggleOptions {
 let compactViewportMediaQuery: MediaQueryList | null = null
 let compactViewportChangeBound = false
 let latestCompactViewportDetector: (() => boolean) | null = null
+let mobileSheetLabelRetryQueued = false
 
 // ── Functions ──────────────────────────────────────────────────────────────
 
@@ -167,12 +168,45 @@ function bindCompactViewportChange(isCompact: () => boolean): void {
 export function setupMobileSearchSheetToggle({
     isCompactSearchViewport
 }: SetupMobileSearchSheetToggleOptions = {}): void {
-    const searchContainer = getSearchContainer()
-    const rawLabel = searchContainer?.querySelector?.('.search-label')
-    if (!searchContainer || !rawLabel) return
-    const label = rawLabel as HTMLElement
+    // W64 fix (2026-08-23): bind the compact-viewport MQ listener FIRST and
+    // unconditionally. The old early-return below fired whenever the search
+    // chrome (.search-container/.search-label) was not yet mounted at call
+    // time — which is exactly when initAdapters() and the first successful
+    // search() reach this function on mobile placeholder boots — and nothing
+    // ever retried, so `(max-width: 768px)` never got a listener and
+    // orientation changes left `mobileSearchSheet` unset forever (detail
+    // stuck at 'none'; W64 sheet-resync dead). The MQ handler re-queries the
+    // container on every fire (syncMobileSearchSheetForViewport), so it does
+    // not need the label to exist at bind time. Bind is idempotent via
+    // compactViewportChangeBound.
     const isCompact = typeof isCompactSearchViewport === 'function' ? isCompactSearchViewport : () => false
     bindCompactViewportChange(isCompact)
+
+    const searchContainer = getSearchContainer()
+    const rawLabel = searchContainer?.querySelector?.('.search-label')
+    if (!searchContainer || !rawLabel) {
+        // Chrome not mounted yet: the MQ sync above is live, but the label
+        // toggle wiring still needs a mounted label. Retry bounded (~3s of
+        // rAF ticks) so a late mount gets wired exactly once.
+        if (typeof requestAnimationFrame === 'function' && !mobileSheetLabelRetryQueued) {
+            mobileSheetLabelRetryQueued = true
+            let tries = 0
+            const retryWire = (): void => {
+                const c = getSearchContainer()
+                const l = c?.querySelector?.('.search-label')
+                if (c && l) {
+                    mobileSheetLabelRetryQueued = false
+                    setupMobileSearchSheetToggle({ isCompactSearchViewport })
+                    return
+                }
+                if (++tries < 60) requestAnimationFrame(retryWire)
+                else mobileSheetLabelRetryQueued = false
+            }
+            requestAnimationFrame(retryWire)
+        }
+        return
+    }
+    const label = rawLabel as HTMLElement
 
     label.setAttribute('aria-controls', 'search-results')
 
@@ -204,4 +238,3 @@ export function setupMobileSearchSheetToggle({
 
     syncMobileSearchSheetForViewport(isCompact)
 }
-

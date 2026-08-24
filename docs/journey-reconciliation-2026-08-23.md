@@ -165,6 +165,21 @@ triage of the remaining board on healthy-boot master, isolated D3D11 runs:
 - **Still REAL: W64 sheet-resync and B-A1 count overshoot** — both fail isolated;
   next digs.
 
+- **W64 — REAL PRODUCT BUG, FIXED.** `setupMobileSearchSheetToggle` early-returned when
+  the search chrome wasn't mounted yet (exactly the state at initAdapters() boot and at
+  first successful search() on placeholder boots) — BEFORE `bindCompactViewportChange`,
+  and nothing ever retried, so `(max-width: 768px)` never got a listener (proven via
+  MediaQueryList.prototype.addEventListener instrumentation: zero binds) and orientation
+  changes left `mobileSearchSheet` unset forever. Fix: bind-first (handler re-queries
+  container per fire), label wiring retried bounded via rAF. Verified: journey test PASS
+  12.7s; MQ listener registered; label click now toggles expanded/peek.
+- **B-A1 — ENVIRONMENT PHANTOM, healed.** Needs `VITE_API_BASE_URL=http://127.0.0.1:8795`
+  baked into the served build (the canonical playwright-web-server does this; bare static
+  servers don't, so same-origin /api.php 404s under ?staticDev=0) AND plain data twins
+  (`scripts/decompress-data-twins.mjs`) for the threads artifacts. PASS 11.4s with both.
+- **W53 #6 sub-pixel flake root-caused**: dismiss box measures 43.99998…px against a bare
+  `>= 44`; assertion now compares Math.round. 
+
 Original session-2 notes:
 Remaining 7 (fresh error-contexts under `test-results/` from the
 TEST_BASE_URL=worktree-server run): dive-sibling pair, W64 sheet-resync,
