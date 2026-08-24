@@ -9,7 +9,11 @@ import { focusOnNode } from '@lib/orchestration/lifecycle'
 const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const PORT = Number(process.env.SEMANTIC_SCENE_PLAYTEST_PORT || 8798);
-const BASE_URL = `http://127.0.0.1:${PORT}/index.html`;
+// Serve the BUILT app entry directly. The root /index.html is a redirect stub
+// whose location.replace('./dist/svelte/') DROPS query params — contract-boot=1
+// and nodemo=1 never reach the app, so the gesture-gated mobile boot (e1e9a6d4)
+// never starts three.js and waitForScene times out (2026-08-24 3D triage).
+const BASE_URL = `http://127.0.0.1:${PORT}/dist/svelte/index.html`;
 const outDir = path.resolve(
     process.cwd(),
     'tmp',
@@ -389,15 +393,17 @@ async function main() {
                     }
                 }
                 if (targetIndex === null) targetIndex = 0;
-                focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
-                setTrailDepth?.(1, { skipUrlSync: true });
+                // Retired bare globals (window-global-allowlist.md) — route
+                // through the sanctioned __APP_ACTIONS__ namespace.
+                window.__APP_ACTIONS__?.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
+                window.__APP_ACTIONS__?.setTrailDepth?.(1, { skipUrlSync: true });
             });
             await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
         };
         const focusedResult = await runFreshPage('02-mobile-focused-node', { view: 'galaxy', q: 'coffee', anchor: '519' }, focusSetup);
         const insideResult = await runFreshPage('03-mobile-step-inside', { view: 'galaxy', q: 'coffee', anchor: '519' }, async (page) => {
             await focusSetup(page);
-            await page.evaluate(() => setTrailDepth?.(2, { fromUserGesture: true }));
+            await page.evaluate(() => window.__APP_ACTIONS__?.setTrailDepth?.(2, { fromUserGesture: true }));
             await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
         });
         const mapResult = await runFreshPage('04-mobile-map', { view: 'map', q: 'coffee', anchor: '519' });
