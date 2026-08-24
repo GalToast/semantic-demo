@@ -37,7 +37,15 @@ export const VALID_SEARCH_STATUS = new Set<string>(['idle', 'searching', 'focusi
 
 export const VALID_LOADING_PHASES = new Set<string>(['records', 'scene', 'restore', 'launch'])
 
-export const VALID_SEMANTIC_LANE_STATES = new Set<string>(['checking', 'healthy', 'degraded', 'offline', 'stuck', 'reconnecting', 'unavailable'])
+export const VALID_SEMANTIC_LANE_STATES = new Set<string>([
+    'checking',
+    'healthy',
+    'degraded',
+    'offline',
+    'stuck',
+    'reconnecting',
+    'unavailable'
+])
 
 export const VALID_FOCUS_TRANSITION_MODES = new Set<string>(['idle', 'entering', 'settling', 'inside', 'exiting'])
 
