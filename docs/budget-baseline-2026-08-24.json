@@ -1,0 +1,407 @@
+{
+  "timestamp": "2026-08-24T17:08:15.559Z",
+  "chunks": [
+    {
+      "name": "three.module-DOYciGzp.js",
+      "size": 734023
+    },
+    {
+      "name": "search.svelte-ytw29vpp.js",
+      "size": 135720
+    },
+    {
+      "name": "index-xsy00jVB.js",
+      "size": 113829
+    },
+    {
+      "name": "three-postprocessing-CZhdQZ9u.js",
+      "size": 81751
+    },
+    {
+      "name": "three-engine-core-U1Mc1JNd.js",
+      "size": 76478
+    },
+    {
+      "name": "index-client-Ch6H7jew.js",
+      "size": 50913
+    },
+    {
+      "name": "app.svelte-b194BH2I.js",
+      "size": 47802
+    },
+    {
+      "name": "lifecycle-tSB0r-IN.js",
+      "size": 39345
+    },
+    {
+      "name": "focus-pocket-DOgLjVWR.js",
+      "size": 24654
+    },
+    {
+      "name": "focus-C1STPrHo.js",
+      "size": 17671
+    },
+    {
+      "name": "LineSegments2-Cwk_LGTu.js",
+      "size": 17666
+    },
+    {
+      "name": "JourneyChrome-BlkVB5j7.js",
+      "size": 17062
+    },
+    {
+      "name": "SearchResults-BrxVZelB.js",
+      "size": 16024
+    },
+    {
+      "name": "semantic-overlay-BnmQ_unh.js",
+      "size": 15378
+    },
+    {
+      "name": "focus-ui-B4ugiXxW.js",
+      "size": 14958
+    },
+    {
+      "name": "legend-panel.svelte-CxBpDTMe.js",
+      "size": 13936
+    },
+    {
+      "name": "three.module-DGEGl4pH.js",
+      "size": 13514
+    },
+    {
+      "name": "camera.svelte-B5lDrGia.js",
+      "size": 13265
+    },
+    {
+      "name": "JourneyCompass-kOg5U_hS.js",
+      "size": 13055
+    },
+    {
+      "name": "data-worker-cS80EeQd.js",
+      "size": 12879
+    },
+    {
+      "name": "data-worker.js",
+      "size": 12879
+    },
+    {
+      "name": "neighborhood-Bfke7DRx.js",
+      "size": 11737
+    },
+    {
+      "name": "orchestration-DdbepBq9.js",
+      "size": 11733
+    },
+    {
+      "name": "InfoPanel-BcjVfiSf.js",
+      "size": 11037
+    },
+    {
+      "name": "global-bindings-s9PBvtdH.js",
+      "size": 10361
+    },
+    {
+      "name": "thread-model-CmCWsAzF.js",
+      "size": 10003
+    },
+    {
+      "name": "semantic-threads-BGQQHMUB.js",
+      "size": 9742
+    },
+    {
+      "name": "semantic-lane-cvrFVYF5.js",
+      "size": 9307
+    },
+    {
+      "name": "Canvas-_fSVmosu.js",
+      "size": 8910
+    },
+    {
+      "name": "canvas-interaction-BSARyvxe.js",
+      "size": 8636
+    },
+    {
+      "name": "SelectedBusinessDetails-C7qWKaKZ.js",
+      "size": 8097
+    },
+    {
+      "name": "FocusCard-BwRzQFSN.js",
+      "size": 7590
+    },
+    {
+      "name": "ThreadInspector-BUuUaHEZ.js",
+      "size": 7295
+    },
+    {
+      "name": "map-state-CQhhDjt4.js",
+      "size": 6980
+    },
+    {
+      "name": "focus.svelte--z8Rw8GS.js",
+      "size": 6586
+    },
+    {
+      "name": "thread-inspector-webgl-BZvq88H8.js",
+      "size": 6527
+    },
+    {
+      "name": "journey-fmyQgMYQ.js",
+      "size": 6141
+    },
+    {
+      "name": "route-trace-Ck1AvXzE.js",
+      "size": 6103
+    },
+    {
+      "name": "viewport.svelte-bX0M5s2n.js",
+      "size": 5887
+    },
+    {
+      "name": "DemoChoreography-DXQY8y88.js",
+      "size": 5849
+    },
+    {
+      "name": "cluster-filter-controller-CLhmPT95.js",
+      "size": 5667
+    },
+    {
+      "name": "canvas-hover-preview-CJ4tW9hv.js",
+      "size": 5646
+    },
+    {
+      "name": "journey-webgl-lazy-BXvEEkJc.js",
+      "size": 5598
+    },
+    {
+      "name": "loading-C5hJ18Ek.js",
+      "size": 5243
+    },
+    {
+      "name": "transition-effects-DRnRs5Tf.js",
+      "size": 5231
+    },
+    {
+      "name": "MapView-C75FZuUz.js",
+      "size": 4990
+    },
+    {
+      "name": "weather.svelte-UrpAAbps.js",
+      "size": 4802
+    },
+    {
+      "name": "audio-scape-BhoYm-lI.js",
+      "size": 4547
+    },
+    {
+      "name": "triggers-CtznGNpx.js",
+      "size": 4431
+    },
+    {
+      "name": "WeatherWidget-CxJtVZsy.js",
+      "size": 4268
+    },
+    {
+      "name": "test-compat.svelte-ByOdJo-R.js",
+      "size": 4213
+    },
+    {
+      "name": "ErrorState-DSbr8k_J.js",
+      "size": 3727
+    },
+    {
+      "name": "geo-data-CFWpyQpw.js",
+      "size": 3719
+    },
+    {
+      "name": "search-abort-DN-nqDZY.js",
+      "size": 3698
+    },
+    {
+      "name": "journey.svelte-CN97w0lH.js",
+      "size": 3604
+    },
+    {
+      "name": "route-arrival-overlay-adapter-BKGCKYJd.js",
+      "size": 3488
+    },
+    {
+      "name": "webgl-Cz1toqX2.js",
+      "size": 3040
+    },
+    {
+      "name": "point-color-a8mkvI1-.js",
+      "size": 3009
+    },
+    {
+      "name": "search-dispatch-DXu3PCGA.js",
+      "size": 2824
+    },
+    {
+      "name": "focus-pocket-thread-curve-CepWN_Ei.js",
+      "size": 2603
+    },
+    {
+      "name": "error-messages-Bbhd74tb.js",
+      "size": 2456
+    },
+    {
+      "name": "config-DEFzhHEw.js",
+      "size": 2336
+    },
+    {
+      "name": "test-globals-DcRZ-Li4.js",
+      "size": 2002
+    },
+    {
+      "name": "environment-CIpK0VY2.js",
+      "size": 1663
+    },
+    {
+      "name": "FocusPocket-DOhhWTUb.js",
+      "size": 1605
+    },
+    {
+      "name": "math-vec3-RZz4dq2l.js",
+      "size": 1571
+    },
+    {
+      "name": "webgl-utils-D4y7Nr0k.js",
+      "size": 1204
+    },
+    {
+      "name": "preload-helper-DbYNonRq.js",
+      "size": 1189
+    },
+    {
+      "name": "camera-controls-EFfZyU4G.js",
+      "size": 1165
+    },
+    {
+      "name": "use-parity-attrs.svelte-BkhISP5X.js",
+      "size": 1081
+    },
+    {
+      "name": "webgl-context-q7w9QnDN.js",
+      "size": 1076
+    },
+    {
+      "name": "thread-lens-BuSSEvOZ.js",
+      "size": 985
+    },
+    {
+      "name": "scene-ready.svelte-CiLSCnmO.js",
+      "size": 807
+    },
+    {
+      "name": "humanize-DwZaZkA_.js",
+      "size": 723
+    },
+    {
+      "name": "pocket-DMl_o_9Z.js",
+      "size": 709
+    },
+    {
+      "name": "focus-panel-mode-DgVE1lEY.js",
+      "size": 573
+    },
+    {
+      "name": "legend.svelte-J4t-Tm4g.js",
+      "size": 573
+    },
+    {
+      "name": "lifecycle-D9ZlgkOQ.js",
+      "size": 551
+    },
+    {
+      "name": "app-lifecycle-Dgr3SukQ.js",
+      "size": 512
+    },
+    {
+      "name": "engine.svelte-DgSV3nNT.js",
+      "size": 493
+    },
+    {
+      "name": "semantic-threads-Bbnfbpii.js",
+      "size": 332
+    },
+    {
+      "name": "math-easing-BvT3svRa.js",
+      "size": 311
+    },
+    {
+      "name": "journey-webgl-lazy-fNRZo717.js",
+      "size": 268
+    },
+    {
+      "name": "journey-focus-timers-8ntCA5wX.js",
+      "size": 256
+    },
+    {
+      "name": "search-react-selectors-CJVRorcc.js",
+      "size": 250
+    },
+    {
+      "name": "canvas-interaction-CHN89gue.js",
+      "size": 234
+    },
+    {
+      "name": "transition-B9eTy4k0.js",
+      "size": 177
+    },
+    {
+      "name": "rolldown-runtime-H_PjY6_i.js",
+      "size": 163
+    },
+    {
+      "name": "thread-settler-D9mRb7su.js",
+      "size": 160
+    },
+    {
+      "name": "debug-BZBSkmqm.js",
+      "size": 145
+    },
+    {
+      "name": "audio-scape-D3LKrwmL.js",
+      "size": 143
+    },
+    {
+      "name": "thread-manager-sEw-flF6.js",
+      "size": 126
+    },
+    {
+      "name": "route-trace-Bzy8EXUs.js",
+      "size": 112
+    },
+    {
+      "name": "url-writer-D3zYwrN2.js",
+      "size": 98
+    },
+    {
+      "name": "data-worker-Dr99kNpy.js",
+      "size": 86
+    },
+    {
+      "name": "focus-ButeZ8eC.js",
+      "size": 80
+    },
+    {
+      "name": "disclose-version-BvIhFN19.js",
+      "size": 74
+    },
+    {
+      "name": "index-client-DYRucHl2.js",
+      "size": 35
+    }
+  ],
+  "totalBytes": 1751995,
+  "cssBytes": 447732,
+  "grandBytes": 2199727,
+  "blessed_at": "2026-08-24T17:08:16.487Z",
+  "note": "2026-08-24 re-stamp: +39.4KB total vs 08-23 baseline across a day of multi-lane landings (priv-data fetch tooling 43675589, keyboard predicate split 8fc89c65, INP prewarm+pp-deferral 0cca993d/0c19e272, timer disposal sweep ed5dcbd5, copy pass e652f4e9). Per-lane KB accounting not performed — gate was structurally comparing name-keyed chunks across an incompatible build-config era (all 45 baseline chunk hashes stale). Contributors should watch their own deltas against THIS stamp.",
+  "prior_baseline": "budget-baseline-2026-08-23.json",
+  "prior_blessed_at": "2026-08-23T21:04:38.672Z",
+  "delta_vs_prior_kb": 39.4,
+  "git_head_sha": "0cca993d6c8d2f63aa55f58c5b8abe3a0d3f1a13",
+  "git_dirty_count": 18
+}
