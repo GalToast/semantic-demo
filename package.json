@@ -50,6 +50,7 @@
         "check:ts-progress": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/ts-js-drift-contract.mjs --progress",
         "check:legacy-budget": "node scripts/check-legacy-ts-budget.mjs",
         "build:safe": "npm run check",
+        "qa:boot-smoke": "node scripts/qa-boot-smoke.mjs",
         "qa:server": "node scripts/qa-server.mjs start",
         "qa:server:ensure": "node scripts/qa-server.mjs ensure",
         "qa:server:stop": "node scripts/qa-server.mjs stop",

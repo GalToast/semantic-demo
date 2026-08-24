@@ -178,7 +178,7 @@ triage of the remaining board on healthy-boot master, isolated D3D11 runs:
   servers don't, so same-origin /api.php 404s under ?staticDev=0) AND plain data twins
   (`scripts/decompress-data-twins.mjs`) for the threads artifacts. PASS 11.4s with both.
 - **W53 #6 sub-pixel flake root-caused**: dismiss box measures 43.99998…px against a bare
-  `>= 44`; assertion now compares Math.round. 
+  `>= 44`; assertion now compares Math.round.
 
 Original session-2 notes:
 Remaining 7 (fresh error-contexts under `test-results/` from the
@@ -193,6 +193,17 @@ git worktree add ../se-journey-head HEAD && cd ../se-journey-head   && npm insta
 node tmp/journey-head-server.mjs &   # serves worktree on :8797
 TEST_BASE_URL=http://127.0.0.1:8797 SEMANTIC_USE_D3D11=1   npx playwright test tests/widget-journey.spec.js --workers=1
 ```
+
+## Gate gap closed: boot smoke (`scripts/qa-boot-smoke.mjs`)
+
+The budget/size gates green-lit `60c2428d` because they only measure bytes -
+a dist that never boots passes them. `npm run qa:boot-smoke` now loads the
+built dist in headless Chromium and asserts an early main.ts side-effect
+(`window.__LEGACY_APP_STATE__`) lands within 15s, for both a plain cold boot
+and a deep-link self-entry boot. Verified both directions: PASS on a live
+build; FAIL with the exact stalled-state dump on a synthesized dead-entry
+dist. **Run it BEFORE budget/provenance gates and before any deploy.** CI
+wiring pending (ci.yml was lane-dirty at authoring time).
 
 ## Known phantom signature: non-booting dist
 
