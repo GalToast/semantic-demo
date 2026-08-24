@@ -43,6 +43,11 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
+    // c9e7871 — test(C1) carrying its own ledger update in
+    // docs/journey-reconciliation-2026-08-23.md (session-5 verdicts for the
+    // same fix). Doc-class bookkeeping riding the test commit, exempted
+    // 2026-08-24 (same evidence-class as the docs precedents above).
+    'c9e787176e4135664067583db5a8b4a008456074',
     // eea3c242 — docs(engine) correcting the stale three-micro-demo-bridge comment;
     // carried a 1-line comment correction inside three-interaction-visuals.ts.
     // Comment-only code-file touch: doc-class intent, exempted 2026-08-20.
