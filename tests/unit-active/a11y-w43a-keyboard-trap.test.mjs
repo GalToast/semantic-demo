@@ -157,7 +157,9 @@ describe('A11y W43-A: Active result live announcement', () => {
     })
 
     it('liveAnnouncement includes result name and rank', () => {
-        expect(src).toMatch(/liveAnnouncement = .*Focus/)
+        // Post-runes migration the announcement is a template literal:
+        // `${name}. ${rank}. (${idx + 1} of ${resultSlice.length})`
+        expect(src).toMatch(/liveAnnouncement = .*\$\{name\}.*\$\{rank\}/)
     })
 
     it('aria-activedescendant is NOT set on the container (roving tabindex is the focus mechanism)', () => {

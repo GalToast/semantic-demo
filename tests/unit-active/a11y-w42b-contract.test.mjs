@@ -126,7 +126,9 @@ describe('A11y W42-B: Search results live announcement', () => {
     })
 
     it('liveAnnouncement is updated when activeIndex changes', () => {
-        expect(src).toMatch(/liveAnnouncement = .*Focus/)
+        // Post-runes migration the announcement is a template literal:
+        // `${name}. ${rank}. (${idx + 1} of ${resultSlice.length})`
+        expect(src).toMatch(/liveAnnouncement = .*\$\{name\}.*\$\{rank\}/)
     })
 
     it('result list has role="list" and aria-label (ARIA sweep F3: listbox → list)', () => {
