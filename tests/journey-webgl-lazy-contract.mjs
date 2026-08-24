@@ -160,16 +160,18 @@ async function testConsumerWiring() {
 
     const consumer = readFileSync(SRC_CONSUMER, 'utf8')
 
-    // The two functions we rely on must be imported FROM the lazy bridge.
-    const importsFromBridge = consumer.match(/import\s*\{[^}]*\}\s*from\s*['"]@lib\/engine\/journey-webgl-lazy['"]/)
-    assert(importsFromBridge !== null, 'url-restore-deep-link must import from @lib/engine/journey-webgl-lazy')
+    // Post task-186 (ef58273d): the consumer imports the lazy bridge
+    // DYNAMICALLY and calls through the module namespace — same theater lock
+    // (no static @lib/journey/webgl), one more layer of laziness.
+    const dynamicBridge = consumer.match(/import\(\s*['"]@lib\/engine\/journey-webgl-lazy['"]\s*\)/)
+    assert(dynamicBridge !== null, 'url-restore-deep-link must dynamically import @lib/engine/journey-webgl-lazy')
     assert(
-        importsFromBridge[0].includes('refreshFocusSemanticOverlay'),
-        'url-restore-deep-link must import refreshFocusSemanticOverlay from the lazy bridge'
+        /\.refreshFocusSemanticOverlay\s*\(/.test(consumer),
+        'url-restore-deep-link must call refreshFocusSemanticOverlay from the lazy bridge'
     )
     assert(
-        importsFromBridge[0].includes('updateFocusSemanticOverlayPositions'),
-        'url-restore-deep-link must import updateFocusSemanticOverlayPositions from the lazy bridge'
+        /\.updateFocusSemanticOverlayPositions\s*\(/.test(consumer),
+        'url-restore-deep-link must call updateFocusSemanticOverlayPositions from the lazy bridge'
     )
 
     // The regression guard: it must NOT statically import the heavy webgl module.
