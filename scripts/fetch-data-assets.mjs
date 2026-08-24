@@ -21,7 +21,7 @@
  * repo as GH_TOKEN and ensure `gh auth setup-git` equivalent, or embed a
  * short-lived token in the URL via GIT_AUTH_HEADER env.
  */
-import { existsSync, mkdirSync, cpSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, cpSync, rmSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
@@ -55,7 +55,12 @@ try {
     mkdirSync(cache, { recursive: true }) // exec cwd must exist; git fills it
     // CI path: read-only deploy key (Actions secret DATA_DEPLOY_KEY written to
     // a file by the workflow). Local path: gh handles auth when logged in.
-    const keyFile = process.env.DATA_DEPLOY_KEY_FILE
+    // Accept the raw key via env (CI) or a pre-written key file.
+    let keyFile = process.env.DATA_DEPLOY_KEY_FILE
+    if (!keyFile && process.env.DATA_DEPLOY_KEY) {
+        keyFile = resolve(cache, '.data-deploy-key')
+        writeFileSync(keyFile, process.env.DATA_DEPLOY_KEY.trimEnd() + '\n')
+    }
     if (keyFile && existsSync(keyFile)) {
         execSync(
             'git clone --depth 1 --quiet git@github.com:GalToast/semantic-explorer-data.git .',
@@ -76,7 +81,7 @@ try {
             shell: 'bash'
         })
     }
-} catch (err) {
+} catch (_err) {
     console.error(
         `[fetch:data] FAILED to clone ${DATA_REPO}.\n` +
             'Auth needed for the private data repo. Run:\n' +
