@@ -309,13 +309,20 @@ Exit codes (comparison mode):
         const jSSize = base.totalBytes
         const diff = s.totalBytes - jSSize
 
-        // Era-change detection (2026-08-24): a build-config change rotates ALL
-        // content-hashes at once. If fewer than 20% of baseline chunk names
-        // still exist verbatim in the fresh build, name-keyed per-chunk deltas
-        // are meaningless — surface that explicitly instead of emitting
-        // confusing 0→x rows (root cause of the 08-24 CI red-streak).
-        const survivingNames = base.chunks.filter((c) => existsSync(resolve(ASSETS_DIR, c.name))).length
-        const eraChanged = base.chunks.length > 0 && survivingNames / base.chunks.length < 0.2
+        // Era-change detection (2026-08-24, refined): content-hash FILENAMES
+        // rotate on every rebuild (hashes cascade up the import graph), so raw
+        // name survival is useless. The stable identity is the chunk-name
+        // PREFIX (everything before the content hash). A build-config change
+        // rotates PREFIXES (chunk boundaries moved); a normal rebuild does not.
+        const stripHash = (name) => name.replace(/-[A-Za-z0-9_-]{6,10}\.(js|css)$/, '')
+        const basePrefixes = new Set(base.chunks.map((c) => stripHash(c.name)))
+        const curPrefixes = new Set(s.js.map((c) => stripHash(c.name)))
+        let survivingPrefixes = 0
+        for (const prefix of basePrefixes) {
+            if (curPrefixes.has(prefix)) survivingPrefixes++
+        }
+        const eraChanged =
+            basePrefixes.size > 0 && survivingPrefixes / basePrefixes.size < 0.5
 
         console.log(`\n── Baseline comparison: ${target} ──`)
         if (!base.blessed_at) {
@@ -366,11 +373,15 @@ Exit codes (comparison mode):
         }
 
         const slack = 32 * 1024
-        const passed = diff <= slack && !mtGrowth
+        // Era-changed runs gate on TOTAL only: name-keyed mode-transition
+        // deltas are meaningless when every baseline hash rotated (a new-hash
+        // chunk vs bs=0 always trips the 16KB rule — the 08-24 CI red-streak
+        // root cause). The era hint above already told the user why.
+        const passed = diff <= slack && (eraChanged || !mtGrowth)
         console.log(
             passed
-                ? `\nPASSED (total grew ≤ +${kb(slack)} KB; mode-transition chunks within +16 KB each)`
-                : `\nFAILED — total grew > +${kb(slack)} KB or a mode-transition chunk grew > 16 KB`
+                ? `\nPASSED (total grew ≤ +${kb(slack)} KB${eraChanged ? '; era-change: total-only gate' : '; mode-transition chunks within +16 KB each'})`
+                : `\nFAILED — total grew > +${kb(slack)} KB${eraChanged ? '' : ' or a mode-transition chunk grew > 16 KB'}`
         )
 
         process.exit(passed ? 0 : 1)
