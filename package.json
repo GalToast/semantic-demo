@@ -132,7 +132,7 @@
         "test:live:e2e": "TEST_BASE_URL=http://127.0.0.1:8797 npx playwright test tests/e2e-click-flow.spec.js --browser=chromium",
         "test:svelte-migration": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/verify-svelte-migration.mjs",
         "dev:svelte": "vite --config vite.config.ts",
-        "build:svelte": "node scripts/fetch-data-assets.mjs --if-missing && vite build --config vite.config.ts && npm run check:data-compression",
+        "build:svelte": "node scripts/fetch-data-assets.mjs --if-missing && node scripts/build-minimized-enrichment.mjs && vite build --config vite.config.ts && npm run check:data-compression",
         "preview:svelte": "vite preview --config vite.config.ts",
         "git:hook:check": "node scripts/git-hooks/run-check.mjs",
         "git:hook:install": "node scripts/git-hooks/install.mjs",
