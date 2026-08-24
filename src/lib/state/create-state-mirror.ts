@@ -101,6 +101,12 @@ export interface StateMirror<T> extends StateMirrorApi<T> {
     /** Read the current mirror state. Always reads from appState (not writable). */
     read(): T
     /**
+     * True once the underlying writable exists (created lazily on first use).
+     * Completes 43387483: focus.svelte.ts gates its self-reads on this to
+     * avoid re-entrant getOrCreateWritable() recursion during first create.
+     */
+    isMaterialized(): boolean
+    /**
      * Drop the window-keyed singleton so the next `read()` recomputes the
      * initial value. Use in test beforeEach to ensure isolation.
      */
@@ -152,17 +158,12 @@ export function createStateMirror<T>(config: {
         // For primitive T (number/boolean/string), `state[key]` is undefined
         // for any key — the state itself IS the bound value. For object T,
         // we use the key lookup per the bindings map.
-        const isPrimitive =
-            state === null ||
-            state === undefined ||
-            typeof state !== 'object'
+        const isPrimitive = state === null || state === undefined || typeof state !== 'object'
         const bindings = config.bindings as Record<string, keyof typeof appState | null | undefined>
         for (const stateKey of Object.keys(bindings)) {
             const appStateKey = bindings[stateKey]
             if (appStateKey == null) continue
-            const value = isPrimitive
-                ? (state as unknown)
-                : (state as Record<string, unknown>)[stateKey as string]
+            const value = isPrimitive ? (state as unknown) : (state as Record<string, unknown>)[stateKey as string]
             ;(appState as unknown as Record<string, unknown>)[appStateKey as string] = value
         }
     }
@@ -185,6 +186,17 @@ export function createStateMirror<T>(config: {
         }
     }
 
+    /** True once the writable exists in the window-keyed singleton slot.
+     *  During the very first getOrCreateWritable() → computeFromAppState() call,
+     *  the singleton isn't published yet, so this returns false — which is the
+     *  signal self-reading consumers need to fall back to defaults instead of
+     *  re-entering getOrCreateWritable(). */
+    function isMaterialized(): boolean {
+        if (typeof window === 'undefined') return false
+        const existing = (window as unknown as Record<string, unknown>)[storageKey]
+        return Boolean(existing && typeof (existing as { subscribe?: unknown }).subscribe === 'function')
+    }
+
     // ── Build the callable store-shaped API ────────────────────────────────
 
     const fn = (() => config.computeFromAppState()) as unknown as StateMirror<T>
@@ -192,6 +204,7 @@ export function createStateMirror<T>(config: {
     fn.update = update
     fn.set = set
     fn.resetForTests = resetForTests
+    fn.isMaterialized = isMaterialized
     // Svelte store contract: expose .subscribe so $store-style reads work
     Object.defineProperty(fn, 'subscribe', { value: _writable.subscribe })
 
