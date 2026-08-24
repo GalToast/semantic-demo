@@ -58,6 +58,10 @@ import { createMycelium } from '@lib/engine/thread-manager'
 import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
 // Dynamic import: postprocessing is code-split to save ~150-200 kB
 let _ppResize: ((w: number, h: number) => void) | null = null
+// INP deferral state: at most one deferred postprocessing load may be pending;
+// every resize while pending just updates the dims the load will apply.
+let _ppLoadPending = false
+let _ppPendingDims: { width: number; height: number } | null = null
 
 // Interaction & UI
 import {
@@ -507,14 +511,36 @@ export function resizeEngine(width: number, height: number): void {
         // build) into a logged warning so resizeEngine never converts the unhandled
         // promise rejection into a page crash. The next resizeEngine call will
         // retry the dynamic import once the chunk is available.
-        import('@lib/engine/three-postprocessing')
-            .then((m) => {
-                _ppResize = m.resizePostProcessing
-                _ppResize?.(width, height)
-            })
-            .catch((e: unknown) => {
-                debugWarn('[lifecycle] postprocessing lazy-load failed during resize:', e)
-            })
+        //
+        // INP campaign (2026-08-24): this first-resize eval lands INSIDE the
+        // post-tap interaction window (82KB chunk — visible slice of the
+        // ~880ms sampled module-eval blob, see tmp/inp-attribution.md).
+        // Defer it past the window via requestIdleCallback (setTimeout
+        // fallback for jsdom); pending dimensions are applied when the
+        // module lands, so nothing is lost — effects appear ~a frame later.
+        const loadAndApply = (): void => {
+            _ppLoadPending = false
+            const dims = _ppPendingDims ?? { width, height }
+            import('@lib/engine/three-postprocessing')
+                .then((m) => {
+                    _ppResize = m.resizePostProcessing
+                    _ppResize?.(dims.width, dims.height)
+                })
+                .catch((e: unknown) => {
+                    debugWarn('[lifecycle] postprocessing lazy-load failed during resize:', e)
+                })
+        }
+        // Single-flight: coalesce overlapping resizes while the 82KB chunk is
+        // deferred — one load, applying the LATEST dims.
+        _ppPendingDims = { width, height }
+        if (!_ppLoadPending) {
+            _ppLoadPending = true
+            if (typeof requestIdleCallback === 'function') {
+                requestIdleCallback(() => loadAndApply(), { timeout: 500 })
+            } else {
+                setTimeout(loadAndApply, 120)
+            }
+        }
     } else {
         _ppResize(width, height)
     }

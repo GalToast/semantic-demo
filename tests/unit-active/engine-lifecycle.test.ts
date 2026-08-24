@@ -100,6 +100,9 @@ vi.mock('@lib/orchestration/event-bus', () => ({
     publish: vi.fn(),
     subscribe: vi.fn(() => vi.fn()), // returns unsubscribe
     subscribeKeyed: vi.fn(() => vi.fn()),
+    unsubscribeKeyed: vi.fn(),
+    getSubscriberCount: vi.fn(() => 0),
+    clearAllSubscribers: vi.fn(),
     EVENTS: {
         CAMERA_NODE_FOCUSED: 'CAMERA_NODE_FOCUSED',
         TRANSITION_PHASE_CHANGED: 'TRANSITION_PHASE_CHANGED',
@@ -466,7 +469,10 @@ describe('engine-lifecycle — resizeEngine behavior', () => {
         // The postprocessing composer is lazy-loaded (dynamic import) — allow
         // the .then to land before asserting (was order-dependent before the
         // M-4 _ppResize cache-clear on destroy).
-        await new Promise((resolve) => setTimeout(resolve, 0))
+        // INP deferral (2026-08-24): the import now sits behind a
+        // requestIdleCallback (setTimeout-120 fallback in jsdom), so flush
+        // 0ms → 250ms to let the idle callback + .then chain land.
+        await new Promise((resolve) => setTimeout(resolve, 250))
 
         expect(resizePostProcessing).toHaveBeenCalledOnce()
     })
@@ -474,8 +480,10 @@ describe('engine-lifecycle — resizeEngine behavior', () => {
     it('passes width and height to resizePostProcessing', async () => {
         resizeEngine(800, 600)
         // Lazy-loaded composer — await the dynamic-import .then (M-4 cache-clear
-        // makes this genuinely async per test).
-        await new Promise((resolve) => setTimeout(resolve, 0))
+        // makes this genuinely async per test). Same 250ms idle-deferral flush
+        // as above; first test in this describe typically primed _ppResize,
+        // but each beforeEach re-init must not assume that.
+        await new Promise((resolve) => setTimeout(resolve, 250))
 
         expect(resizePostProcessing).toHaveBeenCalledWith(800, 600)
     })
