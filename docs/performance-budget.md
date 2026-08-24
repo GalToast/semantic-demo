@@ -60,6 +60,37 @@ These are **not live** — the script still enforces 2,500 / 650 / 65 / 16.
 - Core Web Vitals can also be sampled via Chrome DevTools Performance panel.
 - Budget failures should be filed as bugs with `perf-budget` label.
 
+### Tap→Canvas Init-Chain Budget (INP campaign 2026-08/09)
+
+The splash-CTA tap → first 3D canvas gap is budgeted separately from CWV.
+Instrumentation: `__ENGINE_INIT_TRACE__` breadcrumbs + `performance`
+`engine-init-*` marks (merged by `tmp/init-trace-probe.mjs`, which is
+self-contained — inline server, no external dependency).
+
+| phase (from gpu-start) | budget | measured (throttled 4x) |
+| --- | --- | --- |
+| scene build (buildThreeSceneOrFallback) | ≤ 250ms | 174–229ms ✓ |
+| createPoints (8,406 pts + matrices) | ≤ 400ms | 394–624ms ⚠ |
+| createMycelium (100,872 edge segments) | ≤ 400ms | **751–1807ms ✗** |
+| bindings + semantic attach + ready | ≤ 100ms | ~100ms ✓ |
+
+- **Landed**: LOD-first mycelium build (`aa7cf281`, segmentsPerPair 4 →
+  idle-upgrade to 10) — quantification pending a quiet-window run.
+- **Named culprit**: createMycelium tessellation (+751ms in one task).
+  Fix directions: worker-built buffers + transferables, initial LOD + idle
+  upgrade (landed), finer frame-splitting.
+- **Landed**: pp-chunk eval deferred off the interaction window
+  (`0c19e272`) and WebGL graph prewarm at CTA-visible (`0cca993d`).
+
+Measurement honesty rules (learned the hard way):
+
+1. Always 4x CPU throttle + 150ms latency — unthrottled numbers are not
+   comparable to the bar (and nightly lane activity adds ±50% noise).
+2. Gate the gesture on CTA *visibility*, not a fixed timer.
+3. Worker fetches are invisible to main-thread resource timing — read
+   `dataLoadState.status` instead.
+4. N ≥ 3 per arm, compare medians; single runs have proven meaningless.
+
 ---
 
 ## 3. WebGL / GPU Budget
@@ -150,4 +181,4 @@ Potential additional deferral: ~23 KB raw / ~9 KB gzip (remaining non-split comp
 
 ---
 
-_This budget is a living document. Update it as the architecture evolves._
+*This budget is a living document. Update it as the architecture evolves.*
