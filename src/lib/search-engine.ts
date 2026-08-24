@@ -155,7 +155,17 @@ async function fetchSemanticSearchResultsDirect(
                 const isCallerAbort = !timedOut && signal?.aborted === true
 
                 if (!isCallerAbort && canUseStaticDevFallback()) {
-                    const reason = err instanceof Error ? err.message : 'unknown'
+                    // Pool/transport note: under some runtimes the rejection
+                    // loses its original message (reason would degrade to
+                    // 'unknown'). When the internal timeout is the known
+                    // cause, say so explicitly — diagnostics + the bypass
+                    // reason regexes depend on it.
+                    const reason =
+                        timedOut && !(err instanceof Error && err.message)
+                            ? 'request timed out'
+                            : err instanceof Error
+                              ? err.message
+                              : 'unknown'
                     markApiUnreachable(reason)
                 }
 

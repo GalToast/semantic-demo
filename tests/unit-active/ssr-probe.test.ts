@@ -17,12 +17,28 @@ describe('probe no-window mechanism', () => {
         } finally {
             vi.unstubAllGlobals()
         }
-        expect(threw).not.toBeNull() // jsdom window is non-configurable: stubbing is impossible; the real cross-runtime route is environment-level (no window), not test-stub-level
-        expect(threw).toMatch(/Cannot redefine property: window/)
+        // Pool-sensitive mechanism (2026-08-24): under vmThreads/jsdom the
+        // window global is non-configurable so stubbing THROWS
+        // ('Cannot redefine property: window'); under forks the stub may
+        // apply cleanly. The POOL-AGNOSTIC invariant is hermeticity: whatever
+        // happened inside the try, unstubAllGlobals() restores a usable
+        // window global. The real cross-runtime SSR route remains
+        // environment-level (no window), not test-stub-level.
+        const restored = Object.getOwnPropertyDescriptor(globalThis, 'window')
+        expect(restored).toBeDefined()
+        expect(restored?.configurable).toBe(before?.configurable)
+        if (threw !== null) {
+            // vmThreads/jsdom path — document the refusal signature.
+            expect(threw).toMatch(/Cannot redefine property: window/)
+        } else {
+            // forks path — stub applied and was rolled back.
+            expect(afterDesc?.value).toBeUndefined()
+        }
         console.info(
-            '[ssr-probe] window descriptor configurable=%s writable=%s; approach: vi.stubGlobal (portable)',
+            '[ssr-probe] window descriptor configurable=%s writable=%s; stubRefused=%s; approach: environment-level no-window for SSR, vi.stubGlobal only where portable',
             before?.configurable,
-            before?.writable
+            before?.writable,
+            threw !== null
         )
     })
 })
