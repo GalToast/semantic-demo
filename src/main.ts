@@ -204,9 +204,43 @@ let unsubJourneyWebglPreload: (() => void) | null = engineReady.subscribe((ready
     preloadJourneyWebgl()
 })
 
+// INP prewarm-at-CTA-visible (2026-08-24): the engineReady subscription above
+// arms the WebGL graph fetch AT the tap, which serialized fetch + eval +
+// initEngineHeavy into a ~1.5s tap→canvas gap. A real user can see the CTA
+// long before clicking it — arm the fetch the moment the entry control is
+// visible instead. Byte total is unchanged (the chunk is needed on entry
+// regardless); only its timing moves out of the INP window. One-shot,
+// capped at 30s of polling, torn down with the rest.
+let ctaPrewarmPoll: ReturnType<typeof setInterval> | null = null
+let webglGraphArmed = false
+const armWebglGraph = (): void => {
+    if (webglGraphArmed) return
+    webglGraphArmed = true
+    if (ctaPrewarmPoll) {
+        clearInterval(ctaPrewarmPoll)
+        ctaPrewarmPoll = null
+    }
+    preloadJourneyWebgl()
+}
+ctaPrewarmPoll = setInterval(() => {
+    if (document.querySelector('[data-testid="splash-cta"]')) {
+        armWebglGraph()
+    }
+}, 120)
+setTimeout(() => {
+    if (ctaPrewarmPoll) {
+        clearInterval(ctaPrewarmPoll)
+        ctaPrewarmPoll = null
+    }
+}, 30000)
+
 function disposeJourneyWebglPreload(): void {
     unsubJourneyWebglPreload?.()
     unsubJourneyWebglPreload = null
+    if (ctaPrewarmPoll) {
+        clearInterval(ctaPrewarmPoll)
+        ctaPrewarmPoll = null
+    }
 }
 
 // ── W6-T1 gesture-driven engine-ready signal ─────────────────────────────────
