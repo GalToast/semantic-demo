@@ -30,6 +30,8 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
             - uses: actions/setup-node@v4
               with:
                   node-version: '24'
@@ -42,6 +44,7 @@ jobs:
             - run: npm run test:unit
               env:
                   DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
+                  SEMANTIC_FORCE_WEBGL_SOFTWARE: '1'
 
     build:
         name: Production Build
@@ -151,7 +154,7 @@ jobs:
               with:
                   name: dist-svelte
                   path: dist/svelte/
-            - name: "Witness: re-derive every cited claim from disk + git"
+            - name: 'Witness: re-derive every cited claim from disk + git'
               run: npm run check:findings-witness
             - name: Budget gate vs stamped baseline
               run: node scripts/qa-budget.mjs
