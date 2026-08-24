@@ -118,7 +118,8 @@ describe('mapServiceRow index resolution: fallback behavior', () => {
         expect(r).not.toBeNull()
         expect(r!.index).toBe(2) // corpus index
         expect(r!.name).toBe('Conroe Diner')
-        expect(r!.score).toBe(0.85)
+        // F-search-8 normalization: raw 0.85 -> Math.min(1, 0.85/100) = 0.0085.
+        expect(r!.score).toBe(0.0085)
         expect(r!.category).toBe('Food')
         expect(r!.snippet).toBe('Good eats')
         expect(r!.point?.lead_id).toBe('1088')

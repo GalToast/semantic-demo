@@ -65,8 +65,10 @@ describe('semantic-search-mapper: mapServiceRow', () => {
     })
 
     it('picks score from score then semantic_score, defaulting to 0', () => {
-        expect(mapServiceRow({ name: 'A', score: 2 }, 0)!.score).toBe(2)
-        expect(mapServiceRow({ name: 'A', semantic_score: 5 }, 0)!.score).toBe(5)
+        // F-search-8 normalization: raw scores are percentage-like and get
+        // Math.min(1, raw/100) so multi-token matches saturate at 1.0.
+        expect(mapServiceRow({ name: 'A', score: 2 }, 0)!.score).toBe(0.02)
+        expect(mapServiceRow({ name: 'A', semantic_score: 5 }, 0)!.score).toBe(0.05)
         expect(mapServiceRow({ name: 'A', score: 0, semantic_score: 7 }, 0)!.score).toBe(0)
         expect(mapServiceRow({ name: 'A' }, 0)!.score).toBe(0)
     })

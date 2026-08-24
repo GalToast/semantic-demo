@@ -358,6 +358,8 @@ describe('Playwright/test auto-fire', () => {
   })
 
   it('auto-fires onReady when window.__PLAYWRIGHT__ is true', () => {
+    // 682b3e82: auto-fire requires the ?contract-boot=1 opt-in.
+    window.history.replaceState(null, '', '/?contract-boot=1')
     vi.stubGlobal('__PLAYWRIGHT__', true)
     teardown = installGestureMonitor({ onReady })
     vi.advanceTimersByTime(1)
@@ -365,6 +367,7 @@ describe('Playwright/test auto-fire', () => {
   })
 
   it('auto-fires onReady when navigator.webdriver is true', () => {
+    window.history.replaceState(null, '', '/?contract-boot=1')
     Object.defineProperty(navigator, 'webdriver', {
       value: true,
       configurable: true,
@@ -372,6 +375,15 @@ describe('Playwright/test auto-fire', () => {
     teardown = installGestureMonitor({ onReady })
     vi.advanceTimersByTime(1)
     expect(onReady).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not auto-fire with __PLAYWRIGHT__ but no contract-boot param (682b3e82)', () => {
+    // Clear any ?contract-boot=1 leaked by an earlier test's replaceState.
+    window.history.replaceState(null, '', '/')
+    vi.stubGlobal('__PLAYWRIGHT__', true)
+    teardown = installGestureMonitor({ onReady })
+    vi.advanceTimersByTime(50)
+    expect(onReady).not.toHaveBeenCalled()
   })
 
   it('does not auto-fire onReady when both flags are false', () => {

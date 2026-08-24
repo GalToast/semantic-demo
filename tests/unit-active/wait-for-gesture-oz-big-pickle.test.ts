@@ -309,6 +309,8 @@ describe('wait-for-gesture — ling regression (oz-big-pickle)', () => {
 
     describe('Playwright / automated browser auto-fire', () => {
         it('auto-fires when window.__PLAYWRIGHT__ is truthy before install', () => {
+            // 682b3e82: auto-fire requires the ?contract-boot=1 opt-in.
+            window.history.replaceState(null, '', '/?contract-boot=1')
             ;(window as any).__PLAYWRIGHT__ = true
             const onReady = vi.fn()
             const teardown = installGestureMonitor({ onReady })
@@ -320,6 +322,7 @@ describe('wait-for-gesture — ling regression (oz-big-pickle)', () => {
         })
 
         it('auto-fires when navigator.webdriver is true before install', () => {
+            window.history.replaceState(null, '', '/?contract-boot=1')
             Object.defineProperty(navigator, 'webdriver', {
                 value: true,
                 configurable: true,

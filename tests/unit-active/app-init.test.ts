@@ -88,6 +88,11 @@ vi.mock('@lib/app/app-lifecycle.ts', async (importOriginal) => {
     return {
         ...actual,
         isPlaywrightEnvironment: () => true,
+        // W64-era gate broadening (app-init.ts): test-globals now install for
+        // ANY automated session via isAutomatedBrowserSession(), not just
+        // __PLAYWRIGHT__. Without this stub the gate reads false in jsdom and
+        // installTestStoreGlobals never fires.
+        isAutomatedBrowserSession: () => true,
     }
 })
 vi.mock('@lib/orchestration/test-globals', async () => {

@@ -276,6 +276,9 @@ describe('Playwright/test auto-fire', () => {
     })
 
     it('window.__PLAYWRIGHT__ schedules auto-fire setTimeout with delay 0', () => {
+        // 682b3e82 (2026-08-23): bare automated sessions no longer auto-fire;
+        // the shortcut requires ?contract-boot=1 (F12 reconciliation).
+        window.history.replaceState(null, '', '/?contract-boot=1')
         const setTimeoutSpy = vi.spyOn(window, 'setTimeout')
         window.__PLAYWRIGHT__ = true
         const onReady = vi.fn()
@@ -287,6 +290,7 @@ describe('Playwright/test auto-fire', () => {
     })
 
     it('navigator.webdriver schedules auto-fire', () => {
+        window.history.replaceState(null, '', '/?contract-boot=1')
         const setTimeoutSpy = vi.spyOn(window, 'setTimeout')
         Object.defineProperty(navigator, 'webdriver', {
             configurable: true,
@@ -298,6 +302,16 @@ describe('Playwright/test auto-fire', () => {
         expect(autoCalls.length).toBeGreaterThanOrEqual(1)
         vi.advanceTimersByTime(1)
         expect(onReady).toHaveBeenCalledTimes(1)
+    })
+
+    it('no auto-fire when flags are true but contract-boot param absent (682b3e82 gating)', () => {
+        // Clear any ?contract-boot=1 leaked by an earlier test's replaceState.
+        window.history.replaceState(null, '', '/')
+        window.__PLAYWRIGHT__ = true
+        const onReady = vi.fn()
+        installGestureMonitor({ onReady })
+        vi.advanceTimersByTime(50)
+        expect(onReady).not.toHaveBeenCalled()
     })
 
     it('no auto-fire setTimeout scheduled when both flags are false', () => {

@@ -213,27 +213,41 @@ describe('Playwright / test auto-fire', () => {
     afterEach(() => {
         setTimeoutSpy.mockRestore()
     })
+    // 682b3e82: auto-fire now requires ?contract-boot=1 — each arming test below
+    // opts in via history.replaceState before install.
     it('schedules setTimeout(handleReady, 0) when window.__PLAYWRIGHT__ is true before install', () => {
+        window.history.replaceState(null, '', '/?contract-boot=1')
         ;(window as any).__PLAYWRIGHT__ = true
         installGestureMonitor({ onReady })
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 0)
     })
     it('advancing timers by 1 ms after __PLAYWRIGHT__ install fires onReady', () => {
+        window.history.replaceState(null, '', '/?contract-boot=1')
         ;(window as any).__PLAYWRIGHT__ = true
         installGestureMonitor({ onReady })
         vi.advanceTimersByTime(1)
         expect(onReady).toHaveBeenCalledTimes(1)
     })
     it('schedules setTimeout(handleReady, 0) when navigator.webdriver is true', () => {
+        window.history.replaceState(null, '', '/?contract-boot=1')
         Object.defineProperty(navigator, 'webdriver', { configurable: true, value: true })
         installGestureMonitor({ onReady })
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 0)
     })
     it('advancing timers by 1 ms after webdriver install fires onReady', () => {
+        window.history.replaceState(null, '', '/?contract-boot=1')
         Object.defineProperty(navigator, 'webdriver', { configurable: true, value: true })
         installGestureMonitor({ onReady })
         vi.advanceTimersByTime(1)
         expect(onReady).toHaveBeenCalledTimes(1)
+    })
+    it('does NOT schedule when __PLAYWRIGHT__ set but contract-boot param absent (682b3e82)', () => {
+        // Clear any ?contract-boot=1 leaked by an earlier test's replaceState.
+        window.history.replaceState(null, '', '/')
+        ;(window as any).__PLAYWRIGHT__ = true
+        installGestureMonitor({ onReady })
+        vi.advanceTimersByTime(50)
+        expect(onReady).not.toHaveBeenCalled()
     })
     it('does NOT schedule setTimeout(handleReady, 0) when neither flag is set', () => {
         installGestureMonitor({ onReady })
