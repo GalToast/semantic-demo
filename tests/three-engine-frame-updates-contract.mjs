@@ -179,14 +179,14 @@ async function testUpdateFogDensity() {
     resetAll()
     webglContext.scene = { fog: { density: 99 } }
     mod.updateFogDensity(1.0)
-    // SCENE_ATMOSPHERE.fogDensity = 0.0028
-    assertClose(webglContext.scene.fog.density, 0.0028, 1e-12, 'fog density at progress=1 (0.0028)')
+    // SCENE_ATMOSPHERE.fogDensity = 0.0034 (wave-9b PORT_SCENE_ATMOSPHERE alias; W60 re-tune 0.0028 -> 0.0034)
+    assertClose(webglContext.scene.fog.density, 0.0034, 1e-12, 'fog density at progress=1 (0.0034)')
     assert(typeof webglContext.scene.fog.density === 'number', 'density is a number')
 
     mod.updateFogDensity(0)
     assertClose(webglContext.scene.fog.density, 0, 1e-12, 'fog density at progress=0 (0)')
 
-    console.log('  OK density = fogDensity(0.0028) * progress')
+    console.log('  OK density = fogDensity(0.0034) * progress')
 }
 
 // 3. updateReferenceSphereOpacity — the source sets the county-depth-reference
@@ -223,15 +223,15 @@ async function testUpdateReferenceSphereOpacity() {
 }
 
 // 4. updateSporeOpacity — nodeSporeMaterial.opacity eased toward
-//    sporeOpacity(0.65) * progress * focusBoost.
+//    sporeOpacity(0.58) * progress * focusBoost.
 async function testUpdateSporeOpacity() {
     console.log('\n[TEST] updateSporeOpacity')
 
-    // Null state → focusBoost 1.0. opacity = 0 + (0.65*1.0*1.0 - 0)*0.12 = 0.078
+    // Null state → focusBoost 1.0. opacity = 0 + (0.58*1.0*1.0 - 0)*0.12 = 0.0696
     resetAll()
     webglContext.nodeSporeMaterial = { opacity: 0, emissiveIntensity: 0 }
     mod.updateSporeOpacity(1.0, null)
-    assertClose(webglContext.nodeSporeMaterial.opacity, 0.078, 1e-12, 'spore opacity at progress=1, no focus (0.078)')
+    assertClose(webglContext.nodeSporeMaterial.opacity, 0.0696, 1e-12, 'spore opacity at progress=1, no focus (0.0696)')
     assert(
         typeof webglContext.nodeSporeMaterial.opacity === 'number' &&
             webglContext.nodeSporeMaterial.opacity >= 0 &&
@@ -239,13 +239,13 @@ async function testUpdateSporeOpacity() {
         'spore opacity is a number in [0,1]'
     )
 
-    // Focused node → focusBoost 0.55. opacity = (0.65*1.0*0.55)*0.12 = 0.0429
+    // Focused node → focusBoost 0.55. opacity = (0.58*1.0*0.55)*0.12 = 0.03828
     resetAll()
     webglContext.nodeSporeMaterial = { opacity: 0, emissiveIntensity: 0 }
     mod.updateSporeOpacity(1.0, { focusedNode: 0 })
-    assertClose(webglContext.nodeSporeMaterial.opacity, 0.0429, 1e-12, 'spore opacity at progress=1, focused (0.0429)')
+    assertClose(webglContext.nodeSporeMaterial.opacity, 0.03828, 1e-12, 'spore opacity at progress=1, focused (0.03828)')
 
-    console.log('  OK spore opacity eased toward 0.65*progress*focusBoost')
+    console.log('  OK spore opacity eased toward 0.58*progress*focusBoost')
 }
 
 // 5. updateThreadLayerOpacities — sets the three mycelium line material opacities.
@@ -302,8 +302,8 @@ async function testUpdatePointsMaterial() {
     resetAll()
     webglContext.pointsMaterial = { opacity: 1, size: 1, userData: {} }
     mod.updatePointsMaterial(1.0, null)
-    // 0.32 * 1.0 * 1.0 * 1.0 = 0.32
-    assertClose(webglContext.pointsMaterial.opacity, 0.32, 1e-12, 'points opacity at progress=1, no focus (0.32)')
+    // 0.32 * 0.78 (SCENE_ATMOSPHERE.pointOpacityScale) * 1.0 * 1.0 = 0.2496
+    assertClose(webglContext.pointsMaterial.opacity, 0.2496, 1e-12, 'points opacity at progress=1, no focus (0.2496)')
     assert(
         typeof webglContext.pointsMaterial.opacity === 'number' &&
             webglContext.pointsMaterial.opacity >= 0 &&
@@ -312,11 +312,11 @@ async function testUpdatePointsMaterial() {
     )
     assert(typeof webglContext.pointsMaterial.size === 'number', 'points size is a number')
 
-    // Focused node → opacityScale 0.46 → 0.32 * 0.46 = 0.1472
+    // Focused node → opacityScale 0.46 → 0.32 * 0.78 * 0.46 = 0.114816
     resetAll()
     webglContext.pointsMaterial = { opacity: 1, size: 1, userData: {} }
     mod.updatePointsMaterial(1.0, { focusedNode: 0 })
-    assertClose(webglContext.pointsMaterial.opacity, 0.1472, 1e-12, 'points opacity at progress=1, focused (0.1472)')
+    assertClose(webglContext.pointsMaterial.opacity, 0.114816, 1e-12, 'points opacity at progress=1, focused (0.114816)')
 
     // Null state works (no throw).
     resetAll()
@@ -324,7 +324,7 @@ async function testUpdatePointsMaterial() {
     mod.updatePointsMaterial(0.5, null)
     assert(true, 'null state → no throw')
 
-    console.log('  OK points opacity = 0.32*progress*opacityScale; works with null state')
+    console.log('  OK points opacity = 0.32*0.78*progress*opacityScale; works with null state')
 }
 
 // 8. updateHoverEmissiveFlash — sets nodeSporeMaterial.emissiveIntensity on a
