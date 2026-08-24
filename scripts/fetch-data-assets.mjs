@@ -58,7 +58,7 @@ try {
     // Accept the raw key via env (CI) or a pre-written key file.
     let keyFile = process.env.DATA_DEPLOY_KEY_FILE
     if (!keyFile && process.env.DATA_DEPLOY_KEY) {
-        keyFile = resolve(cache, '.data-deploy-key')
+        keyFile = resolve(cache, '..', '.data-deploy-key')
         writeFileSync(keyFile, process.env.DATA_DEPLOY_KEY.trimEnd() + '\n')
     }
     if (keyFile && existsSync(keyFile)) {
