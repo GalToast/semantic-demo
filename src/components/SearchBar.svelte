@@ -123,17 +123,11 @@
   ondblclick={(e) => e.stopPropagation()}
 >
   {#if mockBannerVisible}
-    <div
-      class="mock-banner"
-      role="status"
-      data-testid="mock-banner"
-      title="Live data temporarily unavailable — search results may be a sample"
-    >
+    <div class="mock-banner" role="status" data-testid="mock-banner">
       Live data is unavailable — searching local records
     </div>
   {/if}
-  <SearchInput bind:this={searchInputRef} expanded={isExpanded} surface={currentSurface()} />
-  {#if SearchResultsComponent}
+  <SearchInput bind:this={searchInputRef} expanded={isExpanded} surface={currentSurface()} />  {#if SearchResultsComponent}
     <SearchResultsComponent />
   {/if}
 </div>

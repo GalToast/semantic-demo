@@ -6702,6 +6702,10 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
             await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
         }
 
+        // (idle) Harmonized invite — gap check for 8b029ac4 / c038df64
+        const idleInvite = page.locator('#trail-context-idle, #focus-stage-progress, .trail-context-text').first()
+        await expect(idleInvite).toContainText("Choose a business to see what's nearby.")
+
         // (1) Focus a node so the journey stage mounts, then assert the chrome
         // container carries NO live region: trail context/progress text changes on
         // every focus step, and a container-level aria-live spams screen readers
@@ -6735,7 +6739,10 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
             .first()
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000, polling: 100 })
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+            timeout: 20000,
+            polling: 100
+        })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 45000 })
         const helpDialog = page.locator('dialog.help-dialog[open]')
         if ((await helpDialog.count()) > 0) {
