@@ -21,7 +21,7 @@
  * repo as GH_TOKEN and ensure `gh auth setup-git` equivalent, or embed a
  * short-lived token in the URL via GIT_AUTH_HEADER env.
  */
-import { existsSync, mkdirSync, cpSync, rmSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, chmodSync, cpSync, rmSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
@@ -59,7 +59,8 @@ try {
     let keyFile = process.env.DATA_DEPLOY_KEY_FILE
     if (!keyFile && process.env.DATA_DEPLOY_KEY) {
         keyFile = resolve(cache, '..', '.data-deploy-key')
-        writeFileSync(keyFile, process.env.DATA_DEPLOY_KEY.trimEnd() + '\n')
+        writeFileSync(keyFile, process.env.DATA_DEPLOY_KEY.trimEnd() + '\n', { mode: 0o600 })
+        chmodSync(keyFile, 0o600)
     }
     if (keyFile && existsSync(keyFile)) {
         execSync(
