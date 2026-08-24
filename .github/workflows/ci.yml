@@ -196,12 +196,12 @@ jobs:
               run: node scripts/qa-server.mjs ensure
             - name: Wait for server
               run: |
-                for i in $(seq 1 30); do
-                  OK=http://127.0.0.1:4174/dist/svelte/index.html
-                  curl -s -o /dev/null "$OK" && exit 0
-                  sleep 1
-                done
-                echo 'Server did not start'; exit 1
+                  for i in $(seq 1 30); do
+                    OK=http://127.0.0.1:4174/dist/svelte/index.html
+                    curl -s -o /dev/null "$OK" && exit 0
+                    sleep 1
+                  done
+                  echo 'Server did not start'; exit 1
             - name: Run Playwright integration tests
               env:
                   TEST_BASE_URL: http://127.0.0.1:4174

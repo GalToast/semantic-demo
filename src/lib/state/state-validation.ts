@@ -78,7 +78,13 @@ export const VALID_STRAND_CONTINUITY_PHASES = new Set<string>([
 
 export const VALID_FOCUS_ORBIT_SLACK_PHASES = new Set<string>(['idle', 'active', 'settling', 'free-pivot'])
 
-export const VALID_ARRIVAL_HANDOFF_PHASES = new Set<string>(['idle', 'prelude', 'flying', 'arriving', 'settling'])
+// arrivalHandoffDiagnostics.phase MIRRORS strandContinuityState.phase verbatim —
+// arrival-handoff.ts copies it at build/update time and its header comment documents
+// the 'arrived' opacity-fade phase. The previous camera-transition vocabulary here
+// (idle/prelude/flying/arriving/settling) never matched the writer, so every trail
+// arrival logged a nested-mutation audit warn for 'arrived'. Alias the strand
+// vocabulary so the two can never drift again.
+export const VALID_ARRIVAL_HANDOFF_PHASES = VALID_STRAND_CONTINUITY_PHASES
 
 export const VALID_DEMO_PHASES = new Set<string>([
     'IDLE',

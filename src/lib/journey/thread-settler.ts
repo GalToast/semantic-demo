@@ -22,7 +22,8 @@ import {
     isBoundedNeighborhoodActive,
     primeBoundedSemanticNeighborhoodForTraversal,
     getBoundedNeighborhoodWalkCandidate,
-    getNextWalkCandidateForIndex
+    getNextWalkCandidateForIndex,
+    setTrailFromSeed
 } from '@lib/journey/neighborhood'
 import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
 import { focusOnNode } from '@lib/engine/camera-controls'
@@ -34,6 +35,8 @@ import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { showExperienceToast } from '@lib/orchestration/toast'
+import { setThreadCandidates } from '@lib/stores/journey.svelte'
+import { debugWarn } from '@lib/utils/debug'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -386,6 +389,24 @@ export class ThreadSettler {
                     fromIndex: capturedFromIndex,
                     reason: capturedReason
                 })
+
+                // Stale-Next fix (2026-08-24): walking A→B leaves navState.threadCandidates
+                // pointing at A's neighbors (whose [0] IS B), so the walk HUD "Next:" line and
+                // the NEXT STOP badge kept showing the stop we just came from until some other
+                // trigger recomputed them. Recompute for the arrived stop now: setTrailFromSeed
+                // writes ONLY candidate/trail-seed fields (mode/surface/trailDepth untouched)
+                // and setThreadCandidates mirrors them into the journey store so the
+                // journeySnapshot-derived HUD actually re-runs (nav-mirror writes alone do not
+                // notify the journey writable). Skip when the walk preserved a bounded
+                // neighborhood — those candidate sets are intentionally stable.
+                if (!preserveNeighborhood) {
+                    try {
+                        setTrailFromSeed(capturedIndex)
+                        setThreadCandidates((appState.navState.threadCandidates ?? []).map((c) => c.index))
+                    } catch (e) {
+                        debugWarn('[thread-settler] arrival candidate rebuild failed', e)
+                    }
+                }
 
                 const pointAtArrival =
                     capturedIndex >= 0 && capturedIndex < recordsList.length ? recordsList[capturedIndex] : null

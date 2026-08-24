@@ -168,6 +168,12 @@ assert(
         arrivalBlock.includes('syncSemanticDiveUi()'),
     'arrival timer should preserve semantic-dive preview behavior'
 )
+assert(
+    arrivalBlock.includes('!preserveNeighborhood') &&
+        arrivalBlock.includes('setTrailFromSeed(capturedIndex)') &&
+        arrivalBlock.includes('setThreadCandidates('),
+    'arrival timer should recompute thread candidates for the arrived stop (stale-Next fix) unless the walk preserved a bounded neighborhood'
+)
 
 const settleBlock = walkBody.slice(settleTimerIndex)
 // Current implementation uses `managerState.phase === 'arrived'` rather than

@@ -538,10 +538,14 @@ async function main() {
                 // load the dive activation + fill can lag the 2-rAF wait.
                 // Poll for the end state instead of racing it (2026-08-24).
                 await page
-                    .waitForFunction(() => {
-                        const a = window.__TEST_STATE__?.semanticLensSpokes?.geometry?.attributes?.alpha?.array || []
-                        return Array.from(a).filter((v) => v > 0).length >= 2
-                    }, { timeout: 6000 })
+                    .waitForFunction(
+                        () => {
+                            const a =
+                                window.__TEST_STATE__?.semanticLensSpokes?.geometry?.attributes?.alpha?.array || []
+                            return Array.from(a).filter((v) => v > 0).length >= 2
+                        },
+                        { timeout: 6000 }
+                    )
                     .catch(() => {})
                 await page
                     .waitForFunction(

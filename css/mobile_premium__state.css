@@ -1581,8 +1581,7 @@
         overflow: hidden;
     }
 
-    body[data-panel-surface='search'][data-focus-panel-mode='field-node']
-        .journey-compass-action::before,
+    body[data-panel-surface='search'][data-focus-panel-mode='field-node'] .journey-compass-action::before,
     body[data-focus-panel-mode='field-node'] .journey-compass-action::before {
         font-size: 10.5px;
         line-height: 1;

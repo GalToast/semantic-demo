@@ -205,7 +205,11 @@ describe('NESTED_STATE_PATHS — shape and keys', () => {
             ['routeChoreographyState.phase', 'overview'],
             ['strandContinuityState.phase', 'idle'],
             ['focusOrbitSlackState.phase', 'idle'],
-            ['arrivalHandoffDiagnostics.phase', 'idle']
+            ['arrivalHandoffDiagnostics.phase', 'idle'],
+            // 'arrived' is the strand-continuity phase the handoff writer mirrors verbatim
+            // (thread-settler arrival → strandContinuityState → arrivalHandoffDiagnostics).
+            // It must validate clean — this pair locks the 2026-08-24 allowlist fix.
+            ['arrivalHandoffDiagnostics.phase', 'arrived']
         ]
         for (const [path, value] of validPairs) {
             const validator = NESTED_STATE_PATHS[path]
