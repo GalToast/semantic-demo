@@ -401,6 +401,16 @@ describe('commit-purity-invariant', () => {
         const conventional = commits.filter((c) => !REVERT_PREFIX_RE.test(c.title))
         const parseable = conventional.filter((c) => c.parsed !== null)
         const ratio = parseable.length / Math.max(conventional.length, 1)
+        // Runner diagnostics (2026-08-24): ratio collapses on CI only — surface
+        // what the walker actually saw instead of failing blind.
+        if (ratio < 0.5) {
+            console.log(
+                '[purity-diag] commits:', commits.length,
+                '| conventional:', conventional.length,
+                '| parseable:', parseable.length,
+                '| sample titles:', JSON.stringify(commits.slice(0, 8).map((c) => c.title))
+            )
+        }
         expect(ratio).toBeGreaterThanOrEqual(0.5)
     })
 

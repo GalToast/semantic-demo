@@ -9,6 +9,8 @@ npm run build
 npm run lint
 npm run test
 npm run test:unit
+npm run test:verify        # ONE-COMMAND full verification env (see below)
+npm run test:verify:unit   # same, unit suite only (skips the 7-min journey gate)
 npm run test:contract
 npm run qa:contract                            # all surface-contract checks (desktop + mobile)
 npm run qa:contract:mobile-critical             # 12 mobile-critical surfaces (includes mobile-idle)
@@ -20,6 +22,25 @@ npm run audit:a11y           # a11y lint for src/components/*.svelte (tabulated)
 npm run audit:a11y:strict    # same, exit 1 on any HIGH finding
 npm run audit:a11y:json      # same, machine-readable JSON
 ```
+
+### `test:verify` — canonical verification environment in one command
+
+`node scripts/verify-env.mjs` encodes the four requirements that otherwise live
+in tribal memory (their absence manufactured phantom failures on 2026-08-23/24 —
+B-A1, W54-4486):
+
+1. Restores plain data twins (`scripts/decompress-data-twins.mjs`) — builds ship only `.br/.gz`.
+2. Probes the live API on `:8795` and reports whether live-gated specs will run or self-skip.
+3. Builds with `VITE_API_BASE_URL=http://127.0.0.1:8795` stamped (same-origin `/api.php`
+   404s under `?staticDev=0` without it).
+4. Serves dist on `:8811` (`VERIFY_PORT` to override) and runs both suites against it:
+   unit via `run-vitest.mjs` (heap-bounded), journeys via the canonical
+   `qa-journey-headless` wrapper with `TEST_BASE_URL` + `--no-build`.
+
+Flags: `--unit-only`, `--journeys-only`, `--no-build`, `--pool forks|vmThreads`.
+Known-pool trade-off: default vmThreads can drop ~11 canvas-keyboard-nav tests to
+worker-grouping pollution; `--pool forks` fixes that but trips 2 vm-tuned tests
+(`ssr-probe`, `search-engine-abort-bypass`). Either way the summary names the world.
 
 `npm run test:unit` and direct repo-root `npx vitest run` commands use a
 single-flight lock at `tmp/vitest.single-flight.lock`. A second full Vitest run

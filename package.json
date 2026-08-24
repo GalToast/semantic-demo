@@ -121,6 +121,8 @@
         "test:contract:full": "node tests/run-all-contracts.js --group=full",
         "test:stress": "playwright test tests/heavy-stress-leak.spec.js --browser=chromium",
         "test:unit": "node scripts/run-vitest.mjs run --config vitest.config.js",
+        "test:verify": "node scripts/verify-env.mjs",
+        "test:verify:unit": "node scripts/verify-env.mjs --unit-only",
         "test:unit:watch": "vitest --config vitest.config.js",
         "test:help": "node scripts/test-help.mjs",
         "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1",
