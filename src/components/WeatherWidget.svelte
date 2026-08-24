@@ -68,24 +68,24 @@
 
 {#snippet iconSvg(key: string)}
   {#if key === 'sun'}
+    <!-- Disc + halo ring: stays unambiguous at 14px (thin-ray suns read as
+         snowflakes/asterisks at pill size — visual-QA nit 2026-08-24). -->
     <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
-      <circle cx="12" cy="12" r="4" fill="var(--color-primary-alt)" />
-      <g stroke="var(--color-primary-alt)" stroke-width="2" stroke-linecap="round">
-        <line x1="12" y1="2" x2="12" y2="5" />
-        <line x1="12" y1="19" x2="12" y2="22" />
-        <line x1="2" y1="12" x2="5" y2="12" />
-        <line x1="19" y1="12" x2="22" y2="12" />
-        <line x1="5.6" y1="5.6" x2="7.7" y2="7.7" />
-        <line x1="16.3" y1="16.3" x2="18.4" y2="18.4" />
-        <line x1="5.6" y1="18.4" x2="7.7" y2="16.3" />
-        <line x1="16.3" y1="7.7" x2="18.4" y2="5.6" />
-      </g>
+      <circle cx="12" cy="12" r="5" fill="var(--color-primary-alt)" />
+      <circle
+        cx="12"
+        cy="12"
+        r="8.5"
+        fill="none"
+        stroke="var(--color-primary-alt)"
+        stroke-width="1.6"
+        opacity="0.55"
+      />
     </svg>
   {:else if key === 'rain'}
     <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
       <path
-        d="M17.5 13a4.5 4.5 0 1 0-1.4-8.78 6.5 6.5 0 0 0-12.6 1.78A4 4 0 0 0 4 13h13.5z"
-        fill="var(--color-primary-alt)"
+        d="M17.5 13a4.5 4.5 0 1 0-1.4-8.78 6.5 6.5 0 0 0-12.6 1.78A4 4 0 0 0 4 13h13.5z"        fill="var(--color-primary-alt)"
       />
       <g stroke="var(--color-primary-alt)" stroke-width="2" stroke-linecap="round">
         <line x1="8" y1="17" x2="7" y2="20" />
@@ -259,14 +259,16 @@
     height: 18px;
     line-height: 1;
     filter: drop-shadow(0 0 5px rgba(var(--color-primary-alt-rgb), 0.35));
+    /* Note (2026-08-24): the icon defaults to 'cloud' and swaps once when the
+       async fetch resolves. A fade-in on swap is NOT feasible here — the
+       per-condition infinite animations below own the opacity property and
+       override any transition. Accepted: the swap happens once, pre-interaction. */
   }
   .weather-icon :global(svg) {
     display: block;
     width: 18px;
     height: 18px;
-  }
-
-  /* Per-condition micro-animation — matches the app's biofield-glow language.
+  }  /* Per-condition micro-animation — matches the app's biofield-glow language.
      All are subtle (2–8px travel / 6–14s periods) and disabled under
      prefers-reduced-motion below. */
   .weather-icon.icon-sun :global(svg) {
