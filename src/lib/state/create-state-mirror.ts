@@ -145,7 +145,15 @@ export function createStateMirror<T>(config: {
         return w
     }
 
-    const _writable = getOrCreateWritable()
+    // Lazy holder — attribution tmp/long-task-attribution.md lever #3: creating
+    // the writable (and thus running computeFromAppState) at module-init put an
+    // eager read on the boot import graph for stores that may never be touched
+    // during cold load. Materialize on first actual use instead.
+    let writableInstance: ReturnType<typeof writable<T>> | null = null
+    function resolveWritable(): ReturnType<typeof writable<T>> {
+        if (writableInstance === null) writableInstance = getOrCreateWritable()
+        return writableInstance
+    }
 
     /** Apply the per-field bindings to mirror the published value into appState. */
     function mirrorToAppState(state: T): void {
@@ -170,12 +178,12 @@ export function createStateMirror<T>(config: {
     function update(fn: (current: T) => T): void {
         const current = config.computeFromAppState()
         const next = fn(current)
-        _writable.set(next)
+        resolveWritable().set(next)
         mirrorToAppState(next)
     }
 
     function set(value: T): void {
-        _writable.set(value)
+        resolveWritable().set(value)
         mirrorToAppState(value)
     }
 
@@ -193,7 +201,9 @@ export function createStateMirror<T>(config: {
     fn.set = set
     fn.resetForTests = resetForTests
     // Svelte store contract: expose .subscribe so $store-style reads work
-    Object.defineProperty(fn, 'subscribe', { value: _writable.subscribe })
+    Object.defineProperty(fn, 'subscribe', {
+        value: (run: (v: T) => void, invalidate?: () => void) => resolveWritable().subscribe(run, invalidate)
+    })
 
     return fn
 }
