@@ -43,6 +43,17 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
+    // 2cb1db76 — docs(p8) hardware-acceptance emulation report riding its own
+    // evidence artifact scripts/qa-p8-probe.mjs (the probe that produced the
+    // acceptance numbers). Companion-artifact class, exempted 2026-08-24.
+    '2cb1db76dae56d65912c500ca3c702efbb3bb5f4',
+    // db9bf7e8 — test(contract) three-engine opacity re-baseline; the intent
+    // commit carried tmp/three-engine-contract-report.md (doc-class trail), an
+    // accidental force-add removed by the immediate follow-up 6624fb71. The
+    // purity gate caught it ON CI (first real teeth test). Exempted 2026-08-24:
+    // history is post-purge rewrite-locked, option-1 splitting is impossible
+    // without rewriting pushed hashes.
+    'db9bf7e810410f2417a4be9e78bc07badd6fb351',
     // c9e7871 — test(C1) carrying its own ledger update in
     // docs/journey-reconciliation-2026-08-23.md (session-5 verdicts for the
     // same fix). Doc-class bookkeeping riding the test commit, exempted
@@ -405,10 +416,14 @@ describe('commit-purity-invariant', () => {
         // what the walker actually saw instead of failing blind.
         if (ratio < 0.5) {
             console.log(
-                '[purity-diag] commits:', commits.length,
-                '| conventional:', conventional.length,
-                '| parseable:', parseable.length,
-                '| sample titles:', JSON.stringify(commits.slice(0, 8).map((c) => c.title))
+                '[purity-diag] commits:',
+                commits.length,
+                '| conventional:',
+                conventional.length,
+                '| parseable:',
+                parseable.length,
+                '| sample titles:',
+                JSON.stringify(commits.slice(0, 8).map((c) => c.title))
             )
         }
         expect(ratio).toBeGreaterThanOrEqual(0.5)
