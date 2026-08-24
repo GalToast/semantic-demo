@@ -604,7 +604,7 @@ function _renderTraversalContext(params: {
         // shadowed the dedicated empty-neighbor branch below, producing the documented
         // "Stop 2 of 0". Guard the "of ${neighborCount}" total so the progress line never shows a
         // total smaller than the current stop, and drop the "Use Next" cue when Next is disabled.
-        contextEl.textContent = `Stop ${stepNumber}: ${currentName}. Why here: ${reason}. Matched by ${sourceLabel}. Use Prev to go back${
+        contextEl.textContent = `Step ${stepNumber}: ${currentName}. Why here: ${reason}. Matched by ${sourceLabel}. Use Prev to go back${
             neighborCount > 0 ? ' or Next to continue' : ', then return to Overview to find more connections'
         }.`
         // Zero-walk guard (2026-08-22, mirrors JourneyChrome): a fresh deep link
@@ -613,11 +613,11 @@ function _renderTraversalContext(params: {
         focusProgressEl.textContent =
             stepNumber === 0
                 ? neighborCount > 0
-                    ? 'Choose a nearby stop to begin.'
-                    : 'No visible stops with these filters.'
+                    ? 'Choose a nearby business to start.'
+                    : 'No nearby businesses with these filters.'
                 : neighborCount > 0
-                  ? `Stop ${stepNumber}.`
-                  : `Stop ${stepNumber}. No more visible stops with these filters.`
+                  ? `Step ${stepNumber} · ${neighborCount} nearby`
+                  : `Step ${stepNumber} — no more nearby with these filters.`
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
                 ? `Next: ${nextWalkName} - ${nextWalkReason}.`

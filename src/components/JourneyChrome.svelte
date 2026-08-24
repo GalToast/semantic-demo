@@ -221,12 +221,11 @@
       // walkHistory until the user picks a stop — "Stop 0." read like a bug.
       // Invite instead (copy rules: give a next step).
       if (currentWalkHistory.length === 0) {
-        return neighborCount > 0 ? 'Choose a nearby stop to begin.' : 'No visible stops with these filters.';
+        return neighborCount > 0 ? 'Choose a nearby business to start.' : 'No nearby businesses with these filters.';
       }
       return neighborCount > 0
-        ? `Stop ${currentWalkHistory.length}.`
-        : `Stop ${currentWalkHistory.length}. No more visible stops with these filters.`;
-    }    return neighborCount
+        ? `Step ${currentWalkHistory.length} · ${neighborCount} nearby`
+        : `Step ${currentWalkHistory.length} — no more nearby with these filters.`;    }    return neighborCount
       ? `${neighborCount} nearby to explore`
       : `Start exploring.`;
   });

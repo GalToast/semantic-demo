@@ -8,18 +8,18 @@ User-facing copy in Semantic Explorer must not leak engineering jargon. Words li
 
 The following words must never appear in strings a user sees. Excluded locations: comments, variable names, source-code identifiers, internal-state keys, and the `a11y-ok` comment annotations in CSS:
 
-| Term       | Why it's jargon                                                    | Friendly replacement                             |
-| ---------- | ------------------------------------------------------------------ | ------------------------------------------------ |
-| `semantic` | Refers to embedding-space relationships, not user concepts         | Drop entirely or say "similar" / "related"       |
-| `node`     | 3D WebGL geometry term                                             | "business" / "listing" / "result"                |
-| `cluster`  | K-means cluster id                                                 | "kind" / "type" / "category"                     |
-| `signal`   | Cosine-similarity score                                            | "strength of match" or just drop                 |
-| `thread`   | Path of related records                                            | "similar businesses" / "connections"             |
-| `mycelium` | System-internal metaphor for the network visualization             | Never                                            |
-| `trail`    | OK as a UI surface name (one of the 6 journey phases) but not copy | OK in url params and nav-state, not user strings |
-| `record`   | Database row                                                       | "listing"                                        |
-| `point`    | GeoJSON point                                                      | "location"                                       |
-| `demo`     | Legacy key used in rail-status.ts fallback path — copy says "Local data" now | Never as user-visible copy                      |
+| Term       | Why it's jargon                                                              | Friendly replacement                             |
+| ---------- | ---------------------------------------------------------------------------- | ------------------------------------------------ |
+| `semantic` | Refers to embedding-space relationships, not user concepts                   | Drop entirely or say "similar" / "related"       |
+| `node`     | 3D WebGL geometry term                                                       | "business" / "listing" / "result"                |
+| `cluster`  | K-means cluster id                                                           | "kind" / "type" / "category"                     |
+| `signal`   | Cosine-similarity score                                                      | "strength of match" or just drop                 |
+| `thread`   | Path of related records                                                      | "similar businesses" / "connections"             |
+| `mycelium` | System-internal metaphor for the network visualization                       | Never                                            |
+| `trail`    | OK as a UI surface name (one of the 6 journey phases) but not copy           | OK in url params and nav-state, not user strings |
+| `record`   | Database row                                                                 | "listing"                                        |
+| `point`    | GeoJSON point                                                                | "location"                                       |
+| `demo`     | Legacy key used in rail-status.ts fallback path — copy says "Local data" now | Never as user-visible copy                       |
 
 A test in `tests/unit-active/thread-lens-friendly-copy.test.ts` enforces the string-literal contract for the highest-exposure site (`describeThreadLensForPoint`). The pattern is reusable: source-inspect the file, extract all string literals, fail if any contains a forbidden word. Add the same style of test for a new copy-heavy module.
 
@@ -31,7 +31,7 @@ A test in `tests/unit-active/thread-lens-friendly-copy.test.ts` enforces the str
 | Show the consequence, not state | "Status: disqualified" → "No longer active. Was a HVAC business."                                                                                                                             |
 | Verb-first when actionable      | "Showing connections from" rather than "Connection Trail — focused on"                                                                                                                        |
 | Concrete nouns over metaphors   | "Connections" rather than "Thread"; "Kind of business" rather than "Semantic Neighborhood"                                                                                                    |
-| Give a next step                | When neighborCount === 0 in JourneyChrome: "Stop N. No more visible stops in this slice. Use Prev to return to Overview to find more connections." (already implemented in W47-g by the lane) |
+| Give a next step                | When neighborCount === 0 in JourneyChrome: "Step N — no more nearby with these filters." with the context line "Step N: <name>. Why here: <reason>." (W48 fixed "Stop N of 0", W72 renamed Stop→Step and added "· M nearby" count). |
 
 ## Layout-Label Conventions
 
@@ -51,6 +51,7 @@ The ids (`#selected-theme`, `#selected-status`, `#selected-map`, `#selected-thre
 - **No container-level `aria-live`** on chrome wrappers (`#journey-chrome`): trail context/progress text changes on every focus step — a live region there spams screen readers and double-announces the scoped `role="status"` regions inside. Announce via dedicated status elements only.
 - **Disabled controls don't show counts**: idle filter reset renders plain `Reset`; the `(N)` count appears only when filters are active (a disabled "Reset (0)" reads like it counts something invisible).
 - **Decorative swatches carry no tooltips**: identical verbose `title` strings repeated across legend swatches are tooltip/SR noise; the wrapping button already carries name + count.
+- **Progress is "Step", not "Stop"**: journey progress reads `Step N · M nearby` (or `Step N — no more nearby…`) and the invite is `Choose a nearby business to start.` — "Stop" implied a transit system with no user model.
 
 ## Exceptions (Intentional Jargon Surfaces)
 

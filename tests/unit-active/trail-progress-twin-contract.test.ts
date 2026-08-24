@@ -16,6 +16,9 @@
  *   is carried by the Next-stop line. The setTrailFromSeed memo is
  *   invalidated when the thread artifact lands so late-loaded semantic
  *   neighbors converge instead of pinning a stale fallback.
+ *
+ * 2026-08-24 UX sweep: "Stop" → "Step" + nearby count for user clarity.
+ *   Progress now reads `Step N · M nearby` instead of bare `Stop N.`
  */
 import { describe, it, expect, beforeAll } from 'vitest'
 import { readFileSync } from 'fs'
@@ -39,29 +42,29 @@ describe('trail progress string contract', () => {
         focusUi = readSource(FOCUS_UI_PATH)
     })
 
-    it('Svelte twin renders bare Stop N - no "of ${neighborCount}" total', () => {
+    it('Svelte twin renders Step N with nearby count - no "of ${neighborCount}" total', () => {
         // Code-form only: comments may still cite the historical string.
         expect(chrome).not.toMatch(/`Step \$\{currentWalkHistory\.length\} of \$\{neighborCount\}`/)
         expect(chrome).not.toContain('Step ${currentWalkHistory.length + 1}')
-        expect(chrome).toMatch(/`Stop \$\{currentWalkHistory\.length\}\./)
+        expect(chrome).toMatch(/`Step \$\{currentWalkHistory\.length\} ·/)
     })
 
     it('DOM twin renders the same rule - bare walkLength as stepNumber', () => {
         expect(focusUi).toMatch(/const stepNumber = walkLength/)
         expect(focusUi).not.toMatch(/stepNumber = walkLength \+ 1/)
-        expect(focusUi).toContain('`Stop ${stepNumber}.`')
+        expect(focusUi).toContain('`Step ${stepNumber} ·')
     })
 
-    it('both twins carry the no-more-stops fallback without offset or total', () => {
-        expect(chrome).toContain('No more visible stops with these filters.')
-        expect(focusUi).toContain('No more visible stops with these filters.')
+    it('both twins carry the no-more-nearby fallback without offset or total', () => {
+        expect(chrome).toContain('no more nearby with these filters.')
+        expect(focusUi).toContain('no more nearby with these filters.')
         expect(chrome).not.toContain('length + 1}. No more visible stops')
         expect(focusUi).not.toContain('stepNumber} of 0')
     })
 
-    it('both twins guard walkLength 0 (fresh deep links) with an invite, not "Stop 0."', () => {
-        expect(chrome).toContain("'Choose a nearby stop to begin.'")
-        expect(focusUi).toContain("'Choose a nearby stop to begin.'")
+    it('both twins guard walkLength 0 (fresh deep links) with an invite, not "Step 0."', () => {
+        expect(chrome).toContain("'Choose a nearby business to start.'")
+        expect(focusUi).toContain("'Choose a nearby business to start.'")
     })
 
     it('seed memo invalidation exists so late thread loads converge', () => {
