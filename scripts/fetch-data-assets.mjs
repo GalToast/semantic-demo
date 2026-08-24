@@ -36,6 +36,7 @@ const ASSETS = [
 ]
 
 const ifMissing = process.argv.includes('--if-missing')
+const quiet = process.argv.includes('--quiet')
 
 function missing() {
     return ASSETS.filter((p) => !existsSync(resolve(ROOT, p)))

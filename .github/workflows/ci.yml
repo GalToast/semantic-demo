@@ -35,6 +35,10 @@ jobs:
                   node-version: '24'
                   cache: 'npm'
             - run: npm ci
+            - name: Restore private data assets
+              env:
+                  DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
+              run: node scripts/fetch-data-assets.mjs --quiet || node scripts/fetch-data-assets.mjs
             - run: npm run test:unit
               env:
                   DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
