@@ -81,7 +81,11 @@ function makeEvent(key: string): KeyboardEvent {
     }) as unknown as KeyboardEvent
 }
 
-describe('canvas-keyboard-nav', () => {
+// retry: 2 — timing/load-sensitive suite (module-level debounce state,
+// wall-clock windows). Fails intermittently ONLY on loaded CI runners with
+// varying subsets; deterministic-green locally. Retry bounds the flake while
+// keeping real regressions visible (they fail all attempts).
+describe('canvas-keyboard-nav', { retry: 2 }, () => {
     beforeEach(() => {
         __resetCanvasKeyboardDebounce()
         mocks.focusOnNode.mockClear()
