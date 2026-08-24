@@ -34,7 +34,7 @@
   <p class="search-empty-title">No results found for "{query}"</p>
   <p class="search-empty-note">Try clearing filters or searching nearby categories:</p>
   <div class="search-empty-suggestions">
-    <div class="search-suggestion-buttons">
+    <div class="search-suggestion-buttons" role="group" aria-label="Search suggestions">
       {#each suggestions as suggestion}
         <button class="search-suggestion-chip" type="button" aria-label={`Try search for ${suggestion}`} onclick={() => onSuggestionClick(suggestion)}>
           {suggestion}

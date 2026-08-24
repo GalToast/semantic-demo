@@ -197,9 +197,11 @@ describe('LegendClusterList component', () => {
         expect(container.querySelector('.legend-item')).toBeNull()
     })
 
-    it('has swatch title attribute', () => {
+    it('swatch is decorative — no redundant tooltip (name/count live on the button)', () => {
         const { container } = renderList()
         const swatch = container.querySelector('.legend-swatch')
-        expect(swatch?.getAttribute('title')).toContain('color-coded')
+        // 2026-08-24 UX sweep: the identical 90-char title on all 21 swatches was
+        // tooltip/SR noise; the wrapping button already carries name + count.
+        expect(swatch?.getAttribute('title')).toBeNull()
     })
 })

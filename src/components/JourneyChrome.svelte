@@ -279,6 +279,9 @@
 </script>
 
 {#if visible && !isJourneyIdle}
+  <!-- No container-level aria-live: trail context / progress text change on
+       every focus step, so a live region here spams screen readers and
+       double-announces the scoped role="status" regions inside. -->
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div
     class="journey-chrome"
@@ -286,10 +289,8 @@
     role="group"
     tabindex="-1"
     aria-label="Journey navigation"
-    aria-live="polite"
     onpointerdown={stopRailSurfaceEvent}
-    onpointerup={stopRailSurfaceEvent}
-    onmousedown={stopRailSurfaceEvent}
+    onpointerup={stopRailSurfaceEvent}    onmousedown={stopRailSurfaceEvent}
     onmouseup={stopRailSurfaceEvent}
     onclick={stopRailSurfaceEvent}
     onkeydown={stopRailSurfaceEvent}

@@ -46,6 +46,12 @@ The four label-value rows in `SelectedBusinessDetails.svelte`'s `.selected-grid`
 
 The ids (`#selected-theme`, `#selected-status`, `#selected-map`, `#selected-thread`) remain unchanged so existing ownership-contract tests and journey tests keep passing — only the visible label text and the `title` tooltips changed. **Do not rename the ids without updating every test in `tests/info-panel-surface-ownership-contract.mjs` / `tests/journey-ui-ownership-contract.mjs` / `tests/map-focus-search-content-owner-contract.mjs`.**
 
+## Live Regions & Control Labels (2026-08-24 UX sweep)
+
+- **No container-level `aria-live`** on chrome wrappers (`#journey-chrome`): trail context/progress text changes on every focus step — a live region there spams screen readers and double-announces the scoped `role="status"` regions inside. Announce via dedicated status elements only.
+- **Disabled controls don't show counts**: idle filter reset renders plain `Reset`; the `(N)` count appears only when filters are active (a disabled "Reset (0)" reads like it counts something invisible).
+- **Decorative swatches carry no tooltips**: identical verbose `title` strings repeated across legend swatches are tooltip/SR noise; the wrapping button already carries name + count.
+
 ## Exceptions (Intentional Jargon Surfaces)
 
 | Surface                                                  | Why it's OK                                                                                                                                                         |

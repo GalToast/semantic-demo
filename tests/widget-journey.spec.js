@@ -6676,4 +6676,49 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         const queryAfter = await searchInputEl.inputValue()
         expect(queryAfter, 'Esc on a toast must NOT clear the search query (global Escape gate)').toBe(testQuery)
     })
+
+    test('W72 UX sweep: no container aria-live on journey chrome + idle filter reset reads plain "Reset"', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+            timeout: 20000,
+            polling: 100
+        })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 45000 })
+
+        // First-visit help dialog may auto-open after splash dismissal — close it.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+        }
+
+        // (1) Focus a node so the journey stage mounts, then assert the chrome
+        // container carries NO live region: trail context/progress text changes on
+        // every focus step, and a container-level aria-live spams screen readers
+        // while double-announcing the scoped role=status regions inside.
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                throw new Error('__navActions__.focusOnNode is not exposed')
+            }
+            if (!actions.focusOnNode(3)) throw new Error('focusOnNode(3) returned falsy')
+        })
+        const chrome = page.locator('#journey-chrome')
+        await chrome.waitFor({ state: 'attached', timeout: 15000 })
+        await expect(chrome, 'container-level aria-live must stay removed (SR announcement spam)').not.toHaveAttribute('aria-live', /.+/)
+
+        // (2) Idle filter reset button shows plain "Reset" — "Reset (0)" on a
+        // disabled control read like it was counting something invisible.
+        const resetBtn = page.locator('#filter-clear-btn')
+        await expect(resetBtn).toHaveText(/^Reset$/)
+        await expect(resetBtn).toBeDisabled()
+    })
 })

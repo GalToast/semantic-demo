@@ -199,13 +199,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .mock-banner strong {
-    color: rgba(255, 224, 130, 1);
-    letter-spacing: 0.04em;
-  }
-
-  /* Fix #1 Map: floating search bar overlaps MapView header at 1rem */
-  :global(body[data-active-view='map'] .search-container:not(.info-panel-contained)) {
+  /* Fix #1 Map: floating search bar overlaps MapView header at 1rem */  :global(body[data-active-view='map'] .search-container:not(.info-panel-contained)) {
     top: 4.5rem;
     width: min(420px, 90vw) !important;
     left: 50% !important;

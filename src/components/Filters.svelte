@@ -238,9 +238,10 @@ function handleContactToggle(id: string): void {
       type="button"
       disabled={!$hasActiveFilters}
     >
-      Reset ({$activeFilterCount})
-    </button>
-  </div>
+      <!-- Count shown only when filters are active: a disabled "Reset (0)" reads
+           like it is counting something the user can't see. -->
+      {$activeFilterCount > 0 ? `Reset (${$activeFilterCount})` : 'Reset'}
+    </button>  </div>
 </details>
 
 <!-- Scrim backdrop — appears when filters panel is open, dismisses on tap -->
