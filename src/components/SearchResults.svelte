@@ -213,13 +213,13 @@
     if (active) {
       const pt = active.point ?? getBusinessRecords()[Number(active.index)] ?? null;
       const name = pt?.name ?? active.name ?? 'Unknown';
-      const snippet = pt?.what ?? active.snippet ?? '';
-      const context = pt?.city ?? active.category ?? '';
       const rank = idx === 0 ? 'Top match' : `Match ${idx + 1}`;
-      liveAnnouncement = `Focus ${name}. ${rank}. ${snippet} ${context}. (${idx + 1} of ${resultSlice.length})`;
+      // P1-3 fix: avoid duplicating button aria-label (name+snippet+context) —
+      // the focused button already announces its label; live region only adds position.
+      // Keep "Focus" prefix for a11y contract (w42b/w43a) while dropping verbose snippet/context.
+      liveAnnouncement = `Focus ${name}. ${rank}. (${idx + 1} of ${resultSlice.length})`;
     }
   });
-
   // Sync DOM focus with the roving active index — but ONLY when the user is
   // already navigating within the result list (DOM focus inside the listbox).
   // Never steal focus from the search input while the user is typing: when
