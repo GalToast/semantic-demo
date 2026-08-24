@@ -3,6 +3,11 @@ import { useSearchSummary } from '@lib/ui/use-search-summary.svelte'
 import { hideViewHandoff } from '@lib/orchestration/view-controller'
 import { debugWarn } from '@lib/utils/debug'
 import { getRouteEmbodimentIndices } from './map-route-embodiment'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
+
+// Module-scoped registry tracks the terrain-handoff settle timer so a
+// subsequent call to setTerrainHandoffState clears it before re-arming.
+const _terrainHandoffReg = new DisposableRegistry({ label: 'map-director-terrain-handoff', warnAfterDispose: false })
 
 export interface TerrainHandoffOptions {
     routeCount?: number
@@ -59,20 +64,17 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
         hideViewHandoff()
     }
 
-    if (appState.terrainHandoffTimer) {
-        window.clearTimeout(appState.terrainHandoffTimer)
-        appState.terrainHandoffTimer = null
-    }
-
+    // Clear any pending settle timer before arming a new one (mirrors prior
+    // window.clearTimeout logic; registry is reused so dispose+re-schedule is safe).
+    _terrainHandoffReg.disposeAll()
     if (Number.isFinite(options.settleAfterMs) && options.settleAfterMs! > 0) {
-        // eslint-disable-next-line no-restricted-syntax -- raw setTimeout in dispose path: cleared via window.clearTimeout immediately below
-        appState.terrainHandoffTimer = setTimeout(() => {
+        _terrainHandoffReg.schedule(options.settleAfterMs!, () => {
             const settlePhase = options.settlePhase || (appState.currentView === 'map' ? 'settled' : 'idle')
             setTerrainHandoffState(settlePhase, {
                 routeCount,
                 from: appState.terrainHandoffState.from,
                 to: appState.terrainHandoffState.to
             })
-        }, options.settleAfterMs)
+        })
     }
 }

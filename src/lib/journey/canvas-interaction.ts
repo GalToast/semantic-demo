@@ -22,6 +22,7 @@ import { clearCanvasFieldHover, setCanvasFieldHover } from './canvas-hover'
 import type { HoverCandidate } from './canvas-hover'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { prefersReducedMotion } from '@lib/utils/environment'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // F3: Track whether the empty-click hint has been shown this session so
 // users aren't spammed with toasts.
@@ -34,7 +35,7 @@ const DRAG_THRESHOLD_PX = 4
 // L1 (engine-teardown audit): track active click-pulse timers so a teardown
 // (disposeCanvasNodeInteractionBindings) before the 550ms animation finishes
 // can remove the stray <div> instead of leaving it orphaned in document.body.
-const _activeClickPulses = new Set<{ timer: ReturnType<typeof setTimeout>; el: HTMLDivElement }>()
+const _pulseReg = new DisposableRegistry({ label: 'canvas-interaction-click-pulses', warnAfterDispose: false })
 
 function setCanvasDragCursor(canvas: HTMLCanvasElement, isDragging: boolean): void {
     canvas.style.cursor = isDragging ? 'grabbing' : ''
@@ -58,16 +59,13 @@ function showClickPulse(x: number, y: number): void {
         pulse.style.transform = 'scale(6)'
         pulse.style.opacity = '0'
     })
-    // L1: track the timer so disposeCanvasNodeInteractionBindings can clear it
-    // (and remove the element) if teardown happens mid-animation.
-    const entry = {
-        timer: setTimeout(() => {
-            pulse.remove()
-            _activeClickPulses.delete(entry)
-        }, 550),
-        el: pulse
-    }
-    _activeClickPulses.add(entry)
+    // L1: track both timer and element so teardown mid-animation doesn't leak.
+    // The schedule's callback removes the pulse on natural expiry; the
+    // separate add() ensures disposeAll also removes it if torn down early.
+    _pulseReg.add(() => pulse.remove())
+    _pulseReg.schedule(550, () => {
+        pulse.remove()
+    })
 }
 
 export { initJourneyCanvasInteractionAdapter, isThreadCandidateVisibleOnCanvas }
@@ -200,11 +198,7 @@ export function disposeCanvasNodeInteractionBindings(): void {
     }
     // L1: clear any in-flight click-pulse timers and remove their elements so a
     // teardown mid-animation doesn't leave stray <div>s in document.body.
-    for (const { timer, el } of _activeClickPulses) {
-        clearTimeout(timer)
-        el.remove()
-    }
-    _activeClickPulses.clear()
+    _pulseReg.disposeAll()
     const canvas = appState.renderer?.domElement
     if (canvas) {
         delete canvas.dataset.threadInteractionBound
