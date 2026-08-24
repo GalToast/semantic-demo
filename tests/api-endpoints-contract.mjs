@@ -155,6 +155,70 @@ try {
     check('guard: same-host referrer allowed', same.status === 200, 'got ' + same.status)
 }
 
+// ── Semantic lane happy paths (env-gated) ────────────────────────────────────
+// These require the prod-side semantic service (:8020/:8019 on the API host).
+// When it is down they SKIP silently so local runs without the service stay
+// green; when reachable they pin the live response shapes.
+try {
+    const origin = new URL(BASE).origin + '/'
+    const lane = await getJson(BASE + '?action=semantic_lane_health', { Referer: origin })
+    const serviceUp = lane.body?.ok === true && lane.body?.search_ok === true
+
+    if (!serviceUp) {
+        check('semantic lane happy-paths', true, 'SKIPPED - semantic service down/degraded on host')
+    } else {
+        // Rotate the query so the hour-cached lexical fallback never masks the
+        // live service result.
+        const q = encodeURIComponent('tacos near the woodlands ' + Math.floor(Date.now() / 60000))
+        const ref = { Referer: origin }
+        const search = await getJson(BASE + '?action=semantic_search&q=' + q + '&limit=3', ref)
+        const hybrid = search.status === 200 && search.body?.ok === true
+            && search.body?.mode === 'semantic_hybrid_public_v1'
+            && search.body?.degraded !== true
+            && Array.isArray(search.body?.results) && search.body.results.length > 0
+        check('semantic_search: hybrid mode with results', hybrid,
+            'mode=' + (search.body?.mode ?? 'none') + ' degraded=' + String(search.body?.degraded))
+        const first = search.body?.results?.[0]
+
+        let leadId = null
+        if (hybrid && first) {
+            leadId = Number(first.lead_id)
+            const scored = typeof first.score === 'number' && Number.isFinite(first.score)
+                && typeof first.semantic_score === 'number'
+            check('semantic_search: hybrid score fields present', scored,
+                'score=' + first.score + ' semantic_score=' + first.semantic_score)
+
+            const lead = await getJson(BASE + '?action=lead_context&id=' + leadId, ref)
+            const leadOk = lead.status === 200 && lead.body?.ok === true
+                && Number(lead.body?.lead_id) === leadId
+                && typeof lead.body?.name === 'string' && lead.body.name.length > 0
+            check('lead_context: happy path payload', leadOk,
+                'status=' + lead.status + ' id=' + lead.body?.lead_id)
+        }
+
+        if (hybrid && first) {
+            const storyReq = await fetch(BASE + '?action=semantic_trail_story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...ref },
+                body: JSON.stringify({
+                    query: decodeURIComponent(q),
+                    results: [{ lead_id: first.lead_id, name: first.name, city: first.city }],
+                    anchor_lead_id: leadId,
+                    anchor_name: first.name
+                })
+            })
+            let storyBody = null
+            try { storyBody = await storyReq.json() } catch {}
+            const storyOk = storyReq.status === 200 && storyBody?.ok === true
+                && (storyBody?.kind === 'semantic_trail_story_v1' || storyBody?.pending_generation === true)
+            check('semantic_trail_story: accepted/queued', storyOk,
+                'status=' + storyReq.status + ' kind=' + (storyBody?.kind ?? 'none'))
+        }
+    }
+} catch (e) {
+    check('semantic lane happy-paths', false, 'probe error: ' + String(e).slice(0, 120))
+}
+
 console.log('')
 if (failed > 0) {
     console.error(`FAILED: ${failed} api-endpoint check(s)`)
