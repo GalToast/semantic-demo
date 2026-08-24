@@ -308,6 +308,14 @@ Exit codes (comparison mode):
         const jSSize = base.totalBytes
         const diff = s.totalBytes - jSSize
 
+        // Era-change detection (2026-08-24): a build-config change rotates ALL
+        // content-hashes at once. If fewer than 20% of baseline chunk names
+        // still exist verbatim in the fresh build, name-keyed per-chunk deltas
+        // are meaningless — surface that explicitly instead of emitting
+        // confusing 0→x rows (root cause of the 08-24 CI red-streak).
+        const survivingNames = base.chunks.filter((c) => existsSync(resolve(ASSETS_DIR, c.name))).length
+        const eraChanged = base.chunks.length > 0 && survivingNames / base.chunks.length < 0.2
+
         console.log(`\n── Baseline comparison: ${target} ──`)
         if (!base.blessed_at) {
             console.log(
@@ -333,6 +341,16 @@ Exit codes (comparison mode):
         console.log(
             `Baseline JS total: ${kb(jSSize)} KB  |  Current JS total: ${kb(s.totalBytes)} KB  |  Delta: ${diff >= 0 ? '+' : ''}${kb(diff)} KB`
         )
+        if (eraChanged) {
+            // Era-change guidance: the TOTAL delta above remains authoritative
+            // (name-independent); per-chunk rows below are informational only.
+            console.log(
+                '  ERA-CHANGE: <20% of baseline chunk names survive in this build (config-era rotation).'
+            )
+            console.log(
+                '  Per-chunk deltas below are informational; if total growth is intentional, re-stamp with --baseline write --note.'
+            )
+        }
 
         const mtChunks = modeTransitionChunks(s)
         // hash-rotation-safe: rebuilt chunks rotate content-hashes
