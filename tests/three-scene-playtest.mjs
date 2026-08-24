@@ -191,17 +191,18 @@ async function inspectScene(page) {
             Boolean(a && b && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top)
         const isVisibleBox = (box) =>
             Boolean(box && box.display !== 'none' && box.visibility !== 'hidden' && box.width > 0 && box.height > 0)
-        const continuitySample = (line, segmentsPerPair) => {
+        const continuitySample = (line, connectionPairs) => {
             // LOD-aware: edges flatten exactly `segmentsPerPair` bezier segments
-            // each (webglContext.myceliumSegmentsPerPair is the stride-contract
-            // source of truth, set by createMycelium). Only INTERNAL joints are
-            // sampled — fixed windows straddled edge boundaries once LOD-4
-            // builds landed (2026-08-25).
+            // each. The stride is DERIVED, not assumed: segCount ÷ core-pair
+            // count (appState.myceliumConnectionPairs layer-0 entries are the
+            // core edges). webglContext's own scalar isn't mirrored to
+            // appState, so deriving keeps this honest across LOD builds.
             const attr = line?.geometry?.attributes?.instanceStart
             const values = Array.from(attr?.data?.array || [])
             if (values.length < 30) return { checked: 0, matched: 0 }
-            const stride = Math.max(1, Math.floor(Number(segmentsPerPair) || 10))
             const segCount = Math.floor(values.length / 6)
+            const corePairs = (connectionPairs || []).filter((p) => p.layer === 0).length
+            const stride = corePairs > 0 ? Math.max(1, Math.round(segCount / corePairs)) : 10
             const edgeCount = Math.floor(segCount / stride)
             let checked = 0
             let matched = 0
@@ -239,9 +240,43 @@ async function inspectScene(page) {
             coreOpacity: state?.myceliumCoreLines?.material?.opacity ?? null,
             wispyOpacity: state?.myceliumWispyLines?.material?.opacity ?? null,
             bridgeOpacity: state?.myceliumBridgeLines?.material?.opacity ?? null,
-            coreContinuity: continuitySample(state?.myceliumCoreLines, state?.myceliumSegmentsPerPair),
+            coreContinuity: continuitySample(state?.myceliumCoreLines, state?.myceliumConnectionPairs),
             semanticLensVisible: Boolean(state?.semanticLensGroup?.visible),
             semanticLensGlowOpacity: state?.semanticLensGlow?.material?.uniforms?.uOpacity?.value ?? 0,
+            // 2026-08-24 spoke-zero triage: capture the gate flags that control
+            // the fill path in three-interaction-visuals.updateSemanticLensVisuals.
+            semanticDiveMode: state?.semanticDiveMode ?? null,
+            semanticLensSpokesVisible: state?.semanticLensSpokes?.visible ?? null,
+            focusedLeadNeighbors: (() => {
+                try {
+                    const pts = state?.points || []
+                    const fn = state?.focusedNode
+                    const rec = Number.isFinite(fn) ? pts[fn] : null
+                    const entry = rec ? state?.semanticNeighborMapByLeadId?.get(String(rec.lead_id)) : null
+                    return entry?.neighbors?.length ?? null
+                } catch {
+                    return 'err'
+                }
+            })(),
+            neighborMapDiagnostics: (() => {
+                try {
+                    const m = state?.semanticNeighborMapByLeadId
+                    if (!m) return { map: 'missing' }
+                    const firstKey = m.keys().next().value ?? null
+                    const pts = state?.points || []
+                    const fn = state?.focusedNode
+                    const rec = Number.isFinite(fn) ? pts[fn] : null
+                    return {
+                        size: m.size,
+                        firstKey,
+                        firstHasKeyShape: firstKey ? Object.keys(m.get(firstKey) ?? {}) : null,
+                        focusedLeadId: rec?.lead_id ?? null,
+                        hasFocusedLead: rec ? m.has(String(rec.lead_id)) : null
+                    }
+                } catch (e) {
+                    return { err: String(e).slice(0, 80) }
+                }
+            })(),
             semanticLensSpokeAlphaNonZero: alphaValues.filter((value) => value > 0).length,
             semanticLensSpokePositionNonZero: positionValues.filter((value) => Math.abs(value) > 0.0001).length,
             consoleGraphicMode: state?.scenePerformanceDiagnostics?.active ?? null,
@@ -398,6 +433,16 @@ async function main() {
                     { timeout: 5000 }
                 )
                 .catch(() => {})
+            // P-Test-1 (2026-08-24 visual QA): the first-visit help dialog
+            // auto-opens under contract-boot and stage 01 was photographing the
+            // dialog, not the idle galaxy. Dismiss via the real path (global
+            // Escape shortcut closes the help dialog) so app state — sessionStorage
+            // seen-flag, focus restoration — updates exactly like a user dismissal.
+            const helpDialog = page.locator('dialog.help-dialog[open]')
+            if ((await helpDialog.count()) > 0) {
+                await page.keyboard.press('Escape')
+                await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            }
             if (setup) await setup(page)
             if (process.env.SEMANTIC_SCENE_DIAG_HIDE) {
                 await page.evaluate((hideList) => {
@@ -489,6 +534,15 @@ async function main() {
             async (page) => {
                 await focusSetup(page)
                 await page.evaluate(() => window.__APP_ACTIONS__?.setTrailDepth?.(2, { fromUserGesture: true }))
+                // Spoke buffers fill on the first inside-active frame; under
+                // load the dive activation + fill can lag the 2-rAF wait.
+                // Poll for the end state instead of racing it (2026-08-24).
+                await page
+                    .waitForFunction(() => {
+                        const a = window.__TEST_STATE__?.semanticLensSpokes?.geometry?.attributes?.alpha?.array || []
+                        return Array.from(a).filter((v) => v > 0).length >= 2
+                    }, { timeout: 6000 })
+                    .catch(() => {})
                 await page
                     .waitForFunction(
                         () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),

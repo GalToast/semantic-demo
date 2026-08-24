@@ -636,6 +636,20 @@
         overflow-y: auto;
     }
 
+    /* 2026-08-24 visual QA (tmp/visual-qa-findings-2026-08-24.md, P-Map-1):
+       the search-trail-cue pins to top: 5.5rem on mobile — the same top band
+       the map search sheet occupies (top: 10px + safe-area, grows with
+       results) plus the map title (y34) and Manifold badge (y64). The cue
+       strip rendered underneath the result header card and read as broken
+       "QUERY ANCHOR EXPLORE" tab labels. Map mode already suppresses other
+       non-map chrome here; the cue's wayfinding content is redundant on the
+       map surface (results + route are the visible state), so hide it. */
+    body.surface-map-any .search-trail-cue:not([hidden]) {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     body.surface-map-search .search-result-item,
     body.surface-map-search .search-result-item.top-result {
         display: block;
