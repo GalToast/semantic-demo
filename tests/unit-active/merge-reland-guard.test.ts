@@ -83,7 +83,16 @@ describe('merge-reland guard', () => {
                     // The merge RESOLVED to the second parent's (stale-from-our-pov) content
                     // when our first parent had a different blob: the old side won silently.
                     if (mergeBlob && secondBlob && mergeBlob === secondBlob) {
-                        const firstBlob = runGit(`rev-parse ${firstParent}:${file}`)
+                        // Absent from first parent = added by this merge, not a
+                        // resurrection of overwritten content — skip. (Unguarded,
+                        // this rev-parse's exit 128 killed the whole battery on CI:
+                        // run 32688649114, scripts/mapstate-fold-gate.mjs.)
+                        let firstBlob = ''
+                        try {
+                            firstBlob = runGit(`rev-parse ${firstParent}:${file}`)
+                        } catch {
+                            continue
+                        }
                         if (firstBlob && firstBlob !== secondBlob) {
                             stale.push(file)
                         }
