@@ -54,7 +54,7 @@ import { cancelOverviewCameraAnimation } from '@lib/demo/camera'
 import { cancelDemo, cancelAllDemoTimers, resetDemo, isDemoActive } from '@lib/stores/demo.svelte.ts'
 import { disposeEventListeners } from '@lib/ui/global-bindings'
 import { destroyMap } from '@lib/engine/map-state'
-import { createMycelium } from '@lib/engine/thread-manager'
+import { createMycelium, MYCELIUM_INITIAL_LOD_SEGMENTS_PER_PAIR } from '@lib/engine/thread-manager'
 import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
 // Dynamic import: postprocessing is code-split to save ~150-200 kB
 let _ppResize: ((w: number, h: number) => void) | null = null
@@ -123,7 +123,7 @@ function _onDataReady(): void {
     try {
         createPoints()
         if (appState.points?.length && appState.nodePositions?.length) {
-            void createMycelium()
+            void createMycelium({ segmentsPerPair: MYCELIUM_INITIAL_LOD_SEGMENTS_PER_PAIR })
         }
     } catch (err) {
         debugWarn('[engine/lifecycle] Late geometry creation failed:', err)

@@ -106,6 +106,7 @@ vi.mock('@lib/engine/node-manager', () => ({
 
 vi.mock('@lib/engine/thread-manager', () => ({
     createMycelium: vi.fn(),
+    MYCELIUM_INITIAL_LOD_SEGMENTS_PER_PAIR: 4,
     disposeMycelium: vi.fn(),
     getMyceliumPresentationProfile: vi.fn(),
     getThreadPulseOpacity: vi.fn(),

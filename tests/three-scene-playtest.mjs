@@ -191,25 +191,24 @@ async function inspectScene(page) {
             Boolean(a && b && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top)
         const isVisibleBox = (box) =>
             Boolean(box && box.display !== 'none' && box.visibility !== 'hidden' && box.width > 0 && box.height > 0)
-        const continuitySample = (line) => {
-            // LineSegmentsGeometry stores per-segment [sx,sy,sz,ex,ey,ez] in an
-            // instanced interleaved buffer (attributes.instanceStart/instanceEnd);
-            // there is NO plain position.array (2026-08-24 harness fix — old
-            // sampler always read [] and reported checked:0).
+        const continuitySample = (line, segmentsPerPair) => {
+            // LOD-aware: edges flatten exactly `segmentsPerPair` bezier segments
+            // each (webglContext.myceliumSegmentsPerPair is the stride-contract
+            // source of truth, set by createMycelium). Only INTERNAL joints are
+            // sampled — fixed windows straddled edge boundaries once LOD-4
+            // builds landed (2026-08-25).
             const attr = line?.geometry?.attributes?.instanceStart
             const values = Array.from(attr?.data?.array || [])
             if (values.length < 30) return { checked: 0, matched: 0 }
+            const stride = Math.max(1, Math.floor(Number(segmentsPerPair) || 10))
             const segCount = Math.floor(values.length / 6)
+            const edgeCount = Math.floor(segCount / stride)
             let checked = 0
             let matched = 0
-            // Each mycelium edge flattens exactly 10 bezier segments
-            // (BEZIER_SEGMENTS_PER_PAIR, thread-manager.ts pushBezierLinePair),
-            // so 5-segment windows never straddle an edge boundary: every
-            // compared pair is an INTERNAL bezier joint and must match.
-            for (let w = 0; w + 5 <= segCount && checked < 18; w += 5) {
-                for (let j = 0; j < 4; j += 1) {
-                    const endOff = (w + j) * 6 + 3
-                    const startOff = (w + j + 1) * 6
+            for (let e = 0; e < edgeCount && checked < 18; e += 1) {
+                for (let j = 0; j + 1 < stride && checked < 18; j += 1) {
+                    const endOff = (e * stride + j) * 6 + 3
+                    const startOff = (e * stride + j + 1) * 6
                     checked += 1
                     const equal =
                         Math.abs(values[endOff] - values[startOff]) < 0.0001 &&
@@ -240,7 +239,7 @@ async function inspectScene(page) {
             coreOpacity: state?.myceliumCoreLines?.material?.opacity ?? null,
             wispyOpacity: state?.myceliumWispyLines?.material?.opacity ?? null,
             bridgeOpacity: state?.myceliumBridgeLines?.material?.opacity ?? null,
-            coreContinuity: continuitySample(state?.myceliumCoreLines),
+            coreContinuity: continuitySample(state?.myceliumCoreLines, state?.myceliumSegmentsPerPair),
             semanticLensVisible: Boolean(state?.semanticLensGroup?.visible),
             semanticLensGlowOpacity: state?.semanticLensGlow?.material?.uniforms?.uOpacity?.value ?? 0,
             semanticLensSpokeAlphaNonZero: alphaValues.filter((value) => value > 0).length,
@@ -441,10 +440,13 @@ async function main() {
             // stage captures mid-load: focusedIndex falls back to 0 and spoke
             // buffers stay zero (2026-08-24 3D triage).
             await page
-                .waitForFunction(() => {
-                    const m = window.__TEST_STATE__?.semanticNeighborMapByLeadId
-                    return Boolean(m && m.size > 0)
-                }, { timeout: 25000 })
+                .waitForFunction(
+                    () => {
+                        const m = window.__TEST_STATE__?.semanticNeighborMapByLeadId
+                        return Boolean(m && m.size > 0)
+                    },
+                    { timeout: 25000 }
+                )
                 .catch(() => {})
             await page.evaluate(() => {
                 // pointIndexByLeadId no longer exists on engine state (moved to

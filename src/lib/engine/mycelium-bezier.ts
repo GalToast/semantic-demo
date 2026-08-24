@@ -182,9 +182,12 @@ export function rebuildDirtyPairsInLayer(
     dirtySet: Set<number>,
     nodePositions: MyceliumPointLike[],
     points: MyceliumPointLike[],
-    colorFn: (cluster: number | null | undefined) => { r: number; g: number; b: number }
+    colorFn: (cluster: number | null | undefined) => { r: number; g: number; b: number },
+    /** Active tessellation level — MUST match what the buffer was built with:
+     * pair N's in-place write offset assumes exactly this many segments/pair. */
+    segmentsPerPair: number = BEZIER_SEGMENTS_PER_PAIR
 ): number {
-    const SEGMENTS_PER_PAIR = BEZIER_SEGMENTS_PER_PAIR
+    const SEGMENTS_PER_PAIR = segmentsPerPair
     const FLOATS_PER_SEGMENT = 6 // 3 start + 3 end
 
     const geom = line?.geometry as LineGeometry | undefined

@@ -34,6 +34,7 @@ import {
     computeLayerIntensityMap,
     rebuildDirtyPairsInLayer
 } from './mycelium-bezier'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,41 @@ type MyceliumEdgeSets = {
     corePairs: EdgePair[]
     wispyPairs: EdgePair[]
     bridgePairs: EdgePair[]
+}
+
+// ── LOD-first build (2026-08-25) ──────────────────────────────────────────
+// Init trace measured createMycelium at +751ms: ~10k bezier pairs × 10
+// segments tessellated synchronously on the boot critical path. Initial
+// builds now tessellate at MYCELIUM_INITIAL_LOD_SEGMENTS_PER_PAIR and an
+// idle callback upgrades the buffers to full smoothness.
+// STRIDE CONTRACT: every buffer consumer must read the SAME segments/pair
+// the build used — dirty-pair in-place rebuilds index offsets by stride.
+// webglContext.myceliumSegmentsPerPair is the single source of truth.
+export const MYCELIUM_INITIAL_LOD_SEGMENTS_PER_PAIR = 4
+
+type CachedMyceliumEdgeSets = {
+    sets: MyceliumEdgeSets
+    semantic: boolean
+    pointsRef: unknown
+    positionsRef: unknown
+}
+let cachedEdgeSets: CachedMyceliumEdgeSets | null = null
+let lodUpgradeToken = 0
+// Sanctioned setTimeout wrapper — keeps the no-restricted-syntax lint rule
+// happy for the requestIdleCallback fallback path.
+const lodUpgradeReg = new DisposableRegistry({ label: 'mycelium-lod-upgrade' })
+
+function scheduleMyceliumLodUpgrade(builtBelowFullLod: boolean): void {
+    if (!builtBelowFullLod) return
+    const token = ++lodUpgradeToken
+    const fire = (): void => {
+        if (token !== lodUpgradeToken) return // disposed / superseded meanwhile
+        void createMycelium()
+    }
+    const ric = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void })
+        .requestIdleCallback
+    if (ric) ric(fire, { timeout: 600 })
+    else lodUpgradeReg.schedule(250, fire)
 }
 
 function buildGeometricMyceliumEdges(
@@ -414,6 +450,7 @@ export function shouldRenderBridgeThreads() {
 }
 
 export function disposeMycelium() {
+    lodUpgradeToken += 1 // cancel any pending LOD-upgrade rebuild
     // Deregister the camera-move listener so we don't leak OrbitControls refs.
     runDisposeBezierViewRefresh()
 
@@ -428,10 +465,18 @@ export function disposeMycelium() {
     webglContext.myceliumConnectionPairs = []
 }
 
-export async function createMycelium() {
+export async function createMycelium(opts?: { segmentsPerPair?: number }) {
     if (!webglContext.pointsMesh || !state.points?.length || !state.nodePositions?.length) return
 
     disposeMycelium()
+
+    // Tessellation level for THIS build — clamped to the full-quality ceiling;
+    // below-ceiling builds schedule an idle upgrade back to the ceiling.
+    const segmentsPerPair = Math.min(
+        Math.max(1, Math.floor(opts?.segmentsPerPair ?? BEZIER_SEGMENTS_PER_PAIR)),
+        BEZIER_SEGMENTS_PER_PAIR
+    )
+    webglContext.myceliumSegmentsPerPair = segmentsPerPair
 
     state.myceliumDirty = true
     refreshCachedBezierViewVector()
@@ -448,9 +493,24 @@ export async function createMycelium() {
         })
     }
 
-    const semanticEdges = await buildSemanticMyceliumEdges()
+    // LOD-upgrade rebuilds reuse previously computed edge sets when the
+    // underlying arrays are identical — re-tessellate, don't re-discover.
+    const cachedEdgeSetsHit =
+        cachedEdgeSets !== null &&
+        cachedEdgeSets.pointsRef === state.points &&
+        cachedEdgeSets.positionsRef === state.nodePositions
+            ? cachedEdgeSets
+            : null
+
+    const semanticEdges = cachedEdgeSetsHit
+        ? cachedEdgeSetsHit.semantic
+            ? cachedEdgeSetsHit.sets
+            : null
+        : await buildSemanticMyceliumEdges()
     let edgeSets: MyceliumEdgeSets | undefined
-    if (semanticEdges) {
+    if (cachedEdgeSetsHit) {
+        edgeSets = cachedEdgeSetsHit.sets
+    } else if (semanticEdges) {
         edgeSets = semanticEdges
     } else {
         const clusterMembers = new Map()
@@ -478,6 +538,14 @@ export async function createMycelium() {
 
         edgeSets = buildGeometricMyceliumEdges(clusterMembers, clusterCentroids) || undefined
     }
+    if (edgeSets && !cachedEdgeSetsHit) {
+        cachedEdgeSets = {
+            sets: edgeSets,
+            semantic: !!semanticEdges,
+            pointsRef: state.points,
+            positionsRef: state.nodePositions
+        }
+    }
     if (!edgeSets) return
     const coreConnections: number[] = []
     const coreColors: number[] = []
@@ -496,7 +564,8 @@ export async function createMycelium() {
             state.nodePositions,
             state.points,
             (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-            semanticEdges ? 0.5 : 0.4
+            semanticEdges ? 0.5 : 0.4,
+            segmentsPerPair
         )
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 0 })
     })
@@ -508,7 +577,8 @@ export async function createMycelium() {
             state.nodePositions,
             state.points,
             (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-            semanticEdges ? 0.3 : 0.22
+            semanticEdges ? 0.3 : 0.22,
+            segmentsPerPair
         )
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 1 })
     })
@@ -520,7 +590,8 @@ export async function createMycelium() {
             state.nodePositions,
             state.points,
             (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-            semanticEdges ? 0.42 : 0.32
+            semanticEdges ? 0.42 : 0.32,
+            segmentsPerPair
         )
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 2 })
     })
@@ -564,6 +635,10 @@ export async function createMycelium() {
     // every frame; the TS port dropped it (regression). Sync once at creation
     // and on resize (see syncMyceliumLineResolution).
     syncMyceliumLineResolution()
+
+    // Below-full builds hand off to an idle callback that rebuilds at the
+    // full tessellation level once the browser has breathing room.
+    scheduleMyceliumLodUpgrade(segmentsPerPair < BEZIER_SEGMENTS_PER_PAIR)
 }
 
 /**
@@ -633,7 +708,8 @@ export function updateMyceliumThreads(): void {
         dirtyNodeIndices,
         state.nodePositions,
         state.points,
-        colorFn
+        colorFn,
+        webglContext.myceliumSegmentsPerPair
     )
     const dirtyPairs1 = rebuildDirtyPairsInLayer(
         webglContext.myceliumWispyLines,
@@ -643,7 +719,8 @@ export function updateMyceliumThreads(): void {
         dirtyNodeIndices,
         state.nodePositions,
         state.points,
-        colorFn
+        colorFn,
+        webglContext.myceliumSegmentsPerPair
     )
     const dirtyPairs2 = rebuildDirtyPairsInLayer(
         webglContext.myceliumBridgeLines,
@@ -653,7 +730,8 @@ export function updateMyceliumThreads(): void {
         dirtyNodeIndices,
         state.nodePositions,
         state.points,
-        colorFn
+        colorFn,
+        webglContext.myceliumSegmentsPerPair
     )
     const totalDirtyPairs = dirtyPairs0 + dirtyPairs1 + dirtyPairs2
 

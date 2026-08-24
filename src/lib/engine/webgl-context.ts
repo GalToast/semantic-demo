@@ -44,6 +44,9 @@ export interface WebGLContextState {
     semanticLensGlow: Mesh | null
     semanticLensSpokes: LineSegments | null
     myceliumConnectionPairs: Array<{ a: number; b: number; layer: number }>
+    /** Active mycelium tessellation (segs/pair). LOD builds set < full; the
+     * dirty-pair in-place rebuild indexes offsets with this value. */
+    myceliumSegmentsPerPair: number
     hemiLight: HemisphereLight | null
     dirLight: DirectionalLight | null
 
@@ -91,6 +94,11 @@ export const webglContext: WebGLContextState = {
     semanticLensGlow: null,
     semanticLensSpokes: null,
     myceliumConnectionPairs: [],
+    // Placeholder until createMycelium() overwrites it (always happens before
+    // any buffer math). NOT imported from mycelium-bezier: that module imports
+    // THIS one (webglContext) — a const import here would close a cycle.
+    // Truth source: BEZIER_SEGMENTS_PER_PAIR = 10.
+    myceliumSegmentsPerPair: 10,
     hemiLight: null,
     dirLight: null,
 

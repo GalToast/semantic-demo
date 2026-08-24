@@ -17,7 +17,10 @@ import {
     compilePointMaterialForReadiness as compilePointMaterialForReadinessPort,
     createPoints as createPointsPort
 } from '@lib/engine/node-manager'
-import { createMycelium as createMyceliumPort } from '@lib/engine/thread-manager'
+import {
+    createMycelium as createMyceliumPort,
+    MYCELIUM_INITIAL_LOD_SEGMENTS_PER_PAIR
+} from '@lib/engine/thread-manager'
 import { cancelAnimate } from './three-engine-teardown'
 import { syncSceneHandles, syncPointsHandles, syncMyceliumHandles } from './three-store-sync'
 import { registerContextListeners } from './three-listener-registration'
@@ -123,8 +126,7 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
     // above, so its own gen is always current.
     const restoreGen = isRestoreAttempt ? snapshotRestoreGeneration() : undefined
     const initIsCurrent = (): boolean =>
-        _initGeneration === initGeneration &&
-        (restoreGen === undefined || !isStaleRestoreGeneration(restoreGen))
+        _initGeneration === initGeneration && (restoreGen === undefined || !isStaleRestoreGeneration(restoreGen))
     cancelAnimate()
 
     // Reset circuit breaker so a fresh init can start the loop even if a
@@ -221,7 +223,10 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
     // is async (thread-manager.ts) and yields during buildSemanticMyceliumEdges —
     // a one-time init cost for a correct handle mirror at scene-ready.
     markEngineInitPhase('mycelium-start')
-    await createMyceliumPort()
+    // LOD-first: initial tessellation at 4 segs/pair (~40% of the float work
+    // vs 10 segs/pair ≈ 751ms measured); thread-manager schedules an idle
+    // upgrade to full smoothness right after this resolves.
+    await createMyceliumPort({ segmentsPerPair: MYCELIUM_INITIAL_LOD_SEGMENTS_PER_PAIR })
     markEngineInitPhase('mycelium-ready')
 
     // C12 — mycelium handle mirror (webglContext → appState + legacyState + engineState.state)
