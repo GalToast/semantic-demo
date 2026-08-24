@@ -314,6 +314,28 @@ function engineInitStillActive(phase: string): boolean {
 
 /** Heavy GPU + geometry init — runs in requestIdleCallback after first paint. */
 async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
+    // task-145 breadcrumbs: every milestone appends to a window-visible trace
+    // so any future stall self-reports its last completed phase (probes and
+    // the safety valve read this instead of guessing). Fully guarded —
+    // diagnostics must never throw.
+    const initTrace = (phase: string): void => {
+        try {
+            const w = window as unknown as { __ENGINE_INIT_TRACE__?: Array<{ p: string; t: number }> }
+            ;(w.__ENGINE_INIT_TRACE__ ??= []).push({ p: phase, t: Math.round(performance.now()) })
+        } catch {
+            /* diagnostics only */
+        }
+    }
+    const dumpTrace = (why: string): void => {
+        try {
+            const w = window as unknown as { __ENGINE_INIT_TRACE__?: Array<{ p: string; t: number }> }
+            debugError(`[engine/lifecycle] init trace (${why}):`, JSON.stringify(w.__ENGINE_INIT_TRACE__ ?? []))
+        } catch {
+            /* diagnostics only */
+        }
+    }
+    initTrace('heavy-start')
+
     // Guard: if engine was destroyed or degraded before we ran, abort
     const currentStatus = _getEngineStatus()
     if (_destroyed || currentStatus === 'degraded') {
@@ -331,6 +353,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
     _engineInitSafetyTimer = engineLifecycleReg.schedule(8_000, () => {
         if (_getEngineStatus() !== 'loading') return // already resolved
         debugError('[engine/lifecycle] Engine init safety valve: GPU init timed out after 8s.')
+        dumpTrace('safety-valve-timeout')
         setDataLoadError('Scene initialization timed out. Your graphics hardware may not be supported.')
         setEngineStatus('degraded')
         callbacks.onGraphicsStateChange?.('fallback')
@@ -340,6 +363,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
     try {
         const _perf = typeof performance?.mark === 'function'
         if (_perf) performance.mark('engine-init-gpu-start')
+        initTrace('three-start')
         // 3b. Initialise the Three.js scene (renderer + scene + camera + lights)
         // This is the largest single CPU+GPU step on cold load (~300-500 ms).
         // W8: initThreeJS() is now async and yields internally to break the
@@ -350,6 +374,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
                 clearTimeout(_engineInitSafetyTimer)
                 _engineInitSafetyTimer = null
             }
+            initTrace('three-failed')
             setEngineStatus('degraded')
             callbacks.onGraphicsStateChange?.('fallback')
             return
@@ -452,6 +477,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         // scheduled only after the Svelte scene-ready callback has run.
 
         // 12. Mark ready
+        initTrace('ready')
         setEngineStatus('ready')
 
         // Notify Canvas.svelte (and other consumers) that the scene is ready.
