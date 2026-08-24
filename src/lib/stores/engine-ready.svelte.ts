@@ -41,7 +41,24 @@ function signalReady(): void {
     // shown, so flip the body data attribute to 'webgl'. This unblocks the
     // legend (and any other CSS gated on render-kind) after the user enters
     // the 3D scene.
-    setRenderKind('webgl')
+    //
+    // W51 fix (2026-08-24): an EXPLICIT ?placeholder=1 URL pin beats the
+    // readiness flip. Automated boots (contract-boot / webdriver auto-signal)
+    // fire signalReady during mount, and the unconditional flip here made the
+    // pinned placeholder2d class unobservable — every CI run timed out in
+    // widget-journey W51-mobile-h1 while local D3D11 runs passed. Real users
+    // never carry the param, so production behavior is unchanged.
+    let placeholderPinned = false
+    try {
+        if (typeof window !== 'undefined') {
+            placeholderPinned = new URLSearchParams(window.location.search).get('placeholder') === '1'
+        }
+    } catch {
+        /* no window (SSR) — nothing to guard */
+    }
+    if (!placeholderPinned) {
+        setRenderKind('webgl')
+    }
     // W51-UX-6: persist the ready flag so HMR remounts don't re-fire the splash.
     if (typeof sessionStorage !== 'undefined') {
         try {
