@@ -160,5 +160,9 @@ public/data/qwen3_embeddings_meta.json
 public/data/semantic_threads.dat
 public/data/semantic_threads_ui.dat
 public/data/leadEnrichment.public.json
+# compressed twins regenerate locally (build pipeline / decompress script);
+# never commit 6MB+ binaries alongside the tracked plains above
+public/data/*.dat.br
+public/data/*.dat.gz
 src/data.dat
 .data-repo-cache/
