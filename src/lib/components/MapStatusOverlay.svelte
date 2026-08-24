@@ -83,9 +83,7 @@
   }
 
   .map-status.is-error .map-status-dot {
-    background: #ff976b;
-    box-shadow: 0 0 18px rgba(255, 151, 107, 0.75);
-    animation: none;
+    display: none;
   }
 
   /* ── Loading shimmer ──────────────────────────────────────────────────────── */

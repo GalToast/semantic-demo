@@ -6677,7 +6677,9 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         expect(queryAfter, 'Esc on a toast must NOT clear the search query (global Escape gate)').toBe(testQuery)
     })
 
-    test('W72 UX sweep: no container aria-live on journey chrome + idle filter reset reads plain "Reset"', async ({ page }) => {
+    test('W72 UX sweep: no container aria-live on journey chrome + idle filter reset reads plain "Reset"', async ({
+        page
+    }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
@@ -6713,12 +6715,42 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         })
         const chrome = page.locator('#journey-chrome')
         await chrome.waitFor({ state: 'attached', timeout: 15000 })
-        await expect(chrome, 'container-level aria-live must stay removed (SR announcement spam)').not.toHaveAttribute('aria-live', /.+/)
+        await expect(chrome, 'container-level aria-live must stay removed (SR announcement spam)').not.toHaveAttribute(
+            'aria-live',
+            /.+/
+        )
 
         // (2) Idle filter reset button shows plain "Reset" — "Reset (0)" on a
         // disabled control read like it was counting something invisible.
         const resetBtn = page.locator('#filter-clear-btn')
         await expect(resetBtn).toHaveText(/^Reset$/)
         await expect(resetBtn).toBeDisabled()
+    })
+
+    test('W73 UX sweep: progress reads Step not Stop with nearby count', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
+        await explore.click()
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000, polling: 100 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 45000 })
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+        }
+        await page.evaluate(() => {
+            const a = window.__navActions__
+            if (!a?.focusOnNode) throw new Error('focusOnNode missing')
+            if (!a.focusOnNode(7)) throw new Error('focusOnNode(7) failed')
+        })
+        const progress = page.locator('#focus-stage-progress .progress-text, .progress-text')
+        await progress.waitFor({ state: 'visible', timeout: 15000 })
+        await expect(progress).toContainText(/Step \d+ · \d+ nearby/)
+        // also ensure old jargon is gone
+        await expect(progress).not.toContainText(/Stop \d+/)
     })
 })
