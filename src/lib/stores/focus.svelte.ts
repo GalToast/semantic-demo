@@ -240,7 +240,27 @@ function _buildPocketNode(
     }
 }
 
+// Re-entrancy guard (2026-08-24, fixes CI RangeError from 6ee4a246):
+// state-mirrors are now LAZY — the first resolveWritable() runs this function
+// while focusMirror itself is mid-initialization. _focusMirrorReady is
+// already true by then, so the mirror reads below recursed into their own
+// getOrCreateWritable forever (Maximum call stack size exceeded — broke
+// focus-camera-animation + cursor contracts in CI). While a read is in
+// flight, re-entry returns INITIAL_FOCUS defaults immediately; the outer
+// read completes and caches the writable.
+let _readingSnapshot = false
+
 function _readFocusSnapshot(): FocusStoreState {
+    if (_readingSnapshot) return { ...INITIAL_FOCUS }
+    _readingSnapshot = true
+    try {
+        return _readFocusSnapshotInner()
+    } finally {
+        _readingSnapshot = false
+    }
+}
+
+function _readFocusSnapshotInner(): FocusStoreState {
     const source = getFocusHydrationSource()
     const navState = source.navState ?? {}
     const indices = navState.focusPocketIndices || []
@@ -281,13 +301,20 @@ function _readFocusSnapshot(): FocusStoreState {
         // (the pre-migration shape) made parity's `transitioning` branch
         // unreachable. `strandContinuityPhase` was never wired into
         // FocusHydrationSource, so reading from the mirror is the only path
-        // parity can see user updates. The mirror is hoisted-after-read for
-        // the very first call (during createStateMirror initialization), so
-        // fall back to INITIAL_FOCUS defaults when focusMirror isn't defined yet.
-        semanticDiveMode: !_focusMirrorReady
+        // parity can see user updates.
+        // Guards (both required):
+        //   - !_focusMirrorReady → module-init TDZ order (focusMirror const not
+        //     yet assigned when this runs during boot imports).
+        //   - !isMaterialized() → lazy-holder first-use re-entrancy: the writable
+        //     is created on first get()/subscribe(); computeFromAppState runs
+        //     DURING that creation, so reading the mirror here recurses into
+        //     getOrCreateWritable() until the stack dies (2026-08-24 boot crash,
+        //     RangeError: Maximum call stack size exceeded). Fall back to
+        //     INITIAL_FOCUS defaults until materialization completes.
+        semanticDiveMode: !_focusMirrorReady || !focusMirror.isMaterialized()
             ? INITIAL_FOCUS.semanticDiveMode
             : (get(focusMirror).semanticDiveMode ?? INITIAL_FOCUS.semanticDiveMode),
-        strandContinuityPhase: !_focusMirrorReady
+        strandContinuityPhase: !_focusMirrorReady || !focusMirror.isMaterialized()
             ? INITIAL_FOCUS.strandContinuityPhase
             : (get(focusMirror).strandContinuityPhase ?? INITIAL_FOCUS.strandContinuityPhase),
         nodesAreSettling: source.focusState?.nodesAreSettling ?? false,
