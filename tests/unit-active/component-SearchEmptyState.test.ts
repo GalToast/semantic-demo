@@ -76,7 +76,7 @@ describe('SearchEmptyState component', () => {
             props: { query: 'test', suggestions: ['HVAC'], onSuggestionClick: vi.fn() }
         })
         const chip = container.querySelector('.search-suggestion-chip')
-        expect(chip?.getAttribute('aria-label')).toBe('Try search for HVAC')
+        expect(chip?.getAttribute('aria-label')).toBe('Search for HVAC')
     })
 
     it('renders the note text', () => {

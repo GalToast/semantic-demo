@@ -462,11 +462,15 @@ describe('map-state — setTerrainHandoffState', () => {
         expect(_appState.terrainHandoffState.to).toBe('map')
     })
 
-    it('clears existing timer when setTerrainHandoffState is called', () => {
-        const fakeTimer = setTimeout(() => {}, 1000) as unknown as ReturnType<typeof setTimeout>
-        _appState.terrainHandoffTimer = fakeTimer
+    it('re-arms terrain handoff safely (timer now registry-owned, ed5dcbd5)', () => {
+        _appState.terrainHandoffState = { phase: 'idle', from: '', to: '', routeCount: 0, startedAt: 0 }
         setTerrainHandoffState('loading', {})
-        expect(_appState.terrainHandoffTimer).toBeNull()
-        clearTimeout(fakeTimer as unknown as number)
+        expect(_appState.terrainHandoffState.phase).toBe('loading')
+        // Registry disposeAll-before-re-arm replaces the old timer; re-calling
+        // must not throw and must refresh startedAt.
+        const first = _appState.terrainHandoffState.startedAt
+        setTerrainHandoffState('complete', {})
+        expect(_appState.terrainHandoffState.phase).toBe('complete')
+        expect(_appState.terrainHandoffState.startedAt >= first).toBe(true)
     })
 })
