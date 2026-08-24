@@ -34,7 +34,7 @@ import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { showExperienceToast } from '@lib/orchestration/toast'
-import { setThreadCandidates } from '@lib/stores/journey.svelte'
+import { setThreadCandidates, syncTrailFromWalkHistory } from '@lib/stores/journey.svelte'
 import { withSearchNotify } from '@lib/stores/search.svelte'
 import { debugWarn } from '@lib/utils/debug'
 
@@ -403,6 +403,10 @@ export class ThreadSettler {
                 // it does not recompute or fight any other writer.
                 try {
                     setThreadCandidates((appState.navState.threadCandidates ?? []).map((c) => c.index))
+                    // Bug #4: project the canonical nav walk history into the journey
+                    // store so ← Prev (canGoBack) and the TRAIL stop count track real
+                    // walks instead of only list-initiated stops.
+                    syncTrailFromWalkHistory(appState.navState.walkHistoryIndices ?? [])
                     // Bug #5 (stale search status): $searchState.activeResultId is a
                     // projection of navState.focusedIndex but the search mirror only
                     // refreshes inside withSearchNotify writers — which the walk path

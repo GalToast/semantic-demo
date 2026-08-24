@@ -414,6 +414,26 @@ export function addTrailStop(stop: TrailStop | number): void {
     })
 }
 
+/**
+ * Bug #4 (2026-08-24): the journey trail/walk-history projection went stale
+ * during thread walks — navState.walkHistoryIndices is the source of truth and
+ * advances every hop, but only list-initiated focus events called addTrailStop,
+ * so JourneyChrome's `journeySnapshot.trail.length > 1` gate kept ← Prev
+ * disabled ("No previous stops in this walk history") after real walks while
+ * nav knew better, and MapSummary's stop count disagreed with the HUD. Project
+ * the canonical nav walk history into the journey store wholesale (same
+ * mirror-only pattern as the arrival candidate sync).
+ */
+export function syncTrailFromWalkHistory(walkHistoryIndices: readonly number[]): void {
+    const list = [...walkHistoryIndices].filter((i) => Number.isFinite(i))
+    withJourneyNotify((s) => ({
+        ...s,
+        walkHistoryIndices: list,
+        trail: list.map((i) => ({ index: i }) as TrailStop),
+        cursor: Math.max(0, list.length - 1)
+    }))
+}
+
 export function removeTrailStop(index: number): void {
     withJourneyNotify((s) => {
         const walkHistoryIndices = s.walkHistoryIndices.filter((i) => i !== index)

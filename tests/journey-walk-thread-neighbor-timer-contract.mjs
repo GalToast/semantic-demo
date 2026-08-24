@@ -178,6 +178,10 @@ assert(
     arrivalBlock.includes('withSearchNotify('),
     'arrival timer should republish the search-store projection so activeResultId tracks the arrived stop (stale search-status fix)'
 )
+assert(
+    arrivalBlock.includes('syncTrailFromWalkHistory(appState.navState.walkHistoryIndices'),
+    'arrival timer should project nav walk history into the journey store so Prev/stop-count track real walks (bug #4 fix)'
+)
 
 const settleBlock = walkBody.slice(settleTimerIndex)
 // Current implementation uses `managerState.phase === 'arrived'` rather than
