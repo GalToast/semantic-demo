@@ -174,6 +174,10 @@ assert(
         !arrivalBlock.includes('setTrailFromSeed(capturedIndex)'),
     'arrival timer should mirror fresh nav candidates into the journey store (stale-Next fix) without recomputing them'
 )
+assert(
+    arrivalBlock.includes('withSearchNotify('),
+    'arrival timer should republish the search-store projection so activeResultId tracks the arrived stop (stale search-status fix)'
+)
 
 const settleBlock = walkBody.slice(settleTimerIndex)
 // Current implementation uses `managerState.phase === 'arrived'` rather than

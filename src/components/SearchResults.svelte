@@ -211,8 +211,18 @@
     }
     const active = resultSlice[idx];
     if (active) {
-      const pt = active.point ?? getBusinessRecords()[Number(active.index)] ?? null;
-      const name = pt?.name ?? active.name ?? 'Unknown';
+      // Stale-status guard (2026-08-24, bug #5): activeResultId is a projection
+      // of navState.focusedIndex that only refreshes when the search store is
+      // notified. After app focus moves outside the list (trail walk, canvas
+      // pick, deep-link restore of an out-of-query record), the derived cursor
+      // can still point at an old row — announcing "Focus X" then would name a
+      // business that is NOT focused. Only announce when the active row IS the
+      // focused business; list navigation keeps them equal via setActiveResult.
+      if (Number(active.index) !== appState.navState.focusedIndex) {
+        liveAnnouncement = '';
+        return;
+      }
+      const pt = active.point ?? getBusinessRecords()[Number(active.index)] ?? null;      const name = pt?.name ?? active.name ?? 'Unknown';
       const rank = idx === 0 ? 'Top match' : `Match ${idx + 1}`;
       // P1-3 fix: avoid duplicating button aria-label (name+snippet+context) —
       // the focused button already announces its label; live region only adds position.

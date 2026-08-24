@@ -35,6 +35,7 @@ import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { setThreadCandidates } from '@lib/stores/journey.svelte'
+import { withSearchNotify } from '@lib/stores/search.svelte'
 import { debugWarn } from '@lib/utils/debug'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -402,6 +403,12 @@ export class ThreadSettler {
                 // it does not recompute or fight any other writer.
                 try {
                     setThreadCandidates((appState.navState.threadCandidates ?? []).map((c) => c.index))
+                    // Bug #5 (stale search status): $searchState.activeResultId is a
+                    // projection of navState.focusedIndex but the search mirror only
+                    // refreshes inside withSearchNotify writers — which the walk path
+                    // never runs. Republish the projection so SearchResults' cursor and
+                    // live announcements track the arrived stop.
+                    withSearchNotify(() => {})
                 } catch (e) {
                     debugWarn('[thread-settler] arrival candidate sync failed', e)
                 }
