@@ -22,8 +22,7 @@ import {
     isBoundedNeighborhoodActive,
     primeBoundedSemanticNeighborhoodForTraversal,
     getBoundedNeighborhoodWalkCandidate,
-    getNextWalkCandidateForIndex,
-    setTrailFromSeed
+    getNextWalkCandidateForIndex
 } from '@lib/journey/neighborhood'
 import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
 import { focusOnNode } from '@lib/engine/camera-controls'
@@ -390,22 +389,21 @@ export class ThreadSettler {
                     reason: capturedReason
                 })
 
-                // Stale-Next fix (2026-08-24): walking A→B leaves navState.threadCandidates
-                // pointing at A's neighbors (whose [0] IS B), so the walk HUD "Next:" line and
-                // the NEXT STOP badge kept showing the stop we just came from until some other
-                // trigger recomputed them. Recompute for the arrived stop now: setTrailFromSeed
-                // writes ONLY candidate/trail-seed fields (mode/surface/trailDepth untouched)
-                // and setThreadCandidates mirrors them into the journey store so the
-                // journeySnapshot-derived HUD actually re-runs (nav-mirror writes alone do not
-                // notify the journey writable). Skip when the walk preserved a bounded
-                // neighborhood — those candidate sets are intentionally stable.
-                if (!preserveNeighborhood) {
-                    try {
-                        setTrailFromSeed(capturedIndex)
-                        setThreadCandidates((appState.navState.threadCandidates ?? []).map((c) => c.index))
-                    } catch (e) {
-                        debugWarn('[thread-settler] arrival candidate rebuild failed', e)
-                    }
+                // Stale-Next fix (2026-08-24): walking A→B leaves the journey-store snapshot
+                // pointing at A's candidates (whose [0] IS B), so the walk HUD "Next:" line
+                // and the NEXT STOP badge kept showing the stop we just came from until
+                // some other trigger re-published them. By arrival time the camera-focus
+                // pipeline (journey.ts deferred setTrailFromSeed) has already refreshed
+                // appState.navState.threadCandidates for B — but that write goes through
+                // the nav mirror ONLY and never notifies the journey writable the HUD
+                // reads (journeySnapshot.threadCandidates). Mirror the fresh indices into
+                // the journey store here so JourneyChrome re-runs. Mirror-only is safe for
+                // preserved bounded neighborhoods too: it copies what the pipeline holds,
+                // it does not recompute or fight any other writer.
+                try {
+                    setThreadCandidates((appState.navState.threadCandidates ?? []).map((c) => c.index))
+                } catch (e) {
+                    debugWarn('[thread-settler] arrival candidate sync failed', e)
                 }
 
                 const pointAtArrival =

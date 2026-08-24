@@ -169,10 +169,10 @@ assert(
     'arrival timer should preserve semantic-dive preview behavior'
 )
 assert(
-    arrivalBlock.includes('!preserveNeighborhood') &&
-        arrivalBlock.includes('setTrailFromSeed(capturedIndex)') &&
-        arrivalBlock.includes('setThreadCandidates('),
-    'arrival timer should recompute thread candidates for the arrived stop (stale-Next fix) unless the walk preserved a bounded neighborhood'
+    arrivalBlock.includes('setThreadCandidates(') &&
+        arrivalBlock.includes('appState.navState.threadCandidates') &&
+        !arrivalBlock.includes('setTrailFromSeed(capturedIndex)'),
+    'arrival timer should mirror fresh nav candidates into the journey store (stale-Next fix) without recomputing them'
 )
 
 const settleBlock = walkBody.slice(settleTimerIndex)
