@@ -53,12 +53,29 @@ const cache = resolve(ROOT, '.data-repo-cache')
 try {
     rmSync(cache, { recursive: true, force: true })
     mkdirSync(cache, { recursive: true }) // exec cwd must exist; git fills it
-    // gh handles auth for private repos when logged in; falls back to git creds otherwise
-    execSync(`gh repo clone ${DATA_REPO} . -- --depth 1 --quiet`, {
-        cwd: cache,
-        stdio: 'inherit',
-        shell: 'bash'
-    })
+    // CI path: read-only deploy key (Actions secret DATA_DEPLOY_KEY written to
+    // a file by the workflow). Local path: gh handles auth when logged in.
+    const keyFile = process.env.DATA_DEPLOY_KEY_FILE
+    if (keyFile && existsSync(keyFile)) {
+        execSync(
+            'git clone --depth 1 --quiet git@github.com:GalToast/semantic-explorer-data.git .',
+            {
+                cwd: cache,
+                stdio: 'inherit',
+                shell: 'bash',
+                env: {
+                    ...process.env,
+                    GIT_SSH_COMMAND: `ssh -i "${keyFile}" -o StrictHostKeyChecking=no -o IdentitiesOnly=yes`
+                }
+            }
+        )
+    } else {
+        execSync(`gh repo clone ${DATA_REPO} . -- --depth 1 --quiet`, {
+            cwd: cache,
+            stdio: 'inherit',
+            shell: 'bash'
+        })
+    }
 } catch (err) {
     console.error(
         `[fetch:data] FAILED to clone ${DATA_REPO}.\n` +

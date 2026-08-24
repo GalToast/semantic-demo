@@ -45,6 +45,15 @@ jobs:
                   node-version: '20'
                   cache: 'npm'
             - run: npm ci
+            - name: Install read-only deploy key for the private data repo
+              env:
+                  DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
+              run: |
+                  KEY_FILE="$HOME/.ssh/data_deploy_key"
+                  mkdir -p ~/.ssh
+                  printf '%s\n' "$DATA_DEPLOY_KEY" > "$KEY_FILE"
+                  chmod 600 "$KEY_FILE"
+                  echo "DATA_DEPLOY_KEY_FILE=$KEY_FILE" >> "$GITHUB_ENV"
             - run: npm run build:svelte
             - name: Archive verified build artifact
               uses: actions/upload-artifact@v4
