@@ -161,12 +161,14 @@ function setupSafetyValves(): SafetyTimers {
 
 function clearSafetyTimers(timers: SafetyTimers | null): void {
     _appInitReg.disposeAll()
+    _appInitReg.rearm() // module-singleton reuse across init cycles
     if (timers?.slowProgress) clearTimeout(timers.slowProgress)
     if (timers?.safetyValve) clearTimeout(timers.safetyValve)
 }
 
 function clearPrewarmTimer(): void {
     _appInitReg.disposeAll()
+    _appInitReg.rearm() // module-singleton reuse across init cycles
     if (_prewarmTimer !== null) {
         clearTimeout(_prewarmTimer)
         _prewarmTimer = null

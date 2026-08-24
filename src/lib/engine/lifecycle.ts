@@ -334,7 +334,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         setDataLoadError('Scene initialization timed out. Your graphics hardware may not be supported.')
         setEngineStatus('degraded')
         callbacks.onGraphicsStateChange?.('fallback')
-_engineInitSafetyTimer = null
+        _engineInitSafetyTimer = null
     })
 
     try {
@@ -574,6 +574,10 @@ export function destroyEngine(): void {
 
     // 0a. Dispose all module-scoped timers tracked by the lifecycle registry
     engineLifecycleReg.disposeAll()
+    // Re-arm immediately: engine remounts reuse this singleton registry and
+    // schedule() again (dispose-then-schedule is the documented reuse pattern;
+    // the DEV build otherwise warns 'Adding disposable after disposeAll').
+    engineLifecycleReg.rearm()
 
     // 1. Cancel the animation loop
     cancelAnimate()

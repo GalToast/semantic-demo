@@ -182,6 +182,17 @@ export class DisposableRegistry {
         this.disposeAll()
     }
 
+    /**
+     * Re-arm a disposed registry for intentional reuse (e.g. engine lifecycle
+     * remounts). Clears any disposed flag so later add()/schedule() calls are
+     * legitimate, not after-dispose leaks. Call after disposeAll() at the
+     * reuse site.
+     */
+    rearm(): void {
+        this.disposed = false
+        this.items = []
+    }
+
     /** True if disposeAll() has been called */
     get isDisposed(): boolean {
         return this.disposed

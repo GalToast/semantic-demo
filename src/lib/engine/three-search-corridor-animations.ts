@@ -615,6 +615,7 @@ export function disposeCorridorGlow(): void {
     }
     _corridorGlowTimers.clear()
     _corridorGlowReg.disposeAll()
+    _corridorGlowReg.rearm() // module-singleton reuse on glow re-entrances
     for (const k of Object.keys(_corridorGlowNodes)) {
         delete _corridorGlowNodes[Number(k)]
     }
