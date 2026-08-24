@@ -192,7 +192,6 @@ function scheduleSearchIndexPrewarm(): void {
  */
 import { applyUrlState } from '@lib/orchestration/url-state'
 
-
 async function applyUrlStateAfterData(isDeepLink: boolean): Promise<void> {
     if (!isDeepLink) return
     try {

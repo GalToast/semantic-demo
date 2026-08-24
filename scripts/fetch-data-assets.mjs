@@ -64,18 +64,15 @@ try {
         chmodSync(keyFile, 0o600)
     }
     if (keyFile && existsSync(keyFile)) {
-        execSync(
-            'git clone --depth 1 --quiet git@github.com:GalToast/semantic-explorer-data.git .',
-            {
-                cwd: cache,
-                stdio: 'inherit',
-                shell: 'bash',
-                env: {
-                    ...process.env,
-                    GIT_SSH_COMMAND: `ssh -i "${keyFile}" -o StrictHostKeyChecking=no -o IdentitiesOnly=yes`
-                }
+        execSync('git clone --depth 1 --quiet git@github.com:GalToast/semantic-explorer-data.git .', {
+            cwd: cache,
+            stdio: 'inherit',
+            shell: 'bash',
+            env: {
+                ...process.env,
+                GIT_SSH_COMMAND: `ssh -i "${keyFile}" -o StrictHostKeyChecking=no -o IdentitiesOnly=yes`
             }
-        )
+        })
     } else {
         execSync(`gh repo clone ${DATA_REPO} . -- --depth 1 --quiet`, {
             cwd: cache,
@@ -90,7 +87,11 @@ try {
             '  gh auth login          (then retry)\n' +
             `or verify you can read: https://github.com/${DATA_REPO}\n`
     )
-    try { rmSync(cache, { recursive: true, force: true }) } catch { /* cache cleanup best-effort */ }
+    try {
+        rmSync(cache, { recursive: true, force: true })
+    } catch {
+        /* cache cleanup best-effort */
+    }
     process.exit(1)
 }
 
@@ -106,7 +107,11 @@ for (const p of ASSETS) {
     cpSync(from, to)
     copied++
 }
-try { rmSync(cache, { recursive: true, force: true }) } catch { /* cache cleanup best-effort */ }
+try {
+    rmSync(cache, { recursive: true, force: true })
+} catch {
+    /* cache cleanup best-effort */
+}
 
 const stillMissing = missing()
 if (stillMissing.length > 0) {

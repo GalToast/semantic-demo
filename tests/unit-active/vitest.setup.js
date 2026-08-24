@@ -41,7 +41,11 @@ if (typeof window !== 'undefined' && typeof window.ResizeObserver === 'undefined
  * console errors that kill forks-pool workers (vmThreads once masked this via
  * shared-VM pollution). webgl/webgl2 -> null; other context types stay native.
  */
-if (typeof window !== 'undefined' && window.HTMLCanvasElement && !window.HTMLCanvasElement.prototype.getContext.__piStubbed) {
+if (
+    typeof window !== 'undefined' &&
+    window.HTMLCanvasElement &&
+    !window.HTMLCanvasElement.prototype.getContext.__piStubbed
+) {
     const nativeGetContext = window.HTMLCanvasElement.prototype.getContext
     window.HTMLCanvasElement.prototype.getContext = function (...args) {
         const type = String(args[0]).toLowerCase()

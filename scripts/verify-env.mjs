@@ -121,7 +121,9 @@ function startStaticServer() {
     step(
         'live API probe (:8795)',
         true,
-        live ? 'LIVE — live-gated specs (B-A1) will execute' : 'ABSENT — live-gated specs will self-skip (start `npm run serve` to exercise them)'
+        live
+            ? 'LIVE — live-gated specs (B-A1) will execute'
+            : 'ABSENT — live-gated specs will self-skip (start `npm run serve` to exercise them)'
     )
 }
 
@@ -169,14 +171,7 @@ if (!JOURNEYS_ONLY) {
             // it re-spawns node with the 6GB ceiling and forwards args.
             const child = spawn(
                 nodeBin,
-                [
-                    'scripts/run-vitest.mjs',
-                    'run',
-                    '--config',
-                    'vitest.config.js',
-                    '--maxWorkers=2',
-                    ...extraArgs
-                ],
+                ['scripts/run-vitest.mjs', 'run', '--config', 'vitest.config.js', '--maxWorkers=2', ...extraArgs],
                 { env: { ...testEnv }, stdio: 'inherit' }
             )
             child.on('exit', (code) => res(code === 0))
@@ -191,11 +186,11 @@ let journeyStatus
 if (!UNIT_ONLY) {
     const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx'
     journeyStatus = await new Promise((res) => {
-        const child = spawn(
-            npx,
-            ['node', 'scripts/qa-journey-headless.mjs', '--no-build'],
-            { shell: process.platform === 'win32', env: { ...testEnv }, stdio: 'inherit' }
-        )
+        const child = spawn(npx, ['node', 'scripts/qa-journey-headless.mjs', '--no-build'], {
+            shell: process.platform === 'win32',
+            env: { ...testEnv },
+            stdio: 'inherit'
+        })
         child.on('exit', (code) => res(code === 0))
     })
     step('journey gate (82 specs)', journeyStatus)

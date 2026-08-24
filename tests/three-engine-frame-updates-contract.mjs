@@ -205,7 +205,9 @@ async function testUpdateReferenceSphereOpacity() {
     mod.updateReferenceSphereOpacity(0.5, true)
     assertClose(refSphere.material.opacity, 0.08, 1e-12, 'active ref-sphere opacity (0.08)')
     assert(
-        typeof refSphere.material.opacity === 'number' && refSphere.material.opacity >= 0 && refSphere.material.opacity <= 1,
+        typeof refSphere.material.opacity === 'number' &&
+            refSphere.material.opacity >= 0 &&
+            refSphere.material.opacity <= 1,
         'active opacity is a number in [0,1]'
     )
 
@@ -243,7 +245,12 @@ async function testUpdateSporeOpacity() {
     resetAll()
     webglContext.nodeSporeMaterial = { opacity: 0, emissiveIntensity: 0 }
     mod.updateSporeOpacity(1.0, { focusedNode: 0 })
-    assertClose(webglContext.nodeSporeMaterial.opacity, 0.03828, 1e-12, 'spore opacity at progress=1, focused (0.03828)')
+    assertClose(
+        webglContext.nodeSporeMaterial.opacity,
+        0.03828,
+        1e-12,
+        'spore opacity at progress=1, focused (0.03828)'
+    )
 
     console.log('  OK spore opacity eased toward 0.58*progress*focusBoost')
 }
@@ -316,7 +323,12 @@ async function testUpdatePointsMaterial() {
     resetAll()
     webglContext.pointsMaterial = { opacity: 1, size: 1, userData: {} }
     mod.updatePointsMaterial(1.0, { focusedNode: 0 })
-    assertClose(webglContext.pointsMaterial.opacity, 0.114816, 1e-12, 'points opacity at progress=1, focused (0.114816)')
+    assertClose(
+        webglContext.pointsMaterial.opacity,
+        0.114816,
+        1e-12,
+        'points opacity at progress=1, focused (0.114816)'
+    )
 
     // Null state works (no throw).
     resetAll()
@@ -394,13 +406,27 @@ async function testUpdatePointsShaderHoverBoost() {
 
     // Real shader stub → uHoverBoost lerps toward 1.5, uHoverNodePos.set called.
     resetAll()
-    const uHoverNodePos = { x: 0, y: 0, z: 0, set(a, b, c) { this.x = a; this.y = b; this.z = c } }
+    const uHoverNodePos = {
+        x: 0,
+        y: 0,
+        z: 0,
+        set(a, b, c) {
+            this.x = a
+            this.y = b
+            this.z = c
+        }
+    }
     webglContext.pointsMaterial = {
         userData: { shader: { uniforms: { uHoverBoost: { value: 1 }, uHoverNodePos: { value: uHoverNodePos } } } }
     }
     mod.updatePointsShaderHoverBoost(0, { nodePositions: [{ x: 1, y: 2, z: 3 }] })
     // target 1.5 → value += (1.5 - 1) * 0.2 = 1.1
-    assertClose(webglContext.pointsMaterial.userData.shader.uniforms.uHoverBoost.value, 1.1, 1e-12, 'uHoverBoost lerps to 1.1')
+    assertClose(
+        webglContext.pointsMaterial.userData.shader.uniforms.uHoverBoost.value,
+        1.1,
+        1e-12,
+        'uHoverBoost lerps to 1.1'
+    )
     assert(uHoverNodePos.x === 1 && uHoverNodePos.y === 2 && uHoverNodePos.z === 3, 'uHoverNodePos.set(1,2,3) called')
 
     console.log('  OK uHoverBoost lerps to 1.5 target; null-safe')

@@ -311,12 +311,14 @@ function _readFocusSnapshotInner(): FocusStoreState {
         //     getOrCreateWritable() until the stack dies (2026-08-24 boot crash,
         //     RangeError: Maximum call stack size exceeded). Fall back to
         //     INITIAL_FOCUS defaults until materialization completes.
-        semanticDiveMode: !_focusMirrorReady || !focusMirror.isMaterialized()
-            ? INITIAL_FOCUS.semanticDiveMode
-            : (get(focusMirror).semanticDiveMode ?? INITIAL_FOCUS.semanticDiveMode),
-        strandContinuityPhase: !_focusMirrorReady || !focusMirror.isMaterialized()
-            ? INITIAL_FOCUS.strandContinuityPhase
-            : (get(focusMirror).strandContinuityPhase ?? INITIAL_FOCUS.strandContinuityPhase),
+        semanticDiveMode:
+            !_focusMirrorReady || !focusMirror.isMaterialized()
+                ? INITIAL_FOCUS.semanticDiveMode
+                : (get(focusMirror).semanticDiveMode ?? INITIAL_FOCUS.semanticDiveMode),
+        strandContinuityPhase:
+            !_focusMirrorReady || !focusMirror.isMaterialized()
+                ? INITIAL_FOCUS.strandContinuityPhase
+                : (get(focusMirror).strandContinuityPhase ?? INITIAL_FOCUS.strandContinuityPhase),
         nodesAreSettling: source.focusState?.nodesAreSettling ?? false,
         pocketMotionByIndex: new Map(source.focusState?.pocketMotionByIndex ?? []),
         pocketTransitionStartedAt: source.focusState?.pocketTransitionStartedAt ?? 0,

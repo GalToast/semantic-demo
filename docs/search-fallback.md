@@ -32,3 +32,27 @@ Vite dev proxies `/api*` to `127.0.0.1:8795`; the system expects a PHP backend t
 ## Debug
 
 `curl '/api.php?action=semantic_search&q=coffee&limit=1&offset=0' -H 'Referer: http://127.0.0.1:5173/'` — should return JSON `{ok: true, ...}`.
+
+## Bare-static hosting (no PHP proxy) — B-A1 verdict [2026-08-24]
+
+Serving the CI `dist/` artifact from a bare static host (CDN, GitHub Pages,
+any server without the PHP 8795 proxy) is a documented NON-SUPPORTED surface:
+the baked API base defaults to root-relative `/api`, which 404s and falls into
+the yellow "demo data" banner (honest degradation, by design).
+
+To make a build point at the canonical API origin instead:
+VITE_API_BASE_URL=<https://mccullough.cloud> npm run build:svelte
+(dev server and playwright builds already set this; only the default CI
+artifact ships root-relative deliberately, because the Hostinger proxy
+satisfies `/api` same-origin and an absolute URL would CORS-break
+vite-preview contract smoke. pi-0006 classified B-A1 as a phantom for
+current deploy surfaces — this note is its closing record.)
+
+## Live-search service coupling (P5 status) [2026-08-24]
+
+Live query mode requires BOTH the PHP endpoint (8795) and the external
+semantic service. Failure of either degrades to the local 8,406-index
+search + the yellow "demo data" banner — the surface stays usable; no
+plan to auto-provision the backend. Ops owners: treat the semantic
+service as a tier-1 dependency on the same alerting track as the PHP
+process; the app itself is honest about its degraded mode by design.

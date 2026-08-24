@@ -30,7 +30,9 @@ describe('wait-for-gesture — ling regression (oz-big-pickle)', () => {
         // Reset global flags
         delete (window as any).__PLAYWRIGHT__
         Object.defineProperty(navigator, 'webdriver', {
-            value: false, configurable: true, writable: true,
+            value: false,
+            configurable: true,
+            writable: true
         })
 
         // Reset body dataset
@@ -42,7 +44,7 @@ describe('wait-for-gesture — ling regression (oz-big-pickle)', () => {
         visState = 'visible'
         Object.defineProperty(document, 'visibilityState', {
             configurable: true,
-            get: () => visState,
+            get: () => visState
         })
     })
 
@@ -71,9 +73,7 @@ describe('wait-for-gesture — ling regression (oz-big-pickle)', () => {
             const teardown = installGestureMonitor({ onReady })
 
             for (const evt of GESTURE_EVENTS) {
-                const calls = (window.addEventListener as any).mock.calls.filter(
-                    (c: any[]) => c[0] === evt
-                )
+                const calls = (window.addEventListener as any).mock.calls.filter((c: any[]) => c[0] === evt)
                 expect(calls.length).toBeGreaterThanOrEqual(1)
                 const lastCall = calls[calls.length - 1]
                 const opts = lastCall[2]
@@ -326,7 +326,7 @@ describe('wait-for-gesture — ling regression (oz-big-pickle)', () => {
             Object.defineProperty(navigator, 'webdriver', {
                 value: true,
                 configurable: true,
-                writable: true,
+                writable: true
             })
             const onReady = vi.fn()
             const teardown = installGestureMonitor({ onReady })
@@ -341,7 +341,7 @@ describe('wait-for-gesture — ling regression (oz-big-pickle)', () => {
             Object.defineProperty(navigator, 'webdriver', {
                 value: false,
                 configurable: true,
-                writable: true,
+                writable: true
             })
             const onReady = vi.fn()
             const teardown = installGestureMonitor({ onReady })

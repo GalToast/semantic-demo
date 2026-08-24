@@ -320,13 +320,13 @@ providers (notably nvidia) return plain OpenAI list shape **without**
 router alone. Counts below are raw listed models per provider whose
 /models endpoint answered within timeout.
 
-| provider | listed models | notes |
-|---|---|---|
-| infron | 137 | catalog-listed again (was 403-quota dead Aug-04); not live-probed |
-| zenmux | 107 | qwen3-vl-plus observed 410 EOL on 2026-08-23 |
-| novita | 44 | |
-| groq | 1 | qwen3.6-27b |
-| nvidia | (modality unknown) | **llama-3.2-11b-vision-instruct LIVE-PROBED OK** (real screenshot accepted, text returned) |
+| provider | listed models      | notes                                                                                      |
+| -------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| infron   | 137                | catalog-listed again (was 403-quota dead Aug-04); not live-probed                          |
+| zenmux   | 107                | qwen3-vl-plus observed 410 EOL on 2026-08-23                                               |
+| novita   | 44                 |                                                                                            |
+| groq     | 1                  | qwen3.6-27b                                                                                |
+| nvidia   | (modality unknown) | **llama-3.2-11b-vision-instruct LIVE-PROBED OK** (real screenshot accepted, text returned) |
 
 Providers absent/timed out during sweep: kilo (410 EOL confirmed 08-23),
 logfare, freemodel, mistral, cloudflare, modelscope (timeout >6s — retry

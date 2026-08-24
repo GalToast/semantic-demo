@@ -19,7 +19,15 @@ import { BASE_URL } from './helpers/3d-interaction-helpers.js'
 test.beforeEach(async ({ page }, testInfo) => {
     const boot = { pageErrors: [], consoleErrors: [], failedRequests: [] }
     page.on('pageerror', (e) =>
-        boot.pageErrors.push(String(e.message).slice(0, 200) + ' :: ' + String(e.stack ?? '').split('\n').slice(1, 4).join(' | ').slice(0, 300))
+        boot.pageErrors.push(
+            String(e.message).slice(0, 200) +
+                ' :: ' +
+                String(e.stack ?? '')
+                    .split('\n')
+                    .slice(1, 4)
+                    .join(' | ')
+                    .slice(0, 300)
+        )
     )
     page.on('console', (m) => {
         if (m.type() === 'error') boot.consoleErrors.push(m.text().slice(0, 220))
@@ -35,7 +43,11 @@ test.beforeEach(async ({ page }, testInfo) => {
 
 test.afterEach(async ({ page }, testInfo) => {
     const b = testInfo.boot
-    if (testInfo.status === 'failed' && b && b.pageErrors.length + b.consoleErrors.length + b.failedRequests.length > 0) {
+    if (
+        testInfo.status === 'failed' &&
+        b &&
+        b.pageErrors.length + b.consoleErrors.length + b.failedRequests.length > 0
+    ) {
         const lines = [
             ...b.pageErrors.map((s) => '[pageerror] ' + s),
             ...b.consoleErrors.map((s) => '[console.error] ' + s),
@@ -243,7 +255,9 @@ test.describe('Journey smoke (no WebGL engine)', () => {
             }
         })
 
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&webgl=1&contract-boot=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&webgl=1&contract-boot=1`, {
+            waitUntil: 'domcontentloaded'
+        })
 
         // In an automated session the gesture monitor auto-fires engineReady at
         // t=0 (wait-for-gesture.ts 'skip gesture wait in automated tests'), so

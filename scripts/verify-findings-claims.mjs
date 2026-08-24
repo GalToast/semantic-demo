@@ -159,11 +159,7 @@ const b23PriorOk =
     typeof b23Prior === 'string' &&
     b23Prior !== 'budget-baseline-2026-08-23.json' &&
     existsSync(resolve(ROOT, 'docs', b23Prior))
-check(
-    'Budget: 08-23 baseline links a real prior (not itself)',
-    b23PriorOk,
-    `prior=${b23Prior || 'MISSING'}`
-)
+check('Budget: 08-23 baseline links a real prior (not itself)', b23PriorOk, `prior=${b23Prior || 'MISSING'}`)
 
 console.log(`\nWITNESS: ${failCount()} of ${results.length} checks drifted from disk truth`)
 process.exit(failCount() === 0 ? 0 : 1)

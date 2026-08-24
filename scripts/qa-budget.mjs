@@ -230,9 +230,7 @@ Exit codes (comparison mode):
         if (prior && resolve(prior) === out) {
             try {
                 const selfOld = await readBaseline(prior)
-                const carried = selfOld.prior_baseline
-                    ? resolve(dirname(out), selfOld.prior_baseline)
-                    : null
+                const carried = selfOld.prior_baseline ? resolve(dirname(out), selfOld.prior_baseline) : null
                 if (carried && existsSync(carried)) {
                     priorPath = carried
                     console.log('  NOTE: same-file re-stamp — prior chain carried from', basename(carried))
@@ -258,7 +256,10 @@ Exit codes (comparison mode):
         let gitDirtyCount = null
         try {
             gitHeadSha = execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim()
-            gitDirtyCount = execSync('git status --porcelain', { cwd: ROOT }).toString().split('\n').filter(Boolean).length
+            gitDirtyCount = execSync('git status --porcelain', { cwd: ROOT })
+                .toString()
+                .split('\n')
+                .filter(Boolean).length
         } catch {
             /* outside git — record nulls */
         }
@@ -344,9 +345,7 @@ Exit codes (comparison mode):
         if (eraChanged) {
             // Era-change guidance: the TOTAL delta above remains authoritative
             // (name-independent); per-chunk rows below are informational only.
-            console.log(
-                '  ERA-CHANGE: <20% of baseline chunk names survive in this build (config-era rotation).'
-            )
+            console.log('  ERA-CHANGE: <20% of baseline chunk names survive in this build (config-era rotation).')
             console.log(
                 '  Per-chunk deltas below are informational; if total growth is intentional, re-stamp with --baseline write --note.'
             )

@@ -52,7 +52,9 @@ describe('installGestureMonitor — basic listener registration', () => {
     it('registers all 4 gesture listeners on window with passive:true', () => {
         const addSpy = vi.spyOn(window, 'addEventListener')
         installGestureMonitor({ onReady: vi.fn() })
-        const captured = addSpy.mock.calls.filter(([type]) => GESTURE_EVENTS.includes(type as (typeof GESTURE_EVENTS)[number]))
+        const captured = addSpy.mock.calls.filter(([type]) =>
+            GESTURE_EVENTS.includes(type as (typeof GESTURE_EVENTS)[number])
+        )
         expect(captured).toHaveLength(4)
         captured.forEach(([, , opts]) => {
             expect(opts).toEqual({ passive: true })

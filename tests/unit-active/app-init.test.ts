@@ -92,7 +92,7 @@ vi.mock('@lib/app/app-lifecycle.ts', async (importOriginal) => {
         // ANY automated session via isAutomatedBrowserSession(), not just
         // __PLAYWRIGHT__. Without this stub the gate reads false in jsdom and
         // installTestStoreGlobals never fires.
-        isAutomatedBrowserSession: () => true,
+        isAutomatedBrowserSession: () => true
     }
 })
 vi.mock('@lib/orchestration/test-globals', async () => {

@@ -91,7 +91,10 @@ describe('semantic-search-mapper: mapServiceRow', () => {
     })
 
     it('coerces every exposed field to a string and number', () => {
-        const r = mapServiceRow({ name: 123 as unknown as string, lead_id: 7 as unknown as string, category: null as unknown as string }, 0)
+        const r = mapServiceRow(
+            { name: 123 as unknown as string, lead_id: 7 as unknown as string, category: null as unknown as string },
+            0
+        )
         expect(typeof r!.id).toBe('string')
         expect(typeof r!.name).toBe('string')
         expect(typeof r!.category).toBe('string')

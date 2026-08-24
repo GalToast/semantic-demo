@@ -68,11 +68,7 @@ describe('mapServiceRow index resolution: canonical lead_id → corpus index', (
     it('ignores the row-level index field from the API (it is page order, not corpus)', () => {
         // Even if the API sends `index: 99`, we must NOT use it — it's response-order.
         // The lead_id map is the source of truth.
-        const r = mapServiceRow(
-            { lead_id: '1045', name: 'Delta', index: 99 } as never,
-            3,
-            canonicalMap
-        )
+        const r = mapServiceRow({ lead_id: '1045', name: 'Delta', index: 99 } as never, 3, canonicalMap)
         expect(r).not.toBeNull()
         expect(r!.index).toBe(1) // corpus index for lead_id=1045, not 99 and not 3
     })
