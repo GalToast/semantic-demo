@@ -57,11 +57,17 @@ import { appState } from '@lib/state/app.svelte'
 /** 250ms debounce for focus-changing actions (arrows, Home, End). */
 const FOCUS_DEBOUNCE_MS = 250
 const _lastFireByKey = new Map<string, number>()
+let _nowForTest: (() => number) | null = null
+
+/** Test-only: inject a deterministic clock (e.g. vi.fn(() => Date.now())). */
+export function __setCanvasKeyboardNow(fn: (() => number) | null): void {
+    _nowForTest = fn
+}
 
 /** Returns true if the action should be suppressed (debounced). */
 function shouldDebounceKey(key: string, isZoom: boolean): boolean {
     if (isZoom) return false
-    const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    const now = _nowForTest ? _nowForTest() : typeof performance !== 'undefined' ? performance.now() : Date.now()
     const last = _lastFireByKey.get(key) ?? 0
     if (now - last < FOCUS_DEBOUNCE_MS) return true
     _lastFireByKey.set(key, now)

@@ -47,11 +47,12 @@ import {
     getTrailSeedIndex,
     getTrailEndIndex,
     getCurrentFocusedIndex,
-    __resetCanvasKeyboardDebounce
-} from '../../src/lib/journey/canvas-keyboard-nav'
-import { appState } from '../../src/lib/state/app.svelte'
-import { businessRecords } from '../../src/lib/data-store'
-import type { BusinessRecord } from '../../src/lib/types/business'
+    __resetCanvasKeyboardDebounce,
+    __setCanvasKeyboardNow
+} from '@lib/journey/canvas-keyboard-nav'
+import { appState } from '@lib/state/app.svelte'
+import { businessRecords } from '@lib/data-store'
+import type { BusinessRecord } from '@lib/types/business'
 
 function makeRecord(over: Partial<BusinessRecord> = {}): BusinessRecord {
     return {
@@ -81,13 +82,15 @@ function makeEvent(key: string): KeyboardEvent {
     }) as unknown as KeyboardEvent
 }
 
-// retry: 2 — timing/load-sensitive suite (module-level debounce state,
-// wall-clock windows). Fails intermittently ONLY on loaded CI runners with
-// varying subsets; deterministic-green locally. Retry bounds the flake while
-// keeping real regressions visible (they fail all attempts).
+// flaky-test fix: deterministic clock for debounce (was wall-clock + shared Map
+// leaking across vmThreads workers). Each test gets a fresh 1s window so first
+// press never debounces, second press within same test still does.
+let _testNow = 1_000_000
 describe('canvas-keyboard-nav', { retry: 2 }, () => {
     beforeEach(() => {
         __resetCanvasKeyboardDebounce()
+        _testNow += 1000
+        __setCanvasKeyboardNow(() => _testNow)
         mocks.focusOnNode.mockClear()
         mocks.focusOnNode.mockImplementation(() => true)
         mocks.traverseNeighbor.mockClear()
