@@ -64,7 +64,7 @@ const VALID_SET_SNAPSHOTS: ReadonlyArray<readonly [string, ReadonlySet<string>, 
     ['VALID_ROUTE_CHOREOGRAPHY_PHASES', VALID_ROUTE_CHOREOGRAPHY_PHASES, 9],
     ['VALID_STRAND_CONTINUITY_PHASES', VALID_STRAND_CONTINUITY_PHASES, 6],
     ['VALID_FOCUS_ORBIT_SLACK_PHASES', VALID_FOCUS_ORBIT_SLACK_PHASES, 4],
-    ['VALID_ARRIVAL_HANDOFF_PHASES', VALID_ARRIVAL_HANDOFF_PHASES, 5],
+    ['VALID_ARRIVAL_HANDOFF_PHASES', VALID_ARRIVAL_HANDOFF_PHASES, 6],
     ['VALID_DEMO_PHASES', VALID_DEMO_PHASES, 13],
     ['VALID_WEATHER_SOURCE_STRINGS', VALID_WEATHER_SOURCE_STRINGS, 5]
 ]
@@ -192,7 +192,9 @@ describe('state-app-class — validateStateProperty (enum paths)', () => {
         ['strandContinuityState.phase', 'bogus', false],
         ['focusOrbitSlackState.phase', 'active', true],
         ['focusOrbitSlackState.phase', 'bogus', false],
-        ['arrivalHandoffDiagnostics.phase', 'flying', true],
+        // 2026-08-24 vocabulary alias: arrival-handoff mirrors the strand-
+        // continuity phases verbatim ('flying' retired, 'arrived' added).
+        ['arrivalHandoffDiagnostics.phase', 'arrived', true],
         ['arrivalHandoffDiagnostics.phase', 'bogus', false],
 
         // Composition validators removed (W48-F): see appState.composition deletion.
