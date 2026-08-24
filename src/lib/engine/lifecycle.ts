@@ -369,6 +369,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         // W8: initThreeJS() is now async and yields internally to break the
         // long task into sub-200ms chunks.
         const success = await initThreeJS()
+        initTrace('three-done')
         if (!success) {
             if (_engineInitSafetyTimer !== null) {
                 clearTimeout(_engineInitSafetyTimer)
@@ -402,6 +403,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         try {
             ensureCanvasNodeInteractionBindings()
             _canvasInteractionBound = true
+            initTrace('interactions-bound')
         } catch (interactionErr) {
             if (_engineInitSafetyTimer !== null) {
                 clearTimeout(_engineInitSafetyTimer)
@@ -462,6 +464,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         // the deferred-hydration phase in ui/loading.ts to avoid blocking startup).
         const semanticThreads = await import('@lib/engine/semantic-threads')
         semanticThreads.attachLegacyState(appState)
+        initTrace('semantic-attached')
         semanticThreads.loadSemanticThreads({ reason: 'lifecycle-init' }).catch((err: unknown) => {
             debugWarn('[engine/lifecycle] semantic-thread load failed:', err)
         })
