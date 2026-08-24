@@ -5,6 +5,7 @@
   import { completeCameraTransition } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts';
   import { setGraphicsMode, setLoadingPhase, graphicsModeStore } from '@lib/data-store';
+  import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte';
   import { engineReady as engineReadyStore } from '@lib/stores/engine-ready.svelte';
   import { debugLog, debugWarn, debugError } from '@lib/utils/debug';
   import type { EngineCallbacks } from '@lib/engine/lifecycle';
@@ -108,6 +109,14 @@ import { isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts';
     },
     onGraphicsStateChange: (state) => {
       setGraphicsMode(state === 'fallback' ? 'fallback' : 'webgl');
+      // Task 145 / P8: when GPU init hangs (the 8s safety valve reports
+      // 'fallback'), hand mobile users the designed 2D preview instead of a
+      // dark dead stage. Desktop keeps the existing degraded-copy path
+      // (Placeholder2D is compact-only by design). Flipping renderKind also
+      // unmounts this failed Canvas instance via App.svelte's branch swap.
+      if (state === 'fallback' && $viewport.isCompact) {
+        setRenderKind('placeholder2d');
+      }
     },
   };
 
