@@ -26,7 +26,8 @@ const ROOT = path.resolve(__dirname, '..')
 // PIDFILE is port-suffixed when QA_SERVER_PORT overrides the default, so a
 // CI journey server on another port never fights the local 8795 singleton.
 const PORT = Number(process.env.QA_SERVER_PORT) || 8795
-const PIDFILE = PORT === 8795 ? path.join(ROOT, 'tmp', 'qa-server.pid') : path.join(ROOT, 'tmp', `qa-server-${PORT}.pid`)
+const PIDFILE =
+    PORT === 8795 ? path.join(ROOT, 'tmp', 'qa-server.pid') : path.join(ROOT, 'tmp', `qa-server-${PORT}.pid`)
 const HOST = '127.0.0.1'
 
 const MIME = {
@@ -458,27 +459,28 @@ async function cmdEnsure() {
         process.exit(3)
     }
 
-    // Start server (same as cmdStart but without its exit-on-duplicate logic)
-    const server = createServer()
-    await new Promise((resolve, reject) => {
-        server.listen(PORT, HOST, () => {
-            writePidfile(process.pid)
-            console.log(`qa-server: ready on http://${HOST}:${PORT} (pid ${process.pid})`)
-            resolve()
-        })
-        server.on('error', reject)
+    // Daemonize: spawn `start` detached so THIS launcher exits after the port
+    // becomes reachable. Running the server in-process kept CI workflow steps
+    // blocked forever (the HTTP server holds the event loop open).
+    const { spawn } = await import('node:child_process')
+    const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'start'], {
+        detached: true,
+        stdio: 'ignore',
+        env: process.env
     })
+    child.unref()
 
-    const shutdown = (signal) => {
-        console.error(`qa-server: received ${signal}, shutting down`)
-        server.close(() => {
-            removePidfile()
+    // Bounded readiness wait (start has its own 30s hard deadline).
+    const deadline = Date.now() + 20_000
+    while (Date.now() < deadline) {
+        if (await probePortSync()) {
+            console.log(`qa-server: ready on http://${HOST}:${PORT} (daemon pid ${child.pid})`)
             process.exit(0)
-        })
-        setTimeout(() => process.exit(1), 5000)
+        }
+        await new Promise((r) => setTimeout(r, 200))
     }
-    process.on('SIGTERM', () => shutdown('SIGTERM'))
-    process.on('SIGINT', () => shutdown('SIGINT'))
+    console.error('qa-server: daemon did not become ready within 20s')
+    process.exit(2)
 }
 
 // CLI
