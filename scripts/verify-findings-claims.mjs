@@ -51,7 +51,14 @@ check('F5: 2026-08-22 baseline exists', existsSync(resolve(ROOT, 'docs', 'budget
 const gi = read('.gitignore')
 check('F6: qwen3 .npy still gitignored', /public\/data\/qwen3_embeddings\.npy/.test(gi))
 check('F6: qwen3 no longer in public/data', !existsSync(resolve(ROOT, 'public', 'data', 'qwen3_embeddings.npy')))
-check('F6: fixture preserved at tmp/fixtures', existsSync(resolve(ROOT, 'tmp', 'fixtures', 'qwen3_embeddings.npy')))
+// tmp/ is gitignored — clean checkouts (CI) legitimately lack it; only assert
+// presence where it exists (dev machines).
+const fixturesDir = resolve(ROOT, 'tmp', 'fixtures')
+if (existsSync(fixturesDir)) {
+    check('F6: fixture preserved at tmp/fixtures', existsSync(resolve(fixturesDir, 'qwen3_embeddings.npy')))
+} else {
+    console.log('NOTE  F6: tmp/fixtures absent in this checkout (gitignored) — fixture check skipped')
+}
 // F6 (PROSE CLAIM — the fact that was WRONG in the register) — "qwen3 was
 // never git-tracked". Re-derive from git: the fixture's presence on disk only
 // proves it exists today, not that it was never committed. This is the exact
@@ -85,19 +92,19 @@ check(
     'P6: legacy 308 redirect in .htaccess',
     /Redirect 308 \/semantic-demo\/vector-explorer-polished\.html \/semantic-demo\/index\.html/.test(ht)
 )
-// P6 (PROSE CLAIM) — "already implemented (5841957a 308 redirect)". The redirect
+// P6 (PROSE CLAIM) — "already implemented (94b0760b 308 redirect)". The redirect
 // being present today does not prove WHICH commit added it; verify the cited
 // commit exists and actually touched .htaccess.
 let p6Commit
 try {
-    p6Commit = execSync('git show --stat --oneline 5841957a -- .htaccess', { cwd: ROOT, encoding: 'utf8' }).trim()
+    p6Commit = execSync('git show --stat --oneline 94b0760b -- .htaccess', { cwd: ROOT, encoding: 'utf8' }).trim()
 } catch (_e) {
     p6Commit = ''
 }
 check(
-    'P6: commit 5841957a exists and touched .htaccess',
+    'P6: commit 94b0760b exists and touched .htaccess',
     p6Commit.length > 0 && /\.htaccess/.test(p6Commit),
-    p6Commit || 'commit 5841957a not found / did not touch .htaccess'
+    p6Commit || 'commit 94b0760b not found / did not touch .htaccess'
 )
 
 // P7 — honest pill copy + guard test present
@@ -107,17 +114,17 @@ check(
     existsSync(resolve(ROOT, 'tests', 'unit-active', 'thread-lens-friendly-copy.test.ts'))
 )
 
-// Manifest purge (018c2d2a) — foreign paths gone, portable basenames
+// Manifest purge (c056e2bd) — foreign paths gone, portable basenames
 const manifest = JSON.parse(read('public/data/semantic_space_layout_manifest.json'))
 check('Manifest: no index_dir shipped', !('index_dir' in manifest))
 check('Manifest: portable data_path', manifest.data_path === 'data.dat')
-// Provenance (PROSE CLAIM) — "the honesty gate died by cleanup (018c2d2a)".
+// Provenance (PROSE CLAIM) — "the honesty gate died by cleanup (c056e2bd)".
 // Verify the cited commit actually removed index_dir from the manifest, rather
 // than trusting that index_dir is absent today (it could have been absent
 // for a different reason).
 let provCommit
 try {
-    provCommit = execSync('git show 018c2d2a -- public/data/semantic_space_layout_manifest.json', {
+    provCommit = execSync('git show c056e2bd -- public/data/semantic_space_layout_manifest.json', {
         cwd: ROOT,
         encoding: 'utf8'
     }).trim()
@@ -125,9 +132,9 @@ try {
     provCommit = ''
 }
 check(
-    'Provenance: 018c2d2a removed index_dir from the manifest',
+    'Provenance: c056e2bd removed index_dir from the manifest',
     provCommit.length > 0 && /index_dir/.test(provCommit),
-    provCommit ? 'removed index_dir' : '018c2d2a did not touch the manifest / no index_dir diff'
+    provCommit ? 'removed index_dir' : 'c056e2bd did not touch the manifest / no index_dir diff'
 )
 
 // P5 — semantic lane supervisor knobs exist
