@@ -156,7 +156,7 @@
 {:else}
   <div class="trail-controls focus-stage-actions idle" id="trail-controls-idle">
     <div class="trail-context" id="trail-context-idle">
-      <span class="trail-context-text">Pick a business, then explore its nearby neighbors.</span>
+      <span class="trail-context-text">Choose a business to see what's nearby.</span>
     </div>
   </div>
 {/if}

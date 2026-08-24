@@ -25,12 +25,12 @@ A test in `tests/unit-active/thread-lens-friendly-copy.test.ts` enforces the str
 
 ## Friendly Copy Patterns
 
-| Pattern                         | Example input → output                                                                                                                                                                        |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Describe what the user sees     | "Sparse node — only 3 connections" → "Only 3 similar businesses."                                                                                                                             |
-| Show the consequence, not state | "Status: disqualified" → "No longer active. Was a HVAC business."                                                                                                                             |
-| Verb-first when actionable      | "Showing connections from" rather than "Connection Trail — focused on"                                                                                                                        |
-| Concrete nouns over metaphors   | "Connections" rather than "Thread"; "Kind of business" rather than "Semantic Neighborhood"                                                                                                    |
+| Pattern                         | Example input → output                                                                                                                                                                                                              |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Describe what the user sees     | "Sparse node — only 3 connections" → "Only 3 similar businesses."                                                                                                                                                                   |
+| Show the consequence, not state | "Status: disqualified" → "No longer active. Was a HVAC business."                                                                                                                                                                   |
+| Verb-first when actionable      | "Showing connections from" rather than "Connection Trail — focused on"                                                                                                                                                              |
+| Concrete nouns over metaphors   | "Connections" rather than "Thread"; "Kind of business" rather than "Semantic Neighborhood"                                                                                                                                          |
 | Give a next step                | When neighborCount === 0 in JourneyChrome: "Step N — no more nearby with these filters." with the context line "Step N: <name>. Why here: <reason>." (W48 fixed "Stop N of 0", W72 renamed Stop→Step and added "· M nearby" count). |
 
 ## Layout-Label Conventions
@@ -52,6 +52,7 @@ The ids (`#selected-theme`, `#selected-status`, `#selected-map`, `#selected-thre
 - **Disabled controls don't show counts**: idle filter reset renders plain `Reset`; the `(N)` count appears only when filters are active (a disabled "Reset (0)" reads like it counts something invisible).
 - **Decorative swatches carry no tooltips**: identical verbose `title` strings repeated across legend swatches are tooltip/SR noise; the wrapping button already carries name + count.
 - **Progress is "Step", not "Stop"**: journey progress reads `Step N · M nearby` (or `Step N — no more nearby…`) and the invite is `Choose a nearby business to start.` — "Stop" implied a transit system with no user model.
+- **Idle invite is harmonized**: both `TrailControls` idle branch and `JourneyChrome` `progressText` fallback (`!chromeHasFocus`) use the same short invite: `Choose a business to see what's nearby.` — consistent across chrome and trail surfaces, no "Pick a business, then explore its nearby neighbors." variant.
 
 ## Exceptions (Intentional Jargon Surfaces)
 

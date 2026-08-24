@@ -704,7 +704,7 @@ export function updateTraversalUi(): void {
 
     if (!hasFocus) {
         updateWalkBreadcrumb(false)
-        focusProgressEl.textContent = 'Pick a business, then explore its nearby neighbors.'
+        focusProgressEl.textContent = 'Choose a business to see what's nearby.'
         if (focusNextEl) focusNextEl.textContent = 'Choose a nearby business to continue the path.'
         if (focusRouteEl) focusRouteEl.dataset.state = 'idle'
         updateFocusNeighborRail()

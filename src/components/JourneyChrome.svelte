@@ -204,7 +204,7 @@
   });
 
   const progressText = $derived.by(() => {
-    if (!chromeHasFocus) return 'Pick a business, then explore its nearby neighbors.';
+    if (!chromeHasFocus) return `Choose a business to see what's nearby.`;
     if (currentTrailDepth >= 1 && currentWalkHistory.length >= 0) {
       // W48 audit (parallel to focus-ui.ts:566-570): the original `Stop N of ${neighborCount}`
       // rendered "Stop 2 of 0" when neighborCount was 0 because the branch fired whenever
