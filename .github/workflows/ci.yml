@@ -41,7 +41,7 @@ jobs:
               env:
                   DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
               run: node scripts/fetch-data-assets.mjs --quiet || node scripts/fetch-data-assets.mjs
-            - run: npm run test:unit
+            - run: npm run test:unit -- --pool=forks
               env:
                   DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
                   SEMANTIC_FORCE_WEBGL_SOFTWARE: '1'
