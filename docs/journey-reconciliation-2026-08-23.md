@@ -137,6 +137,28 @@ never fired (silent dead button for reduced-motion users). Fix:
   conditional-ack invariant. Verified post-revert master: wrapper profile PASS
   19.5s, plain PASS. Remaining: W54-4486 (investigate first), C1, W64, B-A1.
 
+### C1 evidence package (handoff - probed to root-cause cluster 2026-08-24)
+
+Four verified facts from runtime probes (tmp/c1-deep-probe.mjs pattern):
+1. The radio locator matches NOTHING: the modern compass renders
+   btn-journey-primary/secondary/tertiary buttons, zero role=radio.
+2. The fallback's direct window.__APP_STATE__ writes do not drive the
+   compass - compass-state derives from live stores; mirror writes never
+   reach them (reads work, writes don't).
+3. ?record=519 restore does not focus the business: selectedBusiness stays
+   null and the Inside chip stays aria-disabled 15s+ on BOTH a dataless
+   worktree build AND a data-full main-repo build -> hasFocus false ->
+   insideActive unreachable. Product suspect: priv-split data moves
+   (264b7804 / dc7f86c8) changed what record-restore fetches.
+4. #journey-compass presence is build-inconsistent: rendered (phase=map) on
+   worktree dc7f86c8; ABSENT on a main-repo 46299a61+WIP build despite
+   legacyCompassSurfaceActive covering map-* - lazy ensure->.current->render
+   chain suspect.
+
+Rewrite path: unlock via real selection, drive dive through
+.mode-chip[data-mode="inside"] (selectMode), assert phase; plus product
+look at (3).
+
 Cosmetic-probe verdicts (`tmp/probe-overlap.mjs`, DOM rects): the 'County terrain'
 header overlap reproduces ONLY under isPlaywright — App.svelte force-mounts MapView
 via `|| isPlaywright`, so automated probes see a ghost map identity overlapping the
