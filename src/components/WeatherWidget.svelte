@@ -124,33 +124,42 @@
       aria-controls={expanded && loaded ? 'weather-details' : undefined}
       type="button"
     >
-      <span class="weather-icon">{@render iconSvg(iconKey)}</span>
+      <span
+        class="weather-icon"
+        class:icon-sun={iconKey === 'sun'}
+        class:icon-cloud={iconKey === 'cloud'}
+        class:icon-rain={iconKey === 'rain'}
+      >{@render iconSvg(iconKey)}</span>
       {#if loaded}
         <span class="weather-temp">{temperature}&deg;</span>
+        <span class="weather-cond">{label}</span>
       {/if}
     </button>
 
     {#if expanded && loaded}
       <div class="weather-details" id="weather-details">
+        <div class="weather-details-header">
+          <span class="weather-details-loc">Montgomery County</span>
+          <span class="weather-details-live" role="img" aria-label="Live conditions"><span class="live-dot" aria-hidden="true"></span>Live</span>
+        </div>
         <div class="weather-detail-row">
           <span class="detail-label">Condition</span>
           <span class="detail-value">{label}</span>
         </div>
         <div class="weather-detail-row">
           <span class="detail-label">Feels like</span>
-          <span class="detail-value">{feelsLikeVal}&deg;F</span>
+          <span class="detail-value detail-num">{feelsLikeVal}&deg;F</span>
         </div>
         <div class="weather-detail-row">
           <span class="detail-label">Humidity</span>
-          <span class="detail-value">{humidity}%</span>
+          <span class="detail-value detail-num">{humidity}%</span>
         </div>
         <div class="weather-detail-row">
           <span class="detail-label">Wind</span>
-          <span class="detail-value">{windSpeed} mph {windDir}</span>
+          <span class="detail-value detail-num">{windSpeed} mph <span class="wind-dir">{windDir}</span></span>
         </div>
       </div>
-    {/if}
-  </div>
+    {/if}  </div>
 {/if}
 
 <style>
@@ -246,13 +255,57 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     line-height: 1;
-    filter: drop-shadow(0 0 4px rgba(var(--color-primary-alt-rgb), 0.25));
+    filter: drop-shadow(0 0 5px rgba(var(--color-primary-alt-rgb), 0.35));
   }
   .weather-icon :global(svg) {
     display: block;
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Per-condition micro-animation — matches the app's biofield-glow language.
+     All are subtle (2–8px travel / 6–14s periods) and disabled under
+     prefers-reduced-motion below. */
+  .weather-icon.icon-sun :global(svg) {
+    animation: weatherSunGlow 6s ease-in-out infinite;
+  }
+  .weather-icon.icon-cloud :global(svg) {
+    animation: weatherCloudDrift 7s ease-in-out infinite;
+  }
+  .weather-icon.icon-rain :global(svg) {
+    animation: weatherRainNudge 1.6s ease-in-out infinite;
+  }
+  @keyframes weatherSunGlow {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 3px rgba(var(--color-primary-alt-rgb), 0.3));
+      transform: scale(1);
+    }
+    50% {
+      filter: drop-shadow(0 0 8px rgba(var(--color-primary-alt-rgb), 0.55));
+      transform: scale(1.06);
+    }
+  }
+  @keyframes weatherCloudDrift {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(-1.5px);
+    }
+  }
+  @keyframes weatherRainNudge {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(1px);
+    }
   }
 
   /* W46-D4: temperature is always visible — primary data point.
@@ -260,15 +313,32 @@
      white-teal for WCAG 2.1 AA (4.5:1) against the dark pill background. */
   .weather-temp {
     font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
-    font-size: 0.75rem;
-    color: #d0ece8;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #eefaf8;
     white-space: nowrap;
     line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
 
+  /* Condition word next to the temp ("72° Clear") — hidden on compact so the
+     mobile pill stays icon+temp only. Truncates long descriptions. */
+  .weather-cond {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(176, 214, 210, 0.92);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 9ch;
+    border-left: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
+    padding-left: 0.45rem;
+    line-height: 1;
+  }
   .weather-details {
-    margin-top: 0.4rem;
+    margin-top: 0.45rem;
     background: linear-gradient(
       180deg,
       rgba(11, 22, 32, 0.88),
@@ -276,16 +346,60 @@
     );
     backdrop-filter: blur(14px) saturate(140%);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
-    border-radius: 0.55rem;
-    padding: 0.55rem 0.7rem;
-    min-width: 200px;
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.22);
+    border-radius: 0.65rem;
+    padding: 0.5rem 0.75rem 0.6rem;
+    min-width: 208px;
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.04) inset,
-      0 10px 28px rgba(0, 0, 0, 0.5);
+      0 10px 28px rgba(0, 0, 0, 0.5),
+      0 0 14px rgba(var(--color-primary-alt-rgb), 0.08);
     animation: details-in 0.2s ease-out;
   }
 
+  .weather-details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding-bottom: 0.32rem;
+    margin-bottom: 0.24rem;
+    border-bottom: 1px solid rgba(var(--color-primary-alt-rgb), 0.14);
+  }
+  .weather-details-loc {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: #cfe9e5;
+    letter-spacing: 0.02em;
+  }
+  .weather-details-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    font-size: 0.52rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(126, 231, 219, 0.85);
+  }
+  .live-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: #7ee7db;
+    box-shadow: 0 0 6px rgba(126, 231, 219, 0.8);
+    animation: livePulse 2s ease-in-out infinite;
+  }
+  @keyframes livePulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
   @keyframes details-in {
     from { opacity: 0; transform: translateY(-4px) scale(0.98); }
     to { opacity: 1; transform: translateY(0) scale(1); }
@@ -313,12 +427,27 @@
     flex-shrink: 0;
   }
   .detail-value {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     color: #d4eaea;
     text-align: right;
     font-family: 'Nunito Sans', sans-serif;
   }
-
+  .detail-value.detail-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.68rem;
+  }
+  .wind-dir {
+    display: inline-block;
+    padding: 0.05rem 0.28rem;
+    margin-left: 0.15rem;
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.3);
+    border-radius: 0.25rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.04em;
+    color: rgba(176, 214, 210, 0.95);
+  }
   .weather-widget.compact {
     /* The real mobile header is 94–121px tall (mode chips + brand), not the
        ~48px the previous comment assumed. Use a fixed top offset that clears
@@ -328,15 +457,27 @@
     display: block;
   }
 
-  /* Respect reduced motion: skip the expand/hover transitions. */
+  /* Respect reduced motion: skip the expand/hover transitions AND the
+     per-condition icon animations + live dot pulse (decorative only). */
   @media (prefers-reduced-motion: reduce) {
     .weather-toggle,
     .weather-details {
       transition: none;
       animation: none;
     }
+    .weather-icon.icon-sun :global(svg),
+    .weather-icon.icon-cloud :global(svg),
+    .weather-icon.icon-rain :global(svg),
+    .live-dot {
+      animation: none;
+    }
   }
 
+  /* Compact viewport: hide the condition word — icon + temp is the whole
+     story at mobile widths and keeps the pill under the touch floor. */
+  .weather-widget.compact .weather-cond {
+    display: none;
+  }
   @media (max-width: 768px) {
     .weather-widget.surface-focus-search.mode-field-node {
       display: none;
