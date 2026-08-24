@@ -327,6 +327,47 @@ describe('semantic thread worker lifecycle', () => {
         expect(secondWorker.terminated).toBe(true)
     })
 
+    it('failed re-load after success keeps the last-good neighbor map (no wipe)', async () => {
+        // 2026-08-24 triage: the failure catch unconditionally set
+        // semanticNeighborMapByLeadId = new Map(), so a transient failed
+        // RE-load blanked a successfully-loaded map mid-session — threads and
+        // inside-mode spokes vanished until a later successful load
+        // (playtest runs 21-50-54 / 22-03-10-196: size 0 at capture after
+        // focusSetup measured >0). Invariant: last-good data survives.
+        const firstPromise = loadSemanticThreads({ reason: 'unit-test-success' })
+        await flushWorkerPromises()
+        const worker1 = MockWorker.instances[0]
+        worker1.dispatchEvent(
+            new MessageEvent('message', {
+                data: {
+                    type: 'LOAD_THREADS_SUCCESS',
+                    requestId: (worker1.lastMessage as { requestId: number }).requestId,
+                    payload: {
+                        neighborEntries: [['lead-1', createSemanticThreadNode()]],
+                        artifactName: 'semantic_threads_ui.dat',
+                        bundle
+                    }
+                }
+            })
+        )
+        await expect(firstPromise).resolves.toBe(true)
+        expect(state.semanticNeighborMapByLeadId.size).toBe(1)
+
+        // Failed re-load: fresh load cycle whose worker errors out.
+        state.semanticThreadsLoadPromise = null
+        state.semanticThreadsStatus = 'idle'
+        const secondPromise = loadSemanticThreads({ reason: 'unit-test-failure' })
+        await flushWorkerPromises()
+        const worker2 = MockWorker.instances[1]
+        expect(worker2).toBeDefined()
+        emitWorkerError(worker2)
+        await expect(secondPromise).resolves.toBe(false)
+
+        // THE invariant: the populated map survives the failed attempt.
+        expect(state.semanticNeighborMapByLeadId.size).toBe(1)
+        expect(state.semanticNeighborMapByLeadId.has('lead-1')).toBe(true)
+    })
+
     it('ignores stale worker responses until the matching request id resolves', async () => {
         const promise = loadSemanticThreads({ reason: 'unit-test-stale-response' })
         const resolved = vi.fn()

@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises'
+import fsSync from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
 import { inflateSync } from 'node:zlib'
@@ -393,10 +394,69 @@ function summarizeConsoleMessages(consoleMessages) {
 
 async function main() {
     await fs.mkdir(outDir, { recursive: true })
-    const server = spawn('python', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], {
-        cwd: process.cwd(),
-        stdio: 'ignore'
+    // Negotiating static server (replaces `python -m http.server`):
+    // compression-only dist builds delete plain data/semantic_threads.dat (+
+    // manifest) leaving only .br/.gz twins. Production (Hostinger) serves the
+    // .br twin with Content-Encoding for the plain request; python's server
+    // 404s it, so the worker fetch cascade failed end-to-end and the neighbor
+    // map never populated (2026-08-24 3D triage, runs post-21:39 build).
+    // This server serves the .br twin bytes with Content-Encoding: br when the
+    // plain path is missing, mirroring production.
+    const MIME = {
+        '.html': 'text/html; charset=utf-8',
+        '.js': 'application/javascript; charset=utf-8',
+        '.mjs': 'application/javascript; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+        '.json': 'application/json',
+        '.dat': 'application/octet-stream',
+        '.png': 'image/png'
+    }
+    const webRoot = process.cwd()
+    const nodeServer = (await import('node:http')).createServer(async (req, res) => {
+        try {
+            const urlPath = decodeURIComponent(new URL(req.url, 'http://x').pathname)
+            const safePath = path.normalize(urlPath).replace(/^([.][.][/\\])+/, '')
+            let filePath = path.join(webRoot, safePath)
+            let encodingHeader = null
+            if (!fsSync.existsSync(filePath) || fsSync.statSync(filePath).isDirectory()) {
+                if (!path.extname(filePath)) {
+                    filePath = path.join(filePath, 'index.html')
+                }
+            }
+            if (!fsSync.existsSync(filePath)) {
+                const br = filePath + '.br'
+                if (fsSync.existsSync(br)) {
+                    filePath = br
+                    encodingHeader = 'br'
+                } else {
+                    const gz = filePath + '.gz'
+                    if (fsSync.existsSync(gz)) {
+                        filePath = gz
+                        encodingHeader = 'gzip'
+                    }
+                }
+            }
+            if (!fsSync.existsSync(filePath) || fsSync.statSync(filePath).isDirectory()) {
+                res.writeHead(404)
+                res.end('not found')
+                return
+            }
+            const ext = path.extname(filePath).toLowerCase()
+            const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream' }
+            if (encodingHeader) headers['Content-Encoding'] = encodingHeader
+            res.writeHead(200, headers)
+            fsSync.createReadStream(filePath).pipe(res)
+        } catch {
+            res.writeHead(500)
+            res.end('server error')
+        }
     })
+    nodeServer.listen(PORT, '127.0.0.1')
+    const server = {
+        kill: () => nodeServer.close(),
+        // waitForServer polls proc.exitCode — a live node server must read null.
+        exitCode: null
+    }
     const consoleMessages = []
     const failures = []
     let browser
@@ -490,7 +550,7 @@ async function main() {
                         const m = window.__TEST_STATE__?.semanticNeighborMapByLeadId
                         return Boolean(m && m.size > 0)
                     },
-                    { timeout: 25000 }
+                    { timeout: 60000 }
                 )
                 .catch(() => {})
             await page.evaluate(() => {

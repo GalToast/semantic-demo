@@ -721,7 +721,14 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
                 state.semanticSpaceLayoutManifest = null
                 state.semanticSpaceLayoutStatus = 'failed'
                 state.semanticSpaceLayoutError = errMessage
-                state.semanticNeighborMapByLeadId = new Map()
+                // Keep last-good data on failed RE-loads: blanking a populated
+                // map mid-session made threads/inside-mode spokes vanish until
+                // a later successful load (2026-08-24 triage — playtest runs
+                // 21-50-54 / 22-03-10-196 captured size 0 after focusSetup
+                // measured >0). Only a first-load failure starts clean.
+                if (state.semanticNeighborMapByLeadId.size === 0) {
+                    state.semanticNeighborMapByLeadId = new Map()
+                }
             }
             _updateSemanticThreadsStatus('failed')
             state.semanticThreadsLoadPromise = null
