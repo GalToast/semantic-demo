@@ -108,6 +108,9 @@ vi.mock('@lib/search/search-panel-adapter', () => ({
     setupMobileSearchSheetToggle: vi.fn(),
     setSearchContainerState: vi.fn(),
     setSearchGlowState: vi.fn(),
+    // orchestration.search() hands this to registerTransitionEffects; a mock
+    // missing it threw inside every search() call (4 red tests, 2026-08-24).
+    clearMobileSearchSheetState: vi.fn(),
 }))
 
 vi.mock('@lib/search/search-abort', async (importOriginal) => {
