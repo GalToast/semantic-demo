@@ -283,13 +283,15 @@ import SelectedMatchNarrative from '@lib/components/focus/SelectedMatchNarrative
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: rgba(224, 240, 240, 0.85);
-    /* Defensive overflow guard: the all-caps "SIMILAR BUSINESSES" label
-       (16 chars + letter-spacing) could overflow at narrow viewports. */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    /* Overflow guard: wrap instead of ellipsis-truncate. The old nowrap+ellipsis
+       guard was sized for the 16-char "SIMILAR BUSINESSES" label; the current
+       19-char "WHY THESE NEIGHBORS" truncated to "WHY THESE NEIG…" at narrow
+       viewports (dots-3 sweep D, 2026-08-25). Wrapping keeps the full label
+       readable; min-width:0 lets the flex child actually wrap. */
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: break-word;
   }
-
   .selected-relationship-role {
     font-size: 0.65rem;
     font-weight: 700;
