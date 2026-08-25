@@ -19,12 +19,13 @@ let workerUrl: string | null = null
 async function resolveWorkerUrl(): Promise<string> {
     if (workerUrl) return workerUrl
     try {
-        const mod = await import('./mycelium-build-worker-url?worker&url')
-        workerUrl = (mod as { default: string }).default
+        const mod = await import('@lib/workers/mycelium-build-worker-url')
+        const resolved = (mod as { default?: string }).default
+        if (resolved) workerUrl = resolved
     } catch {
         workerUrl = './assets/mycelium-build-worker.js'
     }
-    return workerUrl
+    return workerUrl as string
 }
 
 export interface MyceliumWorkerBuffers {

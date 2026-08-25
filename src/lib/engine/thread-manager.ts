@@ -16,6 +16,8 @@ import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeome
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { appState as state } from '@lib/state/app.svelte'
 import { pointIndexByLeadId } from '@lib/data-store'
+import { buildMyceliumBuffersInWorker } from './mycelium-worker-client'
+import type { MyceliumWorkerBuffers } from './mycelium-worker-client'
 import { CONFIG } from './config'
 import { disposeObject3D } from './resource-tracker'
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
@@ -27,6 +29,7 @@ import {
     getBezierControlPoint,
     pushBezierLinePair,
     refreshCachedBezierViewVector,
+    getBezierViewVectorSnapshot,
     hasDisposeBezierViewRefresh,
     setDisposeBezierViewRefresh,
     runDisposeBezierViewRefresh,
@@ -320,7 +323,12 @@ export function getGroupLineSegmentCount(group: Group) {
     return total
 }
 
-function createLineSegments(positions: number[], colors: number[], opacity: number, linewidth: number) {
+function createLineSegments(
+    positions: number[] | Float32Array,
+    colors: number[] | Float32Array,
+    opacity: number,
+    linewidth: number
+) {
     if (!positions.length) return null
     const geometry = new LineSegmentsGeometry()
     geometry.setPositions(positions)
@@ -554,52 +562,83 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
         }
     }
     if (!edgeSets) return
-    const coreConnections: number[] = []
-    const coreColors: number[] = []
-    const wispyConnections: number[] = []
-    const wispyColors: number[] = []
-    const bridgeConnections: number[] = []
-    const bridgeColors: number[] = []
+
+    // INP campaign 2026-08-25 (6d0ffd77): the tessellation loop measured +751ms
+    // inside the post-tap interaction window. Try the off-main-thread worker
+    // build first; on ANY failure fall back to the original sync loops below.
+    let workerBuffers: MyceliumWorkerBuffers | null = null
+    try {
+        workerBuffers = await buildMyceliumBuffersInWorker({
+            corePairs: edgeSets.corePairs,
+            wispyPairs: edgeSets.wispyPairs,
+            bridgePairs: edgeSets.bridgePairs,
+            nodePositions: state.nodePositions,
+            points: state.points,
+            colors: [...CONFIG.COLORS],
+            intensities: {
+                core: semanticEdges ? 0.5 : 0.4,
+                wispy: semanticEdges ? 0.3 : 0.22,
+                bridge: semanticEdges ? 0.42 : 0.32
+            },
+            viewVector: getBezierViewVectorSnapshot(),
+            segmentsPerPair
+        })
+    } catch {
+        workerBuffers = null
+    }
+
+    const coreConnections: number[] | Float32Array = workerBuffers ? workerBuffers.core : []
+    const coreColors: number[] | Float32Array = workerBuffers ? workerBuffers.coreColors : []
+    const wispyConnections: number[] | Float32Array = workerBuffers ? workerBuffers.wispy : []
+    const wispyColors: number[] | Float32Array = workerBuffers ? workerBuffers.wispyColors : []
+    const bridgeConnections: number[] | Float32Array = workerBuffers ? workerBuffers.bridge : []
+    const bridgeColors: number[] | Float32Array = workerBuffers ? workerBuffers.bridgeColors : []
 
     webglContext.myceliumConnectionPairs.length = 0
 
     edgeSets.corePairs.forEach((pair: EdgePair) => {
-        pushBezierLinePair(
-            coreConnections,
-            coreColors,
-            pair,
-            state.nodePositions,
-            state.points,
-            (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-            semanticEdges ? 0.5 : 0.4,
-            segmentsPerPair
-        )
+        if (!workerBuffers) {
+            pushBezierLinePair(
+                coreConnections as number[],
+                coreColors as number[],
+                pair,
+                state.nodePositions,
+                state.points,
+                (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
+                semanticEdges ? 0.5 : 0.4,
+                segmentsPerPair
+            )
+        }
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 0 })
     })
     edgeSets.wispyPairs.forEach((pair: EdgePair) => {
-        pushBezierLinePair(
-            wispyConnections,
-            wispyColors,
-            pair,
-            state.nodePositions,
-            state.points,
-            (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-            semanticEdges ? 0.3 : 0.22,
-            segmentsPerPair
-        )
+        if (!workerBuffers) {
+            pushBezierLinePair(
+                wispyConnections as number[],
+                wispyColors as number[],
+                pair,
+                state.nodePositions,
+                state.points,
+                (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
+                semanticEdges ? 0.3 : 0.22,
+                segmentsPerPair
+            )
+        }
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 1 })
     })
     edgeSets.bridgePairs.forEach((pair: EdgePair) => {
-        pushBezierLinePair(
-            bridgeConnections,
-            bridgeColors,
-            pair,
-            state.nodePositions,
-            state.points,
-            (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-            semanticEdges ? 0.42 : 0.32,
-            segmentsPerPair
-        )
+        if (!workerBuffers) {
+            pushBezierLinePair(
+                bridgeConnections as number[],
+                bridgeColors as number[],
+                pair,
+                state.nodePositions,
+                state.points,
+                (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
+                semanticEdges ? 0.42 : 0.32,
+                segmentsPerPair
+            )
+        }
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 2 })
     })
 

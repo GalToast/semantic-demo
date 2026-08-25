@@ -52,6 +52,17 @@ let _cachedBezierViewVector: Vector3 | null = null
 export function seedBezierViewVector(v: { x: number; y: number; z: number }): void {
     _cachedBezierViewVector = new Vector3(v.x, v.y, v.z)
 }
+
+/** Snapshot of the current view vector for passing to a worker build
+ * (mirrors refreshCachedBezierViewVector's cache ?? camera ?? default). */
+export function getBezierViewVectorSnapshot(): { x: number; y: number; z: number } {
+    const v =
+        _cachedBezierViewVector ??
+        (webglContext.camera
+            ? new Vector3().subVectors(webglContext.camera.position, new Vector3(0.5, 0.5, 0.5)).normalize()
+            : new Vector3(0.28, 0.2, 1).normalize())
+    return { x: v.x, y: v.y, z: v.z }
+}
 let _disposeBezierViewRefresh: (() => void) | null = null
 
 /** Refresh _cachedBezierViewVector from the current camera position. */
