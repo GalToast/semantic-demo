@@ -354,7 +354,22 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         if (_getEngineStatus() !== 'loading') return // already resolved
         debugError('[engine/lifecycle] Engine init safety valve: GPU init timed out after 8s.')
         dumpTrace('safety-valve-timeout')
-        setDataLoadError('Scene initialization timed out. Your graphics hardware may not be supported.')
+        // #187 (2026-08-25): when the engine boots invisibly behind the mobile
+        // 2D placeholder (sessionStorage-persisted engineReady reload), the
+        // placeholder IS the user feedback — stamping "graphics hardware may
+        // not be supported" over a working preview is wrong and contradicts
+        // this valve's own rationale ("dark canvas with zero feedback").
+        // Degrade silently on that surface; diagnostics (log + trace + status
+        // machine + fallback graphics state) are unchanged.
+        let onPlaceholderSurface = false
+        try {
+            onPlaceholderSurface = document.body?.dataset?.renderKind === 'placeholder2d'
+        } catch {
+            /* no DOM — keep the loud error path */
+        }
+        if (!onPlaceholderSurface) {
+            setDataLoadError('Scene initialization timed out. Your graphics hardware may not be supported.')
+        }
         setEngineStatus('degraded')
         callbacks.onGraphicsStateChange?.('fallback')
         _engineInitSafetyTimer = null

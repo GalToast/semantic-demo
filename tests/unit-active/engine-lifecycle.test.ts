@@ -296,6 +296,7 @@ import {
 } from '@lib/journey/canvas-interaction'
 import { loadSemanticThreads } from '@lib/engine/semantic-threads'
 import { initTooltipEventBusSubscriptions, disposeTooltipEventBusSubscriptions } from '@lib/ui/tooltip'
+import { setDataLoadError } from '@lib/data-store'
 
 // ── Test Helpers ─────────────────────────────────────────────────────────────
 
@@ -622,5 +623,55 @@ describe('engine-lifecycle — status transitions', () => {
 
         destroyEngine()
         expect(getEngineStatus()).toBe('idle')
+    })
+})
+
+// ── #187 (2026-08-25): engine-init safety valve × mobile 2D placeholder ─────
+//
+// When engineReady is persisted in sessionStorage, a mobile (placeholder2d)
+// reload mounts the Canvas hidden behind Placeholder2D and boots the engine
+// invisibly. If initThreeJS exceeds the 8s valve window, the valve used to
+// stamp the user-facing "Scene initialization timed out … graphics hardware"
+// error over the working placeholder. On that surface the placeholder IS the
+// feedback, so the valve must degrade silently (log + trace + status machine
+// unchanged) and NOT surface the error.
+describe('engine-lifecycle — init safety valve on placeholder2d surface (#187)', () => {
+    beforeEach(() => {
+        vi.useFakeTimers()
+        vi.clearAllMocks()
+    })
+
+    afterEach(() => {
+        vi.useRealTimers()
+        delete document.body.dataset.renderKind
+        destroyEngine()
+        setEngineStatus('idle')
+    })
+
+    it('does NOT surface the user-facing error when renderKind is placeholder2d', async () => {
+        document.body.dataset.renderKind = 'placeholder2d'
+        // Hang initThreeJS so the engine is still 'loading' when the valve fires.
+        vi.mocked(initThreeJS).mockImplementationOnce(() => new Promise(() => {}))
+        const onGraphicsStateChange = vi.fn()
+
+        initEngine(createMockCanvas(), { onGraphicsStateChange }) // intentionally unawaited — init hangs
+        await vi.advanceTimersByTimeAsync(8_500)
+
+        expect(setDataLoadError).not.toHaveBeenCalled()
+        expect(onGraphicsStateChange).toHaveBeenCalledWith('fallback')
+        expect(getEngineStatus()).toBe('degraded')
+    })
+
+    it('still surfaces the error on the webgl surface (existing behavior)', async () => {
+        document.body.dataset.renderKind = 'webgl'
+        vi.mocked(initThreeJS).mockImplementationOnce(() => new Promise(() => {}))
+        const onGraphicsStateChange = vi.fn()
+
+        initEngine(createMockCanvas(), { onGraphicsStateChange }) // intentionally unawaited — init hangs
+        await vi.advanceTimersByTimeAsync(8_500)
+
+        expect(setDataLoadError).toHaveBeenCalledWith(expect.stringContaining('Scene initialization timed out'))
+        expect(onGraphicsStateChange).toHaveBeenCalledWith('fallback')
+        expect(getEngineStatus()).toBe('degraded')
     })
 })

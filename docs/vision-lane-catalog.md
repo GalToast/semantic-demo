@@ -4,6 +4,14 @@ Chat-vision = router catalog input_modalities contains "image" + output is text.
 
 Generated 2026-08-04T22:37:23.672Z — chat-vision ids: 225 · name-hint-only: 68
 
+## STATUS UPDATE 2026-08-25 (live-probe, visual-QA session)
+
+- **WORKING:** `kilo/thinkingmachines/inkling:free` (deep-reasoning vision, curl LANE_OK + full 2-image PIXELS_OK worker run, ~6s TTFT), `zenmux/stepfun/step-3.7-flash` @zenmux (fast/cheap, full report).
+- **DEAD today:** `modelscope/Qwen3-VL-235B-A22B-Instruct` (preflight OK but 429 "insufficient balance" → 410), `direct-openrouter/*` — the `openrouter/` prefix now routes to a DIRECT openrouter key with **402 no credits** (bypasses key-router pool; use `router-openrouter` lanes or `kilo/`), `nvidia/meta/llama-3.2-90b-vision-instruct` (400 no body on 2-image payload; 11b untested).
+- **Advertised but untested 2026-08-25:** kilo+openrouter `google/gemini-3.7-flash`, `deepseek/deepseek-v4-flash-vision-exp`, kilo `openai/gpt-5.4-image-2`, `z-ai/glm-5v-turbo`, NIM `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`.
+- **logfare:** thin (`minimax-m3`, `gemma-4-26b`) — still treat as unfit per 2026-08-05 hang notes.
+- Worker-dispatch note: `external_subagent_start` MCP calls time out at the bridge ~50% of the time but **the spawn usually succeeds server-side** — verify via newest `.opencode/opencode-workers/ocw_*/metadata.json` before relaunching (duplicate workers otherwise).
+
 ## VERIFIED with a real screenshot (2026-08-04)
 
 - modelscope/Qwen/Qwen3-VL-235B-A22B-Instruct — best focused VLM; pixel-perfect reads, fast

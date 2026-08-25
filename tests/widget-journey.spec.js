@@ -6851,4 +6851,42 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         // also ensure old jargon is gone
         await expect(progress).not.toContainText(/Stop \d+/)
     })
+
+    // #187 (2026-08-25): sessionStorage-persisted engineReady + mobile viewport
+    // mounts the Canvas hidden behind Placeholder2D and boots the engine
+    // invisibly. If initThreeJS exceeds the 8s engine-init safety valve, the
+    // valve used to stamp the user-facing "Scene initialization timed out …
+    // graphics hardware may not be supported" error overlay OVER the working
+    // 2D preview. On the placeholder surface the preview IS the feedback, so
+    // the valve must degrade silently (lifecycle.ts valve, #187 fix). This
+    // journey reproduces the reload-after-entering-3D flow end to end.
+    test('mobile placeholder reload (persisted engineReady) never shows the scene-timeout error alert (#187)', async ({
+        page
+    }) => {
+        await page.setViewportSize({ width: 390, height: 844 })
+        // Seed the persisted-ready flag BEFORE any app script runs — this is
+        // the "user entered 3D earlier, now reloads on mobile" flow.
+        await page.addInitScript(() => {
+            sessionStorage.setItem('semantic-explorer.engineReady', '1')
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&placeholder=1`, { waitUntil: 'domcontentloaded' })
+
+        // Give the engine-init safety valve (8s after heavy init starts) its
+        // full window plus margin before asserting on the error surface.
+        await page.waitForTimeout(9_500)
+
+        // No error overlay may appear over the placeholder…
+        await expect(page.locator('[data-loading-state="error"]')).toHaveCount(0)
+        await expect(page.locator('[aria-label="Loading failed"]')).toHaveCount(0)
+        // …and the user sees the placeholder OR a live scene — never the error
+        // alert. (If init finished within the window the placeholder legitimately
+        // hands off to the canvas, so either outcome is correct.)
+        const outcome = await page.evaluate(() => ({
+            placeholder: !!document.querySelector(
+                '[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]'
+            ),
+            canvas: !!document.querySelector('canvas')
+        }))
+        expect(outcome.placeholder || outcome.canvas, 'placeholder or live scene must be present').toBe(true)
+    })
 })
