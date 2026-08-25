@@ -19,7 +19,7 @@
  *          wispyColors: Float32Array, bridgeColors: Float32Array,
  *          pairCount: number }  (buffers transferred, not cloned)
  */
-import { pushBezierLinePair, seedBezierViewVector } from '@lib/engine/mycelium-bezier'
+import { pushBezierLinePair, seedBezierViewVector, pairKey } from '@lib/engine/mycelium-bezier'
 import { computeOverviewScatterOffsets } from '@lib/utils/geo-data'
 import { getPointBoundsCenter } from '@lib/utils/point-cloud-math'
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
@@ -119,6 +119,110 @@ export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
         wispyColors: new Float32Array(wispyColors),
         bridgeColors: new Float32Array(bridgeColors)
     }
+}
+
+// ── Discovery (edge sets) — pure, shared with the main-thread fallback ──
+// INP 2026-08-25 longtask attribution: the DOMINANT main-thread cost in the
+// mycelium window is buildSemanticMyceliumEdges — edge DISCOVERY (~900ms
+// sync), not tessellation. The algorithm lives in ONE exported pure function
+// used by both this worker and the main-thread sync fallback — zero drift.
+
+export interface DiscoverNeighbor {
+    leadId: string | null
+    semanticScore?: number
+    bridgeScore?: number
+    sameCity?: boolean
+    threadType?: string
+}
+
+export interface DiscoverPayload {
+    /** lead_id per point index ('' when absent — skipped, mirrors main). */
+    leadIds: string[]
+    pointClusters: Array<number | null>
+    /** semanticNeighborMapByLeadId serialized: leadId → neighbor details. */
+    neighborMap: Record<string, DiscoverNeighbor[]>
+}
+
+export interface DiscoveredEdgeSets {
+    corePairs: Array<{ a: number; b: number }>
+    wispyPairs: Array<{ a: number; b: number }>
+    bridgePairs: Array<{ a: number; b: number }>
+}
+
+/** Pure discovery — the EXACT algorithm from thread-manager's
+ * buildSemanticMyceliumEdges (thresholds, sort-by-score top-20, seen-set,
+ * per-layer degree caps). No yields: workers don't block anything. */
+export function discoverMyceliumEdges(payload: DiscoverPayload): DiscoveredEdgeSets | null {
+    const { leadIds, pointClusters, neighborMap } = payload
+    if (!leadIds.length) return null
+    // pointIndexByLeadId rebuilt from array positions (leadIds[i] ↔ index i).
+    const pointIndex = new Map<string, number>()
+    for (let i = 0; i < leadIds.length; i += 1) {
+        const leadId = leadIds[i]
+        if (leadId) pointIndex.set(leadId, i)
+    }
+    if (!pointIndex.size) return null
+
+    const seen = new Set<string>()
+    const corePairs: Array<{ a: number; b: number }> = []
+    const wispyPairs: Array<{ a: number; b: number }> = []
+    const bridgePairs: Array<{ a: number; b: number }> = []
+    const coreDegree = new Map<number, number>()
+    const wispyDegree = new Map<number, number>()
+    const bridgeDegree = new Map<number, number>()
+
+    for (let index = 0; index < leadIds.length; index += 1) {
+        const leadId = leadIds[index]
+        if (!leadId) continue
+        const record = neighborMap[leadId]
+        const sortedNeighbors = [...(record || [])]
+            .sort((a, b) => (b.semanticScore || 0) - (a.semanticScore || 0))
+            .slice(0, 20)
+        sortedNeighbors.forEach((neighbor) => {
+            const otherIndex = pointIndex.get(String(neighbor.leadId))
+            if (otherIndex === undefined || otherIndex === index) return
+            const key = pairKey(index, otherIndex)
+            if (seen.has(key)) return
+            seen.add(key)
+            const semanticScore = Number.isFinite(neighbor.semanticScore) ? neighbor.semanticScore! : 0
+            const bridgeScore = Number.isFinite(neighbor.bridgeScore) ? neighbor.bridgeScore! : 0
+            const sameCluster = pointClusters[index] === pointClusters[otherIndex]
+            const sameCity = !!neighbor.sameCity
+            const bridgeLike =
+                String(neighbor.threadType || '')
+                    .toLowerCase()
+                    .includes('bridge') || bridgeScore >= 0.62
+
+            if (!sameCluster) {
+                if (!bridgeLike) return
+                const aDegree = bridgeDegree.get(index) || 0
+                const bDegree = bridgeDegree.get(otherIndex) || 0
+                if (aDegree >= 2 || bDegree >= 2) return
+                bridgeDegree.set(index, aDegree + 1)
+                bridgeDegree.set(otherIndex, bDegree + 1)
+                bridgePairs.push({ a: index, b: otherIndex })
+                return
+            }
+
+            if (semanticScore >= 0.62 || (semanticScore >= 0.56 && sameCity)) {
+                const aDegree = coreDegree.get(index) || 0
+                const bDegree = coreDegree.get(otherIndex) || 0
+                if (aDegree >= 4 || bDegree >= 4) return
+                coreDegree.set(index, aDegree + 1)
+                coreDegree.set(otherIndex, bDegree + 1)
+                corePairs.push({ a: index, b: otherIndex })
+            } else if (semanticScore >= 0.42 || sameCity) {
+                const aDegree = wispyDegree.get(index) || 0
+                const bDegree = wispyDegree.get(otherIndex) || 0
+                if (aDegree >= 5 || bDegree >= 5) return
+                wispyDegree.set(index, aDegree + 1)
+                wispyDegree.set(otherIndex, bDegree + 1)
+                wispyPairs.push({ a: index, b: otherIndex })
+            }
+        })
+    }
+
+    return corePairs.length || wispyPairs.length || bridgePairs.length ? { corePairs, wispyPairs, bridgePairs } : null
 }
 
 // ── Points build (INP 2026-08-25: createPoints per-point loop, +394ms) ──
@@ -221,6 +325,7 @@ const ctx = self as unknown as WorkerAPI
 type BuildRequest =
     | (MyceliumBuildPayload & { type: 'BUILD'; requestId?: number })
     | (PointsBuildPayload & { type: 'POINTS_BUILD'; requestId?: number })
+    | (DiscoverPayload & { type: 'DISCOVER_BUILD'; requestId?: number })
 
 ctx.onmessage = (e: MessageEvent<BuildRequest>): void => {
     const requestId = e.data.requestId ?? 0
@@ -228,6 +333,11 @@ ctx.onmessage = (e: MessageEvent<BuildRequest>): void => {
         const result = buildPointsBuffers(e.data)
         const transfer = [result.positions.buffer, result.colors.buffer, result.pointBaseColors.buffer]
         ;(self as unknown as Worker).postMessage({ type: 'POINTS_BUILT', requestId, ...result }, transfer)
+        return
+    }
+    if (e.data.type === 'DISCOVER_BUILD') {
+        const result = discoverMyceliumEdges(e.data)
+        ;(self as unknown as Worker).postMessage({ type: 'DISCOVER_BUILT', requestId, edgeSets: result })
         return
     }
     // buildMyceliumBuffers seeds the view vector internally.

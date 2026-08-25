@@ -16,7 +16,8 @@ import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeome
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { appState as state } from '@lib/state/app.svelte'
 import { pointIndexByLeadId } from '@lib/data-store'
-import { buildMyceliumBuffersInWorker } from './mycelium-worker-client'
+import { buildMyceliumBuffersInWorker, discoverMyceliumEdgesInWorker } from './mycelium-worker-client'
+import { discoverMyceliumEdges } from '@lib/workers/mycelium-build-worker'
 import type { MyceliumWorkerBuffers } from './mycelium-worker-client'
 import { CONFIG } from './config'
 import { disposeObject3D } from './resource-tracker'
@@ -198,68 +199,29 @@ function buildGeometricMyceliumEdges(
 
 async function buildSemanticMyceliumEdges(): Promise<MyceliumEdgeSets | null> {
     if (!state.semanticNeighborMapByLeadId?.size || !pointIndexByLeadId.getSnapshot().size) return null
-    const seen = new Set<string>()
-    const corePairs: EdgePair[] = []
-    const wispyPairs: EdgePair[] = []
-    const bridgePairs: EdgePair[] = []
-    const coreDegree = new Map<number, number>()
-    const wispyDegree = new Map<number, number>()
-    const bridgeDegree = new Map<number, number>()
 
-    for (let index = 0; index < state.points.length; index += 1) {
-        const point = state.points[index]
-        const leadId = point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id)
-        if (!leadId) continue
-        const record = state.semanticNeighborMapByLeadId.get(leadId)
-        const sortedNeighbors = [...(record?.neighbors || [])]
-            .sort((a, b) => (b.semanticScore || 0) - (a.semanticScore || 0))
-            .slice(0, 20)
-        sortedNeighbors.forEach((neighbor: SemanticNeighborDetail) => {
-            const otherIndex = pointIndexByLeadId.getSnapshot().get(String(neighbor.leadId))
-            if (otherIndex === undefined || otherIndex === index) return
-            const key = pairKey(index, otherIndex)
-            if (seen.has(key)) return
-            seen.add(key)
-            const semanticScore = Number.isFinite(neighbor.semanticScore) ? neighbor.semanticScore : 0
-            const bridgeScore = Number.isFinite(neighbor.bridgeScore) ? neighbor.bridgeScore : 0
-            const sameCluster = state.points[index]?.cluster === state.points[otherIndex]?.cluster
-            const sameCity = !!neighbor.sameCity
-            const bridgeLike =
-                String(neighbor.threadType || '')
-                    .toLowerCase()
-                    .includes('bridge') || bridgeScore >= 0.62
+    // INP 2026-08-25 (longtask attribution): discovery is the ~900ms
+    // main-thread task. Run it on the geometry worker; the sync fallback
+    // calls the SAME exported pure function — zero drift by construction.
+    const leadIds: string[] = []
+    const pointClusters: Array<number | null> = []
+    for (let i = 0; i < state.points.length; i += 1) {
+        const point = state.points[i]
+        leadIds.push(point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id))
+        pointClusters.push(point?.cluster ?? null)
+    }
+    const neighborMap: Record<string, SemanticNeighborDetail[]> = {}
+    state.semanticNeighborMapByLeadId.forEach((record, leadId) => {
+        neighborMap[leadId] = record.neighbors
+    })
 
-            if (!sameCluster) {
-                if (!bridgeLike) return
-                const aDegree = bridgeDegree.get(index) || 0
-                const bDegree = bridgeDegree.get(otherIndex) || 0
-                if (aDegree >= 2 || bDegree >= 2) return
-                bridgeDegree.set(index, aDegree + 1)
-                bridgeDegree.set(otherIndex, bDegree + 1)
-                bridgePairs.push({ a: index, b: otherIndex })
-                return
-            }
-
-            if (semanticScore >= 0.62 || (semanticScore >= 0.56 && sameCity)) {
-                const aDegree = coreDegree.get(index) || 0
-                const bDegree = coreDegree.get(otherIndex) || 0
-                if (aDegree >= 4 || bDegree >= 4) return
-                coreDegree.set(index, aDegree + 1)
-                coreDegree.set(otherIndex, bDegree + 1)
-                corePairs.push({ a: index, b: otherIndex })
-            } else if (semanticScore >= 0.42 || sameCity) {
-                const aDegree = wispyDegree.get(index) || 0
-                const bDegree = wispyDegree.get(otherIndex) || 0
-                if (aDegree >= 5 || bDegree >= 5) return
-                wispyDegree.set(index, aDegree + 1)
-                wispyDegree.set(otherIndex, bDegree + 1)
-                wispyPairs.push({ a: index, b: otherIndex })
-            }
-        })
-        if (index % 250 === 0) await yieldToBrowser()
+    const workerResult = await discoverMyceliumEdgesInWorker({ leadIds, pointClusters, neighborMap })
+    if (workerResult !== undefined) {
+        return workerResult
     }
 
-    return corePairs.length || wispyPairs.length || bridgePairs.length ? { corePairs, wispyPairs, bridgePairs } : null
+    // Worker unavailable/failed — same algorithm, main thread.
+    return discoverMyceliumEdges({ leadIds, pointClusters, neighborMap })
 }
 
 // ── Dirty-node tracking for amortized updates ──────────────────────────────

@@ -47,6 +47,8 @@ export interface MyceliumWorkerBuffers {
 export type MyceliumBuildPayload = import('@lib/workers/mycelium-build-worker').MyceliumBuildPayload
 export type PointsBuildPayload = import('@lib/workers/mycelium-build-worker').PointsBuildPayload
 export type PointsBuildBuffers = import('@lib/workers/mycelium-build-worker').PointsBuildBuffers
+export type DiscoverPayload = import('@lib/workers/mycelium-build-worker').DiscoverPayload
+export type DiscoveredEdgeSets = import('@lib/workers/mycelium-build-worker').DiscoveredEdgeSets
 
 type PendingResolve = (buffers: MyceliumWorkerBuffers | null) => void
 
@@ -70,12 +72,12 @@ async function getSingletonWorker(): Promise<Worker | null> {
     const worker = new Worker(url, { type: 'module' })
     worker.onmessage = (e: MessageEvent) => {
         const data = e.data as
-            | ((MyceliumWorkerBuffers | PointsBuildBuffers) & {
+            | ((MyceliumWorkerBuffers | PointsBuildBuffers | { edgeSets: DiscoveredEdgeSets | null }) & {
                   type?: string
                   requestId?: number
               })
             | null
-        if (data?.type !== 'BUILT' && data?.type !== 'POINTS_BUILT') return
+        if (data?.type !== 'BUILT' && data?.type !== 'POINTS_BUILT' && data?.type !== 'DISCOVER_BUILT') return
         const requestId = typeof data.requestId === 'number' ? data.requestId : -1
         const resolve = pending.get(requestId)
         if (resolve) {
@@ -145,6 +147,33 @@ export async function buildPointsBuffersInWorker(payload: PointsBuildPayload): P
     }
 }
 
+/** Run semantic edge DISCOVERY off-thread (the ~900ms main-thread task —
+ * longtask attribution 2026-08-25). Resolves null on ANY failure — callers
+ * must fall back to the main-thread pure function (same implementation). */
+export async function discoverMyceliumEdgesInWorker(
+    payload: DiscoverPayload
+): Promise<DiscoveredEdgeSets | null | undefined> {
+    if (typeof Worker === 'undefined') return undefined
+    try {
+        const worker = await getSingletonWorker()
+        if (!worker) return undefined
+        const requestId = nextRequestId++
+        return await new Promise<DiscoveredEdgeSets | null | undefined>((res) => {
+            const timeout = setTimeout(() => {
+                pending.delete(requestId)
+                res(undefined)
+            }, 15000)
+            pending.set(requestId, (buffers) => {
+                clearTimeout(timeout)
+                res((buffers as { edgeSets?: DiscoveredEdgeSets | null } | null)?.edgeSets ?? null)
+            })
+            worker.postMessage({ type: 'DISCOVER_BUILD', requestId, ...payload })
+        })
+    } catch {
+        return undefined
+    }
+}
+
 let prewarmStarted = false
 
 /** Spawn + module-eval the worker BEFORE the tap (CTA-visible hook). Trivial
@@ -178,6 +207,13 @@ export function prewarmMyceliumWorker(): void {
                 colors: ['#888888'],
                 threadTint: { r: 0.5, g: 0.5, b: 0.5 },
                 fieldScale: { x: 1, y: 1, z: 1 }
+            })
+            worker.postMessage({
+                type: 'DISCOVER_BUILD',
+                requestId: 0,
+                leadIds: [],
+                pointClusters: [],
+                neighborMap: {}
             })
         } catch {
             prewarmStarted = false
