@@ -79,8 +79,15 @@ function scheduleMyceliumLodUpgrade(builtBelowFullLod: boolean): void {
     }
     const ric = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void })
         .requestIdleCallback
-    if (ric) ric(fire, { timeout: 600 })
-    else lodUpgradeReg.schedule(250, fire)
+    // INP A/B correction (2026-08-25, certified interleaved N=9/arm): the old
+    // 600ms timeout fired the full-10 REBUILD inside the post-tap interaction
+    // window — LOD-first as landed roughly DOUBLED interaction-window mycelium
+    // work (589ms LOD=4 build + ~700ms unmarked rebuild vs 681ms single full
+    // build). 5s post-ready lets the user finish entering the scene before
+    // the quality upgrade runs; angularity for a few seconds is invisible
+    // next to the jank it removes. See tmp/inp-campaign.md LOD A/B section.
+    if (ric) ric(fire, { timeout: 5000 })
+    else lodUpgradeReg.schedule(5000, fire)
 }
 
 function buildGeometricMyceliumEdges(
