@@ -278,6 +278,80 @@ async function inspectScene(page) {
                     return { err: String(e).slice(0, 80) }
                 }
             })(),
+            // 2026-08-25 P-Gal-1/P-Inside-1 triage: screenshot-matched DOM
+            // dump of the mobile journey rail + brand/county labels, with the
+            // first clipping ancestor per element (overflow != visible whose
+            // box actually intersects the element) so the clipper is named,
+            // not guessed.
+            railDiagnostics: (() => {
+                try {
+                    const rectOf = (el) => {
+                        const r = el.getBoundingClientRect()
+                        return {
+                            x: Math.round(r.x),
+                            y: Math.round(r.y),
+                            w: Math.round(r.width),
+                            h: Math.round(r.height)
+                        }
+                    }
+                    const clipperOf = (el) => {
+                        const r = el.getBoundingClientRect()
+                        let a = el.parentElement
+                        while (a && a !== document.body) {
+                            const cs = getComputedStyle(a)
+                            if (cs.overflow !== 'visible' || cs.overflowY !== 'visible') {
+                                const ar = a.getBoundingClientRect()
+                                const ix = Math.max(0, Math.min(r.right, ar.right) - Math.max(r.x, ar.x))
+                                const iy = Math.max(0, Math.min(r.bottom, ar.bottom) - Math.max(r.y, ar.y))
+                                if (iy < r.height - 1 || ix < r.width - 1) {
+                                    return `${a.tagName.toLowerCase()}${a.id ? '#' + a.id : ''}.${String(a.className).split(' ')[0]} ovf=${cs.overflow}/${cs.overflowY} box=${Math.round(ar.x)},${Math.round(ar.y)},${Math.round(ar.width)},${Math.round(ar.height)}`
+                                }
+                            }
+                            a = a.parentElement
+                        }
+                        return null
+                    }
+                    const grab = (sel) => {
+                        const el = document.querySelector(sel)
+                        if (!el) return null
+                        const r = rectOf(el)
+                        return { ...r, clipper: clipperOf(el), text: (el.textContent || '').trim().slice(0, 40) }
+                    }
+                    const seEl = Array.from(document.querySelectorAll('body *')).find((el) => {
+                        if (el.children.length > 0) return false
+                        const t = (el.textContent || '').trim()
+                        if (t !== 'SE') return false
+                        const r = el.getBoundingClientRect()
+                        return r.y < 120 && r.x < 120 && r.width > 0
+                    })
+                    const countEl = Array.from(document.querySelectorAll('body *')).find((el) => {
+                        if (el.children.length > 0) return false
+                        const t = (el.textContent || '').trim()
+                        if (!/^Count/.test(t)) return false
+                        const r = el.getBoundingClientRect()
+                        return r.width > 0 && r.y < 400
+                    })
+                    return {
+                        journeyChrome: grab('#journey-chrome'),
+                        focusStageJourney: grab('.focus-stage-journey'),
+                        trailControls: grab('#trail-controls'),
+                        trailContextText: grab('.trail-context-text'),
+                        trailProgress: grab('#focus-stage-progress'),
+                        trailNext: grab('#focus-stage-next'),
+                        ctxWrapper: grab('.trail-context-wrapper'),
+                        seBrand: seEl ? { ...rectOf(seEl), clipper: clipperOf(seEl) } : null,
+                        countLabel: countEl
+                            ? {
+                                  ...rectOf(countEl),
+                                  text: (countEl.textContent || '').trim().slice(0, 40),
+                                  clipper: clipperOf(countEl)
+                              }
+                            : null
+                    }
+                } catch (e) {
+                    return { err: String(e).slice(0, 120) }
+                }
+            })(),
             semanticLensSpokeAlphaNonZero: alphaValues.filter((value) => value > 0).length,
             semanticLensSpokePositionNonZero: positionValues.filter((value) => Math.abs(value) > 0.0001).length,
             consoleGraphicMode: state?.scenePerformanceDiagnostics?.active ?? null,

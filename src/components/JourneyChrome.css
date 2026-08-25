@@ -178,17 +178,21 @@ body.surface-focus-search .journey-header {
     display: none;
 }
 
-
 /* ── Mobile / Compact ───────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .journey-chrome {
         bottom: 3.5rem;
         max-width: 95vw;
-        /* Cap height so the neighbor rail cannot grow upward into the
-         FocusCard zone at the top (top: 3.5rem). Leave 56px + 8px
-         breathing room above and below. */
+        /* Height cap kept as a growth backstop, but overflow must stay
+           visible: the neighbor rail deliberately floats ~19px above the
+           strip's top edge (stage-band design, 2026-08-04) and overflow-y:
+           auto clipped its count header's top half at the strip boundary
+           (P-Gal-1, 2026-08-25 probe: count box y=207 vs strip y=220).
+           Growth into the FocusCard zone is already prevented by inner
+           caps — .focus-stage-neighbor-list max-height 54px on mobile —
+           so the rail is bounded (~96px) and cannot reach the card. */
         max-height: calc(100dvh - 7.5rem);
-        overflow-y: auto;
+        overflow: visible;
         overscroll-behavior: contain;
         scrollbar-width: none;
     }

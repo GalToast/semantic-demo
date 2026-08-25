@@ -693,7 +693,7 @@
             [data-focus-panel-mode='field-node']
         )
         .focus-stage-neighbor-list
-        >:nth-child(n + 2) {
+        > :nth-child(n + 2) {
         display: none;
     }
 
@@ -1107,7 +1107,7 @@
 
     body.surface-semantic-dive
         #focus-stage-auxiliary-surfaces
-        >:not(#focus-stage-inside-status):not(#focus-stage-inside-controls) {
+        > :not(#focus-stage-inside-status):not(#focus-stage-inside-controls) {
         display: none;
     }
 
@@ -1355,7 +1355,12 @@
         top: clamp(214px, 27dvh, 240px);
         bottom: auto;
         max-height: calc(100dvh - 294px - env(safe-area-inset-bottom, 0px));
-        overflow-y: auto;
+        /* overflow visible: the neighbor rail deliberately floats ~13px above
+           this strip's top edge (count header at y=207 vs strip y=220) —
+           overflow-y:auto clipped the header's top half (P-Gal-1). Growth is
+           bounded by max-height + the 54px neighbor-list cap, so visible
+           cannot reach the focus card below. */
+        overflow-y: visible;
     }
 
     /* Field node returns to bottom when trail is active */
@@ -1428,7 +1433,7 @@
             [data-panel-surface='semantic-dive']
         )
         .journey-compass[data-density='compact']
-        >:not(.journey-compass-copy) {
+        > :not(.journey-compass-copy) {
         display: none;
     }
 
@@ -1637,7 +1642,7 @@
 
     body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
         .focus-stage-neighbor-list
-        >:nth-child(n + 2) {
+        > :nth-child(n + 2) {
         display: none;
     }
 
