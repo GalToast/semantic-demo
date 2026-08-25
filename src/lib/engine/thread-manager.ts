@@ -599,6 +599,7 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
         }
     }
     if (!edgeSets) return
+    performance.mark('engine-init-mycelium-edges-done')
 
     // INP campaign 2026-08-25 (6d0ffd77): the tessellation loop measured +751ms
     // inside the post-tap interaction window. Try the off-main-thread worker
@@ -626,6 +627,7 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
     } catch {
         workerBuffers = null
     }
+    performance.mark('engine-init-mycelium-worker-done')
 
     const coreConnections: number[] | Float32Array = workerBuffers ? workerBuffers.core : []
     const coreColors: number[] | Float32Array = workerBuffers ? workerBuffers.coreColors : []
@@ -705,6 +707,7 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
         profile.linewidth.bridge,
         workerBuffers?.layerBounds.bridge
     )
+    performance.mark('engine-init-mycelium-geometry-done')
 
     if (webglContext.myceliumCoreLines) webglContext.myceliumGroup.add(webglContext.myceliumCoreLines)
     if (webglContext.myceliumWispyLines) webglContext.myceliumGroup.add(webglContext.myceliumWispyLines)
