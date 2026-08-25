@@ -36,6 +36,7 @@
 <script lang="ts">
   import { appState } from '@lib/state/app.svelte';
   import { journeyStore, JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey.svelte.ts';
+  import { navStore } from '@lib/stores/navigation.svelte.ts';
   import type { JourneyStoreState } from '@lib/stores/journey.svelte.ts';
   import { focusStore } from '@lib/stores/focus.svelte.ts';
   import type { FocusStoreState } from '@lib/stores/focus.svelte.ts';
@@ -132,15 +133,32 @@
       focusState = state;
       refreshCompass();
     });
-    // Track navState dependency, then refresh (replaces navStore.subscribe mirror)
+    // Bug #3 (2026-08-25): the previous `void navState` replacement read NO
+    // properties, so Svelte 5's fine-grained tracking subscribed to nothing and
+    // nav/mode/surface + semanticDive transitions never re-ran this effect —
+    // compass kicker/title/note kept the previous phase's copy (trail banner
+    // persisting into Inside) while data-phase updated via the parity path.
+    // Restore the navStore subscription so nav-driven phase flips refresh the
+    // header text like the legacy updateJourneyCompass() event flow did.
+    const unsubNav = navStore.subscribe(() => {
+      refreshCompass();
+    });
+    // Bug #3 (2026-08-25, part 2): navStore only notifies on VIEW-level
+    // transitions; mode/surface-only patches (e.g. galaxy Inside entry) and
+    // semanticDive flips arrive through the parity feeds without a navMirror
+    // notification. parityMap is a $state proxy refreshed by those feeds —
+    // reading these keys inside this effect registers auto-tracked deps so the
+    // compass text re-derives on every phase transition, matching the legacy
+    // event-driven updateJourneyCompass() behavior.
+    void parityMap.journeyPhase;
+    void parityMap.panelSurface;
     void navState;
-    refreshCompass();
-    return () => {
+    refreshCompass();    return () => {
       unsubJourney();
       unsubFocus();
+      unsubNav();
     };
   });
-
   // Presentation is derived from the live compass state. This avoids
   // the "captures initial value" lint warning that comes from calling
   // a function with a $state value at init time.
