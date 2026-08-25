@@ -342,3 +342,5 @@ before declaring dead).
 
 Verified-lane recommendation unchanged for quick vision QA:
 nvidia/meta/llama-3.2-11b-vision-instruct.
+
+> **2026-08-26 dots3-note-prev vision confirmed** — read full-res 2MB PNG canvas frames (1784×985) one-per-turn and produced an accurate structured verdict (`tmp/vis-sweep/verdict-real-canvas.md`), matching main-lane vision check on all material points. Pacing rule: ONE image per tool call (stacking big images in one turn aborts the request — that was the 2026-08-26 first-attempt failure, not a lane defect). Weakness: misses UI-mode context (called a trail-mode frame "general field view") — prompt with mode context. Use as independent vision jury.

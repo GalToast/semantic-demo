@@ -197,10 +197,10 @@ The shim exposes `/health`, defaults to Laguna, and preserves provider-specific 
 
 **Critical finding:** the entire `logfare/*` route is unusable for subagent dispatch. Tested all 19 models via both `external_subagent_start` and `external_subagent_text_chat`:
 
-| Failure mode | Count | Examples |
-|---|---|---|
-| Broker preflight abort (`key_router_catalog_unavailable` / `key_router_health_unavailable` / `key_router_models_unavailable`) | 17 | `minimax-m3`, `deepseek-v4-pro-0813`, `kimi-k3`, `grape-2-pro`, `phoenix-1.0`, `lucid-origin`, `moondream3.1`, `flux-2-pro`, `qwen3-embedding-8b`, `deepseek-v4-flash-0731`, `aura-2-en`, `gemma-4-26b`, `nova-3`, `whisper-large-v3-turbo`, `qwen-3.8-27b`, `deepseek-v4-pro`, `kiro-auto` |
-| Empty response (0 output tokens) | 2 | `minimax-m3`, `glm-5.2` — preflight passes but content is empty |
+| Failure mode                                                                                                                  | Count | Examples                                                                                                                                                                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Broker preflight abort (`key_router_catalog_unavailable` / `key_router_health_unavailable` / `key_router_models_unavailable`) | 17    | `minimax-m3`, `deepseek-v4-pro-0813`, `kimi-k3`, `grape-2-pro`, `phoenix-1.0`, `lucid-origin`, `moondream3.1`, `flux-2-pro`, `qwen3-embedding-8b`, `deepseek-v4-flash-0731`, `aura-2-en`, `gemma-4-26b`, `nova-3`, `whisper-large-v3-turbo`, `qwen-3.8-27b`, `deepseek-v4-pro`, `kiro-auto` |
+| Empty response (0 output tokens)                                                                                              | 2     | `minimax-m3`, `glm-5.2` — preflight passes but content is empty                                                                                                                                                                                                                             |
 
 The router itself is healthy (`/health` shows 5 active keys, 0 cooling). The broker's preflight logic is what's broken — it aborts 17 models before launch, and the 2 that get through return empty content. This is a systemic provider-route issue, not individual model failures.
 
@@ -210,13 +210,13 @@ The router itself is healthy (`/health` shows 5 active keys, 0 cooling). The bro
 
 All 6 free models tested via `external_subagent_text_chat` with trivial "Reply PONG" prompt. 5 confirmed returning real output:
 
-| Model | Output tokens | TTFT | Cost | Status |
-|---|---|---|---|---|
-| `opencode-zen/deepseek-v4-flash-free` | 24 | 5.3s | $0 | ✅ |
-| `opencode-zen/hy3-free` | 16 | 6.6s | $0 | ✅ |
-| `opencode-zen/mimo-v2.5-free` | 32 | 4.1s | $0 | ✅ |
-| `opencode-zen/laguna-s-2.1-free` | 3 | 4.4s | $0 | ✅ |
-| `opencode-zen/nemotron-3-ultra-free` | — | — | $0 | 🔄 running |
+| Model                                 | Output tokens | TTFT | Cost | Status     |
+| ------------------------------------- | ------------- | ---- | ---- | ---------- |
+| `opencode-zen/deepseek-v4-flash-free` | 24            | 5.3s | $0   | ✅         |
+| `opencode-zen/hy3-free`               | 16            | 6.6s | $0   | ✅         |
+| `opencode-zen/mimo-v2.5-free`         | 32            | 4.1s | $0   | ✅         |
+| `opencode-zen/laguna-s-2.1-free`      | 3             | 4.4s | $0   | ✅         |
+| `opencode-zen/nemotron-3-ultra-free`  | —             | —    | $0   | 🔄 running |
 
 Route form: `opencode-zen/<model-id>` → `pi:router-opencode-zen/<model-id>`. 6 active keys, 0 cooling records. Preflight always passes. This is the **recommended free subagent route** — use for all delegation.
 
@@ -1032,3 +1032,5 @@ OK). Re-probe before dispatching on kilo/openrouter; don't assume qwen3-coder-ne
 | logfare/kimi-k3         | ❌ 404       | gone                                           |
 
 → Use `logfare/minimax-m3` as the lane; others: catalog ghosts (impacted router keys).
+
+> **2026-08-26 route-truth map (main lane, corrected):** Full pipeline mapped: `opencode.json` provider `limit.{context,output}` (ROUTER TRUTH, authoritative) + `pi-model-providers/index.ts` route-quota constants → catalog daemon → `model-catalog-manifest.json` + `model-providers.json` (regenerated every ~15 min from in-memory state; disk edits to either file are CLOBBERED until Pi restarts). VERDICT: the logfare/dots metadata is scoped route truth, not error — e.g. logfare minimax-m3 out 32768 is a deliberate quota-2056 workaround (131K/524K trigger the logfare quota edge, 1M=empty; see tmp/minimax-m3-logfare-empty-content-investigation.md); deepseek-v4-flash-0731 16384 and qwen-3.8-27b 131072/32768 are explicit opencode.json route limits; glm-5.2 131072 = 128K (correct). MODEL ceilings are higher on other routes (minimax 1M/524288 main-lane measured; flash 384K per DeepSeek metadata). Only change shipped: dots3-note-prev ctx 512000→524288 (exact 512K) — ctx truth only; its 262144 output stays (documented routed ceiling). Web-verified model ceilings: dots3-note 524288/49152-benchmark, minimax 1M/524288, glm-5.2 1M/128K, deepseek-v4-flash/pro 1M/384K, qwen-3.8-27b 262K ctx, qwen-3.8-2.4t-a95b 1M ctx. Repro: dot patches clobber ~15 min after apply.
