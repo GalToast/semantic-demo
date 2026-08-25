@@ -55,6 +55,7 @@ export type PointsBuildPayload = import('@lib/workers/mycelium-build-worker').Po
 export type PointsBuildBuffers = import('@lib/workers/mycelium-build-worker').PointsBuildBuffers
 export type DiscoverPayload = import('@lib/workers/mycelium-build-worker').DiscoverPayload
 export type DiscoveredEdgeSets = import('@lib/workers/mycelium-build-worker').DiscoveredEdgeSets
+export type DiscoveredEdgeSetsBuffers = import('@lib/workers/mycelium-build-worker').DiscoveredEdgeSetsBuffers
 export type SerializedAdjacency = import('@lib/workers/mycelium-build-worker').SerializedAdjacency
 export type DiscoverCsrPayload = Omit<DiscoverPayload, 'neighborMap'> & SerializedAdjacency
 
@@ -80,7 +81,7 @@ async function getSingletonWorker(): Promise<Worker | null> {
     const worker = new Worker(url, { type: 'module' })
     worker.onmessage = (e: MessageEvent) => {
         const data = e.data as
-            | ((MyceliumWorkerBuffers | PointsBuildBuffers | { edgeSets: DiscoveredEdgeSets | null }) & {
+            | ((MyceliumWorkerBuffers | PointsBuildBuffers | { edgeSets: DiscoveredEdgeSetsBuffers | null }) & {
                   type?: string
                   requestId?: number
               })
@@ -162,20 +163,20 @@ export async function buildPointsBuffersInWorker(payload: PointsBuildPayload): P
  * pure function), null when discovery legitimately found no edges. */
 export async function discoverMyceliumEdgesInWorker(
     payload: DiscoverCsrPayload
-): Promise<DiscoveredEdgeSets | null | undefined> {
+): Promise<DiscoveredEdgeSetsBuffers | null | undefined> {
     if (typeof Worker === 'undefined') return undefined
     try {
         const worker = await getSingletonWorker()
         if (!worker) return undefined
         const requestId = nextRequestId++
-        return await new Promise<DiscoveredEdgeSets | null | undefined>((res) => {
+        return await new Promise<DiscoveredEdgeSetsBuffers | null | undefined>((res) => {
             const timeout = setTimeout(() => {
                 pending.delete(requestId)
                 res(undefined)
             }, 15000)
             pending.set(requestId, (buffers) => {
                 clearTimeout(timeout)
-                res((buffers as { edgeSets?: DiscoveredEdgeSets | null } | null)?.edgeSets ?? null)
+                res((buffers as { edgeSets?: DiscoveredEdgeSetsBuffers | null } | null)?.edgeSets ?? null)
             })
             const transfer = [payload.recordOffsets.buffer, payload.neighborLeadIdx.buffer, payload.neighborScores.buffer, payload.neighborBridgeScores.buffer, payload.neighborFlags.buffer]
             worker.postMessage({ type: 'DISCOVER_BUILD', requestId, ...payload }, transfer)

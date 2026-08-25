@@ -2,13 +2,15 @@
  * CSR discovery parity: serializeAdjacency → discoverMyceliumEdgesCSR must
  * produce IDENTICAL edge sets to the object-form discoverMyceliumEdges (the
  * sync-fallback wrapper) across classification, dedup, and degree caps.
- * INP campaign 2026-08-25 — transferable adjacency cycle.
+ * INP campaign 2026-08-25 — transferable adjacency + zero-copy response.
  */
 import { describe, expect, it } from 'vitest'
 import {
     discoverMyceliumEdges,
     discoverMyceliumEdgesCSR,
-    serializeAdjacency
+    discoverMyceliumEdgesCSRBuffers,
+    serializeAdjacency,
+    unpairEdges
 } from '../../src/lib/workers/mycelium-build-worker'
 
 const leadIds = ['a', 'b', 'c', 'd']
@@ -97,5 +99,32 @@ describe('discovery CSR ↔ object-form parity', () => {
                 adjacency: structuredClone(serializeAdjacency({ leadIds: [], neighborMap: {} }))
             })
         ).toBeNull()
+    })
+
+    it('buffer form interleaves the same pairs as the object form (zero-copy response)', () => {
+        const adjacency = structuredClone(serializeAdjacency({ leadIds, neighborMap }))
+        const objResult = discoverMyceliumEdgesCSR({
+            leadIds,
+            pointClusters: clusters,
+            adjacency
+        })
+        const bufResult = discoverMyceliumEdgesCSRBuffers({
+            leadIds,
+            pointClusters: clusters,
+            adjacency
+        })
+        if (!objResult) {
+            expect(bufResult).toBeNull()
+            return
+        }
+        expect(bufResult).not.toBeNull()
+        expect(unpairEdges(bufResult!.corePairs)).toEqual(objResult.corePairs)
+        expect(unpairEdges(bufResult!.wispyPairs)).toEqual(objResult.wispyPairs)
+        expect(unpairEdges(bufResult!.bridgePairs)).toEqual(objResult.bridgePairs)
+        // Interleaved invariant: even length, Int32Array (zero-copy transferable).
+        for (const buf of [bufResult!.corePairs, bufResult!.wispyPairs, bufResult!.bridgePairs]) {
+            expect(buf.length % 2).toBe(0)
+            expect(buf).toBeInstanceOf(Int32Array)
+        }
     })
 })

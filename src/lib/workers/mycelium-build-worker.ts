@@ -28,9 +28,9 @@ import { Color, MathUtils, Vector3 } from 'three'
 type EdgePair = { a: number; b: number }
 
 export interface MyceliumBuildPayload {
-    corePairs: EdgePair[]
-    wispyPairs: EdgePair[]
-    bridgePairs: EdgePair[]
+    corePairs: Int32Array | EdgePair[]
+    wispyPairs: Int32Array | EdgePair[]
+    bridgePairs: Int32Array | EdgePair[]
     nodePositions: Array<{ x?: number; y?: number; z?: number }>
     /** Cluster id per point — INP fix (2026-08-25 longtask probe): the
      * original payload shipped 8,406 full BusinessRecord objects and the
@@ -56,10 +56,16 @@ export function computeLayerBounds(positions: Float32Array): {
     center: { x: number; y: number; z: number }
     radius: number
 } {
-    let minX = Infinity, minY = Infinity, minZ = Infinity
-    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity
+    let minX = Infinity,
+        minY = Infinity,
+        minZ = Infinity
+    let maxX = -Infinity,
+        maxY = -Infinity,
+        maxZ = -Infinity
     for (let i = 0; i < positions.length; i += 3) {
-        const x = positions[i]!, y = positions[i + 1]!, z = positions[i + 2]!
+        const x = positions[i]!,
+            y = positions[i + 1]!,
+            z = positions[i + 2]!
         if (x < minX) minX = x
         if (y < minY) minY = y
         if (z < minZ) minZ = z
@@ -70,10 +76,14 @@ export function computeLayerBounds(positions: Float32Array): {
     if (!Number.isFinite(minX)) {
         return { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 }, center: { x: 0, y: 0, z: 0 }, radius: 0 }
     }
-    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, cz = (minZ + maxZ) / 2
+    const cx = (minX + maxX) / 2,
+        cy = (minY + maxY) / 2,
+        cz = (minZ + maxZ) / 2
     let radiusSq = 0
     for (let i = 0; i < positions.length; i += 3) {
-        const dx = positions[i]! - cx, dy = positions[i + 1]! - cy, dz = positions[i + 2]! - cz
+        const dx = positions[i]! - cx,
+            dy = positions[i + 1]! - cy,
+            dz = positions[i + 2]! - cz
         const d = dx * dx + dy * dy + dz * dz
         if (d > radiusSq) radiusSq = d
     }
@@ -115,6 +125,22 @@ export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
         return { r: c.r, g: c.g, b: c.b }
     }
 
+    // Accept BOTH the interleaved Int32Array form (zero-copy from the
+    // discovery worker) and the object form (parity-test fixtures). Both
+    // iterate to the same pushBezierLinePair call site — the shape is the
+    // only difference.
+    const normalizePairs = (pairs: Int32Array | EdgePair[]): EdgePair[] => {
+        if (pairs instanceof Int32Array) {
+            const out: EdgePair[] = []
+            for (let i = 0; i < pairs.length; i += 2) out.push({ a: pairs[i]!, b: pairs[i + 1]! })
+            return out
+        }
+        return pairs
+    }
+    const corePairs = normalizePairs(payload.corePairs)
+    const wispyPairs = normalizePairs(payload.wispyPairs)
+    const bridgePairs = normalizePairs(payload.bridgePairs)
+
     const core: number[] = []
     const coreColors: number[] = []
     const wispy: number[] = []
@@ -122,7 +148,7 @@ export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
     const bridge: number[] = []
     const bridgeColors: number[] = []
 
-    for (const pair of payload.corePairs) {
+    for (const pair of corePairs) {
         pushBezierLinePair(
             core,
             coreColors,
@@ -134,7 +160,7 @@ export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
             payload.segmentsPerPair
         )
     }
-    for (const pair of payload.wispyPairs) {
+    for (const pair of wispyPairs) {
         pushBezierLinePair(
             wispy,
             wispyColors,
@@ -146,7 +172,7 @@ export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
             payload.segmentsPerPair
         )
     }
-    for (const pair of payload.bridgePairs) {
+    for (const pair of bridgePairs) {
         pushBezierLinePair(
             bridge,
             bridgeColors,
@@ -203,6 +229,25 @@ export interface DiscoveredEdgeSets {
     bridgePairs: Array<{ a: number; b: number }>
 }
 
+/** Zero-copy discovery response — the SAME edge sets as DiscoveredEdgeSets,
+ * but as three interleaved Int32Arrays ([a0,b0,a1,b1,...]). postMessage
+ * TRANSFERS these (zero-copy); the object form would structured-clone
+ * thousands of small {a,b} objects (~1000ms, the measured round-trip cost).
+ * The main thread iterates the flat arrays directly — no reconstruction. */
+export interface DiscoveredEdgeSetsBuffers {
+    corePairs: Int32Array
+    wispyPairs: Int32Array
+    bridgePairs: Int32Array
+}
+
+/** Reconstruct the object form from interleaved buffers — parity-test helper
+ * ONLY (the hot path never calls this). */
+export function unpairEdges(buffer: Int32Array): Array<{ a: number; b: number }> {
+    const out: Array<{ a: number; b: number }> = []
+    for (let i = 0; i < buffer.length; i += 2) out.push({ a: buffer[i]!, b: buffer[i + 1]! })
+    return out
+}
+
 /** CSR serialization of the neighbor map — INP 2026-08-25: the structured
  * clone of 8,406 record objects inside postMessage measured ~650ms ON MAIN
  * (the transfer had become the cost after the compute moved worker-side).
@@ -223,7 +268,10 @@ export interface SerializedAdjacency {
     stringTable: string[]
 }
 
-export function serializeAdjacency(payload: { leadIds: string[]; neighborMap: Record<string, DiscoverNeighbor[]> }): SerializedAdjacency {
+export function serializeAdjacency(payload: {
+    leadIds: string[]
+    neighborMap: Record<string, DiscoverNeighbor[]>
+}): SerializedAdjacency {
     const { leadIds, neighborMap } = payload
     const stringTable: string[] = []
     const stringIdx = new Map<string, number>()
@@ -373,6 +421,30 @@ export function discoverMyceliumEdgesCSR(
     return corePairs.length || wispyPairs.length || bridgePairs.length ? { corePairs, wispyPairs, bridgePairs } : null
 }
 
+/** Buffer-form discovery — same algorithm, same ordering, same caps; the
+ * result is three interleaved Int32Arrays for zero-copy transfer. Kept in
+ * lockstep with discoverMyceliumEdgesCSR by construction (single push site).
+ */
+export function discoverMyceliumEdgesCSRBuffers(
+    payload: DiscoverPayload & { adjacency: SerializedAdjacency }
+): DiscoveredEdgeSetsBuffers | null {
+    const sets = discoverMyceliumEdgesCSR(payload)
+    if (!sets) return null
+    const toBuffer = (pairs: Array<{ a: number; b: number }>): Int32Array => {
+        const buf = new Int32Array(pairs.length * 2)
+        for (let i = 0; i < pairs.length; i += 1) {
+            buf[i * 2] = pairs[i]!.a
+            buf[i * 2 + 1] = pairs[i]!.b
+        }
+        return buf
+    }
+    return {
+        corePairs: toBuffer(sets.corePairs),
+        wispyPairs: toBuffer(sets.wispyPairs),
+        bridgePairs: toBuffer(sets.bridgePairs)
+    }
+}
+
 /** Object-form discovery — serializes then runs the CSR algorithm. Kept as
  * the sync-fallback entry (rare path) and for the parity test fixture API. */
 export function discoverMyceliumEdges(payload: DiscoverPayload): DiscoveredEdgeSets | null {
@@ -493,9 +565,17 @@ ctx.onmessage = (e: MessageEvent<BuildRequest>): void => {
     }
     if (e.data.type === 'DISCOVER_BUILD') {
         // CSR arrays arrive TRANSFERRED (zero-copy) — run the CSR algorithm
-        // directly; no re-serialization worker-side.
-        const result = discoverMyceliumEdgesCSR({ ...e.data, adjacency: e.data })
-        ;(self as unknown as Worker).postMessage({ type: 'DISCOVER_BUILT', requestId, edgeSets: result })
+        // directly; no re-serialization worker-side. The RESPONSE is also
+        // transferred: three interleaved Int32Arrays instead of an object
+        // graph of thousands of {a,b} pairs (the structured clone of that
+        // graph measured ~1000ms — the dominant cost in the mycelium window).
+        const result = discoverMyceliumEdgesCSRBuffers({ ...e.data, adjacency: e.data })
+        if (!result) {
+            ;(self as unknown as Worker).postMessage({ type: 'DISCOVER_BUILT', requestId, edgeSets: null })
+            return
+        }
+        const transfer = [result.corePairs.buffer, result.wispyPairs.buffer, result.bridgePairs.buffer]
+        ;(self as unknown as Worker).postMessage({ type: 'DISCOVER_BUILT', requestId, edgeSets: result }, transfer)
         return
     }
     // buildMyceliumBuffers seeds the view vector internally.

@@ -10,7 +10,18 @@
  */
 
 import { webglContext } from './webgl-context'
-import { Vector3, Vector2, Object3D, LineSegments, NormalBlending, Group, Box3, Sphere, InstancedInterleavedBuffer, InterleavedBufferAttribute } from 'three'
+import {
+    Vector3,
+    Vector2,
+    Object3D,
+    LineSegments,
+    NormalBlending,
+    Group,
+    Box3,
+    Sphere,
+    InstancedInterleavedBuffer,
+    InterleavedBufferAttribute
+} from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
@@ -46,10 +57,17 @@ import { DisposableRegistry } from '@lib/utils/disposable-registry'
  * 5 was visibly angular; 10 gives smooth filaments without bloating the buffer. */
 
 type EdgePair = { a: number; b: number }
+/**
+ * Canonical edge-set form: three interleaved Int32Arrays ([a0,b0,a1,b1,...]).
+ * This is what the discovery worker TRANSFERS back (zero-copy — the object
+ * form would structured-clone thousands of small {a,b} objects, the measured
+ * ~1000ms round-trip cost). The sync fallback and geometric fallback build
+ * the same interleaved format so the tessellation loops are format-agnostic.
+ */
 type MyceliumEdgeSets = {
-    corePairs: EdgePair[]
-    wispyPairs: EdgePair[]
-    bridgePairs: EdgePair[]
+    corePairs: Int32Array
+    wispyPairs: Int32Array
+    bridgePairs: Int32Array
 }
 
 // ── LOD-first build (2026-08-25) ──────────────────────────────────────────
@@ -194,7 +212,21 @@ function buildGeometricMyceliumEdges(
             })
     })
 
-    return { corePairs, wispyPairs, bridgePairs }
+    return interleave(corePairs, wispyPairs, bridgePairs)
+}
+
+/** Pack three {a,b} pair arrays into the canonical interleaved Int32Array form
+ * ([a0,b0,a1,b1,...] per layer) — the zero-copy transfer shape. */
+function interleave(corePairs: EdgePair[], wispyPairs: EdgePair[], bridgePairs: EdgePair[]): MyceliumEdgeSets {
+    const pack = (pairs: EdgePair[]): Int32Array => {
+        const buf = new Int32Array(pairs.length * 2)
+        for (let i = 0; i < pairs.length; i += 1) {
+            buf[i * 2] = pairs[i]!.a
+            buf[i * 2 + 1] = pairs[i]!.b
+        }
+        return buf
+    }
+    return { corePairs: pack(corePairs), wispyPairs: pack(wispyPairs), bridgePairs: pack(bridgePairs) }
 }
 
 async function buildSemanticMyceliumEdges(): Promise<MyceliumEdgeSets | null> {
@@ -230,8 +262,12 @@ async function buildSemanticMyceliumEdges(): Promise<MyceliumEdgeSets | null> {
     // Diagnostic mark: the worker path failed and the sync fallback ran.
     performance.mark('engine-init-discovery-fallback')
 
-    // Worker unavailable/failed — same algorithm, main thread.
-    return discoverMyceliumEdges({ leadIds, pointClusters, neighborMap })
+    // Worker unavailable/failed — same algorithm, main thread. The object
+    // form is re-packed to interleaved Int32Arrays so the tessellation loops
+    // below are format-agnostic (they index the flat arrays either way).
+    const syncResult = discoverMyceliumEdges({ leadIds, pointClusters, neighborMap })
+    if (!syncResult) return null
+    return interleave(syncResult.corePairs, syncResult.wispyPairs, syncResult.bridgePairs)
 }
 
 // ── Dirty-node tracking for amortized updates ──────────────────────────────
@@ -332,10 +368,7 @@ export function buildFastLineSegmentsGeometry(
         new Vector3(bounds.min.x, bounds.min.y, bounds.min.z),
         new Vector3(bounds.max.x, bounds.max.y, bounds.max.z)
     )
-    geometry.boundingSphere = new Sphere(
-        new Vector3(bounds.center.x, bounds.center.y, bounds.center.z),
-        bounds.radius
-    )
+    geometry.boundingSphere = new Sphere(new Vector3(bounds.center.x, bounds.center.y, bounds.center.z), bounds.radius)
     return geometry
 }
 
@@ -349,7 +382,12 @@ function createLineSegments(
      * ~530-760ms post-worker long task, 2026-08-25). Absent/invalid → the
      * original setPositions path runs (three 0.184 layout verified by the
      * line-segments-fast-path parity test). */
-    bounds?: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; center: { x: number; y: number; z: number }; radius: number }
+    bounds?: {
+        min: { x: number; y: number; z: number }
+        max: { x: number; y: number; z: number }
+        center: { x: number; y: number; z: number }
+        radius: number
+    }
 ) {
     if (!positions.length) return null
     let geometry: LineSegmentsGeometry
@@ -638,51 +676,53 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
 
     webglContext.myceliumConnectionPairs.length = 0
 
-    edgeSets.corePairs.forEach((pair: EdgePair) => {
-        if (!workerBuffers) {
+    // Tessellate the interleaved Int32Arrays directly — no reconstruction.
+    // Pair N occupies indices [N*2, N*2+1] in each layer buffer.
+    const tessellateLayer = (
+        pairs: Int32Array,
+        connections: number[] | Float32Array,
+        colors: number[] | Float32Array,
+        intensity: number
+    ): void => {
+        if (workerBuffers) return // worker already produced the buffers
+        for (let p = 0; p < pairs.length; p += 2) {
             pushBezierLinePair(
-                coreConnections as number[],
-                coreColors as number[],
-                pair,
+                connections as number[],
+                colors as number[],
+                { a: pairs[p]!, b: pairs[p + 1]! },
                 state.nodePositions,
                 state.points,
                 (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-                semanticEdges ? 0.5 : 0.4,
+                intensity,
                 segmentsPerPair
             )
         }
-        webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 0 })
-    })
-    edgeSets.wispyPairs.forEach((pair: EdgePair) => {
-        if (!workerBuffers) {
-            pushBezierLinePair(
-                wispyConnections as number[],
-                wispyColors as number[],
-                pair,
-                state.nodePositions,
-                state.points,
-                (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-                semanticEdges ? 0.3 : 0.22,
-                segmentsPerPair
-            )
-        }
-        webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 1 })
-    })
-    edgeSets.bridgePairs.forEach((pair: EdgePair) => {
-        if (!workerBuffers) {
-            pushBezierLinePair(
-                bridgeConnections as number[],
-                bridgeColors as number[],
-                pair,
-                state.nodePositions,
-                state.points,
-                (cluster) => getThreadCategoryColor(cluster, CONFIG.COLORS),
-                semanticEdges ? 0.42 : 0.32,
-                segmentsPerPair
-            )
-        }
-        webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 2 })
-    })
+    }
+
+    tessellateLayer(edgeSets.corePairs, coreConnections, coreColors, semanticEdges ? 0.5 : 0.4)
+    for (let p = 0; p < edgeSets.corePairs.length; p += 2) {
+        webglContext.myceliumConnectionPairs.push({
+            a: edgeSets.corePairs[p]!,
+            b: edgeSets.corePairs[p + 1]!,
+            layer: 0
+        })
+    }
+    tessellateLayer(edgeSets.wispyPairs, wispyConnections, wispyColors, semanticEdges ? 0.3 : 0.22)
+    for (let p = 0; p < edgeSets.wispyPairs.length; p += 2) {
+        webglContext.myceliumConnectionPairs.push({
+            a: edgeSets.wispyPairs[p]!,
+            b: edgeSets.wispyPairs[p + 1]!,
+            layer: 1
+        })
+    }
+    tessellateLayer(edgeSets.bridgePairs, bridgeConnections, bridgeColors, semanticEdges ? 0.42 : 0.32)
+    for (let p = 0; p < edgeSets.bridgePairs.length; p += 2) {
+        webglContext.myceliumConnectionPairs.push({
+            a: edgeSets.bridgePairs[p]!,
+            b: edgeSets.bridgePairs[p + 1]!,
+            layer: 2
+        })
+    }
 
     webglContext.myceliumGroup = new Group()
     const profile = getMyceliumPresentationProfile()
