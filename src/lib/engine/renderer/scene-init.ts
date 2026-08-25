@@ -16,6 +16,7 @@ import {
     HemisphereLight,
     DirectionalLight,
     AmbientLight,
+    IcosahedronGeometry,
     SphereGeometry,
     MeshBasicMaterial,
     Mesh,
@@ -153,7 +154,14 @@ export async function buildThreeScene(
     glowSphere.name = 'semantic-depth-atmosphere'
     scene.add(glowSphere)
 
-    const refGeo = new SphereGeometry(2.35, 48, 24)
+    // Bug (QA tour 2026-08-24): the lat/long wireframe's 48 meridians all
+    // converge at the sphere poles — under AdditiveBlending the overlapping
+    // segments saturate to a bright white "starburst" that lands bottom-center
+    // in the overview camera. Geodesic icosahedron wireframe distributes lines
+    // uniformly (no convergence point) while keeping the depth-reference
+    // function and the same material/opacity contract (frame-updates only
+    // mutates material.opacity).
+    const refGeo = new IcosahedronGeometry(2.35, 3)
     const refMat = new MeshBasicMaterial({
         color: SCENE_PALETTE.threadTint,
         wireframe: true,
