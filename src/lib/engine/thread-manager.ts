@@ -17,7 +17,7 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { appState as state } from '@lib/state/app.svelte'
 import { pointIndexByLeadId } from '@lib/data-store'
 import { buildMyceliumBuffersInWorker, discoverMyceliumEdgesInWorker } from './mycelium-worker-client'
-import { discoverMyceliumEdges } from '@lib/workers/mycelium-build-worker'
+import { discoverMyceliumEdges, serializeAdjacency } from '@lib/workers/mycelium-build-worker'
 import type { MyceliumWorkerBuffers } from './mycelium-worker-client'
 import { CONFIG } from './config'
 import { disposeObject3D } from './resource-tracker'
@@ -215,10 +215,20 @@ async function buildSemanticMyceliumEdges(): Promise<MyceliumEdgeSets | null> {
         neighborMap[leadId] = record.neighbors
     })
 
-    const workerResult = await discoverMyceliumEdgesInWorker({ leadIds, pointClusters, neighborMap })
+    // Serialize to CSR typed arrays — TRANSFERRED zero-copy (the object-graph
+    // structured clone measured ~650ms on main; the CSR pass is a single O(n)
+    // loop). The fallback re-serializes from the intact object map.
+    const adjacency = serializeAdjacency({ leadIds, neighborMap })
+    const workerResult = await discoverMyceliumEdgesInWorker({
+        leadIds,
+        pointClusters,
+        ...adjacency
+    })
     if (workerResult !== undefined) {
         return workerResult
     }
+    // Diagnostic mark: the worker path failed and the sync fallback ran.
+    performance.mark('engine-init-discovery-fallback')
 
     // Worker unavailable/failed — same algorithm, main thread.
     return discoverMyceliumEdges({ leadIds, pointClusters, neighborMap })

@@ -49,6 +49,8 @@ export type PointsBuildPayload = import('@lib/workers/mycelium-build-worker').Po
 export type PointsBuildBuffers = import('@lib/workers/mycelium-build-worker').PointsBuildBuffers
 export type DiscoverPayload = import('@lib/workers/mycelium-build-worker').DiscoverPayload
 export type DiscoveredEdgeSets = import('@lib/workers/mycelium-build-worker').DiscoveredEdgeSets
+export type SerializedAdjacency = import('@lib/workers/mycelium-build-worker').SerializedAdjacency
+export type DiscoverCsrPayload = Omit<DiscoverPayload, 'neighborMap'> & SerializedAdjacency
 
 type PendingResolve = (buffers: MyceliumWorkerBuffers | null) => void
 
@@ -148,10 +150,12 @@ export async function buildPointsBuffersInWorker(payload: PointsBuildPayload): P
 }
 
 /** Run semantic edge DISCOVERY off-thread (the ~900ms main-thread task —
- * longtask attribution 2026-08-25). Resolves null on ANY failure — callers
- * must fall back to the main-thread pure function (same implementation). */
+ * longtask attribution 2026-08-25). CSR arrays are TRANSFERRED (zero-copy —
+ * the structured clone of the object graph measured ~650ms on main).
+ * Resolves undefined on ANY failure (caller falls back to the main-thread
+ * pure function), null when discovery legitimately found no edges. */
 export async function discoverMyceliumEdgesInWorker(
-    payload: DiscoverPayload
+    payload: DiscoverCsrPayload
 ): Promise<DiscoveredEdgeSets | null | undefined> {
     if (typeof Worker === 'undefined') return undefined
     try {
@@ -167,7 +171,8 @@ export async function discoverMyceliumEdgesInWorker(
                 clearTimeout(timeout)
                 res((buffers as { edgeSets?: DiscoveredEdgeSets | null } | null)?.edgeSets ?? null)
             })
-            worker.postMessage({ type: 'DISCOVER_BUILD', requestId, ...payload })
+            const transfer = [payload.recordOffsets.buffer, payload.neighborLeadIdx.buffer, payload.neighborScores.buffer, payload.neighborBridgeScores.buffer, payload.neighborFlags.buffer]
+            worker.postMessage({ type: 'DISCOVER_BUILD', requestId, ...payload }, transfer)
         })
     } catch {
         return undefined

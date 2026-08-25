@@ -149,13 +149,103 @@ export interface DiscoveredEdgeSets {
     bridgePairs: Array<{ a: number; b: number }>
 }
 
-/** Pure discovery — the EXACT algorithm from thread-manager's
- * buildSemanticMyceliumEdges (thresholds, sort-by-score top-20, seen-set,
- * per-layer degree caps). No yields: workers don't block anything. */
-export function discoverMyceliumEdges(payload: DiscoverPayload): DiscoveredEdgeSets | null {
-    const { leadIds, pointClusters, neighborMap } = payload
+/** CSR serialization of the neighbor map — INP 2026-08-25: the structured
+ * clone of 8,406 record objects inside postMessage measured ~650ms ON MAIN
+ * (the transfer had become the cost after the compute moved worker-side).
+ * Typed arrays transfer ZERO-COPY. threadType's bridge-includes check is
+ * precomputed to a flag bit at serialization (data-static). */
+export interface SerializedAdjacency {
+    /** CSR offsets: record i's neighbors occupy [offsets[i], offsets[i+1]).
+     * Indexed by POINT index (records exist only for points with a leadId
+     * present in the neighbor map — missing = empty range). */
+    recordOffsets: Int32Array
+    /** Per-neighbor string-table index of the neighbor's leadId. */
+    neighborLeadIdx: Int32Array
+    neighborScores: Float32Array
+    neighborBridgeScores: Float32Array
+    /** bit0 = sameCity, bit1 = threadType.toLowerCase().includes('bridge'). */
+    neighborFlags: Uint8Array
+    /** Unique leadIds (points + neighbors). neighborLeadIdx indexes this. */
+    stringTable: string[]
+}
+
+export function serializeAdjacency(payload: { leadIds: string[]; neighborMap: Record<string, DiscoverNeighbor[]> }): SerializedAdjacency {
+    const { leadIds, neighborMap } = payload
+    const stringTable: string[] = []
+    const stringIdx = new Map<string, number>()
+    const intern = (s: string): number => {
+        let idx = stringIdx.get(s)
+        if (idx === undefined) {
+            idx = stringTable.length
+            stringIdx.set(s, idx)
+            stringTable.push(s)
+        }
+        return idx
+    }
+    for (const leadId of leadIds) if (leadId) intern(leadId)
+
+    const n = leadIds.length
+    const recordRows: Array<Array<{ leadIdx: number; score: number; bridge: number; flags: number }>> = new Array(n)
+    for (let i = 0; i < n; i += 1) {
+        const leadId = leadIds[i]
+        const record = leadId ? neighborMap[leadId] : undefined
+        const row: Array<{ leadIdx: number; score: number; bridge: number; flags: number }> = []
+        if (record) {
+            for (const neighbor of record) {
+                const nl = String(neighbor.leadId ?? '')
+                if (!nl) continue
+                row.push({
+                    leadIdx: intern(nl),
+                    score: Number.isFinite(neighbor.semanticScore) ? neighbor.semanticScore! : 0,
+                    bridge: Number.isFinite(neighbor.bridgeScore) ? neighbor.bridgeScore! : 0,
+                    flags:
+                        (neighbor.sameCity ? 1 : 0) |
+                        (String(neighbor.threadType || '')
+                            .toLowerCase()
+                            .includes('bridge')
+                            ? 2
+                            : 0)
+                })
+            }
+        }
+        recordRows[i] = row
+    }
+
+    let total = 0
+    for (const row of recordRows) total += row.length
+    const recordOffsets = new Int32Array(n + 1)
+    const neighborLeadIdx = new Int32Array(total)
+    const neighborScores = new Float32Array(total)
+    const neighborBridgeScores = new Float32Array(total)
+    const neighborFlags = new Uint8Array(total)
+    let cursor = 0
+    for (let i = 0; i < n; i += 1) {
+        recordOffsets[i] = cursor
+        for (const cell of recordRows[i]!) {
+            neighborLeadIdx[cursor] = cell.leadIdx
+            neighborScores[cursor] = cell.score
+            neighborBridgeScores[cursor] = cell.bridge
+            neighborFlags[cursor] = cell.flags
+            cursor += 1
+        }
+    }
+    recordOffsets[n] = cursor
+    return { recordOffsets, neighborLeadIdx, neighborScores, neighborBridgeScores, neighborFlags, stringTable }
+}
+
+/** CSR-form discovery — the algorithm over the serialized adjacency. The
+ * per-record top-20-by-score selection sorts an index slice (same ordering
+ * semantics as the object form: score desc, stable within equal scores). */
+export function discoverMyceliumEdgesCSR(
+    payload: DiscoverPayload & { adjacency: SerializedAdjacency }
+): DiscoveredEdgeSets | null {
+    const { leadIds, pointClusters, adjacency } = payload
     if (!leadIds.length) return null
-    // pointIndexByLeadId rebuilt from array positions (leadIds[i] ↔ index i).
+    const { recordOffsets, neighborLeadIdx, neighborScores, neighborBridgeScores, neighborFlags, stringTable } =
+        adjacency
+    // pointIndexByLeadId: leadId string-table index → point index.
+    const leadStrToTable = new Map<string, number>()
+    for (let t = 0; t < stringTable.length; t += 1) leadStrToTable.set(stringTable[t]!, t)
     const pointIndex = new Map<string, number>()
     for (let i = 0; i < leadIds.length; i += 1) {
         const leadId = leadIds[i]
@@ -170,59 +260,71 @@ export function discoverMyceliumEdges(payload: DiscoverPayload): DiscoveredEdgeS
     const coreDegree = new Map<number, number>()
     const wispyDegree = new Map<number, number>()
     const bridgeDegree = new Map<number, number>()
+    const order: number[] = []
 
     for (let index = 0; index < leadIds.length; index += 1) {
         const leadId = leadIds[index]
         if (!leadId) continue
-        const record = neighborMap[leadId]
-        const sortedNeighbors = [...(record || [])]
-            .sort((a, b) => (b.semanticScore || 0) - (a.semanticScore || 0))
-            .slice(0, 20)
-        sortedNeighbors.forEach((neighbor) => {
-            const otherIndex = pointIndex.get(String(neighbor.leadId))
-            if (otherIndex === undefined || otherIndex === index) return
+        const from = recordOffsets[index]!
+        const to = recordOffsets[index + 1]!
+        if (to <= from) continue
+        order.length = 0
+        for (let k = from; k < to; k += 1) order.push(k)
+        // Score desc; Array.prototype.sort is stable → ties keep CSR order,
+        // matching the object form's stable sort of the source array.
+        order.sort((ka, kb) => (neighborScores[kb!] || 0) - (neighborScores[ka!] || 0))
+        const top = order.slice(0, 20)
+        for (const k of top) {
+            const neighborLead = stringTable[neighborLeadIdx[k!]!]
+            const otherIndex = neighborLead ? pointIndex.get(neighborLead) : undefined
+            if (otherIndex === undefined || otherIndex === index) continue
             const key = pairKey(index, otherIndex)
-            if (seen.has(key)) return
+            if (seen.has(key)) continue
             seen.add(key)
-            const semanticScore = Number.isFinite(neighbor.semanticScore) ? neighbor.semanticScore! : 0
-            const bridgeScore = Number.isFinite(neighbor.bridgeScore) ? neighbor.bridgeScore! : 0
+            const semanticScore = neighborScores[k!]!
+            const bridgeScore = neighborBridgeScores[k!]!
             const sameCluster = pointClusters[index] === pointClusters[otherIndex]
-            const sameCity = !!neighbor.sameCity
-            const bridgeLike =
-                String(neighbor.threadType || '')
-                    .toLowerCase()
-                    .includes('bridge') || bridgeScore >= 0.62
+            const sameCity = (neighborFlags[k!]! & 1) !== 0
+            const bridgeLike = (neighborFlags[k!]! & 2) !== 0 || bridgeScore >= 0.62
 
             if (!sameCluster) {
-                if (!bridgeLike) return
+                if (!bridgeLike) continue
                 const aDegree = bridgeDegree.get(index) || 0
                 const bDegree = bridgeDegree.get(otherIndex) || 0
-                if (aDegree >= 2 || bDegree >= 2) return
+                if (aDegree >= 2 || bDegree >= 2) continue
                 bridgeDegree.set(index, aDegree + 1)
                 bridgeDegree.set(otherIndex, bDegree + 1)
                 bridgePairs.push({ a: index, b: otherIndex })
-                return
+                continue
             }
 
             if (semanticScore >= 0.62 || (semanticScore >= 0.56 && sameCity)) {
                 const aDegree = coreDegree.get(index) || 0
                 const bDegree = coreDegree.get(otherIndex) || 0
-                if (aDegree >= 4 || bDegree >= 4) return
+                if (aDegree >= 4 || bDegree >= 4) continue
                 coreDegree.set(index, aDegree + 1)
                 coreDegree.set(otherIndex, bDegree + 1)
                 corePairs.push({ a: index, b: otherIndex })
             } else if (semanticScore >= 0.42 || sameCity) {
                 const aDegree = wispyDegree.get(index) || 0
                 const bDegree = wispyDegree.get(otherIndex) || 0
-                if (aDegree >= 5 || bDegree >= 5) return
+                if (aDegree >= 5 || bDegree >= 5) continue
                 wispyDegree.set(index, aDegree + 1)
                 wispyDegree.set(otherIndex, bDegree + 1)
                 wispyPairs.push({ a: index, b: otherIndex })
             }
-        })
+        }
     }
 
     return corePairs.length || wispyPairs.length || bridgePairs.length ? { corePairs, wispyPairs, bridgePairs } : null
+}
+
+/** Object-form discovery — serializes then runs the CSR algorithm. Kept as
+ * the sync-fallback entry (rare path) and for the parity test fixture API. */
+export function discoverMyceliumEdges(payload: DiscoverPayload): DiscoveredEdgeSets | null {
+    if (!payload.leadIds.length) return null
+    const adjacency = serializeAdjacency(payload)
+    return discoverMyceliumEdgesCSR({ ...payload, adjacency })
 }
 
 // ── Points build (INP 2026-08-25: createPoints per-point loop, +394ms) ──
@@ -325,7 +427,7 @@ const ctx = self as unknown as WorkerAPI
 type BuildRequest =
     | (MyceliumBuildPayload & { type: 'BUILD'; requestId?: number })
     | (PointsBuildPayload & { type: 'POINTS_BUILD'; requestId?: number })
-    | (DiscoverPayload & { type: 'DISCOVER_BUILD'; requestId?: number })
+    | (DiscoverPayload & SerializedAdjacency & { type: 'DISCOVER_BUILD'; requestId?: number })
 
 ctx.onmessage = (e: MessageEvent<BuildRequest>): void => {
     const requestId = e.data.requestId ?? 0
@@ -336,7 +438,9 @@ ctx.onmessage = (e: MessageEvent<BuildRequest>): void => {
         return
     }
     if (e.data.type === 'DISCOVER_BUILD') {
-        const result = discoverMyceliumEdges(e.data)
+        // CSR arrays arrive TRANSFERRED (zero-copy) — run the CSR algorithm
+        // directly; no re-serialization worker-side.
+        const result = discoverMyceliumEdgesCSR({ ...e.data, adjacency: e.data })
         ;(self as unknown as Worker).postMessage({ type: 'DISCOVER_BUILT', requestId, edgeSets: result })
         return
     }
