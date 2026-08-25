@@ -36,6 +36,11 @@ async function resolveWorkerUrl(): Promise<string> {
 }
 
 export interface MyceliumWorkerBuffers {
+    layerBounds: {
+        core: LayerBounds
+        wispy: LayerBounds
+        bridge: LayerBounds
+    }
     core: Float32Array
     wispy: Float32Array
     bridge: Float32Array
@@ -45,6 +50,7 @@ export interface MyceliumWorkerBuffers {
 }
 
 export type MyceliumBuildPayload = import('@lib/workers/mycelium-build-worker').MyceliumBuildPayload
+type LayerBounds = import('@lib/workers/mycelium-build-worker').LayerBounds
 export type PointsBuildPayload = import('@lib/workers/mycelium-build-worker').PointsBuildPayload
 export type PointsBuildBuffers = import('@lib/workers/mycelium-build-worker').PointsBuildBuffers
 export type DiscoverPayload = import('@lib/workers/mycelium-build-worker').DiscoverPayload

@@ -10,7 +10,7 @@
  */
 
 import { webglContext } from './webgl-context'
-import { Vector3, Vector2, Object3D, LineSegments, NormalBlending, Group } from 'three'
+import { Vector3, Vector2, Object3D, LineSegments, NormalBlending, Group, Box3, Sphere, InstancedInterleavedBuffer, InterleavedBufferAttribute } from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
@@ -295,17 +295,82 @@ export function getGroupLineSegmentCount(group: Group) {
     return total
 }
 
+export type LayerBounds = {
+    min: { x: number; y: number; z: number }
+    max: { x: number; y: number; z: number }
+    center: { x: number; y: number; z: number }
+    radius: number
+}
+
+/**
+ * Fast-path LineSegmentsGeometry construction: mirrors three 0.184
+ * setPositions/setColors internals (InstancedInterleavedBuffer stride 6,
+ * instanceStart/End + instanceColorStart/End at offsets 0/3) but assigns
+ * PRECOMPUTED bounds instead of running the O(n) computeBoundingBox/
+ * computeBoundingSphere (~530-760ms post-worker long task, 2026-08-25).
+ * Returns null when the input fails sanity (caller falls back to
+ * setPositions); the layout assumption is CI-guarded by
+ * line-segments-fast-path parity test against the INSTALLED three.
+ */
+export function buildFastLineSegmentsGeometry(
+    positions: Float32Array,
+    colors: Float32Array,
+    bounds: LayerBounds
+): LineSegmentsGeometry | null {
+    if (positions.length === 0 || positions.length % 6 !== 0) return null
+    if (!Number.isFinite(bounds.radius) || !Number.isFinite(bounds.min.x)) return null
+    const geometry = new LineSegmentsGeometry()
+    const instanceBuffer = new InstancedInterleavedBuffer(positions, 6, 1)
+    geometry.setAttribute('instanceStart', new InterleavedBufferAttribute(instanceBuffer, 3, 0))
+    geometry.setAttribute('instanceEnd', new InterleavedBufferAttribute(instanceBuffer, 3, 3))
+    geometry.instanceCount = instanceBuffer.count
+    if (geometry.instanceCount !== positions.length / 6) return null
+    const colorBuffer = new InstancedInterleavedBuffer(colors, 6, 1)
+    geometry.setAttribute('instanceColorStart', new InterleavedBufferAttribute(colorBuffer, 3, 0))
+    geometry.setAttribute('instanceColorEnd', new InterleavedBufferAttribute(colorBuffer, 3, 3))
+    geometry.boundingBox = new Box3(
+        new Vector3(bounds.min.x, bounds.min.y, bounds.min.z),
+        new Vector3(bounds.max.x, bounds.max.y, bounds.max.z)
+    )
+    geometry.boundingSphere = new Sphere(
+        new Vector3(bounds.center.x, bounds.center.y, bounds.center.z),
+        bounds.radius
+    )
+    return geometry
+}
+
 function createLineSegments(
     positions: number[] | Float32Array,
     colors: number[] | Float32Array,
     opacity: number,
-    linewidth: number
+    linewidth: number,
+    /** Precomputed layer bounds from the geometry worker — lets the fast path
+     * SKIP setPositions' O(n) computeBoundingBox/computeBoundingSphere (the
+     * ~530-760ms post-worker long task, 2026-08-25). Absent/invalid → the
+     * original setPositions path runs (three 0.184 layout verified by the
+     * line-segments-fast-path parity test). */
+    bounds?: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; center: { x: number; y: number; z: number }; radius: number }
 ) {
     if (!positions.length) return null
-    const geometry = new LineSegmentsGeometry()
-    geometry.setPositions(positions)
-    if (colors.length) {
-        geometry.setColors(colors)
+    let geometry: LineSegmentsGeometry
+    let colorsApplied = false
+    if (bounds !== undefined && positions instanceof Float32Array && colors instanceof Float32Array) {
+        const fast = buildFastLineSegmentsGeometry(positions, colors, bounds)
+        if (fast) {
+            geometry = fast
+            colorsApplied = true // fast path sets instanceColorStart/End itself
+        } else {
+            // Layout sanity rejected the input (three upgrade) — original path.
+            geometry = new LineSegmentsGeometry()
+        }
+    } else {
+        geometry = new LineSegmentsGeometry()
+    }
+    if (!colorsApplied) {
+        geometry.setPositions(positions)
+        if (colors.length) {
+            geometry.setColors(colors)
+        }
     }
     // The @types/three LineMaterial has a stricter parameters type than
     // the runtime export of the same class. Cast to the constructor's
@@ -623,19 +688,22 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
         coreConnections,
         coreColors,
         profile.core,
-        profile.linewidth.core
+        profile.linewidth.core,
+        workerBuffers?.layerBounds.core
     )
     webglContext.myceliumWispyLines = createLineSegments(
         wispyConnections,
         wispyColors,
         profile.wispy,
-        profile.linewidth.wispy
+        profile.linewidth.wispy,
+        workerBuffers?.layerBounds.wispy
     )
     webglContext.myceliumBridgeLines = createLineSegments(
         bridgeConnections,
         bridgeColors,
         profile.bridge,
-        profile.linewidth.bridge
+        profile.linewidth.bridge,
+        workerBuffers?.layerBounds.bridge
     )
 
     if (webglContext.myceliumCoreLines) webglContext.myceliumGroup.add(webglContext.myceliumCoreLines)

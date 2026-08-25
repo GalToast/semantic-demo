@@ -45,8 +45,56 @@ export interface MyceliumBuildPayload {
     segmentsPerPair: number
 }
 
+/** Per-layer bounding box + sphere in three's Box3/Sphere semantics — lets
+ * the main thread SKIP LineSegmentsGeometry.setPositions' O(n)
+ * computeBoundingBox/computeBoundingSphere (the ~530-760ms post-worker
+ * long task, 2026-08-25). Radius = max endpoint distance from center
+ * (matches three's algorithm; an upper bound is required for culling). */
+export function computeLayerBounds(positions: Float32Array): {
+    min: { x: number; y: number; z: number }
+    max: { x: number; y: number; z: number }
+    center: { x: number; y: number; z: number }
+    radius: number
+} {
+    let minX = Infinity, minY = Infinity, minZ = Infinity
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = positions[i]!, y = positions[i + 1]!, z = positions[i + 2]!
+        if (x < minX) minX = x
+        if (y < minY) minY = y
+        if (z < minZ) minZ = z
+        if (x > maxX) maxX = x
+        if (y > maxY) maxY = y
+        if (z > maxZ) maxZ = z
+    }
+    if (!Number.isFinite(minX)) {
+        return { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 }, center: { x: 0, y: 0, z: 0 }, radius: 0 }
+    }
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, cz = (minZ + maxZ) / 2
+    let radiusSq = 0
+    for (let i = 0; i < positions.length; i += 3) {
+        const dx = positions[i]! - cx, dy = positions[i + 1]! - cy, dz = positions[i + 2]! - cz
+        const d = dx * dx + dy * dy + dz * dz
+        if (d > radiusSq) radiusSq = d
+    }
+    return {
+        min: { x: minX, y: minY, z: minZ },
+        max: { x: maxX, y: maxY, z: maxZ },
+        center: { x: cx, y: cy, z: cz },
+        radius: Math.sqrt(radiusSq)
+    }
+}
+
 /** Pure build function — exported for unit-test parity checks (no worker spawn). */
+export interface LayerBounds {
+    min: { x: number; y: number; z: number }
+    max: { x: number; y: number; z: number }
+    center: { x: number; y: number; z: number }
+    radius: number
+}
+
 export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
+    layerBounds: { core: LayerBounds; wispy: LayerBounds; bridge: LayerBounds }
     core: Float32Array
     wispy: Float32Array
     bridge: Float32Array
@@ -111,7 +159,13 @@ export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
         )
     }
 
+    const layerBounds = {
+        core: computeLayerBounds(new Float32Array(core)),
+        wispy: computeLayerBounds(new Float32Array(wispy)),
+        bridge: computeLayerBounds(new Float32Array(bridge))
+    }
     return {
+        layerBounds,
         core: new Float32Array(core),
         wispy: new Float32Array(wispy),
         bridge: new Float32Array(bridge),
