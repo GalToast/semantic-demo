@@ -44,6 +44,14 @@ export function pairKey(a: number, b: number): string {
 
 // ── Bezier view cache (module-level state carried WITH its setter) ──
 let _cachedBezierViewVector: Vector3 | null = null
+
+/** Worker-build hook: seed the view-vector cache from the main thread.
+ * Workers have no camera — without this, control points fall back to the
+ * default view vector and bezier arcs differ from camera-refreshed builds.
+ * Mirrors the test-hook pattern (__resetCanvasKeyboardDebounce). */
+export function seedBezierViewVector(v: { x: number; y: number; z: number }): void {
+    _cachedBezierViewVector = new Vector3(v.x, v.y, v.z)
+}
 let _disposeBezierViewRefresh: (() => void) | null = null
 
 /** Refresh _cachedBezierViewVector from the current camera position. */
