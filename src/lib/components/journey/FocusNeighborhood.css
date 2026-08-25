@@ -165,10 +165,13 @@
 .focus-stage-neighbor-reason {
     font-size: 0.72rem;
     color: var(--color-text-teal-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 200px;
+    white-space: normal;
 }
 .focus-stage-neighbor-actions {
     display: flex;
@@ -216,9 +219,6 @@
     }
     .focus-stage-neighbor-name {
         font-size: 0.6rem;
-    }
-    .focus-stage-neighbor-reason {
-        max-width: 180px;
     }
     .focus-stage-neighbor-actions {
         flex-direction: column;

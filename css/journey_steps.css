@@ -502,11 +502,16 @@ body[data-panel-surface]:not(.surface-map-any)[data-strand-journey='exploring']
 }
 
 .focus-stage-neighbor-reason {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
     color: #b0c8c8;
     font-size: 0.72rem;
+    line-height: 1.3;
+    line-clamp: 2;
 }
 
 .focus-stage-neighbor-actions {

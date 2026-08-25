@@ -158,12 +158,13 @@
     min-height: 44px;
     margin-top: 0.5rem;
     padding: 0 1rem;
-    /* Keep the footer sticky on the desktop/search-list surface. Compact
-       panel-contained sheets override this below so the footer cannot paint
-       over the last result's hit area. */
-    position: sticky;
-    bottom: 0;
-    z-index: var(--z-base);
+    /* Stickiness caused the button to clip behind panel chrome on desktop
+       search surfaces where the parent has overflow:hidden padding. Use
+       static positioning so the button is always the last list item and
+       remains fully visible without needing extra scroll. Mobile sheet
+       override below is now redundant but kept for specificity. */
+    position: static;
+    z-index: auto;
     background: rgba(var(--color-surface-chrome-rgb), 0.96);
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
     border-radius: 0.4rem;

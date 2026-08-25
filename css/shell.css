@@ -493,6 +493,16 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-tile-pane 
     filter: saturate(0.86) brightness(0.68) contrast(1.12);
 }
 
+/* W69: leaflet fade opacity fix — Leaflet's JS tile fade sets inline opacity:0
+   then animates to 1 via requestAnimationFrame. On some Chromium / headless
+   paths the rAF never fires (map is hidden during handoff), leaving every
+   .leaflet-tile-loaded at inline opacity:0 and the basemap appears black.
+   Force loaded tiles to visible regardless of JS animation state. */
+#map-container .leaflet-tile.leaflet-tile-loaded {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
 #map-container .leaflet-control-zoom.leaflet-bar {
     border: 1px solid var(--color-primary-soft);
     border-radius: var(--radius-normal);
