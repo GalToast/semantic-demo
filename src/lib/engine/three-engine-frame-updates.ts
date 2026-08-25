@@ -82,6 +82,30 @@ export function computeRevealProgress(now: number): { revealed: number; points: 
     return { revealed, points, camera }
 }
 
+// ── Overview wash attenuation (2026-08-25, QA-tour 'washed-out overview bloom') ─
+//
+// At overview distances the 8,406 soft additive point/spore sprites sum into a
+// pastel veil that hides individual dots (W60 fought the same symptom via
+// exposure; the QA tour flagged it again). Attenuate opacity/size smoothly
+// between the start/full camera distances so zooming in restores the full
+// glow. Missing camera (unit-test proxies) → factor 1, no attenuation.
+const WASH_ATTENUATION = Object.freeze({
+    startDist: 2.6,
+    fullDist: 3.4,
+    opacityFactor: 0.72,
+    sizeFactor: 0.85
+})
+
+function overviewWashFactor(kind: 'opacity' | 'size'): number {
+    const dist = webglContext.camera?.position?.length?.()
+    if (!Number.isFinite(dist)) return 1
+    const { startDist, fullDist, opacityFactor, sizeFactor } = WASH_ATTENUATION
+    if (dist! <= startDist) return 1
+    const t = Math.min(1, (dist! - startDist) / (fullDist - startDist))
+    const smooth = t * t * (3 - 2 * t)
+    return 1 + smooth * ((kind === 'opacity' ? opacityFactor : sizeFactor) - 1)
+}
+
 // ── A7 — Points material update ──────────────────────────────────────────────
 
 /**
@@ -106,9 +130,16 @@ export function updatePointsMaterial(
     const pointsOpacityScale = isSemanticDive ? 0.06 : isFocused ? 0.46 : 1.0
     const pointsSizeScale = isSemanticDive ? 0.36 : isFocused ? 0.8 : 1.0
     webglContext.pointsMaterial.opacity =
-        0.32 * (PORT_SCENE_ATMOSPHERE.pointOpacityScale ?? 1) * pointsRevealProgress * pointsOpacityScale
+        0.32 *
+        (PORT_SCENE_ATMOSPHERE.pointOpacityScale ?? 1) *
+        pointsRevealProgress *
+        pointsOpacityScale *
+        overviewWashFactor('opacity')
     webglContext.pointsMaterial.size =
-        CONFIG.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46) * pointsSizeScale
+        CONFIG.POINTS_MATERIAL_BASE_SIZE *
+        (1.06 + pointsRevealProgress * 0.46) *
+        pointsSizeScale *
+        overviewWashFactor('size')
     if (webglContext.pointsMaterial.userData.shader) {
         const prefersReduced = prefersReducedMotion()
         webglContext.pointsMaterial.userData.shader.uniforms.uRevealProgress.value = pointsRevealProgress
@@ -402,7 +433,11 @@ export function updateSporeOpacity(
         // preserves the existing 0.22 dim. Do not raise above ~0.6 (re-bloom) or
         // below ~0.4 (hero loses chromaticity against the points halo).
         const focusBoost = isSemanticDive ? 0.22 : isFocused ? 0.55 : 1.0
-        const targetSporeOpacity = (PORT_SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) * pointsRevealProgress * focusBoost
+        const targetSporeOpacity =
+            (PORT_SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) *
+            pointsRevealProgress *
+            focusBoost *
+            overviewWashFactor('opacity')
         webglContext.nodeSporeMaterial.opacity += (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12
     }
 }
