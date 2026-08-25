@@ -1,11 +1,8 @@
 import fs from 'node:fs/promises'
 import fsSync from 'node:fs'
 import path from 'node:path'
-import { spawn } from 'node:child_process'
 import { inflateSync } from 'node:zlib'
 import { chromium } from 'playwright'
-import { setTrailDepth } from '@lib/stores/journey.svelte'
-import { focusOnNode } from '@lib/orchestration/lifecycle'
 // SwiftShader gate (see visual-state-audit.mjs)
 const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
@@ -190,7 +187,7 @@ async function inspectScene(page) {
         }
         const intersects = (a, b) =>
             Boolean(a && b && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top)
-        const isVisibleBox = (box) =>
+        const _isVisibleBox = (box) =>
             Boolean(box && box.display !== 'none' && box.visibility !== 'hidden' && box.width > 0 && box.height > 0)
         const continuitySample = (line, connectionPairs) => {
             // LOD-aware: edges flatten exactly `segmentsPerPair` bezier segments
@@ -533,6 +530,34 @@ async function main() {
     }
     const consoleMessages = []
     const failures = []
+    // 2026-08-25: under heavy box load (parallel lanes saturating node CPU) the
+    // renderer main thread can starve and the whole playtest can wedge mid-stage.
+    // A global watchdog guarantees a partial summary is written and the process
+    // exits instead of hanging forever — collected{} tracks what DID complete.
+    const collected = {}
+    const WATCHDOG_MS = 15 * 60 * 1000
+    const watchdog = setTimeout(() => {
+        console.error(`[watchdog] playtest exceeded ${WATCHDOG_MS / 1000}s — writing partial summary`)
+        const partial = {
+            outDir,
+            partial: true,
+            reason: 'watchdog',
+            screenshots: Object.keys(collected),
+            inspections: Object.fromEntries(
+                Object.entries(collected).map(([k, v]) => [k, v.inspection])
+            ),
+            luminance: Object.fromEntries(
+                Object.entries(collected).map(([k, v]) => [k, v.luminance])
+            ),
+            failures: ['watchdog: playtest did not complete within time budget']
+        }
+        fs.writeFileSync(path.join(outDir, 'summary.json'), JSON.stringify(partial, null, 2))
+        process.exit(2)
+    }, WATCHDOG_MS)
+    const collect = (name, result) => {
+        collected[name] = result
+        return result
+    }
     let browser
     try {
         await waitForServer(server)
@@ -605,13 +630,20 @@ async function main() {
                     .catch(() => {})
             }
             const screenshot = await capture(page, name)
-            const inspection = await inspectScene(page)
-            const luminance = await sceneLuminance(screenshot)
-            await context.close()
+            // 2026-08-25: under heavy box load the renderer's main thread can
+            // starve and page.evaluate/context.close() deadlock forever
+            // (3 consecutive runs wedged after the stage-02 screenshot).
+            // Bound both: a wedged stage yields a null inspection + partial
+            // summary instead of an infinite hang.
+            const withTimeout = (p, ms, fallback) =>
+                Promise.race([p, new Promise((resolve) => setTimeout(() => resolve(fallback), ms))])
+            const inspection = await withTimeout(inspectScene(page), 45000, null)
+            const luminance = await withTimeout(sceneLuminance(screenshot), 15000, null)
+            await withTimeout(context.close(), 10000, null)
             return { inspection, luminance }
         }
 
-        const idleResult = await runFreshPage('01-mobile-idle-galaxy', { view: 'galaxy' })
+        const idleResult = collect('01-mobile-idle-galaxy', await runFreshPage('01-mobile-idle-galaxy', { view: 'galaxy' }))
         const focusSetup = async (page) => {
             // The thread artifact (semantic_threads.dat.br, multi-MB) parses
             // asynchronously AFTER scene-ready. Spoke/trail assertions need
@@ -657,13 +689,12 @@ async function main() {
                 )
                 .catch(() => {})
         }
-        const focusedResult = await runFreshPage(
+        const focusedResult = collect('02-mobile-focused-node', await runFreshPage(
             '02-mobile-focused-node',
             { view: 'galaxy', q: 'coffee', anchor: '519' },
             focusSetup
-        )
-        const insideResult = await runFreshPage(
-            '03-mobile-step-inside',
+        ))
+        const insideResult = collect('03-mobile-step-inside', await runFreshPage(            '03-mobile-step-inside',
             { view: 'galaxy', q: 'coffee', anchor: '519' },
             async (page) => {
                 await focusSetup(page)
@@ -687,11 +718,10 @@ async function main() {
                         { timeout: 8000 }
                     )
                     .catch(() => {})
-            }
-        )
-        const mapResult = await runFreshPage('04-mobile-map', { view: 'map', q: 'coffee', anchor: '519' })
-
-        const mapSearchResult = await runFreshPage(
+                }
+        ))
+        const mapResult = collect('04-mobile-map', await runFreshPage('04-mobile-map', { view: 'map', q: 'coffee', anchor: '519' }))
+        const mapSearchResult = collect('05-mobile-map-search-active', await runFreshPage(
             '05-mobile-map-search-active',
             { view: 'map', q: 'coffee', anchor: '519' },
             async (page) => {
@@ -702,7 +732,7 @@ async function main() {
                     )
                     .catch(() => {})
             }
-        )
+        ))
 
         const idle = idleResult.inspection
         const focused = focusedResult.inspection
@@ -921,6 +951,7 @@ async function main() {
         console.log(JSON.stringify(summary, null, 2))
         if (failures.length) process.exitCode = 1
     } finally {
+        clearTimeout(watchdog)
         if (browser) await browser.close().catch(() => {})
         server.kill()
     }
