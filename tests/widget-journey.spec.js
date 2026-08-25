@@ -28,10 +28,10 @@ test.afterEach(async ({ page }) => {
 // explicit `page.evaluate` poll seeing `class:hidden` removed at ~250ms).
 // `page.evaluate` is dispatched over the CDP request channel and is immune to
 // rAF stalls, so polling it on a fixed interval reliably captures the state.
-const pollFor = async (page, predicate, timeoutMs, intervalMs = 50) => {
+const pollFor = async (page, predicate, timeoutMs, intervalMs = 50, evalArg) => {
     const start = Date.now()
     while (Date.now() - start < timeoutMs) {
-        if (await page.evaluate(predicate)) return true
+        if (await page.evaluate(predicate, evalArg)) return true
         await page.waitForTimeout(intervalMs)
     }
     return false
@@ -1426,6 +1426,97 @@ test.describe('Widget journey', () => {
         // The onMount ?q= guard must not re-dispatch after the restore already
         // fulfilled the empty query — exactly one semantic_search round-trip.
         expect(searchRequests.count, 'empty deep-link must dispatch exactly one semantic search request').toBe(1)
+    })
+
+    test('W72: trail-walk arrival clears the stale search-status focus line (bug #5 regression)', async ({ page }) => {
+        test.setTimeout(90000)
+        await page.setViewportSize({ width: 1440, height: 900 })
+        // Deep-link into a focused coffee result, then walk away. The invariant
+        // under test: after arrival, no live region may announce "Focus <name>.
+        // Match N." for a business that is NOT the currently focused record —
+        // the pre-fix bug announced the PREVIOUS stop indefinitely. Deliberately
+        // API-state-agnostic (worker index vs live API vs mock fallback reorder
+        // results), so nothing here pins a business name or result rank.
+        await page.goto(
+            `${BASE_URL}/dist/svelte/index.html?nodemo=1&q=coffee&surface=focus-search&anchor=7911&record=7912`,
+            { waitUntil: 'domcontentloaded' }
+        )
+        // Cold deep-links render a DISABLED focus-stage "Next Stop" (duplicate
+        // #btn-next-node id); the walk HUD's "Next →" only enables once the user
+        // has walked. Start the journey like a real user: click a search result.
+        const firstResult = page.locator('#search-result-list button').first()
+        await expect(firstResult).toBeVisible({ timeout: 40000 })
+        await firstResult.click()
+
+        // TrailControls' walk HUD (distinct from the focus-stage button by its
+        // visible "Next →" label).
+        const nextBtn = page.locator('button', { hasText: 'Next →' }).first()
+        await expect(nextBtn).toBeVisible({ timeout: 30000 })
+        await expect(nextBtn).toBeEnabled({ timeout: 15000 })
+
+        // Let the result-click refocus settle into the journey store (walk
+        // history non-empty, HUD live) before baselining, so the Next click
+        // below is a clean second hop rather than racing the first transition.
+        // Note: result-clicks refocus WITHOUT the strand exploring→arrived
+        // cycle — that machinery is specific to Next/Prev hops.
+        const hudReady = await pollFor(
+            page,
+            () => {
+                const s = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__
+                return (s?.navState?.walkHistoryIndices?.length ?? 0) >= 1
+            },
+            15000,
+            250
+        )
+        expect(hudReady, 'result-click must seed the journey walk history').toBe(true)
+        await page.waitForTimeout(800)
+
+        const focusBefore = await page.evaluate(
+            () => window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__?.navState?.focusedIndex
+        )
+        await nextBtn.click()
+
+        // Arrival: focusedIndex moves AND the search mirror projection follows it.
+        // focusBefore is passed as an evaluate arg — browser scope can't see it.
+        const synced = await pollFor(
+            page,
+            (fb) => {
+                const s = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__
+                const m = window.__SEMANTIC_EXPLORER_SEARCH_MIRROR__
+                let activeId = null
+                m?.subscribe?.((v) => {
+                    activeId = v?.activeResultId ?? null
+                })?.()
+                return (
+                    Number.isFinite(s?.navState?.focusedIndex) &&
+                    s.navState.focusedIndex !== fb &&
+                    String(s.navState.focusedIndex) === String(activeId)
+                )
+            },
+            15000,
+            250,
+            focusBefore
+        )
+        expect(synced, 'arrival must republish the search-store projection (activeResultId === focusedIndex)').toBe(
+            true
+        )
+
+        // Invariant: every "Focus <name>." live announcement must name the
+        // currently focused record. Pre-fix, the stale line kept naming the stop
+        // we walked AWAY from.
+        await page.waitForTimeout(1200)
+        const violation = await page.evaluate(() => {
+            const s = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__
+            const idx = s?.navState?.focusedIndex
+            const records = window.__SEMANTIC_EXPLORER_DATA_BUSINESS_RECORDS__ ?? []
+            const focusedName = idx != null ? records[idx]?.name : null
+            return [...document.querySelectorAll('[role=status], [aria-live=polite]')].some((e) => {
+                const m = (e.textContent || '').match(/Focus ([^.]+)\./)
+                if (!m) return false
+                return !focusedName || m[1] !== focusedName
+            })
+        })
+        expect(violation, 'a live region announces Focus <X> for a non-focused X (stale search status)').toBe(false)
     })
 
     test('desktop focus-search hides legacy dive sibling and stays viewport-bounded', async ({ page }) => {
