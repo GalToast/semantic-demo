@@ -32,7 +32,7 @@ const fixture = {
         { x: 0.8, y: 0.7, z: 0.9 },
         { x: 0.3, y: 0.6, z: 0.2 }
     ],
-    points: [{ cluster: 0 }, { cluster: 1 }, { cluster: 2 }, { cluster: 0 }],
+    pointClusters: [0, 1, 2, 0],
     colors: COLORS,
     intensities: { core: 0.38, wispy: 0.22, bridge: 0.32 },
     viewVector: VIEW,
@@ -44,19 +44,52 @@ describe('mycelium build worker — parity with main-thread reference', () => {
         seedBezierViewVector(VIEW)
 
         // Reference: the exact main-thread loop from createMycelium.
+        const pointViews = fixture.pointClusters.map((cluster) => ({ cluster }))
         const ref: Record<string, number[]> = {
-            core: [], coreColors: [], wispy: [], wispyColors: [], bridge: [], bridgeColors: []
+            core: [],
+            coreColors: [],
+            wispy: [],
+            wispyColors: [],
+            bridge: [],
+            bridgeColors: []
         }
         const colorFn = (cluster: number | null | undefined) => {
             const c = new Color(COLORS[(cluster ?? 0) % COLORS.length])
             return { r: c.r, g: c.g, b: c.b }
         }
         for (const pair of fixture.corePairs)
-            pushBezierLinePair(ref.core, ref.coreColors, pair, fixture.nodePositions, fixture.points, colorFn, fixture.intensities.core, fixture.segmentsPerPair)
+            pushBezierLinePair(
+                ref.core,
+                ref.coreColors,
+                pair,
+                fixture.nodePositions,
+                pointViews,
+                colorFn,
+                fixture.intensities.core,
+                fixture.segmentsPerPair
+            )
         for (const pair of fixture.wispyPairs)
-            pushBezierLinePair(ref.wispy, ref.wispyColors, pair, fixture.nodePositions, fixture.points, colorFn, fixture.intensities.wispy, fixture.segmentsPerPair)
+            pushBezierLinePair(
+                ref.wispy,
+                ref.wispyColors,
+                pair,
+                fixture.nodePositions,
+                pointViews,
+                colorFn,
+                fixture.intensities.wispy,
+                fixture.segmentsPerPair
+            )
         for (const pair of fixture.bridgePairs)
-            pushBezierLinePair(ref.bridge, ref.bridgeColors, pair, fixture.nodePositions, fixture.points, colorFn, fixture.intensities.bridge, fixture.segmentsPerPair)
+            pushBezierLinePair(
+                ref.bridge,
+                ref.bridgeColors,
+                pair,
+                fixture.nodePositions,
+                pointViews,
+                colorFn,
+                fixture.intensities.bridge,
+                fixture.segmentsPerPair
+            )
 
         // Worker path (same pure function, direct call — no worker spawn needed).
         const built = buildMyceliumBuffers(fixture)

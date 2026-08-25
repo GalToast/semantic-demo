@@ -32,7 +32,11 @@ export interface MyceliumBuildPayload {
     wispyPairs: EdgePair[]
     bridgePairs: EdgePair[]
     nodePositions: Array<{ x?: number; y?: number; z?: number }>
-    points: Array<{ cluster?: number | null }>
+    /** Cluster id per point — INP fix (2026-08-25 longtask probe): the
+     * original payload shipped 8,406 full BusinessRecord objects and the
+     * structured clone cost ~900ms ON THE MAIN THREAD (the very long task
+     * this worker was meant to remove). Only .cluster is read worker-side. */
+    pointClusters: Array<number | null>
     /** Category color strings (CONFIG.COLORS) — Color parses them worker-side. */
     colors: string[]
     intensities: { core: number; wispy: number; bridge: number }
@@ -51,6 +55,8 @@ export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
     bridgeColors: Float32Array
 } {
     seedBezierViewVector(payload.viewVector)
+    // Minimal per-point views — pushBezierLinePair only reads .cluster.
+    const pointViews = payload.pointClusters.map((cluster) => ({ cluster }))
     const colorFn = (cluster: number | null | undefined): { r: number; g: number; b: number } => {
         const c = new Color(
             payload.colors[
@@ -74,7 +80,7 @@ export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
             coreColors,
             pair,
             payload.nodePositions,
-            payload.points,
+            pointViews,
             colorFn,
             payload.intensities.core,
             payload.segmentsPerPair
@@ -86,7 +92,7 @@ export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
             wispyColors,
             pair,
             payload.nodePositions,
-            payload.points,
+            pointViews,
             colorFn,
             payload.intensities.wispy,
             payload.segmentsPerPair
@@ -98,7 +104,7 @@ export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
             bridgeColors,
             pair,
             payload.nodePositions,
-            payload.points,
+            pointViews,
             colorFn,
             payload.intensities.bridge,
             payload.segmentsPerPair

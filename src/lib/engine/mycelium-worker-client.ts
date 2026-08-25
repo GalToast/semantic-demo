@@ -164,7 +164,7 @@ export function prewarmMyceliumWorker(): void {
                 wispyPairs: [],
                 bridgePairs: [],
                 nodePositions: [],
-                points: [],
+                pointClusters: [],
                 colors: ['#888888'],
                 intensities: { core: 1, wispy: 1, bridge: 1 },
                 viewVector: { x: 0, y: 0, z: 1 },

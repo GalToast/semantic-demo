@@ -573,7 +573,10 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
             wispyPairs: edgeSets.wispyPairs,
             bridgePairs: edgeSets.bridgePairs,
             nodePositions: state.nodePositions,
-            points: state.points,
+            // Cluster ids ONLY — shipping full BusinessRecords made the
+            // postMessage structured clone a ~900ms main-thread long task
+            // (2026-08-25 longtask probe attribution).
+            pointClusters: state.points.map((point) => point.cluster ?? null),
             colors: [...CONFIG.COLORS],
             intensities: {
                 core: semanticEdges ? 0.5 : 0.4,
