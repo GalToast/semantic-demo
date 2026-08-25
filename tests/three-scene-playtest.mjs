@@ -543,15 +543,11 @@ async function main() {
             partial: true,
             reason: 'watchdog',
             screenshots: Object.keys(collected),
-            inspections: Object.fromEntries(
-                Object.entries(collected).map(([k, v]) => [k, v.inspection])
-            ),
-            luminance: Object.fromEntries(
-                Object.entries(collected).map(([k, v]) => [k, v.luminance])
-            ),
+            inspections: Object.fromEntries(Object.entries(collected).map(([k, v]) => [k, v.inspection])),
+            luminance: Object.fromEntries(Object.entries(collected).map(([k, v]) => [k, v.luminance])),
             failures: ['watchdog: playtest did not complete within time budget']
         }
-        fs.writeFileSync(path.join(outDir, 'summary.json'), JSON.stringify(partial, null, 2))
+        fsSync.writeFileSync(path.join(outDir, 'summary.json'), JSON.stringify(partial, null, 2))
         process.exit(2)
     }, WATCHDOG_MS)
     const collect = (name, result) => {
@@ -643,7 +639,10 @@ async function main() {
             return { inspection, luminance }
         }
 
-        const idleResult = collect('01-mobile-idle-galaxy', await runFreshPage('01-mobile-idle-galaxy', { view: 'galaxy' }))
+        const idleResult = collect(
+            '01-mobile-idle-galaxy',
+            await runFreshPage('01-mobile-idle-galaxy', { view: 'galaxy' })
+        )
         const focusSetup = async (page) => {
             // The thread artifact (semantic_threads.dat.br, multi-MB) parses
             // asynchronously AFTER scene-ready. Spoke/trail assertions need
@@ -689,50 +688,59 @@ async function main() {
                 )
                 .catch(() => {})
         }
-        const focusedResult = collect('02-mobile-focused-node', await runFreshPage(
+        const focusedResult = collect(
             '02-mobile-focused-node',
-            { view: 'galaxy', q: 'coffee', anchor: '519' },
-            focusSetup
-        ))
-        const insideResult = collect('03-mobile-step-inside', await runFreshPage(            '03-mobile-step-inside',
-            { view: 'galaxy', q: 'coffee', anchor: '519' },
-            async (page) => {
-                await focusSetup(page)
-                await page.evaluate(() => window.__APP_ACTIONS__?.setTrailDepth?.(2, { fromUserGesture: true }))
-                // Spoke buffers fill on the first inside-active frame; under
-                // load the dive activation + fill can lag the 2-rAF wait.
-                // Poll for the end state instead of racing it (2026-08-24).
-                await page
-                    .waitForFunction(
-                        () => {
-                            const a =
-                                window.__TEST_STATE__?.semanticLensSpokes?.geometry?.attributes?.alpha?.array || []
-                            return Array.from(a).filter((v) => v > 0).length >= 2
-                        },
-                        { timeout: 6000 }
-                    )
-                    .catch(() => {})
-                await page
-                    .waitForFunction(
-                        () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
-                        { timeout: 8000 }
-                    )
-                    .catch(() => {})
+            await runFreshPage('02-mobile-focused-node', { view: 'galaxy', q: 'coffee', anchor: '519' }, focusSetup)
+        )
+        const insideResult = collect(
+            '03-mobile-step-inside',
+            await runFreshPage(
+                '03-mobile-step-inside',
+                { view: 'galaxy', q: 'coffee', anchor: '519' },
+                async (page) => {
+                    await focusSetup(page)
+                    await page.evaluate(() => window.__APP_ACTIONS__?.setTrailDepth?.(2, { fromUserGesture: true }))
+                    // Spoke buffers fill on the first inside-active frame; under
+                    // load the dive activation + fill can lag the 2-rAF wait.
+                    // Poll for the end state instead of racing it (2026-08-24).
+                    await page
+                        .waitForFunction(
+                            () => {
+                                const a =
+                                    window.__TEST_STATE__?.semanticLensSpokes?.geometry?.attributes?.alpha?.array || []
+                                return Array.from(a).filter((v) => v > 0).length >= 2
+                            },
+                            { timeout: 6000 }
+                        )
+                        .catch(() => {})
+                    await page
+                        .waitForFunction(
+                            () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
+                            { timeout: 8000 }
+                        )
+                        .catch(() => {})
                 }
-        ))
-        const mapResult = collect('04-mobile-map', await runFreshPage('04-mobile-map', { view: 'map', q: 'coffee', anchor: '519' }))
-        const mapSearchResult = collect('05-mobile-map-search-active', await runFreshPage(
+            )
+        )
+        const mapResult = collect(
+            '04-mobile-map',
+            await runFreshPage('04-mobile-map', { view: 'map', q: 'coffee', anchor: '519' })
+        )
+        const mapSearchResult = collect(
             '05-mobile-map-search-active',
-            { view: 'map', q: 'coffee', anchor: '519' },
-            async (page) => {
-                await page
-                    .waitForFunction(
-                        () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
-                        { timeout: 8000 }
-                    )
-                    .catch(() => {})
-            }
-        ))
+            await runFreshPage(
+                '05-mobile-map-search-active',
+                { view: 'map', q: 'coffee', anchor: '519' },
+                async (page) => {
+                    await page
+                        .waitForFunction(
+                            () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
+                            { timeout: 8000 }
+                        )
+                        .catch(() => {})
+                }
+            )
+        )
 
         const idle = idleResult.inspection
         const focused = focusedResult.inspection
