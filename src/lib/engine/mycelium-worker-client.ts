@@ -7,9 +7,16 @@
  * TRANSFERRED Float32Array buffers; the main thread only does the GPU upload
  * (createLineSegments — must stay main-side).
  *
+ * SINGLETON + PREWARM (2026-08-25 interleaved A/B, tmp/inp-campaign.md):
+ * under CPU saturation the per-build worker spawn + three module eval landed
+ * on the critical path and erased the win (worker 873-1217ms vs sync
+ * 570-1098ms). A persistent singleton amortizes spawn/eval to once, and
+ * prewarmMyceliumWorker() (called from the CTA-visible poll in main.ts, same
+ * hook as preloadJourneyWebgl) pays that cost BEFORE the tap.
+ *
  * Fallback: any worker failure resolves null and callers use the existing
  * synchronous path (pushBezierLinePair on main) — the build never blocks on
- * worker availability.
+ * worker availability. A crashed singleton resets so the next build retries.
  *
  * URL boundary follows the data-worker-url.ts pattern (?worker&url is
  * Vite-specific and must be imported at the site Vite processes).
@@ -39,6 +46,46 @@ export interface MyceliumWorkerBuffers {
 
 export type MyceliumBuildPayload = import('@lib/workers/mycelium-build-worker').MyceliumBuildPayload
 
+type PendingResolve = (buffers: MyceliumWorkerBuffers | null) => void
+
+let singletonWorker: Worker | null = null
+let nextRequestId = 1
+const pending = new Map<number, PendingResolve>()
+
+function resetSingleton(): void {
+    if (singletonWorker) {
+        const w = singletonWorker
+        singletonWorker = null
+        w.terminate()
+    }
+    for (const resolve of pending.values()) resolve(null)
+    pending.clear()
+}
+
+async function getSingletonWorker(): Promise<Worker | null> {
+    if (singletonWorker) return singletonWorker
+    const url = await resolveWorkerUrl()
+    const worker = new Worker(url, { type: 'module' })
+    worker.onmessage = (e: MessageEvent) => {
+        const data = e.data as (MyceliumWorkerBuffers & { type?: string; requestId?: number }) | null
+        if (data?.type !== 'BUILT') return
+        const requestId = typeof data.requestId === 'number' ? data.requestId : -1
+        const resolve = pending.get(requestId)
+        if (resolve) {
+            pending.delete(requestId)
+            resolve(data as unknown as MyceliumWorkerBuffers)
+        }
+    }
+    worker.onerror = () => {
+        // Crashed singleton: fail all in-flight builds to the sync path and
+        // reset so the NEXT build spawns a fresh worker (transient faults
+        // don't permanently disable the worker path).
+        resetSingleton()
+    }
+    singletonWorker = worker
+    return worker
+}
+
 /** Build the tessellated buffers off-thread. Resolves null on ANY failure —
  * callers must fall back to the synchronous path. */
 export async function buildMyceliumBuffersInWorker(
@@ -46,27 +93,52 @@ export async function buildMyceliumBuffersInWorker(
 ): Promise<MyceliumWorkerBuffers | null> {
     if (typeof Worker === 'undefined') return null
     try {
-        const url = await resolveWorkerUrl()
-        const worker = new Worker(url, { type: 'module' })
+        const worker = await getSingletonWorker()
+        if (!worker) return null
+        const requestId = nextRequestId++
         return await new Promise<MyceliumWorkerBuffers | null>((res) => {
             const timeout = setTimeout(() => {
-                worker.terminate()
+                pending.delete(requestId)
                 res(null)
             }, 15000)
-            worker.onmessage = (e: MessageEvent) => {
-                if (e.data?.type !== 'BUILT') return
+            pending.set(requestId, (buffers) => {
                 clearTimeout(timeout)
-                worker.terminate()
-                res(e.data as MyceliumWorkerBuffers)
-            }
-            worker.onerror = () => {
-                clearTimeout(timeout)
-                worker.terminate()
-                res(null)
-            }
-            worker.postMessage({ type: 'BUILD', ...payload })
+                res(buffers)
+            })
+            worker.postMessage({ type: 'BUILD', requestId, ...payload })
         })
     } catch {
         return null
     }
+}
+
+let prewarmStarted = false
+
+/** Spawn + module-eval the worker BEFORE the tap (CTA-visible hook). A trivial
+ * empty BUILD forces the worker chunk fetch, three import evaluation, and JIT
+ * warm without touching real data. Safe to call multiple times. */
+export function prewarmMyceliumWorker(): void {
+    if (prewarmStarted || typeof Worker === 'undefined') return
+    prewarmStarted = true
+    void (async () => {
+        try {
+            const worker = await getSingletonWorker()
+            if (!worker) return
+            worker.postMessage({
+                type: 'BUILD',
+                requestId: 0,
+                corePairs: [],
+                wispyPairs: [],
+                bridgePairs: [],
+                nodePositions: [],
+                points: [],
+                colors: ['#888888'],
+                intensities: { core: 1, wispy: 1, bridge: 1 },
+                viewVector: { x: 0, y: 0, z: 1 },
+                segmentsPerPair: 1
+            })
+        } catch {
+            prewarmStarted = false
+        }
+    })()
 }

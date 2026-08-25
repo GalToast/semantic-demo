@@ -120,7 +120,7 @@ interface WorkerAPI {
 
 const ctx = self as unknown as WorkerAPI
 
-ctx.onmessage = (e: MessageEvent<MyceliumBuildPayload & { type: 'BUILD' }>): void => {
+ctx.onmessage = (e: MessageEvent<MyceliumBuildPayload & { type: 'BUILD'; requestId?: number }>): void => {
     const result = buildMyceliumBuffers(e.data)
     const transfer = [
         result.core.buffer,
@@ -130,5 +130,5 @@ ctx.onmessage = (e: MessageEvent<MyceliumBuildPayload & { type: 'BUILD' }>): voi
         result.wispyColors.buffer,
         result.bridgeColors.buffer
     ]
-    ;(self as unknown as Worker).postMessage({ type: 'BUILT', ...result }, transfer)
+    ;(self as unknown as Worker).postMessage({ type: 'BUILT', requestId: e.data.requestId ?? 0, ...result }, transfer)
 }

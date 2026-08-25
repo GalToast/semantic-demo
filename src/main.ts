@@ -32,6 +32,7 @@ import { teardownToastHooks } from '@lib/orchestration/toast'
 import { registerUrlStateEventListeners } from '@lib/orchestration/url-state'
 import { registerClusterFilterEventListeners } from '@lib/orchestration/cluster-filter-controller'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
+import { prewarmMyceliumWorker } from '@lib/engine/mycelium-worker-client'
 import { webglContext } from '@lib/engine/webgl-context'
 import { getInitialRenderKind, isDeepLinkParams } from '@lib/orchestration/responsive-renderer'
 import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte'
@@ -221,6 +222,10 @@ const armWebglGraph = (): void => {
         ctaPrewarmPoll = null
     }
     preloadJourneyWebgl()
+    // INP 2026-08-25 interleaved A/B: worker spawn + three module eval on the
+    // critical path erased the mycelium worker win under CPU saturation —
+    // pay that cost here, pre-tap, alongside the WebGL chunk arm.
+    prewarmMyceliumWorker()
 }
 ctaPrewarmPoll = setInterval(() => {
     if (document.querySelector('[data-testid="splash-cta"]')) {
