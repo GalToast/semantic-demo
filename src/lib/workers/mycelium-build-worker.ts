@@ -20,7 +20,10 @@
  *          pairCount: number }  (buffers transferred, not cloned)
  */
 import { pushBezierLinePair, seedBezierViewVector } from '@lib/engine/mycelium-bezier'
-import { Color } from 'three'
+import { computeOverviewScatterOffsets } from '@lib/utils/geo-data'
+import { getPointBoundsCenter } from '@lib/utils/point-cloud-math'
+import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
+import { Color, MathUtils, Vector3 } from 'three'
 
 type EdgePair = { a: number; b: number }
 
@@ -112,6 +115,95 @@ export function buildMyceliumBuffers(payload: MyceliumBuildPayload): {
     }
 }
 
+// ── Points build (INP 2026-08-25: createPoints per-point loop, +394ms) ──
+
+export interface PointsBuildPayload {
+    /** Cluster id per point (rawClustersBuffer copy). Length = point count. */
+    clusters: number[]
+    /** Raw source positions, [x,y,z] per point (CLONED — main store keeps
+     * its reference; transferring would detach the store's buffer). */
+    rawPositions: Float32Array
+    colors: string[]
+    threadTint: { r: number; g: number; b: number }
+    fieldScale: { x: number; y: number; z: number }
+}
+
+export interface PointsBuildBuffers {
+    /** Render-space positions [x,y,z] per point — ALSO the nodePositions
+     * triples (createPoints pushes identical values into state arrays). */
+    positions: Float32Array
+    colors: Float32Array
+    pointBaseColors: Float32Array
+    bounds: {
+        min: { x: number; y: number; z: number }
+        max: { x: number; y: number; z: number }
+        center: { x: number; y: number; z: number }
+        count: number
+    }
+}
+
+/** Pure build function — exported for unit-test parity checks (no worker
+ * spawn). Mirrors the createPoints per-point loop EXACTLY (node-manager.ts).
+ * `clusters` doubles as the points-length carrier for the length-only APIs
+ * (computeOverviewScatterOffsets/getPointBoundsCenter never read point
+ * objects — only positionBuffer + length). */
+export function buildPointsBuffers(payload: PointsBuildPayload): PointsBuildBuffers {
+    const n = payload.clusters.length
+    // Length-only usage: the functions read rawPositions + .length, never the
+    // point objects themselves (verified — geo-data.ts getPosition + the
+    // bounds loop read positionBuffer exclusively).
+    const pointsLike = payload.clusters as unknown as Array<{ x?: number; y?: number; z?: number }>
+    const scatterOffsets = computeOverviewScatterOffsets(pointsLike, payload.rawPositions)
+    const bounds = getPointBoundsCenter(pointsLike, payload.rawPositions)
+    const renderCenter = bounds.center
+
+    const tint = new Color(payload.threadTint.r, payload.threadTint.g, payload.threadTint.b)
+    const positions = new Float32Array(n * 3)
+    const colors = new Float32Array(n * 3)
+    const pointBaseColors = new Float32Array(n * 3)
+
+    for (let i = 0; i < n; i += 1) {
+        const scatter = scatterOffsets[i] || { x: 0, y: 0, z: 0 }
+        const px = payload.rawPositions[i * 3] ?? 0
+        const py = payload.rawPositions[i * 3 + 1] ?? 0
+        const pz = payload.rawPositions[i * 3 + 2] ?? 0
+        const cluster = payload.clusters[i] ?? 0
+
+        const fx = (px - renderCenter.x + scatter.x) * payload.fieldScale.x
+        const fy = (py - renderCenter.y + scatter.y) * payload.fieldScale.y
+        const fz = (pz - renderCenter.z + scatter.z) * payload.fieldScale.z
+        positions[i * 3] = fx
+        positions[i * 3 + 1] = fy
+        positions[i * 3 + 2] = fz
+
+        const color = getThreadCategoryColor(cluster, payload.colors).lerp(tint, 0.005)
+        const radialDepth = Math.sqrt(fx * fx + fy * fy + fz * fz)
+        const depthFactor = MathUtils.clamp(1.16 - radialDepth * 0.14, 0.82, 1.12)
+        color.offsetHSL(0, 0.045, -0.01)
+        const baseR = Math.min(1, color.r * depthFactor * 1.18 + 0.018)
+        const baseG = Math.min(1, color.g * depthFactor * 1.18 + 0.022)
+        const baseB = Math.min(1, color.b * depthFactor * 1.18 + 0.019)
+        pointBaseColors[i * 3] = baseR
+        pointBaseColors[i * 3 + 1] = baseG
+        pointBaseColors[i * 3 + 2] = baseB
+        colors[i * 3] = baseR
+        colors[i * 3 + 1] = baseG
+        colors[i * 3 + 2] = baseB
+    }
+
+    return {
+        positions,
+        colors,
+        pointBaseColors,
+        bounds: {
+            min: { x: bounds.min.x, y: bounds.min.y, z: bounds.min.z },
+            max: { x: bounds.max.x, y: bounds.max.y, z: bounds.max.z },
+            center: { x: renderCenter.x, y: renderCenter.y, z: renderCenter.z },
+            count: bounds.count
+        }
+    }
+}
+
 interface WorkerAPI {
     postMessage(message: MyceliumBuildPayload & { type: 'BUILD' }): void
     onmessage: ((e: MessageEvent) => void) | null
@@ -120,7 +212,19 @@ interface WorkerAPI {
 
 const ctx = self as unknown as WorkerAPI
 
-ctx.onmessage = (e: MessageEvent<MyceliumBuildPayload & { type: 'BUILD'; requestId?: number }>): void => {
+type BuildRequest =
+    | (MyceliumBuildPayload & { type: 'BUILD'; requestId?: number })
+    | (PointsBuildPayload & { type: 'POINTS_BUILD'; requestId?: number })
+
+ctx.onmessage = (e: MessageEvent<BuildRequest>): void => {
+    const requestId = e.data.requestId ?? 0
+    if (e.data.type === 'POINTS_BUILD') {
+        const result = buildPointsBuffers(e.data)
+        const transfer = [result.positions.buffer, result.colors.buffer, result.pointBaseColors.buffer]
+        ;(self as unknown as Worker).postMessage({ type: 'POINTS_BUILT', requestId, ...result }, transfer)
+        return
+    }
+    // buildMyceliumBuffers seeds the view vector internally.
     const result = buildMyceliumBuffers(e.data)
     const transfer = [
         result.core.buffer,

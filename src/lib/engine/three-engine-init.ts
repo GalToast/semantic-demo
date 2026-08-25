@@ -195,7 +195,9 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
 
     // Inline createPoints logic (was engineDelegates.createPoints) to avoid
     // circular dependency with three-engine-mycelium.
-    createPointsPort()
+    // INP 2026-08-25: createPoints is async (worker build round-trip);
+    // points-ready marks when the buffers are actually uploaded.
+    await createPointsPort()
     markEngineInitPhase('points-ready')
 
     // C11 — points/spore handle mirror (webglContext → appState + engineState.state)
@@ -226,7 +228,7 @@ export async function initThreeJSInternal(isRestoreAttempt: boolean): Promise<bo
     // LOD-first: initial tessellation at 4 segs/pair (~40% of the float work
     // vs 10 segs/pair ≈ 751ms measured); thread-manager schedules an idle
     // upgrade to full smoothness right after this resolves.
-    await createMyceliumPort({ segmentsPerPair: MYCELIUM_INITIAL_LOD_SEGMENTS_PER_PAIR })
+    await createMyceliumPort({ segmentsPerPair: 4 })
     markEngineInitPhase('mycelium-ready')
 
     // C12 — mycelium handle mirror (webglContext → appState + legacyState + engineState.state)

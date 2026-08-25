@@ -33,8 +33,8 @@ export function updateMyceliumThreads(): void {
     updateMyceliumThreadsPort()
 }
 
-export function createPoints(): void {
-    createPointsPort()
+export async function createPoints(): Promise<void> {
+    await createPointsPort()
     appState.pointsMesh = webglContext.pointsMesh
     appState.nodeSporeMesh = webglContext.nodeSporeMesh
     if (engineState.state) {

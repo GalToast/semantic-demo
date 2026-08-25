@@ -45,6 +45,8 @@ export interface MyceliumWorkerBuffers {
 }
 
 export type MyceliumBuildPayload = import('@lib/workers/mycelium-build-worker').MyceliumBuildPayload
+export type PointsBuildPayload = import('@lib/workers/mycelium-build-worker').PointsBuildPayload
+export type PointsBuildBuffers = import('@lib/workers/mycelium-build-worker').PointsBuildBuffers
 
 type PendingResolve = (buffers: MyceliumWorkerBuffers | null) => void
 
@@ -67,8 +69,13 @@ async function getSingletonWorker(): Promise<Worker | null> {
     const url = await resolveWorkerUrl()
     const worker = new Worker(url, { type: 'module' })
     worker.onmessage = (e: MessageEvent) => {
-        const data = e.data as (MyceliumWorkerBuffers & { type?: string; requestId?: number }) | null
-        if (data?.type !== 'BUILT') return
+        const data = e.data as
+            | ((MyceliumWorkerBuffers | PointsBuildBuffers) & {
+                  type?: string
+                  requestId?: number
+              })
+            | null
+        if (data?.type !== 'BUILT' && data?.type !== 'POINTS_BUILT') return
         const requestId = typeof data.requestId === 'number' ? data.requestId : -1
         const resolve = pending.get(requestId)
         if (resolve) {
@@ -112,11 +119,37 @@ export async function buildMyceliumBuffersInWorker(
     }
 }
 
+/** Build the point-cloud buffers off-thread. Resolves null on ANY failure —
+ * callers must fall back to the synchronous path. rawPositions/rawClusters
+ * are CLONED by postMessage (never transferred — the main-side stores keep
+ * their references). */
+export async function buildPointsBuffersInWorker(payload: PointsBuildPayload): Promise<PointsBuildBuffers | null> {
+    if (typeof Worker === 'undefined') return null
+    try {
+        const worker = await getSingletonWorker()
+        if (!worker) return null
+        const requestId = nextRequestId++
+        return await new Promise<PointsBuildBuffers | null>((res) => {
+            const timeout = setTimeout(() => {
+                pending.delete(requestId)
+                res(null)
+            }, 15000)
+            pending.set(requestId, (buffers) => {
+                clearTimeout(timeout)
+                res(buffers as PointsBuildBuffers | null)
+            })
+            worker.postMessage({ type: 'POINTS_BUILD', requestId, ...payload })
+        })
+    } catch {
+        return null
+    }
+}
+
 let prewarmStarted = false
 
-/** Spawn + module-eval the worker BEFORE the tap (CTA-visible hook). A trivial
- * empty BUILD forces the worker chunk fetch, three import evaluation, and JIT
- * warm without touching real data. Safe to call multiple times. */
+/** Spawn + module-eval the worker BEFORE the tap (CTA-visible hook). Trivial
+ * BUILD + POINTS_BUILD messages force the worker chunk fetch, three import
+ * evaluation, and JIT warm without touching real data. Safe to call repeatedly. */
 export function prewarmMyceliumWorker(): void {
     if (prewarmStarted || typeof Worker === 'undefined') return
     prewarmStarted = true
@@ -136,6 +169,15 @@ export function prewarmMyceliumWorker(): void {
                 intensities: { core: 1, wispy: 1, bridge: 1 },
                 viewVector: { x: 0, y: 0, z: 1 },
                 segmentsPerPair: 1
+            })
+            worker.postMessage({
+                type: 'POINTS_BUILD',
+                requestId: 0,
+                clusters: [],
+                rawPositions: new Float32Array(0),
+                colors: ['#888888'],
+                threadTint: { r: 0.5, g: 0.5, b: 0.5 },
+                fieldScale: { x: 1, y: 1, z: 1 }
             })
         } catch {
             prewarmStarted = false

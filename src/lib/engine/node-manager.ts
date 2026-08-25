@@ -33,6 +33,8 @@ import { positionBuffer, clustersBuffer } from '@lib/data-store'
 import type { Point } from '@lib/state/state-types'
 const state = _state
 import { webglContext } from './webgl-context'
+import { buildPointsBuffersInWorker } from './mycelium-worker-client'
+import type { PointsBuildBuffers } from './mycelium-worker-client'
 import { SCENE_PALETTE } from '@lib/utils/design-tokens'
 import { computeOverviewScatterOffsets } from '@lib/utils/geo-data'
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
@@ -253,54 +255,12 @@ export function getNodeSporeColor(index: number, factor = 1) {
     return _nodeSporeColor
 }
 
-export function getPointBoundsCenter(
-    points: Array<{ x?: number; y?: number; z?: number }>,
-    positionBuffer: Float32Array
-) {
-    const min = new Vector3(Infinity, Infinity, Infinity)
-    const max = new Vector3(-Infinity, -Infinity, -Infinity)
-    let count = 0
-
-    // `positionBuffer` is a required `Float32Array` (TypeScript-enforced).
-    // The legacy `point.x/y/z` fallback has been removed: at runtime
-    // `state.points` is `BusinessRecord[]` and does not carry `.x`/`.y`/`.z`,
-    // so the fallback would silently produce `count=0` and a wrong center.
-    // See `tmp/bounds-center-audit-2026-06-29.md` for the audit history.
-    const len = points.length
-    for (let i = 0; i < len; i += 1) {
-        const rawX = positionBuffer[i * 3]
-        const rawY = positionBuffer[i * 3 + 1]
-        const rawZ = positionBuffer[i * 3 + 2]
-        if (rawX === undefined || rawY === undefined || rawZ === undefined) continue
-        const x = Number(rawX)
-        const y = Number(rawY)
-        const z = Number(rawZ)
-        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue
-        if (x < min.x) min.x = x
-        if (y < min.y) min.y = y
-        if (z < min.z) min.z = z
-        if (x > max.x) max.x = x
-        if (y > max.y) max.y = y
-        if (z > max.z) max.z = z
-        count += 1
-    }
-
-    if (!count) {
-        return {
-            center: new Vector3(0, 0, 0),
-            min: new Vector3(0, 0, 0),
-            max: new Vector3(0, 0, 0),
-            count: 0
-        }
-    }
-
-    return {
-        center: min.clone().add(max).multiplyScalar(0.5),
-        min,
-        max,
-        count
-    }
-}
+/** Worker-build extraction (2026-08-25): implementation moved verbatim to
+ * @lib/utils/point-cloud-math (pure — node-manager pulls the Svelte state
+ * graph at module eval, which the geometry build worker must not import).
+ * Re-export keeps the documented import location + all call sites unchanged. */
+export { getPointBoundsCenter } from '@lib/utils/point-cloud-math'
+import { getPointBoundsCenter } from '@lib/utils/point-cloud-math'
 
 export function compilePointMaterialForReadiness() {
     if (!webglContext.renderer || !webglContext.scene || !webglContext.camera || !webglContext.pointsMaterial) return
@@ -461,12 +421,12 @@ export function createNodeSporeLayer() {
     }
 }
 
-export function createPoints() {
+export async function createPoints(): Promise<void> {
     disposeNodeVisuals()
     if (!state.points || !state.points.length) return
     const geometry = new BufferGeometry()
-    const positions: number[] = []
-    const colors: number[] = []
+    let positions: number[] | Float32Array = []
+    let colors: number[] | Float32Array = []
 
     state.nodePositions = []
     state.targetPositions = []
@@ -498,9 +458,106 @@ export function createPoints() {
     // finishes (test/edge-case), bail rather than crash on the reads below
     // (W58 F5). Past this guard rawPositionsBuffer is non-null, so no `!` is needed.
     if (!rawPositionsBuffer) return
-    const scatterOffsets = computeOverviewScatterOffsets(state.points, rawPositionsBuffer)
-    const bounds = getPointBoundsCenter(state.points, rawPositionsBuffer)
-    const renderCenter = bounds.center
+
+    // INP 2026-08-25: the per-point loop measured +394ms inside the boot/init
+    // window. Try the off-main-thread geometry worker first (IDENTICAL math —
+    // parity-tested in points-build-worker-parity.test.ts); on ANY failure
+    // fall back to the original synchronous path below. rawPositions is
+    // CLONED by postMessage — the positionBuffer store keeps its reference.
+    let workerPoints: PointsBuildBuffers | null = null
+    if (rawClustersBuffer && rawClustersBuffer.length === state.points.length) {
+        try {
+            workerPoints = await buildPointsBuffersInWorker({
+                clusters: Array.from(rawClustersBuffer),
+                rawPositions: rawPositionsBuffer,
+                colors: [...CONFIG.COLORS],
+                threadTint: { r: _threadTintColor.r, g: _threadTintColor.g, b: _threadTintColor.b },
+                fieldScale: { x: MYCELIUM_FIELD_SCALE.x, y: MYCELIUM_FIELD_SCALE.y, z: MYCELIUM_FIELD_SCALE.z }
+            })
+        } catch {
+            workerPoints = null
+        }
+    }
+
+    let bounds: { center: { x: number; y: number; z: number }; min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; count: number }
+    let renderCenter: { x: number; y: number; z: number }
+    if (workerPoints) {
+        positions = workerPoints.positions
+        colors = workerPoints.colors
+        state.pointBaseColors.set(workerPoints.pointBaseColors)
+        bounds = {
+            center: workerPoints.bounds.center,
+            min: workerPoints.bounds.min,
+            max: workerPoints.bounds.max,
+            count: workerPoints.bounds.count
+        }
+        renderCenter = workerPoints.bounds.center
+        // nodePositions/targetPositions/originalPositions keep their {x,y,z}
+        // object contract — filled from the worker's triples (values are
+        // identical to the render positions by construction).
+        const n = state.points.length
+        for (let i = 0; i < n; i += 1) {
+            const fx = positions[i * 3]!
+            const fy = positions[i * 3 + 1]!
+            const fz = positions[i * 3 + 2]!
+            state.nodePositions.push({ x: fx, y: fy, z: fz })
+            state.targetPositions.push({ x: fx, y: fy, z: fz })
+            state.originalPositions.push({ x: fx, y: fy, z: fz })
+        }
+    } else {
+        const scatterOffsets = computeOverviewScatterOffsets(state.points, rawPositionsBuffer)
+        bounds = getPointBoundsCenter(state.points, rawPositionsBuffer)
+        renderCenter = bounds.center
+        const hasRawBuffers =
+            rawPositionsBuffer && rawClustersBuffer && rawClustersBuffer.length === state.points.length
+
+        state.points.forEach((point: Point, i: number) => {
+            const scatter = scatterOffsets[i] || { x: 0, y: 0, z: 0 }
+            let px, py, pz, cluster
+
+            if (hasRawBuffers) {
+                px = rawPositionsBuffer[i * 3] ?? 0
+                py = rawPositionsBuffer[i * 3 + 1] ?? 0
+                pz = rawPositionsBuffer[i * 3 + 2] ?? 0
+                cluster = rawClustersBuffer[i] ?? 0
+            } else {
+                // No raw clusters buffer (or length mismatch) — use zero defaults
+                // instead of the dead `point.x/y/z` reads. `state.points` is
+                // `BusinessRecord[]` and never carries those fields (getPointBoundsCenter
+                // already removed this fallback — see its comment). This path
+                // should never fire in production; warn if it does (W58 F4).
+                debugWarn('[node-manager] createPoints hit the no-raw-buffer branch; using zero defaults')
+                px = 0
+                py = 0
+                pz = 0
+                cluster = 0
+            }
+
+            const fx = (px - renderCenter.x + scatter.x) * MYCELIUM_FIELD_SCALE.x
+            const fy = (py - renderCenter.y + scatter.y) * MYCELIUM_FIELD_SCALE.y
+            const fz = (pz - renderCenter.z + scatter.z) * MYCELIUM_FIELD_SCALE.z
+            ;(positions as number[]).push(fx, fy, fz)
+
+            state.nodePositions.push({ x: fx, y: fy, z: fz })
+            state.targetPositions.push({ x: fx, y: fy, z: fz })
+            state.originalPositions.push({ x: fx, y: fy, z: fz })
+
+            const color = getThreadCategoryColor(cluster, CONFIG.COLORS).lerp(_threadTintColor, 0.005)
+            const radialDepth = Math.sqrt(fx * fx + fy * fy + fz * fz)
+            const depthFactor = MathUtils.clamp(1.16 - radialDepth * 0.14, 0.82, 1.12)
+            const colorOffset = i * 3
+            color.offsetHSL(0, 0.045, -0.01)
+            const baseR = Math.min(1, color.r * depthFactor * 1.18 + 0.018)
+            const baseG = Math.min(1, color.g * depthFactor * 1.18 + 0.022)
+            const baseB = Math.min(1, color.b * depthFactor * 1.18 + 0.019)
+
+            pointBaseColors[colorOffset] = baseR
+            pointBaseColors[colorOffset + 1] = baseG
+            pointBaseColors[colorOffset + 2] = baseB
+            ;(colors as number[]).push(baseR, baseG, baseB)
+        })
+    }
+
     state.overviewBounds = {
         sourceMin: { x: bounds.min.x, y: bounds.min.y, z: bounds.min.z },
         sourceMax: { x: bounds.max.x, y: bounds.max.y, z: bounds.max.z },
@@ -513,54 +570,6 @@ export function createPoints() {
     webglContext.focusBeaconTexture = sporeTexture
     webglContext.focusRingTexture = trackTexture(createFocusRingTexture())
     webglContext.focusNextCueTexture = trackTexture(createFocusNextCueTexture())
-
-    const hasRawBuffers = rawPositionsBuffer && rawClustersBuffer && rawClustersBuffer.length === state.points.length
-
-    state.points.forEach((point: Point, i: number) => {
-        const scatter = scatterOffsets[i] || { x: 0, y: 0, z: 0 }
-        let px, py, pz, cluster
-
-        if (hasRawBuffers) {
-            px = rawPositionsBuffer[i * 3] ?? 0
-            py = rawPositionsBuffer[i * 3 + 1] ?? 0
-            pz = rawPositionsBuffer[i * 3 + 2] ?? 0
-            cluster = rawClustersBuffer[i] ?? 0
-        } else {
-            // No raw clusters buffer (or length mismatch) — use zero defaults
-            // instead of the dead `point.x/y/z` reads. `state.points` is
-            // `BusinessRecord[]` and never carries those fields (getPointBoundsCenter
-            // already removed this fallback — see its comment). This path
-            // should never fire in production; warn if it does (W58 F4).
-            debugWarn('[node-manager] createPoints hit the no-raw-buffer branch; using zero defaults')
-            px = 0
-            py = 0
-            pz = 0
-            cluster = 0
-        }
-
-        const fx = (px - renderCenter.x + scatter.x) * MYCELIUM_FIELD_SCALE.x
-        const fy = (py - renderCenter.y + scatter.y) * MYCELIUM_FIELD_SCALE.y
-        const fz = (pz - renderCenter.z + scatter.z) * MYCELIUM_FIELD_SCALE.z
-        positions.push(fx, fy, fz)
-
-        state.nodePositions.push({ x: fx, y: fy, z: fz })
-        state.targetPositions.push({ x: fx, y: fy, z: fz })
-        state.originalPositions.push({ x: fx, y: fy, z: fz })
-
-        const color = getThreadCategoryColor(cluster, CONFIG.COLORS).lerp(_threadTintColor, 0.005)
-        const radialDepth = Math.sqrt(fx * fx + fy * fy + fz * fz)
-        const depthFactor = MathUtils.clamp(1.16 - radialDepth * 0.14, 0.82, 1.12)
-        const colorOffset = i * 3
-        color.offsetHSL(0, 0.045, -0.01)
-        const baseR = Math.min(1, color.r * depthFactor * 1.18 + 0.018)
-        const baseG = Math.min(1, color.g * depthFactor * 1.18 + 0.022)
-        const baseB = Math.min(1, color.b * depthFactor * 1.18 + 0.019)
-
-        pointBaseColors[colorOffset] = baseR
-        pointBaseColors[colorOffset + 1] = baseG
-        pointBaseColors[colorOffset + 2] = baseB
-        colors.push(baseR, baseG, baseB)
-    })
 
     geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
     geometry.setAttribute('color', new Float32BufferAttribute(colors, 3))
@@ -595,9 +604,9 @@ function createCountyOutline({
     max,
     center
 }: {
-    min: Vector3 | null | undefined
-    max: Vector3 | null | undefined
-    center: Vector3 | null | undefined
+    min: { x: number; y: number; z: number } | null | undefined
+    max: { x: number; y: number; z: number } | null | undefined
+    center: { x: number; y: number; z: number } | null | undefined
 }) {
     if (!webglContext.scene) return
     const existing = webglContext.scene.getObjectByName('county-outline')
