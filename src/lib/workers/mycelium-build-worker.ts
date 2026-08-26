@@ -548,7 +548,7 @@ interface WorkerAPI {
     addEventListener(type: 'message', cb: (e: MessageEvent) => void): void
 }
 
-const ctx = self as unknown as WorkerAPI
+const ctx = (typeof self !== 'undefined' ? self : globalThis) as unknown as WorkerAPI
 
 type BuildRequest =
     | (MyceliumBuildPayload & { type: 'BUILD'; requestId?: number })
