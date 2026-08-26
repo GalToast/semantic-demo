@@ -630,7 +630,22 @@ export function disposeMycelium() {
 export async function createMycelium(opts?: { segmentsPerPair?: number }) {
     if (!webglContext.pointsMesh || !state.points?.length || !state.nodePositions?.length) return
 
-    disposeMycelium()
+    // Keep the current filaments visible while the new ones build — the old
+    // Group stays attached to pointsMesh until the new Group is ready to
+    // atomically replace it (prevents the pale gap seen after reload, where
+    // dispose cleared the scene before the async scan/worker finished).
+    lodUpgradeToken += 1
+    runDisposeBezierViewRefresh()
+    const oldGroup = webglContext.myceliumGroup
+    const oldCore = webglContext.myceliumCoreLines
+    const oldWispy = webglContext.myceliumWispyLines
+    const oldBridge = webglContext.myceliumBridgeLines
+    const oldPairs = webglContext.myceliumConnectionPairs.slice()
+    webglContext.myceliumGroup = null
+    webglContext.myceliumCoreLines = null
+    webglContext.myceliumWispyLines = null
+    webglContext.myceliumBridgeLines = null
+    webglContext.myceliumConnectionPairs = []
 
     // Tessellation level for THIS build — clamped to the full-quality ceiling;
     // below-ceiling builds schedule an idle upgrade back to the ceiling.
@@ -717,7 +732,15 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
             semanticSource: semanticEdges ? neighborMapRef : null
         }
     }
-    if (!edgeSets) return
+    if (!edgeSets) {
+        // No new edges — keep the old filaments visible.
+        webglContext.myceliumGroup = oldGroup
+        webglContext.myceliumCoreLines = oldCore
+        webglContext.myceliumWispyLines = oldWispy
+        webglContext.myceliumBridgeLines = oldBridge
+        webglContext.myceliumConnectionPairs = oldPairs
+        return
+    }
     performance.mark('engine-init-mycelium-edges-done')
 
     // INP campaign 2026-08-25 (6d0ffd77): the tessellation loop measured +751ms
@@ -805,23 +828,23 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
         })
     }
 
-    webglContext.myceliumGroup = new Group()
+    const newGroup = new Group()
     const profile = getMyceliumPresentationProfile()
-    webglContext.myceliumCoreLines = createLineSegments(
+    const newCore = createLineSegments(
         coreConnections,
         coreColors,
         profile.core,
         profile.linewidth.core,
         workerBuffers?.layerBounds.core
     )
-    webglContext.myceliumWispyLines = createLineSegments(
+    const newWispy = createLineSegments(
         wispyConnections,
         wispyColors,
         profile.wispy,
         profile.linewidth.wispy,
         workerBuffers?.layerBounds.wispy
     )
-    webglContext.myceliumBridgeLines = createLineSegments(
+    const newBridge = createLineSegments(
         bridgeConnections,
         bridgeColors,
         profile.bridge,
@@ -830,11 +853,27 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
     )
     performance.mark('engine-init-mycelium-geometry-done')
 
-    if (webglContext.myceliumCoreLines) webglContext.myceliumGroup.add(webglContext.myceliumCoreLines)
-    if (webglContext.myceliumWispyLines) webglContext.myceliumGroup.add(webglContext.myceliumWispyLines)
-    if (webglContext.myceliumBridgeLines) webglContext.myceliumGroup.add(webglContext.myceliumBridgeLines)
-    if (!webglContext.scene) return
-    webglContext.pointsMesh.add(webglContext.myceliumGroup)
+    if (newCore) newGroup.add(newCore)
+    if (newWispy) newGroup.add(newWispy)
+    if (newBridge) newGroup.add(newBridge)
+    if (!webglContext.scene) {
+        disposeObject3D(newGroup)
+        webglContext.myceliumGroup = oldGroup
+        webglContext.myceliumCoreLines = oldCore
+        webglContext.myceliumWispyLines = oldWispy
+        webglContext.myceliumBridgeLines = oldBridge
+        webglContext.myceliumConnectionPairs = oldPairs
+        return
+    }
+    if (oldGroup) {
+        if (webglContext.pointsMesh) webglContext.pointsMesh.remove(oldGroup)
+        disposeObject3D(oldGroup)
+    }
+    webglContext.myceliumGroup = newGroup
+    webglContext.myceliumCoreLines = newCore
+    webglContext.myceliumWispyLines = newWispy
+    webglContext.myceliumBridgeLines = newBridge
+    webglContext.pointsMesh.add(newGroup)
 
     {
         state.scenePerformanceDiagnostics.myceliumCoreSegments = coreConnections.length / 6
