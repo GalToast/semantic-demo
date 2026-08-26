@@ -6890,3 +6890,63 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
         expect(outcome.placeholder || outcome.canvas, 'placeholder or live scene must be present').toBe(true)
     })
 })
+
+// Semantic upgrade journey (2026-08-26, 7e360bc8 chain): the boot mycelium
+// builds on the geometric fallback (~15.7k segments) because the 40MB threads
+// artifact lands ~20s after boot; notifySemanticNeighborMapReady() must then
+// upgrade the live scene to the ~176k-segment semantic contract WITHOUT a
+// blank/pale gap (atomic swap + cross-fade). This test pins the full chain:
+// artifact load → map assign → rebuild → dense scene.
+test.describe('Semantic upgrade journey', () => {
+    test('boot scene upgrades from geometric to the dense semantic mycelium after the threads artifact lands', async ({ page }) => {
+        test.setTimeout(180_000)
+        await page.setViewportSize({ width: 1280, height: 800 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
+        await explore.click()
+
+        // Phase 1 — boot settle: geometric mycelium present (any density > 0).
+        const booted = await pollFor(
+            page,
+            () => {
+                const s = window.__APP_STATE__ ?? {}
+                const d = s.scenePerformanceDiagnostics ?? {}
+                return (d.myceliumCoreSegments ?? 0) + (d.myceliumBridgeSegments ?? 0) > 0
+            },
+            60_000
+        )
+        expect(booted, 'boot mycelium (geometric fallback) must render').toBe(true)
+
+        // Phase 2 — semantic upgrade: neighbor map arrives, rebuild fires,
+        // scene jumps to the dense semantic contract (>100k core segments).
+        const upgraded = await pollFor(
+            page,
+            () => {
+                const s = window.__APP_STATE__ ?? {}
+                const d = s.scenePerformanceDiagnostics ?? {}
+                return (s.semanticNeighborMapByLeadId?.size ?? 0) > 0 && (d.myceliumCoreSegments ?? 0) > 100_000
+            },
+            120_000
+        )
+        expect(upgraded, 'semantic rebuild must land the dense contract (core > 100k segments)').toBe(true)
+
+        // Phase 3 — the upgrade must not blank the scene mid-flight: after the
+        // swap the canvas still holds the dense group (no pale gap regression).
+        const dense = await page.evaluate(() => {
+            const s = window.__APP_STATE__ ?? {}
+            const d = s.scenePerformanceDiagnostics ?? {}
+            return {
+                core: d.myceliumCoreSegments ?? 0,
+                bridge: d.myceliumBridgeSegments ?? 0,
+                mapSize: s.semanticNeighborMapByLeadId?.size ?? 0
+            }
+        })
+        expect(dense.core).toBeGreaterThan(100_000)
+        expect(dense.bridge).toBeGreaterThan(10_000)
+        expect(dense.mapSize).toBe(8_406)
+    })
+})
