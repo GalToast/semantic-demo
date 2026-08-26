@@ -86,24 +86,30 @@ export function computeRevealProgress(now: number): { revealed: number; points: 
 //
 // At overview distances the 8,406 soft additive point/spore sprites sum into a
 // pastel veil that hides individual dots (W60 fought the same symptom via
-// exposure; the QA tour flagged it again). Attenuate opacity/size smoothly
-// between the start/full camera distances so zooming in restores the full
-// glow. Missing camera (unit-test proxies) → factor 1, no attenuation.
+// exposure; the QA tour flagged it again). Attenuate smoothly between the
+// start/full camera distances so zooming in restores the full glow.
+// W72-follow-up (2026-08-26): contrast-aware — node cores keep more presence
+// at overview (points legibility first) while spore dust recedes harder, so
+// the cloud reads as atmosphere behind the points instead of over them.
+// Missing camera (unit-test proxies) → factor 1, no attenuation.
 const WASH_ATTENUATION = Object.freeze({
     startDist: 2.6,
     fullDist: 3.4,
-    opacityFactor: 0.72,
-    sizeFactor: 0.85
+    pointsOpacityFactor: 0.88,
+    pointsSizeFactor: 1.0,
+    sporeOpacityFactor: 0.66
 })
 
-function overviewWashFactor(kind: 'opacity' | 'size'): number {
+function overviewWashFactor(kind: 'points-opacity' | 'points-size' | 'spore-opacity'): number {
     const dist = webglContext.camera?.position?.length?.()
     if (!Number.isFinite(dist)) return 1
-    const { startDist, fullDist, opacityFactor, sizeFactor } = WASH_ATTENUATION
+    const { startDist, fullDist, pointsOpacityFactor, pointsSizeFactor, sporeOpacityFactor } = WASH_ATTENUATION
     if (dist! <= startDist) return 1
     const t = Math.min(1, (dist! - startDist) / (fullDist - startDist))
     const smooth = t * t * (3 - 2 * t)
-    return 1 + smooth * ((kind === 'opacity' ? opacityFactor : sizeFactor) - 1)
+    const target =
+        kind === 'points-opacity' ? pointsOpacityFactor : kind === 'points-size' ? pointsSizeFactor : sporeOpacityFactor
+    return 1 + smooth * (target - 1)
 }
 
 // ── A7 — Points material update ──────────────────────────────────────────────
@@ -134,12 +140,12 @@ export function updatePointsMaterial(
         (PORT_SCENE_ATMOSPHERE.pointOpacityScale ?? 1) *
         pointsRevealProgress *
         pointsOpacityScale *
-        overviewWashFactor('opacity')
+        overviewWashFactor('points-opacity')
     webglContext.pointsMaterial.size =
         CONFIG.POINTS_MATERIAL_BASE_SIZE *
         (1.06 + pointsRevealProgress * 0.46) *
         pointsSizeScale *
-        overviewWashFactor('size')
+        overviewWashFactor('points-size')
     if (webglContext.pointsMaterial.userData.shader) {
         const prefersReduced = prefersReducedMotion()
         webglContext.pointsMaterial.userData.shader.uniforms.uRevealProgress.value = pointsRevealProgress
@@ -437,7 +443,7 @@ export function updateSporeOpacity(
             (PORT_SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) *
             pointsRevealProgress *
             focusBoost *
-            overviewWashFactor('opacity')
+            overviewWashFactor('spore-opacity')
         webglContext.nodeSporeMaterial.opacity += (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12
     }
 }
