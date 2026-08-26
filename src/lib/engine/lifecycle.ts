@@ -297,12 +297,26 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
  */
 function yieldToBrowser(): Promise<void> {
     if (typeof window === 'undefined') return Promise.resolve()
-    if ('requestIdleCallback' in window) {
-        return new Promise<void>((resolve) => {
-            window.requestIdleCallback(() => resolve(), { timeout: 50 })
-        })
-    }
-    return new Promise<void>((resolve) => engineLifecycleReg.schedule(0, () => resolve()))
+    // Starvation-proof yield (2026-08-26, boot-arm-stall class): rIC's
+    // {timeout:50} fires only when the idle loop runs — under GPU saturation
+    // the main thread can delay it past 75s (measured: boot stuck at
+    // 'three-done' with the render loop never arming, frozen overlay).
+    // Race rIC against an absolute 2s setTimeout cap so init always proceeds.
+    return new Promise<void>((resolve) => {
+        let done = false
+        const finish = () => {
+            if (done) return
+            done = true
+            clearTimeout(cap)
+            resolve()
+        }
+        const cap = window.setTimeout(finish, 2000)
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(finish, { timeout: 50 })
+        } else {
+            engineLifecycleReg.schedule(0, finish)
+        }
+    })
 }
 
 function engineInitStillActive(phase: string): boolean {
