@@ -866,14 +866,49 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
         return
     }
     if (oldGroup) {
-        if (webglContext.pointsMesh) webglContext.pointsMesh.remove(oldGroup)
-        disposeObject3D(oldGroup)
+        // Cross-fade (300ms): keep the sparse filaments visible at their
+        // current opacity while the dense semantic ones grow in — turns the
+        // 15k→176k pop into a growth feel. Falls back to atomic swap when
+        // rAF is unavailable (tests) or a layer is missing.
+        const newMats = [newCore, newWispy, newBridge]
+            .map((l) => (l as unknown as { material?: { opacity: number } })?.material)
+            .filter((m): m is { opacity: number } => !!m)
+        const oldMats = (oldGroup.children as Array<{ material?: { opacity: number } }>)
+            .map((c) => c.material)
+            .filter((m): m is { opacity: number } => !!m)
+        const newTargets = newMats.map((m) => m.opacity)
+        const oldTargets = oldMats.map((m) => m.opacity)
+        newMats.forEach((m) => (m.opacity = 0))
+        webglContext.myceliumGroup = newGroup
+        webglContext.myceliumCoreLines = newCore
+        webglContext.myceliumWispyLines = newWispy
+        webglContext.myceliumBridgeLines = newBridge
+        if (webglContext.pointsMesh) webglContext.pointsMesh.add(newGroup)
+        if (typeof requestAnimationFrame !== 'undefined' && oldMats.length && newMats.length) {
+            const start = performance.now()
+            const duration = 300
+            const tick = (): void => {
+                const t = Math.min((performance.now() - start) / duration, 1)
+                oldMats.forEach((m, i) => (m.opacity = oldTargets[i]! * (1 - t)))
+                newMats.forEach((m, i) => (m.opacity = newTargets[i]! * t))
+                if (t < 1) requestAnimationFrame(tick)
+                else {
+                    if (webglContext.pointsMesh) webglContext.pointsMesh.remove(oldGroup)
+                    disposeObject3D(oldGroup)
+                }
+            }
+            requestAnimationFrame(tick)
+        } else {
+            if (webglContext.pointsMesh) webglContext.pointsMesh.remove(oldGroup)
+            disposeObject3D(oldGroup)
+        }
+    } else {
+        webglContext.myceliumGroup = newGroup
+        webglContext.myceliumCoreLines = newCore
+        webglContext.myceliumWispyLines = newWispy
+        webglContext.myceliumBridgeLines = newBridge
+        if (webglContext.pointsMesh) webglContext.pointsMesh.add(newGroup)
     }
-    webglContext.myceliumGroup = newGroup
-    webglContext.myceliumCoreLines = newCore
-    webglContext.myceliumWispyLines = newWispy
-    webglContext.myceliumBridgeLines = newBridge
-    webglContext.pointsMesh.add(newGroup)
 
     {
         state.scenePerformanceDiagnostics.myceliumCoreSegments = coreConnections.length / 6
