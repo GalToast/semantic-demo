@@ -324,11 +324,12 @@
     switch (status) {
       case 'active': return 'Active';
       case 'inactive': return 'Inactive';
-      case 'disqualified': return 'Disqualified';
+      // Internal CRM jargon ('disqualified') must not reach the public card —
+      // phrased to match thread-lens.ts's public wording.
+      case 'disqualified': return 'No longer active';
       default: return status;
     }
   }
-
   function formatClusterName(cluster: number): string {
     return CLUSTER_NAMES[cluster % CLUSTER_NAMES.length] ?? 'Uncategorized';
   }
