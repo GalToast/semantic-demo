@@ -628,8 +628,41 @@ export function disposeMycelium() {
     webglContext.myceliumConnectionPairs = []
 }
 
+// ── Boot-race retry (2026-08-26) ──────────────────────────────────────────────
+// Measured (tmp/boot-race-repro.md + switchboard event 14): createMycelium can
+// be called while the data worker is still delivering (GPU contention); the old
+// one-shot silent return left the scene PERMANENTLY core-less — render loop
+// alive, frames advancing, myceliumCoreLines null forever. Re-arm a bounded
+// retry so late data still builds the core lines.
+const MYCELIUM_RETRY_MS = 750
+const MYCELIUM_RETRY_MAX = 24 // ≈18s of bounded retry; later triggers handle rebuilds after that
+let myceliumRetryTimer: ReturnType<typeof setTimeout> | null = null
+function scheduleMyceliumRetry(opts?: { segmentsPerPair?: number }): void {
+    if (myceliumRetryTimer !== null) return
+    let attempts = 0
+    myceliumRetryTimer = setTimeout(function tick() {
+        myceliumRetryTimer = null
+        attempts += 1
+        if (webglContext.pointsMesh && state.points?.length && state.nodePositions?.length) {
+            void createMycelium(opts) // conditions met — real build (guard now passes)
+        } else if (attempts < MYCELIUM_RETRY_MAX) {
+            myceliumRetryTimer = setTimeout(tick, MYCELIUM_RETRY_MS)
+        }
+    }, MYCELIUM_RETRY_MS)
+}
+
 export async function createMycelium(opts?: { segmentsPerPair?: number }) {
-    if (!webglContext.pointsMesh || !state.points?.length || !state.nodePositions?.length) return
+    if (!webglContext.pointsMesh || !state.points?.length || !state.nodePositions?.length) {
+        // Late-data race: silent one-shot return permanently skipped the core
+        // build. Retry in bounded steps until data lands (or budget exhausted;
+        // later rebuild triggers call us again).
+        scheduleMyceliumRetry(opts)
+        return
+    }
+    if (myceliumRetryTimer !== null) {
+        clearTimeout(myceliumRetryTimer)
+        myceliumRetryTimer = null
+    }
 
     // Keep the current filaments visible while the new ones build — the old
     // Group stays attached to pointsMesh until the new Group is ready to
