@@ -67,18 +67,29 @@ Instrumentation: `__ENGINE_INIT_TRACE__` breadcrumbs + `performance`
 `engine-init-*` marks (merged by `tmp/init-trace-probe.mjs`, which is
 self-contained — inline server, no external dependency).
 
-| phase (from gpu-start) | budget | measured (throttled 4x) |
-| --- | --- | --- |
-| scene build (buildThreeSceneOrFallback) | ≤ 250ms | 174–229ms ✓ |
-| createPoints (8,406 pts + matrices) | ≤ 400ms | 394–624ms ⚠ |
-| createMycelium (100,872 edge segments) | ≤ 400ms | **751–1807ms ✗** |
-| bindings + semantic attach + ready | ≤ 100ms | ~100ms ✓ |
+| phase (from gpu-start)                  | budget  | measured (throttled 4x) |
+| --------------------------------------- | ------- | ----------------------- |
+| scene build (buildThreeSceneOrFallback) | ≤ 250ms | 174–229ms ✓             |
+| createPoints (8,406 pts + matrices)     | ≤ 400ms | 394–624ms ⚠             |
+| createMycelium boot (geometric, chunked)| ≤ 400ms | 332–906ms ⚠ scan median 448ms; yields every 800pts keep tasks under budget |
+| bindings + semantic attach + ready      | ≤ 100ms | ~100ms ✓                |
 
 - **Landed**: LOD-first mycelium build (`aa7cf281`, segmentsPerPair 4 →
   idle-upgrade to 10) — quantification pending a quiet-window run.
-- **Named culprit**: createMycelium tessellation (+751ms in one task).
-  Fix directions: worker-built buffers + transferables, initial LOD + idle
-  upgrade (landed), finer frame-splitting.
+- **Attribution correction (2026-08-26)**: the old "751–1807ms" window was
+  NOT tessellation and NOT the discovery worker — fine-grained marks proved
+  it is `buildGeometricMyceliumEdges`' 27-bucket neighbor scan (the boot
+  scene always built on the geometric fallback because the 40MB threads
+  artifact lands ~20s AFTER mycelium). Boot is ~15.7k segments; the
+  ~176k-segment semantic contract arrives via the rebuild below.
+- **Landed**: semantic upgrade chain (`7e360bc8` rebuild when the neighbor
+  map arrives → `57fb9a32` atomic swap keeps old filaments visible during
+  the rebuild → `2f340601` 300ms cross-fade). Certified end-to-end: marks
+  `mycelium-semantic-rebuild` (+19.8s) → discovery → rebuild done (+25.8s);
+  segments 15,670 → 176,200 (core 110,860 + bridge 65,340).
+- **Landed**: geometric scan opt (`e43da739`) — squared distance, integer
+  pair keys, `Set<number>`, chunked `yieldToBrowser` every 800 points.
+  Scan median 881ms → 448ms under load (quiet-window rerun pending).
 - **Landed**: pp-chunk eval deferred off the interaction window
   (`0c19e272`) and WebGL graph prewarm at CTA-visible (`0cca993d`).
 
@@ -86,7 +97,7 @@ Measurement honesty rules (learned the hard way):
 
 1. Always 4x CPU throttle + 150ms latency — unthrottled numbers are not
    comparable to the bar (and nightly lane activity adds ±50% noise).
-2. Gate the gesture on CTA *visibility*, not a fixed timer.
+2. Gate the gesture on CTA _visibility_, not a fixed timer.
 3. Worker fetches are invisible to main-thread resource timing — read
    `dataLoadState.status` instead.
 4. N ≥ 3 per arm, compare medians; single runs have proven meaningless.
@@ -181,4 +192,4 @@ Potential additional deferral: ~23 KB raw / ~9 KB gzip (remaining non-split comp
 
 ---
 
-*This budget is a living document. Update it as the architecture evolves.*
+_This budget is a living document. Update it as the architecture evolves._
