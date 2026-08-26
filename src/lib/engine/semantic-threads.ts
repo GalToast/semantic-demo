@@ -702,6 +702,16 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
                     state.semanticThreadArtifactName = artifactName
                     state.semanticNeighborMapByLeadId = neighborMap
                 }
+                if (neighborMap.size > 0) {
+                    // The artifact lands ~1s AFTER the boot mycelium built on the
+                    // geometric fallback (~1.5k pairs vs the ~10k-pair semantic
+                    // contract). Announce readiness so thread-manager invalidates
+                    // its cached edge sets and upgrades the live scene to real
+                    // semantic filaments (idle-scheduled, gesture-safe).
+                    void import('@lib/engine/thread-manager')
+                        .then(({ notifySemanticNeighborMapReady }) => notifySemanticNeighborMapReady())
+                        .catch(() => {})
+                }
                 _syncSemanticThreadDataToStores(bundle, artifactName, neighborMap, manifest)
                 finalizeThreadLoad()
                 return true

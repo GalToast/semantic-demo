@@ -85,8 +85,41 @@ type CachedMyceliumEdgeSets = {
     semantic: boolean
     pointsRef: unknown
     positionsRef: unknown
+    /** Identity of state.semanticNeighborMapByLeadId the discovery actually
+     * used (null for geometric-fallback caches). When a NEW non-empty map
+     * arrives after boot (the 40MB threads artifact lands late), this
+     * mismatch invalidates the cache so the scene upgrades to semantic
+     * edges — see notifySemanticNeighborMapReady(). */
+    semanticSource: unknown
 }
 let cachedEdgeSets: CachedMyceliumEdgeSets | null = null
+
+export type CachedEdgeSetsMeta = {
+    pointsRef: unknown
+    positionsRef: unknown
+    semanticSource: unknown
+}
+export type CurrentRefs = {
+    points: unknown
+    positions: unknown
+    neighborMap: unknown
+    neighborMapSize: number
+}
+/** Cache-validity predicate — exported pure for unit pinning
+ * (mycelium-cache-stale.test.ts). Semantics:
+ * - no cache → rebuild;
+ * - array identity drift (points/positions) → rebuild;
+ * - a NEW NON-EMPTY neighbor map (identity change) → rebuild so the scene
+ *   upgrades geometric→semantic edges once the threads artifact lands;
+ * - map still empty/size 0 (mid-load or reset) → KEEP the current build
+ *   (never downgrade a live scene back to geometric while data loads). */
+export function isCachedEdgeSetsUsable(cached: CachedEdgeSetsMeta | null, current: CurrentRefs): boolean {
+    if (!cached) return false
+    if (cached.pointsRef !== current.points) return false
+    if (cached.positionsRef !== current.positions) return false
+    if (current.neighborMapSize > 0 && cached.semanticSource !== current.neighborMap) return false
+    return true
+}
 let lodUpgradeToken = 0
 // Sanctioned setTimeout wrapper — keeps the no-restricted-syntax lint rule
 // happy for the requestIdleCallback fallback path.
@@ -110,6 +143,31 @@ function scheduleMyceliumLodUpgrade(builtBelowFullLod: boolean): void {
     // next to the jank it removes. See tmp/inp-campaign.md LOD A/B section.
     if (ric) ric(fire, { timeout: 5000 })
     else lodUpgradeReg.schedule(5000, fire)
+}
+
+/**
+ * Semantic-upgrade hook (2026-08-26): the 40MB threads artifact lands AFTER
+ * boot (~3s vs ~2s), so the first createMycelium always runs on the geometric
+ * fallback and nothing ever applied the real semantic edges (~1.5k pairs vs
+ * the ~10k-pair contract). semantic-threads.ts calls this ONCE after it
+ * assigns a NON-EMPTY state.semanticNeighborMapByLeadId; the cache check in
+ * createMycelium (isCachedEdgeSetsUsable) sees the new map identity, treats
+ * the cached edge sets as stale, and this rebuild upgrades the live scene to
+ * semantic filaments. Idle-scheduled so it never fights an active gesture.
+ */
+export function notifySemanticNeighborMapReady(): void {
+    if (!webglContext.pointsMesh || !state.points?.length || !state.nodePositions?.length) return
+    if (!state.semanticNeighborMapByLeadId?.size) return // reset-to-empty path — never rebuild from that
+    performance.mark('engine-init-mycelium-semantic-rebuild')
+    const token = ++lodUpgradeToken // supersede any pending LOD upgrade — this build supersedes it
+    const fire = (): void => {
+        if (token !== lodUpgradeToken) return // disposed / superseded meanwhile
+        void createMycelium()
+    }
+    const ric = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void })
+        .requestIdleCallback
+    if (ric) ric(fire, { timeout: 2500 })
+    else lodUpgradeReg.schedule(2500, fire)
 }
 
 function buildGeometricMyceliumEdges(
@@ -246,11 +304,16 @@ async function buildSemanticMyceliumEdges(): Promise<MyceliumEdgeSets | null> {
     state.semanticNeighborMapByLeadId.forEach((record, leadId) => {
         neighborMap[leadId] = record.neighbors
     })
+    // Attribution (2026-08-25): the discovery window split into maps-build /
+    // CSR-serialize / worker round-trip. init-trace-probe picks up any
+    // engine-init-* mark automatically.
+    performance.mark('engine-init-discovery-maps-done')
 
     // Serialize to CSR typed arrays — TRANSFERRED zero-copy (the object-graph
     // structured clone measured ~650ms on main; the CSR pass is a single O(n)
     // loop). The fallback re-serializes from the intact object map.
     const adjacency = serializeAdjacency({ leadIds, neighborMap })
+    performance.mark('engine-init-discovery-csr-done')
     const workerResult = await discoverMyceliumEdgesInWorker({
         leadIds,
         pointClusters,
@@ -585,12 +648,18 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
 
     // LOD-upgrade rebuilds reuse previously computed edge sets when the
     // underlying arrays are identical — re-tessellate, don't re-discover.
-    const cachedEdgeSetsHit =
-        cachedEdgeSets !== null &&
-        cachedEdgeSets.pointsRef === state.points &&
-        cachedEdgeSets.positionsRef === state.nodePositions
-            ? cachedEdgeSets
-            : null
+    // Semantic-upgrade-aware cache check: when the threads artifact lands
+    // AFTER boot, the map identity changes and the geometric cache is stale —
+    // the rebuild below re-discovers with real semantic edges.
+    const neighborMapRef = state.semanticNeighborMapByLeadId
+    const cachedEdgeSetsHit = isCachedEdgeSetsUsable(cachedEdgeSets, {
+        points: state.points,
+        positions: state.nodePositions,
+        neighborMap: neighborMapRef,
+        neighborMapSize: neighborMapRef?.size ?? 0
+    })
+        ? cachedEdgeSets
+        : null
 
     const semanticEdges = cachedEdgeSetsHit
         ? cachedEdgeSetsHit.semantic
@@ -633,7 +702,10 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
             sets: edgeSets,
             semantic: !!semanticEdges,
             pointsRef: state.points,
-            positionsRef: state.nodePositions
+            positionsRef: state.nodePositions,
+            // The map identity discovery actually consumed this build — null
+            // for the geometric fallback. A later non-empty map invalidates.
+            semanticSource: semanticEdges ? neighborMapRef : null
         }
     }
     if (!edgeSets) return
