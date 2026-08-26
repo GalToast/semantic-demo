@@ -907,11 +907,11 @@
         align-items: center;
         gap: 7px;
         position: fixed;
-        // 2026-08-25 (P-Inside-2): top:6px + 30px bar lands under the status bar
-        // (SE/browser chrome), so "Inside neighborhood" renders clipped/
-        // obscured at the top of the capture. Start below the status bar,
-        // honoring safe-area when the device has one. Values aligned to the
-        // parallel lane's committed fix (42px floor / 36px + safe-area).
+        /* 2026-08-25 (P-Inside-2): top:6px + 30px bar lands under the status
+           bar (SE/browser chrome), so "Inside neighborhood" renders clipped
+           or obscured at the top of the capture. Start below the status bar,
+           honoring safe-area when present. Values aligned to the parallel
+           lane's committed fix (42px floor / 36px + safe-area). */
         top: max(42px, calc(36px + env(safe-area-inset-top, 0px)));
         left: 0;
         right: 0;
@@ -2018,10 +2018,10 @@
 
     body.surface-semantic-dive .focus-stage-inside-status {
         position: fixed;
-        // 2026-08-25 (P-Inside-2): same top-offset fix as the portrait rule —
-        // a 6px top + 30px bar renders under the status bar and clips
-        // "Inside neighborhood" at the top of the capture. Values aligned to
-        // the parallel lane's committed fix (42px floor / 36px + safe-area).
+        /* 2026-08-25 (P-Inside-2): same top-offset fix as the portrait rule —
+           a 6px top + 30px bar renders under the status bar and clips
+           "Inside neighborhood" at the top of the capture. Values aligned
+           to the parallel lane's committed fix (42px / 36px + safe-area). */
         top: max(42px, calc(36px + env(safe-area-inset-top, 0px)));
         left: max(10px, env(safe-area-inset-left, 0px));
         right: max(10px, env(safe-area-inset-right, 0px));
