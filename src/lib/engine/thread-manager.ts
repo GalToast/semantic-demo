@@ -170,16 +170,18 @@ export function notifySemanticNeighborMapReady(): void {
     else lodUpgradeReg.schedule(2500, fire)
 }
 
-function buildGeometricMyceliumEdges(
+async function buildGeometricMyceliumEdges(
     clusterMembers: Map<number, number[]>,
     clusterCentroids: Map<number, { x: number; y: number; z: number }>
-): MyceliumEdgeSets | undefined {
+): Promise<MyceliumEdgeSets | undefined> {
     if (!state.points || !Array.isArray(state.points) || state.points.length === 0) return undefined
     const corePairs: EdgePair[] = []
     const wispyPairs: EdgePair[] = []
     const bridgePairs: EdgePair[] = []
-    const seen = new Set<string>()
+    const seen = new Set<number>()
     const cellSize = 0.1
+    const CORE_SQ = 0.048 * 0.048
+    const WISPY_SQ = 0.078 * 0.078
     const grid = new Map<string, number[]>()
 
     for (let i = 0; i < state.points.length; i += 1) {
@@ -189,8 +191,10 @@ function buildGeometricMyceliumEdges(
         if (!grid.has(key)) grid.set(key, [])
         grid.get(key)!.push(i)
     }
+    performance.mark('engine-init-geometric-grid-done')
 
     for (let i = 0; i < state.points.length; i += 1) {
+        if (i !== 0 && i % 800 === 0) await yieldToBrowser()
         const pos = state.nodePositions[i]
         if (!pos) continue
         const cx = Math.floor(pos.x / cellSize)
@@ -208,13 +212,17 @@ function buildGeometricMyceliumEdges(
                         if (!p1 || !p2 || p1.cluster !== p2.cluster) continue
                         const other = state.nodePositions[j]
                         if (!other) continue
-                        const dist = Math.hypot(pos.x - other.x, pos.y - other.y, pos.z - other.z)
-                        const key = pairKey(i, j)
+                        const dx = pos.x - other.x
+                        const dy = pos.y - other.y
+                        const dz = pos.z - other.z
+                        const distSq = dx * dx + dy * dy + dz * dz
+                        // integer pair key: 8406 < 16384, pack as min*16384+max
+                        const key = i < j ? i * 16384 + j : j * 16384 + i
                         if (seen.has(key)) continue
-                        if (dist < 0.048) {
+                        if (distSq < CORE_SQ) {
                             corePairs.push({ a: i, b: j })
                             seen.add(key)
-                        } else if (dist < 0.078) {
+                        } else if (distSq < WISPY_SQ) {
                             wispyPairs.push({ a: i, b: j })
                             seen.add(key)
                         }
@@ -269,6 +277,7 @@ function buildGeometricMyceliumEdges(
                 bridgePairs.push({ a, b })
             })
     })
+    performance.mark('engine-init-geometric-scan-done')
 
     return interleave(corePairs, wispyPairs, bridgePairs)
 }
@@ -695,7 +704,7 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
             centroid.z /= centroid.count || 1
         })
 
-        edgeSets = buildGeometricMyceliumEdges(clusterMembers, clusterCentroids) || undefined
+        edgeSets = (await buildGeometricMyceliumEdges(clusterMembers, clusterCentroids)) || undefined
     }
     if (edgeSets && !cachedEdgeSetsHit) {
         cachedEdgeSets = {
