@@ -639,9 +639,23 @@ async function main() {
             return { inspection, luminance }
         }
 
+        // 2026-08-26: thread reveal races the capture under box load —
+        // threadRevealProgress stays 0 until pointsRevealProgress passes 0.25,
+        // so coreOpacity reads 0 mid-reveal and the >=0.04 assertion fails on
+        // a scene that is about to look correct. Poll for the steady state;
+        // if threads never reveal, the catch proceeds and the assertion fails
+        // with the real value (correct behavior for a genuinely broken scene).
+        const idleSetup = async (page) => {
+            await page
+                .waitForFunction(
+                    () => (window.__TEST_STATE__?.myceliumCoreLines?.material?.opacity ?? 0) >= 0.04,
+                    { timeout: 30000 }
+                )
+                .catch(() => {})
+        }
         const idleResult = collect(
             '01-mobile-idle-galaxy',
-            await runFreshPage('01-mobile-idle-galaxy', { view: 'galaxy' })
+            await runFreshPage('01-mobile-idle-galaxy', { view: 'galaxy' }, idleSetup)
         )
         const focusSetup = async (page) => {
             // The thread artifact (semantic_threads.dat.br, multi-MB) parses
