@@ -205,10 +205,9 @@
       <li>Use <kbd>arrow keys</kbd> or <strong>drag</strong> to explore nearby neighbors.</li>
     </ul>
     <p class="help-dialog-hint">
-      Press <kbd aria-label="Question mark">?</kbd> anytime for keyboard shortcuts.
+      Press <kbd aria-label="Question mark">?</kbd> — outside the search box — for keyboard shortcuts.
       Close the dialog with any outside click or keypress (including /) to start exploring.
-    </p>
-    <button
+    </p>    <button
       class="help-dialog-close"
       type="button"
       onclick={() => closeHelpDialog()}
