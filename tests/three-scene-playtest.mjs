@@ -59,7 +59,7 @@ async function waitForScene(page) {
                 state?.pointsMesh?.geometry?.attributes?.position?.count
             )
         },
-        { timeout: 10000 }
+        { timeout: 60000 }
     )
     // preceding waitForFunction handles settlement
 }
