@@ -354,12 +354,15 @@
      concept without blocking the primary search affordance. */
   @media (max-width: 768px) {
     .proximity-legend-wrapper {
-      top: calc(var(--app-header-height) + 12px);
+      /* 2026-08-25 (P-Gal-2): header+12px (72.8px) landed the card inside the
+         journey-compass tab row (pills start at --app-header-height and are
+         min-height:44px, bottom ≈110px) — the headline rendered behind the
+         Overview/Trail/Focus/Inside pills. Clear the tab row too. */
+      top: calc(var(--app-header-height) + 56px);
       left: 12px;
       bottom: auto;
       max-width: calc(100vw - 24px);
-    }
-    .proximity-legend-card {
+    }    .proximity-legend-card {
       max-width: 280px;
       padding: 12px 14px;
     }
