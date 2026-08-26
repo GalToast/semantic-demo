@@ -10,6 +10,7 @@
  */
 
 import { webglContext } from './webgl-context'
+import { syncMyceliumHandles } from './three-store-sync'
 import {
     Vector3,
     Vector2,
@@ -883,6 +884,18 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
         webglContext.myceliumCoreLines = newCore
         webglContext.myceliumWispyLines = newWispy
         webglContext.myceliumBridgeLines = newBridge
+        // 2026-08-26: re-mirror the upgraded handles into appState/legacy/
+        // engineState — the cross-fade previously swapped webglContext only,
+        // staling the state mirror (and TEST_STATE) at the disposed 15k
+        // objects while the 176k lines rendered (scene had them; mirror did
+        // not — the exact failure mode three-engine-init.ts documents).
+        syncMyceliumHandles({
+            myceliumGroup: newGroup,
+            myceliumCoreLines: newCore,
+            myceliumWispyLines: newWispy,
+            myceliumBridgeLines: newBridge,
+            myceliumConnectionPairs: webglContext.myceliumConnectionPairs
+        })
         if (webglContext.pointsMesh) webglContext.pointsMesh.add(newGroup)
         if (typeof requestAnimationFrame !== 'undefined' && oldMats.length && newMats.length) {
             const start = performance.now()
@@ -907,6 +920,15 @@ export async function createMycelium(opts?: { segmentsPerPair?: number }) {
         webglContext.myceliumCoreLines = newCore
         webglContext.myceliumWispyLines = newWispy
         webglContext.myceliumBridgeLines = newBridge
+        // 2026-08-26: mirror the swapped handles (same invariant as the
+        // cross-fade branch above).
+        syncMyceliumHandles({
+            myceliumGroup: newGroup,
+            myceliumCoreLines: newCore,
+            myceliumWispyLines: newWispy,
+            myceliumBridgeLines: newBridge,
+            myceliumConnectionPairs: webglContext.myceliumConnectionPairs
+        })
         if (webglContext.pointsMesh) webglContext.pointsMesh.add(newGroup)
     }
 

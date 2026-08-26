@@ -647,10 +647,9 @@ async function main() {
         // with the real value (correct behavior for a genuinely broken scene).
         const idleSetup = async (page) => {
             await page
-                .waitForFunction(
-                    () => (window.__TEST_STATE__?.myceliumCoreLines?.material?.opacity ?? 0) >= 0.04,
-                    { timeout: 30000 }
-                )
+                .waitForFunction(() => (window.__TEST_STATE__?.myceliumCoreLines?.material?.opacity ?? 0) >= 0.04, {
+                    timeout: 30000
+                })
                 .catch(() => {})
         }
         const idleResult = collect(
