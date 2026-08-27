@@ -526,8 +526,10 @@
   <!-- Layer 800: Camera controls -->
   <Controls visible={surface.controlsVisible} />
 
-  <!-- Filters (positioned at bottom center) -->
-  <Filters open={false} />
+  <!-- Filters (positioned at bottom center) — hide on placeholder2d; the placeholder is a standalone preview, not the explorable map -->
+  {#if surface.renderKind !== 'placeholder2d'}
+    <Filters open={false} />
+  {/if}
 
   <!-- Thread inspector (overlay, self-gates via visible && threadInspectorActive()) -->
   {#if threadInspectorLazy.current}
@@ -855,6 +857,11 @@
      source order wins. */
   .layer.placeholder-layer {
     pointer-events: none;
+    background: var(--ok-bg, #071018);
+    isolation: isolate;
+  }
+  .layer.placeholder-layer.active {
+    background: var(--ok-bg, #071018);
   }
   /* Layers are stacked by DOM order (later = higher). No z-index needed,
      which lets children (e.g. error overlays) escape the crossfade stack

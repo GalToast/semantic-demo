@@ -83,6 +83,7 @@ type RootAssetMiddlewareStack = {
 
 const LEGACY_CSS_LINKS = [
     '<link rel="stylesheet" href="semantic-demo.css">',
+    '<link rel="stylesheet" href="css/tokens.css">',
     '<link rel="stylesheet" href="css/base.css">',
     '<link rel="stylesheet" href="css/loading.css">',
     '<link rel="stylesheet" href="css/shell.css">',

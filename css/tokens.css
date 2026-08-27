@@ -1,0 +1,83 @@
+/* tokens.css — Design foundation (layer: tokens) */
+/* Single source of truth for color, type, space, radius, z, motion. OKLCH for perceptual uniformity; sRGB fallbacks kept via existing --color-* vars. */
+@layer tokens {
+    :root {
+        /* ── Color — OKLCH (perceptual) + sRGB fallback ── */
+        --ok-bg: oklch(0.14 0.025 235);
+        --ok-bg-deep: oklch(0.11 0.018 235);
+        --ok-surface: oklch(0.18 0.02 235);
+        --ok-surface-raised: oklch(0.21 0.025 235);
+        --ok-text: oklch(0.97 0.006 235);
+        --ok-text-muted: oklch(0.68 0.012 235);
+        --ok-text-faint: oklch(0.55 0.012 235);
+        --ok-primary: oklch(0.82 0.11 175);
+        --ok-primary-hover: oklch(0.86 0.11 175);
+        --ok-primary-soft: oklch(0.82 0.11 175 / 0.14);
+        --ok-border: oklch(0.97 0.006 235 / 0.08);
+        --ok-border-strong: oklch(0.97 0.006 235 / 0.14);
+
+        /* Fallback aliases so components can migrate incrementally */
+        --color-bg: var(--ok-bg);
+        --color-bg-deep: var(--ok-bg-deep);
+        --color-surface: var(--ok-surface);
+        --color-surface-raised: var(--ok-surface-raised);
+
+        /* ── Type — one display, one body, one mono ── */
+        --text-display-size: clamp(30px, 8vw, 42px);
+        --text-display-line: 0.95;
+        --text-display-tracking: -0.03em;
+        --text-title-size: 15px;
+        --text-body-size: 13.5px;
+        --text-caption-size: 11.5px;
+        --text-kicker-size: 10px;
+        --text-action-size: 13px;
+        --line-tight: 1.15;
+        --line-normal: 1.45;
+        --line-relaxed: 1.6;
+        --font-tabular: tabular-nums;
+
+        /* ── Space — 8pt base (4 = half) ── */
+        --space-05: 4px;
+        --space-1: 8px;
+        --space-2: 12px;
+        --space-3: 16px;
+        --space-4: 20px;
+        --space-5: 24px;
+        --space-6: 32px;
+        --space-7: 40px;
+        --space-8: 48px;
+
+        /* ── Radius ── */
+        --radius-card: 16px;
+        --radius-panel: 20px;
+        --radius-pill: 999px;
+        --radius-input: 12px;
+
+        /* ── Z — single scale, no ad-hoc 9999 ── */
+        --z-base: 0;
+        --z-base-raised: 1;
+        --z-panels: 50;
+        --z-compass: 80;
+        --z-legend: 50;
+        --z-overlay: 120;
+        --z-toast: 1200;
+        --z-loading: 3000;
+
+        /* ── Motion ── */
+        --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        --dur-fast: 160ms;
+        --dur-normal: 240ms;
+    --dur-slow: 360ms;
+  }
+
+  /* ── Placeholder chrome hiding — the placeholder is a standalone preview, not the explorable map.
+     Filters / bottom search chrome are siblings of the layer-0 stack, so making the placeholder
+     layer opaque is not enough — they paint above it. Hide them via the body data-render-kind
+     parity attribute (set synchronously at mount, no Svelte timing race). */
+  body[data-render-kind='placeholder2d'] #filters-section,
+  body[data-render-kind='placeholder2d'] #search-result-list,
+  body[data-render-kind='placeholder2d'] .search-container {
+    display: none !important;
+  }
+}
