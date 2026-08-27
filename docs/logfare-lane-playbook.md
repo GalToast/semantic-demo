@@ -16,19 +16,19 @@ kimi-k3.5?, grape-2-pro, qwen-3.8-27b, gemma-4-26b`
 
 ## Model reliability (as of 2026-08-17, 10 working chat models)
 
-| Model                    | Use           | Notes                                                                                                                               |
-| ------------------------ | ------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `kiro-auto`              | **PRIMARY**   | Reliable; streams content.                                                                                                          |
-| `grape-2-pro`            | secondary     | Leaky reasoning into content (`<reasoning>` blocks); occasional missing file at "completed".                                        |
-| `deepseek-v4-flash-0731` | ok            | Fast; 429 per-model rate-limit under concurrent load.                                                                               |
-| `glm-5.2`                | flaky         | Mid-stream SSE drops ("Service temporarily unavailable"), 200-with-no-content in non-stream.                                        |
-| `qwen-3.8-27b`           | slow          | 18-25s/turn; often silent-empty.                                                                                                    |
-| `minimax-m3`             | ok            | Working (reasoning, max effort). Earlier "dead" was a max_tokens-starvation artifact.                                               |
-| `kimi-k3`                | ok            | Working. Earlier "dead" was a probe artifact; transient 429s possible.                                                              |
-| `deepseek-v4-pro`        | ok            | Working (1M ctx, 384K out). Earlier 503s were transient upstream.                                                                   |
-| `deepseek-v4-pro-0813`   | ok            | Working (reasoning; needs max_tokens >= ~50 or content is starved by thinking). Added 2026-08-16.                                   |
-| `gemma-4-26b`            | ok            | Working (reasoning; same budget artifact -- max_tokens >= ~50). Added 2026-08-16.                                                   |
-| `moondream3.1`           | not-in-config | GENUINELY BROKEN (stub null response, 0 completion tokens across text/image variants). Removed from all 3 config layers 2026-08-17. |
+| Model                    | Use           | Notes                                                                                                                                                                      |
+| ------------------------ | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kiro-auto`              | **PRIMARY**   | Reliable; streams content.                                                                                                                                                 |
+| `grape-2-pro`            | secondary     | Leaky reasoning into content (`<reasoning>` blocks); occasional missing file at "completed".                                                                               |
+| `deepseek-v4-flash-0731` | ok            | Fast; 429 per-model rate-limit under concurrent load.                                                                                                                      |
+| `glm-5.2`                | flaky         | Mid-stream SSE drops ("Service temporarily unavailable"), 200-with-no-content in non-stream.                                                                               |
+| `qwen-3.8-27b`           | slow          | 18-25s/turn; often silent-empty. **VISION OK (measured 2026-08-26**: live image probe → 200 + correct color description; use as second opinion / big-context vision lane). |
+| `minimax-m3`             | ok            | Working (reasoning, max effort). Earlier "dead" was a max_tokens-starvation artifact.                                                                                      |
+| `kimi-k3`                | ok            | Working. Earlier "dead" was a probe artifact; transient 429s possible.                                                                                                     |
+| `deepseek-v4-pro`        | ok            | Working (1M ctx, 384K out). Earlier 503s were transient upstream.                                                                                                          |
+| `deepseek-v4-pro-0813`   | ok            | Working (reasoning; needs max_tokens >= ~50 or content is starved by thinking). Added 2026-08-16.                                                                          |
+| `gemma-4-26b`            | ok            | Working (reasoning; same budget artifact -- max_tokens >= ~50). Added 2026-08-16.                                                                                          |
+| `moondream3.1`           | not-in-config | GENUINELY BROKEN (stub null response, 0 completion tokens across text/image variants). Removed from all 3 config layers 2026-08-17.                                        |
 
 ## Launch recipe (the WHOLE lesson)
 

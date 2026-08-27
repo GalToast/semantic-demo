@@ -1,4 +1,4 @@
-# Subagent Lane Inventory — Semantic Explorer
+- qwen-3.8-27b ✅ VISION (measured 2026-08-26: image probe via /logfare/v1/chat/completions returned 200 + correct image description; 18-25s/turn so budget runway; big ctx 1M/131K). Added to vision-capable set alongside kimi-k2.7-code.# Subagent Lane Inventory — Semantic Explorer
 
 > **COMPRESSED HISTORY (2026-08-11):** the 59 dated run-entries below are history; durable lessons → docs/subagent-delegation.md (Landmine classes). The live coordination state is in the un-dated sections.
 
@@ -977,8 +977,7 @@ fleet-quiet-window root-cause (canvas render under test-server serving), separat
 - minimax-m3 ✅ OK (workhorse: 112 workers this session; vision-capable)
 - kiro-auto ✅ OK (2nd-workhorse: 97; was NOT in the roster doc — add it)
 - kimi-k3 ✅ OK (25; cheap reads)
-- grape-2-pro ✅ responds (26) — CAUTION: empty-turn risk (disk-gate it)
-- deepseek-v4-flash — ⚠️ flaky (timed out now; 16 workers)
+- grape-2-pro ✅ responds (26) — CAUTION: empty-turn risk (disk-gate it)- deepseek-v4-flash — ⚠️ flaky (timed out now; 16 workers)
 - deepseek-v4-flash-0731 — situational (36)
 - v4-pro/v4-flash/fusion/qwen3/hydra/nemotron/open-4o/hy3 — the names I guessed 404'd (NOT in the current catalog via those slugs)
 - Method: probe BEFORE dispatch (the 429/404/empty-turn window changes); disk-gate EVERY lane
