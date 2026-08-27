@@ -87,6 +87,13 @@ export interface ThreeEngineState {
     // Render-loop bookkeeping
     rafId: number | null
     idleFrameTimerId: number | null
+    /**
+     * Performance timestamp of the last frame that moved scene content
+     * (node lerp / pocket breathing). The idle scheduler renders at ~30Hz
+     * while this stays fresh (<=250ms) and decays to the static 125ms rate
+     * otherwise — breathing looks alive without paying 60fps when static.
+     */
+    idleMotionLastMs: number | null
     webglContextLost: boolean
     /** T3-1: set true by the C6 (webglcontextrestored) handler so the
      *  orchestration layer knows a full GPU resource re-init is needed
@@ -151,6 +158,7 @@ export const engineState: ThreeEngineState = {
     // Render-loop bookkeeping
     rafId: null,
     idleFrameTimerId: null,
+    idleMotionLastMs: null,
     webglContextLost: false,
     webglNeedsRestoreReinit: false,
     circuitBreakerTripped: false,

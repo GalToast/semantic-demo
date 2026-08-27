@@ -288,6 +288,12 @@ export function lerpNodesForFrame(now: number): boolean {
         }
     })
 
+    // Idle-motion stamp: the scheduler renders at ~30Hz while nodes are
+    // breathing/settling, then decays to the static 8Hz idle rate (feel fix).
+    if (anyNodeMoved) {
+        engineState.idleMotionLastMs = now
+    }
+
     // Defensive: preserve the original `if (!engineState.state) return` bail
     // from animate() (pre-extraction L425). Reading the singleton live (not
     // the captured `state`) so a mid-frame teardown is observable.

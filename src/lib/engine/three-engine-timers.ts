@@ -13,7 +13,8 @@ import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Module-level constants ──────────────────────────────────────────────────
 
-const IDLE_STATIC_FRAME_INTERVAL_MS = 125
+const IDLE_STATIC_FRAME_INTERVAL_MS = 125 // static galaxy: ~8Hz energy-throttled
+const IDLE_MOTION_FRAME_INTERVAL_MS = 33 // motion (breathing/settling): ~30Hz alive
 
 // ── Animate callback injection ───────────────────────────────────────────────
 //
@@ -60,7 +61,19 @@ export function scheduleNextAnimationFrame(continuous: boolean): void {
     engineState.idleFrameTimerId = window.setTimeout(() => {
         engineState.idleFrameTimerId = null
         if (engineState.rafId === null) engineState.rafId = window.requestAnimationFrame(animate)
-    }, IDLE_STATIC_FRAME_INTERVAL_MS)
+    }, idleFrameIntervalMs())
+}
+
+/**
+ * Two-tier idle rate (2026-08-27, feel fix): while the last frame moved scene
+ * content (node breathing / settling), re-render at ~30Hz so the animation
+ * looks alive; once motion has been quiet for 250ms, decay to the static
+ * 8Hz rate to save energy. Self-decaying via the idleMotionLastMs stamp.
+ */
+function idleFrameIntervalMs(): number {
+    const last = engineState.idleMotionLastMs
+    if (last !== null && performance.now() - last < 250) return IDLE_MOTION_FRAME_INTERVAL_MS
+    return IDLE_STATIC_FRAME_INTERVAL_MS
 }
 
 export function pauseRenderLoopTimers(options: { clearRestoreTimer?: boolean } = {}): void {
