@@ -162,3 +162,11 @@ main-lane must recheck the file on disk, never the harness status alone.
 ---
 
 _Updated 2026-07-15: added router watch, harvest-playbook, model-id 404 trap._
+
+## 2026-08-27 fleet update
+
+- **glm-5.3-flash**: NEW logfare id — VISION-CAPABLE (image probe: 200 + color answer "Salmon"); configured in pi-model-providers (vision label + limits 131072/131072); also exists on zenmux as `z-ai/glm-5.3-flash`. ~18s/turn.
+- **dots3-note-prev**: VISION CONFIRMED via zenmux (image probe: 200, reasoning engaged). NOTE: the bare id `dots-studio/dots3-note` does NOT exist on zenmux — always use `dots3-note-prev`. Top-tier vision lane — use for jury work.
+- **phoenix-1.0**: image-GEN only (404 on chat/completions) — not a chat/VLM lane.
+- **grape-2-pro**: REMOVED from logfare's model list (was present 2026-08-26).
+- Smoke matrix: tmp/vision-smoke-20260827.json; config: pi-model-providers vision matcher now includes glm-5.3 + dots3-note; logfare limits row added.
