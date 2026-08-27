@@ -47,7 +47,6 @@
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { signalSceneReady, signalSceneError } from '@lib/stores/scene-ready.svelte';
   import Legend from '@components/Legend.svelte';
-  import SearchBar from '@components/SearchBar.svelte';
   import FocusPocketA11y from '@components/FocusPocketA11y.svelte';
   import Filters from '@components/Filters.svelte';
   import CompassRail from '@components/CompassRail.svelte';
@@ -102,6 +101,12 @@
   // __PLAYWRIGHT__ block and idle prewarm below load them eagerly exactly like
   // canvasLazy/mapViewLazy. Render sites use the {#if c} pattern.
   const infoPanelLazy = createLazyComponent(() => import('@components/InfoPanel.svelte'))
+  // Task 188 / P3-LCP: SearchBar is 132 KB raw (search.svelte chunk) — the single
+  // largest entry-graph chunk. It only ever renders inside the already-lazy InfoPanel
+  // (searchPanelContent snippet) or the map-trail lane, never in the placeholder2d
+  // first-paint block. Lazy-load so its bytes leave the entry graph; placeholder posture
+  // is unchanged (Placeholder2D holds first paint, not SearchBar).
+  const searchBarLazy = createLazyComponent(() => import('@components/SearchBar.svelte'))
   const journeyChromeLazy = createLazyComponent(() => import('@components/JourneyChrome.svelte'))
   const focusCardLazy = createLazyComponent(() => import('@components/FocusCard.svelte'))
   // P3-LCP (2026-08-21): FocusPocket statically imported engine.svelte.ts (→ Three.js)
@@ -161,6 +166,7 @@
     infoPanelLazy.ensure(true)
     journeyChromeLazy.ensure(true)
     focusCardLazy.ensure(true)
+    searchBarLazy.ensure(true)
   }
   // Downstream template gates (MapView render fallback) follow the same
   // narrowed contract-boot semantics.
@@ -194,6 +200,11 @@
   $effect(() => infoPanelLazy.ensure(true));
   $effect(() => journeyChromeLazy.ensure(true));
   $effect(() => focusCardLazy.ensure(true));
+  // Task 188: load SearchBar only when a surface that renders it is active. On the
+  // placeholder2d cold path none of these are true (idleSurfaceActive is true by default
+  // but SearchBar is never rendered there — Placeholder2D holds first paint), so the chunk
+  // stays off the entry graph and loads async without blocking FCP.
+  $effect(() => searchBarLazy.ensure(surface.idleSurfaceActive || surface.searchFamilySurfaceActive || surface.mapTrailSearchLaneActive));
 
   $effect(() => weatherWidgetLazy.ensure(weatherVisible));
 
@@ -305,8 +316,9 @@
 </script>
 
 {#snippet searchPanelContent()}
-  {#if surface.idleSurfaceActive || surface.searchFamilySurfaceActive}
-    <SearchBar panelContained />
+  {#if (surface.idleSurfaceActive || surface.searchFamilySurfaceActive) && searchBarLazy.current}
+    {@const Cmp = searchBarLazy.current}
+    <Cmp panelContained />
   {/if}
 {/snippet}
 
@@ -436,7 +448,10 @@
       SearchBar composes <SearchInput> + <SearchResults>, so the result list
       lives inside the same positioning context as the input.
     -->
-    <SearchBar />
+    {#if searchBarLazy.current}
+      {@const Cmp = searchBarLazy.current}
+      <Cmp />
+    {/if}
   {/if}
 
   <!--
