@@ -826,7 +826,11 @@
       pointer-events: none;
     }
   }
-  /* W45-B: Crossfade for placeholder-to-3D transition */
+  /* W45-B: Crossfade replaced by hard swap. The previous opacity/visibility
+     transition left both layers in the compositor at 0–100% opacity during the
+     300ms handoff, causing the galaxy “soup” (placeholder + WebGL + chrome all
+     visible at once) and the placeholder ghost filters/search chrome. Using
+     display:none on the inactive layer guarantees only one layer paints. */
   .layer-0-crossfade {
     position: relative;
     width: 100%;
@@ -835,14 +839,13 @@
   .layer {
     position: absolute;
     inset: 0;
-    transition: opacity 300ms ease, visibility 300ms ease;
+    display: none;
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
   }
   .layer.active {
+    display: block;
     opacity: 1;
-    visibility: visible;
     pointer-events: auto;
   }
   /* The placeholder backdrop must NEVER capture pointer events across its
@@ -871,8 +874,8 @@
   }
 
   /* Fix #1 Map layout: page title overlaps MapView header on map */
-  :global(body[data-active-view='map'] .app-title-header) {
-    display: none !important;
+  :global(body[data-active-view='map'] header.app-title-header.app-title-header) {
+    display: none;
   }
 
   /* Fix #1b (2026-08-23) — the inverse seam: MapView is force-mounted under
@@ -884,15 +887,15 @@
      when activeView is 'map' (real users never mount MapView elsewhere;
      mapview-placeholder-journey.spec asserts it via ?view=map, which this
      rule leaves untouched). */
-  :global(body:not([data-active-view='map']) .map-view-header) {
-    display: none !important;
+  :global(body:not([data-active-view='map']) .map-view-header.map-view-header) {
+    display: none;
   }
 
   /* Fix #2 Inside walk controls clipped at viewport bottom */
-  :global(body.navigation-inside-walk .focus-stage-journey.active) {
-    height: auto !important;
-    max-height: calc(100vh - 140px) !important;
-    overflow: visible !important;
+  :global(body.navigation-inside-walk .focus-stage-journey.active.focus-stage-journey) {
+    height: auto;
+    max-height: calc(100vh - 140px);
+    overflow: visible;
     align-content: start;
   }
   :global(body.navigation-inside-walk .focus-stage-journey.active > #trail-controls) {

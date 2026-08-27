@@ -499,8 +499,8 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-tile-pane 
    .leaflet-tile-loaded at inline opacity:0 and the basemap appears black.
    Force loaded tiles to visible regardless of JS animation state. */
 #map-container .leaflet-tile.leaflet-tile-loaded {
-    opacity: 1 !important;
-    visibility: visible !important;
+    opacity: 1;
+    visibility: visible;
 }
 
 #map-container .leaflet-control-zoom.leaflet-bar {

@@ -839,7 +839,7 @@ body:has(.info-panel.active) .panel-toggle {
    so the CTA/hero isn't covered. Once the user selects a surface (search,
    focus, map, etc.) the panel must be visible even before they enter WebGL. ── */
 body.render-kind-placeholder2d.surface-idle .info-panel {
-    display: none !important;
+    display: none;
 }
 
 /* Reduced-motion: honor prefers-reduced-motion by disabling transitions and
@@ -860,7 +860,7 @@ body.render-kind-placeholder2d.surface-idle .info-panel {
     .legend-toggle,
     .help-toggle,
     .legend {
-        transition: none !important;
-        animation: none !important;
+        transition: none;
+        animation: none;
     }
 }

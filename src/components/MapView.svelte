@@ -415,14 +415,13 @@
     pointer-events: auto;
   }
 
-  :global(#map-container .leaflet-container) {
+  :global(#map-container .leaflet-container.leaflet-container.leaflet-container) {
     /* Force the Leaflet surface to fill #map-container so its rendered width
        matches the viewport-capped container instead of Leaflet's own initial
        size calc, which otherwise leaves scrollWidth > clientWidth and clips
-       the map at the edges (BUG H5). !important overrides the inline width
-       Leaflet assigns on init. */
-    width: 100% !important;
+       the map at the edges (BUG H5). Triple class selector outranks Leaflet's
+       inline width without !important. */
+    width: 100%;
     background: #071018;
   }
-
 </style>

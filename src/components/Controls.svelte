@@ -220,23 +220,17 @@
     border: var(--glass-border);
     box-shadow: var(--shadow-glass);
   }
-  .controls[hidden] {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
   .controls.compact {
     bottom: 4.5rem;
     right: 0.5rem;
   }
   @media (max-width: 768px) {
-    :global(body.surface-idle) .controls {
-      display: none !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
+    :global(body.surface-idle) .controls.controls {
+      display: none;
+      visibility: hidden;
+      pointer-events: none;
     }
-  }
-  .control-btn {
+  }  .control-btn {
     display: flex;
     flex-direction: column;
     align-items: center;

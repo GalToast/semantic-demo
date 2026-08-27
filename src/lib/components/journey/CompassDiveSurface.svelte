@@ -85,11 +85,10 @@
    * own root element, giving sufficient specificity to override the
    * external rule without needing !important.
    */
-  :global(#btn-focus-dive) {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-</style>
+  :global(#btn-focus-dive#btn-focus-dive) {
+    margin-left: 0;
+    margin-right: 0;
+  }</style>
 
 <div
   id="map-trail-strip"

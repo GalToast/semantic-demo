@@ -279,14 +279,15 @@
     color: inherit;
     font-family: inherit;
     font-size: 1rem;
+    /* Keep placeholder text from running up against the submit button. */
+    padding-right: 0.5rem;
   }
 
-  .splash-search-input:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
-    outline-offset: -2px;
-    border-radius: 0.4rem;
+  .splash-search-input:focus-visible {    /* The parent .splash-search:focus-within already provides the focus
+       ring (box-shadow), so keep the field outline off to avoid the
+       nested-teal-rings look that also crowds the placeholder text. */
+    outline: none;
   }
-
   .splash-search-input::placeholder {
     color: rgba(231, 240, 240, 0.85);
   }

@@ -99,7 +99,8 @@ describe('App.svelte — lazy component surface', () => {
         // placeholder2d renderKind; lazy gating broke W51/W54/W55 (0 H1).
         // Net count 9 lazy handles.
         // focusPocketLazy joined (wave): 9 -> 10
-        expect(names.size).toBe(10)
+        // Task 188 (P3-LCP): SearchBar lazy: 10 -> 11
+        expect(names.size).toBe(11)
     })
 })
 

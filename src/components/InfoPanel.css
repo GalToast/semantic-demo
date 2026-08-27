@@ -83,7 +83,7 @@
 .selected-sensitivity[hidden],
 .selected-match-panel[hidden],
 .selected-action-row[hidden] {
-    display: none !important;
+    display: none;
 }
 .selected-action-row .action-btn {
     box-sizing: border-box;

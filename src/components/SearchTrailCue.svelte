@@ -88,10 +88,9 @@
   /* When the renderer marks the cue as active (search/focus states), it must
      stay visible even if Svelte re-applies the static `hidden` attribute or a
      surface body class sets `display: none`. */
-  :global(.search-trail-cue.active) {
-    display: flex !important;
-  }
-  .search-trail-cue-kicker {
+  :global(.search-trail-cue.active.active) {
+    display: flex;
+  }  .search-trail-cue-kicker {
     font-size: 0.55rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -127,12 +126,11 @@
      useful on regular mobile search, but redundant here; suppress only this
      constrained focus/search composition so the rail remains readable. */
   @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
-    :global(body.surface-focus) .search-trail-cue,
-    :global(body.surface-focus-search) .search-trail-cue,
-    :global(body.surface-semantic-dive) .search-trail-cue {
-      display: none !important;
+    :global(body.surface-focus) .search-trail-cue.search-trail-cue,
+    :global(body.surface-focus-search) .search-trail-cue.search-trail-cue,
+    :global(body.surface-semantic-dive) .search-trail-cue.search-trail-cue {
+      display: none;
       visibility: hidden;
       pointer-events: none;
     }
-  }
-</style>
+  }</style>

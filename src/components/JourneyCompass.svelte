@@ -507,24 +507,23 @@
 <style>
   /* Hide compass in overview when ?nodemo=1 */
   .journey-compass.hidden-by-nodemo {
-    display: none !important;
+    display: none;
   }
   /* Hide compass when search results are active to prevent overlap */
   .journey-compass.hidden-by-search {
-    display: none !important;
-  }
-  .journey-compass-actions.standard-flex {
+    display: none;
+  }  .journey-compass-actions.standard-flex {
     display: flex;
     align-items: center;
     gap: 8px;
   }
   :global(.focus-stage-dive-btn[hidden]) {
-    display: none !important;
+    display: none;
     visibility: hidden;
     pointer-events: none;
   }
   :global(.map-county-reset-btn[hidden]) {
-    display: none !important;
+    display: none;
     visibility: hidden;
     pointer-events: none;
   }

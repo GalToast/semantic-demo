@@ -1,5 +1,18 @@
 /* tokens.css — Design foundation (layer: tokens) */
 /* Single source of truth for color, type, space, radius, z, motion. OKLCH for perceptual uniformity; sRGB fallbacks kept via existing --color-* vars. */
+
+/* Placeholder chrome hiding: the placeholder is a standalone preview, not the explorable map.
+   Filters / bottom search chrome are siblings of the layer-0 stack, so an opaque placeholder
+   layer is not enough — they paint above it. This rule lives *outside* @layer tokens so its
+   unlayered authority overrides component display rules. */
+body[data-render-kind='placeholder2d'] #filters-section,
+body[data-render-kind='placeholder2d'] #search-result-list,
+body[data-render-kind='placeholder2d'] .search-container,
+body:has(.placeholder-layer.active) #filters-section,
+body:has(.placeholder-layer.active) #search-result-list,
+body:has(.placeholder-layer.active) .search-container {
+    display: none;
+}
 @layer tokens {
     :root {
         /* ── Color — OKLCH (perceptual) + sRGB fallback ── */
@@ -68,19 +81,6 @@
         --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
         --dur-fast: 160ms;
         --dur-normal: 240ms;
-    --dur-slow: 360ms;
-  }
-
-  /* ── Placeholder chrome hiding — the placeholder is a standalone preview, not the explorable map.
-     Filters / bottom search chrome are siblings of the layer-0 stack, so making the placeholder
-     layer opaque is not enough — they paint above it. Hide them via the body data-render-kind
-     parity attribute (set synchronously at mount, no Svelte timing race). */
-  body[data-render-kind='placeholder2d'] #filters-section,
-  body[data-render-kind='placeholder2d'] #search-result-list,
-  body[data-render-kind='placeholder2d'] .search-container,
-  body:has(.placeholder-layer.active) #filters-section,
-  body:has(.placeholder-layer.active) #search-result-list,
-  body:has(.placeholder-layer.active) .search-container {
-    display: none !important;
-  }
+        --dur-slow: 360ms;
+    }
 }

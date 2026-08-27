@@ -193,10 +193,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  /* Fix #1 Map: floating search bar overlaps MapView header at 1rem */  :global(body[data-active-view='map'] .search-container:not(.info-panel-contained)) {
+  /* Fix #1 Map: floating search bar overlaps MapView header at 1rem */
+  :global(body[data-active-view='map'] .search-container.search-container:not(.info-panel-contained)) {
     top: 4.5rem;
-    width: min(420px, 90vw) !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    right: auto !important;
+    width: min(420px, 90vw);
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
   }</style>

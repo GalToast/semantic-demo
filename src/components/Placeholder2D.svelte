@@ -463,11 +463,10 @@
   @media (prefers-reduced-motion: reduce) {
     .orb-anim,
     .placeholder-cta {
-      animation: none !important;
-      transition: none !important;
+      animation: none;
+      transition: none;
     }
   }
-
   /* Small-viewport adjustments: keep the placeholder usable on 320–360 px
      devices and on narrow desktop windows that still fall back to the
      2D preview. Reduces padding, collapses the legend to a single column,

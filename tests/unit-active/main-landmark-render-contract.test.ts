@@ -78,7 +78,9 @@ describe('A2-1 + A2-2: main#main-content landmark', () => {
         const mainStart = appSrc.indexOf('<main id="main-content"')
         const mainEnd = appSrc.indexOf('</main>', mainStart)
         const mainContent = appSrc.substring(mainStart, mainEnd)
-        expect(mainContent).toContain('<SearchBar')
+        // Task 188 (P3-LCP): SearchBar is now lazy-loaded via createLazyComponent,
+        // so the source contains the dynamic Cmp render rather than a static tag.
+        expect(mainContent).toContain('searchBarLazy.current')
     })
 
     it('contains InfoPanel inside the main element', () => {

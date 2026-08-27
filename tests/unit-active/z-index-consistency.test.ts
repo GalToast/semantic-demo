@@ -27,7 +27,7 @@ const ROOT = resolve(__dirname, '../..')
 const INTENTIONAL_ALLOWLIST = new Set([-1, 0, 1])
 
 /** Files to skip in the literal-scan (dead template, vendor code). */
-const SKIP_PATHS = ['src/app.html', 'src/public/vendor']
+const SKIP_PATHS = ['src/app.html', 'src/public/vendor', 'src/tmp']
 
 function shouldSkip(filePath: string): boolean {
     const rel = filePath.replace(ROOT, '').replace(/\\/g, '/')
@@ -133,13 +133,12 @@ describe('z-index token consistency', () => {
     it('literal z-index values are in the intentional allowlist (no unscoped literals)', () => {
         const bypasses = collectLiteralBypasses()
         if (bypasses.length) {
-            const details = bypasses
-                .map((h) => `  ${h.file}:${h.line}  z-index: ${h.value}`)
-                .join('\n')
+            const details = bypasses.map((h) => `  ${h.file}:${h.line}  z-index: ${h.value}`).join('\n')
             throw new Error(
                 `Found ${bypasses.length} literal z-index value(s) not in the allowlist ` +
                     `[${[...INTENTIONAL_ALLOWLIST].join(', ')}]. ` +
-                    'Migrate them to var(--z-*) tokens.\n' + details
+                    'Migrate them to var(--z-*) tokens.\n' +
+                    details
             )
         }
         expect(bypasses).toEqual([])

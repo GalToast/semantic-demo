@@ -340,11 +340,12 @@
     min-width: 44px;
   }
   .search-input:focus-visible {
-    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
-    outline-offset: -2px;
-    border-radius: 0.25rem;
-  }
-  /* W50-UX: placeholder color raised to 0.62 (≈ 5.4:1 on bg-surface-chrome
+    /* SearchInputChrome.svelte paints the focus ring on the wrapper with
+       .search-input-wrap:focus-within box-shadow. Removing this inner
+       outline avoids the double-ring look and prevents the outline from
+       crowding the placeholder text. */
+    outline: none;
+  }  /* W50-UX: placeholder color raised to 0.62 (≈ 5.4:1 on bg-surface-chrome
    * ~0.07 alpha over a dark canvas) so the search bar's affordance is
    * actually readable. Previous 0.35 was ≈ 2.5:1 — failed WCAG 2 AA. */
   .search-input::placeholder {

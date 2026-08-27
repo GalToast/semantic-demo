@@ -6,7 +6,6 @@
   import { appState } from '@lib/state/app.svelte.ts'
   import { getPointIndexByLeadId } from '@lib/data-store'
   import { hideSummaryCard, requestSemanticGuide } from '@lib/journey/semantic-guide'
-  import { focusOnNode } from '@lib/engine/camera-choreography'
   import { syncSvelteNavFromLegacy } from '@lib/orchestration/window-actions'
 
   type Suggestion = {
@@ -45,7 +44,9 @@
     if (leadKey == null) return
     const idx = getPointIndexByLeadId().get(leadKey)
     if (!Number.isFinite(idx)) return
-    focusOnNode(idx as number, { fromCanvasNode: true })
+    // #186: lazy — guide-card focus runs post-gesture; keeps camera-choreography
+    // (and three.module) off the mobile cold-boot path.
+    void import('@lib/engine/camera-choreography').then((m) => m.focusOnNode(idx as number, { fromCanvasNode: true }))
     syncSvelteNavFromLegacy()
   }
 </script>

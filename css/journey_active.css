@@ -194,8 +194,7 @@ body.surface-map .app-title {
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
         )
-
-    body.view-galaxy:is(
+        body.view-galaxy:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -217,11 +216,9 @@ body.surface-map .app-title {
        journey compass spans are decorative duplicates in this surface, but
        trailDepth used to bypass the phase-based suppress-step-indicators
        class and expand the compact compass into a tall vertical stack. */
-    body.view-galaxy:is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search']
-        )
-        .journey-compass [data-journey-step] {
+    body.view-galaxy:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
+        .journey-compass
+        [data-journey-step] {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -365,7 +362,6 @@ body.surface-map .app-title {
     font-size: 12px;
     line-height: 18px;
 }
-
 
 .journey-compass-actions {
     display: flex;
@@ -615,12 +611,12 @@ body.surface-map .app-title {
     /* LOW1: hide stale search DOM behind focus pocket — SearchResults.svelte is .search-results-wrapper, not legacy .search-results */
     body.surface-focus-search .search-results.active,
     body.surface-focus-search .search-results-wrapper {
-        display: none !important;
+        display: none;
     }
     body.surface-focus .search-results-wrapper,
     body.surface-semantic-dive .search-results-wrapper,
     body.surface-inside .search-results-wrapper {
-        display: none !important;
+        display: none;
     }
 
     body.surface-focus-search .focus-lens-truth {
