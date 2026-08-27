@@ -67,12 +67,12 @@ Instrumentation: `__ENGINE_INIT_TRACE__` breadcrumbs + `performance`
 `engine-init-*` marks (merged by `tmp/init-trace-probe.mjs`, which is
 self-contained — inline server, no external dependency).
 
-| phase (from gpu-start)                  | budget  | measured (throttled 4x) |
-| --------------------------------------- | ------- | ----------------------- |
-| scene build (buildThreeSceneOrFallback) | ≤ 250ms | 174–229ms ✓             |
-| createPoints (8,406 pts + matrices)     | ≤ 400ms | 394–624ms ⚠             |
-| createMycelium boot (geometric, chunked)| ≤ 400ms | 332–906ms ⚠ scan median 448ms; yields every 800pts keep tasks under budget |
-| bindings + semantic attach + ready      | ≤ 100ms | ~100ms ✓                |
+| phase (from gpu-start)                   | budget  | measured (throttled 4x)                                                    |
+| ---------------------------------------- | ------- | -------------------------------------------------------------------------- |
+| scene build (buildThreeSceneOrFallback)  | ≤ 250ms | 174–229ms ✓                                                                |
+| createPoints (8,406 pts + matrices)      | ≤ 400ms | 394–624ms ⚠                                                                |
+| createMycelium boot (geometric, chunked) | ≤ 400ms | 332–906ms ⚠ scan median 448ms; yields every 800pts keep tasks under budget |
+| bindings + semantic attach + ready       | ≤ 100ms | ~100ms ✓                                                                   |
 
 - **Landed**: LOD-first mycelium build (`aa7cf281`, segmentsPerPair 4 →
   idle-upgrade to 10) — quantification pending a quiet-window run.

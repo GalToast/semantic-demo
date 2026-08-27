@@ -1,6 +1,6 @@
 # Logfare Lane Ops — validated 2026-08-17
 
-**Status: logfare is a WORKING lane with 10 confirmed chat models.** The
+**Status: logfare is a WORKING lane. LIVE chat models (catalog-verified 2026-08-27): auto, kiro-auto, minimax-m3, glm-5.2, glm-5.3-flash, kimi-k2.7-code, qwen-3.8-27b, moondream3.1, deepseek-v4-flash-0731, deepseek-v4-pro-0813, gemma-4-26b. NOTE: kimi-k3 retired; glm-5.3-flash is the newest (vision-capable, 1M ctx). Deck: logfare/glm-5.3-flash | logfare/kimi-k2.7-code | logfare/minimax-m3 | logfare/kiro-auto.** The
 oversubscribe-harvest pattern still applies — never assume a model is up — but
 the "dead model" list was mostly a probe artifact (reasoning models starved by
 single-digit max_tokens), not deadness.
@@ -9,8 +9,8 @@ single-digit max_tokens), not deadness.
 
 - Base: `https://logfare.ai/v1` (keys: `~/.config/opencode/logfare-keys.json`, 5× `lfu_` keys)
 - Real catalog (GET /models, 10 working chat models): `kiro-auto, minimax-m3,
-deepseek-v4-pro, deepseek-v4-pro-0813, deepseek-v4-flash-0731, glm-5.2, kimi-k3,
-kimi-k3.5?, grape-2-pro, qwen-3.8-27b, gemma-4-26b`
+  deepseek-v4-pro, deepseek-v4-pro-0813, deepseek-v4-flash-0731, glm-5.2, glm-5.3-flash,
+  kimi-k2.7-code (kimi-k3 is RETIRED from logfare — catalog shows kimi-k2.7-code),
 - The router's model id REWRITE `deepseek-v4-flash-0731 → deepseek-v4-flash`
   was a bug (fixed 2026-07-15): the upstream 404'd the bare name. Do NOT re-add.
 
@@ -24,7 +24,7 @@ kimi-k3.5?, grape-2-pro, qwen-3.8-27b, gemma-4-26b`
 | `glm-5.2`                | flaky         | Mid-stream SSE drops ("Service temporarily unavailable"), 200-with-no-content in non-stream.                                                                               |
 | `qwen-3.8-27b`           | slow          | 18-25s/turn; often silent-empty. **VISION OK (measured 2026-08-26**: live image probe → 200 + correct color description; use as second opinion / big-context vision lane). |
 | `minimax-m3`             | ok            | Working (reasoning, max effort). Earlier "dead" was a max_tokens-starvation artifact.                                                                                      |
-| `kimi-k3`                | ok            | Working. Earlier "dead" was a probe artifact; transient 429s possible.                                                                                                     |
+| `kimi-k2.7-code`         | ok            | Replaced retired kimi-k3 on logfare (verified 2026-08-27). Earlier "dead" was a probe artifact; transient 429s possible.                                                   |
 | `deepseek-v4-pro`        | ok            | Working (1M ctx, 384K out). Earlier 503s were transient upstream.                                                                                                          |
 | `deepseek-v4-pro-0813`   | ok            | Working (reasoning; needs max_tokens >= ~50 or content is starved by thinking). Added 2026-08-16.                                                                          |
 | `gemma-4-26b`            | ok            | Working (reasoning; same budget artifact -- max_tokens >= ~50). Added 2026-08-16.                                                                                          |
@@ -72,7 +72,7 @@ websearch ground truth + live upstream probes:
 
 | Model             | wrong (picker) | correct  |
 | ----------------- | -------------- | -------- |
-| `kimi-k3`         | ctx 262144     | **1M**   |
+| `kimi-k2.7-code`  | ctx 262144     | **1M**   |
 | `gemma-4-26b`     | ctx 1M         | **256K** |
 | `deepseek-v4-pro` | ctx 128K       | **1M**   |
 
@@ -83,7 +83,7 @@ conservative default.** Verified live at upstream (200 + real content):
 | ----------------------------------- | -------- | ----------------------------------------------- |
 | `deepseek-v4-pro`, `-0813`, `flash` | 384000   | DeepSeek V4: 384K max output (Pro and Flash)    |
 | `minimax-m3`                        | 524288   | MiniMax M3: hard max 524288 (recommends 131072) |
-| `kimi-k3`                           | 1048576  | Moonshot: configurable up to full 1M            |
+| `kimi-k2.7-code`                    | 1048576  | Moonshot: configurable up to full 1M            |
 | `glm-5.2`                           | 131072   | Z.ai: 131072 output cap                         |
 | `qwen-3.8-27b`                      | 131072   | Qwen3.8: 131072 output                          |
 | `gemma-4-26b`                       | 131072   | no authoritative source; Google class default   |

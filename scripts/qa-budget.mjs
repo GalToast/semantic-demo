@@ -321,8 +321,7 @@ Exit codes (comparison mode):
         for (const prefix of basePrefixes) {
             if (curPrefixes.has(prefix)) survivingPrefixes++
         }
-        const eraChanged =
-            basePrefixes.size > 0 && survivingPrefixes / basePrefixes.size < 0.5
+        const eraChanged = basePrefixes.size > 0 && survivingPrefixes / basePrefixes.size < 0.5
 
         console.log(`\n── Baseline comparison: ${target} ──`)
         if (!base.blessed_at) {
