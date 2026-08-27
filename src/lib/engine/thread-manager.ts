@@ -527,7 +527,7 @@ export function getMyceliumPresentationProfile() {
         // opacity appeared nearly invisible). Bumped to ~3-5× the previous
         // base opacities so the mycelium reads as a clear ambient texture while
         // still staying subordinate to points and spore materials.
-        return { core: 0.75, wispy: 0.42, bridge: 0.58, pulse: 0.08, linewidth: { core: 3.0, wispy: 1.4, bridge: 2.2 } }
+        return { core: 0.75, wispy: 0.42, bridge: 0.58, pulse: 0.08, linewidth: { core: 4.5, wispy: 2.0, bridge: 3.0 } } // hero-legibility pass2: +50% width so threads keep edges at overview distance
     }
     // Semantic-dive mode needs its own profile because the downstream
     // `semanticDiveThreadScale` multiplier (0.42 in three-engine-core) applies

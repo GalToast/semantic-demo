@@ -60,7 +60,7 @@ export const MYCELIUM_FIELD_SCALE = Object.freeze({
 // the spores from "barely visible specks" to "self-illuminating nodes".
 export const SCENE_ATMOSPHERE = Object.freeze({
     fogColor: SCENE_PALETTE.fog,
-    fogDensity: 0.0034,
+    fogDensity: 0.0026, // hero-legibility: less pastel wash, sharper edges
     clearAlpha: 0.9,
     // W60 (2026-08-19): 1.15 → 1.35 → 1.22 (2026-08-23): 1.35 pushed idle
     // median to pastel fog — distinct dots merged into cotton-candy haze at
@@ -68,14 +68,14 @@ export const SCENE_ATMOSPHERE = Object.freeze({
     // exposure 10% and add depth fog so the cloud reads as points, not fog.
     toneExposure: 1.22,
     pointOpacityScale: 0.78,
-    sporeOpacity: 0.58
+    sporeOpacity: 0.72 // hero-legibility: brighter self-illuminating nodes
 })
 // W60 (2026-08-19): 0.0019 → 0.0027 (~42% larger). Vision-jury flagged
 // idle/focus spores as "dust — sparse tiny stars" (~2.4-3.8 px on a
 // 1440×900 canvas: radius 0.0019 × ~1000 px/unit, ×0.62 off-pocket). At
 // 0.0027 the base reads ~5.4px and still stays subordinate to the focused
 // 8× hero spore.
-const NODE_SPORE_BASE_RADIUS = 0.0027
+const NODE_SPORE_BASE_RADIUS = 0.0055 /* hero-legibility 2026-08-27 pass2: 2x base so overview nodes read as dots, not dust */
 const NODE_SPORE_COLOR_LIFT = new Color(SCENE_PALETTE.sporeLift)
 const NODE_SPORE_ROLE_TINT_PRIMARY = new Color(SCENE_PALETTE.threadTint) // teal - .direct
 const NODE_SPORE_ROLE_TINT_SUPPORT = new Color(0xffd93d) // amber - .support
@@ -479,7 +479,12 @@ export async function createPoints(): Promise<void> {
         }
     }
 
-    let bounds: { center: { x: number; y: number; z: number }; min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; count: number }
+    let bounds: {
+        center: { x: number; y: number; z: number }
+        min: { x: number; y: number; z: number }
+        max: { x: number; y: number; z: number }
+        count: number
+    }
     let renderCenter: { x: number; y: number; z: number }
     if (workerPoints) {
         positions = workerPoints.positions

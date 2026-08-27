@@ -151,9 +151,12 @@ export function getGraphPresentationProfile(
     const zoomReveal = 1 - zoomBlend
     const profiles: Record<GraphPresentationState, GraphPresentationProfile> = {
         overview: {
-            coreOpacity: 0.078 + zoomReveal * 0.086,
-            wispyOpacity: 0.008 + zoomReveal * 0.03,
-            bridgeOpacity: 0.006 + zoomReveal * 0.018,
+            // hero-legibility 2026-08-27 (visual-hunt consensus #1): threads at
+            // 8% base opacity read as a washed-out smudge; floor raised to 18%
+            // so the network is legible at overview distance.
+            coreOpacity: 0.18 + zoomReveal * 0.09,
+            wispyOpacity: 0.02 + zoomReveal * 0.03,
+            bridgeOpacity: 0.012 + zoomReveal * 0.018,
             hoverOverlayOpacity: 0.24 + zoomReveal * 0.08,
             searchDimFactor: 0.14 + zoomReveal * 0.03,
             searchContextFactor: 0.44 + zoomReveal * 0.12,
