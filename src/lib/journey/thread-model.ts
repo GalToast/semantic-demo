@@ -453,7 +453,7 @@ export function getGeometricThreadCandidates(index: number, ...args: unknown[]):
                 relationshipRole: UNCLASSIFIED_RELATIONSHIP_ROLE,
                 relationshipAxis: '',
                 roleReason: '',
-                reason: 'approximate projected neighbor from the current cloud layout',
+                reason: 'Projected neighbor (current cloud layout)' /* visual-hunt declutter 2026-08-27: 12-word per-row caption repeated on every geometric-fallback row read as massive clutter (kimi hunter); short label keeps the signal without the noise. */,
                 source: 'geometric-fallback'
             })
         )
@@ -475,7 +475,7 @@ export function getGeometricThreadCandidates(index: number, ...args: unknown[]):
         relationshipRole: 'unclassified' as RelationshipRole,
         relationshipAxis: '',
         roleReason: '',
-        reason: 'approximate projected neighbor from the current cloud layout',
+        reason: 'Projected neighbor (current cloud layout)' /* visual-hunt declutter 2026-08-27: 12-word per-row caption repeated on every geometric-fallback row read as massive clutter (kimi hunter); short label keeps the signal without the noise. */,
         source: 'geometric-fallback'
     }))
 }

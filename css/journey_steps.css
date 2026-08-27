@@ -328,8 +328,8 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill {
     border-radius: 14px;
     background:
         radial-gradient(circle at 0% 50%, rgba(var(--color-primary-tint-rgb), 0.12), transparent 48%),
-        linear-gradient(180deg, rgba(14, 31, 38, 0.62), rgba(6, 13, 19, 0.5));
-    border: 1px solid rgba(var(--color-primary-tint-rgb), 0.12);
+        linear-gradient(180deg, rgba(14, 31, 38, 0.94), rgba(6, 13, 19, 0.9));
+    border: 1px solid rgba(var(--color-primary-tint-rgb), 0.16);
     overflow: hidden;
 }
 
