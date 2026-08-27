@@ -169,8 +169,8 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(var(--color-surface-chrome-rgb), 0.95);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
+    background: rgba(var(--color-surface-chrome-rgb), 0.98);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.28);
     border-radius: var(--radius-tight);
     padding: 0;
     max-width: 28rem;
@@ -184,13 +184,19 @@
     );
     overflow-y: auto;
     color: rgba(224, 240, 240, 0.9);
+    /* 2026-08-27 visual audit (kimi+qwen lanes): flat ring + thin border read
+       as a double border; replace the ring with a layered elevation shadow. */
     box-shadow:
-        0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.1),
-        0 20px 60px rgba(0, 0, 0, 0.5);
+        0 24px 80px rgba(0, 0, 0, 0.72),
+        0 4px 16px rgba(0, 0, 0, 0.55);
 }
 .help-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
+    /* 2026-08-27 visual audit: backdrop-filter blur over a live WebGL render
+       read as a muddy "render glitch"; a solid dark scrim is clean and
+       cheap. Contrast floor kept (>=40% black). */
+    background: rgba(6, 10, 14, 0.62);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 .help-dialog-inner {
     /* W53 issue #8: keep the "Got it" button clear of the bottom
@@ -273,7 +279,14 @@
     margin: 0 0 1.25rem;
 }
 .help-dialog-close {
-    padding: 0.4rem 1rem;
+    padding: 0.5rem 1.4rem;
+    /* 2026-08-27 visual audit: left-aligned thin CTA read as stock; make it
+       a right-aligned solid primary (kept 44px min touch target + contrast).
+       Block-level flex container: margin-left:auto right-aligns it in the
+       dialog flow; the flex centers the label inside. */
+    width: max-content;
+    margin-left: auto;
+    margin-right: 0;
     /* W53 vision-refresh issue #7: the 0.12 fill + 0.3 border read at
        ~3.2:1 against the 0.95-alpha chrome background. Bump fill to 0.25
        and border to 0.55 + font-weight 600 so the "Got it" CTA clears
@@ -282,11 +295,11 @@
        borderline-low-prominence (split: gemma called it high-contrast). Bump
        fill 0.25→0.35 + border 0.55→0.7 so it reads as an obvious primary
        CTA — text is near-white teal-light, keeps ≥10:1 contrast at 0.35. */
-    background: rgba(var(--color-primary-alt-rgb), 0.35);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.7);
+    background: rgba(var(--color-primary-alt-rgb), 0.5);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.9);
     border-radius: 0.3rem;
     color: var(--color-text-teal-light);
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s;
@@ -294,7 +307,7 @@
        box grows past content height; 44×44 meets WCAG 2.5.5 / the project's
        qa:surface 44-px floor. The text-aligned-only padding gave 28 px
        which global-spacing rightly flags. */
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     min-height: 44px;
