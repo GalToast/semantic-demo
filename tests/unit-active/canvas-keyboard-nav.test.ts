@@ -86,6 +86,13 @@ function makeEvent(key: string): KeyboardEvent {
 // leaking across vmThreads workers). Each test gets a fresh 1s window so first
 // press never debounces, second press within same test still does.
 let _testNow = 1_000_000
+
+// #186: camera calls are now lazily loaded (dynamic import resolves in a
+// microtask+macrotask); flush the queue before asserting on the mocks.
+async function flushAsyncCameraLoad(): Promise<void> {
+    await new Promise<void>((resolve) => setTimeout(resolve, 0))
+}
+
 describe('canvas-keyboard-nav', { retry: 2 }, () => {
     beforeEach(() => {
         __resetCanvasKeyboardDebounce()
@@ -179,7 +186,7 @@ describe('canvas-keyboard-nav', { retry: 2 }, () => {
             expect(getClusterSiblings(999)).toEqual([])
         })
 
-        it('ArrowDown steps to next sibling via focusOnNode', () => {
+        it('ArrowDown steps to next sibling via focusOnNode', async () => {
             businessRecords.set([
                 makeRecord({ lead_id: '0', index: 0, cluster: 1 }),
                 makeRecord({ lead_id: '1', index: 1, cluster: 1 }),
@@ -187,10 +194,11 @@ describe('canvas-keyboard-nav', { retry: 2 }, () => {
             ])
             appState.navState.focusedIndex = 0
             handleCanvasKeydown(makeEvent('ArrowDown'))
+            await flushAsyncCameraLoad()
             expect(mocks.focusOnNode).toHaveBeenCalledWith(1, { fromCanvasNode: true })
         })
 
-        it('ArrowUp steps to previous sibling via focusOnNode', () => {
+        it('ArrowUp steps to previous sibling via focusOnNode', async () => {
             businessRecords.set([
                 makeRecord({ lead_id: '0', index: 0, cluster: 1 }),
                 makeRecord({ lead_id: '1', index: 1, cluster: 1 }),
@@ -198,6 +206,7 @@ describe('canvas-keyboard-nav', { retry: 2 }, () => {
             ])
             appState.navState.focusedIndex = 1
             handleCanvasKeydown(makeEvent('ArrowUp'))
+            await flushAsyncCameraLoad()
             expect(mocks.focusOnNode).toHaveBeenCalledWith(0, { fromCanvasNode: true })
         })
 
@@ -227,15 +236,17 @@ describe('canvas-keyboard-nav', { retry: 2 }, () => {
     })
 
     describe('Trail extremes (Home / End)', () => {
-        it('Home → focusOnNode called with the trail seed', () => {
+        it('Home → focusOnNode called with the trail seed', async () => {
             appState.navState.trailSeedIndex = 42
             handleCanvasKeydown(makeEvent('Home'))
+            await flushAsyncCameraLoad()
             expect(mocks.focusOnNode).toHaveBeenCalledWith(42, { fromCanvasNode: true })
         })
 
-        it('End → focusOnNode called with the last walk-history entry', () => {
+        it('End → focusOnNode called with the last walk-history entry', async () => {
             appState.navState.walkHistoryIndices = [10, 20, 30]
             handleCanvasKeydown(makeEvent('End'))
+            await flushAsyncCameraLoad()
             expect(mocks.focusOnNode).toHaveBeenCalledWith(30, { fromCanvasNode: true })
         })
 
@@ -253,37 +264,42 @@ describe('canvas-keyboard-nav', { retry: 2 }, () => {
     })
 
     describe('Zoom (Plus / Equal / Minus)', () => {
-        it('Plus calls zoomCamera with multiplier < 1 (zoom in)', () => {
+        it('Plus calls zoomCamera with multiplier < 1 (zoom in)', async () => {
             handleCanvasKeydown(makeEvent('Plus'))
+            await flushAsyncCameraLoad()
             expect(mocks.zoomCamera).toHaveBeenCalledWith(1 / 1.2)
         })
 
-        it('Equal calls zoomCamera with the same multiplier as Plus', () => {
+        it('Equal calls zoomCamera with the same multiplier as Plus', async () => {
             handleCanvasKeydown(makeEvent('Equal'))
+            await flushAsyncCameraLoad()
             expect(mocks.zoomCamera).toHaveBeenCalledWith(1 / 1.2)
         })
 
-        it('Minus calls zoomCamera with multiplier > 1 (zoom out)', () => {
+        it('Minus calls zoomCamera with multiplier > 1 (zoom out)', async () => {
             handleCanvasKeydown(makeEvent('Minus'))
+            await flushAsyncCameraLoad()
             expect(mocks.zoomCamera).toHaveBeenCalledWith(1.2)
         })
 
-        it('zoom is RAW-repeat (no debounce) — 5 rapid presses = 5 calls', () => {
+        it('zoom is RAW-repeat (no debounce) — 5 rapid presses = 5 calls', async () => {
             for (let i = 0; i < 5; i++) {
                 handleCanvasKeydown(makeEvent('Minus'))
             }
+            await flushAsyncCameraLoad()
             expect(mocks.zoomCamera).toHaveBeenCalledTimes(5)
         })
 
-        it('Zoom still works when no focus (zoom in place, no orphan)', () => {
+        it('Zoom still works when no focus (zoom in place, no orphan)', async () => {
             appState.navState.focusedIndex = null
             handleCanvasKeydown(makeEvent('Plus'))
+            await flushAsyncCameraLoad()
             expect(mocks.zoomCamera).toHaveBeenCalledTimes(1)
         })
     })
 
     describe('Debounce (250ms for focus-changing actions)', () => {
-        it('two ArrowDown within 250ms → only one focusOnNode call', () => {
+        it('two ArrowDown within 250ms → only one focusOnNode call', async () => {
             businessRecords.set([
                 makeRecord({ lead_id: '0', index: 0, cluster: 1 }),
                 makeRecord({ lead_id: '1', index: 1, cluster: 1 }),
@@ -292,13 +308,15 @@ describe('canvas-keyboard-nav', { retry: 2 }, () => {
             appState.navState.focusedIndex = 0
             handleCanvasKeydown(makeEvent('ArrowDown'))
             handleCanvasKeydown(makeEvent('ArrowDown'))
+            await flushAsyncCameraLoad()
             expect(mocks.focusOnNode).toHaveBeenCalledTimes(1)
         })
 
-        it('two Home presses within 250ms → only one focusOnNode call', () => {
+        it('two Home presses within 250ms → only one focusOnNode call', async () => {
             appState.navState.trailSeedIndex = 5
             handleCanvasKeydown(makeEvent('Home'))
             handleCanvasKeydown(makeEvent('Home'))
+            await flushAsyncCameraLoad()
             expect(mocks.focusOnNode).toHaveBeenCalledTimes(1)
         })
     })

@@ -6898,7 +6898,9 @@ test.describe('SoM-found mobile/tablet overlaps (2026-08-05)', () => {
 // blank/pale gap (atomic swap + cross-fade). This test pins the full chain:
 // artifact load → map assign → rebuild → dense scene.
 test.describe('Semantic upgrade journey', () => {
-    test('boot scene upgrades from geometric to the dense semantic mycelium after the threads artifact lands', async ({ page }) => {
+    test('boot scene upgrades from geometric to the dense semantic mycelium after the threads artifact lands', async ({
+        page
+    }) => {
         test.setTimeout(180_000)
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })

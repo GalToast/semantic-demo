@@ -14,7 +14,6 @@ import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/
 import { truncateMicrocopy } from '@lib/journey/text-helpers'
 import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
 import type { ThreadCandidateRef } from '@lib/types/state'
-import { focusOnNode } from '@lib/engine/camera-controls'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
 import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
@@ -537,13 +536,17 @@ export function exploreThreadNeighbor(
     if (appState.currentView === 'map') {
         focusOnPoint(targetPoint)
     } else {
-        focusOnNode(index, {
-            fromCanvasNode: !!options.fromCanvasNode,
-            fromTraversal: true,
-            appendHistory: !options.restoreHistory,
-            restoreHistory: !!options.restoreHistory,
-            fromIndex: fromIndex ?? undefined
-        })
+        // #186: lazy — thread-inspection focus runs post-gesture; keeps
+        // camera-controls -> camera-choreography -> three off the cold path.
+        void import('@lib/engine/camera-controls').then((m) =>
+            m.focusOnNode(index, {
+                fromCanvasNode: !!options.fromCanvasNode,
+                fromTraversal: true,
+                appendHistory: !options.restoreHistory,
+                restoreHistory: !!options.restoreHistory,
+                fromIndex: fromIndex ?? undefined
+            })
+        )
     }
     showExperienceToast(
         'Following connection',

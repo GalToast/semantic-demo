@@ -11,7 +11,6 @@ import type { DemoPhase } from '@lib/stores/demo.svelte.ts'
 import { demoPhase, getDemoLifecycleSignal, isDemoActive } from '@lib/stores/demo.svelte.ts'
 import { toggleAutoRotate, exploreInsideToNextStop, returnToCountyView } from '@lib/orchestration/lifecycle'
 import { search, getFirstSearchHit } from '@lib/search/state'
-import { focusOnNode } from '@lib/engine/camera-choreography/cursor'
 import { traverseNeighbor } from '@lib/journey/thread-settler'
 import { setClusterFilter, clearClusterFilter } from '@lib/orchestration/cluster-filter-controller'
 import { switchView } from '@lib/orchestration/view-controller'
@@ -108,6 +107,8 @@ export const DEMO_SCRIPT: DemoStep[] = [
             // caption never claims a focus that hasn't happened.
             const hit = await waitForSearchHit(25000)
             if (hit !== null) {
+                // #186: lazy — demo camera framing loads three on demand.
+                const { focusOnNode } = await import('@lib/engine/camera-choreography/cursor')
                 focusOnNode(hit)
             }
         }

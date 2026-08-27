@@ -25,7 +25,13 @@ import {
     getNextWalkCandidateForIndex
 } from '@lib/journey/neighborhood'
 import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
-import { focusOnNode } from '@lib/engine/camera-controls'
+// #186: lazily loaded — focusOnNode fires only during keyboard traversal
+// (post-gesture); a static import here would pin camera-controls →
+// camera-choreography → three.module onto the mobile cold-boot path.
+let _cameraControls: Promise<typeof import('@lib/engine/camera-controls')> | null = null
+function loadCameraControls(): Promise<typeof import('@lib/engine/camera-controls')> {
+    return (_cameraControls ??= import('@lib/engine/camera-controls'))
+}
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
 import { inspectThreadNeighbor, clearThreadInspection } from './thread-inspector-state'
 import { renderThreadInspection } from './thread-inspector-render'
@@ -299,14 +305,16 @@ export class ThreadSettler {
         if (appState.currentView === 'map') {
             focusOnPoint(targetPoint)
         } else {
-            focusOnNode(index, {
-                fromCanvasNode: !!options.fromCanvasNode,
-                fromTraversal: true,
-                preserveNeighborhood,
-                appendHistory: !options.restoreHistory,
-                restoreHistory: !!options.restoreHistory,
-                fromIndex: fromIndex ?? undefined
-            })
+            void loadCameraControls().then((m) =>
+                m.focusOnNode(index, {
+                    fromCanvasNode: !!options.fromCanvasNode,
+                    fromTraversal: true,
+                    preserveNeighborhood,
+                    appendHistory: !options.restoreHistory,
+                    restoreHistory: !!options.restoreHistory,
+                    fromIndex: fromIndex ?? undefined
+                })
+            )
         }
 
         const nextHistory = copyFiniteIndexHistory(appState.navState.walkHistoryIndices)

@@ -208,9 +208,12 @@ function _readJourneyFromAppState(): JourneyStoreState {
         threadSource: navState.threadSource,
         lastTraversalReason: navState.lastTraversalReason,
         compass: compassCache,
-        terrainHandoffPhase: (appState.terrainHandoffState?.phase ?? 'idle') as JourneyStoreState['terrainHandoffPhase'],
-        routeExplorationPhase: (appState.routeExplorationState?.phase ?? 'idle') as JourneyStoreState['routeExplorationPhase'],
-        routeChoreographyPhase: (appState.routeChoreographyState?.phase ?? 'overview') as JourneyStoreState['routeChoreographyPhase']
+        terrainHandoffPhase: (appState.terrainHandoffState?.phase ??
+            'idle') as JourneyStoreState['terrainHandoffPhase'],
+        routeExplorationPhase: (appState.routeExplorationState?.phase ??
+            'idle') as JourneyStoreState['routeExplorationPhase'],
+        routeChoreographyPhase: (appState.routeChoreographyState?.phase ??
+            'overview') as JourneyStoreState['routeChoreographyPhase']
     }
 }
 
@@ -334,7 +337,6 @@ function _createJourneyStore(): JourneyStoreApi {
 export const journeyStore: JourneyStoreApi = _createJourneyStore()
 /** Backwards-compatible alias. */
 export const journeyState: JourneyStoreApi = journeyStore
-
 
 // ── Derived Getters ──────────────────────────────────────────────────────────
 
@@ -473,7 +475,6 @@ export function advanceTrailCursor(delta = 1): void {
         return { ...s, cursor: Math.max(-1, Math.min(max, s.cursor + delta)) }
     })
 }
-
 
 export function setThreadCandidates(candidates: readonly number[]): void {
     const refs = candidates.map((idx) => ({ index: idx, source: '', reason: '' }))

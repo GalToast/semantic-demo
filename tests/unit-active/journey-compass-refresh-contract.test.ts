@@ -18,10 +18,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const src = readFileSync(
-    resolve(import.meta.dirname, '../../src/components/JourneyCompass.svelte'),
-    'utf8'
-)
+const src = readFileSync(resolve(import.meta.dirname, '../../src/components/JourneyCompass.svelte'), 'utf8')
 
 describe('JourneyCompass compass refresh wiring (bug #3 regression)', () => {
     it('refresh effect still subscribes to navStore', () => {

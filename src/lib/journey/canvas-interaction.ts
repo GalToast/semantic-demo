@@ -6,11 +6,16 @@
  * Re-exports core adapters from extracted modules and owns canvas DOM event binding lifecycle.
  */
 import { appState } from '@lib/state/app.svelte'
-import {
-    focusOnNode as _focusOnNode,
-    noteSceneInteraction,
-    releaseFocusCameraAssist
-} from '@lib/engine/camera-controls'
+
+// #186: lazily loaded — these fire only inside pointer interaction handlers
+// (post-gesture). A static import of camera-controls would pin
+// camera-choreography → three.module onto the mobile cold-boot path.
+// (The old `focusOnNode as _focusOnNode` static import here was dead code
+// and was removed.)
+let _cameraControls: Promise<typeof import('@lib/engine/camera-controls')> | null = null
+function loadCameraControls(): Promise<typeof import('@lib/engine/camera-controls')> {
+    return (_cameraControls ??= import('@lib/engine/camera-controls'))
+}
 import {
     initJourneyCanvasInteractionAdapter,
     isThreadCandidateVisibleOnCanvas,
@@ -103,8 +108,10 @@ export function ensureCanvasNodeInteractionBindings(): void {
                     } satisfies HoverCandidate,
                     canvas
                 )
-                noteSceneInteraction()
-                releaseFocusCameraAssist('canvasHover')
+                void loadCameraControls().then((m) => {
+                    m.noteSceneInteraction()
+                    m.releaseFocusCameraAssist('canvasHover')
+                })
             } else {
                 clearCanvasFieldHover(canvas)
             }
@@ -144,8 +151,10 @@ export function ensureCanvasNodeInteractionBindings(): void {
                     } satisfies HoverCandidate,
                     canvas
                 )
-                noteSceneInteraction()
-                releaseFocusCameraAssist('canvasHover')
+                void loadCameraControls().then((m) => {
+                    m.noteSceneInteraction()
+                    m.releaseFocusCameraAssist('canvasHover')
+                })
             } else if (!_emptyClickHintShown) {
                 // F3: First empty-space click → gentle hint to guide the user
                 _emptyClickHintShown = true

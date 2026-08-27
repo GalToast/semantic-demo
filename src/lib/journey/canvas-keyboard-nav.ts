@@ -43,8 +43,21 @@ import { get } from 'svelte/store'
 import { businessRecords } from '@lib/data-store'
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { calculateSignalScore } from '@lib/utils/geo-data'
-import { focusOnNode } from '@lib/engine/camera-choreography/cursor'
-import { zoomCamera } from '@lib/engine/camera-choreography/routes'
+// #186: camera modules load lazily — these handlers only run on user
+// keypresses (post-gesture), so keeping the import dynamic keeps
+// camera-choreography (and the ~733KB three.module vendor chunk) off the
+// mobile cold-boot path.
+let _cameraChoreo: Promise<
+    typeof import('@lib/engine/camera-choreography/cursor') & typeof import('@lib/engine/camera-choreography/routes')
+> | null = null
+function loadCameraChoreo(): Promise<
+    typeof import('@lib/engine/camera-choreography/cursor') & typeof import('@lib/engine/camera-choreography/routes')
+> {
+    return (_cameraChoreo ??= Promise.all([
+        import('@lib/engine/camera-choreography/cursor'),
+        import('@lib/engine/camera-choreography/routes')
+    ]).then(([cursor, routes]) => ({ ...cursor, ...routes })))
+}
 import { traverseNeighbor } from '@lib/journey/thread-settler'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { appState } from '@lib/state/app.svelte'
@@ -178,24 +191,24 @@ function dispatchClusterAction(step: 1 | -1, focusedIndex: number): void {
     }
     const targetIndex = siblings[nextPos]
     if (typeof targetIndex === 'number' && Number.isFinite(targetIndex)) {
-        focusOnNode(targetIndex, { fromCanvasNode: true })
+        void loadCameraChoreo().then((m) => m.focusOnNode(targetIndex, { fromCanvasNode: true }))
     }
 }
 
 function dispatchHomeAction(): void {
     const seed = getTrailSeedIndex()
     if (seed === null) return
-    focusOnNode(seed, { fromCanvasNode: true })
+    void loadCameraChoreo().then((m) => m.focusOnNode(seed, { fromCanvasNode: true }))
 }
 
 function dispatchEndAction(): void {
     const end = getTrailEndIndex()
     if (end === null) return
-    focusOnNode(end, { fromCanvasNode: true })
+    void loadCameraChoreo().then((m) => m.focusOnNode(end, { fromCanvasNode: true }))
 }
 
 function dispatchZoomAction(multiplier: number): void {
-    zoomCamera(multiplier)
+    void loadCameraChoreo().then((m) => m.zoomCamera(multiplier))
 }
 
 /**

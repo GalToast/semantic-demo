@@ -10,7 +10,6 @@
 
 import { get } from 'svelte/store'
 import { navStore, updateNavState } from '@lib/stores/navigation.svelte.ts'
-import { animateCameraToTerrainPrelude } from '@lib/engine/camera-controls'
 import { applyMapFlatteningLayout } from '@lib/utils/map-flattening-layout'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
@@ -261,7 +260,11 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
 function _startTerrainPrelude(_view: ViewName, options: SwitchViewOptions, _nav: ReturnType<typeof get>): void {
     // Show the handoff overlay
     showViewHandoff('map')
-    animateCameraToTerrainPrelude({ duration: CONFIG.MAP_HANDOFF_PRELUDE_MS })
+    // #186: lazy — terrain prelude runs on map handoff (post-boot interaction);
+    // keeps camera-controls -> camera-choreography -> three off the cold path.
+    void import('@lib/engine/camera-controls').then((m) =>
+        m.animateCameraToTerrainPrelude({ duration: CONFIG.MAP_HANDOFF_PRELUDE_MS })
+    )
 
     if (_preludeTimer !== null) {
         clearTimeout(_preludeTimer)
