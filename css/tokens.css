@@ -77,7 +77,10 @@
      parity attribute (set synchronously at mount, no Svelte timing race). */
   body[data-render-kind='placeholder2d'] #filters-section,
   body[data-render-kind='placeholder2d'] #search-result-list,
-  body[data-render-kind='placeholder2d'] .search-container {
+  body[data-render-kind='placeholder2d'] .search-container,
+  body:has(.placeholder-layer.active) #filters-section,
+  body:has(.placeholder-layer.active) #search-result-list,
+  body:has(.placeholder-layer.active) .search-container {
     display: none !important;
   }
 }
