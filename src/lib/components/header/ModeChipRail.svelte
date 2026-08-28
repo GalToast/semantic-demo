@@ -183,10 +183,25 @@
      appearing active. Matches the lock guard in navigation.svelte.ts.
      A locked chip must NEVER read as active: the combined `.is-locked.active`
      rule keeps it visually unavailable even if both classes are ever present
-     (defensive — locked chips cannot be selected via selectMode). */
+     (defensive — locked chips cannot be selected via selectMode).
+
+     Opacity 0.35 -> 0.7 (2026-08-28): locked chips were effectively
+     unreadable. Note the `color` below is overridden at runtime by the
+     higher-specificity rule `body #mode-chips .mode-chip.is-locked` in
+     strands.css, so the composited label is rgba(220,230,235,0.85) over
+     the --color-surface-chrome-rgb (7,16,24) header.
+       at 0.35 -> ~rgb(70,80,87)  => ~2.3:1  (fails WCAG AA 4.5:1 and the
+                                              3:1 non-text floor)
+       at 0.7  -> ~rgb(134,143,150) => ~5.8:1 (passes AA with headroom)
+     Three padlocked chips at ~2.3:1 on first paint is what made the boot
+     state read as a broken product. 0.7 still reads as clearly
+     de-emphasised against the active chip. Chips stay rendered AND visible
+     — this deliberately does not hide them, per the A2-4 contract (see the
+     resurrection guards in strands.css / progressive_disclosure.css /
+     mobile_premium__state.css). */
   .mode-chip.is-locked,
   .mode-chip.is-locked.active {
-      opacity: 0.35;
+      opacity: 0.7;
       background: rgba(var(--color-primary-alt-rgb), 0.06);
       color: rgba(176, 208, 208, 0.85);
       border-color: rgba(var(--color-primary-alt-rgb), 0.18);
