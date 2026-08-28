@@ -6,8 +6,12 @@
  * overview-mode values to their focus-mode values.
  *
  * From , getMyceliumPresentationProfile:
- *   - overview mode:   { core: 0.07, wispy: 0.026, bridge: 0.045, pulse: 0.018 }
- *   - focused mode:    { core: 0.14,  wispy: 0.045, bridge: 0.07,  pulse: 0.006 }
+ *   - overview mode:   { core: 0.28, wispy: 0.12, bridge: 0.2, pulse: 0.05 }
+ *   - focused mode:    { core: 0.5,  wispy: 0.24, bridge: 0.36, pulse: 0.012 }
+ *
+ * (Values updated 2026-08-28 for the overview-legibility pass3 rebalance —
+ * see getMyceliumPresentationProfile in src/lib/engine/thread-manager.ts for
+ * the live truth and tuning history.)
  *
  * Test approach:
  *   1. Open the app with mock API stubs, wait for ready
@@ -128,8 +132,8 @@ function availableOpacityEntries(opacities) {
         .map((key) => [key, opacities[key]])
 }
 
-const OVERVIEW_TARGETS = { core: 0.07, wispy: 0.026, bridge: 0.045 }
-const FOCUS_TARGETS = { core: 0.14, wispy: 0.045, bridge: 0.07 }
+const OVERVIEW_TARGETS = { core: 0.28, wispy: 0.12, bridge: 0.2 }
+const FOCUS_TARGETS = { core: 0.5, wispy: 0.24, bridge: 0.36 }
 
 // ---------------------------------------------------------------------------
 // Dynamic lighting suite

@@ -6951,4 +6951,77 @@ test.describe('Semantic upgrade journey', () => {
         expect(dense.bridge).toBeGreaterThan(10_000)
         expect(dense.mapSize).toBe(8_406)
     })
+
+    // Camera toolbar regression (2026-08-28): zoom-in/out/reset wrote the
+    // camera STORE, but the store is a mirror — the engine never reads it —
+    // so all three buttons were inert in the live scene while the jsdom unit
+    // tests (which assert the store) stayed green. This journey test pins the
+    // REAL contract: the buttons must move the live Three camera, and reset
+    // must restore the canonical boot overview pose ([2.05, 1.55, 2.75],
+    // distance ≈ 3.764 from target).
+    test('camera toolbar zoom + reset operate on the live Three camera (regression: inert store-only writes)', async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
+            .first()
+        await explore.waitFor({ state: 'visible', timeout: 60000 })
+        await explore.click()
+
+        const settled = await pollFor(
+            page,
+            () => {
+                const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+                return (
+                    document.body.dataset.graphicsMode === 'webgl' &&
+                    document.body.dataset.sceneReady === 'true' &&
+                    !!appState.camera &&
+                    !!appState.controls
+                )
+            },
+            60000,
+            100
+        )
+        expect(settled, 'desktop boot must publish a ready WebGL scene with camera + controls').toBe(true)
+
+        const readDist = () =>
+            page.evaluate(() => {
+                const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+                const cam = s.camera
+                const t = s.controls?.target
+                if (!cam || !t) return null
+                const dx = cam.position.x - t.x
+                const dy = cam.position.y - t.y
+                const dz = cam.position.z - t.z
+                return Math.sqrt(dx * dx + dy * dy + dz * dz)
+            })
+
+        // Distance-based assertions are robust to idle auto-rotate (rotation
+        // preserves the camera-target distance).
+        const overviewDist = await readDist()
+        expect(overviewDist, 'boot overview camera must sit at a positive distance').toBeGreaterThan(0)
+
+        // Zoom in twice: the LIVE camera distance must shrink (old code: no-op).
+        const zoomIn = page.locator('button[aria-label="Zoom in"]')
+        await zoomIn.click()
+        await page.waitForTimeout(300)
+        await zoomIn.click()
+        await page.waitForTimeout(300)
+        const afterZoomIn = await readDist()
+        expect(
+            afterZoomIn,
+            'zoom-in must dolly the live Three camera closer to the target'
+        ).toBeLessThan(overviewDist)
+        expect(afterZoomIn).toBeCloseTo(overviewDist / 1.2 / 1.2, 2)
+
+        // Reset: back to the canonical overview distance (≈3.764).
+        await page.locator('button[aria-label="Reset view"]').click()
+        await page.waitForTimeout(500)
+        const afterReset = await readDist()
+        expect(
+            Math.abs((afterReset ?? 0) - overviewDist),
+            'reset view must restore the canonical boot overview pose'
+        ).toBeLessThan(0.05)
+    })
 })

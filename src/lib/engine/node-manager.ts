@@ -66,16 +66,16 @@ export const SCENE_ATMOSPHERE = Object.freeze({
     // median to pastel fog — distinct dots merged into cotton-candy haze at
     // overview distance (size 0.026 + opacity 1.0 + high exposure). Pull back
     // exposure 10% and add depth fog so the cloud reads as points, not fog.
-    toneExposure: 1.22,
-    pointOpacityScale: 0.78,
-    sporeOpacity: 0.72 // hero-legibility: brighter self-illuminating nodes
+    toneExposure: 1.05, // hero-legibility pass3 (2026-08-28): 1.22 over-brightened the 8,406-spore sum into a white cotton blob at overview; 1.05 keeps the bioluminescent read without disc merge
+    pointOpacityScale: 0.9, // pass3: 0.78 → 0.9 — the POINTS are the signal; strengthen dots relative to the spore wash
+    sporeOpacity: 0.5 // pass3: 0.72 → 0.5 — spores are glow context, not the subject
 })
 // W60 (2026-08-19): 0.0019 → 0.0027 (~42% larger). Vision-jury flagged
 // idle/focus spores as "dust — sparse tiny stars" (~2.4-3.8 px on a
 // 1440×900 canvas: radius 0.0019 × ~1000 px/unit, ×0.62 off-pocket). At
 // 0.0027 the base reads ~5.4px and still stays subordinate to the focused
 // 8× hero spore.
-const NODE_SPORE_BASE_RADIUS = 0.0055 /* hero-legibility 2026-08-27 pass2: 2x base so overview nodes read as dots, not dust */
+const NODE_SPORE_BASE_RADIUS = 0.0038 /* hero-legibility 2026-08-28 pass3: 0.0055 doubled the overlapping-disc sum into a white cotton blob at overview; 0.0038 keeps dots readable without merging */
 const NODE_SPORE_COLOR_LIFT = new Color(SCENE_PALETTE.sporeLift)
 const NODE_SPORE_ROLE_TINT_PRIMARY = new Color(SCENE_PALETTE.threadTint) // teal - .direct
 const NODE_SPORE_ROLE_TINT_SUPPORT = new Color(0xffd93d) // amber - .support

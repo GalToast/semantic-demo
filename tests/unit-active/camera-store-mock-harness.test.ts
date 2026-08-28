@@ -149,8 +149,8 @@ describe('camera.svelte.ts — Svelte 5 rune mock harness (Phase 6d)', () => {
     // ── Initial state ───────────────────────────────────────────────────────
 
     describe('initial state', () => {
-        it('cameraPosition starts at default [0, 0, 3]', () => {
-            expect(cameraPosition()).toEqual([0, 0, 3])
+        it('cameraPosition starts at canonical overview pose [2.05, 1.55, 2.75]', () => {
+            expect(cameraPosition()).toEqual([2.05, 1.55, 2.75])
         })
 
         it('cameraTarget starts at default [0, 0, 0]', () => {
@@ -316,20 +316,19 @@ describe('camera.svelte.ts — Svelte 5 rune mock harness (Phase 6d)', () => {
     // ── resetCamera ────────────────────────────────────────────────────────
 
     describe('resetCamera', () => {
-        it('restores camera to DEFAULT_POSITION and DEFAULT_TARGET', () => {
+        it('restores camera to canonical overview pose', () => {
             setCameraPosition([99, 99, 99])
             setCameraTarget([88, 88, 88])
             resetCamera()
-            // resetCamera uses DEFAULT_POSITION [0,0,3] and DEFAULT_TARGET [0,0,0],
-            // NOT OVERVIEW_CAMERA_POSE (which is [0, 0.45, 3.0]).
-            expect(cameraPosition()).toEqual([0, 0, 3])
+            // Consolidation (2026-08-28): DEFAULT_POSITION/TARGET now equal the
+            // canonical OVERVIEW_CAMERA_POSE [2.05,1.55,2.75] so reset matches boot.
+            expect(cameraPosition()).toEqual([2.05, 1.55, 2.75])
             expect(cameraTarget()).toEqual([0, 0, 0])
         })
 
-        it('OVERVIEW_CAMERA_POSE is distinct from resetCamera defaults', () => {
-            // Sanity check: OVERVIEW_CAMERA_POSE is an exported constant with
-            // a different position than resetCamera's defaults.
-            expect(OVERVIEW_CAMERA_POSE.position).toEqual([0, 0.45, 3.0])
+        it('OVERVIEW_CAMERA_POSE equals the canonical overview pose', () => {
+            // Single source of truth: @lib/engine/camera-controls-restore.svelte.ts
+            expect(OVERVIEW_CAMERA_POSE.position).toEqual([2.05, 1.55, 2.75])
             expect(OVERVIEW_CAMERA_POSE.target).toEqual([0, 0, 0])
         })
     })

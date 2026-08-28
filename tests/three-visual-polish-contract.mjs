@@ -151,7 +151,7 @@ function hasOpacityProfile(source, values) {
     return re.test(source)
 }
 const opacityProfiles = [
-    { core: 0.75, wispy: 0.42, bridge: 0.58, pulse: 0.08 },
+    { core: 0.28, wispy: 0.12, bridge: 0.2, pulse: 0.05 },
     { core: 0.5, wispy: 0.24, bridge: 0.36, pulse: 0.012 },
     { core: 0.42, wispy: 0.24, bridge: 0.3, pulse: 0.072 },
     { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
@@ -173,12 +173,14 @@ includesAll(
     ['createPoints()', 'createMycelium()', 'compilePointMaterialForReadiness'],
     'three-engine init should build points and mycelium before readiness'
 )
-// Camera overview pose moved into renderer/scene-init.ts (buildThreeScene) during
-// the W46-P2 extraction; verify it survives in either the engine or the extracted
-// scene-init module.
+// Camera overview pose lives in renderer/scene-init.ts (buildThreeScene) and must
+// use the canonical OVERVIEW_CAMERA_POSE. Accept either the literal
+// (pre-consolidation) or the consolidated constant reference.
 assert(
-    sceneGraphSrc.includes('camera.position.set(2.05, 1.55, 2.75)'),
-    'three-engine init should build points and mycelium before readiness missing camera.position.set(2.05, 1.55, 2.75)'
+    sceneGraphSrc.includes('camera.position.set(2.05, 1.55, 2.75)') ||
+        (sceneGraphSrc.includes('OVERVIEW_CAMERA_POSE') &&
+            sceneGraphSrc.includes('camera.position.set(...OVERVIEW_CAMERA_POSE.position)')),
+    'three-engine init should build points and mycelium before readiness missing canonical camera pose (literal 2.05,1.55,2.75 or OVERVIEW_CAMERA_POSE)'
 )
 
 includesAll(

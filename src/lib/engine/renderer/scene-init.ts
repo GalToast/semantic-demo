@@ -26,6 +26,7 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CONFIG } from '@lib/engine/config'
 import { SCENE_ATMOSPHERE } from '@lib/engine/node-manager'
+import { OVERVIEW_CAMERA_POSE } from '@lib/engine/camera-controls-restore.svelte'
 import { SCENE_PALETTE } from '@lib/utils/design-tokens'
 import { detectWebGLSupport, type WebGLSupportDetail } from './webgl-fallback'
 
@@ -64,8 +65,8 @@ export async function buildThreeScene(
 
     // ── Camera ──────────────────────────────────────────────────────────────
     const camera = new PerspectiveCamera(60, width / height, 0.1, 1000)
-    camera.position.set(2.05, 1.55, 2.75)
-    camera.lookAt(0, 0, 0)
+    camera.position.set(...OVERVIEW_CAMERA_POSE.position)
+    camera.lookAt(...OVERVIEW_CAMERA_POSE.target)
 
     // ── Renderer ────────────────────────────────────────────────────────────
     let renderer: WebGLRenderer

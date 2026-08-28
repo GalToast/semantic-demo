@@ -485,7 +485,7 @@ describe('camera store — T4 writable + withCameraNotify migration', () => {
         setCameraPosition([99, 99, 99])
         setCameraTarget([88, 88, 88])
         resetCamera()
-        expect(cameraPosition()).toEqual([0, 0, 3])
+        expect(cameraPosition()).toEqual([2.05, 1.55, 2.75])
         expect(cameraTarget()).toEqual([0, 0, 0])
     })
 

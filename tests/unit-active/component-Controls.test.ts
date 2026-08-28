@@ -115,8 +115,12 @@ describe('Controls component — zoom behavior', () => {
         const btn = container.querySelector('button[aria-label="Zoom in"]') as HTMLButtonElement
         expect(btn).toBeTruthy()
         await fireEvent.click(btn)
-        // After click, the transition's `to.position` holds the new destination.
-        const after = distance(cameraState.transition.to.position, cameraState.transition.to.target)
+        // Camera toolbar fix (2026-08-28): the store is a MIRROR of the live
+        // camera (the engine never reads it), so Controls now writes the
+        // computed dolly straight into cameraState.position instead of
+        // scheduling a store transition nobody consumed. In jsdom (no live
+        // appState.camera) the mirror write is also the fallback path.
+        const after = distance(cameraState.position, cameraState.target)
         expect(after).toBeLessThan(before)
         expect(after).toBeCloseTo(before / 1.2, 5)
     })
@@ -127,7 +131,7 @@ describe('Controls component — zoom behavior', () => {
         const btn = container.querySelector('button[aria-label="Zoom out"]') as HTMLButtonElement
         expect(btn).toBeTruthy()
         await fireEvent.click(btn)
-        const after = distance(cameraState.transition.to.position, cameraState.transition.to.target)
+        const after = distance(cameraState.position, cameraState.target)
         expect(after).toBeGreaterThan(before)
         expect(after).toBeCloseTo(before * 1.2, 5)
     })

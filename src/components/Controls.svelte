@@ -2,10 +2,12 @@
   @components/Controls.svelte — Camera/interaction controls
 -->
 <script lang="ts">
-  import { cameraState, setAutoRotate, startCameraTransition, resetCamera, CAMERA_CONFIG } from '@lib/stores/camera.svelte.ts';
+  import { cameraState, setAutoRotate, CAMERA_CONFIG } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { copyCurrentViewLink } from '@lib/orchestration/lifecycle';
+  import { appState } from '@lib/state/app.svelte';
+  import { OVERVIEW_CAMERA_POSE } from '@lib/engine/camera-controls-restore.svelte';
 
   interface Props {
     visible?: boolean;
@@ -21,13 +23,29 @@
    * Step the camera distance from the target by `factor`. factor < 1 zooms in,
    * factor > 1 zooms out. Clamped to the orbit distance limits so the camera
    * never crosses through the target or escapes the scene bounds.
+   *
+   * Camera toolbar fix (2026-08-28): the live Three camera is mutated
+   * imperatively (repo convention — "Three.js object mutations stay
+   * imperative, they're not Svelte state", camera-controls-restore.svelte.ts).
+   * The camera store is a MIRROR — the engine never reads it — so the old
+   * store-only write (startCameraTransition) was a dead write and the buttons
+   * were inert in the live scene while the jsdom unit tests (which assert the
+   * store) stayed green. When no live camera exists (jsdom/unit contexts) the
+   * math falls back to the store so the mirror contract still holds there.
    */
   function zoomBy(factor: number): void {
-    const [px, py, pz] = cameraState.position;
-    const [tx, ty, tz] = cameraState.target;
-    const dx = px - tx;
-    const dy = py - ty;
-    const dz = pz - tz;
+    const cam = appState.camera;
+    const ctrl = appState.controls;
+    const liveTarget = ctrl?.target;
+    const p: [number, number, number] = cam
+      ? [cam.position.x, cam.position.y, cam.position.z]
+      : [...cameraState.position];
+    const t: [number, number, number] = liveTarget
+      ? [liveTarget.x, liveTarget.y, liveTarget.z]
+      : [...cameraState.target];
+    const dx = p[0] - t[0];
+    const dy = p[1] - t[1];
+    const dz = p[2] - t[2];
     const currentDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
     if (currentDistance < 1e-6) return; // camera coincides with target, nothing to dolly
     const min = CAMERA_CONFIG.ORBIT_MIN_DISTANCE_DEFAULT;
@@ -36,14 +54,18 @@
     if (nextDistance === currentDistance) return; // already at the clamp
     const scale = nextDistance / currentDistance;
     const nextPosition: [number, number, number] = [
-      tx + dx * scale,
-      ty + dy * scale,
-      tz + dz * scale
+      t[0] + dx * scale,
+      t[1] + dy * scale,
+      t[2] + dz * scale
     ];
-    startCameraTransition(
-      { position: nextPosition, target: cameraState.target },
-      300
-    );
+    if (cam) {
+      cam.position.set?.(nextPosition[0], nextPosition[1], nextPosition[2]);
+      if (liveTarget) cam.lookAt?.(liveTarget.x, liveTarget.y, liveTarget.z);
+      ctrl?.update?.();
+    }
+    // Mirror (or jsdom fallback) — the store never drives the camera.
+    cameraState.position = nextPosition;
+    if (liveTarget) cameraState.target = t;
   }
 
   function zoomIn(): void {
@@ -56,7 +78,24 @@
 
   function resetView(): void {
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
-    resetCamera();
+    // Camera toolbar fix (2026-08-28): reset to the CANONICAL overview pose
+    // (the framing the scene actually boots into, pinned by the three-visual-
+    // polish + camera-restore contracts as [2.05, 1.55, 2.75]) applied
+    // imperatively to the live Three camera. The old resetCamera() store
+    // write never reached the engine (the store is a mirror, not a driver),
+    // and its stale [0,0,3] default framed differently than boot overview.
+    const cam = appState.camera;
+    const ctrl = appState.controls;
+    const [px, py, pz] = OVERVIEW_CAMERA_POSE.position;
+    const [tx, ty, tz] = OVERVIEW_CAMERA_POSE.target;
+    if (cam && ctrl) {
+      cam.position.set?.(px, py, pz);
+      ctrl.target.set?.(tx, ty, tz);
+      cam.lookAt?.(tx, ty, tz);
+      ctrl.update?.();
+    }
+    cameraState.position = [px, py, pz];
+    cameraState.target = [tx, ty, tz];
   }
 
   /**

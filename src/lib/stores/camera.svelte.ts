@@ -10,8 +10,18 @@
 import type { Readable } from 'svelte/store'
 import type { CameraState, CameraTransition, FocusOrbitSlackState } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte.ts'
-import { cameraControlsRestore } from '@lib/engine/camera-controls-restore.svelte.ts'
+import {
+    cameraControlsRestore,
+    OVERVIEW_CAMERA_POSE
+} from '@lib/engine/camera-controls-restore.svelte.ts'
 import { debugError } from '@lib/utils/debug'
+
+// Re-export canonical pose for consumers that import from the store layer.
+// Single source of truth is @lib/engine/camera-controls-restore.svelte.ts
+// (scene-init + Controls + restore all read that module). Keeping the
+// re-export preserves the public API while eliminating the dead duplicate
+// [0,0.45,3.0] that previously diverged from the live boot pose.
+export { OVERVIEW_CAMERA_POSE }
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -33,17 +43,23 @@ export const CAMERA_CONFIG = {
     SEARCH_TRAIL_CUE_MIN_DWELL_MS: 920
 } as const
 
-// ── Overview Camera Pose (from camera-controls-restore.js) ───────────────────
-
-export const OVERVIEW_CAMERA_POSE = {
-    position: [0, 0.45, 3.0] as [number, number, number],
-    target: [0, 0, 0] as [number, number, number]
-} as const
-
 // ── Initial State ────────────────────────────────────────────────────────────
-
-const DEFAULT_POSITION: [number, number, number] = [0, 0, 3]
-const DEFAULT_TARGET: [number, number, number] = [0, 0, 0]
+// DEFAULT_POSITION/TARGET are the store's initial snapshot and reset target.
+// They must match the canonical overview pose so the store never briefly
+// publishes a different framing than the engine boots into ([2.05,1.55,2.75]).
+// The previous [0,0,3] default was a stale pre-canonical pose that caused a
+// user-visible framing jump on reset and contributed to the three-way pose
+// drift noted in the 2026-08-28 health sweep.
+const DEFAULT_POSITION: [number, number, number] = [...OVERVIEW_CAMERA_POSE.position] as [
+    number,
+    number,
+    number
+]
+const DEFAULT_TARGET: [number, number, number] = [...OVERVIEW_CAMERA_POSE.target] as [
+    number,
+    number,
+    number
+]
 
 const INITIAL_TRANSITION: CameraTransition = {
     phase: 'idle',

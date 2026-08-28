@@ -95,9 +95,9 @@ export function computeRevealProgress(now: number): { revealed: number; points: 
 const WASH_ATTENUATION = Object.freeze({
     startDist: 2.6,
     fullDist: 3.4,
-    pointsOpacityFactor: 0.88,
+    pointsOpacityFactor: 0.95, // pass3: points are the signal — near-neutral wash at overview distance
     pointsSizeFactor: 1.0,
-    sporeOpacityFactor: 0.66
+    sporeOpacityFactor: 0.45 // pass3: 0.66 → 0.45 — the spore layer was still merging into a white blob at overview distance
 })
 
 function overviewWashFactor(kind: 'points-opacity' | 'points-size' | 'spore-opacity'): number {

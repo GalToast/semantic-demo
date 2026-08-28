@@ -522,12 +522,12 @@ export function getThreadPulseOpacity(
 export function getMyceliumPresentationProfile() {
     const currentMode = getNavigationMode()
     if (currentMode === 'overview' || currentMode === undefined) {
-        // Ambient overview profile. Previously 0.12/0.047/0.068 — too faint against
-        // the dark canvas (8,406 points × ~3,830 line segments rendered at 12%
-        // opacity appeared nearly invisible). Bumped to ~3-5× the previous
-        // base opacities so the mycelium reads as a clear ambient texture while
-        // still staying subordinate to points and spore materials.
-        return { core: 0.75, wispy: 0.42, bridge: 0.58, pulse: 0.08, linewidth: { core: 4.5, wispy: 2.0, bridge: 3.0 } } // hero-legibility pass2: +50% width so threads keep edges at overview distance
+        // Ambient overview profile. History: 0.12/0.047/0.068 read "nearly
+        // invisible"; the 0.75/0.42/0.58 + linewidth-4.5 pass2 overshot into a
+        // saturated scribble that dominated the whole overview (2026-08-28 QA).
+        // pass3 lands between the two: threads read as a thin ambient filament
+        // texture, clearly subordinate to points and spores.
+        return { core: 0.28, wispy: 0.12, bridge: 0.2, pulse: 0.05, linewidth: { core: 1.8, wispy: 0.8, bridge: 1.2 } } // hero-legibility pass3: thin dim filaments, not foreground scribble
     }
     // Semantic-dive mode needs its own profile because the downstream
     // `semanticDiveThreadScale` multiplier (0.42 in three-engine-core) applies
