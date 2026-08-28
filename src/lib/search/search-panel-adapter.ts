@@ -8,6 +8,8 @@
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
+
 interface SearchContainerState {
     searching?: boolean
     focusing?: boolean
@@ -33,6 +35,7 @@ let compactViewportMediaQuery: MediaQueryList | null = null
 let compactViewportChangeBound = false
 let latestCompactViewportDetector: (() => boolean) | null = null
 let mobileSheetLabelRetryQueued = false
+const _sheetLabelRetryReg = new DisposableRegistry({ label: 'search-sheet-label-retry' })
 
 // ── Functions ──────────────────────────────────────────────────────────────
 
@@ -199,10 +202,17 @@ export function setupMobileSearchSheetToggle({
                     setupMobileSearchSheetToggle({ isCompactSearchViewport })
                     return
                 }
-                if (++tries < 60) requestAnimationFrame(retryWire)
-                else mobileSheetLabelRetryQueued = false
+                if (++tries < 60) {
+                    // eslint-disable-next-line no-restricted-syntax -- rAF is registered with _sheetLabelRetryReg.raf() immediately below
+                    const id = requestAnimationFrame(retryWire)
+                    _sheetLabelRetryReg.raf(id)
+                } else {
+                    mobileSheetLabelRetryQueued = false
+                }
             }
-            requestAnimationFrame(retryWire)
+            // eslint-disable-next-line no-restricted-syntax -- rAF is registered with _sheetLabelRetryReg.raf() immediately below
+            const firstId = requestAnimationFrame(retryWire)
+            _sheetLabelRetryReg.raf(firstId)
         }
         return
     }

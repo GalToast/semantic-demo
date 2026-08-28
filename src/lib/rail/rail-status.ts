@@ -9,8 +9,12 @@
 //
 // The truth table IS the unit test (rail-status.test.ts).
 
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
+
 export type RailBanner =
-    { key: 'live'; copy: string } | { key: 'fallback'; copy: string } | { key: 'demo'; copy: string }
+    | { key: 'live'; copy: string }
+    | { key: 'fallback'; copy: string }
+    | { key: 'demo'; copy: string }
 
 export function railBanner(
     source: 'api' | 'fallback',
@@ -35,12 +39,13 @@ export function railBanner(
 export async function probeSemanticRail(timeoutMs = 2500): Promise<boolean | null> {
     try {
         const ctrl = new AbortController()
-        const t = setTimeout(() => ctrl.abort(), timeoutMs)
+        const abortReg = new DisposableRegistry({ label: 'rail-probe-abort' })
+        abortReg.schedule(timeoutMs, () => ctrl.abort())
         const res = await fetch(`${location.pathname}?action=semantic_lane_health`, {
             signal: ctrl.signal,
             headers: { Accept: 'application/json' }
         })
-        clearTimeout(t)
+        abortReg.disposeAll()
         if (!res.ok) return false
         const body = await res.json().catch(() => null)
         if (body && typeof body === 'object') {

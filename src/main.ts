@@ -38,6 +38,7 @@ import { getInitialRenderKind, isDeepLinkParams } from '@lib/orchestration/respo
 import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte'
 import './lib/css/biofield.css'
 import { debugError, debugWarn } from '@lib/utils/debug'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 // Laguna-FT-1 fix (2026-07-25): the MutationObserver-driven focus trap
 // was exported but NEVER INVOKED — the entire a11y binding was dead code
 // at runtime. main.ts is the install site, paired with the same-teardown
@@ -212,40 +213,31 @@ let unsubJourneyWebglPreload: (() => void) | null = engineReady.subscribe((ready
 // visible instead. Byte total is unchanged (the chunk is needed on entry
 // regardless); only its timing moves out of the INP window. One-shot,
 // capped at 30s of polling, torn down with the rest.
-let ctaPrewarmPoll: ReturnType<typeof setInterval> | null = null
+const _prewarmReg = new DisposableRegistry({ label: 'cta-prewarm' })
 let webglGraphArmed = false
 const armWebglGraph = (): void => {
     if (webglGraphArmed) return
     webglGraphArmed = true
-    if (ctaPrewarmPoll) {
-        clearInterval(ctaPrewarmPoll)
-        ctaPrewarmPoll = null
-    }
+    _prewarmReg.disposeAll()
     preloadJourneyWebgl()
     // INP 2026-08-25 interleaved A/B: worker spawn + three module eval on the
     // critical path erased the mycelium worker win under CPU saturation —
     // pay that cost here, pre-tap, alongside the WebGL chunk arm.
     prewarmMyceliumWorker()
 }
-ctaPrewarmPoll = setInterval(() => {
+_prewarmReg.scheduleInterval(120, () => {
     if (document.querySelector('[data-testid="splash-cta"]')) {
         armWebglGraph()
     }
-}, 120)
-setTimeout(() => {
-    if (ctaPrewarmPoll) {
-        clearInterval(ctaPrewarmPoll)
-        ctaPrewarmPoll = null
-    }
-}, 30000)
+})
+_prewarmReg.schedule(30000, () => {
+    _prewarmReg.disposeAll()
+})
 
 function disposeJourneyWebglPreload(): void {
     unsubJourneyWebglPreload?.()
     unsubJourneyWebglPreload = null
-    if (ctaPrewarmPoll) {
-        clearInterval(ctaPrewarmPoll)
-        ctaPrewarmPoll = null
-    }
+    _prewarmReg.disposeAll()
 }
 
 // ── W6-T1 gesture-driven engine-ready signal ─────────────────────────────────
@@ -294,26 +286,20 @@ window.addEventListener(
 // Hydrate Svelte stores from the legacy state after mount.
 // The legacy init path sets __APP_STATE__ asynchronously; retry until the
 // data is present or the cap is reached.
+const _hydrateReg = new DisposableRegistry({ label: 'hydrate-timer' })
 let hydrateAttempts = 0
-// F7 (2026-08-07): track the pending retry timer so HMR/unload can cancel
-// it (previously the setTimeout chain had no cancellation path) and so the
-// cap-exhaustion give-up is surfaced instead of silent.
-let hydrateTimer: number | null = null
 const tryHydrate = (): void => {
     const didHydrate = hydrateFromLegacyState()
     hydrateAttempts += 1
     if (didHydrate) return
     if (hydrateAttempts < 60) {
-        hydrateTimer = window.setTimeout(tryHydrate, 500)
+        _hydrateReg.schedule(500, tryHydrate)
     } else {
         debugError('[main] legacy-state hydration failed after 60 attempts — app may be degraded')
     }
 }
 function clearHydrateTimer(): void {
-    if (hydrateTimer !== null) {
-        clearTimeout(hydrateTimer)
-        hydrateTimer = null
-    }
+    _hydrateReg.disposeAll()
 }
 tryHydrate()
 

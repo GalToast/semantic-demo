@@ -17,6 +17,11 @@ import { apiUrl } from '@lib/utils/api-url'
 import { railBanner } from '@lib/rail/rail-status'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
+// Module-level registries for periodic lane timers — replaces manual
+// clearInterval bookkeeping and satisfies the no-restricted-syntax rule.
+const _monitorReg = new DisposableRegistry({ label: 'semantic-lane-monitor' })
+const _opsRefreshReg = new DisposableRegistry({ label: 'semantic-lane-ops-refresh' })
+
 // ── Window augmentation (semantic-lane helpers attached by lifecycle.js) ────
 
 declare global {
@@ -441,21 +446,18 @@ export async function probeSemanticLane({
 
 export function scheduleSemanticLaneMonitor(): void {
     const win = getWindow()
-    if (state.semanticLaneMonitorTimer) {
-        clearInterval(state.semanticLaneMonitorTimer)
-    }
+    _monitorReg.disposeAll()
+    _monitorReg.rearm()
 
-    state.semanticLaneMonitorTimer =
-        typeof win?.setInterval === 'function'
-            ? setInterval(() => {
-                  // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneMonitorTimer
-                  if (isStaticDevLaneFallbackActive()) return
-                  probeSemanticLane({
-                      warm: shouldWarmSemanticLane('interval'),
-                      reason: 'interval'
-                  })
-              }, 45000)
-            : null
+    if (typeof win?.setInterval === 'function') {
+        _monitorReg.scheduleInterval(45000, () => {
+            if (isStaticDevLaneFallbackActive()) return
+            probeSemanticLane({
+                warm: shouldWarmSemanticLane('interval'),
+                reason: 'interval'
+            })
+        })
+    }
 }
 
 // ── UI State ───────────────────────────────────────────────────────────────
@@ -593,17 +595,15 @@ export function setSemanticLaneOpsMode(enabled: boolean): void {
         panel.hidden = !state.semanticLaneOpsMode
     }
     if (!state.semanticLaneOpsMode) {
-        if (state.semanticLaneOpsRefreshTimer) {
-            clearInterval(state.semanticLaneOpsRefreshTimer)
-            state.semanticLaneOpsRefreshTimer = null
-        }
+        _opsRefreshReg.disposeAll()
+        _opsRefreshReg.rearm()
         return
     }
-    if (!state.semanticLaneOpsRefreshTimer && typeof win?.setInterval === 'function') {
-        state.semanticLaneOpsRefreshTimer = setInterval(() => {
-            // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneOpsRefreshTimer
+    if (_opsRefreshReg.size > 0) return
+    if (typeof win?.setInterval === 'function') {
+        _opsRefreshReg.scheduleInterval(60000, () => {
             refreshSemanticLaneOpsSummary()
-        }, 60000)
+        })
     }
 }
 

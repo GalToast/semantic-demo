@@ -8,9 +8,7 @@
  * S-2: search-glows.ts            — glow/highlight setters
  * S-3: search-core.ts             — mirror singleton + mutation/setter surface
  */
-import type { SearchState, SearchResult, SearchSummary, SearchStatus } from '@lib/types/state'
-import type { BusinessRecord } from '@lib/types/business'
-import { type Readable, writable } from 'svelte/store'
+import { writable } from 'svelte/store'
 import {
     tokenizeSearchText as tokenizeRaw,
     expandSearchIntent as expandRaw,
