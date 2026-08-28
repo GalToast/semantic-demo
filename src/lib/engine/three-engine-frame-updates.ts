@@ -419,6 +419,30 @@ export function updateReferenceSphereOpacity(revealProgress: number, sceneReveal
  * @param state — subset of AppState for semanticDiveMode/trailDepth reads
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A10)
  */
+function isSporeFreeOverview(state: { focusedNode?: unknown; trailDepth?: unknown; semanticDiveMode?: unknown } | null | undefined): boolean {
+    // Spore-free overview variant (?spores=0) — lets the overview read as
+    // points + threads without the additive spore wash. The 8,406 spores are
+    // still created (so focus can still use the hero spore), but at overview
+    // (no focus, no semantic-dive) their opacity is forced to 0 and the mesh
+    // hidden. Threads stay — per user, they are the relationship signal.
+    // Check both `spores=0` and `sporeFree=1` for ergonomics, and guard for
+    // non-DOM contexts (unit tests, SSR) where location is undefined.
+    try {
+        const search = typeof location !== 'undefined' ? location.search : ''
+        if (!search) return false
+        const params = new URLSearchParams(search)
+        const sporesParam = params.get('spores')
+        const sporeFreeParam = params.get('sporeFree')
+        const flag = sporesParam === '0' || sporesParam === 'off' || sporeFreeParam === '1' || sporeFreeParam === 'true'
+        if (!flag) return false
+        const isFocused = Number.isFinite(state?.focusedNode as number)
+        const isSemanticDive = state?.semanticDiveMode === true || (state?.trailDepth as number ?? 0) >= 2
+        return !isFocused && !isSemanticDive
+    } catch {
+        return false
+    }
+}
+
 export function updateSporeOpacity(
     pointsRevealProgress: number,
     state: (Pick<AppState, 'focusedNode' | 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined
@@ -445,12 +469,20 @@ export function updateSporeOpacity(
         // preserves the existing 0.22 dim. Do not raise above ~0.6 (re-bloom) or
         // below ~0.4 (hero loses chromaticity against the points halo).
         const focusBoost = isSemanticDive ? 0.22 : isFocused ? 0.55 : 1.0
-        const targetSporeOpacity =
+        const baseTarget =
             (PORT_SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) *
             pointsRevealProgress *
             focusBoost *
             overviewWashFactor('spore-opacity')
+        const targetSporeOpacity = isSporeFreeOverview(state) ? 0 : baseTarget
         webglContext.nodeSporeMaterial.opacity += (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12
+        // When spore-free overview is active, hide the InstancedMesh entirely
+        // so it costs no draw call and no depth write at overview distance.
+        if (webglContext.nodeSporeMesh) {
+            const shouldHide = isSporeFreeOverview(state)
+            if (shouldHide && webglContext.nodeSporeMesh.visible) webglContext.nodeSporeMesh.visible = false
+            else if (!shouldHide && !webglContext.nodeSporeMesh.visible) webglContext.nodeSporeMesh.visible = true
+        }
     }
 }
 
