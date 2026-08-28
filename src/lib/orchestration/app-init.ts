@@ -20,6 +20,9 @@
 import { initData, setLoadingPhase, setDataLoadError } from '@lib/data-store'
 import { prewarmLocalIndex } from '@lib/search/local-search-index'
 import { initViewportListeners } from '@lib/stores/viewport.svelte.ts'
+import { isMobileViewport } from '@lib/utils/environment'
+import { getSearchParams, hasRestorableUrlState } from '@lib/orchestration/url-params'
+import { writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { debugWarn } from '@lib/utils/debug'
 import { initAdapters } from '@lib/orchestration/adapters'
 import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
@@ -193,7 +196,19 @@ function scheduleSearchIndexPrewarm(): void {
 import { applyUrlState } from '@lib/orchestration/url-state'
 
 async function applyUrlStateAfterData(isDeepLink: boolean): Promise<void> {
-    if (!isDeepLink) return
+    if (!isDeepLink) {
+        // Mobile place-first default (2026-08-28): fresh bare boot on ≤768px
+        // lands in the Leaflet map instead of galaxy/placeholder; the 3D
+        // mycelium stays one explicit CTA away. Any navigation-intent param
+        // (view/q/anchor/record/story/surface/mode/cluster/depth/filters) or
+        // ?placeholder=1 keeps the old surface so deep-links and compact-UI
+        // tests stay deterministic.
+        const params = getSearchParams()
+        if (isMobileViewport() && !hasRestorableUrlState(params) && !params.has('placeholder')) {
+            writeNavStateMirror({ currentView: 'map', surface: 'map' })
+        }
+        return
+    }
     try {
         await applyUrlState()
     } catch (err) {

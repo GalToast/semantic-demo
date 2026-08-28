@@ -123,12 +123,24 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
     // authoritative even when returning to a clean URL, because they must
     // clear the state represented by the previous history entry.
     if (!options.fromHistory && !hasRestorableUrlState(params)) {
-        // Mobile default: map instead of galaxy when no explicit view/surface.
+        // Mobile default: map instead of galaxy on a bare boot (no explicit
+        // view/surface/placeholder/q/anchor/record/story/mode/cluster/depth).
         // 3D mycelium at 8k points is heavy + disorienting on ≤768px; Leaflet
-        // is the familiar, performant default. Explicit ?view=galaxy or
-        // ?surface= still wins (checked below, not here), and desktop stays
-        // galaxy. Keep ?spores=1 opt-in for 3D overview fog.
-        if (isMobileViewport() && !params.has('view') && !params.has('surface')) {
+        // is the familiar, performant place-first default, and the 3D side
+        // stays one CTA away. Desktop keeps galaxy.
+        if (
+            isMobileViewport() &&
+            !params.has('view') &&
+            !params.has('surface') &&
+            !params.has('placeholder') &&
+            !params.has('q') &&
+            !params.has('anchor') &&
+            !params.has('record') &&
+            !params.has('story') &&
+            !params.has('mode') &&
+            !params.has('cluster') &&
+            !params.has('depth')
+        ) {
             writeNavStateMirror({ currentView: 'map', surface: 'map' })
         }
         return

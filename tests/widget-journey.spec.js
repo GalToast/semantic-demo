@@ -3332,7 +3332,7 @@ test.describe('Widget journey', () => {
         // compact-sheet change cannot silently make the control unreachable.
         test.setTimeout(60000)
         await page.setViewportSize({ width: 390, height: 844 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=galaxy`, { waitUntil: 'domcontentloaded' })
 
         const searchChip = page.locator('.mode-chip[data-mode="search"]')
         await searchChip.waitFor({ state: 'visible', timeout: 15000 })
@@ -3483,7 +3483,7 @@ test.describe('Widget journey', () => {
 
         const enterSearch = async (width, height) => {
             await page.setViewportSize({ width, height })
-            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=galaxy`, { waitUntil: 'domcontentloaded' })
             await page.locator('.mode-chip[data-mode="search"]').waitFor({ state: 'visible', timeout: 15000 })
             await page.locator('.mode-chip[data-mode="search"]').click()
             await page.locator('#search-input').waitFor({ state: 'visible', timeout: 15000 })
@@ -6959,7 +6959,9 @@ test.describe('Semantic upgrade journey', () => {
     // REAL contract: the buttons must move the live Three camera, and reset
     // must restore the canonical boot overview pose ([2.05, 1.55, 2.75],
     // distance ≈ 3.764 from target).
-    test('camera toolbar zoom + reset operate on the live Three camera (regression: inert store-only writes)', async ({ page }) => {
+    test('camera toolbar zoom + reset operate on the live Three camera (regression: inert store-only writes)', async ({
+        page
+    }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
@@ -7021,10 +7023,7 @@ test.describe('Semantic upgrade journey', () => {
         await zoomIn.click()
         await page.waitForTimeout(300)
         const afterZoomIn = await readDist()
-        expect(
-            afterZoomIn,
-            'zoom-in must dolly the live Three camera closer to the target'
-        ).toBeLessThan(overviewDist)
+        expect(afterZoomIn, 'zoom-in must dolly the live Three camera closer to the target').toBeLessThan(overviewDist)
         expect(afterZoomIn).toBeCloseTo(overviewDist / 1.2 / 1.2, 2)
 
         // Reset: back to the canonical overview distance (≈3.764).
@@ -7035,5 +7034,22 @@ test.describe('Semantic upgrade journey', () => {
             Math.abs((afterReset ?? 0) - overviewDist),
             'reset view must restore the canonical boot overview pose'
         ).toBeLessThan(0.05)
+    })
+
+    test('mobile bare boot defaults to map view (3D mycelium stays opt-in)', async ({ page }) => {
+        // Mobile-default flip (2026-08-28): fresh mobile boot with no
+        // view/surface/placeholder/q/anchor/etc. lands in the Leaflet map
+        // (place-first). Previous behavior was galaxy/placeholder-2d.
+        await page.setViewportSize({ width: 375, height: 667 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        await page.waitForFunction(() => window.__APP_STATE__?.currentView === 'map', null, {
+            timeout: 20000,
+            polling: 100
+        })
+        expect(
+            await page.evaluate(() => window.__APP_STATE__?.currentView),
+            'fresh mobile boot with no view param must land in the map view (3D stays opt-in)'
+        ).toBe('map')
     })
 })

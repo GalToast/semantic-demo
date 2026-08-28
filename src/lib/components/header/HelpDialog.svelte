@@ -23,7 +23,12 @@
 
   function openHelpDialog(): void {
     if (!helpDialog || helpDialog.open) return;
-    helpDialog.showModal();
+    // Non-modal show() (chrome-soup fix 2026-08-28): showModal()'s ::backdrop
+    // inerted every element outside the dialog, so the camera toolbar
+    // (Zoom/Reset) and search clicks silently ate pointer events until the
+    // dialog was dismissed (220 click retries in the headless journey).
+    // show() keeps the dialog visible without the backdrop/inert layer.
+    helpDialog.show();
   }
 
   function closeHelpDialog(): void {
@@ -31,7 +36,6 @@
     helpDialog.close();
     markOnboardingSeen();
   }
-
   /** Toggled by #btn-app-help in the parent Header (called via bind:this). */
   export function toggleHelpDialog(): void {
     if (!helpDialog) return;
@@ -139,7 +143,9 @@
       try {
         const raw = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
         if (!raw) {
-          helpDialog.showModal();
+          // Non-modal show() — see openHelpDialog(): the modal backdrop
+          // was inerting the whole scene behind the first-visit helper.
+          helpDialog.show();
         }
       } catch {
         /* storage unavailable – silently skip */
