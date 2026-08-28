@@ -152,8 +152,6 @@ Generated from package.json (manually curated, update on script changes).
 | `qa:live-reset`                      | `npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --headed`            | manual |
 | `qa:mapview-placeholder`             | `npx playwright test tests/mapview-placeholder-journey.spec.js --browser=chromium`                     | manual |
 | `qa:product-playthrough`             | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/product-playthrough-audit.mjs --headed`     | yes    |
-| `qa:release-mobile-ownership`        | `npm run qa:ui-quality && node scripts/qa.mjs visual --states=11-mobile-selected-card-map-trail,24...` | manual |
-| `qa:release-mobile-ownership:headed` | `npm run qa:ui-quality && node scripts/qa.mjs visual --states=11-mobile-selected-card-map-trail,24...` | manual |
 | `qa:scene-health`                    | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/three-scene-playtest.mjs`                   | manual |
 | `qa:server`                          | `node scripts/qa-server.mjs start`                                                                     | manual |
 | `qa:server:ensure`                   | `node scripts/qa-server.mjs ensure`                                                                    | manual |
@@ -162,7 +160,6 @@ Generated from package.json (manually curated, update on script changes).
 | `qa:short-landscape`                 | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/short-landscape-layout-contract.mjs && ...` | yes    |
 | `qa:short-landscape:release`         | `npm run qa:short-landscape && npm run qa:short-landscape:transition`                                  | manual |
 | `qa:short-landscape:transition`      | `npx playwright test tests/short-landscape-transition-ui-paths.spec.js --browser=chromium --worker...` | yes    |
-| `qa:ui-quality`                      | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/ui-quality-contract.mjs --headed`           | yes    |
 | `qa:visual`                          | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/visual-state-audit.mjs --headed`            | manual |
 
 ## `refresh:` family (1)
