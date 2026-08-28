@@ -495,7 +495,6 @@ describe('camera store — T4 writable + withCameraNotify migration', () => {
         resetCamera()
         expect(_cameraState.autoRotate).toBe(false)
         expect(_cameraState.autoRotateSuspended).toBe(false)
-
     })
 
     it('CAMERA_CONFIG exposes numeric constants', () => {

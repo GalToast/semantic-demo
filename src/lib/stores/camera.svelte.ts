@@ -10,10 +10,7 @@
 import type { Readable } from 'svelte/store'
 import type { CameraState, CameraTransition, FocusOrbitSlackState } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte.ts'
-import {
-    cameraControlsRestore,
-    OVERVIEW_CAMERA_POSE
-} from '@lib/engine/camera-controls-restore.svelte.ts'
+import { cameraControlsRestore, OVERVIEW_CAMERA_POSE } from '@lib/engine/camera-controls-restore.svelte.ts'
 import { debugError } from '@lib/utils/debug'
 
 // Re-export canonical pose for consumers that import from the store layer.
@@ -50,16 +47,8 @@ export const CAMERA_CONFIG = {
 // The previous [0,0,3] default was a stale pre-canonical pose that caused a
 // user-visible framing jump on reset and contributed to the three-way pose
 // drift noted in the 2026-08-28 health sweep.
-const DEFAULT_POSITION: [number, number, number] = [...OVERVIEW_CAMERA_POSE.position] as [
-    number,
-    number,
-    number
-]
-const DEFAULT_TARGET: [number, number, number] = [...OVERVIEW_CAMERA_POSE.target] as [
-    number,
-    number,
-    number
-]
+const DEFAULT_POSITION: [number, number, number] = [...OVERVIEW_CAMERA_POSE.position] as [number, number, number]
+const DEFAULT_TARGET: [number, number, number] = [...OVERVIEW_CAMERA_POSE.target] as [number, number, number]
 
 const INITIAL_TRANSITION: CameraTransition = {
     phase: 'idle',

@@ -3,7 +3,9 @@ import { setupMockSearch } from './mock-semantic-search.js'
 // Keep this helper aligned with playwright.config.js: Playwright owns the
 // static-plus-PHP-proxy server on 8796, while 8795 is the single-threaded PHP
 // backend and is intentionally reserved for API proxying.
-export const BASE_URL = (process.env.TEST_BASE_URL || `http://127.0.0.1:${process.env.TEST_SERVER_PORT || 8796}`).replace(/\/$/, '')
+export const BASE_URL = (
+    process.env.TEST_BASE_URL || `http://127.0.0.1:${process.env.TEST_SERVER_PORT || 8796}`
+).replace(/\/$/, '')
 export const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
 
 function buildAppUrl(baseUrl = BASE_URL, appPath = APP_PATH, { focusRecord = false } = {}) {

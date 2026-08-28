@@ -73,7 +73,7 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
             semanticGuideRequestSequence: 0,
             currentSemanticGuide: null,
             summaryCardTypeToken: 0,
-searchVisibleCount: 5
+            searchVisibleCount: 5
         },
         viewportState: {
             viewportWidth: 1280,
