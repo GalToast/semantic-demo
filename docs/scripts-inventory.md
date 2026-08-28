@@ -2,7 +2,7 @@
 
 Generated from package.json (manually curated, update on script changes).
 
-**Scale:** 138 scripts \| 29 invoked-by-other-scripts \| 109 manual/orphan entries.
+**Scale:** 94 scripts (pruned 2026-08-28: 51 verified-dead entries removed — see tmp/reports/script-audit-REPORT.md).
 
 ## Key entry points
 
@@ -29,7 +29,6 @@ Generated from package.json (manually curated, update on script changes).
 | Script         | Command (truncated)                                                    | Wired? |
 | -------------- | ---------------------------------------------------------------------- | ------ |
 | `build`        | `npm run build:svelte`                                                 | yes    |
-| `build:safe`   | `npm run check`                                                        | manual |
 | `build:svelte` | `vite build --config vite.config.ts && npm run check:data-compression` | yes    |
 
 ## `check:` family (26)
@@ -37,22 +36,16 @@ Generated from package.json (manually curated, update on script changes).
 | Script                          | Command (truncated)                                                                                    | Wired? |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------ | ------ |
 | `check`                         | `npm run verify:syntax && npm run check:svelte && npm run build:svelte`                                | yes    |
-| `check:android`                 | `node tests/qa-android-contract.mjs`                                                                   | manual |
 | `check:bridges`                 | `node scripts/check-bridge-references.mjs`                                                             | yes    |
 | `check:cache`                   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/cache-buster-check.js`                      | yes    |
 | `check:config-topology`         | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/config-topology-env-contract.mjs`           | yes    |
-| `check:css-minified`            | `node tests/css-minification-build-output-contract.mjs`                                                | manual |
 | `check:data-compression`        | `node scripts/check-data-compression.mjs`                                                              | yes    |
 | `check:dist-integrity`          | `node scripts/qa-deploy-preflight.mjs --dist-only`                                                     | manual |
 | `check:journey`                 | `node scripts/qa-journey-gate.mjs`                                                                     | manual |
-| `check:legacy-budget`           | `node scripts/check-legacy-ts-budget.mjs`                                                              | manual |
 | `check:manifest`                | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-manifest-contract.mjs && node --loa...` | yes    |
-| `check:model-capability-status` | `node tests/model-capability-status-sweep.mjs`                                                         | manual |
 | `check:model-catalog`           | `node tests/model-catalog-sweep.mjs`                                                                   | manual |
 | `check:ownership`               | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-ownership-sweep.mjs`                    | yes    |
 | `check:param-prop`              | `node tests/param-property-loader-sweep.mjs`                                                           | manual |
-| `check:phone-farm`              | `node tests/phone-model-sweep.mjs && node tests/model-capability-status-sweep.mjs && node tests/mo...` | manual |
-| `check:phone-model-parity`      | `node tests/phone-model-sweep.mjs`                                                                     | manual |
 | `check:script-targets`          | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/package-script-targets-contract.mjs`        | yes    |
 | `check:semantic-space`          | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/semantic-space-audit.mjs && node --load...` | yes    |
 | `check:shell`                   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/shell-contract-check.js && node --loade...` | yes    |
@@ -80,7 +73,6 @@ Generated from package.json (manually curated, update on script changes).
 
 | Script    | Command (truncated)                                                                                    | Wired? |
 | --------- | ------------------------------------------------------------------------------------------------------ | ------ |
-| `eval:ci` | `node scripts/eval-harness.mjs --ci=tmp/eval-manifest.ci.json && node scripts/eval-harness.mjs --s...` | manual |
 
 ## `format:` family (1)
 
@@ -124,7 +116,6 @@ Generated from package.json (manually curated, update on script changes).
 | `models:capability-status` | `node scripts/build-model-capability-status.mjs --catalog=tmp/phone-model-parity/canonical-model-c...` | manual |
 | `models:reconcile-runtime` | `node scripts/reconcile-model-catalog.mjs`                                                             | manual |
 | `models:phone-health`      | `node scripts/phone-model-health.mjs --phone-router=http://127.0.0.1:18789 --limit=8 --markdown`       | manual |
-| `models:phone-parity`      | `node scripts/phone-model-parity.mjs`                                                                  | manual |
 | `models:verify-catalog`    | `node scripts/verify-model-catalog.mjs`                                                                | manual |
 
 ## `phone:` family (2)
@@ -132,7 +123,6 @@ Generated from package.json (manually curated, update on script changes).
 | Script                    | Command (truncated)                              | Wired? |
 | ------------------------- | ------------------------------------------------ | ------ |
 | `phone:deploy-catalog`    | `node scripts/deploy-phone-model-catalog.mjs`    | manual |
-| `phone:deploy-projection` | `node scripts/deploy-phone-model-projection.mjs` | manual |
 
 ## `preview:` family (1)
 
@@ -144,8 +134,6 @@ Generated from package.json (manually curated, update on script changes).
 
 | Script                | Command (truncated)                                                      | Wired? |
 | --------------------- | ------------------------------------------------------------------------ | ------ |
-| `prune:artifacts`     | `node scripts/report-artifact-volume.js --prune-dry-run`                 | manual |
-| `prune:artifacts:now` | `node scripts/report-artifact-volume.js --prune-dry-run --execute --yes` | manual |
 
 ## `qa:` family (53)
 
@@ -155,44 +143,18 @@ Generated from package.json (manually curated, update on script changes).
 | `qa:3d:fresh`                        | `npm run build && npm run qa:3d`                                                                       | manual |
 | `qa:adversarial`                     | `npx playwright test tests/polish-adversarial.spec.js --browser=chromium --headed`                     | manual |
 | `qa:android`                         | `node scripts/qa-android.mjs`                                                                          | manual |
-| `qa:camera-ownership`                | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/focus-camera-ownership-contract.mjs`        | manual |
-| `qa:canvas-hit-test`                 | `npx playwright test tests/canvas-hit-test-interaction.spec.js --browser=chromium --headed`            | manual |
 | `qa:contract`                        | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-contract-check.mjs --headed`        | manual |
 | `qa:contract:mobile-critical`        | `node scripts/qa.mjs contract --preset=mobile-critical --headed`                                       | manual |
-| `qa:contract:phase-a`                | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-contract-check.mjs --surfaces=i...` | manual |
-| `qa:contract:phase-b`                | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-contract-check.mjs --surfaces=f...` | manual |
-| `qa:desktop-critical`                | `node scripts/qa.mjs visual --states=07-desktop-idle,08-desktop-search-coffee,11-desktop-selected-...` | manual |
-| `qa:focus-readability`               | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/focus-camera-readability-contract.mjs`      | manual |
-| `qa:focus-stage-render`              | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/focus-stage-render-contract.mjs`            | manual |
-| `qa:interaction-ownership`           | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/focus-interaction-ownership-contract.mjs`   | manual |
 | `qa:journey`                         | `npx playwright test tests/widget-journey.spec.js tests/widget-journey-smoke.spec.js --browser=chr...` | yes    |
 | `qa:journey:fresh`                   | `npm run build && npm run qa:journey`                                                                  | manual |
-| `qa:journey:fresh:headless`          | `npm run build && npm run qa:journey:headless`                                                         | manual |
-| `qa:journey:fresh:smoke`             | `npm run build && npm run qa:journey:smoke`                                                            | manual |
 | `qa:journey:headless`                | `node scripts/qa-journey-headless.mjs`                                                                 | yes    |
-| `qa:journey:live`                    | `npx playwright test tests/widget-journey.spec.js --browser=chromium --workers=1 --grep @live`         | manual |
 | `qa:journey:smoke`                   | `npx playwright test tests/widget-journey-smoke.spec.js --browser=chromium`                            | yes    |
 | `qa:live-reset`                      | `npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --headed`            | manual |
-| `qa:live-reset-interaction`          | `npx playwright test tests/live-ui-reset-interaction.spec.js --browser=chromium --headed`              | manual |
-| `qa:live-semantic-roles`             | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/live-semantic-roles-contract.mjs`           | manual |
-| `qa:live-step-inside`                | `npx playwright test tests/live-step-inside-url-body-state-sync.spec.js --browser=chromium --headed`   | manual |
 | `qa:mapview-placeholder`             | `npx playwright test tests/mapview-placeholder-journey.spec.js --browser=chromium`                     | manual |
-| `qa:micro-interactions`              | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/micro-surface-interactions-contract.mjs`    | manual |
-| `qa:mobile-visual`                   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/mobile-visual-qa-contract.mjs`              | manual |
-| `qa:mode-chip`                       | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/mode-chip-state-render-contract.mjs`        | manual |
-| `qa:motion-state`                    | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/motion-state-contract.mjs`                  | manual |
 | `qa:product-playthrough`             | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/product-playthrough-audit.mjs --headed`     | yes    |
-| `qa:real-route:visual`               | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/product-playthrough-audit.mjs --real-ro...` | manual |
-| `qa:reduced-motion-scene`            | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/reduced-motion-scene-diagnostic.mjs`        | manual |
-| `qa:reduced-motion-transition`       | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/reduced-motion-transition-contract.mjs`     | manual |
 | `qa:release-mobile-ownership`        | `npm run qa:ui-quality && node scripts/qa.mjs visual --states=11-mobile-selected-card-map-trail,24...` | manual |
 | `qa:release-mobile-ownership:headed` | `npm run qa:ui-quality && node scripts/qa.mjs visual --states=11-mobile-selected-card-map-trail,24...` | manual |
-| `qa:reset-map-ownership`             | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/reset-map-interaction-ownership-contrac...` | manual |
-| `qa:role-traversal`                  | `npx playwright test tests/semantic-role-traversal.spec.js --browser=chromium --workers=1 --headed`    | manual |
-| `qa:route-ergonomics`                | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/product-playthrough-audit.mjs --real-ro...` | manual |
 | `qa:scene-health`                    | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/three-scene-playtest.mjs`                   | manual |
-| `qa:semantic-guide-fallback`         | `npx playwright test tests/semantic-guide-fallback-contract.spec.js --browser=chromium --headed`       | manual |
-| `qa:serve`                           | `node scripts/qa-serve.mjs`                                                                            | manual |
 | `qa:server`                          | `node scripts/qa-server.mjs start`                                                                     | manual |
 | `qa:server:ensure`                   | `node scripts/qa-server.mjs ensure`                                                                    | manual |
 | `qa:server:status`                   | `node scripts/qa-server.mjs status`                                                                    | manual |
@@ -200,9 +162,7 @@ Generated from package.json (manually curated, update on script changes).
 | `qa:short-landscape`                 | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/short-landscape-layout-contract.mjs && ...` | yes    |
 | `qa:short-landscape:release`         | `npm run qa:short-landscape && npm run qa:short-landscape:transition`                                  | manual |
 | `qa:short-landscape:transition`      | `npx playwright test tests/short-landscape-transition-ui-paths.spec.js --browser=chromium --worker...` | yes    |
-| `qa:surface-redundancy`              | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-redundancy-contract.mjs`            | manual |
 | `qa:ui-quality`                      | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/ui-quality-contract.mjs --headed`           | yes    |
-| `qa:ui-renderers-seam`               | `npx playwright test tests/ui-renderers-validation.spec.js --browser=chromium --headed`                | manual |
 | `qa:visual`                          | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/visual-state-audit.mjs --headed`            | manual |
 
 ## `refresh:` family (1)
@@ -243,27 +203,19 @@ Generated from package.json (manually curated, update on script changes).
 | `test:a11y`             | `playwright test tests/integration/a11y-baseline.spec.js --browser=chromium`                           | manual |
 | `test:contract`         | `node tests/run-all-contracts.js`                                                                      | manual |
 | `test:contract:core`    | `node tests/run-all-contracts.js --group=core`                                                         | manual |
-| `test:contract:full`    | `node tests/run-all-contracts.js --group=full`                                                         | manual |
 | `test:contract:smoke`   | `node tests/run-all-contracts.js --group=smoke`                                                        | yes    |
-| `test:e2e:click-flow`   | `npx playwright test tests/e2e-click-flow.spec.js --browser=chromium --headed`                         | manual |
 | `test:fast`             | `npm run test:static`                                                                                  | manual |
 | `test:help`             | `node scripts/test-help.mjs`                                                                           | manual |
-| `test:live:e2e`         | `TEST_BASE_URL=http://127.0.0.1:8797 npx playwright test tests/e2e-click-flow.spec.js --browser=ch...` | manual |
-| `test:smoke`            | `npm run test:contract:smoke`                                                                          | manual |
 | `test:static`           | `npm run check:shell && npm run check:skills && npm run check:manifest && npm run check:cache && n...` | yes    |
-| `test:stress`           | `playwright test tests/heavy-stress-leak.spec.js --browser=chromium`                                   | manual |
 | `test:svelte-migration` | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/verify-svelte-migration.mjs`                | manual |
 | `test:unit`             | `vitest run --config vitest.config.js`                                                                 | yes    |
-| `test:unit:watch`       | `vitest --config vitest.config.js`                                                                     | manual |
 | `test:visual`           | `npx tsx tests/visual-regression.test.ts`                                                              | manual |
-| `test:visual:update`    | `UPDATE_SNAPSHOTS=true npx playwright test tests/integration/visual-state-snapshots.spec.js --brow...` | manual |
 
 ## `typecheck:` family (2)
 
 | Script            | Command (truncated)                       | Wired? |
 | ----------------- | ----------------------------------------- | ------ |
 | `typecheck`       | `tsc --noEmit -p tsconfig.typecheck.json` | yes    |
-| `typecheck:tests` | `tsc --noEmit -p tsconfig.tests.json`     | manual |
 
 ## `verify:` family (2)
 
