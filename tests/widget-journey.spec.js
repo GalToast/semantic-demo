@@ -6985,6 +6985,18 @@ test.describe('Semantic upgrade journey', () => {
         )
         expect(settled, 'desktop boot must publish a ready WebGL scene with camera + controls').toBe(true)
 
+        // Dismiss first-visit help dialog if present — it intercepts pointer
+        // events on the camera toolbar (covers bottom-right chrome) and would
+        // block the zoom/reset clicks (verified failure: help-dialog blocks
+        // Zoom In at 2.0m timeout). Same pattern as other widget-journey
+        // desktop boots (see "desktop cold boot" + "5g. Focus-panel" above).
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
         const readDist = () =>
             page.evaluate(() => {
                 const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
