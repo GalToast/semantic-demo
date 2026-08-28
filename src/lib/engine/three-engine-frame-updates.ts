@@ -419,27 +419,34 @@ export function updateReferenceSphereOpacity(revealProgress: number, sceneReveal
  * @param state — subset of AppState for semanticDiveMode/trailDepth reads
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A10)
  */
-function isSporeFreeOverview(state: { focusedNode?: unknown; trailDepth?: unknown; semanticDiveMode?: unknown } | null | undefined): boolean {
-    // Spore-free overview variant (?spores=0) — lets the overview read as
-    // points + threads without the additive spore wash. The 8,406 spores are
-    // still created (so focus can still use the hero spore), but at overview
-    // (no focus, no semantic-dive) their opacity is forced to 0 and the mesh
-    // hidden. Threads stay — per user, they are the relationship signal.
-    // Check both `spores=0` and `sporeFree=1` for ergonomics, and guard for
-    // non-DOM contexts (unit tests, SSR) where location is undefined.
+function isSporeFreeOverview(
+    state: { focusedNode?: unknown; trailDepth?: unknown; semanticDiveMode?: unknown } | null | undefined
+): boolean {
+    // Default spore-free overview (user-approved 2026-08-28): overview
+    // (no focus, no semantic-dive) hides the 8,406-spore InstancedMesh
+    // so the read is points + threads. Focus/semantic-dive still show the
+    // hero spore. Opt-in to the old fog via ?spores=1 / ?spores=on /
+    // ?sporeFree=0. Guard for non-DOM contexts (unit tests, SSR).
+    const isFocused = Number.isFinite(state?.focusedNode as number)
+    const isSemanticDive = state?.semanticDiveMode === true || ((state?.trailDepth as number) ?? 0) >= 2
+    if (isFocused || isSemanticDive) return false
     try {
         const search = typeof location !== 'undefined' ? location.search : ''
-        if (!search) return false
+        if (!search) return true // default: hide at overview
         const params = new URLSearchParams(search)
-        const sporesParam = params.get('spores')
-        const sporeFreeParam = params.get('sporeFree')
-        const flag = sporesParam === '0' || sporesParam === 'off' || sporeFreeParam === '1' || sporeFreeParam === 'true'
-        if (!flag) return false
-        const isFocused = Number.isFinite(state?.focusedNode as number)
-        const isSemanticDive = state?.semanticDiveMode === true || (state?.trailDepth as number ?? 0) >= 2
-        return !isFocused && !isSemanticDive
+        if (params.has('spores')) {
+            const v = params.get('spores')
+            if (v === '1' || v === 'on' || v === 'true' || v === 'show') return false
+            if (v === '0' || v === 'off' || v === 'false' || v === 'hide') return true
+        }
+        if (params.has('sporeFree')) {
+            const v = params.get('sporeFree')
+            if (v === '0' || v === 'false') return false
+            if (v === '1' || v === 'true') return true
+        }
+        return true // default hide
     } catch {
-        return false
+        return true
     }
 }
 

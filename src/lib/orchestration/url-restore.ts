@@ -29,6 +29,7 @@ import {
     surfaceParamToNavMode,
     resolveAnchorFromRecordId
 } from '@lib/orchestration/url-params'
+import { isMobileViewport } from '@lib/utils/environment'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { updateUrlState, clearExplorationFocusSelection } from './url-writer'
 import { _restoreAnchorFromParams } from './url-restore-deep-link'
@@ -121,7 +122,17 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
     // while data initialization is still settling. History restores remain
     // authoritative even when returning to a clean URL, because they must
     // clear the state represented by the previous history entry.
-    if (!options.fromHistory && !hasRestorableUrlState(params)) return
+    if (!options.fromHistory && !hasRestorableUrlState(params)) {
+        // Mobile default: map instead of galaxy when no explicit view/surface.
+        // 3D mycelium at 8k points is heavy + disorienting on ≤768px; Leaflet
+        // is the familiar, performant default. Explicit ?view=galaxy or
+        // ?surface= still wins (checked below, not here), and desktop stays
+        // galaxy. Keep ?spores=1 opt-in for 3D overview fog.
+        if (isMobileViewport() && !params.has('view') && !params.has('surface')) {
+            writeNavStateMirror({ currentView: 'map', surface: 'map' })
+        }
+        return
+    }
 
     const restoreToken = bumpUrlStateRestoreToken()
     const $nav = get(navStore)
