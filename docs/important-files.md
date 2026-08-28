@@ -42,6 +42,7 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 
 ## State / Data
 
+- `src/data.dat` — CANONICAL 8,406-point mycelium dataset loaded by the data worker. `dist/svelte/data.dat` is the build-output copy and `tmp/ci-artifact/data.dat` a CI artifact copy — all three were byte-identical (md5 `786549ee`, verified 2026-08-28); treat `src/data.dat` as source of truth.
 - `src/lib/state/app.svelte.ts`
 - `src/lib/state/state-types.ts`
 - `src/lib/data-store.ts`

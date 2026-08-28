@@ -27,7 +27,7 @@ const ROOT = resolve(__dirname, '../..')
 const INTENTIONAL_ALLOWLIST = new Set([-1, 0, 1])
 
 /** Files to skip in the literal-scan (dead template, vendor code). */
-const SKIP_PATHS = ['src/app.html', 'src/public/vendor', 'src/tmp']
+const SKIP_PATHS = ['src/app.html', 'src/public/vendor']
 
 function shouldSkip(filePath: string): boolean {
     const rel = filePath.replace(ROOT, '').replace(/\\/g, '/')
