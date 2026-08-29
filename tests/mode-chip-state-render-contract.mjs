@@ -121,6 +121,20 @@ async function main() {
   });
   // state mutation applied synchronously
 
+  // -- 0b. Freeze CSS transitions before any computed-style assertion --------
+  // `.mode-chip { transition: all 0.15s }` (ModeChipRail.svelte) means a
+  // getComputedStyle read immediately after a class mutation returns the
+  // IN-FLIGHT interpolated value, not the declared target. So the .is-waiting
+  // and :disabled opacity assertions raced that 150ms transition and flapped:
+  // 1 failure on a fast machine, 2 on a slow one, 0 when the transition had
+  // already been running. The CSS contract itself is correct — measured with
+  // transitions off: .is-waiting => 0.75, :disabled => 0.7, both < 1.
+  // Freezing the transition makes the assertions deterministic and still
+  // measures exactly what the contract asks for: the settled rendered state.
+  await page.addStyleTag({
+    content: '#mode-chips .mode-chip { transition: none !important; }',
+  });
+
   // -- 1. Mode grid and chips exist ------------------------------------------
   const modeGrid = page.locator('#mode-grid, #mode-chips');
   if (await modeGrid.count() === 0) {
@@ -203,6 +217,11 @@ async function main() {
     if (Number(waitOpacity) >= 1) fail(`is-waiting chip opacity="${waitOpacity}" should be < 1`);
     const waitBorderStyle = await waitingChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('border-style'));
     if (waitBorderStyle !== 'solid') fail(`is-waiting chip border-style="${waitBorderStyle}", expected "solid"`);
+    // Reset: .is-waiting used to leak into the :disabled assertion below, so
+    // step 5 measured a chip that was BOTH waiting and disabled (0.7) instead
+    // of :disabled alone. Both happen to be < 1, so the bug was invisible —
+    // but it meant the :disabled contract was never actually verified.
+    await waitingChip.evaluate((el) => el.classList.remove('is-waiting'));
   } else {
     fail('No mode chip found - cannot test is-waiting state');
   }
