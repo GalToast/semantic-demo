@@ -998,13 +998,8 @@ body.searching .search-container.has-query .search-clear-btn {
     }
 }
 
-/* polish289: once user has typed a query, hide the first-time discovery scaffolding */
-.search-container.results-rendered .demo-journey-steps,
+/* polish289: once user has typed a query,
 .search-container.results-rendered .search-trail-cue {
-    display: none;
-}
-
-.search-container.has-query .demo-journey-steps {
     display: none;
 }
 
@@ -1063,8 +1058,6 @@ body.searching .search-container.has-query .search-clear-btn {
 .rail-section summary .summary-text,
 
 .rail-section summary .summary-title,
-
-.rail-section summary .summary-note,
 .filter-preview {
     font-size: 9px;
     font-weight: 600;
@@ -1514,10 +1507,6 @@ body.surface-map-focus-search .semantic-lane-assist-copy {
     word-break: break-word;
     min-width: 0;
 }
-
-body.surface-search .semantic-lane-assist-row,
-body.surface-focus-search .semantic-lane-assist-row,
-body.surface-map-search .semantic-lane-assist-row,
 body.surface-search .semantic-lane-assist-meta,
 body.surface-focus-search .semantic-lane-assist-meta,
 body.surface-map-search .semantic-lane-assist-meta,

@@ -111,11 +111,6 @@
     margin: 7px 0 6px;
 }
 
-.focus-stage-route[data-state='empty'] .focus-stage-route-dot:not(.is-current),
-.focus-stage-route[data-state='idle'] .focus-stage-route-dot:not(.is-current) {
-    opacity: 0.32;
-}
-
 .focus-stage-route[data-state='ready'] .focus-stage-route-line {
     background: linear-gradient(90deg, rgba(255, 226, 132, 0.72), rgba(var(--color-primary-tint-rgb), 0.78));
     box-shadow: 0 0 18px rgba(var(--color-primary-tint-rgb), 0.14);

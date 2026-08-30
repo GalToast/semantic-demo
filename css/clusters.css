@@ -212,11 +212,6 @@ body.surface-focus-search .selected-card {
     pointer-events: auto;
 }
 
-body.surface-focus .selected-card .panel-section-title,
-body.surface-focus-search .selected-card .panel-section-title {
-    color: rgb(var(--cluster-rgb));
-}
-
 body.surface-focus .trail-context,
 body.surface-focus-search .trail-context {
     display: block;
@@ -284,15 +279,6 @@ body.surface-map-focus-search .selected-role-badge {
         max-height: 40vh;
         overflow-y: auto;
     }
-}
-
-body.surface-map-any .selected-card .panel-section-title {
-    font-size: 11px;
-}
-
-body.surface-map-focus .selected-card .panel-section-title,
-body.surface-map-focus-search .selected-card .panel-section-title {
-    color: var(--color-accent);
 }
 
 body.surface-map-focus .selected-card h3,

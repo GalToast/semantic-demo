@@ -1408,9 +1408,7 @@ body.view-map #mode-chips .mode-chip.active {
 }
 
 /* V8 idle contract: the overview sheet is search-only. Older responsive
-   sizing blocks above describe legacy starter chips, but idle must not
-   render competing entry points in the live cascade. */
-body.surface-idle .launch-btn,
+   sizing blocks above describe legacy starter chips,
 body.surface-idle .stats-row,
 body.surface-idle .stat-caption,
 body.surface-idle #mode-grid {

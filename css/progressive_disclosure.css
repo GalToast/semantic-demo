@@ -417,7 +417,6 @@
 
 body.surface-semantic-dive #search-results.active,
 body.surface-semantic-dive .info-panel,
-body.surface-semantic-dive .semantic-lane-rail,
 body.surface-semantic-dive .selected-card {
     opacity: 0;
     visibility: hidden;
@@ -448,11 +447,6 @@ body.surface-semantic-dive .selected-card {
         animation: none;
     }
 }
-
-/* is-loading state for surprise-btn */
-
-/* 10/10 Polish: View Transition Choreography */
-body.view-transitioning #canvas-container,
 body.view-transitioning #map-container,
 body.view-transitioning .info-panel,
 body.view-transitioning .journey-compass {
@@ -720,17 +714,6 @@ body.surface-semantic-dive::after {
     font-style: italic;
 }
 
-/* 10/10 Polish: Journey Compass Discovery Active State */
-#journey-compass-note.discovery-active {
-    color: var(--status-warning);
-    font-style: italic;
-    background: rgba(255, 214, 107, 0.12);
-    padding: 4px 8px;
-    border-radius: 6px;
-    margin-top: 4px;
-    border-left: 2px solid rgba(255, 214, 107, 0.3);
-}
-
 /* 10/10 Polish: Glassmorphism Search Input */
 
 /* 10/10 Polish: Search Spinner Integration */
@@ -847,7 +830,6 @@ body.surface-focus .search-trail-cue,
 /* A2-4: #mode-chips stays visible in focus (resurrection guard, 2026-08-21 —
    see strands.css focus-block note). */
 body.surface-focus .stats-row,
-body.surface-focus .launch-btn,
 body.surface-focus .rail-section#cluster-section,
 body.surface-focus .rail-section#filters-section {
     display: none;
@@ -856,7 +838,6 @@ body.surface-focus .rail-section#filters-section {
 /* ── Focus+Search: focused business + search results share the panel ──────────── */
 
 body.surface-focus-search .stats-row,
-body.surface-focus-search .launch-btn,
 body.surface-focus-search .rail-section#cluster-section,
 body.surface-focus-search .rail-section#filters-section,
 body.surface-focus .semantic-lane-ops,
@@ -869,9 +850,7 @@ body.surface-semantic-dive .synthesize-trigger,
 body.surface-semantic-dive .search-trail-cue,
 body.surface-semantic-dive .stats-row,
 body.surface-semantic-dive .rail-section#cluster-section,
-body.surface-semantic-dive .rail-section#filters-section,
-body.surface-semantic-dive .surprise-btn,
-body.surface-semantic-dive .launch-btn {
+body.surface-semantic-dive .rail-section#filters-section{
     display: none;
 }
 

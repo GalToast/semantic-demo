@@ -196,14 +196,6 @@
     scrollbar-width: thin;
     scrollbar-color: rgba(var(--color-primary-rgb), 0.5) rgba(var(--color-primary-rgb), 0.08);
 }
-
-/* polish288: info-panel stats-row base styles — extracted from vector-explorer-polished.html inline style block */
-
-.launch-btn,
-.launch-btn:active,
-.launch-btn:hover,
-.launch-btn:hover,
-.launch-btn:focus-visible,
 #mode-chips .mode-chip:hover,
 #mode-chips .mode-chip:focus-visible,
 body.surface-focus .info-panel,
