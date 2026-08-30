@@ -190,7 +190,14 @@ const EXEMPTED_SHAS = new Set<string>([
     // with the 6 map-* siblings it repoints (map-director, map-leaflet-runtime,
     // map-markers, map-route-embodiment, map-state-controls, …) — same atomic
     // refactor+test class as be9d4f42. Map-split wave-6 (dcb9b5aa siblings).
-    'bc42822448579af20985b42524d2676fe1b56c9a'
+    'bc42822448579af20985b42524d2676fe1b56c9a',
+    // 2c41c844 — test(budget) bundle-ceiling freeze + paint-metrics gate: the
+    // deliverable IS the gate (scripts/check-bundle-size.mjs class: code, the
+    // qa:paint-budget npm wiring class: config) plus its baseline artifact and
+    // doc updates (docs/*). Gate+docs are atomic — the gate is meaningless
+    // without its frozen-budgets doc. Exempted 2026-08-30 (same session;
+    // future budget commits should use chore(budget)/ci prefixes instead).
+    '2c41c844c918714378235d1b38a4ad68766bb24e'
 ])
 
 // Conventional-commit prefix regex. Captures:
