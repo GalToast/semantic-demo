@@ -23,7 +23,7 @@ import { pushBezierLinePair, seedBezierViewVector, pairKey } from '@lib/engine/m
 import { computeOverviewScatterOffsets } from '@lib/utils/geo-data'
 import { getPointBoundsCenter } from '@lib/utils/point-cloud-math'
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
-import { Color, MathUtils, Vector3 } from 'three'
+import { Color, MathUtils } from 'three'
 
 type EdgePair = { a: number; b: number }
 
@@ -548,7 +548,17 @@ interface WorkerAPI {
     addEventListener(type: 'message', cb: (e: MessageEvent) => void): void
 }
 
-const ctx = (typeof self !== 'undefined' ? self : globalThis) as unknown as WorkerAPI
+/**
+ * Worker scope facade: the declared WorkerAPI plus the postMessage signature
+ * the message handlers below need. self (DedicatedWorkerGlobalScope) and the
+ * declared WorkerAPI are unrelated types, so the unavoidable scope cast is
+ * centralized to this single auditable site (was 5 scattered casts).
+ */
+type WorkerScope = WorkerAPI & {
+    postMessage(message: unknown, transfer?: Transferable[]): void
+}
+
+const ctx = (typeof self !== 'undefined' ? self : globalThis) as unknown as WorkerScope
 
 type BuildRequest =
     | (MyceliumBuildPayload & { type: 'BUILD'; requestId?: number })
@@ -560,7 +570,7 @@ ctx.onmessage = (e: MessageEvent<BuildRequest>): void => {
     if (e.data.type === 'POINTS_BUILD') {
         const result = buildPointsBuffers(e.data)
         const transfer = [result.positions.buffer, result.colors.buffer, result.pointBaseColors.buffer]
-        ;(self as unknown as Worker).postMessage({ type: 'POINTS_BUILT', requestId, ...result }, transfer)
+        ctx.postMessage({ type: 'POINTS_BUILT', requestId, ...result }, transfer)
         return
     }
     if (e.data.type === 'DISCOVER_BUILD') {
@@ -571,11 +581,11 @@ ctx.onmessage = (e: MessageEvent<BuildRequest>): void => {
         // graph measured ~1000ms — the dominant cost in the mycelium window).
         const result = discoverMyceliumEdgesCSRBuffers({ ...e.data, adjacency: e.data })
         if (!result) {
-            ;(self as unknown as Worker).postMessage({ type: 'DISCOVER_BUILT', requestId, edgeSets: null })
+            ctx.postMessage({ type: 'DISCOVER_BUILT', requestId, edgeSets: null })
             return
         }
         const transfer = [result.corePairs.buffer, result.wispyPairs.buffer, result.bridgePairs.buffer]
-        ;(self as unknown as Worker).postMessage({ type: 'DISCOVER_BUILT', requestId, edgeSets: result }, transfer)
+        ctx.postMessage({ type: 'DISCOVER_BUILT', requestId, edgeSets: result }, transfer)
         return
     }
     // buildMyceliumBuffers seeds the view vector internally.
@@ -588,5 +598,5 @@ ctx.onmessage = (e: MessageEvent<BuildRequest>): void => {
         result.wispyColors.buffer,
         result.bridgeColors.buffer
     ]
-    ;(self as unknown as Worker).postMessage({ type: 'BUILT', requestId: e.data.requestId ?? 0, ...result }, transfer)
+    ctx.postMessage({ type: 'BUILT', requestId: e.data.requestId ?? 0, ...result }, transfer)
 }
