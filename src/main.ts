@@ -25,7 +25,7 @@ import { appState, legacyState } from '@lib/state/app.svelte.ts'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 // Side-effect: generates and exposes window.__semanticExplorerSessionSeed
 import '@lib/state/session.svelte'
-import type { ViewName, SearchSummary, Point } from '@lib/state/state-types'
+import type { ViewName, SearchSummary } from '@lib/state/state-types'
 import type { BusinessRecord } from '@lib/types/business'
 import { appInit } from '@lib/orchestration/app-init'
 import { teardownToastHooks } from '@lib/orchestration/toast'
@@ -481,7 +481,10 @@ function createTestCompatProxy(): Record<string, unknown> {
                             // write through the compat proxy.
                             setSearchSummary(value as SearchSummary | null)
                         } else if (prop === 'points') {
-                            appState.points = value as Point[]
+                            // Runtime truth is BusinessRecord[]; the legacy proxy
+                            // boundary is the one place the untyped value gets a
+                            // type (see app.svelte.ts points setter).
+                            appState.points = value as BusinessRecord[]
                         } else if (prop === 'focusedNode') {
                             void import('@lib/journey/thread-settler')
                                 .then((m) => m.setFocusedNode(value === null ? null : (value as number)))

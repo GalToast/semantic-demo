@@ -153,13 +153,12 @@ function bindEventBridge(callbacks: EngineCallbacks): void {
     try {
         _eventUnsubs.push(
             subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
-                let index = payload.index as number | undefined
-                if (!Number.isFinite(index)) {
-                    const point = payload.point as { x: number; y: number; z: number } | undefined
-                    if (point && appState.points) {
-                        index = appState.points.findIndex((p) => p.x === point.x && p.y === point.y && p.z === point.z)
-                    }
-                }
+                // The only emitter (camera-choreography/cursor.ts focusOnNode)
+                // always carries a finite index. The legacy point-shape fallback
+                // was removed 2026-08-30: records never carry x/y/z (AGENTS.md
+                // invariant) so it could never match, and undefined===undefined
+                // would have returned index 0 — a silent misfocus had it ever run.
+                const index = payload.index as number | undefined
                 if (Number.isFinite(index) && index! >= 0) {
                     callbacks.onNodePicked?.(index!)
                 }
