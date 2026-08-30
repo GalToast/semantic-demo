@@ -118,10 +118,20 @@ export const NAV_DRIFT_KEYS = [
     'trailSeedIndex'
 ] as const
 
+/**
+ * String-keyed read/write view over a typed object, for the drift-diff and
+ * mirror-patch machinery that compares NavState keys by name. TS interfaces
+ * carry no implicit index signatures, so generic-key indexing needs this one
+ * centralized view instead of scattered `as unknown as Record<...>` casts.
+ */
+function asRecord(obj: object): Record<string, unknown> {
+    return obj as Record<string, unknown>
+}
+
 export function navDriftDigest(nav: NavState): string {
     const parts: string[] = []
     for (const key of NAV_DRIFT_KEYS) {
-        parts.push(`${key}=${JSON.stringify((nav as unknown as Record<string, unknown>)[key])}`)
+        parts.push(`${key}=${JSON.stringify(asRecord(nav)[key])}`)
     }
     return parts.join('|')
 }
@@ -148,7 +158,7 @@ export function describeNavDrift(live: NavState): string | null {
     if (liveDigest === _lastCanonicalDigest) return null
     const changed: string[] = []
     for (const key of NAV_DRIFT_KEYS) {
-        const a = String((live as unknown as Record<string, unknown>)[key])
+        const a = String(asRecord(live)[key])
         const d = navDriftDigestParts(_lastCanonicalDigest, key)
         if (a !== d) changed.push(key)
     }
@@ -265,8 +275,8 @@ function _applyNavUpdate(fn: (_current: NavState) => NavState): void {
     // writeNavStateMirror entirely (the root cause of the 2026-08-04
     // 'unwritable-view' alarm class).
     const patch: Record<string, unknown> = {}
-    const currentRecord = current as unknown as Record<string, unknown>
-    const nextRecord = next as unknown as Record<string, unknown>
+    const currentRecord = asRecord(current)
+    const nextRecord = asRecord(next)
     for (const key in next) {
         if (currentRecord[key] !== nextRecord[key]) {
             // Write through a plain record: writing a string index on
@@ -285,9 +295,7 @@ function _createNavStore(): NavStoreApi {
     fn.set = (value: NavState) => {
         const current = _readNavSnapshot()
         const changed = Object.keys(value).some(
-            (key) =>
-                (value as unknown as Record<string, unknown>)[key] !==
-                (current as unknown as Record<string, unknown>)[key]
+            (key) => asRecord(value)[key] !== asRecord(current)[key]
         )
 
         // Use the canonical path so appState is updated before navMirror
@@ -361,9 +369,7 @@ export function writeNavStateMirror(patch: Partial<NavState>): void {
 
     let noop = true
     for (const key in patch) {
-        if (
-            (patch as unknown as Record<string, unknown>)[key] !== (current as unknown as Record<string, unknown>)[key]
-        ) {
+        if (asRecord(patch)[key] !== asRecord(current)[key]) {
             noop = false
             break
         }
