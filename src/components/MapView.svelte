@@ -292,7 +292,7 @@
 
   <footer class="map-view-footer">
     <MapBackButton onClick={returnToOverview} label="Overview" ariaLabel="Return to overview" />
-    <span class="map-attribution">OpenStreetMap | CARTO</span>
+    <span class="map-attribution">Tiles &copy; Esri</span>
   </footer>
 </section>
 

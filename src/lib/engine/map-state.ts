@@ -115,10 +115,29 @@ export async function initMap(): Promise<void> {
         })
 
         try {
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: 'OpenStreetMap | CARTO',
-                maxZoom: 19
-            }).addTo(mapState.map)
+            // Basemap: Esri Canvas "World Dark Gray" — keyless, raster, dark
+            // themed, so it is a drop-in for the Leaflet tile pane.
+            //
+            // Replaces CARTO `dark_all`, which now returns "API KEY REQUIRED"
+            // watermark tiles for unauthenticated requests. Verified
+            // 2026-08-29: the `api_key` param is IGNORED on CARTO's raster
+            // endpoint — responses are byte-identical (md5 b473e770fac0) with
+            // and without a key, so supplying one does not clear the
+            // watermark. Esri serves this style with no key.
+            //
+            // NOTE: Esri tile URLs are {z}/{y}/{x} — y BEFORE x, the reverse
+            // of the OSM/CARTO convention. Swapping them silently yields a
+            // blank map.
+            L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+                { attribution: 'Tiles © Esri', maxZoom: 19 }
+            ).addTo(mapState.map)
+            // Reference overlay: transparent place + boundary labels only.
+            // Added after the base so Leaflet stacks it on top.
+            L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+                { maxZoom: 19 }
+            ).addTo(mapState.map)
         } catch (err) {
             debugWarn('tileLayer addTo failed:', err)
         }

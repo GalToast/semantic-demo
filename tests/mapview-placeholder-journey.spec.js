@@ -74,7 +74,11 @@ test.describe('MapView journey', () => {
         const footer = map.locator('.map-view-footer')
         await expect(footer).toHaveCount(1)
         await expect(footer.locator('.map-back-btn')).toContainText('Overview')
-        await expect(footer.locator('.map-attribution')).toHaveText('OpenStreetMap | CARTO')
+        // Basemap moved from CARTO dark_all to Esri Canvas "World Dark Gray"
+        // (2026-08-29): CARTO now serves "API KEY REQUIRED" watermark tiles to
+        // unauthenticated requests and ignores `api_key` on its raster
+        // endpoint, so the attribution changed too.
+        await expect(footer.locator('.map-attribution')).toHaveText('Tiles © Esri')
 
         // `activateMapShell()` synchronously adds `.active` to #map-container and
         // sets `dataset.activeView='map'`. #map-container is owned by Canvas

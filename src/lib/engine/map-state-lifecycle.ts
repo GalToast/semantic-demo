@@ -71,10 +71,21 @@ export async function initMap(): Promise<void> {
         })
 
         try {
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: 'OpenStreetMap | CARTO',
-                maxZoom: 19
-            }).addTo(appState.map)
+            // Basemap: Esri Canvas "World Dark Gray" (keyless, raster, dark).
+            // Replaces CARTO `dark_all`, which now serves "API KEY REQUIRED"
+            // watermark tiles unauthenticated; the `api_key` param is ignored
+            // on that endpoint (verified 2026-08-29 — responses are
+            // byte-identical with and without a key). See the longer comment
+            // in map-state.ts. Esri tile URLs are {z}/{y}/{x}, y BEFORE x.
+            L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+                { attribution: 'Tiles © Esri', maxZoom: 19 }
+            ).addTo(appState.map)
+            // Reference overlay: transparent place + boundary labels only.
+            L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+                { maxZoom: 19 }
+            ).addTo(appState.map)
         } catch (err) {
             debugWarn('tileLayer addTo failed:', err)
         }
