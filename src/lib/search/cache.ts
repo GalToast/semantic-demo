@@ -1,16 +1,16 @@
 /**
  * @lib/search/cache.ts — In-memory result cache for semantic search.
  *
- * The dead IndexedDB-backed semantic-search payload cache half
- * (initSearchCache / getCachedSemanticSearchPayload /
- * storeSemanticSearchPayload / getSemanticSearchCacheDiagnostics IDB variant /
- * CacheEntry / SearchPayload / CacheDiagnosticsSnapshot) was removed: it had
- * no production callers. Only the live in-memory result cache below (used by
- * search-engine.ts) remains.
+ * Removed as dead code (2026-08-30 sweep): the IndexedDB-backed semantic-search
+ * payload cache half (no production callers) and the Node-only advisory lock
+ * tail (acquireSearchLock + qHash — zero production consumers; qHash existed
+ * only for lock filenames). The lock's dynamic `node:fs/promises` / `node:path`
+ * imports were the source of the browser-bundle externalize warnings on every
+ * build. Only the live in-memory result cache below (used by search-engine.ts)
+ * remains.
  */
 
 import type { SearchResult } from '@lib/types/state'
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Cache Key ────────────────────────────────────────────────────────────────
 
@@ -36,20 +36,6 @@ function cacheKeyToString(key: SearchCacheKey): string {
     // any query text. Not escaped with '\0' -> '\\0' because a literal
     // backslash-zero query would then collide with an escaped NUL.
     return `${encodeURIComponent(key.query)}|${key.offset}`
-}
-
-// ── Hash Helper ──────────────────────────────────────────────────────────────
-
-/**
- * Simple DJB2 hash for generating lock-file-safe strings from query text.
- * Not cryptographic — just fast and collision-resistant enough for filenames.
- */
-export function qHash(query: string): string {
-    let hash = 5381
-    for (let i = 0; i < query.length; i++) {
-        hash = ((hash << 5) + hash + query.charCodeAt(i)) >>> 0
-    }
-    return hash.toString(36)
 }
 
 // ── Cache Entry ──────────────────────────────────────────────────────────────
@@ -236,51 +222,4 @@ export function getSearchCacheDiagnostics(): {
  */
 export function setSearchCacheTTL(ms: number): void {
     _ttlMs = ms
-}
-
-// ── Advisory Lock (Node.js test environments) ────────────────────────────────
-
-/**
- * Acquire an advisory filesystem lock for a search page.
- * Only functional in Node.js environments (not browser).
- * Uses mkdir-based lockfiles at `.cache/locks/<qHash>-<page>.lock`.
- *
- * @returns A release function, or a no-op release if lock unavailable.
- */
-export async function acquireSearchLock(query: string, page: number, timeoutMs = 5000): Promise<() => void> {
-    // Browser environment: no filesystem access, return no-op release
-    if (typeof window !== 'undefined' || typeof process === 'undefined') {
-        return () => {}
-    }
-
-    try {
-        // Dynamic import of node: modules — Vite externalizes these in the
-        // browser bundle. The typeof-window guard above ensures these never
-        // execute client-side.
-        const fs = await import('node:fs/promises')
-        const path = await import('node:path')
-        const lockDir = path.join('.cache', 'locks')
-        const lockFile = path.join(lockDir, `${qHash(query)}-${page}.lock`)
-
-        await fs.mkdir(lockDir, { recursive: true })
-
-        const deadline = Date.now() + timeoutMs
-        while (Date.now() < deadline) {
-            try {
-                // mkdir is atomic: only one caller succeeds
-                await fs.mkdir(lockFile)
-                return () => {
-                    fs.rm(lockFile, { recursive: true }).catch(() => {})
-                }
-            } catch {
-                const reg = new DisposableRegistry({ label: 'cache-fallback' })
-                await new Promise<void>((r) => reg.schedule(50, () => r()))
-            }
-        }
-        // Timeout: yield gracefully, no error to caller
-        return () => {}
-    } catch {
-        // FS not available: yield gracefully
-        return () => {}
-    }
 }

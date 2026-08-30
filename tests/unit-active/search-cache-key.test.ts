@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
     clearSearchCache,
     getCachedSearch,
-    qHash,
     setCachedSearch,
     setSearchCacheTTL
 } from '../../src/lib/search/cache'
@@ -42,11 +41,5 @@ describe('search-cache keying', () => {
         setCachedSearch('test', 0, 0, [{ id: '1', name: 'A', index: 0, score: 1, category: '', snippet: '' }])
         clearSearchCache()
         expect(getCachedSearch('test', 0, 0)).toBeNull()
-    })
-
-    it('produces deterministic filename-safe query hashes', () => {
-        expect(qHash('coffee shop')).toBe(qHash('coffee shop'))
-        expect(qHash('coffee shop')).not.toBe(qHash('Coffee Shop'))
-        expect(qHash('café')).toMatch(/^[a-z0-9]+$/)
     })
 })

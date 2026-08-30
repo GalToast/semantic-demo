@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-    acquireSearchLock,
     clearPendingSearch,
     clearSearchCache,
     getPendingSearch,
@@ -131,14 +130,5 @@ describe('search-cache pending-request dedup', () => {
 
         expect(getPendingSearch('coffee', 0, 0)).toBeNull()
         expect(getSearchCacheDiagnostics().pending).toBe(0)
-    })
-})
-
-describe('search-cache advisory lock graceful behavior', () => {
-    it('returns a safe release function in jsdom/browser-like environments', async () => {
-        const release = await acquireSearchLock('coffee', 0, 1)
-
-        expect(typeof release).toBe('function')
-        expect(() => release()).not.toThrow()
     })
 })
