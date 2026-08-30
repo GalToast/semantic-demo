@@ -52,6 +52,7 @@
 
 import { writable, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte'
+import { asRecord } from '@lib/utils/record-view'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -137,7 +138,7 @@ export function createStateMirror<T>(config: {
 
     function getOrCreateWritable() {
         if (typeof window !== 'undefined') {
-            const w = window as unknown as Record<string, unknown>
+            const w = asRecord(window)
             const existing = w[storageKey]
             if (existing && typeof (existing as { subscribe?: unknown }).subscribe === 'function') {
                 return existing as ReturnType<typeof writable<T>>
@@ -146,7 +147,7 @@ export function createStateMirror<T>(config: {
         const initial = config.computeFromAppState()
         const w = writable<T>(initial)
         if (typeof window !== 'undefined') {
-            ;(window as unknown as Record<string, unknown>)[storageKey] = w
+            asRecord(window)[storageKey] = w
         }
         return w
     }
@@ -164,7 +165,7 @@ export function createStateMirror<T>(config: {
             const appStateKey = bindings[stateKey]
             if (appStateKey == null) continue
             const value = isPrimitive ? (state as unknown) : (state as Record<string, unknown>)[stateKey as string]
-            ;(appState as unknown as Record<string, unknown>)[appStateKey as string] = value
+            asRecord(appState)[appStateKey as string] = value
         }
     }
 
@@ -182,7 +183,7 @@ export function createStateMirror<T>(config: {
 
     function resetForTests(): void {
         if (typeof window !== 'undefined') {
-            delete (window as unknown as Record<string, unknown>)[storageKey]
+            delete asRecord(window)[storageKey]
         }
     }
 
@@ -193,20 +194,26 @@ export function createStateMirror<T>(config: {
      *  re-entering getOrCreateWritable(). */
     function isMaterialized(): boolean {
         if (typeof window === 'undefined') return false
-        const existing = (window as unknown as Record<string, unknown>)[storageKey]
+        const existing = asRecord(window)[storageKey]
         return Boolean(existing && typeof (existing as { subscribe?: unknown }).subscribe === 'function')
     }
 
     // ── Build the callable store-shaped API ────────────────────────────────
 
-    const fn = (() => config.computeFromAppState()) as unknown as StateMirror<T>
-    fn.read = () => config.computeFromAppState()
-    fn.update = update
-    fn.set = set
-    fn.resetForTests = resetForTests
-    fn.isMaterialized = isMaterialized
+    // Object.assign composes the callable + StateMirror props with real
+    // property types (was: a bare function cast, then 5 property writes).
+    // The single hop below is sound because StateMirror<T> is assignable to
+    // the built intersection shape — the runtime `subscribe` is attached via
+    // defineProperty, invisible to the intersection's type.
+    const fn = Object.assign(() => config.computeFromAppState(), {
+        read: () => config.computeFromAppState(),
+        update,
+        set,
+        resetForTests,
+        isMaterialized
+    })
     // Svelte store contract: expose .subscribe so $store-style reads work
     Object.defineProperty(fn, 'subscribe', { value: _writable.subscribe })
 
-    return fn
+    return fn as StateMirror<T>
 }

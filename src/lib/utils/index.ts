@@ -127,5 +127,13 @@ export type { RelationshipRole } from './relationship-roles'
 export { el, setChildren } from './dom-builder'
 export type { DomChild, DomEventHandler, DomAttributes } from './dom-builder'
 export { FOCUSABLE_SELECTORS, setupFocusTrap, releaseFocusTrap } from './focus-trap'
-export { bindFocusTrapObserver, disposeFocusTrapBindings, registerOpenDialog, unregisterOpenDialog, hasOpenNestedDialog } from './focus-trap-bindings'
+export {
+    bindFocusTrapObserver,
+    disposeFocusTrapBindings,
+    registerOpenDialog,
+    unregisterOpenDialog,
+    hasOpenNestedDialog
+} from './focus-trap-bindings'
 export { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from './three-textures'
+
+export { asRecord } from './record-view'

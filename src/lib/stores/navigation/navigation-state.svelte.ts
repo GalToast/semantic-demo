@@ -13,6 +13,7 @@ import { appState } from '@lib/state/app.svelte.ts'
 import { createStateMirror } from '@lib/state/create-state-mirror'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { SELECTION_DEPENDENT_MODES } from '@lib/navigation/mode-affordances'
+import { asRecord } from '@lib/utils/record-view'
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -117,16 +118,6 @@ export const NAV_DRIFT_KEYS = [
     'trailDepth',
     'trailSeedIndex'
 ] as const
-
-/**
- * String-keyed read/write view over a typed object, for the drift-diff and
- * mirror-patch machinery that compares NavState keys by name. TS interfaces
- * carry no implicit index signatures, so generic-key indexing needs this one
- * centralized view instead of scattered `as unknown as Record<...>` casts.
- */
-function asRecord(obj: object): Record<string, unknown> {
-    return obj as Record<string, unknown>
-}
 
 export function navDriftDigest(nav: NavState): string {
     const parts: string[] = []
@@ -294,9 +285,7 @@ function _createNavStore(): NavStoreApi {
     fn.update = _applyNavUpdate
     fn.set = (value: NavState) => {
         const current = _readNavSnapshot()
-        const changed = Object.keys(value).some(
-            (key) => asRecord(value)[key] !== asRecord(current)[key]
-        )
+        const changed = Object.keys(value).some((key) => asRecord(value)[key] !== asRecord(current)[key])
 
         // Use the canonical path so appState is updated before navMirror
         // subscribers run. This prevents callbacks that read appState.navState

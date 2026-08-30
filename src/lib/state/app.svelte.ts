@@ -65,6 +65,7 @@ import { validateStateProperty, STATE_VALIDATION_STRICT, validateAppStateEnumFie
 import { businessRecords } from '@lib/data-store'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
+import { asRecord } from '@lib/utils/record-view'
 
 // ── App State class ─────────────────────────────────────────────────────────
 
@@ -636,9 +637,7 @@ function getAppState(): AppState {
         // `Object.defineProperty(window, GLOBAL_APP_STATE_KEY, { get: getAppState })`,
         // so reading it triggers `getAppState()` again — infinite recursion.
         const directInstance =
-            typeof window !== 'undefined'
-                ? ((window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] as AppState | undefined)
-                : undefined
+            typeof window !== 'undefined' ? (asRecord(window)[APP_STATE_DIRECT_KEY] as AppState | undefined) : undefined
         if (directInstance) {
             _appStateInstance = directInstance
         } else {
@@ -648,7 +647,7 @@ function getAppState(): AppState {
                 // the same guarded object.  The Proxy delegates to the raw
                 // instance held in this module's _appStateInstance, so no
                 // recursion occurs when a foreign chunk reads the stored Proxy.
-                ;(window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] = appState
+                asRecord(window)[APP_STATE_DIRECT_KEY] = appState
             }
 
             // ── Phase 6a — startup enum safety net ─────────────────────────────
@@ -738,7 +737,7 @@ export const appState: AppState = new Proxy({} as AppState, {
 async function _runNestedAudit() {
     try {
         const { auditNestedStateMutations } = await import('./state-validation')
-        const errors = auditNestedStateMutations(getAppState() as unknown as Record<string, unknown>)
+        const errors = auditNestedStateMutations(asRecord(getAppState()))
         const IS_DEV = typeof import.meta.env !== 'undefined' && import.meta.env.DEV
         if (errors.length > 0 && IS_DEV) {
             console.warn('[appState] nested mutation audit:', errors.join('; '))
