@@ -52,6 +52,7 @@
     "qa:contract": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-contract-check.mjs --headed",
     "qa:contract:mobile-critical": "node scripts/qa.mjs contract --preset=mobile-critical --headed",
     "qa:scene-health": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/three-scene-playtest.mjs",
+    "qa:paint-budget": "node tests/paint-metrics-gate.mjs",
     "qa:adversarial": "npx playwright test tests/polish-adversarial.spec.js --browser=chromium --headed",
     "qa:live-reset": "npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --headed",
     "qa:journey": "npx playwright test tests/widget-journey.spec.js tests/widget-journey-smoke.spec.js --browser=chromium --headed",

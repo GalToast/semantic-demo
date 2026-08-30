@@ -6,11 +6,15 @@
  * (raw + gzip), and checks against performance ceilings from
  * docs/performance-budget.md.
  *
- * Budget Ceilings:
- *   JS  raw  < 2500 KB
- *   JS  gzip <  650 KB
- *   CSS raw  <   65 KB
- *   CSS gzip <   16 KB
+ * Budget Ceilings — FROZEN 2026-08-30 from measured fresh-build actuals (+2% drift):
+ *   JS  raw  < 1902 KB   (actual 1864.38)
+ *   JS  gzip <  566 KB   (actual 553.90–554.04)
+ *   CSS raw  <   59.5 KB (initial-load actual 58.24)
+ *   CSS gzip <   11.1 KB (initial-load actual 10.80)
+ * Policy: budgets may be RATCHETED DOWN freely. Raising a ceiling requires a
+ *   measured re-baseline (fresh `npm run build` actuals) + a commit message
+ *   naming the cause. Never raise a ceiling just to green a failing gate.
+ *   Baseline provenance: docs/performance-budget.md §Bundle Size Budget.
  *
  * Exit 0 if within budget, exit 1 if exceeded.
  */
@@ -28,12 +32,13 @@ const YELLOW = '\x1b[33m'
 const CYAN = '\x1b[36m'
 const DIM = '\x1b[2m'
 
-// Performance budget ceilings (KB)
+// Performance budget ceilings (KB) — frozen 2026-08-30 @ actuals +2% drift.
+// Ratchet-down freely; raising requires measured re-baseline + cause (see header).
 const BUDGET = {
-    jsRaw: 2500,
-    jsGzip: 650,
-    cssRaw: 65,
-    cssGzip: 16
+    jsRaw: 1902,
+    jsGzip: 566,
+    cssRaw: 59.5,
+    cssGzip: 11.1
 }
 
 // Assets directory

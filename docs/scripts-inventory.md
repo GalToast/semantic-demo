@@ -151,6 +151,7 @@ Generated from package.json (manually curated, update on script changes).
 | `qa:journey:smoke`                   | `npx playwright test tests/widget-journey-smoke.spec.js --browser=chromium`                            | yes    |
 | `qa:live-reset`                      | `npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --headed`            | manual |
 | `qa:mapview-placeholder`             | `npx playwright test tests/mapview-placeholder-journey.spec.js --browser=chromium`                     | manual |
+| `qa:paint-budget`                    | `node tests/paint-metrics-gate.mjs`                                                                    | manual |
 | `qa:product-playthrough`             | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/product-playthrough-audit.mjs --headed`     | yes    |
 | `qa:scene-health`                    | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/three-scene-playtest.mjs`                   | manual |
 | `qa:server`                          | `node scripts/qa-server.mjs start`                                                                     | manual |

@@ -193,6 +193,18 @@ when the broader journey suite is needed. The production build job publishes
 the `dist-svelte` artifact, and both the bundle-size and deploy jobs restore
 that same verified artifact instead of rebuilding a second copy.
 
+## Paint-metrics gate (qa:paint-budget)
+
+`node tests/paint-metrics-gate.mjs` (or `npm run qa:paint-budget`) measures
+LCP / FCP / CLS / TTFB of the built app in headed Chromium and fails on drift
+from the frozen budgets in `docs/paint-metrics-baseline-*.json`. Canonical run:
+`SEMANTIC_USE_D3D11=1 npm run qa:paint-budget` (budgets were frozen on that
+rendering path). Serving: it uses the managed qa-server; if 8795 is occupied by
+the unmanaged live-API PHP server it falls back to **port 8798** — 8796/8797
+belong to the Playwright webServer and fleet lanes (rule above). Budgets are
+anti-drift freezes, ratcheted DOWN freely; raising one requires a new measured
+baseline artifact + a commit naming the cause (see docs/performance-budget.md).
+
 ## 3d battery — port-8796 coordination rule (2026-08-11)
 
 The playwright webServer binds 8796 (`reuseExistingServer` is env-gated via

@@ -1,0 +1,17 @@
+{
+  "frozen": "2026-08-30",
+  "environment": "Windows, headed Chromium + --use-angle=d3d11 (SEMANTIC_USE_D3D11=1), desktop 1280x800, qa-server managed static serve (port 8798 fallback), dist built at e80a1adb3 worktree + W61 css in flight",
+  "cold": { "lcpMs": 6764, "fcpMs": 2460, "cls": 0, "ttfbMs": 2048.5 },
+  "warm": { "lcpMs": 2428, "fcpMs": 952, "cls": 0, "ttfbMs": 541.2 },
+  "budgets": {
+    "cold": { "lcpMs": 7780, "fcpMs": 2830, "cls": 0.1, "ttfbMs": 2400 },
+    "warm": { "lcpMs": 2800, "fcpMs": 1100, "cls": 0.1, "ttfbMs": 700 }
+  },
+  "policy": "Anti-drift freezes at measured +15% (CLS = CWV cap). Ratchet DOWN freely; raising requires a new measured baseline artifact + commit naming the cause.",
+  "notes": [
+    "First-paint numbers are BIMODAL on this box: cold (fresh daemon + fresh dist, first nav) ~6.8s LCP vs warm (post-warm-up nav, fresh context) ~2.4s LCP — OS file cache, GPU shader cache, and Defender scans dominate the cold regime.",
+    "Warm LCP 2428ms barely meets the CWV desktop target (<2.5s); cold LCP ~6.8s remains the documented first-visit debt (consistent with the 2026-08-23 ~6.7s measurement).",
+    "Cold TTFB ~2s is local server/OS warm-up noise, not network — do not read it as a serving regression without a warm-protocol comparison.",
+    "Warm TTFB is n=1; revisit the 700ms budget after n>=3 runs."
+  ]
+}

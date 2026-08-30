@@ -1,6 +1,6 @@
 # Performance Budget
 
-> Living document — last updated 2026-08-07 (renderer diagnostics and restore hardening).
+> Living document — last updated 2026-08-30 (budget freeze @ actuals + paint-metrics gate).
 > Source data: `docs/w40-bundle-audit-2026-06-18.md`.
 
 This document defines hard performance ceilings for the Semantic Explorer. All PRs that affect bundle size, render performance, or GPU usage must be checked against these budgets.
@@ -9,16 +9,22 @@ This document defines hard performance ceilings for the Semantic Explorer. All P
 
 ## 1. Bundle Size Budget
 
-| Metric                 | Current (measured) | Live ceiling (script) | Slack         |
-| ---------------------- | ------------------ | --------------------- | ------------- |
-| **Total JS (raw)**     | 1,687.76 KB        | 2,500 KB (2.5 MB)     | 812 KB (32%)  |
-| **Total JS (gzip)**    | 496.06 KB          | 650 KB                | 154 KB (24%)  |
-| **CSS initial (raw)**  | 58.34 KB           | 65 KB                 | 6.66 KB (10%) |
-| **CSS initial (gzip)** | 10.60 KB           | 16 KB                 | 5.40 KB (34%) |
+| Metric                 | Current (measured 2026-08-30) | Live ceiling (script) | Slack          |
+| ---------------------- | ----------------------------- | --------------------- | -------------- |
+| **Total JS (raw)**     | 1,864.38 KB                   | 1,902 KB              | 37.6 KB (2%)   |
+| **Total JS (gzip)**    | 553.90 KB                     | 566 KB                | 12.1 KB (2%)   |
+| **CSS initial (raw)**  | 58.24 KB                      | 59.5 KB               | 1.26 KB (2%)   |
+| **CSS initial (gzip)** | 10.80 KB                      | 11.1 KB               | 0.30 KB (3%)   |
 
 ### Budget Rationale
 
-- **Live ceiling (2.5 MB JS raw / 650 KB JS gzip)**: Enforced by `node scripts/check-bundle-size.mjs` in CI. Exceeding this is a regression.
+- **2026-08-30 freeze policy**: the 2026-08-23 audit found the gate green only
+  because ceilings (2500/650/65/16) had drifted far above actuals — a gate that
+  cannot fail. Ceilings were re-frozen at measured fresh-build actuals +2%
+  drift in `scripts/check-bundle-size.mjs`. **Ratchet DOWN freely; raising a
+  ceiling requires a measured re-baseline (fresh `npm run build` actuals) + a
+  commit naming the cause — never raise a ceiling just to green a failing
+  gate.** Run-to-run gzip variance is ~0.2 KB; 2% headroom absorbs it.
 - **CSS budget measured on initial-load only (2026-08-18)**: `scripts/check-bundle-size.mjs` now counts only stylesheets linked from the built `index.html` (entry `index-*.css` + `ErrorState-*.css`) against the CSS ceiling; lazy chunks (InfoPanel, JourneyChrome, FocusCard, Placeholder2D, MapView, Canvas — deferred to first-interaction via `createLazyComponent`) are excluded because they are NOT fetched on initial paint, matching the "code-split / lazy-load mode-specific components" intent below. Full `assets/` totals still print for reference.
 - **2026-08-18 chunking win**: converted the four heaviest static imports in `src/App.svelte` (InfoPanel 14.4 KB, JourneyChrome 13.2 KB, Placeholder2D 9.7 KB, FocusCard 7.6 KB CSS) to lazy handles with `ensure(true)` eager-loading for contract tests + idle prewarm. Entry CSS dropped 86.7 KB → 57.6 KB (−33%); initial-load CSS is now 58.34 KB raw / ~11 KB gzip — **both under the 65/16 budget since the split**.
 - **CSS ceiling (65 KB initial raw / 16 KB initial gzip)**: Raised 2026-06-29 from 60/12 to account for the full surface-matrix complexity (13 states × desktop + mobile); re-baselined to initial-load measurement on 2026-08-18 when per-route lazy CSS chunking landed (entry dropped 86.7 → 58.3 KB). Monitor.
@@ -32,7 +38,7 @@ Once the current ceiling has proven stable, consider tightening to:
 | JS raw  | ≤ 1,500 KB       | 500 KB above current actual; accounts for growth |
 | JS gzip | ≤ 400 KB         | 62 KB above current actual                       |
 
-These are **not live** — the script still enforces 2,500 / 650 / 65 / 16.
+These are **not live** — the script enforces the 2026-08-30 freeze (1902 / 566 / 59.5 / 11.1); the proposed tightening below is the ratchet target once the freeze proves stable.
 
 ### Key Offenders
 
@@ -56,9 +62,20 @@ These are **not live** — the script still enforces 2,500 / 650 / 65 / 16.
 
 ### Measurement
 
-- Run Lighthouse via `npx lighthouse http://127.0.0.1:8795/ --output=json` after `npm run serve` (PHP CLI serves `index.html` and executes `/api.php`).
-- Core Web Vitals can also be sampled via Chrome DevTools Performance panel.
-- Budget failures should be filed as bugs with `perf-budget` label.
+**Enforced gate:** `SEMANTIC_USE_D3D11=1 npm run qa:paint-budget` — measures
+LCP / FCP / CLS / TTFB of the built app in headed Chromium and fails on drift
+from `docs/paint-metrics-baseline-2026-08-30.json`. Two protocols exist because
+first-paint is bimodal on this box: `cold` (default; catches catastrophic +
+bundle regressions; LCP budget 7780ms) and `--warm` (fresh context after a
+warm-up nav; catches perf-code drift; LCP budget 2800ms).
+
+**Honest status vs the targets above (2026-08-30):** warm-protocol LCP is
+~2.4s — at the desktop target boundary. Cold-protocol LCP is ~6.8s (consistent
+with the 2026-08-23 ~6.7s measurement) — far from target and recorded debt,
+not a gate green. Lighthouse can still be run manually via
+`npx lighthouse http://127.0.0.1:8798/dist/svelte/index.html --output=json`
+for lab scoring, but the gate above is the enforced signal.
+Budget failures should be filed as bugs with `perf-budget` label.
 
 ### Tap→Canvas Init-Chain Budget (INP campaign 2026-08/09)
 
