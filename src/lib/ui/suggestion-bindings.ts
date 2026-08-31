@@ -92,38 +92,38 @@ export function bindSuggestionControls(): void {
         }
 
         _registry.schedule(0, () => {
-                const eligible = _getEligiblePoints()
-                if (!eligible.length) {
-                    const summaryEl = document.getElementById('summary-text')
-                    if (summaryEl) summaryEl.textContent = 'No eligible businesses for surprise selection.'
-                    if (btn) {
-                        btn.classList.add('disabled')
-                        btn.setAttribute('aria-disabled', 'true')
-                        btn.title = 'No eligible businesses for surprise selection'
-                        btn.textContent = originalText
-                    }
-                    return
-                }
-
+            const eligible = _getEligiblePoints()
+            if (!eligible.length) {
+                const summaryEl = document.getElementById('summary-text')
+                if (summaryEl) summaryEl.textContent = 'No eligible businesses for surprise selection.'
                 if (btn) {
-                    btn.classList.remove('is-loading')
-                    btn.classList.remove('disabled')
-                    btn.removeAttribute('aria-disabled')
-                    btn.removeAttribute('title')
+                    btn.classList.add('disabled')
+                    btn.setAttribute('aria-disabled', 'true')
+                    btn.title = 'No eligible businesses for surprise selection'
                     btn.textContent = originalText
                 }
+                return
+            }
 
-                const rand = eligible[Math.floor(_nextSeededRandom() * _cachedEligibleLength)]
-                const idx = state.points.indexOf(rand as Point)
+            if (btn) {
+                btn.classList.remove('is-loading')
+                btn.classList.remove('disabled')
+                btn.removeAttribute('aria-disabled')
+                btn.removeAttribute('title')
+                btn.textContent = originalText
+            }
 
-                if (idx >= 0) {
-                    const searchInput = document.getElementById('search-input') as HTMLInputElement | null
-                    if (searchInput) searchInput.value = ''
-                    clearShortSemanticSearchState(null, null)
+            const rand = eligible[Math.floor(_nextSeededRandom() * _cachedEligibleLength)]
+            const idx = state.points.indexOf(rand as Point)
 
-                    focusOnNode(idx, { fromCanvasNode: true })
-                }
-            })
+            if (idx >= 0) {
+                const searchInput = document.getElementById('search-input') as HTMLInputElement | null
+                if (searchInput) searchInput.value = ''
+                clearShortSemanticSearchState(null, null)
+
+                focusOnNode(idx, { fromCanvasNode: true })
+            }
+        })
     }
 
     bindClick('btn-launch', focusRandomBusiness, { optional: true })

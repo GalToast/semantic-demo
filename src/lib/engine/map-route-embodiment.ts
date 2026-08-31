@@ -1,13 +1,8 @@
 import { appState } from '@lib/state/app.svelte.ts'
-import type { Point, ActiveFilters } from '@lib/state/state-types'
+import type { Point } from '@lib/state/state-types'
 import { useSearchSummary } from '@lib/ui/use-search-summary.svelte'
 import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data'
-import { formatBusinessName } from '@lib/utils/dom-formatters'
-import { showExperienceToast } from '@lib/orchestration/toast'
-import { focusOnPoint } from '@lib/orchestration/lifecycle'
-import { hideViewHandoff } from '@lib/orchestration/view-controller'
 import { isMobileViewport } from '@lib/utils/environment'
-import { debugWarn } from '@lib/utils/debug'
 import { getRouteDirectorState } from './map-director'
 import { getLeafletMap } from './map-leaflet-runtime'
 import type { LeafletMarker } from './map-leaflet-runtime'
@@ -184,9 +179,11 @@ export function centerMapOnRouteAnchor(): boolean {
         point.lng!
     ])
     if (routeLatLngs.length >= 2) {
-        const bounds = (window.L! as {
-            latLngBounds: (latLngs: Array<[number, number]>) => unknown
-        }).latLngBounds(routeLatLngs)
+        const bounds = (
+            window.L! as {
+                latLngBounds: (latLngs: Array<[number, number]>) => unknown
+            }
+        ).latLngBounds(routeLatLngs)
         getLeafletMap()?.fitBounds(bounds, {
             animate: true,
             maxZoom: 15,

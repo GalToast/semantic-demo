@@ -9,7 +9,6 @@
  */
 
 import { appState } from '@lib/state/app.svelte.ts'
-import type { Point } from '@lib/state/state-types'
 import type { PanelSurface } from '@lib/types/state'
 
 import { isMobile } from '@lib/utils/environment'
