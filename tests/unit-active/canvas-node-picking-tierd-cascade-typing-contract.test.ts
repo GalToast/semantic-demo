@@ -62,14 +62,16 @@ describe('canvas-node-picking.ts / Tier D cascade', () => {
         expect(source).toMatch(/pointsMesh\s+as\s+Object3D(?!\s*[\[\.])/)
     })
 
-    it('preserved: getRaycastPoints uses single-hop as GeoPoint[]', () => {
-        // cc4dcd52 collapsed the double-hop cast to a direct single-hop cast.
+    it('preserved: getRaycastPoints returns points cast-free', () => {
+        // History: cc4dcd52 collapsed the double-hop cast to a single-hop
+        // `appState.points as GeoPoint[]`; the readonly cascade (6bde52006)
+        // then eliminated the cast entirely — `readonly BusinessRecord[]` is
+        // structurally assignable to `readonly Point[]`. Pin the STRONGER
+        // invariant: no cast at the return site.
         const source = readSource('src/lib/journey/canvas-node-picking.ts')
+        expect(source).toMatch(/return appState\.points$/m)
         const pointsCasts = source.match(/appState\.points\s+as\s+GeoPoint\[\]/g) || []
-        expect(
-            pointsCasts.length,
-            `expected GeoPoint[] cast preserved, got ${pointsCasts.length}`
-        ).toBeGreaterThanOrEqual(1)
+        expect(pointsCasts.length, 'legacy GeoPoint[] cast must stay eliminated').toBe(0)
     })
 
     it('preserved: getRaycastSporeMesh uses as unknown as InstancedMesh', () => {

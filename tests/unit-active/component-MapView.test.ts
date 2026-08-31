@@ -77,7 +77,9 @@ describe('MapView component', () => {
         const { container } = render(MapView);
         const attribution = container.querySelector('.map-attribution');
         expect(attribution).toBeTruthy();
-        expect(attribution!.textContent).toContain('OpenStreetMap');
+        // Basemap switched to keyless Esri "World Dark Gray" canvas (f2beb1476);
+        // the legacy CARTO/OSM expectation predates that switch.
+        expect(attribution!.textContent).toContain('Tiles © Esri');
     });
 })
 

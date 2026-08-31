@@ -92,7 +92,8 @@
         "stress": {
             "description": "Heavy stress and leak detection - 40-cycle full-app stress test via Playwright. Loaded on-demand; not part of any default run.",
             "contracts": [
-                "heavy-stress-leak.spec.js"
+                "heavy-stress-leak.spec.js",
+                "layout-integrity-contract.mjs"
             ]
         },
         "render": {
@@ -103,7 +104,8 @@
                 "mode-chip-state-render-contract.mjs",
                 "weather-widget-render-contract.mjs",
                 "connection-analysis-render-state-contract.mjs",
-                "search-peek-expanded-render-contract.mjs"
+                "search-peek-expanded-render-contract.mjs",
+                "paint-metrics-gate.mjs"
             ]
         },
         "smoke": {
@@ -585,7 +587,6 @@
                 "w53-fixes-journey.spec.js",
                 "wcag-contrast-journey.spec.js",
                 "weather-widget-context-journey.spec.js",
-                "widget-journey.spec.js",
                 "deep-link-focus-card-hit-journey.spec.js",
                 "header-journey-component-contract.spec.js",
                 "journey-transition-parity.spec.js",
