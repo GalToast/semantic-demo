@@ -48,8 +48,8 @@ export interface ConstellationMotif {
 }
 
 export function getFocusConstellationMotif(index: number): ConstellationMotif {
-    const point = state.points[index] || {}
-    const clusterLabel = (describeCluster(point.cluster ?? 0) || '').toLowerCase()
+    const cluster = state.points[index]?.cluster ?? 0
+    const clusterLabel = (describeCluster(cluster) || '').toLowerCase()
     let key: ConstellationMotifName = 'market'
     if (/(food|hospitality|beauty|wellness|arts|culture)/.test(clusterLabel)) {
         key = 'rosette'
@@ -70,7 +70,7 @@ export function getFocusConstellationMotif(index: number): ConstellationMotif {
     return {
         ...(motif as unknown as ConstellationMotif),
         key,
-        seed: (point.cluster ?? 0) * 0.41 + (index % 11) * 0.07
+        seed: cluster * 0.41 + (index % 11) * 0.07
     }
 }
 

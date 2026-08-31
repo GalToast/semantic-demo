@@ -30,6 +30,7 @@ import {
 } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
 import { positionBuffer, clustersBuffer } from '@lib/data-store'
+import type { BusinessRecord } from '@lib/types/business'
 import type { Point } from '@lib/state/state-types'
 const state = _state
 import { webglContext } from './webgl-context'
@@ -516,7 +517,7 @@ export async function createPoints(): Promise<void> {
         const hasRawBuffers =
             rawPositionsBuffer && rawClustersBuffer && rawClustersBuffer.length === state.points.length
 
-        state.points.forEach((point: Point, i: number) => {
+        state.points.forEach((point: BusinessRecord, i: number) => {
             const scatter = scatterOffsets[i] || { x: 0, y: 0, z: 0 }
             let px, py, pz, cluster
 

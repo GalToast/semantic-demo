@@ -4,7 +4,7 @@
  */
 
 import { appState as _state } from '@lib/state/app.svelte'
-import type { Point } from '@lib/state/state-types'
+import type { BusinessRecord } from '@lib/types/business'
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 const state = _state
 import { bindClick } from '@lib/ui/view-bindings'
@@ -25,12 +25,12 @@ const _nextSeededRandom = (): number => seededUnit(_suggestionPickSeed++, 0)
 // ── Memoized O(8406) caches ────────────────────────────────────────────────
 
 /** Cached eligible-points list (status !== 'disqualified'), invalidated on dataset change. */
-let _cachedEligiblePoints: Point[] | null = null
+let _cachedEligiblePoints: BusinessRecord[] | null = null
 let _cachedPointsLength = 0
 let _cachedEligibleLength = 0
 
 /** Get the cached eligible-points list, recomputing only when the dataset length changes. */
-function _getEligiblePoints(): Point[] {
+function _getEligiblePoints(): BusinessRecord[] {
     const pts = state.points
     const len = pts?.length ?? 0
     if (_cachedEligiblePoints !== null && _cachedPointsLength === len) {
@@ -45,9 +45,9 @@ function _getEligiblePoints(): Point[] {
 
 /** Memoized cluster-index map: for each cluster, list of point indices (excluding the focused index). */
 let _cachedClusterIndex: number | null = null
-let _cachedSameCluster: { p: Point; i: number }[] | null = null
+let _cachedSameCluster: { p: BusinessRecord; i: number }[] | null = null
 
-function _getSameCluster(focusedIdx: number): { p: Point; i: number }[] {
+function _getSameCluster(focusedIdx: number): { p: BusinessRecord; i: number }[] {
     const cluster = state.points[focusedIdx]?.cluster
     if (Number.isFinite(cluster)) {
         if (_cachedClusterIndex === focusedIdx && _cachedSameCluster !== null) {
@@ -55,7 +55,7 @@ function _getSameCluster(focusedIdx: number): { p: Point; i: number }[] {
         }
         const same = state.points
             .map((p, i) => ({ p, i }))
-            .filter(({ p, i }: { p: Point; i: number }) => p && p.cluster === cluster && i !== focusedIdx)
+            .filter(({ p, i }: { p: BusinessRecord; i: number }) => p && p.cluster === cluster && i !== focusedIdx)
         _cachedClusterIndex = focusedIdx
         _cachedSameCluster = same
         return same
@@ -154,7 +154,7 @@ export function bindSuggestionControls(): void {
             const sameCluster = _getSameCluster(focusedIdx)
             if (sameCluster.length) {
                 const _randPick = sameCluster[Math.floor(_nextSeededRandom() * sameCluster.length)] as
-                    | { p: Point; i: number }
+                    | { p: BusinessRecord; i: number }
                     | undefined
                 const i = _randPick ? _randPick.i : -1
                 focusOnNode(i, { fromCanvasNode: true })

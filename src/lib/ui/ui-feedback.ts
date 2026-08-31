@@ -14,7 +14,7 @@
  */
 import { appState } from '@lib/state/app.svelte'
 import { getPointIndexByLeadId } from '@lib/data-store'
-import type { Point } from '@lib/state/state-types'
+import type { BusinessRecord } from '@lib/types/business'
 
 import { isCompactMapViewport, isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
@@ -43,7 +43,7 @@ export interface SyncSearchStatusOptions {
     fromTraversal?: boolean
 }
 
-export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatusOptions = {}): void {
+export function syncSearchStatusForFocus(point: BusinessRecord, options: SyncSearchStatusOptions = {}): void {
     const statusEl = document.getElementById('search-status')
     const resultsEl = document.getElementById('search-results')
     if (!statusEl || !point || !appState.searchState.currentSearchSummary) return

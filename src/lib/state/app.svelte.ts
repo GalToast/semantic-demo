@@ -4,7 +4,6 @@
 
 import type {
     ViewName,
-    Point,
     NodePosition,
     RouteExplorationState,
     FocusConnectionSegment,
@@ -165,12 +164,10 @@ export class AppState {
     // ==== POSITION / GEOMETRY STATE ====
     // Runtime truth: appState.points carries BusinessRecord[] (the 8,406-row
     // corpus — it never carries x/y/z; positions live in rawPositionsBuffer).
-    // Point (core-types) is the all-optional legacy read-view; the getter
-    // exposes it readonly, matching the store snapshot (mutations target the
-    // store via businessRecords, never this array). Consumers read fields by
-    // index; element mutation (e.g. map-markers' point.cluster fallback) is
-    // still fine — readonly applies to the array, not the elements.
-    get points(): readonly Point[] {
+    // The getter exposes the store snapshot honestly typed; consumers read
+    // fields by index. Element mutation (e.g. map-markers' point.cluster
+    // fallback) is still fine — readonly applies to the array, not elements.
+    get points(): readonly BusinessRecord[] {
         return businessRecords.getSnapshot()
     }
     set points(value: BusinessRecord[]) {

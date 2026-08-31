@@ -87,7 +87,7 @@ import {
     getPendingFocusTransitionToken,
     clearPendingFocusTransitionToken
 } from '@lib/search/orchestration'
-import type { Point } from '@lib/state/state-types'
+import type { BusinessRecord } from '@lib/types/business'
 import type { SearchResult } from '@lib/types/state'
 import type { SearchContext } from '@lib/search/state'
 import { get } from 'svelte/store'
@@ -463,7 +463,7 @@ subscribeKeyed(
     'triggers.ts:SEARCH_STATUS_SYNC_REQUESTED',
     EVENTS.SEARCH_STATUS_SYNC_REQUESTED,
     (payload: Record<string, unknown> = {}) => {
-        const point = payload.point as Point | undefined
+        const point = payload.point as BusinessRecord | undefined
         const options = payload.options as Record<string, unknown> | undefined
         if (!point) return
         syncSearchStatusForFocus(point, options)

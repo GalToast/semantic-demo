@@ -1,5 +1,5 @@
 import { appState } from '@lib/state/app.svelte.ts'
-import type { Point } from '@lib/state/state-types'
+import type { BusinessRecord } from '@lib/types/business'
 import { useSearchSummary } from '@lib/ui/use-search-summary.svelte'
 import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data'
 import { isMobileViewport } from '@lib/utils/environment'
@@ -7,10 +7,12 @@ import { getRouteDirectorState } from './map-director'
 import { getLeafletMap } from './map-leaflet-runtime'
 import type { LeafletMarker } from './map-leaflet-runtime'
 
-export function getMapRoutePoints(): Array<{ index: number; point: Point }> {
+export function getMapRoutePoints(): Array<{ index: number; point: BusinessRecord }> {
     return getRouteEmbodimentIndices()
         .map((index: number) => ({ index, point: appState.points?.[index] }))
-        .filter((entry): entry is { index: number; point: Point } => !!entry.point && pointHasGeocode(entry.point))
+        .filter(
+            (entry): entry is { index: number; point: BusinessRecord } => !!entry.point && pointHasGeocode(entry.point)
+        )
         .slice(0, isMobileViewport() ? 7 : 10)
 }
 
@@ -114,7 +116,10 @@ export function refreshMapRouteEmbodiment(): void {
         if (emptyEl) emptyEl.remove()
     }
 
-    const latLngs: Array<[number, number]> = routePoints.map(({ point }: { point: Point }) => [point.lat!, point.lng!])
+    const latLngs: Array<[number, number]> = routePoints.map(({ point }: { point: BusinessRecord }) => [
+        point.lat!,
+        point.lng!
+    ])
     const L = window.L! as {
         polyline: (
             latLngs: Array<[number, number]>,
@@ -142,7 +147,7 @@ export function refreshMapRouteEmbodiment(): void {
     }
 
     const anchorIndex = getRouteAnchorIndex(routePoints.map(({ index }: { index: number }) => index))
-    routePoints.slice(0, 7).forEach(({ index, point }: { index: number; point: Point }, order: number) => {
+    routePoints.slice(0, 7).forEach(({ index, point }: { index: number; point: BusinessRecord }, order: number) => {
         const isAnchor = index === anchorIndex
         L.circleMarker([point.lat!, point.lng!], {
             className: isAnchor ? 'semantic-map-route-pulse is-anchor' : 'semantic-map-route-pulse',
@@ -174,7 +179,7 @@ export function centerMapOnRouteAnchor(): boolean {
 
     if (!focusPoint || !pointHasGeocode(focusPoint)) return false
     const routePoints = getMapRoutePoints()
-    const routeLatLngs: Array<[number, number]> = routePoints.map(({ point }: { point: Point }) => [
+    const routeLatLngs: Array<[number, number]> = routePoints.map(({ point }: { point: BusinessRecord }) => [
         point.lat!,
         point.lng!
     ])
