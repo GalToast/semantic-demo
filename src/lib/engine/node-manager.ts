@@ -140,7 +140,7 @@ export function getClusterSizeFactor(cluster: number | null | undefined, cluster
 }
 
 /** Build a map of cluster ID → node count, in one pass over state.points. */
-export function computeClusterSizes(points: Point[] = state.points): Map<number, number> {
+export function computeClusterSizes(points: readonly Point[] = state.points): Map<number, number> {
     const sizes = new Map<number, number>()
     for (const p of points) {
         if (p.cluster != null) {

@@ -77,7 +77,7 @@ export function getSearchContextSnapshot(): SearchContextSnapshot {
 // getAnchorPoint were PUBLIC on the deleted adapter; the fold inlined them but
 // they must keep being exported so the adapter contract (semantic-guide-
 // payload-contract runtime section) still resolves them.
-export function getPoints(): Point[] {
+export function getPoints(): readonly Point[] {
     return state.points;
 }
 
@@ -87,7 +87,7 @@ export function getResultContextMap(): Map<string, unknown> {
 
 function buildPayloadResultFromSnapshot(
     index: number,
-    points: Point[],
+    points: readonly Point[],
     contextMap: Map<string, unknown>
 ): PayloadResult | null {
     if (!points) return null;
@@ -111,7 +111,7 @@ function buildPayloadResultFromSnapshot(
 
 export function mapResultIndicesToPayloadResults(
     resultIndices: number[],
-    points: Point[],
+    points: readonly Point[],
     contextMap: Map<string, unknown>
 ): PayloadResult[] {
     if (!resultIndices?.length) return [];
@@ -121,7 +121,7 @@ export function mapResultIndicesToPayloadResults(
         .filter((r): r is PayloadResult => r !== null);
 }
 
-export function getAnchorPoint(currentSearchSummary: SearchSummarySnapshot | null, points: Point[]): Point | null {
+export function getAnchorPoint(currentSearchSummary: SearchSummarySnapshot | null, points: readonly Point[]): Point | null {
     const idx = currentSearchSummary?.anchorIndex as number | undefined;
     if (!Number.isFinite(idx) || !points) return null;
     return points[idx as number] || null;
@@ -131,7 +131,7 @@ export function getAnchorPoint(currentSearchSummary: SearchSummarySnapshot | nul
 
 export function buildSemanticGuidePayloadResult(
     index: number,
-    points: Point[] = getPoints(),
+    points: readonly Point[] = getPoints(),
     contextMap: Map<string, unknown> = getResultContextMap()
 ): SemanticGuidePayloadResult | null {
     return buildPayloadResultFromSnapshot(index, points, contextMap) as SemanticGuidePayloadResult | null;

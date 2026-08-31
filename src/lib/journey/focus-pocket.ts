@@ -163,7 +163,7 @@ function topoKnnCandidates(
     seed: number,
     positions: Array<{ x: number; y: number; z: number } | undefined>,
     k: number,
-    points: { name?: string | null }[]
+    points: readonly { name?: string | null }[]
 ): Array<{
     index: number
     source: string

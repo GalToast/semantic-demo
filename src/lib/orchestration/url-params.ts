@@ -112,7 +112,7 @@ export function surfaceParamToNavMode(surface: string | null): SurfaceParamPatch
  */
 export function resolveAnchorFromRecordId(
     params: URLSearchParams,
-    points: { lead_id?: string | number | null | undefined }[] | undefined
+    points: readonly { lead_id?: string | number | null | undefined }[] | undefined
 ): { anchorId: string | null; notFound?: string } {
     let anchorId = params.get('anchor')
     const recordId = params.get('record')

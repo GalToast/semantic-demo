@@ -13,7 +13,7 @@ import { isPointVisible } from '@lib/utils/geo-data'
 import { getCanvasPointerPosition, getCanvasFieldNodeClickRadius } from './canvas-hit-test'
 import type { CanvasPointerPosition } from './canvas-hit-test'
 import type { ActiveFilters, GeoPoint } from '@lib/utils/geo-data'
-import type { CanvasHoverCandidate } from '@lib/state/state-types'
+import type { CanvasHoverCandidate, Point } from '@lib/state/state-types'
 
 const canvasFieldRaycaster = new Raycaster()
 
@@ -51,8 +51,8 @@ function getRaycastPointsMesh(): Object3D | null {
     return appState.pointsMesh as Object3D | null
 }
 
-function getRaycastPoints(): GeoPoint[] {
-    return appState.points as GeoPoint[]
+function getRaycastPoints(): readonly Point[] {
+    return appState.points
 }
 
 function getRaycastSporeMesh(): InstancedMesh | null {

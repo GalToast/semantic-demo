@@ -192,7 +192,7 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
     const navState = appState.navState
     const focusIndex =
         navState?.focusedIndex != null && Number.isFinite(navState.focusedIndex) ? navState.focusedIndex : null
-    const points = appState.points as GeoPoint[]
+    const points = appState.points
     const threadCandidates = navState?.threadCandidates ?? []
 
     // Memoize: skip recomputation when inputs haven't changed

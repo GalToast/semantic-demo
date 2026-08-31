@@ -76,15 +76,15 @@ function getNavStateWithRoute(): NavStateWithRoute {
     return state.navState as NavStateWithRoute
 }
 
-function getAudioPoints(): AudioPoint[] {
-    return state.points as AudioPoint[]
+function getAudioPoints(): readonly AudioPoint[] {
+    return state.points as readonly AudioPoint[]
 }
 
 // ── Module-scoped mutable state ─────────────────────────────────────────────
 
 /** Lightweight point shape for audio density lookups. */
 interface AudioPoint {
-    cluster?: number
+    cluster?: number | null
     x?: number
     y?: number
     z?: number

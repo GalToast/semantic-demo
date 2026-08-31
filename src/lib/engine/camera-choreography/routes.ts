@@ -32,7 +32,7 @@ interface NodePosition {
 
 /** Point shape from the points array. */
 interface Point {
-    cluster?: number | string
+    cluster?: number | string | null
     lead_id?: number | string | null
     [key: string]: unknown
 }
@@ -94,7 +94,7 @@ export function animateCameraToSearchCorridor(
     if (!Number.isFinite(anchorIndex) || appState.navState.focusedIndex !== null || appState.semanticDiveMode)
         return false
 
-    const isPointVisible = (index: number, points: Point[], clusterFilter: number | null): boolean => {
+    const isPointVisible = (index: number, points: readonly Point[], clusterFilter: number | null): boolean => {
         if (!Number.isFinite(index) || index < 0 || index >= points.length) return false
         const point = points[index]
         if (!point) return false

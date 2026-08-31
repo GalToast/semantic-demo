@@ -122,7 +122,7 @@ export function pushBezierLinePair(
     colors: number[],
     pair: EdgePair,
     nodePositions: MyceliumPointLike[],
-    points: MyceliumPointLike[],
+    points: readonly MyceliumPointLike[],
     colorFn: (cluster: number | null | undefined) => { r: number; g: number; b: number },
     intensity = 1,
     segments = BEZIER_SEGMENTS_PER_PAIR
@@ -200,7 +200,7 @@ export function rebuildDirtyPairsInLayer(
     pairs: Array<{ a: number; b: number; layer: number }>,
     dirtySet: Set<number>,
     nodePositions: MyceliumPointLike[],
-    points: MyceliumPointLike[],
+    points: readonly MyceliumPointLike[],
     colorFn: (cluster: number | null | undefined) => { r: number; g: number; b: number },
     /** Active tessellation level — MUST match what the buffer was built with:
      * pair N's in-place write offset assumes exactly this many segments/pair. */

@@ -10,7 +10,7 @@
 import { Vector3 } from 'three'
 
 export function getPointBoundsCenter(
-    points: Array<{ x?: number; y?: number; z?: number }>,
+    points: ReadonlyArray<{ x?: number; y?: number; z?: number }>,
     positionBuffer: Float32Array
 ) {
     const min = new Vector3(Infinity, Infinity, Infinity)
