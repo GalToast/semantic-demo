@@ -91,9 +91,7 @@ export function updateWeatherStaleness(lastFetch: number | null): void {
 function startStalenessPolling(): void {
     if (_stalenessActive || _registry.isDisposed || typeof window === 'undefined') return
     _stalenessActive = true
-    _registry.timer(
-        window.setInterval(() => updateWeatherStaleness(appState.weatherState?.lastFetch), 60000)
-    )
+    _registry.timer(window.setInterval(() => updateWeatherStaleness(appState.weatherState?.lastFetch), 60000))
 }
 
 export function updateWeatherUi(state: WeatherStateValue): void {
@@ -222,9 +220,7 @@ function scheduleLightning(): void {
         }
         if (generation === lightningGeneration) {
             flashCount += 1
-            _registry.timer(
-                window.setTimeout(flash, 5000 + seededUnit(flashCount, 0x71cd) * 15000)
-            )
+            _registry.timer(window.setTimeout(flash, 5000 + seededUnit(flashCount, 0x71cd) * 15000))
         }
     }
     _registry.timer(window.setTimeout(flash, 3000))
