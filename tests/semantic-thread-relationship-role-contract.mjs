@@ -21,10 +21,10 @@ const VALID_ROLES = new Set(['core_peer', 'upstream', 'downstream', 'complement'
 
 const CODE_PROPAGATION_FILES = [
     'src/lib/workers/data-worker.ts',
-    'src/lib/engine/semantic-threads.ts',
+    'src/lib/engine/semantic-threads-normalize.ts',
     'src/lib/journey/thread-model.ts',
     'src/lib/journey/focus-pocket.ts',
-    'src/lib/journey/focus-pocket-geometry.ts'
+    'src/lib/journey/focus-pocket-profiles.ts'
 ]
 
 function assert(condition, message) {
@@ -93,19 +93,29 @@ assert(
     'relationship role owner must define explicit unclassified UI fallback copy'
 )
 
+const semanticThreadsNormalizeSource = read('src/lib/engine/semantic-threads-normalize.ts')
+assert(
+    /function normalizeSemanticNeighborEntries\s*\(/.test(semanticThreadsNormalizeSource),
+    'semantic-threads-normalize.ts must normalize worker-loaded neighbor entries through the relationship role owner'
+)
+assert(
+    /relationshipRole:\s*normalizeRelationshipRole\([\s\S]*neighbor\?\.relationshipRole/.test(
+        semanticThreadsNormalizeSource
+    ),
+    'semantic-threads-normalize.ts must normalize the worker-loaded neighbor relationshipRole through the shared relationship role normalizer (worker emits camelCase upstream; data-loader.ts left the neighbor pipeline in the camelCase refactor)'
+)
+
 const semanticThreadsSource = read('src/lib/engine/semantic-threads.ts')
-assert(
-    /function normalizeSemanticNeighborEntries\s*\(/.test(semanticThreadsSource),
-    'semantic-threads.ts must normalize worker-loaded neighbor entries through the relationship role owner'
-)
-assert(
-    /relationshipRole:\s*normalizeRelationshipRole\([\s\S]*neighbor\?\.relationshipRole/.test(semanticThreadsSource),
-    'semantic-threads.ts must normalize the worker-loaded neighbor relationshipRole through the shared relationship role normalizer (worker emits camelCase upstream; data-loader.ts left the neighbor pipeline in the camelCase refactor)'
-)
 assert(
     /async function _guardSemanticSpaceLayout\s*\(/.test(semanticThreadsSource) &&
         /semantic_space_layout_status/.test(semanticThreadsSource),
     'semantic-threads.ts must guard ready semantic traversal with the semantic space layout manifest'
+)
+assert(
+    /export\s*\{\s*normalizeSemanticNeighborEntriesCached\s*\}\s*from\s*'\.\/semantic-threads-normalize'/.test(
+        semanticThreadsSource
+    ),
+    'semantic-threads.ts must re-export the neighbor normalization owner (semantic-threads-normalize.ts)'
 )
 
 const journeyThreadModelSource = read('src/lib/journey/thread-model.ts')

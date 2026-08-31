@@ -31,30 +31,33 @@ Generated from package.json (manually curated, update on script changes).
 | `build`        | `npm run build:svelte`                                                 | yes    |
 | `build:svelte` | `vite build --config vite.config.ts && npm run check:data-compression` | yes    |
 
-## `check:` family (26)
+## `check:` family (23)
 
-| Script                   | Command (truncated)                                                                                    | Wired? |
-| ------------------------ | ------------------------------------------------------------------------------------------------------ | ------ |
-| `check`                  | `npm run verify:syntax && npm run check:svelte && npm run build:svelte`                                | yes    |
-| `check:bridges`          | `node scripts/check-bridge-references.mjs`                                                             | yes    |
-| `check:cache`            | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/cache-buster-check.js`                      | yes    |
-| `check:config-topology`  | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/config-topology-env-contract.mjs`           | yes    |
-| `check:data-compression` | `node scripts/check-data-compression.mjs`                                                              | yes    |
-| `check:dist-integrity`   | `node scripts/qa-deploy-preflight.mjs --dist-only`                                                     | manual |
-| `check:journey`          | `node scripts/qa-journey-gate.mjs`                                                                     | manual |
-| `check:manifest`         | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-manifest-contract.mjs && node --loa...` | yes    |
-| `check:model-catalog`    | `node tests/model-catalog-sweep.mjs`                                                                   | manual |
-| `check:ownership`        | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-ownership-sweep.mjs`                    | yes    |
-| `check:param-prop`       | `node tests/param-property-loader-sweep.mjs`                                                           | manual |
-| `check:script-targets`   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/package-script-targets-contract.mjs`        | yes    |
-| `check:semantic-space`   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/semantic-space-audit.mjs && node --load...` | yes    |
-| `check:shell`            | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/shell-contract-check.js && node --loade...` | yes    |
-| `check:skills`           | `node scripts/check-skill-loads.mjs`                                                                   | yes    |
-| `check:surface-styles`   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-style-matrix-contract.mjs`          | yes    |
-| `check:svelte`           | `svelte-check --workspace src --tsconfig tsconfig.json --diagnostic-sources svelte,css`                | yes    |
-| `check:tdb-fidelity`     | `node scripts/tdb1-fidelity-ci.mjs`                                                                    | manual |
-| `check:tokens`           | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/design-token-sweep.mjs`                     | yes    |
-| `check:ts-progress`      | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/ts-js-drift-contract.mjs --progress`        | manual |
+| Script                        | Command (truncated)                                                                                    | Wired? |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------ | ------ |
+| `check`                       | `npm run verify:syntax && npm run check:svelte && npm run build:svelte`                                | yes    |
+| `check:bridges`               | `node scripts/check-bridge-references.mjs`                                                             | yes    |
+| `check:cache`                 | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/cache-buster-check.js`                      | yes    |
+| `check:config-topology`       | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/config-topology-env-contract.mjs`           | yes    |
+| `check:data-compression`      | `node scripts/check-data-compression.mjs`                                                              | yes    |
+| `check:dist-integrity`        | `node scripts/qa-deploy-preflight.mjs --dist-only`                                                     | manual |
+| `check:findings-witness`      | `node scripts/verify-findings-claims.mjs`                                                              | ci     |
+| `check:focus-gate`            | `node scripts/ci-check-focus-gate.mjs`                                                                 | yes    |
+| `check:journey`               | `node scripts/qa-journey-gate.mjs`                                                                     | manual |
+| `check:manifest`              | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-manifest-contract.mjs && node --loa...` | yes    |
+| `check:model-catalog`         | `node tests/model-catalog-sweep.mjs`                                                                   | manual |
+| `check:model-catalog-runtime` | `node tests/model-catalog-reconcile-sweep.mjs`                                                         | manual |
+| `check:ownership`             | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-ownership-sweep.mjs`                    | yes    |
+| `check:param-prop`            | `node tests/param-property-loader-sweep.mjs`                                                           | manual |
+| `check:script-targets`        | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/package-script-targets-contract.mjs`        | yes    |
+| `check:semantic-space`        | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/semantic-space-audit.mjs && node --load...` | yes    |
+| `check:shell`                 | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/shell-contract-check.js && node --loade...` | yes    |
+| `check:skills`                | `node scripts/check-skill-loads.mjs`                                                                   | yes    |
+| `check:surface-styles`        | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-style-matrix-contract.mjs`          | yes    |
+| `check:svelte`                | `svelte-check --workspace src --tsconfig tsconfig.json --diagnostic-sources svelte,css`                | yes    |
+| `check:tdb-fidelity`          | `node scripts/tdb1-fidelity-ci.mjs`                                                                    | manual |
+| `check:tokens`                | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/design-token-sweep.mjs`                     | yes    |
+| `check:ts-progress`           | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/ts-js-drift-contract.mjs --progress`        | manual |
 
 ## `deploy:` family (2)
 
