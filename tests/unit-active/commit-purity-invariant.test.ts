@@ -27,7 +27,8 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
+import { appendFileSync } from 'node:fs'
 import process from 'node:process'
 
 // ---------------------------------------------------------------------------
@@ -331,29 +332,63 @@ function classifyFile(filePath: string): FileClass {
 /**
  * Run git commands and return trimmed stdout.
  */
-function git(cmd: string): string {
-    try {
-        return execSync(`git ${cmd}`, {
-            cwd: process.cwd(),
-            encoding: 'utf-8',
-            stdio: ['pipe', 'pipe', 'pipe']
-        }).trim()
-    } catch {
-        return ''
+function git(args: string[]): string {
+    // execFileSync + array args: no cmd.exe shell, so --format="%H"-style
+    // quoted args cannot be mangled. stdin 'ignore' prevents git blocking
+    // on an open stdin pipe (hang class: vmThread worker sync-blocked,
+    // vitest timeout can't fire).
+    //
+    // Bounded retry: under multi-session host load git children die
+    // silently (non-zero exit with EMPTY stderr — captured 2026-08-31 via
+    // tmp/git-flake-err.log instrumentation). Two 250ms backoffs absorb the
+    // transient kill; a genuine git error persists across retries and the
+    // empty-string return keeps the length assertion as the tripwire.
+    let lastErr: unknown
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            return execFileSync('git', args, {
+                cwd: process.cwd(),
+                encoding: 'utf-8',
+                stdio: ['ignore', 'pipe', 'pipe']
+            }).trim()
+        } catch (err: unknown) {
+            lastErr = err
+        }
+        try {
+            execFileSync(process.execPath, ['-e', 'setTimeout(() => {}, 250)'], { stdio: 'ignore' })
+        } catch {
+            // backoff spawn failed — retry immediately
+        }
     }
+    console.warn(`[commit-purity] git ${JSON.stringify(args)} failed after retries:`, String(lastErr).slice(0, 200))
+    const e = lastErr as { stderr?: unknown; status?: unknown } | undefined
+    try {
+        appendFileSync(
+            'tmp/git-flake-err.log',
+            JSON.stringify({
+                args,
+                status: e?.status,
+                stderr: String(e?.stderr ?? '').slice(0, 300),
+                cwd: process.cwd()
+            }) + String.fromCharCode(10)
+        )
+    } catch {
+        /* ignore */
+    }
+    return ''
 }
 
 /**
  * Walk recent commits and return structured records.
  */
 function walkRecentCommits(limit: number): CommitRecord[] {
-    const log = git(`log --format="%H" -n ${limit}`)
+    const log = git(['log', '--format=%H', '-n', String(limit)])
     if (!log) return []
 
     const shas = log.split('\n').filter(Boolean)
     return shas.map((sha) => {
-        const title = git(`log -1 --format="%s" ${sha}`)
-        const filesRaw = git(`show --format="" --name-only ${sha}`)
+        const title = git(['log', '-1', '--format=%s', sha])
+        const filesRaw = git(['show', '--format=', '--name-only', sha])
         const files = filesRaw ? filesRaw.split('\n').filter(Boolean) : []
         const parsed = parseCommit(title)
         return { sha, title, files, parsed }

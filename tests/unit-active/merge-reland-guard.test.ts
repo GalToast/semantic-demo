@@ -25,14 +25,23 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 
 const MERGE_SCAN = 200
 
-function runGit(args: string): string {
-    // Bind quiet stderr: git's path/rev ambiguity hints are noise for a smoke
-    // detector — only stdout (the parseable output) matters.
-    return execSync(`git ${args} 2>/dev/null`, { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }).trim()
+function runGit(args: string[]): string {
+    // execFileSync with array args: no cmd.exe shell, so quoted args
+    // (--format=%H%x09%s) can never be mangled by Windows quoting — the
+    // suite-context flake class (shell-string execSync) is eliminated.
+    // stdin 'ignore' is load-bearing: an open stdin pipe lets git block
+    // waiting for EOF, hanging the vmThread worker forever (vitest's
+    // timeout cannot interrupt a blocked sync child call — observed
+    // 28,763s hang). stderr surfaces inside thrown errors.
+    return execFileSync('git', args, {
+        encoding: 'utf8',
+        maxBuffer: 16 * 1024 * 1024,
+        stdio: ['ignore', 'pipe', 'pipe']
+    }).trim()
 }
 
 describe('merge-reland guard', () => {
@@ -41,7 +50,7 @@ describe('merge-reland guard', () => {
         { timeout: 120_000 },
         () => {
             // list merge commits in the recent history (parents != 1)
-            const merges = runGit(`log --merges --format=%H%x09%s -${MERGE_SCAN}`)
+            const merges = runGit(['log', '--merges', '--format=%H%x09%s', `-${MERGE_SCAN}`])
                 .split('\n')
                 .map((ln) => {
                     const [sha, subject] = ln.split('\t')
@@ -55,17 +64,26 @@ describe('merge-reland guard', () => {
                 let firstParent = ''
                 let secondParent = ''
                 try {
-                    firstParent = runGit(`rev-parse ${sha}^1`).trim()
-                    secondParent = runGit(`rev-parse ${sha}^2`).trim()
+                    firstParent = runGit(['rev-parse', `${sha}^1`]).trim()
+                    secondParent = runGit(['rev-parse', `${sha}^2`]).trim()
                 } catch {
                     continue // amended/unreachable merge parent — cannot resolve, skip
                 }
                 if (!firstParent || !secondParent) continue
 
                 // files where the two parents DISAGREE (one advanced, one stale)
-                const conflictCandidates = runGit(
-                    `diff-tree --no-commit-id -r --name-only ${firstParent} ${secondParent} -- src tests scripts`
-                )
+                const conflictCandidates = runGit([
+                    'diff-tree',
+                    '--no-commit-id',
+                    '-r',
+                    '--name-only',
+                    firstParent,
+                    secondParent,
+                    '--',
+                    'src',
+                    'tests',
+                    'scripts'
+                ])
                     .split('\n')
                     .filter(Boolean)
                     .filter((f) => /^(src|tests|scripts)\//.test(f))
@@ -75,8 +93,8 @@ describe('merge-reland guard', () => {
                     let mergeBlob = ''
                     let secondBlob = ''
                     try {
-                        mergeBlob = runGit(`rev-parse ${sha}:${file}`)
-                        secondBlob = runGit(`rev-parse ${secondParent}:${file}`)
+                        mergeBlob = runGit(['rev-parse', `${sha}:${file}`])
+                        secondBlob = runGit(['rev-parse', `${secondParent}:${file}`])
                     } catch {
                         continue
                     }
@@ -89,7 +107,7 @@ describe('merge-reland guard', () => {
                         // run 32688649114, scripts/mapstate-fold-gate.mjs.)
                         let firstBlob = ''
                         try {
-                            firstBlob = runGit(`rev-parse ${firstParent}:${file}`)
+                            firstBlob = runGit(['rev-parse', `${firstParent}:${file}`])
                         } catch {
                             continue
                         }
