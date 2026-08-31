@@ -219,12 +219,10 @@ test.describe('Focus journey', () => {
         await explore.waitFor({ state: 'visible', timeout: 60000 })
         await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-            // 20s timeout accommodates WebGL GPU-stall delays during initial scene
-            // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
-            timeout: 20000,
-            polling: 100
-        })
+        // pollFor (CDP evaluate) per spec-header doctrine: in-page
+        // waitForFunction polling starves under serial-suite GPU stalls —
+        // this wait timed out in the full 26-test run while passing solo.
+        await pollFor(page, () => (window.__APP_STATE__?.points?.length ?? 0) > 100, 20000, 100)
         await page.waitForTimeout(700)
 
         // Trigger focus via the nav-actions bridge.
@@ -2245,14 +2243,22 @@ test.describe('Focus journey', () => {
         })
 
         // Wait for the twin mesh to build with the pocket membership.
-        await page.waitForFunction(
+        // pollFor (CDP evaluate) per spec-header doctrine: in-page
+        // waitForFunction polling starves under serial-suite GPU stalls —
+        // F16 timed out at 20s in the full run while passing solo.
+        const twinBuilt = await pollFor(
+            page,
             () => {
                 const info = window.__APP_STATE__?.focusPocketSizeMeshInfo
-                return info && info.count >= 10
+                return !!(info && info.count >= 10)
             },
-            null,
-            { timeout: 20000, polling: 100 }
+            // 30s: the twin-mesh build is marginal at 20s when the serial suite
+            // leaves GPU renderer bookkeeping behind (observed pass/fail flip
+            // across solo vs full-run at 20s; 30s absorbs the contention).
+            30000,
+            100
         )
+        expect(twinBuilt, 'pocket twin mesh must build with pocket membership (count >= 10)').toBe(true)
 
         const info = await page.evaluate(() => window.__APP_STATE__?.focusPocketSizeMeshInfo)
         expect(info, 'focusPocketSizeMeshInfo must be available').not.toBeNull()
