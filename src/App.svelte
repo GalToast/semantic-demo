@@ -413,7 +413,7 @@
   <!-- Layer 80: Info panel -->
   {#if !surface.mapModeActive && infoPanelLazy.current}
     {@const Cmp = infoPanelLazy.current}
-    <Cmp open={surface.infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
+    <Cmp open={surface.infoPanelOpen} content={searchPanelContent} />
   {/if}
   {#if surface.mapTrailSearchLaneActive}
     <!--

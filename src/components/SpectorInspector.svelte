@@ -51,7 +51,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
   // Single typed accessor for window — replaces both `window as
   // unknown as { … }` sites in the capture bridge and publisher.
   function getSpectorDevWindow(): SpectorDevWindow {
-    return window as unknown as SpectorDevWindow;
+    return window;
   }
 
   interface Props {

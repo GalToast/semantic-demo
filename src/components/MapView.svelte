@@ -190,7 +190,7 @@
       centerMapOnRouteAnchor();
 
       requestAnimationFrame(() => {
-        const map = appState.map as unknown as LeafletMapWithInvalidateSize | undefined;
+        const map = appState.map;
         map?.invalidateSize?.();
         _registry.schedule(120, () => map?.invalidateSize?.());
       });
@@ -201,7 +201,7 @@
       const mc = document.getElementById('map-container');
       if (mc && !resizeObserver) {
         resizeObserver = new ResizeObserver(() => {
-          const map = appState.map as unknown as LeafletMapWithInvalidateSize | undefined;
+          const map = appState.map;
           map?.invalidateSize?.();
         });
         resizeObserver.observe(mc);

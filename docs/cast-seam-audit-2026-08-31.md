@@ -56,3 +56,15 @@ New `as unknown as` sites must land with a comment naming the boundary or the
 structural blocker, same as the existing population. The budget test enforces
 the count; this document is the qualitative contract. Re-run this
 classification if the count grows by more than ~5 between audits.
+
+## Addendum — same-day tightening (46-budget)
+
+Immediately after this audit, a tsc-driven empirical hunt stripped every
+simple-path cast and kept only removals that typecheck clean: **6 redundant
+casts removed** (official comment-stripped count 50 → 44). The other 34
+simple-path sites (18 verified-load-bearing + 16 complex-operand) were
+restored — `typeof`/`readonly`/union operands and index-signature boundaries
+where the cast IS the contract. Budget re-ratcheted 91 → **46** (44 actual
+- 2 margin) in the same commit. Lesson recorded: strip-then-tsc converges
+fast, but restore lists must normalize Windows path separators and comment
+mentions must never be counted as sites.
