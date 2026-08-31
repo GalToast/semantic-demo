@@ -83,15 +83,6 @@
         gap: 12px;
     }
 
-    body.surface-idle .stat-box {
-        flex: 1;
-        padding: 12px;
-        background: var(--glass-reflection-fade);
-        border: 1px solid var(--glass-reflection-muted);
-        border-radius: 12px;
-        text-align: center;
-    }
-
     /* 3. SEARCH & FOCUS-SEARCH COMMON (Mobile) */
     body.surface-search .info-panel,
     body.surface-focus-search .info-panel {
@@ -364,8 +355,6 @@
     body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-what,
     body.surface-search[data-panel-surface-detail='peek'] .search-result-meta,
     body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-meta,
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-cluster,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-cluster,
     body.surface-search[data-panel-surface-detail='peek'] .search-result-context,
     body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-context,
     body.surface-search[data-panel-surface-detail='peek'] .search-result-bar,
@@ -537,17 +526,10 @@
         padding-top: 20px;
         margin-top: calc(env(safe-area-inset-top, 0px));
     }
-
-    body.surface-search[data-panel-surface-detail='expanded'] .stat-row,
-    body.surface-focus-search[data-panel-surface-detail='expanded'] .stat-row,
     body.surface-search[data-panel-surface-detail='expanded'] .stat-caption,
     body.surface-focus-search[data-panel-surface-detail='expanded'] .stat-caption,
-    body.surface-search[data-panel-surface-detail='expanded'] .demo-journey-steps,
-    body.surface-focus-search[data-panel-surface-detail='expanded'] .demo-journey-steps,
     body.surface-search[data-panel-surface-detail='expanded'] #btn-launch,
-    body.surface-focus-search[data-panel-surface-detail='expanded'] #btn-launch,
-    body.surface-search[data-panel-surface-detail='expanded'] .surprise-btn,
-    body.surface-focus-search[data-panel-surface-detail='expanded'] .surprise-btn {
+    body.surface-focus-search[data-panel-surface-detail='expanded'] #btn-launch{
         display: none;
     }
 
@@ -680,24 +662,20 @@
         gap: 4px 8px;
     }
 
-    body.surface-map-search .search-result-name,
-    body.surface-map-search .search-result-title {
+    body.surface-map-search .search-result-name{
         color: rgba(245, 255, 252, 0.96);
         font-size: 14px;
         line-height: 1.12;
     }
 
     body.surface-map-search .search-result-what,
-    body.surface-map-search .search-result-meta,
-    body.surface-map-search .search-result-type,
-    body.surface-map-search .search-result-location {
+    body.surface-map-search .search-result-meta{
         color: rgba(211, 228, 224, 0.85);
         font-size: 12px;
         line-height: 1.22;
     }
 
-    body.surface-map-search .search-result-badges,
-    body.surface-map-search .search-result-actions {
+    body.surface-map-search .search-result-badges{
         color: rgba(164, 236, 227, 0.85);
     }
 
@@ -2431,7 +2409,6 @@
     }
 
     body.surface-map-any #btn-launch,
-    body.surface-map-any .launch-btn,
     body.surface-map-any #synthesize-trigger {
         display: none;
         visibility: hidden;

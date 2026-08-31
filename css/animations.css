@@ -16,7 +16,6 @@
     body .info-panel,
     body .info-header,
     body .info-toggle-icon,
-    body .launch-btn,
     body .legend,
     body .legend-item,
     body .search-container,
@@ -34,7 +33,6 @@
     body .fade-in,
     body.searching .search-spinner,
     body.searching .search-container.has-query .search-spinner,
-    body .search-spinner-overlay,
     body .shake-input,
     body .suggestion-btn.shake {
         animation: none;
