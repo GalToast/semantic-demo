@@ -47,6 +47,15 @@ single-flight lock at `tmp/vitest.single-flight.lock`. A second full Vitest run
 fails fast with the owning PID instead of competing for RAM; a lock whose owner
 process has exited is reclaimed automatically.
 
+Measured 2026-08-31 — suite under multi-session/host load:
+
+- The full suite can OOM at default heap when other lanes run concurrently
+  (`FATAL ERROR: NewSpace::EnsureCurrentCapacity`). Run it as
+  `NODE_OPTIONS=--max-old-space-size=4096 npm run test:unit` in that case.
+- `commit-purity-invariant` / `merge-reland-guard` (git-shelling tests) are
+  the first to flake under contention: both pass solo and as a pair, but can
+  fail in-suite. Absorb with `--retry=1` (suite re-verified 4173/4173).
+
 Vitest `globalSetup` runs `scripts/tdb1-fixture-ensure.mjs` before every run:
 it (re)generates the gitignored TDB fixtures the `semantic-tdb{,-fidelity}`
 unit tests read (`tmp/perf9/semantic_threads.dat.bin` + `semantic_threads_ui.dat.bin`)
