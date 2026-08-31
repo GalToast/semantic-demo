@@ -105,7 +105,7 @@ export function animateCameraToSearchCorridor(
         return true
     }
 
-    const allPoints = appState.points as Point[]
+    const allPoints = appState.points
     const routeIndices = [...new Set([anchorIndex, ...(resultIndices || [])])]
         .filter(
             (index) =>

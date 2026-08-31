@@ -55,7 +55,7 @@ export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatus
             : undefined
     const pointIndex = Number.isFinite(pointIndexByLeadId)
         ? pointIndexByLeadId
-        : (appState.points as Point[] | undefined)?.indexOf?.(point)
+        : appState.points?.indexOf?.(point)
     const summary = getCurrentSearchSummarySnapshot()
     const resultIndices = Array.isArray(summary?.resultIndices) ? summary!.resultIndices : []
     const pointInResults = Number.isFinite(pointIndex) && resultIndices.includes(pointIndex as number)

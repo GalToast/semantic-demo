@@ -165,18 +165,13 @@ export class AppState {
     // ==== POSITION / GEOMETRY STATE ====
     // Runtime truth: appState.points carries BusinessRecord[] (the 8,406-row
     // corpus — it never carries x/y/z; positions live in rawPositionsBuffer).
-    // Point (core-types) is the all-optional legacy read-view.
-    //
-    // THIS GETTER HOLDS THE SEAM CAST (the only one): the store's getSnapshot()
-    // is readonly BusinessRecord[], and Point[] (mutable) is not directly
-    // assertable from it. Removing this hop means retyping the getter to
-    // `readonly Point[]` and sweeping the 12 `as Point[]` consumer sites
-    // (map-markers, map-route-embodiment, cursor, routes, stage-renderer,
-    // ui-feedback, suggestion-bindings) — a dedicated wave, not this seam.
-    // The setter takes the honest runtime type; the legacy-proxy boundary cast
-    // lives in main.ts.
-    get points(): Point[] {
-        return businessRecords.getSnapshot() as unknown as Point[]
+    // Point (core-types) is the all-optional legacy read-view; the getter
+    // exposes it readonly, matching the store snapshot (mutations target the
+    // store via businessRecords, never this array). Consumers read fields by
+    // index; element mutation (e.g. map-markers' point.cluster fallback) is
+    // still fine — readonly applies to the array, not the elements.
+    get points(): readonly Point[] {
+        return businessRecords.getSnapshot()
     }
     set points(value: BusinessRecord[]) {
         businessRecords.set(value)

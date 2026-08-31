@@ -14,7 +14,7 @@ import type { LeafletMarker } from './map-leaflet-runtime'
 
 export function getMapRoutePoints(): Array<{ index: number; point: Point }> {
     return getRouteEmbodimentIndices()
-        .map((index: number) => ({ index, point: (appState.points as Point[])?.[index] }))
+        .map((index: number) => ({ index, point: appState.points?.[index] }))
         .filter((entry): entry is { index: number; point: Point } => !!entry.point && pointHasGeocode(entry.point))
         .slice(0, isMobileViewport() ? 7 : 10)
 }
@@ -172,8 +172,8 @@ export function centerMapOnRouteAnchor(): boolean {
     const anchorIdxValid = Number.isFinite(anchorIdx) && anchorIdx! >= 0 && anchorIdx! < appState.points.length
     const focusPoint =
         appState.focusState.selectedPoint ||
-        (focusIdxValid ? (appState.points as Point[])[focusIndex!] : null) ||
-        (anchorIdxValid ? (appState.points as Point[])[anchorIdx!] : null) ||
+        (focusIdxValid ? appState.points[focusIndex!] : null) ||
+        (anchorIdxValid ? appState.points[anchorIdx!] : null) ||
         getMapRoutePoints()[0]?.point ||
         null
 
@@ -214,7 +214,7 @@ export function getRouteEmbodimentIndices(): number[] {
             index >= appState.points.length
         )
             return
-        if (!isPointVisible(index, appState.points as Point[], null, appState.activeFilters)) return
+        if (!isPointVisible(index, appState.points, null, appState.activeFilters)) return
         if (!(appState.nodePositions as unknown[])[index] && !(appState.originalPositions as unknown[])[index]) return
         if (!ordered.includes(index)) ordered.push(index)
     }

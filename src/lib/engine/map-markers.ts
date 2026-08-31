@@ -27,11 +27,8 @@ export function refreshMapMarkers(): void {
         const priorityMarkers: LeafletMarker[] = []
 
         ;(appState.pointMarkers as Array<{ marker: LeafletMarker; index: number }>).forEach(({ marker, index }) => {
-            if (
-                !isPointVisible(index, appState.points as Point[], appState.activeClusterFilter, appState.activeFilters)
-            )
-                return
-            const point = (appState.points as Point[])[index]
+            if (!isPointVisible(index, appState.points, appState.activeClusterFilter, appState.activeFilters)) return
+            const point = appState.points[index]
             if (!point) return
             if (point.cluster === null || point.cluster === undefined || !Number.isFinite(point.cluster))
                 point.cluster = 0

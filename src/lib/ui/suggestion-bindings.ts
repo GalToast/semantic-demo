@@ -36,7 +36,7 @@ function _getEligiblePoints(): Point[] {
     if (_cachedEligiblePoints !== null && _cachedPointsLength === len) {
         return _cachedEligiblePoints
     }
-    const eligible = (pts as Point[]).filter((p) => p && p.status !== 'disqualified')
+    const eligible = pts.filter((p) => p && p.status !== 'disqualified')
     _cachedEligiblePoints = eligible
     _cachedPointsLength = len
     _cachedEligibleLength = eligible.length

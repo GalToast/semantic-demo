@@ -70,7 +70,7 @@ export function updateSelectedCardHeading(point: Point | null = null): void {
     if (!titleEl) return
 
     const activePoint = point || appState.focusState.selectedPoint || null
-    const points = Array.isArray(appState.points) ? (appState.points as Point[]) : []
+    const points = Array.isArray(appState.points) ? appState.points : []
     const activeIndex = activePoint ? resolvePointIndex(points, activePoint) : -1
     const summary = appState.searchState.currentSearchSummary
     const resultIndices = summary && Array.isArray(summary.resultIndices) ? (summary.resultIndices as number[]) : []

@@ -58,7 +58,7 @@ export interface FocusOnNodeOptions {
 // -----------------------------------------------------------------------------
 
 export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): boolean {
-    const points = appState.points as Point[]
+    const points = appState.points
     if (!Number.isFinite(index) || index < 0 || !points || index >= points.length) return false
     const point = points[index]
     if (!point) return false
