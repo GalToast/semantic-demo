@@ -107,9 +107,12 @@ export class DisposableRegistry {
     }
 
     /** Track a setTimeout / setInterval id.  Clears it on disposeAll().
-     *  Accepts `ReturnType<typeof setTimeout>` so it works in both browser
-     *  (returns `number`) and Node test environments (returns `Timeout`). */
-    timer(id: ReturnType<typeof setTimeout>): void {
+     *  Accepts browser numeric ids and Node Timeout handles — widened
+     *  2026-08-31 so window.setInterval/setTimeout call sites (number) and
+     *  Node environments (Timeout) pass without casts (was
+     *  `ReturnType<typeof setTimeout>` alone, forcing a cast at every
+     *  window.* call site under @types/node). */
+    timer(id: number | ReturnType<typeof setTimeout>): void {
         this.add(() => {
             clearTimeout(id)
             clearInterval(id)
