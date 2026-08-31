@@ -11,21 +11,13 @@ import { execFileSync } from 'node:child_process'
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'))
 
-const ALLOWED_UNTRACKED_TARGETS = new Set([
-    'scripts/reconcile-model-catalog.mjs',
-    'tests/model-catalog-reconcile-sweep.mjs'
-])
+const ALLOWED_UNTRACKED_TARGETS = new Set([])
 
-const REQUIRED_SCRIPT_INCLUDES = [
-    {
-        scriptName: 'qa:release-mobile-ownership:headed',
-        fragments: [
-            'node scripts/qa.mjs visual --states=11-mobile-selected-card-map-trail,24-mobile-map-focus-search,17-mobile-thread-inspector --headed',
-            'node scripts/qa.mjs playthrough --real-route-visual --headed',
-            'npm run check:script-targets'
-        ]
-    }
-]
+// Vestigial QA-release-pair requirement removed — ba71ab699 (2026-08-28)
+// deliberately dropped qa:release-mobile-ownership(:headed) + qa:ui-quality
+// as pruned scripts (only consumers were each other). Keep this list empty
+// until a new required-QA pair is introduced on purpose.
+const REQUIRED_SCRIPT_INCLUDES = []
 
 function normalizePath(value) {
     return value.replaceAll('\\', '/').replace(/^\.\/+/, '')

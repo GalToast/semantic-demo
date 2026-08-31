@@ -97,7 +97,7 @@
     "check:param-prop": "node tests/param-property-loader-sweep.mjs",
     "check:data-compression": "node scripts/check-data-compression.mjs",
     "check:findings-witness": "node scripts/verify-findings-claims.mjs",
-    "ci": "npm run check && npm run test:unit && npm run build:svelte && node scripts/check-bundle-size.mjs && npm run check:findings-witness && node scripts/qa-budget.mjs && npm run test:contract:smoke && npm run verify:3d-tests"
+    "ci": "npm run verify:syntax && npm run check:svelte && npm run test:static && npm run test:unit && npm run build:svelte && node scripts/check-bundle-size.mjs && npm run check:findings-witness && node scripts/qa-budget.mjs && npm run test:contract:smoke && npm run verify:3d-tests"
   },
   "keywords": [],
   "author": "",
