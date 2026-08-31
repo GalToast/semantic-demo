@@ -37,7 +37,6 @@ const pollFor = async (page, predicate, timeoutMs, intervalMs = 50, evalArg) => 
     return false
 }
 
-
 test.describe('Focus journey', () => {
     test('5l. Help (?) button re-opens the help dialog after dismissal (W48 fix)', async ({ page }) => {
         // W48 audit: the ? (btn-app-help) toggle looked broken — clicking it
@@ -1318,7 +1317,9 @@ test.describe('Focus journey', () => {
 
         const enterSearch = async (width, height) => {
             await page.setViewportSize({ width, height })
-            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=galaxy`, { waitUntil: 'domcontentloaded' })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=galaxy`, {
+                waitUntil: 'domcontentloaded'
+            })
             await page.locator('.mode-chip[data-mode="search"]').waitFor({ state: 'visible', timeout: 15000 })
             await page.locator('.mode-chip[data-mode="search"]').click()
             await page.locator('#search-input').waitFor({ state: 'visible', timeout: 15000 })
