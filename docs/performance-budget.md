@@ -9,12 +9,12 @@ This document defines hard performance ceilings for the Semantic Explorer. All P
 
 ## 1. Bundle Size Budget
 
-| Metric                 | Current (measured 2026-08-30) | Live ceiling (script) | Slack          |
-| ---------------------- | ----------------------------- | --------------------- | -------------- |
-| **Total JS (raw)**     | 1,864.38 KB                   | 1,902 KB              | 37.6 KB (2%)   |
-| **Total JS (gzip)**    | 553.90 KB                     | 566 KB                | 12.1 KB (2%)   |
-| **CSS initial (raw)**  | 58.24 KB                      | 59.5 KB               | 1.26 KB (2%)   |
-| **CSS initial (gzip)** | 10.80 KB                      | 11.1 KB               | 0.30 KB (3%)   |
+| Metric                 | Current (measured 2026-08-30) | Live ceiling (script) | Slack        |
+| ---------------------- | ----------------------------- | --------------------- | ------------ |
+| **Total JS (raw)**     | 1,864.38 KB                   | 1,902 KB              | 37.6 KB (2%) |
+| **Total JS (gzip)**    | 553.90 KB                     | 566 KB                | 12.1 KB (2%) |
+| **CSS initial (raw)**  | 58.24 KB                      | 59.5 KB               | 1.26 KB (2%) |
+| **CSS initial (gzip)** | 10.80 KB                      | 11.1 KB               | 0.30 KB (3%) |
 
 ### Budget Rationale
 

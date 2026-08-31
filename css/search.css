@@ -194,10 +194,6 @@ body:is(
     font-weight: 600;
 }
 
-.search-results-count .search-results-count-empty {
-    color: rgba(255, 196, 110, 0.86);
-}
-
 body:is(
         [data-panel-surface='search'],
         [data-panel-surface='focus-search'],
@@ -1022,12 +1018,6 @@ body.searching .search-container.has-query .search-clear-btn {
     opacity: 1;
     transition: opacity 0.3s ease;
     border-radius: inherit;
-}
-
-.search-results.searching .search-spinner-overlay {
-    opacity: 1;
-    animation: searchSpin 0.75s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    z-index: var(--z-tooltips);
 }
 
 /* polish288b: rail-section base styles — extracted from vector-explorer-polished.html inline style block */

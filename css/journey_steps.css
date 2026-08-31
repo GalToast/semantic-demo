@@ -111,29 +111,6 @@
     margin: 7px 0 6px;
 }
 
-.focus-stage-route[data-state='ready'] .focus-stage-route-line {
-    background: linear-gradient(90deg, rgba(255, 226, 132, 0.72), rgba(var(--color-primary-tint-rgb), 0.78));
-    box-shadow: 0 0 18px rgba(var(--color-primary-tint-rgb), 0.14);
-}
-
-.focus-stage-route[data-state='walking'] .focus-stage-route-line {
-    background: linear-gradient(
-        90deg,
-        rgba(255, 226, 132, 0.86),
-        rgba(var(--color-primary-tint-rgb), 0.92),
-        rgba(223, 255, 248, 0.72)
-    );
-    box-shadow: 0 0 22px rgba(var(--color-primary-tint-rgb), 0.22);
-    animation: focusRouteCurrent 2.6s ease-in-out infinite;
-}
-
-.focus-stage-route[data-state='walking'] .focus-stage-route-dot.is-next {
-    transform: scale(1.12);
-    box-shadow:
-        0 0 0 5px rgba(var(--color-primary-tint-rgb), 0.12),
-        0 0 22px rgba(255, 226, 132, 0.22);
-}
-
 @keyframes focusRouteCurrent {
     0%,
     100% {
@@ -159,11 +136,6 @@ body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .
 
 body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .focus-stage-neighbors.active {
     animation: focusNeighborsArrival 0.58s cubic-bezier(0.2, 0.72, 0.22, 1) 0.12s both;
-}
-
-body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .focus-stage-route-line {
-    transform-origin: left center;
-    animation: focusRouteArrival 0.82s ease-out both;
 }
 
 @keyframes focusRouteArrival {

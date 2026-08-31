@@ -6,15 +6,15 @@ Generated from package.json (manually curated, update on script changes).
 
 ## Key entry points
 
-| Script      | Purpose                                                                                |
-| ----------- | -------------------------------------------------------------------------------------- |
-| `build`     | npm run build:svelte                                                                   |
-| `test`      | npm run test:static && npm run test:unit                                               |
-| `test:unit` | vitest run --config vitest.config.js                                                   |
-| `test:fast` | npm run test:static                                                                    |
-| `check`     | npm run verify:syntax && npm run check:svelte && npm run build:svelte                  |
-| `lint`      | eslint "{js,tests}/**/\*.{js,ts}" && eslint "src/**/*.{ts,svelte}" --max-warnings=9999 |
-| `serve`     | php -S 127.0.0.1:8795 -t .                                                             |
+| Script      | Purpose                                                                                 |
+| ----------- | --------------------------------------------------------------------------------------- |
+| `build`     | npm run build:svelte                                                                    |
+| `test`      | npm run test:static && npm run test:unit                                                |
+| `test:unit` | vitest run --config vitest.config.js                                                    |
+| `test:fast` | npm run test:static                                                                     |
+| `check`     | npm run verify:syntax && npm run check:svelte && npm run build:svelte                   |
+| `lint`      | eslint "{js,tests}/**/\*.{js,ts}" && eslint "src/**/\*.{ts,svelte}" --max-warnings=9999 |
+| `serve`     | php -S 127.0.0.1:8795 -t .                                                              |
 
 ## `audit:` family (3)
 
@@ -33,28 +33,28 @@ Generated from package.json (manually curated, update on script changes).
 
 ## `check:` family (26)
 
-| Script                          | Command (truncated)                                                                                    | Wired? |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------ | ------ |
-| `check`                         | `npm run verify:syntax && npm run check:svelte && npm run build:svelte`                                | yes    |
-| `check:bridges`                 | `node scripts/check-bridge-references.mjs`                                                             | yes    |
-| `check:cache`                   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/cache-buster-check.js`                      | yes    |
-| `check:config-topology`         | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/config-topology-env-contract.mjs`           | yes    |
-| `check:data-compression`        | `node scripts/check-data-compression.mjs`                                                              | yes    |
-| `check:dist-integrity`          | `node scripts/qa-deploy-preflight.mjs --dist-only`                                                     | manual |
-| `check:journey`                 | `node scripts/qa-journey-gate.mjs`                                                                     | manual |
-| `check:manifest`                | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-manifest-contract.mjs && node --loa...` | yes    |
-| `check:model-catalog`           | `node tests/model-catalog-sweep.mjs`                                                                   | manual |
-| `check:ownership`               | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-ownership-sweep.mjs`                    | yes    |
-| `check:param-prop`              | `node tests/param-property-loader-sweep.mjs`                                                           | manual |
-| `check:script-targets`          | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/package-script-targets-contract.mjs`        | yes    |
-| `check:semantic-space`          | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/semantic-space-audit.mjs && node --load...` | yes    |
-| `check:shell`                   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/shell-contract-check.js && node --loade...` | yes    |
-| `check:skills`                  | `node scripts/check-skill-loads.mjs`                                                                   | yes    |
-| `check:surface-styles`          | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-style-matrix-contract.mjs`          | yes    |
-| `check:svelte`                  | `svelte-check --workspace src --tsconfig tsconfig.json --diagnostic-sources svelte,css`                | yes    |
-| `check:tdb-fidelity`            | `node scripts/tdb1-fidelity-ci.mjs`                                                                    | manual |
-| `check:tokens`                  | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/design-token-sweep.mjs`                     | yes    |
-| `check:ts-progress`             | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/ts-js-drift-contract.mjs --progress`        | manual |
+| Script                   | Command (truncated)                                                                                    | Wired? |
+| ------------------------ | ------------------------------------------------------------------------------------------------------ | ------ |
+| `check`                  | `npm run verify:syntax && npm run check:svelte && npm run build:svelte`                                | yes    |
+| `check:bridges`          | `node scripts/check-bridge-references.mjs`                                                             | yes    |
+| `check:cache`            | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/cache-buster-check.js`                      | yes    |
+| `check:config-topology`  | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/config-topology-env-contract.mjs`           | yes    |
+| `check:data-compression` | `node scripts/check-data-compression.mjs`                                                              | yes    |
+| `check:dist-integrity`   | `node scripts/qa-deploy-preflight.mjs --dist-only`                                                     | manual |
+| `check:journey`          | `node scripts/qa-journey-gate.mjs`                                                                     | manual |
+| `check:manifest`         | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-manifest-contract.mjs && node --loa...` | yes    |
+| `check:model-catalog`    | `node tests/model-catalog-sweep.mjs`                                                                   | manual |
+| `check:ownership`        | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-ownership-sweep.mjs`                    | yes    |
+| `check:param-prop`       | `node tests/param-property-loader-sweep.mjs`                                                           | manual |
+| `check:script-targets`   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/package-script-targets-contract.mjs`        | yes    |
+| `check:semantic-space`   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/semantic-space-audit.mjs && node --load...` | yes    |
+| `check:shell`            | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/shell-contract-check.js && node --loade...` | yes    |
+| `check:skills`           | `node scripts/check-skill-loads.mjs`                                                                   | yes    |
+| `check:surface-styles`   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-style-matrix-contract.mjs`          | yes    |
+| `check:svelte`           | `svelte-check --workspace src --tsconfig tsconfig.json --diagnostic-sources svelte,css`                | yes    |
+| `check:tdb-fidelity`     | `node scripts/tdb1-fidelity-ci.mjs`                                                                    | manual |
+| `check:tokens`           | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/design-token-sweep.mjs`                     | yes    |
+| `check:ts-progress`      | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/ts-js-drift-contract.mjs --progress`        | manual |
 
 ## `deploy:` family (2)
 
@@ -71,8 +71,8 @@ Generated from package.json (manually curated, update on script changes).
 
 ## `eval:` family (1)
 
-| Script    | Command (truncated)                                                                                    | Wired? |
-| --------- | ------------------------------------------------------------------------------------------------------ | ------ |
+| Script | Command (truncated) | Wired? |
+| ------ | ------------------- | ------ |
 
 ## `format:` family (1)
 
@@ -120,9 +120,9 @@ Generated from package.json (manually curated, update on script changes).
 
 ## `phone:` family (2)
 
-| Script                    | Command (truncated)                              | Wired? |
-| ------------------------- | ------------------------------------------------ | ------ |
-| `phone:deploy-catalog`    | `node scripts/deploy-phone-model-catalog.mjs`    | manual |
+| Script                 | Command (truncated)                           | Wired? |
+| ---------------------- | --------------------------------------------- | ------ |
+| `phone:deploy-catalog` | `node scripts/deploy-phone-model-catalog.mjs` | manual |
 
 ## `preview:` family (1)
 
@@ -132,36 +132,36 @@ Generated from package.json (manually curated, update on script changes).
 
 ## `prune:` family (2)
 
-| Script                | Command (truncated)                                                      | Wired? |
-| --------------------- | ------------------------------------------------------------------------ | ------ |
+| Script | Command (truncated) | Wired? |
+| ------ | ------------------- | ------ |
 
 ## `qa:` family (53)
 
-| Script                               | Command (truncated)                                                                                    | Wired? |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------ | ------ |
-| `qa:3d`                              | `SEMANTIC_USE_D3D11=1 PLAYWRIGHT_STRICT_FRESH=1 npx playwright test tests/3d-*.spec.js --browser=c...` | yes    |
-| `qa:3d:fresh`                        | `npm run build && npm run qa:3d`                                                                       | manual |
-| `qa:adversarial`                     | `npx playwright test tests/polish-adversarial.spec.js --browser=chromium --headed`                     | manual |
-| `qa:android`                         | `node scripts/qa-android.mjs`                                                                          | manual |
-| `qa:contract`                        | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-contract-check.mjs --headed`        | manual |
-| `qa:contract:mobile-critical`        | `node scripts/qa.mjs contract --preset=mobile-critical --headed`                                       | manual |
-| `qa:journey`                         | `npx playwright test tests/widget-journey.spec.js tests/widget-journey-smoke.spec.js --browser=chr...` | yes    |
-| `qa:journey:fresh`                   | `npm run build && npm run qa:journey`                                                                  | manual |
-| `qa:journey:headless`                | `node scripts/qa-journey-headless.mjs`                                                                 | yes    |
-| `qa:journey:smoke`                   | `npx playwright test tests/widget-journey-smoke.spec.js --browser=chromium`                            | yes    |
-| `qa:live-reset`                      | `npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --headed`            | manual |
-| `qa:mapview-placeholder`             | `npx playwright test tests/mapview-placeholder-journey.spec.js --browser=chromium`                     | manual |
-| `qa:paint-budget`                    | `node tests/paint-metrics-gate.mjs`                                                                    | manual |
-| `qa:product-playthrough`             | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/product-playthrough-audit.mjs --headed`     | yes    |
-| `qa:scene-health`                    | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/three-scene-playtest.mjs`                   | manual |
-| `qa:server`                          | `node scripts/qa-server.mjs start`                                                                     | manual |
-| `qa:server:ensure`                   | `node scripts/qa-server.mjs ensure`                                                                    | manual |
-| `qa:server:status`                   | `node scripts/qa-server.mjs status`                                                                    | manual |
-| `qa:server:stop`                     | `node scripts/qa-server.mjs stop`                                                                      | manual |
-| `qa:short-landscape`                 | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/short-landscape-layout-contract.mjs && ...` | yes    |
-| `qa:short-landscape:release`         | `npm run qa:short-landscape && npm run qa:short-landscape:transition`                                  | manual |
-| `qa:short-landscape:transition`      | `npx playwright test tests/short-landscape-transition-ui-paths.spec.js --browser=chromium --worker...` | yes    |
-| `qa:visual`                          | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/visual-state-audit.mjs --headed`            | manual |
+| Script                          | Command (truncated)                                                                                    | Wired? |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------ | ------ |
+| `qa:3d`                         | `SEMANTIC_USE_D3D11=1 PLAYWRIGHT_STRICT_FRESH=1 npx playwright test tests/3d-*.spec.js --browser=c...` | yes    |
+| `qa:3d:fresh`                   | `npm run build && npm run qa:3d`                                                                       | manual |
+| `qa:adversarial`                | `npx playwright test tests/polish-adversarial.spec.js --browser=chromium --headed`                     | manual |
+| `qa:android`                    | `node scripts/qa-android.mjs`                                                                          | manual |
+| `qa:contract`                   | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/surface-contract-check.mjs --headed`        | manual |
+| `qa:contract:mobile-critical`   | `node scripts/qa.mjs contract --preset=mobile-critical --headed`                                       | manual |
+| `qa:journey`                    | `npx playwright test tests/widget-journey.spec.js tests/widget-journey-smoke.spec.js --browser=chr...` | yes    |
+| `qa:journey:fresh`              | `npm run build && npm run qa:journey`                                                                  | manual |
+| `qa:journey:headless`           | `node scripts/qa-journey-headless.mjs`                                                                 | yes    |
+| `qa:journey:smoke`              | `npx playwright test tests/widget-journey-smoke.spec.js --browser=chromium`                            | yes    |
+| `qa:live-reset`                 | `npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --headed`            | manual |
+| `qa:mapview-placeholder`        | `npx playwright test tests/mapview-placeholder-journey.spec.js --browser=chromium`                     | manual |
+| `qa:paint-budget`               | `node tests/paint-metrics-gate.mjs`                                                                    | manual |
+| `qa:product-playthrough`        | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/product-playthrough-audit.mjs --headed`     | yes    |
+| `qa:scene-health`               | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/three-scene-playtest.mjs`                   | manual |
+| `qa:server`                     | `node scripts/qa-server.mjs start`                                                                     | manual |
+| `qa:server:ensure`              | `node scripts/qa-server.mjs ensure`                                                                    | manual |
+| `qa:server:status`              | `node scripts/qa-server.mjs status`                                                                    | manual |
+| `qa:server:stop`                | `node scripts/qa-server.mjs stop`                                                                      | manual |
+| `qa:short-landscape`            | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/short-landscape-layout-contract.mjs && ...` | yes    |
+| `qa:short-landscape:release`    | `npm run qa:short-landscape && npm run qa:short-landscape:transition`                                  | manual |
+| `qa:short-landscape:transition` | `npx playwright test tests/short-landscape-transition-ui-paths.spec.js --browser=chromium --worker...` | yes    |
+| `qa:visual`                     | `node --loader ./tests/helpers/ts-resolve-loader.mjs tests/visual-state-audit.mjs --headed`            | manual |
 
 ## `refresh:` family (1)
 
@@ -211,9 +211,9 @@ Generated from package.json (manually curated, update on script changes).
 
 ## `typecheck:` family (2)
 
-| Script            | Command (truncated)                       | Wired? |
-| ----------------- | ----------------------------------------- | ------ |
-| `typecheck`       | `tsc --noEmit -p tsconfig.typecheck.json` | yes    |
+| Script      | Command (truncated)                       | Wired? |
+| ----------- | ----------------------------------------- | ------ |
+| `typecheck` | `tsc --noEmit -p tsconfig.typecheck.json` | yes    |
 
 ## `verify:` family (2)
 

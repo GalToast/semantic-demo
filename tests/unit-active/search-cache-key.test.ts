@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-    clearSearchCache,
-    getCachedSearch,
-    setCachedSearch,
-    setSearchCacheTTL
-} from '../../src/lib/search/cache'
+import { clearSearchCache, getCachedSearch, setCachedSearch, setSearchCacheTTL } from '../../src/lib/search/cache'
 
 describe('search-cache keying', () => {
     beforeEach(() => {

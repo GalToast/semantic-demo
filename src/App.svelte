@@ -14,11 +14,10 @@
 -->
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
-  import { get } from 'svelte/store';
-  import { navStore } from '@lib/stores/navigation.svelte.ts';
-  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
+  import { navStore } from '@lib/stores/navigation.svelte.ts';  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
   import { useNavState } from '@lib/ui/use-nav-state.svelte';
   import { useSurfaceComposition } from '@lib/ui/use-surface-composition.svelte';
+  import { usePanelCleanup } from '@lib/ui/use-panel-cleanup.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { removeStaticPlaceholder, computeDevToolsVisible, isPlaywrightEnvironment, isContractBootTest } from '@lib/app/app-lifecycle.ts';
@@ -267,27 +266,7 @@
   // change in the composable.
   const surface = useSurfaceComposition({ getSceneReady: () => s3dSceneReady });
 
-  // Reactive panel cleanup: close panels that don't belong in the current view
-  // (W46-C2b: reduces panel stacking clutter in search/trail/focus/inside/map)
-  $effect(() => {
-    const navSurface = nav.surface;
-    const mode = nav.mode;
-
-    // Close legend when entering search, trail, focus, inside, or map modes
-    // The legend is only relevant in idle/overview and info-panel states
-    if (
-      navSurface === 'search' ||
-      navSurface === 'focus-search' ||
-      mode === 'trail' ||
-      mode === 'focus' ||
-      mode === 'inside' ||
-      nav.view === 'map'
-    ) {      if (get(legendOpen)) {
-        setLegendOpen(false);
-      }
-    }
-  });
-  // W6-T2: keeps Three.js + postprocessing out of the cold-load bundle.
+  usePanelCleanup();  // W6-T2: keeps Three.js + postprocessing out of the cold-load bundle.
   $effect(() => canvasLazy.ensure(engineReady.value));
 
   // A11y: move focus into the app when it first becomes interactive.

@@ -29,7 +29,7 @@ function stopServer() {
 
 function runSuite() {
     return (
-        spawnSync('npx', ['playwright', 'test', 'tests/widget-journey.spec.js'], {
+        spawnSync('npx', ['playwright', 'test', 'tests/journey/'], {
             stdio: 'inherit',
             env: {
                 ...process.env,

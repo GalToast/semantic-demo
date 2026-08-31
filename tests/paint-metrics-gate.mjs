@@ -64,12 +64,8 @@ const launchOptions = {
               '--ignore-gpu-blocklist',
               '--use-gl=angle',
               '--enable-webgl',
-              ...(process.platform === 'win32' && process.env.SEMANTIC_USE_D3D11 === '1'
-                  ? ['--use-angle=d3d11']
-                  : []),
-              ...(forceSoftwareWebgl
-                  ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering']
-                  : [])
+              ...(process.platform === 'win32' && process.env.SEMANTIC_USE_D3D11 === '1' ? ['--use-angle=d3d11'] : []),
+              ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])
           ]
         : [
               ...(forceSoftwareWebgl
@@ -212,11 +208,7 @@ async function main() {
         m.lcpMs = lcpMs || m.lcpMs
         await browser.close()
 
-        const rendering = headed
-            ? process.env.SEMANTIC_USE_D3D11 === '1'
-                ? 'headed + D3D11'
-                : 'headed'
-            : 'headless'
+        const rendering = headed ? (process.env.SEMANTIC_USE_D3D11 === '1' ? 'headed + D3D11' : 'headed') : 'headless'
         const metrics = [
             { label: 'LCP (ms)', actual: m.lcpMs, budget: BUDGET.lcpMs },
             { label: 'FCP (ms)', actual: m.fcpMs, budget: BUDGET.fcpMs },
@@ -245,7 +237,16 @@ async function main() {
         await writeFile(
             path.join(outDir, 'paint-metrics-last.json'),
             JSON.stringify(
-                { timestamp: new Date().toISOString(), protocol: PROTOCOL, rendering, viewport: '1280x800', url: bootUrl, metrics: m, budgets: BUDGET, passed: allPassed },
+                {
+                    timestamp: new Date().toISOString(),
+                    protocol: PROTOCOL,
+                    rendering,
+                    viewport: '1280x800',
+                    url: bootUrl,
+                    metrics: m,
+                    budgets: BUDGET,
+                    passed: allPassed
+                },
                 null,
                 2
             )
@@ -261,7 +262,7 @@ async function main() {
         }
         console.log(
             '  ✗ PAINT BUDGET EXCEEDED — budgets are anti-drift freezes (docs/performance-budget.md).\n' +
-              '    Fix the regression, or ratchet UP only with a new measured baseline artifact + commit naming the cause.\n'
+                '    Fix the regression, or ratchet UP only with a new measured baseline artifact + commit naming the cause.\n'
         )
         process.exit(1)
     } finally {

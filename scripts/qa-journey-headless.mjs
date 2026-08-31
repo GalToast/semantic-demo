@@ -45,7 +45,7 @@ const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 const args = [
     'playwright',
     'test',
-    'tests/widget-journey.spec.js',
+    'tests/journey/',
     'tests/widget-journey-smoke.spec.js',
     '--browser=chromium',
     ...passthroughArgs
