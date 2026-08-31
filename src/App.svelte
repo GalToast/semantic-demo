@@ -14,14 +14,13 @@
 -->
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
-  import { navStore } from '@lib/stores/navigation.svelte.ts';  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
+  import { navStore } from '@lib/stores/navigation.svelte.ts';
+  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
   import { useNavState } from '@lib/ui/use-nav-state.svelte';
   import { useSurfaceComposition } from '@lib/ui/use-surface-composition.svelte';
   import { usePanelCleanup } from '@lib/ui/use-panel-cleanup.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
-  import { viewport } from '@lib/stores/viewport.svelte.ts';
-  import { removeStaticPlaceholder, computeDevToolsVisible, isPlaywrightEnvironment, isContractBootTest } from '@lib/app/app-lifecycle.ts';
-  import { createAppBootHandlers } from '@lib/app/app-event-handlers.ts';
+  import { removeStaticPlaceholder, computeDevToolsVisible, isPlaywrightEnvironment, isContractBootTest } from '@lib/app/app-lifecycle.ts';  import { createAppBootHandlers } from '@lib/app/app-event-handlers.ts';
   import { focusSearchInputUntilLanded } from '@lib/app/app-render.ts';
 
   // Side-effect import: biofield glow animation CSS
@@ -355,10 +354,9 @@
   id="semantic-explorer"
   class="semantic-explorer"
   class:surface-semantic-dive={surface.isSemanticDive}
-  class:is-compact={$viewport.isCompact}
-  class:reduced-motion={$viewport.reducedMotion}
-  class:is-overview={$navStore.mode === 'overview'}
->
+  class:is-compact={surface.isCompactViewport}
+  class:reduced-motion={surface.reducedMotion}
+  class:is-overview={surface.isOverview}>
   <!-- Layer 0: WebGL canvas / placeholder crossfade -->
   {#if surface.renderKind === 'placeholder2d'}
     <div class="layer-0-crossfade">

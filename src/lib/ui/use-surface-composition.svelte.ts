@@ -57,6 +57,9 @@ export interface SurfaceComposition {
     focusSearchPanelActive: boolean
     isSemanticDive: boolean
     compassRailVisible: boolean
+    isOverview: boolean
+    isCompactViewport: boolean
+    reducedMotion: boolean
 }
 
 export function useSurfaceComposition(opts: { getSceneReady: () => boolean }): SurfaceComposition {
@@ -111,6 +114,9 @@ export function useSurfaceComposition(opts: { getSceneReady: () => boolean }): S
     const compassRailVisible = $derived(
         focusActive && !focusSearchPanelActive && !appState.viewportState.viewportIsCompact
     )
+    const isOverview = $derived(nav.mode === 'overview')
+    const isCompactViewport = $derived(appState.viewportState.viewportIsCompact)
+    const reducedMotion = $derived(appState.viewportState.viewportReducedMotion)
 
     return {
         get renderKind() {
@@ -157,6 +163,15 @@ export function useSurfaceComposition(opts: { getSceneReady: () => boolean }): S
         },
         get compassRailVisible() {
             return compassRailVisible
+        },
+        get isOverview() {
+            return isOverview
+        },
+        get isCompactViewport() {
+            return isCompactViewport
+        },
+        get reducedMotion() {
+            return reducedMotion
         }
     }
 }
