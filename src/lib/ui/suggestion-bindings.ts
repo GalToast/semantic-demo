@@ -113,8 +113,8 @@ export function bindSuggestionControls(): void {
                 btn.textContent = originalText
             }
 
-            const rand = eligible[Math.floor(_nextSeededRandom() * _cachedEligibleLength)]
-            const idx = state.points.indexOf(rand as Point)
+            const rand = eligible[Math.floor(_nextSeededRandom() * _cachedEligibleLength)]!
+            const idx = state.points.indexOf(rand)
 
             if (idx >= 0) {
                 const searchInput = document.getElementById('search-input') as HTMLInputElement | null
