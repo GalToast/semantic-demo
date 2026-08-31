@@ -869,7 +869,9 @@ test.describe('Navigation and UI hardening', () => {
             30000,
             100
         )
-        expect(surfaceReady, 'mobile focus overlap test must reach a real surface (webgl dive or placeholder2d)').toBe(true)
+        expect(surfaceReady, 'mobile focus overlap test must reach a real surface (webgl dive or placeholder2d)').toBe(
+            true
+        )
 
         // The toggle must lift above the surface's primary action: the bottom
         // dive strip on webgl, the top-mounted Step Inside on placeholder2d.
