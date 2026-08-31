@@ -76,7 +76,7 @@ fi
 # ── Test-strategy-gap check ────────────────────────────────────────────────
 # Enforce the rule from docs/session-coordination.md → "The test-strategy gap":
 # when a user-visible file is staged, at least one journey test must also be
-# staged. Warn-only by default (matches the high-reversion-risk check);
+# staged. Blocking by default (exit 1);
 # override with --SkipTestStrategyGapCheck for pure internal refactors.
 if [ "$skipTestStrategyGapCheck" = false ]; then
     userVisibleFiles=""
@@ -95,7 +95,7 @@ src/lib/keyboard/*.ts)
 
     for file in $stagedFiles; do
         case "$file" in
-            tests/widget-journey.spec.js|\
+            tests/journey/*.spec.js|\
 tests/*-journey*.spec.js|\
 tests/*-journey*.spec.ts|\
 tests/journey-*.spec.js|\
@@ -118,7 +118,7 @@ tests/journey/*.spec.ts)                journeyFiles="$journeyFiles $file"
 
     if [ "$userVisibleCount" -gt 0 ] && [ "$journeyCount" -eq 0 ]; then
         echo ""
-        echo "Reminder: test-strategy-gap rule (docs/session-coordination.md)."
+        echo "Blocked: test-strategy-gap rule (docs/session-coordination.md)."
         echo "  User-visible files staged but no journey test staged."
         echo "  Contract tests do not catch click-eating z-index, missing callbacks,"
         echo "  or stubs dressed as data. A journey test is required for features"
@@ -129,9 +129,11 @@ tests/journey/*.spec.ts)                journeyFiles="$journeyFiles $file"
             echo "    $f"
         done
         echo ""
-        echo "  -> Add a test to tests/widget-journey.spec.js (or tests/*-journey*.spec.js)"
+        echo "  -> Add a test to tests/journey/*.spec.js (or tests/*-journey*.spec.js)"
         echo "  -> Or pass --SkipTestStrategyGapCheck if this is a pure internal refactor"
         echo ""
+        echo "Commit blocked — add a journey test or bypass with --SkipTestStrategyGapCheck."
+        exit 1
     fi
 fi
 

@@ -366,7 +366,7 @@
     <h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
   </div>
 {/if}
-<main id="main-content" class="semantic-main" class:surface-semantic-dive={parity.panelSurface === 'semantic-dive'} tabindex="-1" aria-label="Business network explorer">
+<main id="main-content" class="semantic-main" class:surface-semantic-dive={surface.isSemanticDive} tabindex="-1" aria-label="Business network explorer">
 <!-- Screen-reader-only live region for dynamic announcements.
      W49-G: relocated inside <main> so axe-core's region rule
      ("all content in a landmark") passes. Page content like this
@@ -375,7 +375,7 @@
 <div
   id="semantic-explorer"
   class="semantic-explorer"
-  class:surface-semantic-dive={parity.panelSurface === 'semantic-dive'}
+  class:surface-semantic-dive={surface.isSemanticDive}
   class:is-compact={$viewport.isCompact}
   class:reduced-motion={$viewport.reducedMotion}
   class:is-overview={$navStore.mode === 'overview'}
@@ -521,7 +521,7 @@
   <FocusPocketA11y />
 
   <!-- Layer 700: Compass rail -->
-  <CompassRail visible={surface.focusActive && !surface.focusSearchPanelActive && !$viewport.isCompact} />
+  <CompassRail visible={surface.compassRailVisible} />
 
   <!-- Layer 800: Camera controls -->
   <Controls visible={surface.controlsVisible} />

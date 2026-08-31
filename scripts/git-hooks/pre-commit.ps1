@@ -50,7 +50,7 @@ $userVisiblePatterns = @(
 
 # Patterns for journey test files
 $journeyPatterns = @(
-    "tests/widget-journey.spec.js",
+    "tests/journey/*.spec.js",
     "tests/*-journey*.spec.js",
     "tests/*-journey*.spec.ts",
     "tests/journey/*.spec.js",
@@ -101,18 +101,20 @@ if (-not $SkipTestStrategyGapCheck) {
 
     if ($userVisibleFiles.Count -gt 0 -and $journeyFiles.Count -eq 0) {
         Write-Host ""
-        Write-Host "Reminder: test-strategy-gap rule (docs/session-coordination.md)." -ForegroundColor Yellow
-        Write-Host "  User-visible files staged but no journey test staged." -ForegroundColor Yellow
-        Write-Host "  Contract tests do not catch click-eating z-index, missing callbacks," -ForegroundColor Yellow
-        Write-Host "  or stubs dressed as data. A journey test is required for features" -ForegroundColor Yellow
-        Write-Host "  that touch Svelte components or other user-facing DOM." -ForegroundColor Yellow
+        Write-Host "Blocked: test-strategy-gap rule (docs/session-coordination.md)." -ForegroundColor Red
+        Write-Host "  User-visible files staged but no journey test staged." -ForegroundColor Red
+        Write-Host "  Contract tests do not catch click-eating z-index, missing callbacks," -ForegroundColor Red
+        Write-Host "  or stubs dressed as data. A journey test is required for features" -ForegroundColor Red
+        Write-Host "  that touch Svelte components or other user-facing DOM." -ForegroundColor Red
         Write-Host ""
-        Write-Host "  Files staged:" -ForegroundColor Yellow
-        $userVisibleFiles | ForEach-Object { Write-Host "    $_" -ForegroundColor Yellow }
+        Write-Host "  Files staged:" -ForegroundColor Red
+        $userVisibleFiles | ForEach-Object { Write-Host "    $_" -ForegroundColor Red }
         Write-Host ""
-        Write-Host "  -> Add a test to tests/widget-journey.spec.js (or tests/*-journey*.spec.js)" -ForegroundColor Yellow
-        Write-Host "  -> Or use -SkipTestStrategyGapCheck if this is a pure internal refactor" -ForegroundColor Yellow
+        Write-Host "  -> Add a test to tests/journey/*.spec.js (or tests/*-journey*.spec.js)" -ForegroundColor Red
+        Write-Host "  -> Or use -SkipTestStrategyGapCheck if this is a pure internal refactor" -ForegroundColor Red
         Write-Host ""
+        Write-Host "Commit blocked — add a journey test or bypass with -SkipTestStrategyGapCheck." -ForegroundColor Red
+        exit 1
     }
 }
 

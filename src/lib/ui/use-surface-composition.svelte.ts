@@ -55,6 +55,8 @@ export interface SurfaceComposition {
     /** focus-search surface: the search-results panel owns the left edge,
      *  so left-edge chrome (journey compass rail) must yield. */
     focusSearchPanelActive: boolean
+    isSemanticDive: boolean
+    compassRailVisible: boolean
 }
 
 export function useSurfaceComposition(opts: { getSceneReady: () => boolean }): SurfaceComposition {
@@ -100,10 +102,14 @@ export function useSurfaceComposition(opts: { getSceneReady: () => boolean }): S
     )
     const legacyCompassSurfaceActive = $derived(
         searchFamilySurfaceActive ||
-        focusActive ||
-        mapModeActive ||
-        parity.panelSurface.startsWith('map-') ||
-        nav.surface.startsWith('map-')
+            focusActive ||
+            mapModeActive ||
+            parity.panelSurface.startsWith('map-') ||
+            nav.surface.startsWith('map-')
+    )
+    const isSemanticDive = $derived(parity.panelSurface === 'semantic-dive')
+    const compassRailVisible = $derived(
+        focusActive && !focusSearchPanelActive && !appState.viewportState.viewportIsCompact
     )
 
     return {
@@ -145,6 +151,12 @@ export function useSurfaceComposition(opts: { getSceneReady: () => boolean }): S
         },
         get legacyCompassSurfaceActive() {
             return legacyCompassSurfaceActive
+        },
+        get isSemanticDive() {
+            return isSemanticDive
+        },
+        get compassRailVisible() {
+            return compassRailVisible
         }
     }
 }
