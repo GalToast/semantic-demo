@@ -553,6 +553,26 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-tile-pane 
 }
 
 /* Map empty state */
+/* While the splash is up, suppress the map's empty-state prompt.
+ *
+ * They are two competing "what do I do now" messages. The splash is the entry
+ * gate (Search / Explore CTAs); the empty-state says "Choose a business to map
+ * its neighborhood". At 375px both rendered at once and the empty-state title
+ * overlapped the splash tag by 71% (found by
+ * tests/layout-integrity-contract.mjs).
+ *
+ * Note the empty-state's z-index:1000 does NOT put it above the splash -- it
+ * is confined inside .map-container, which is position:fixed z-index:2 and so
+ * creates a stacking context. The splash (z-index:400, sibling of that
+ * container) paints above it, but its background is only rgba(0,0,0,0.92), so
+ * the empty-state text bled through as text-over-text.
+ *
+ * :has() is already used across css/ (shell, layout_base, mobile_base,
+ * mobile_premium__state, tokens, focus_stage). */
+body:has(.splash:not([hidden])) .map-empty-state {
+    display: none;
+}
+
 .map-empty-state {
     position: absolute;
     top: 50%;

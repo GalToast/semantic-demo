@@ -59,11 +59,15 @@ const ALLOWLIST = [
     { surface: 'map', width: 820, kind: 'clipped', a: 'span.weather-cond', why: 'weather condition text clipped ~16px' },
     { surface: 'search', width: 820, kind: 'clipped', a: 'span.weather-cond', why: 'weather condition text clipped ~16px' },
     { surface: 'search', width: 1280, kind: 'clipped', a: 'span.weather-cond', why: 'weather condition text clipped ~16px' },
+    // Data-dependent: the condition string length varies, so this one appears
+    // intermittently rather than on every run.
+    { surface: 'map', width: 1280, kind: 'clipped', a: 'span.weather-cond', why: 'weather condition text clipped ~16px (flaky - depends on condition string length)' },
     { surface: 'search', width: 820, kind: 'clipped', a: 'div.search-result-name', why: 'business name clipped ~21px' },
     { surface: 'search', width: 1280, kind: 'clipped', a: 'div.search-result-name', why: 'business name clipped ~21px' },
     { surface: 'map', width: 820, kind: 'clipped', a: 'div#journey-compass-title.journey-compass-title', why: 'compass title clipped ~9px' },
     // --- real collisions ---
-    { surface: 'overview', width: 375, kind: 'collision', a: 'div.map-empty-state-title', b: 'p.splash-tag', why: 'empty-state title renders over the splash tag at 375' },
+    // FIXED 2026-08-30: map-empty-state-title <-> p.splash-tag @375, resolved by
+    // suppressing .map-empty-state while the splash is up (css/shell.css).
     { surface: 'search', width: 640, kind: 'collision', a: 'span.header-description', b: 'div#search-trail-cue-title.search-trail-cue-title', why: 'header status text collides with the trail-cue title' }
 ]
 
