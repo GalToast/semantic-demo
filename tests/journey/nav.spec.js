@@ -782,7 +782,7 @@ test.describe('Navigation and UI hardening', () => {
 
     test('tablet focus: proximity legend self-collapses at 936', async ({ page }) => {
         test.setTimeout(60000)
-        await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
         await page.setViewportSize({ width: 936, height: 800 })
         // Wait for the SETTLED state, not just wrapper existence: the deep-link
         // focus transition starts on the idle surface (legend expanded), then
@@ -814,7 +814,7 @@ test.describe('Navigation and UI hardening', () => {
             if (message.type() === 'error') runtimeErrors.push(`console.error: ${message.text()}`)
         })
         await page.setViewportSize({ width: 390, height: 844 })
-        await page.goto(`${APP}?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519&view=galaxy`, { waitUntil: 'domcontentloaded' })
         // Mobile cold-load entry depends on device capability since S5
         // auto-enter AND on deep-link self-entry (main.ts fires signalReady at
         // boot for ?anchor/?record/?q deep-links on non-placeholder2d boots).
