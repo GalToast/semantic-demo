@@ -812,8 +812,12 @@
     position: relative;
     width: 100%;
     height: 100%;
-  }
-  .layer {
+    /* Task-191 (2026-09-01): the wrapper covered the viewport with default
+       pointer-events:auto and intercepted "Open in 3D" taps at mobile sizes
+       (Playwright: 192 click retries, layer "intercepts pointer events") —
+       a real-user dead-tap. Children re-enable via .layer.active pe:auto. */
+    pointer-events: none;
+  }  .layer {
     position: absolute;
     inset: 0;
     display: none;

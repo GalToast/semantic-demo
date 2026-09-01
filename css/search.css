@@ -1668,6 +1668,16 @@ body.surface-map-focus-search .semantic-lane-assist-meta {
     body.surface-search .search-result-item:not(:first-child) {
         min-height: 72px;
     }
+    /* Task-191 (W63): the surface-search results cap lives under
+       max-width:768 only, so landscape-phone widths (e.g. 844x390) render an
+       uncapped list inside info-panel-content (overflow:hidden) — Show-more
+       lands at y≈978 in a 391px viewport, clipped/unreachable. Cap the list
+       here so the control stays inside the short viewport (internal scroll). */
+    body.surface-search .search-container .search-results.active {
+        max-height: min(16dvh, 120px);
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────

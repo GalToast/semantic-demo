@@ -830,20 +830,16 @@ test.describe('Focus journey', () => {
         { tag: '@live' },
         async ({ page }) => {
             await page.setViewportSize({ width: 390, height: 844 })
-            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
-
-            const explore = page
-                .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
-                .first()
-            await explore.waitFor({ state: 'visible', timeout: 60000 })
-            await explore.click()
-
-            await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-                // 20s timeout accommodates WebGL GPU-stall delays during initial scene
-                // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
-                timeout: 20000,
-                polling: 100
+            // Task-191: boot webgl+galaxy so the mode-chip rail exists. The old
+            // CTA-boot flow lands navSurface=map at 390px, where headerVisible
+            // is false BY DESIGN (!mapModeActive) and #mode-chips never mounts —
+            // a body-class injection cannot fake surface-composition state.
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=galaxy&webgl=1`, {
+                waitUntil: 'domcontentloaded'
             })
+            await page
+                .locator('#mode-chips .mode-chip[data-mode="trail"]')
+                .waitFor({ state: 'attached', timeout: 20000 })
             await page.waitForTimeout(1200)
 
             const helpDialog = page.locator('dialog.help-dialog[open]')
@@ -936,13 +932,15 @@ test.describe('Focus journey', () => {
         { tag: '@live' },
         async ({ page }) => {
             await page.setViewportSize({ width: 390, height: 844 })
-            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
-
-            const explore = page
-                .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
-                .first()
-            await explore.waitFor({ state: 'visible', timeout: 60000 })
-            await explore.click()
+            // Task-191: boot webgl+galaxy (idle surface). The old CTA-boot flow
+            // lands navSurface=map, where focusStageActive = focusActive &&
+            // !mapModeActive is FALSE by design (map+focus edge) — FocusCard
+            // never mounts, so "View on Map" cannot exist there (the user is
+            // already on the map). The idle-boot journey is the flow this
+            // test's contract targets.
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=galaxy&webgl=1`, {
+                waitUntil: 'domcontentloaded'
+            })
 
             await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
                 // 20s timeout accommodates WebGL GPU-stall delays during initial scene
@@ -1044,21 +1042,12 @@ test.describe('Focus journey', () => {
             })
 
             await page.setViewportSize({ width: 390, height: 844 })
-            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
-
-            const explore = page
-                .locator('[data-testid="splash-cta"], button[aria-label="Open in 3D"], [data-testid="placeholder-cta"]')
-                .first()
-            await explore.waitFor({ state: 'visible', timeout: 60000 })
-            await explore.click()
-
-            await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
-                // 20s timeout accommodates WebGL GPU-stall delays during initial scene
-                // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
-                timeout: 20000,
-                polling: 100
+            // Task-191: boot webgl+galaxy (idle surface) — on the post-CTA map
+            // surface no always-mounted #search-input exists (desktop-header
+            // assumption); the idle boot is the search-sheet flow F7 targets.
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=galaxy&webgl=1`, {
+                waitUntil: 'domcontentloaded'
             })
-
             // Dismiss first-visit help dialog if it auto-opened (can intercept typing).
             const helpDialog = page.locator('dialog.help-dialog[open]')
             if ((await helpDialog.count()) > 0) {
@@ -1148,7 +1137,9 @@ test.describe('Focus journey', () => {
             const { dirname, resolve } = await import('node:path')
             const { fileURLToPath } = await import('node:url')
             const here = dirname(fileURLToPath(import.meta.url))
-            const source = readFileSync(resolve(here, '../src/components/SearchResults.svelte'), 'utf-8')
+            // Task-191: ../../src — the 46a59dd32 journey reorg moved this spec
+            // from tests/ to tests/journey/, so ../src resolved to tests/src.
+            const source = readFileSync(resolve(here, '../../src/components/SearchResults.svelte'), 'utf-8')
             expect(
                 source,
                 'F7 regression: source must NOT read the dead appState.composition.panelSurfaceDetail field'
@@ -1227,8 +1218,14 @@ test.describe('Focus journey', () => {
         // Short landscape has a different cascade: the panel can report
         // detail="none" even after results render, and the desktop-sized
         // 72px card used to let the sticky footer paint over the anchor.
+        // Boot ?webgl=1 (the QA render-kind override): a plain ?nodemo=1 boot
+        // in an automated browser stays placeholder2d (webdriver branch in
+        // responsive-renderer.ts), where .search-container is display:none by
+        // the tokens.css placeholder-preview contract — the search chip flips
+        // nav.surface but the input ghost-renders at 0x0. ?webgl=1 is the real
+        // desktop flow this geometry contract targets.
         await page.setViewportSize({ width: 844, height: 390 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&webgl=1`, { waitUntil: 'domcontentloaded' })
         const landscapeSearchChip = page.locator('.mode-chip[data-mode="search"]')
         await landscapeSearchChip.waitFor({ state: 'visible', timeout: 15000 })
         await landscapeSearchChip.click()
@@ -1239,6 +1236,15 @@ test.describe('Focus journey', () => {
         await page.waitForSelector('#search-results-count', { state: 'visible', timeout: 30000 })
         await page.waitForSelector('.search-show-more-btn', { state: 'attached', timeout: 30000 })
 
+        // Task-191: landscape desktop-variant list scrolls for Show-more (the
+        // compact sheet keeps it in-view; the wide-viewport list scrolls) —
+        // normalize scroll first so the contract measures reachability, not
+        // first-paint position inside the capped scroll container.
+        await page
+            .locator('.search-show-more-btn')
+            .scrollIntoViewIfNeeded()
+            .catch(() => {})
+        await page.waitForTimeout(150)
         const landscapeGeometry = await page.evaluate(() => {
             const viewport = { width: window.innerWidth, height: window.innerHeight }
             const rect = (selector) => {
@@ -1317,7 +1323,12 @@ test.describe('Focus journey', () => {
 
         const enterSearch = async (width, height) => {
             await page.setViewportSize({ width, height })
-            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=galaxy`, {
+            // ?webgl=1 (QA render-kind override): at landscape the automated
+            // webdriver boot stays placeholder2d even with view=galaxy (not a
+            // deep-link param), where .search-container is display:none by the
+            // tokens.css placeholder-preview contract — the input ghost-renders
+            // at 0x0. webgl is the real post-CTA flow this contract targets.
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=galaxy&webgl=1`, {
                 waitUntil: 'domcontentloaded'
             })
             await page.locator('.mode-chip[data-mode="search"]').waitFor({ state: 'visible', timeout: 15000 })
@@ -1338,6 +1349,14 @@ test.describe('Focus journey', () => {
             undefined,
             { timeout: 10000 }
         )
+        // Task-191: same reachability normalization as W63-landscape — the
+        // Show-more control can sit below the fold inside the capped scroll
+        // list right after rotation; scroll it in before measuring.
+        await page
+            .locator('.search-show-more-btn')
+            .scrollIntoViewIfNeeded()
+            .catch(() => {})
+        await page.waitForTimeout(150)
         const portraitAfterLandscape = await readSearchLayout()
         expect(portraitAfterLandscape.sheet, 'landscape-to-portrait must restore the compact peek sheet').toBe('peek')
         expect(
@@ -1376,6 +1395,13 @@ test.describe('Focus journey', () => {
             undefined,
             { timeout: 10000 }
         )
+        // Task-191: reachability normalization (same as W63-landscape) — the
+        // post-transition landscape list scrolls for Show-more.
+        await page
+            .locator('.search-show-more-btn')
+            .scrollIntoViewIfNeeded()
+            .catch(() => {})
+        await page.waitForTimeout(150)
         const landscapeAfterPortrait = await readSearchLayout()
         expect(landscapeAfterPortrait.sheet, 'portrait-to-landscape must clear compact-only sheet state').toBeNull()
         expect(
