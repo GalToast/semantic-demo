@@ -52,6 +52,8 @@ External subagents receive skill paths **only** from explicitly-listed extension
 
 Fix: a skills-only extension (`~/.pi/agent/local-packages/pi-worker-skills/index.ts`) registers `resources_discover` for the global + project skills dirs with zero memory/hooks; add it to the worker `--extension` list.
 
+Verification rule (2026-09-01): a worker's own log echo of success is NOT verification. Before accepting a deliverable, the main lane independently (1) confirms required evidence files exist with real content, (2) re-runs the deliverable fresh, (3) checks outputs match the rubric. Observed failure: worker marked 'completed' with a success echo but never wrote its required report file.
+
 Hygiene rule: after any change to worker extension wiring or the skill library, verify by probing a live worker's own `<skill list` (spawn a probe worker asking it to list its injected skills); do not assume.
 
 **A/B preflight gate (2026-08-05, from skill-efficacy A/B #2/#3):** before any skill-efficacy measurement, confirm the treatment worker demonstrably has the target skill in its injected context. Two cheap confirmations, either suffices: (a) post-run grep the treatment worker's stdout for the skill's description string (workers apply skills from the injected name+description without reading the body file — that's normal Pi design), or (b) spawn a one-shot probe worker that enumerates its own `<available_skills>` and asserts the skill name. A run recorded without this confirmation is INVALID — A/B #2 was invalidated this way (neither group had the skill; the apparent "signal" was prompt-priming from the treatment text). Workers launched with the deterministic `pi-worker-skills` extension in args satisfy this trivially; spot-check one log after the run.
