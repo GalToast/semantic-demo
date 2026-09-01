@@ -237,11 +237,16 @@ test.describe('Focus journey', () => {
         // Use waitForFunction — the A11y list is intentionally off-screen (sr-only
         // pattern) unless the user opts in via the toggle button. The buttons exist
         // in the DOM for screen readers regardless of visual visibility.
-        // 20s timeout accommodates WebGL GPU-stall delays during initial scene
-        // setup that block Svelte's reactivity flush (~7-11s) — see W55 timeline diagnosis.
-        await page.waitForFunction(
+        // pollFor (CDP evaluate) per spec-header doctrine: in-page
+        // waitForFunction here misused the signature (options object passed as
+        // arg), so timeout/polling never applied — RAF polling starved under
+        // serial-suite GPU stalls and the list-population wait timed out in
+        // full runs while passing solo.
+        await pollFor(
+            page,
             () => document.querySelectorAll('#focus-pocket-a11y .focus-pocket-item-btn').length > 0,
-            { timeout: 20000, polling: 100 }
+            20000,
+            100
         )
 
         const items = await page.$$eval('#focus-pocket-a11y .focus-pocket-item-btn', (btns) =>
