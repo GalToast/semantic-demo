@@ -1,0 +1,495 @@
+{
+  "timestamp": "2026-09-01T16:35:19.705Z",
+  "chunks": [
+    {
+      "name": "three.module-CMMeRs4d.js",
+      "size": 733947
+    },
+    {
+      "name": "search.svelte-D_iCDugq.js",
+      "size": 132330
+    },
+    {
+      "name": "mycelium-build-worker-BGRUb3B2.js",
+      "size": 126756
+    },
+    {
+      "name": "three-engine-core-Hhb0FvEv.js",
+      "size": 115914
+    },
+    {
+      "name": "index-D444giyW.js",
+      "size": 108862
+    },
+    {
+      "name": "three-postprocessing-BtiLSrdZ.js",
+      "size": 81643
+    },
+    {
+      "name": "index-client--mdztkz2.js",
+      "size": 50706
+    },
+    {
+      "name": "app.svelte-CTy8BOmZ.js",
+      "size": 47760
+    },
+    {
+      "name": "focus-pocket-Bet_x2Ky.js",
+      "size": 24668
+    },
+    {
+      "name": "LineSegments2-Dvhhtq_Q.js",
+      "size": 17666
+    },
+    {
+      "name": "JourneyChrome-DJ9VxQOi.js",
+      "size": 17057
+    },
+    {
+      "name": "SearchResults-DadXyXTg.js",
+      "size": 16120
+    },
+    {
+      "name": "focus-ui-BZ587-3J.js",
+      "size": 15418
+    },
+    {
+      "name": "semantic-overlay-Ct9Vg4aP.js",
+      "size": 15158
+    },
+    {
+      "name": "map-state-CoW26JrF.js",
+      "size": 14704
+    },
+    {
+      "name": "data-worker-DO1Wzu1i.js",
+      "size": 14436
+    },
+    {
+      "name": "data-worker.js",
+      "size": 14436
+    },
+    {
+      "name": "semantic-threads-Dm8tPmAS.js",
+      "size": 13877
+    },
+    {
+      "name": "three.module-DBThZxTE.js",
+      "size": 13514
+    },
+    {
+      "name": "mycelium-worker-client-B0zo5Qat.js",
+      "size": 13243
+    },
+    {
+      "name": "JourneyCompass-IfxTU2BB.js",
+      "size": 13172
+    },
+    {
+      "name": "orchestration-DP25WTJx.js",
+      "size": 12706
+    },
+    {
+      "name": "neighborhood-BiHvCmPF.js",
+      "size": 11737
+    },
+    {
+      "name": "InfoPanel-BjamwTDR.js",
+      "size": 10939
+    },
+    {
+      "name": "legend-panel.svelte-BJ7Ufx4k.js",
+      "size": 10758
+    },
+    {
+      "name": "canvas-interaction-D2c4sLFg.js",
+      "size": 9989
+    },
+    {
+      "name": "thread-model-g2kQFueR.js",
+      "size": 9960
+    },
+    {
+      "name": "Canvas-BHGYSnSM.js",
+      "size": 9807
+    },
+    {
+      "name": "lifecycle-GzYzCuP4.js",
+      "size": 9507
+    },
+    {
+      "name": "frame-scheduler-8ZL6_sfe.js",
+      "size": 9397
+    },
+    {
+      "name": "SearchBar-CK3y4t0s.js",
+      "size": 9089
+    },
+    {
+      "name": "focus-xZYm0oQU.js",
+      "size": 8479
+    },
+    {
+      "name": "SelectedBusinessDetails-BWUvZn_v.js",
+      "size": 8097
+    },
+    {
+      "name": "FocusCard-CupUiAaS.js",
+      "size": 7539
+    },
+    {
+      "name": "ThreadInspector-BQn5FAsc.js",
+      "size": 7295
+    },
+    {
+      "name": "DemoChoreography-Cb8xth03.js",
+      "size": 7175
+    },
+    {
+      "name": "focus.svelte-a9j-Nl0A.js",
+      "size": 6692
+    },
+    {
+      "name": "thread-inspector-webgl-Cp2-H_1z.js",
+      "size": 6523
+    },
+    {
+      "name": "camera.svelte-00C1WK9m.js",
+      "size": 6398
+    },
+    {
+      "name": "journey-CtGdkahH.js",
+      "size": 6140
+    },
+    {
+      "name": "route-trace-Dpg4Hazh.js",
+      "size": 6019
+    },
+    {
+      "name": "viewport.svelte-LXj0iErG.js",
+      "size": 5887
+    },
+    {
+      "name": "canvas-hover-preview-Ss1AktpU.js",
+      "size": 5648
+    },
+    {
+      "name": "transition-effects-Czerd89I.js",
+      "size": 5416
+    },
+    {
+      "name": "strand-continuity-BUIV30If.js",
+      "size": 5374
+    },
+    {
+      "name": "routes-ThW44UIC.js",
+      "size": 5221
+    },
+    {
+      "name": "MapView-5geDwnVH.js",
+      "size": 5029
+    },
+    {
+      "name": "WeatherWidget-DPRBCXXX.js",
+      "size": 4751
+    },
+    {
+      "name": "audio-scape-C5i0T39m.js",
+      "size": 4536
+    },
+    {
+      "name": "camera-controls-restore.svelte-ibdN6hZY.js",
+      "size": 4497
+    },
+    {
+      "name": "triggers-DDdhHURJ.js",
+      "size": 4420
+    },
+    {
+      "name": "search-abort-DG8mbWhy.js",
+      "size": 3829
+    },
+    {
+      "name": "cluster-filter-controller-CjQf0kkI.js",
+      "size": 3796
+    },
+    {
+      "name": "journey.svelte-CeSam1rJ.js",
+      "size": 3764
+    },
+    {
+      "name": "journey-webgl-lazy-BvrHuczB.js",
+      "size": 3750
+    },
+    {
+      "name": "ErrorState-CoDcJO6Y.js",
+      "size": 3727
+    },
+    {
+      "name": "geo-data-CGLQiBI_.js",
+      "size": 3719
+    },
+    {
+      "name": "result-renderer-DN8A7s5y.js",
+      "size": 3510
+    },
+    {
+      "name": "route-arrival-overlay-adapter-CNbNOUKu.js",
+      "size": 3488
+    },
+    {
+      "name": "connection-analysis-BLtZynRR.js",
+      "size": 3447
+    },
+    {
+      "name": "ui-feedback-DvXtgwQm.js",
+      "size": 3177
+    },
+    {
+      "name": "webgl-CUz0NtXz.js",
+      "size": 3097
+    },
+    {
+      "name": "point-color-DRTqOxWn.js",
+      "size": 3009
+    },
+    {
+      "name": "search-dispatch-Dpv8o01D.js",
+      "size": 2762
+    },
+    {
+      "name": "cursor-B_giBLdu.js",
+      "size": 2761
+    },
+    {
+      "name": "three-textures-Il6vVseL.js",
+      "size": 2617
+    },
+    {
+      "name": "focus-pocket-thread-curve-Bs3Wq6pL.js",
+      "size": 2603
+    },
+    {
+      "name": "error-messages-Bbhd74tb.js",
+      "size": 2456
+    },
+    {
+      "name": "config-BGh2G6DC.js",
+      "size": 2336
+    },
+    {
+      "name": "test-globals-DRgSlveh.js",
+      "size": 2001
+    },
+    {
+      "name": "toast-B163j4St.js",
+      "size": 1904
+    },
+    {
+      "name": "ui-presentation-BI7TLvFd.js",
+      "size": 1858
+    },
+    {
+      "name": "environment-CIpK0VY2.js",
+      "size": 1663
+    },
+    {
+      "name": "camera-controls-BaqgwWrH.js",
+      "size": 1611
+    },
+    {
+      "name": "FocusPocket-wWktNCUK.js",
+      "size": 1605
+    },
+    {
+      "name": "math-vec3-RZz4dq2l.js",
+      "size": 1571
+    },
+    {
+      "name": "camera-controls--NJsUwXz.js",
+      "size": 1214
+    },
+    {
+      "name": "preload-helper-POFxoyoN.js",
+      "size": 1199
+    },
+    {
+      "name": "webgl-utils-Bq1H-izh.js",
+      "size": 1175
+    },
+    {
+      "name": "dom-builder-D77iklw4.js",
+      "size": 1130
+    },
+    {
+      "name": "webgl-context-BlqjbSil.js",
+      "size": 1103
+    },
+    {
+      "name": "use-parity-attrs.svelte-Ww4u9uMm.js",
+      "size": 1081
+    },
+    {
+      "name": "thread-lens-CIDsXBNo.js",
+      "size": 982
+    },
+    {
+      "name": "humanize-DwZaZkA_.js",
+      "size": 723
+    },
+    {
+      "name": "pocket-BjqE4JrB.js",
+      "size": 709
+    },
+    {
+      "name": "result-presentation-2YOgTowt.js",
+      "size": 628
+    },
+    {
+      "name": "focus-panel-mode-DgVE1lEY.js",
+      "size": 573
+    },
+    {
+      "name": "legend.svelte-mKrpAHWJ.js",
+      "size": 573
+    },
+    {
+      "name": "state-C-p6azbw.js",
+      "size": 513
+    },
+    {
+      "name": "app-lifecycle-Dgr3SukQ.js",
+      "size": 512
+    },
+    {
+      "name": "engine.svelte-CfA-6As9.js",
+      "size": 493
+    },
+    {
+      "name": "lifecycle-BvX74hd9.js",
+      "size": 488
+    },
+    {
+      "name": "compass.svelte-C7dLvpD0.js",
+      "size": 426
+    },
+    {
+      "name": "semantic-threads-DFZZgySN.js",
+      "size": 332
+    },
+    {
+      "name": "math-easing-BvT3svRa.js",
+      "size": 311
+    },
+    {
+      "name": "camera-choreography-egOfS_NX.js",
+      "size": 295
+    },
+    {
+      "name": "scene-ready.svelte-B_BOvShY.js",
+      "size": 292
+    },
+    {
+      "name": "utils-DsNhCGT5.js",
+      "size": 289
+    },
+    {
+      "name": "mycelium-build-worker-url-CQaZ9gF2.js",
+      "size": 281
+    },
+    {
+      "name": "journey-webgl-lazy-DeGKMY-z.js",
+      "size": 268
+    },
+    {
+      "name": "journey-focus-timers-BRWTUXyR.js",
+      "size": 256
+    },
+    {
+      "name": "routes-CNmwxr1a.js",
+      "size": 255
+    },
+    {
+      "name": "canvas-interaction-DoY7c8rw.js",
+      "size": 234
+    },
+    {
+      "name": "pending-search.svelte-DblR3-3a.js",
+      "size": 193
+    },
+    {
+      "name": "thread-manager-CE2HKWD0.js",
+      "size": 193
+    },
+    {
+      "name": "transition-B9eTy4k0.js",
+      "size": 177
+    },
+    {
+      "name": "chunk-H_PjY6_i.js",
+      "size": 163
+    },
+    {
+      "name": "thread-settler-B9ZbBMlw.js",
+      "size": 160
+    },
+    {
+      "name": "audio-scape-CEDfwRPb.js",
+      "size": 148
+    },
+    {
+      "name": "debug-BZBSkmqm.js",
+      "size": 145
+    },
+    {
+      "name": "timer-utils-Dn_Hggra.js",
+      "size": 145
+    },
+    {
+      "name": "route-trace-DcV-51vL.js",
+      "size": 112
+    },
+    {
+      "name": "url-writer-DzP3Z19m.js",
+      "size": 98
+    },
+    {
+      "name": "mycelium-build-worker-C1VdszmT.js",
+      "size": 96
+    },
+    {
+      "name": "data-worker-CZYF3bRJ.js",
+      "size": 86
+    },
+    {
+      "name": "focus-DIy2QpWx.js",
+      "size": 80
+    },
+    {
+      "name": "disclose-version-BvIhFN19.js",
+      "size": 74
+    },
+    {
+      "name": "cursor-CXelbtiH.js",
+      "size": 66
+    },
+    {
+      "name": "index-client-yHMZMKE9.js",
+      "size": 35
+    },
+    {
+      "name": "camera-choreography-BvRk9kiK.js",
+      "size": 0
+    }
+  ],
+  "totalBytes": 1914779,
+  "cssBytes": 447483,
+  "grandBytes": 2362262,
+  "blessed_at": "2026-09-01T16:35:19.863Z",
+  "note": "2026-09-01 fresh rebuild after data-twin verification-order fix and semantic TDB transport/state migration. Hard ceilings pass; this is a rapid, dirty-tree trend restamp to make the current build era explicit. Review the +159.0 KiB change versus 2026-08-24 before tightening or accepting future growth.",
+  "prior_baseline": "budget-baseline-2026-08-24.json",
+  "prior_blessed_at": "2026-08-24T17:08:16.487Z",
+  "delta_vs_prior_kb": 159,
+  "git_head_sha": "505c0bf8239848daa3e4af907523d8a31ca0be73",
+  "git_dirty_count": 30
+}
