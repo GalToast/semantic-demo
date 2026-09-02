@@ -231,6 +231,7 @@
                 "visual-state-audit.mjs",
                 "visual-state-registry.mjs",
                 "semantic-space-audit.mjs",
+                "semantic-space-provenance-mode.mjs",
                 "product-playthrough-audit.mjs",
                 "deploy-surface-contract.mjs",
                 "model-catalog-reconcile-sweep.mjs",

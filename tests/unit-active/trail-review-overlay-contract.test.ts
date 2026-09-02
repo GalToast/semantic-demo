@@ -101,6 +101,7 @@ vi.mock('@lib/stores/navigation.svelte.ts', () => ({
 }))
 
 vi.mock('@lib/state/app.svelte.ts', () => ({
+    appState: mocks.legacyState,
     legacyState: mocks.legacyState
 }))
 
