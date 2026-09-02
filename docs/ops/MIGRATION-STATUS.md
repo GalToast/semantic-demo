@@ -24,6 +24,15 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 
 Wave/status tracking now lives on the live switchboard taskboard (board: main) plus docs/arch/. This document is frozen as the historical migration record through Phase 7 closeout.
 
+### Current runtime truth (2026-09-01)
+
+The bridge-file migration is complete, but the runtime compatibility boundary is
+still active. `appState` is the canonical Svelte state object; `legacyState` is
+an alias retained for older engine consumers, `main.ts` exposes the test/legacy
+window proxy, and `three-store-sync.ts` mirrors transient Three.js handles into
+the WebGL context and state object. Treat this as compatibility debt still
+requiring staged retirement, not as proof that all legacy state paths are gone.
+
 ### Scope
 
 - Retired 20 single-consumer and passthrough bridges via 5-signal dead-code audit:

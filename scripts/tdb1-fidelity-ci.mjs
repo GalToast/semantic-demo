@@ -4,10 +4,14 @@
 // If present: runs the tripwire file + a lead-set/oracle-sum smoke, exits 0/1.
 import { existsSync, readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
 const BIN = 'dist/svelte/data/semantic_threads.dat.bin'
 const JSON_SRC = 'public/data/semantic_threads.dat'
-const TRIPWIRE = ['npx', 'vitest', 'run', 'tests/unit-active/semantic-tdb-fidelity.test.ts']
+// Invoke the checked-in CLI through Node instead of spawning `npx` directly.
+// On Windows the executable is npx.cmd, so spawnSync('npx', ...) returns
+// ENOENT with no child output and used to make this gate fail opaquely.
+const VITEST_CLI = fileURLToPath(new URL('../node_modules/vitest/vitest.mjs', import.meta.url))
 
 if (!existsSync(BIN)) {
     // Self-heal: a dist churn (parallel rebuilds) can silently evict the bin;
@@ -21,9 +25,13 @@ if (!existsSync(BIN)) {
 }
 
 // 1) tripwire suite (lead-set / parity / checksum)
-const r = spawnSync('npx', ['vitest', 'run', 'tests/unit-active/semantic-tdb-fidelity.test.ts'], {
+const r = spawnSync(process.execPath, [VITEST_CLI, 'run', 'tests/unit-active/semantic-tdb-fidelity.test.ts'], {
     stdio: 'inherit'
 })
+if (r.error) {
+    console.error('[tdb-fidelity] tripwire launch failed:', r.error.message)
+    process.exit(1)
+}
 if (r.status !== 0) process.exit(r.status ?? 1)
 
 // 2) fast oracle checksum (edge-sum within 1%) — mirrors the CERT's core

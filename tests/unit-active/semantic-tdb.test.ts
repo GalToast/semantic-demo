@@ -2,7 +2,7 @@
 // graph the JSON produces (sample-compare), proving the production path.
 import { readFileSync } from 'node:fs'
 import { test, expect } from 'vitest'
-import { parseTdb } from '@lib/loaders/semantic-tdb'
+import { parseTdb, parseTdbCompact, parseTdbU, parseTdbUCompact } from '@lib/loaders/semantic-tdb'
 
 const bin = readFileSync('tmp/perf9/semantic_threads.dat.bin')
 const j = JSON.parse(readFileSync('public/data/semantic_threads.dat', 'utf8'))
@@ -32,9 +32,36 @@ test("first neighbor's score round-trips", () => {
     expect(Math.abs(bn.score - (nb.score ?? 0))).toBeLessThan(1e-3)
 })
 
-// ── TDBU / label-plane (the fix that stopped the silent label drop) ──────────
-import { parseTdbU } from '@lib/loaders/semantic-tdb'
+function buildTdb1Fixture(): ArrayBuffer {
+    const out = new ArrayBuffer(12 + 10 + 13)
+    const bytes = new Uint8Array(out)
+    bytes.set([0x54, 0x44, 0x42, 0x31], 0)
+    const dv = new DataView(out)
+    dv.setUint32(4, 1, true) // count
+    dv.setUint32(8, 0, true) // no string table
+    dv.setUint32(12, 7, true) // node lead
+    dv.setFloat32(16, 3.5, true) // node signal
+    dv.setUint16(20, 1, true) // neighbor count
+    dv.setUint32(22, 42, true) // neighbor lead
+    dv.setFloat32(26, 1.2, true) // score
+    dv.setFloat32(30, 0.9, true) // semantic score
+    bytes[34] = 1 // flags
+    return out
+}
 
+test('TDB1 compact parser emits CSR-style transferable planes', () => {
+    const graph = parseTdbCompact(buildTdb1Fixture())
+    expect(graph.count).toBe(1)
+    expect(graph.edgeCount).toBe(1)
+    expect(Array.from(graph.nodeLeadIds)).toEqual([7])
+    expect(Array.from(graph.nodeOffsets)).toEqual([0, 1])
+    expect(Array.from(graph.neighborLeadIds)).toEqual([42])
+    expect(graph.neighborScores[0]).toBeCloseTo(1.2, 5)
+    expect(graph.neighborSemanticScores[0]).toBeCloseTo(0.9, 5)
+    expect(graph.labelPlane).toBe(false)
+})
+
+// ── TDBU / label-plane (the fix that stopped the silent label drop) ──────────
 function buildTdbuFixture(): ArrayBuffer {
     const strings = ['same_city_semantic_neighbor', 'core_peer', 'professional_support', '']
     const strtab = Buffer.from(strings.join('\u0000') + '\u0000', 'utf8')
@@ -75,6 +102,22 @@ test('TDBU: label plane decodes (thread_type/role/axis + bridge + flags)', () =>
     expect(nb.thread_type).toBe('same_city_semantic_neighbor')
     expect(nb.relationship_role).toBe('core_peer')
     expect(nb.relationship_axis).toBe('professional_support')
+})
+
+test('TDBU compact parser preserves labels and edge planes', () => {
+    const graph = parseTdbUCompact(buildTdbuFixture())
+    expect(graph.count).toBe(1)
+    expect(graph.edgeCount).toBe(1)
+    expect(Array.from(graph.nodeOffsets)).toEqual([0, 1])
+    expect(graph.neighborScores[0]).toBeCloseTo(1.2, 5)
+    expect(graph.neighborSemanticScores[0]).toBeCloseTo(0.9, 5)
+    expect(graph.neighborBridgeScores[0]).toBeCloseTo(0.7, 5)
+    expect(graph.neighborSignalScores[0]).toBeCloseTo(3.2, 5)
+    expect(graph.neighborFlags[0]).toBe(3)
+    expect(graph.stringTable[graph.neighborThreadTypeIndices[0]]).toBe('same_city_semantic_neighbor')
+    expect(graph.stringTable[graph.neighborRelationshipRoleIndices[0]]).toBe('core_peer')
+    expect(graph.stringTable[graph.neighborRelationshipAxisIndices[0]]).toBe('professional_support')
+    expect(graph.labelPlane).toBe(true)
 })
 
 test('TDBU: real dist bin carries a non-empty label plane (the flip gate)', () => {

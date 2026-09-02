@@ -54,6 +54,14 @@ Do BINARY (Phase 2 - prototype) BEFORE the big PG: the bin:JSON size ratio decid
 2× vs 20×; the loader path = one seam; the win = mobile LCP + tab memory. The
 audit lives here; implementation = the next wave's #1.
 
+## Transport implementation (2026-09-01)
+
+The binary worker path is now live: `parseTdbCompact`/`parseTdbUCompact` decode
+directly into CSR-style typed-array planes, `data-worker.ts` transfers those
+buffers, and `semantic-threads.ts` rehydrates the existing bundle/map contract
+on the main thread. The normal build generates the `.bin` siblings, and plain
+JSON remains the compatibility fallback.
+
 ## Giant-stats (07:02Z — decision unlocked)
 
 - Schema: nodes = 8,406-object map, per-node = {lead_id(u32), name/city/status(str), signal_score(f32), neighbors: [ {lead_id(u32), score(f32), semantic_score(f32), same_city/same_status/bridge(flags)…} ]} — a semantic GRAPH.

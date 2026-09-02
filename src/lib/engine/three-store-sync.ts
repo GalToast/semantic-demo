@@ -6,7 +6,7 @@
  * 4-way mirror writes that back the legacy + reactive state split:
  *      webglContext (canonical, builder writes here)
  *      appState    (reactive Svelte 5 class)
- *      legacyState (legacy-state-adapter alias)
+ *      legacy compatibility sink (the production object is appState)
  *      engineState.state (legacy mirror held inside the singleton)
  *
  * Three pure-ish helpers, one per init concern:
@@ -41,7 +41,7 @@ import type { AppState } from '@lib/state/app.svelte'
 import type { ThreeEngineState } from './three-engine-state'
 import type { WebGLContextState } from '@lib/engine/webgl-context'
 import { webglContext } from '@lib/engine/webgl-context'
-import { appState, legacyState } from '@lib/state/app.svelte'
+import { appState } from '@lib/state/app.svelte'
 import { engineState } from './three-engine-state'
 
 // ── Sink contracts ───────────────────────────────────────────────────────────
@@ -143,17 +143,17 @@ function defaultSceneSinks(): SceneSyncSinks {
     return {
         webglContext,
         appState,
-        legacyState,
+        legacyState: appState,
         engineState
     }
 }
 
 function defaultPointsSinks(): PointsSyncSinks {
-    return { appState, legacyState, engineState }
+    return { appState, legacyState: appState, engineState }
 }
 
 function defaultMyceliumSinks(): MyceliumSyncSinks {
-    return { appState, legacyState, engineState }
+    return { appState, legacyState: appState, engineState }
 }
 
 // ── C3 — Scene mirror ────────────────────────────────────────────────────────

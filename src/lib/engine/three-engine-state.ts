@@ -177,7 +177,7 @@ export const engineState: ThreeEngineState = {
 
 // ── Module Bootstrap ─────────────────────────────────────────────────────────
 
-import { legacyState } from '@lib/state/app.svelte'
+import { appState } from '@lib/state/app.svelte'
 import * as viewControllerMod from '@lib/orchestration/view-controller'
 import * as mapStateMod from '@lib/engine/map-state'
 import * as uiFeedbackMod from '@lib/ui/ui-feedback'
@@ -198,9 +198,9 @@ import { debugError } from '@lib/utils/debug'
 export function ensureModules(): void {
     if (engineState.loaded) return
     try {
-        engineState.state = legacyState
+        engineState.state = appState
         if (typeof window !== 'undefined') {
-            ;(window as WindowWithDevGlobals).__LEGACY_APP_STATE__ = legacyState
+            ;(window as WindowWithDevGlobals).__LEGACY_APP_STATE__ = appState
             ;(window as WindowWithDevGlobals).__refreshTestCompatState__?.()
         }
         engineState.withStateMutation = (fn: () => void) => fn()

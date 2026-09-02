@@ -30,14 +30,16 @@ in tribal memory (their absence manufactured phantom failures on 2026-08-23/24 �
 B-A1, W54-4486):
 
 1. Restores plain data twins (`scripts/decompress-data-twins.mjs`) — builds ship only `.br/.gz`.
-2. Probes the live API on `:8795` and reports whether live-gated specs will run or self-skip.
+2. Probes the live API on `:8795` and reports whether live-gated specs will run or self-skip. An absent optional API is reported as `INCOMPLETE`, not as a fully green release result; set `VERIFY_REQUIRE_LIVE_API=1` for a fail-closed release check. Optional gaps return exit code 0 so local static/demo checks remain usable; required gaps fail.
 3. Builds with `VITE_API_BASE_URL=http://127.0.0.1:8795` stamped (same-origin `/api.php`
    404s under `?staticDev=0` without it).
 4. Serves dist on `:8811` (`VERIFY_PORT` to override) and runs both suites against it:
    unit via `run-vitest.mjs` (heap-bounded), journeys via the canonical
    `qa-journey-headless` wrapper with `TEST_BASE_URL` + `--no-build`.
 
-Flags: `--unit-only`, `--journeys-only`, `--no-build`, `--pool forks|vmThreads`.
+Flags: `--unit-only`, `--journeys-only`, `--no-build`, `--preflight-only`,
+`--pool forks|vmThreads`. Use `--preflight-only --no-build` for a fast check of
+an existing dist without starting Vitest or Playwright.
 Known-pool trade-off: default vmThreads can drop ~11 canvas-keyboard-nav tests to
 worker-grouping pollution; `--pool forks` fixes that but trips 2 vm-tuned tests
 (`ssr-probe`, `search-engine-abort-bypass`). Either way the summary names the world.
@@ -46,6 +48,14 @@ worker-grouping pollution; `--pool forks` fixes that but trips 2 vm-tuned tests
 single-flight lock at `tmp/vitest.single-flight.lock`. A second full Vitest run
 fails fast with the owning PID instead of competing for RAM; a lock whose owner
 process has exited is reclaimed automatically.
+
+`npm run check:tdb-fidelity` invokes the checked-in Vitest CLI through
+`process.execPath`, so the TDB tripwire works on Windows as well as POSIX hosts
+without relying on the platform-specific `npx` executable name.
+
+The Playwright and Lighthouse QA wrappers select `npx.cmd` on Windows and
+`npx` elsewhere; the Playwright gate enables the Windows shell bridge required
+by `.cmd` launchers.
 
 Measured 2026-08-31 — suite under multi-session/host load:
 
@@ -61,6 +71,19 @@ it (re)generates the gitignored TDB fixtures the `semantic-tdb{,-fidelity}`
 unit tests read (`tmp/perf9/semantic_threads.dat.bin` + `semantic_threads_ui.dat.bin`)
 from the committed JSON oracles via `scripts/lib/tdb1-pack.mjs`. No-op when fresh;
 run it manually with `node scripts/tdb1-fixture-ensure.mjs` if a fixture goes stale.
+
+### Semantic-space provenance modes
+
+`npm run check:semantic-space` keeps the data-level semantic checks green on a
+fresh clone and warns when the private embedding index is unavailable. The
+focused contract is `node tests/semantic-space-provenance-mode.mjs`.
+
+For release/CI runs that have the private index, set
+`SEMANTIC_PROVENANCE_REQUIRED=1` and `SEMANTIC_INDEX_BUILD_DIR` to the local
+directory containing `manifest.json`, `metadata.json`, and `embeddings.npy`
+before running `node tests/semantic-space-audit.mjs`. The separate
+`scripts/verify-semantic-provenance.mjs` command remains the operator-facing
+provenance check and also requires `SEMANTIC_INDEX_BUILD_DIR`.
 
 ## a11y audit
 
@@ -91,11 +114,14 @@ Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter. Use narrower c
   build** and serves whatever is on disk. After editing source, a stale 8796 serves an
   out-of-date `dist/` and tests can fail against the OLD build. Local-dev risk only — CI
   always rebuilds (no pre-bound port).
-- **Worktree foot-g (2026-08-11):** `src/data.dat` + `src/data.dat.gz` are an **untracked
-  local corpus asset** (1.8MB, exists only in the main checkout). A fresh `git worktree`
-  must copy them (`cp <main>/src/data.dat src/` + `.gz`) and `npm run build` before
-  data-based suites (3D/journey/hover) — otherwise `GET /data.dat` → 404 → `points:0`
-  and every data-dependent test dies at the boot gate with no obvious cause.
+- **Private corpus bootstrap (2026-09-01):** `src/data.dat` and the semantic data
+  artifacts are intentionally untracked/private. `npm run build:svelte` runs
+  `scripts/fetch-data-assets.mjs --if-missing`, using `gh auth login` locally or
+  `DATA_DEPLOY_KEY` in CI. For a no-build journey run, restore the private assets
+  explicitly with `node scripts/fetch-data-assets.mjs --if-missing` first.
+  `verify-env.mjs` fails before the server/journey gate if required runtime
+  artifacts are absent or suspiciously small, instead of allowing a misleading
+  `points:0` boot.
 - **Orphan-safe pattern (2026-08-16 lesson):** killing the parent bash job can ORPHAN the Vite child on 8796 → the next run hits "port already used" and hangs. Worse, an 18-min hung run wedged the machine's loopback HTTP stack (localhost probes hang, `netstat`/`Get-NetTCPConnection` hang, `fuser` not installed, `taskkill` needs the PID). Avoid the whole problem by making Playwright NOT spawn its own server:
 
     ```bash

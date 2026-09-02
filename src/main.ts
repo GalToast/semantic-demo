@@ -21,7 +21,7 @@ import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
 import { terminateDataLoaderWorkers } from '@lib/data-loader'
 import type { WeatherData } from '@lib/utils/weather'
-import { appState, legacyState } from '@lib/state/app.svelte.ts'
+import { appState } from '@lib/state/app.svelte.ts'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 // Side-effect: generates and exposes window.__semanticExplorerSessionSeed
 import '@lib/state/session.svelte'
@@ -148,7 +148,7 @@ let app: ReturnType<typeof mount> | undefined
 // object instead of an empty placeholder. (The __APP_STATE__ fallback claim
 // for semantic-threads.ts was stale — that module never reads it; removed.)
 if (typeof window !== 'undefined') {
-    window.__LEGACY_APP_STATE__ = legacyState
+    window.__LEGACY_APP_STATE__ = appState
 }
 
 if (mountTarget) {

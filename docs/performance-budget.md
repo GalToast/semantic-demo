@@ -1,19 +1,25 @@
 # Performance Budget
 
-> Living document — last updated 2026-08-30 (budget freeze @ actuals + paint-metrics gate).
+> Living document — last updated 2026-09-01 (fresh bundle baseline + paint-metrics gate).
 > Source data: `docs/w40-bundle-audit-2026-06-18.md`.
 
 This document defines hard performance ceilings for the Semantic Explorer. All PRs that affect bundle size, render performance, or GPU usage must be checked against these budgets.
+
+Bundle policy values are defined once in `scripts/bundle-budget.mjs`. CI applies
+two explicit protections to the same build: `check-bundle-size.mjs` enforces the
+hard raw/gzip ceilings, while `qa-budget.mjs` compares the stamped JS trend
+baseline and also checks the shared JS raw ceiling. A pass from one check never
+overrides a failure from the other; the output identifies which policy failed.
 
 ---
 
 ## 1. Bundle Size Budget
 
-| Metric                 | Current (measured 2026-08-30) | Live ceiling (script) | Slack        |
+| Metric                 | Current (measured 2026-09-01) | Live ceiling (script) | Slack        |
 | ---------------------- | ----------------------------- | --------------------- | ------------ |
-| **Total JS (raw)**     | 1,864.38 KB                   | 1,902 KB              | 37.6 KB (2%) |
-| **Total JS (gzip)**    | 553.90 KB                     | 566 KB                | 12.1 KB (2%) |
-| **CSS initial (raw)**  | 58.24 KB                      | 59.5 KB               | 1.26 KB (2%) |
+| **Total JS (raw)**     | 1,869.90 KB                   | 1,902 KB              | 32.1 KB (2%) |
+| **Total JS (gzip)**    | 555.34 KB                     | 566 KB                | 10.7 KB (2%) |
+| **CSS initial (raw)**  | 58.26 KB                      | 59.5 KB               | 1.24 KB (2%) |
 | **CSS initial (gzip)** | 10.80 KB                      | 11.1 KB               | 0.30 KB (3%) |
 
 ### Budget Rationale
@@ -25,29 +31,40 @@ This document defines hard performance ceilings for the Semantic Explorer. All P
   ceiling requires a measured re-baseline (fresh `npm run build` actuals) + a
   commit naming the cause — never raise a ceiling just to green a failing
   gate.** Run-to-run gzip variance is ~0.2 KB; 2% headroom absorbs it.
+- **2026-09-01 trend baseline**: a fresh rebuild measured 1,869.90 KB raw JS,
+  555.34 KB gzip JS, 58.26 KB initial CSS, and 10.80 KB initial CSS gzip.
+  `docs/budget-baseline-2026-09-01.json` records the current build era and its
+  +159.0 KB delta from the 2026-08-24 stamp. The baseline was intentionally
+  stamped from the active dirty worktree; review that delta before accepting
+  further growth.
 - **CSS budget measured on initial-load only (2026-08-18)**: `scripts/check-bundle-size.mjs` now counts only stylesheets linked from the built `index.html` (entry `index-*.css` + `ErrorState-*.css`) against the CSS ceiling; lazy chunks (InfoPanel, JourneyChrome, FocusCard, Placeholder2D, MapView, Canvas — deferred to first-interaction via `createLazyComponent`) are excluded because they are NOT fetched on initial paint, matching the "code-split / lazy-load mode-specific components" intent below. Full `assets/` totals still print for reference.
 - **2026-08-18 chunking win**: converted the four heaviest static imports in `src/App.svelte` (InfoPanel 14.4 KB, JourneyChrome 13.2 KB, Placeholder2D 9.7 KB, FocusCard 7.6 KB CSS) to lazy handles with `ensure(true)` eager-loading for contract tests + idle prewarm. Entry CSS dropped 86.7 KB → 57.6 KB (−33%); initial-load CSS is now 58.34 KB raw / ~11 KB gzip — **both under the 65/16 budget since the split**.
-- **CSS ceiling (65 KB initial raw / 16 KB initial gzip)**: Raised 2026-06-29 from 60/12 to account for the full surface-matrix complexity (13 states × desktop + mobile); re-baselined to initial-load measurement on 2026-08-18 when per-route lazy CSS chunking landed (entry dropped 86.7 → 58.3 KB). Monitor.
+- **CSS ceiling history**: the older 65 KB initial raw / 16 KB initial gzip
+  ceiling was raised 2026-06-29 for the full surface matrix and re-baselined
+  on 2026-08-18. The live ceiling is now the tighter 59.5/11.1 KB freeze above;
+  the 2026-09-01 build retains only 1.24/0.30 KB of slack. Monitor closely.
 
-### Proposed Next-Ceiling (requires script + CI update)
+### Reduction Targets (not live)
 
-Once the current ceiling has proven stable, consider tightening to:
+Once the current ceiling has proven stable, consider pursuing these reduction
+targets (they are not valid ceilings yet):
 
-| Metric  | Proposed ceiling | Rationale                                        |
+| Metric  | Reduction target | Distance from current actual                   |
 | ------- | ---------------- | ------------------------------------------------ |
-| JS raw  | ≤ 1,500 KB       | 500 KB above current actual; accounts for growth |
-| JS gzip | ≤ 400 KB         | 62 KB above current actual                       |
+| JS raw  | ≤ 1,500 KB       | 369.9 KB below current actual; requires work    |
+| JS gzip | ≤ 400 KB         | 155.3 KB below current actual; requires work    |
 
-These are **not live** — the script enforces the 2026-08-30 freeze (1902 / 566 / 59.5 / 11.1); the proposed tightening below is the ratchet target once the freeze proves stable.
+These are **not live** — the script enforces the 2026-08-30 freeze (1902 / 566 / 59.5 / 11.1). Do not change the live ceiling to these values until a measured reduction plan lands.
 
 ### Key Offenders
 
-| Module                   | Raw       | % of Bundle | Action                                       |
+| Module / chunk           | Raw       | % of Bundle | Action                                       |
 | ------------------------ | --------- | ----------- | -------------------------------------------- |
-| Three.js                 | 561.88 KB | 46.1%       | Reduced via selective imports (W41); monitor |
-| Postprocessing           | 80.55 KB  | 6.6%        | Already tree-shaken; monitor                 |
-| App source (TS + Svelte) | 549.87 KB | 45.1%       | Lazy-load mode-specific components           |
-| Lazy-loaded chunks       | 23.92 KB  | 2.0%        | SearchResults + JourneyChrome (code-split)   |
+| `three.module-*.js`      | 716.75 KB | 38.3%       | Largest single chunk; split or reduce imports |
+| `search.svelte-*.js`     | 129.23 KB | 6.9%        | Keep search off the bare/mobile cold path     |
+| `mycelium-build-worker-*.js` | 123.79 KB | 6.6%    | Measure worker bootstrap and defer where safe |
+| `three-engine-core-*.js` | 113.20 KB | 6.1%        | Audit engine-only imports and lazy boundaries |
+| `three-postprocessing-*.js` | 79.73 KB | 4.3%      | Keep deferred; profile shader/effect necessity |
 
 ---
 
@@ -172,8 +189,8 @@ an app-level interaction regression.
 | -------------------------- | --------------------------------------------------------------------- |
 | **Complete**               | W41 commit `fc0c4bc` converted namespace imports to selective imports |
 | **Savings achieved**       | ~1,319 KB raw reduction (52% of original 2,539 KB)                    |
-| **Current state**          | Three.js chunk: 561.88 KB (down from 759.7 KB)                        |
-| **Post-conversion actual** | 1,219.73 KB total JS (51% under 2,500 KB ceiling)                     |
+| **Current state**          | Three.js chunk: 716.75 KB (38.3% of the 2026-09-01 build)            |
+| **Current total**          | 1,869.90 KB raw JS / 555.34 KB gzip JS                                |
 
 ### How Namespace Imports Kill Tree-Shaking
 
@@ -202,7 +219,7 @@ Potential additional deferral: ~23 KB raw / ~9 KB gzip (remaining non-split comp
 
 ## 5. Enforcement
 
-1. **CI Gate**: Bundle size check against ceiling (2,500 KB JS raw / 650 KB JS gzip) is live via `node scripts/check-bundle-size.mjs`.
+1. **CI Gates**: `node scripts/check-bundle-size.mjs` enforces the live raw/gzip ceilings above; `node scripts/qa-budget.mjs` enforces the stamped trend budget plus the shared JS raw ceiling.
 2. **PR Review**: Any PR that adds >10 KB raw must justify the addition.
 3. **Quarterly Review**: Re-audit bundle with `npx vite build --mode analyze` and update this document.
 4. **Regression Protocol**: If ceiling is exceeded, file a `P1-perf-regression` issue and block release.

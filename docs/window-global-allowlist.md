@@ -129,11 +129,12 @@ Classification: `debug-probe`. These are devtools, Playwright, or visual-audit i
 
 ### `src/`-tree debug-probe globals (enforced by contract)
 
-These are assigned in the modern `src/lib/**` tree and classified `debug-probe` by `tests/window-global-allowlist-contract.mjs` (each is gated behind a `__DEV_TOOLS__` / environment / build-flag check).
+These are assigned in the modern `src/lib/**` tree and classified `debug-probe` by `tests/window-global-allowlist-contract.mjs`. Most are gated behind a `__DEV_TOOLS__` / environment / build-flag check; `__THREE_APP__` is the intentional test/visual-audit engine handle and is cleared during teardown.
 
 | Global                                                               | Owner                                                                            |
 | -------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `window.__semanticPostprocessing`                                    | `src/lib/engine/*` post-processing tuning hook                                   |
+| `window.__THREE_APP__`                                               | `src/lib/engine/lifecycle.ts` test/visual-audit engine handle; cleared on teardown |
 | `window.__toastHooks__`                                              | `src/lib/orchestration/toast*` test/dev hooks                                    |
 | `window.__SEMANTIC_GUIDE_TIMEOUT_MS__`                               | `src/lib/orchestration/*` guide timeout probe                                    |
 | `window.__telemetry_devtoolsVisible`                                 | `src/lib/*` telemetry devtools-visibility flag                                   |

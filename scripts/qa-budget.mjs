@@ -20,6 +20,7 @@ import { existsSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import { resolve, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
+import { BUNDLE_CEILINGS_KB, BUNDLE_TREND_LIMITS_KB } from './bundle-budget.mjs'
 
 const __DIR__ = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__DIR__, '..')
@@ -169,10 +170,10 @@ Baseline discipline (2026-08-23 re-arm): every baseline write is STAMPED
 Re-blessing within 90 days of the prior bless prints a RAPID RE-BASELINE
 notice — budget growth is trended across blessings, not reset per event.
 
-Exit codes (comparison mode):
-  0  total JS <= baseline + 32 KB  (perf slack)
-  1  total grew more than 32 KB, OR any mode-transition chunk grew > 16 KB
-  2  missing inputs (no baseline found when comparing)
+Exit codes:
+  0  hard JS ceiling and (when present) stamped trend budget pass
+  1  hard JS ceiling or stamped trend budget failed
+  2  an explicitly requested baseline is missing or unreadable
 `)
         return
     }
@@ -206,6 +207,12 @@ Exit codes (comparison mode):
     // Print table always
     const lines = tableRows(s)
     console.log(lines.join('\n'))
+
+    const hardJsCeilingBytes = BUNDLE_CEILINGS_KB.jsRaw * 1024
+    const hardJsPass = s.totalBytes < hardJsCeilingBytes
+    console.log(
+        `\nHard JS raw ceiling: ${kb(s.totalBytes)} KB / ${BUNDLE_CEILINGS_KB.jsRaw.toFixed(1)} KB → ${hardJsPass ? 'PASS' : 'FAIL'}`
+    )
 
     // Determine exit code / mode
     if (baselineMode === 'write') {
@@ -291,7 +298,12 @@ Exit codes (comparison mode):
                         : ' — within quarterly cadence')
             )
         }
-        process.exit(0)
+        if (!hardJsPass) {
+            console.error(
+                `  WARNING: baseline was written, but the shared hard JS ceiling of ${BUNDLE_CEILINGS_KB.jsRaw} KB is exceeded.`
+            )
+        }
+        process.exit(hardJsPass ? 0 : 1)
     }
 
     if (baselineMode === 'read' && baselineFile) {
@@ -371,16 +383,17 @@ Exit codes (comparison mode):
             console.log(`  ${c.name}: ${kb(bs)} KB → ${kb(c.size)} KB  (${d >= 0 ? '+' : ''}${kb(d)} KB)`)
         }
 
-        const slack = 32 * 1024
+        const slack = BUNDLE_TREND_LIMITS_KB.totalJs * 1024
         // Era-changed runs gate on TOTAL only: name-keyed mode-transition
         // deltas are meaningless when every baseline hash rotated (a new-hash
         // chunk vs bs=0 always trips the 16KB rule — the 08-24 CI red-streak
         // root cause). The era hint above already told the user why.
-        const passed = diff <= slack && (eraChanged || !mtGrowth)
+        const trendPass = diff <= slack && (eraChanged || !mtGrowth)
+        const passed = hardJsPass && trendPass
         console.log(
             passed
-                ? `\nPASSED (total grew ≤ +${kb(slack)} KB${eraChanged ? '; era-change: total-only gate' : '; mode-transition chunks within +16 KB each'})`
-                : `\nFAILED — total grew > +${kb(slack)} KB${eraChanged ? '' : ' or a mode-transition chunk grew > 16 KB'}`
+                ? `\nPASSED (hard JS ceiling + trend: total grew ≤ +${kb(slack)} KB${eraChanged ? '; era-change: total-only gate' : `; mode-transition chunks within +${BUNDLE_TREND_LIMITS_KB.modeTransition} KB each`})`
+                : `\nFAILED — ${hardJsPass ? '' : `hard JS ceiling ${BUNDLE_CEILINGS_KB.jsRaw} KB exceeded; `}${trendPass ? '' : `stamped trend grew > +${kb(slack)} KB${eraChanged ? '' : ` or a mode-transition chunk grew > ${BUNDLE_TREND_LIMITS_KB.modeTransition} KB`}`}`
         )
 
         process.exit(passed ? 0 : 1)
@@ -391,7 +404,7 @@ Exit codes (comparison mode):
         console.log('\n(No baseline found to compare against. Use --baseline write to seed one.)')
     }
 
-    process.exit(0)
+    process.exit(hardJsPass ? 0 : 1)
 }
 
 main().catch((err) => {

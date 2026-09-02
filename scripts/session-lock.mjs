@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/session-lock.mjs — Multi-session coordination for the working tree.
+ * scripts/session-lock.mjs - Multi-session coordination for the working tree.
  *
  * W46-E4: when multiple AI sessions (Pi, Codex, subagents) share this repo,
  * they can clobber each other's in-flight edits. This tool records who's
@@ -19,9 +19,9 @@
  * taken over with `--force`.
  *
  * Exit codes:
- *   0 — success
- *   1 — refused (another fresh session is active; coordinate first)
- *   2 — file I/O error
+ *   0 - success
+ *   1 - refused (another fresh session is active; coordinate first)
+ *   2 - file I/O error
  *
  * See docs/session-coordination.md for the full protocol.
  */

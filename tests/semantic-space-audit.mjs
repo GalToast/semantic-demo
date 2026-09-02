@@ -147,16 +147,18 @@ const layoutManifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
 const nodes = threadBundle.nodes || {}
 const positions = dataRows.map((row) => [Number(row[0]), Number(row[1]), Number(row[2])])
 const leadToIndex = new Map(dataRows.map((row, index) => [String(row[7]), index]))
-const indexDir = path.resolve(layoutManifest.index_dir || '')
-const indexManifestPath = path.join(indexDir, 'manifest.json')
-const indexMetadataPath = path.join(indexDir, 'metadata.json')
-const indexEmbeddingsPath = path.join(indexDir, 'embeddings.npy')
+const envIndexDir = process.env.SEMANTIC_INDEX_BUILD_DIR || ''
+const configuredIndexDir = envIndexDir || layoutManifest.index_dir || ''
+const indexDir = configuredIndexDir ? path.resolve(configuredIndexDir) : ''
+const indexManifestPath = indexDir ? path.join(indexDir, 'manifest.json') : ''
+const indexMetadataPath = indexDir ? path.join(indexDir, 'metadata.json') : ''
+const indexEmbeddingsPath = indexDir ? path.join(indexDir, 'embeddings.npy') : ''
 const indexManifest =
-    layoutManifest.index_dir && fs.existsSync(indexManifestPath)
+    Boolean(indexDir) && fs.existsSync(indexManifestPath)
         ? JSON.parse(fs.readFileSync(indexManifestPath, 'utf8'))
         : null
 const indexMetadata =
-    layoutManifest.index_dir && fs.existsSync(indexMetadataPath)
+    Boolean(indexDir) && fs.existsSync(indexMetadataPath)
         ? JSON.parse(fs.readFileSync(indexMetadataPath, 'utf8'))
         : null
 const threadIndexManifest = threadBundle.meta?.source_index_manifest || {}
@@ -168,10 +170,10 @@ const indexOrderMismatches = indexMetadata
           (count, row, index) => count + (String(row[7]) !== String(indexMetadata[index]?.lead_id) ? 1 : 0),
           0
       )
-    : dataRows.length
+    : null
 const scriptEmbeddingHash = fs.existsSync(SCRIPT_EMBEDDINGS_PATH) ? hashFile(SCRIPT_EMBEDDINGS_PATH) : null
 const indexEmbeddingHash =
-    layoutManifest.index_dir && fs.existsSync(indexEmbeddingsPath) ? hashFile(indexEmbeddingsPath) : null
+    Boolean(indexDir) && fs.existsSync(indexEmbeddingsPath) ? hashFile(indexEmbeddingsPath) : null
 const gzipCoordinateMismatches = gzipDataRows
     ? dataRows.reduce((count, row, index) => {
           const gzipRow = gzipDataRows[index] || []
@@ -239,7 +241,7 @@ const summary = {
     layoutManifest: {
         generatedAt: layoutManifest.generated_at || null,
         method: layoutManifest.method || null,
-        indexDir: artifactBasename(layoutManifest.index_dir),
+        indexDir: artifactBasename(configuredIndexDir) || '(unset)',
         rows: Number(layoutManifest.rows),
         edges: Number(layoutManifest.edges),
         dataPath: artifactBasename(layoutManifest.data_path),
@@ -302,12 +304,24 @@ if (gzipDataRows) {
 // below derives from data.dat + thread refs alone. When the index is absent
 // (fresh clone / other machine), WARN and skip the provenance gate instead of
 // hard-failing — mirrors the null-safe `if (scriptEmbeddingHash)` pattern above.
+const provenanceRequired = process.env.SEMANTIC_PROVENANCE_REQUIRED === '1'
 const indexAvailable =
-    Boolean(layoutManifest.index_dir) &&
+    Boolean(indexDir) &&
     fs.existsSync(indexDir) &&
     fs.existsSync(indexManifestPath) &&
     fs.existsSync(indexMetadataPath) &&
     fs.existsSync(indexEmbeddingsPath)
+if (provenanceRequired && !indexAvailable) {
+    console.error('[provenance] FAIL: SEMANTIC_PROVENANCE_REQUIRED=1 but index provenance inputs are absent. ')
+    console.error('  layoutManifest.index_dir:', layoutManifest.index_dir || '(unset)')
+    console.error(
+        '  SEMANTIC_INDEX_BUILD_DIR:',
+        envIndexDir ? artifactBasename(envIndexDir) + ' (override)' : '(unset)'
+    )
+    console.error('  To re-arm: run scripts/verify-semantic-provenance.mjs with SEMANTIC_INDEX_BUILD_DIR pointing ')
+    console.error('  at the index build dir (manifest.json, metadata.json, embeddings.npy).\n')
+    process.exit(1)
+}
 if (indexAvailable) {
     assert(
         indexMetadata.length === dataRows.length,
@@ -384,9 +398,9 @@ assert(
 
 if (!indexAvailable) {
     console.warn(
-        `WARN: layout index_dir absent (${layoutManifest.index_dir || 'unset'}) — index provenance checks skipped. ` +
-            'The data-level semantic-quality asserts still ran. To restore the index gate, place the index build ' +
-            '(manifest.json, metadata.json, embeddings.npy) at that path.'
+        `WARN: index provenance inputs absent (${envIndexDir ? 'SEMANTIC_INDEX_BUILD_DIR=' + artifactBasename(envIndexDir) : 'env unset'}, ${layoutManifest.index_dir || 'manifest unset'}) — index provenance checks skipped. ` +
+            'The data-level semantic-quality asserts still ran. For operator-run provenance re-arm, use ' +
+            'scripts/verify-semantic-provenance.mjs with SEMANTIC_INDEX_BUILD_DIR set to the index build dir.'
     )
 }
 

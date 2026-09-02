@@ -133,7 +133,14 @@ declare global {
          * DevGui and tests can poll capture state without invoking the
          * capture itself.
          */
-        __spectorStatus?: Record<string, unknown>
+        __spectorStatus?: {
+          phase: 'idle' | 'loading' | 'ready' | 'unsupported' | 'error'
+          loadError: string | null
+          loadDetail: string | null
+          lastCommandCount: number
+          lastCaptureAt: number | null
+          bridgeReady: boolean
+        }
 
         /**
          * Test-only function hook set by stores/test-compat so Playwright can

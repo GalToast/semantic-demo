@@ -10,7 +10,11 @@
 // Runtime payload validation lives in a pure sibling module (unit-testable
 // without a Worker global; farm audit 2026-08-14 regression pin).
 import { requireRecordUrl, requireThreadPayload, type AttemptConfig } from './data-worker-payload'
-import { parseTdb, parseTdbU } from '@lib/loaders/semantic-tdb'
+import {
+    parseTdbCompact,
+    parseTdbUCompact,
+    type SerializedSemanticThreadGraph
+} from '@lib/loaders/semantic-tdb'
 
 interface PointRecord {
     cluster: number
@@ -59,9 +63,29 @@ export interface NeighborEntry {
 }
 
 interface LoadThreadsResult {
-    neighborEntries: Array<[string, NeighborEntry]>
+    /** Binary artifacts use this transferable representation. */
+    compact?: SerializedSemanticThreadGraph
+    /** JSON artifacts retain the legacy structured-clone representation. */
+    neighborEntries?: Array<[string, NeighborEntry]>
     artifactName: string | null
-    bundle: unknown
+    bundle?: unknown
+}
+
+function getSerializedGraphTransferables(graph: SerializedSemanticThreadGraph): Transferable[] {
+    return [
+        graph.nodeLeadIds.buffer,
+        graph.nodeSignalScores.buffer,
+        graph.nodeOffsets.buffer,
+        graph.neighborLeadIds.buffer,
+        graph.neighborScores.buffer,
+        graph.neighborSemanticScores.buffer,
+        graph.neighborBridgeScores.buffer,
+        graph.neighborSignalScores.buffer,
+        graph.neighborFlags.buffer,
+        graph.neighborThreadTypeIndices.buffer,
+        graph.neighborRelationshipRoleIndices.buffer,
+        graph.neighborRelationshipAxisIndices.buffer
+    ] as Transferable[]
 }
 
 interface LoadLeadEnrichmentResult {
@@ -249,7 +273,18 @@ self.onmessage = async (event: MessageEvent) => {
             // ERROR reply (farm audit: previously `payload as {...}` blindly).
             const result = await handleLoadThreads(requireThreadPayload(payload), requestId, signal)
             if (requestId !== _activeRequestId) return
-            self.postMessage({ type: 'LOAD_THREADS_SUCCESS', payload: result, requestId })
+            const message = { type: 'LOAD_THREADS_SUCCESS', payload: result, requestId }
+            if (result?.compact) {
+                // The large numeric planes move to the main thread without a
+                // structured clone. Do this only after the supersede check so
+                // stale requests do not detach buffers that nobody consumes.
+                ;(self as unknown as { postMessage(message: unknown, transfer?: Transferable[]): void }).postMessage(
+                    message,
+                    getSerializedGraphTransferables(result.compact)
+                )
+            } else {
+                self.postMessage(message)
+            }
         } else if (type === 'LOAD_LEAD_ENRICHMENT') {
             const result = await handleLoadLeadEnrichment(
                 { url: requireRecordUrl(payload, 'LOAD_LEAD_ENRICHMENT') },
@@ -392,6 +427,7 @@ async function handleLoadThreads(
     signal: AbortSignal
 ): Promise<LoadThreadsResult | null> {
     let bundle: unknown = null
+    let compact: SerializedSemanticThreadGraph | null = null
     let loadedArtifactName: string | null = null
     let lastError: unknown = null
 
@@ -410,22 +446,14 @@ async function handleLoadThreads(
                 )
                 if (requestId !== _activeRequestId) throw new Error('Request superseded by newer request')
                 if (!response.ok) throw new Error(`Thread artifact unavailable (${response.status})`)
-                // TDB1 flip (2026-06-17): binary sibling feeds the same bundle
-                // shape; the extractor below is untouched (JSON fallback intact).
+                // Binary artifacts stay in compact typed-array form until the
+                // main thread decodes them. This avoids building both the raw
+                // object graph and the normalized neighbor graph in the worker.
                 if (artifactName.endsWith('.bin')) {
                     const binBuf = await response.arrayBuffer()
                     const bytes = new Uint8Array(binBuf)
                     const magic = String.fromCharCode(bytes[0] ?? 0, bytes[1] ?? 0, bytes[2] ?? 0, bytes[3] ?? 0)
-                    const { nodes } = magic === 'TDBU' ? parseTdbU(binBuf) : parseTdb(binBuf)
-                    const nodesRecord: Record<string, unknown> = {}
-                    for (const [leadId, node] of nodes) {
-                        nodesRecord[leadId] = {
-                            lead_id: node.lead_id,
-                            signal_score: node.signal_score,
-                            neighbors: node.neighbors
-                        }
-                    }
-                    bundle = { nodes: nodesRecord }
+                    compact = magic === 'TDBU' ? parseTdbUCompact(binBuf) : parseTdbCompact(binBuf)
                     loadedArtifactName = artifactName
                     break outer
                 }
@@ -453,7 +481,12 @@ async function handleLoadThreads(
     }
 
     if (requestId !== _activeRequestId) throw new Error('Request superseded by newer request')
-    if (!bundle) throw lastError || new Error('No thread artifacts could be loaded')
+    if (!bundle && !compact) throw lastError || new Error('No thread artifacts could be loaded')
+
+    // Binary responses are sent as transferable typed arrays. JSON retains the
+    // legacy conversion below because it is still used by plain-artifact and
+    // test/mock paths.
+    if (compact) return { compact, artifactName: loadedArtifactName }
 
     // Transform node map to entries for Map reconstruction on main thread
     const neighborEntries: Array<[string, NeighborEntry]> = []

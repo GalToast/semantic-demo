@@ -18,8 +18,15 @@
  *   node scripts/verify-env.mjs --unit-only        # steps 1-2 + build + unit suite
  *   node scripts/verify-env.mjs --journeys-only    # steps 1-2 + api probe + journeys (expects built dist)
  *   node scripts/verify-env.mjs --no-build         # skip the vite build step
+ *   node scripts/verify-env.mjs --preflight-only  # assets/API/build checks, no suites
  *
- * Exit code: 0 iff every executed step passed.
+ * Set VERIFY_REQUIRE_LIVE_API=1 for a release-style fail-closed API check.
+ * Without it, an absent API is allowed for the static/demo gate but is reported
+ * as INCOMPLETE rather than being counted as a fully green verification.
+ *
+ * Exit code: 0 iff no required step failed. Optional capability gaps return 0
+ * with an explicit INCOMPLETE summary; set VERIFY_REQUIRE_LIVE_API=1 when the
+ * live API is required.
  */
 import { spawn, spawnSync } from 'node:child_process'
 import { createServer } from 'node:http'
@@ -30,18 +37,26 @@ const argv = process.argv.slice(2)
 const UNIT_ONLY = argv.includes('--unit-only')
 const JOURNEYS_ONLY = argv.includes('--journeys-only')
 const NO_BUILD = argv.includes('--no-build')
+const PREFLIGHT_ONLY = argv.includes('--preflight-only')
+const REQUIRE_LIVE_API = process.env.VERIFY_REQUIRE_LIVE_API === '1'
 const POOL_IDX = argv.indexOf('--pool')
 const POOL = POOL_IDX !== -1 ? argv[POOL_IDX + 1] : undefined // e.g. --pool forks
 const PORT = Number(process.env.VERIFY_PORT || 8811)
 const API_BASE = process.env.VITE_API_BASE_URL || 'http://127.0.0.1:8795'
 const ROOT = process.cwd()
 const DIST_INDEX = join(ROOT, 'dist', 'svelte', 'index.html')
+const REQUIRED_RUNTIME_ASSETS = [
+    { path: join('dist', 'svelte', 'data.dat'), minBytes: 1024 * 1024 },
+    { path: join('dist', 'svelte', 'data', 'rows.bin'), minBytes: 1024 },
+    { path: join('dist', 'svelte', 'data', 'semantic_threads_ui.dat.bin'), minBytes: 1024 }
+]
 const results = []
 let staticServer = null
 
-function step(name, ok, detail = '') {
-    results.push({ name, ok })
-    console.log(`${ok ? '✓' : '✗'} ${name}${detail ? ` — ${detail}` : ''}`)
+function step(name, ok, detail = '', state = ok ? 'pass' : 'fail') {
+    results.push({ name, ok, state, detail })
+    const marker = state === 'incomplete' ? '⚠' : ok ? '✓' : '✗'
+    console.log(`${marker} ${name}${detail ? ` — ${detail}` : ''}`)
     return ok
 }
 
@@ -56,11 +71,11 @@ async function probeApi() {
         const t = setTimeout(() => ctrl.abort(), 2500)
         const r = await fetch(`${API_BASE}/api.php?action=semantic_search&q=coffee`, { signal: ctrl.signal })
         clearTimeout(t)
-        if (!r.ok) return false
+        if (!r.ok) return { available: false, reason: `http-${r.status}` }
         await r.json()
-        return true
-    } catch {
-        return false
+        return { available: true, reason: 'ok' }
+    } catch (error) {
+        return { available: false, reason: error?.name === 'AbortError' ? 'timeout' : 'unreachable' }
     }
 }
 
@@ -106,28 +121,43 @@ function startStaticServer() {
     })
 }
 
+function checkRuntimeAssets() {
+    const failures = []
+    for (const asset of REQUIRED_RUNTIME_ASSETS) {
+        const full = join(ROOT, asset.path)
+        try {
+            const size = statSync(full).size
+            if (size < asset.minBytes) {
+                failures.push(`${asset.path} is only ${size} bytes (minimum ${asset.minBytes})`)
+            }
+        } catch {
+            failures.push(`${asset.path} is missing`)
+        }
+    }
+    return failures
+}
+
 // ── Steps ────────────────────────────────────────────────────────────────────
 
-// 1. Plain data twins (idempotent, ~2s).
-{
-    const ok = run('node', ['scripts/decompress-data-twins.mjs'])
-    step('data twins restored', ok)
-    if (!ok) process.exit(1)
-}
-
-// 2. Live-API availability probe (report-only).
+// 1. Live-API availability probe (report-only).
 {
     const live = await probeApi()
+    const liveDetail = live.available
+        ? 'LIVE — live-gated specs (B-A1) will execute'
+        : `${REQUIRE_LIVE_API ? 'REQUIRED / ABSENT' : 'ABSENT'} (${live.reason}) — live-gated specs will self-skip; start \`npm run serve\` to exercise them`
     step(
-        'live API probe (:8795)',
-        true,
-        live
-            ? 'LIVE — live-gated specs (B-A1) will execute'
-            : 'ABSENT — live-gated specs will self-skip (start `npm run serve` to exercise them)'
+        `live API probe (${API_BASE.replace(/^https?:\/\//, '').replace(/\/.*$/, '') || 'configured endpoint'})`,
+        live.available || !REQUIRE_LIVE_API,
+        liveDetail,
+        live.available ? 'pass' : REQUIRE_LIVE_API ? 'fail' : 'incomplete'
     )
+    if (!live.available && REQUIRE_LIVE_API) {
+        console.error('✗ VERIFY_REQUIRE_LIVE_API=1 requires a reachable, JSON-speaking live API.')
+        process.exit(1)
+    }
 }
 
-// 3. Build with VITE_API_BASE_URL baked in.
+// 2. Build with VITE_API_BASE_URL baked in.
 if (!NO_BUILD && !JOURNEYS_ONLY) {
     const ok = run('npm', ['run', 'build:svelte'], {
         env: { ...process.env, VITE_API_BASE_URL: API_BASE }
@@ -139,6 +169,38 @@ if (!NO_BUILD && !JOURNEYS_ONLY) {
     process.exit(1)
 } else {
     step('build', true, 'skipped (--no-build/--journeys-only), existing dist found')
+}
+
+// 3. Restore plain data twins after the build. The build's compression gate
+// must see a clean dist tree; the verification server still needs the
+// decompressed runtime artifacts.
+{
+    const ok = run('node', ['scripts/decompress-data-twins.mjs'])
+    step('data twins restored', ok)
+    if (!ok) process.exit(1)
+}
+
+// 4. Runtime data preflight. A build with missing private corpus assets can
+// otherwise produce a valid-looking shell that boots with points:0. Fail here
+// before starting the static server or spending minutes in journey readiness.
+{
+    const failures = checkRuntimeAssets()
+    if (failures.length > 0) {
+        step('runtime data assets', false, failures.join('; '))
+        process.exit(1)
+    }
+    step('runtime data assets', true, 'required corpus and semantic artifacts are present')
+}
+
+if (PREFLIGHT_ONLY) {
+    console.log('\n── verify-env summary ──')
+    for (const r of results) console.log(`${r.state === 'incomplete' ? '⚠' : r.ok ? '✓' : '✗'} ${r.name}`)
+    const failed = results.filter((r) => !r.ok)
+    const incomplete = results.filter((r) => r.state === 'incomplete')
+    if (failed.length > 0) console.log(`${failed.length} preflight step(s) failed`)
+    else if (incomplete.length > 0) console.log(`PREFLIGHT INCOMPLETE — ${incomplete.map((r) => r.name).join(', ')}`)
+    else console.log('PREFLIGHT GREEN')
+    process.exit(failed.length === 0 ? 0 : 1)
 }
 
 await startStaticServer()
@@ -199,7 +261,10 @@ if (!UNIT_ONLY) {
 if (staticServer) staticServer.close()
 
 const failed = results.filter((r) => !r.ok)
+const incomplete = results.filter((r) => r.state === 'incomplete')
 console.log(`\n── verify-env summary ──`)
-for (const r of results) console.log(`${r.ok ? '✓' : '✗'} ${r.name}`)
-console.log(failed.length === 0 ? 'ALL GREEN' : `${failed.length} step(s) failed`)
+for (const r of results) console.log(`${r.state === 'incomplete' ? '⚠' : r.ok ? '✓' : '✗'} ${r.name}`)
+if (failed.length > 0) console.log(`${failed.length} step(s) failed`)
+else if (incomplete.length > 0) console.log(`INCOMPLETE — ${incomplete.map((r) => r.name).join(', ')}`)
+else console.log('ALL GREEN')
 process.exit(failed.length === 0 ? 0 : 1)

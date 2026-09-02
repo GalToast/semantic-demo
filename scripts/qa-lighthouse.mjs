@@ -33,6 +33,7 @@ const args = process.argv.slice(2)
 const runGate = args.includes('--gate')
 const updateBaseline = args.includes('--baseline')
 const desktop = args.includes('--desktop')
+const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 const outputArg = args.find((a) => a.startsWith('--output='))
 const outputPath = outputArg ? outputArg.slice(9) : null
 
@@ -74,7 +75,7 @@ async function runLighthouse() {
     console.log(`Running Lighthouse (${preset}) against ${URL}...`)
 
     return new Promise((resolve, reject) => {
-        const child = spawn('npx', ['lighthouse', ...flags], {
+        const child = spawn(npx, ['lighthouse', ...flags], {
             stdio: ['ignore', 'pipe', 'inherit'],
             shell: true
         })

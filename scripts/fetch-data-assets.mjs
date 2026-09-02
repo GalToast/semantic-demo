@@ -21,7 +21,7 @@
  * repo as GH_TOKEN and ensure `gh auth setup-git` equivalent, or embed a
  * short-lived token in the URL via GIT_AUTH_HEADER env.
  */
-import { existsSync, mkdirSync, chmodSync, cpSync, rmSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, chmodSync, cpSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
@@ -34,21 +34,40 @@ const ASSETS = [
     'public/data/leadEnrichment.public.json',
     'src/data.dat'
 ]
+const MIN_BYTES = new Map([
+    ['src/data.dat', 1024 * 1024],
+    ['public/data/semantic_threads.dat', 1],
+    ['public/data/semantic_threads_ui.dat', 1],
+    ['public/data/leadEnrichment.public.json', 1]
+])
 
 const ifMissing = process.argv.includes('--if-missing')
 const quiet = process.argv.includes('--quiet')
 
-function missing() {
-    return ASSETS.filter((p) => !existsSync(resolve(ROOT, p)))
+function info(...args) {
+    if (!quiet) console.log(...args)
 }
 
-if (ifMissing && missing().length === 0) {
-    console.log('[fetch:data] all assets present — skipping')
+function invalidAssets() {
+    return ASSETS.filter((p) => {
+        const full = resolve(ROOT, p)
+        if (!existsSync(full)) return true
+        try {
+            const asset = statSync(full)
+            return !asset.isFile() || asset.size < (MIN_BYTES.get(p) ?? 1)
+        } catch {
+            return true
+        }
+    })
+}
+
+if (ifMissing && invalidAssets().length === 0) {
+    info('[fetch:data] all assets present — skipping')
     process.exit(0)
 }
 
-const need = missing()
-console.log(`[fetch:data] fetching ${need.length}/${ASSETS.length} assets from ${DATA_REPO} ...`)
+const need = invalidAssets()
+info(`[fetch:data] fetching ${need.length}/${ASSETS.length} assets from ${DATA_REPO} ...`)
 
 const cache = resolve(ROOT, '.data-repo-cache')
 try {
@@ -102,6 +121,19 @@ for (const p of ASSETS) {
         console.error(`[fetch:data] asset missing in data repo: ${p}`)
         continue
     }
+    let sourceBytes = 0
+    try {
+        const sourceStat = statSync(from)
+        sourceBytes = sourceStat.isFile() ? sourceStat.size : 0
+    } catch {
+        sourceBytes = 0
+    }
+    if (sourceBytes < (MIN_BYTES.get(p) ?? 1)) {
+        console.error(
+            `[fetch:data] asset invalid in data repo: ${p} (${sourceBytes} bytes; minimum ${MIN_BYTES.get(p) ?? 1})`
+        )
+        continue
+    }
     const to = resolve(ROOT, p)
     mkdirSync(dirname(to), { recursive: true })
     cpSync(from, to)
@@ -113,9 +145,9 @@ try {
     /* cache cleanup best-effort */
 }
 
-const stillMissing = missing()
+const stillMissing = invalidAssets()
 if (stillMissing.length > 0) {
     console.error(`[fetch:data] INCOMPLETE — still missing: ${stillMissing.join(', ')}`)
     process.exit(1)
 }
-console.log(`[fetch:data] OK — ${copied} asset(s) restored to expected paths`)
+info(`[fetch:data] OK — ${copied} asset(s) restored to expected paths`)

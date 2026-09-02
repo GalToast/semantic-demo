@@ -14,6 +14,7 @@
 
 import { workerUrl } from '@lib/workers/data-worker-url'
 import type { NeighborEntry } from '@lib/workers/data-worker'
+import type { SerializedSemanticThreadGraph } from '@lib/loaders/semantic-tdb'
 import {
     normalizeSemanticNeighborEntriesCached,
     isLayoutManifest as isLayoutManifestPort,
@@ -22,13 +23,11 @@ import {
 } from './semantic-threads-normalize'
 import type {
     SemanticThreadBundle,
+    SemanticThreadNode,
     SemanticNeighborEntry,
-    SemanticNeighborDetail,
     LayoutManifest
 } from '@lib/types/business'
-import { normalizeRelationshipRole } from '@lib/utils/relationship-roles'
 import { debugWarn } from '@lib/utils/debug'
-import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store'
 import { invalidateTrailSeedCache } from '@lib/journey/neighborhood'
 
@@ -309,6 +308,10 @@ function _validateSemanticSpaceLayoutManifest(
     const edges = Number(manifest.edges)
     const manifestThreadName = basenameUtil(manifest.thread_path)
     const loadedThreadName = artifactName ? basenameUtil(artifactName) : ''
+    // Binary siblings are transport representations of the manifest's plain
+    // .dat artifact, not a different semantic graph. Compare canonical names
+    // while retaining the actual loaded filename for diagnostics/state.
+    const loadedThreadContractName = loadedThreadName.replace(/\.bin$/i, '')
     // Label-plane fallback warn: a core (directed, score-only) artifact winning
     // the load means thread_type/role/axis render as defaults. The UI pair-form
     // carries the label plane; surface the degradation instead of accepting it.
@@ -322,7 +325,7 @@ function _validateSemanticSpaceLayoutManifest(
     if (rows !== nodeCount) failures.push(`rows ${rows} != semantic nodes ${nodeCount}`)
     if (pointCount > 0 && rows !== pointCount) failures.push(`rows ${rows} != loaded points ${pointCount}`)
     if (edges !== edgeCount) failures.push(`edges ${edges} != semantic edges ${edgeCount}`)
-    if (manifestThreadName && loadedThreadName && manifestThreadName !== loadedThreadName) {
+    if (manifestThreadName && loadedThreadContractName && manifestThreadName !== loadedThreadContractName) {
         failures.push(`thread_path ${manifestThreadName} != loaded artifact ${loadedThreadName}`)
     }
     if (basenameUtil(manifest.data_path) && basenameUtil(manifest.data_path) !== 'data.dat') {
@@ -338,7 +341,7 @@ function _validateSemanticSpaceLayoutManifest(
         method: (manifest.method as string) || null,
         rows,
         edges,
-        threadArtifact: loadedThreadName || manifestThreadName || null
+        threadArtifact: loadedThreadContractName || manifestThreadName || null
     }
 }
 
@@ -371,6 +374,133 @@ async function _guardSemanticSpaceLayout(
 
 // ── Worker communication ──────────────────────────────────────────────────────
 
+function compactString(table: string[], index: number): string {
+    return typeof table[index] === 'string' ? table[index]! : ''
+}
+
+/**
+ * Rehydrate the legacy raw bundle and normalized worker entries from the
+ * transferable binary representation. This keeps the rest of the application
+ * contract stable while moving the expensive object-graph construction out of
+ * the worker and off the structured-clone transport path.
+ */
+function decodeCompactSemanticThreadGraph(compact: SerializedSemanticThreadGraph): {
+    bundle: SemanticThreadBundle
+    neighborEntries: Array<[string, NeighborEntry]>
+} {
+    const nodeCount = compact.nodeLeadIds.length
+    const edgeCount = compact.neighborLeadIds.length
+    const edgePlaneLengths = [
+        compact.neighborScores.length,
+        compact.neighborSemanticScores.length,
+        compact.neighborBridgeScores.length,
+        compact.neighborSignalScores.length,
+        compact.neighborFlags.length,
+        compact.neighborThreadTypeIndices.length,
+        compact.neighborRelationshipRoleIndices.length,
+        compact.neighborRelationshipAxisIndices.length
+    ]
+    if (
+        compact.count !== nodeCount ||
+        compact.nodeOffsets.length !== nodeCount + 1 ||
+        compact.edgeCount !== edgeCount ||
+        edgePlaneLengths.some((length) => length !== edgeCount) ||
+        !Array.isArray(compact.stringTable)
+    ) {
+        throw new Error('Semantic thread compact payload has inconsistent array lengths')
+    }
+    if (compact.nodeOffsets[0] !== 0 || compact.nodeOffsets[nodeCount] !== edgeCount) {
+        throw new Error('Semantic thread compact payload has invalid node offsets')
+    }
+
+    const nodes: SemanticThreadBundle['nodes'] = {}
+    const neighborEntries: Array<[string, NeighborEntry]> = []
+    const hasLabelPlane = compact.labelPlane === true
+
+    for (let nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++) {
+        const edgeStart = compact.nodeOffsets[nodeIndex] ?? 0
+        const edgeEnd = compact.nodeOffsets[nodeIndex + 1] ?? edgeStart
+        if (edgeStart > edgeEnd || edgeEnd > edgeCount) {
+            throw new Error(`Semantic thread compact payload has invalid offsets for node ${nodeIndex}`)
+        }
+
+        const leadId = String(compact.nodeLeadIds[nodeIndex] ?? 0)
+        const rawNeighbors: SemanticThreadNode['neighbors'] = []
+        const normalizedNeighbors: NeighborEntry['neighbors'] = []
+
+        for (let edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++) {
+            const flags = compact.neighborFlags[edgeIndex] ?? 0
+            const score = compact.neighborScores[edgeIndex] ?? 0
+            const semanticScore = compact.neighborSemanticScores[edgeIndex] ?? 0
+            const bridgeScore = compact.neighborBridgeScores[edgeIndex] ?? 0
+            const signalScore = compact.neighborSignalScores[edgeIndex] ?? 0
+            const threadType = hasLabelPlane
+                ? compactString(compact.stringTable, compact.neighborThreadTypeIndices[edgeIndex] ?? 0)
+                : ''
+            const relationshipRole = hasLabelPlane
+                ? compactString(compact.stringTable, compact.neighborRelationshipRoleIndices[edgeIndex] ?? 0)
+                : ''
+            const relationshipAxis = hasLabelPlane
+                ? compactString(compact.stringTable, compact.neighborRelationshipAxisIndices[edgeIndex] ?? 0)
+                : ''
+            const neighborLeadId = String(compact.neighborLeadIds[edgeIndex] ?? 0)
+            const sameCity = hasLabelPlane && (flags & 1) !== 0
+            const sameStatus = hasLabelPlane && (flags & 2) !== 0
+
+            rawNeighbors.push({
+                lead_id: neighborLeadId,
+                score,
+                semantic_score: semanticScore,
+                same_city: sameCity,
+                same_status: sameStatus,
+                bridge_score: bridgeScore,
+                signal_score: signalScore,
+                thread_type: threadType,
+                relationship_role: relationshipRole,
+                relationship_axis: relationshipAxis,
+                role_reason: '',
+                reason: 'semantic neighbor'
+            })
+            normalizedNeighbors.push({
+                leadId: neighborLeadId,
+                score,
+                semanticScore,
+                sameCity,
+                sameStatus,
+                bridgeScore,
+                signalScore,
+                threadType: threadType || 'local_semantic_neighbor',
+                relationshipRole,
+                relationshipAxis,
+                roleReason: '',
+                reason: 'semantic neighbor'
+            })
+        }
+
+        nodes[leadId] = {
+            lead_id: leadId,
+            name: null,
+            city: null,
+            status: null,
+            signal_score: compact.nodeSignalScores[nodeIndex] ?? 0,
+            neighbors: rawNeighbors
+        }
+        neighborEntries.push([
+            leadId,
+            {
+                leadId,
+                name: null,
+                city: null,
+                status: null,
+                signalScore: compact.nodeSignalScores[nodeIndex] ?? 0,
+                neighbors: normalizedNeighbors
+            }
+        ])
+    }
+
+    return { bundle: { nodes }, neighborEntries }
+}
+
 interface WorkerResponse {
     type: string
     payload: unknown
@@ -378,9 +508,10 @@ interface WorkerResponse {
 }
 
 interface WorkerThreadResult {
-    neighborEntries: Array<[string, NeighborEntry]>
+    neighborEntries?: Array<[string, NeighborEntry]>
     artifactName: string
-    bundle: SemanticThreadBundle
+    bundle?: SemanticThreadBundle
+    compact?: SerializedSemanticThreadGraph
 }
 
 async function callWorker(type: string, payload: unknown): Promise<WorkerThreadResult> {
@@ -689,10 +820,22 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
             }
 
             try {
-                const { neighborEntries, artifactName, bundle } = await callWorker('LOAD_THREADS', {
+                const workerResult = await callWorker('LOAD_THREADS', {
                     urls: requestUrls,
                     attemptConfigs
                 })
+                const { artifactName } = workerResult
+                let bundle: SemanticThreadBundle
+                let neighborEntries: Array<[string, NeighborEntry]>
+                if (workerResult.compact) {
+                    const decoded = decodeCompactSemanticThreadGraph(workerResult.compact)
+                    bundle = decoded.bundle
+                    neighborEntries = decoded.neighborEntries
+                } else {
+                    if (!workerResult.bundle) throw new Error('Worker returned no semantic thread bundle')
+                    bundle = workerResult.bundle
+                    neighborEntries = workerResult.neighborEntries ?? []
+                }
                 const { manifest } = await _guardSemanticSpaceLayout(bundle, artifactName, cacheBust)
                 const neighborMap = new Map(
                     normalizeSemanticNeighborEntriesCached(neighborEntries, artifactName, bundle)

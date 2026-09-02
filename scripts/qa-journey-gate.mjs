@@ -10,6 +10,7 @@ import http from 'node:http'
 const ROOT = process.cwd()
 const BASE = 'http://127.0.0.1:8795/'
 const QUIET = process.argv.includes('--quiet')
+const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 
 let ownServer = false
 
@@ -29,13 +30,14 @@ function stopServer() {
 
 function runSuite() {
     return (
-        spawnSync('npx', ['playwright', 'test', 'tests/journey/'], {
+        spawnSync(npx, ['playwright', 'test', 'tests/journey/'], {
             stdio: 'inherit',
             env: {
                 ...process.env,
                 SEMANTIC_FORCE_WEBGL_SOFTWARE: '1',
                 TEST_BASE_URL: `${BASE}`
             },
+            shell: process.platform === 'win32',
             timeout: 600_000,
             cwd: ROOT
         }).status ?? 1

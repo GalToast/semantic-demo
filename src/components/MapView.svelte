@@ -35,6 +35,12 @@
     invalidateSize?: () => void
   }
 
+  function getLeafletMapForResize(): LeafletMapWithInvalidateSize | null {
+    return appState.map
+      ? (appState.map as unknown as LeafletMapWithInvalidateSize)
+      : null;
+  }
+
   type MapStatus = 'loading' | 'ready' | 'error';
 
   // eslint-disable-next-line no-empty-pattern -- empty $props() destructuring is the Svelte 5 idiom for "no props accepted"
@@ -190,7 +196,7 @@
       centerMapOnRouteAnchor();
 
       requestAnimationFrame(() => {
-        const map = appState.map;
+        const map = getLeafletMapForResize();
         map?.invalidateSize?.();
         _registry.schedule(120, () => map?.invalidateSize?.());
       });
@@ -201,7 +207,7 @@
       const mc = document.getElementById('map-container');
       if (mc && !resizeObserver) {
         resizeObserver = new ResizeObserver(() => {
-          const map = appState.map;
+          const map = getLeafletMapForResize();
           map?.invalidateSize?.();
         });
         resizeObserver.observe(mc);

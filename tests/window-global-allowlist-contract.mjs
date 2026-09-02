@@ -89,6 +89,7 @@ const debugProbe = new Set([
     '__telemetry__',
     '__APP_STATE__',
     '__TEST_STATE__',
+    '__THREE_APP__',
     '__initTimings',
     '__semanticCanvasThreadProbe',
     '__semanticFocusCueProbe',

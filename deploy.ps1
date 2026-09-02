@@ -39,19 +39,23 @@ $BackupParent = if ($env:DEPLOY_BACKUP_DIR) { $env:DEPLOY_BACKUP_DIR } else { "/
 $BackupDir = "$BackupParent/deploy-$DeployStamp"
 $SemanticArtifacts = @(
     "data.dat",
-    "data.dat.gz",
-    "semantic_space_layout_manifest.json"
+    "data.dat.gz"
 )
 # P4 (2026-08-22): threads artifacts move to data/ — that is the path the app
-# fetches (buildAssetUrl('data/semantic_threads*.dat')). Ship plains AND br/gz
-# twins so the .htaccess rewrite serves 2.6MB instead of an 82.5MB plain body.
+# fetches (buildAssetUrl('data/semantic_threads*.dat')). Ship binary transport,
+# compatibility plains when present, and br/gz twins so the .htaccess rewrite
+# serves 2.6MB instead of an 82.5MB plain body.
 $DataDirArtifacts = @(
     "semantic_threads.dat",
+    "semantic_threads.dat.bin",
     "semantic_threads.dat.br",
     "semantic_threads.dat.gz",
     "semantic_threads_ui.dat",
+    "semantic_threads_ui.dat.bin",
     "semantic_threads_ui.dat.br",
     "semantic_threads_ui.dat.gz",
+    "semantic_space_layout_manifest.json.br",
+    "semantic_space_layout_manifest.json.gz",
     "leadEnrichment.public.json.br",
     "leadEnrichment.public.json.gz"
 )
@@ -123,7 +127,12 @@ foreach ($Artifact in $DataDirArtifacts) {
 # The internal enrichment (leadEnrichment.internal.json) stays in the repo
 # and is never deployed — it carries pipeline state that must not reach
 # the public demo.
-Invoke-Step @("scp", "-P", $Port, "dist/svelte/data/leadEnrichment.public.json", "${Target}data/leadEnrichment.public.json")
+$PublicEnrichment = "dist/svelte/data/leadEnrichment.public.json"
+if (Test-Path $PublicEnrichment) {
+    Invoke-Step @("scp", "-P", $Port, $PublicEnrichment, "${Target}data/leadEnrichment.public.json")
+} else {
+    Write-Warning "Optional public enrichment plain twin missing: $PublicEnrichment"
+}
 
 
 Invoke-Step @(

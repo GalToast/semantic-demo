@@ -767,10 +767,3 @@ if (typeof window !== 'undefined') {
         configurable: true
     })
 }
-
-// ── legacyState runtime alias (historical) ───────────────────────────────────
-// Replaces legacy-state-adapter.ts. A few subsystems still read appState
-// through this alias. It is the same object as appState, typed as AppState.
-// The unsafe `as unknown as LegacyState` cast was removed in the P1-F cleanup so
-// every access is now type-checked.
-export const legacyState = appState

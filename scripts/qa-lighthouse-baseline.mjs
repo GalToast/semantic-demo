@@ -44,6 +44,7 @@ const TARGET = `http://${HOST}:${PORT}/dist/svelte/index.html`
 
 const args = process.argv.slice(2)
 const refreshBaseline = args.includes('--baseline')
+const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 
 const CHROME_FLAGS = '--chrome-flags=--headless=new --no-sandbox --disable-gpu'
 const CATEGORIES = '--only-categories=performance,accessibility,best-practices,seo'
@@ -88,7 +89,7 @@ function probeServer(retries = 40, delayMs = 500) {
 function runLighthouse(preset, reportPath) {
     const flags = [TARGET, OUT_JSON, `--output-path=${reportPath}`, CATEGORIES, CHROME_FLAGS, ...preset.flags]
     console.log(`\n lighthouse (${preset.name}) -> ${path.relative(ROOT, reportPath)}`)
-    const result = spawnSync('npx', ['lighthouse', ...flags], {
+    const result = spawnSync(npx, ['lighthouse', ...flags], {
         shell: true,
         stdio: 'inherit',
         windowsHide: true

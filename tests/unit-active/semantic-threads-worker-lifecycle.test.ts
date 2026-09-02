@@ -8,6 +8,7 @@ import {
     resetDataStores
 } from '../../src/lib/data-store.ts'
 import type { SemanticThreadBundle, SemanticThreadNode } from '../../src/lib/types/business'
+import type { SerializedSemanticThreadGraph } from '../../src/lib/loaders/semantic-tdb'
 
 vi.mock('../../src/lib/workers/data-worker-url', () => ({
     workerUrl: 'mock-data-worker.js'
@@ -133,6 +134,27 @@ function createBundle(): SemanticThreadBundle {
     }
 }
 
+function createCompactGraph(): SerializedSemanticThreadGraph {
+    return {
+        nodeLeadIds: Uint32Array.from([7]),
+        nodeSignalScores: Float32Array.from([3.5]),
+        nodeOffsets: Uint32Array.from([0, 1]),
+        neighborLeadIds: Uint32Array.from([42]),
+        neighborScores: Float32Array.from([1.2]),
+        neighborSemanticScores: Float32Array.from([0.9]),
+        neighborBridgeScores: Float32Array.from([0.7]),
+        neighborSignalScores: Float32Array.from([3.2]),
+        neighborFlags: Uint8Array.from([3]),
+        neighborThreadTypeIndices: Uint16Array.from([0]),
+        neighborRelationshipRoleIndices: Uint16Array.from([1]),
+        neighborRelationshipAxisIndices: Uint16Array.from([2]),
+        stringTable: ['same_city_semantic_neighbor', 'core_peer', 'professional_support', ''],
+        count: 1,
+        edgeCount: 1,
+        labelPlane: true
+    }
+}
+
 async function flushWorkerPromises(): Promise<void> {
     await Promise.resolve()
     await Promise.resolve()
@@ -243,6 +265,51 @@ describe('semantic thread worker lifecycle', () => {
         expect(getSemanticThreadArtifactName()).toBe('semantic_threads_ui.dat')
         expect(getSemanticNeighborMap().size).toBe(1)
         expect(getLayoutManifest()).not.toBeNull()
+        expect(worker.terminated).toBe(true)
+    })
+
+    it('rehydrates a compact transferred response without the legacy worker object graph', async () => {
+        const promise = loadSemanticThreads({ reason: 'compact-transport-test' })
+        await Promise.resolve()
+        await Promise.resolve()
+
+        const worker = MockWorker.instances[0]
+        expect(worker).toBeDefined()
+        const request = worker.lastMessage as { type: string; requestId: number }
+
+        worker.dispatchEvent(
+            new MessageEvent('message', {
+                data: {
+                    type: 'LOAD_THREADS_SUCCESS',
+                    requestId: request.requestId,
+                    payload: {
+                        compact: createCompactGraph(),
+                        artifactName: 'semantic_threads_ui.dat.bin'
+                    }
+                }
+            })
+        )
+
+        await expect(promise).resolves.toBe(true)
+        const node = getSemanticThreadBundle()?.nodes['7']
+        const neighbor = getSemanticNeighborMap().get('7')?.neighbors[0]
+        expect(node?.signal_score).toBeCloseTo(3.5, 5)
+        expect(node?.neighbors[0]?.thread_type).toBe('same_city_semantic_neighbor')
+        expect(neighbor).toMatchObject({
+            leadId: '42',
+            sameCity: true,
+            sameStatus: true,
+            threadType: 'same_city_semantic_neighbor',
+            relationshipAxis: 'professional_support'
+        })
+        expect(neighbor?.score).toBeCloseTo(1.2, 5)
+        expect(neighbor?.semanticScore).toBeCloseTo(0.9, 5)
+        expect(neighbor?.bridgeScore).toBeCloseTo(0.7, 5)
+        expect(neighbor?.signalScore).toBeCloseTo(3.2, 5)
+        const manifestFetch = vi.mocked(fetch).mock.calls.find(([input]) =>
+            String(input).includes('semantic_space_layout_manifest.json')
+        )
+        expect(String(manifestFetch?.[0])).toMatch(/\/data\/semantic_space_layout_manifest\.json\?v=\d+$/)
         expect(worker.terminated).toBe(true)
     })
 

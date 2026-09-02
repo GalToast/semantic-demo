@@ -710,14 +710,21 @@ function testCameraInteractionBridgesRetired() {
         /noteSceneInteraction\(\s*duration\s*\+\s*1200\s*\)/.test(cameraChoreographySrc),
         'camera choreography routes should call noteSceneInteraction directly for search corridor animation'
     )
-    assert(
+    const hasDirectCameraImport =
         /import\s+\{[^}]*\bfocusOnNode\b[^}]*\bnoteSceneInteraction\b[^}]*\breleaseFocusCameraAssist\b[^}]*\}\s+from\s+['"](?:\.\/camera-controls\.(?:js|ts)|@lib\/engine\/camera-controls)['"]/.test(
             canvasInteractionSrc
-        ),
-        'journey-canvas-interaction.js should import camera interaction functions directly from camera-controls.ts'
+        )
+    const hasColdBootSafeLazyImport =
+        /import\(\s*['"]@lib\/engine\/camera-controls['"]\s*\)/.test(canvasInteractionSrc) &&
+        /\bloadCameraControls\(\)/.test(canvasInteractionSrc) &&
+        /\bm\.noteSceneInteraction\(\)/.test(canvasInteractionSrc) &&
+        /\bm\.releaseFocusCameraAssist\(/.test(canvasInteractionSrc)
+    assert(
+        hasDirectCameraImport || hasColdBootSafeLazyImport,
+        'journey-canvas-interaction.js should use direct or cold-boot-safe lazy camera-controls imports'
     )
 
-    console.log('  OK — camera interaction bridges retired; direct imports remain')
+    console.log('  OK — camera interaction bridges retired; direct or lazy imports remain')
 }
 
 // ── TEST 10 — View handoff camera prelude bridge is retired ────────────────
@@ -730,11 +737,16 @@ function testViewHandoffCameraPreludeBridgeRetired() {
     const threeSetupSrc = read('threeSetup')
     const mapFlatteningLayoutSrc = read('mapFlatteningLayout')
 
-    assert(
+    const hasDirectTerrainPreludeImport =
         /import\s+\{[^}]*\banimateCameraToTerrainPrelude\b[^}]*\}\s+from\s+['"](?:\.\/camera-controls\.(?:js|ts)|@lib\/engine\/(?:camera-controls|camera-choreography))['"]/.test(
             viewControllerSrc
-        ),
-        'view-controller.js should import animateCameraToTerrainPrelude directly from camera-controls.ts'
+        )
+    const hasColdBootSafeLazyTerrainPrelude =
+        /import\(\s*['"]@lib\/engine\/camera-controls['"]\s*\)/.test(viewControllerSrc) &&
+        /\bm\.animateCameraToTerrainPrelude\(/.test(viewControllerSrc)
+    assert(
+        hasDirectTerrainPreludeImport || hasColdBootSafeLazyTerrainPrelude,
+        'view-controller.js should use direct or cold-boot-safe lazy camera-controls imports'
     )
     assert(
         !viewControllerSrc.includes('window.animateCameraToTerrainPrelude'),
@@ -768,7 +780,7 @@ function testViewHandoffCameraPreludeBridgeRetired() {
         'map-flattening-layout.js must stay side-effect-free with no window references'
     )
 
-    console.log('  OK — view handoff terrain/map flattening bridges retired; direct imports remain')
+    console.log('  OK — view handoff terrain/map flattening bridges retired; direct or lazy imports remain')
 }
 
 // ── TEST 11 — Legend collapsed-panel bridge is retired ─────────────────────

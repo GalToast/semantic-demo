@@ -22,6 +22,7 @@
 import { readdir, stat, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
+import { BUNDLE_CEILINGS_KB } from './bundle-budget.mjs'
 
 // ANSI color codes
 const RESET = '\x1b[0m'
@@ -34,12 +35,7 @@ const DIM = '\x1b[2m'
 
 // Performance budget ceilings (KB) — frozen 2026-08-30 @ actuals +2% drift.
 // Ratchet-down freely; raising requires measured re-baseline + cause (see header).
-const BUDGET = {
-    jsRaw: 1902,
-    jsGzip: 566,
-    cssRaw: 59.5,
-    cssGzip: 11.1
-}
+const BUDGET = BUNDLE_CEILINGS_KB
 
 // Assets directory
 const ASSETS_DIR = join(process.cwd(), 'dist', 'svelte', 'assets')

@@ -26,6 +26,30 @@ export interface TdbNode {
 
 type NodeMap = Map<string, TdbNode>
 
+/**
+ * Compact representation used across the worker boundary for binary TDB
+ * artifacts. The numeric planes are deliberately separate ArrayBuffers so
+ * the worker can transfer them instead of structured-cloning an object graph.
+ */
+export interface SerializedSemanticThreadGraph {
+    nodeLeadIds: Uint32Array
+    nodeSignalScores: Float32Array
+    nodeOffsets: Uint32Array
+    neighborLeadIds: Uint32Array
+    neighborScores: Float32Array
+    neighborSemanticScores: Float32Array
+    neighborBridgeScores: Float32Array
+    neighborSignalScores: Float32Array
+    neighborFlags: Uint8Array
+    neighborThreadTypeIndices: Uint16Array
+    neighborRelationshipRoleIndices: Uint16Array
+    neighborRelationshipAxisIndices: Uint16Array
+    stringTable: string[]
+    count: number
+    edgeCount: number
+    labelPlane: boolean
+}
+
 export function parseTdb(buffer: ArrayBuffer): { nodes: NodeMap; count: number } {
     const bytes = new Uint8Array(buffer)
     if (bytes[0] !== 0x54 || bytes[1] !== 0x44 || bytes[2] !== 0x42 || bytes[3] !== 0x31) {
@@ -33,7 +57,7 @@ export function parseTdb(buffer: ArrayBuffer): { nodes: NodeMap; count: number }
     }
     const dv = new DataView(buffer)
     const count = dv.getUint32(4, true)
-    const strLen = dv.getUint32(8, true)
+    dv.getUint32(8, true) // reserved string-table length in TDB1
     let o = 12
     const nodes: NodeMap = new Map()
     for (let i = 0; i < count; i++) {
@@ -117,4 +141,135 @@ export function parseTdbU(buffer: ArrayBuffer): { nodes: Map<string, TdbNode>; c
         nodes.set(String(lead_id), { lead_id, signal_score, neighbors })
     }
     return { nodes, count }
+}
+
+function readCompactHeader(
+    buffer: ArrayBuffer,
+    expectedMagic: string
+): { bytes: Uint8Array; dv: DataView; count: number; strLen: number } {
+    const bytes = new Uint8Array(buffer)
+    if (buffer.byteLength < 12) throw new Error(`${expectedMagic}: truncated header`)
+    for (let i = 0; i < expectedMagic.length; i++) {
+        if (bytes[i] !== expectedMagic.charCodeAt(i)) throw new Error(`${expectedMagic}: bad magic`)
+    }
+    const dv = new DataView(buffer)
+    const count = dv.getUint32(4, true)
+    const strLen = dv.getUint32(8, true)
+    // Every record has at least a 10-byte node header. This prevents a corrupt
+    // count from causing a giant typed-array allocation before bounds checks.
+    if (count > Math.floor((buffer.byteLength - 12) / 10)) {
+        throw new Error(`${expectedMagic}: node count exceeds buffer`)
+    }
+    return { bytes, dv, count, strLen }
+}
+
+function createSerializedGraph(count: number, edgeCount: number, stringTable: string[], labelPlane: boolean) {
+    return {
+        nodeLeadIds: new Uint32Array(count),
+        nodeSignalScores: new Float32Array(count),
+        nodeOffsets: new Uint32Array(count + 1),
+        neighborLeadIds: new Uint32Array(edgeCount),
+        neighborScores: new Float32Array(edgeCount),
+        neighborSemanticScores: new Float32Array(edgeCount),
+        neighborBridgeScores: new Float32Array(edgeCount),
+        neighborSignalScores: new Float32Array(edgeCount),
+        neighborFlags: new Uint8Array(edgeCount),
+        neighborThreadTypeIndices: new Uint16Array(edgeCount),
+        neighborRelationshipRoleIndices: new Uint16Array(edgeCount),
+        neighborRelationshipAxisIndices: new Uint16Array(edgeCount),
+        stringTable,
+        count,
+        edgeCount,
+        labelPlane
+    } satisfies SerializedSemanticThreadGraph
+}
+
+/**
+ * Parse a score-only TDB1 artifact without constructing Maps or per-edge
+ * objects. The returned planes are transferable from a Web Worker.
+ */
+export function parseTdbCompact(buffer: ArrayBuffer): SerializedSemanticThreadGraph {
+    const { bytes, dv, count } = readCompactHeader(buffer, 'TDB1')
+    let offset = 12
+    let edgeCount = 0
+    for (let i = 0; i < count; i++) {
+        if (offset + 10 > buffer.byteLength) throw new Error('TDB1: truncated node header')
+        const neighborCount = dv.getUint16(offset + 8, true)
+        const edgeBytes = neighborCount * 13
+        if (offset + 10 + edgeBytes > buffer.byteLength) throw new Error('TDB1: truncated neighbor records')
+        offset += 10 + edgeBytes
+        edgeCount += neighborCount
+    }
+
+    const graph = createSerializedGraph(count, edgeCount, [''], false)
+    offset = 12
+    let edgeIndex = 0
+    graph.nodeOffsets[0] = 0
+    for (let nodeIndex = 0; nodeIndex < count; nodeIndex++) {
+        graph.nodeLeadIds[nodeIndex] = dv.getUint32(offset, true)
+        graph.nodeSignalScores[nodeIndex] = dv.getFloat32(offset + 4, true)
+        const neighborCount = dv.getUint16(offset + 8, true)
+        offset += 10
+        for (let neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++) {
+            graph.neighborLeadIds[edgeIndex] = dv.getUint32(offset, true)
+            graph.neighborScores[edgeIndex] = dv.getFloat32(offset + 4, true)
+            graph.neighborSemanticScores[edgeIndex] = dv.getFloat32(offset + 8, true)
+            graph.neighborFlags[edgeIndex] = bytes[offset + 12] ?? 0
+            offset += 13
+            edgeIndex++
+        }
+        graph.nodeOffsets[nodeIndex + 1] = edgeIndex
+    }
+    return graph
+}
+
+/**
+ * Parse a label-plane TDBU artifact into transferable numeric planes. The
+ * string table is the only non-typed payload and is small relative to the
+ * graph itself.
+ */
+export function parseTdbUCompact(buffer: ArrayBuffer): SerializedSemanticThreadGraph {
+    const { bytes, dv, count, strLen } = readCompactHeader(buffer, 'TDBU')
+    let stringStart = 12
+    let edgeCount = 0
+    for (let i = 0; i < count; i++) {
+        if (stringStart + 10 > buffer.byteLength) throw new Error('TDBU: truncated node header')
+        const neighborCount = dv.getUint16(stringStart + 8, true)
+        const edgeBytes = neighborCount * 27
+        if (stringStart + 10 + edgeBytes > buffer.byteLength) {
+            throw new Error('TDBU: truncated neighbor records')
+        }
+        stringStart += 10 + edgeBytes
+        edgeCount += neighborCount
+    }
+    if (stringStart + strLen > buffer.byteLength) throw new Error('TDBU: truncated string table')
+
+    const stringTable = new TextDecoder()
+        .decode(bytes.subarray(stringStart, stringStart + strLen))
+        .split('\u0000')
+    const graph = createSerializedGraph(count, edgeCount, stringTable, true)
+    let offset = 12
+    let edgeIndex = 0
+    graph.nodeOffsets[0] = 0
+    for (let nodeIndex = 0; nodeIndex < count; nodeIndex++) {
+        graph.nodeLeadIds[nodeIndex] = dv.getUint32(offset, true)
+        graph.nodeSignalScores[nodeIndex] = dv.getFloat32(offset + 4, true)
+        const neighborCount = dv.getUint16(offset + 8, true)
+        offset += 10
+        for (let neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++) {
+            graph.neighborLeadIds[edgeIndex] = dv.getUint32(offset, true)
+            graph.neighborScores[edgeIndex] = dv.getFloat32(offset + 4, true)
+            graph.neighborSemanticScores[edgeIndex] = dv.getFloat32(offset + 8, true)
+            graph.neighborBridgeScores[edgeIndex] = dv.getFloat32(offset + 12, true)
+            graph.neighborSignalScores[edgeIndex] = dv.getFloat32(offset + 16, true)
+            graph.neighborFlags[edgeIndex] = bytes[offset + 20] ?? 0
+            graph.neighborThreadTypeIndices[edgeIndex] = dv.getUint16(offset + 21, true)
+            graph.neighborRelationshipRoleIndices[edgeIndex] = dv.getUint16(offset + 23, true)
+            graph.neighborRelationshipAxisIndices[edgeIndex] = dv.getUint16(offset + 25, true)
+            offset += 27
+            edgeIndex++
+        }
+        graph.nodeOffsets[nodeIndex + 1] = edgeIndex
+    }
+    return graph
 }

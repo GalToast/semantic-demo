@@ -18,7 +18,7 @@ import {
     currentView,
     setMyceliumMode as _setMyceliumMode
 } from './navigation.svelte'
-import { legacyState } from '@lib/state/app.svelte'
+import { appState } from '@lib/state/app.svelte'
 import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } from './focus.svelte'
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
 import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'
@@ -136,11 +136,11 @@ export function applyCompositionState(): void {
 
     // Keep the focus-store compatibility view current for the test bridge.
     // Navigation fields are already synchronized by writeNavStateMirror();
-    // writing legacyState.navState here would bypass that canonical funnel and
+    // writing appState.navState here would bypass that canonical funnel and
     // reintroduce the state drift this function is meant to expose.
     if (typeof window !== 'undefined') {
-        if (legacyState.focusState) {
-            legacyState.focusState.selectedPoint = $focus.selectedBusiness
+        if (appState.focusState) {
+            appState.focusState.selectedPoint = $focus.selectedBusiness
         }
     }
 }
@@ -219,12 +219,12 @@ export function resetExplorationFocus(options?: {
         publish(EVENTS.STATE_RESET, { reason: 'manual-reset', options })
     }
 
-    // Mirror the reset through the canonical navigation helper. legacyState is
-    // the same appState object, so trailDepth, semanticDiveMode, and
+    // Mirror the reset through the canonical navigation helper. appState is
+    // the only runtime state object, so trailDepth, semanticDiveMode, and
     // focusedNode aliases all follow the navState patch while subscribers see
     // one ordered write. window.state was retired 2026-05-27.
     if (typeof window !== 'undefined') {
-        if (legacyState.navState) {
+        if (appState.navState) {
             writeNavStateMirror({
                 focusedIndex: null,
                 surface: 'idle',
