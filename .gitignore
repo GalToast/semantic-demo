@@ -166,3 +166,6 @@ public/data/*.dat.br
 public/data/*.dat.gz
 src/data.dat
 .data-repo-cache/
+
+# Pi harness loop-guard runtime log (self-healing, regenerated each guard trigger)
+loop-guard-handoff.json
