@@ -258,12 +258,19 @@ final-verify on everything.
 4. Fan-out only for genuinely independent slices — logfare lanes run one-at-a-time
    in practice, so parallel fan-out gains little today.
 
-### Stacked goal tiers (the "beast" file-path protocol — live 2026-08-11)
+### Stacked goal tiers (the "beast" file-path protocol — historical 2026-08-11)
+
+> **2026-09-03 superseding architecture:** there is one live goal engine in
+> `C:/Users/HP/.pi/agent/extensions/goal.ts`. The repo CLI/evaluator are thin
+> adapters and must not grow a second parser or transition loop. Worker file
+> state is normalized, bounded, atomic, and namespaced per worker; the parent
+> inheritance mirror is updated only by the main process. See `docs/goal-loop.md`.
 
 The goal TOOL is not surfaced in worker schemas (worker tool-filter blocks it; mmx
 extension injection does NOT add it — probed + reverted). BUT goal-state.json at
-~/.pi/agent/extensions/goal-state.json is a plain read-fileSync/writeFileSync file:
-ANY worker + nested child can read/write it with ordinary bash/node-fs — no tool.
+the worker's own `PI_GOAL_STATE_PATH` is the worker-reachable transport:
+workers can read/write it with ordinary bash/node-fs when they do not receive
+the goal tool. The parent path must not be used by workers.
 
 Beast stacking = every tier writes its own namespaced sub-goal alongside the main
 goal; the main lane evaluates all-tiers-ACHIEVED. Live: parent tier written BY a

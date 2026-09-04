@@ -1,8 +1,71 @@
-- qwen-3.8-27b ✅ VISION (measured 2026-08-26: image probe via /logfare/v1/chat/completions returned 200 + correct image description; 18-25s/turn so budget runway; big ctx 1M/131K). Added to vision-capable set alongside kimi-k2.7-code.# Subagent Lane Inventory — Semantic Explorer
+- qwen-3.8-27b ✅ VISION (measured 2026-08-26: image probe via /logfare/v1/chat/completions returned 200 + correct image description; 18-25s/turn so budget runway; big ctx 1M/131K). Added to vision-capable set alongside kimi-k2.7-code.
+
+# Subagent Lane Inventory — Semantic Explorer
 
 > **COMPRESSED HISTORY (2026-08-11):** the 59 dated run-entries below are history; durable lessons → docs/subagent-delegation.md (Landmine classes). The live coordination state is in the un-dated sections.
 
 Moved out of `AGENTS.md` (Prompt Budget: no large reference tables in the hot-path file). `docs/subagent-delegation.md` remains the source for lifecycle/rate/vision rules; this doc is just the live per-model viability table.
+
+## Provider free-route probe — 2026-09-04
+
+The local key-router at `127.0.0.1:8788` returned HTTP 200 with configured keys
+for both free-provider lanes. Discovery found 368 Kilo models and 425
+OpenRouter models. The broker exposed 19 Kilo free launch refs and 20 OpenRouter
+free launch refs. These are catalog/key-accessibility facts; `/models` does not
+prove that a particular upstream model will accept a completion at this moment.
+
+Sequential `chat/completions` probes used `max_tokens=1` and the exact body model
+id. Kilo returned 200 for 15 of 17 text/alias probes. The two failures were
+`thinkingmachines/inkling:free` and `thinkingmachines/inkling-small:free`, both
+429 daily-cap responses. OpenRouter returned 200 for 10 of 18 text/alias probes:
+North Mini Code, Dots3-Note, Ling 3.0 Flash Fin, LFM2.5, MiniMax M2.7/M3, and
+Nemotron Nano/Super/Ultra/3.5. OpenRouter's current failures were Gemma 4 26B
+and 31B (429), Poolside Laguna S/XS (429), GLM 5.2 (429), Inkling/Inkling Small
+(403 agentic-harness-only), and the bare `free` body id (404). The launch ref is
+`openrouter/free`; a provider-qualified launch ref must not be reduced to a
+bare body id by an adapter.
+
+Selected live catalog metadata (context window; input -> output) is:
+
+| family | context | modalities |
+| --- | ---: | --- |
+| Laguna S/XS | 262,144 | text -> text |
+| North Mini Code | 256,000 | text -> text |
+| Dots3-Note | 512,000 | text + image -> text |
+| MiniMax M2.7 | 196,608 | text -> text |
+| MiniMax M3 | 1,048,576 | text + image + video -> text |
+| Nemotron 3.5 Lightning / Ultra | 1,000,000 | text -> text |
+| Nemotron 3 Nano Omni | 256,000 | text + image + audio + video -> text |
+| Gemma 4 26B / 31B | 262,144 | text + image + video -> text |
+| Inkling / Inkling Small | 1,048,576 | text + image + audio -> text |
+| GLM 5.2 | 256,000 | text -> text |
+
+The live rows generally omit `top_provider.max_completion_tokens`, so output
+budgets remain route-specific policy/override values in Qwen settings; never
+inflate an unknown output cap to the context window. Muse Spark 1.2/1.3
+Contributor is separately pinned to `xhigh` because OpenCode Zen rejects the
+generic `max` reasoning tier. The broker source and dist contain that safety cap;
+reload the external-subagents MCP process before relying on the new code in a
+running server.
+
+## Inkling Pi-harness launch probe — 2026-09-04
+
+Provider-qualified Inkling refs are structurally launchable from the Pi
+harness, but availability remains route- and quota-specific. A Kilo launch of
+`kilo/thinkingmachines/inkling:free` passed `/kilo/v1` preflight with two active
+keys, then returned the upstream daily-cap `429` on both keys with zero tokens.
+An OpenRouter launch of `openrouter/thinkingmachines/inkling:free` completed
+through `pi:direct-openrouter` with the exact smoke marker, `first_ttft_ms=3799`,
+88 output tokens, zero retries, and zero cost. The plain completion probe's
+earlier `403 agentic-harness-only` is therefore an access policy distinction,
+not proof that the Pi route is broken.
+
+The running external-subagents MCP process was older than the rebuilt source
+and dist during this probe. Its smoke worker incorrectly received the parent's
+active goal; restart the MCP client/server before treating isolated
+`mode=smoke` or `inherit_goal=false` behavior as verified. Published Inkling
+benchmarks and the raw local probe are recorded in
+`tmp/inkling-launch-benchmark-20260904.md`.
 
 ## Current coordination snapshot — 2026-08-20
 
@@ -812,9 +875,12 @@ glm), harvest the survivor's deliverable, wait for the rest.
 
 > **2026-08-10 Goal-loop review adjudication:** k2 (nvidia llama) reviewed loop — 3 prelim concerns. Main-lane adjudication: all 3 VERIFIED-OK. Reviewer must run actual self-test, not just read code.
 
-- goal-loop.mjs (explicit in settings.json) = the autonomous loop: pi.on(agent_end)
+- goal.ts (enabled in settings.json) = the single runtime owner: interactive `/goal`,
+  deterministic evaluator, normalized file state, and `agent_end` continuation.
 
-> **2026-08-10 goal-loop stack = two complementary extensions:** goal.ts (interactive /goal tool) + goal-loop.mjs (autonomous loop). Pair is full /goal parity stack.
+> **2026-09-03 consolidation:** the old two-extension description is historical and
+> superseded. `tools/goal-loop/evaluator.mjs` is now only a compatibility facade over
+> `goal.ts`; `goal.mjs` is the CLI facade; the archived `goal-loop.mjs` is not loaded.
 
 OPEN: cline-as-worker path still produces 0 output (worker harness→shim route
 

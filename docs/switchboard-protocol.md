@@ -22,6 +22,8 @@ If the board is empty for >30 min you may proceed without further coordination.
 
 **Rule of thumb:** if another session would be blocked or misled without reading it, it is a TASK or HANDOFF — not a chat message.
 
+**Doorbell (urgent-nudge):** `ring_agent` fires a one-shot ping that appears in the peer's `get_inbox` under `doorbells`. Use for urgent-but-non-blocking signals; persistent coordination goes to `create_task` / `post_message`.
+
 ## 3. Finding → Handoff Flow
 
 The 2026-08-05 FocusPocketA11y overflow finding was left as a chat message and was missed. Use this flow instead:
@@ -70,7 +72,21 @@ The 2026-08-05 session had repeated conflicts: two sessions rebuilding `dist/` w
 
 Use `stale_task_sweep` on abandoned work so the board does not rot.
 
-## 6. What NOT To Do
+## 6. Doorbell Mechanics (verified 2026-09-03)
+
+Ring for urgent-nudge; the missed list is the backstop.
+
+- **missed_doorbells** — `get_inbox` now returns a `missed_doorbells` field plus `counts.missed_doorbells`: expired-but-unacked doorbells from the last 24 h. They surface in `get_next_action` as `type: missed_doorbell` at priority 1. Previously unacked pings vanished silently at TTL.
+- **Late ack** — `ack_doorbell` no longer raises `doorbell_expired`. An expired bell can still be marked seen/handled. Snoozing a missed doorbell re-rings it.
+
+## 7. Direct-message Attention and Idle Lanes (verified 2026-09-04)
+
+- A direct `post_message` is durable message data **and** an attention signal: the server creates a deduplicated, 24-hour doorbell for the recipient and exposes `attention.required` / counts in `get_inbox`.
+- The switchboard server does not start a peer's Pi turn. `before_agent_start` can surface the doorbell when a turn is already starting, but a truly idle interactive lane remains idle unless an opt-in local watcher delivers a follow-up into that Pi process.
+- An idle watcher may wake only actionable direct-message/doorbell work, must deduplicate message/doorbell IDs, respect busy/pending-turn state, cooldowns, wake budgets, goal budgets/TTLs, and an explicit stop/ack path, and must never create an unbounded peer ping-pong loop.
+- A received message is not complete merely because it was surfaced. The lane should read the full inbox, process or route the work, acknowledge the doorbell after handling it, and post a concise reply or handoff.
+
+## 8. What NOT To Do
 
 - **Do not** post large evidence (diffs, screenshots, long logs) into chat — reference `tmp/` paths instead.
 - **Do not** claim a task that another session owns with a live heartbeat; negotiate via `ring_agent` or `comment_task`.
