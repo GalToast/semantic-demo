@@ -5,7 +5,6 @@
 //   status                                              → print current state
 //   step                                                → run one evaluateAndUpdate pass (returns continueLoop)
 //   clear | pause | resume                               → mutate status
-import { writeFileSync } from 'node:fs'
 import { STATE_PATH, defaultState, readStateFile, writeStateFile, evaluateAndUpdate } from './evaluator.mjs'
 
 const CLI_STATE = process.env.GOAL_STATE_PATH || process.env.PI_GOAL_STATE_PATH || STATE_PATH
@@ -15,7 +14,7 @@ function usage() {
 
   set <condition> [budget]   write a new goal (default budget 12)
   status                     print the state (JSON)
-  step                       run one evaluateAndUpdate pass
+  step                       run one canonical-engine evaluate pass
   clear                      clear the goal entirely
   pause / resume             toggle status (paused / running)
 state file: ${CLI_STATE}`)
@@ -83,12 +82,8 @@ function main(argv) {
             break
         }
         case 'clear': {
-            try {
-                writeFileSync(stateFile, '')
-                console.log('CLEARED')
-            } catch {
-                console.log('no goal file')
-            }
+            writeStateFile({ status: 'cleared' }, stateFile)
+            console.log('CLEARED')
             break
         }
         default:

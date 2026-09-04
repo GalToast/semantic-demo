@@ -1,13 +1,16 @@
 // goal-loop-fake-pi-test.mjs — prove the goal-loop extension's loop behavior
 // with a stubbed pi object (no real harness). Run: node goal-loop-fake-pi-test.mjs
 import { pathToFileURL } from 'node:url'
-import { writeFileSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 
-const HERE = dirname(fileURLToPath(import.meta.url))
 const EXT = 'C:/Users/HP/.pi/agent/extensions/goal.ts'
-const STATE = 'C:/Users/HP/.pi/agent/extensions/goal-state.json'
+const STATE = `C:/tmp/pi-goal-loop-fake-${process.pid}.json`
+const INHERIT = `C:/tmp/pi-goal-loop-fake-${process.pid}-inherit.json`
+const TELEMETRY = `C:/tmp/pi-goal-loop-fake-${process.pid}-events.jsonl`
+mkdirSync('C:/tmp', { recursive: true })
+process.env.PI_GOAL_STATE_PATH = STATE
+process.env.PI_GOAL_INHERIT_STATE_PATH = INHERIT
+process.env.PI_GOAL_TELEMETRY_PATH = TELEMETRY
 
 const captured = {}
 const sendMessages = []
@@ -15,6 +18,7 @@ const fakePi = {
     on: (ev, fn) => {
         captured[ev] = fn
     },
+    sendMessage: async (msg) => sendMessages.push(msg),
     exec: async () => ({ stdout: '', code: 0 }),
     registerTool: () => {},
     registerCommand: () => {},
@@ -25,8 +29,10 @@ mod.default(fakePi)
 
 function freshState(over = {}) {
     const base = {
-        goal: 'cond::cmd: node -e process.exit(0)',
-        condition: 'cond::cmd: node -e process.exit(0)',
+        // Quote the JavaScript so this fixture is valid under both cmd.exe
+        // and the POSIX shell used by the live Pi bash tool on Windows.
+        goal: 'cond::cmd: node -e "process.exit(0)"',
+        condition: 'cond::cmd: node -e "process.exit(0)"',
         budget: 3,
         turnCount: 0,
         status: 'running',
@@ -55,13 +61,13 @@ assert(typeof captured.agent_end === 'function', 'registers agent_end')
 assert(typeof captured.session_before_compact === 'function', 'registers session_before_compact')
 
 // 2. Met condition → no nextTurn
-freshState({ condition: 'cond::cmd: node -e process.exit(0)' })
+freshState({ condition: 'cond::cmd: node -e "process.exit(0)"' })
 sendMessages.length = 0
 await captured.agent_end({}, ctx)
 assert(sendMessages.length === 0, 'met condition → no sendMessage')
 
 // 3. Unmet condition → nextTurn with evidence
-freshState({ condition: 'cond::cmd: node -e process.exit(1)', goal: 'cond::cmd: node -e process.exit(1)' })
+freshState({ condition: 'cond::cmd: node -e "process.exit(1)"', goal: 'cond::cmd: node -e "process.exit(1)"' })
 sendMessages.length = 0
 await captured.agent_end({}, ctx)
 assert(sendMessages.length === 1, 'unmet condition → sendMessage called')
@@ -71,8 +77,8 @@ assert(/exit=1|Evidence|not yet met/i.test(sendMessages[0]?.content || ''), 'mes
 
 // 4. Budget exhausted → stops (no nextTurn)
 freshState({
-    condition: 'cond::cmd: node -e process.exit(1)',
-    goal: 'cond::cmd: node -e process.exit(1)',
+    condition: 'cond::cmd: node -e "process.exit(1)"',
+    goal: 'cond::cmd: node -e "process.exit(1)"',
     turnCount: 3,
     budget: 3
 })
@@ -98,10 +104,13 @@ await captured.agent_end({}, ctx)
 assert(sendMessages.length === 0, 'malformed/missing state → graceful, no sendMessage')
 
 // 7. state file updated after evaluation (lastCheckAt/status transitions)
-freshState({ condition: 'cond::cmd: node -e process.exit(0)' })
+freshState({ condition: 'cond::cmd: node -e "process.exit(0)"' })
 await captured.agent_end({}, ctx)
 const after = JSON.parse(readFileSync(STATE, 'utf8'))
 assert(after.status === 'met' || after.status === 'cleared', 'met condition transitions state')
 
 console.log(`\nRESULT: ${pass} pass / ${fail} fail`)
+rmSync(STATE, { force: true })
+rmSync(INHERIT, { force: true })
+rmSync(TELEMETRY, { force: true })
 process.exit(fail > 0 ? 1 : 0)
