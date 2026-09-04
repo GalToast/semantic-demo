@@ -44,6 +44,13 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
+    // 2dd4798 — docs(tests) provenance-mode contract + transport spec + budget
+    // baseline: the intent commit carried its own test subject
+    // (tests/journey/semantic-thread-transport.spec.js,
+    // tests/semantic-space-provenance-mode.mjs) plus the budget tool that
+    // gates them (scripts/bundle-budget.mjs). Companion-artifact class,
+    // same as 2cb1db76. Exempted 2026-09-04.
+    '2dd47980fe313ae78d2c3aeddb685ccb174d5abb',
     // 2cb1db76 — docs(p8) hardware-acceptance emulation report riding its own
     // evidence artifact scripts/qa-p8-probe.mjs (the probe that produced the
     // acceptance numbers). Companion-artifact class, exempted 2026-08-24.
