@@ -34,6 +34,7 @@
   import SelectedBusinessDetails from '@components/SelectedBusinessDetails.svelte';
   import { returnToOverview } from '@lib/orchestration/lifecycle';
   import FocusCardHeader from '@lib/components/focus/FocusCardHeader.svelte';
+  import SonicIdentity from '@components/sonic/SonicIdentity.svelte';
 
 
   // ── Business records (reactive store subscription) ─────────────────────
@@ -393,6 +394,7 @@
       <div id="fc-selected-details" class="selected-details" transition:fade={{ duration: 150 }}>
         <FocusCardHeader {viewModel} {selectedCity} idPrefix="fc-" />
         <SelectedBusinessDetails {viewModel} {selectedCity} idPrefix="fc-" showHeader={false} />
+        <SonicIdentity cluster={selectedRecord ? selectedRecord.cluster : null} />
       </div>
     {/if}
   </div>
