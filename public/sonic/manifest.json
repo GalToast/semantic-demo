@@ -1,17 +1,17 @@
 {
-  "version": 1,
-  "generated": "2026-09-04",
-  "generator": "magenta-rt2 mrt2_small official CPU pipeline + ear_v7.1 (GTZAN-calibrated)",
-  "defaultClip": "food-hospitality",
-  "clips": [
-    {
-      "id": "food-hospitality",
-      "file": "/sonic/clips/food-hospitality.wav",
-      "prompt": "warm acoustic guitar campfire",
-      "seed": 7,
-      "seconds": 8,
-      "ear": { "score": 100, "grade": "S", "motif": 0.152, "beat": 0.361 }
-    }
-  ],
-  "clusterMap": {}
+    "version": 1,
+    "generated": "2026-09-04",
+    "generator": "magenta-rt2 mrt2_small official CPU pipeline + ear_v7.1 (GTZAN-calibrated)",
+    "defaultClip": "food-hospitality",
+    "clips": [
+        {
+            "id": "food-hospitality",
+            "file": "sonic/clips/food-hospitality.wav",
+            "prompt": "warm acoustic guitar campfire",
+            "seed": 7,
+            "seconds": 8,
+            "ear": { "score": 100, "grade": "S", "motif": 0.152, "beat": 0.361 }
+        }
+    ],
+    "clusterMap": {}
 }

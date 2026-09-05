@@ -69,6 +69,8 @@ const ROOT_ASSETS = new Map<string, string>([
     ['/data.dat.gz', 'src/data.dat.gz'],
     ['/semantic_threads_ui.dat', 'public/data/semantic_threads_ui.dat'],
     ['/semantic_threads.dat', 'public/data/semantic_threads.dat'],
+    ['/sonic/manifest.json', 'public/sonic/manifest.json'],
+    ['/sonic/clips/food-hospitality.wav', 'public/sonic/clips/food-hospitality.wav'],
     ['/semantic_space_layout_manifest.json', 'public/data/semantic_space_layout_manifest.json'],
     ['/scripts/leadEnrichment.public.json', 'public/data/leadEnrichment.public.json']
 ])

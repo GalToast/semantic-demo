@@ -39,7 +39,7 @@ async function fetchClipBuffer(clip: SonicClip): Promise<AudioBuffer | null> {
     const c = ensureCtx()
     if (!c) return null
     try {
-        const res = await fetch(clip.file)
+        const res = await fetch(`${import.meta.env.BASE_URL}${clip.file}`)
         if (!res.ok) return null
         const raw = await res.arrayBuffer()
         const buf = await c.decodeAudioData(raw)

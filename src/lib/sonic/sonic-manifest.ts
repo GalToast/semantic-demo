@@ -62,7 +62,7 @@ export function parseManifest(raw: unknown): SonicManifest | null {
                 score: c.ear.score,
                 grade: c.ear.grade,
                 motif: typeof c.ear.motif === 'number' ? c.ear.motif : null,
-                beat: typeof c.ear.beat === 'number' ? c.ear.beat : null,
+                beat: typeof c.ear.beat === 'number' ? c.ear.beat : null
             }
         }
         clips.push({
@@ -71,7 +71,7 @@ export function parseManifest(raw: unknown): SonicManifest | null {
             prompt: typeof c.prompt === 'string' ? c.prompt : '',
             seed: typeof c.seed === 'number' ? c.seed : 0,
             seconds: typeof c.seconds === 'number' ? c.seconds : 0,
-            ear,
+            ear
         })
     }
     const clusterMap: Record<string, string> = {}
@@ -84,7 +84,7 @@ export function parseManifest(raw: unknown): SonicManifest | null {
         version,
         clips,
         clusterMap,
-        defaultClip: typeof raw.defaultClip === 'string' ? raw.defaultClip : null,
+        defaultClip: typeof raw.defaultClip === 'string' ? raw.defaultClip : null
     }
 }
 
@@ -92,7 +92,7 @@ export function parseManifest(raw: unknown): SonicManifest | null {
 export async function loadSonicManifest(): Promise<SonicManifest | null> {
     if (cached) return cached
     if (!pending) {
-        pending = fetch('/sonic/manifest.json')
+        pending = fetch(`${import.meta.env.BASE_URL}sonic/manifest.json`)
             .then((r): Promise<SonicManifest | null> => (r.ok ? r.json() : Promise.resolve(null)))
             .then((raw) => {
                 cached = parseManifest(raw)
@@ -105,7 +105,6 @@ export async function loadSonicManifest(): Promise<SonicManifest | null> {
 
 /** Resolve the clip for a cluster name; falls back to defaultClip, then null. */
 export function getClipForCluster(manifest: SonicManifest, clusterName: string | null | undefined): SonicClip | null {
-    const byId = (id: string | null) => (id ? manifest.clips.find((c) => c.id === id) ?? null : null)
-    return byId(clusterName ? manifest.clusterMap[clusterName] ?? null : null)
-        ?? byId(manifest.defaultClip)
+    const byId = (id: string | null) => (id ? (manifest.clips.find((c) => c.id === id) ?? null) : null)
+    return byId(clusterName ? (manifest.clusterMap[clusterName] ?? null) : null) ?? byId(manifest.defaultClip)
 }
