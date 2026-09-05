@@ -16,6 +16,9 @@ test.afterEach(async ({ page }) => {
 
 // Sonic identity journey: focused business shows its generated clip player
 // (Magenta RT2 clip + ear_v7.1 score badge from public/sonic/manifest.json).
+// v2: the manifest carries 3 ranked seed-variants per cluster; the component
+// assigns one deterministically per node via FNV-1a hash of the leadId, so
+// this spec still asserts the stable play/badge contract on any variant.
 test.describe('Sonic identity journey', () => {
     test('SONIC-1. Focused business shows sonic play control and ear score badge', async ({ page }) => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=6218`, { waitUntil: 'domcontentloaded' })

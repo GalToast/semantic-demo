@@ -394,7 +394,7 @@
       <div id="fc-selected-details" class="selected-details" transition:fade={{ duration: 150 }}>
         <FocusCardHeader {viewModel} {selectedCity} idPrefix="fc-" />
         <SelectedBusinessDetails {viewModel} {selectedCity} idPrefix="fc-" showHeader={false} />
-        <SonicIdentity cluster={selectedRecord ? selectedRecord.cluster : null} />
+        <SonicIdentity cluster={selectedRecord ? selectedRecord.cluster : null} leadId={selectedRecord ? selectedRecord.lead_id : null} />
       </div>
     {/if}
   </div>

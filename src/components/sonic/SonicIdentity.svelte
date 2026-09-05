@@ -3,19 +3,22 @@
 
   Shows a play/pause control and the ear_v7.1 score badge for the focused
   business's sonic identity (Magenta RT2 generated clip keyed by cluster).
+  v2: the exact clip variant is picked deterministically from the node's
+  leadId, so businesses of the same cluster play different takes.
   Hidden entirely when no clip resolves (manifest missing / clips empty).
 -->
 <script lang="ts">
-  import { loadSonicManifest, getClipForCluster, type SonicManifest, type SonicClip } from '@lib/sonic/sonic-manifest';
+  import { loadSonicManifest, pickVariantForNode, type SonicManifest, type SonicClip } from '@lib/sonic/sonic-manifest';
   import { playSonicIdentity, stopSonicIdentity, isPlaying } from '@lib/audio/sonic-identity';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
 
   interface Props {
-    /** Focused business record (cluster drives clip resolution). */
+    /** Focused business record fields driving clip resolution. */
     cluster: number | null;
+    leadId?: string | null;
   }
 
-  let { cluster }: Props = $props();
+  let { cluster, leadId = null }: Props = $props();
 
   let manifest = $state<SonicManifest | null>(null);
   $effect(() => {
@@ -25,7 +28,7 @@
   });
 
   const clusterName = $derived(cluster !== null ? CLUSTER_NAMES[cluster % CLUSTER_NAMES.length] ?? null : null);
-  const clip = $derived(manifest ? getClipForCluster(manifest, clusterName) : null);
+  const clip = $derived(manifest ? pickVariantForNode(manifest, clusterName, leadId) : null);
 
   let playing = $state(false);
   // Keep the local flag in sync when the clip ends naturally.
@@ -42,7 +45,7 @@
       stopSonicIdentity();
       playing = false;
     } else {
-      void playSonicIdentity(clusterName, clip.id).then((ok) => { playing = ok; });
+      void playSonicIdentity(clusterName, clip.id, leadId).then((ok) => { playing = ok; });
     }
   }
 </script>

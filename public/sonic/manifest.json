@@ -1,99 +1,253 @@
 {
-  "version": 1,
+  "version": 2,
   "generated": "2026-09-04",
   "generator": "magenta-rt2 mrt2_small official CPU pipeline + ear_v7.1 (GTZAN-calibrated)",
-  "defaultClip": "food-hospitality",
-  "clips": [
-    {
-      "id": "food-hospitality",
-      "file": "sonic/clips/food-hospitality.wav",
+  "clusters": {
+    "Food & Hospitality": {
       "prompt": "warm acoustic guitar campfire",
-      "seed": 7,
-      "seconds": 8,
-      "ear": {
-        "score": 100,
-        "grade": "S",
-        "motif": 0.152,
-        "beat": 0.361
-      }
+      "variants": [
+        {
+          "id": "food-hospitality-s7",
+          "file": "sonic/clips/food-hospitality-s7.wav",
+          "seed": 7,
+          "seconds": 8,
+          "ear": {
+            "score": 100,
+            "grade": "S",
+            "motif": 0.152,
+            "beat": 0.361
+          }
+        },
+        {
+          "id": "food-hospitality-s13",
+          "file": "sonic/clips/food-hospitality-s13.wav",
+          "seed": 13,
+          "seconds": 8,
+          "ear": {
+            "score": 100,
+            "grade": "S",
+            "motif": 0.213,
+            "beat": 0.587
+          }
+        },
+        {
+          "id": "food-hospitality-s21",
+          "file": "sonic/clips/food-hospitality-s21.wav",
+          "seed": 21,
+          "seconds": 8,
+          "ear": {
+            "score": 100,
+            "grade": "S",
+            "motif": 0.214,
+            "beat": 0.567
+          }
+        }
+      ]
     },
-    {
-      "id": "retail",
-      "file": "/sonic/clips/retail.wav",
+    "Retail & Shops": {
       "prompt": "bright upbeat boutique pop",
-      "seed": 7,
-      "seconds": 8,
-      "cluster": "Retail & Shops",
-      "ear": {
-        "score": 100,
-        "grade": "S",
-        "motif": 0.269,
-        "beat": 0.693
-      }
+      "variants": [
+        {
+          "id": "retail-s7",
+          "file": "sonic/clips/retail-s7.wav",
+          "seed": 7,
+          "seconds": 8,
+          "ear": {
+            "score": 100,
+            "grade": "S",
+            "motif": 0.258,
+            "beat": 0.738
+          }
+        },
+        {
+          "id": "retail-s21",
+          "file": "sonic/clips/retail-s21.wav",
+          "seed": 21,
+          "seconds": 8,
+          "ear": {
+            "score": 100,
+            "grade": "S",
+            "motif": 0.257,
+            "beat": 0.675
+          }
+        },
+        {
+          "id": "retail-s13",
+          "file": "sonic/clips/retail-s13.wav",
+          "seed": 13,
+          "seconds": 8,
+          "ear": {
+            "score": 92,
+            "grade": "S",
+            "motif": 0.156,
+            "beat": 0.624
+          }
+        }
+      ]
     },
-    {
-      "id": "professional",
-      "file": "/sonic/clips/professional.wav",
+    "Professional Services": {
       "prompt": "clean minimal piano pulse",
-      "seed": 7,
-      "seconds": 8,
-      "cluster": "Professional Services",
-      "ear": {
-        "score": 100,
-        "grade": "S",
-        "motif": 0.329,
-        "beat": 0.472
-      }
+      "variants": [
+        {
+          "id": "professional-s13",
+          "file": "sonic/clips/professional-s13.wav",
+          "seed": 13,
+          "seconds": 8,
+          "ear": {
+            "score": 100,
+            "grade": "S",
+            "motif": 0.541,
+            "beat": 0.597
+          }
+        },
+        {
+          "id": "professional-s7",
+          "file": "sonic/clips/professional-s7.wav",
+          "seed": 7,
+          "seconds": 8,
+          "ear": {
+            "score": 100,
+            "grade": "S",
+            "motif": 0.415,
+            "beat": 0.435
+          }
+        },
+        {
+          "id": "professional-s21",
+          "file": "sonic/clips/professional-s21.wav",
+          "seed": 21,
+          "seconds": 8,
+          "ear": {
+            "score": 100,
+            "grade": "S",
+            "motif": 0.444,
+            "beat": 0.588
+          }
+        }
+      ]
     },
-    {
-      "id": "healthcare",
-      "file": "/sonic/clips/healthcare.wav",
+    "Healthcare & Medical": {
       "prompt": "gentle ambient choir",
-      "seed": 7,
-      "seconds": 8,
-      "cluster": "Healthcare & Medical",
-      "ear": {
-        "score": 95,
-        "grade": "S",
-        "motif": 0.406,
-        "beat": 0.417
-      }
+      "variants": [
+        {
+          "id": "healthcare-s13",
+          "file": "sonic/clips/healthcare-s13.wav",
+          "seed": 13,
+          "seconds": 8,
+          "ear": {
+            "score": 98,
+            "grade": "S",
+            "motif": 0.408,
+            "beat": 0.467
+          }
+        },
+        {
+          "id": "healthcare-s21",
+          "file": "sonic/clips/healthcare-s21.wav",
+          "seed": 21,
+          "seconds": 8,
+          "ear": {
+            "score": 95,
+            "grade": "S",
+            "motif": 0.217,
+            "beat": 0.463
+          }
+        },
+        {
+          "id": "healthcare-s7",
+          "file": "sonic/clips/healthcare-s7.wav",
+          "seed": 7,
+          "seconds": 8,
+          "ear": {
+            "score": 93,
+            "grade": "S",
+            "motif": 0.109,
+            "beat": 0.423
+          }
+        }
+      ]
     },
-    {
-      "id": "arts",
-      "file": "/sonic/clips/arts.wav",
+    "Arts & Culture": {
       "prompt": "expressive jazz brushes",
-      "seed": 7,
-      "seconds": 8,
-      "cluster": "Arts & Culture",
-      "ear": {
-        "score": 95,
-        "grade": "S",
-        "motif": 0.133,
-        "beat": 0.183
-      }
+      "variants": [
+        {
+          "id": "arts-s21",
+          "file": "sonic/clips/arts-s21.wav",
+          "seed": 21,
+          "seconds": 8,
+          "ear": {
+            "score": 98,
+            "grade": "S",
+            "motif": 0.147,
+            "beat": 0.158
+          }
+        },
+        {
+          "id": "arts-s13",
+          "file": "sonic/clips/arts-s13.wav",
+          "seed": 13,
+          "seconds": 8,
+          "ear": {
+            "score": 96,
+            "grade": "S",
+            "motif": 0.244,
+            "beat": 0.088
+          }
+        },
+        {
+          "id": "arts-s7",
+          "file": "sonic/clips/arts-s7.wav",
+          "seed": 7,
+          "seconds": 8,
+          "ear": {
+            "score": 89,
+            "grade": "A",
+            "motif": 0.129,
+            "beat": 0.234
+          }
+        }
+      ]
     },
-    {
-      "id": "churches",
-      "file": "/sonic/clips/churches.wav",
+    "Churches": {
       "prompt": "reverent organ hymn",
-      "seed": 7,
-      "seconds": 8,
-      "cluster": "Churches",
-      "ear": {
-        "score": 93,
-        "grade": "S",
-        "motif": 0.325,
-        "beat": 0.13
-      }
+      "variants": [
+        {
+          "id": "churches-s13",
+          "file": "sonic/clips/churches-s13.wav",
+          "seed": 13,
+          "seconds": 8,
+          "ear": {
+            "score": 98,
+            "grade": "S",
+            "motif": 0.254,
+            "beat": 0.209
+          }
+        },
+        {
+          "id": "churches-s7",
+          "file": "sonic/clips/churches-s7.wav",
+          "seed": 7,
+          "seconds": 8,
+          "ear": {
+            "score": 95,
+            "grade": "S",
+            "motif": 0.076,
+            "beat": 0.112
+          }
+        },
+        {
+          "id": "churches-s21",
+          "file": "sonic/clips/churches-s21.wav",
+          "seed": 21,
+          "seconds": 8,
+          "ear": {
+            "score": 94,
+            "grade": "S",
+            "motif": 0.309,
+            "beat": 0.079
+          }
+        }
+      ]
     }
-  ],
-  "clusterMap": {
-    "Food & Hospitality": "food-hospitality",
-    "Retail & Shops": "retail",
-    "Professional Services": "professional",
-    "Healthcare & Medical": "healthcare",
-    "Arts & Culture": "arts",
-    "Churches": "churches"
   }
 }

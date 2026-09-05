@@ -2,14 +2,17 @@
  * @lib/audio/sonic-identity.ts — Playback for business-node sonic identities.
  *
  * Loads generated Magenta RT2 clips (via the sonic manifest) into a lazily
- * created AudioContext and exposes play/pause/stop with a short fade.
- * Respects the global audio mute state owned by audio-scape (`isAudioMuted`):
- * playback is suppressed while muted, and an in-flight source is stopped when
- * mute engages. This module owns NO mute state — one writer per slice.
+ * created AudioContext and exposes play/pause/stop. v2 playback:
+ * - gapless looping (source.loop = true) instead of one-shot + retrigger
+ * - short fades at edges to avoid clicks; loop seam stays seamless because
+ *   loop=true restarts the buffer without re-scheduling
+ * - respects the global audio mute state owned by audio-scape
+ *   (`isAudioMuted`): playback is suppressed while muted, and an in-flight
+ *   source is stopped when mute engages. This module owns NO mute state.
  */
 
 import { isAudioMuted } from '@lib/audio/audio-scape'
-import { loadSonicManifest, getClipForCluster, type SonicClip } from '@lib/sonic/sonic-manifest'
+import { loadSonicManifest, pickVariantForNode, type SonicClip } from '@lib/sonic/sonic-manifest'
 
 interface WindowWithAudioContext extends Window {
     AudioContext: typeof AudioContext
@@ -56,16 +59,24 @@ export function isPlaying(clipId: string): boolean {
 }
 
 /**
- * Play (or restart) the clip for a cluster. Resolves true when playback began.
+ * Play the node's variant on gapless loop. Resolves true when playback began.
  * No-op (false) when audio is muted, the manifest/clip is unavailable, or the
  * Web Audio constructor is missing.
  */
-export async function playSonicIdentity(clusterName: string | null | undefined, clipId: string): Promise<boolean> {
+export async function playSonicIdentity(
+    clusterName: string | null | undefined,
+    clipId: string,
+    leadId?: string | null
+): Promise<boolean> {
     if (isAudioMuted()) return false
     const manifest = await loadSonicManifest()
     if (!manifest) return false
-    const clip = getClipForCluster(manifest, clusterName)
-    if (!clip || clip.id !== clipId) return false
+    // Resolve by id across the node's variant set (clipId is the requested variant;
+    // leadId refines per-node assignment when provided).
+    const entry = clusterName ? manifest.clusters[clusterName] : undefined
+    const variants = entry?.variants ?? manifest.clusters.__default?.variants ?? []
+    const clip = variants.find((v) => v.id === clipId) ?? pickVariantForNode(manifest, clusterName, leadId ?? null)
+    if (!clip) return false
     const c = ensureCtx()
     if (!c) return false
     const buf = await fetchClipBuffer(clip)
@@ -75,9 +86,10 @@ export async function playSonicIdentity(clusterName: string | null | undefined, 
     stopSonicIdentity()
     const src = c.createBufferSource()
     src.buffer = buf
+    src.loop = true
     const gain = c.createGain()
     gain.gain.setValueAtTime(0.0001, c.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.6, c.currentTime + 0.25) // 250ms fade-in
+    gain.gain.exponentialRampToValueAtTime(0.55, c.currentTime + 0.25) // 250ms fade-in
     src.connect(gain)
     gain.connect(c.destination)
     src.onended = () => {
