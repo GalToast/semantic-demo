@@ -28,6 +28,7 @@ This file is loaded into every Pi model call. Keep it concise. Detailed referenc
 - **User-visible features need a journey test.** Svelte/DOM-touching features → add a test in `tests/journey/*.spec.js` + run `npm run qa:journey:headless`. Pre-commit hook warns on unstaged-journey-test for `*.svelte`/`App.svelte`/`lib/ui`/`lib/keyboard`; `--SkipTestStrategyGapCheck` for pure refactors. Full rule: `docs/session-coordination.md` § test-strategy gap.
 - **Audit before "done".** Enumerate every data source (files/fields/code paths), verify each with rg/git. Cheap to audit, expensive to ship half.
 - **Investigate to conclusion before acting (2026-08-17):** for any multi-part product/process criticism, investigate each claim ONE-BY-ONE to a conclusive verdict (evidence: files, timestamps, logs, measurements) before proposing or making the fix. Record each conclusion as it lands; never act on a half-read. Rabbit holes get a bounded budget, then the verdict is documented as the blocker.
+- **Completion gate — every surface must report green, not just the happy path (2026-09-05):** a fix is not done when the primary action succeeds. Before claiming done, enumerate EVERY status/report/check surface the change exposes and confirm each one is green — apply status, read-only check, post-run verify, syntax gates, and the real loader import. A `missing`/`error`/`not-found` entry is a failure, even when `ok:true` and the main path worked. Caught today: the dots-adapter reported `ok:true, installed:false, missing:[...]` for several turns while the real fix was a one-line `supersededBy` on a dead patch — the primary apply was succeeding, so nothing flagged it. If a surface cannot be made green, say so explicitly and record the blocker; do not ship a partial green. Full incident: `~/.pi/agent/patches/pi-shared-patch-atomic-2026-09-05.md`.
 - **Polish to 10/10; delegating parts doesn't delegate ownership.** Subagent plans AND outputs must both be main-lane-polished to the real success criteria before done.
 
 ## Session Lock Protocol
@@ -100,9 +101,23 @@ Core: `npm run build` · `lint` · `test:unit` · `qa:contract`. Full script lis
 ## Pi Harness Notes
 
 - **Write tool path resolution (verified 2026-09-01)**: `write` to `/tmp/x` lands at `C:\tmp\x`, NOT at `<repo>\tmp\x` and NOT at a real `/tmp`. Root cause: `dist/utils/paths.js` `normalizeWindowsShellPath` only translated Git-Bash drive mounts (`/c/`, `/d/`) — POSIX `/tmp` and `/var` fell through to `path.resolve` relative to the repo cwd, producing a phantom path. Every later `python3 /tmp/x` then failed with ENOENT. **Fix applied to `dist/utils/paths.js`** (two branches: one in `normalizeWindowsShellPath`, one in `normalizePath`); backup `paths.js.pre-pi-tmp-fix-*.bak`; patch doc `~/.pi/agent/patches/pi-windows-posix-temp-paths.md`. **Workaround until the fix is re-applied**: always write to an absolute Windows path (`C:/tmp/...`) and invoke with the same path. Bash heredocs (`cat > /c/tmp/x.py`) are the reliable fallback.
-- **`pi_harness_doctor` is a ghost tool** (verified 2026-09-01): it is declared in the tool schema but has **zero source files** anywhere under `dist/` (walked the whole tree — 0 hits). Calling it returns `Validation failed: must not have additional properties`. Audit finding C2 stands; the health check must be implemented, not worked around.
+- **`pi_harness_doctor` is a ghost tool** (verified 2026-09-01, re-verified
+  2026-09-05): declared in the tool schema but has **zero source files**
+  anywhere under `dist/` (walked the whole tree — 0 hits). Calling it
+  returns `Validation failed: must not have additional properties`. Audit
+  finding C2 stands. **Not implementable in-tree** — the schema is orphaned
+  with no owning module to attach an implementation to, and any patch to
+  `dist/` would be clobbered by the next `pi update`. Workaround: run the
+  equivalent checks directly — `pi_background_jobs action=diagnostics` for
+  job bloat/stale logs, `node --check` + `import()` for module health, and
+  `pi --version` + a one-turn boot for end-to-end. See
+  `~/.pi/agent/patches/pi-harness-doctor-ghost-tool.md`.
 - **Skills silently fail to load when frontmatter YAML breaks** (inner double quotes, single-line frontmatter, embedded structured fields — loader drops them with only a console warning). After creating/editing a SKILL.md, verify it loads: `node --input-type=module -e "import {loadSkills} from 'file:///<pi>/dist/core/skills.js'; ..."` (see `skill-authoring` skill).
-- `memory_write` is broken at the gateway layer until `~/.pi/agent/extensions/pi-hermes-memory-writer.ts` is loaded. If `pi_tool memory_write → Tool not found`, run `/reload-runtime` or restart once. See `~/.pi/agent/patches/pi-hermes-memory-writer.md`.
+- **`memory_write` WORKS as of 2026-09-05** — the gateway extension
+  (`pi-hermes-memory-writer.ts`, 16KB, 2026-06-21) IS loaded. The earlier
+  note that it was broken was stale; verified live by a successful write
+  (stamp fnv1a-0f1aa92f). If it ever fails, `/reload-runtime` or a restart
+  is the recovery, not a code change.
 - **Constantly improve** the Pi harness, key-router, environment, skills, system prompts, memory stores, and tools — when friction presents OR when an observation warrants it (not a per-turn mandate). Capture coding gains as skills + repo docs; route user-preference / life-side gains to `pi_tool memory_write target:"user"`. Long-term compound goal: an amazing coding AND life assistant.
 - Keep reusable Pi harness rules in global Pi docs/skills, not in this repo file unless repo-specific.
 - **Knowledge-gap default → `websearch`** (MCP `websearch_*` via `mcp`). When local files, memory, and `ctx` don't give a confident answer — search instead of speculate. Always available any turn; treat as always-on external memory.
