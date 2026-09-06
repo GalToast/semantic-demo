@@ -663,6 +663,18 @@
       "prompt": "hopeful community folk singalong",
       "variants": [
         {
+          "id": "nonprofits-s13",
+          "file": "sonic/clips/nonprofits-s13.wav",
+          "seed": 13,
+          "seconds": 8,
+          "ear": {
+            "score": 93,
+            "grade": "S",
+            "motif": 0.332,
+            "beat": 0.405
+          }
+        },
+        {
           "id": "nonprofits-s21",
           "file": "sonic/clips/nonprofits-s21.wav",
           "seed": 21,

@@ -2,6 +2,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { createReadStream } from 'node:fs'
 import { copyFile, cp, mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises'
+import { sep } from 'node:path'
 import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'url'
@@ -41,7 +42,8 @@ const COMPRESSION_ALLOWLIST = new Set([
     'semantic_threads_ui.dat',
     'semantic_threads.dat',
     'semantic_space_layout_manifest.json',
-    'leadEnrichment.public.json'
+    'leadEnrichment.public.json',
+    'sonic/manifest.json'
 ])
 
 // W44 Quick Win: CSS files benefit hugely from brotli (~70% off) and gzip
@@ -100,6 +102,7 @@ const ROOT_ASSETS = new Map<string, string>([
     ['/sonic/clips/faith-ministries-s21.wav', 'public/sonic/clips/faith-ministries-s21.wav'],
     ['/sonic/clips/faith-ministries-s7.wav', 'public/sonic/clips/faith-ministries-s7.wav'],
     ['/sonic/clips/faith-ministries-s13.wav', 'public/sonic/clips/faith-ministries-s13.wav'],
+    ['/sonic/clips/nonprofits-s13.wav', 'public/sonic/clips/nonprofits-s13.wav'],
     ['/sonic/clips/nonprofits-s21.wav', 'public/sonic/clips/nonprofits-s21.wav'],
     ['/sonic/clips/nonprofits-s7.wav', 'public/sonic/clips/nonprofits-s7.wav'],
     ['/sonic/clips/foundations-s13.wav', 'public/sonic/clips/foundations-s13.wav'],
@@ -457,7 +460,17 @@ function w44AssetCompressionPlugin(): Plugin {
             await Promise.all(
                 entries.map(async (entry) => {
                     if (!entry.isFile()) return
-                    const isAllowlisted = COMPRESSION_ALLOWLIST.has(entry.name)
+                    // COMPRESSION_ALLOWLIST entries are dist-relative paths
+                    // (e.g. 'sonic/manifest.json'), but entry.name is just the
+                    // basename — matching the two directly misses every asset
+                    // living in a subdirectory. Reconstruct the dist-relative
+                    // path from parentPath so the allowlist actually fires.
+                    // (Caught 2026-09-05: manifest.json sat in dist/svelte/sonic/
+                    // and was silently skipped, failing the compression gate.)
+                    const relPath = join(entry.parentPath, entry.name)
+                        .replace(SVELTE_OUT_DIR + sep, '')
+                        .replace(/\\/g, '/')
+                    const isAllowlisted = COMPRESSION_ALLOWLIST.has(entry.name) || COMPRESSION_ALLOWLIST.has(relPath)
                     const isCss = COMPRESS_CSS && entry.name.endsWith('.css')
                     const isJs = COMPRESS_JS && entry.name.endsWith('.js')
                     if (!isAllowlisted && !isCss && !isJs) return
