@@ -50,4 +50,34 @@ test.describe('Sonic identity journey', () => {
         const pressed = await playBtn.getAttribute('aria-pressed')
         expect(['true', 'false']).toContain(pressed ?? '')
     })
+
+    test('SONIC-2. Style dial toggles between best and purePrior variants', async ({ page }) => {
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=6218`, { waitUntil: 'domcontentloaded' })
+
+        // Wait for sonic section
+        const start = Date.now()
+        let found = false
+        while (Date.now() - start < 15000) {
+            found = await page.evaluate(() => !!document.querySelector('#sonic-style'))
+            if (found) break
+            await page.waitForTimeout(100)
+        }
+        expect(found, 'sonic style dial must appear').toBe(true)
+
+        const styleBtn = page.locator('#sonic-style')
+        await expect(styleBtn).toHaveAttribute('aria-pressed', 'false')
+        await expect(styleBtn).toHaveText('★')
+
+        // Click to purePrior
+        await styleBtn.click()
+        await page.waitForTimeout(100)
+        await expect(styleBtn).toHaveAttribute('aria-pressed', 'true')
+        await expect(styleBtn).toHaveText('⚡')
+
+        // Click back to best
+        await styleBtn.click()
+        await page.waitForTimeout(100)
+        await expect(styleBtn).toHaveAttribute('aria-pressed', 'false')
+        await expect(styleBtn).toHaveText('★')
+    })
 })

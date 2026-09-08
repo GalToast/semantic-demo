@@ -92,3 +92,34 @@ describe('hashString', () => {
         expect(hashString('6218')).not.toBe(hashString('6219'))
     })
 })
+
+describe('style dial (purePrior)', () => {
+    const WITH_Z12 = structuredClone(V2) as typeof V2
+    WITH_Z12.clusters['Food & Hospitality'].variants.push({
+        id: 'Food & Hospitality-z12',
+        file: 'sonic/clips/food-z12.wav',
+        seed: 12,
+        seconds: 8,
+        ear: { score: 76, grade: 'B', motif: 0.1, beat: 0.64 }
+    } as never)
+
+    it("style='purePrior' picks the -z12 variant regardless of leadId", () => {
+        for (let i = 0; i < 20; i++) {
+            const v = pickVariantForNode(WITH_Z12, 'Food & Hospitality', `lead-${i}`, 'purePrior')
+            expect(v?.id).toBe('Food & Hospitality-z12')
+        }
+    })
+    it("style='purePrior' with no leadId also picks -z12", () => {
+        const v = pickVariantForNode(WITH_Z12, 'Food & Hospitality', null, 'purePrior')
+        expect(v?.id).toBe('Food & Hospitality-z12')
+    })
+    it("style='purePrior' falls back to deterministic default when no z12 variant exists", () => {
+        const v = pickVariantForNode(V2, 'Food & Hospitality', 'lead-3', 'purePrior')
+        expect(v?.id).toBe(pickVariantForNode(V2, 'Food & Hospitality', 'lead-3')?.id)
+    })
+    it('default style keeps existing behavior (style arg optional)', () => {
+        expect(pickVariantForNode(WITH_Z12, 'Food & Hospitality', 'lead-3', 'best')).toBe(
+            pickVariantForNode(WITH_Z12, 'Food & Hospitality', 'lead-3')
+        )
+    })
+})

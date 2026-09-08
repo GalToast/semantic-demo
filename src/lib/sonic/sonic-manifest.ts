@@ -156,18 +156,31 @@ export function hashString(s: string): number {
     return h >>> 0
 }
 
+/** Sonic style dial: 'best' = ear-ranked default; 'purePrior' = Z12 zero-style variant (max rhythmic vitality). */
+export type SonicStyle = 'best' | 'purePrior'
+
 /**
  * Deterministic per-node variant: same leadId always picks the same variant
  * of the cluster's ranked list; different nodes spread across variants.
+ *
+ * `style='purePrior'` prefers the cluster's `-z12` variant (zero-style
+ * conditioning — the model's unconditional prior, measured strongest rhythm:
+ * beat 0.476-0.641 vs 0.248-0.448 styled, zero dropouts across seeds); falls
+ * back to the deterministic default when the cluster has no z12 variant.
  */
 export function pickVariantForNode(
     manifest: SonicManifest,
     clusterName: string | null | undefined,
-    leadId: string | null | undefined
+    leadId: string | null | undefined,
+    style: SonicStyle = 'best'
 ): SonicClip | null {
     const entry = clusterName ? manifest.clusters[clusterName] : undefined
     const variants = entry?.variants ?? manifest.clusters.__default?.variants ?? null
     if (!variants || variants.length === 0) return manifest.defaultClip
+    if (style === 'purePrior') {
+        const z12 = variants.find((v) => v.id.endsWith('-z12'))
+        if (z12) return z12
+    }
     if (!leadId) return variants[0] ?? manifest.defaultClip
     return variants[hashString(leadId) % variants.length] ?? manifest.defaultClip
 }
