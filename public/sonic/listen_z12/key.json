@@ -22,5 +22,32 @@
  "track_06.wav": {
   "source": "cond_drumpat_s7.wav",
   "description": "Drum pattern only (beat, no style)"
+ },
+ "_verdict": {
+  "date": "2026-09-08",
+  "ear": "v10.1",
+  "poles": {
+   "purePrior_z12": {
+    "track": "track_03.wav",
+    "v10": 100,
+    "v7_grade": "S",
+    "beat_clarity": 0.476,
+    "whine_pct": 0.6,
+    "flags": []
+   },
+   "full_style": {
+    "track": "track_02.wav",
+    "v10": 51,
+    "v7_grade": "C",
+    "beat_clarity": 0.086,
+    "whine_pct": 25.4,
+    "flags": [
+     "excess digital silence 26.1%"
+    ]
+   }
+  },
+  "gap_v10": 49,
+  "reading": "The style dial is not cosmetic. Full style (old broken state: masked embeddings suppress the rhythmic prior) scores 51/C with 26% silence; zero-style pure prior scores 100/S with the strongest beat clarity (0.476) and cleanest signal (0.6% whine) \u2014 beating the official JAX reference on rhythm. Half-style + zero 6-11 (track_01, 90/A, beat 0.448) is the sweet spot for style+rhythm balance.",
+  "user_verdict_track_02": "rough, definitely some artifacting \u2014 independently confirmed by ear_v10.1 (51/C, 26.1% silence, 25.4% whine)"
  }
 }
