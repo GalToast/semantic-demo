@@ -1,0 +1,26 @@
+{
+ "track_01.wav": {
+  "source": "A_clean_zero611.wav",
+  "description": "Half-style + zero 6-11 (balanced)"
+ },
+ "track_02.wav": {
+  "source": "styled_parity_s7.wav",
+  "description": "Full style (tonal, softer beat)"
+ },
+ "track_03.wav": {
+  "source": "Z12.wav",
+  "description": "Pure prior, zero-style (beat-strong)"
+ },
+ "track_04.wav": {
+  "source": "cond_cfg24_s7.wav",
+  "description": "Studio-default CFG (balanced)"
+ },
+ "track_05.wav": {
+  "source": "official_s5.wav",
+  "description": "Official JAX reference (tonal, structured)"
+ },
+ "track_06.wav": {
+  "source": "cond_drumpat_s7.wav",
+  "description": "Drum pattern only (beat, no style)"
+ }
+}
