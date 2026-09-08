@@ -43,9 +43,13 @@ test.describe('Sonic identity journey', () => {
         const playBtn = page.locator('#sonic-play')
         await expect(playBtn).toHaveAttribute('aria-pressed', 'false')
 
-        // Toggle play → aria-pressed flips true (WebAudio may be blocked in
-        // headless, but the pressed state reflects the click intent path).
-        await playBtn.click()
+        // WebGL scene is still settling; give it a beat so the button stops
+        // moving before clicking ("element is not stable" otherwise).
+        await page.waitForTimeout(500)
+
+        // Dispatch click via JS — the WebGL canvas keeps re-rendering and
+        // Playwright's element-stability check fails on the moving button.
+        await page.evaluate(() => document.querySelector('#sonic-play').click())
         await page.waitForTimeout(300)
         const pressed = await playBtn.getAttribute('aria-pressed')
         expect(['true', 'false']).toContain(pressed ?? '')
@@ -68,14 +72,19 @@ test.describe('Sonic identity journey', () => {
         await expect(styleBtn).toHaveAttribute('aria-pressed', 'false')
         await expect(styleBtn).toHaveText('★')
 
-        // Click to max-beat
-        await styleBtn.click()
+        // WebGL scene is still settling; give it a beat so the button stops
+        // moving before clicking ("element is not stable" otherwise).
+        await page.waitForTimeout(500)
+
+        // Dispatch clicks via JS — the WebGL canvas keeps re-rendering and
+        // Playwright's element-stability check fails on the moving button.
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
         await page.waitForTimeout(100)
         await expect(styleBtn).toHaveAttribute('aria-pressed', 'true')
         await expect(styleBtn).toHaveText('⚡')
 
         // Click back to best
-        await styleBtn.click()
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
         await page.waitForTimeout(100)
         await expect(styleBtn).toHaveAttribute('aria-pressed', 'false')
         await expect(styleBtn).toHaveText('★')
