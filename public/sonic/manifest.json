@@ -7,16 +7,17 @@
    "prompt": "warm acoustic guitar campfire",
    "variants": [
     {
-     "id": "food-hospitality-s7",
-     "file": "sonic/clips/food-hospitality-s7.wav",
+     "id": "Food & Hospitality-z12",
+     "file": "sonic/clips/Food & Hospitality-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
       "score": 100,
       "grade": "S",
-      "motif": 0.152,
-      "beat": 0.361
-     }
+      "motif": 0.102,
+      "beat": 0.476
+     },
+     "conditioning": "pure-prior"
     },
     {
      "id": "food-hospitality-s13",
@@ -43,8 +44,26 @@
      }
     },
     {
-     "id": "Food & Hospitality-z12",
-     "file": "sonic/clips/Food & Hospitality-z12.wav",
+     "id": "food-hospitality-s7",
+     "file": "sonic/clips/food-hospitality-s7.wav",
+     "seed": 7,
+     "seconds": 8,
+     "ear": {
+      "score": 100,
+      "grade": "S",
+      "motif": 0.152,
+      "beat": 0.361
+     }
+    }
+   ],
+   "best": "Food & Hospitality-z12"
+  },
+  "Retail & Shops": {
+   "prompt": "bright upbeat boutique pop",
+   "variants": [
+    {
+     "id": "Retail & Shops-z12",
+     "file": "sonic/clips/Retail & Shops-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -54,13 +73,7 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "food-hospitality-s7"
-  },
-  "Retail & Shops": {
-   "prompt": "bright upbeat boutique pop",
-   "variants": [
+    },
     {
      "id": "retail-s7",
      "file": "sonic/clips/retail-s7.wav",
@@ -96,10 +109,16 @@
       "motif": 0.156,
       "beat": 0.624
      }
-    },
+    }
+   ],
+   "best": "Retail & Shops-z12"
+  },
+  "Professional Services": {
+   "prompt": "clean minimal piano pulse",
+   "variants": [
     {
-     "id": "Retail & Shops-z12",
-     "file": "sonic/clips/Retail & Shops-z12.wav",
+     "id": "Professional Services-z12",
+     "file": "sonic/clips/Professional Services-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -109,13 +128,7 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "retail-s7"
-  },
-  "Professional Services": {
-   "prompt": "clean minimal piano pulse",
-   "variants": [
+    },
     {
      "id": "professional-s13",
      "file": "sonic/clips/professional-s13.wav",
@@ -126,18 +139,6 @@
       "grade": "S",
       "motif": 0.541,
       "beat": 0.597
-     }
-    },
-    {
-     "id": "professional-s7",
-     "file": "sonic/clips/professional-s7.wav",
-     "seed": 7,
-     "seconds": 8,
-     "ear": {
-      "score": 100,
-      "grade": "S",
-      "motif": 0.415,
-      "beat": 0.435
      }
     },
     {
@@ -153,8 +154,26 @@
      }
     },
     {
-     "id": "Professional Services-z12",
-     "file": "sonic/clips/Professional Services-z12.wav",
+     "id": "professional-s7",
+     "file": "sonic/clips/professional-s7.wav",
+     "seed": 7,
+     "seconds": 8,
+     "ear": {
+      "score": 100,
+      "grade": "S",
+      "motif": 0.415,
+      "beat": 0.435
+     }
+    }
+   ],
+   "best": "Professional Services-z12"
+  },
+  "Healthcare & Medical": {
+   "prompt": "gentle ambient choir",
+   "variants": [
+    {
+     "id": "Healthcare & Medical-z12",
+     "file": "sonic/clips/Healthcare & Medical-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -164,13 +183,19 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "professional-s13"
-  },
-  "Healthcare & Medical": {
-   "prompt": "gentle ambient choir",
-   "variants": [
+    },
+    {
+     "id": "healthcare-s7",
+     "file": "sonic/clips/healthcare-s7.wav",
+     "seed": 7,
+     "seconds": 8,
+     "ear": {
+      "score": 100,
+      "grade": "S",
+      "motif": 0.262,
+      "beat": 0.502
+     }
+    },
     {
      "id": "healthcare-s13",
      "file": "sonic/clips/healthcare-s13.wav",
@@ -194,22 +219,16 @@
       "motif": 0.217,
       "beat": 0.463
      }
-    },
+    }
+   ],
+   "best": "Healthcare & Medical-z12"
+  },
+  "Arts & Culture": {
+   "prompt": "expressive jazz brushes",
+   "variants": [
     {
-     "id": "healthcare-s7",
-     "file": "sonic/clips/healthcare-s7.wav",
-     "seed": 7,
-     "seconds": 8,
-     "ear": {
-      "score": 100,
-      "grade": "S",
-      "motif": 0.262,
-      "beat": 0.502
-     }
-    },
-    {
-     "id": "Healthcare & Medical-z12",
-     "file": "sonic/clips/Healthcare & Medical-z12.wav",
+     "id": "Arts & Culture-z12",
+     "file": "sonic/clips/Arts & Culture-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -219,24 +238,6 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "healthcare-s7"
-  },
-  "Arts & Culture": {
-   "prompt": "expressive jazz brushes",
-   "variants": [
-    {
-     "id": "arts-s21",
-     "file": "sonic/clips/arts-s21.wav",
-     "seed": 21,
-     "seconds": 8,
-     "ear": {
-      "score": 98,
-      "grade": "S",
-      "motif": 0.147,
-      "beat": 0.158
-     }
     },
     {
      "id": "arts-s13",
@@ -251,6 +252,18 @@
      }
     },
     {
+     "id": "arts-s21",
+     "file": "sonic/clips/arts-s21.wav",
+     "seed": 21,
+     "seconds": 8,
+     "ear": {
+      "score": 98,
+      "grade": "S",
+      "motif": 0.147,
+      "beat": 0.158
+     }
+    },
+    {
      "id": "arts-s7",
      "file": "sonic/clips/arts-s7.wav",
      "seed": 7,
@@ -261,10 +274,16 @@
       "motif": 0.129,
       "beat": 0.234
      }
-    },
+    }
+   ],
+   "best": "Arts & Culture-z12"
+  },
+  "Churches": {
+   "prompt": "reverent organ hymn",
+   "variants": [
     {
-     "id": "Arts & Culture-z12",
-     "file": "sonic/clips/Arts & Culture-z12.wav",
+     "id": "Churches-z12",
+     "file": "sonic/clips/Churches-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -274,13 +293,7 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "arts-s13"
-  },
-  "Churches": {
-   "prompt": "reverent organ hymn",
-   "variants": [
+    },
     {
      "id": "churches-s13",
      "file": "sonic/clips/churches-s13.wav",
@@ -316,10 +329,16 @@
       "motif": 0.309,
       "beat": 0.079
      }
-    },
+    }
+   ],
+   "best": "Churches-z12"
+  },
+  "General Business": {
+   "prompt": "confident steady indie rock groove",
+   "variants": [
     {
-     "id": "Churches-z12",
-     "file": "sonic/clips/Churches-z12.wav",
+     "id": "General Business-z12",
+     "file": "sonic/clips/General Business-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -329,13 +348,7 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "Churches-z12"
-  },
-  "General Business": {
-   "prompt": "confident steady indie rock groove",
-   "variants": [
+    },
     {
      "id": "general-business-s7",
      "file": "sonic/clips/general-business-s7.wav",
@@ -371,10 +384,16 @@
       "motif": 0.196,
       "beat": 0.403
      }
-    },
+    }
+   ],
+   "best": "General Business-z12"
+  },
+  "Construction & Trades": {
+   "prompt": "driving work-song rhythm guitars",
+   "variants": [
     {
-     "id": "General Business-z12",
-     "file": "sonic/clips/General Business-z12.wav",
+     "id": "Construction & Trades-z12",
+     "file": "sonic/clips/Construction & Trades-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -384,13 +403,7 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "General Business-z12"
-  },
-  "Construction & Trades": {
-   "prompt": "driving work-song rhythm guitars",
-   "variants": [
+    },
     {
      "id": "construction-s21",
      "file": "sonic/clips/construction-s21.wav",
@@ -426,10 +439,16 @@
       "motif": 0.098,
       "beat": 0.485
      }
-    },
+    }
+   ],
+   "best": "Construction & Trades-z12"
+  },
+  "Beauty & Wellness": {
+   "prompt": "silky smooth neo-soul chords",
+   "variants": [
     {
-     "id": "Construction & Trades-z12",
-     "file": "sonic/clips/Construction & Trades-z12.wav",
+     "id": "Beauty & Wellness-z12",
+     "file": "sonic/clips/Beauty & Wellness-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -439,13 +458,19 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "Construction & Trades-z12"
-  },
-  "Beauty & Wellness": {
-   "prompt": "silky smooth neo-soul chords",
-   "variants": [
+    },
+    {
+     "id": "beauty-wellness-s21",
+     "file": "sonic/clips/beauty-wellness-s21.wav",
+     "seed": 21,
+     "seconds": 8,
+     "ear": {
+      "score": 100,
+      "grade": "S",
+      "motif": 0.14,
+      "beat": 0.224
+     }
+    },
     {
      "id": "beauty-wellness-s7",
      "file": "sonic/clips/beauty-wellness-s7.wav",
@@ -469,22 +494,16 @@
       "motif": 0.038,
       "beat": 0.329
      }
-    },
+    }
+   ],
+   "best": "Beauty & Wellness-z12"
+  },
+  "Real Estate & Property": {
+   "prompt": "warm upright piano swing",
+   "variants": [
     {
-     "id": "beauty-wellness-s21",
-     "file": "sonic/clips/beauty-wellness-s21.wav",
-     "seed": 21,
-     "seconds": 8,
-     "ear": {
-      "score": 100,
-      "grade": "S",
-      "motif": 0.14,
-      "beat": 0.224
-     }
-    },
-    {
-     "id": "Beauty & Wellness-z12",
-     "file": "sonic/clips/Beauty & Wellness-z12.wav",
+     "id": "Real Estate & Property-z12",
+     "file": "sonic/clips/Real Estate & Property-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -494,13 +513,7 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "beauty-wellness-s21"
-  },
-  "Real Estate & Property": {
-   "prompt": "warm upright piano swing",
-   "variants": [
+    },
     {
      "id": "real-estate-s21",
      "file": "sonic/clips/real-estate-s21.wav",
@@ -536,10 +549,16 @@
       "motif": 0.04,
       "beat": 0.378
      }
-    },
+    }
+   ],
+   "best": "Real Estate & Property-z12"
+  },
+  "Industrial & Logistics": {
+   "prompt": "pulsing mechanical electro beat",
+   "variants": [
     {
-     "id": "Real Estate & Property-z12",
-     "file": "sonic/clips/Real Estate & Property-z12.wav",
+     "id": "Industrial & Logistics-z12",
+     "file": "sonic/clips/Industrial & Logistics-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -549,13 +568,19 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "real-estate-s21"
-  },
-  "Industrial & Logistics": {
-   "prompt": "pulsing mechanical electro beat",
-   "variants": [
+    },
+    {
+     "id": "industrial-s21",
+     "file": "sonic/clips/industrial-s21.wav",
+     "seed": 21,
+     "seconds": 8,
+     "ear": {
+      "score": 82,
+      "grade": "A",
+      "motif": 0.377,
+      "beat": 0.17
+     }
+    },
     {
      "id": "industrial-s13",
      "file": "sonic/clips/industrial-s13.wav",
@@ -579,22 +604,16 @@
       "motif": 0.484,
       "beat": 0.579
      }
-    },
+    }
+   ],
+   "best": "Industrial & Logistics-z12"
+  },
+  "Agriculture & Ranching": {
+   "prompt": "open plains folk harmonica",
+   "variants": [
     {
-     "id": "industrial-s21",
-     "file": "sonic/clips/industrial-s21.wav",
-     "seed": 21,
-     "seconds": 8,
-     "ear": {
-      "score": 82,
-      "grade": "A",
-      "motif": 0.377,
-      "beat": 0.17
-     }
-    },
-    {
-     "id": "Industrial & Logistics-z12",
-     "file": "sonic/clips/Industrial & Logistics-z12.wav",
+     "id": "Agriculture & Ranching-z12",
+     "file": "sonic/clips/Agriculture & Ranching-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -604,13 +623,19 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "Industrial & Logistics-z12"
-  },
-  "Agriculture & Ranching": {
-   "prompt": "open plains folk harmonica",
-   "variants": [
+    },
+    {
+     "id": "agriculture-s21",
+     "file": "sonic/clips/agriculture-s21.wav",
+     "seed": 21,
+     "seconds": 8,
+     "ear": {
+      "score": 94,
+      "grade": "S",
+      "motif": 0.122,
+      "beat": 0.243
+     }
+    },
     {
      "id": "agriculture-s13",
      "file": "sonic/clips/agriculture-s13.wav",
@@ -634,22 +659,16 @@
       "motif": 0.064,
       "beat": 0.222
      }
-    },
+    }
+   ],
+   "best": "Agriculture & Ranching-z12"
+  },
+  "Automotive": {
+   "prompt": "revving chrome rock and roll",
+   "variants": [
     {
-     "id": "agriculture-s21",
-     "file": "sonic/clips/agriculture-s21.wav",
-     "seed": 21,
-     "seconds": 8,
-     "ear": {
-      "score": 94,
-      "grade": "S",
-      "motif": 0.122,
-      "beat": 0.243
-     }
-    },
-    {
-     "id": "Agriculture & Ranching-z12",
-     "file": "sonic/clips/Agriculture & Ranching-z12.wav",
+     "id": "Automotive-z12",
+     "file": "sonic/clips/Automotive-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -659,13 +678,7 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "Agriculture & Ranching-z12"
-  },
-  "Automotive": {
-   "prompt": "revving chrome rock and roll",
-   "variants": [
+    },
     {
      "id": "automotive-s13",
      "file": "sonic/clips/automotive-s13.wav",
@@ -701,10 +714,16 @@
       "motif": 0.09,
       "beat": 0.712
      }
-    },
+    }
+   ],
+   "best": "Automotive-z12"
+  },
+  "Therapy & Counseling": {
+   "prompt": "calm healing ambient pads",
+   "variants": [
     {
-     "id": "Automotive-z12",
-     "file": "sonic/clips/Automotive-z12.wav",
+     "id": "Therapy & Counseling-z12",
+     "file": "sonic/clips/Therapy & Counseling-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -714,24 +733,6 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "Automotive-z12"
-  },
-  "Therapy & Counseling": {
-   "prompt": "calm healing ambient pads",
-   "variants": [
-    {
-     "id": "therapy-s21",
-     "file": "sonic/clips/therapy-s21.wav",
-     "seed": 21,
-     "seconds": 8,
-     "ear": {
-      "score": 100,
-      "grade": "S",
-      "motif": 0.343,
-      "beat": 0.184
-     }
     },
     {
      "id": "therapy-s13",
@@ -746,6 +747,18 @@
      }
     },
     {
+     "id": "therapy-s21",
+     "file": "sonic/clips/therapy-s21.wav",
+     "seed": 21,
+     "seconds": 8,
+     "ear": {
+      "score": 100,
+      "grade": "S",
+      "motif": 0.343,
+      "beat": 0.184
+     }
+    },
+    {
      "id": "therapy-s7",
      "file": "sonic/clips/therapy-s7.wav",
      "seed": 7,
@@ -756,10 +769,16 @@
       "motif": 0.336,
       "beat": 0.123
      }
-    },
+    }
+   ],
+   "best": "Therapy & Counseling-z12"
+  },
+  "Education & Childcare": {
+   "prompt": "playful bright glockenspiel melody",
+   "variants": [
     {
-     "id": "Therapy & Counseling-z12",
-     "file": "sonic/clips/Therapy & Counseling-z12.wav",
+     "id": "Education & Childcare-z12",
+     "file": "sonic/clips/Education & Childcare-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -769,24 +788,6 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "therapy-s21"
-  },
-  "Education & Childcare": {
-   "prompt": "playful bright glockenspiel melody",
-   "variants": [
-    {
-     "id": "education-s7",
-     "file": "sonic/clips/education-s7.wav",
-     "seed": 7,
-     "seconds": 8,
-     "ear": {
-      "score": 100,
-      "grade": "S",
-      "motif": 0.292,
-      "beat": 0.344
-     }
     },
     {
      "id": "education-s21",
@@ -813,8 +814,26 @@
      }
     },
     {
-     "id": "Education & Childcare-z12",
-     "file": "sonic/clips/Education & Childcare-z12.wav",
+     "id": "education-s7",
+     "file": "sonic/clips/education-s7.wav",
+     "seed": 7,
+     "seconds": 8,
+     "ear": {
+      "score": 100,
+      "grade": "S",
+      "motif": 0.292,
+      "beat": 0.344
+     }
+    }
+   ],
+   "best": "Education & Childcare-z12"
+  },
+  "Faith Ministries": {
+   "prompt": "soaring gospel organ swells",
+   "variants": [
+    {
+     "id": "Faith Ministries-z12",
+     "file": "sonic/clips/Faith Ministries-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -824,13 +843,7 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "education-s7"
-  },
-  "Faith Ministries": {
-   "prompt": "soaring gospel organ swells",
-   "variants": [
+    },
     {
      "id": "faith-ministries-s21",
      "file": "sonic/clips/faith-ministries-s21.wav",
@@ -866,10 +879,16 @@
       "motif": 0.138,
       "beat": 0.07
      }
-    },
+    }
+   ],
+   "best": "Faith Ministries-z12"
+  },
+  "Community Nonprofits": {
+   "prompt": "hopeful community folk singalong",
+   "variants": [
     {
-     "id": "Faith Ministries-z12",
-     "file": "sonic/clips/Faith Ministries-z12.wav",
+     "id": "Community Nonprofits-z12",
+     "file": "sonic/clips/Community Nonprofits-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -879,13 +898,7 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "faith-ministries-s21"
-  },
-  "Community Nonprofits": {
-   "prompt": "hopeful community folk singalong",
-   "variants": [
+    },
     {
      "id": "nonprofits-s13",
      "file": "sonic/clips/nonprofits-s13.wav",
@@ -921,10 +934,16 @@
       "motif": 0.151,
       "beat": 0.203
      }
-    },
+    }
+   ],
+   "best": "Community Nonprofits-z12"
+  },
+  "Foundations": {
+   "prompt": "dignified orchestral strings",
+   "variants": [
     {
-     "id": "Community Nonprofits-z12",
-     "file": "sonic/clips/Community Nonprofits-z12.wav",
+     "id": "Foundations-z12",
+     "file": "sonic/clips/Foundations-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -934,24 +953,6 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "Community Nonprofits-z12"
-  },
-  "Foundations": {
-   "prompt": "dignified orchestral strings",
-   "variants": [
-    {
-     "id": "foundations-s13",
-     "file": "sonic/clips/foundations-s13.wav",
-     "seed": 13,
-     "seconds": 8,
-     "ear": {
-      "score": 88,
-      "grade": "A",
-      "motif": 0.131,
-      "beat": 0.188
-     }
     },
     {
      "id": "foundations-s7",
@@ -966,6 +967,18 @@
      }
     },
     {
+     "id": "foundations-s13",
+     "file": "sonic/clips/foundations-s13.wav",
+     "seed": 13,
+     "seconds": 8,
+     "ear": {
+      "score": 88,
+      "grade": "A",
+      "motif": 0.131,
+      "beat": 0.188
+     }
+    },
+    {
      "id": "foundations-s21",
      "file": "sonic/clips/foundations-s21.wav",
      "seed": 21,
@@ -976,10 +989,16 @@
       "motif": 0.248,
       "beat": 0.063
      }
-    },
+    }
+   ],
+   "best": "Foundations-z12"
+  },
+  "Economic Development": {
+   "prompt": "ascending optimistic synth progression",
+   "variants": [
     {
-     "id": "Foundations-z12",
-     "file": "sonic/clips/Foundations-z12.wav",
+     "id": "Economic Development-z12",
+     "file": "sonic/clips/Economic Development-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -989,24 +1008,6 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "Foundations-z12"
-  },
-  "Economic Development": {
-   "prompt": "ascending optimistic synth progression",
-   "variants": [
-    {
-     "id": "economic-dev-s13",
-     "file": "sonic/clips/economic-dev-s13.wav",
-     "seed": 13,
-     "seconds": 8,
-     "ear": {
-      "score": 92,
-      "grade": "S",
-      "motif": 0.378,
-      "beat": 0.402
-     }
     },
     {
      "id": "economic-dev-s21",
@@ -1021,6 +1022,18 @@
      }
     },
     {
+     "id": "economic-dev-s13",
+     "file": "sonic/clips/economic-dev-s13.wav",
+     "seed": 13,
+     "seconds": 8,
+     "ear": {
+      "score": 92,
+      "grade": "S",
+      "motif": 0.378,
+      "beat": 0.402
+     }
+    },
+    {
      "id": "economic-dev-s7",
      "file": "sonic/clips/economic-dev-s7.wav",
      "seed": 7,
@@ -1031,10 +1044,16 @@
       "motif": 0.392,
       "beat": 0.561
      }
-    },
+    }
+   ],
+   "best": "Economic Development-z12"
+  },
+  "Public Agencies": {
+   "prompt": "stately brass fanfare march",
+   "variants": [
     {
-     "id": "Economic Development-z12",
-     "file": "sonic/clips/Economic Development-z12.wav",
+     "id": "Public Agencies-z12",
+     "file": "sonic/clips/Public Agencies-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -1044,13 +1063,7 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "economic-dev-s21"
-  },
-  "Public Agencies": {
-   "prompt": "stately brass fanfare march",
-   "variants": [
+    },
     {
      "id": "public-agencies-s7",
      "file": "sonic/clips/public-agencies-s7.wav",
@@ -1086,10 +1099,16 @@
       "motif": 0.326,
       "beat": 0.165
      }
-    },
+    }
+   ],
+   "best": "Public Agencies-z12"
+  },
+  "Enterprise Brands": {
+   "prompt": "polished corporate anthemic pop",
+   "variants": [
     {
-     "id": "Public Agencies-z12",
-     "file": "sonic/clips/Public Agencies-z12.wav",
+     "id": "Enterprise Brands-z12",
+     "file": "sonic/clips/Enterprise Brands-z12.wav",
      "seed": 7,
      "seconds": 8,
      "ear": {
@@ -1099,24 +1118,6 @@
       "beat": 0.476
      },
      "conditioning": "pure-prior"
-    }
-   ],
-   "best": "Public Agencies-z12"
-  },
-  "Enterprise Brands": {
-   "prompt": "polished corporate anthemic pop",
-   "variants": [
-    {
-     "id": "enterprise-brands-s13",
-     "file": "sonic/clips/enterprise-brands-s13.wav",
-     "seed": 13,
-     "seconds": 8,
-     "ear": {
-      "score": 72,
-      "grade": "B",
-      "motif": 0.104,
-      "beat": 0.548
-     }
     },
     {
      "id": "enterprise-brands-s21",
@@ -1131,6 +1132,18 @@
      }
     },
     {
+     "id": "enterprise-brands-s13",
+     "file": "sonic/clips/enterprise-brands-s13.wav",
+     "seed": 13,
+     "seconds": 8,
+     "ear": {
+      "score": 72,
+      "grade": "B",
+      "motif": 0.104,
+      "beat": 0.548
+     }
+    },
+    {
      "id": "enterprise-brands-s7",
      "file": "sonic/clips/enterprise-brands-s7.wav",
      "seed": 7,
@@ -1141,19 +1154,6 @@
       "motif": 0.119,
       "beat": 0.526
      }
-    },
-    {
-     "id": "Enterprise Brands-z12",
-     "file": "sonic/clips/Enterprise Brands-z12.wav",
-     "seed": 7,
-     "seconds": 8,
-     "ear": {
-      "score": 100,
-      "grade": "S",
-      "motif": 0.102,
-      "beat": 0.476
-     },
-     "conditioning": "pure-prior"
     }
    ],
    "best": "Enterprise Brands-z12"
