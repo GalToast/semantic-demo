@@ -120,10 +120,31 @@ export function parseManifest(raw: unknown): SonicManifest | null {
 
     if (Object.keys(clusters).length === 0) return null
 
-    // Build the single-clip view (best variant per cluster = first; the
-    // generator ranks variants best-first).
+    // Build the single-clip view (best variant per cluster). The generator
+    // ranks variants best-first and the file is expected to be pre-sorted, but
+    // the file is the weakest link in this chain — a rewrite (v4.2 shipped a
+    // non-deterministic order and variants[0] silently picked a lower-scoring
+    // default) proves it. Re-rank here so the default is always the best by
+    // the same rule the manifest generator uses: score desc, then Z12
+    // (pure-prior) preferred, then beat desc, motif desc, seed asc.
+    function rankVariants(list: SonicClip[]): SonicClip[] {
+        return [...list].sort((a, b) => {
+            const sa = a.ear?.score ?? -1, sb = b.ear?.score ?? -1
+            if (sa !== sb) return sb - sa
+            const za = a.id.endsWith('-z12') ? 1 : 0
+            const zb = b.id.endsWith('-z12') ? 1 : 0
+            if (za !== zb) return zb - za
+            const ba = a.ear?.beat ?? -1, bb = b.ear?.beat ?? -1
+            if (ba !== bb) return bb - ba
+            const ma = a.ear?.motif ?? -1, mb = b.ear?.motif ?? -1
+            if (ma !== mb) return mb - ma
+            return a.seed - b.seed
+        })
+    }
+
     for (const [name, entry] of Object.entries(clusters)) {
         if (name === '__default') continue
+        entry.variants = rankVariants(entry.variants)
         const best = entry.variants[0]
         if (best) clusterMap[name] = best
     }
