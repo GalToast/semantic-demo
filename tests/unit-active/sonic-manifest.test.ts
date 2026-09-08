@@ -93,7 +93,7 @@ describe('hashString', () => {
     })
 })
 
-describe('style dial (purePrior)', () => {
+describe('style dial (beat)', () => {
     const WITH_Z12 = structuredClone(V2) as typeof V2
     WITH_Z12.clusters['Food & Hospitality'].variants.push({
         id: 'Food & Hospitality-z12',
@@ -103,19 +103,28 @@ describe('style dial (purePrior)', () => {
         ear: { score: 76, grade: 'B', motif: 0.1, beat: 0.64 }
     } as never)
 
-    it("style='purePrior' picks the -z12 variant regardless of leadId", () => {
+    it("style='beat' picks the variant with the highest beat_clarity regardless of leadId", () => {
+        // V2: beat 0.36 / 0.4 / 0.5 -> max is food-s21
         for (let i = 0; i < 20; i++) {
-            const v = pickVariantForNode(WITH_Z12, 'Food & Hospitality', `lead-${i}`, 'purePrior')
-            expect(v?.id).toBe('Food & Hospitality-z12')
+            const v = pickVariantForNode(V2, 'Food & Hospitality', `lead-${i}`, 'beat')
+            expect(v?.id).toBe('food-s21')
         }
     })
-    it("style='purePrior' with no leadId also picks -z12", () => {
-        const v = pickVariantForNode(WITH_Z12, 'Food & Hospitality', null, 'purePrior')
+    it("style='beat' with no leadId also picks the max-beat variant", () => {
+        const v = pickVariantForNode(V2, 'Food & Hospitality', null, 'beat')
+        expect(v?.id).toBe('food-s21')
+    })
+    it("style='beat' prefers the z12 variant when it has the highest beat", () => {
+        // WITH_Z12 adds beat 0.64 -> beats V2's 0.5
+        const v = pickVariantForNode(WITH_Z12, 'Food & Hospitality', 'lead-3', 'beat')
         expect(v?.id).toBe('Food & Hospitality-z12')
     })
-    it("style='purePrior' falls back to deterministic default when no z12 variant exists", () => {
-        const v = pickVariantForNode(V2, 'Food & Hospitality', 'lead-3', 'purePrior')
-        expect(v?.id).toBe(pickVariantForNode(V2, 'Food & Hospitality', 'lead-3')?.id)
+    it("style='beat' falls back to deterministic default when no ear.beat data exists", () => {
+        const NO_BEAT = structuredClone(V2) as typeof V2
+        for (const c of Object.values(NO_BEAT.clusters))
+            for (const v of c.variants) delete (v.ear as Record<string, unknown>).beat
+        const v = pickVariantForNode(NO_BEAT, 'Food & Hospitality', 'lead-3', 'beat')
+        expect(v?.id).toBe(pickVariantForNode(NO_BEAT, 'Food & Hospitality', 'lead-3')?.id)
     })
     it('default style keeps existing behavior (style arg optional)', () => {
         expect(pickVariantForNode(WITH_Z12, 'Food & Hospitality', 'lead-3', 'best')).toBe(

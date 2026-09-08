@@ -180,8 +180,8 @@ export function hashString(s: string): number {
     return h >>> 0
 }
 
-/** Sonic style dial: 'best' = ear-ranked default; 'purePrior' = Z12 zero-style variant (max rhythmic vitality). */
-export type SonicStyle = 'best' | 'purePrior'
+/** Sonic style dial: 'best' = ear-ranked default; 'beat' = max beat_clarity variant. */
+export type SonicStyle = 'best' | 'beat'
 
 /**
  * Deterministic per-node variant: same leadId always picks the same variant
@@ -191,6 +191,11 @@ export type SonicStyle = 'best' | 'purePrior'
  * conditioning — the model's unconditional prior, measured strongest rhythm:
  * beat 0.476-0.641 vs 0.248-0.448 styled, zero dropouts across seeds); falls
  * back to the deterministic default when the cluster has no z12 variant.
+ *
+ * `style='beat'` prefers the variant with the highest beat_clarity in the
+ * cluster (ear v10.1). All 4 variants per cluster score 100/S after the
+ * conditioning fix — style is no longer a quality gap, it is a taste axis,
+ * and beat_clarity is the objective discriminator within that band.
  */
 export function pickVariantForNode(
     manifest: SonicManifest,
@@ -201,9 +206,10 @@ export function pickVariantForNode(
     const entry = clusterName ? manifest.clusters[clusterName] : undefined
     const variants = entry?.variants ?? manifest.clusters.__default?.variants ?? null
     if (!variants || variants.length === 0) return manifest.defaultClip
-    if (style === 'purePrior') {
-        const z12 = variants.find((v) => v.id.endsWith('-z12'))
-        if (z12) return z12
+    if (style === 'beat') {
+        const best = variants.reduce((a, b) =>
+            (a?.ear?.beat ?? -1) >= (b?.ear?.beat ?? -1) ? a : b)
+        if (best) return best
     }
     if (!leadId) return variants[0] ?? manifest.defaultClip
     return variants[hashString(leadId) % variants.length] ?? manifest.defaultClip

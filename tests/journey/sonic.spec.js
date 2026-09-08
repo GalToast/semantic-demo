@@ -51,7 +51,7 @@ test.describe('Sonic identity journey', () => {
         expect(['true', 'false']).toContain(pressed ?? '')
     })
 
-    test('SONIC-2. Style dial toggles between best and purePrior variants', async ({ page }) => {
+    test('SONIC-2. Style dial toggles between best and max-beat variants', async ({ page }) => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=6218`, { waitUntil: 'domcontentloaded' })
 
         // Wait for sonic section
@@ -68,7 +68,7 @@ test.describe('Sonic identity journey', () => {
         await expect(styleBtn).toHaveAttribute('aria-pressed', 'false')
         await expect(styleBtn).toHaveText('★')
 
-        // Click to purePrior
+        // Click to max-beat
         await styleBtn.click()
         await page.waitForTimeout(100)
         await expect(styleBtn).toHaveAttribute('aria-pressed', 'true')

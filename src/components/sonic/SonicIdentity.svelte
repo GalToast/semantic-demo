@@ -29,12 +29,12 @@
 
   const clusterName = $derived(cluster !== null ? CLUSTER_NAMES[cluster % CLUSTER_NAMES.length] ?? null : null);
 
-  // Style dial: 'best' = ear-ranked default; 'purePrior' = Z12 zero-style take (max rhythm).
+  // Style dial: 'best' = ear-ranked default; 'beat' = max beat_clarity variant.
   let style = $state<SonicStyle>('best');
   const clip = $derived(manifest ? pickVariantForNode(manifest, clusterName, leadId, style) : null);
 
   function toggleStyle(): void {
-    const next: SonicStyle = style === 'best' ? 'purePrior' : 'best';
+    const next: SonicStyle = style === 'best' ? 'beat' : 'best';
     style = next;
     if (playing && manifest) {
       // Swap the clip seamlessly if audio is active. Note: `clip` is still the
@@ -85,11 +85,11 @@
         id="sonic-style"
         class="sonic-style"
         type="button"
-        aria-label={style === 'purePrior' ? 'Switch to best variant' : 'Switch to pure-prior variant (stronger rhythm)'}
-        aria-pressed={style === 'purePrior'}
-        title={style === 'purePrior' ? 'Pure-prior take — strongest rhythm (Z12)' : 'Best ear-ranked take'}
+        aria-label={style === 'beat' ? 'Switch to best variant' : 'Switch to max-beat variant (stronger pulse)'}
+        aria-pressed={style === 'beat'}
+        title={style === 'beat' ? 'Max beat-clarity take — strongest pulse' : 'Best ear-ranked take'}
         onclick={toggleStyle}
-      >{style === 'purePrior' ? '⚡' : '★'}</button>
+      >{style === 'beat' ? '⚡' : '★'}</button>
     </div>
   </div>
 {/if}
