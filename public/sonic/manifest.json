@@ -56,7 +56,7 @@
      "conditioning": "pure-prior"
     }
    ],
-   "best": "Food & Hospitality-z12"
+   "best": "food-hospitality-s7"
   },
   "Retail & Shops": {
    "prompt": "bright upbeat boutique pop",
@@ -111,7 +111,7 @@
      "conditioning": "pure-prior"
     }
    ],
-   "best": "Retail & Shops-z12"
+   "best": "retail-s7"
   },
   "Professional Services": {
    "prompt": "clean minimal piano pulse",
@@ -166,7 +166,7 @@
      "conditioning": "pure-prior"
     }
    ],
-   "best": "Professional Services-z12"
+   "best": "professional-s13"
   },
   "Healthcare & Medical": {
    "prompt": "gentle ambient choir",
@@ -221,7 +221,7 @@
      "conditioning": "pure-prior"
     }
    ],
-   "best": "Healthcare & Medical-z12"
+   "best": "healthcare-s7"
   },
   "Arts & Culture": {
    "prompt": "expressive jazz brushes",
@@ -276,7 +276,7 @@
      "conditioning": "pure-prior"
     }
    ],
-   "best": "Arts & Culture-z12"
+   "best": "arts-s13"
   },
   "Churches": {
    "prompt": "reverent organ hymn",
@@ -496,7 +496,7 @@
      "conditioning": "pure-prior"
     }
    ],
-   "best": "Beauty & Wellness-z12"
+   "best": "beauty-wellness-s21"
   },
   "Real Estate & Property": {
    "prompt": "warm upright piano swing",
@@ -551,7 +551,7 @@
      "conditioning": "pure-prior"
     }
    ],
-   "best": "Real Estate & Property-z12"
+   "best": "real-estate-s21"
   },
   "Industrial & Logistics": {
    "prompt": "pulsing mechanical electro beat",
@@ -771,7 +771,7 @@
      "conditioning": "pure-prior"
     }
    ],
-   "best": "Therapy & Counseling-z12"
+   "best": "therapy-s21"
   },
   "Education & Childcare": {
    "prompt": "playful bright glockenspiel melody",
@@ -826,7 +826,7 @@
      "conditioning": "pure-prior"
     }
    ],
-   "best": "Education & Childcare-z12"
+   "best": "education-s7"
   },
   "Faith Ministries": {
    "prompt": "soaring gospel organ swells",
@@ -881,7 +881,7 @@
      "conditioning": "pure-prior"
     }
    ],
-   "best": "Faith Ministries-z12"
+   "best": "faith-ministries-s21"
   },
   "Community Nonprofits": {
    "prompt": "hopeful community folk singalong",
@@ -1046,7 +1046,7 @@
      "conditioning": "pure-prior"
     }
    ],
-   "best": "Economic Development-z12"
+   "best": "economic-dev-s21"
   },
   "Public Agencies": {
    "prompt": "stately brass fanfare march",
