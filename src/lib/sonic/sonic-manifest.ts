@@ -129,14 +129,17 @@ export function parseManifest(raw: unknown): SonicManifest | null {
     // (pure-prior) preferred, then beat desc, motif desc, seed asc.
     function rankVariants(list: SonicClip[]): SonicClip[] {
         return [...list].sort((a, b) => {
-            const sa = a.ear?.score ?? -1, sb = b.ear?.score ?? -1
+            const sa = a.ear?.score ?? -1,
+                sb = b.ear?.score ?? -1
             if (sa !== sb) return sb - sa
             const za = a.id.endsWith('-z12') ? 1 : 0
             const zb = b.id.endsWith('-z12') ? 1 : 0
             if (za !== zb) return zb - za
-            const ba = a.ear?.beat ?? -1, bb = b.ear?.beat ?? -1
+            const ba = a.ear?.beat ?? -1,
+                bb = b.ear?.beat ?? -1
             if (ba !== bb) return bb - ba
-            const ma = a.ear?.motif ?? -1, mb = b.ear?.motif ?? -1
+            const ma = a.ear?.motif ?? -1,
+                mb = b.ear?.motif ?? -1
             if (ma !== mb) return mb - ma
             return a.seed - b.seed
         })

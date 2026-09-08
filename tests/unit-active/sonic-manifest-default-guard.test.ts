@@ -7,12 +7,27 @@ const MISORDERED = {
         'Food & Hospitality': {
             prompt: 'warm acoustic guitar campfire',
             variants: [
-                { id: 'food-s7', file: 'sonic/clips/food-s7.wav', seed: 7, seconds: 8,
-                  ear: { score: 84, grade: 'S', motif: 0.15, beat: 0.36 } },
-                { id: 'food-z12', file: 'sonic/clips/food-z12.wav', seed: 7, seconds: 8,
-                  ear: { score: 100, grade: 'S', motif: 0.102, beat: 0.476 } },
-                { id: 'food-s13', file: 'sonic/clips/food-s13.wav', seed: 13, seconds: 8,
-                  ear: { score: 73, grade: 'S', motif: 0.09, beat: 0.31 } }
+                {
+                    id: 'food-s7',
+                    file: 'sonic/clips/food-s7.wav',
+                    seed: 7,
+                    seconds: 8,
+                    ear: { score: 84, grade: 'S', motif: 0.15, beat: 0.36 }
+                },
+                {
+                    id: 'food-z12',
+                    file: 'sonic/clips/food-z12.wav',
+                    seed: 7,
+                    seconds: 8,
+                    ear: { score: 100, grade: 'S', motif: 0.102, beat: 0.476 }
+                },
+                {
+                    id: 'food-s13',
+                    file: 'sonic/clips/food-s13.wav',
+                    seed: 13,
+                    seconds: 8,
+                    ear: { score: 73, grade: 'S', motif: 0.09, beat: 0.31 }
+                }
             ]
         }
     }
@@ -27,9 +42,13 @@ describe('parseManifest guards the variants[0] default', () => {
 
     it('does not mutate the caller input array order', () => {
         const input = JSON.parse(JSON.stringify(MISORDERED))
-        const before = input.clusters['Food & Hospitality'].variants.map(function (v) { return v.id })
+        const before = input.clusters['Food & Hospitality'].variants.map(function (v) {
+            return v.id
+        })
         parseManifest(input)
-        const after = input.clusters['Food & Hospitality'].variants.map(function (v) { return v.id })
+        const after = input.clusters['Food & Hospitality'].variants.map(function (v) {
+            return v.id
+        })
         expect(after).toEqual(before)
     })
 
@@ -40,10 +59,20 @@ describe('parseManifest guards the variants[0] default', () => {
                 Tie: {
                     prompt: 'p',
                     variants: [
-                        { id: 'tie-s7', file: 'a.wav', seed: 7, seconds: 8,
-                          ear: { score: 100, grade: 'S', motif: 0.2, beat: 0.5 } },
-                        { id: 'tie-z12', file: 'b.wav', seed: 7, seconds: 8,
-                          ear: { score: 100, grade: 'S', motif: 0.1, beat: 0.6 } }
+                        {
+                            id: 'tie-s7',
+                            file: 'a.wav',
+                            seed: 7,
+                            seconds: 8,
+                            ear: { score: 100, grade: 'S', motif: 0.2, beat: 0.5 }
+                        },
+                        {
+                            id: 'tie-z12',
+                            file: 'b.wav',
+                            seed: 7,
+                            seconds: 8,
+                            ear: { score: 100, grade: 'S', motif: 0.1, beat: 0.6 }
+                        }
                     ]
                 }
             }
@@ -60,10 +89,20 @@ describe('parseManifest guards the variants[0] default', () => {
                 Tie: {
                     prompt: 'p',
                     variants: [
-                        { id: 'a-s13', file: 'a.wav', seed: 13, seconds: 8,
-                          ear: { score: 100, grade: 'S', motif: 0.3, beat: 0.4 } },
-                        { id: 'b-s7', file: 'b.wav', seed: 7, seconds: 8,
-                          ear: { score: 100, grade: 'S', motif: 0.3, beat: 0.4 } }
+                        {
+                            id: 'a-s13',
+                            file: 'a.wav',
+                            seed: 13,
+                            seconds: 8,
+                            ear: { score: 100, grade: 'S', motif: 0.3, beat: 0.4 }
+                        },
+                        {
+                            id: 'b-s7',
+                            file: 'b.wav',
+                            seed: 7,
+                            seconds: 8,
+                            ear: { score: 100, grade: 'S', motif: 0.3, beat: 0.4 }
+                        }
                     ]
                 }
             }
