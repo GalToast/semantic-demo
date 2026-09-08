@@ -12,7 +12,7 @@
  */
 
 import { isAudioMuted } from '@lib/audio/audio-scape'
-import { loadSonicManifest, pickVariantForNode, type SonicClip } from '@lib/sonic/sonic-manifest'
+import { loadSonicManifest, pickVariantForNode, type SonicClip, type SonicStyle } from '@lib/sonic/sonic-manifest'
 
 interface WindowWithAudioContext extends Window {
     AudioContext: typeof AudioContext
@@ -62,11 +62,16 @@ export function isPlaying(clipId: string): boolean {
  * Play the node's variant on gapless loop. Resolves true when playback began.
  * No-op (false) when audio is muted, the manifest/clip is unavailable, or the
  * Web Audio constructor is missing.
+ *
+ * `style` threads the ★/⚡ dial through to the fallback resolution: if the
+ * requested clipId is not found in the node's variant set, the fallback must
+ * still honour the dial rather than silently defaulting to 'best'.
  */
 export async function playSonicIdentity(
     clusterName: string | null | undefined,
     clipId: string,
-    leadId?: string | null
+    leadId?: string | null,
+    style?: SonicStyle
 ): Promise<boolean> {
     if (isAudioMuted()) return false
     const manifest = await loadSonicManifest()
@@ -75,7 +80,8 @@ export async function playSonicIdentity(
     // leadId refines per-node assignment when provided).
     const entry = clusterName ? manifest.clusters[clusterName] : undefined
     const variants = entry?.variants ?? manifest.clusters.__default?.variants ?? []
-    const clip = variants.find((v) => v.id === clipId) ?? pickVariantForNode(manifest, clusterName, leadId ?? null)
+    const clip =
+        variants.find((v) => v.id === clipId) ?? pickVariantForNode(manifest, clusterName, leadId ?? null, style)
     if (!clip) return false
     const c = ensureCtx()
     if (!c) return false

@@ -42,7 +42,7 @@
       stopSonicIdentity();
       playing = false;
       const nextClip = pickVariantForNode(manifest, clusterName, leadId, next);
-      void playSonicIdentity(clusterName, nextClip?.id ?? null, leadId).then((ok) => { playing = ok; });
+      void playSonicIdentity(clusterName, nextClip?.id ?? null, leadId, next).then((ok) => { playing = ok; });
     }
   }
 
@@ -61,7 +61,7 @@
       stopSonicIdentity();
       playing = false;
     } else {
-      void playSonicIdentity(clusterName, clip.id, leadId).then((ok) => { playing = ok; });
+      void playSonicIdentity(clusterName, clip.id, leadId, style).then((ok) => { playing = ok; });
     }
   }
 </script>

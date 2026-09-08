@@ -47,9 +47,9 @@ test.describe('Sonic identity journey', () => {
         // moving before clicking ("element is not stable" otherwise).
         await page.waitForTimeout(500)
 
-        // Dispatch click via JS — the WebGL canvas keeps re-rendering and
-        // Playwright's element-stability check fails on the moving button.
-        await page.evaluate(() => document.querySelector('#sonic-play').click())
+        // Toggle play → aria-pressed flips true (WebAudio may be blocked in
+        // headless, but the pressed state reflects the click intent path).
+        await playBtn.click({ force: true })
         await page.waitForTimeout(300)
         const pressed = await playBtn.getAttribute('aria-pressed')
         expect(['true', 'false']).toContain(pressed ?? '')
@@ -76,15 +76,14 @@ test.describe('Sonic identity journey', () => {
         // moving before clicking ("element is not stable" otherwise).
         await page.waitForTimeout(500)
 
-        // Dispatch clicks via JS — the WebGL canvas keeps re-rendering and
-        // Playwright's element-stability check fails on the moving button.
-        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        // Click to max-beat
+        await styleBtn.click({ force: true })
         await page.waitForTimeout(100)
         await expect(styleBtn).toHaveAttribute('aria-pressed', 'true')
         await expect(styleBtn).toHaveText('⚡')
 
         // Click back to best
-        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await styleBtn.click({ force: true })
         await page.waitForTimeout(100)
         await expect(styleBtn).toHaveAttribute('aria-pressed', 'false')
         await expect(styleBtn).toHaveText('★')
