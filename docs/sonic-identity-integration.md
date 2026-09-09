@@ -73,3 +73,20 @@ Selection-dependent (focus is in SELECTION_DEPENDENT_MODES). CSS per css-ownersh
 4. focus-panel UI (button + badge)
 5. journey test
 6. remaining 5 starter clips + clusterMap expansion
+
+---
+
+## Tier 2 & 3 — live jam steering + radio
+
+This design doc covers tier 1 (pre-rendered playback). The dial gained two more
+layers after it, both driving the live MRT2 jam server at `127.0.0.1:8083`:
+
+- **Tier 2 — steering** (`jam-steer.ts`): fire-and-forget `POST /style {pole}`.
+- **Tier 3 — radio** (`jam-radio.ts`): WebSocket client streaming the jam's live
+  PCM decode to the browser.
+
+Full wire contract, playback strategy, config table, and verification state:
+**[`docs/sonic-jam-radio.md`](sonic-jam-radio.md)**.
+
+The 3-way dial order is `['best', 'beat', 'live']`; `live` has no pre-rendered
+clip — it streams.
