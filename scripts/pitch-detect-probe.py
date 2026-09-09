@@ -8,6 +8,7 @@ octave jumps, noise floors. CPU-only, no mic, no GPU, no stack.
 Success bar: <25 cents median error on vibrato tones 80-800Hz at 20dB SNR
 (good enough to drive note_on without audible wrong notes).
 """
+
 import os
 
 import numpy as np
@@ -36,7 +37,7 @@ def yin(frame, sr=SR, fmin=60, fmax=1200):
     cmnd = np.ones(n)
     run = 0.0
     for t in range(1, n):
-        run += (1.0 - ac[t])
+        run += 1.0 - ac[t]
         cmnd[t] = (1.0 - ac[t]) * t / (run + 1e-12) if run > 0 else 1.0
     lo, hi = int(sr / fmax), int(sr / fmin)
     seg = cmnd[lo:hi]
@@ -52,7 +53,14 @@ def yin(frame, sr=SR, fmin=60, fmax=1200):
     return float(sr / t)
 
 
-def tone(freq, secs=1.0, vibrato_cents=0, vibrato_hz=5.5, snr_db=99, harmonics=(1.0, 0.3, 0.1)):
+def tone(
+    freq,
+    secs=1.0,
+    vibrato_cents=0,
+    vibrato_hz=5.5,
+    snr_db=99,
+    harmonics=(1.0, 0.3, 0.1),
+):
     t = np.arange(int(SR * secs)) / SR
     if vibrato_cents:
         # FM with peak deviation in Hz converted from cents

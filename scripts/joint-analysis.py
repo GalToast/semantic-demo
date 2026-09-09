@@ -12,6 +12,7 @@ is NOT in per-level entropies — it must live in JOINT structure. This probes:
 
 Same artifacts, same loader. No GPU, no stack.
 """
+
 import json
 import os
 
@@ -32,8 +33,15 @@ FILES = {
     "amp11": f"{PL}/amp_11.npz",
 }
 # ear_v7 reference scores for correlation readout
-SCORES = {"c9_none": 75, "c11_none": 88, "c11_L2": 100, "c12_none": None,
-          "amp8": 74, "amp10": 95, "amp11": 53}
+SCORES = {
+    "c9_none": 75,
+    "c11_none": 88,
+    "c11_L2": 100,
+    "c12_none": None,
+    "amp8": 74,
+    "amp10": 95,
+    "amp11": 53,
+}
 
 
 def load(path):
@@ -123,7 +131,7 @@ def main():
             m = norm_mi(data[n][:, q], data[n][:, q + 1])
             full["xmi"].setdefault(n, []).append(m)
             row.append(f"{m:9.3f}")
-        show(f"L{q}-L{q+1} | " + " ".join(row))
+        show(f"L{q}-L{q + 1} | " + " ".join(row))
 
     with open(os.path.join(OUT, "joint_analysis.json"), "w") as f:
         json.dump(full, f, indent=1)

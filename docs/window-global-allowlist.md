@@ -14,7 +14,7 @@ The enforcement contract is [tests/window-global-allowlist-contract.mjs](../test
 
 | Legacy path cited in this doc    | Modern home                                                                                                                                                            |
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `js/modules/app.js`              | `src/lib/orchestration/app-init.ts` (+ `src/main.ts` entry)                                                                                                            |
+| `js/modules/app.js`              | `src/lib/orchestration/app-init.ts` (+ `src/main-explorer.ts` normal-route entry)                                                                                      |
 | `js/modules/micro-demo.js`       | `src/lib/demo/choreography.ts` (+ `camera.ts`, `guards.ts`, `ui.ts`, `demo-script.ts`)                                                                                 |
 | `js/modules/camera-controls.js`  | `src/lib/engine/camera-controls.ts` (+ `camera-controls-core.ts`, `camera-controls-restore.svelte.ts`, `camera-choreography/*`)                                        |
 | `js/modules/lifecycle.js`        | `src/lib/orchestration/lifecycle.ts` + `src/lib/stores/lifecycle.ts`                                                                                                   |
@@ -46,7 +46,7 @@ avoid the global entirely.
 Classification: `live-product`.
 Introduced: 2026-05-28. Replaces one-off window bridges as the single classified compatibility entry point for app action access.
 
-**Owner:** `src/main.ts` / `src/lib/orchestration/app-init.ts` (legacy: `js/modules/app.js`)
+**Owner:** `src/main-explorer.ts` / `src/lib/orchestration/app-init.ts` (legacy: `js/modules/app.js`)
 
 **Purpose:** Consolidates one-off `window.*` action bridges into a single explicitly classified namespace. It is the compatibility owner for Playwright specs, visual-audit helpers, manual DevTools probing, and external callers still crossing the app boundary through `window`. Retired migration-debt bare globals like `window.focusOnNode` and `window.setTrailFromSeed` now route through `window.__APP_ACTIONS__`.
 
@@ -93,7 +93,7 @@ Migration: `window.focusOnNode` and `window.setTrailFromSeed` are retired as bar
 
 Classification: `live-product`.
 
-**Owner:** `src/main.ts`
+**Owner:** `src/main-explorer.ts`
 
 **Purpose:** Compatibility state bridge. `src/lib/engine/semantic-threads.ts` falls back to `window.__APP_STATE__`; `__LEGACY_APP_STATE__` is published at boot so that fallback points at the real `AppState` object rather than an empty placeholder during the legacy-state migration.
 
@@ -114,7 +114,7 @@ Classification: `debug-probe`. These are devtools, Playwright, or visual-audit i
 | Global                                      | Owner                                    | Notes                                                                                                                                                                                                                          |
 | ------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `window.__APP_STATE__`                      | `js/modules/bridge-registry.js`          | **Primary app state hook.** Preferred neutral state surface for runtime inspection.                                                                                                                                            |
-| `window.__ERROR_RING__`                     | `src/main.ts`                            | **Global error sink.** Circular buffer of recent unhandled errors/rejections, installed via `Object.defineProperty`. Read-only getter (no setter).                                                                             |
+| `window.__ERROR_RING__`                     | `src/main-explorer.ts`                   | **Global error sink.** Circular buffer of recent unhandled errors/rejections, installed via `Object.defineProperty`. Read-only getter (no setter).                                                                             |
 | `window.__spectorStatus`                    | `src/components/SpectorInspector.svelte` | **SpectorJS lifecycle snapshot.** Published read-only status (phase, loadError, bridgeReady, etc.) for headless tests and dev panel; assigned via `getSpectorDevWindow()` alias.                                               |
 | `window.__forceSemanticDiveContractSurface` | `src/components/AppBoot.svelte`          | **Test contract hook.** Forces semantic-dive visibility for contract tests; installed unconditionally in `onMount` via `contractWindow` alias. **⚠️ Prod-gate bug: installed unconditionally (not dev-gated).** See F1 report. |
 | `window.withStateMutation`                  | `js/state.js`                            | **State mutation gate.** Allows testing/DevTools to bypass the critical keys mutation lock.                                                                                                                                    |

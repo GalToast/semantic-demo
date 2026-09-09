@@ -89,19 +89,29 @@ paths score and audio flows end-to-end**.
 
 ## Related: the LM server dies silently after binding (2026-09-09)
 
+**CORRECTED 2026-09-09 15:0x — the fused-chain gate was NOT the root cause.**
 `tmp/lm_server_v3.py` binds 8796, prints `listening on 127.0.0.1:8796`,
 then vanishes — no Python traceback, process just exits. Every launch
 produced a dead 8796 and the pump FATAL'd on a closed socket.
 
-**Root cause:** line 340 runs `make_sess(path=FUSED_MODEL, graph=True, ...)`
-unconditionally whenever `FUSED=1`. CUDA-graph capture serializes the whole
-IR and needs host RAM to hold it — with **1.56 GB free** the capture OOMs and
-kills the process. The docstring documents `io` as "IO-bound, no capture" and
-`plain` as no graphs, but this branch ignored `MODE` entirely.
+**Root cause (foreground run, not a guess):**
 
-**Fix:** gate the fused chain on `MODE == 'cuda'` (one line). Launch with
-`LM_V3_MODE=io` to skip capture. Same class of failure as the decode
-MemoryError, but without the env-var escape hatch.
+onnxruntime.capi.onnxruntime_pybind11_state.Fail: [ONNXRuntimeError]
+  : 1 : FAIL : Non-zero status code returned while running Add node.
+  Name:'/encoder/Add' Status Message: CUDA error
+  cudaErrorMemoryAllocation:out of memory
+
+The encoder's `Add` node cannot allocate on the RTX 4050 (2.56 GB free of
+6 GB). The `fused 12-level depth chain ENABLED` log line prints *before*
+the encoder runs, so it looked like graph capture was the killer — it is
+not. The gate on `MODE == 'cuda'` is harmless but was never the blocker.
+
+**Fix:** `LM_FP16=1` (the script supports it) halves the encoder's memory
+footprint. With it the LM stays alive.
+
+**Lesson:** a log line that prints before the crash point is not evidence of
+where the crash is. Run the failing component in the foreground to get the
+real exit code — detached `start /min` launches never produced one.
 
 ## All four project venvs are broken (2026-09-09)
 

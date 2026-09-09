@@ -12,6 +12,7 @@ Metrics per (file, level): code histogram entropy, top-1 concentration,
 silence-dropout rate (code 0 runs?), level-active rate. Deltas between
 configs tell the story.
 """
+
 import os
 
 import numpy as np
@@ -64,7 +65,13 @@ def level_stats(codes):
         ent = float(-(nz * np.log2(nz)).sum())
         top1 = float(p.max())
         drop = float((col == 0).mean())
-        out.append({"entropy": round(ent, 3), "top1": round(top1, 4), "dropout": round(drop, 4)})
+        out.append(
+            {
+                "entropy": round(ent, 3),
+                "top1": round(top1, 4),
+                "dropout": round(drop, 4),
+            }
+        )
     return out
 
 
@@ -111,10 +118,16 @@ def main():
                 f"L{q:2d} | {a['entropy']:6.2f} {b['entropy']:6.2f} | "
                 f"{a['top1']:.3f} {b['top1']:.3f} | {a['dropout']:.3f} {b['dropout']:.3f}"
             )
-            cliff[q] = {"d_ent": round(b["entropy"] - a["entropy"], 3),
-                        "d_drop": round(b["dropout"] - a["dropout"], 4)}
+            cliff[q] = {
+                "d_ent": round(b["entropy"] - a["entropy"], 3),
+                "d_drop": round(b["dropout"] - a["dropout"], 4),
+            }
         full["cliff_delta"] = cliff
-        worst = sorted(cliff, key=lambda q: abs(cliff[q]["d_drop"]) + abs(cliff[q]["d_ent"]) / 10, reverse=True)[:4]
+        worst = sorted(
+            cliff,
+            key=lambda q: abs(cliff[q]["d_drop"]) + abs(cliff[q]["d_ent"]) / 10,
+            reverse=True,
+        )[:4]
         show(f"collapse centers (levels where c12 breaks): {worst}")
         full["cliff_center_levels"] = worst
 

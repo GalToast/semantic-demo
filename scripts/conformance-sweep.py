@@ -4,6 +4,7 @@ No audio needed (decode-independent): verifies the control roundtrips —
 prog_set/play/stop/status replies, /band_mask echo, metrics flow, uiReady.
 Run once, restore summit state, disconnect. ~2 min.
 """
+
 import json
 import os
 import sys
@@ -14,7 +15,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import importlib.util
 
 _spec = importlib.util.spec_from_file_location(
-    "e2e_summit", os.path.join(os.path.dirname(os.path.abspath(__file__)), "e2e-summit.py")
+    "e2e_summit",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "e2e-summit.py"),
 )
 assert _spec is not None and _spec.loader is not None
 _e2e = importlib.util.module_from_spec(_spec)
@@ -59,11 +61,23 @@ def main():
     msgs = drain(8, "metrics")
     metrics = [m for m in msgs if m.get("type") == "metrics"]
     ps0 = [m for m in msgs if m.get("type") == "prog_status"]
-    check("control traffic flows", len(metrics) >= 1 or len(ps0) >= 1,
-          f"({len(metrics)} metrics, {len(ps0)} prog_status — metrics need uncontended act[ws])")
+    check(
+        "control traffic flows",
+        len(metrics) >= 1 or len(ps0) >= 1,
+        f"({len(metrics)} metrics, {len(ps0)} prog_status — metrics need uncontended act[ws])",
+    )
 
     # 2. prog_set roundtrip
-    ws.send(json.dumps({"type": "prog_set", "spec": "Am 4 | F 4 | C 4 | G 4", "bpm": 100, "loop": True}))
+    ws.send(
+        json.dumps(
+            {
+                "type": "prog_set",
+                "spec": "Am 4 | F 4 | C 4 | G 4",
+                "bpm": 100,
+                "loop": True,
+            }
+        )
+    )
     msgs = drain(6, "prog_set")
     ps = [m for m in msgs if m.get("type") == "prog_status"]
     check("prog_set replies prog_status", len(ps) >= 1, f"({ps[-1] if ps else 'none'})")
@@ -94,7 +108,9 @@ def main():
 
     # 6. band_mask echo (summit slots, then restore — already summit)
     r = post_band(slots=[2, 11])
-    check("band_mask echo active_slots [2,11]", r.get("active_slots") == [2, 11], f"({r})")
+    check(
+        "band_mask echo active_slots [2,11]", r.get("active_slots") == [2, 11], f"({r})"
+    )
 
     # 7. note_on accepted without error (no reply defined — absence of close is the signal)
     for n in CHORD:

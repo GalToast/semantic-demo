@@ -9,6 +9,7 @@ HF-band energy ratio (8-16kHz / full), onset density, zero-crossing rate,
 spectral flatness (Wiener entropy proxy for whine narrowband-ness).
 Labels: scraped from every results JSON + scoring log on disk.
 """
+
 import glob
 import json
 import os
@@ -66,7 +67,9 @@ def scrape_labels():
     """filename stem -> {v10, v7, whine, beat} from every results artifact."""
     labels = {}
     # json results files with per-file scores
-    for jf in glob.glob(r"C:\tmp\pitch_style_cross\*.json") + glob.glob(r"C:\tmp\style_interp\*.json"):
+    for jf in glob.glob(r"C:\tmp\pitch_style_cross\*.json") + glob.glob(
+        r"C:\tmp\style_interp\*.json"
+    ):
         try:
             d = json.load(open(jf))
         except Exception:
@@ -79,11 +82,17 @@ def scrape_labels():
         if not os.path.exists(lf):
             continue
         for line in open(lf):
-            m = re.search(r"amp (\d+): v10=(\d+) v7=(\d+)(?:/(\w))? beat=([\d.]+)", line)
+            m = re.search(
+                r"amp (\d+): v10=(\d+) v7=(\d+)(?:/(\w))? beat=([\d.]+)", line
+            )
             if m:
                 amp, v10, v7, grade, beat = m.groups()
-                labels[f"amp_{int(amp):d}"] = {"v10": int(v10), "v7": int(v7),
-                                              "grade": grade, "beat": float(beat)}
+                labels[f"amp_{int(amp):d}"] = {
+                    "v10": int(v10),
+                    "v7": int(v7),
+                    "grade": grade,
+                    "beat": float(beat),
+                }
                 labels[f"amp_{int(amp):02d}"] = labels[f"amp_{int(amp):d}"]
     return labels
 
@@ -113,8 +122,14 @@ def normalize_label(d):
 def match_score(stem, labels):
     if stem in labels and isinstance(labels[stem], dict) and "v10" in labels[stem]:
         return labels[stem]
-    for jf in ["grid_results.json", "summit_results.json", "whine_scan_results.json",
-               "slot_scan_results.json", "final_scan_results.json", "results.json"]:
+    for jf in [
+        "grid_results.json",
+        "summit_results.json",
+        "whine_scan_results.json",
+        "slot_scan_results.json",
+        "final_scan_results.json",
+        "results.json",
+    ]:
         raw = labels.get("_raw_" + jf)
         if isinstance(raw, dict):
             for key in (stem, stem + ".wav"):
@@ -139,20 +154,40 @@ def main():
             f = features(a, sr)
             lab = match_score(stem, labels)
             rows.append({"file": stem, "features": f, "label": lab})
-            tag = f"v10={lab.get('v10')} whine={lab.get('whine_pct', lab.get('whine', '?'))}" if lab else "UNLABELLED"
-            print(f"  {stem}: centroid={f['centroid']:.0f} hf={f['hf_ratio']:.4f} flat={f['hf_flatness']:.4f} onset={f['onset_density']:.4f} [{tag}]")
+            tag = (
+                f"v10={lab.get('v10')} whine={lab.get('whine_pct', lab.get('whine', '?'))}"
+                if lab
+                else "UNLABELLED"
+            )
+            print(
+                f"  {stem}: centroid={f['centroid']:.0f} hf={f['hf_ratio']:.4f} flat={f['hf_flatness']:.4f} onset={f['onset_density']:.4f} [{tag}]"
+            )
 
     with open(os.path.join(OUT, "meter_features.json"), "w") as fh:
         json.dump(rows, fh, indent=1)
 
     # correlations where labels exist
-    lab_rows = [r for r in rows if r["label"] and isinstance(r["label"].get("v10"), (int, float))]
+    lab_rows = [
+        r
+        for r in rows
+        if r["label"] and isinstance(r["label"].get("v10"), (int, float))
+    ]
     print(f"\nlabelled rows: {len(lab_rows)}/{len(rows)}")
     if len(lab_rows) >= 6:
-        for feat in ["centroid", "hf_ratio", "hf_flatness", "onset_density", "zcr", "crest", "rms"]:
+        for feat in [
+            "centroid",
+            "hf_ratio",
+            "hf_flatness",
+            "onset_density",
+            "zcr",
+            "crest",
+            "rms",
+        ]:
             xs = np.array([r["features"][feat] for r in lab_rows])
             for target in ["v10", "whine", "beat"]:
-                ys = np.array([r["label"].get(target, np.nan) for r in lab_rows], dtype=float)
+                ys = np.array(
+                    [r["label"].get(target, np.nan) for r in lab_rows], dtype=float
+                )
                 m = ~np.isnan(ys)
                 if m.sum() >= 6:
                     c = np.corrcoef(xs[m], ys[m])[0, 1]

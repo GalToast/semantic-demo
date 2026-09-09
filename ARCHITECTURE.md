@@ -23,7 +23,8 @@ semantic-explorer/
 │       docs/archive/vector-explorer-polished-legacy.html is the archived legacy shell.
 ├── css/                          Modular CSS, loaded through `semantic-demo.css`.
 ├── src/                          Single-page Svelte + Three.js application.
-│   ├── main.ts                   Vite entry; initializes URL/demo flags + mounts App.
+│   ├── main.ts                   Vite route dispatcher (explorer vs standalone jam).
+│   ├── main-explorer.ts          Normal explorer bootstrap; initializes URL/demo flags + mounts App.
 │   ├── App.svelte                Root composition; body parity attrs; lazy child mounts.
 │   ├── components/               39 Svelte component files (UI surface + dev tooling).
 │   └── lib/                      All engineering modules (engine, state, stores, …).
@@ -38,7 +39,7 @@ semantic-explorer/
 
 ## One App Shell
 
-The production app shell is `dist/svelte/index.html`, built from `src/main.ts` by Vite. Deploy publishes this shell to the live routes (`/semantic-demo/index.html` and `/semantic-demo/vector-explorer-polished.html`). `src/App.svelte` is the root composition that mounts the body parity attrs and the lazy-loaded surface components.
+The production app shell is `dist/svelte/index.html`, built from `src/main.ts` by Vite. The entry dispatches `?jam=1` / `?view=jam` to the standalone JamView chunk and sends every other URL through `src/main-explorer.ts`, which mounts the normal explorer. Deploy publishes this shell to the live routes (`/semantic-demo/index.html` and `/semantic-demo/vector-explorer-polished.html`). `src/App.svelte` is the root composition that mounts the body parity attrs and the lazy-loaded surface components.
 
 The repo-root `index.html` is a routing/front-door page only. It may link into the explorer but must never include canvas DOM, `dist/svelte/`, `semantic-demo.css`, or the Semantic API behavior. Run `npm run build && npm run check:shell` before deploy or shell-level edits. The deploy scripts build first, then call this guard before uploading.
 
@@ -48,7 +49,8 @@ The repo-root `index.html` is a routing/front-door page only. It may link into t
 
 ### Entry & Composition
 
-- **`src/main.ts`** — Vite entry. Initializes URL state, reads `?demo=force` flags, and mounts the Svelte app.
+- **`src/main.ts`** — Vite route dispatcher. It selects the standalone jam entry before the explorer bootstrap is imported, keeping the jam route's module graph engine-free.
+- **`src/main-explorer.ts`** — Normal explorer bootstrap. Initializes URL state, reads `?demo=force` flags, installs the explorer lifecycle, and mounts `App.svelte`.
 - **`src/App.svelte`** — Root component. Imports ~30 modules, declares 7 `createLazyComponent()` handles (Canvas, InfoPanel, MapView, FocusPocket, ThreadInspector, DemoChoreography, FocusCard, WeatherWidget) and mounts each via `$effect` once preconditions resolve. Wraps the whole tree in App boot logic plus the body-attribute parity bridge (`useParityAttrs`) and the Svelte viewport store. Dev-only components (`DevGui`, `DevTelemetry`, `DevToolsMount`, `SpectorInspector`) go behind `import.meta.env.DEV` so they stay out of prod builds.
 - **`src/components/Canvas.svelte`** — Owns WebGL canvas lifecycle (mount → engine.init → render → dispose).
 - **`src/components/AppBoot.svelte`** — Boot sequence wrapper that coordinates initial state hydration.

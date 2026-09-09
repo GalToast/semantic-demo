@@ -48,13 +48,13 @@ is no steering loop and no e2e.
 
 ## Known failure signatures
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| `MemoryError` in `write_bytecode` at boot | compilation cache hashing huge module | `JAX_ENABLE_COMPILATION_CACHE=0` |
-| `opt_einsum has no attribute paths` at import | broken namespace pkg in torch-venv | force-reinstall opt-einsum, or use system python |
-| Ports LISTENING but connections refused | accept loop wedged, process half-dead | restart that process (not the neighbors) |
-| Metrics flow, zero audio frames | decode_worker stuck on dead DEC socket | restart jam (fresh sockets) |
-| 101 without `Sec-WebSocket-Accept` | raw-socket WS server | strict clients reject; use lenient client or fix server |
+| Symptom                                       | Cause                                  | Fix                                                     |
+| --------------------------------------------- | -------------------------------------- | ------------------------------------------------------- |
+| `MemoryError` in `write_bytecode` at boot     | compilation cache hashing huge module  | `JAX_ENABLE_COMPILATION_CACHE=0`                        |
+| `opt_einsum has no attribute paths` at import | broken namespace pkg in torch-venv     | force-reinstall opt-einsum, or use system python        |
+| Ports LISTENING but connections refused       | accept loop wedged, process half-dead  | restart that process (not the neighbors)                |
+| Metrics flow, zero audio frames               | decode_worker stuck on dead DEC socket | restart jam (fresh sockets)                             |
+| 101 without `Sec-WebSocket-Accept`            | raw-socket WS server                   | strict clients reject; use lenient client or fix server |
 
 ## End-to-end confirmation
 
