@@ -14,6 +14,7 @@
   import { startJamRadio, stopJamRadio, getRadioState, setRadioNoteState } from '@lib/audio/jam-radio';
   import { setRadioProg, playRadioProg, stopRadioProg, DEFAULT_PROG_SPEC } from '@lib/audio/jam-radio';
   import { setRadioBandMode, getRadioBandMode, type RadioBandMode } from '@lib/audio/jam-radio';
+  import { startMidiInput, stopMidiInput } from '@lib/audio/jam-midi';
   import { isMeasuredPair, SUMMIT_STATE } from '@lib/audio/jam-radio';
   import { requestRadioProgStatus, type RadioProgStatus } from '@lib/audio/jam-radio';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
@@ -69,7 +70,7 @@
 
   // Stop the radio if the focus card unmounts — never leak a live stream.
   // Prog rides along: a running progression must not outlive the radio.
-  $effect(() => () => { stopRadioProg(); stopJamRadio(); });
+  $effect(() => () => { stopRadioProg(); stopMidiInput(); midiCount = 0; stopJamRadio(); });
 
   function cycleNoteState(): void {
     noteState = (noteState + 1) % 12;
@@ -92,6 +93,18 @@
   function cycleBandMode(): void {
     bandMode = bandMode === 'tone' ? 'beat' : 'tone';
     setRadioBandMode(bandMode);
+  }
+  // MIDI keyboard: pitch+timing from fingers, articulation from the dial.
+  // -1 = unavailable, 0 = off, >0 = device count while attached.
+  let midiCount = $state(0);
+  async function toggleMidi(): Promise<void> {
+    if (midiCount > 0) {
+      stopMidiInput();
+      midiCount = 0;
+      return;
+    }
+    const n = await startMidiInput(() => noteState);
+    midiCount = n;
   }
   // Summit restore: the interaction reverses sign across cond steps, so
   // only measured pairs are summit-grade. One click returns both dials.
@@ -139,6 +152,8 @@
     if (prev === 'live') {
       stopRadioProg();
       progPlaying = false;
+      stopMidiInput();
+      midiCount = 0;
       stopJamRadio();
       radioPlaying = false;
     }
@@ -170,6 +185,8 @@
       if (radioPlaying || getRadioState() === 'live') {
         stopRadioProg();
         progPlaying = false;
+        stopMidiInput();
+        midiCount = 0;
         stopJamRadio();
         radioPlaying = false;
       } else {
@@ -239,6 +256,20 @@
           : 'Beat preset: slots {2}, 100/100-S, beat 0.586 — stronger pulse.'}
         onclick={cycleBandMode}
       >{bandMode === 'tone' ? '🎻' : '🥁'}</button>
+      <button
+        id="sonic-midi"
+        class="sonic-midi"
+        type="button"
+        aria-label={midiCount < 0 ? 'MIDI unavailable in this browser' : midiCount === 0 ? 'Enable MIDI keyboard input' : `MIDI keyboard on (${midiCount} device${midiCount === 1 ? '' : 's'}) — click to disable`}
+        aria-pressed={midiCount > 0}
+        aria-disabled={midiCount < 0}
+        title={midiCount < 0
+          ? 'Web MIDI not available here — keys play from the dial only.'
+          : midiCount === 0
+            ? 'Play the jam from a MIDI keyboard — pitch from your fingers, articulation from the state dial.'
+            : `MIDI live: keys voice at state ${noteState} (${STATE_LABELS[noteState]}). Sustain pedal holds notes.`}
+        onclick={toggleMidi}
+      >🎹{midiCount > 0 ? midiCount : ''}</button>
       {:else if clip.ear}
         <span id="sonic-score" class="sonic-score sonic-score-{clip.ear.grade.toLowerCase()}">{clip.ear.score}/{clip.ear.grade}</span>
       {/if}
@@ -378,6 +409,24 @@
     border-color: rgba(255, 200, 120, 0.7);
     background: rgba(255, 200, 120, 0.18);
   }
+  .sonic-midi {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: inherit;
+    font-size: 0.7rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .sonic-midi:hover { background: rgba(255, 255, 255, 0.16); }
+  .sonic-midi[aria-pressed='true'] {
+    border-color: rgba(180, 140, 255, 0.7);
+    background: rgba(180, 140, 255, 0.18);
+  }
+  .sonic-midi[aria-disabled='true'] { opacity: 0.4; cursor: default; }
   .sonic-meta {
     display: flex;
     align-items: baseline;

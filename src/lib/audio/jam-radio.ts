@@ -222,9 +222,13 @@ function playChunk(audioCtx: AudioContext, b64: string): void {
 
 /** Disconnect from the radio and release held notes. Safe when idle. */
 let heldNotes: readonly NoteMessage[] = []
+/** Notes pressed via MIDI (outside the radio chord), for release on stop. */
+const midiNotes = new Set<number>()
 
 export function stopJamRadio(): void {
     for (const n of heldNotes) send({ type: 'note_off', note: n.note })
+    for (const note of midiNotes) send({ type: 'note_off', note })
+    midiNotes.clear()
     try {
         ws?.close()
     } catch {
@@ -273,6 +277,22 @@ export function stopRadioProg(): void {
 /** Ask the server for prog status (replied as a prog_status message). */
 export function requestRadioProgStatus(): void {
     send({ type: 'prog_status' })
+}
+
+/** Press one note at a pitch-slot state (MIDI path). Tracked separately
+ * from the radio chord so stop releases both. Range-checked 0..127;
+ * state clamped 0..11. Safe no-op when the socket is closed. */
+export function pressRadioNote(note: number, state: number): void {
+    if (!Number.isInteger(note) || note < 0 || note > 127) return
+    if (!Number.isInteger(state) || state < 0 || state > 11) return
+    midiNotes.add(note)
+    send({ type: 'note_on', note, state })
+}
+
+/** Release one MIDI-pressed note. Safe no-op when idle or unknown. */
+export function releaseRadioNote(note: number): void {
+    if (!midiNotes.delete(note)) return
+    send({ type: 'note_off', note })
 }
 
 /** Band preset menu (whine-scan Pareto): 'tone' = slots {2,11}, 100/100-S

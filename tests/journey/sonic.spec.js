@@ -712,8 +712,13 @@ test.describe('Sonic identity journey', () => {
                         if (this.onopen) this.onopen()
                     }, 10)
                 }
-                send(data) { window.__ws.sent.push(String(data)) }
-                close() { window.__ws.closed += 1; this.readyState = 3 }
+                send(data) {
+                    window.__ws.sent.push(String(data))
+                }
+                close() {
+                    window.__ws.closed += 1
+                    this.readyState = 3
+                }
             }
             FakeWebSocket.OPEN = 1
             window.WebSocket = FakeWebSocket
@@ -763,5 +768,96 @@ test.describe('Sonic identity journey', () => {
         await expect(page.locator('.sonic-unmeasured')).toHaveCount(0)
         const sentAfter = await page.evaluate(() => window.__ws.sent.length)
         expect(sentAfter, 'restore must re-arm chord + band').toBeGreaterThan(sentBefore)
+    })
+
+    // SONIC-11: MIDI keyboard plays the jam. A mocked MIDIAccess delivers
+    // note-on/off + sustain; keys voice at the live dial state through the
+    // radio socket. WS mocked too — no server needed.
+    test('SONIC-11. MIDI keyboard voices keys at dial state with sustain', async ({ page }) => {
+        await page.addInitScript(() => {
+            window.__ws = { url: null, sent: [], closed: 0 }
+            class FakeWebSocket {
+                constructor(url) {
+                    window.__ws.url = url
+                    this.readyState = 0
+                    setTimeout(() => {
+                        this.readyState = 1
+                        if (this.onopen) this.onopen()
+                    }, 10)
+                }
+                send(data) { window.__ws.sent.push(String(data)) }
+                close() { window.__ws.closed += 1; this.readyState = 3 }
+            }
+            FakeWebSocket.OPEN = 1
+            window.WebSocket = FakeWebSocket
+            // Fake MIDI: one input whose handler the test drives directly.
+            window.__midiInput = { onmidimessage: null }
+            window.__midiAccess = { inputs: new Map([['fake-1', window.__midiInput]]) }
+            navigator.requestMIDIAccess = async () => window.__midiAccess
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, { waitUntil: 'domcontentloaded' })
+
+        const start = Date.now()
+        let found = false
+        while (Date.now() - start < 15000) {
+            found = await page.evaluate(() => !!document.querySelector('#sonic-style'))
+            if (found) break
+            await page.waitForTimeout(100)
+        }
+        expect(found, 'sonic style dial must appear').toBe(true)
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#sonic-style')
+                const rect = el ? el.getBoundingClientRect() : null
+                return !!el && rect && rect.width > 0 && rect.height > 0
+            },
+            { timeout: 30000, polling: 200 }
+        )
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForTimeout(100)
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('.sonic-identity')
+                return el && el.getAttribute('data-live') === 'true'
+            },
+            { timeout: 30000 }
+        )
+        await page.waitForFunction(() => window.__ws && window.__ws.sent.length >= 5, { timeout: 30000 })
+
+        // Enable MIDI: button shows the device count.
+        await page.evaluate(() => document.querySelector('#sonic-midi').click())
+        await expect(page.locator('#sonic-midi')).toHaveAttribute('aria-pressed', 'true')
+
+        // Key down voices note 60 at the dial state (summit 4 default).
+        await page.evaluate(() => window.__midiInput.onmidimessage({ data: new Uint8Array([0x90, 60, 100]) }))
+        await page.waitForFunction(
+            () => window.__ws.sent.some((m) => m.includes('"note_on"') && m.includes('"note":60')),
+            { timeout: 30000 }
+        )
+        const onMsg = await page.evaluate(() =>
+            window.__ws.sent.find((m) => m.includes('"note_on"') && m.includes('"note":60'))
+        )
+        expect(onMsg, 'key must voice at dial state').toContain('"state":4')
+
+        // Sustain pedal down, key up: note_off deferred, not sent.
+        await page.evaluate(() => window.__midiInput.onmidimessage({ data: new Uint8Array([0xb0, 64, 127]) }))
+        const offsBefore = await page.evaluate(() =>
+            window.__ws.sent.filter((m) => m.includes('"note_off"') && m.includes('"note":60')).length
+        )
+        await page.evaluate(() => window.__midiInput.onmidimessage({ data: new Uint8Array([0x80, 60, 0]) }))
+        await page.waitForTimeout(300)
+        const offsHeld = await page.evaluate(() =>
+            window.__ws.sent.filter((m) => m.includes('"note_off"') && m.includes('"note":60')).length
+        )
+        expect(offsHeld, 'sustain must defer note_off').toBe(offsBefore)
+
+        // Pedal up releases the deferred note.
+        await page.evaluate(() => window.__midiInput.onmidimessage({ data: new Uint8Array([0xb0, 64, 0]) }))
+        await page.waitForFunction(
+            () =>
+                window.__ws.sent.some((m) => m.includes('"note_off"') && m.includes('"note":60')),
+            { timeout: 30000 }
+        )
     })
 })

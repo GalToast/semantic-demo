@@ -33,8 +33,18 @@ checks.append(
 checks.append(
     ("SonicIdentity stops prog on radio stop", svelte.count("stopRadioProg()") >= 3)
 )
-checks.append(("SonicIdentity has summit restore", "restoreSummit" in svelte and "SUMMIT_STATE" in svelte))
-checks.append(("SonicIdentity marks untested combos", "sonic-unmeasured" in svelte and "isMeasuredPair" in svelte))
+checks.append(
+    (
+        "SonicIdentity has summit restore",
+        "restoreSummit" in svelte and "SUMMIT_STATE" in svelte,
+    )
+)
+checks.append(
+    (
+        "SonicIdentity marks untested combos",
+        "sonic-unmeasured" in svelte and "isMeasuredPair" in svelte,
+    )
+)
 checks.append(
     ("SonicIdentity noteState default is 4 (summit)", "noteState = $state(4)" in svelte)
 )
@@ -44,7 +54,12 @@ with open(os.path.join(ROOT, "src/lib/audio/jam-radio.ts"), encoding="utf-8") as
 checks.append(("jam-radio has setRadioNoteState", "setRadioNoteState" in radio))
 checks.append(("jam-radio has startJamRadioAt", "startJamRadioAt" in radio))
 checks.append(("jam-radio has NoteMessage interface", "interface NoteMessage" in radio))
-checks.append(("jam-radio has measured pairs", "MEASURED_PAIRS" in radio and "isMeasuredPair" in radio))
+checks.append(
+    (
+        "jam-radio has measured pairs",
+        "MEASURED_PAIRS" in radio and "isMeasuredPair" in radio,
+    )
+)
 checks.append(
     (
         "jam-radio has prog controls",
@@ -65,7 +80,11 @@ checks.append(
         "RadioBandMode" in radio and "setRadioBandMode" in radio,
     )
 )
-checks.append(("SonicIdentity has #sonic-band button", "sonic-band" in svelte))
+with open(os.path.join(ROOT, "src/lib/audio/jam-midi.ts"), encoding="utf-8") as f:
+    midi = f.read()
+checks.append(("jam-midi voices keys at dial state", "pressRadioNote" in midi and "getState()" in midi))
+checks.append(("jam-midi defers note_off on sustain", "deferredOff" in midi and "releaseRadioNote" in midi))
+checks.append(("SonicIdentity has #sonic-midi button", "sonic-midi" in svelte))
 checks.append(("jam-radio has default prog spec", "DEFAULT_PROG_SPEC" in radio))
 checks.append(
     ("jam-radio held notes carry state", "state: 4" in radio and "note: 45" in radio)

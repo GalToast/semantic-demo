@@ -5,6 +5,8 @@
  */
 import { describe, it, expect } from 'vitest'
 import { decodePcmChunk, chunkToAudioBuffer } from '../../src/lib/audio/jam-radio'
+import { pressRadioNote, releaseRadioNote } from '../../src/lib/audio/jam-radio'
+import { startMidiInput, stopMidiInput, getMidiInputCount } from '../../src/lib/audio/jam-midi'
 
 /** Encode int16 samples to base64 of little-endian bytes (mirrors the server). */
 function i16ToB64(samples: number[]): string {
@@ -70,5 +72,34 @@ describe('chunkToAudioBuffer', () => {
     it('handles an odd-length chunk by dropping the trailing half-frame', () => {
         const buf = chunkToAudioBuffer(fakeCtx(), new Float32Array([0.1, 0.2, 0.3]))
         expect(buf.length).toBe(1)
+    })
+})
+
+describe('pressRadioNote / releaseRadioNote guards', () => {
+    it('accepts valid note+state without throwing (socket closed = silent no-op)', () => {
+        expect(() => pressRadioNote(60, 4)).not.toThrow()
+        expect(() => releaseRadioNote(60)).not.toThrow()
+    })
+    it('rejects out-of-range notes and states silently', () => {
+        expect(() => pressRadioNote(-1, 4)).not.toThrow()
+        expect(() => pressRadioNote(128, 4)).not.toThrow()
+        expect(() => pressRadioNote(60, -1)).not.toThrow()
+        expect(() => pressRadioNote(60, 12)).not.toThrow()
+        expect(() => pressRadioNote(60.5, 4)).not.toThrow()
+    })
+    it('releasing an unknown note is a no-op', () => {
+        expect(() => releaseRadioNote(77)).not.toThrow()
+    })
+})
+
+describe('jam-midi lifecycle', () => {
+    it('resolves -1 when Web MIDI is unavailable', async () => {
+        // jsdom has navigator but no requestMIDIAccess.
+        await expect(startMidiInput()).resolves.toBe(-1)
+        expect(getMidiInputCount()).toBe(0)
+    })
+    it('stop is safe when idle', () => {
+        expect(() => stopMidiInput()).not.toThrow()
+        expect(getMidiInputCount()).toBe(0)
     })
 })

@@ -167,3 +167,14 @@ independent dials can serve unmeasured combos under summit branding.
 `MEASURED_PAIRS` lists the ear-scored combos ({4,tone}, {4,beat});
 `isMeasuredPair()` gates the UI. The LIVE badge is a button: one click
 restores the summit pair. Unmeasured combos show an amber `*` marker.
+
+## Tier 9 — MIDI keyboard input (pitch from fingers)
+
+Web MIDI (`jam-midi.ts`) supplies pitch + timing; the ladder dial supplies
+articulation. Velocity is deliberately NOT mapped onto pitch-slot states
+(categorical learned states, not loudness). Note-on voices the key at the
+live dial state via `pressRadioNote(note, state)`; note-off releases;
+sustain pedal (CC64) defers releases. Dial `#sonic-midi` button toggles
+device attach (shows count); MIDI stops with every radio stop. No-MIDI
+and denied-permission resolve -1 — the dial works regardless. Zero server
+changes: the note protocol already spoke it.
