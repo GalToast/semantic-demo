@@ -172,69 +172,80 @@ class RawWS:
 
 
 def record_run(state, seconds, out_wav):
-    """Hold the chord at `state`, record streamed PCM for `seconds`."""
-    ws = RawWS()
-    if not ws.accept_ok:
-        print("  note: server omitted Sec-WebSocket-Accept (known interop gap)")
-    ws.send(json.dumps({"type": "uiReady"}))
-    for n in CHORD:
-        ws.send(json.dumps({"type": "note_on", "note": n, "state": state}))
-    # The pump only streams audio frames once the prog engine is playing
-    # (jam-radio.ts: prog_play -> engine presses notes -> audio chunks).
-    # Without this the e2e receives metrics but zero audio frames
-    # (measured: 79 metrics, 0 audio -> "no audio frames received").
-    ws.send(
-        json.dumps(
-            {
-                "type": "prog_set",
-                "spec": "Am 4 | F 4 | C 4 | G 4",
-                "bpm": 100,
-                "loop": True,
-            }
-        )
-    )
-    ws.send(json.dumps({"type": "prog_play"}))
-    chunks = []
-    seen = {}
-    shapes = {}
-    deadline = time.time() + seconds
-    while time.time() < deadline:
-        try:
-            raw = ws.recv(timeout=5)
-        except ConnectionError:
-            break
-        except Exception:
-            continue
-        shapes[ws.last_frame] = shapes.get(ws.last_frame, 0) + 1
-        with contextlib.suppress(Exception):
-            msg = json.loads(raw)
-            seen[msg.get("type", "?")] = seen.get(msg.get("type", "?"), 0) + 1
-            if msg.get("type") == "audio" and isinstance(msg.get("data"), str):
-                pcm = base64.b64decode(msg["data"])
-                i16 = np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768.0
-                chunks.append(i16)
-    for n in CHORD:
-        with contextlib.suppress(Exception):
-            ws.send(json.dumps({"type": "note_off", "note": n}))
-    with contextlib.suppress(Exception):
-        ws.send(json.dumps({"type": "prog_stop"}))
-    ws.close()
-    print(f"  frames seen: {seen}")
-    print(f"  frame shapes (opcode, len, ext): {shapes}")
+    """Hold the chord at `state`, record streamed PCM for `seconds`.
 
-    if not chunks:
-        raise RuntimeError("no audio frames received")
-    audio = np.concatenate(chunks)
-    stereo = audio.reshape(-1, 2) if audio.size % 2 == 0 else audio[:-1].reshape(-1, 2)
-    wav16 = np.clip(stereo, -1, 1) * 16384.0
-    with wave.open(out_wav, "wb") as w:
-        w.setnchannels(2)
-        w.setsampwidth(2)
-        w.setframerate(RATE)
-        w.writeframes(wav16.astype("<i2").tobytes())
-    secs = len(stereo) / RATE
-    print(f"  recorded {secs:.1f}s -> {out_wav}")
-    return out_wav
+    The jam server acquires its measurement lease when the WebSocket upgrade
+    succeeds. Do not reserve it with a separate HTTP request: that request
+    uses a different ephemeral peer port and would make the following WS
+    upgrade look like a competing client.
+    """
+    ws = None
+    try:
+        ws = RawWS()
+        if not ws.accept_ok:
+            print("  note: server omitted Sec-WebSocket-Accept (known interop gap)")
+        ws.send(json.dumps({"type": "uiReady"}))
+        for n in CHORD:
+            ws.send(json.dumps({"type": "note_on", "note": n, "state": state}))
+        # The pump only streams audio frames once the prog engine is playing
+        # (jam-radio.ts: prog_play -> engine presses notes -> audio chunks).
+        # Without this the e2e receives metrics but zero audio frames
+        # (measured: 79 metrics, 0 audio -> "no audio frames received").
+        ws.send(
+            json.dumps(
+                {
+                    "type": "prog_set",
+                    "spec": "Am 4 | F 4 | C 4 | G 4",
+                    "bpm": 100,
+                    "loop": True,
+                }
+            )
+        )
+        ws.send(json.dumps({"type": "prog_play"}))
+        chunks = []
+        seen = {}
+        shapes = {}
+        deadline = time.time() + seconds
+        while time.time() < deadline:
+            try:
+                raw = ws.recv(timeout=5)
+            except ConnectionError:
+                break
+            except Exception:
+                continue
+            shapes[ws.last_frame] = shapes.get(ws.last_frame, 0) + 1
+            with contextlib.suppress(Exception):
+                msg = json.loads(raw)
+                seen[msg.get("type", "?")] = seen.get(msg.get("type", "?"), 0) + 1
+                if msg.get("type") == "audio" and isinstance(msg.get("data"), str):
+                    pcm = base64.b64decode(msg["data"])
+                    i16 = np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768.0
+                    chunks.append(i16)
+        for n in CHORD:
+            with contextlib.suppress(Exception):
+                ws.send(json.dumps({"type": "note_off", "note": n}))
+        with contextlib.suppress(Exception):
+            ws.send(json.dumps({"type": "prog_stop"}))
+        print(f"  frames seen: {seen}")
+        print(f"  frame shapes (opcode, len, ext): {shapes}")
+
+        if not chunks:
+            raise RuntimeError("no audio frames received")
+        audio = np.concatenate(chunks)
+        stereo = audio.reshape(-1, 2) if audio.size % 2 == 0 else audio[:-1].reshape(-1, 2)
+        wav16 = np.clip(stereo, -1, 1) * 16384.0
+        with wave.open(out_wav, "wb") as w:
+            w.setnchannels(2)
+            w.setsampwidth(2)
+            w.setframerate(RATE)
+            w.writeframes(wav16.astype("<i2").tobytes())
+        secs = len(stereo) / RATE
+        print(f"  recorded {secs:.1f}s -> {out_wav}")
+        return out_wav
+    finally:
+        if ws is not None:
+            with contextlib.suppress(Exception):
+                ws.close()
 
 
 def ear_score(wav):
