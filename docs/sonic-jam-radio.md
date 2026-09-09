@@ -261,3 +261,34 @@ needs a `fetch()` wrapper. The MusicCoCa embed itself is measured at
 cos 1.0) — cheap enough to run alongside the LM with zero GPU contention,
 but the 914MB TFLite bundle does not fit in a browser, so the embedding
 runs server-side by design.
+
+## Text-vibe steering (tier 13)
+
+`jam-radio.ts` gains `sendStyleText` — `POST /style_text {text}` to the
+live jam. mrt2-lane shipped and live-verified this endpoint ('funky
+techno' matched the funky anchor, tokens identical to the standalone
+probe); this is the client half. Fire-and-forget; the dial applies it
+server-side without dropping the stream. Returns the matched anchor name
+or null on a network/parse failure.
+
+Why /style_text and not /style_audio? The audio path needs
+`surf_style_helper`, which does not exist on disk (`jam_server.py` line 24
+imports it but the module is absent). mrt2-lane's text endpoint uses 100%
+existing infrastructure — no MusicCoCa at runtime — so it is the one to
+wire up now. The audio embedding (MusicCoCa, ~3s per 10s clip on CPU,
+measured in `scripts/style-ear-latency.py`) stays queued for when the
+server side lands.
+
+JamView.svelte: `#jam-style` input + 💚 send button + matched-anchor
+readout. JAM-6 pins the fetch shape.
+
+## Surface inventory (tiers 1–13)
+
+| Tier | Control | Dial | Verified |
+|------|---------|------|----------|
+| 1–8 | pitch state + band presets | `#sonic-note-state` / `#sonic-band` | SONIC-1..8 |
+| 9 | MIDI keyboard in | `#sonic-midi` | SONIC-11 |
+| 10 | MIDI OUT bridge | `#sonic-midi` (bridge) | unit 13/13 |
+| 11 | progression MIDI bridge | `#sonic-prog` / `#jam-prog` | JAM-4, unit 10/10 |
+| 12 | vocal monitor | `#sonic-vocal` / `#jam-vocal` | SONIC-12 |
+| 13 | text-vibe steering | `#jam-style` | JAM-6 |
