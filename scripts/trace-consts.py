@@ -1,4 +1,5 @@
 """Read Constant node values + Slice params feeding the pitch Gather."""
+
 import os
 
 
@@ -14,7 +15,9 @@ nodes = {n.name: n for n in g.node}
 
 
 def const_of(name):
-    n = nodes.get(name.rsplit("_output_0", 1)[0] if name.endswith("_output_0") else name)
+    n = nodes.get(
+        name.rsplit("_output_0", 1)[0] if name.endswith("_output_0") else name
+    )
     if n is None or n.op_type != "Constant":
         # try direct tensor name match against initializers
         for i in g.initializer:

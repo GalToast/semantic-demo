@@ -3,6 +3,7 @@
 Goal: derive the EXACT index formula (not the doc's claim) and compute
 which table rows any driver can ever address. CPU-only, no GPU/stack.
 """
+
 import os
 
 import numpy as np
@@ -35,7 +36,9 @@ print("=== Gather nodes touching regular_embedding ===")
 for node in g.node:
     if node.op_type == "Gather":
         data, idx = node.input[0], node.input[1]
-        print(f"Gather {node.name}: data={data} indices={idx} axis={node.attribute[0].i if node.attribute else '?'}")
+        print(
+            f"Gather {node.name}: data={data} indices={idx} axis={node.attribute[0].i if node.attribute else '?'}"
+        )
 
 print("\n=== nodes feeding Gather indices (walk back 6 levels) ===")
 

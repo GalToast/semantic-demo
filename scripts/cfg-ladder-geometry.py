@@ -14,6 +14,7 @@ adjacent bins + cosine to the production row. Structured = distinct learned
 concepts (sweep-worthy); noise = dead (close the thread cheaply).
 CPU-only, no GPU/stack.
 """
+
 import os
 
 import numpy as np
@@ -34,7 +35,12 @@ print(f"table: {table.shape}")
 BASES = {"drums": 1408, "cfg-mulan": 1417, "cfg-notes": 1464, "cfg-drums": 1511}
 PROD = {"drums": 8, "cfg-mulan": 27, "cfg-notes": 13, "cfg-drums": 9}
 # plausible bin ranges: mulan/notes step 0.2 x40 bins (+7 offset); drums step 1.0 x8 (+7)
-RANGES = {"drums": range(6, 10), "cfg-mulan": range(7, 48), "cfg-notes": range(7, 48), "cfg-drums": range(7, 16)}
+RANGES = {
+    "drums": range(6, 10),
+    "cfg-mulan": range(7, 48),
+    "cfg-notes": range(7, 48),
+    "cfg-drums": range(7, 16),
+}
 
 
 def cos(a, b):
@@ -42,19 +48,27 @@ def cos(a, b):
 
 
 for slot, base in BASES.items():
-    print(f"\n=== {slot} (base {base}, production cond {PROD[slot]} -> row {base + PROD[slot]}) ===")
+    print(
+        f"\n=== {slot} (base {base}, production cond {PROD[slot]} -> row {base + PROD[slot]}) ==="
+    )
     rows = {c: table[base + c] for c in RANGES[slot] if base + c < 1536}
     norms = [np.linalg.norm(v) for v in rows.values()]
-    print(f"  rows: {min(rows)}..{max(rows)}  norm mean={np.mean(norms):.3f} std={np.std(norms):.3f} "
-          f"min={min(norms):.3f} max={max(norms):.3f}")
+    print(
+        f"  rows: {min(rows)}..{max(rows)}  norm mean={np.mean(norms):.3f} std={np.std(norms):.3f} "
+        f"min={min(norms):.3f} max={max(norms):.3f}"
+    )
     prod = table[base + PROD[slot]]
     adj = []
     keys = sorted(rows)
     for a, b in zip(keys, keys[1:]):  # noqa: B905 (adjacent pairs differ by design)
         adj.append(cos(rows[a], rows[b]))
-    print(f"  adjacent-bin cosine: mean={np.mean(adj):.3f} min={min(adj):.3f} max={max(adj):.3f}")
+    print(
+        f"  adjacent-bin cosine: mean={np.mean(adj):.3f} min={min(adj):.3f} max={max(adj):.3f}"
+    )
     to_prod = [cos(v, prod) for k, v in rows.items() if k != PROD[slot]]
-    print(f"  cosine to production row: mean={np.mean(to_prod):.3f} min={min(to_prod):.3f} max={max(to_prod):.3f}")
+    print(
+        f"  cosine to production row: mean={np.mean(to_prod):.3f} min={min(to_prod):.3f} max={max(to_prod):.3f}"
+    )
     # verdict heuristic: structured if adjacent bins are mutually distinct (cos < 0.5)
     # AND norms are in the trained band (not collapsed)
     distinct = sum(1 for c in adj if c < 0.5)

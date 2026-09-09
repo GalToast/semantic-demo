@@ -8,6 +8,7 @@ uses and measures whether anything comes back.
 No kills, no restarts, no config changes. One small request (~100ms of
 shared decode time).
 """
+
 import socket
 import struct
 import sys
@@ -19,7 +20,7 @@ HOST, PORT = "127.0.0.1", 8797
 
 t0 = time.time()
 s = socket.create_connection((HOST, PORT), timeout=10)
-print(f"connected in {time.time()-t0:.2f}s")
+print(f"connected in {time.time() - t0:.2f}s")
 s.settimeout(90)
 
 codes = np.zeros((1, 4, 12), dtype=np.int32)
@@ -43,7 +44,7 @@ def drain(n):
 
 t1 = time.time()
 n = struct.unpack("<I", drain(4))[0]
-print(f"length prefix in {time.time()-t1:.1f}s: n={n}")
+print(f"length prefix in {time.time() - t1:.1f}s: n={n}")
 if n == 0:
     print("VERDICT: decode responded zero-length (error path, but ALIVE)")
     sys.exit(0)

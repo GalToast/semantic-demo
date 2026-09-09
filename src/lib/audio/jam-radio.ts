@@ -306,7 +306,7 @@ export interface MeasuredPair {
 }
 export const MEASURED_PAIRS: readonly MeasuredPair[] = [
     { state: 4, mode: 'tone', score: '100/100-S whine 2.6%' },
-    { state: 4, mode: 'beat', score: '100/100-S beat 0.586' },
+    { state: 4, mode: 'beat', score: '100/100-S beat 0.586' }
 ]
 export function isMeasuredPair(state: number, mode: RadioBandMode): boolean {
     return MEASURED_PAIRS.some((p) => p.state === state && p.mode === mode)
