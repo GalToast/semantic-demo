@@ -21,7 +21,7 @@ test.afterEach(async ({ page }) => {
 // this spec still asserts the stable play/badge contract on any variant.
 test.describe('Sonic identity journey', () => {
     test('SONIC-1. Focused business shows sonic play control and ear score badge', async ({ page }) => {
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=6218`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, { waitUntil: 'domcontentloaded' })
 
         // The sonic section renders inside the focus card once the manifest
         // loads. Poll via CDP evaluate (rAF stalls in headless WebGL).
@@ -58,7 +58,7 @@ test.describe('Sonic identity journey', () => {
     })
 
     test('SONIC-2. Style dial toggles between best and max-beat variants', async ({ page }) => {
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=6218`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, { waitUntil: 'domcontentloaded' })
 
         // Wait for sonic section
         const start = Date.now()
@@ -78,20 +78,24 @@ test.describe('Sonic identity journey', () => {
         // moving before clicking ("element is not stable" otherwise).
         await page.waitForTimeout(500)
 
-        // Click to max-beat
+        // 3-way dial cycle: ★ best -> ⚡ beat -> 🔴 live -> ★ best.
+        // aria-pressed tracks the live pole only (text tracks the state).
         await page.evaluate(() => document.querySelector('#sonic-style').click())
         await page.waitForTimeout(100)
-        await expect(styleBtn).toHaveAttribute('aria-pressed', 'true')
         await expect(styleBtn).toHaveText('⚡')
+        await expect(styleBtn).toHaveAttribute('aria-pressed', 'false')
 
-        // Click back to best, then assert BOTH DOM projections of the dial
-        // state atomically — under serial WebGL load a cross-assertion race
-        // (attribute flipped, text lagging) can produce false failures.
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForTimeout(100)
+        await expect(styleBtn).toHaveText('🔴')
+        await expect(styleBtn).toHaveAttribute('aria-pressed', 'true')
+
+        // Back to best; assert the return atomically (both DOM projections).
         await page.evaluate(() => document.querySelector('#sonic-style').click())
         const backToBest = await page.waitForFunction(
             () => {
                 const b = document.querySelector('#sonic-style')
-                return !!b && b.getAttribute('aria-pressed') === 'false' && b.textContent === '★'
+                return !!b && b.textContent === '★' && b.getAttribute('aria-pressed') === 'false'
             },
             { timeout: 10000 }
         )
@@ -103,7 +107,7 @@ test.describe('Sonic identity journey', () => {
     // forget, so the jam server may be down — we intercept fetch in-page
     // and assert the steering request shape, never its outcome.
     test('SONIC-3. Style dial toggle fires a jam steering POST', async ({ page }) => {
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=6218`, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, { waitUntil: 'domcontentloaded' })
 
         const start = Date.now()
         let found = false
@@ -148,11 +152,85 @@ test.describe('Sonic identity journey', () => {
         expect(beatCall, 'toggling to beat must POST { pole: "beat" } to /style').toBeTruthy()
         expect(beatCall.url).toContain('/style')
 
+        // Toggle to live -> continuity steer keeps the current pole ('beat').
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForTimeout(200)
+
         // Toggle back to best -> should fire POST { pole: 'best' }
         await page.evaluate(() => document.querySelector('#sonic-style').click())
         await page.waitForTimeout(200)
         const bestCall = jamCalls.find((c) => c.body.includes('"best"'))
         expect(bestCall, 'toggling back to best must POST { pole: "best" } to /style').toBeTruthy()
         expect(bestCall.url).toContain('/style')
+    })
+
+    // SONIC-4: the 🔴 live pole connects a WebSocket to the MRT2 jam server,
+    // holds the radio chord (note_on per RADIO_HELD_NOTES), and flips the
+    // component into live mode; leaving live closes the socket. The socket is
+    // mocked in-page (addInitScript) so the journey never needs the server.
+    test('SONIC-4. Live dial connects the jam radio and holds the chord', async ({ page }) => {
+        await page.addInitScript(() => {
+            window.__ws = { url: null, sent: [], closed: 0 }
+            class FakeWebSocket {
+                constructor(url) {
+                    window.__ws.url = url
+                    this.readyState = 0 // CONNECTING
+                    setTimeout(() => {
+                        this.readyState = 1 // OPEN
+                        if (this.onopen) this.onopen()
+                    }, 10)
+                }
+                send(data) {
+                    window.__ws.sent.push(String(data))
+                }
+                close() {
+                    window.__ws.closed += 1
+                    this.readyState = 3
+                }
+            }
+            FakeWebSocket.OPEN = 1
+            window.WebSocket = FakeWebSocket
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, { waitUntil: 'domcontentloaded' })
+
+        const start = Date.now()
+        let found = false
+        while (Date.now() - start < 15000) {
+            found = await page.evaluate(() => !!document.querySelector('#sonic-style'))
+            if (found) break
+            await page.waitForTimeout(100)
+        }
+        expect(found, 'sonic style dial must appear').toBe(true)
+
+        // Cycle the dial to live: ★ -> ⚡ -> 🔴 (JS dispatch; WebGL overlay).
+        await page.waitForTimeout(500)
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForTimeout(100)
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+
+        // Radio must connect to the jam server, go live, and hold the chord.
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('.sonic-identity')
+                return el && el.getAttribute('data-live') === 'true'
+            },
+            { timeout: 10000 }
+        )
+        const wsState = await page.evaluate(() => window.__ws)
+        expect(wsState.url, 'radio must target the jam websocket').toContain(':8083')
+        const noteOns = wsState.sent.filter((m) => m.includes('"note_on"'))
+        expect(noteOns.length, 'radio must hold the radio chord via note_on').toBeGreaterThanOrEqual(5)
+
+        // Leaving live closes the socket and exits live mode.
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('.sonic-identity')
+                return el && el.getAttribute('data-live') === 'false'
+            },
+            { timeout: 10000 }
+        )
+        const after = await page.evaluate(() => window.__ws)
+        expect(after.closed, 'radio socket must be closed on leaving live').toBeGreaterThanOrEqual(1)
     })
 })

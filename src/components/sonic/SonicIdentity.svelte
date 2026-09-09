@@ -11,6 +11,7 @@
   import { loadSonicManifest, pickVariantForNode, type SonicManifest, type SonicClip, type SonicStyle } from '@lib/sonic/sonic-manifest';
   import { playSonicIdentity, stopSonicIdentity, isPlaying } from '@lib/audio/sonic-identity';
   import { steerJam } from '@lib/audio/jam-steer';
+  import { startJamRadio, stopJamRadio, getRadioState } from '@lib/audio/jam-radio';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
 
   interface Props {
@@ -30,13 +31,37 @@
 
   const clusterName = $derived(cluster !== null ? CLUSTER_NAMES[cluster % CLUSTER_NAMES.length] ?? null : null);
 
-  // Style dial: 'best' = ear-ranked default; 'beat' = max beat_clarity variant.
-  let style = $state<SonicStyle>('best');
+  // Style dial: 3-way cycle — ★ 'best' (ear-ranked clip), ⚡ 'beat' (max
+  // beat_clarity clip), 🔴 'live' (generative radio via the MRT2 jam server).
+  type Dial = 'best' | 'beat' | 'live';
+  const DIAL_ORDER: Dial[] = ['best', 'beat', 'live'];
+  let dial = $state<Dial>('best');
+  // Clip-selection style: the live pole plays the radio, not a canned clip.
+  const style = $derived<SonicStyle>(dial === 'live' ? 'best' : dial);
+  const live = $derived(dial === 'live');
+  let radioPlaying = $state(false);
   const clip = $derived(manifest ? pickVariantForNode(manifest, clusterName, leadId, style) : null);
 
+  // Stop the radio if the focus card unmounts — never leak a live stream.
+  $effect(() => () => { stopJamRadio(); });
+
   function toggleStyle(): void {
-    const next: SonicStyle = style === 'best' ? 'beat' : 'best';
-    style = next;
+    const prev = dial;
+    const next: Dial = DIAL_ORDER[(DIAL_ORDER.indexOf(dial) + 1) % DIAL_ORDER.length];
+    dial = next;
+    if (next === 'live') {
+      // Radio replaces the canned clip; steer with the pole we came from so
+      // the generative stream continues the mood.
+      stopSonicIdentity();
+      playing = false;
+      void steerJam(prev === 'beat' ? 'beat' : 'best');
+      void startJamRadio({ onState: (s) => { radioPlaying = s === 'live'; } });
+      return;
+    }
+    if (prev === 'live') {
+      stopJamRadio();
+      radioPlaying = false;
+    }
     // Steer any live jam session toward the new pole (fire-and-forget; the
     // jam server may not be running — playback dial works regardless).
     void steerJam(next);
@@ -60,6 +85,16 @@
   });
 
   function toggle(): void {
+    if (live) {
+      // In live mode the play button controls the generative radio.
+      if (radioPlaying || getRadioState() === 'live') {
+        stopJamRadio();
+        radioPlaying = false;
+      } else {
+        void startJamRadio({ onState: (s) => { radioPlaying = s === 'live'; } }).then((ok) => { radioPlaying = ok; });
+      }
+      return;
+    }
     if (!clip) return;
     if (playing) {
       stopSonicIdentity();
@@ -71,17 +106,21 @@
 </script>
 
 {#if clip}
-  <div class="sonic-identity" data-testid="sonic-identity">
+  <div class="sonic-identity" data-testid="sonic-identity" data-live={live ? 'true' : 'false'}>
     <button
       id="sonic-play"
       class="sonic-play"
       type="button"
-      aria-label={playing ? `Pause sonic identity for ${clip.prompt}` : `Play sonic identity for ${clip.prompt}`}
-      aria-pressed={playing}
+      aria-label={live
+        ? (radioPlaying ? 'Pause live jam radio' : 'Play live jam radio')
+        : (playing ? `Pause sonic identity for ${clip.prompt}` : `Play sonic identity for ${clip.prompt}`)}
+      aria-pressed={live ? radioPlaying : playing}
       onclick={toggle}
-    >{playing ? '⏸' : '▶'}</button>
+    >{live ? (radioPlaying ? '⏸' : '▶') : (playing ? '⏸' : '▶')}</button>
     <div class="sonic-meta">
-      {#if clip.ear}
+      {#if live}
+        <span id="sonic-live-badge" class="sonic-live">LIVE</span>
+      {:else if clip.ear}
         <span id="sonic-score" class="sonic-score sonic-score-{clip.ear.grade.toLowerCase()}">{clip.ear.score}/{clip.ear.grade}</span>
       {/if}
       <span class="sonic-prompt" title={clip.prompt}>{clip.prompt}</span>
@@ -89,11 +128,19 @@
         id="sonic-style"
         class="sonic-style"
         type="button"
-        aria-label={style === 'beat' ? 'Switch to best variant' : 'Switch to max-beat variant (stronger pulse)'}
-        aria-pressed={style === 'beat'}
-        title={style === 'beat' ? 'Max beat-clarity take — strongest pulse' : 'Best ear-ranked take'}
+        aria-label={dial === 'best'
+          ? 'Switch to max-beat variant (stronger pulse)'
+          : dial === 'beat'
+            ? 'Switch to live generative radio'
+            : 'Switch to best variant'}
+        aria-pressed={live}
+        title={dial === 'best'
+          ? 'Best ear-ranked take'
+          : dial === 'beat'
+            ? 'Max beat-clarity take — strongest pulse'
+            : 'Live generative radio (MRT2 jam)'}
         onclick={toggleStyle}
-      >{style === 'beat' ? '⚡' : '★'}</button>
+      >{dial === 'best' ? '★' : dial === 'beat' ? '⚡' : '🔴'}</button>
     </div>
   </div>
 {/if}
@@ -138,6 +185,17 @@
   .sonic-style[aria-pressed='true'] {
     border-color: rgba(120, 220, 160, 0.7);
     background: rgba(120, 220, 160, 0.18);
+  }
+  .sonic-live {
+    flex: none;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.5);
+    border-radius: 0.25rem;
+    padding: 0 0.3rem;
+    line-height: 1.5;
   }
   .sonic-meta {
     display: flex;
