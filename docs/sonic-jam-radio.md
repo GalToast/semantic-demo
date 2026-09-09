@@ -294,11 +294,11 @@ readout. JAM-6 pins the fetch shape.
 
 ## Surface inventory (tiers 1–13)
 
-| Tier | Control | Dial | Verified |
-|------|---------|------|----------|
-| 1–8 | pitch state + band presets | `#sonic-note-state` / `#sonic-band` | SONIC-1..8 |
-| 9 | MIDI keyboard in | `#sonic-midi` | SONIC-11 |
-| 10 | MIDI OUT bridge | `#sonic-midi` (bridge) | unit 13/13 |
-| 11 | progression MIDI bridge | `#sonic-prog` / `#jam-prog` | JAM-4, unit 10/10 |
-| 12 | vocal monitor | `#sonic-vocal` / `#jam-vocal` | SONIC-12 |
-| 13 | text-vibe steering | `#jam-style` | JAM-6 |
+| Tier | Control                    | Dial                                | Verified          |
+| ---- | -------------------------- | ----------------------------------- | ----------------- |
+| 1–8  | pitch state + band presets | `#sonic-note-state` / `#sonic-band` | SONIC-1..8        |
+| 9    | MIDI keyboard in           | `#sonic-midi`                       | SONIC-11          |
+| 10   | MIDI OUT bridge            | `#sonic-midi` (bridge)              | unit 13/13        |
+| 11   | progression MIDI bridge    | `#sonic-prog` / `#jam-prog`         | JAM-4, unit 10/10 |
+| 12   | vocal monitor              | `#sonic-vocal` / `#jam-vocal`       | SONIC-12          |
+| 13   | text-vibe steering         | `#jam-style`                        | JAM-6             |
