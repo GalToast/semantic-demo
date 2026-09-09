@@ -13,6 +13,7 @@
   import { steerJam } from '@lib/audio/jam-steer';
   import { startJamRadio, stopJamRadio, getRadioState, setRadioNoteState } from '@lib/audio/jam-radio';
   import { setRadioProg, playRadioProg, stopRadioProg, DEFAULT_PROG_SPEC } from '@lib/audio/jam-radio';
+  import { setRadioBandMode, getRadioBandMode, type RadioBandMode } from '@lib/audio/jam-radio';
   import { requestRadioProgStatus, type RadioProgStatus } from '@lib/audio/jam-radio';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
 
@@ -78,6 +79,19 @@
   // starts it. The engine moves harmony while the summit config (state 4
   // + slots {2,11}) holds the quality. Toggle off returns to the drone.
   let progPlaying = $state(false);
+  function onRadioState(s: 'idle' | 'connecting' | 'live'): void {
+    radioPlaying = s === 'live';
+    // Connect always fires the summit slots server-side — keep the dial's
+    // preset in agreement so the next toggle goes beat, not tone-again.
+    if (s === 'live') bandMode = 'tone';
+  }
+  // Band preset menu (whine-scan Pareto): tone = clean, beat = pulse.
+  // Defaults to tone (the connect default); cycles without dropping audio.
+  let bandMode = $state<RadioBandMode>('tone');
+  function cycleBandMode(): void {
+    bandMode = bandMode === 'tone' ? 'beat' : 'tone';
+    setRadioBandMode(bandMode);
+  }
   // Last server-confirmed prog status (null until the first prog_status
   // reply). The toggle is optimistic; this is ground truth when present.
   let progStatus = $state<RadioProgStatus | null>(null);
@@ -107,7 +121,7 @@
       stopSonicIdentity();
       playing = false;
       void steerJam(prev === 'beat' ? 'beat' : 'best');
-      void startJamRadio({ onState: (s) => { radioPlaying = s === 'live'; }, onProgStatus });
+      void startJamRadio({ onState: onRadioState, onProgStatus });
       return;
     }
     // State cycling lives on the dedicated #sonic-note-state button — the
@@ -150,7 +164,7 @@
         stopJamRadio();
         radioPlaying = false;
       } else {
-        void startJamRadio({ onState: (s) => { radioPlaying = s === 'live'; }, onProgStatus }).then((ok) => { radioPlaying = ok; });
+        void startJamRadio({ onState: onRadioState, onProgStatus }).then((ok) => { radioPlaying = ok; });
       }
       return;
     }
@@ -198,6 +212,17 @@
           : 'Chord progression (Am–F–C–G) through the summit config — harmonic movement experiment.'}
         onclick={toggleProg}
       >{progPlaying ? '⏹' : '𝄢'}</button>
+      <button
+        id="sonic-band"
+        class="sonic-band"
+        type="button"
+        aria-label={bandMode === 'tone' ? 'Switch to beat preset (stronger pulse)' : 'Switch to tone preset (cleaner tone)'}
+        aria-pressed={bandMode === 'beat'}
+        title={bandMode === 'tone'
+          ? 'Tone preset: slots {2,11}, 100/100-S, whine 2.6% — clean tone.'
+          : 'Beat preset: slots {2}, 100/100-S, beat 0.586 — stronger pulse.'}
+        onclick={cycleBandMode}
+      >{bandMode === 'tone' ? '🎻' : '🥁'}</button>
       {:else if clip.ear}
         <span id="sonic-score" class="sonic-score sonic-score-{clip.ear.grade.toLowerCase()}">{clip.ear.score}/{clip.ear.grade}</span>
       {/if}
@@ -310,6 +335,23 @@
   .sonic-prog[aria-pressed='true'] {
     border-color: rgba(150, 180, 255, 0.7);
     background: rgba(150, 180, 255, 0.18);
+  }
+  .sonic-band {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: inherit;
+    font-size: 0.7rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .sonic-band:hover { background: rgba(255, 255, 255, 0.16); }
+  .sonic-band[aria-pressed='true'] {
+    border-color: rgba(255, 200, 120, 0.7);
+    background: rgba(255, 200, 120, 0.18);
   }
   .sonic-meta {
     display: flex;

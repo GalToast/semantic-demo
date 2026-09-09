@@ -25,9 +25,14 @@ checks.append(
 )
 checks.append(("SonicIdentity has #sonic-prog button", "sonic-prog" in svelte))
 checks.append(
-    ("SonicIdentity prog toggle calls set+play", "setRadioProg" in svelte and "playRadioProg" in svelte)
+    (
+        "SonicIdentity prog toggle calls set+play",
+        "setRadioProg" in svelte and "playRadioProg" in svelte,
+    )
 )
-checks.append(("SonicIdentity stops prog on radio stop", svelte.count("stopRadioProg()") >= 3))
+checks.append(
+    ("SonicIdentity stops prog on radio stop", svelte.count("stopRadioProg()") >= 3)
+)
 checks.append(
     ("SonicIdentity noteState default is 4 (summit)", "noteState = $state(4)" in svelte)
 )
@@ -37,8 +42,27 @@ with open(os.path.join(ROOT, "src/lib/audio/jam-radio.ts"), encoding="utf-8") as
 checks.append(("jam-radio has setRadioNoteState", "setRadioNoteState" in radio))
 checks.append(("jam-radio has startJamRadioAt", "startJamRadioAt" in radio))
 checks.append(("jam-radio has NoteMessage interface", "interface NoteMessage" in radio))
-checks.append(("jam-radio has prog controls", "setRadioProg" in radio and "playRadioProg" in radio and "stopRadioProg" in radio))
-checks.append(("jam-radio routes prog_status replies", "onProgStatus" in radio and "prog_learned" in radio))
+checks.append(
+    (
+        "jam-radio has prog controls",
+        "setRadioProg" in radio
+        and "playRadioProg" in radio
+        and "stopRadioProg" in radio,
+    )
+)
+checks.append(
+    (
+        "jam-radio routes prog_status replies",
+        "onProgStatus" in radio and "prog_learned" in radio,
+    )
+)
+checks.append(
+    (
+        "jam-radio has band preset menu",
+        "RadioBandMode" in radio and "setRadioBandMode" in radio,
+    )
+)
+checks.append(("SonicIdentity has #sonic-band button", "sonic-band" in svelte))
 checks.append(("jam-radio has default prog spec", "DEFAULT_PROG_SPEC" in radio))
 checks.append(
     ("jam-radio held notes carry state", "state: 4" in radio and "note: 45" in radio)

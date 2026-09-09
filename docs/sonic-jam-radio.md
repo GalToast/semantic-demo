@@ -149,3 +149,12 @@ static chord and never touched it. Now:
 - Open question (needs the live stack): does harmonic movement preserve
   the 100/S, or do transitions collapse it? Scored prog run is the next
   experiment after the jam restart.
+
+## Tier 7 — band preset menu (beat-vs-tone Pareto)
+
+The whine scan's product consequence: two 100/100-S configs, different
+surfaces. `setRadioBandMode('tone'|'beat')` fires
+`steerJamBandSlots([2,11] vs [2])` without dropping the stream — tone for
+clean (whine 2.6%), beat for pulse (beat 0.586). Dial `#sonic-band` button
+in live mode cycles them; the preset resets to tone on every (re)connect
+to match what the server gets at `ws.onopen`.

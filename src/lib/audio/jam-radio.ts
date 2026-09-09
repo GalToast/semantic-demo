@@ -182,6 +182,7 @@ export function startJamRadioAt(evs: JamRadioEvents, notes: readonly NoteMessage
             // tempo 137 — the whine-clean summit (mrt2 tmp/WHINE_SCAN_RESULTS.md),
             // superseding the original L2-only melodic preset (whine 12.8%).
             void steerJamBandSlots(RADIO_SUMMIT_SLOTS)
+            bandMode = 'tone'
             for (const n of heldNotes) send({ type: 'note_on', note: n.note, state: n.state })
             resolve(true)
         }
@@ -272,4 +273,24 @@ export function stopRadioProg(): void {
 /** Ask the server for prog status (replied as a prog_status message). */
 export function requestRadioProgStatus(): void {
     send({ type: 'prog_status' })
+}
+
+/** Band preset menu (whine-scan Pareto): 'tone' = slots {2,11}, 100/100-S
+ * with whine 2.6% (clean tone, weaker beat 0.397); 'beat' = slots {2},
+ * 100/100-S with beat 0.586 (stronger pulse, whine 12.8%). Same perfect
+ * score, different surface — keyed by what the listener needs. */
+export type RadioBandMode = 'tone' | 'beat'
+export const RADIO_BAND_SLOTS: Record<RadioBandMode, readonly number[]> = {
+    tone: RADIO_SUMMIT_SLOTS,
+    beat: [2]
+}
+let bandMode: RadioBandMode = 'tone'
+export function getRadioBandMode(): RadioBandMode {
+    return bandMode
+}
+/** Switch the live jam's band preset. Fire-and-forget; the dial applies it
+ * immediately server-side without dropping the stream. */
+export function setRadioBandMode(mode: RadioBandMode): void {
+    bandMode = mode
+    void steerJamBandSlots(RADIO_BAND_SLOTS[mode])
 }
