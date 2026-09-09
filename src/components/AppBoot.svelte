@@ -44,7 +44,7 @@
 
   onMount(() => {
     // ── Test-only contract surface ────────────────────────────────────────────
-    // parity-attrs.svelte.ts (installed via main.ts:67 → app-init.ts:251)
+    // parity-attrs.svelte.ts (installed via main-explorer.ts → app-init.ts)
     // writes testReady to body.dataset on its first sync, before App.svelte's
     // onMount fires. Tests polling for testReady see it set by parity-attrs.
     const contractWindow = window as ContractWindow;

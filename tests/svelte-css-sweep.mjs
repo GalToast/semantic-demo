@@ -44,7 +44,9 @@ function walk(dir, files = []) {
 // ─── Sweep Part 1: svelte-chrome-ownership (from svelte-chrome-ownership-contract.mjs) ──
 
 const appSource = read('src/App.svelte')
-const appIslandSource = read('src/main.ts')
+// The Vite entry is now a route dispatcher. The explorer shell itself lives in
+// the normal-route bootstrap, which keeps it out of the standalone jam graph.
+const appIslandSource = read('src/main-explorer.ts')
 const shellSource = read('dist/svelte/index.html')
 
 assert(
@@ -63,11 +65,11 @@ assert(appSource.includes('<Legend '), 'src/App.svelte should render Legend')
 
 assert(
     appIslandSource.includes("import App from './App.svelte'"),
-    'src/main.ts should mount the unified App.svelte root'
+    'src/main-explorer.ts should mount the unified App.svelte root'
 )
 assert(
     !appIslandSource.includes('InfoPanelChrome') && !appIslandSource.includes('LegendPanelChrome'),
-    'src/main.ts should not mount retired chrome panels separately'
+    'src/main-explorer.ts should not mount retired chrome panels separately'
 )
 
 assert(!exists('js/modules/info-panel-chrome-island.ts'), 'obsolete info-panel-chrome-island.ts should not exist')
