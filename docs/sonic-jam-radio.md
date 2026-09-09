@@ -50,6 +50,13 @@ Client → server:
 
 One live session at a time server-side; newest connection wins.
 
+**Scope decision (2026-09-09): single-user product, no multiclient.**
+Newest-wins is CORRECT here, not a limitation: one human jamming means
+one stream, and reconnects take over cleanly. No mix bus, no per-client
+state, no session multiplexing is planned — dev-time probe contention
+(ws_probe loops flapping act["ws"]) is a coordination problem solved by
+quiet windows, not architecture.
+
 **Playback strategy:** each chunk becomes an `AudioBufferSourceNode` scheduled at a monotonically advancing `nextStart` timestamp, so bursty WS arrival still yields gapless output. A starving stream (nextStart fell behind wall clock) resynchronizes to now + a small lead.
 
 **Held notes:** `RADIO_HELD_NOTES = [45, 52, 57, 64, 71]` — a soft A-minor add9 voicing so the stream plays unattended when nothing else is driving it.
