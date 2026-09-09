@@ -15,15 +15,15 @@ with open(os.path.join(ROOT, "src/components/sonic/SonicIdentity.svelte"), encod
 checks.append(("SonicIdentity has #sonic-note-state button", "sonic-note-state" in svelte))
 checks.append(("SonicIdentity has cycleNoteState", "cycleNoteState" in svelte))
 checks.append(("SonicIdentity has STATE_LABELS", "STATE_LABELS" in svelte))
-checks.append(("SonicIdentity labels state 10 as best", "best" in svelte and "95/S" in svelte))
-checks.append(("SonicIdentity noteState default is 1 (held)", "noteState = $state(1)" in svelte))
+checks.append(("SonicIdentity labels state 4 as summit", "summit" in svelte and "100/S" in svelte))
+checks.append(("SonicIdentity noteState default is 4 (summit)", "noteState = $state(4)" in svelte))
 
 with open(os.path.join(ROOT, "src/lib/audio/jam-radio.ts"), encoding="utf-8") as f:
     radio = f.read()
 checks.append(("jam-radio has setRadioNoteState", "setRadioNoteState" in radio))
 checks.append(("jam-radio has startJamRadioAt", "startJamRadioAt" in radio))
 checks.append(("jam-radio has NoteMessage interface", "interface NoteMessage" in radio))
-checks.append(("jam-radio held notes carry state", "state: 1" in radio and "note: 45" in radio))
+checks.append(("jam-radio held notes carry state", "state: 4" in radio and "note: 45" in radio))
 checks.append(("jam-radio rejects out-of-range state", "state < 0 || state > 11" in radio))
 
 # Vite minifies JS identifiers, so `setRadioNoteState` and `STATE_LABELS` are

@@ -329,9 +329,10 @@ test.describe('Sonic identity journey', () => {
             { timeout: 30000 }
         )
 
-        // The state dial must exist in live mode and start at the held state.
+        // The state dial must exist in live mode and start at the summit
+        // state (4 = cond 11 + L2 melodic = 100/100-S, the radio default).
         const dial = page.locator('#sonic-note-state')
-        await expect(dial).toHaveText(/1/)
+        await expect(dial).toHaveText(/4/)
 
         // The held chord must be armed with a state field — that is the whole
         // point of this dial, and it is what reaches the encoder's pitch
@@ -344,7 +345,7 @@ test.describe('Sonic identity journey', () => {
         // Cycling advances the value and re-arms the chord at the new state.
         const before = await page.evaluate(() => window.__ws.sent.length)
         await dial.click()
-        await expect(dial).toHaveText(/2/)
+        await expect(dial).toHaveText(/5/)
         const after = await page.evaluate(() => window.__ws.sent.length)
         expect(after, 'cycling must re-arm the chord').toBeGreaterThan(before)
 

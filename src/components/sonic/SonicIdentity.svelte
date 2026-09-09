@@ -47,17 +47,18 @@
   // new state — the server's steering loop picks it up on the next frame.
   // Visible only in live mode so it can't interfere with clip playback.
   //
-  // Mapping to the LATENT_PITCH_LADDER sweep: radio noteState N -> pr[p]=N
-  // -> cond N+7. Google's sampler uses cond 7/8/9 (states 0/1/2). The sweep
-  // measured cond 17 (state 10) at 95/S — the best in the sweep and better
-  // than the documented held state. Default stays at 1 (held) so existing
-  // behaviour is unchanged; cycle to reach the measured winner.
-  let noteState = $state(1);
+  // Mapping to the MRT2 sweeps: radio noteState N -> pr[p]=N -> cond N+7.
+  // Google's sampler uses cond 7/8/9 (states 0/1/2). The ladder sweep measured
+  // cond 17 (state 10) at 95/S ladder-mode best; the summit (mrt2 3a71bed)
+  // measured cond 11 (state 4) + L2 melodic band at 100/100-S box-best.
+  // Default is 4 so the dial agrees with what the radio actually holds on
+  // connect (RADIO_HELD_NOTES state 4 + steerJamBandMask('melodic')).
+  let noteState = $state(4);
   const STATE_LABELS: Record<number, string> = {
     0: 'silent', 1: 'held', 2: 'onset',
-    3: 'staccato', 4: 'accent', 5: 'ghost',
+    3: 'staccato', 4: 'summit ★ 100/S', 5: 'ghost',
     6: 'tremolo', 7: 'roll', 8: 'ping',
-    9: 'swell', 10: 'best ★ 95/S', 11: 'flare',
+    9: 'swell', 10: 'ladder 95/S', 11: 'flare',
   };
   const clip = $derived(manifest ? pickVariantForNode(manifest, clusterName, leadId, style) : null);
 

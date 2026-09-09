@@ -47,7 +47,14 @@ via `setRadioNoteState()`. The server picks up the new `pr` value on the next
 
 ## Next
 
-- Wait for amp 14/16/18 decode + score (in flight).
+- ~~Wait for amp 14/16/18 decode + score (in flight)~~ DONE — 8/8 scored.
+  Full table below.
+- **SUPERSEDED AS BOX-BEST: the summit (mrt2 3a71bed, SUMMIT_RESULTS.md)
+  measured cond 11 (state 4) + L2 melodic band at 100/100-S.** The ladder-mode
+  best below (state 10 alone, 95/S) remains the best *single-dial* result,
+  but the super-additive combination beats it by 5 points. The radio now
+  defaults to the summit (state 4 + `steerJamBandMask('melodic')` on
+  connect; dial default noteState 4 labelled 'summit ★ 100/S').
 - **Extend the sweep to states 3..7 (cond 10..14)** — the middle band no one
   has probed. `PITCH_LADDER_AMPS=13,14,15,16,17`.
 - Test a **multi-note chord** rather than a single bass, in case the

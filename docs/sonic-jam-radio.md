@@ -99,5 +99,33 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
 4. ✅ jam steering (tier 2)
 5. ✅ jam radio (tier 3)
 6. ✅ journey tests + fixture fix
-7. ⬜ remaining starter clips + clusterMap expansion
-8. ⬜ mobile surface check (CSS ownership per `docs/css-ownership.md`)
+7. ✅ pitch-slot latent states (tier 4) — `#sonic-note-state` dial 0..11
+8. ✅ summit defaults (tier 5) — state 4 + L2 melodic band, 100/100-S
+9. ⬜ remaining starter clips + clusterMap expansion
+10. ⬜ mobile surface check (CSS ownership per `docs/css-ownership.md`)
+
+## Tier 4 — pitch-slot latent states
+
+The encoder's pitch embedding has 12 trained states per slot; Google's
+sampler emits 3. `note_on` carries an optional `state` 0..11
+(`jam_server.py` reads `amp` or `state`, clamps 1..11, defaults 1) and the
+steering loop builds `pr[p] = state`. The dial exposes `#sonic-note-state`
+in live mode, cycling 0..11 and re-arming the held chord via
+`setRadioNoteState()` without dropping the stream. Full results:
+`docs/latent-pitch-ladder-results.md` (ladder-mode best: state 10, 95/S).
+
+## Tier 5 — summit defaults (box-best)
+
+The super-additive discovery (mrt2 3a71bed, `SUMMIT_RESULTS.md`): pitch
+state 4 (cond 11) + L2 melodic band = **100/100-S**, the first perfect
+score. The radio uses this as its default ambient mode:
+
+- `RADIO_HELD_NOTES`: all five chord notes at state 4.
+- `ws.onopen`: fires `steerJamBandMask('melodic')` (`POST /band_mask
+  {preset:'melodic'}` → slots `[2]`), alongside the pitch states.
+- Dial default `noteState` 4, labelled 'summit ★ 100/S'.
+
+Both protocols (`note_on {state}` + `/band_mask {preset}`) already shipped
+server-side; the radio just points at the summit values. End-to-end
+confirmation (live radio at summit vs baseline, ear_v10 on streamed
+output): `scripts/e2e-summit.py`.
