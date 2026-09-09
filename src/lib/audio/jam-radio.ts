@@ -37,7 +37,12 @@ import { RADIO_SUMMIT_SLOTS, steerJamBandSlots } from '@lib/audio/jam-steer'
  * Wire contract (mrt2 tmp/jam_server.py steering_loop:131): the server
  * builds pr = zeros(128) then pr[note] = state, so any value 0..11 is
  * accepted as-is — no graph change, no re-export, no LM restart. */
-const RADIO_HELD_NOTES: { note: number; state: number }[] = [
+export interface RadioHeldNote {
+    note: number
+    state: number
+}
+
+const RADIO_HELD_NOTES: RadioHeldNote[] = [
     { note: 45, state: 4 },
     { note: 52, state: 4 },
     { note: 57, state: 4 },
@@ -93,7 +98,7 @@ export function decodePcmChunk(b64: string): Float32Array {
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
     const i16 = new Int16Array(bytes.buffer)
     const f32 = new Float32Array(i16.length)
-    for (let i = 0; i < i16.length; i++) f32[i] = i16[i] / 32768
+    for (let i = 0; i < i16.length; i++) f32[i] = (i16[i] ?? 0) / 32768
     return f32
 }
 
@@ -102,10 +107,20 @@ export function decodePcmChunk(b64: string): Float32Array {
  * Returns null for non-note messages. Pure — unit tested. */
 export function midiMessageToNote(data: ArrayLike<number>, state: number): NoteMessage | null {
     if (!data || data.length < 3) return null
-    const status = data[0] & 0xf0
+    const statusByte = data[0]
     const note = data[1]
     const velocity = data[2]
-    if (note > 127) return null
+    if (
+        statusByte === undefined ||
+        note === undefined ||
+        velocity === undefined ||
+        !Number.isInteger(statusByte) ||
+        !Number.isInteger(note) ||
+        !Number.isInteger(velocity) ||
+        note < 0 ||
+        note > 127
+    ) return null
+    const status = statusByte & 0xf0
     if (status === 0x90 && velocity > 0) return { type: 'note_on', note, state }
     if (status === 0x80 || (status === 0x90 && velocity === 0)) return { type: 'note_off', note }
     return null
@@ -116,6 +131,7 @@ export function midiMessageToNote(data: ArrayLike<number>, state: number): NoteM
  * Resolves true when at least one MIDI input is bound. No-op where Web MIDI
  * is unavailable. */
 export function enableJamMidi(state: number = DEFAULT_NOTE_STATE): Promise<boolean> {
+    if (typeof window === 'undefined') return Promise.resolve(false)
     const nav = window as unknown as {
         navigator?: { requestMIDIAccess?: (opts?: { sysex?: boolean }) => Promise<MIDIAccessLike> }
     }
@@ -148,8 +164,8 @@ export function chunkToAudioBuffer(ctx: AudioContext, interleaved: Float32Array)
     const l = buf.getChannelData(0)
     const r = buf.getChannelData(1)
     for (let i = 0; i < frames; i++) {
-        l[i] = interleaved[i * 2]
-        r[i] = interleaved[i * 2 + 1]
+        l[i] = interleaved[i * 2] ?? 0
+        r[i] = interleaved[i * 2 + 1] ?? 0
     }
     return buf
 }
@@ -189,8 +205,8 @@ export function getRadioState(): RadioState {
     return state
 }
 
-/** Current radio chord (for the MIDI bridge). Read-only snapshot. */
-export function getRadioHeldNotes(): readonly NoteMessage[] {
+/** Current radio chord with a concrete articulation state on every note. */
+export function getRadioHeldNotes(): readonly RadioHeldNote[] {
     return heldNotes
 }
 
@@ -198,23 +214,30 @@ export function getRadioHeldNotes(): readonly NoteMessage[] {
  * uiReady + the held chord on onopen; anything the UI fired first
  * (prog_set/play, a state change) is flushed right after so it is not
  * lost. Without this, pressing prog before the radio settles is a no-op. */
-const pendingQueue: Record<string, unknown>[] = []
+const pendingQueue: object[] = []
 
 /** Test-only view of the send queue. Exported so unit tests can assert
  * ordering without touching the real WebSocket. */
-export function __testPendingQueue(): readonly Record<string, unknown>[] {
+export function __testPendingQueue(): readonly object[] {
     return pendingQueue
 }
 
-function send(msg: Record<string, unknown>): void {
-    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg))
-    else pendingQueue.push(msg)
+function send(msg: object): void {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        const payload = JSON.stringify(msg)
+        if (payload !== undefined) ws.send(payload)
+    } else if (state === 'connecting') {
+        pendingQueue.push(msg)
+    }
 }
 
 function flushPending(): void {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
     while (pendingQueue.length) {
         const msg = pendingQueue.shift()
-        if (msg && ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg))
+        if (!msg) continue
+        const payload = JSON.stringify(msg)
+        if (payload !== undefined) ws.send(payload)
     }
 }
 
@@ -229,17 +252,18 @@ export function startJamRadio(evs: JamRadioEvents = {}): Promise<boolean> {
 
 /** Connect and hold an explicit note set. Used by the dial to drive a
  * specific pitch-slot state through the live jam. */
-export function startJamRadioAt(evs: JamRadioEvents, notes: readonly NoteMessage[]): Promise<boolean> {
+export function startJamRadioAt(evs: JamRadioEvents, notes: readonly { note: number; state?: number }[]): Promise<boolean> {
     events = evs
     if (state !== 'idle') return Promise.resolve(false)
-    if (typeof WebSocket === 'undefined') return Promise.resolve(false)
+    if (typeof WebSocket === 'undefined' || typeof window === 'undefined') return Promise.resolve(false)
 
     const w = window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }
     const Ctor = w.AudioContext ?? w.webkitAudioContext
     if (!Ctor) return Promise.resolve(false)
+    pendingQueue.length = 0
     ctx = ctx ?? new Ctor()
     nextStart = 0
-    heldNotes = notes
+    heldNotes = notes.map((note) => ({ note: note.note, state: note.state ?? DEFAULT_NOTE_STATE }))
     setState('connecting')
 
     return new Promise<boolean>((resolve) => {
@@ -254,6 +278,7 @@ export function startJamRadioAt(evs: JamRadioEvents, notes: readonly NoteMessage
         const fail = (): void => {
             if (!settled) {
                 settled = true
+                pendingQueue.length = 0
                 setState('idle')
                 resolve(false)
             }
@@ -308,7 +333,7 @@ function playChunk(audioCtx: AudioContext, b64: string): void {
 }
 
 /** Disconnect from the radio and release held notes. Safe when idle. */
-let heldNotes: readonly NoteMessage[] = []
+let heldNotes: readonly RadioHeldNote[] = []
 /** Notes pressed via MIDI (outside the radio chord), for release on stop. */
 const midiNotes = new Set<number>()
 
@@ -324,6 +349,7 @@ export function stopJamRadio(): void {
     ws = null
     heldNotes = []
     setState('idle')
+    pendingQueue.length = 0
 }
 
 /** Drive the live jam's held notes to a single pitch-slot state.
@@ -380,11 +406,13 @@ export function parseProgressionSpec(spec: string, bpm: number): ProgSlot[] | nu
     if (!spec.trim() || !Number.isFinite(bpm) || bpm <= 0) return null
     const bars: { chord: string; beats: number | null }[][] = []
     for (const part of spec.split('|')) {
-        const entries = part.trim().split()
+        const trimmed = part.trim()
+        const entries = trimmed ? trimmed.split(/\s+/) : []
         const chords: { chord: string; beats: number | null }[] = []
         for (const entry of entries) {
-            if (entry && entry[0] >= '0' && entry[0] <= '9') {
-                if (chords.length) chords[chords.length - 1].beats = parseInt(entry, 10)
+            if (/^\d/.test(entry)) {
+                const last = chords[chords.length - 1]
+                if (last) last.beats = parseInt(entry, 10)
             } else if (entry) {
                 chords.push({ chord: entry, beats: null })
             }
@@ -406,14 +434,14 @@ export function parseProgressionSpec(spec: string, bpm: number): ProgSlot[] | nu
 
 function parseProgChord(spec: string): number[] {
     const tok = spec.trim()
-    const rootCh = tok[0].toUpperCase()
-    if (!(rootCh in PROG_NOTES)) throw new Error('bad root in ' + spec)
-    // NOTE: the server's parse_chord walks the WHOLE token counting #/b
-    // (so 'Am' reads as A-1, not A — a bug, but it is the authority: the
-    // LM is steered by the server's slots, so the client MIDI scheduler
-    // must voice the same pitches or the Sampler plays a different chord
-    // than the model actually heard). Only '#' and 'b' count here, not
-    // 'm'/'maj'/'7' — mirroring the server's `if tok[i] in '#b'`.
+    const rootCh = tok[0]?.toUpperCase()
+    const rootNote = rootCh === undefined ? undefined : PROG_NOTES[rootCh]
+    if (rootCh === undefined || rootNote === undefined) throw new Error('bad root in ' + spec)
+    // NOTE: the server's parser consumes the whole token while counting
+    // accidentals, then parses the empty remainder. That means quality and
+    // octave suffixes are ignored, while '#'/'b' still affect the root. It
+    // is a server quirk, but the server's slots are authoritative: the MIDI
+    // scheduler must voice the same pitches as the model heard.
     let i = 1
     let acc = 0
     while (i < tok.length) {
@@ -421,7 +449,7 @@ function parseProgChord(spec: string): number[] {
         else if (tok[i] === 'b') acc -= 1
         i += 1
     }
-    let rest = tok.slice(1)
+    let rest = tok.slice(i)
     let qual = 'maj'
     for (const q of Object.keys(PROG_QUALS).sort((a, b) => b.length - a.length)) {
         if (rest.startsWith(q)) {
@@ -431,11 +459,14 @@ function parseProgChord(spec: string): number[] {
         }
     }
     const msh = rest.match(/([+-]?\d+)$/)
-    const octShift = msh ? parseInt(msh[1], 10) : 0
-    const rootPc = PROG_NOTES[rootCh] + acc
+    const shiftText = msh?.[1]
+    const octShift = shiftText === undefined ? 0 : parseInt(shiftText, 10)
+    const rootPc = rootNote + acc
     const low = 48 + octShift * 12
     const midi: number[] = []
-    for (const off of PROG_QUALS[qual]) {
+    const intervals = PROG_QUALS[qual] ?? PROG_QUALS.maj
+    if (!intervals) throw new Error('bad quality in ' + spec)
+    for (const off of intervals) {
         let p = rootPc + off
         while (p < low) p += 12
         while (p > low + 24) p -= 12

@@ -35,9 +35,18 @@ async function mockRadio(page) {
     })
 }
 
-async function gotoJam(page) {
-    await page.goto(`${BASE_URL}/dist/svelte/index.html?jam=1&nodemo=1`, { waitUntil: 'domcontentloaded' })
+async function gotoJam(page, query = 'jam=1') {
+    await page.goto(`${BASE_URL}/dist/svelte/index.html?${query}&nodemo=1`, { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !!document.querySelector('[data-testid="jam-view"]'), { timeout: 30000 })
+    await expect(page.locator('#semantic-explorer')).toHaveCount(0)
+    await expect(page.locator('canvas')).toHaveCount(0)
+    const engineAssets = await page.evaluate(() =>
+        performance
+            .getEntriesByType('resource')
+            .map((entry) => entry.name)
+            .filter((name) => /three|canvas|engine/i.test(name))
+    )
+    expect(engineAssets, 'JamView must not fetch the explorer engine').toEqual([])
 }
 
 test.describe('Jam view', () => {
@@ -48,6 +57,13 @@ test.describe('Jam view', () => {
         await expect(page.locator('.jam-title')).toContainText('Live Jam')
         // Idle state asks for play.
         await expect(page.locator('.jam-status')).toContainText('Radio idle')
+    })
+
+    test('JAM-1b. view=jam is the same engine-free surface', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page, 'view=jam')
+        await expect(page.getByTestId('jam-view')).toBeVisible()
+        await expect(page.locator('#jam-play')).toBeVisible()
     })
 
     test('JAM-2. Play connects the radio at summit defaults', async ({ page }) => {

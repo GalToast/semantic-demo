@@ -24,11 +24,12 @@
     SUMMIT_STATE,
     STATE_LABELS,
     DEFAULT_PROG_SPEC,
+    DEFAULT_PROG_BPM,
     type RadioState,
     type RadioBandMode,
     type RadioProgStatus,
   } from '@lib/audio/jam-radio';
-  import { startMidiInput, stopMidiInput, startMidiBridge, stopMidiBridge, bridgeChordToMidi, startMidiProgBridge, stopMidiProgBridge, isMidiProgBridgeOn } from '@lib/audio/jam-midi';
+  import { startMidiInput, stopMidiInput, startMidiBridge, stopMidiBridge, bridgeChordToMidi, startMidiProgBridge, stopMidiProgBridge } from '@lib/audio/jam-midi';
   import { startVocalMonitor, stopVocalMonitor, isVocalMonitoring } from '@lib/audio/jam-vocal';
   import { parseProgressionSpec } from '@lib/audio/jam-radio';
 

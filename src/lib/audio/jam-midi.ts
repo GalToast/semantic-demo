@@ -16,6 +16,7 @@
  */
 
 import { pressRadioNote, releaseRadioNote, midiMessageToNote } from '@lib/audio/jam-radio'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 /** Keys currently down (for sustain-pedal deferral). */
 const heldKeys = new Set<number>()
@@ -56,7 +57,14 @@ function onMidiMessage(ev: MIDIMessageEvent): void {
     if (!msg) {
         // Non-note messages: only sustain (CC64) is handled.
         const data = ev.data
-        if (data && data.length >= 3 && (data[0] & 0xf0) === 0xb0) controlChange(data[1], data[2])
+        if (data && data.length >= 3) {
+            const status = data[0]
+            const cc = data[1]
+            const value = data[2]
+            if (status !== undefined && cc !== undefined && value !== undefined && (status & 0xf0) === 0xb0) {
+                controlChange(cc, value)
+            }
+        }
         return
     }
     if (msg.type === 'note_on') {
@@ -133,6 +141,7 @@ export async function listMidiOutputs(): Promise<string[]> {
         return []
     }
     const names: string[] = []
+    outputs = []
     access.outputs.forEach((o) => {
         names.push(o.name ?? o.id)
         outputs.push(o)
@@ -151,7 +160,7 @@ function midiOut(): MIDIOutput | null {
 
 /** Mirror the radio chord to the MIDI out port at the dial state.
  * Call after connect and on every state change. Silent when unavailable. */
-export function bridgeChordToMidi(notes: readonly { note: number; state: number }[]): void {
+export function bridgeChordToMidi(notes: readonly { note: number; state?: number }[]): void {
     if (!bridgeOn) return
     const out = midiOut()
     if (!out) return
@@ -196,45 +205,47 @@ export function stopMidiBridge(): void {
  * at the server's 25fps, re-arming notes when the slot advances and releasing
  * the previous slot's notes. Autonomous — no server round-trip per tick, so
  * the Sampler plays the full Am–F–C–G, not just the held chord. */
-let progTimer: ReturnType<typeof setInterval> | null = null
+let progTimer: ReturnType<typeof setTimeout> | null = null
 let progSlots: { notes: number[]; frames: number }[] = []
 let progIdx = 0
 let progFrame = 0
-let progBpm = 100
 let progActiveNotes = new Set<number>()
+const progRegistry = new DisposableRegistry({ label: 'jam-midi-progression', warnAfterDispose: false })
 
-export function startMidiProgBridge(
-    slots: { notes: number[]; frames: number }[],
-    bpm: number = 100,
-): void {
+export function startMidiProgBridge(slots: { notes: number[]; frames: number }[], bpm: number = 100): void {
     if (!slots.length) return
     stopMidiProgBridge()
     progSlots = slots
-    progBpm = bpm
+    // Slot frames already encode the requested BPM; the scheduler itself is
+    // fixed at the server's 25fps tick, so this argument is metadata only.
+    void bpm
     progIdx = 0
     progFrame = 0
     progActiveNotes = new Set<number>()
     voiceSlot(0)
-    progTimer = setInterval(() => {
+    progTimer = progRegistry.scheduleInterval(40, () => {
         progFrame += 1
         const slot = progSlots[progIdx]
-        if (progFrame >= slot.frames) {
+        if (slot && progFrame >= slot.frames) {
             progIdx = (progIdx + 1) % progSlots.length
             progFrame = 0
             voiceSlot(progIdx)
         }
-    }, 40)
+    })
 }
 
 export function stopMidiProgBridge(): void {
-    if (progTimer) {
-        clearInterval(progTimer)
+    if (progTimer !== null) {
+        progRegistry.disposeAll()
+        progRegistry.rearm()
         progTimer = null
     }
     for (const n of progActiveNotes) {
         try {
             midiOut()?.send([0x80, n, 0])
-        } catch { /* ignore */ }
+        } catch {
+            /* ignore */
+        }
     }
     progActiveNotes = new Set<number>()
 }
@@ -250,13 +261,21 @@ function voiceSlot(idx: number): void {
     // Release notes no longer in this slot.
     for (const n of progActiveNotes) {
         if (!next.has(n)) {
-            try { out.send([0x80, n, 0]) } catch { /* ignore */ }
+            try {
+                out.send([0x80, n, 0])
+            } catch {
+                /* ignore */
+            }
         }
     }
     // Press new notes (velocity 96 — presence-only, same as the chord bridge).
     for (const n of next) {
         if (!progActiveNotes.has(n)) {
-            try { out.send([0x90, n, 96]) } catch { /* ignore */ }
+            try {
+                out.send([0x90, n, 96])
+            } catch {
+                /* ignore */
+            }
         }
     }
     progActiveNotes = next

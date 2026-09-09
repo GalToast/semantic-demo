@@ -196,6 +196,23 @@ own dial state). Big transport, state dial, band/prog/MIDI/mic controls,
 server-confirmed status line, summit restore. Journey:
 `tests/journey/jam-view.spec.js` (JAM-1..4, no WebGL needed).
 
+## Vocal monitor
+
+The standalone jam and the focused SonicIdentity card expose a microphone
+monitor alongside MIDI. `jam-vocal.ts` requests the mic only after the user
+clicks the control, runs bounded autocorrelation over an `AnalyserNode`, and
+turns the quantized fundamental into the same `pressRadioNote(note, state)`
+messages used by MIDI. The dial remains the articulation source; microphone
+level is not mapped onto the learned pitch-slot states. Three hundred
+milliseconds of genuinely unvoiced input releases the current note, and every
+start/stop path disconnects the source and stops the media tracks. Permission
+denial, missing Web Audio, and browsers without `getUserMedia` leave the rest
+of the jam usable.
+
+Pure signal coverage lives in `tests/unit-active/jam-vocal.test.ts`; the
+standalone journey covers the control's graceful presence without requesting
+permission automatically.
+
 ## Progression MIDI bridge (tier 11)
 
 The prog button now voices the **full Am–F–C–G** through the Sampler, not
@@ -210,10 +227,11 @@ mirror is pinned by `tests/unit-active/jam-prog.test.ts`, where every
 expected pitch was captured by running the canonical Python against the
 same spec strings.
 
-One deliberate divergence from the *correct* behaviour: the server's
-`parse_chord` counts `#`/`b` across the **whole** token, so `Am` reads as
-A−1 (a bug). The client reproduces it on purpose — if the Sampler voiced
-`A-C-E` while the LM was steered with `A♭-C-E♭`, the two would disagree.
+One deliberate compatibility quirk: the server's `parse_chord` walks the
+whole token while counting `#`/`b`, then parses the empty remainder. As a
+result, quality and octave suffixes are ignored while accidentals still shift
+the root. The client reproduces the observed server slots on purpose — if the
+Sampler voices a different chord than the LM received, the two disagree.
 `jam-midi.ts` adds `startMidiProgBridge` / `stopMidiProgBridge` (25 fps
 `setInterval`, slot advance re-arms notes, previous slot releases).
 

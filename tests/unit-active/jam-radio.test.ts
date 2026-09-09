@@ -4,7 +4,7 @@
  * and covered by the journey suite; these cover the data path math.
  */
 import { describe, it, expect } from 'vitest'
-import { decodePcmChunk, chunkToAudioBuffer, midiMessageToNote } from '../../src/lib/audio/jam-radio'
+import { decodePcmChunk, chunkToAudioBuffer, midiMessageToNote, __testPendingQueue } from '../../src/lib/audio/jam-radio'
 import { pressRadioNote, releaseRadioNote } from '../../src/lib/audio/jam-radio'
 import { startMidiInput, stopMidiInput, getMidiInputCount } from '../../src/lib/audio/jam-midi'
 
