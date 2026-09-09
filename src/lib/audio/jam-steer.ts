@@ -14,8 +14,10 @@
 import { JAM_HTTP_URL } from '@lib/audio/jam-config'
 
 const JAM_STYLE_URL = `${JAM_HTTP_URL}/style`
+const JAM_BAND_MASK_URL = `${JAM_HTTP_URL}/band_mask`
 
 export type JamPole = 'beat' | 'best'
+export type JamBandPreset = 'melodic' | 'beat' | 'production' | 'clean_melodic' | 'harmonic' | 'spectral' | 'all' | 'none'
 
 /** Steer any live jam session toward `pole`. Resolves true when accepted. */
 export function steerJam(pole: JamPole): Promise<boolean> {
@@ -23,6 +25,19 @@ export function steerJam(pole: JamPole): Promise<boolean> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pole })
+    })
+        .then((r) => r.ok)
+        .catch(() => false)
+}
+
+/** Set the live jam's band-selectable style mask (per-RVQ-level conditioning).
+ * Presets from BAND_SELECTABLE_STYLE.md; 'production' is the only config with
+ * quality (88-A), rhythm (0.671), AND spectral cleanliness (1.5%) together. */
+export function steerJamBandMask(preset: JamBandPreset): Promise<boolean> {
+    return fetch(JAM_BAND_MASK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preset })
     })
         .then((r) => r.ok)
         .catch(() => false)
