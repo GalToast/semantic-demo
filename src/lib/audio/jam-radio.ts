@@ -80,6 +80,52 @@ export function decodePcmChunk(b64: string): Float32Array {
     return f32
 }
 
+/** Parse a raw Web MIDI message into a jam note message.
+ * 0x9n = note-on (velocity 0 counts as off), 0x8n = note-off.
+ * Returns null for non-note messages. Pure — unit tested. */
+export function midiMessageToNote(data: ArrayLike<number>, state: number): NoteMessage | null {
+    if (!data || data.length < 3) return null
+    const status = data[0] & 0xf0
+    const note = data[1]
+    const velocity = data[2]
+    if (note > 127) return null
+    if (status === 0x90 && velocity > 0) return { type: 'note_on', note, state }
+    if (status === 0x80 || (status === 0x90 && velocity === 0)) return { type: 'note_off', note }
+    return null
+}
+
+/** Wire the browser's Web MIDI inputs to the live jam: every physical MIDI
+ * keyboard note becomes a jam note_on/note_off at `state` (summit default 4).
+ * Resolves true when at least one MIDI input is bound. No-op where Web MIDI
+ * is unavailable. */
+export function enableJamMidi(state: number = DEFAULT_NOTE_STATE): Promise<boolean> {
+    const nav = window as unknown as {
+        navigator?: { requestMIDIAccess?: (opts?: { sysex?: boolean }) => Promise<MIDIAccessLike> }
+    }
+    const req = nav.navigator?.requestMIDIAccess
+    if (!req) return Promise.resolve(false)
+    return req
+        .call(nav.navigator, { sysex: false })
+        .then((access) => {
+            let bound = 0
+            access.inputs.forEach((input) => {
+                bound++
+                input.onmidimessage = (ev: { data: Uint8Array }) => {
+                    const note = midiMessageToNote(ev.data, state)
+                    if (note) send(note)
+                }
+            })
+            return bound > 0
+        })
+        .catch(() => false)
+}
+
+interface MIDIAccessLike {
+    inputs: { forEach: (cb: (input: {
+        onmidimessage: ((ev: { data: Uint8Array }) => void) | null
+    }) => void) => void }
+}
+
 /** De-interleave a stereo chunk into an AudioBuffer scheduled for playback. */
 export function chunkToAudioBuffer(ctx: AudioContext, interleaved: Float32Array): AudioBuffer {
     const frames = Math.floor(interleaved.length / 2)

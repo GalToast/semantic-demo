@@ -4,7 +4,7 @@
  * and covered by the journey suite; these cover the data path math.
  */
 import { describe, it, expect } from 'vitest'
-import { decodePcmChunk, chunkToAudioBuffer } from '../../src/lib/audio/jam-radio'
+import { decodePcmChunk, chunkToAudioBuffer, midiMessageToNote } from '../../src/lib/audio/jam-radio'
 import { pressRadioNote, releaseRadioNote } from '../../src/lib/audio/jam-radio'
 import { startMidiInput, stopMidiInput, getMidiInputCount } from '../../src/lib/audio/jam-midi'
 
@@ -101,5 +101,22 @@ describe('jam-midi lifecycle', () => {
     it('stop is safe when idle', () => {
         expect(() => stopMidiInput()).not.toThrow()
         expect(getMidiInputCount()).toBe(0)
+    })
+})
+
+describe('midiMessageToNote', () => {
+    it('maps note-on (0x9n, velocity>0) to note_on with the given state', () => {
+        expect(midiMessageToNote([0x90, 60, 100], 4)).toEqual({ type: 'note_on', note: 60, state: 4 })
+    })
+    it('maps note-on with velocity 0 to note_off (MIDI convention)', () => {
+        expect(midiMessageToNote([0x90, 60, 0], 4)).toEqual({ type: 'note_off', note: 60 })
+    })
+    it('maps note-off (0x8n) to note_off', () => {
+        expect(midiMessageToNote([0x80, 60, 64], 4)).toEqual({ type: 'note_off', note: 60 })
+    })
+    it('ignores control-change and short messages', () => {
+        expect(midiMessageToNote([0xb0, 7, 100], 4)).toBeNull()
+        expect(midiMessageToNote([0x90, 60], 4)).toBeNull()
+        expect(midiMessageToNote([], 4)).toBeNull()
     })
 })
