@@ -3,6 +3,7 @@
 Checks source, build output, docs, and the sweep script. Run from anywhere:
     python scripts/latent-state-gate.py
 """
+
 import os
 import re
 
@@ -10,21 +11,33 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 checks = []
 
-with open(os.path.join(ROOT, "src/components/sonic/SonicIdentity.svelte"), encoding="utf-8") as f:
+with open(
+    os.path.join(ROOT, "src/components/sonic/SonicIdentity.svelte"), encoding="utf-8"
+) as f:
     svelte = f.read()
-checks.append(("SonicIdentity has #sonic-note-state button", "sonic-note-state" in svelte))
+checks.append(
+    ("SonicIdentity has #sonic-note-state button", "sonic-note-state" in svelte)
+)
 checks.append(("SonicIdentity has cycleNoteState", "cycleNoteState" in svelte))
 checks.append(("SonicIdentity has STATE_LABELS", "STATE_LABELS" in svelte))
-checks.append(("SonicIdentity labels state 4 as summit", "summit" in svelte and "100/S" in svelte))
-checks.append(("SonicIdentity noteState default is 4 (summit)", "noteState = $state(4)" in svelte))
+checks.append(
+    ("SonicIdentity labels state 4 as summit", "summit" in svelte and "100/S" in svelte)
+)
+checks.append(
+    ("SonicIdentity noteState default is 4 (summit)", "noteState = $state(4)" in svelte)
+)
 
 with open(os.path.join(ROOT, "src/lib/audio/jam-radio.ts"), encoding="utf-8") as f:
     radio = f.read()
 checks.append(("jam-radio has setRadioNoteState", "setRadioNoteState" in radio))
 checks.append(("jam-radio has startJamRadioAt", "startJamRadioAt" in radio))
 checks.append(("jam-radio has NoteMessage interface", "interface NoteMessage" in radio))
-checks.append(("jam-radio held notes carry state", "state: 4" in radio and "note: 45" in radio))
-checks.append(("jam-radio rejects out-of-range state", "state < 0 || state > 11" in radio))
+checks.append(
+    ("jam-radio held notes carry state", "state: 4" in radio and "note: 45" in radio)
+)
+checks.append(
+    ("jam-radio rejects out-of-range state", "state < 0 || state > 11" in radio)
+)
 
 # Vite minifies JS identifiers, so `setRadioNoteState` and `STATE_LABELS` are
 # renamed in the bundle and cannot be matched by source name. DOM class names
@@ -54,19 +67,26 @@ if os.path.exists(index):
     with open(index, encoding="utf-8") as f:
         html = f.read()
     refs = re.findall(r'(?:src|href)="([^"]+)"', html)
-    missing = [r for r in refs
-               if not r.startswith(("http", "//", "data:", "#"))
-               and not os.path.exists(os.path.join(dist_dir, r.lstrip("/")))]
+    missing = [
+        r
+        for r in refs
+        if not r.startswith(("http", "//", "data:", "#"))
+        and not os.path.exists(os.path.join(dist_dir, r.lstrip("/")))
+    ]
     checks.append(("index.html refs resolve on disk", not missing))
 
-checks.append((
-    "docs/latent-pitch-ladder-results.md exists",
-    os.path.exists(os.path.join(ROOT, "docs/latent-pitch-ladder-results.md")),
-))
-checks.append((
-    "scripts/latent-pitch-sweep.py exists",
-    os.path.exists(os.path.join(ROOT, "scripts/latent-pitch-sweep.py")),
-))
+checks.append(
+    (
+        "docs/latent-pitch-ladder-results.md exists",
+        os.path.exists(os.path.join(ROOT, "docs/latent-pitch-ladder-results.md")),
+    )
+)
+checks.append(
+    (
+        "scripts/latent-pitch-sweep.py exists",
+        os.path.exists(os.path.join(ROOT, "scripts/latent-pitch-sweep.py")),
+    )
+)
 
 print("latent-state feature gate:")
 all_ok = True

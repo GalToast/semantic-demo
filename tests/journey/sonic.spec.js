@@ -293,8 +293,13 @@ test.describe('Sonic identity journey', () => {
                         if (this.onopen) this.onopen()
                     }, 10)
                 }
-                send(data) { window.__ws.sent.push(String(data)) }
-                close() { window.__ws.closed += 1; this.readyState = 3 }
+                send(data) {
+                    window.__ws.sent.push(String(data))
+                }
+                close() {
+                    window.__ws.closed += 1
+                    this.readyState = 3
+                }
             }
             FakeWebSocket.OPEN = 1
             window.WebSocket = FakeWebSocket
@@ -351,9 +356,83 @@ test.describe('Sonic identity journey', () => {
 
         // The dial is live-mode only — leaving live hides it.
         await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForFunction(() => !document.querySelector('#sonic-note-state'), { timeout: 30000 })
+    })
+
+    // SONIC-6: connecting the radio also activates the summit band mask.
+    // startJamRadio fires steerJamBandMask('melodic') (POST /band_mask)
+    // on ws.onopen alongside the pitch states. WS mocked + fetch recorded
+    // in-page, same patterns as SONIC-3/4 — no server needed.
+    test('SONIC-6. Radio connect fires the summit band-mask POST', async ({ page }) => {
+        await page.addInitScript(() => {
+            window.__ws = { url: null, sent: [], closed: 0 }
+            class FakeWebSocket {
+                constructor(url) {
+                    window.__ws.url = url
+                    this.readyState = 0
+                    setTimeout(() => {
+                        this.readyState = 1
+                        if (this.onopen) this.onopen()
+                    }, 10)
+                }
+                send(data) { window.__ws.sent.push(String(data)) }
+                close() { window.__ws.closed += 1; this.readyState = 3 }
+            }
+            FakeWebSocket.OPEN = 1
+            window.WebSocket = FakeWebSocket
+        })
+        const bandCalls = []
+        await page.exposeFunction('__recordBandCall', (url, body) => {
+            bandCalls.push({ url, body })
+        })
+        await page.addInitScript(() => {
+            const orig = window.fetch.bind(window)
+            window.fetch = function (input, init) {
+                const url = typeof input === 'string' ? input : (input && input.url) || ''
+                if (url.indexOf('/band_mask') !== -1) {
+                    let body = ''
+                    try {
+                        body = typeof (init && init.body) === 'string' ? init.body : ''
+                    } catch (e) {
+                        /* ignore */
+                    }
+                    void window.__recordBandCall(url, body)
+                }
+                return orig(input, init)
+            }
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, { waitUntil: 'domcontentloaded' })
+
+        const start = Date.now()
+        let found = false
+        while (Date.now() - start < 15000) {
+            found = await page.evaluate(() => !!document.querySelector('#sonic-style'))
+            if (found) break
+            await page.waitForTimeout(100)
+        }
+        expect(found, 'sonic style dial must appear').toBe(true)
         await page.waitForFunction(
-            () => !document.querySelector('#sonic-note-state'),
+            () => {
+                const el = document.querySelector('#sonic-style')
+                const rect = el ? el.getBoundingClientRect() : null
+                return !!el && rect && rect.width > 0 && rect.height > 0
+            },
+            { timeout: 30000, polling: 200 }
+        )
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForTimeout(100)
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('.sonic-identity')
+                return el && el.getAttribute('data-live') === 'true'
+            },
             { timeout: 30000 }
         )
+
+        // The summit band must be requested alongside the pitch states.
+        await page.waitForFunction(() => window.__ws && window.__ws.sent.length >= 5, { timeout: 30000 })
+        const melodic = bandCalls.filter((c) => (c.body || '').indexOf('melodic') !== -1)
+        expect(melodic.length, 'radio connect must POST /band_mask melodic').toBeGreaterThanOrEqual(1)
     })
 })

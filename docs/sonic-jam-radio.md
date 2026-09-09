@@ -122,7 +122,7 @@ score. The radio uses this as its default ambient mode:
 
 - `RADIO_HELD_NOTES`: all five chord notes at state 4.
 - `ws.onopen`: fires `steerJamBandMask('melodic')` (`POST /band_mask
-  {preset:'melodic'}` → slots `[2]`), alongside the pitch states.
+{preset:'melodic'}` → slots `[2]`), alongside the pitch states.
 - Dial default `noteState` 4, labelled 'summit ★ 100/S'.
 
 Both protocols (`note_on {state}` + `/band_mask {preset}`) already shipped

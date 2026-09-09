@@ -10,6 +10,7 @@ Runs:
 Usage:
     python scripts/e2e-summit.py [--seconds 45] [--out /c/tmp/radio_e2e/]
 """
+
 import argparse
 import base64
 import contextlib
@@ -73,6 +74,7 @@ class RawWS:
     frames (client->server) and parses unmasked text/binary frames
     (server->client). Good enough for the jam's JSON protocol.
     """
+
     GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
     def __init__(self, host="127.0.0.1", port=8083, path="/", timeout=10):
@@ -135,14 +137,18 @@ class RawWS:
         self._buf = self._buf[2:]
         opcode = b1 & 0x0F
         length = b2 & 0x7F
+        ext = None
         if length == 126:
             self._fill(2)
             (length,) = _struct.unpack(">H", self._buf[:2])
             self._buf = self._buf[2:]
+            ext = 126
         elif length == 127:
             self._fill(8)
             (length,) = _struct.unpack(">Q", self._buf[:8])
             self._buf = self._buf[8:]
+            ext = 127
+        self.last_frame = (opcode, length, ext)
         if b2 & 0x80:
             self._fill(4)
             mask = self._buf[:4]
@@ -175,6 +181,7 @@ def record_run(state, seconds, out_wav):
         ws.send(json.dumps({"type": "note_on", "note": n, "state": state}))
     chunks = []
     seen = {}
+    shapes = {}
     deadline = time.time() + seconds
     while time.time() < deadline:
         try:
@@ -183,6 +190,7 @@ def record_run(state, seconds, out_wav):
             break
         except Exception:
             continue
+        shapes[ws.last_frame] = shapes.get(ws.last_frame, 0) + 1
         with contextlib.suppress(Exception):
             msg = json.loads(raw)
             seen[msg.get("type", "?")] = seen.get(msg.get("type", "?"), 0) + 1
@@ -195,6 +203,7 @@ def record_run(state, seconds, out_wav):
             ws.send(json.dumps({"type": "note_off", "note": n}))
     ws.close()
     print(f"  frames seen: {seen}")
+    print(f"  frame shapes (opcode, len, ext): {shapes}")
 
     if not chunks:
         raise RuntimeError("no audio frames received")
@@ -217,7 +226,10 @@ def ear_score(wav):
     base = r"C:\Users\HP\Desktop\Temp while my comp is at the shop\mrt2\tmp"
     r = subprocess.run(
         [sys.executable, os.path.join(base, "ear_v10.py"), wav],
-        cwd=base, capture_output=True, text=True, timeout=300,
+        cwd=base,
+        capture_output=True,
+        text=True,
+        timeout=300,
     )
     try:
         d = json.loads(r.stdout)
@@ -243,18 +255,32 @@ def main():
     wav = os.path.join(args.out, "summit_state4_melodic.wav")
     record_run(4, args.seconds, wav)
     s = ear_score(wav)
-    print(f"  summit score: {json.dumps({k: v for k, v in s.items() if k != 'raw'})}", flush=True)
-    results["summit"] = {"band": "melodic", "state": 4, "wav": wav,
-                         "score": {k: v for k, v in s.items() if k != "raw"}}
+    print(
+        f"  summit score: {json.dumps({k: v for k, v in s.items() if k != 'raw'})}",
+        flush=True,
+    )
+    results["summit"] = {
+        "band": "melodic",
+        "state": 4,
+        "wav": wav,
+        "score": {k: v for k, v in s.items() if k != "raw"},
+    }
 
     print("=== baseline: band=all, state=1 ===", flush=True)
     print(" ", post_band(preset="all"), flush=True)
     wav = os.path.join(args.out, "baseline_state1_all.wav")
     record_run(1, args.seconds, wav)
     s = ear_score(wav)
-    print(f"  baseline score: {json.dumps({k: v for k, v in s.items() if k != 'raw'})}", flush=True)
-    results["baseline"] = {"band": "all", "state": 1, "wav": wav,
-                           "score": {k: v for k, v in s.items() if k != "raw"}}
+    print(
+        f"  baseline score: {json.dumps({k: v for k, v in s.items() if k != 'raw'})}",
+        flush=True,
+    )
+    results["baseline"] = {
+        "band": "all",
+        "state": 1,
+        "wav": wav,
+        "score": {k: v for k, v in s.items() if k != "raw"},
+    }
 
     # leave the server in the summit configuration for the radio default
     print(" restoring summit band for the radio default", flush=True)

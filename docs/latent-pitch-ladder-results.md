@@ -51,7 +51,7 @@ via `setRadioNoteState()`. The server picks up the new `pr` value on the next
   Full table below.
 - **SUPERSEDED AS BOX-BEST: the summit (mrt2 3a71bed, SUMMIT_RESULTS.md)
   measured cond 11 (state 4) + L2 melodic band at 100/100-S.** The ladder-mode
-  best below (state 10 alone, 95/S) remains the best *single-dial* result,
+  best below (state 10 alone, 95/S) remains the best _single-dial_ result,
   but the super-additive combination beats it by 5 points. The radio now
   defaults to the summit (state 4 + `steerJamBandMask('melodic')` on
   connect; dial default noteState 4 labelled 'summit ★ 100/S').
