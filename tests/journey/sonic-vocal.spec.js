@@ -10,12 +10,15 @@ import { BASE_URL } from '../helpers/3d-interaction-helpers.js'
 // toggle lifecycle when getUserMedia resolves.
 test.afterEach(async ({ page }) => {
     await page.close().catch(() => {})
-    await page.context().close().catch(() => {})
+    await page
+        .context()
+        .close()
+        .catch(() => {})
 })
 
 async function boot(page) {
     await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, {
-        waitUntil: 'domcontentloaded',
+        waitUntil: 'domcontentloaded'
     })
     await page.waitForFunction(() => !!document.querySelector('#sonic-note-state'), { timeout: 30000 })
     await page.evaluate(() => document.querySelector('#sonic-note-state').click())
@@ -38,7 +41,9 @@ test.describe('Sonic vocal monitor', () => {
         await page.evaluate(() => {
             const nav = navigator
             if (!nav.mediaDevices) nav.mediaDevices = {}
-            nav.mediaDevices.getUserMedia = async () => { throw new Error('denied') }
+            nav.mediaDevices.getUserMedia = async () => {
+                throw new Error('denied')
+            }
         })
         const vocal = page.locator('#sonic-vocal')
         await vocal.click()

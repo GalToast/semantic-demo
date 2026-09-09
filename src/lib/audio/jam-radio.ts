@@ -119,7 +119,8 @@ export function midiMessageToNote(data: ArrayLike<number>, state: number): NoteM
         !Number.isInteger(velocity) ||
         note < 0 ||
         note > 127
-    ) return null
+    )
+        return null
     const status = statusByte & 0xf0
     if (status === 0x90 && velocity > 0) return { type: 'note_on', note, state }
     if (status === 0x80 || (status === 0x90 && velocity === 0)) return { type: 'note_off', note }
@@ -252,7 +253,10 @@ export function startJamRadio(evs: JamRadioEvents = {}): Promise<boolean> {
 
 /** Connect and hold an explicit note set. Used by the dial to drive a
  * specific pitch-slot state through the live jam. */
-export function startJamRadioAt(evs: JamRadioEvents, notes: readonly { note: number; state?: number }[]): Promise<boolean> {
+export function startJamRadioAt(
+    evs: JamRadioEvents,
+    notes: readonly { note: number; state?: number }[]
+): Promise<boolean> {
     events = evs
     if (state !== 'idle') return Promise.resolve(false)
     if (typeof WebSocket === 'undefined' || typeof window === 'undefined') return Promise.resolve(false)
@@ -549,7 +553,7 @@ export async function sendStyleText(text: string): Promise<string | null> {
         res = await fetch(`${JAM_HTTP_URL}/style_text`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text.trim() }),
+            body: JSON.stringify({ text: text.trim() })
         })
     } catch {
         return null

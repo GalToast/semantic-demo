@@ -179,7 +179,7 @@ test.describe('Jam view', () => {
         await page.fill('#jam-style', 'funky techno')
         await page.evaluate(() => document.querySelector('#jam-style-send').click())
         await page.waitForFunction(() => window.__styleCalls && window.__styleCalls.length > 0, {
-            timeout: 30000,
+            timeout: 30000
         })
         const calls = await page.evaluate(() => window.__styleCalls)
         expect(calls.length).toBe(1)
