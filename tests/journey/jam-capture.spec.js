@@ -21,7 +21,7 @@ import { writeFileSync, mkdirSync } from 'node:fs'
 const TEST_BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8841'
 
 test('JAM-CAP. Capture live jam audio to /c/tmp/jam_live.wav', async ({ page }) => {
-    try { mkdirSync('C:/tmp', { recursive: true }) } catch (e) { /* best-effort */ }
+    try { mkdirSync('C:/tmp', { recursive: true }) } catch { /* best-effort */ }
 
     await page.addInitScript(() => {
         window.__frames = []
@@ -36,7 +36,10 @@ test('JAM-CAP. Capture live jam audio to /c/tmp/jam_live.wav', async ({ page }) 
                     window.__sent.push(typeof data === 'string' ? data : '[blob]')
                     return origSend(data)
                 }
-                this.onmessage = (ev) => {
+                // Keep the app's own ws.onmessage handler intact. The radio
+                // assigns that property after constructing the socket, so an
+                // assignment here would be silently overwritten.
+                this.addEventListener('message', (ev) => {
                     let msg
                     try { msg = JSON.parse(ev.data) } catch { return }
                     window.__types[msg.type] = (window.__types[msg.type] || 0) + 1
@@ -48,7 +51,7 @@ test('JAM-CAP. Capture live jam audio to /c/tmp/jam_live.wav', async ({ page }) 
                         for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
                         window.__frames.push(bytes.buffer)
                     }
-                }
+                })
             }
         }
     })
