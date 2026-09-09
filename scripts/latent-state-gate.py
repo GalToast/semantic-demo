@@ -23,6 +23,11 @@ checks.append(("SonicIdentity has STATE_LABELS", "STATE_LABELS" in svelte))
 checks.append(
     ("SonicIdentity labels state 4 as summit", "summit" in svelte and "100/S" in svelte)
 )
+checks.append(("SonicIdentity has #sonic-prog button", "sonic-prog" in svelte))
+checks.append(
+    ("SonicIdentity prog toggle calls set+play", "setRadioProg" in svelte and "playRadioProg" in svelte)
+)
+checks.append(("SonicIdentity stops prog on radio stop", svelte.count("stopRadioProg()") >= 3))
 checks.append(
     ("SonicIdentity noteState default is 4 (summit)", "noteState = $state(4)" in svelte)
 )
@@ -32,6 +37,8 @@ with open(os.path.join(ROOT, "src/lib/audio/jam-radio.ts"), encoding="utf-8") as
 checks.append(("jam-radio has setRadioNoteState", "setRadioNoteState" in radio))
 checks.append(("jam-radio has startJamRadioAt", "startJamRadioAt" in radio))
 checks.append(("jam-radio has NoteMessage interface", "interface NoteMessage" in radio))
+checks.append(("jam-radio has prog controls", "setRadioProg" in radio and "playRadioProg" in radio and "stopRadioProg" in radio))
+checks.append(("jam-radio has default prog spec", "DEFAULT_PROG_SPEC" in radio))
 checks.append(
     ("jam-radio held notes carry state", "state: 4" in radio and "note: 45" in radio)
 )

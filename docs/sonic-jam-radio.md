@@ -129,3 +129,21 @@ Both protocols (`note_on {state}` + `/band_mask {preset}`) already shipped
 server-side; the radio just points at the summit values. End-to-end
 confirmation (live radio at summit vs baseline, ear_v10 on streamed
 output): `scripts/e2e-summit.py`.
+
+## Tier 6 — progression player (harmonic movement)
+
+The jam's prog engine (`prog_engine.py`: `set_prog` DSL + `play`/`stop` at
+25fps into the shared held/onset sets) was unclaimed — the radio held one
+static chord and never touched it. Now:
+
+- `setRadioProg(spec, bpm)` → `{type:'prog_set', spec, bpm, loop:true}`;
+  `playRadioProg()` / `stopRadioProg()`; default `Am 4 | F 4 | C 4 | G 4`.
+- Dial `#sonic-prog` button in live mode toggles it. Prog rides every
+  radio-stop path (leave-live, play-button stop, unmount) so a running
+  progression can never outlive the stream.
+- Downbeats press notes into onset (pr=2) then settle to each note's amp
+  state — summit-held notes keep state 4, so harmony moves under the
+  summit config instead of replacing it.
+- Open question (needs the live stack): does harmonic movement preserve
+  the 100/S, or do transitions collapse it? Scored prog run is the next
+  experiment after the jam restart.

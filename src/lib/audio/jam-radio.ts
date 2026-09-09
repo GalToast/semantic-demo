@@ -226,3 +226,33 @@ export function setRadioNoteState(state: number): void {
     heldNotes = heldNotes.map((n) => ({ ...n, state }))
     for (const n of heldNotes) send({ type: 'note_on', note: n.note, state })
 }
+
+/** Default progression: I–V–vi–IV in A minor at 100bpm, looped. The
+ * summit was measured on a static A-minor drone; this is the harmonic-
+ * movement experiment — does the 100/S survive chord changes? */
+export const DEFAULT_PROG_SPEC = 'Am 4 | F 4 | C 4 | G 4'
+export const DEFAULT_PROG_BPM = 100
+
+/** Load a chord progression into the jam's prog engine (does not start
+ * playback). Resolves the server's slot table, or null when not live. */
+export function setRadioProg(spec: string = DEFAULT_PROG_SPEC, bpm: number = DEFAULT_PROG_BPM): void {
+    if (!spec.trim() || !Number.isFinite(bpm) || bpm <= 0) return
+    send({ type: 'prog_set', spec, bpm, loop: true })
+}
+
+/** Start the loaded progression. The engine presses/releases notes into
+ * the shared held/onset sets at 25fps; downbeats hit onset state then
+ * settle to each note's amp state (summit notes keep state 4). */
+export function playRadioProg(): void {
+    send({ type: 'prog_play' })
+}
+
+/** Stop the progression and release its notes. The radio chord stays. */
+export function stopRadioProg(): void {
+    send({ type: 'prog_stop' })
+}
+
+/** Ask the server for prog status (replied as a prog_status message). */
+export function requestRadioProgStatus(): void {
+    send({ type: 'prog_status' })
+}

@@ -12,6 +12,7 @@
   import { playSonicIdentity, stopSonicIdentity, isPlaying } from '@lib/audio/sonic-identity';
   import { steerJam } from '@lib/audio/jam-steer';
   import { startJamRadio, stopJamRadio, getRadioState, setRadioNoteState } from '@lib/audio/jam-radio';
+  import { setRadioProg, playRadioProg, stopRadioProg, DEFAULT_PROG_SPEC } from '@lib/audio/jam-radio';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
 
   interface Props {
@@ -63,11 +64,27 @@
   const clip = $derived(manifest ? pickVariantForNode(manifest, clusterName, leadId, style) : null);
 
   // Stop the radio if the focus card unmounts — never leak a live stream.
-  $effect(() => () => { stopJamRadio(); });
+  // Prog rides along: a running progression must not outlive the radio.
+  $effect(() => () => { stopRadioProg(); stopJamRadio(); });
 
   function cycleNoteState(): void {
     noteState = (noteState + 1) % 12;
     setRadioNoteState(noteState);
+  }
+
+  // Progression player: loads Am–F–C–G into the jam's prog engine and
+  // starts it. The engine moves harmony while the summit config (state 4
+  // + melodic band) holds the quality. Toggle off returns to the drone.
+  let progPlaying = $state(false);
+  function toggleProg(): void {
+    if (progPlaying) {
+      stopRadioProg();
+      progPlaying = false;
+    } else {
+      setRadioProg(DEFAULT_PROG_SPEC);
+      playRadioProg();
+      progPlaying = true;
+    }
   }
 
   function toggleStyle(): void {
@@ -83,13 +100,12 @@
       void startJamRadio({ onState: (s) => { radioPlaying = s === 'live'; } });
       return;
     }
-    // In live mode the style button cycles the pitch-slot state instead of
-    // leaving the radio — that is the generative lever this dial exposes.
+    // State cycling lives on the dedicated #sonic-note-state button — the
+    // style button keeps its pole-cycle contract, including a clean radio
+    // stop when leaving live (SONIC-4).
     if (prev === 'live') {
-      cycleNoteState();
-      return;
-    }
-    if (prev === 'live') {
+      stopRadioProg();
+      progPlaying = false;
       stopJamRadio();
       radioPlaying = false;
     }
@@ -119,6 +135,8 @@
     if (live) {
       // In live mode the play button controls the generative radio.
       if (radioPlaying || getRadioState() === 'live') {
+        stopRadioProg();
+        progPlaying = false;
         stopJamRadio();
         radioPlaying = false;
       } else {
@@ -159,6 +177,15 @@
         title={`Pitch-slot state ${noteState} of 11 — ${STATE_LABELS[noteState]}. Click to cycle the held chord's encoder state.`}
         onclick={cycleNoteState}
       >{noteState}<small>{STATE_LABELS[noteState]}</small></button>
+      <button
+        id="sonic-prog"
+        class="sonic-prog"
+        type="button"
+        aria-label={progPlaying ? 'Stop chord progression' : 'Play Am–F–C–G progression'}
+        aria-pressed={progPlaying}
+        title="Chord progression (Am–F–C–G) through the summit config — harmonic movement experiment."
+        onclick={toggleProg}
+      >{progPlaying ? '⏹' : '𝄢'}</button>
       {:else if clip.ear}
         <span id="sonic-score" class="sonic-score sonic-score-{clip.ear.grade.toLowerCase()}">{clip.ear.score}/{clip.ear.grade}</span>
       {/if}
@@ -255,6 +282,23 @@
     text-transform: lowercase;
   }
   .sonic-note-state:hover { background: rgba(120, 220, 160, 0.18); }
+  .sonic-prog {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: inherit;
+    font-size: 0.7rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .sonic-prog:hover { background: rgba(255, 255, 255, 0.16); }
+  .sonic-prog[aria-pressed='true'] {
+    border-color: rgba(150, 180, 255, 0.7);
+    background: rgba(150, 180, 255, 0.18);
+  }
   .sonic-meta {
     display: flex;
     align-items: baseline;
