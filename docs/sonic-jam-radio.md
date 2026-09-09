@@ -245,33 +245,37 @@ Verification: jam-radio/progression/vocal unit suites (28/28), production build,
 JAM-1..4 plus the `view=jam` alias journey, and a normal explorer deep-link
 smoke are green. The jam journey also verifies that no engine asset is fetched.
 
-## Style-follow endpoint (blocked on mrt2)
+## Audio style-follow (blocked on mrt2)
 
-Design posted (msg 1584): `POST /style_audio {pcm_b64, sr}` → 10s
+Design posted (msg 1584): `POST /style_from_audio {pcm_b64, sr}` → 10s
 rolling buffer → MusicCoCa embed every 2-4s → tokenize → swap
 `style_tokens` in the LM conditioning block. Covers speech/poetry/song
 vibe-following; rap-downbeat sync and melody harmonizing stay separate
 future dials.
 
-**Status: blocked — the endpoint does not exist on the server.**
-`jam_server.py` has no `/style_audio` handler at all; the only style
-endpoints it serves are `/style {pole}` (PCA poles → tokens) and
-`/style_text {text}` (tier 13). The MusicCoCa audio embedding was never
-wired into the jam.
+**Status: endpoint exists, implementation does not.** mrt2-lane shipped
+the route (`/style_from_audio`, msg 1621) but the handler is a queue
+placeholder — it always returns 501:
 
-`surf_style_helper` is NOT missing — it lives at
+`{"ok": false, "error": "encoder window required — capture accepted, queued for GPU slot"}`
+
+Verified live. The SpectroStream encoder half needs a GPU window
+(`stack_watchdog.pause` protocol); until it is wired, every POST gets
+that 501. This is a real chunk of work, not a missing import.
+
+`surf_style_helper` is NOT the blocker — it lives at
 `mrt2/magenta_port/surf_style_helper.py` and exports
 `surf_tokens_for(x, y)` (verified live: it imports cleanly and the
-current jam is serving its tokens). What is missing is the audio path:
-`surf_style_helper` takes PCA coordinates, not a waveform, so someone has
-to write the MusicCoCa → 768-d embed → PCA → tokens bridge. Owner is
-`codex-disk` (they own `jam_server.py`). Do not touch that file until they
-post the seam.
+current jam is serving its tokens). It takes PCA coordinates, not a
+waveform, so it cannot consume audio directly. The missing piece is the
+MusicCoCa → 768-d embed → PCA → tokens bridge. Owner is `codex-disk`
+(they own `jam_server.py`). Do not touch that file until they post the
+seam.
 
-Client side is ready to go the moment the endpoint exists:
+Client side is ready to go the moment the endpoint returns 200:
 `jam-radio.ts` already sends `uiReady` + held chord on connect and flushes
-a pending queue on open, so a `POST /style_audio` call from the dial just
-needs a `fetch()` wrapper. The MusicCoCa embed itself is measured at
+a pending queue on open, so a `POST /style_from_audio` call from the dial
+just needs a `fetch()` wrapper. The MusicCoCa embed itself is measured at
 ~3s per 10s clip on CPU (`scripts/style-ear-latency.py`, deterministic,
 cos 1.0) — cheap enough to run alongside the LM with zero GPU contention,
 but the 914MB TFLite bundle does not fit in a browser, so the embedding
@@ -286,14 +290,15 @@ probe); this is the client half. Fire-and-forget; the dial applies it
 server-side without dropping the stream. Returns the matched anchor name
 or null on a network/parse failure.
 
-Why /style_text and not /style_audio? The audio path does not exist on
-the server at all (no `/style_audio` handler), and `surf_style_helper`
-takes PCA coordinates — not a waveform — so it cannot consume audio
-directly. mrt2-lane's text endpoint uses 100% existing infrastructure
-(no MusicCoCa at runtime, no new module to write), so it is the one to
-wire up now. The audio embedding (MusicCoCa, ~3s per 10s clip on CPU,
-measured in `scripts/style-ear-latency.py`) stays queued for when the
-server side lands.
+Why /style_text and not /style_from_audio? The audio endpoint exists
+now (`/style_from_audio`, shipped by mrt2-lane msg 1621) but its handler
+is a queue placeholder that returns 501 until the SpectroStream encoder
+half gets a GPU window — verified live. mrt2-lane's text endpoint uses
+100% existing infrastructure (no MusicCoCa at runtime, no encoder window),
+so it is the one that is actually usable today. The audio embedding
+(MusicCoCa, ~3s per 10s clip on CPU, measured in
+`scripts/style-ear-latency.py`) stays queued for when the server side
+returns 200.
 
 JamView.svelte: `#jam-style` input + 💚 send button + matched-anchor
 readout. JAM-6 pins the fetch shape.
