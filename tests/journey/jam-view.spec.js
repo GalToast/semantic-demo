@@ -187,4 +187,50 @@ test.describe('Jam view', () => {
         expect(body.text).toBe('funky techno')
         await expect(page.locator('.jam-style-anchor')).toContainText('matched: funky')
     })
+
+    test('JAM-7. Style-morph slider sends /style_interp', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page)
+        await page.evaluate(() => document.querySelector('#jam-play').click())
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        await page.waitForFunction(() => window.__ws.sent.length >= 5, { timeout: 30000 })
+        // Mock fetch so the POST is observable without a live jam.
+        await page.evaluate(() => {
+            window.__interpCalls = []
+            const orig = window.fetch
+            window.fetch = async (url, opts) => {
+                if (typeof url === 'string' && url.includes('/style_interp')) {
+                    window.__interpCalls.push({ url, opts })
+                    return { ok: true, status: 200 }
+                }
+                return orig(url, opts)
+            }
+        })
+        // range inputs don't take .fill(); set value + dispatch input event.
+        const setMorph = async (v) => {
+            await page.evaluate((n) => {
+                const el = document.getElementById('jam-morph')
+                if (el) { el.value = String(n); el.dispatchEvent(new Event('input', { bubbles: true })) }
+            }, v)
+        }
+        await setMorph(0.5)
+        await page.waitForTimeout(250)
+        await expect(page.locator('#jam-morph-val')).toHaveText('0.50')
+        await page.waitForFunction(() => window.__interpCalls && window.__interpCalls.length > 0, {
+            timeout: 5000
+        })
+        const calls = await page.evaluate(() => window.__interpCalls)
+        expect(calls.length).toBe(1)
+        const body = JSON.parse(calls[0].opts.body)
+        expect(body.t).toBe(0.5)
+        // Poison zone [0.74, 0.82] snaps to 0.72 on the server — the slider
+        // still sends the raw value; verify the wire carries it.
+        await setMorph(0.78)
+        await page.waitForTimeout(250)
+        const calls2 = await page.evaluate(() => window.__interpCalls)
+        expect(JSON.parse(calls2[calls2.length - 1].opts.body).t).toBe(0.78)
+    })
 })

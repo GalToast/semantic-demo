@@ -31,7 +31,15 @@
   } from '@lib/audio/jam-radio';
   import { startMidiInput, stopMidiInput, startMidiBridge, stopMidiBridge, bridgeChordToMidi, startMidiProgBridge, stopMidiProgBridge } from '@lib/audio/jam-midi';
   import { startVocalMonitor, stopVocalMonitor, isVocalMonitoring } from '@lib/audio/jam-vocal';
-  import { sendStyleText, parseProgressionSpec } from '@lib/audio/jam-radio';
+  import { sendStyleText, parseProgressionSpec, setStyleMorph } from '@lib/audio/jam-radio';
+  let morphT = $state(0)
+  let morphDebounce: ReturnType<typeof setTimeout> | null = null
+
+  function onMorphInput(ev: Event & { currentTarget: HTMLInputElement }): void {
+    morphT = parseFloat(ev.currentTarget.value)
+    if (morphDebounce) clearTimeout(morphDebounce)
+    morphDebounce = setTimeout(() => { void setStyleMorph(morphT) }, 120)
+  }
   let styleText = $state('');
   let styleAnchor = $state<string | null>(null);
 
@@ -206,6 +214,9 @@
         aria-label={vocalOn ? 'Stop vocal monitor' : vocalDenied ? 'Microphone unavailable' : 'Monitor voice to play the jam'}
         aria-pressed={vocalOn}
       >🎤</button>
+      <span class="jam-morph-label">morph</span>
+      <input id="jam-morph" class="jam-morph" type="range" min="0" max="1" step="0.01" value="0" oninput={onMorphInput} aria-label="Continuous style morph t" />
+      <span id="jam-morph-val" class="jam-morph-val">{morphT.toFixed(2)}</span>
       <input id="jam-style" class="jam-style-input" type="text" bind:value={styleText} placeholder="Type a vibe: funky techno…" aria-label="Text vibe for the jam" maxlength="64" />
       <button id="jam-style-send" class="jam-chip" type="button" onclick={postStyleText} aria-label="Send text vibe">💬</button>
       {#if styleAnchor}
@@ -320,4 +331,7 @@
     font-size: 0.8rem;
   }
   .jam-style-anchor { font-size: 0.72rem; opacity: 0.85; color: #9fd0ff; }
+  .jam-morph-label { font-size: 0.72rem; opacity: 0.7; margin-right: 0.35rem; }
+  .jam-morph { width: 7rem; accent-color: #9fd0ff; }
+  .jam-morph-val { font-size: 0.72rem; opacity: 0.85; margin-left: 0.3rem; font-variant-numeric: tabular-nums; }
 </style>

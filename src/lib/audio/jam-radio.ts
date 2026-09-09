@@ -133,7 +133,7 @@ export function midiMessageToNote(data: ArrayLike<number>, state: number): NoteM
  * is unavailable. */
 export function enableJamMidi(state: number = DEFAULT_NOTE_STATE): Promise<boolean> {
     if (typeof window === 'undefined') return Promise.resolve(false)
-    const nav = window as unknown as {
+    const nav = window as Window & {
         navigator?: { requestMIDIAccess?: (opts?: { sysex?: boolean }) => Promise<MIDIAccessLike> }
     }
     const req = nav.navigator?.requestMIDIAccess
@@ -261,7 +261,7 @@ export function startJamRadioAt(
     if (state !== 'idle') return Promise.resolve(false)
     if (typeof WebSocket === 'undefined' || typeof window === 'undefined') return Promise.resolve(false)
 
-    const w = window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }
+    const w = window as Window & { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }
     const Ctor = w.AudioContext ?? w.webkitAudioContext
     if (!Ctor) return Promise.resolve(false)
     pendingQueue.length = 0
@@ -584,3 +584,23 @@ export function isMeasuredPair(state: number, mode: RadioBandMode): boolean {
     return MEASURED_PAIRS.some((p) => p.state === state && p.mode === mode)
 }
 export const SUMMIT_STATE = 4
+
+/** Continuous style morph: t in [0,1] between the current style's table
+ * rows and the +500-offset companion rows. mrt2-lane wired /style_interp
+ * live (msg 1606): t=0.0/0.5/1.0 all ack, poison zone [0.74,0.82] snaps to
+ * 0.72 (a whine spike in the fine map). Fire-and-forget; the LM applies it
+ * per frame. Returns true when the LM ack'd (ack byte 8). */
+export async function setStyleMorph(t: number): Promise<boolean> {
+    const tt = Math.max(0, Math.min(1, t))
+    let res: Response
+    try {
+        res = await fetch(`${JAM_HTTP_URL}/style_interp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ t: tt }),
+        })
+    } catch {
+        return false
+    }
+    return res.ok
+}
