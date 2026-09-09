@@ -82,6 +82,15 @@ export interface RadioMetrics {
     bufferCap: number
 }
 
+/** Audio frame payload, as streamed by the jam server. `data` is a base64
+ * of int16 interleaved stereo at `rate` Hz. Exposed via onAudioFrame so
+ * test harnesses can count frames without touching the audio graph. */
+export interface RadioAudioFrame {
+    type: 'audio'
+    data: string
+    rate?: number
+}
+
 /** Note-on message payload. `state` is optional for backward compat with
  * clients that only send `{type:'note_on', note:N}` — it defaults to the
  * documented held state. */
@@ -175,6 +184,7 @@ interface JamRadioEvents {
     onState?: (state: RadioState) => void
     onMetrics?: (m: RadioMetrics) => void
     onProgStatus?: (s: RadioProgStatus) => void
+    onAudioFrame?: (msg: RadioAudioFrame) => void
 }
 
 /** Progression engine status, as reported by the jam server's prog_status
@@ -309,6 +319,7 @@ export function startJamRadioAt(
                 const msg = JSON.parse(ev.data as string) as Record<string, unknown>
                 if (msg.type === 'audio' && typeof msg.data === 'string' && ctx) {
                     playChunk(ctx, msg.data)
+                    events.onAudioFrame?.(msg as unknown as RadioAudioFrame)
                 } else if (msg.type === 'metrics') {
                     events.onMetrics?.(msg as unknown as RadioMetrics)
                 } else if (msg.type === 'prog_status' || msg.type === 'prog_learned') {

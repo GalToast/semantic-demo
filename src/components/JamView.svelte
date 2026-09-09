@@ -62,6 +62,13 @@
 
   const measured = $derived(isMeasuredPair(noteState, bandMode));
 
+  function onAudioFrame(): void {
+    if (typeof window !== 'undefined') {
+      const w = window as Window & { __audioFrames?: number }
+      w.__audioFrames = (w.__audioFrames || 0) + 1
+    }
+  }
+
   function onRadioState(s: RadioState): void {
     radioState = s;
     if (s === 'live') {
@@ -88,7 +95,7 @@
       stopJamRadio();
     } else {
       progStatus = null;
-      await startJamRadio({ onState: onRadioState, onProgStatus });
+      await startJamRadio({ onState: onRadioState, onProgStatus, onAudioFrame });
     }
   }
   function cycleNoteState(): void {
