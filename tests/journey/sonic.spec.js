@@ -4,14 +4,13 @@ import { BASE_URL } from '../helpers/3d-interaction-helpers.js'
 // GPU cleanup between tests: close the page and its entire browser context so
 // serial WebGL journeys do not accumulate renderer bookkeeping.
 test.afterEach(async ({ page }) => {
-    const context = page.context()
-    try {
-        await page.close().catch(() => {})
-    } catch {
-        // best-effort
-    } finally {
-        await context.close().catch(() => {})
-    }
+    // Close the page first; the context follows. Guard both so a failure
+    // mid-test (page already gone) doesn't cascade into an unhandled
+    // rejection — the old pattern closed the context AFTER the page,
+    // which threw "Target page, context or browser has been closed" on
+    // the very first assertion after a mid-test failure.
+    try { await page.close() } catch { /* already gone */ }
+    try { await page.context().close() } catch { /* already gone */ }
 })
 
 // Sonic identity journey: focused business shows its generated clip player

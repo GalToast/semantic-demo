@@ -130,6 +130,15 @@ const EXEMPTED_SHAS = new Set<string>([
     // docs/window-global-allowlist.md is the registry the scanner validates
     // (doc+code in one atomic change). Evidence-bank class.
     '2ebdd2b8422a6d1242051a04758a4012631503ad',
+    // 4ccc4d3 — docs(scripts): analysis-script hardening + boot doc sync.
+    // The scripts were formatting/hardening companions to the boot diagnosis
+    // docs. This historical mixed commit is already shared, so preserve it
+    // explicitly rather than rewriting branch history.
+    '4ccc4d304dbadba8827445b2c698f36b2ee8ff6f',
+    // cebbde6 — docs(sonic): second ladder — guidance-strength bins geometry.
+    // The three analysis scripts are evidence-producing companions to the
+    // ladder-results doc. This historical mixed commit is intentional.
+    'cebbde6f40b5cc6a001afdc95b05fbefd4916b31',
     // 7ca2e1d0 — test(css): Option C ownership redesign. Bundled docs/subagent-lane-inventory.md addendum = measured delegation evidence (process/evidence-bank class, same shape as f0840f8). selector-baseline retirement (delegation-wave-2).
     '7ca2e1d0305245c682c397ddca4cff70bdff042e',
     // 53b75c84 — docs(engine): corridor-glow dispose indirection note. The

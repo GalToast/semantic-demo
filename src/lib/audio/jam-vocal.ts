@@ -184,7 +184,7 @@ export async function startVocalMonitor(
             nextStream.getTracks().forEach((track) => track.stop())
             return false
         }
-        const w = window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }
+        const w = window as Window & { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }
         const Ctor = w.AudioContext ?? w.webkitAudioContext
         if (!Ctor) {
             nextStream.getTracks().forEach((track) => track.stop())
