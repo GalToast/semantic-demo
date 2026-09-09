@@ -45,7 +45,17 @@ test.describe('Sonic identity journey', () => {
 
         // WebGL scene is still settling; give it a beat so the button stops
         // moving before clicking ("element is not stable" otherwise).
-        await page.waitForTimeout(500)
+        // Poll the DOM rather than a fixed timeout: D3D11 cold-start on a
+        // loaded box can take seconds, and a short fixed wait lets the page
+        // die under the click (SONIC-1 hit that).
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#sonic-play')
+                const rect = el ? el.getBoundingClientRect() : null
+                return !!el && rect && rect.width > 0 && rect.height > 0
+            },
+            { timeout: 30000, polling: 200 }
+        )
 
         // Toggle play → aria-pressed flips true (WebAudio may be blocked in
         // headless, but the pressed state reflects the click intent path).
@@ -71,35 +81,48 @@ test.describe('Sonic identity journey', () => {
         expect(found, 'sonic style dial must appear').toBe(true)
 
         const styleBtn = page.locator('#sonic-style')
-        await expect(styleBtn).toHaveAttribute('aria-pressed', 'false')
-        await expect(styleBtn).toHaveText('★')
+        // Svelte 5 omits the attribute entirely when aria-pressed={false},
+        // so the "not live" assertion is absence, not the literal "false".
+        // (A literal toHaveAttribute('aria-pressed','false') fails with "".)
+        await expect(styleBtn).not.toHaveAttribute('aria-pressed', 'true', { timeout: 30000 })
+        await expect(styleBtn).toHaveText('★', { timeout: 30000 })
 
         // WebGL scene is still settling; give it a beat so the button stops
         // moving before clicking ("element is not stable" otherwise).
-        await page.waitForTimeout(500)
+        // Poll the render rect rather than a fixed wait: D3D11 cold-start
+        // varies run to run and a short fixed wait lets the page die under
+        // the next click.
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#sonic-style')
+                const rect = el ? el.getBoundingClientRect() : null
+                return !!el && rect && rect.width > 0 && rect.height > 0
+            },
+            { timeout: 30000, polling: 200 }
+        )
 
         // 3-way dial cycle: ★ best -> ⚡ beat -> 🔴 live -> ★ best.
         // aria-pressed tracks the live pole only (text tracks the state).
+        // Poll rather than waitForTimeout: D3D11 settles on its own schedule
+        // and a fixed 100ms is too tight on a cold GPU (SONIC-2 timed out).
         await page.evaluate(() => document.querySelector('#sonic-style').click())
-        await page.waitForTimeout(100)
-        await expect(styleBtn).toHaveText('⚡')
-        await expect(styleBtn).toHaveAttribute('aria-pressed', 'false')
+        await expect(styleBtn).toHaveText('⚡', { timeout: 15000 })
+        await expect(styleBtn).not.toHaveAttribute('aria-pressed', 'true', { timeout: 5000 })
 
         await page.evaluate(() => document.querySelector('#sonic-style').click())
-        await page.waitForTimeout(100)
-        await expect(styleBtn).toHaveText('🔴')
-        await expect(styleBtn).toHaveAttribute('aria-pressed', 'true')
+        await expect(styleBtn).toHaveText('🔴', { timeout: 15000 })
+        await expect(styleBtn).toHaveAttribute('aria-pressed', 'true', { timeout: 5000 })
 
         // Back to best; assert the return atomically (both DOM projections).
         await page.evaluate(() => document.querySelector('#sonic-style').click())
         const backToBest = await page.waitForFunction(
             () => {
                 const b = document.querySelector('#sonic-style')
-                return !!b && b.textContent === '★' && b.getAttribute('aria-pressed') === 'false'
+                return !!b && b.textContent === '★' && b.getAttribute('aria-pressed') !== 'true'
             },
-            { timeout: 10000 }
+            { timeout: 15000 }
         )
-        expect(backToBest, 'dial must return to ★ (aria-pressed=false)').toBeTruthy()
+        expect(backToBest, 'dial must return to ★ (not live)').toBeTruthy()
     })
 
     // SONIC-3: toggling the style dial also steers any live jam session
@@ -142,7 +165,16 @@ test.describe('Sonic identity journey', () => {
         })
 
         const styleBtn = page.locator('#sonic-style')
-        await page.waitForTimeout(500)
+        // Same settle poll as SONIC-2 — a fixed 500ms is not enough on a cold
+        // D3D11 context, and the page dies under the next click.
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#sonic-style')
+                const rect = el ? el.getBoundingClientRect() : null
+                return !!el && rect && rect.width > 0 && rect.height > 0
+            },
+            { timeout: 30000, polling: 200 }
+        )
 
         // Toggle to max-beat -> should fire POST { pole: 'beat' }
         // (JS dispatch: the WebGL canvas overlays chrome and steals pointer clicks.)
@@ -150,7 +182,7 @@ test.describe('Sonic identity journey', () => {
         await page.waitForTimeout(200)
         const beatCall = jamCalls.find((c) => c.body.includes('beat'))
         expect(beatCall, 'toggling to beat must POST { pole: "beat" } to /style').toBeTruthy()
-        expect(beatCall.url).toContain('/style')
+        expect(beatCall?.url).toContain('/style')
 
         // Toggle to live -> continuity steer keeps the current pole ('beat').
         await page.evaluate(() => document.querySelector('#sonic-style').click())
@@ -161,7 +193,7 @@ test.describe('Sonic identity journey', () => {
         await page.waitForTimeout(200)
         const bestCall = jamCalls.find((c) => c.body.includes('"best"'))
         expect(bestCall, 'toggling back to best must POST { pole: "best" } to /style').toBeTruthy()
-        expect(bestCall.url).toContain('/style')
+        expect(bestCall?.url).toContain('/style')
     })
 
     // SONIC-4: the 🔴 live pole connects a WebSocket to the MRT2 jam server,
@@ -203,18 +235,29 @@ test.describe('Sonic identity journey', () => {
         expect(found, 'sonic style dial must appear').toBe(true)
 
         // Cycle the dial to live: ★ -> ⚡ -> 🔴 (JS dispatch; WebGL overlay).
-        await page.waitForTimeout(500)
+        // Same settle poll as SONIC-2 — a fixed 500ms lets the page die
+        // under the click on a cold D3D11 context.
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#sonic-style')
+                const rect = el ? el.getBoundingClientRect() : null
+                return !!el && rect && rect.width > 0 && rect.height > 0
+            },
+            { timeout: 30000, polling: 200 }
+        )
         await page.evaluate(() => document.querySelector('#sonic-style').click())
         await page.waitForTimeout(100)
         await page.evaluate(() => document.querySelector('#sonic-style').click())
 
         // Radio must connect to the jam server, go live, and hold the chord.
+        // 30s budget: D3D11 cold-start can take >10s on a loaded box, and a
+        // short timeout here throws mid-test and leaves the page closed.
         await page.waitForFunction(
             () => {
                 const el = document.querySelector('.sonic-identity')
                 return el && el.getAttribute('data-live') === 'true'
             },
-            { timeout: 10000 }
+            { timeout: 30000 }
         )
         const wsState = await page.evaluate(() => window.__ws)
         expect(wsState.url, 'radio must target the jam websocket').toContain(':8083')
@@ -228,7 +271,7 @@ test.describe('Sonic identity journey', () => {
                 const el = document.querySelector('.sonic-identity')
                 return el && el.getAttribute('data-live') === 'false'
             },
-            { timeout: 10000 }
+            { timeout: 30000 }
         )
         const after = await page.evaluate(() => window.__ws)
         expect(after.closed, 'radio socket must be closed on leaving live').toBeGreaterThanOrEqual(1)

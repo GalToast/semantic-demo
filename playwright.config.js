@@ -15,8 +15,7 @@ const useD3d11 = process.platform === 'win32' && process.env.SEMANTIC_USE_D3D11 
 // by default. It limits browser background work and animation without using
 // --disable-gpu, so WebGL assertions remain meaningful.
 const lowContention =
-    process.env.PLAYWRIGHT_LOW_CONTENTION === '1' ||
-    process.env.PLAYWRIGHT_PROFILE?.toLowerCase() === 'low-contention'
+    process.env.PLAYWRIGHT_LOW_CONTENTION === '1' || process.env.PLAYWRIGHT_PROFILE?.toLowerCase() === 'low-contention'
 const chromiumArgs = [
     '--ignore-gpu-blocklist',
     ...(lowContention
@@ -48,7 +47,9 @@ const webServer = process.env.TEST_BASE_URL
 export default defineConfig({
     fullyParallel: false,
     workers: 1,
-    timeout: 120_000,
+    // 180s: D3D11 cold-start on a loaded box can eat the old 120s budget
+    // mid-test (SONIC-2/SONIC-4 hit the cap inside waitForFunction).
+    timeout: 180_000,
     expect: {
         timeout: 10_000
     },

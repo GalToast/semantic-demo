@@ -10,7 +10,7 @@ by a valid variable name character."
 ## Root cause
 
 Git Bash (the shell the `bash` tool runs in) performs **its own variable and
-parameter expansion** on the command string *before* pwsh ever sees it. The
+parameter expansion** on the command string _before_ pwsh ever sees it. The
 PowerShell automatic variable `$_` (the pipeline/foreach current item) starts
 with `$`, so Git Bash tries to expand `$_` — and `$_.LocalPort` becomes
 `<empty>.LocalPort`, which pwsh then rejects.
