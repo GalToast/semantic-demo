@@ -10,6 +10,7 @@
 <script lang="ts">
   import { loadSonicManifest, pickVariantForNode, type SonicManifest, type SonicClip, type SonicStyle } from '@lib/sonic/sonic-manifest';
   import { playSonicIdentity, stopSonicIdentity, isPlaying } from '@lib/audio/sonic-identity';
+  import { steerJam } from '@lib/audio/jam-steer';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
 
   interface Props {
@@ -36,6 +37,9 @@
   function toggleStyle(): void {
     const next: SonicStyle = style === 'best' ? 'beat' : 'best';
     style = next;
+    // Steer any live jam session toward the new pole (fire-and-forget; the
+    // jam server may not be running — playback dial works regardless).
+    void steerJam(next);
     if (playing && manifest) {
       // Swap the clip seamlessly if audio is active. Note: `clip` is still the
       // pre-toggle derived value here — resolve the next clip explicitly.
