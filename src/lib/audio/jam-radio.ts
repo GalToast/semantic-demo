@@ -22,7 +22,7 @@
  * Endpoint: configurable via VITE_JAM_WS_URL (see jam-config.ts).
  */
 
-import { JAM_WS_URL } from '@lib/audio/jam-config'
+import { JAM_WS_URL, JAM_HTTP_URL } from '@lib/audio/jam-config'
 import { RADIO_SUMMIT_SLOTS, steerJamBandSlots } from '@lib/audio/jam-steer'
 
 /** Radio's held notes: a soft A-minor add9 voicing (MIDI indices into the
@@ -533,6 +533,34 @@ export function getRadioBandMode(): RadioBandMode {
 export function setRadioBandMode(mode: RadioBandMode): void {
     bandMode = mode
     void steerJamBandSlots(RADIO_BAND_SLOTS[mode])
+}
+
+/** Send a text vibe to the live jam. mrt2-lane's /style_text endpoint
+ * matches the text against the 16 named style-map anchors (token overlap)
+ * and applies the nearest anchor's tokens via the existing surf_tokens_for
+ * path — live-verified ('funky techno' matched the funky anchor, tokens
+ * identical to the standalone probe). Fire-and-forget; the dial applies it
+ * immediately server-side without dropping the stream. Returns the matched
+ * anchor name, or null on a network/parse failure. */
+export async function sendStyleText(text: string): Promise<string | null> {
+    if (!text.trim()) return null
+    let res: Response
+    try {
+        res = await fetch(`${JAM_HTTP_URL}/style_text`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text.trim() }),
+        })
+    } catch {
+        return null
+    }
+    if (!res.ok) return null
+    try {
+        const j = await res.json()
+        return typeof j.anchor === 'string' ? j.anchor : null
+    } catch {
+        return null
+    }
 }
 
 /** Measured-good pitch×band pairs (ear-scored, same seed/frames family).

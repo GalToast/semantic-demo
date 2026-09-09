@@ -128,4 +128,63 @@ test.describe('Jam view', () => {
             'prog toggle sends prog_set'
         ).toBe(true)
     })
+
+    test('JAM-5. Denied microphone keeps the jam usable', async ({ page }) => {
+        await mockRadio(page)
+        await page.addInitScript(() => {
+            const denied = () => Promise.reject(new Error('permission denied'))
+            const media = navigator.mediaDevices
+            if (media) {
+                Object.defineProperty(media, 'getUserMedia', { configurable: true, value: denied })
+            } else {
+                Object.defineProperty(navigator, 'mediaDevices', {
+                    configurable: true,
+                    value: { getUserMedia: denied }
+                })
+            }
+        })
+        await gotoJam(page)
+        await page.locator('#jam-play').click()
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        await expect(page.locator('#jam-vocal')).toBeVisible()
+        await page.locator('#jam-vocal').click()
+        await expect(page.locator('#jam-vocal')).toHaveAttribute('aria-label', 'Microphone unavailable')
+        await expect(page.locator('#jam-play')).toBeVisible()
+    })
+
+    test('JAM-6. Text vibe input sends /style_text', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page)
+        await page.evaluate(() => document.querySelector('#jam-play').click())
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        await page.waitForFunction(() => window.__ws.sent.length >= 5, { timeout: 30000 })
+        // Mock fetch so the POST is observable without a live jam.
+        await page.evaluate(() => {
+            window.__styleCalls = []
+            const orig = window.fetch
+            window.fetch = async (url, opts) => {
+                if (typeof url === 'string' && url.includes('/style_text')) {
+                    window.__styleCalls.push({ url, opts })
+                    return { ok: true, status: 200, json: async () => ({ ok: true, anchor: 'funky' }) }
+                }
+                return orig(url, opts)
+            }
+        })
+        await page.fill('#jam-style', 'funky techno')
+        await page.evaluate(() => document.querySelector('#jam-style-send').click())
+        await page.waitForFunction(() => window.__styleCalls && window.__styleCalls.length > 0, {
+            timeout: 30000,
+        })
+        const calls = await page.evaluate(() => window.__styleCalls)
+        expect(calls.length).toBe(1)
+        const body = JSON.parse(calls[0].opts.body)
+        expect(body.text).toBe('funky techno')
+        await expect(page.locator('.jam-style-anchor')).toContainText('matched: funky')
+    })
 })

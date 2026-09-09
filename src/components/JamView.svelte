@@ -31,7 +31,16 @@
   } from '@lib/audio/jam-radio';
   import { startMidiInput, stopMidiInput, startMidiBridge, stopMidiBridge, bridgeChordToMidi, startMidiProgBridge, stopMidiProgBridge } from '@lib/audio/jam-midi';
   import { startVocalMonitor, stopVocalMonitor, isVocalMonitoring } from '@lib/audio/jam-vocal';
-  import { parseProgressionSpec } from '@lib/audio/jam-radio';
+  import { sendStyleText, parseProgressionSpec } from '@lib/audio/jam-radio';
+  let styleText = $state('');
+  let styleAnchor = $state<string | null>(null);
+
+  async function postStyleText(): Promise<void> {
+    if (!styleText.trim()) return
+    const anchor = await sendStyleText(styleText.trim())
+    styleAnchor = anchor
+    styleText = ''
+  }
 
   let radioState = $state<RadioState>('idle');
   const live = $derived(radioState === 'live');
@@ -197,6 +206,11 @@
         aria-label={vocalOn ? 'Stop vocal monitor' : vocalDenied ? 'Microphone unavailable' : 'Monitor voice to play the jam'}
         aria-pressed={vocalOn}
       >🎤</button>
+      <input id="jam-style" class="jam-style-input" type="text" bind:value={styleText} placeholder="Type a vibe: funky techno…" aria-label="Text vibe for the jam" maxlength="64" />
+      <button id="jam-style-send" class="jam-chip" type="button" onclick={postStyleText} aria-label="Send text vibe">💬</button>
+      {#if styleAnchor}
+        <span class="jam-style-anchor" role="status">matched: {styleAnchor}</span>
+      {/if}
       <button id="jam-summit" class="jam-chip" type="button" onclick={restoreSummit} aria-label="Restore summit pair (state 4 + tone)">★ summit</button>
     </div>
     {#if progStatus && typeof progStatus.slots === 'number'}
@@ -296,4 +310,14 @@
     background: rgba(150, 180, 255, 0.18);
   }
   .jam-prog-status { font-size: 0.75rem; opacity: 0.7; margin: 0; }
+  .jam-style-input {
+    min-width: 13rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.25);
+    color: inherit;
+    font-size: 0.8rem;
+  }
+  .jam-style-anchor { font-size: 0.72rem; opacity: 0.85; color: #9fd0ff; }
 </style>

@@ -235,5 +235,29 @@ Sampler voices a different chord than the LM received, the two disagree.
 `jam-midi.ts` adds `startMidiProgBridge` / `stopMidiProgBridge` (25 fps
 `setInterval`, slot advance re-arms notes, previous slot releases).
 
-Verification: unit 10/10 (jam-prog) + 13/13 (jam-radio), gate GREEN, build
-green. JAM-1..4 green on the standalone surface.
+Verification: jam-radio/progression/vocal unit suites (28/28), production build,
+JAM-1..4 plus the `view=jam` alias journey, and a normal explorer deep-link
+smoke are green. The jam journey also verifies that no engine asset is fetched.
+
+## Style-follow endpoint (blocked on mrt2)
+
+Design posted (msg 1584): `POST /style_audio {pcm_b64, sr}` → 10s
+rolling buffer → MusicCoCa embed every 2-4s → tokenize → swap
+`style_tokens` in the LM conditioning block. Covers speech/poetry/song
+vibe-following; rap-downbeat sync and melody harmonizing stay separate
+future dials.
+
+**Status: blocked.** `jam_server.py` line 24 does
+`import surf_style_helper as surf_helper` but the module does not exist on
+disk (`find mrt2 -name "*surf*"` returns nothing), so the endpoint has no
+implementation to call. Owner is `codex-disk` (they own `jam_server.py`).
+Do not touch that file until they post the seam.
+
+Client side is ready to go the moment the endpoint exists:
+`jam-radio.ts` already sends `uiReady` + held chord on connect and flushes
+a pending queue on open, so a `POST /style_audio` call from the dial just
+needs a `fetch()` wrapper. The MusicCoCa embed itself is measured at
+~3s per 10s clip on CPU (`scripts/style-ear-latency.py`, deterministic,
+cos 1.0) — cheap enough to run alongside the LM with zero GPU contention,
+but the 914MB TFLite bundle does not fit in a browser, so the embedding
+runs server-side by design.
