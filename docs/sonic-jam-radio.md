@@ -108,8 +108,11 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
 6. ✅ journey tests + fixture fix
 7. ✅ pitch-slot latent states (tier 4) — `#sonic-note-state` dial 0..11
 8. ✅ summit defaults (tier 5) — state 4 + slots {2,11}, 100/100-S, whine 2.6%
-9. ⬜ remaining starter clips + clusterMap expansion
-10. ⬜ mobile surface check (CSS ownership per `docs/css-ownership.md`)
+9. ✅ starter clips + clusterMap expansion — `manifest.json` now covers 21
+   clusters / 84 variants; all 84 referenced WAVs exist under `public/sonic`.
+10. ✅ mobile surface check (CSS ownership per `docs/css-ownership.md`) —
+    390×844 live JamView has every control in-bounds with no horizontal
+    overflow; evidence: `tmp/sonic-jam-mobile-390x844.png`.
 
 ## Tier 4 — pitch-slot latent states
 
