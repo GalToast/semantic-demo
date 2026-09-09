@@ -194,8 +194,28 @@ export function getRadioHeldNotes(): readonly NoteMessage[] {
     return heldNotes
 }
 
+/** Messages queued before the socket opens. startJamRadio sends
+ * uiReady + the held chord on onopen; anything the UI fired first
+ * (prog_set/play, a state change) is flushed right after so it is not
+ * lost. Without this, pressing prog before the radio settles is a no-op. */
+const pendingQueue: Record<string, unknown>[] = []
+
+/** Test-only view of the send queue. Exported so unit tests can assert
+ * ordering without touching the real WebSocket. */
+export function __testPendingQueue(): readonly Record<string, unknown>[] {
+    return pendingQueue
+}
+
 function send(msg: Record<string, unknown>): void {
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg))
+    else pendingQueue.push(msg)
+}
+
+function flushPending(): void {
+    while (pendingQueue.length) {
+        const msg = pendingQueue.shift()
+        if (msg && ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg))
+    }
 }
 
 /**
@@ -249,6 +269,7 @@ export function startJamRadioAt(evs: JamRadioEvents, notes: readonly NoteMessage
             // superseding the original L2-only melodic preset (whine 12.8%).
             void steerJamBandSlots(RADIO_SUMMIT_SLOTS)
             bandMode = 'tone'
+            flushPending()
             for (const n of heldNotes) send({ type: 'note_on', note: n.note, state: n.state })
             resolve(true)
         }
@@ -330,12 +351,25 @@ export interface ProgSlot {
 }
 
 const PROG_NOTES: Record<string, number> = {
-    C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
+    C: 0,
+    D: 2,
+    E: 4,
+    F: 5,
+    G: 7,
+    A: 9,
+    B: 11
 }
 const PROG_QUALS: Record<string, number[]> = {
-    maj: [0, 4, 7], '': [0, 4, 7], min: [0, 3, 7], m: [0, 3, 7],
-    '7': [0, 4, 7, 10], maj7: [0, 4, 7, 11], m7: [0, 3, 7, 10],
-    dim: [0, 3, 6], sus4: [0, 5, 7], sus2: [0, 2, 7],
+    maj: [0, 4, 7],
+    '': [0, 4, 7],
+    min: [0, 3, 7],
+    m: [0, 3, 7],
+    '7': [0, 4, 7, 10],
+    maj7: [0, 4, 7, 11],
+    m7: [0, 3, 7, 10],
+    dim: [0, 3, 6],
+    sus4: [0, 5, 7],
+    sus2: [0, 2, 7]
 }
 
 /** Parse the progression DSL into slots. Same grammar as the server's
@@ -359,11 +393,9 @@ export function parseProgressionSpec(spec: string, bpm: number): ProgSlot[] | nu
     }
     if (!bars.length) return null
     const slots: ProgSlot[] = []
-    const framesPerBeat = Math.floor(25 * 60 / bpm)
+    const framesPerBeat = Math.floor((25 * 60) / bpm)
     for (const bar of bars) {
-        const barBeats = bar.every((c) => c.beats !== null)
-            ? bar.reduce((s, c) => s + (c.beats ?? 0), 0)
-            : 4
+        const barBeats = bar.every((c) => c.beats !== null) ? bar.reduce((s, c) => s + (c.beats ?? 0), 0) : 4
         for (const c of bar) {
             const beats = c.beats ?? Math.floor(barBeats / bar.length)
             slots.push({ notes: parseProgChord(c.chord), frames: Math.round(beats * framesPerBeat) })
