@@ -17,7 +17,29 @@ const JAM_STYLE_URL = `${JAM_HTTP_URL}/style`
 const JAM_BAND_MASK_URL = `${JAM_HTTP_URL}/band_mask`
 
 export type JamPole = 'beat' | 'best'
-export type JamBandPreset = 'melodic' | 'beat' | 'production' | 'clean_melodic' | 'harmonic' | 'spectral' | 'all' | 'none'
+export type JamBandPreset =
+    | 'melodic'
+    | 'beat'
+    | 'production'
+    | 'clean_melodic'
+    | 'harmonic'
+    | 'spectral'
+    | 'all'
+    | 'none'
+
+/** New-summit band slots: {2,11} at cond 11 (radio state 4) = 100/100-S with
+ * whine 2.6% (vs L2-alone's 12.8%) and a more musical tempo (137 bpm).
+ * Slot 11 is the non-interfering companion discovered in the whine scan;
+ * slots 1 and 3 are poison (never include) — mrt2 tmp/WHINE_SCAN_RESULTS.md
+ * and FINAL_SCAN_RESULTS.md. */
+export const RADIO_SUMMIT_SLOTS: readonly number[] = [2, 11]
+
+/** Build the /band_mask request body. Accepts a named preset or explicit
+ * per-RVQ-level slots (server contract: {preset|slots}, commit 26bf210).
+ * Exported pure for unit testing. */
+export function bandMaskBody(presetOrSlots: JamBandPreset | readonly number[]): Record<string, unknown> {
+    return Array.isArray(presetOrSlots) ? { slots: [...presetOrSlots] } : { preset: presetOrSlots }
+}
 
 /** Steer any live jam session toward `pole`. Resolves true when accepted. */
 export function steerJam(pole: JamPole): Promise<boolean> {
@@ -31,13 +53,26 @@ export function steerJam(pole: JamPole): Promise<boolean> {
 }
 
 /** Set the live jam's band-selectable style mask (per-RVQ-level conditioning).
- * Presets from BAND_SELECTABLE_STYLE.md; 'production' is the only config with
- * quality (88-A), rhythm (0.671), AND spectral cleanliness (1.5%) together. */
+ * Accepts a named preset or explicit slots. The summit config is
+ * RADIO_SUMMIT_SLOTS ({2,11}); 'production' remains the legacy all-axes
+ * fallback (88-A / 0.671 / 1.5%). */
 export function steerJamBandMask(preset: JamBandPreset): Promise<boolean> {
     return fetch(JAM_BAND_MASK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preset })
+        body: JSON.stringify(bandMaskBody(preset))
+    })
+        .then((r) => r.ok)
+        .catch(() => false)
+}
+
+/** Set the live jam's style mask to explicit per-RVQ-level slots (e.g. the
+ * {2,11} summit). Same endpoint as steerJamBandMask with the slots field. */
+export function steerJamBandSlots(slots: readonly number[]): Promise<boolean> {
+    return fetch(JAM_BAND_MASK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bandMaskBody(slots))
     })
         .then((r) => r.ok)
         .catch(() => false)

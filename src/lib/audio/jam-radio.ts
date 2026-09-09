@@ -23,7 +23,7 @@
  */
 
 import { JAM_WS_URL } from '@lib/audio/jam-config'
-import { steerJamBandMask } from '@lib/audio/jam-steer'
+import { RADIO_SUMMIT_SLOTS, steerJamBandSlots } from '@lib/audio/jam-steer'
 
 /** Radio's held notes: a soft A-minor add9 voicing (MIDI indices into the
  * model's 128-pitch vector) so the stream plays unattended.
@@ -177,10 +177,11 @@ export function startJamRadioAt(evs: JamRadioEvents, notes: readonly NoteMessage
             settled = true
             setState('live')
             send({ type: 'uiReady' })
-            // Activate the summit band mask (L2 melodic carrier) alongside
-            // the pitch state — the super-additive combination scored
-            // 100/100-S (mrt2 tmp/SUMMIT_RESULTS.md).
-            void steerJamBandMask('melodic')
+            // Activate the summit band mask alongside the pitch state.
+            // Slots {2,11} at cond 11 = 100/100-S with whine 2.6% and
+            // tempo 137 — the whine-clean summit (mrt2 tmp/WHINE_SCAN_RESULTS.md),
+            // superseding the original L2-only melodic preset (whine 12.8%).
+            void steerJamBandSlots(RADIO_SUMMIT_SLOTS)
             for (const n of heldNotes) send({ type: 'note_on', note: n.note, state: n.state })
             resolve(true)
         }
