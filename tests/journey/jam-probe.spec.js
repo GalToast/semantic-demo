@@ -24,7 +24,11 @@ test('JAM-PROBE. Log every frame the live jam sends', async ({ page }) => {
                 // assignment here would be silently overwritten.
                 this.addEventListener('message', (ev) => {
                     let msg
-                    try { msg = JSON.parse(ev.data) } catch { return }
+                    try {
+                        msg = JSON.parse(ev.data)
+                    } catch {
+                        return
+                    }
                     window.__types[msg.type] = (window.__types[msg.type] || 0) + 1
                     if (msg.type === 'audio' && typeof msg.data === 'string') {
                         const bin = atob(msg.data) // eslint-disable-line no-undef
@@ -41,10 +45,12 @@ test('JAM-PROBE. Log every frame the live jam sends', async ({ page }) => {
     await page.waitForFunction(() => document.querySelector('[data-testid="jam-view"]'), { timeout: 30000 })
 
     await page.evaluate(() => document.querySelector('#jam-play').click())
-    const live = await page.waitForFunction(
-        () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
-        { timeout: 30000 }
-    ).catch(() => null)
+    const live = await page
+        .waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        .catch(() => null)
 
     if (!live) {
         console.log('JAM DOWN')
@@ -57,7 +63,7 @@ test('JAM-PROBE. Log every frame the live jam sends', async ({ page }) => {
         types: window.__types,
         sent: window.__sent.slice(0, 4),
         frames: window.__frames.length,
-        bytes: window.__frames.reduce((a, b) => a + b.byteLength, 0),
+        bytes: window.__frames.reduce((a, b) => a + b.byteLength, 0)
     }))
 
     console.log('FRAME TYPES FROM SERVER:', JSON.stringify(result.types))
