@@ -158,3 +158,12 @@ surfaces. `setRadioBandMode('tone'|'beat')` fires
 clean (whine 2.6%), beat for pulse (beat 0.586). Dial `#sonic-band` button
 in live mode cycles them; the preset resets to tone on every (re)connect
 to match what the server gets at `ws.onopen`.
+
+## Tier 8 — measured pairs (sign-reversal guard)
+
+The style×pitch interaction reverses sign across cond 11→12 (c11: L2 +12,
+all12 −11; c12: L2 −9, all12 +4), so pitch and band dials are coupled —
+independent dials can serve unmeasured combos under summit branding.
+`MEASURED_PAIRS` lists the ear-scored combos ({4,tone}, {4,beat});
+`isMeasuredPair()` gates the UI. The LIVE badge is a button: one click
+restores the summit pair. Unmeasured combos show an amber `*` marker.

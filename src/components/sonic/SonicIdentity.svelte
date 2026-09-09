@@ -14,6 +14,7 @@
   import { startJamRadio, stopJamRadio, getRadioState, setRadioNoteState } from '@lib/audio/jam-radio';
   import { setRadioProg, playRadioProg, stopRadioProg, DEFAULT_PROG_SPEC } from '@lib/audio/jam-radio';
   import { setRadioBandMode, getRadioBandMode, type RadioBandMode } from '@lib/audio/jam-radio';
+  import { isMeasuredPair, SUMMIT_STATE } from '@lib/audio/jam-radio';
   import { requestRadioProgStatus, type RadioProgStatus } from '@lib/audio/jam-radio';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
 
@@ -91,6 +92,14 @@
   function cycleBandMode(): void {
     bandMode = bandMode === 'tone' ? 'beat' : 'tone';
     setRadioBandMode(bandMode);
+  }
+  // Summit restore: the interaction reverses sign across cond steps, so
+  // only measured pairs are summit-grade. One click returns both dials.
+  function restoreSummit(): void {
+    noteState = SUMMIT_STATE;
+    bandMode = 'tone';
+    setRadioNoteState(SUMMIT_STATE);
+    setRadioBandMode('tone');
   }
   // Last server-confirmed prog status (null until the first prog_status
   // reply). The toggle is optimistic; this is ground truth when present.
@@ -192,7 +201,14 @@
     >{live ? (radioPlaying ? '⏸' : '▶') : (playing ? '⏸' : '▶')}</button>
     <div class="sonic-meta">
       {#if live}
-        <span id="sonic-live-badge" class="sonic-live">LIVE</span>
+        <button
+          id="sonic-live-badge"
+          class="sonic-live"
+          type="button"
+          aria-label="Restore summit pair (state 4 + tone preset)"
+          title="Back to the measured summit: state 4 + tone {2,11}, 100/100-S."
+          onclick={restoreSummit}
+        >LIVE{#if !isMeasuredPair(noteState, bandMode)}<span class="sonic-unmeasured" title="Untested pitch×band combo — quality unknown.">*</span>{/if}</button>
       <button
         id="sonic-note-state"
         class="sonic-note-state"
@@ -299,6 +315,15 @@
     border-radius: 0.25rem;
     padding: 0 0.3rem;
     line-height: 1.5;
+    background: transparent;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .sonic-live:hover { background: rgba(255, 107, 107, 0.12); }
+  .sonic-unmeasured {
+    color: #ffd27d;
+    font-weight: 700;
+    margin-left: 0.15rem;
   }
   .sonic-note-state {
     flex: none;

@@ -695,4 +695,73 @@ test.describe('Sonic identity journey', () => {
         )
         await expect(band).toHaveAttribute('aria-pressed', 'false')
     })
+
+    // SONIC-10: the LIVE badge restores the measured summit pair, and
+    // unmeasured pitch×band combos are marked (the interaction reverses
+    // sign across cond steps, so only measured pairs are summit-grade).
+    // WS mocked + fetch recorded in-page — no server needed.
+    test('SONIC-10. Live badge restores summit; untested combos marked', async ({ page }) => {
+        await page.addInitScript(() => {
+            window.__ws = { url: null, sent: [], closed: 0 }
+            class FakeWebSocket {
+                constructor(url) {
+                    window.__ws.url = url
+                    this.readyState = 0
+                    setTimeout(() => {
+                        this.readyState = 1
+                        if (this.onopen) this.onopen()
+                    }, 10)
+                }
+                send(data) { window.__ws.sent.push(String(data)) }
+                close() { window.__ws.closed += 1; this.readyState = 3 }
+            }
+            FakeWebSocket.OPEN = 1
+            window.WebSocket = FakeWebSocket
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, { waitUntil: 'domcontentloaded' })
+
+        const start = Date.now()
+        let found = false
+        while (Date.now() - start < 15000) {
+            found = await page.evaluate(() => !!document.querySelector('#sonic-style'))
+            if (found) break
+            await page.waitForTimeout(100)
+        }
+        expect(found, 'sonic style dial must appear').toBe(true)
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#sonic-style')
+                const rect = el ? el.getBoundingClientRect() : null
+                return !!el && rect && rect.width > 0 && rect.height > 0
+            },
+            { timeout: 30000, polling: 200 }
+        )
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForTimeout(100)
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('.sonic-identity')
+                return el && el.getAttribute('data-live') === 'true'
+            },
+            { timeout: 30000 }
+        )
+        await page.waitForFunction(() => window.__ws && window.__ws.sent.length >= 5, { timeout: 30000 })
+
+        // Summit default: no untested marker.
+        await expect(page.locator('.sonic-unmeasured')).toHaveCount(0)
+
+        // Leave the measured pair: cycle state 4 -> 5, marker appears.
+        await page.evaluate(() => document.querySelector('#sonic-note-state').click())
+        await expect(page.locator('#sonic-note-state')).toHaveText(/5/)
+        await expect(page.locator('.sonic-unmeasured')).toHaveCount(1)
+
+        // Badge click restores summit pair and clears the marker.
+        const sentBefore = await page.evaluate(() => window.__ws.sent.length)
+        await page.evaluate(() => document.querySelector('#sonic-live-badge').click())
+        await expect(page.locator('#sonic-note-state')).toHaveText(/4/)
+        await expect(page.locator('.sonic-unmeasured')).toHaveCount(0)
+        const sentAfter = await page.evaluate(() => window.__ws.sent.length)
+        expect(sentAfter, 'restore must re-arm chord + band').toBeGreaterThan(sentBefore)
+    })
 })

@@ -294,3 +294,21 @@ export function setRadioBandMode(mode: RadioBandMode): void {
     bandMode = mode
     void steerJamBandSlots(RADIO_BAND_SLOTS[mode])
 }
+
+/** Measured-good pitch×band pairs (ear-scored, same seed/frames family).
+ * The style×pitch interaction REVERSES SIGN across cond steps (c11: L2 +12,
+ * all12 −11; c12: L2 −9, all12 +4), so unlisted combos are genuinely
+ * unknown — the dials must not present them as summit-grade. */
+export interface MeasuredPair {
+    state: number
+    mode: RadioBandMode
+    score: string
+}
+export const MEASURED_PAIRS: readonly MeasuredPair[] = [
+    { state: 4, mode: 'tone', score: '100/100-S whine 2.6%' },
+    { state: 4, mode: 'beat', score: '100/100-S beat 0.586' },
+]
+export function isMeasuredPair(state: number, mode: RadioBandMode): boolean {
+    return MEASURED_PAIRS.some((p) => p.state === state && p.mode === mode)
+}
+export const SUMMIT_STATE = 4
