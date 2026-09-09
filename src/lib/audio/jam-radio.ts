@@ -23,6 +23,7 @@
  */
 
 import { JAM_WS_URL } from '@lib/audio/jam-config'
+import { steerJamBandMask } from '@lib/audio/jam-steer'
 
 /** Radio's held notes: a soft A-minor add9 voicing (MIDI indices into the
  * model's 128-pitch vector) so the stream plays unattended.
@@ -37,15 +38,18 @@ import { JAM_WS_URL } from '@lib/audio/jam-config'
  * builds pr = zeros(128) then pr[note] = state, so any value 0..11 is
  * accepted as-is — no graph change, no re-export, no LM restart. */
 const RADIO_HELD_NOTES: { note: number; state: number }[] = [
-    { note: 45, state: 1 },
-    { note: 52, state: 1 },
-    { note: 57, state: 1 },
-    { note: 64, state: 1 },
-    { note: 71, state: 1 }
+    { note: 45, state: 4 },
+    { note: 52, state: 4 },
+    { note: 57, state: 4 },
+    { note: 64, state: 4 },
+    { note: 71, state: 4 }
 ]
 
-/** Default note state: 1 = held, matching Google's documented sampler output. */
-const DEFAULT_NOTE_STATE = 1
+/** Default note state: 4 = the summit configuration (cond 11 + L2 band =
+ * 100/100-S, first perfect score — see mrt2 tmp/SUMMIT_RESULTS.md).
+ * State 1 (held) is Google's documented default; state 4 is the
+ * super-additive discovery from the pitch ladder × band style cross-sweep. */
+const DEFAULT_NOTE_STATE = 4
 
 export type RadioState = 'idle' | 'connecting' | 'live'
 
@@ -159,6 +163,10 @@ export function startJamRadioAt(evs: JamRadioEvents, notes: readonly NoteMessage
             settled = true
             setState('live')
             send({ type: 'uiReady' })
+            // Activate the summit band mask (L2 melodic carrier) alongside
+            // the pitch state — the super-additive combination scored
+            // 100/100-S (mrt2 tmp/SUMMIT_RESULTS.md).
+            void steerJamBandMask('melodic')
             for (const n of heldNotes) send({ type: 'note_on', note: n.note, state: n.state })
             resolve(true)
         }
