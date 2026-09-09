@@ -45,6 +45,23 @@ const RADIO_HELD_NOTES: { note: number; state: number }[] = [
     { note: 71, state: 4 }
 ]
 
+/** Human labels for the 12 pitch-slot states. Single source for every
+ * dial surface (SonicIdentity, JamView) so wording never drifts. */
+export const STATE_LABELS: Record<number, string> = {
+    0: 'silent',
+    1: 'held',
+    2: 'onset',
+    3: 'free ★ documented',
+    4: 'summit ★ 100/S',
+    5: 'ghost',
+    6: 'tremolo',
+    7: 'roll',
+    8: 'ping',
+    9: 'swell',
+    10: 'ladder 95/S',
+    11: 'flare'
+}
+
 /** Default note state: 4 = the summit configuration (cond 11 + L2 band =
  * 100/100-S, first perfect score — see mrt2 tmp/SUMMIT_RESULTS.md).
  * State 1 (held) is Google's documented default; state 4 is the
@@ -303,6 +320,97 @@ export function setRadioNoteState(state: number): void {
  * movement experiment — does the 100/S survive chord changes? */
 export const DEFAULT_PROG_SPEC = 'Am 4 | F 4 | C 4 | G 4'
 export const DEFAULT_PROG_BPM = 100
+
+/** One slot of a parsed progression: the chord to voice for `frames` ticks.
+ * Mirrors chord_sequencer.parse_prog / parse_chord (same DSL, same voicing
+ * 48..72) so the client can schedule MIDI without asking the server. */
+export interface ProgSlot {
+    notes: number[]
+    frames: number
+}
+
+const PROG_NOTES: Record<string, number> = {
+    C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
+}
+const PROG_QUALS: Record<string, number[]> = {
+    maj: [0, 4, 7], '': [0, 4, 7], min: [0, 3, 7], m: [0, 3, 7],
+    '7': [0, 4, 7, 10], maj7: [0, 4, 7, 11], m7: [0, 3, 7, 10],
+    dim: [0, 3, 6], sus4: [0, 5, 7], sus2: [0, 2, 7],
+}
+
+/** Parse the progression DSL into slots. Same grammar as the server's
+ * chord_sequencer so client-side scheduling matches server-side LM steering.
+ * Returns null on a malformed spec (caller falls back to the server's
+ * prog_status reply, which carries the parsed slots). */
+export function parseProgressionSpec(spec: string, bpm: number): ProgSlot[] | null {
+    if (!spec.trim() || !Number.isFinite(bpm) || bpm <= 0) return null
+    const bars: { chord: string; beats: number | null }[][] = []
+    for (const part of spec.split('|')) {
+        const entries = part.trim().split()
+        const chords: { chord: string; beats: number | null }[] = []
+        for (const entry of entries) {
+            if (entry && entry[0] >= '0' && entry[0] <= '9') {
+                if (chords.length) chords[chords.length - 1].beats = parseInt(entry, 10)
+            } else if (entry) {
+                chords.push({ chord: entry, beats: null })
+            }
+        }
+        if (chords.length) bars.push(chords)
+    }
+    if (!bars.length) return null
+    const slots: ProgSlot[] = []
+    const framesPerBeat = Math.floor(25 * 60 / bpm)
+    for (const bar of bars) {
+        const barBeats = bar.every((c) => c.beats !== null)
+            ? bar.reduce((s, c) => s + (c.beats ?? 0), 0)
+            : 4
+        for (const c of bar) {
+            const beats = c.beats ?? Math.floor(barBeats / bar.length)
+            slots.push({ notes: parseProgChord(c.chord), frames: Math.round(beats * framesPerBeat) })
+        }
+    }
+    return slots.length ? slots : null
+}
+
+function parseProgChord(spec: string): number[] {
+    const tok = spec.trim()
+    const rootCh = tok[0].toUpperCase()
+    if (!(rootCh in PROG_NOTES)) throw new Error('bad root in ' + spec)
+    // NOTE: the server's parse_chord walks the WHOLE token counting #/b
+    // (so 'Am' reads as A-1, not A — a bug, but it is the authority: the
+    // LM is steered by the server's slots, so the client MIDI scheduler
+    // must voice the same pitches or the Sampler plays a different chord
+    // than the model actually heard). Only '#' and 'b' count here, not
+    // 'm'/'maj'/'7' — mirroring the server's `if tok[i] in '#b'`.
+    let i = 1
+    let acc = 0
+    while (i < tok.length) {
+        if (tok[i] === '#') acc += 1
+        else if (tok[i] === 'b') acc -= 1
+        i += 1
+    }
+    let rest = tok.slice(1)
+    let qual = 'maj'
+    for (const q of Object.keys(PROG_QUALS).sort((a, b) => b.length - a.length)) {
+        if (rest.startsWith(q)) {
+            qual = q
+            rest = rest.slice(q.length)
+            break
+        }
+    }
+    const msh = rest.match(/([+-]?\d+)$/)
+    const octShift = msh ? parseInt(msh[1], 10) : 0
+    const rootPc = PROG_NOTES[rootCh] + acc
+    const low = 48 + octShift * 12
+    const midi: number[] = []
+    for (const off of PROG_QUALS[qual]) {
+        let p = rootPc + off
+        while (p < low) p += 12
+        while (p > low + 24) p -= 12
+        midi.push(p)
+    }
+    return [...new Set(midi)].sort((a, b) => a - b)
+}
 
 /** Load a chord progression into the jam's prog engine (does not start
  * playback). Resolves the server's slot table, or null when not live. */

@@ -20,8 +20,13 @@ checks.append(
 )
 checks.append(("SonicIdentity has cycleNoteState", "cycleNoteState" in svelte))
 checks.append(("SonicIdentity has STATE_LABELS", "STATE_LABELS" in svelte))
+with open(os.path.join(ROOT, "src/lib/audio/jam-radio.ts"), encoding="utf-8") as f:
+    radio_src = f.read()
 checks.append(
-    ("SonicIdentity labels state 4 as summit", "summit" in svelte and "100/S" in svelte)
+    (
+        "S jam-radio STATE_LABELS names state 4 summit",
+        "summit" in radio_src and "100/S" in radio_src,
+    )
 )
 checks.append(("SonicIdentity has #sonic-prog button", "sonic-prog" in svelte))
 checks.append(
@@ -119,6 +124,12 @@ if os.path.isdir(dist_dir):
                     bundle_text += f.read()
 checks.append(("dist/svelte has JS bundles", len(bundle_files) > 0))
 checks.append(("bundle has sonic-note-state", "sonic-note-state" in bundle_text))
+checks.append(
+    (
+        "bundle has JamView surface",
+        "jam-view" in bundle_text and "jam-state" in bundle_text,
+    )
+)
 # NOTE: `best 95/S`, `setRadioNoteState(` and `cycleNoteState` are NOT checked
 # against the bundle — Vite strips the star from the string literal and
 # minifies the identifiers, so they are unrecoverable in the output. Source

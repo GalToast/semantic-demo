@@ -185,3 +185,37 @@ sustain pedal (CC64) defers releases. Dial `#sonic-midi` button toggles
 device attach (shows count); MIDI stops with every radio stop. No-MIDI
 and denied-permission resolve -1 — the dial works regardless. Zero server
 changes: the note protocol already spoke it.
+
+## JamView standalone surface (?jam=1)
+
+The radio as a music app instead of a panel: `src/components/JamView.svelte`
+mounts INSTEAD of the explorer shell when `?jam=1` (or `?view=jam`) —
+before any engine-gated chrome, so no Canvas/WebGL ever mounts and the
+surface costs no GPU. Never co-mounted with SonicIdentity (each holds its
+own dial state). Big transport, state dial, band/prog/MIDI/mic controls,
+server-confirmed status line, summit restore. Journey:
+`tests/journey/jam-view.spec.js` (JAM-1..4, no WebGL needed).
+
+## Progression MIDI bridge (tier 11)
+
+The prog button now voices the **full Am–F–C–G** through the Sampler, not
+just the held chord. `jam-radio.ts` gains `parseProgressionSpec` + `parseProgChord`
+— a client-side mirror of `mrt2/tmp/chord_sequencer.py`'s `parse_prog` /
+`parse_chord`, so the scheduler needs no server round-trip per tick.
+
+Why mirror the server instead of reading its `prog_status` reply? The reply
+carries `slots[].notes`, but only on `prog_set` — once playback starts the
+engine runs autonomously and the client must keep scheduling itself. The
+mirror is pinned by `tests/unit-active/jam-prog.test.ts`, where every
+expected pitch was captured by running the canonical Python against the
+same spec strings.
+
+One deliberate divergence from the *correct* behaviour: the server's
+`parse_chord` counts `#`/`b` across the **whole** token, so `Am` reads as
+A−1 (a bug). The client reproduces it on purpose — if the Sampler voiced
+`A-C-E` while the LM was steered with `A♭-C-E♭`, the two would disagree.
+`jam-midi.ts` adds `startMidiProgBridge` / `stopMidiProgBridge` (25 fps
+`setInterval`, slot advance re-arms notes, previous slot releases).
+
+Verification: unit 10/10 (jam-prog) + 13/13 (jam-radio), gate GREEN, build
+green. JAM-1..4 green on the standalone surface.

@@ -192,6 +192,76 @@ export function stopMidiBridge(): void {
     bridgeOn = false
 }
 
+/** Progression scheduler: voices the parsed chord slots through the bridge
+ * at the server's 25fps, re-arming notes when the slot advances and releasing
+ * the previous slot's notes. Autonomous — no server round-trip per tick, so
+ * the Sampler plays the full Am–F–C–G, not just the held chord. */
+let progTimer: ReturnType<typeof setInterval> | null = null
+let progSlots: { notes: number[]; frames: number }[] = []
+let progIdx = 0
+let progFrame = 0
+let progBpm = 100
+let progActiveNotes = new Set<number>()
+
+export function startMidiProgBridge(
+    slots: { notes: number[]; frames: number }[],
+    bpm: number = 100,
+): void {
+    if (!slots.length) return
+    stopMidiProgBridge()
+    progSlots = slots
+    progBpm = bpm
+    progIdx = 0
+    progFrame = 0
+    progActiveNotes = new Set<number>()
+    voiceSlot(0)
+    progTimer = setInterval(() => {
+        progFrame += 1
+        const slot = progSlots[progIdx]
+        if (progFrame >= slot.frames) {
+            progIdx = (progIdx + 1) % progSlots.length
+            progFrame = 0
+            voiceSlot(progIdx)
+        }
+    }, 40)
+}
+
+export function stopMidiProgBridge(): void {
+    if (progTimer) {
+        clearInterval(progTimer)
+        progTimer = null
+    }
+    for (const n of progActiveNotes) {
+        try {
+            midiOut()?.send([0x80, n, 0])
+        } catch { /* ignore */ }
+    }
+    progActiveNotes = new Set<number>()
+}
+
+export function isMidiProgBridgeOn(): boolean {
+    return progTimer !== null
+}
+
+function voiceSlot(idx: number): void {
+    const out = midiOut()
+    if (!out) return
+    const next = new Set<number>(progSlots[idx]?.notes ?? [])
+    // Release notes no longer in this slot.
+    for (const n of progActiveNotes) {
+        if (!next.has(n)) {
+            try { out.send([0x80, n, 0]) } catch { /* ignore */ }
+        }
+    }
+    // Press new notes (velocity 96 — presence-only, same as the chord bridge).
+    for (const n of next) {
+        if (!progActiveNotes.has(n)) {
+            try { out.send([0x90, n, 96]) } catch { /* ignore */ }
+        }
+    }
+    progActiveNotes = next
+}
+
 export function isMidiBridgeOn(): boolean {
     return bridgeOn
 }
