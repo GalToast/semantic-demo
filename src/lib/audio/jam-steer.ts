@@ -68,6 +68,28 @@ export function steerJamBandMask(preset: JamBandPreset): Promise<boolean> {
 
 /** Set the live jam's style mask to explicit per-RVQ-level slots (e.g. the
  * {2,11} summit). Same endpoint as steerJamBandMask with the slots field. */
+
+/** Clamp a continuous-morph t value into the safe range: [0,1], with the
+ * poison zone [0.74,0.82] (whine spike, fine map a4ebf93) snapped down to
+ * 0.72. Pure — unit tested. */
+export function clampMorphT(t: number): number {
+    const v = Math.max(0, Math.min(1, Number(t) || 0))
+    return v >= 0.74 && v <= 0.82 ? 0.72 : v
+}
+
+/** Continuous style morph: t in [0,1] between the current style's table
+ * rows and the +500 companion rows. Server interpolates the style table
+ * per frame; the poison zone is clamped client-side before sending. */
+export function steerJamStyleInterp(t: number): Promise<boolean> {
+    return fetch(`${JAM_HTTP_URL}/style_interp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ t: clampMorphT(t) })
+    })
+        .then((r) => r.ok)
+        .catch(() => false)
+}
+
 export function steerJamBandSlots(slots: readonly number[]): Promise<boolean> {
     return fetch(JAM_BAND_MASK_URL, {
         method: 'POST',

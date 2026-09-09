@@ -5,7 +5,7 @@
  * (mrt2 tmp/WHINE_SCAN_RESULTS.md, FINAL_SCAN_RESULTS.md).
  */
 import { describe, it, expect } from 'vitest'
-import { bandMaskBody, RADIO_SUMMIT_SLOTS } from '../../src/lib/audio/jam-steer'
+import { bandMaskBody, clampMorphT, RADIO_SUMMIT_SLOTS } from '../../src/lib/audio/jam-steer'
 
 describe('bandMaskBody', () => {
     it('wraps a named preset in the {preset} field', () => {
@@ -40,5 +40,24 @@ describe('RADIO_SUMMIT_SLOTS', () => {
 
     it('keeps slot 2 — the single-slot resonance carrier', () => {
         expect(RADIO_SUMMIT_SLOTS).toContain(2)
+    })
+})
+
+describe('clampMorphT', () => {
+    it('passes values in the safe range through unchanged', () => {
+        expect(clampMorphT(0)).toBe(0)
+        expect(clampMorphT(0.5)).toBe(0.5)
+        expect(clampMorphT(1)).toBe(1)
+        expect(clampMorphT(0.72)).toBe(0.72)
+    })
+    it('snaps the poison zone [0.74,0.82] down to 0.72', () => {
+        expect(clampMorphT(0.78)).toBe(0.72)
+        expect(clampMorphT(0.74)).toBe(0.72)
+        expect(clampMorphT(0.82)).toBe(0.72)
+    })
+    it('clamps out-of-range and garbage input into [0,1]', () => {
+        expect(clampMorphT(-1)).toBe(0)
+        expect(clampMorphT(2)).toBe(1)
+        expect(clampMorphT(NaN)).toBe(0)
     })
 })
