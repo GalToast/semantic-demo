@@ -82,8 +82,18 @@ checks.append(
 )
 with open(os.path.join(ROOT, "src/lib/audio/jam-midi.ts"), encoding="utf-8") as f:
     midi = f.read()
-checks.append(("jam-midi voices keys at dial state", "pressRadioNote" in midi and "getState()" in midi))
-checks.append(("jam-midi defers note_off on sustain", "deferredOff" in midi and "releaseRadioNote" in midi))
+checks.append(
+    (
+        "jam-midi voices keys at dial state",
+        "pressRadioNote" in midi and "getState()" in midi,
+    )
+)
+checks.append(
+    (
+        "jam-midi defers note_off on sustain",
+        "deferredOff" in midi and "releaseRadioNote" in midi,
+    )
+)
 checks.append(("SonicIdentity has #sonic-midi button", "sonic-midi" in svelte))
 checks.append(("jam-radio has default prog spec", "DEFAULT_PROG_SPEC" in radio))
 checks.append(

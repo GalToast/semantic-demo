@@ -785,8 +785,13 @@ test.describe('Sonic identity journey', () => {
                         if (this.onopen) this.onopen()
                     }, 10)
                 }
-                send(data) { window.__ws.sent.push(String(data)) }
-                close() { window.__ws.closed += 1; this.readyState = 3 }
+                send(data) {
+                    window.__ws.sent.push(String(data))
+                }
+                close() {
+                    window.__ws.closed += 1
+                    this.readyState = 3
+                }
             }
             FakeWebSocket.OPEN = 1
             window.WebSocket = FakeWebSocket
@@ -842,21 +847,20 @@ test.describe('Sonic identity journey', () => {
 
         // Sustain pedal down, key up: note_off deferred, not sent.
         await page.evaluate(() => window.__midiInput.onmidimessage({ data: new Uint8Array([0xb0, 64, 127]) }))
-        const offsBefore = await page.evaluate(() =>
-            window.__ws.sent.filter((m) => m.includes('"note_off"') && m.includes('"note":60')).length
+        const offsBefore = await page.evaluate(
+            () => window.__ws.sent.filter((m) => m.includes('"note_off"') && m.includes('"note":60')).length
         )
         await page.evaluate(() => window.__midiInput.onmidimessage({ data: new Uint8Array([0x80, 60, 0]) }))
         await page.waitForTimeout(300)
-        const offsHeld = await page.evaluate(() =>
-            window.__ws.sent.filter((m) => m.includes('"note_off"') && m.includes('"note":60')).length
+        const offsHeld = await page.evaluate(
+            () => window.__ws.sent.filter((m) => m.includes('"note_off"') && m.includes('"note":60')).length
         )
         expect(offsHeld, 'sustain must defer note_off').toBe(offsBefore)
 
         // Pedal up releases the deferred note.
         await page.evaluate(() => window.__midiInput.onmidimessage({ data: new Uint8Array([0xb0, 64, 0]) }))
         await page.waitForFunction(
-            () =>
-                window.__ws.sent.some((m) => m.includes('"note_off"') && m.includes('"note":60')),
+            () => window.__ws.sent.some((m) => m.includes('"note_off"') && m.includes('"note":60')),
             { timeout: 30000 }
         )
     })

@@ -11,10 +11,12 @@
   import { loadSonicManifest, pickVariantForNode, type SonicManifest, type SonicClip, type SonicStyle } from '@lib/sonic/sonic-manifest';
   import { playSonicIdentity, stopSonicIdentity, isPlaying } from '@lib/audio/sonic-identity';
   import { steerJam } from '@lib/audio/jam-steer';
-  import { startJamRadio, stopJamRadio, getRadioState, setRadioNoteState } from '@lib/audio/jam-radio';
+  import { startJamRadio, stopJamRadio, getRadioState, setRadioNoteState, getRadioHeldNotes } from '@lib/audio/jam-radio';
   import { setRadioProg, playRadioProg, stopRadioProg, DEFAULT_PROG_SPEC } from '@lib/audio/jam-radio';
   import { setRadioBandMode, getRadioBandMode, type RadioBandMode } from '@lib/audio/jam-radio';
   import { startMidiInput, stopMidiInput } from '@lib/audio/jam-midi';
+  import { startMidiBridge, stopMidiBridge, bridgeChordToMidi, isMidiBridgeOn } from '@lib/audio/jam-midi';
+  import { startVocalMonitor, stopVocalMonitor, isVocalMonitoring } from '@lib/audio/jam-vocal';
   import { isMeasuredPair, SUMMIT_STATE } from '@lib/audio/jam-radio';
   import { requestRadioProgStatus, type RadioProgStatus } from '@lib/audio/jam-radio';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
@@ -70,11 +72,12 @@
 
   // Stop the radio if the focus card unmounts — never leak a live stream.
   // Prog rides along: a running progression must not outlive the radio.
-  $effect(() => () => { stopRadioProg(); stopMidiInput(); midiCount = 0; stopJamRadio(); });
+  $effect(() => () => { stopRadioProg(); stopMidiInput(); midiCount = 0; stopMidiBridge(); stopJamRadio(); });
 
   function cycleNoteState(): void {
     noteState = (noteState + 1) % 12;
     setRadioNoteState(noteState);
+    if (isMidiBridgeOn()) bridgeChordToMidi(getRadioHeldNotes());
   }
 
   // Progression player: loads Am–F–C–G into the jam's prog engine and
@@ -85,7 +88,13 @@
     radioPlaying = s === 'live';
     // Connect always fires the summit slots server-side — keep the dial's
     // preset in agreement so the next toggle goes beat, not tone-again.
-    if (s === 'live') bandMode = 'tone';
+    if (s === 'live') {
+      bandMode = 'tone';
+      // Bridge the summit chord to the sampler so it plays from bar one.
+      void startMidiBridge().then((ok) => {
+        if (ok) bridgeChordToMidi(getRadioHeldNotes());
+      });
+    }
   }
   // Band preset menu (whine-scan Pareto): tone = clean, beat = pulse.
   // Defaults to tone (the connect default); cycles without dropping audio.
@@ -94,7 +103,23 @@
     bandMode = bandMode === 'tone' ? 'beat' : 'tone';
     setRadioBandMode(bandMode);
   }
-  // MIDI keyboard: pitch+timing from fingers, articulation from the dial.
+  // Vocal monitor: mic pitch in, dial articulation out. -1 = unavailable.
+  let vocalOn = $state(false);
+  let vocalDenied = $state(false);
+  async function toggleVocal(): Promise<void> {
+    if (isVocalMonitoring()) {
+      stopVocalMonitor();
+      vocalOn = false;
+      return;
+    }
+    vocalDenied = false;
+    const ok = await startVocalMonitor(() => noteState);
+    if (ok) {
+      vocalOn = true;
+    } else {
+      vocalDenied = true;
+    }
+  }
   // -1 = unavailable, 0 = off, >0 = device count while attached.
   let midiCount = $state(0);
   async function toggleMidi(): Promise<void> {
@@ -154,6 +179,7 @@
       progPlaying = false;
       stopMidiInput();
       midiCount = 0;
+      stopMidiBridge();
       stopJamRadio();
       radioPlaying = false;
     }
@@ -187,6 +213,7 @@
         progPlaying = false;
         stopMidiInput();
         midiCount = 0;
+        stopMidiBridge();
         stopJamRadio();
         radioPlaying = false;
       } else {
@@ -270,6 +297,16 @@
             : `MIDI live: keys voice at state ${noteState} (${STATE_LABELS[noteState]}). Sustain pedal holds notes.`}
         onclick={toggleMidi}
       >🎹{midiCount > 0 ? midiCount : ''}</button>
+      <button
+        id="sonic-vocal"
+        class="sonic-vocal"
+        type="button"
+        aria-label={vocalOn ? 'Stop vocal monitor' : vocalDenied ? 'Microphone unavailable' : 'Monitor voice to play the jam'}
+        aria-pressed={vocalOn}
+        aria-disabled={vocalDenied}
+        title={vocalOn ? 'Listening: your pitch plays at dial state.' : 'Sing to play — pitch tracked live, articulation from the state dial.'}
+        onclick={toggleVocal}
+      >🎤</button>
       {:else if clip.ear}
         <span id="sonic-score" class="sonic-score sonic-score-{clip.ear.grade.toLowerCase()}">{clip.ear.score}/{clip.ear.grade}</span>
       {/if}

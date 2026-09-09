@@ -121,9 +121,7 @@ export function enableJamMidi(state: number = DEFAULT_NOTE_STATE): Promise<boole
 }
 
 interface MIDIAccessLike {
-    inputs: { forEach: (cb: (input: {
-        onmidimessage: ((ev: { data: Uint8Array }) => void) | null
-    }) => void) => void }
+    inputs: { forEach: (cb: (input: { onmidimessage: ((ev: { data: Uint8Array }) => void) | null }) => void) => void }
 }
 
 /** De-interleave a stereo chunk into an AudioBuffer scheduled for playback. */
@@ -172,6 +170,11 @@ function setState(s: RadioState): void {
 
 export function getRadioState(): RadioState {
     return state
+}
+
+/** Current radio chord (for the MIDI bridge). Read-only snapshot. */
+export function getRadioHeldNotes(): readonly NoteMessage[] {
+    return heldNotes
 }
 
 function send(msg: Record<string, unknown>): void {
