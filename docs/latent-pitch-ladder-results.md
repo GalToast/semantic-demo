@@ -80,3 +80,23 @@ values (0 off,1 on,2 onset,3 free)]`, mapped `cond[12:140] = steer+7`.
 - `/c/tmp/pitch_ladder/scoring.log` — decode + ear_v10 rows
 - `scripts/latent-pitch-sweep.py` — live LM+DEC stack path (superseded by the
   ONNX probe above; kept as the radio-side driver reference)
+
+## Second ladder: guidance-strength bins (geometry-confirmed, unswept)
+
+Traced from the graph (not the docs): the pitch Gather computes
+`Slice(cond[12:144]) + Constant_9` where
+`Constant_9 = [i*11 for i in 0..128] + [1417, 1464, 1511]`. Pitch slots use
+bases 0..1397; the tail maps drums→1408, cfg-mulan→1417, cfg-notes→1464,
+cfg-drums→1511. Only ONE bin per CFG slot is ever used in production
+(27/13/9). CPU geometry on the rest (scripts/cfg-ladder-geometry.py):
+adjacent-bin cosine 0.56–0.63 (far above ~0 noise — smooth manifold, NOT
+categorical like pitch states at ~0.03), cosine-to-production ~0.0–0.13,
+norms stable ~1.2, 12–13/40 distinct adjacent pairs. Character: a continuous
+guidance-strength axis. Sharp hypothesis: production bins were chosen for
+OFFICIAL FIDELITY (bin 6 ↔ official cond block), not quality — quality may
+peak elsewhere (fidelity-vs-quality tradeoff dial). Test when the stack
+allows: `LM_NOTES_CFG` bins 0..20 scored (env exists, no code change).
+Scripts: `trace-gather.py`, `trace-consts.py`, `dump-tables.py`.
+Also closed: no second ladder table exists (temporal tables are all
+norms/kernels; decoder_embedding fully addressed); solo switch is
+write-only dead code.
