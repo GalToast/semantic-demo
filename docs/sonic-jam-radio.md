@@ -1,6 +1,6 @@
 # Sonic Jam Radio — Tier 2 & 3
 
-**Status:** committed 2026-09-08 · `d176d9073` on top of `4f34ff77e` · 4/4 journey green, 4/4 unit green, build green
+**Status:** active · JAM-1..7 and focused Sonic journey green; real-WebSocket JAM-R is environment-gated on the live jam stack
 **Source:** Magenta RT2 pipeline (`mrt2/tmp/jam_server.py`, commit 03cd572 era), ear_v7.1 scorer
 
 ## What this is
@@ -86,7 +86,9 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
 
 ## Verification
 
-- **Journey** (`tests/journey/sonic.spec.js`, SONIC-1..4): play control, 3-way dial cycle, jam `/style` interception, live radio chord hold. 4/4 green at 34.8s.
+- **Journey** (`tests/journey/sonic.spec.js`, SONIC-1..4): play control, 3-way dial cycle, jam `/style` interception, live radio chord hold. 4/4 green.
+- **Standalone Jam journey** (`tests/journey/jam-view.spec.js`, JAM-1..7): engine-free surface, transport, dial/band/progression controls, vocal fallback, text steering, and continuous style morph. 8/8 green.
+- **Real-WebSocket journey** (`tests/journey/jam-real.spec.js`, JAM-R): environment-gated proof of the real 8083 handshake, `uiReady`/`note_on`, and streamed audio frames; requires the live jam stack.
 - **Unit** (`tests/unit-active/jam-radio.test.ts`): `decodePcmChunk`, `chunkToAudioBuffer`, held-notes, gapless resync. 4/4.
 - **Build**: `npm run build:svelte` — 41.51s, `[tdb-ensure] OK`, data-compression gate passes. FocusCard hash `BPGaY18Z` confirms the radio code is in the bundle.
 - **Full unit suite**: 4239/4242. The 3 failures are a pre-existing merge-reland guard, unrelated.
@@ -200,7 +202,7 @@ before any engine-gated chrome, so no Canvas/WebGL ever mounts and the
 surface costs no GPU. Never co-mounted with SonicIdentity (each holds its
 own dial state). Big transport, state dial, band/prog/MIDI/mic controls,
 server-confirmed status line, summit restore. Journey:
-`tests/journey/jam-view.spec.js` (JAM-1..4, no WebGL needed).
+`tests/journey/jam-view.spec.js` (JAM-1..7, no WebGL needed).
 
 ## Vocal monitor
 
@@ -242,7 +244,7 @@ Sampler voices a different chord than the LM received, the two disagree.
 `setInterval`, slot advance re-arms notes, previous slot releases).
 
 Verification: jam-radio/progression/vocal unit suites (28/28), production build,
-JAM-1..4 plus the `view=jam` alias journey, and a normal explorer deep-link
+JAM-1..7 plus the `view=jam` alias journey, and a normal explorer deep-link
 smoke are green. The jam journey also verifies that no engine asset is fetched.
 
 ## Audio style-follow (blocked on mrt2)
