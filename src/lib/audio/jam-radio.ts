@@ -96,6 +96,20 @@ export function chunkToAudioBuffer(ctx: AudioContext, interleaved: Float32Array)
 interface JamRadioEvents {
     onState?: (state: RadioState) => void
     onMetrics?: (m: RadioMetrics) => void
+    onProgStatus?: (s: RadioProgStatus) => void
+}
+
+/** Progression engine status, as reported by the jam server's prog_status
+ * reply (see prog_engine.status()). prog_learned replies carry notes. */
+export interface RadioProgStatus {
+    type: string
+    running?: boolean
+    slots?: number
+    idx?: number
+    frame?: number
+    bpm?: number
+    notes?: number[]
+    error?: string
 }
 
 /** Minimal scheduling state so chunk gaps never double-schedule. */
@@ -179,6 +193,8 @@ export function startJamRadioAt(evs: JamRadioEvents, notes: readonly NoteMessage
                     playChunk(ctx, msg.data)
                 } else if (msg.type === 'metrics') {
                     events.onMetrics?.(msg as unknown as RadioMetrics)
+                } else if (msg.type === 'prog_status' || msg.type === 'prog_learned') {
+                    events.onProgStatus?.(msg as unknown as RadioProgStatus)
                 }
             } catch {
                 // malformed frame — ignore, keep the stream going

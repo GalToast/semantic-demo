@@ -179,6 +179,12 @@ def record_run(state, seconds, out_wav):
     ws.send(json.dumps({"type": "uiReady"}))
     for n in CHORD:
         ws.send(json.dumps({"type": "note_on", "note": n, "state": state}))
+    # The pump only streams audio frames once the prog engine is playing
+    # (jam-radio.ts: prog_play -> engine presses notes -> audio chunks).
+    # Without this the e2e receives metrics but zero audio frames
+    # (measured: 79 metrics, 0 audio -> "no audio frames received").
+    ws.send(json.dumps({"type": "prog_set", "spec": "Am 4 | F 4 | C 4 | G 4", "bpm": 100, "loop": True}))
+    ws.send(json.dumps({"type": "prog_play"}))
     chunks = []
     seen = {}
     shapes = {}
@@ -201,6 +207,8 @@ def record_run(state, seconds, out_wav):
     for n in CHORD:
         with contextlib.suppress(Exception):
             ws.send(json.dumps({"type": "note_off", "note": n}))
+    with contextlib.suppress(Exception):
+        ws.send(json.dumps({"type": "prog_stop"}))
     ws.close()
     print(f"  frames seen: {seen}")
     print(f"  frame shapes (opcode, len, ext): {shapes}")

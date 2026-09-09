@@ -38,6 +38,7 @@ checks.append(("jam-radio has setRadioNoteState", "setRadioNoteState" in radio))
 checks.append(("jam-radio has startJamRadioAt", "startJamRadioAt" in radio))
 checks.append(("jam-radio has NoteMessage interface", "interface NoteMessage" in radio))
 checks.append(("jam-radio has prog controls", "setRadioProg" in radio and "playRadioProg" in radio and "stopRadioProg" in radio))
+checks.append(("jam-radio routes prog_status replies", "onProgStatus" in radio and "prog_learned" in radio))
 checks.append(("jam-radio has default prog spec", "DEFAULT_PROG_SPEC" in radio))
 checks.append(
     ("jam-radio held notes carry state", "state: 4" in radio and "note: 45" in radio)

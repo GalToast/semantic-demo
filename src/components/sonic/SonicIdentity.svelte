@@ -13,6 +13,7 @@
   import { steerJam } from '@lib/audio/jam-steer';
   import { startJamRadio, stopJamRadio, getRadioState, setRadioNoteState } from '@lib/audio/jam-radio';
   import { setRadioProg, playRadioProg, stopRadioProg, DEFAULT_PROG_SPEC } from '@lib/audio/jam-radio';
+  import { requestRadioProgStatus, type RadioProgStatus } from '@lib/audio/jam-radio';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
 
   interface Props {
@@ -76,6 +77,13 @@
   // starts it. The engine moves harmony while the summit config (state 4
   // + melodic band) holds the quality. Toggle off returns to the drone.
   let progPlaying = $state(false);
+  // Last server-confirmed prog status (null until the first prog_status
+  // reply). The toggle is optimistic; this is ground truth when present.
+  let progStatus = $state<RadioProgStatus | null>(null);
+  function onProgStatus(s: RadioProgStatus): void {
+    progStatus = s;
+    if (typeof s.running === 'boolean') progPlaying = s.running;
+  }
   function toggleProg(): void {
     if (progPlaying) {
       stopRadioProg();
@@ -83,6 +91,7 @@
     } else {
       setRadioProg(DEFAULT_PROG_SPEC);
       playRadioProg();
+      requestRadioProgStatus();
       progPlaying = true;
     }
   }
@@ -97,7 +106,7 @@
       stopSonicIdentity();
       playing = false;
       void steerJam(prev === 'beat' ? 'beat' : 'best');
-      void startJamRadio({ onState: (s) => { radioPlaying = s === 'live'; } });
+      void startJamRadio({ onState: (s) => { radioPlaying = s === 'live'; }, onProgStatus });
       return;
     }
     // State cycling lives on the dedicated #sonic-note-state button — the
@@ -140,7 +149,7 @@
         stopJamRadio();
         radioPlaying = false;
       } else {
-        void startJamRadio({ onState: (s) => { radioPlaying = s === 'live'; } }).then((ok) => { radioPlaying = ok; });
+        void startJamRadio({ onState: (s) => { radioPlaying = s === 'live'; }, onProgStatus }).then((ok) => { radioPlaying = ok; });
       }
       return;
     }
@@ -183,7 +192,9 @@
         type="button"
         aria-label={progPlaying ? 'Stop chord progression' : 'Play Am–F–C–G progression'}
         aria-pressed={progPlaying}
-        title="Chord progression (Am–F–C–G) through the summit config — harmonic movement experiment."
+        title={progStatus && typeof progStatus.slots === 'number'
+          ? `Progression ${progStatus.running ? 'running' : 'stopped'} — slot ${(progStatus.idx ?? 0) + 1}/${progStatus.slots} @ ${progStatus.bpm ?? 100}bpm (server-confirmed).`
+          : 'Chord progression (Am–F–C–G) through the summit config — harmonic movement experiment.'}
         onclick={toggleProg}
       >{progPlaying ? '⏹' : '𝄢'}</button>
       {:else if clip.ear}

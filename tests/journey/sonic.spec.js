@@ -456,8 +456,13 @@ test.describe('Sonic identity journey', () => {
                         if (this.onopen) this.onopen()
                     }, 10)
                 }
-                send(data) { window.__ws.sent.push(String(data)) }
-                close() { window.__ws.closed += 1; this.readyState = 3 }
+                send(data) {
+                    window.__ws.sent.push(String(data))
+                }
+                close() {
+                    window.__ws.closed += 1
+                    this.readyState = 3
+                }
             }
             FakeWebSocket.OPEN = 1
             window.WebSocket = FakeWebSocket
@@ -497,19 +502,79 @@ test.describe('Sonic identity journey', () => {
         const prog = page.locator('#sonic-prog')
         await expect(prog).toBeVisible()
         await page.evaluate(() => document.querySelector('#sonic-prog').click())
-        await page.waitForFunction(
-            () => window.__ws.sent.some((m) => m.includes('"prog_play"')),
-            { timeout: 30000 }
-        )
+        await page.waitForFunction(() => window.__ws.sent.some((m) => m.includes('"prog_play"')), { timeout: 30000 })
         const setCalls = await page.evaluate(() => window.__ws.sent.filter((m) => m.includes('"prog_set"')))
         expect(setCalls.length, 'prog toggle must send prog_set').toBeGreaterThanOrEqual(1)
-        expect(setCalls.some((m) => m.includes('Am')), 'prog spec must carry the Am–F–C–G progression').toBe(true)
+        expect(
+            setCalls.some((m) => m.includes('Am')),
+            'prog spec must carry the Am–F–C–G progression'
+        ).toBe(true)
 
         // Toggling off stops the engine.
         await page.evaluate(() => document.querySelector('#sonic-prog').click())
+        await page.waitForFunction(() => window.__ws.sent.some((m) => m.includes('"prog_stop"')), { timeout: 30000 })
+    })
+
+    // SONIC-8: server prog_status replies reach the dial. The radio routes
+    // prog_status / prog_learned frames to onProgStatus; the dial shows
+    // server-confirmed slot position and syncs the toggle to it. The mock
+    // socket stashes itself so the test can inject a server frame.
+    test('SONIC-8. Server prog_status reply syncs the dial', async ({ page }) => {
+        await page.addInitScript(() => {
+            window.__ws = { url: null, sent: [], closed: 0, sock: null }
+            class FakeWebSocket {
+                constructor(url) {
+                    window.__ws.url = url
+                    window.__ws.sock = this
+                    this.readyState = 0
+                    setTimeout(() => {
+                        this.readyState = 1
+                        if (this.onopen) this.onopen()
+                    }, 10)
+                }
+                send(data) { window.__ws.sent.push(String(data)) }
+                close() { window.__ws.closed += 1; this.readyState = 3 }
+            }
+            FakeWebSocket.OPEN = 1
+            window.WebSocket = FakeWebSocket
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, { waitUntil: 'domcontentloaded' })
+
+        const start = Date.now()
+        let found = false
+        while (Date.now() - start < 15000) {
+            found = await page.evaluate(() => !!document.querySelector('#sonic-style'))
+            if (found) break
+            await page.waitForTimeout(100)
+        }
+        expect(found, 'sonic style dial must appear').toBe(true)
         await page.waitForFunction(
-            () => window.__ws.sent.some((m) => m.includes('"prog_stop"')),
+            () => {
+                const el = document.querySelector('#sonic-style')
+                const rect = el ? el.getBoundingClientRect() : null
+                return !!el && rect && rect.width > 0 && rect.height > 0
+            },
+            { timeout: 30000, polling: 200 }
+        )
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForTimeout(100)
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('.sonic-identity')
+                return el && el.getAttribute('data-live') === 'true'
+            },
             { timeout: 30000 }
         )
+
+        // Inject a server prog_status reply as if the engine just started.
+        await page.evaluate(() =>
+            window.__ws.sock.onmessage({
+                data: JSON.stringify({ type: 'prog_status', running: true, slots: 4, idx: 1, frame: 0, bpm: 100 })
+            })
+        )
+        const prog = page.locator('#sonic-prog')
+        await expect(prog).toHaveAttribute('title', /slot 2\/4/)
+        await expect(prog).toHaveAttribute('aria-pressed', 'true')
     })
 })
