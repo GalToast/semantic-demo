@@ -247,11 +247,20 @@ rolling buffer → MusicCoCa embed every 2-4s → tokenize → swap
 vibe-following; rap-downbeat sync and melody harmonizing stay separate
 future dials.
 
-**Status: blocked.** `jam_server.py` line 24 does
-`import surf_style_helper as surf_helper` but the module does not exist on
-disk (`find mrt2 -name "*surf*"` returns nothing), so the endpoint has no
-implementation to call. Owner is `codex-disk` (they own `jam_server.py`).
-Do not touch that file until they post the seam.
+**Status: blocked — the endpoint does not exist on the server.**
+`jam_server.py` has no `/style_audio` handler at all; the only style
+endpoints it serves are `/style {pole}` (PCA poles → tokens) and
+`/style_text {text}` (tier 13). The MusicCoCa audio embedding was never
+wired into the jam.
+
+`surf_style_helper` is NOT missing — it lives at
+`mrt2/magenta_port/surf_style_helper.py` and exports
+`surf_tokens_for(x, y)` (verified live: it imports cleanly and the
+current jam is serving its tokens). What is missing is the audio path:
+`surf_style_helper` takes PCA coordinates, not a waveform, so someone has
+to write the MusicCoCa → 768-d embed → PCA → tokens bridge. Owner is
+`codex-disk` (they own `jam_server.py`). Do not touch that file until they
+post the seam.
 
 Client side is ready to go the moment the endpoint exists:
 `jam-radio.ts` already sends `uiReady` + held chord on connect and flushes
@@ -271,10 +280,11 @@ probe); this is the client half. Fire-and-forget; the dial applies it
 server-side without dropping the stream. Returns the matched anchor name
 or null on a network/parse failure.
 
-Why /style_text and not /style_audio? The audio path needs
-`surf_style_helper`, which does not exist on disk (`jam_server.py` line 24
-imports it but the module is absent). mrt2-lane's text endpoint uses 100%
-existing infrastructure — no MusicCoCa at runtime — so it is the one to
+Why /style_text and not /style_audio? The audio path does not exist on
+the server at all (no `/style_audio` handler), and `surf_style_helper`
+takes PCA coordinates — not a waveform — so it cannot consume audio
+directly. mrt2-lane's text endpoint uses 100% existing infrastructure
+(no MusicCoCa at runtime, no new module to write), so it is the one to
 wire up now. The audio embedding (MusicCoCa, ~3s per 10s clip on CPU,
 measured in `scripts/style-ear-latency.py`) stays queued for when the
 server side lands.
