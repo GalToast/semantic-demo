@@ -11,7 +11,7 @@
   import { loadSonicManifest, pickVariantForNode, type SonicManifest, type SonicClip, type SonicStyle } from '@lib/sonic/sonic-manifest';
   import { playSonicIdentity, stopSonicIdentity, isPlaying } from '@lib/audio/sonic-identity';
   import { steerJam } from '@lib/audio/jam-steer';
-  import { startJamRadio, stopJamRadio, getRadioState } from '@lib/audio/jam-radio';
+  import { startJamRadio, stopJamRadio, getRadioState, setRadioNoteState } from '@lib/audio/jam-radio';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
 
   interface Props {
@@ -40,10 +40,34 @@
   const style = $derived<SonicStyle>(dial === 'live' ? 'best' : dial);
   const live = $derived(dial === 'live');
   let radioPlaying = $state(false);
+
+  // Pitch-slot state for the live radio. The encoder's pitch embedding has
+  // 12 trained states per slot; Google's sampler emits 3, and the radio has
+  // been driving only 2. This cycles 0..11 and re-arms the held chord at the
+  // new state — the server's steering loop picks it up on the next frame.
+  // Visible only in live mode so it can't interfere with clip playback.
+  //
+  // Mapping to the LATENT_PITCH_LADDER sweep: radio noteState N -> pr[p]=N
+  // -> cond N+7. Google's sampler uses cond 7/8/9 (states 0/1/2). The sweep
+  // measured cond 17 (state 10) at 95/S — the best in the sweep and better
+  // than the documented held state. Default stays at 1 (held) so existing
+  // behaviour is unchanged; cycle to reach the measured winner.
+  let noteState = $state(1);
+  const STATE_LABELS: Record<number, string> = {
+    0: 'silent', 1: 'held', 2: 'onset',
+    3: 'staccato', 4: 'accent', 5: 'ghost',
+    6: 'tremolo', 7: 'roll', 8: 'ping',
+    9: 'swell', 10: 'best ★ 95/S', 11: 'flare',
+  };
   const clip = $derived(manifest ? pickVariantForNode(manifest, clusterName, leadId, style) : null);
 
   // Stop the radio if the focus card unmounts — never leak a live stream.
   $effect(() => () => { stopJamRadio(); });
+
+  function cycleNoteState(): void {
+    noteState = (noteState + 1) % 12;
+    setRadioNoteState(noteState);
+  }
 
   function toggleStyle(): void {
     const prev = dial;
@@ -56,6 +80,12 @@
       playing = false;
       void steerJam(prev === 'beat' ? 'beat' : 'best');
       void startJamRadio({ onState: (s) => { radioPlaying = s === 'live'; } });
+      return;
+    }
+    // In live mode the style button cycles the pitch-slot state instead of
+    // leaving the radio — that is the generative lever this dial exposes.
+    if (prev === 'live') {
+      cycleNoteState();
       return;
     }
     if (prev === 'live') {
@@ -120,6 +150,14 @@
     <div class="sonic-meta">
       {#if live}
         <span id="sonic-live-badge" class="sonic-live">LIVE</span>
+      <button
+        id="sonic-note-state"
+        class="sonic-note-state"
+        type="button"
+        aria-label={`Pitch-slot state ${noteState}: ${STATE_LABELS[noteState]}`}
+        title={`Pitch-slot state ${noteState} of 11 — ${STATE_LABELS[noteState]}. Click to cycle the held chord's encoder state.`}
+        onclick={cycleNoteState}
+      >{noteState}<small>{STATE_LABELS[noteState]}</small></button>
       {:else if clip.ear}
         <span id="sonic-score" class="sonic-score sonic-score-{clip.ear.grade.toLowerCase()}">{clip.ear.score}/{clip.ear.grade}</span>
       {/if}
@@ -197,6 +235,25 @@
     padding: 0 0.3rem;
     line-height: 1.5;
   }
+  .sonic-note-state {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+    border: 1px solid rgba(120, 220, 160, 0.4);
+    border-radius: 0.35rem;
+    background: rgba(120, 220, 160, 0.08);
+    color: #7dd87d;
+    cursor: pointer;
+    padding: 0.15rem 0.3rem;
+  }
+  .sonic-note-state small {
+    font-size: 0.5rem;
+    opacity: 0.8;
+    text-transform: lowercase;
+  }
+  .sonic-note-state:hover { background: rgba(120, 220, 160, 0.18); }
   .sonic-meta {
     display: flex;
     align-items: baseline;

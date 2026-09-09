@@ -25,8 +25,27 @@
 import { JAM_WS_URL } from '@lib/audio/jam-config'
 
 /** Radio's held notes: a soft A-minor add9 voicing (MIDI indices into the
- * model's 128-pitch vector) so the stream plays unattended. */
-const RADIO_HELD_NOTES = [45, 52, 57, 64, 71]
+ * model's 128-pitch vector) so the stream plays unattended.
+ *
+ * Each note carries a `state` 0..11 into the encoder's pitch embedding
+ * (encoder.regular_embedding, [1536,256] = 128 slots x 12 trained states).
+ * Google's sampler emits only 3 (silence/held/onset); states 3..11 are
+ * trained but undocumented, and the live radio has been driving only 2 of
+ * them. `state` is the dial that exposes the other 9.
+ *
+ * Wire contract (mrt2 tmp/jam_server.py steering_loop:131): the server
+ * builds pr = zeros(128) then pr[note] = state, so any value 0..11 is
+ * accepted as-is — no graph change, no re-export, no LM restart. */
+const RADIO_HELD_NOTES: { note: number; state: number }[] = [
+    { note: 45, state: 1 },
+    { note: 52, state: 1 },
+    { note: 57, state: 1 },
+    { note: 64, state: 1 },
+    { note: 71, state: 1 }
+]
+
+/** Default note state: 1 = held, matching Google's documented sampler output. */
+const DEFAULT_NOTE_STATE = 1
 
 export type RadioState = 'idle' | 'connecting' | 'live'
 
@@ -35,6 +54,15 @@ export interface RadioMetrics {
     droppedFrames: number
     bufferAvail: number
     bufferCap: number
+}
+
+/** Note-on message payload. `state` is optional for backward compat with
+ * clients that only send `{type:'note_on', note:N}` — it defaults to the
+ * documented held state. */
+export interface NoteMessage {
+    type: 'note_on' | 'note_off'
+    note: number
+    state?: number
 }
 
 /** Decode a base64 PCM chunk into interleaved float32 [-1, 1). */
@@ -92,6 +120,12 @@ function send(msg: Record<string, unknown>): void {
  * No-op (resolves false) when already live or WebSocket is unavailable.
  */
 export function startJamRadio(evs: JamRadioEvents = {}): Promise<boolean> {
+    return startJamRadioAt(evs, RADIO_HELD_NOTES)
+}
+
+/** Connect and hold an explicit note set. Used by the dial to drive a
+ * specific pitch-slot state through the live jam. */
+export function startJamRadioAt(evs: JamRadioEvents, notes: readonly NoteMessage[]): Promise<boolean> {
     events = evs
     if (state !== 'idle') return Promise.resolve(false)
     if (typeof WebSocket === 'undefined') return Promise.resolve(false)
@@ -101,6 +135,7 @@ export function startJamRadio(evs: JamRadioEvents = {}): Promise<boolean> {
     if (!Ctor) return Promise.resolve(false)
     ctx = ctx ?? new Ctor()
     nextStart = 0
+    heldNotes = notes
     setState('connecting')
 
     return new Promise<boolean>((resolve) => {
@@ -124,7 +159,7 @@ export function startJamRadio(evs: JamRadioEvents = {}): Promise<boolean> {
             settled = true
             setState('live')
             send({ type: 'uiReady' })
-            for (const note of RADIO_HELD_NOTES) send({ type: 'note_on', note })
+            for (const n of heldNotes) send({ type: 'note_on', note: n.note, state: n.state })
             resolve(true)
         }
         ws.onerror = fail
@@ -160,13 +195,26 @@ function playChunk(audioCtx: AudioContext, b64: string): void {
 }
 
 /** Disconnect from the radio and release held notes. Safe when idle. */
+let heldNotes: readonly NoteMessage[] = []
+
 export function stopJamRadio(): void {
-    for (const note of RADIO_HELD_NOTES) send({ type: 'note_off', note })
+    for (const n of heldNotes) send({ type: 'note_off', note: n.note })
     try {
         ws?.close()
     } catch {
         // already closed — best effort
     }
     ws = null
+    heldNotes = []
     setState('idle')
+}
+
+/** Drive the live jam's held notes to a single pitch-slot state.
+ * Re-arms the chord at the new state without dropping the stream — the
+ * server's steering loop picks up the new pr value on the next frame.
+ * No-op when not live. */
+export function setRadioNoteState(state: number): void {
+    if (state < 0 || state > 11 || !Number.isInteger(state)) return
+    heldNotes = heldNotes.map((n) => ({ ...n, state }))
+    for (const n of heldNotes) send({ type: 'note_on', note: n.note, state })
 }

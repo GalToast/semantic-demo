@@ -276,4 +276,83 @@ test.describe('Sonic identity journey', () => {
         const after = await page.evaluate(() => window.__ws)
         expect(after.closed, 'radio socket must be closed on leaving live').toBeGreaterThanOrEqual(1)
     })
+
+    // SONIC-5 covers the pitch-slot state dial: in live mode the held chord
+    // is armed with a `state` 0..11 into the encoder's pitch embedding, and
+    // cycling it re-arms the chord without dropping the stream. Mocked in
+    // page, same as SONIC-4 — no server needed.
+    test('SONIC-5. Live mode exposes a pitch-slot state dial that cycles the held chord', async ({ page }) => {
+        await page.addInitScript(() => {
+            window.__ws = { url: null, sent: [], closed: 0 }
+            class FakeWebSocket {
+                constructor(url) {
+                    window.__ws.url = url
+                    this.readyState = 0
+                    setTimeout(() => {
+                        this.readyState = 1
+                        if (this.onopen) this.onopen()
+                    }, 10)
+                }
+                send(data) { window.__ws.sent.push(String(data)) }
+                close() { window.__ws.closed += 1; this.readyState = 3 }
+            }
+            FakeWebSocket.OPEN = 1
+            window.WebSocket = FakeWebSocket
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, { waitUntil: 'domcontentloaded' })
+
+        // Reach live mode via the style dial (same settle poll as SONIC-4).
+        const start = Date.now()
+        let found = false
+        while (Date.now() - start < 15000) {
+            found = await page.evaluate(() => !!document.querySelector('#sonic-style'))
+            if (found) break
+            await page.waitForTimeout(100)
+        }
+        expect(found, 'sonic style dial must appear').toBe(true)
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#sonic-style')
+                const rect = el ? el.getBoundingClientRect() : null
+                return !!el && rect && rect.width > 0 && rect.height > 0
+            },
+            { timeout: 30000, polling: 200 }
+        )
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForTimeout(100)
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('.sonic-identity')
+                return el && el.getAttribute('data-live') === 'true'
+            },
+            { timeout: 30000 }
+        )
+
+        // The state dial must exist in live mode and start at the held state.
+        const dial = page.locator('#sonic-note-state')
+        await expect(dial).toHaveText(/1/)
+
+        // The held chord must be armed with a state field — that is the whole
+        // point of this dial, and it is what reaches the encoder's pitch
+        // embedding on the server side.
+        const noteOns = await page.evaluate(() => window.__ws.sent.filter((m) => m.includes('"note_on"')))
+        expect(noteOns.length, 'radio must hold the chord via note_on').toBeGreaterThanOrEqual(5)
+        const withState = noteOns.filter((m) => /"state"/.test(m))
+        expect(withState.length, 'note_on must carry a pitch-slot state').toBe(noteOns.length)
+
+        // Cycling advances the value and re-arms the chord at the new state.
+        const before = await page.evaluate(() => window.__ws.sent.length)
+        await dial.click()
+        await expect(dial).toHaveText(/2/)
+        const after = await page.evaluate(() => window.__ws.sent.length)
+        expect(after, 'cycling must re-arm the chord').toBeGreaterThan(before)
+
+        // The dial is live-mode only — leaving live hides it.
+        await page.evaluate(() => document.querySelector('#sonic-style').click())
+        await page.waitForFunction(
+            () => !document.querySelector('#sonic-note-state'),
+            { timeout: 30000 }
+        )
+    })
 })

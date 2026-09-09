@@ -7,13 +7,13 @@
 
 The sonic style dial in the focus panel does three things now, one per tier:
 
-| Tier | Module | What it does |
-| --- | --- | --- |
+| Tier         | Module                                | What it does                                                                                       |
+| ------------ | ------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | 1 — playback | `sonic-identity.ts` + `manifest.json` | Picks a pre-rendered clip keyed to the node's cluster category, plays it with fade, respects mute. |
-| 2 — steering | `jam-steer.ts` | Fire-and-forget `POST /style {pole}` to the live MRT2 jam server. |
-| 3 — radio | `jam-radio.ts` | WebSocket client that streams the jam's live PCM decode to the browser. |
+| 2 — steering | `jam-steer.ts`                        | Fire-and-forget `POST /style {pole}` to the live MRT2 jam server.                                  |
+| 3 — radio    | `jam-radio.ts`                        | WebSocket client that streams the jam's live PCM decode to the browser.                            |
 
-The dial is a 3-way cycle: **★ best → ⚡ beat → 🔴 live → ★**. Each pole both selects a playback variant *and* drives the jam server. Toggling to `live` opens the radio; toggling away closes it.
+The dial is a 3-way cycle: **★ best → ⚡ beat → 🔴 live → ★**. Each pole both selects a playback variant _and_ drives the jam server. Toggling to `live` opens the radio; toggling away closes it.
 
 ## Tier 2 — jam steering
 
@@ -25,7 +25,9 @@ export function steerJam(pole: JamPole): Promise<boolean> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pole })
-    }).then(r => r.ok).catch(() => false)
+    })
+        .then((r) => r.ok)
+        .catch(() => false)
 }
 ```
 
@@ -62,16 +64,16 @@ One live session at a time server-side; newest connection wins.
 const DIAL_ORDER: JamPole[] = ['best', 'beat', 'live']
 ```
 
-`toggleStyle` cycles through the order. `best` and `beat` call `steerJam(pole)`; `live` calls `startJamRadio()` and `stopJamRadio()` on exit. The `live` pole has no pre-rendered clip — it *is* the clip, streamed.
+`toggleStyle` cycles through the order. `best` and `beat` call `steerJam(pole)`; `live` calls `startJamRadio()` and `stopJamRadio()` on exit. The `live` pole has no pre-rendered clip — it _is_ the clip, streamed.
 
 ## Config
 
 All endpoints live in `src/lib/audio/jam-config.ts`, env-driven:
 
-| Env var | Default | Used by |
-| --- | --- | --- |
+| Env var             | Default                 | Used by        |
+| ------------------- | ----------------------- | -------------- |
 | `VITE_JAM_HTTP_URL` | `http://127.0.0.1:8083` | `jam-steer.ts` |
-| `VITE_JAM_WS_URL` | `ws://127.0.0.1:8083` | `jam-radio.ts` |
+| `VITE_JAM_WS_URL`   | `ws://127.0.0.1:8083`   | `jam-radio.ts` |
 
 Committed at `9bcd0e251` so the endpoints are configurable without touching code.
 
@@ -87,7 +89,7 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
 - **Port 8796 is held by mrt2-rt's LM server** (PID 4832). The project's `playwright-web-server.mjs`/`test-server.mjs` cannot start there. Worked around with `TEST_BASE_URL` + `scripts/qa-static-server.mjs` on alternate ports.
 - **`record=6218` was a stale fixture** — that lead_id doesn't exist in the 8,406-point corpus. All four sonic specs now use `record=519` (Angel Fire Coffee, index 518).
 - **D3D11 cold-start variance**: fixed `waitForTimeout` settle waits caused "Target page, context or browser has been closed" timeouts. Replaced with `waitForFunction` polls on the render rect.
-- **Svelte 5 omits `aria-pressed` entirely when `false`** — "not live" assertions check *absence*, not the literal `'false'`.
+- **Svelte 5 omits `aria-pressed` entirely when `false`** — "not live" assertions check _absence_, not the literal `'false'`.
 
 ## Minimal increment order (what's done → what's next)
 
