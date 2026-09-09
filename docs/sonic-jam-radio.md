@@ -113,6 +113,9 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
 10. ✅ mobile surface check (CSS ownership per `docs/css-ownership.md`) —
     390×844 live JamView has every control in-bounds with no horizontal
     overflow; evidence: `tmp/sonic-jam-mobile-390x844.png`.
+11. ✅ continuous style morph (tier 14) — JamView `#jam-morph` sends the
+    debounced `/style_interp` contract; JAM-7 passes with the wire payload
+    verified at `t=0.50` and `t=0.78`.
 
 ## Tier 4 — pitch-slot latent states
 
@@ -295,7 +298,18 @@ server side lands.
 JamView.svelte: `#jam-style` input + 💚 send button + matched-anchor
 readout. JAM-6 pins the fetch shape.
 
-## Surface inventory (tiers 1–13)
+## Continuous style morph (tier 14)
+
+`JamView.svelte` exposes `#jam-morph`, a 0..1 range control that debounces
+`POST /style_interp {t}` by 120ms so dragging does not flood the jam server.
+The endpoint is live on MRT2 and acknowledges `t=0.0`, `0.5`, and `1.0`; its
+server-side poison-zone clamp avoids the measured whine spike near `t=0.78`
+by snapping that interval to `0.72` (Switchboard verification msg 1606).
+The client sends the raw position and leaves that safety clamp server-owned.
+JAM-7 (`tests/journey/jam-view.spec.js`) pins the fetch shape without requiring
+the live stack.
+
+## Surface inventory (tiers 1–14)
 
 | Tier | Control                    | Dial                                | Verified          |
 | ---- | -------------------------- | ----------------------------------- | ----------------- |
@@ -305,3 +319,4 @@ readout. JAM-6 pins the fetch shape.
 | 11   | progression MIDI bridge    | `#sonic-prog` / `#jam-prog`         | JAM-4, unit 10/10 |
 | 12   | vocal monitor              | `#sonic-vocal` / `#jam-vocal`       | SONIC-12          |
 | 13   | text-vibe steering         | `#jam-style`                        | JAM-6             |
+| 14   | continuous style morph     | `#jam-morph`                        | JAM-7             |
