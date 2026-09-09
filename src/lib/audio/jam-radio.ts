@@ -18,9 +18,11 @@
  * scheduled at a monotonically advancing `nextStart` timestamp, so bursty
  * WS arrival still yields gapless output. A starving stream (nextStart fell
  * behind wall clock) resynchronizes to now + a small lead.
+ *
+ * Endpoint: configurable via VITE_JAM_WS_URL (see jam-config.ts).
  */
 
-const JAM_WS_URL = 'ws://127.0.0.1:8083/'
+import { JAM_WS_URL } from '@lib/audio/jam-config'
 
 /** Radio's held notes: a soft A-minor add9 voicing (MIDI indices into the
  * model's 128-pitch vector) so the stream plays unattended. */

@@ -11,7 +11,9 @@
  * Contract mirror: mrt2 tmp/jam_server.py STYLE_POLE_XY (commit 03cd572).
  */
 
-const JAM_STYLE_URL = 'http://127.0.0.1:8083/style'
+import { JAM_HTTP_URL } from '@lib/audio/jam-config'
+
+const JAM_STYLE_URL = `${JAM_HTTP_URL}/style`
 
 export type JamPole = 'beat' | 'best'
 
