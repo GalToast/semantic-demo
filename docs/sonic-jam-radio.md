@@ -1,4 +1,4 @@
-# Sonic Jam Radio — Tier 2 & 3
+# Sonic Jam Radio — Tiers 2–14
 
 **Status:** active · JAM-1..7 and focused Sonic journey green; real-WebSocket JAM-R is environment-gated on the live jam stack
 **Source:** Magenta RT2 pipeline (`mrt2/tmp/jam_server.py`, commit 03cd572 era), ear_v7.1 scorer
@@ -89,9 +89,9 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
 - **Journey** (`tests/journey/sonic.spec.js`, SONIC-1..4): play control, 3-way dial cycle, jam `/style` interception, live radio chord hold. 4/4 green.
 - **Standalone Jam journey** (`tests/journey/jam-view.spec.js`, JAM-1..7): engine-free surface, transport, dial/band/progression controls, vocal fallback, text steering, and continuous style morph. 8/8 green.
 - **Real-WebSocket journey** (`tests/journey/jam-real.spec.js`, JAM-R): environment-gated proof of the real 8083 handshake, `uiReady`/`note_on`, and streamed audio frames; requires the live jam stack.
-- **Unit** (`tests/unit-active/jam-radio.test.ts`): `decodePcmChunk`, `chunkToAudioBuffer`, held-notes, gapless resync. 4/4.
-- **Build**: `npm run build:svelte` — 41.51s, `[tdb-ensure] OK`, data-compression gate passes. FocusCard hash `BPGaY18Z` confirms the radio code is in the bundle.
-- **Full unit suite**: 4239/4242. The 3 failures are a pre-existing merge-reland guard, unrelated.
+- **Unit** (`tests/unit-active/jam-radio.test.ts`): `decodePcmChunk`, `chunkToAudioBuffer`, held-notes, gapless resync. 14/14.
+- **Build**: `npm run build` — 537 modules transformed, `[tdb-ensure] OK`, and the data-compression gate passes.
+- **Historical full-unit snapshot**: 4239/4242. The 3 failures were a pre-existing merge-reland guard, unrelated.
 
 ## Known constraints
 
