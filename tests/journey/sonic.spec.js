@@ -335,7 +335,7 @@ test.describe('Sonic identity journey', () => {
         )
 
         // The state dial must exist in live mode and start at the summit
-        // state (4 = cond 11 + L2 melodic = 100/100-S, the radio default).
+        // state (4 = cond 11 + slots {2,11} = 100/100-S, the radio default).
         const dial = page.locator('#sonic-note-state')
         await expect(dial).toHaveText(/4/)
 
@@ -360,9 +360,10 @@ test.describe('Sonic identity journey', () => {
     })
 
     // SONIC-6: connecting the radio also activates the summit band mask.
-    // startJamRadio fires steerJamBandMask('melodic') (POST /band_mask)
-    // on ws.onopen alongside the pitch states. WS mocked + fetch recorded
-    // in-page, same patterns as SONIC-3/4 — no server needed.
+    // startJamRadio fires steerJamBandSlots(RADIO_SUMMIT_SLOTS) (POST
+    // /band_mask {slots:[2,11]}) on ws.onopen alongside the pitch states.
+    // WS mocked + fetch recorded in-page, same patterns as SONIC-3/4 —
+    // no server needed.
     test('SONIC-6. Radio connect fires the summit band-mask POST', async ({ page }) => {
         await page.addInitScript(() => {
             window.__ws = { url: null, sent: [], closed: 0 }
@@ -436,9 +437,18 @@ test.describe('Sonic identity journey', () => {
         )
 
         // The summit band must be requested alongside the pitch states.
+        // Whine-clean summit: explicit slots {2,11} (100/100-S, whine 2.6%),
+        // superseding the L2-only melodic preset (whine 12.8%).
         await page.waitForFunction(() => window.__ws && window.__ws.sent.length >= 5, { timeout: 30000 })
-        const melodic = bandCalls.filter((c) => (c.body || '').indexOf('melodic') !== -1)
-        expect(melodic.length, 'radio connect must POST /band_mask melodic').toBeGreaterThanOrEqual(1)
+        const summit = bandCalls.filter((c) => {
+            try {
+                const b = JSON.parse(c.body || '{}')
+                return Array.isArray(b.slots) && b.slots.includes(2) && b.slots.includes(11)
+            } catch (e) {
+                return false
+            }
+        })
+        expect(summit.length, 'radio connect must POST /band_mask {slots:[2,11]}').toBeGreaterThanOrEqual(1)
     })
 
     // SONIC-7: live mode exposes a progression player. The prog button

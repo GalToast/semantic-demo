@@ -52,13 +52,14 @@
   // Mapping to the MRT2 sweeps: radio noteState N -> pr[p]=N -> cond N+7.
   // Google's sampler uses cond 7/8/9 (states 0/1/2). The ladder sweep measured
   // cond 17 (state 10) at 95/S ladder-mode best; the summit (mrt2 3a71bed)
-  // measured cond 11 (state 4) + L2 melodic band at 100/100-S box-best.
+  // measured cond 11 (state 4) + slots {2,11} at 100/100-S box-best
+  // (whine-clean summit, whine 2.6%).
   // Default is 4 so the dial agrees with what the radio actually holds on
-  // connect (RADIO_HELD_NOTES state 4 + steerJamBandMask('melodic')).
+  // connect (RADIO_HELD_NOTES state 4 + steerJamBandSlots summit slots).
   let noteState = $state(4);
   const STATE_LABELS: Record<number, string> = {
     0: 'silent', 1: 'held', 2: 'onset',
-    3: 'staccato', 4: 'summit ★ 100/S', 5: 'ghost',
+    3: 'free ★ documented', 4: 'summit ★ 100/S', 5: 'ghost',
     6: 'tremolo', 7: 'roll', 8: 'ping',
     9: 'swell', 10: 'ladder 95/S', 11: 'flare',
   };
@@ -75,7 +76,7 @@
 
   // Progression player: loads Am–F–C–G into the jam's prog engine and
   // starts it. The engine moves harmony while the summit config (state 4
-  // + melodic band) holds the quality. Toggle off returns to the drone.
+  // + slots {2,11}) holds the quality. Toggle off returns to the drone.
   let progPlaying = $state(false);
   // Last server-confirmed prog status (null until the first prog_status
   // reply). The toggle is optimistic; this is ground truth when present.

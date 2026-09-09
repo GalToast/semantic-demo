@@ -50,17 +50,28 @@ via `setRadioNoteState()`. The server picks up the new `pr` value on the next
 - ~~Wait for amp 14/16/18 decode + score (in flight)~~ DONE — 8/8 scored.
   Full table below.
 - **SUPERSEDED AS BOX-BEST: the summit (mrt2 3a71bed, SUMMIT_RESULTS.md)
-  measured cond 11 (state 4) + L2 melodic band at 100/100-S.** The ladder-mode
+  measured cond 11 (state 4) + slots {2,11} at 100/100-S.** The ladder-mode
   best below (state 10 alone, 95/S) remains the best _single-dial_ result,
   but the super-additive combination beats it by 5 points. The radio now
-  defaults to the summit (state 4 + `steerJamBandMask('melodic')` on
-  connect; dial default noteState 4 labelled 'summit ★ 100/S').
-- **Extend the sweep to states 3..7 (cond 10..14)** — the middle band no one
-  has probed. `PITCH_LADDER_AMPS=13,14,15,16,17`.
+  defaults to the summit (state 4 + slots {2,11} via `steerJamBandSlots`
+  on connect; dial default noteState 4 labelled 'summit ★ 100/S').
+- **Extend the sweep to states 3,5,6,7 (cond 10,12,13,14)** — the middle
+  band no one has probed. `PITCH_LADDER_AMPS=3,5,6,7` (amps, not conds).
+  Note an older bullet here wrongly suggested 13,14,15,16,17 — those conds
+  are already scored (amps 6,7,8,9 → 74–95).
 - Test a **multi-note chord** rather than a single bass, in case the
   semantics are per-slot rather than global.
 - Drive the live radio at state 9 and ear_v10 the streamed output — that is
   the end-to-end confirmation, not the isolated probe.
+- **CODEBOOK LAYERS (2026-09-09, source-verified): the pianoroll codebook
+  documents FOUR states, samplers emit THREE, the embedding holds TWELVE.**
+  int8_base_gen.py:122: `[12:140] pianoroll codebook 4: 0=off, 1=held,
+2=onset, 3=on`. lm_server_v2.py:577: steering payload `[128 pianoroll
+values (0 off,1 on,2 onset,3 free)]`, mapped `cond[12:140] = steer+7`.
+  So radio noteState 3 → cond 10 → the documented 4th state no sampler has
+  ever produced (dial now labels it 'free ★ documented'). Possible third
+  layer (unverified): ~127 embedding rows beyond stride-11 reach (max
+  addressed row 127\*11+11=1408 < 1536) — needs a geometry check.
 
 ## Artifacts
 

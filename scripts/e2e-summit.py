@@ -4,7 +4,7 @@ Drives the exact radio path: WS to 8083, note_on with pitch-slot state,
 /band_mask preset via HTTP, records streamed PCM, writes wav, ear_v10 scores.
 
 Runs:
-  summit:   band=melodic ([2]=L2), state=4 (cond 11) — expect ~100/S
+  summit:   band slots [2,11] (whine-clean summit), state=4 (cond 11) — expect ~100/S
   baseline: band=all (default),   state=1 (cond 8)  — expect ~50s
 
 Usage:
@@ -258,9 +258,9 @@ def main():
 
     results = {}
 
-    print("=== summit: band=melodic, state=4 ===", flush=True)
-    print(" ", post_band(preset="melodic"), flush=True)
-    wav = os.path.join(args.out, "summit_state4_melodic.wav")
+    print("=== summit: band slots [2,11], state=4 ===", flush=True)
+    print(" ", post_band(slots=[2, 11]), flush=True)
+    wav = os.path.join(args.out, "summit_state4_slots2_11.wav")
     record_run(4, args.seconds, wav)
     s = ear_score(wav)
     print(
@@ -268,7 +268,7 @@ def main():
         flush=True,
     )
     results["summit"] = {
-        "band": "melodic",
+        "band": "slots [2,11]",
         "state": 4,
         "wav": wav,
         "score": {k: v for k, v in s.items() if k != "raw"},
@@ -292,7 +292,7 @@ def main():
 
     # leave the server in the summit configuration for the radio default
     print(" restoring summit band for the radio default", flush=True)
-    print(" ", post_band(preset="melodic"), flush=True)
+    print(" ", post_band(slots=[2, 11]), flush=True)
 
     with open(os.path.join(args.out, "e2e_results.json"), "w") as f:
         json.dump(results, f, indent=2)

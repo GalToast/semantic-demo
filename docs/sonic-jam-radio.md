@@ -100,7 +100,7 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
 5. ✅ jam radio (tier 3)
 6. ✅ journey tests + fixture fix
 7. ✅ pitch-slot latent states (tier 4) — `#sonic-note-state` dial 0..11
-8. ✅ summit defaults (tier 5) — state 4 + L2 melodic band, 100/100-S
+8. ✅ summit defaults (tier 5) — state 4 + slots {2,11}, 100/100-S, whine 2.6%
 9. ⬜ remaining starter clips + clusterMap expansion
 10. ⬜ mobile surface check (CSS ownership per `docs/css-ownership.md`)
 
@@ -117,12 +117,14 @@ in live mode, cycling 0..11 and re-arming the held chord via
 ## Tier 5 — summit defaults (box-best)
 
 The super-additive discovery (mrt2 3a71bed, `SUMMIT_RESULTS.md`): pitch
-state 4 (cond 11) + L2 melodic band = **100/100-S**, the first perfect
-score. The radio uses this as its default ambient mode:
+state 4 (cond 11) + slots {2,11} = **100/100-S**, the first perfect
+score — and the whine-clean summit (whine 2.6% vs L2-alone's 12.8%, tempo
+137; slot 11 is the non-interfering companion, slots 1 and 3 are poison).
+The radio uses this as its default ambient mode:
 
 - `RADIO_HELD_NOTES`: all five chord notes at state 4.
-- `ws.onopen`: fires `steerJamBandMask('melodic')` (`POST /band_mask
-{preset:'melodic'}` → slots `[2]`), alongside the pitch states.
+- `ws.onopen`: fires `steerJamBandSlots(RADIO_SUMMIT_SLOTS)` (`POST
+/band_mask {slots:[2,11]}`), alongside the pitch states.
 - Dial default `noteState` 4, labelled 'summit ★ 100/S'.
 
 Both protocols (`note_on {state}` + `/band_mask {preset}`) already shipped
