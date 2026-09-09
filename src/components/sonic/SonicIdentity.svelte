@@ -8,16 +8,16 @@
   Hidden entirely when no clip resolves (manifest missing / clips empty).
 -->
 <script lang="ts">
-  import { loadSonicManifest, pickVariantForNode, type SonicManifest, type SonicClip, type SonicStyle } from '@lib/sonic/sonic-manifest';
+  import { loadSonicManifest, pickVariantForNode, type SonicManifest, type SonicStyle } from '@lib/sonic/sonic-manifest';
   import { playSonicIdentity, stopSonicIdentity, isPlaying } from '@lib/audio/sonic-identity';
   import { steerJam } from '@lib/audio/jam-steer';
   import { startJamRadio, stopJamRadio, getRadioState, setRadioNoteState, getRadioHeldNotes } from '@lib/audio/jam-radio';
   import { setRadioProg, playRadioProg, stopRadioProg, DEFAULT_PROG_SPEC } from '@lib/audio/jam-radio';
-  import { setRadioBandMode, getRadioBandMode, type RadioBandMode } from '@lib/audio/jam-radio';
+  import { setRadioBandMode, type RadioBandMode } from '@lib/audio/jam-radio';
   import { startMidiInput, stopMidiInput } from '@lib/audio/jam-midi';
   import { startMidiBridge, stopMidiBridge, bridgeChordToMidi, isMidiBridgeOn } from '@lib/audio/jam-midi';
   import { startVocalMonitor, stopVocalMonitor, isVocalMonitoring } from '@lib/audio/jam-vocal';
-  import { isMeasuredPair, SUMMIT_STATE } from '@lib/audio/jam-radio';
+  import { isMeasuredPair, SUMMIT_STATE, STATE_LABELS } from '@lib/audio/jam-radio';
   import { requestRadioProgStatus, type RadioProgStatus } from '@lib/audio/jam-radio';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
 
@@ -62,17 +62,11 @@
   // Default is 4 so the dial agrees with what the radio actually holds on
   // connect (RADIO_HELD_NOTES state 4 + steerJamBandSlots summit slots).
   let noteState = $state(4);
-  const STATE_LABELS: Record<number, string> = {
-    0: 'silent', 1: 'held', 2: 'onset',
-    3: 'free ★ documented', 4: 'summit ★ 100/S', 5: 'ghost',
-    6: 'tremolo', 7: 'roll', 8: 'ping',
-    9: 'swell', 10: 'ladder 95/S', 11: 'flare',
-  };
   const clip = $derived(manifest ? pickVariantForNode(manifest, clusterName, leadId, style) : null);
 
   // Stop the radio if the focus card unmounts — never leak a live stream.
   // Prog rides along: a running progression must not outlive the radio.
-  $effect(() => () => { stopRadioProg(); stopMidiInput(); midiCount = 0; stopMidiBridge(); stopJamRadio(); });
+  $effect(() => () => { stopRadioProg(); stopMidiInput(); midiCount = 0; stopMidiBridge(); stopVocalMonitor(); vocalOn = false; stopJamRadio(); });
 
   function cycleNoteState(): void {
     noteState = (noteState + 1) % 12;
@@ -160,7 +154,7 @@
 
   function toggleStyle(): void {
     const prev = dial;
-    const next: Dial = DIAL_ORDER[(DIAL_ORDER.indexOf(dial) + 1) % DIAL_ORDER.length];
+    const next: Dial = DIAL_ORDER[(DIAL_ORDER.indexOf(dial) + 1) % DIAL_ORDER.length] ?? 'best';
     dial = next;
     if (next === 'live') {
       // Radio replaces the canned clip; steer with the pole we came from so
@@ -192,7 +186,7 @@
       stopSonicIdentity();
       playing = false;
       const nextClip = pickVariantForNode(manifest, clusterName, leadId, next);
-      void playSonicIdentity(clusterName, nextClip?.id ?? null, leadId, next).then((ok) => { playing = ok; });
+      if (nextClip) void playSonicIdentity(clusterName, nextClip.id, leadId, next).then((ok) => { playing = ok; });
     }
   }
 
@@ -214,6 +208,8 @@
         stopMidiInput();
         midiCount = 0;
         stopMidiBridge();
+        stopVocalMonitor();
+        vocalOn = false;
         stopJamRadio();
         radioPlaying = false;
       } else {
@@ -250,7 +246,7 @@
           class="sonic-live"
           type="button"
           aria-label="Restore summit pair (state 4 + tone preset)"
-          title="Back to the measured summit: state 4 + tone {2,11}, 100/100-S."
+          title="Back to the measured summit: state 4 + tone slots 2 and 11, 100/100-S."
           onclick={restoreSummit}
         >LIVE{#if !isMeasuredPair(noteState, bandMode)}<span class="sonic-unmeasured" title="Untested pitch×band combo — quality unknown.">*</span>{/if}</button>
       <button
@@ -279,8 +275,8 @@
         aria-label={bandMode === 'tone' ? 'Switch to beat preset (stronger pulse)' : 'Switch to tone preset (cleaner tone)'}
         aria-pressed={bandMode === 'beat'}
         title={bandMode === 'tone'
-          ? 'Tone preset: slots {2,11}, 100/100-S, whine 2.6% — clean tone.'
-          : 'Beat preset: slots {2}, 100/100-S, beat 0.586 — stronger pulse.'}
+          ? 'Tone preset: slots 2 and 11, 100/100-S, whine 2.6% — clean tone.'
+          : 'Beat preset: slot 2, 100/100-S, beat 0.586 — stronger pulse.'}
         onclick={cycleBandMode}
       >{bandMode === 'tone' ? '🎻' : '🥁'}</button>
       <button
