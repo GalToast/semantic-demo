@@ -233,4 +233,32 @@ test.describe('Jam view', () => {
         const calls2 = await page.evaluate(() => window.__interpCalls)
         expect(JSON.parse(calls2[calls2.length - 1].opts.body).t).toBe(0.78)
     })
+
+    test('JAM-8. Idle surface is pre-configurable; keyboard drives transport and dial', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page)
+        // Controls render before connecting (disabled) — the surface is
+        // configurable first, play second.
+        for (const sel of ['#jam-state', '#jam-band', '#jam-prog', '#jam-midi', '#jam-vocal', '#jam-morph', '#jam-style']) {
+            await expect(page.locator(sel)).toBeVisible()
+        }
+        await expect(page.locator('#jam-frames')).toContainText('0 audio frames')
+        // Space starts the radio without a pointer.
+        await page.keyboard.press('Space')
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        // Bracket keys step the dial both ways.
+        await page.keyboard.press(']')
+        await expect(page.locator('#jam-state')).toContainText('5')
+        await page.keyboard.press('[')
+        await expect(page.locator('#jam-state')).toContainText('4')
+        // Space stops it again.
+        await page.keyboard.press('Space')
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') !== 'true',
+            { timeout: 30000 }
+        )
+    })
 })
