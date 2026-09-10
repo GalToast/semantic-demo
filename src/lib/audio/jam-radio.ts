@@ -389,6 +389,7 @@ export function startJamRadioAt(
                 }
             }
         }
+        openSocket()
     })
 }
 

@@ -97,6 +97,7 @@ test.describe('Jam view', () => {
             () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
             { timeout: 30000 }
         )
+        await page.evaluate(() => document.querySelector('#jam-advanced-toggle').click())
         await page.evaluate(() => document.querySelector('#jam-state').click())
         await expect(page.locator('#jam-state')).toContainText('5')
         await expect(page.locator('.jam-unmeasured')).toHaveCount(1)
@@ -115,6 +116,7 @@ test.describe('Jam view', () => {
             { timeout: 30000 }
         )
         await page.waitForFunction(() => window.__ws.sent.length >= 5, { timeout: 30000 })
+        await page.evaluate(() => document.querySelector('#jam-advanced-toggle').click())
         // Band toggle flips the preset UI (the POST shape itself is covered
         // by SONIC-6/9 against the shared steer functions).
         await page.evaluate(() => document.querySelector('#jam-band').click())
@@ -305,6 +307,7 @@ test.describe('Jam view', () => {
             { timeout: 30000 }
         )
         await page.waitForFunction(() => window.__ws.sent.length >= 5, { timeout: 30000 })
+        await page.evaluate(() => document.querySelector('#jam-advanced-toggle').click())
         // Mock fetch so the POST is observable without a live jam.
         await page.evaluate(() => {
             window.__maskCalls = []
@@ -405,6 +408,7 @@ test.describe('Jam view', () => {
             () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
             { timeout: 30000 }
         )
+        await page.evaluate(() => document.querySelector('#jam-advanced-toggle').click())
         for (const sel of ['#jam-preset-clean', '#jam-prog-spec', '#jam-midi', '#jam-vocal', '#jam-morph']) {
             await expect(page.locator(sel)).toBeVisible()
         }
@@ -514,7 +518,7 @@ test.describe('Jam view', () => {
             const orig = window.fetch
             window.fetch = async (url, opts) => {
                 if (typeof url === 'string' && url.includes('/band_mask')) {
-                    return new Response(null, { status: 409 })
+                    return new globalThis.Response(null, { status: 409 })
                 }
                 return orig(url, opts)
             }
@@ -551,7 +555,7 @@ test.describe('Jam view', () => {
         // Garbage is rejected inline, not applied.
         await page.fill('#jam-host', 'not a host!!')
         await page.evaluate(() => document.querySelector('#jam-host-apply').click())
-        await expect(page.locator('.jam-prog-error')).toContainText("doesn't parse")
+        await expect(page.locator('.jam-prog-error')).toContainText('doesn’t parse')
         // Reset returns to the default box.
         await page.evaluate(() => document.querySelector('#jam-host-reset').click())
         await expect(page.locator('.jam-endpoints')).toContainText('ws://127.0.0.1:8083')
