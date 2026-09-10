@@ -215,7 +215,11 @@ function finish(code, failures, summary) {
     clearTimeout(soakTimer)
     clearInterval(bucketTimer)
     clearTimeout(silenceTimer)
-    try { ws?.close() } catch { /* noop */ }
+    try {
+        ws?.close()
+    } catch {
+        /* noop */
+    }
     setTimeout(() => process.exit(code), 100)
 }
 
@@ -262,12 +266,7 @@ function connect() {
         } else if (msg.type === 'metrics') {
             if (!firstMetrics) firstMetrics = msg
             lastMetrics = msg
-            if (
-                b &&
-                typeof msg.bufferCap === 'number' &&
-                msg.bufferCap > 0 &&
-                typeof msg.bufferAvail === 'number'
-            ) {
+            if (b && typeof msg.bufferCap === 'number' && msg.bufferCap > 0 && typeof msg.bufferAvail === 'number') {
                 b.bufFrac = msg.bufferAvail / msg.bufferCap
             }
         }

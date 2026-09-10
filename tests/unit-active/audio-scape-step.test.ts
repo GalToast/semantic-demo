@@ -10,6 +10,7 @@ import {
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
+import { resetSharedAudioForTest } from '../../src/lib/audio/jam-engine'
 const mockAppState = vi.hoisted(() => ({
     camera: null as any,
     navState: { focusedIndex: null as number | null } as any,
@@ -122,6 +123,10 @@ beforeEach(() => {
     cancelSpy.mockClear()
     mockWarn.mockClear()
     reset()
+    // audio-scape borrows the process-wide engine. Reset only the test
+    // handle so each case can install its own mock context without closing a
+    // context that other audio surfaces may still use in production.
+    resetSharedAudioForTest()
     Object.defineProperty(navigator, 'webdriver', { configurable: true, get: () => false })
 })
 afterEach(() => {
@@ -172,12 +177,13 @@ describe('startAudioContext', () => {
         expect(filter.type).toBe('lowpass')
         expect(filter.frequency.setValueAtTime).toHaveBeenCalledWith(200, 0)
     })
-    it('chains osc -> filter -> gain -> destination', () => {
+    it('chains osc -> filter -> gain -> shared master stage', () => {
         document.dispatchEvent(new Event('mousedown'))
-        const [osc, gain, filter] = activeCtx.nodes
+        const [osc, gain, filter, master] = activeCtx.nodes
         expect(osc.connect).toHaveBeenCalledWith(filter)
         expect(filter.connect).toHaveBeenCalledWith(gain)
-        expect(gain.connect).toHaveBeenCalledWith(activeCtx.destination)
+        expect(gain.connect).toHaveBeenCalledWith(master)
+        expect(master.connect).toHaveBeenCalledWith(activeCtx.destination)
     })
     it('starts mainOsc once and schedules rAF', () => {
         document.dispatchEvent(new Event('mousedown'))
@@ -341,8 +347,8 @@ describe('triggerCorridorBloom', () => {
     it('creates osc + gain with correct frequency/gain schedules', () => {
         start()
         triggerCorridorBloom()
-        expect(activeCtx.nodes.length).toBe(5)
-        const [osc, gain] = [activeCtx.nodes[3], activeCtx.nodes[4]]
+        expect(activeCtx.nodes.length).toBe(6)
+        const [osc, gain] = [activeCtx.nodes[4], activeCtx.nodes[5]]
         const startF = osc.frequency.setValueAtTime.mock.calls[0][0]
         expect(startF).toBeGreaterThanOrEqual(880)
         expect(startF).toBeLessThan(1320)
@@ -350,7 +356,7 @@ describe('triggerCorridorBloom', () => {
         expect(gain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.012, expect.any(Number))
         expect(gain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(0.0001, expect.any(Number))
         expect(osc.connect).toHaveBeenCalledWith(gain)
-        expect(gain.connect).toHaveBeenCalledWith(activeCtx.destination)
+        expect(gain.connect).toHaveBeenCalledWith(activeCtx.nodes[3])
         expect(osc.start).toHaveBeenCalledTimes(1)
         expect(osc.stop).toHaveBeenCalledTimes(1)
     })
@@ -367,7 +373,7 @@ describe('trigger / play', () => {
     it('dispatches corridor-bloom to triggerCorridorBloom', () => {
         start()
         trigger('corridor-bloom')
-        expect(activeCtx.nodes.length).toBe(5)
+        expect(activeCtx.nodes.length).toBe(6)
     })
     it('is a no-op for non-bloom names', () => {
         start()
@@ -391,14 +397,15 @@ describe('disposeAudio', () => {
         disposeAudio()
         expect(cancelSpy).toHaveBeenCalledTimes(1)
         expect(activeCtx.nodes[0].stop).toHaveBeenCalledTimes(1)
-        activeCtx.nodes.forEach((n: any) => expect(n.disconnect).toHaveBeenCalledTimes(1))
+        activeCtx.nodes.slice(0, 3).forEach((n: any) => expect(n.disconnect).toHaveBeenCalledTimes(1))
+        expect(activeCtx.nodes[3].disconnect).not.toHaveBeenCalled()
     })
-    it('closes audioCtx when not closed', () => {
+    it('leaves the shared audioCtx open for other surfaces', () => {
         start()
         disposeAudio()
-        expect(activeCtx!.close).toHaveBeenCalledTimes(1)
+        expect(activeCtx!.close).not.toHaveBeenCalled()
     })
-    it('skips close when audioCtx is already closed', () => {
+    it('does not close an already-closed shared audioCtx', () => {
         start()
         activeCtx.state = 'closed'
         disposeAudio()
@@ -430,8 +437,9 @@ describe('audio-scape — as unknown as cast lock-in (laneC-dsfree)', () => {
         expect(castMatches.length).toBe(0)
     })
 
-    it('window accessor uses the typed single-cast form', () => {
-        expect(stripped).toMatch(/return window as WindowWithAudioContext\b/)
+    it('uses the shared engine instead of a private window constructor', () => {
+        expect(stripped).toMatch(/sharedAudioContext\(\)/)
+        expect(stripped).not.toMatch(/new\s+\(?[^\n]*AudioContext/)
     })
 
     it('camera accessor is cast-free (returns the typed camera, null-guarded at call site)', () => {

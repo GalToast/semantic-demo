@@ -12,12 +12,8 @@
  */
 
 import { isAudioMuted } from '@lib/audio/audio-scape'
+import { masterStageFor, sharedAudioContext } from '@lib/audio/jam-engine'
 import { loadSonicManifest, pickVariantForNode, type SonicClip, type SonicStyle } from '@lib/sonic/sonic-manifest'
-
-interface WindowWithAudioContext extends Window {
-    AudioContext: typeof AudioContext
-    webkitAudioContext?: typeof AudioContext
-}
 
 let ctx: AudioContext | null = null
 let currentSource: AudioBufferSourceNode | null = null
@@ -29,10 +25,7 @@ const bufferCache = new Map<string, AudioBuffer>()
 
 function ensureCtx(): AudioContext | null {
     if (ctx) return ctx
-    const w = window as unknown as Partial<WindowWithAudioContext>
-    const Ctor = w.AudioContext ?? w.webkitAudioContext
-    if (!Ctor) return null
-    ctx = new Ctor()
+    ctx = sharedAudioContext()
     return ctx
 }
 
@@ -97,7 +90,9 @@ export async function playSonicIdentity(
     gain.gain.setValueAtTime(0.0001, c.currentTime)
     gain.gain.exponentialRampToValueAtTime(0.55, c.currentTime + 0.25) // 250ms fade-in
     src.connect(gain)
-    gain.connect(c.destination)
+    const stage = masterStageFor(c)
+    if (stage) gain.connect(stage)
+    else gain.connect(c.destination)
     src.onended = () => {
         if (playingClipId === clip.id) {
             playingClipId = null

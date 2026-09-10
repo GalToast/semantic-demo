@@ -18,6 +18,7 @@
  */
 
 import { pressRadioNote, releaseRadioNote } from '@lib/audio/jam-radio'
+import { sharedAudioContext } from '@lib/audio/jam-engine'
 
 let ctx: AudioContext | null = null
 let stream: MediaStream | null = null
@@ -33,7 +34,6 @@ let lastLevel = 0
 let onPitchCb: ((midi: number | null, level: number) => void) | null = null
 
 const WIN = 2048
-const SR_HINT = 48000
 const UNVOICED_RELEASE_MS = 300
 const POLL_MS = 100
 const MIN_RMS = 0.01
@@ -184,21 +184,14 @@ export async function startVocalMonitor(
             nextStream.getTracks().forEach((track) => track.stop())
             return false
         }
-        const w = window as Window & { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }
-        const Ctor = w.AudioContext ?? w.webkitAudioContext
-        if (!Ctor) {
+        const sharedCtx = sharedAudioContext()
+        if (!sharedCtx) {
             nextStream.getTracks().forEach((track) => track.stop())
             return false
         }
         try {
             stream = nextStream
-            if (!ctx) {
-                try {
-                    ctx = new Ctor({ sampleRate: SR_HINT })
-                } catch {
-                    ctx = new Ctor()
-                }
-            }
+            ctx = sharedCtx
             const resume = (ctx as AudioContext & { resume?: () => Promise<void> }).resume
             if (resume) await resume.call(ctx).catch(() => {})
             source = ctx.createMediaStreamSource(stream)

@@ -324,6 +324,9 @@ export function startJamRadioAt(
             if (sessionToken !== stopToken) return
             clearTimer()
             setState('connecting')
+            // Module-level radio reconnect lifetime is owned by stopToken and
+            // clearTimer; it outlives any one component instance.
+            // eslint-disable-next-line no-restricted-syntax
             reconnectTimer = setTimeout(() => {
                 if (state === 'idle' || sessionToken !== stopToken) return
                 openSocket()

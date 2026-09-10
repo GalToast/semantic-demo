@@ -537,9 +537,9 @@ describe('disposeAudio', () => {
         expect(allNodes.filters[0].disconnect).toHaveBeenCalled()
         expect(allNodes.gains[0].disconnect).toHaveBeenCalled()
     })
-    it('closes audioCtx when not closed', () => {
+    it('leaves the shared audioCtx open for other audio surfaces', () => {
         disposeAudio()
-        expect(lastCtx!.state).toBe('closed')
+        expect(lastCtx!.state).toBe('running')
     })
     it('after dispose, audioState is cleared (isAudioMuted returns true via null ctx/gain)', () => {
         disposeAudio()

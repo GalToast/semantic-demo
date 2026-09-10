@@ -12,6 +12,7 @@ import { pointIndexByLeadId } from '@lib/data-store'
 const state = _state
 import { debugWarn } from '@lib/utils/debug'
 import type { NavState } from '@lib/types/state'
+import { masterStageFor, sharedAudioContext } from '@lib/audio/jam-engine'
 
 // ── Local boundary types ────────────────────────────────────────────────────
 
@@ -26,20 +27,6 @@ interface Vector3Like {
     y: number
     z: number
     distanceTo?(v: Vector3Like): number
-}
-
-/**
- * Window shape that exposes the Web Audio constructors (standard + legacy
- * webkit fallback). Captured once at the startAudioContext scope via the
- * Phase 16 typed-interface pattern: extends the ambient `Window` so only the
- * `AudioContext` + legacy `webkitAudioContext` members need declaring (the
- * DOM lib does not put AudioContext on `Window`).
- */
-interface WindowWithAudioContext extends Window {
-    /** Standard Web Audio constructor (not declared on `Window` in the DOM lib). */
-    AudioContext: typeof AudioContext
-    /** Legacy webkit-prefixed fallback — not present in the standard DOM lib. */
-    webkitAudioContext?: typeof AudioContext
 }
 
 /** Minimal camera shape used by this module. */
@@ -62,10 +49,6 @@ interface Vector3Like {
  */
 interface NavStateWithRoute extends NavState {
     activeRoutePath?: Array<string | number> | null
-}
-
-function getAudioWindow(): WindowWithAudioContext {
-    return window as WindowWithAudioContext
 }
 
 function getCameraLike(): CameraLike | null {
@@ -154,22 +137,26 @@ function startAudioContext(): void {
     if (audioState.audioCtx) return
 
     try {
-        audioState.audioCtx = new (getAudioWindow().AudioContext || getAudioWindow().webkitAudioContext)()
+        const ctx = sharedAudioContext()
+        if (!ctx) return
+        audioState.audioCtx = ctx
 
-        audioState.mainOsc = audioState.audioCtx.createOscillator()
+        audioState.mainOsc = ctx.createOscillator()
         audioState.mainOsc.type = 'sine'
-        audioState.mainOsc.frequency.setValueAtTime(55, audioState.audioCtx.currentTime) // Low A
+        audioState.mainOsc.frequency.setValueAtTime(55, ctx.currentTime) // Low A
 
-        audioState.gainNode = audioState.audioCtx.createGain()
-        audioState.gainNode.gain.setValueAtTime(0, audioState.audioCtx.currentTime)
+        audioState.gainNode = ctx.createGain()
+        audioState.gainNode.gain.setValueAtTime(0, ctx.currentTime)
 
-        audioState.filterNode = audioState.audioCtx.createBiquadFilter()
+        audioState.filterNode = ctx.createBiquadFilter()
         audioState.filterNode.type = 'lowpass'
-        audioState.filterNode.frequency.setValueAtTime(200, audioState.audioCtx.currentTime)
+        audioState.filterNode.frequency.setValueAtTime(200, ctx.currentTime)
 
         audioState.mainOsc.connect(audioState.filterNode)
         audioState.filterNode.connect(audioState.gainNode)
-        audioState.gainNode.connect(audioState.audioCtx.destination)
+        const stage = masterStageFor(ctx)
+        if (stage) audioState.gainNode.connect(stage)
+        else audioState.gainNode.connect(ctx.destination)
 
         audioState.mainOsc.start()
 
@@ -301,7 +288,9 @@ export function triggerCorridorBloom(): void {
         g.gain.exponentialRampToValueAtTime(0.0001, audioState.audioCtx.currentTime + 0.8)
 
         osc.connect(g)
-        g.connect(audioState.audioCtx.destination)
+        const stage = masterStageFor(audioState.audioCtx)
+        if (stage) g.connect(stage)
+        else g.connect(audioState.audioCtx.destination)
 
         osc.start()
         osc.stop(audioState.audioCtx.currentTime + 0.8)
@@ -360,14 +349,10 @@ export function disposeAudio(): void {
         audioState.gainNode.disconnect()
         audioState.gainNode = null
     }
-    if (audioState.audioCtx && audioState.audioCtx.state !== 'closed') {
-        try {
-            audioState.audioCtx.close()
-        } catch {
-            // audioContext may already be closed — safe to ignore
-        }
-        audioState.audioCtx = null
-    }
+    // The context belongs to jam-engine and may still be carrying radio,
+    // vocal, or sonic-identity nodes. Disconnect only this surface; closing
+    // here would tear down unrelated playback and defeat the shared engine.
+    audioState.audioCtx = null
     audioState.lastCameraPos = null
     audioState.currentVelocity = 0
     audioState.smoothVelocity = 0

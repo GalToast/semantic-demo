@@ -39,7 +39,14 @@ import {
     getRecentJamHosts,
     resolveJamUrls
 } from '../../src/lib/audio/jam-config'
-import { volumeToGain, setSharedVolume, getSharedVolume, resetSharedAudioForTest } from '../../src/lib/audio/jam-engine'
+import {
+    volumeToGain,
+    setSharedVolume,
+    getSharedVolume,
+    resetSharedAudioForTest,
+    sharedAudioContext,
+    masterStageFor
+} from '../../src/lib/audio/jam-engine'
 import { getRig, patchRig, subscribeRig, resetRigForTest, JAM_RIG_DEFAULTS } from '../../src/lib/audio/jam-rig'
 import { MUSICIAN_PRESETS, presetById } from '../../src/lib/audio/jam-presets'
 
@@ -400,6 +407,81 @@ describe('jam-engine shared chain', () => {
         } finally {
             resetSharedAudioForTest()
             setSharedVolume(1)
+        }
+    })
+
+    it('reuses one context and builds the master gain -> limiter chain once', () => {
+        type FakeNode = {
+            gain?: { value: number }
+            threshold?: { value: number }
+            knee?: { value: number }
+            ratio?: { value: number }
+            attack?: { value: number }
+            release?: { value: number }
+            fftSize?: number
+            smoothingTimeConstant?: number
+            connections: unknown[]
+            connect: (target: unknown) => void
+        }
+        const node = (params: Partial<FakeNode> = {}): FakeNode => ({
+            connections: [],
+            connect(target: unknown) {
+                this.connections.push(target)
+            },
+            ...params
+        })
+        class FakeContext {
+            readonly destination = node()
+            readonly gains: FakeNode[] = []
+            readonly compressors: FakeNode[] = []
+            readonly analysers: FakeNode[] = []
+            readonly state = 'running'
+            readonly currentTime = 0
+            createGain() {
+                const g = node({ gain: { value: 1 } })
+                this.gains.push(g)
+                return g as unknown as GainNode
+            }
+            createDynamicsCompressor() {
+                const c = node({
+                    threshold: { value: 0 },
+                    knee: { value: 0 },
+                    ratio: { value: 0 },
+                    attack: { value: 0 },
+                    release: { value: 0 }
+                })
+                this.compressors.push(c)
+                return c as unknown as DynamicsCompressorNode
+            }
+            createAnalyser() {
+                const a = node({ fftSize: 0, smoothingTimeConstant: 0 })
+                this.analysers.push(a)
+                return a as unknown as AnalyserNode
+            }
+        }
+        const descriptor = Object.getOwnPropertyDescriptor(window, 'AudioContext')
+        Object.defineProperty(window, 'AudioContext', { configurable: true, writable: true, value: FakeContext })
+        resetSharedAudioForTest()
+        try {
+            const first = sharedAudioContext()
+            const second = sharedAudioContext()
+            expect(first).not.toBeNull()
+            expect(second).toBe(first)
+            const fake = first as unknown as FakeContext
+            expect(fake.gains).toHaveLength(0)
+
+            const stage = masterStageFor(first as AudioContext)
+            expect(stage).toBe(fake.gains[0])
+            expect(fake.gains).toHaveLength(1)
+            expect(fake.compressors).toHaveLength(1)
+            expect(fake.gains[0]?.connections).toContain(fake.compressors[0])
+            expect(fake.compressors[0]?.connections).toContain(fake.destination)
+            expect(fake.gains[0]?.connections).toContain(fake.analysers[0])
+        } finally {
+            resetSharedAudioForTest()
+            setSharedVolume(1)
+            if (descriptor) Object.defineProperty(window, 'AudioContext', descriptor)
+            else delete (window as Window & { AudioContext?: typeof AudioContext }).AudioContext
         }
     })
 })

@@ -1,6 +1,6 @@
 # Sonic Jam Radio — Tiers 2–14
 
-**Status:** active · JAM-1..18, JAM-RC reconnect safety, baseline JAM-R, and live continuous-style interpolation apply/draw are green; quality continuity remains open in follow-up #224
+**Status:** active · JAM-1..18, JAM-RC reconnect safety, baseline JAM-R, shared audio engine/limiter, and live continuous-style interpolation apply/draw are green; quality continuity remains open in follow-up #224
 **Source:** Magenta RT2 pipeline (`mrt2/tmp/jam_server.py`, commit 03cd572 era), ear_v7.1 scorer
 
 ## What this is
@@ -20,19 +20,13 @@ The dial is a 3-way cycle: **★ best → ⚡ beat → 🔴 live → ★**. Each
 `src/lib/audio/jam-steer.ts`:
 
 ```ts
-export function steerJam(pole: JamPole): Promise<boolean> {
-    return fetch(`${JAM_HTTP_URL}/style`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pole })
-    })
-        .then((r) => r.ok)
-        .catch(() => false)
+export function steerJam(pole: JamPole): Promise<JamResult<boolean>> {
+    return postJson(styleUrl(), { pole })
 }
 ```
 
 - `JAMPole = 'beat' | 'best'`, sourced from `JAM_HTTP_URL` in `jam-config.ts` (env-configurable via `VITE_JAM_HTTP_URL`, defaults to `http://127.0.0.1:8083`).
-- **Silent no-op when the jam server is down.** The dial keeps working; only the steering is skipped. This is the whole point — the feature must not degrade the existing playback path.
+- **Discriminated failure results:** `ok`, `offline`, `lease-held`, or `rejected`. The dial keeps working when the jam server is down, while JamView surfaces the reason instead of silently swallowing it.
 - Contract mirror: `mrt2/tmp/jam_server.py` `STYLE_POLE_XY`. `beat` = centroid of techno+disco2+metal; `best` = pop neutral anchor. Verified live against the real server.
 
 ## Tier 3 — jam radio
@@ -59,7 +53,17 @@ multiplexing is planned.
 
 **Held notes:** `RADIO_HELD_NOTES = [45, 52, 57, 64, 71]` — a soft A-minor add9 voicing so the stream plays unattended when nothing else is driving it.
 
-**Public API:** `startJamRadio(ctx, onMetrics?)`, `stopJamRadio()`, `getRadioState(): RadioState` (`'idle' | 'connecting' | 'live'`), plus pure helpers `decodePcmChunk`, `chunkToAudioBuffer`, `scheduleChunk`.
+**Public API:** `startJamRadio(events?)`, `stopJamRadio()`, `getRadioState(): RadioState` (`'idle' | 'connecting' | 'live'`), plus pure helpers `decodePcmChunk`, `chunkToAudioBuffer`, `scheduleChunk`.
+
+## Shared audio engine
+
+`src/lib/audio/jam-engine.ts` is the only production owner that constructs an
+`AudioContext`. It builds one `masterGain -> DynamicsCompressor -> destination`
+chain, applies the persisted 0..2 volume as a v² gain taper, and exposes the
+post-gain recorder/analyser taps. Jam Radio, the reactive audio scape (including
+corridor blooms), SonicIdentity playback, and the vocal monitor all reuse that
+context. Scape teardown disconnects only its own oscillator/filter/gain nodes;
+it never closes the shared context while another surface may still be playing.
 
 ## The dial UI
 
@@ -89,9 +93,9 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
 - **Reconnect journey** (`tests/journey/jam-reconnect.spec.js`, JAM-RC.1..2): a live socket drop reconnects, while the Stop control cancels backoff without resurrecting the radio. 2/2 green.
 - **Real-WebSocket journey** (`tests/journey/jam-real.spec.js`, JAM-R): environment-gated proof of the real 8083 handshake, `uiReady`/`note_on`, and streamed audio frames; requires the live jam stack.
 - **Strict JAM-R result (2026-09-10):** an initial clean run reached `data-live="true"` but exposed a missing jam→decode link and timed out at the strict audio assertion. After owner-controlled reconnect work established jam→LM 8796 and jam→decode 8797 simultaneously, the bounded rerun passed in 8.2s with `uiReady`, summit `state=4` `note_on`, and `audioFrames=1`; post-run TCP retained both links. A subsequent post-apply run passed in 26.1s after `/style_interp t=0.5` returned HTTP 200, with `audioFrames=1`; the table was restored with `/style_interp t=0.0` HTTP 200. Baseline and live interpolation browser audio are proven; quality continuity remains separate.
-- **Unit** (`tests/unit-active/jam-radio.test.ts`, `jam-steer.test.ts`): PCM decode, buffer scheduling, held-notes, gapless resync, steering payloads, morph-safe routing, shared rig notifications, and discriminated server outcomes. 52/52 in the current focused run.
+- **Unit** (`tests/unit-active/jam-radio.test.ts`, `jam-steer.test.ts`, `jam-vocal.test.ts`, `audio-scape-*.test.ts`): PCM decode, buffer scheduling, held-notes, gapless resync, shared engine chain, steering payloads, morph-safe routing, shared rig notifications, vocal signal processing, and discriminated server outcomes. The focused audio run is green.
 - **Build**: `npm run build` — 541 modules transformed, `[tdb-ensure] OK`, and the data-compression gate passes.
-- **Historical full-unit snapshot**: 4239/4242. The 3 failures were a pre-existing merge-reland guard, unrelated.
+- **Full-unit baseline:** the shared-engine migration is green in its affected contracts; two unrelated hygiene guards remain outside this seam (ungated `console.error` calls in `src/main.ts` and historical mixed `test(...)` commits).
 
 ## Known constraints
 
@@ -346,11 +350,14 @@ readout. JAM-6 pins the fetch shape.
 
 `JamView.svelte` exposes `#jam-morph`, a 0..1 range control that debounces
 `POST /style_interp {t}` by 120ms so dragging does not flood the jam server.
-The endpoint is live on MRT2 and acknowledges `t=0.0`, `0.5`, and `1.0`; the
-measured whine zone `[0.74,0.82]` is routed to the safer measured target
-`t=0.75` (fine-map evidence: 97/95 with 12.3% whine, versus 83/71 with
-20.8% whine at `t=0.78`). Client and server apply the same route, and the
-slider reflects the value actually sent.
+The endpoint is live on MRT2 and acknowledges `t=0.0`, `0.5`, and `1.0`;
+`clampMorphT` routes through the measured 12-point map (ear_v10, closes
+#224): safe passthrough on `[0.60,0.66]` and `[0.72,0.74]`, poison zones
+`[0.68,0.70]` and `[0.76,0.80]` snap to the nearest safe edge, and
+`t>=0.81` reaches the 100/100-S summit at `t=0.82` (second perfect score;
+the old blunt `[0.74,0.82]→0.75` clamp blocked it — evidence: 97/95 with
+12.3% whine at 0.75 versus 83/71 with 20.8% at 0.78). Client and server
+apply the same route, and the slider reflects the value actually sent.
 JAM-7 (`tests/journey/jam-view.spec.js`) pins the fetch shape without requiring
 the live stack.
 
