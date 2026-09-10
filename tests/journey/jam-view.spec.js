@@ -213,7 +213,10 @@ test.describe('Jam view', () => {
         const setMorph = async (v) => {
             await page.evaluate((n) => {
                 const el = document.getElementById('jam-morph')
-                if (el) { el.value = String(n); el.dispatchEvent(new Event('input', { bubbles: true })) }
+                if (el) {
+                    el.value = String(n)
+                    el.dispatchEvent(new Event('input', { bubbles: true }))
+                }
             }, v)
         }
         await setMorph(0.5)
@@ -239,7 +242,15 @@ test.describe('Jam view', () => {
         await gotoJam(page)
         // Controls render before connecting (disabled) — the surface is
         // configurable first, play second.
-        for (const sel of ['#jam-state', '#jam-band', '#jam-prog', '#jam-midi', '#jam-vocal', '#jam-morph', '#jam-style']) {
+        for (const sel of [
+            '#jam-state',
+            '#jam-band',
+            '#jam-prog',
+            '#jam-midi',
+            '#jam-vocal',
+            '#jam-morph',
+            '#jam-style'
+        ]) {
             await expect(page.locator(sel)).toBeVisible()
         }
         await expect(page.locator('#jam-frames')).toContainText('0 audio frames')
@@ -314,10 +325,9 @@ test.describe('Jam view', () => {
         await page.fill('#jam-prog-spec', 'Em 4 | C 4 | G 4 | D 4')
         await page.fill('#jam-prog-bpm', '120')
         await page.evaluate(() => document.querySelector('#jam-prog').click())
-        await page.waitForFunction(
-            () => window.__ws.sent.some((m) => m.includes('Em 4 | C 4 | G 4 | D 4')),
-            { timeout: 10000 }
-        )
+        await page.waitForFunction(() => window.__ws.sent.some((m) => m.includes('Em 4 | C 4 | G 4 | D 4')), {
+            timeout: 10000
+        })
         const sent = await page.evaluate(() => window.__ws.sent)
         const sets = sent.filter((m) => m.includes('"prog_set"'))
         expect(sets.length).toBe(1)
@@ -354,5 +364,21 @@ test.describe('Jam view', () => {
         )
         await expect(page.locator('#jam-waiting')).toBeVisible()
         await expect(page.locator('#jam-frames')).toContainText('0 audio frames')
+    })
+
+    test('JAM-12. Mobile viewport has no overflow and stays usable', async ({ page }) => {
+        await mockRadio(page)
+        await page.setViewportSize({ width: 390, height: 844 })
+        await gotoJam(page)
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+        expect(overflow).toBeLessThanOrEqual(1)
+        await page.evaluate(() => document.querySelector('#jam-play').click())
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        for (const sel of ['#jam-preset-clean', '#jam-prog-spec', '#jam-midi', '#jam-vocal', '#jam-morph']) {
+            await expect(page.locator(sel)).toBeVisible()
+        }
     })
 })
