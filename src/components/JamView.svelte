@@ -46,7 +46,15 @@
         stopMidiProgBridge
     } from '@lib/audio/jam-midi'
     import { startVocalMonitor, stopVocalMonitor, isVocalMonitoring } from '@lib/audio/jam-vocal'
-    import { sendStyleText, parseProgressionSpec, setStyleMorph, loadJamSettings, saveJamSettings } from '@lib/audio/jam-radio'
+    import {
+        sendStyleText,
+        parseProgressionSpec,
+        setStyleMorph,
+        loadJamSettings,
+        saveJamSettings,
+        getRadioVolume,
+        setRadioVolume
+    } from '@lib/audio/jam-radio'
     import { MEASURED_SLOT_PRESETS, steerJamBandSlots, type MeasuredSlotPreset } from '@lib/audio/jam-steer'
 
     const savedSettings = loadJamSettings()
@@ -62,6 +70,7 @@
     let presetLabel = $state<string | null>(null)
     let progSpec = $state(savedSettings.progSpec ?? DEFAULT_PROG_SPEC)
     let progBpm = $state(savedSettings.progBpm ?? DEFAULT_PROG_BPM)
+    let volume = $state(savedSettings.volume ?? getRadioVolume())
     let progError = $state<string | null>(null)
     let vocalDenied = $state(false)
     let connectError = $state<string | null>(null)
@@ -244,8 +253,14 @@
         }
     }
 
+    function onVolumeInput(ev: Event & { currentTarget: HTMLInputElement }): void {
+        volume = parseFloat(ev.currentTarget.value)
+        setRadioVolume(volume)
+    }
+
     $effect(() => {
-        saveJamSettings({ noteState, bandMode, progSpec, progBpm, morphT })
+        setRadioVolume(volume)
+        saveJamSettings({ noteState, bandMode, progSpec, progBpm, morphT, volume })
     })
 
     $effect(() => {
@@ -308,6 +323,18 @@
                 {/each}
             </div>
             <span id="jam-frames" class="jam-frames">{audioFrames} audio frame{audioFrames === 1 ? '' : 's'}</span>
+            <label class="jam-vol-label" for="jam-volume">vol</label>
+            <input
+                id="jam-volume"
+                class="jam-morph jam-vol"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                oninput={onVolumeInput}
+                aria-label="Master volume"
+            />
             {#if live && audioFrames === 0}
                 <span id="jam-waiting" class="jam-waiting">Live — waiting for first audio frame…</span>
             {/if}

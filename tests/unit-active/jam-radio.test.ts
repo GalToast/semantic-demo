@@ -14,7 +14,7 @@ import {
 import { pressRadioNote, releaseRadioNote } from '../../src/lib/audio/jam-radio'
 import { startMidiInput, stopMidiInput, getMidiInputCount } from '../../src/lib/audio/jam-midi'
 import { MEASURED_SLOT_PRESETS, RADIO_SUMMIT_SLOTS } from '../../src/lib/audio/jam-steer'
-import { loadJamSettings, saveJamSettings } from '../../src/lib/audio/jam-radio'
+import { loadJamSettings, saveJamSettings, getRadioVolume, setRadioVolume } from '../../src/lib/audio/jam-radio'
 
 describe('send queue (messages before the socket opens)', () => {
     it('queues a message when the socket is closed and flushes on open', () => {
@@ -190,8 +190,15 @@ describe('loadJamSettings / saveJamSettings', () => {
     it('round-trips valid settings', () => {
         vi.stubGlobal('localStorage', fakeStorage())
         try {
-            saveJamSettings({ noteState: 7, bandMode: 'beat', progSpec: 'Em 4 | D 4', progBpm: 132, morphT: 0.5 })
-            expect(loadJamSettings()).toEqual({ noteState: 7, bandMode: 'beat', progSpec: 'Em 4 | D 4', progBpm: 132, morphT: 0.5 })
+            saveJamSettings({ noteState: 7, bandMode: 'beat', progSpec: 'Em 4 | D 4', progBpm: 132, morphT: 0.5, volume: 0.7 })
+            expect(loadJamSettings()).toEqual({
+                noteState: 7,
+                bandMode: 'beat',
+                progSpec: 'Em 4 | D 4',
+                progBpm: 132,
+                morphT: 0.5,
+                volume: 0.7
+            })
         } finally {
             vi.unstubAllGlobals()
         }
@@ -215,9 +222,29 @@ describe('loadJamSettings / saveJamSettings', () => {
         vi.stubGlobal('localStorage', undefined)
         try {
             expect(loadJamSettings()).toEqual({})
-            expect(() => saveJamSettings({ noteState: 4, bandMode: 'tone', progSpec: 'x', progBpm: 100, morphT: 0 })).not.toThrow()
+            expect(() =>
+                saveJamSettings({ noteState: 4, bandMode: 'tone', progSpec: 'x', progBpm: 100, morphT: 0, volume: 1 })
+            ).not.toThrow()
         } finally {
             vi.unstubAllGlobals()
+        }
+    })
+})
+
+describe('setRadioVolume / getRadioVolume', () => {
+    it('sets, gets and clamps without a context', () => {
+        const prev = getRadioVolume()
+        try {
+            setRadioVolume(0.5)
+            expect(getRadioVolume()).toBe(0.5)
+            setRadioVolume(2)
+            expect(getRadioVolume()).toBe(1)
+            setRadioVolume(-1)
+            expect(getRadioVolume()).toBe(0)
+            setRadioVolume(Number.NaN)
+            expect(getRadioVolume()).toBe(0)
+        } finally {
+            setRadioVolume(prev)
         }
     })
 })

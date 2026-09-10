@@ -351,6 +351,23 @@ export function ensureAudioRunning(audioCtx: AudioContext): void {
     }
 }
 
+/** Master volume 0..1 with a lazily-built gain stage. Sources connect
+ * through it when the context supports gain; otherwise they fall back to
+ * a direct connection so headless/mocked contexts never break playback. */
+let radioVolume = 1
+let masterGain: GainNode | null = null
+export function getRadioVolume(): number {
+    return radioVolume
+}
+export function setRadioVolume(v: number): void {
+    radioVolume = Math.min(1, Math.max(0, Number(v) || 0))
+    try {
+        if (masterGain) masterGain.gain.value = radioVolume
+    } catch {
+        // headless — value still applies when the stage is built
+    }
+}
+
 /** Schedule one base64 chunk; called per audio message. */
 function playChunk(audioCtx: AudioContext, b64: string): void {
     ensureAudioRunning(audioCtx)
@@ -362,7 +379,17 @@ function playChunk(audioCtx: AudioContext, b64: string): void {
     nextStart = nextStart > now + 0.02 ? nextStart : now + 0.05
     const src = audioCtx.createBufferSource()
     src.buffer = buf
-    src.connect(audioCtx.destination)
+    try {
+        if (!masterGain && typeof audioCtx.createGain === 'function') {
+            masterGain = audioCtx.createGain()
+            masterGain.gain.value = radioVolume
+            masterGain.connect(audioCtx.destination)
+        }
+    } catch {
+        masterGain = null
+    }
+    if (masterGain) src.connect(masterGain)
+    else src.connect(audioCtx.destination)
     src.start(nextStart)
     nextStart += buf.duration
 }
@@ -560,6 +587,7 @@ export interface JamSettings {
     progSpec: string
     progBpm: number
     morphT: number
+    volume: number
 }
 const JAM_SETTINGS_KEY = 'sonic-jam-settings-v1'
 export function loadJamSettings(): Partial<JamSettings> {
@@ -579,6 +607,9 @@ export function loadJamSettings(): Partial<JamSettings> {
         }
         if (typeof j.morphT === 'number' && Number.isFinite(j.morphT) && j.morphT >= 0 && j.morphT <= 1) {
             out.morphT = j.morphT
+        }
+        if (typeof j.volume === 'number' && Number.isFinite(j.volume) && j.volume >= 0 && j.volume <= 1) {
+            out.volume = j.volume
         }
         return out
     } catch {

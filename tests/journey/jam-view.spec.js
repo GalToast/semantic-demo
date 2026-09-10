@@ -370,7 +370,9 @@ test.describe('Jam view', () => {
         await mockRadio(page)
         await page.setViewportSize({ width: 390, height: 844 })
         await gotoJam(page)
-        const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+        const overflow = await page.evaluate(
+            () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+        )
         expect(overflow).toBeLessThanOrEqual(1)
         await page.evaluate(() => document.querySelector('#jam-play').click())
         await page.waitForFunction(
@@ -380,5 +382,21 @@ test.describe('Jam view', () => {
         for (const sel of ['#jam-preset-clean', '#jam-prog-spec', '#jam-midi', '#jam-vocal', '#jam-morph']) {
             await expect(page.locator(sel)).toBeVisible()
         }
+    })
+
+    test('JAM-13. Master volume slider persists across reload', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page)
+        await expect(page.locator('#jam-volume')).toBeVisible()
+        await page.evaluate(() => {
+            const el = document.getElementById('jam-volume')
+            if (el) {
+                el.value = '0.5'
+                el.dispatchEvent(new Event('input', { bubbles: true }))
+            }
+        })
+        await page.reload()
+        await page.waitForFunction(() => !!document.querySelector('[data-testid="jam-view"]'), { timeout: 30000 })
+        await expect(page.locator('#jam-volume')).toHaveValue('0.5')
     })
 })
