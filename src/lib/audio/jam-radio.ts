@@ -24,14 +24,7 @@
 
 import { JAM_WS_URL, JAM_HTTP_URL, resolveJamUrls } from '@lib/audio/jam-config'
 import { RADIO_SUMMIT_SLOTS, clampMorphT, steerJamBandSlots } from '@lib/audio/jam-steer'
-import {
-    jamLeaseHeld,
-    jamOffline,
-    jamOk,
-    jamRejected,
-    jamResultLabel,
-    type JamResult
-} from '@lib/audio/jam-result'
+import { jamLeaseHeld, jamOffline, jamOk, jamRejected, jamResultLabel, type JamResult } from '@lib/audio/jam-result'
 import {
     detachRecorderTap,
     getSharedVolume,
@@ -541,11 +534,7 @@ export const RADIO_STALL_AFTER_MS = 8000
  * `hidden` pauses the clock — background-tab timer jitter must not
  * false-positive a stall the stream doesn't have.
  */
-export function stallState(
-    lastMessageAt: number | null,
-    now: number,
-    hidden = false
-): 'ok' | 'waiting' | 'stalled' {
+export function stallState(lastMessageAt: number | null, now: number, hidden = false): 'ok' | 'waiting' | 'stalled' {
     if (lastMessageAt === null) return 'waiting'
     if (hidden) return 'ok'
     return now - lastMessageAt > RADIO_STALL_AFTER_MS ? 'stalled' : 'ok'
@@ -910,9 +899,9 @@ export const SUMMIT_STATE = 4
 
 /** Continuous style morph: t in [0,1] between the current style's table
  * rows and the +500-offset companion rows. mrt2-lane wired /style_interp
- * live (msg 1606). SINGLE MORPH TRUTH: the poison zone [0.74,0.82] (whine
- * spike, fine map) is clamped client-side via clampMorphT — the same value
- * the slider shows and the server receives. Returns a discriminated
+ * live (msg 1606). SINGLE MORPH TRUTH: the measured whine zone [0.74,0.82]
+ * is routed client-side via clampMorphT to its measured safe target — the
+ * same value the slider shows and the server receives. Returns a discriminated
  * JamResult so offline/lease-held surface distinctly. */
 export async function setStyleMorph(t: number): Promise<JamResult<boolean>> {
     const tt = clampMorphT(t)

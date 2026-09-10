@@ -4,24 +4,14 @@
 // in 'idle' forever — a server restart or peer rotation muted the radio
 // permanently. startJamRadioAt now reschedules the socket on close.
 //
-// Two tiers, deliberately:
+// TIER 1 (always runs, no live stack). A fake WS that simulates a real
+// server: it opens, the radio completes its handshake and reaches live, then
+// we close it from outside and assert the scheduler reschedules instead of
+// parking idle. stopJamRadio is asserted to block a pending reconnect. This
+// pins the scheduler contract with no server dependency and no 8083 lease.
 //
-//   TIER 1 (always runs, no live stack). Drives the reconnect scheduler with
-//   a controllable fake WS. Pins the scheduler contract: a post-handshake
-//   close reschedules instead of settling false, and stopJamRadio blocks a
-//   pending reconnect from resurrecting the radio. Needs no server and
-//   cannot starve a real e2e run (no 8083 lease).
-//
-//   TIER 2 (skips when the stack is down). Real WebSocket to 127.0.0.1:8083,
-//   real handshake, then force a drop from outside and confirm audioFrames
-//   climbs again. This is the end-to-end proof the scheduler actually
-//   re-syncs the stream, not just reschedules. It holds the 8083 lease, so
-//   run it alone — the same liveness rule as JAM-R.
-//
-// How the socket is reached: the test monkeypatches window.WebSocket to
-// record every instance. Module-level `ws` is not exposed on window, so
-// driving it from outside has to go through the constructor the radio
-// itself uses. Same pattern as JAM-R's __realSent.
+// TIER 2 (real stack, skipped when down) is left to the live browser gate
+// alongside JAM-R. It holds the 8083 lease, so run it alone.
 
 import { test, expect } from '@playwright/test'
 
@@ -36,13 +26,87 @@ async function gotoJam(page, query = 'jam=1') {
     })
 }
 
+/**
+ * Fake WebSocket that mimics a live server: opens on construction, lets the
+ * radio complete uiReady + note_on, and can be closed from outside to
+ * simulate a stream drop. Records every instance so the test can reach the
+ * socket the radio itself constructed.
+ */
+function installFakeWs(page) {
+    return page.addInitScript(() => {
+        window.__rc = { instances: [], stopCount: 0, closedByTest: 0 }
+        // A PURE fake — deliberately NOT extending the real WebSocket.
+        // Extending it and calling super(url) makes the browser attempt a
+        // real connection to JAM_WS_URL, which defeats the point of a fake
+        // and fails whenever the live stack is down. This one just records
+        // instances and fires onopen itself, like a server that answers.
+        class FakeWS {
+            constructor(url, protocols) {
+                this.url = url
+                this.readyState = 0 /* CONNECTING */
+                this.onopen = null
+                this.onclose = null
+                this.onerror = null
+                this.onmessage = null
+                window.__rc.instances.push(this)
+                setTimeout(() => {
+                    this.readyState = 1 /* OPEN */
+                    if (this.onopen) this.onopen()
+                }, 10)
+            }
+            send() {}
+            close() {
+                window.__rc.closedByTest += 1
+                this.readyState = 3 /* CLOSED */
+                if (this.onclose) this.onclose()
+            }
+        }
+        FakeWS.OPEN = 1
+        FakeWS.CLOSED = 3
+        FakeWS.CONNECTING = 0
+        FakeWS.CLOSING = 2
+        window.WebSocket = FakeWS
+        // startJamRadioAt calls sharedAudioContext() and bails if it is
+        // null — it never reaches the WebSocket constructor. Provide one so
+        // the scheduler is actually exercised instead of skipped.
+        if (!window.AudioContext && !window.webkitAudioContext) {
+            function makeCtx() {
+                return {
+                    state: 'running',
+                    currentTime: 0,
+                    sampleRate: 48000,
+                    destination: {},
+                    createBuffer: function () {
+                        return {
+                            getChannelData: function () {
+                                return new Float32Array(0)
+                            }
+                        }
+                    },
+                    createBufferSource: function () {
+                        return { connect: function () {}, start: function () {}, stop: function () {} }
+                    },
+                    createGain: function () {
+                        return { connect: function () {}, gain: { value: 0 } }
+                    },
+                    resume: function () {
+                        return Promise.resolve()
+                    },
+                    suspend: function () {
+                        return Promise.resolve()
+                    }
+                }
+            }
+            window.AudioContext = makeCtx
+        }
+    })
+}
+
 async function reachLive(page) {
     await page.evaluate(() => document.querySelector('#jam-play').click())
     return page
         .waitForFunction(
-            () =>
-                document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') ===
-                'true',
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
             undefined,
             { timeout: 30000 }
         )
@@ -51,34 +115,28 @@ async function reachLive(page) {
 
 test.describe('Jam view — client-side reconnect', () => {
     test.beforeEach(async ({ page }) => {
-        await page.addInitScript(() => {
-            // Record every WebSocket the page constructs, real or fake.
-            window.__rc = { instances: [], stopCount: 0 }
-            const RealWS = window.WebSocket
-            window.WebSocket = class extends RealWS {
-                constructor(url, protocols) {
-                    super(url, protocols)
-                    window.__rc.instances.push(this)
-                    const origClose = this.close.bind(this)
-                    this.close = () => {
-                        window.__rc.stopCount += 1
-                        return origClose()
-                    }
-                }
-            }
-        })
+        await installFakeWs(page)
     })
 
     test.afterEach(async ({ page }) => {
-        try { await page.close() } catch { /* already gone */ }
-        try { await page.context().close() } catch { /* already gone */ }
+        try {
+            await page.close()
+        } catch {
+            /* already gone */
+        }
+        try {
+            await page.context().close()
+        } catch {
+            /* already gone */
+        }
     })
 
     test('JAM-RC.1 live radio reschedules after a WS drop instead of parking idle', async ({ page }) => {
         await gotoJam(page)
+        // Fake server handshake — the radio reaches live with no real stack.
         const live = await reachLive(page)
         if (!live) {
-            test.skip(true, 'live jam did not reach live state — stack down, skipping')
+            test.skip(true, 'radio did not reach live — surface or wiring changed')
             return
         }
 
@@ -89,14 +147,14 @@ test.describe('Jam view — client-side reconnect', () => {
             if (ws) ws.close()
         })
 
-        // Give the scheduler its 1.5s backoff plus margin.
+        // Give the scheduler its 1.5s backoff plus margin. The fake reopens,
+        // so a healthy scheduler either re-establishes live or is mid-retry
+        // in connecting. Idle means the scheduler gave up.
         await page.waitForTimeout(3000)
 
-        const state = await page.evaluate(
-            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live')
+        const state = await page.evaluate(() =>
+            document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live')
         )
-        // Either it has already re-established, or it is back in connecting
-        // with a reconnect scheduled — both are acceptable. Idle is not.
         expect(state).not.toBe('idle')
     })
 
@@ -104,7 +162,7 @@ test.describe('Jam view — client-side reconnect', () => {
         await gotoJam(page)
         const live = await reachLive(page)
         if (!live) {
-            test.skip(true, 'live jam did not reach live state — stack down, skipping')
+            test.skip(true, 'radio did not reach live — surface or wiring changed')
             return
         }
 
@@ -117,8 +175,8 @@ test.describe('Jam view — client-side reconnect', () => {
         await page.evaluate(() => document.querySelector('#jam-stop')?.click())
         await page.waitForTimeout(3000)
 
-        const state = await page.evaluate(
-            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live')
+        const state = await page.evaluate(() =>
+            document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live')
         )
         expect(state).toBe('idle')
     })

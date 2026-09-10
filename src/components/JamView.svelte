@@ -130,6 +130,11 @@
     let level = $state(0)
     let lastMsgAt = $state<number | null>(null)
     let nowTs = $state(0)
+    // Transport telemetry: buffer/drops/latency name the cause every time
+    // the meter sits at zero (starving server vs stall vs suspended ctx).
+    // Declared before the stall deriveds — they read it.
+    let metrics = $state<RadioMetrics | null>(null)
+    let meterTimer: ReturnType<typeof setInterval> | null = null
     // Split stalls: audio silence vs metrics silence are different faults
     // (dead decode vs dead steering loop). A metrics-only keepalive must not
     // mask dead audio, and background-tab timer jitter must not false-positive.
@@ -137,10 +142,6 @@
     const metricsStall = $derived(live && metrics ? stallState(lastMsgAt, nowTs, document.hidden) : 'ok')
     const stall = $derived(audioStall === 'stalled' || metricsStall === 'stalled' ? 'stalled' : 'ok')
     const degraded = $derived(live && stall === 'stalled')
-    // Transport telemetry: buffer/drops/latency name the cause every time
-    // the meter sits at zero (starving server vs stall vs suspended ctx).
-    let metrics = $state<RadioMetrics | null>(null)
-    let meterTimer: ReturnType<typeof setInterval> | null = null
 
     const measured = $derived(isMeasuredPair(noteState, bandMode))
     // Displayed level follows the monitor mix: a muted rig shows a flat
@@ -160,7 +161,7 @@
                 const f32 = decodePcmChunk(frame.data)
                 let peak = 0
                 for (let i = 0; i < f32.length; i += 4) {
-                    const a = Math.abs(f32[i])
+                    const a = Math.abs(f32[i] ?? 0)
                     if (a > peak) peak = a
                 }
                 level = Math.max(Math.min(1, peak), level * 0.6)

@@ -5,7 +5,7 @@
  * (mrt2 tmp/WHINE_SCAN_RESULTS.md, FINAL_SCAN_RESULTS.md).
  */
 import { describe, it, expect } from 'vitest'
-import { bandMaskBody, clampMorphT, RADIO_SUMMIT_SLOTS } from '../../src/lib/audio/jam-steer'
+import { bandMaskBody, clampMorphT, MORPH_SAFE_ROUTE, RADIO_SUMMIT_SLOTS } from '../../src/lib/audio/jam-steer'
 
 describe('bandMaskBody', () => {
     it('wraps a named preset in the {preset} field', () => {
@@ -50,10 +50,11 @@ describe('clampMorphT', () => {
         expect(clampMorphT(1)).toBe(1)
         expect(clampMorphT(0.72)).toBe(0.72)
     })
-    it('snaps the poison zone [0.74,0.82] down to 0.72', () => {
-        expect(clampMorphT(0.78)).toBe(0.72)
-        expect(clampMorphT(0.74)).toBe(0.72)
-        expect(clampMorphT(0.82)).toBe(0.72)
+    it('routes the measured whine zone [0.74,0.82] to its safe target', () => {
+        expect(MORPH_SAFE_ROUTE.target).toBe(0.75)
+        expect(clampMorphT(0.78)).toBe(MORPH_SAFE_ROUTE.target)
+        expect(clampMorphT(MORPH_SAFE_ROUTE.start)).toBe(MORPH_SAFE_ROUTE.target)
+        expect(clampMorphT(MORPH_SAFE_ROUTE.end)).toBe(MORPH_SAFE_ROUTE.target)
     })
     it('clamps out-of-range and garbage input into [0,1]', () => {
         expect(clampMorphT(-1)).toBe(0)

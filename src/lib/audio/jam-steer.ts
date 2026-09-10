@@ -134,19 +134,32 @@ export function steerJamBandMask(preset: JamBandPreset): Promise<JamResult<boole
 /** Set the live jam's style mask to explicit per-RVQ-level slots (e.g. the
  * {2,11} summit). Same endpoint as steerJamBandMask with the slots field. */
 
-/** Clamp a continuous-morph t value into the safe range: [0,1], with the
- * poison zone [0.74,0.82] (whine spike, fine map a4ebf93) snapped down to
- * 0.72. Pure — unit tested. */
+/** Measured safe route for the continuous-morph whine zone.
+ *
+ * The fine map in `C:\\tmp\\style_interp\\pothole_scores.json` measured
+ * t=.75 at 97/95 (v10/v7) with 12.3% whine, while t=.78 fell to 83/71 with
+ * 20.8% whine. Keep the route explicit so the client and server can share
+ * the same target while the broader .6 -> .7 continuity question remains
+ * tracked separately in task #224. */
+export const MORPH_SAFE_ROUTE = Object.freeze({
+    start: 0.74,
+    end: 0.82,
+    target: 0.75
+} as const)
+
+/** Route a continuous-morph t value into [0,1]. Values in the measured
+ * whine zone [0.74,0.82] go to the measured safe target instead. Pure —
+ * unit tested. The historical function name is retained for callers. */
 export function clampMorphT(t: number): number {
     const v = Math.max(0, Math.min(1, Number(t) || 0))
-    return v >= 0.74 && v <= 0.82 ? 0.72 : v
+    return v >= MORPH_SAFE_ROUTE.start && v <= MORPH_SAFE_ROUTE.end ? MORPH_SAFE_ROUTE.target : v
 }
 
 /** Continuous style morph: t in [0,1] between the current style's table
  * rows and the +500 companion rows. Server interpolates the style table
- * per frame. SINGLE MORPH TRUTH: the poison zone [0.74,0.82] (whine spike,
- * fine map a4ebf93) is clamped client-side via clampMorphT before sending,
- * so the slider position always equals the sent value. */
+ * per frame. SINGLE MORPH TRUTH: the measured whine zone [0.74,0.82] is
+ * routed client-side via clampMorphT before sending, so the slider position
+ * always equals the sent value. */
 export function steerJamStyleInterp(t: number): Promise<JamResult<boolean>> {
     return postJson(styleInterpUrl(), { t: clampMorphT(t) })
 }

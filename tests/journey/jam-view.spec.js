@@ -230,13 +230,13 @@ test.describe('Jam view', () => {
         expect(calls.length).toBe(1)
         const body = JSON.parse(calls[0].opts.body)
         expect(body.t).toBe(0.5)
-        // Poison zone [0.74, 0.82] snaps client-side to 0.72 — SINGLE MORPH
-        // TRUTH: the thumb always equals the sent value, no lying readout.
+        // Measured whine zone [0.74, 0.82] routes client-side to 0.75 — SINGLE
+        // MORPH TRUTH: the thumb always equals the sent value, no lying readout.
         await setMorph(0.78)
         await page.waitForTimeout(250)
         const calls2 = await page.evaluate(() => window.__interpCalls)
-        expect(JSON.parse(calls2[calls2.length - 1].opts.body).t).toBe(0.72)
-        await expect(page.locator('#jam-morph-val')).toHaveText('0.72')
+        expect(JSON.parse(calls2[calls2.length - 1].opts.body).t).toBe(0.75)
+        await expect(page.locator('#jam-morph-val')).toHaveText('0.75')
     })
 
     test('JAM-8. Idle surface is pre-configurable; keyboard drives transport and dial', async ({ page }) => {

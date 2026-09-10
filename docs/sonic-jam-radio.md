@@ -116,7 +116,7 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
     overflow; evidence: `tmp/sonic-jam-mobile-390x844.png`.
 11. ✅ continuous style morph (tier 14) — JamView `#jam-morph` sends the
     debounced `/style_interp` contract; JAM-7 passes with the wire payload
-    verified at `t=0.50` and `t=0.78`.
+    verified at `t=0.50` and unsafe input `t=0.78` routed to `t=0.75`.
 
 ## Tier 4 — pitch-slot latent states
 
@@ -343,10 +343,11 @@ readout. JAM-6 pins the fetch shape.
 
 `JamView.svelte` exposes `#jam-morph`, a 0..1 range control that debounces
 `POST /style_interp {t}` by 120ms so dragging does not flood the jam server.
-The endpoint is live on MRT2 and acknowledges `t=0.0`, `0.5`, and `1.0`; its
-server-side poison-zone clamp avoids the measured whine spike near `t=0.78`
-by snapping that interval to `0.72` (Switchboard verification msg 1606).
-The client sends the raw position and leaves that safety clamp server-owned.
+The endpoint is live on MRT2 and acknowledges `t=0.0`, `0.5`, and `1.0`; the
+measured whine zone `[0.74,0.82]` is routed to the safer measured target
+`t=0.75` (fine-map evidence: 97/95 with 12.3% whine, versus 83/71 with
+20.8% whine at `t=0.78`). Client and server apply the same route, and the
+slider reflects the value actually sent.
 JAM-7 (`tests/journey/jam-view.spec.js`) pins the fetch shape without requiring
 the live stack.
 
