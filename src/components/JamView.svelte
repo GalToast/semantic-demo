@@ -55,6 +55,7 @@
         saveJamSettings,
         getRadioVolume,
         setRadioVolume,
+        stallState,
         isRecorderSupported,
         isRecording,
         startJamRecording,
@@ -91,16 +92,22 @@
     // This is the user-visible answer to "is sound actually flowing".
     let audioFrames = $state(0)
     let level = $state(0)
+    let lastMsgAt = $state<number | null>(null)
+    let nowTs = $state(0)
+    const stall = $derived(live ? stallState(lastMsgAt, nowTs) : 'ok')
     // Transport telemetry: buffer/drops/latency name the cause every time
     // the meter sits at zero (starving server vs stall vs suspended ctx).
     let metrics = $state<RadioMetrics | null>(null)
     let meterTimer: ReturnType<typeof setInterval> | null = null
 
     const measured = $derived(isMeasuredPair(noteState, bandMode))
-    const meterFilled = $derived(Math.round(Math.min(1, Math.max(0, level)) * 12))
+    // Displayed level follows the monitor mix: a muted rig shows a flat
+    // meter instead of dancing to inaudible chunks.
+    const meterFilled = $derived(Math.round(Math.min(1, Math.max(0, level)) * Math.min(1, volume) * 12))
 
     function onAudioFrame(frame?: { data?: unknown }): void {
         audioFrames += 1
+        lastMsgAt = Date.now()
         if (typeof window !== 'undefined') {
             const w = window as Window & { __audioFrames?: number }
             w.__audioFrames = (w.__audioFrames || 0) + 1
@@ -136,10 +143,12 @@
     }
     function onProgStatus(s: RadioProgStatus): void {
         progStatus = s
+        lastMsgAt = Date.now()
         if (typeof s.running === 'boolean') progPlaying = s.running
     }
     function onMetrics(m: RadioMetrics): void {
         metrics = m
+        lastMsgAt = Date.now()
     }
 
     async function toggleRecord(): Promise<void> {
@@ -175,6 +184,8 @@
         } else {
             progStatus = null
             metrics = null
+            lastMsgAt = null
+            nowTs = Date.now()
             connectError = null
             const ok = await startJamRadio({ onState: onRadioState, onProgStatus, onAudioFrame, onMetrics })
             if (!ok) {
@@ -309,6 +320,7 @@
         window.addEventListener('keydown', onKey)
         meterTimer = setInterval(() => {
             if (level > 0) level = Math.max(0, level - 0.09)
+            nowTs = Date.now()
         }, 120)
         return () => {
             window.removeEventListener('keydown', onKey)
@@ -318,6 +330,7 @@
     })
 
     $effect(() => () => {
+        if (recUrl) URL.revokeObjectURL(recUrl)
         if (morphDebounce) clearTimeout(morphDebounce)
         stopRadioProg()
         stopMidiProgBridge()
@@ -407,6 +420,11 @@
             <span id="jam-vol-val" class="jam-morph-val">{Math.round(volume * 100)}%</span>
             {#if live && audioFrames === 0}
                 <span id="jam-waiting" class="jam-waiting">Live — waiting for first audio frame…</span>
+            {/if}
+            {#if stall === 'stalled'}
+                <p id="jam-stalled" class="jam-error" role="alert">
+                    Stream stalled — no data for a while. The connection may be half-open; stop and press play again.
+                </p>
             {/if}
         </div>
     </section>

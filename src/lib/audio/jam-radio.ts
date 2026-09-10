@@ -167,10 +167,12 @@ interface MIDIAccessLike {
     inputs: { forEach: (cb: (input: { onmidimessage: ((ev: { data: Uint8Array }) => void) | null }) => void) => void }
 }
 
-/** De-interleave a stereo chunk into an AudioBuffer scheduled for playback. */
-export function chunkToAudioBuffer(ctx: AudioContext, interleaved: Float32Array): AudioBuffer {
+/** De-interleave a stereo chunk into an AudioBuffer scheduled for playback.
+ * `rate` honors the frame's declared sample rate — ignoring it would
+ * pitch-shift any non-48k stream, so it defaults instead of assumes. */
+export function chunkToAudioBuffer(ctx: AudioContext, interleaved: Float32Array, rate = 48000): AudioBuffer {
     const frames = Math.floor(interleaved.length / 2)
-    const buf = ctx.createBuffer(2, frames, 48000)
+    const buf = ctx.createBuffer(2, frames, rate)
     const l = buf.getChannelData(0)
     const r = buf.getChannelData(1)
     for (let i = 0; i < frames; i++) {
@@ -286,46 +288,75 @@ export function startJamRadioAt(
 
     return new Promise<boolean>((resolve) => {
         let settled = false
-        try {
-            ws = new WebSocket(JAM_WS_URL)
-        } catch {
-            setState('idle')
-            resolve(false)
-            return
-        }
-        const fail = (): void => {
-            if (!settled) {
-                settled = true
-                pendingQueue.length = 0
-                setState('idle')
-                resolve(false)
+        let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+        const clearTimer = () => {
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer)
+                reconnectTimer = null
             }
         }
-        ws.onopen = () => {
-            if (settled) return
-            settled = true
-            setState('live')
-            send({ type: 'uiReady' })
-            // Activate the summit band mask alongside the pitch state.
-            // Slots {2,11} at cond 11 = 100/100-S with whine 2.6% and
-            // tempo 137 — the whine-clean summit (mrt2 tmp/WHINE_SCAN_RESULTS.md),
-            // superseding the original L2-only melodic preset (whine 12.8%).
-            void steerJamBandSlots(RADIO_SUMMIT_SLOTS)
-            bandMode = 'tone'
-            flushPending()
-            for (const n of heldNotes) send({ type: 'note_on', note: n.note, state: n.state })
-            resolve(true)
+        const scheduleReconnect = () => {
+            if (stopToken !== 0) return
+            clearTimer()
+            setState('connecting')
+            reconnectTimer = setTimeout(() => {
+                if (state === 'idle' || stopToken !== 0) return
+                reconnectAttempt += 1
+                openSocket()
+            }, 1500)
         }
-        ws.onerror = fail
-        ws.onclose = fail
-        ws.onmessage = (ev) => {
+        let reconnectAttempt = 0
+        const openSocket = () => {
             try {
-                const msg = JSON.parse(ev.data as string) as Record<string, unknown>
-                if (msg.type === 'audio' && typeof msg.data === 'string' && ctx) {
-                    playChunk(ctx, msg.data)
-                    events.onAudioFrame?.(msg as unknown as RadioAudioFrame)
-                } else if (msg.type === 'metrics') {
-                    events.onMetrics?.(msg as unknown as RadioMetrics)
+                ws = new WebSocket(JAM_WS_URL)
+            } catch {
+                scheduleReconnect()
+                return
+            }
+            ws.onopen = () => {
+                if (settled) return
+                settled = true
+                setState('live')
+                send({ type: 'uiReady' })
+                // Activate the summit band mask alongside the pitch state.
+                // Slots {2,11} at cond 11 = 100/100-S with whine 2.6% and
+                // tempo 137 — the whine-clean summit (mrt2 tmp/WHINE_SCAN_RESULTS.md),
+                // superseding the original L2-only melodic preset (whine 12.8%).
+                void steerJamBandSlots(RADIO_SUMMIT_SLOTS)
+                bandMode = 'tone'
+                flushPending()
+                for (const n of heldNotes) send({ type: 'note_on', note: n.note, state: n.state })
+                resolve(true)
+            }
+            ws.onerror = () => {
+                // onerror is followed by onclose; let onclose drive the
+                // reconnect so we don't double-schedule.
+            }
+            ws.onclose = () => {
+                clearTimer()
+                if (settled) {
+                    // Initial handshake failed — give up rather than retry
+                    // forever against a dead stack.
+                    settled = false
+                    pendingQueue.length = 0
+                    setState('idle')
+                    resolve(false)
+                    return
+                }
+                // Connection dropped after we were live. The stream is
+                // gapless-expected, so a drop is a fault, not a feature —
+                // reconnect rather than parking in idle. The server rotates
+                // its LM/decode peers; the client should survive it.
+                scheduleReconnect()
+            }
+            ws.onmessage = (ev) => {
+                try {
+                    const msg = JSON.parse(ev.data as string) as Record<string, unknown>
+                    if (msg.type === 'audio' && typeof msg.data === 'string' && ctx) {
+                        playChunk(ctx, msg.data, typeof msg.rate === 'number' ? msg.rate : undefined)
+                        events.onAudioFrame?.(msg as unknown as RadioAudioFrame)
+                    } else if (msg.type === 'metrics') {
+                        events.onMetrics?.(msg as unknown as RadioMetrics)
                 } else if (msg.type === 'prog_status' || msg.type === 'prog_learned') {
                     events.onProgStatus?.(msg as unknown as RadioProgStatus)
                 }
@@ -371,7 +402,7 @@ export function setRadioVolume(v: number): void {
 }
 
 /** Schedule one base64 chunk; called per audio message. */
-function playChunk(audioCtx: AudioContext, b64: string): void {
+function playChunk(audioCtx: AudioContext, b64: string, rate?: number): void {
     ensureAudioRunning(audioCtx)
     const interleaved = decodePcmChunk(b64)
     if (interleaved.length < 2) return
@@ -386,17 +417,15 @@ function playChunk(audioCtx: AudioContext, b64: string): void {
             masterGain = audioCtx.createGain()
             masterGain.gain.value = radioVolume
             masterGain.connect(audioCtx.destination)
+            // The record tap hangs off the gain stage, not the source:
+            // takes match what the musician actually heard.
+            if (recStream) masterGain.connect(recStream)
         }
     } catch {
         masterGain = null
     }
     if (masterGain) src.connect(masterGain)
     else src.connect(audioCtx.destination)
-    try {
-        if (recStream) src.connect(recStream)
-    } catch {
-        // recording tap is best-effort — never break playback
-    }
     src.start(nextStart)
     nextStart += buf.duration
 }
@@ -425,7 +454,17 @@ export function startJamRecording(): boolean {
     if (recording || !ctx || !isRecorderSupported()) return false
     try {
         const Ctor = (window as Window & { MediaRecorder: typeof MediaRecorder }).MediaRecorder
-        if (!recStream) recStream = ctx.createMediaStreamDestination()
+        if (!recStream) {
+            recStream = ctx.createMediaStreamDestination()
+            // Post-gain tap (see playChunk): takes match the monitor mix.
+            if (masterGain) {
+                try {
+                    masterGain.connect(recStream)
+                } catch {
+                    // best-effort — the direct tap still records
+                }
+            }
+        }
         recChunks = []
         recorder = new Ctor(recStream.stream)
         recorder.ondataavailable = (ev: BlobEvent) => {
@@ -439,10 +478,24 @@ export function startJamRecording(): boolean {
         return false
     }
 }
+/** Silence = suspicious. Past this many ms with live state but no frames
+ * of any kind, the socket is probably half-open (TCP up, server gone) and
+ * the UI must say so instead of glowing Live forever. Pure — unit tested. */
+export const RADIO_STALL_AFTER_MS = 8000
+export function stallState(lastMessageAt: number | null, now: number): 'ok' | 'waiting' | 'stalled' {
+    if (lastMessageAt === null) return 'waiting'
+    return now - lastMessageAt > RADIO_STALL_AFTER_MS ? 'stalled' : 'ok'
+}
+
 export function stopJamRecording(): Promise<string | null> {
     const rec = recorder
     recorder = null
     recording = false
+    try {
+        if (masterGain && recStream) masterGain.disconnect(recStream)
+    } catch {
+        // already torn down — ignore
+    }
     if (!rec) return Promise.resolve(null)
     return new Promise((resolve) => {
         const done = () => {
@@ -465,6 +518,7 @@ export function stopJamRecording(): Promise<string | null> {
 }
 
 /** Disconnect from the radio and release held notes. Safe when idle. */
+let stopToken = 0
 let heldNotes: readonly RadioHeldNote[] = []
 /** Notes pressed via MIDI (outside the radio chord), for release on stop. */
 const midiNotes = new Set<number>()
@@ -482,6 +536,9 @@ export function stopJamRadio(): void {
     heldNotes = []
     setState('idle')
     pendingQueue.length = 0
+    // A scheduled reconnect must not resurrect the radio after the user
+    // pressed stop. stopToken is checked at fire time in scheduleReconnect.
+    stopToken += 1
 }
 
 /** Drive the live jam's held notes to a single pitch-slot state.

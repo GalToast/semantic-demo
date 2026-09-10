@@ -19,6 +19,7 @@ import {
     saveJamSettings,
     getRadioVolume,
     setRadioVolume,
+    stallState,
     isRecorderSupported,
     isRecording,
     startJamRecording,
@@ -104,6 +105,10 @@ describe('chunkToAudioBuffer', () => {
     it('handles an odd-length chunk by dropping the trailing half-frame', () => {
         const buf = chunkToAudioBuffer(fakeCtx(), new Float32Array([0.1, 0.2, 0.3]))
         expect(buf.length).toBe(1)
+    })
+    it('defaults to 48k but honors an explicit frame rate', () => {
+        expect(chunkToAudioBuffer(fakeCtx(), new Float32Array([0.1, 0.2])).sampleRate).toBe(48000)
+        expect(chunkToAudioBuffer(fakeCtx(), new Float32Array([0.1, 0.2]), 44100).sampleRate).toBe(44100)
     })
 })
 
@@ -275,6 +280,19 @@ describe('session recorder guards', () => {
     })
     it('stop resolves null when nothing recorded', async () => {
         await expect(stopJamRecording()).resolves.toBeNull()
+    })
+})
+
+describe('stallState (half-open socket detector)', () => {
+    it('reports waiting before any message ever arrives', () => {
+        expect(stallState(null, 1_000_000)).toBe('waiting')
+    })
+    it('reports ok while messages flow', () => {
+        expect(stallState(1_000_000, 1_002_000)).toBe('ok')
+    })
+    it('reports stalled past the threshold, ok at the boundary', () => {
+        expect(stallState(1_000_000, 1_008_001)).toBe('stalled')
+        expect(stallState(1_000_000, 1_008_000)).toBe('ok')
     })
 })
 

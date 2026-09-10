@@ -474,4 +474,25 @@ test.describe('Jam view', () => {
         await expect(page.locator('.jam-health-text')).toContainText('3 dropped')
         await expect(page.locator('.jam-health-text')).toContainText('12.5ms/frame')
     })
+
+    test('JAM-16. A stream gone silent surfaces a stall warning', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page)
+        await page.evaluate(() => document.querySelector('#jam-play').click())
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        // One metrics frame proves the stream was alive, then silence:
+        // past the stall threshold the UI must say so.
+        await page.evaluate(() => {
+            window.__wsSock.onmessage({
+                data: JSON.stringify({ type: 'metrics', frameMs: 10, droppedFrames: 0, bufferAvail: 4, bufferCap: 8 })
+            })
+        })
+        await expect(page.locator('#jam-health')).toBeVisible()
+        await expect(page.locator('#jam-stalled')).toHaveCount(0)
+        await page.waitForTimeout(8500)
+        await expect(page.locator('#jam-stalled')).toBeVisible()
+    })
 })

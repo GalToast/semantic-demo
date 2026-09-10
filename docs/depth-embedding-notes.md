@@ -24,16 +24,16 @@ Null floor (random-pair cosine, n=4000): **0.040**.
 
 ## Bank geometry (cosine on L2-normalized rows)
 
-| bank | adj-cos mean | within-bank mean | verdict |
-| --- | --- | --- | --- |
-| 0–4 | 0.05–0.06 | 0.05–0.07 | categorical (≈ null) |
-| 5 | 0.090 | 0.093 | weakly smooth |
-| 6 | 0.088 | 0.087 | weakly smooth |
-| 7 | 0.093 | 0.096 | weakly smooth |
-| 8 | 0.112 | 0.106 | graded |
-| 9 | 0.122 | 0.122 | graded |
-| 10 | 0.143 | 0.143 | graded |
-| 11 | **0.391** | **0.384** | **smooth manifold** |
+| bank | adj-cos mean | within-bank mean | verdict              |
+| ---- | ------------ | ---------------- | -------------------- |
+| 0–4  | 0.05–0.06    | 0.05–0.07        | categorical (≈ null) |
+| 5    | 0.090        | 0.093            | weakly smooth        |
+| 6    | 0.088        | 0.087            | weakly smooth        |
+| 7    | 0.093        | 0.096            | weakly smooth        |
+| 8    | 0.112        | 0.106            | graded               |
+| 9    | 0.122        | 0.122            | graded               |
+| 10   | 0.143        | 0.143            | graded               |
+| 11   | **0.391**    | **0.384**        | **smooth manifold**  |
 
 Reference points: pitch-slot states ~0.03 (categorical), CFG bins 0.56–0.63
 (smooth). Bank 11 sits between — a genuine cluster, 10x above the floor.

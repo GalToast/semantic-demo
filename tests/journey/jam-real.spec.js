@@ -47,6 +47,7 @@ test.describe('Jam view — real WebSocket path', () => {
         await page.goto(`${TEST_BASE_URL}/dist/svelte/index.html?jam=1`, { waitUntil: 'domcontentloaded' })
         await page.waitForFunction(
             () => document.querySelector('[data-testid="jam-view"]'),
+            undefined,
             { timeout: 30000 }
         )
         await page.evaluate(() => { window.__audioFrames = 0 })
@@ -55,6 +56,7 @@ test.describe('Jam view — real WebSocket path', () => {
         await page.evaluate(() => document.querySelector('#jam-play').click())
         const live = await page.waitForFunction(
             () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            undefined,
             { timeout: 30000 }
         ).catch(() => null)
 
@@ -65,7 +67,7 @@ test.describe('Jam view — real WebSocket path', () => {
             return
         }
 
-        await page.waitForFunction(() => window.__realSent.length >= 2, { timeout: 30000 })
+        await page.waitForFunction(() => window.__realSent.length >= 2, undefined, { timeout: 30000 })
 
         const sent = await page.evaluate(() => window.__realSent)
         expect(sent.some((m) => m.includes('"uiReady"')), 'radio must send uiReady').toBe(true)
@@ -76,7 +78,9 @@ test.describe('Jam view — real WebSocket path', () => {
 
         // The server streams audio frames back. JAM-R's whole point: prove
         // the real server answers the real client, not a mock.
+        await page.waitForFunction(() => (window.__audioFrames || 0) > 0, undefined, { timeout: 30000 })
         const audioFrames = await page.evaluate(() => window.__audioFrames || 0)
         console.log(`[JAM-R] audio frames received: ${audioFrames}`)
+        expect(audioFrames, 'real jam must stream at least one audio frame').toBeGreaterThan(0)
     })
 })

@@ -1,6 +1,6 @@
 # Sonic Jam Radio — Tiers 2–14
 
-**Status:** active · JAM-1..7 and focused Sonic journey green; real-WebSocket JAM-R is environment-gated on the live jam stack
+**Status:** active · JAM-1..7, focused Sonic journey, and baseline real-WebSocket JAM-R are green; live continuous-style interpolation apply/draw remains open
 **Source:** Magenta RT2 pipeline (`mrt2/tmp/jam_server.py`, commit 03cd572 era), ear_v7.1 scorer
 
 ## What this is
@@ -48,14 +48,12 @@ Client → server:
 
 - `{type:'note_on', note:N}` / `{type:'note_off', note:N}` / `{type:'uiReady'}` / `{type:'param', index, value}`
 
-One live session at a time server-side; newest connection wins.
-
-**Scope decision (2026-09-09): single-user product, no multiclient.**
-Newest-wins is CORRECT here, not a limitation: one human jamming means
-one stream, and reconnects take over cleanly. No mix bus, no per-client
-state, no session multiplexing is planned — dev-time probe contention
-(ws_probe loops flapping act["ws"]) is a coordination problem solved by
-quiet windows, not architecture.
+One live measurement session at a time server-side, enforced by an explicit
+lease. The owner retains its metrics/audio stream; a competing probe receives
+HTTP 409 while the lease is active, and an owner reconnect can reacquire it.
+The lease expires after a bounded TTL so an abandoned session cannot block the
+single-user UI forever. No mix bus, per-client stream state, or session
+multiplexing is planned.
 
 **Playback strategy:** each chunk becomes an `AudioBufferSourceNode` scheduled at a monotonically advancing `nextStart` timestamp, so bursty WS arrival still yields gapless output. A starving stream (nextStart fell behind wall clock) resynchronizes to now + a small lead.
 
@@ -89,13 +87,14 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
 - **Journey** (`tests/journey/sonic.spec.js`, SONIC-1..4): play control, 3-way dial cycle, jam `/style` interception, live radio chord hold. 4/4 green.
 - **Standalone Jam journey** (`tests/journey/jam-view.spec.js`, JAM-1..7): engine-free surface, transport, dial/band/progression controls, vocal fallback, text steering, and continuous style morph. 8/8 green.
 - **Real-WebSocket journey** (`tests/journey/jam-real.spec.js`, JAM-R): environment-gated proof of the real 8083 handshake, `uiReady`/`note_on`, and streamed audio frames; requires the live jam stack.
-- **Unit** (`tests/unit-active/jam-radio.test.ts`): `decodePcmChunk`, `chunkToAudioBuffer`, held-notes, gapless resync. 14/14.
+- **Strict JAM-R result (2026-09-10):** an initial clean run reached `data-live="true"` but exposed a missing jam→decode link and timed out at the strict audio assertion. After owner-controlled reconnect work established jam→LM 8796 and jam→decode 8797 simultaneously, the bounded rerun passed in 8.2s with `uiReady`, summit `state=4` `note_on`, and `audioFrames=1`; post-run TCP retained both links. Baseline browser audio is now proven; this does not yet prove live style interpolation.
+- **Unit** (`tests/unit-active/jam-radio.test.ts`): `decodePcmChunk`, `chunkToAudioBuffer`, held-notes, gapless resync. 20/20 in the current focused run.
 - **Build**: `npm run build` — 537 modules transformed, `[tdb-ensure] OK`, and the data-compression gate passes.
 - **Historical full-unit snapshot**: 4239/4242. The 3 failures were a pre-existing merge-reland guard, unrelated.
 
 ## Known constraints
 
-- **Port 8796 is held by mrt2-rt's LM server** (PID 4832). The project's `playwright-web-server.mjs`/`test-server.mjs` cannot start there. Worked around with `TEST_BASE_URL` + `scripts/qa-static-server.mjs` on alternate ports.
+- **Port 8796 is held by MRT2's LM server.** The project's Playwright web server cannot start there. Real jam journeys must set `TEST_BASE_URL` to the already-running static server (currently 8841) and must not start a second 8796 stack.
 - **`record=6218` was a stale fixture** — that lead_id doesn't exist in the 8,406-point corpus. All four sonic specs now use `record=519` (Angel Fire Coffee, index 518).
 - **D3D11 cold-start variance**: fixed `waitForTimeout` settle waits caused "Target page, context or browser has been closed" timeouts. Replaced with `waitForFunction` polls on the render rect.
 - **Svelte 5 omits `aria-pressed` entirely when `false`** — "not live" assertions check _absence_, not the literal `'false'`.
@@ -259,7 +258,7 @@ Evidence: `C:/tmp/live_wait.log`, `C:/tmp/live_capture2.wav`. Reference:
 offline `styled_s7.wav` scores 94; contention-era live captures scored
 47-48 (silence) and 77.
 
-## Audio style-follow (offline path complete; live apply pending on mrt2)
+## Audio style-follow (offline path complete; bridge apply proven; clean-runtime browser proof pending)
 
 Design posted (msg 1584): `POST /style_from_audio {pcm_b64, sr}` → 10s
 rolling buffer → MusicCoCa embed every 2-4s → tokenize → swap
@@ -267,13 +266,23 @@ rolling buffer → MusicCoCa embed every 2-4s → tokenize → swap
 vibe-following; rap-downbeat sync and melody harmonizing stay separate
 future dials.
 
-**Status (2026-09-10): capture, queue, encoder, and status are implemented;
-the live apply proof remains open.** The route accepts a raw-buffer upload,
+**Status (2026-09-10): capture, queue, encoder, status, and one live bridge
+apply are proven.** A real WAV upload returned HTTP 202; job 2 was consumed,
+persisted as a `[12]` `int32` token vector, applied through the jam bridge with
+`lm_applied: true`, and followed by a passing raw two-client lease/stream
+probe. The browser journey now asserts at least one audio frame. An initial
+strict run exposed a stale jam→decode link; after owner-controlled reconnect
+work, the clean rerun reached the live handshake and received one real audio
+frame with both jam downstream TCP links established, so baseline browser audio
+is green. A prior external
+`pitch_style_cross/kill_all.py` loop was observed; the runtime owner now
+reports it parked. The route accepts a raw-buffer upload,
 reads the declared Content-Length before dispatch, persists the exact WAV via
 an atomic rename as `hum_queue/job_N.wav`, and returns a job id. The console's
 MediaRecorder path performs the mono WAV mixdown, submits the capture, and
 polls `GET /style_job?id=N` until queued, done, or error. This is now an
-offline-proven pipeline; the live stack still needs one coordinated run.
+offline- and bridge-proven pipeline; the browser proof still needs one clean
+coordinated run.
 
 The encoder path itself exists: `encode_chain.py` was ground-truth-verified
 against JAX for STFT maxdiff, latent diff, and code-match percentage. The
@@ -292,16 +301,22 @@ without a GPU window or live-stack restart.
 `surf_tokens_for(x, y)` (verified live: it imports cleanly and the
 current jam is serving its tokens). It takes PCA coordinates, not a
 waveform, so it cannot consume audio directly. The offline worker and queue
-seam are now implemented; `codex-disk` still owns `jam_server.py`, so
-coordinate the live reload/apply proof before touching the running server.
+seam are now implemented. The live jam keeps one persistent LM TCP client;
+therefore the worker's direct `--apply-lm` connection is for isolated use only.
+The patched `jam_server.py` exposes `POST /style_tokens`, which serializes the
+validated n==48 control through the jam's existing LM socket.
 
-The browser capture path and server worker are now wired. The remaining step
-is a live proof after the stack is restored and the patched v2 process is
-loaded: run the worker with `--watch --apply-lm`, submit a real recording, and
-capture one post-apply frame while checking jam/decode health. The MusicCoCa
-embed is measured at ~3s per 10s clip on CPU (`scripts/style-ear-latency.py`,
-deterministic, cos 1.0), and the 914MB TFLite bundle does not fit in a browser,
-so encoding runs server-side by design.
+The browser capture path and server worker are wired. Baseline live browser
+audio is now proven. The remaining #215 proof is to route the 8-byte
+`/style_interp` control through the jam's existing `lm_sock` under
+`lm_io_lock`, require an ACK and changed table version, then capture one
+post-apply live draw/audio and reconcile the existing discontinuity result.
+Do not run a blind `--watch` loop while the known 8-byte `job_1.wav` marker is
+still queued.
+The MusicCoCa embed is measured at ~3s per
+10s clip on CPU (`scripts/style-ear-latency.py`, deterministic, cos 1.0), and
+the 914MB TFLite bundle does not fit in a browser, so encoding runs server-side
+by design.
 
 ## Text-vibe steering (tier 13)
 
