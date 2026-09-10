@@ -12,7 +12,7 @@
   import { playSonicIdentity, stopSonicIdentity, isPlaying } from '@lib/audio/sonic-identity';
   import { steerJam } from '@lib/audio/jam-steer';
   import { jamResultLabel } from '@lib/audio/jam-result';
-  import { getRig, patchRig } from '@lib/audio/jam-rig';
+  import { getRig, patchRig, subscribeRig } from '@lib/audio/jam-rig';
   import { startJamRadio, stopJamRadio, getRadioState, setRadioNoteState, getRadioHeldNotes } from '@lib/audio/jam-radio';
   import { setRadioProg, playRadioProg, stopRadioProg, DEFAULT_PROG_SPEC } from '@lib/audio/jam-radio';
   import { setRadioBandMode, type RadioBandMode } from '@lib/audio/jam-radio';
@@ -89,6 +89,9 @@
     // preset in agreement so the next toggle goes beat, not tone-again.
     if (s === 'live') {
       bandMode = 'tone';
+      noteState = getRig().noteState;
+      patchRig({ noteState, bandMode: 'tone' });
+      setRadioNoteState(noteState);
       // Bridge the summit chord to the sampler so it plays from bar one.
       void startMidiBridge().then((ok) => {
         if (ok) bridgeChordToMidi(getRadioHeldNotes());
@@ -100,6 +103,16 @@
   // Steering failures surface as a dial title tooltip, never silent.
   let bandMode = $state<RadioBandMode>(rig0.bandMode);
   let steerNote = $state<string | null>(null);
+  // Keep the focus surface in lockstep with JamView and other tabs. The rig
+  // store owns persistence and emits storage updates; this component only
+  // mirrors its local presentation state.
+  $effect(() => {
+    const unsubscribe = subscribeRig((s) => {
+      noteState = s.noteState;
+      bandMode = s.bandMode;
+    });
+    return unsubscribe;
+  });
   function cycleBandMode(): void {
     bandMode = bandMode === 'tone' ? 'beat' : 'tone';
     patchRig({ bandMode });
@@ -341,12 +354,16 @@
         onclick={toggleStyle}
       >{dial === 'best' ? '★' : dial === 'beat' ? '⚡' : '🔴'}</button>
     </div>
+    {#if steerNote}
+      <span class="sonic-steer-note" role="status" aria-live="polite">{steerNote}</span>
+    {/if}
   </div>
 {/if}
 
 <style>
   .sonic-identity {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
@@ -481,6 +498,13 @@
     align-items: baseline;
     gap: 0.5rem;
     min-width: 0;
+  }
+  .sonic-steer-note {
+    flex: 0 0 100%;
+    min-width: 0;
+    color: #ffb4b4;
+    font-size: 0.68rem;
+    line-height: 1.3;
   }
   .sonic-score {
     font-weight: 700;

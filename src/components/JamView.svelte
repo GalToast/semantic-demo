@@ -5,8 +5,8 @@
   state dial, band presets, progression player, MIDI/mic inputs, text vibe
   and morph steering, server-confirmed status. Mounted INSTEAD of the
   explorer shell (main.ts routes ?jam=1 here before any engine-gated chrome)
-  and NEVER alongside SonicIdentity — each holds its own dial state, so
-  co-mounting would split the truth.
+  and normally not alongside SonicIdentity; both surfaces use the shared
+  jam-rig store so their dial truth stays aligned when navigation changes.
   All audio logic lives in @lib/audio/*; this file is presentation only.
 
   Journey contract (tests/journey/jam-view.spec.js JAM-1..8): every control
@@ -31,7 +31,6 @@
         SUMMIT_STATE,
         STATE_LABELS,
         DEFAULT_PROG_SPEC,
-        DEFAULT_PROG_BPM,
         type RadioState,
         type RadioBandMode,
         type RadioProgStatus,
@@ -51,15 +50,11 @@
         sendStyleText,
         parseProgressionSpec,
         setStyleMorph,
-        loadJamSettings,
-        saveJamSettings,
-        getRadioVolume,
         setRadioVolume,
         getLastSteerNotice,
         clearLastSteerNotice,
         stallState,
         isRecorderSupported,
-        isRecording,
         startJamRecording,
         stopJamRecording,
         recordingExtension
@@ -83,7 +78,6 @@
     import { getRig, patchRig, subscribeRig } from '@lib/audio/jam-rig'
 
     const rig0 = getRig()
-    const savedSettings = loadJamSettings()
     let radioState = $state<RadioState>('idle')
     const live = $derived(radioState === 'live')
     const connecting = $derived(radioState === 'connecting')
@@ -215,7 +209,12 @@
         }
     }
     async function toggleRadio(): Promise<void> {
-        if (live || getRadioState() === 'live') {
+        // Stop is valid whenever a session exists — live, or mid-reconnect.
+        // A half-open socket parked in 'connecting' must be cancellable;
+        // otherwise the Play button becomes a silent no-op and the reconnect
+        // loop can only be escaped by reloading the page.
+        const current = getRadioState()
+        if (live || current === 'live' || current === 'connecting') {
             if (recActive) {
                 recActive = false
                 const url = await stopJamRecording()
@@ -339,7 +338,7 @@
             // parseProgressionSpec mirrors chord_sequencer.parse_chord, which
             // throws on a bad root — a typo blocks the send with an inline
             // error instead of stranding an error slot server-side.
-            let slots: { notes: number[]; frames: number }[] | null = null
+            let slots: { notes: number[]; frames: number }[] | null
             try {
                 slots = parseProgressionSpec(progSpec, progBpm)
             } catch {
@@ -560,11 +559,11 @@
             class="jam-play"
             type="button"
             onclick={toggleRadio}
-            aria-label={live ? 'Stop live jam radio' : 'Play live jam radio'}
-            aria-pressed={live}
+            aria-label={live || connecting ? 'Stop live jam radio' : 'Play live jam radio'}
+            aria-pressed={live || connecting}
         >
-            <span aria-hidden="true">{live ? '⏸' : '▶'}</span>
-            <span class="jam-play-label">{live ? 'Stop' : 'Play'}</span>
+            <span aria-hidden="true">{live || connecting ? '⏸' : '▶'}</span>
+            <span class="jam-play-label">{live || connecting ? 'Stop' : 'Play'}</span>
         </button>
         <div class="jam-signal">
             <div id="jam-meter" class="jam-meter" aria-hidden="true">

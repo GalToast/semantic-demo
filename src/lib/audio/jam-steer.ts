@@ -6,7 +6,9 @@
  * to PCA coordinates over the 2035-style-map genre anchors (beat = centroid
  * of techno+disco2+metal; best = the pop neutral anchor), then sets the live
  * style tokens through the same pipeline as /surf. When no jam session is
- * running the request fails silently — playback dial selection is unaffected.
+ * running the request returns a discriminated outcome — playback dial
+ * selection is unaffected when the server is offline or another session owns
+ * the lease.
  *
  * Contract mirror: mrt2 tmp/jam_server.py STYLE_POLE_XY (commit 03cd572).
  */
@@ -28,9 +30,6 @@ function baseUrl(): string {
         return JAM_HTTP_URL
     }
 }
-
-const JAM_STYLE_URL = `${JAM_HTTP_URL}/style`
-const JAM_BAND_MASK_URL = `${JAM_HTTP_URL}/band_mask`
 
 function styleUrl(): string {
     return `${baseUrl()}/style`

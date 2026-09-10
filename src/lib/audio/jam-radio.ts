@@ -310,7 +310,9 @@ export function startJamRadioAt(
     setState('connecting')
 
     return new Promise<boolean>((resolve) => {
+        const sessionToken = ++stopToken
         let settled = false
+        let connected = false
         let reconnectTimer: ReturnType<typeof setTimeout> | null = null
         const clearTimer = () => {
             if (reconnectTimer) {
@@ -319,26 +321,29 @@ export function startJamRadioAt(
             }
         }
         const scheduleReconnect = () => {
-            if (stopToken !== 0) return
+            if (sessionToken !== stopToken) return
             clearTimer()
             setState('connecting')
             reconnectTimer = setTimeout(() => {
-                if (state === 'idle' || stopToken !== 0) return
-                reconnectAttempt += 1
+                if (state === 'idle' || sessionToken !== stopToken) return
                 openSocket()
             }, 1500)
         }
-        let reconnectAttempt = 0
         const openSocket = () => {
+            let socket: WebSocket
             try {
-                ws = new WebSocket(activeWsUrl())
+                socket = new WebSocket(activeWsUrl())
             } catch {
                 scheduleReconnect()
                 return
             }
-            ws.onopen = () => {
-                if (settled) return
-                settled = true
+            ws = socket
+            socket.onopen = () => {
+                if (sessionToken !== stopToken) {
+                    socket.close()
+                    return
+                }
+                connected = true
                 setState('live')
                 send({ type: 'uiReady' })
                 // Activate the summit band mask alongside the pitch state.
@@ -350,30 +355,37 @@ export function startJamRadioAt(
                 bandMode = 'tone'
                 flushPending()
                 for (const n of heldNotes) send({ type: 'note_on', note: n.note, state: n.state })
-                resolve(true)
+                if (!settled) {
+                    settled = true
+                    resolve(true)
+                }
             }
-            ws.onerror = () => {
+            socket.onerror = () => {
                 // onerror is followed by onclose; let onclose drive the
                 // reconnect so we don't double-schedule.
             }
-            ws.onclose = () => {
+            socket.onclose = () => {
                 clearTimer()
-                if (settled) {
+                if (sessionToken !== stopToken) return
+                if (!connected) {
                     // Initial handshake failed — give up rather than retry
                     // forever against a dead stack.
-                    settled = false
                     pendingQueue.length = 0
                     setState('idle')
-                    resolve(false)
+                    if (!settled) {
+                        settled = true
+                        resolve(false)
+                    }
                     return
                 }
+                connected = false
                 // Connection dropped after we were live. The stream is
-                // gapless-expected, so a drop is a fault, not a feature —
-                // reconnect rather than parking in idle. The server rotates
-                // its LM/decode peers; the client should survive it.
+                // gapless-expected, so a drop is a fault, not a feature.
+                // Reconnect rather than parking in idle; the server rotates
+                // its LM/decode peers and the client should survive it.
                 scheduleReconnect()
             }
-            ws.onmessage = (ev) => {
+            socket.onmessage = (ev) => {
                 try {
                     const msg = JSON.parse(ev.data as string) as Record<string, unknown>
                     if (msg.type === 'audio' && typeof msg.data === 'string' && ctx) {
@@ -574,6 +586,10 @@ let heldNotes: readonly RadioHeldNote[] = []
 const midiNotes = new Set<number>()
 
 export function stopJamRadio(): void {
+    // Invalidate the active session before closing the socket. Some WebSocket
+    // implementations invoke onclose synchronously, and stale reconnect
+    // callbacks must not get a chance to schedule a new socket in that gap.
+    stopToken += 1
     for (const n of heldNotes) send({ type: 'note_off', note: n.note })
     for (const note of midiNotes) send({ type: 'note_off', note })
     midiNotes.clear()
@@ -586,9 +602,6 @@ export function stopJamRadio(): void {
     heldNotes = []
     setState('idle')
     pendingQueue.length = 0
-    // A scheduled reconnect must not resurrect the radio after the user
-    // pressed stop. stopToken is checked at fire time in scheduleReconnect.
-    stopToken += 1
 }
 
 /** Drive the live jam's held notes to a single pitch-slot state.

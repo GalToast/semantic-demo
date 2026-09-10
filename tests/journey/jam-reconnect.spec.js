@@ -41,7 +41,7 @@ function installFakeWs(page) {
         // and fails whenever the live stack is down. This one just records
         // instances and fires onopen itself, like a server that answers.
         class FakeWS {
-            constructor(url, protocols) {
+            constructor(url) {
                 this.url = url
                 this.readyState = 0 /* CONNECTING */
                 this.onopen = null
@@ -155,7 +155,7 @@ test.describe('Jam view — client-side reconnect', () => {
         const state = await page.evaluate(() =>
             document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live')
         )
-        expect(state).not.toBe('idle')
+        expect(state).toBe('true')
     })
 
     test('JAM-RC.2 stopJamRadio blocks a pending reconnect from resurrecting', async ({ page }) => {
@@ -172,12 +172,13 @@ test.describe('Jam view — client-side reconnect', () => {
             const ws = window.__rc.instances[window.__rc.instances.length - 1]
             if (ws) ws.close()
         })
-        await page.evaluate(() => document.querySelector('#jam-stop')?.click())
+        await expect(page.locator('#jam-play')).toHaveAttribute('aria-label', 'Stop live jam radio')
+        await page.evaluate(() => document.querySelector('#jam-play')?.click())
         await page.waitForTimeout(3000)
 
         const state = await page.evaluate(() =>
             document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live')
         )
-        expect(state).toBe('idle')
+        expect(state).toBe('false')
     })
 })

@@ -1,6 +1,6 @@
 # Sonic Jam Radio — Tiers 2–14
 
-**Status:** active · JAM-1..7, baseline JAM-R, and live continuous-style interpolation apply/draw are green; quality continuity remains open in follow-up #224
+**Status:** active · JAM-1..18, JAM-RC reconnect safety, baseline JAM-R, and live continuous-style interpolation apply/draw are green; quality continuity remains open in follow-up #224
 **Source:** Magenta RT2 pipeline (`mrt2/tmp/jam_server.py`, commit 03cd572 era), ear_v7.1 scorer
 
 ## What this is
@@ -86,9 +86,10 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
 
 - **Journey** (`tests/journey/sonic.spec.js`, SONIC-1..4): play control, 3-way dial cycle, jam `/style` interception, live radio chord hold. 4/4 green.
 - **Standalone Jam journey** (`tests/journey/jam-view.spec.js`, JAM-1..18): engine-free surface, initial socket connection, transport, dial/band/progression controls, vocal fallback, text steering, connection screen, and continuous style morph. 19/19 green.
+- **Reconnect journey** (`tests/journey/jam-reconnect.spec.js`, JAM-RC.1..2): a live socket drop reconnects, while the Stop control cancels backoff without resurrecting the radio. 2/2 green.
 - **Real-WebSocket journey** (`tests/journey/jam-real.spec.js`, JAM-R): environment-gated proof of the real 8083 handshake, `uiReady`/`note_on`, and streamed audio frames; requires the live jam stack.
 - **Strict JAM-R result (2026-09-10):** an initial clean run reached `data-live="true"` but exposed a missing jam→decode link and timed out at the strict audio assertion. After owner-controlled reconnect work established jam→LM 8796 and jam→decode 8797 simultaneously, the bounded rerun passed in 8.2s with `uiReady`, summit `state=4` `note_on`, and `audioFrames=1`; post-run TCP retained both links. A subsequent post-apply run passed in 26.1s after `/style_interp t=0.5` returned HTTP 200, with `audioFrames=1`; the table was restored with `/style_interp t=0.0` HTTP 200. Baseline and live interpolation browser audio are proven; quality continuity remains separate.
-- **Unit** (`tests/unit-active/jam-radio.test.ts`, `jam-steer.test.ts`): PCM decode, buffer scheduling, held-notes, gapless resync, steering payloads, and morph-safe routing. 52/52 in the current focused run.
+- **Unit** (`tests/unit-active/jam-radio.test.ts`, `jam-steer.test.ts`): PCM decode, buffer scheduling, held-notes, gapless resync, steering payloads, morph-safe routing, shared rig notifications, and discriminated server outcomes. 52/52 in the current focused run.
 - **Build**: `npm run build` — 541 modules transformed, `[tdb-ensure] OK`, and the data-compression gate passes.
 - **Historical full-unit snapshot**: 4239/4242. The 3 failures were a pre-existing merge-reland guard, unrelated.
 
@@ -198,8 +199,10 @@ changes: the note protocol already spoke it.
 The radio as a music app instead of a panel: `src/components/JamView.svelte`
 mounts INSTEAD of the explorer shell when `?jam=1` (or `?view=jam`) —
 before any engine-gated chrome, so no Canvas/WebGL ever mounts and the
-surface costs no GPU. Never co-mounted with SonicIdentity (each holds its
-own dial state). Big transport, state dial, band/prog/MIDI/mic controls,
+surface costs no GPU. It is normally not co-mounted with SonicIdentity, but
+both surfaces read and write the shared `jam-rig` store so navigation and
+storage updates do not split dial truth. Big transport, state dial,
+band/prog/MIDI/mic controls,
 server-confirmed status line, summit restore. Journey:
 `tests/journey/jam-view.spec.js` (JAM-1..7, no WebGL needed).
 
