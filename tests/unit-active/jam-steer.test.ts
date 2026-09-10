@@ -5,7 +5,7 @@
  * (mrt2 tmp/WHINE_SCAN_RESULTS.md, FINAL_SCAN_RESULTS.md).
  */
 import { describe, it, expect } from 'vitest'
-import { bandMaskBody, clampMorphT, MORPH_SAFE_ROUTE, RADIO_SUMMIT_SLOTS } from '../../src/lib/audio/jam-steer'
+import { bandMaskBody, clampMorphT, MORPH_MEASURED_ZONES, RADIO_SUMMIT_SLOTS } from '../../src/lib/audio/jam-steer'
 
 describe('bandMaskBody', () => {
     it('wraps a named preset in the {preset} field', () => {
@@ -44,21 +44,31 @@ describe('RADIO_SUMMIT_SLOTS', () => {
 })
 
 describe('clampMorphT', () => {
-    it('passes values in the safe range through unchanged', () => {
-        expect(clampMorphT(0)).toBe(0)
-        expect(clampMorphT(0.5)).toBe(0.5)
-        expect(clampMorphT(1)).toBe(1)
+    it('passes measured-safe values through unchanged', () => {
+        expect(clampMorphT(0.6)).toBe(0.6)
+        expect(clampMorphT(0.64)).toBe(0.64)
         expect(clampMorphT(0.72)).toBe(0.72)
+        expect(clampMorphT(0.74)).toBe(0.74)
     })
-    it('routes the measured whine zone [0.74,0.82] to its safe target', () => {
-        expect(MORPH_SAFE_ROUTE.target).toBe(0.75)
-        expect(clampMorphT(0.78)).toBe(MORPH_SAFE_ROUTE.target)
-        expect(clampMorphT(MORPH_SAFE_ROUTE.start)).toBe(MORPH_SAFE_ROUTE.target)
-        expect(clampMorphT(MORPH_SAFE_ROUTE.end)).toBe(MORPH_SAFE_ROUTE.target)
+    it('snaps the t=0.82 summit (100/100-S) and anything above 0.81 to it', () => {
+        expect(clampMorphT(0.82)).toBe(MORPH_MEASURED_ZONES.summitT)
+        expect(clampMorphT(0.95)).toBe(MORPH_MEASURED_ZONES.summitT)
+        expect(clampMorphT(1)).toBe(MORPH_MEASURED_ZONES.summitT)
     })
-    it('clamps out-of-range and garbage input into [0,1]', () => {
-        expect(clampMorphT(-1)).toBe(0)
-        expect(clampMorphT(2)).toBe(1)
-        expect(clampMorphT(NaN)).toBe(0)
+    it('routes poison zone [0.68,0.70] to nearest safe edge', () => {
+        expect(clampMorphT(0.68)).toBe(0.66)
+        expect(clampMorphT(0.69)).toBe(0.72)
+        expect(clampMorphT(0.7)).toBe(0.72)
+    })
+    it('routes poison zone [0.76,0.80] to 0.74 or the summit', () => {
+        expect(clampMorphT(0.76)).toBe(0.74)
+        expect(clampMorphT(0.78)).toBe(0.82)
+        expect(clampMorphT(0.8)).toBe(0.82)
+    })
+    it('anchors below-range input at 0.60 (lowest measured safe point)', () => {
+        expect(clampMorphT(0.3)).toBe(0.6)
+        expect(clampMorphT(0)).toBe(0.6)
+        expect(clampMorphT(-1)).toBe(0.6)
+        expect(clampMorphT(NaN)).toBe(0.6)
     })
 })

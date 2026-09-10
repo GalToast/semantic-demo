@@ -138,27 +138,54 @@ export function steerJamBandMask(preset: JamBandPreset): Promise<JamResult<boole
  * The fine map in `C:\\tmp\\style_interp\\pothole_scores.json` measured
  * t=.75 at 97/95 (v10/v7) with 12.3% whine, while t=.78 fell to 83/71 with
  * 20.8% whine. Keep the route explicit so the client and server can share
- * the same target while the broader .6 -> .7 continuity question remains
- * tracked separately in task #224. */
-export const MORPH_SAFE_ROUTE = Object.freeze({
-    start: 0.74,
-    end: 0.82,
-    target: 0.75
+ * Measured 2026-09-10 (12-point fine map, ear_v10, deterministic):
+ *   SAFE:   [0.60,0.66] (93-95 v10, whine 3-8%) · [0.72,0.74] (90-92, 8-9%)
+ *   SUMMIT: 0.82 = 100/100-S, whine 9.7% (second perfect score, cf. cond11+L2)
+ *   POISON: [0.68,0.70] (whine 16%) · [0.76,0.80] (whine 14-21%, 0.78 worst 20.8%)
+ * clampMorphT snaps poison-zone slider positions to the nearest safe edge
+ * and preserves access to the t=0.82 summit (the old blunt [0.74,0.82]→0.75
+ * clamp blocked the summit — this map supersedes it; closes #224). */
+export const MORPH_MEASURED_ZONES = Object.freeze({
+    /** Contiguous safe ranges — pass through unchanged. */
+    safe: Object.freeze([
+        Object.freeze({ start: 0.6, end: 0.66 }),
+        Object.freeze({ start: 0.72, end: 0.74 })
+    ]),
+    /** Poison ranges — snapped to the nearest safe edge. */
+    poison: Object.freeze([
+        Object.freeze({ start: 0.68, end: 0.70 }),
+        Object.freeze({ start: 0.76, end: 0.8 })
+    ]),
+    /** t >= summitThreshold snaps to the 100/100-S summit. */
+    summitT: 0.82,
+    summitThreshold: 0.81,
+    /** Fallback anchors for t below/above the measured span. */
+    lowAnchor: 0.6,
+    highAnchor: 0.82
 } as const)
 
-/** Route a continuous-morph t value into [0,1]. Values in the measured
- * whine zone [0.74,0.82] go to the measured safe target instead. Pure —
- * unit tested. The historical function name is retained for callers. */
 export function clampMorphT(t: number): number {
     const v = Math.max(0, Math.min(1, Number(t) || 0))
-    return v >= MORPH_SAFE_ROUTE.start && v <= MORPH_SAFE_ROUTE.end ? MORPH_SAFE_ROUTE.target : v
+    const z = MORPH_MEASURED_ZONES
+    if (v >= z.summitThreshold) return z.summitT
+    for (const s of z.safe) if (v >= s.start && v <= s.end) return v
+    for (const p of z.poison) {
+        if (v >= p.start && v <= p.end) {
+            const mid = (p.start + p.end) / 2
+            const edge = (v < mid ? p.start - 0.02 : p.end + 0.02)
+            return Math.round(edge * 100) / 100
+        }
+    }
+    return v < z.lowAnchor ? z.lowAnchor : z.highAnchor
 }
 
 /** Continuous style morph: t in [0,1] between the current style's table
  * rows and the +500 companion rows. Server interpolates the style table
- * per frame. SINGLE MORPH TRUTH: the measured whine zone [0.74,0.82] is
- * routed client-side via clampMorphT before sending, so the slider position
- * always equals the sent value. */
+ * per frame. SINGLE MORPH TRUTH: the measured safe/poison zones are
+ * routed client-side via clampMorphT before sending, so slider positions in
+ * poison zones land on measured-safe edges and t≥0.81 reaches the 100/100-S
+ * summit at 0.82 (closes #224). What the slider shows always routes through
+ * clampMorphT, so the displayed value equals the sent value. */
 export function steerJamStyleInterp(t: number): Promise<JamResult<boolean>> {
     return postJson(styleInterpUrl(), { t: clampMorphT(t) })
 }
