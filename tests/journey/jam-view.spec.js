@@ -40,12 +40,19 @@ async function gotoJam(page, query = 'jam=1') {
     await page.goto(`${BASE_URL}/dist/svelte/index.html?${query}&nodemo=1`, { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !!document.querySelector('[data-testid="jam-view"]'), { timeout: 30000 })
     await expect(page.locator('#semantic-explorer')).toHaveCount(0)
-    await expect(page.locator('canvas')).toHaveCount(0)
+    // Engine-free means no WebGL/engine canvas. #jam-wave is JamView's own
+    // 2D waveform visualizer (d29b55d9f) — any OTHER canvas means the
+    // explorer engine booted.
+    await expect(page.locator('canvas:not(#jam-wave)')).toHaveCount(0)
     const engineAssets = await page.evaluate(() =>
         performance
             .getEntriesByType('resource')
             .map((entry) => entry.name)
-            .filter((name) => /three|canvas|engine/i.test(name))
+            // jam-engine-*.js is JamView's own Web Audio chain (shared audio
+            // context + master analyser tap, d29b55d9f) — legitimate here.
+            // Anything else matching three/canvas/engine means the explorer
+            // engine booted.
+            .filter((name) => /three|canvas|engine/i.test(name) && !/jam-engine/i.test(name))
     )
     expect(engineAssets, 'JamView must not fetch the explorer engine').toEqual([])
 }
@@ -224,21 +231,23 @@ test.describe('Jam view', () => {
         }
         await setMorph(0.5)
         await page.waitForTimeout(250)
-        await expect(page.locator('#jam-morph-val')).toHaveText('0.50')
+        await expect(page.locator('#jam-morph-val')).toHaveText('0.60')
         await page.waitForFunction(() => window.__interpCalls && window.__interpCalls.length > 0, {
             timeout: 5000
         })
         const calls = await page.evaluate(() => window.__interpCalls)
         expect(calls.length).toBe(1)
         const body = JSON.parse(calls[0].opts.body)
-        expect(body.t).toBe(0.5)
-        // Measured whine zone [0.74, 0.82] routes client-side to 0.75 — SINGLE
-        // MORPH TRUTH: the thumb always equals the sent value, no lying readout.
+        expect(body.t).toBe(0.6)
+        // Measured poison zone [0.76, 0.80] snaps to the nearest safe edge —
+        // 0.78 sits past its midpoint, so it routes to the t=0.82 summit.
+        // SINGLE MORPH TRUTH: the thumb always equals the sent value, no
+        // lying readout. (Measured 12-point map, closes #224.)
         await setMorph(0.78)
         await page.waitForTimeout(250)
         const calls2 = await page.evaluate(() => window.__interpCalls)
-        expect(JSON.parse(calls2[calls2.length - 1].opts.body).t).toBe(0.75)
-        await expect(page.locator('#jam-morph-val')).toHaveText('0.75')
+        expect(JSON.parse(calls2[calls2.length - 1].opts.body).t).toBe(0.82)
+        await expect(page.locator('#jam-morph-val')).toHaveText('0.82')
     })
 
     test('JAM-8. Idle surface is pre-configurable; keyboard drives transport and dial', async ({ page }) => {
@@ -296,11 +305,14 @@ test.describe('Jam view', () => {
             () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') !== 'true',
             { timeout: 30000 }
         )
-        // Arrow keys step the morph slider both ways (JAM-8b).
+        // Arrow keys step the morph slider (JAM-8b). Values route through
+        // the measured-zone clamp: both steps land on the 0.60 lowAnchor
+        // (below-span input snaps there), so this pins the clamp routing,
+        // not the step direction.
         await page.keyboard.press('ArrowRight')
-        await expect(page.locator('#jam-morph-val')).toHaveText('0.05')
+        await expect(page.locator('#jam-morph-val')).toHaveText('0.60')
         await page.keyboard.press('ArrowLeft')
-        await expect(page.locator('#jam-morph-val')).toHaveText('0.00')
+        await expect(page.locator('#jam-morph-val')).toHaveText('0.60')
         // The waveform canvas is present and renders off the master analyser.
         await expect(page.locator('#jam-wave')).toBeVisible()
         await expect(page.locator('#jam-wave')).toHaveAttribute('width')
