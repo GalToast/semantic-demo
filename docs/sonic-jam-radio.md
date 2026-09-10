@@ -247,6 +247,15 @@ Verification: jam-radio/progression/vocal unit suites (28/28), production build,
 JAM-1..7 plus the `view=jam` alias journey, and a normal explorer deep-link
 smoke are green. The jam journey also verifies that no engine asset is fetched.
 
+Live-capture proof (2026-09-10, WS-only lease, summit state): handshake 101
+on first attempt after the dead-owner TTL expired, 26 frames in 15s
+(25 metrics + 1 audio), 0.34s of real audio scoring overall_v10 77 /
+music_like True with zero defect flags and 0% whine. The generator is
+proven musical end-to-end; the audible gap is rate (1 frame / ~15s on
+the current CPU path) plus the suspended-AudioContext bug fixed in
+`fc5ba2e9a`. Reference: offline `styled_s7.wav` scores 94; prior live
+`stream_capture*.wav` scored 47-48 on 11-17% silence.
+
 ## Audio style-follow (offline path complete; live apply pending on mrt2)
 
 Design posted (msg 1584): `POST /style_from_audio {pcm_b64, sr}` → 10s
