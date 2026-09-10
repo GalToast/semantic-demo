@@ -300,4 +300,34 @@ test.describe('Jam view', () => {
         const calls2 = await page.evaluate(() => window.__maskCalls)
         expect(JSON.parse(calls2[calls2.length - 1].opts.body)).toEqual({ slots: [2, 11, 9] })
     })
+
+    test('JAM-10. Progression editor sends a custom spec; typos stay client-side', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page)
+        await page.evaluate(() => document.querySelector('#jam-play').click())
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        await page.waitForFunction(() => window.__ws.sent.length >= 5, { timeout: 30000 })
+        // Custom spec + tempo go out on the wire verbatim.
+        await page.fill('#jam-prog-spec', 'Em 4 | C 4 | G 4 | D 4')
+        await page.fill('#jam-prog-bpm', '120')
+        await page.evaluate(() => document.querySelector('#jam-prog').click())
+        await page.waitForFunction(
+            () => window.__ws.sent.some((m) => m.includes('Em 4 | C 4 | G 4 | D 4')),
+            { timeout: 10000 }
+        )
+        const sent = await page.evaluate(() => window.__ws.sent)
+        const sets = sent.filter((m) => m.includes('"prog_set"'))
+        expect(sets.length).toBe(1)
+        expect(JSON.parse(sets[0]).bpm).toBe(120)
+        // Stop, then a typo: no new prog_set, inline error instead.
+        await page.evaluate(() => document.querySelector('#jam-prog').click())
+        await page.fill('#jam-prog-spec', 'zzz')
+        await page.evaluate(() => document.querySelector('#jam-prog').click())
+        await expect(page.locator('.jam-prog-error')).toContainText("Couldn't parse")
+        const sent2 = await page.evaluate(() => window.__ws.sent)
+        expect(sent2.filter((m) => m.includes('"prog_set"')).length).toBe(1)
+    })
 })

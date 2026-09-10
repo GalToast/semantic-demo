@@ -59,6 +59,9 @@
     let midiCount = $state(0)
     let vocalOn = $state(false)
     let presetLabel = $state<string | null>(null)
+    let progSpec = $state(DEFAULT_PROG_SPEC)
+    let progBpm = $state(DEFAULT_PROG_BPM)
+    let progError = $state<string | null>(null)
     let vocalDenied = $state(false)
     let connectError = $state<string | null>(null)
     // Signal readout: audio-frame count + smoothed peak level 0..1.
@@ -157,20 +160,24 @@
             progPlaying = false
         } else {
             // parseProgressionSpec mirrors chord_sequencer.parse_chord, which
-            // raises ValueError on a bad root — catch it so a typo can't strand
-            // the UI half-way into a toggle. The server still gets the raw spec
-            // and replies with an error slot; the bridge just won't start.
+            // throws on a bad root — a typo blocks the send with an inline
+            // error instead of stranding an error slot server-side.
             let slots: { notes: number[]; frames: number }[] | null = null
             try {
-                slots = parseProgressionSpec(DEFAULT_PROG_SPEC, DEFAULT_PROG_BPM)
+                slots = parseProgressionSpec(progSpec, progBpm)
             } catch {
-                /* bad spec — skip the bridge, server handles it */
+                slots = null
             }
-            setRadioProg(DEFAULT_PROG_SPEC, DEFAULT_PROG_BPM)
+            if (!slots) {
+                progError = `Couldn't parse that progression — try e.g. ${DEFAULT_PROG_SPEC}.`
+                return
+            }
+            progError = null
+            setRadioProg(progSpec, progBpm)
             playRadioProg()
             requestRadioProgStatus()
             progPlaying = true
-            if (slots) startMidiProgBridge(slots, DEFAULT_PROG_BPM)
+            startMidiProgBridge(slots, progBpm)
         }
     }
     function restoreSummit(): void {
@@ -344,6 +351,29 @@
 
     <section class="jam-card" aria-label="Progression">
         <h2 class="jam-card-title">Progression</h2>
+        <div class="jam-dial-row">
+            <input
+                id="jam-prog-spec"
+                class="jam-style-input"
+                type="text"
+                bind:value={progSpec}
+                placeholder={DEFAULT_PROG_SPEC}
+                aria-label="Chord progression (chord beats separated by |)"
+                maxlength="96"
+            />
+            <input
+                id="jam-prog-bpm"
+                class="jam-bpm-input"
+                type="number"
+                bind:value={progBpm}
+                min="40"
+                max="220"
+                aria-label="Progression tempo in BPM"
+            />
+            {#if progError}
+                <p class="jam-prog-error" role="alert">{progError}</p>
+            {/if}
+        </div>
         <div class="jam-dial-row">
             <button
                 id="jam-prog"
@@ -640,6 +670,23 @@
         font-size: 0.72rem;
         opacity: 0.85;
         color: #9fd0ff;
+    }
+    .jam-bpm-input {
+        width: 4.5rem;
+        padding: 0.5rem 0.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.25);
+        color: inherit;
+        font-size: 0.8rem;
+        font-variant-numeric: tabular-nums;
+    }
+    .jam-prog-error {
+        font-size: 0.75rem;
+        color: #ffb4b4;
+        margin: 0;
+        width: 100%;
+        text-align: center;
     }
     .jam-morph-label {
         font-size: 0.72rem;
