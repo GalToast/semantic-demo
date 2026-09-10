@@ -247,14 +247,17 @@ Verification: jam-radio/progression/vocal unit suites (28/28), production build,
 JAM-1..7 plus the `view=jam` alias journey, and a normal explorer deep-link
 smoke are green. The jam journey also verifies that no engine asset is fetched.
 
-Live-capture proof (2026-09-10, WS-only lease, summit state): handshake 101
-on first attempt after the dead-owner TTL expired, 26 frames in 15s
-(25 metrics + 1 audio), 0.34s of real audio scoring overall_v10 77 /
-music_like True with zero defect flags and 0% whine. The generator is
-proven musical end-to-end; the audible gap is rate (1 frame / ~15s on
-the current CPU path) plus the suspended-AudioContext bug fixed in
-`fc5ba2e9a`. Reference: offline `styled_s7.wav` scores 94; prior live
-`stream_capture*.wav` scored 47-48 on 11-17% silence.
+Live-capture proof (2026-09-10, WS-only lease, summit state, single-owner
+stack 16248/31164/32388 with both jam fixes): SIXTY consecutive 409s
+(retry_after 299->2, one owner) with zero takeovers, then handshake 101
+first try after legitimate lease expiry, 38 frames in 15s (37 metrics +
+1 audio). The 0.34s live fragment scores overall_v10 100 / music_like
+True with zero defect flags (rms 2413). Quality is proven end-to-end;
+the audible gap is rate alone (1 audio frame / ~15s while metrics flow
+freely) plus the suspended-AudioContext bug fixed in `fc5ba2e9a`.
+Evidence: `C:/tmp/live_wait.log`, `C:/tmp/live_capture2.wav`. Reference:
+offline `styled_s7.wav` scores 94; contention-era live captures scored
+47-48 (silence) and 77.
 
 ## Audio style-follow (offline path complete; live apply pending on mrt2)
 
