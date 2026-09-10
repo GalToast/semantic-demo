@@ -240,6 +240,26 @@ belong to the Playwright webServer and fleet lanes (rule above). Budgets are
 anti-drift freezes, ratcheted DOWN freely; raising one requires a new measured
 baseline artifact + a commit naming the cause (see docs/performance-budget.md).
 
+## Jam live soak gate (qa:jam:soak)
+
+`npm run qa:jam:soak -- --seconds 300` (script: `scripts/jam-soak-gate.mjs`,
+#222 P0-3) drives the LIVE jam stack at `ws://127.0.0.1:8083/` — prog loop plus
+summit `note_on` — and gates on frame flow, server drop slope, arrival-clock
+drift, buffer fill trend, and jam-server RSS growth. JSON report lands in
+`tmp/jam-soak-report-*.json` (written even on failure). Exit 2 means it could
+not connect.
+
+Two operational notes (both measured 2026-09-10):
+
+- **The jam server has a single `act["ws"]` slot.** A second active WS client
+  (the other dev tab, a journey run, a lane's live session) gets `HTTP 409` on
+  the upgrade. If the gate fails with 409 and zero frames, the lease is held —
+  free the slot or coordinate; the script retries until its window closes.
+- **A connect failure still burns the full soak window** (the fast-exit
+  precondition `soakStart === 0` is never true once `main()` timestamps the
+  start). On 409-at-upgrade you can Ctrl-C early; the report is written only
+  at window end. Fix candidate noted in the script header.
+
 ## 3d battery — port-8796 coordination rule (2026-08-11)
 
 The playwright webServer binds 8796 (`reuseExistingServer` is env-gated via

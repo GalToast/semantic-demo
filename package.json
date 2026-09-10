@@ -45,6 +45,7 @@
     "qa:server:stop": "node scripts/qa-server.mjs stop",
     "qa:android": "node scripts/qa-android.mjs",
     "qa:server:status": "node scripts/qa-server.mjs status",
+    "qa:jam:soak": "node scripts/jam-soak-gate.mjs",
     "qa:visual": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/visual-state-audit.mjs --headed",
     "qa:product-playthrough": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/product-playthrough-audit.mjs --headed",
     "qa:short-landscape": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/short-landscape-layout-contract.mjs && npx playwright test tests/short-landscape-contract.spec.js --browser=chromium --headed",
