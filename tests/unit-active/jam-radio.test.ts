@@ -14,7 +14,16 @@ import {
 import { pressRadioNote, releaseRadioNote } from '../../src/lib/audio/jam-radio'
 import { startMidiInput, stopMidiInput, getMidiInputCount } from '../../src/lib/audio/jam-midi'
 import { MEASURED_SLOT_PRESETS, RADIO_SUMMIT_SLOTS } from '../../src/lib/audio/jam-steer'
-import { loadJamSettings, saveJamSettings, getRadioVolume, setRadioVolume } from '../../src/lib/audio/jam-radio'
+import {
+    loadJamSettings,
+    saveJamSettings,
+    getRadioVolume,
+    setRadioVolume,
+    isRecorderSupported,
+    isRecording,
+    startJamRecording,
+    stopJamRecording
+} from '../../src/lib/audio/jam-radio'
 
 describe('send queue (messages before the socket opens)', () => {
     it('queues a message when the socket is closed and flushes on open', () => {
@@ -190,7 +199,14 @@ describe('loadJamSettings / saveJamSettings', () => {
     it('round-trips valid settings', () => {
         vi.stubGlobal('localStorage', fakeStorage())
         try {
-            saveJamSettings({ noteState: 7, bandMode: 'beat', progSpec: 'Em 4 | D 4', progBpm: 132, morphT: 0.5, volume: 0.7 })
+            saveJamSettings({
+                noteState: 7,
+                bandMode: 'beat',
+                progSpec: 'Em 4 | D 4',
+                progBpm: 132,
+                morphT: 0.5,
+                volume: 0.7
+            })
             expect(loadJamSettings()).toEqual({
                 noteState: 7,
                 bandMode: 'beat',
@@ -237,8 +253,10 @@ describe('setRadioVolume / getRadioVolume', () => {
         try {
             setRadioVolume(0.5)
             expect(getRadioVolume()).toBe(0.5)
-            setRadioVolume(2)
-            expect(getRadioVolume()).toBe(1)
+            setRadioVolume(1.5)
+            expect(getRadioVolume()).toBe(1.5)
+            setRadioVolume(3)
+            expect(getRadioVolume()).toBe(2)
             setRadioVolume(-1)
             expect(getRadioVolume()).toBe(0)
             setRadioVolume(Number.NaN)
@@ -246,6 +264,17 @@ describe('setRadioVolume / getRadioVolume', () => {
         } finally {
             setRadioVolume(prev)
         }
+    })
+})
+
+describe('session recorder guards', () => {
+    it('reports unsupported with no MediaRecorder and refuses to start', () => {
+        expect(isRecorderSupported()).toBe(false)
+        expect(isRecording()).toBe(false)
+        expect(startJamRecording()).toBe(false)
+    })
+    it('stop resolves null when nothing recorded', async () => {
+        await expect(stopJamRecording()).resolves.toBeNull()
     })
 })
 

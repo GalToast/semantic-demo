@@ -60,7 +60,12 @@
         startJamRecording,
         stopJamRecording
     } from '@lib/audio/jam-radio'
-    import { MEASURED_SLOT_PRESETS, steerJamBandSlots, type MeasuredSlotPreset } from '@lib/audio/jam-steer'
+    import {
+        MEASURED_SLOT_PRESETS,
+        steerJamBandSlots,
+        clampMorphT,
+        type MeasuredSlotPreset
+    } from '@lib/audio/jam-steer'
 
     const savedSettings = loadJamSettings()
     let radioState = $state<RadioState>('idle')
@@ -259,6 +264,7 @@
     let morphDebounce: ReturnType<typeof setTimeout> | null = null
 
     function onMorphInput(ev: Event & { currentTarget: HTMLInputElement }): void {
+        presetLabel = null
         morphT = parseFloat(ev.currentTarget.value)
         if (morphDebounce) clearTimeout(morphDebounce)
         morphDebounce = setTimeout(() => {
@@ -270,6 +276,7 @@
 
     async function postStyleText(): Promise<void> {
         if (!styleText.trim()) return
+        presetLabel = null
         const anchor = await sendStyleText(styleText.trim())
         styleAnchor = anchor
         styleText = ''
@@ -391,12 +398,13 @@
                 class="jam-morph jam-vol"
                 type="range"
                 min="0"
-                max="1"
+                max="2"
                 step="0.01"
                 value={volume}
                 oninput={onVolumeInput}
-                aria-label="Master volume"
+                aria-label="Master volume, up to 200 percent boost"
             />
+            <span id="jam-vol-val" class="jam-morph-val">{Math.round(volume * 100)}%</span>
             {#if live && audioFrames === 0}
                 <span id="jam-waiting" class="jam-waiting">Live — waiting for first audio frame…</span>
             {/if}
@@ -540,7 +548,11 @@
                 oninput={onMorphInput}
                 aria-label="Continuous style morph t"
             />
-            <span id="jam-morph-val" class="jam-morph-val">{morphT.toFixed(2)}</span>
+            <span id="jam-morph-val" class="jam-morph-val"
+                >{morphT.toFixed(2)}{clampMorphT(morphT) !== morphT
+                    ? ` → ${clampMorphT(morphT).toFixed(2)} whine-zone`
+                    : ''}</span
+            >
         </div>
         <div class="jam-dial-row">
             <input
@@ -631,7 +643,7 @@
         font-weight: 700;
         letter-spacing: 0.18em;
         text-transform: uppercase;
-        opacity: 0.55;
+        opacity: 0.7;
         margin: 0 0 0.6rem;
     }
     .jam-transport {
@@ -816,11 +828,11 @@
     }
     .jam-morph-label {
         font-size: 0.72rem;
-        opacity: 0.7;
+        opacity: 0.85;
     }
     .jam-vol-label {
         font-size: 0.72rem;
-        opacity: 0.7;
+        opacity: 0.85;
     }
     .jam-download {
         text-decoration: none;
@@ -836,7 +848,7 @@
     }
     .jam-hint {
         font-size: 0.7rem;
-        opacity: 0.55;
+        opacity: 0.8;
         margin: 0.6rem 0 0;
         text-align: center;
     }

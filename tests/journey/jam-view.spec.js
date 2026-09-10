@@ -231,11 +231,12 @@ test.describe('Jam view', () => {
         const body = JSON.parse(calls[0].opts.body)
         expect(body.t).toBe(0.5)
         // Poison zone [0.74, 0.82] snaps to 0.72 on the server — the slider
-        // still sends the raw value; verify the wire carries it.
+        // still sends the raw value, but the readout must confess the snap.
         await setMorph(0.78)
         await page.waitForTimeout(250)
         const calls2 = await page.evaluate(() => window.__interpCalls)
         expect(JSON.parse(calls2[calls2.length - 1].opts.body).t).toBe(0.78)
+        await expect(page.locator('#jam-morph-val')).toContainText('0.78 → 0.72')
     })
 
     test('JAM-8. Idle surface is pre-configurable; keyboard drives transport and dial', async ({ page }) => {
@@ -267,6 +268,19 @@ test.describe('Jam view', () => {
         await page.keyboard.press('[')
         await expect(page.locator('#jam-state')).toContainText('4')
         // Space stops it again.
+        await page.keyboard.press('Space')
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') !== 'true',
+            { timeout: 30000 }
+        )
+        // Space on the FOCUSED play button must single-toggle both ways —
+        // a native keyup-click plus the keydown handler would net to zero.
+        await page.evaluate(() => document.querySelector('#jam-play').focus())
+        await page.keyboard.press('Space')
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
         await page.keyboard.press('Space')
         await page.waitForFunction(
             () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') !== 'true',

@@ -351,7 +351,9 @@ export function ensureAudioRunning(audioCtx: AudioContext): void {
     }
 }
 
-/** Master volume 0..1 with a lazily-built gain stage. Sources connect
+/** Master volume 0..2 with a lazily-built gain stage. Unity is 1.0; the
+ * range above it is deliberate gain staging for whisper-quiet live
+ * fragments (rms in the hundreds) — the musician's call, clipping and all. Sources connect
  * through it when the context supports gain; otherwise they fall back to
  * a direct connection so headless/mocked contexts never break playback. */
 let radioVolume = 1
@@ -360,7 +362,7 @@ export function getRadioVolume(): number {
     return radioVolume
 }
 export function setRadioVolume(v: number): void {
-    radioVolume = Math.min(1, Math.max(0, Number(v) || 0))
+    radioVolume = Math.min(2, Math.max(0, Number(v) || 0))
     try {
         if (masterGain) masterGain.gain.value = radioVolume
     } catch {
@@ -390,8 +392,76 @@ function playChunk(audioCtx: AudioContext, b64: string): void {
     }
     if (masterGain) src.connect(masterGain)
     else src.connect(audioCtx.destination)
+    try {
+        if (recStream) src.connect(recStream)
+    } catch {
+        // recording tap is best-effort — never break playback
+    }
     src.start(nextStart)
     nextStart += buf.duration
+}
+
+/** Local session recorder: taps the playback graph into a MediaRecorder
+ * so the musician can keep what the jam played. Fully client-side — no
+ * server support needed. Returns false when unsupported or not live. */
+let recStream: MediaStreamAudioDestinationNode | null = null
+let recorder: MediaRecorder | null = null
+let recChunks: Blob[] = []
+let recording = false
+export function isRecorderSupported(): boolean {
+    try {
+        return (
+            typeof window !== 'undefined' &&
+            typeof (window as Window & { MediaRecorder?: unknown }).MediaRecorder === 'function'
+        )
+    } catch {
+        return false
+    }
+}
+export function isRecording(): boolean {
+    return recording
+}
+export function startJamRecording(): boolean {
+    if (recording || !ctx || !isRecorderSupported()) return false
+    try {
+        const Ctor = (window as Window & { MediaRecorder: typeof MediaRecorder }).MediaRecorder
+        if (!recStream) recStream = ctx.createMediaStreamDestination()
+        recChunks = []
+        recorder = new Ctor(recStream.stream)
+        recorder.ondataavailable = (ev: BlobEvent) => {
+            if (ev.data && ev.data.size) recChunks.push(ev.data)
+        }
+        recorder.start(1000)
+        recording = true
+        return true
+    } catch {
+        recorder = null
+        return false
+    }
+}
+export function stopJamRecording(): Promise<string | null> {
+    const rec = recorder
+    recorder = null
+    recording = false
+    if (!rec) return Promise.resolve(null)
+    return new Promise((resolve) => {
+        const done = () => {
+            try {
+                if (!recChunks.length) return resolve(null)
+                const blob = new Blob(recChunks, { type: rec.mimeType || 'audio/webm' })
+                resolve(URL.createObjectURL(blob))
+            } catch {
+                resolve(null)
+            }
+        }
+        try {
+            rec.onstop = done
+            if (rec.state === 'inactive') done()
+            else rec.stop()
+        } catch {
+            done()
+        }
+    })
 }
 
 /** Disconnect from the radio and release held notes. Safe when idle. */
@@ -608,7 +678,7 @@ export function loadJamSettings(): Partial<JamSettings> {
         if (typeof j.morphT === 'number' && Number.isFinite(j.morphT) && j.morphT >= 0 && j.morphT <= 1) {
             out.morphT = j.morphT
         }
-        if (typeof j.volume === 'number' && Number.isFinite(j.volume) && j.volume >= 0 && j.volume <= 1) {
+        if (typeof j.volume === 'number' && Number.isFinite(j.volume) && j.volume >= 0 && j.volume <= 2) {
             out.volume = j.volume
         }
         return out
