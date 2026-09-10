@@ -14,13 +14,7 @@
  */
 
 import { JAM_HTTP_URL, resolveJamUrls } from '@lib/audio/jam-config'
-import {
-    jamLeaseHeld,
-    jamOffline,
-    jamOk,
-    jamRejected,
-    type JamResult
-} from '@lib/audio/jam-result'
+import { jamLeaseHeld, jamOffline, jamOk, jamRejected, type JamResult } from '@lib/audio/jam-result'
 
 function baseUrl(): string {
     // Runtime host override (connection screen) wins; env default otherwise.
@@ -147,15 +141,9 @@ export function steerJamBandMask(preset: JamBandPreset): Promise<JamResult<boole
  * clamp blocked the summit — this map supersedes it; closes #224). */
 export const MORPH_MEASURED_ZONES = Object.freeze({
     /** Contiguous safe ranges — pass through unchanged. */
-    safe: Object.freeze([
-        Object.freeze({ start: 0.6, end: 0.66 }),
-        Object.freeze({ start: 0.72, end: 0.74 })
-    ]),
+    safe: Object.freeze([Object.freeze({ start: 0.6, end: 0.66 }), Object.freeze({ start: 0.72, end: 0.74 })]),
     /** Poison ranges — snapped to the nearest safe edge. */
-    poison: Object.freeze([
-        Object.freeze({ start: 0.68, end: 0.70 }),
-        Object.freeze({ start: 0.76, end: 0.8 })
-    ]),
+    poison: Object.freeze([Object.freeze({ start: 0.68, end: 0.7 }), Object.freeze({ start: 0.76, end: 0.8 })]),
     /** t >= summitThreshold snaps to the 100/100-S summit. */
     summitT: 0.82,
     summitThreshold: 0.81,
@@ -172,7 +160,7 @@ export function clampMorphT(t: number): number {
     for (const p of z.poison) {
         if (v >= p.start && v <= p.end) {
             const mid = (p.start + p.end) / 2
-            const edge = (v < mid ? p.start - 0.02 : p.end + 0.02)
+            const edge = v < mid ? p.start - 0.02 : p.end + 0.02
             return Math.round(edge * 100) / 100
         }
     }
