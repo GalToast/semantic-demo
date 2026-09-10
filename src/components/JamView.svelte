@@ -831,7 +831,6 @@
                 {/each}
             </div>
         {/if}
-        </div>
         <p class="jam-hint">Space plays / stops · [ and ] step the dial · configure first, then press play.</p>
     </section>
 </main>

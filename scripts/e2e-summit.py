@@ -219,7 +219,9 @@ def record_run(state, seconds, out_wav):
                 seen[msg.get("type", "?")] = seen.get(msg.get("type", "?"), 0) + 1
                 if msg.get("type") == "audio" and isinstance(msg.get("data"), str):
                     pcm = base64.b64decode(msg["data"])
-                    i16 = np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768.0
+                    i16 = (
+                        np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768.0
+                    )
                     chunks.append(i16)
         for n in CHORD:
             with contextlib.suppress(Exception):
@@ -232,7 +234,9 @@ def record_run(state, seconds, out_wav):
         if not chunks:
             raise RuntimeError("no audio frames received")
         audio = np.concatenate(chunks)
-        stereo = audio.reshape(-1, 2) if audio.size % 2 == 0 else audio[:-1].reshape(-1, 2)
+        stereo = (
+            audio.reshape(-1, 2) if audio.size % 2 == 0 else audio[:-1].reshape(-1, 2)
+        )
         wav16 = np.clip(stereo, -1, 1) * 16384.0
         with wave.open(out_wav, "wb") as w:
             w.setnchannels(2)
