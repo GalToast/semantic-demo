@@ -223,6 +223,9 @@ milliseconds of genuinely unvoiced input releases the current note, and every
 start/stop path disconnects the source and stops the media tracks. Permission
 denial, missing Web Audio, and browsers without `getUserMedia` leave the rest
 of the jam usable.
+When permission is denied, the visible vocal control exposes
+`aria-disabled="true"`; while the monitor is available, that attribute is
+omitted.
 
 Pure signal coverage lives in `tests/unit-active/jam-vocal.test.ts`; the
 standalone journey covers the control's graceful presence without requesting

@@ -17,16 +17,47 @@ test.afterEach(async ({ page }) => {
 })
 
 async function boot(page) {
+    // The vocal controls live inside SonicIdentity's live-mode branch. Reach
+    // that branch through the same mocked radio path as sonic.spec.js so this
+    // UI-only journey never depends on the real jam server.
+    await page.addInitScript(() => {
+        window.__ws = { url: null, sent: [], closed: 0 }
+        class FakeWebSocket {
+            constructor(url) {
+                window.__ws.url = url
+                this.readyState = 0
+                setTimeout(() => {
+                    this.readyState = 1
+                    if (this.onopen) this.onopen()
+                }, 10)
+            }
+            send(data) {
+                window.__ws.sent.push(String(data))
+            }
+            close() {
+                window.__ws.closed += 1
+                this.readyState = 3
+            }
+        }
+        FakeWebSocket.OPEN = 1
+        window.WebSocket = FakeWebSocket
+    })
     await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&record=519`, {
         waitUntil: 'domcontentloaded'
     })
-    await page.waitForFunction(() => !!document.querySelector('#sonic-note-state'), { timeout: 30000 })
-    await page.evaluate(() => document.querySelector('#sonic-note-state').click())
+    await page.waitForFunction(() => !!document.querySelector('#sonic-style'), { timeout: 30000 })
+    await page.evaluate(() => document.querySelector('#sonic-style').click())
+    await page.waitForFunction(() => document.querySelector('#sonic-style')?.textContent === '⚡', { timeout: 15000 })
+    await page.evaluate(() => document.querySelector('#sonic-style').click())
+    await page.waitForFunction(
+        () => document.querySelector('.sonic-identity')?.getAttribute('data-live') === 'true',
+        { timeout: 30000 }
+    )
     await page.waitForFunction(() => window.__ws && window.__ws.sent.length >= 5, { timeout: 30000 })
 }
 
 test.describe('Sonic vocal monitor', () => {
-    test('SONIC-12. Button exists, is pressable, starts off', async ({ page }) => {
+    test('SONIC-12. Button starts off and marks denied mic unavailable', async ({ page }) => {
         await boot(page)
         const vocal = page.locator('#sonic-vocal')
         await expect(vocal).toBeVisible()
@@ -34,10 +65,6 @@ test.describe('Sonic vocal monitor', () => {
         await expect(vocal).not.toHaveAttribute('aria-disabled')
         // Toggle is wired (onclick resolves to a function).
         await expect(vocal).toHaveAttribute('aria-label', 'Monitor voice to play the jam')
-    })
-
-    test('SONIC-12b. Denied mic marks the button unavailable', async ({ page }) => {
-        await boot(page)
         await page.evaluate(() => {
             const nav = navigator
             if (!nav.mediaDevices) nav.mediaDevices = {}
@@ -45,7 +72,6 @@ test.describe('Sonic vocal monitor', () => {
                 throw new Error('denied')
             }
         })
-        const vocal = page.locator('#sonic-vocal')
         await vocal.click()
         await expect(vocal).toHaveAttribute('aria-disabled', 'true')
         await expect(vocal).toHaveAttribute('aria-pressed', 'false')

@@ -224,13 +224,16 @@ function finish(code, failures, summary) {
 }
 
 function connect() {
-    let opened = false
     ws = new WebSocket(WS_URL)
     ws.on('unexpected-response', (req, res) => {
         // 409 = another lane holds the measurement lease. Cooperate: wait for
         // retry_after (capped) and retry, instead of failing the gate.
         let retry = 30
-        try { retry = JSON.parse(res.body).retry_after ?? 30 } catch { /* default */ }
+        try {
+            retry = JSON.parse(res.body).retry_after ?? 30
+        } catch {
+            /* default */
+        }
         retry = Math.min(Math.max(1, retry), 60)
         console.log(`[soak] lease held — waiting ${retry}s (window keeps running)`)
         const waitStart = now()
@@ -248,7 +251,6 @@ function connect() {
         }
     })
     ws.on('open', () => {
-        opened = true
         everOpened = true
         console.log(`[soak] open (#${reconnects + 1}) — prog_set + prog_play + summit note_on`)
         // A single held note generates only a fixed ~8s phrase (measured

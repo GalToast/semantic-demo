@@ -328,7 +328,7 @@
         type="button"
         aria-label={vocalOn ? 'Stop vocal monitor' : vocalDenied ? 'Microphone unavailable' : 'Monitor voice to play the jam'}
         aria-pressed={vocalOn}
-        aria-disabled={vocalDenied}
+        aria-disabled={vocalDenied ? 'true' : undefined}
         title={vocalOn ? 'Listening: your pitch plays at dial state.' : 'Sing to play — pitch tracked live, articulation from the state dial.'}
         onclick={toggleVocal}
       >🎤</button>
