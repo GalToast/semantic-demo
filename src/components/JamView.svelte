@@ -46,21 +46,22 @@
         stopMidiProgBridge
     } from '@lib/audio/jam-midi'
     import { startVocalMonitor, stopVocalMonitor, isVocalMonitoring } from '@lib/audio/jam-vocal'
-    import { sendStyleText, parseProgressionSpec, setStyleMorph } from '@lib/audio/jam-radio'
+    import { sendStyleText, parseProgressionSpec, setStyleMorph, loadJamSettings, saveJamSettings } from '@lib/audio/jam-radio'
     import { MEASURED_SLOT_PRESETS, steerJamBandSlots, type MeasuredSlotPreset } from '@lib/audio/jam-steer'
 
+    const savedSettings = loadJamSettings()
     let radioState = $state<RadioState>('idle')
     const live = $derived(radioState === 'live')
     const connecting = $derived(radioState === 'connecting')
-    let noteState = $state(4)
-    let bandMode = $state<RadioBandMode>('tone')
+    let noteState = $state(savedSettings.noteState ?? 4)
+    let bandMode = $state<RadioBandMode>(savedSettings.bandMode ?? 'tone')
     let progPlaying = $state(false)
     let progStatus = $state<RadioProgStatus | null>(null)
     let midiCount = $state(0)
     let vocalOn = $state(false)
     let presetLabel = $state<string | null>(null)
-    let progSpec = $state(DEFAULT_PROG_SPEC)
-    let progBpm = $state(DEFAULT_PROG_BPM)
+    let progSpec = $state(savedSettings.progSpec ?? DEFAULT_PROG_SPEC)
+    let progBpm = $state(savedSettings.progBpm ?? DEFAULT_PROG_BPM)
     let progError = $state<string | null>(null)
     let vocalDenied = $state(false)
     let connectError = $state<string | null>(null)
@@ -98,7 +99,11 @@
         radioState = s
         if (s === 'live') {
             connectError = null
-            bandMode = 'tone'
+            // Apply the configured dial (restored or pre-set idle) to the
+            // fresh session instead of forcing summit defaults — the rig
+            // connects as it looks. Fresh profiles still land on summit.
+            setRadioNoteState(noteState)
+            setRadioBandMode(bandMode)
             void startMidiBridge().then(ok => {
                 if (ok) bridgeChordToMidi(getRadioHeldNotes())
             })
@@ -206,7 +211,7 @@
         if (!vocalOn) vocalDenied = true
     }
 
-    let morphT = $state(0)
+    let morphT = $state(savedSettings.morphT ?? 0)
     let morphDebounce: ReturnType<typeof setTimeout> | null = null
 
     function onMorphInput(ev: Event & { currentTarget: HTMLInputElement }): void {
@@ -238,6 +243,10 @@
             stepNoteState(1)
         }
     }
+
+    $effect(() => {
+        saveJamSettings({ noteState, bandMode, progSpec, progBpm, morphT })
+    })
 
     $effect(() => {
         window.addEventListener('keydown', onKey)
@@ -299,6 +308,9 @@
                 {/each}
             </div>
             <span id="jam-frames" class="jam-frames">{audioFrames} audio frame{audioFrames === 1 ? '' : 's'}</span>
+            {#if live && audioFrames === 0}
+                <span id="jam-waiting" class="jam-waiting">Live — waiting for first audio frame…</span>
+            {/if}
         </div>
     </section>
 
@@ -434,7 +446,7 @@
                 min="0"
                 max="1"
                 step="0.01"
-                value="0"
+                value={morphT}
                 disabled={!live}
                 oninput={onMorphInput}
                 aria-label="Continuous style morph t"
@@ -590,6 +602,10 @@
         font-size: 0.72rem;
         opacity: 0.75;
         font-variant-numeric: tabular-nums;
+    }
+    .jam-waiting {
+        font-size: 0.72rem;
+        color: #ffd27d;
     }
     .jam-dial-row {
         display: flex;

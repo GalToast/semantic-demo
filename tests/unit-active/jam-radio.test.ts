@@ -3,7 +3,7 @@
  * stereo de-interleave. AudioContext-dependent scheduling is browser-only
  * and covered by the journey suite; these cover the data path math.
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
     decodePcmChunk,
     chunkToAudioBuffer,
@@ -14,6 +14,7 @@ import {
 import { pressRadioNote, releaseRadioNote } from '../../src/lib/audio/jam-radio'
 import { startMidiInput, stopMidiInput, getMidiInputCount } from '../../src/lib/audio/jam-midi'
 import { MEASURED_SLOT_PRESETS, RADIO_SUMMIT_SLOTS } from '../../src/lib/audio/jam-steer'
+import { loadJamSettings, saveJamSettings } from '../../src/lib/audio/jam-radio'
 
 describe('send queue (messages before the socket opens)', () => {
     it('queues a message when the socket is closed and flushes on open', () => {
@@ -174,6 +175,50 @@ describe('MEASURED_SLOT_PRESETS (one-tap scan winners)', () => {
         const summit = MEASURED_SLOT_PRESETS.find((p) => p.id === 'summit')
         expect(summit).toBeDefined()
         expect([...(summit as { slots: readonly number[] }).slots]).toEqual([...RADIO_SUMMIT_SLOTS])
+    })
+})
+
+describe('loadJamSettings / saveJamSettings', () => {
+    function fakeStorage() {
+        const m = new Map<string, string>()
+        return {
+            getItem: (k: string) => (m.has(k) ? (m.get(k) as string) : null),
+            setItem: (k: string, v: string) => void m.set(k, v),
+            _raw: m
+        }
+    }
+    it('round-trips valid settings', () => {
+        vi.stubGlobal('localStorage', fakeStorage())
+        try {
+            saveJamSettings({ noteState: 7, bandMode: 'beat', progSpec: 'Em 4 | D 4', progBpm: 132, morphT: 0.5 })
+            expect(loadJamSettings()).toEqual({ noteState: 7, bandMode: 'beat', progSpec: 'Em 4 | D 4', progBpm: 132, morphT: 0.5 })
+        } finally {
+            vi.unstubAllGlobals()
+        }
+    })
+    it('drops malformed fields and survives bad JSON', () => {
+        const store = fakeStorage()
+        vi.stubGlobal('localStorage', store)
+        try {
+            store._raw.set('sonic-jam-settings-v1', '{not json')
+            expect(loadJamSettings()).toEqual({})
+            store._raw.set(
+                'sonic-jam-settings-v1',
+                JSON.stringify({ noteState: 99, bandMode: 'opera', progSpec: 7, progBpm: 9, morphT: 2 })
+            )
+            expect(loadJamSettings()).toEqual({})
+        } finally {
+            vi.unstubAllGlobals()
+        }
+    })
+    it('is safe with no storage at all', () => {
+        vi.stubGlobal('localStorage', undefined)
+        try {
+            expect(loadJamSettings()).toEqual({})
+            expect(() => saveJamSettings({ noteState: 4, bandMode: 'tone', progSpec: 'x', progBpm: 100, morphT: 0 })).not.toThrow()
+        } finally {
+            vi.unstubAllGlobals()
+        }
     })
 })
 

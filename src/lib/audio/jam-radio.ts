@@ -550,6 +550,50 @@ export function releaseRadioNote(note: number): void {
     send({ type: 'note_off', note })
 }
 
+/** Persisted dial settings so the rig remembers itself across reloads.
+ * All fields optional on load; anything missing or malformed falls back
+ * to the caller's defaults. Storage failures (private mode, SSR) are
+ * swallowed — persistence is convenience, never load-bearing. */
+export interface JamSettings {
+    noteState: number
+    bandMode: RadioBandMode
+    progSpec: string
+    progBpm: number
+    morphT: number
+}
+const JAM_SETTINGS_KEY = 'sonic-jam-settings-v1'
+export function loadJamSettings(): Partial<JamSettings> {
+    try {
+        if (typeof localStorage === 'undefined') return {}
+        const raw = localStorage.getItem(JAM_SETTINGS_KEY)
+        if (!raw) return {}
+        const j = JSON.parse(raw) as Record<string, unknown>
+        const out: Partial<JamSettings> = {}
+        if (Number.isInteger(j.noteState) && (j.noteState as number) >= 0 && (j.noteState as number) <= 11) {
+            out.noteState = j.noteState as number
+        }
+        if (j.bandMode === 'tone' || j.bandMode === 'beat') out.bandMode = j.bandMode
+        if (typeof j.progSpec === 'string' && j.progSpec.length <= 96) out.progSpec = j.progSpec
+        if (typeof j.progBpm === 'number' && Number.isFinite(j.progBpm) && j.progBpm >= 40 && j.progBpm <= 220) {
+            out.progBpm = j.progBpm
+        }
+        if (typeof j.morphT === 'number' && Number.isFinite(j.morphT) && j.morphT >= 0 && j.morphT <= 1) {
+            out.morphT = j.morphT
+        }
+        return out
+    } catch {
+        return {}
+    }
+}
+export function saveJamSettings(s: JamSettings): void {
+    try {
+        if (typeof localStorage === 'undefined') return
+        localStorage.setItem(JAM_SETTINGS_KEY, JSON.stringify(s))
+    } catch {
+        // convenience only — never break the radio over storage
+    }
+}
+
 /** Band preset menu (whine-scan Pareto): 'tone' = slots {2,11}, 100/100-S
  * with whine 2.6% (clean tone, weaker beat 0.397); 'beat' = slots {2},
  * 100/100-S with beat 0.586 (stronger pulse, whine 12.8%). Same perfect
@@ -628,7 +672,7 @@ export async function setStyleMorph(t: number): Promise<boolean> {
         res = await fetch(`${JAM_HTTP_URL}/style_interp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ t: tt }),
+            body: JSON.stringify({ t: tt })
         })
     } catch {
         return false

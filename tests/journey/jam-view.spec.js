@@ -330,4 +330,29 @@ test.describe('Jam view', () => {
         const sent2 = await page.evaluate(() => window.__ws.sent)
         expect(sent2.filter((m) => m.includes('"prog_set"')).length).toBe(1)
     })
+
+    test('JAM-11. Settings survive reload; live with zero frames says so', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page)
+        // Configure, then reload: the rig remembers itself.
+        await page.fill('#jam-prog-spec', 'Em 4 | C 4 | G 4 | D 4')
+        await page.fill('#jam-prog-bpm', '132')
+        await page.evaluate(() => document.activeElement?.blur?.())
+        await page.keyboard.press(']')
+        await expect(page.locator('#jam-state')).toContainText('5')
+        await page.reload()
+        await page.waitForFunction(() => !!document.querySelector('[data-testid="jam-view"]'), { timeout: 30000 })
+        await expect(page.locator('#jam-prog-spec')).toHaveValue('Em 4 | C 4 | G 4 | D 4')
+        await expect(page.locator('#jam-prog-bpm')).toHaveValue('132')
+        await expect(page.locator('#jam-state')).toContainText('5')
+        // Connect: the mocked socket never sends audio, so the waiting
+        // hint must be visible instead of a silent meter.
+        await page.evaluate(() => document.querySelector('#jam-play').click())
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        await expect(page.locator('#jam-waiting')).toBeVisible()
+        await expect(page.locator('#jam-frames')).toContainText('0 audio frames')
+    })
 })
