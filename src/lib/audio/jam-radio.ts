@@ -276,6 +276,10 @@ export function startJamRadioAt(
     if (!Ctor) return Promise.resolve(false)
     pendingQueue.length = 0
     ctx = ctx ?? new Ctor()
+    // Autoplay policy: resume() inside a gesture is a no-op when running,
+    // and saves every non-gesture start (auto-start, effect re-run) from
+    // permanent silence. playChunk re-checks per frame as a second net.
+    void ensureAudioRunning(ctx)
     nextStart = 0
     heldNotes = notes.map((note) => ({ note: note.note, state: note.state ?? DEFAULT_NOTE_STATE }))
     setState('connecting')
@@ -332,8 +336,24 @@ export function startJamRadioAt(
     })
 }
 
+/**
+ * Nudge a suspended AudioContext back to running. Browsers suspend contexts
+ * created outside a user gesture (auto-start, effect re-run, a reused idle
+ * context); without this the radio schedules chunks into a frozen clock and
+ * the laptop stays silent even with a live stream. Exported for unit tests.
+ */
+export function ensureAudioRunning(audioCtx: AudioContext): void {
+    try {
+        const c = audioCtx as AudioContext & { state?: string; resume?: () => unknown }
+        if (c.state === 'suspended' && typeof c.resume === 'function') void c.resume()
+    } catch {
+        // headless / mocked context — never let audio teardown break the radio
+    }
+}
+
 /** Schedule one base64 chunk; called per audio message. */
 function playChunk(audioCtx: AudioContext, b64: string): void {
+    ensureAudioRunning(audioCtx)
     const interleaved = decodePcmChunk(b64)
     if (interleaved.length < 2) return
     const buf = chunkToAudioBuffer(audioCtx, interleaved)

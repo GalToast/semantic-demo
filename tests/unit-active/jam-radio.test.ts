@@ -4,7 +4,7 @@
  * and covered by the journey suite; these cover the data path math.
  */
 import { describe, it, expect } from 'vitest'
-import { decodePcmChunk, chunkToAudioBuffer, midiMessageToNote, __testPendingQueue } from '../../src/lib/audio/jam-radio'
+import { decodePcmChunk, chunkToAudioBuffer, midiMessageToNote, __testPendingQueue, ensureAudioRunning } from '../../src/lib/audio/jam-radio'
 import { pressRadioNote, releaseRadioNote } from '../../src/lib/audio/jam-radio'
 import { startMidiInput, stopMidiInput, getMidiInputCount } from '../../src/lib/audio/jam-midi'
 
@@ -116,6 +116,25 @@ describe('jam-midi lifecycle', () => {
     it('stop is safe when idle', () => {
         expect(() => stopMidiInput()).not.toThrow()
         expect(getMidiInputCount()).toBe(0)
+    })
+})
+
+describe('ensureAudioRunning (autoplay-policy net)', () => {
+    it('resumes a suspended context', () => {
+        let calls = 0
+        const fake = { state: 'suspended', resume: () => { calls++ } }
+        expect(() => ensureAudioRunning(fake as unknown as AudioContext)).not.toThrow()
+        expect(calls).toBe(1)
+    })
+    it('leaves a running context alone', () => {
+        let calls = 0
+        const fake = { state: 'running', resume: () => { calls++ } }
+        ensureAudioRunning(fake as unknown as AudioContext)
+        expect(calls).toBe(0)
+    })
+    it('never throws on a context without resume (headless mock)', () => {
+        expect(() => ensureAudioRunning({} as unknown as AudioContext)).not.toThrow()
+        expect(() => ensureAudioRunning({ state: 'suspended' } as unknown as AudioContext)).not.toThrow()
     })
 })
 
