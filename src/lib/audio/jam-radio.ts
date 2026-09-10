@@ -437,7 +437,7 @@ function playChunk(audioCtx: AudioContext, b64: string, rate?: number): void {
     ensureAudioRunning(audioCtx)
     const interleaved = decodePcmChunk(b64)
     if (interleaved.length < 2) return
-    const buf = chunkToAudioBuffer(audioCtx, interleaved)
+    const buf = chunkToAudioBuffer(audioCtx, interleaved, rate)
     const now = audioCtx.currentTime
     // Resync when the schedule starved; otherwise chain seamlessly.
     nextStart = nextStart > now + 0.02 ? nextStart : now + 0.05
