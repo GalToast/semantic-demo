@@ -440,4 +440,24 @@ test.describe('Jam view', () => {
         const href = await page.locator('#jam-download').getAttribute('href')
         expect(href && href.startsWith('blob:')).toBe(true)
     })
+
+    test('JAM-15. Metrics frames render stream health', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page)
+        await expect(page.locator('#jam-health')).toHaveCount(0)
+        await page.evaluate(() => document.querySelector('#jam-play').click())
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        await page.evaluate(() => {
+            window.__wsSock.onmessage({
+                data: JSON.stringify({ type: 'metrics', frameMs: 12.5, droppedFrames: 3, bufferAvail: 2, bufferCap: 8 })
+            })
+        })
+        await expect(page.locator('#jam-health')).toBeVisible()
+        await expect(page.locator('.jam-health-text')).toContainText('buf 2/8')
+        await expect(page.locator('.jam-health-text')).toContainText('3 dropped')
+        await expect(page.locator('.jam-health-text')).toContainText('12.5ms/frame')
+    })
 })

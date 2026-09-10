@@ -34,7 +34,8 @@
         DEFAULT_PROG_BPM,
         type RadioState,
         type RadioBandMode,
-        type RadioProgStatus
+        type RadioProgStatus,
+        type RadioMetrics
     } from '@lib/audio/jam-radio'
     import {
         startMidiInput,
@@ -53,7 +54,11 @@
         loadJamSettings,
         saveJamSettings,
         getRadioVolume,
-        setRadioVolume
+        setRadioVolume,
+        isRecorderSupported,
+        isRecording,
+        startJamRecording,
+        stopJamRecording
     } from '@lib/audio/jam-radio'
     import { MEASURED_SLOT_PRESETS, steerJamBandSlots, type MeasuredSlotPreset } from '@lib/audio/jam-steer'
 
@@ -71,6 +76,9 @@
     let progSpec = $state(savedSettings.progSpec ?? DEFAULT_PROG_SPEC)
     let progBpm = $state(savedSettings.progBpm ?? DEFAULT_PROG_BPM)
     let volume = $state(savedSettings.volume ?? getRadioVolume())
+    const recSupported = isRecorderSupported()
+    let recActive = $state(false)
+    let recUrl = $state<string | null>(null)
     let progError = $state<string | null>(null)
     let vocalDenied = $state(false)
     let connectError = $state<string | null>(null)
@@ -78,6 +86,9 @@
     // This is the user-visible answer to "is sound actually flowing".
     let audioFrames = $state(0)
     let level = $state(0)
+    // Transport telemetry: buffer/drops/latency name the cause every time
+    // the meter sits at zero (starving server vs stall vs suspended ctx).
+    let metrics = $state<RadioMetrics | null>(null)
     let meterTimer: ReturnType<typeof setInterval> | null = null
 
     const measured = $derived(isMeasuredPair(noteState, bandMode))
@@ -122,9 +133,32 @@
         progStatus = s
         if (typeof s.running === 'boolean') progPlaying = s.running
     }
+    function onMetrics(m: RadioMetrics): void {
+        metrics = m
+    }
 
+    async function toggleRecord(): Promise<void> {
+        if (recActive) {
+            recActive = false
+            const url = await stopJamRecording()
+            if (recUrl) URL.revokeObjectURL(recUrl)
+            recUrl = url
+        } else {
+            if (recUrl) {
+                URL.revokeObjectURL(recUrl)
+                recUrl = null
+            }
+            recActive = startJamRecording()
+        }
+    }
     async function toggleRadio(): Promise<void> {
         if (live || getRadioState() === 'live') {
+            if (recActive) {
+                recActive = false
+                const url = await stopJamRecording()
+                if (recUrl) URL.revokeObjectURL(recUrl)
+                recUrl = url
+            }
             stopRadioProg()
             progPlaying = false
             stopMidiInput()
@@ -135,8 +169,9 @@
             stopJamRadio()
         } else {
             progStatus = null
+            metrics = null
             connectError = null
-            const ok = await startJamRadio({ onState: onRadioState, onProgStatus, onAudioFrame })
+            const ok = await startJamRadio({ onState: onRadioState, onProgStatus, onAudioFrame, onMetrics })
             if (!ok) {
                 connectError =
                     "Couldn't reach the jam server — it may be busy (measurement lease held by another session) or down. Wait a few seconds and retry."
@@ -323,6 +358,33 @@
                 {/each}
             </div>
             <span id="jam-frames" class="jam-frames">{audioFrames} audio frame{audioFrames === 1 ? '' : 's'}</span>
+            {#if metrics}
+                <div id="jam-health" class="jam-health" role="status" aria-label="Stream health">
+                    <div class="jam-bufbar" aria-hidden="true">
+                        <span
+                            class="jam-buffill"
+                            style={`width: ${Math.round((100 * metrics.bufferAvail) / Math.max(1, metrics.bufferCap))}%`}
+                        ></span>
+                    </div>
+                    <span class="jam-health-text"
+                        >buf {metrics.bufferAvail}/{metrics.bufferCap} · {metrics.droppedFrames} dropped · {metrics.frameMs}ms/frame</span
+                    >
+                </div>
+            {/if}
+            {#if recSupported}
+                <button
+                    id="jam-record"
+                    class="jam-chip"
+                    type="button"
+                    onclick={toggleRecord}
+                    disabled={!live}
+                    aria-label={recActive ? 'Stop recording the session' : 'Record the session to a file'}
+                    aria-pressed={recActive}>{recActive ? '■ stop' : '● rec'}</button
+                >
+                {#if recUrl}
+                    <a id="jam-download" class="jam-chip jam-download" href={recUrl} download="jam-session.webm">⤓ take</a>
+                {/if}
+            {/if}
             <label class="jam-vol-label" for="jam-volume">vol</label>
             <input
                 id="jam-volume"
@@ -634,6 +696,27 @@
         font-size: 0.72rem;
         color: #ffd27d;
     }
+    .jam-health {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .jam-bufbar {
+        height: 0.4rem;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+    }
+    .jam-buffill {
+        display: block;
+        height: 100%;
+        background: #9fd0ff;
+    }
+    .jam-health-text {
+        font-size: 0.7rem;
+        opacity: 0.75;
+        font-variant-numeric: tabular-nums;
+    }
     .jam-dial-row {
         display: flex;
         gap: 0.75rem;
@@ -734,6 +817,13 @@
     .jam-morph-label {
         font-size: 0.72rem;
         opacity: 0.7;
+    }
+    .jam-vol-label {
+        font-size: 0.72rem;
+        opacity: 0.7;
+    }
+    .jam-download {
+        text-decoration: none;
     }
     .jam-morph {
         width: 7rem;
