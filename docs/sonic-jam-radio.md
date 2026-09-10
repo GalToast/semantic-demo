@@ -247,7 +247,7 @@ Verification: jam-radio/progression/vocal unit suites (28/28), production build,
 JAM-1..7 plus the `view=jam` alias journey, and a normal explorer deep-link
 smoke are green. The jam journey also verifies that no engine asset is fetched.
 
-## Audio style-follow (blocked on mrt2)
+## Audio style-follow (offline path complete; live apply pending on mrt2)
 
 Design posted (msg 1584): `POST /style_from_audio {pcm_b64, sr}` → 10s
 rolling buffer → MusicCoCa embed every 2-4s → tokenize → swap
@@ -255,35 +255,41 @@ rolling buffer → MusicCoCa embed every 2-4s → tokenize → swap
 vibe-following; rap-downbeat sync and melody harmonizing stay separate
 future dials.
 
-**Status (2026-09-09): capture/queue is live; encoder application remains
-open.** The route now accepts a raw-buffer upload, persists it as
-`hum_queue/job_N.wav`, and returns a job id. The console's MediaRecorder path
-performs the mono WAV mixdown and submits the capture. This is the first 3/4
-of the pipeline, not a proof that style has been applied yet.
+**Status (2026-09-10): capture, queue, encoder, and status are implemented;
+the live apply proof remains open.** The route accepts a raw-buffer upload,
+reads the declared Content-Length before dispatch, persists the exact WAV via
+an atomic rename as `hum_queue/job_N.wav`, and returns a job id. The console's
+MediaRecorder path performs the mono WAV mixdown, submits the capture, and
+polls `GET /style_job?id=N` until queued, done, or error. This is now an
+offline-proven pipeline; the live stack still needs one coordinated run.
 
 The encoder path itself exists: `encode_chain.py` was ground-truth-verified
 against JAX for STFT maxdiff, latent diff, and code-match percentage. The
-remaining dependency is `resources/spectrostream/encoder.safetensors` plus
-`quantizer.safetensors`; `mrt2_small.safetensors` does not contain the
-encoder. Once those weights are available, the worker can run the offline
-CPU path (`hum_queue/*.wav` → STFT → encoder → RVQ → mean codes →
-`style_tokens` → LM `n==48` control) without a GPU window or a live-stack
-restart.
+checked-out MRT2 root still lacks `resources/spectrostream/encoder.safetensors`
+and `quantizer.safetensors`; verified copies are staged under
+`C:/tmp/mrt2-weights-20260909/` and can be passed explicitly to
+`magenta_port/audio_style_worker.py` under `tmp/torch-venv`. The worker runs
+the CPU path (`hum_queue/*.wav` → STFT → encoder → RVQ → mean codes →
+12x int32 global `style_tokens`) and `lm_server_v2.py` now accepts the
+validated `n==48` control, rebuilds conditioning, invalidates its encoder
+cache, and echoes the applied tokens. The model-backed queue proof passed
+without a GPU window or live-stack restart.
 
 `surf_style_helper` is NOT the blocker — it lives at
 `mrt2/magenta_port/surf_style_helper.py` and exports
 `surf_tokens_for(x, y)` (verified live: it imports cleanly and the
 current jam is serving its tokens). It takes PCA coordinates, not a
-waveform, so it cannot consume audio directly. The missing piece is the
-encoder/quantizer weights plus the queued worker that maps the audio through
-the verified encode chain. `codex-disk` owns `jam_server.py`; coordinate that
-seam before touching the live server.
+waveform, so it cannot consume audio directly. The offline worker and queue
+seam are now implemented; `codex-disk` still owns `jam_server.py`, so
+coordinate the live reload/apply proof before touching the running server.
 
-The browser capture path is live; the remaining server worker must consume
-the queued file and apply its result. The MusicCoCa embed is measured at ~3s
-per 10s clip on CPU (`scripts/style-ear-latency.py`, deterministic, cos 1.0),
-and the 914MB TFLite bundle does not fit in a browser, so encoding runs
-server-side by design.
+The browser capture path and server worker are now wired. The remaining step
+is a live proof after the stack is restored and the patched v2 process is
+loaded: run the worker with `--watch --apply-lm`, submit a real recording, and
+capture one post-apply frame while checking jam/decode health. The MusicCoCa
+embed is measured at ~3s per 10s clip on CPU (`scripts/style-ear-latency.py`,
+deterministic, cos 1.0), and the 914MB TFLite bundle does not fit in a browser,
+so encoding runs server-side by design.
 
 ## Text-vibe steering (tier 13)
 
@@ -294,12 +300,11 @@ probe); this is the client half. Fire-and-forget; the dial applies it
 server-side without dropping the stream. Returns the matched anchor name
 or null on a network/parse failure.
 
-Why /style_text and not /style_from_audio? The audio endpoint now captures
-and queues the upload, but style application still waits on the missing
-encoder weights and worker. mrt2-lane's text endpoint uses 100% existing
-infrastructure (no MusicCoCa at runtime), so it is the one that is actually
-usable end-to-end today. The audio embedding stays queued until the worker
-returns an applied style result.
+Why /style_text and not /style_from_audio? The text endpoint remains the
+lowest-latency path because it uses existing infrastructure and no encoder
+batch. The audio path now has its worker and LM control, but stays a queued
+feature in the product until the restored live stack returns one applied-style
+frame and a healthy jam/decode check.
 
 JamView.svelte: `#jam-style` input + 💚 send button + matched-anchor
 readout. JAM-6 pins the fetch shape.
