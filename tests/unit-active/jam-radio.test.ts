@@ -4,9 +4,16 @@
  * and covered by the journey suite; these cover the data path math.
  */
 import { describe, it, expect } from 'vitest'
-import { decodePcmChunk, chunkToAudioBuffer, midiMessageToNote, __testPendingQueue, ensureAudioRunning } from '../../src/lib/audio/jam-radio'
+import {
+    decodePcmChunk,
+    chunkToAudioBuffer,
+    midiMessageToNote,
+    __testPendingQueue,
+    ensureAudioRunning
+} from '../../src/lib/audio/jam-radio'
 import { pressRadioNote, releaseRadioNote } from '../../src/lib/audio/jam-radio'
 import { startMidiInput, stopMidiInput, getMidiInputCount } from '../../src/lib/audio/jam-midi'
+import { MEASURED_SLOT_PRESETS, RADIO_SUMMIT_SLOTS } from '../../src/lib/audio/jam-steer'
 
 describe('send queue (messages before the socket opens)', () => {
     it('queues a message when the socket is closed and flushes on open', () => {
@@ -122,19 +129,51 @@ describe('jam-midi lifecycle', () => {
 describe('ensureAudioRunning (autoplay-policy net)', () => {
     it('resumes a suspended context', () => {
         let calls = 0
-        const fake = { state: 'suspended', resume: () => { calls++ } }
+        const fake = {
+            state: 'suspended',
+            resume: () => {
+                calls++
+            }
+        }
         expect(() => ensureAudioRunning(fake as unknown as AudioContext)).not.toThrow()
         expect(calls).toBe(1)
     })
     it('leaves a running context alone', () => {
         let calls = 0
-        const fake = { state: 'running', resume: () => { calls++ } }
+        const fake = {
+            state: 'running',
+            resume: () => {
+                calls++
+            }
+        }
         ensureAudioRunning(fake as unknown as AudioContext)
         expect(calls).toBe(0)
     })
     it('never throws on a context without resume (headless mock)', () => {
         expect(() => ensureAudioRunning({} as unknown as AudioContext)).not.toThrow()
         expect(() => ensureAudioRunning({ state: 'suspended' } as unknown as AudioContext)).not.toThrow()
+    })
+})
+
+describe('MEASURED_SLOT_PRESETS (one-tap scan winners)', () => {
+    it('has unique ids and the summit preset', () => {
+        const ids = MEASURED_SLOT_PRESETS.map((p) => p.id)
+        expect(new Set(ids).size).toBe(ids.length)
+        expect(ids).toContain('summit')
+    })
+    it('never includes poison slots 1 or 3 and stays in 0..11', () => {
+        for (const p of MEASURED_SLOT_PRESETS) {
+            expect(p.slots).not.toContain(1)
+            expect(p.slots).not.toContain(3)
+            for (const s of p.slots) {
+                expect(Number.isInteger(s) && s >= 0 && s <= 11).toBe(true)
+            }
+        }
+    })
+    it('summit preset matches RADIO_SUMMIT_SLOTS', () => {
+        const summit = MEASURED_SLOT_PRESETS.find((p) => p.id === 'summit')
+        expect(summit).toBeDefined()
+        expect([...(summit as { slots: readonly number[] }).slots]).toEqual([...RADIO_SUMMIT_SLOTS])
     })
 })
 

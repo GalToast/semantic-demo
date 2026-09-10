@@ -47,6 +47,7 @@
     } from '@lib/audio/jam-midi'
     import { startVocalMonitor, stopVocalMonitor, isVocalMonitoring } from '@lib/audio/jam-vocal'
     import { sendStyleText, parseProgressionSpec, setStyleMorph } from '@lib/audio/jam-radio'
+    import { MEASURED_SLOT_PRESETS, steerJamBandSlots, type MeasuredSlotPreset } from '@lib/audio/jam-steer'
 
     let radioState = $state<RadioState>('idle')
     const live = $derived(radioState === 'live')
@@ -57,6 +58,7 @@
     let progStatus = $state<RadioProgStatus | null>(null)
     let midiCount = $state(0)
     let vocalOn = $state(false)
+    let presetLabel = $state<string | null>(null)
     let vocalDenied = $state(false)
     let connectError = $state<string | null>(null)
     // Signal readout: audio-frame count + smoothed peak level 0..1.
@@ -124,7 +126,14 @@
             }
         }
     }
+    function applySlotPreset(p: MeasuredSlotPreset): void {
+        noteState = SUMMIT_STATE
+        presetLabel = p.label
+        setRadioNoteState(SUMMIT_STATE)
+        void steerJamBandSlots(p.slots)
+    }
     function cycleNoteState(): void {
+        presetLabel = null
         noteState = (noteState + 1) % 12
         setRadioNoteState(noteState)
         void import('@lib/audio/jam-midi').then(m => {
@@ -132,10 +141,12 @@
         })
     }
     function stepNoteState(delta: -1 | 1): void {
+        presetLabel = null
         noteState = (noteState + delta + 12) % 12
         setRadioNoteState(noteState)
     }
     function cycleBandMode(): void {
+        presetLabel = null
         bandMode = bandMode === 'tone' ? 'beat' : 'tone'
         setRadioBandMode(bandMode)
     }
@@ -163,6 +174,7 @@
         }
     }
     function restoreSummit(): void {
+        presetLabel = null
         noteState = SUMMIT_STATE
         bandMode = 'tone'
         setRadioNoteState(SUMMIT_STATE)
@@ -253,7 +265,7 @@
                 Live · state {noteState} {STATE_LABELS[noteState]} · {bandMode === 'tone'
                     ? 'tone {2,11}'
                     : 'beat {2}'}{#if !measured} · <span class="jam-unmeasured">untested combo</span>{/if}{#if progPlaying}
-                    · progression playing{/if}{#if midiCount > 0} · MIDI ×{midiCount}{/if}{#if vocalOn} · vocal in{/if}
+                    · progression playing{/if}{#if midiCount > 0} · MIDI ×{midiCount}{/if}{#if vocalOn} · vocal in{/if}{#if presetLabel} · {presetLabel}{/if}
             {/if}
         </p>
         {#if connectError}
@@ -314,6 +326,19 @@
                 disabled={!live}
                 aria-label="Restore summit pair (state 4 + tone)">★ summit</button
             >
+        </div>
+        <div class="jam-dial-row jam-presets">
+            {#each MEASURED_SLOT_PRESETS as p}
+                <button
+                    id={`jam-preset-${p.id}`}
+                    class="jam-chip"
+                    type="button"
+                    onclick={() => applySlotPreset(p)}
+                    disabled={!live}
+                    aria-label={`Apply measured preset ${p.label}: ${p.blurb}`}
+                    title={p.blurb}>{p.label}</button
+                >
+            {/each}
         </div>
     </section>
 

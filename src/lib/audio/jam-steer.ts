@@ -34,6 +34,36 @@ export type JamBandPreset =
  * and FINAL_SCAN_RESULTS.md. */
 export const RADIO_SUMMIT_SLOTS: readonly number[] = [2, 11]
 
+/** One-tap measured slot presets (mrt2 scan results, Sep 2026). Poison
+ * slots 1 and 3 are never included. Applied with pitch state 4 (cond 11).
+ * Pure data — JamView renders one chip per entry. */
+export interface MeasuredSlotPreset {
+    id: string
+    label: string
+    slots: readonly number[]
+    blurb: string
+}
+export const MEASURED_SLOT_PRESETS: readonly MeasuredSlotPreset[] = [
+    {
+        id: 'summit',
+        label: 'Summit {2,11}',
+        slots: RADIO_SUMMIT_SLOTS,
+        blurb: '100/100-S, whine 2.6% — the whine-clean summit'
+    },
+    {
+        id: 'clean',
+        label: 'Clean {2,7,11}',
+        slots: [2, 7, 11],
+        blurb: '93/89-A, whine 0.7% — cleanest tone'
+    },
+    {
+        id: 'beat',
+        label: 'Beat {2,11,9}',
+        slots: [2, 11, 9],
+        blurb: '82/70-B, beat 0.821 — strongest pulse'
+    }
+]
+
 /** Build the /band_mask request body. Accepts a named preset or explicit
  * per-RVQ-level slots (server contract: {preset|slots}, commit 26bf210).
  * Exported pure for unit testing. */

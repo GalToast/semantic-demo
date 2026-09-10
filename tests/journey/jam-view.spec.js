@@ -261,4 +261,43 @@ test.describe('Jam view', () => {
             { timeout: 30000 }
         )
     })
+
+    test('JAM-9. Measured preset chips send raw slots at summit state', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page)
+        await page.evaluate(() => document.querySelector('#jam-play').click())
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        await page.waitForFunction(() => window.__ws.sent.length >= 5, { timeout: 30000 })
+        // Mock fetch so the POST is observable without a live jam.
+        await page.evaluate(() => {
+            window.__maskCalls = []
+            const orig = window.fetch
+            window.fetch = async (url, opts) => {
+                if (typeof url === 'string' && url.includes('/band_mask')) {
+                    window.__maskCalls.push({ url, opts })
+                    return { ok: true, status: 200 }
+                }
+                return orig(url, opts)
+            }
+        })
+        // Step off summit first so the preset's state pin is actually proven.
+        await page.keyboard.press(']')
+        await expect(page.locator('#jam-state')).toContainText('5')
+        // Clean-tone preset: raw slots {2,7,11}, dial pinned to summit state.
+        await page.evaluate(() => document.querySelector('#jam-preset-clean').click())
+        await page.waitForFunction(() => window.__maskCalls && window.__maskCalls.length > 0, {
+            timeout: 10000
+        })
+        const calls = await page.evaluate(() => window.__maskCalls)
+        expect(JSON.parse(calls[calls.length - 1].opts.body)).toEqual({ slots: [2, 7, 11] })
+        await expect(page.locator('#jam-state')).toContainText('4')
+        // Beat preset sends its own raw slots.
+        await page.evaluate(() => document.querySelector('#jam-preset-beat').click())
+        await page.waitForFunction(() => window.__maskCalls.length >= 2, { timeout: 10000 })
+        const calls2 = await page.evaluate(() => window.__maskCalls)
+        expect(JSON.parse(calls2[calls2.length - 1].opts.body)).toEqual({ slots: [2, 11, 9] })
+    })
 })
