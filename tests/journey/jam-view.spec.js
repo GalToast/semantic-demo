@@ -296,6 +296,14 @@ test.describe('Jam view', () => {
             () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') !== 'true',
             { timeout: 30000 }
         )
+        // Arrow keys step the morph slider both ways (JAM-8b).
+        await page.keyboard.press('ArrowRight')
+        await expect(page.locator('#jam-morph-val')).toHaveText('0.05')
+        await page.keyboard.press('ArrowLeft')
+        await expect(page.locator('#jam-morph-val')).toHaveText('0.00')
+        // The waveform canvas is present and renders off the master analyser.
+        await expect(page.locator('#jam-wave')).toBeVisible()
+        await expect(page.locator('#jam-wave')).toHaveAttribute('width')
     })
 
     test('JAM-9. Measured preset chips send raw slots at summit state', async ({ page }) => {

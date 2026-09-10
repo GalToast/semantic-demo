@@ -18,8 +18,12 @@ let masterGain: GainNode | null = null
 let limiter: DynamicsCompressorNode | null = null
 let linearVolume = 1
 let recStream: MediaStreamAudioDestinationNode | null = null
+/** AnalyserNode tapped off the master chain for waveform / meter readout.
+ * Null until the chain is built. JamView uses it for the live meter and
+ * any future waveform visualizer without owning a second context. */
+let analyser: AnalyserNode | null = null
 
-function ctor(): (typeof AudioContext) | null {
+function ctor(): typeof AudioContext | null {
     try {
         if (typeof window === 'undefined') return null
         const w = window as Window & {
@@ -50,7 +54,14 @@ export function resetSharedAudioForTest(): void {
     sharedCtx = null
     masterGain = null
     limiter = null
+    analyser = null
     recStream = null
+}
+
+/** Read-only access to the master analyser for waveform / meter surfaces.
+ * Returns null when no real context is built (headless / mocked). */
+export function getMasterAnalyser(): AnalyserNode | null {
+    return analyser
 }
 
 /** Linear 0..2 -> gain. v^2 taper: 0.5->0.25 (-12dB), 1->1, 2->4 (+12dB
@@ -59,7 +70,6 @@ export function volumeToGain(v: number): number {
     const c = Math.min(2, Math.max(0, Number(v) || 0))
     return c * c
 }
-
 
 /** Apply a linear 0..2 volume to the shared chain (and remember it). */
 export function setSharedVolume(v: number): number {
@@ -95,10 +105,24 @@ function buildChain(audioCtx: AudioContext): GainNode | null {
         } else {
             masterGain.connect(audioCtx.destination)
         }
+        // Tap an analyser off the master chain so the meter / waveform
+        // visualizer reads the ACTUAL output, not a pre-gain guess. It is
+        // a pass-through node — it does not alter the signal path.
+        if (typeof audioCtx.createAnalyser === 'function') {
+            try {
+                analyser = audioCtx.createAnalyser()
+                analyser.fftSize = 2048
+                analyser.smoothingTimeConstant = 0.8
+                masterGain.connect(analyser)
+            } catch {
+                analyser = null
+            }
+        }
         return masterGain
     } catch {
         masterGain = null
         limiter = null
+        analyser = null
         return null
     }
 }

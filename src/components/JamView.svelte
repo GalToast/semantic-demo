@@ -66,6 +66,7 @@
         type MeasuredSlotPreset
     } from '@lib/audio/jam-steer'
     import { jamResultLabel } from '@lib/audio/jam-result'
+    import { getMasterAnalyser } from '@lib/audio/jam-engine'
     import {
         getJamHost,
         saveJamHost,
@@ -436,7 +437,54 @@
             stepNoteState(-1)
         } else if (ev.key === ']') {
             stepNoteState(1)
+        } else if (ev.key === 'ArrowLeft') {
+            ev.preventDefault()
+            applyMorph(morphT - 0.05)
+        } else if (ev.key === 'ArrowRight') {
+            ev.preventDefault()
+            applyMorph(morphT + 0.05)
         }
+    }
+    // Keyboard-driven morph step. Mirrors the slider handler exactly so
+    // key and pointer land on the same value and debounce.
+    function applyMorph(v: number): void {
+        morphT = clampMorphT(v)
+        if (morphDebounce) clearTimeout(morphDebounce)
+        morphDebounce = setTimeout(() => {
+            void setStyleMorph(morphT).then((r) => {
+                steerNotice = jamResultLabel(r)
+            })
+        }, 120)
+        syncRig()
+    }
+    // Draw the live waveform from the master analyser. Reads what is
+    // actually being heard — a pass-through node off the gain->limiter
+    // chain — so the visual tracks the output rather than a synthetic
+    // level. No-op when no real context exists (headless / mocked).
+    function drawWaveform(): void {
+        const canvas = document.getElementById('jam-wave') as HTMLCanvasElement | null
+        const analyser = getMasterAnalyser()
+        if (!canvas || !analyser) return
+        const ctx2d = canvas.getContext('2d')
+        if (!ctx2d) return
+        const w = canvas.clientWidth || canvas.width
+        const h = canvas.clientHeight || canvas.height
+        if (canvas.width !== w) canvas.width = w
+        const buf = new Uint8Array(analyser.frequencyBinCount)
+        analyser.getByteTimeDomainData(buf)
+        ctx2d.clearRect(0, 0, w, h)
+        ctx2d.lineWidth = 2
+        ctx2d.strokeStyle = 'var(--jam-accent, #7fd0ff)'
+        ctx2d.beginPath()
+        const step = w / buf.length
+        for (let i = 0; i < buf.length; i++) {
+            const v = (buf[i] ?? 0) / 128.0
+            const y = v * (h / 2)
+            const x = i * step
+            if (i === 0) ctx2d.moveTo(x, y)
+            else ctx2d.lineTo(x, y)
+        }
+        ctx2d.stroke()
     }
 
     function onVolumeInput(ev: Event & { currentTarget: HTMLInputElement }): void {
@@ -478,6 +526,9 @@
             // Surface steering outcomes that arrived without a click context
             // (connect-time summit mask). Cleared on next user steering.
             if (!steerNotice) steerNotice = getLastSteerNotice()
+            // Drive the waveform visualizer from the master analyser so it
+            // reflects what is actually being heard, not a synthetic level.
+            drawWaveform()
         }, 120)
         return () => {
             window.removeEventListener('keydown', onKey)
@@ -571,6 +622,7 @@
                     <span class="jam-seg" data-on={i < meterFilled}></span>
                 {/each}
             </div>
+            <canvas id="jam-wave" class="jam-wave" aria-hidden="true" width="320" height="48"></canvas>
             <span id="jam-frames" class="jam-frames" role="status" aria-live="polite"
                 >{audioFrames} audio frame{audioFrames === 1 ? '' : 's'}</span
             >
