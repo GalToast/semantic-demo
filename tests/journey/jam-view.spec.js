@@ -16,6 +16,7 @@ async function mockRadio(page) {
         class FakeWebSocket {
             constructor(url) {
                 window.__ws.url = url
+                window.__wsSock = this
                 this.readyState = 0
                 setTimeout(() => {
                     this.readyState = 1
@@ -398,5 +399,45 @@ test.describe('Jam view', () => {
         await page.reload()
         await page.waitForFunction(() => !!document.querySelector('[data-testid="jam-view"]'), { timeout: 30000 })
         await expect(page.locator('#jam-volume')).toHaveValue('0.5')
+    })
+
+    test('JAM-14. Session record produces a downloadable take', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page)
+        await page.evaluate(() => document.querySelector('#jam-play').click())
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        const supported = await page.evaluate(() => typeof MediaRecorder !== 'undefined')
+        test.skip(!supported, 'no MediaRecorder in this browser')
+        await expect(page.locator('#jam-record')).toBeVisible()
+        await page.evaluate(() => document.querySelector('#jam-record').click())
+        await expect(page.locator('#jam-record')).toHaveAttribute('aria-pressed', 'true')
+        // Feed real PCM through the app's own message path so the tap has
+        // samples to capture (0.1s 440Hz stereo-interleaved int16, x3).
+        const pcmB64 = await page.evaluate(() => {
+            const n = 4800
+            const bytes = new Uint8Array(n * 2)
+            const view = new DataView(bytes.buffer)
+            for (let i = 0; i < n; i++) {
+                view.setInt16(i * 2, Math.floor(12000 * Math.sin((2 * Math.PI * 440 * i) / 48000)), true)
+            }
+            let bin = ''
+            bytes.forEach((b) => {
+                bin += String.fromCharCode(b)
+            })
+            return btoa(bin) // eslint-disable-line no-undef
+        })
+        await page.evaluate((b64) => {
+            const sock = window.__wsSock
+            for (let k = 0; k < 3; k++) sock.onmessage({ data: JSON.stringify({ type: 'audio', data: b64 }) })
+        }, pcmB64)
+        await expect(page.locator('#jam-frames')).toContainText('3 audio frames')
+        await page.waitForTimeout(1500)
+        await page.evaluate(() => document.querySelector('#jam-record').click())
+        await expect(page.locator('#jam-download')).toBeVisible({ timeout: 10000 })
+        const href = await page.locator('#jam-download').getAttribute('href')
+        expect(href && href.startsWith('blob:')).toBe(true)
     })
 })
