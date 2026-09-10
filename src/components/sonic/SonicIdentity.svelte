@@ -11,6 +11,8 @@
   import { loadSonicManifest, pickVariantForNode, type SonicManifest, type SonicStyle } from '@lib/sonic/sonic-manifest';
   import { playSonicIdentity, stopSonicIdentity, isPlaying } from '@lib/audio/sonic-identity';
   import { steerJam } from '@lib/audio/jam-steer';
+  import { jamResultLabel } from '@lib/audio/jam-result';
+  import { getRig, patchRig } from '@lib/audio/jam-rig';
   import { startJamRadio, stopJamRadio, getRadioState, setRadioNoteState, getRadioHeldNotes } from '@lib/audio/jam-radio';
   import { setRadioProg, playRadioProg, stopRadioProg, DEFAULT_PROG_SPEC } from '@lib/audio/jam-radio';
   import { setRadioBandMode, type RadioBandMode } from '@lib/audio/jam-radio';
@@ -61,7 +63,9 @@
   // (whine-clean summit, whine 2.6%).
   // Default is 4 so the dial agrees with what the radio actually holds on
   // connect (RADIO_HELD_NOTES state 4 + steerJamBandSlots summit slots).
-  let noteState = $state(4);
+  // Shared rig truth (jam-rig): JamView writes arrive here on mount.
+  const rig0 = getRig();
+  let noteState = $state(rig0.noteState);
   const clip = $derived(manifest ? pickVariantForNode(manifest, clusterName, leadId, style) : null);
 
   // Stop the radio if the focus card unmounts — never leak a live stream.
@@ -71,6 +75,7 @@
   function cycleNoteState(): void {
     noteState = (noteState + 1) % 12;
     setRadioNoteState(noteState);
+    patchRig({ noteState });
     if (isMidiBridgeOn()) bridgeChordToMidi(getRadioHeldNotes());
   }
 
@@ -92,10 +97,15 @@
   }
   // Band preset menu (whine-scan Pareto): tone = clean, beat = pulse.
   // Defaults to tone (the connect default); cycles without dropping audio.
-  let bandMode = $state<RadioBandMode>('tone');
+  // Steering failures surface as a dial title tooltip, never silent.
+  let bandMode = $state<RadioBandMode>(rig0.bandMode);
+  let steerNote = $state<string | null>(null);
   function cycleBandMode(): void {
     bandMode = bandMode === 'tone' ? 'beat' : 'tone';
-    setRadioBandMode(bandMode);
+    patchRig({ bandMode });
+    void setRadioBandMode(bandMode).then((r) => {
+      steerNote = jamResultLabel(r);
+    });
   }
   // Vocal monitor: mic pitch in, dial articulation out. -1 = unavailable.
   let vocalOn = $state(false);
@@ -131,7 +141,10 @@
     noteState = SUMMIT_STATE;
     bandMode = 'tone';
     setRadioNoteState(SUMMIT_STATE);
-    setRadioBandMode('tone');
+    patchRig({ noteState: SUMMIT_STATE, bandMode: 'tone' });
+    void setRadioBandMode('tone').then((r) => {
+      steerNote = jamResultLabel(r);
+    });
   }
   // Last server-confirmed prog status (null until the first prog_status
   // reply). The toggle is optimistic; this is ground truth when present.
@@ -158,10 +171,13 @@
     dial = next;
     if (next === 'live') {
       // Radio replaces the canned clip; steer with the pole we came from so
-      // the generative stream continues the mood.
+      // the generative stream continues the mood. Steering failures surface
+      // as a dial tooltip, never silent.
       stopSonicIdentity();
       playing = false;
-      void steerJam(prev === 'beat' ? 'beat' : 'best');
+      void steerJam(prev === 'beat' ? 'beat' : 'best').then((r) => {
+        steerNote = jamResultLabel(r);
+      });
       void startJamRadio({ onState: onRadioState, onProgStatus });
       return;
     }

@@ -230,23 +230,26 @@ test.describe('Jam view', () => {
         expect(calls.length).toBe(1)
         const body = JSON.parse(calls[0].opts.body)
         expect(body.t).toBe(0.5)
-        // Poison zone [0.74, 0.82] snaps to 0.72 on the server — the slider
-        // still sends the raw value, but the readout must confess the snap.
+        // Poison zone [0.74, 0.82] snaps client-side to 0.72 — SINGLE MORPH
+        // TRUTH: the thumb always equals the sent value, no lying readout.
         await setMorph(0.78)
         await page.waitForTimeout(250)
         const calls2 = await page.evaluate(() => window.__interpCalls)
-        expect(JSON.parse(calls2[calls2.length - 1].opts.body).t).toBe(0.78)
-        await expect(page.locator('#jam-morph-val')).toContainText('0.78 → 0.72')
+        expect(JSON.parse(calls2[calls2.length - 1].opts.body).t).toBe(0.72)
+        await expect(page.locator('#jam-morph-val')).toHaveText('0.72')
     })
 
     test('JAM-8. Idle surface is pre-configurable; keyboard drives transport and dial', async ({ page }) => {
         await mockRadio(page)
         await gotoJam(page)
         // Controls render before connecting (disabled) — the surface is
-        // configurable first, play second.
+        // configurable first, play second. Lab dials hide behind Advanced;
+        // musician voices + summit stay visible.
         for (const sel of [
-            '#jam-state',
-            '#jam-band',
+            '#jam-voice-summit',
+            '#jam-voice-clean',
+            '#jam-voice-beat',
+            '#jam-advanced-toggle',
             '#jam-prog',
             '#jam-midi',
             '#jam-vocal',
@@ -255,6 +258,11 @@ test.describe('Jam view', () => {
         ]) {
             await expect(page.locator(sel)).toBeVisible()
         }
+        // Lab dials are hidden until Advanced opens.
+        await expect(page.locator('#jam-state')).toHaveCount(0)
+        await page.evaluate(() => document.querySelector('#jam-advanced-toggle').click())
+        await expect(page.locator('#jam-state')).toBeVisible()
+        await expect(page.locator('#jam-band')).toBeVisible()
         await expect(page.locator('#jam-frames')).toContainText('0 audio frames')
         // Space starts the radio without a pointer.
         await page.keyboard.press('Space')
@@ -364,11 +372,14 @@ test.describe('Jam view', () => {
         await page.fill('#jam-prog-bpm', '132')
         await page.evaluate(() => document.activeElement?.blur?.())
         await page.keyboard.press(']')
+        await page.evaluate(() => document.querySelector('#jam-advanced-toggle').click())
         await expect(page.locator('#jam-state')).toContainText('5')
         await page.reload()
         await page.waitForFunction(() => !!document.querySelector('[data-testid="jam-view"]'), { timeout: 30000 })
         await expect(page.locator('#jam-prog-spec')).toHaveValue('Em 4 | C 4 | G 4 | D 4')
         await expect(page.locator('#jam-prog-bpm')).toHaveValue('132')
+        // The dial state survives too — open Advanced to see it.
+        await page.evaluate(() => document.querySelector('#jam-advanced-toggle').click())
         await expect(page.locator('#jam-state')).toContainText('5')
         // Connect: the mocked socket never sends audio, so the waiting
         // hint must be visible instead of a silent meter.
@@ -494,5 +505,55 @@ test.describe('Jam view', () => {
         await expect(page.locator('#jam-stalled')).toHaveCount(0)
         await page.waitForTimeout(8500)
         await expect(page.locator('#jam-stalled')).toBeVisible()
+    })
+
+    test('JAM-17. Steering failures surface — 409 lease says "another session"', async ({ page }) => {
+        await mockRadio(page)
+        // The jam server is reachable but holds the measurement lease.
+        await page.addInitScript(() => {
+            const orig = window.fetch
+            window.fetch = async (url, opts) => {
+                if (typeof url === 'string' && url.includes('/band_mask')) {
+                    return new Response(null, { status: 409 })
+                }
+                return orig(url, opts)
+            }
+        })
+        await gotoJam(page)
+        await expect(page.locator('.jam-notice')).toHaveCount(0)
+        await page.evaluate(() => document.querySelector('#jam-play').click())
+        await page.waitForFunction(
+            () => document.querySelector('[data-testid="jam-view"]')?.getAttribute('data-live') === 'true',
+            { timeout: 30000 }
+        )
+        // The connect-time summit mask POST hits 409 — the UI must say so in
+        // musician words instead of silently no-oping.
+        await expect(page.locator('.jam-notice')).toContainText('Another session owns the live stream', {
+            timeout: 10000
+        })
+    })
+
+    test('JAM-18. Connection screen applies and remembers a server address', async ({ page }) => {
+        await mockRadio(page)
+        await gotoJam(page)
+        await expect(page.locator('#jam-host')).toBeVisible()
+        await expect(page.locator('.jam-endpoints')).toContainText('ws://127.0.0.1:8083')
+        await page.fill('#jam-host', '192.168.1.20:8083')
+        await page.evaluate(() => document.querySelector('#jam-host-apply').click())
+        // Endpoints update live; the override survives a reload.
+        await expect(page.locator('.jam-endpoints')).toContainText('ws://192.168.1.20:8083')
+        await expect(page.locator('.jam-endpoints')).toContainText('http://192.168.1.20:8083')
+        await page.reload()
+        await page.waitForFunction(() => !!document.querySelector('[data-testid="jam-view"]'), { timeout: 30000 })
+        await expect(page.locator('.jam-endpoints')).toContainText('ws://192.168.1.20:8083')
+        // Recent hosts offer one-tap return.
+        await expect(page.locator('.jam-recent').first()).toContainText('192.168.1.20:8083')
+        // Garbage is rejected inline, not applied.
+        await page.fill('#jam-host', 'not a host!!')
+        await page.evaluate(() => document.querySelector('#jam-host-apply').click())
+        await expect(page.locator('.jam-prog-error')).toContainText("doesn't parse")
+        // Reset returns to the default box.
+        await page.evaluate(() => document.querySelector('#jam-host-reset').click())
+        await expect(page.locator('.jam-endpoints')).toContainText('ws://127.0.0.1:8083')
     })
 })

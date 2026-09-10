@@ -1,6 +1,6 @@
 # Sonic Jam Radio — Tiers 2–14
 
-**Status:** active · JAM-1..7, focused Sonic journey, and baseline real-WebSocket JAM-R are green; live continuous-style interpolation apply/draw remains open
+**Status:** active · JAM-1..7, baseline JAM-R, and live continuous-style interpolation apply/draw are green; quality continuity remains open in follow-up #224
 **Source:** Magenta RT2 pipeline (`mrt2/tmp/jam_server.py`, commit 03cd572 era), ear_v7.1 scorer
 
 ## What this is
@@ -87,7 +87,7 @@ Committed at `9bcd0e251` so the endpoints are configurable without touching code
 - **Journey** (`tests/journey/sonic.spec.js`, SONIC-1..4): play control, 3-way dial cycle, jam `/style` interception, live radio chord hold. 4/4 green.
 - **Standalone Jam journey** (`tests/journey/jam-view.spec.js`, JAM-1..7): engine-free surface, transport, dial/band/progression controls, vocal fallback, text steering, and continuous style morph. 8/8 green.
 - **Real-WebSocket journey** (`tests/journey/jam-real.spec.js`, JAM-R): environment-gated proof of the real 8083 handshake, `uiReady`/`note_on`, and streamed audio frames; requires the live jam stack.
-- **Strict JAM-R result (2026-09-10):** an initial clean run reached `data-live="true"` but exposed a missing jam→decode link and timed out at the strict audio assertion. After owner-controlled reconnect work established jam→LM 8796 and jam→decode 8797 simultaneously, the bounded rerun passed in 8.2s with `uiReady`, summit `state=4` `note_on`, and `audioFrames=1`; post-run TCP retained both links. Baseline browser audio is now proven; this does not yet prove live style interpolation.
+- **Strict JAM-R result (2026-09-10):** an initial clean run reached `data-live="true"` but exposed a missing jam→decode link and timed out at the strict audio assertion. After owner-controlled reconnect work established jam→LM 8796 and jam→decode 8797 simultaneously, the bounded rerun passed in 8.2s with `uiReady`, summit `state=4` `note_on`, and `audioFrames=1`; post-run TCP retained both links. A subsequent post-apply run passed in 26.1s after `/style_interp t=0.5` returned HTTP 200, with `audioFrames=1`; the table was restored with `/style_interp t=0.0` HTTP 200. Baseline and live interpolation browser audio are proven; quality continuity remains separate.
 - **Unit** (`tests/unit-active/jam-radio.test.ts`): `decodePcmChunk`, `chunkToAudioBuffer`, held-notes, gapless resync. 20/20 in the current focused run.
 - **Build**: `npm run build` — 537 modules transformed, `[tdb-ensure] OK`, and the data-compression gate passes.
 - **Historical full-unit snapshot**: 4239/4242. The 3 failures were a pre-existing merge-reland guard, unrelated.
@@ -274,7 +274,9 @@ probe. The browser journey now asserts at least one audio frame. An initial
 strict run exposed a stale jam→decode link; after owner-controlled reconnect
 work, the clean rerun reached the live handshake and received one real audio
 frame with both jam downstream TCP links established, so baseline browser audio
-is green. A prior external
+is green. The corrected persistent-socket `/style_interp` path was then
+applied at `t=0.5` (HTTP 200; LM table-version log advanced), followed by a
+passing JAM-R audio frame and a successful `t=0` restore. A prior external
 `pitch_style_cross/kill_all.py` loop was observed; the runtime owner now
 reports it parked. The route accepts a raw-buffer upload,
 reads the declared Content-Length before dispatch, persists the exact WAV via
@@ -306,11 +308,12 @@ therefore the worker's direct `--apply-lm` connection is for isolated use only.
 The patched `jam_server.py` exposes `POST /style_tokens`, which serializes the
 validated n==48 control through the jam's existing LM socket.
 
-The browser capture path and server worker are wired. Baseline live browser
-audio is now proven. The remaining #215 proof is to route the 8-byte
-`/style_interp` control through the jam's existing `lm_sock` under
-`lm_io_lock`, require an ACK and changed table version, then capture one
-post-apply live draw/audio and reconcile the existing discontinuity result.
+The browser capture path and server worker are wired. Baseline and post-apply
+live browser audio are proven. The source routes the 8-byte `/style_interp`
+control through the jam's existing `lm_sock` under `lm_io_lock` and matches
+v2's four-byte ACK framing. The remaining quality work is tracked in #224:
+reconcile the existing discontinuity result, choose an approved criterion, and
+resolve or explicitly accept the cliff and poison-zone behavior.
 Do not run a blind `--watch` loop while the known 8-byte `job_1.wav` marker is
 still queued.
 The MusicCoCa embed is measured at ~3s per

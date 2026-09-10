@@ -11,10 +11,54 @@
  * Contract mirror: mrt2 tmp/jam_server.py STYLE_POLE_XY (commit 03cd572).
  */
 
-import { JAM_HTTP_URL } from '@lib/audio/jam-config'
+import { JAM_HTTP_URL, resolveJamUrls } from '@lib/audio/jam-config'
+import {
+    jamLeaseHeld,
+    jamOffline,
+    jamOk,
+    jamRejected,
+    type JamResult
+} from '@lib/audio/jam-result'
+
+function baseUrl(): string {
+    // Runtime host override (connection screen) wins; env default otherwise.
+    try {
+        return resolveJamUrls().http
+    } catch {
+        return JAM_HTTP_URL
+    }
+}
 
 const JAM_STYLE_URL = `${JAM_HTTP_URL}/style`
 const JAM_BAND_MASK_URL = `${JAM_HTTP_URL}/band_mask`
+
+function styleUrl(): string {
+    return `${baseUrl()}/style`
+}
+
+function bandMaskUrl(): string {
+    return `${baseUrl()}/band_mask`
+}
+
+function styleInterpUrl(): string {
+    return `${baseUrl()}/style_interp`
+}
+
+async function postJson(url: string, body: Record<string, unknown>): Promise<JamResult<boolean>> {
+    let res: Response
+    try {
+        res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+    } catch {
+        return jamOffline()
+    }
+    if (res.ok) return jamOk(true)
+    if (res.status === 409) return jamLeaseHeld()
+    return jamRejected(res.status)
+}
 
 export type JamPole = 'beat' | 'best'
 export type JamBandPreset =
@@ -71,29 +115,20 @@ export function bandMaskBody(presetOrSlots: JamBandPreset | readonly number[]): 
     return Array.isArray(presetOrSlots) ? { slots: [...presetOrSlots] } : { preset: presetOrSlots }
 }
 
-/** Steer any live jam session toward `pole`. Resolves true when accepted. */
-export function steerJam(pole: JamPole): Promise<boolean> {
-    return fetch(JAM_STYLE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pole })
-    })
-        .then((r) => r.ok)
-        .catch(() => false)
+/** Steer any live jam session toward `pole`. Resolves a discriminated
+ * JamResult — ok when accepted, offline when unreachable, lease-held on
+ * HTTP 409 (another session owns the stream), rejected otherwise.
+ * Legacy boolean callers: check `result.kind === 'ok'`. */
+export function steerJam(pole: JamPole): Promise<JamResult<boolean>> {
+    return postJson(styleUrl(), { pole })
 }
 
 /** Set the live jam's band-selectable style mask (per-RVQ-level conditioning).
  * Accepts a named preset or explicit slots. The summit config is
  * RADIO_SUMMIT_SLOTS ({2,11}); 'production' remains the legacy all-axes
  * fallback (88-A / 0.671 / 1.5%). */
-export function steerJamBandMask(preset: JamBandPreset): Promise<boolean> {
-    return fetch(JAM_BAND_MASK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bandMaskBody(preset))
-    })
-        .then((r) => r.ok)
-        .catch(() => false)
+export function steerJamBandMask(preset: JamBandPreset): Promise<JamResult<boolean>> {
+    return postJson(bandMaskUrl(), bandMaskBody(preset))
 }
 
 /** Set the live jam's style mask to explicit per-RVQ-level slots (e.g. the
@@ -109,23 +144,13 @@ export function clampMorphT(t: number): number {
 
 /** Continuous style morph: t in [0,1] between the current style's table
  * rows and the +500 companion rows. Server interpolates the style table
- * per frame; the poison zone is clamped client-side before sending. */
-export function steerJamStyleInterp(t: number): Promise<boolean> {
-    return fetch(`${JAM_HTTP_URL}/style_interp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ t: clampMorphT(t) })
-    })
-        .then((r) => r.ok)
-        .catch(() => false)
+ * per frame. SINGLE MORPH TRUTH: the poison zone [0.74,0.82] (whine spike,
+ * fine map a4ebf93) is clamped client-side via clampMorphT before sending,
+ * so the slider position always equals the sent value. */
+export function steerJamStyleInterp(t: number): Promise<JamResult<boolean>> {
+    return postJson(styleInterpUrl(), { t: clampMorphT(t) })
 }
 
-export function steerJamBandSlots(slots: readonly number[]): Promise<boolean> {
-    return fetch(JAM_BAND_MASK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bandMaskBody(slots))
-    })
-        .then((r) => r.ok)
-        .catch(() => false)
+export function steerJamBandSlots(slots: readonly number[]): Promise<JamResult<boolean>> {
+    return postJson(bandMaskUrl(), bandMaskBody(slots))
 }

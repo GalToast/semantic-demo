@@ -266,7 +266,15 @@ def ear_score(wav):
         print("  ear stderr:", (r.stderr or "")[-500:])
         raise
     v7 = d.get("v7_core", {})
-    return {"v10": d.get("v10", d.get("score")), "v7": v7.get("score", v7), "raw": d}
+    # ear_v10.py emits overall_v10 (fused connoisseur verdict) and music_like,
+    # NOT a bare "v10"/"score" key — d.get("v10", d.get("score")) silently
+    # resolved to null for every run, which is why e2e reported v10:null
+    # while the scorer was actually producing a real verdict.
+    return {
+        "v10": d.get("overall_v10", d.get("music_like")),
+        "v7": v7.get("score", v7),
+        "raw": d,
+    }
 
 
 def main():

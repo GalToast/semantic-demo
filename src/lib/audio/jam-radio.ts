@@ -22,8 +22,24 @@
  * Endpoint: configurable via VITE_JAM_WS_URL (see jam-config.ts).
  */
 
-import { JAM_WS_URL, JAM_HTTP_URL } from '@lib/audio/jam-config'
-import { RADIO_SUMMIT_SLOTS, steerJamBandSlots } from '@lib/audio/jam-steer'
+import { JAM_WS_URL, JAM_HTTP_URL, resolveJamUrls } from '@lib/audio/jam-config'
+import { RADIO_SUMMIT_SLOTS, clampMorphT, steerJamBandSlots } from '@lib/audio/jam-steer'
+import {
+    jamLeaseHeld,
+    jamOffline,
+    jamOk,
+    jamRejected,
+    jamResultLabel,
+    type JamResult
+} from '@lib/audio/jam-result'
+import {
+    detachRecorderTap,
+    getSharedVolume,
+    masterStageFor,
+    recorderStreamFor,
+    setSharedVolume,
+    sharedAudioContext
+} from '@lib/audio/jam-engine'
 
 /** Radio's held notes: a soft A-minor add9 voicing (MIDI indices into the
  * model's 128-pitch vector) so the stream plays unattended.
@@ -218,6 +234,22 @@ export function getRadioState(): RadioState {
     return state
 }
 
+function activeWsUrl(): string {
+    try {
+        return resolveJamUrls().ws
+    } catch {
+        return JAM_WS_URL
+    }
+}
+
+function activeHttpUrl(): string {
+    try {
+        return resolveJamUrls().http
+    } catch {
+        return JAM_HTTP_URL
+    }
+}
+
 /** Current radio chord with a concrete articulation state on every note. */
 export function getRadioHeldNotes(): readonly RadioHeldNote[] {
     return heldNotes
@@ -273,11 +305,9 @@ export function startJamRadioAt(
     if (state !== 'idle') return Promise.resolve(false)
     if (typeof WebSocket === 'undefined' || typeof window === 'undefined') return Promise.resolve(false)
 
-    const w = window as Window & { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }
-    const Ctor = w.AudioContext ?? w.webkitAudioContext
-    if (!Ctor) return Promise.resolve(false)
+    ctx = sharedAudioContext()
+    if (!ctx) return Promise.resolve(false)
     pendingQueue.length = 0
-    ctx = ctx ?? new Ctor()
     // Autoplay policy: resume() inside a gesture is a no-op when running,
     // and saves every non-gesture start (auto-start, effect re-run) from
     // permanent silence. playChunk re-checks per frame as a second net.
@@ -308,7 +338,7 @@ export function startJamRadioAt(
         let reconnectAttempt = 0
         const openSocket = () => {
             try {
-                ws = new WebSocket(JAM_WS_URL)
+                ws = new WebSocket(activeWsUrl())
             } catch {
                 scheduleReconnect()
                 return
@@ -322,7 +352,8 @@ export function startJamRadioAt(
                 // Slots {2,11} at cond 11 = 100/100-S with whine 2.6% and
                 // tempo 137 — the whine-clean summit (mrt2 tmp/WHINE_SCAN_RESULTS.md),
                 // superseding the original L2-only melodic preset (whine 12.8%).
-                void steerJamBandSlots(RADIO_SUMMIT_SLOTS)
+                // Steering failures surface via lastSteerNotice, never silent.
+                void steerJamBandSlots(RADIO_SUMMIT_SLOTS).then(noteSteerResult)
                 bandMode = 'tone'
                 flushPending()
                 for (const n of heldNotes) send({ type: 'note_on', note: n.note, state: n.state })
@@ -357,11 +388,12 @@ export function startJamRadioAt(
                         events.onAudioFrame?.(msg as unknown as RadioAudioFrame)
                     } else if (msg.type === 'metrics') {
                         events.onMetrics?.(msg as unknown as RadioMetrics)
-                } else if (msg.type === 'prog_status' || msg.type === 'prog_learned') {
-                    events.onProgStatus?.(msg as unknown as RadioProgStatus)
+                    } else if (msg.type === 'prog_status' || msg.type === 'prog_learned') {
+                        events.onProgStatus?.(msg as unknown as RadioProgStatus)
+                    }
+                } catch {
+                    // malformed frame — ignore, keep the stream going
                 }
-            } catch {
-                // malformed frame — ignore, keep the stream going
             }
         }
     })
@@ -382,26 +414,19 @@ export function ensureAudioRunning(audioCtx: AudioContext): void {
     }
 }
 
-/** Master volume 0..2 with a lazily-built gain stage. Unity is 1.0; the
- * range above it is deliberate gain staging for whisper-quiet live
- * fragments (rms in the hundreds) — the musician's call, clipping and all. Sources connect
- * through it when the context supports gain; otherwise they fall back to
- * a direct connection so headless/mocked contexts never break playback. */
-let radioVolume = 1
-let masterGain: GainNode | null = null
+/** Master volume 0..2, backed by the shared engine chain (gain->limiter).
+ * Unity is 1.0; the range above it is deliberate gain staging for
+ * whisper-quiet live fragments — applied as v^2 through a fast compressor,
+ * not raw linear clipping. Thin wrappers so existing callers keep working. */
 export function getRadioVolume(): number {
-    return radioVolume
+    return getSharedVolume()
 }
 export function setRadioVolume(v: number): void {
-    radioVolume = Math.min(2, Math.max(0, Number(v) || 0))
-    try {
-        if (masterGain) masterGain.gain.value = radioVolume
-    } catch {
-        // headless — value still applies when the stage is built
-    }
+    setSharedVolume(v)
 }
 
-/** Schedule one base64 chunk; called per audio message. */
+/** Schedule one base64 chunk; called per audio message. Routes through the
+ * shared master stage (gain->limiter) so takes match the monitor mix. */
 function playChunk(audioCtx: AudioContext, b64: string, rate?: number): void {
     ensureAudioRunning(audioCtx)
     const interleaved = decodePcmChunk(b64)
@@ -412,31 +437,29 @@ function playChunk(audioCtx: AudioContext, b64: string, rate?: number): void {
     nextStart = nextStart > now + 0.02 ? nextStart : now + 0.05
     const src = audioCtx.createBufferSource()
     src.buffer = buf
-    try {
-        if (!masterGain && typeof audioCtx.createGain === 'function') {
-            masterGain = audioCtx.createGain()
-            masterGain.gain.value = radioVolume
-            masterGain.connect(audioCtx.destination)
-            // The record tap hangs off the gain stage, not the source:
-            // takes match what the musician actually heard.
-            if (recStream) masterGain.connect(recStream)
+    const stage = masterStageFor(audioCtx)
+    if (stage) src.connect(stage)
+    else {
+        try {
+            src.connect(audioCtx.destination)
+        } catch {
+            // headless without destination — scheduling still advances
         }
-    } catch {
-        masterGain = null
     }
-    if (masterGain) src.connect(masterGain)
-    else src.connect(audioCtx.destination)
     src.start(nextStart)
     nextStart += buf.duration
 }
 
-/** Local session recorder: taps the playback graph into a MediaRecorder
- * so the musician can keep what the jam played. Fully client-side — no
- * server support needed. Returns false when unsupported or not live. */
-let recStream: MediaStreamAudioDestinationNode | null = null
+/** Local session recorder: taps the shared engine's post-gain stage into a
+ * MediaRecorder so the musician can keep what the jam played. Fully
+ * client-side — no server support needed. Mime type is probed (Safari yields
+ * audio/mp4, Chromium audio/webm) and exposed via getRecordingMimeType so
+ * the download extension matches the actual blob. False when unsupported
+ * or not live. */
 let recorder: MediaRecorder | null = null
 let recChunks: Blob[] = []
 let recording = false
+let recMime = ''
 export function isRecorderSupported(): boolean {
     try {
         return (
@@ -454,19 +477,13 @@ export function startJamRecording(): boolean {
     if (recording || !ctx || !isRecorderSupported()) return false
     try {
         const Ctor = (window as Window & { MediaRecorder: typeof MediaRecorder }).MediaRecorder
-        if (!recStream) {
-            recStream = ctx.createMediaStreamDestination()
-            // Post-gain tap (see playChunk): takes match the monitor mix.
-            if (masterGain) {
-                try {
-                    masterGain.connect(recStream)
-                } catch {
-                    // best-effort — the direct tap still records
-                }
-            }
-        }
+        // Post-gain tap off the shared engine: takes match the monitor mix,
+        // and the engine re-taps on chain rebuilds so reconnects don't orphan it.
+        const tap = recorderStreamFor(ctx)
+        if (!tap) return false
         recChunks = []
-        recorder = new Ctor(recStream.stream)
+        recMime = pickRecordingMime(Ctor)
+        recorder = recMime ? new Ctor(tap.stream, { mimeType: recMime }) : new Ctor(tap.stream)
         recorder.ondataavailable = (ev: BlobEvent) => {
             if (ev.data && ev.data.size) recChunks.push(ev.data)
         }
@@ -478,12 +495,59 @@ export function startJamRecording(): boolean {
         return false
     }
 }
+
+/** Preferred recording mime, probed in priority order. '' = default. Pure-ish (reads the ctor). */
+export function pickRecordingMime(Ctor: typeof MediaRecorder): string {
+    try {
+        const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
+        for (const m of candidates) {
+            try {
+                if (typeof Ctor.isTypeSupported === 'function' && Ctor.isTypeSupported(m)) return m
+            } catch {
+                // keep probing
+            }
+        }
+    } catch {
+        // ignore — caller uses the default constructor
+    }
+    return ''
+}
+
+/** Mime of the in-progress/finished take, '' when unknown. */
+export function getRecordingMimeType(): string {
+    try {
+        return recorder?.mimeType || recMime
+    } catch {
+        return recMime
+    }
+}
+
+/** Download extension matching the actual take mime — never hardcoded .webm. */
+export function recordingExtension(): string {
+    const m = getRecordingMimeType()
+    if (m.includes('mp4')) return 'm4a'
+    if (m.includes('ogg')) return 'ogg'
+    if (m.includes('wav')) return 'wav'
+    return 'webm'
+}
 /** Silence = suspicious. Past this many ms with live state but no frames
  * of any kind, the socket is probably half-open (TCP up, server gone) and
  * the UI must say so instead of glowing Live forever. Pure — unit tested. */
 export const RADIO_STALL_AFTER_MS = 8000
-export function stallState(lastMessageAt: number | null, now: number): 'ok' | 'waiting' | 'stalled' {
+/**
+ * Half-open socket detector: past this many ms with live state but no frame
+ * of the tracked kind, the socket is probably half-open (TCP up, server
+ * gone) and the UI must say so instead of glowing Live forever. Pure.
+ * `hidden` pauses the clock — background-tab timer jitter must not
+ * false-positive a stall the stream doesn't have.
+ */
+export function stallState(
+    lastMessageAt: number | null,
+    now: number,
+    hidden = false
+): 'ok' | 'waiting' | 'stalled' {
     if (lastMessageAt === null) return 'waiting'
+    if (hidden) return 'ok'
     return now - lastMessageAt > RADIO_STALL_AFTER_MS ? 'stalled' : 'ok'
 }
 
@@ -491,11 +555,7 @@ export function stopJamRecording(): Promise<string | null> {
     const rec = recorder
     recorder = null
     recording = false
-    try {
-        if (masterGain && recStream) masterGain.disconnect(recStream)
-    } catch {
-        // already torn down — ignore
-    }
+    detachRecorderTap()
     if (!rec) return Promise.resolve(null)
     return new Promise((resolve) => {
         const done = () => {
@@ -765,39 +825,69 @@ let bandMode: RadioBandMode = 'tone'
 export function getRadioBandMode(): RadioBandMode {
     return bandMode
 }
-/** Switch the live jam's band preset. Fire-and-forget; the dial applies it
- * immediately server-side without dropping the stream. */
-export function setRadioBandMode(mode: RadioBandMode): void {
+/** Switch the live jam's band preset. Returns a discriminated JamResult;
+ * callers surface offline/lease-held distinctly instead of silent no-op. */
+export function setRadioBandMode(mode: RadioBandMode): Promise<JamResult<boolean>> {
     bandMode = mode
-    void steerJamBandSlots(RADIO_BAND_SLOTS[mode])
+    return steerJamBandSlots(RADIO_BAND_SLOTS[mode])
 }
+
+/** Last steering outcome, for the status line. Null = no steering attempted
+ * yet this session, or the last one succeeded (nothing to report). */
+let lastSteerNotice: string | null = null
+export function getLastSteerNotice(): string | null {
+    return lastSteerNotice
+}
+export function clearLastSteerNotice(): void {
+    lastSteerNotice = null
+}
+function noteSteerResult(r: JamResult): void {
+    lastSteerNotice = jamResultLabel(r)
+}
+
+/** Text-vibe result: the matched anchor on ok, plus a discriminated reason
+ * when the vibe didn't apply — so the UI can say "server down" vs
+ * "no match" instead of one silent null. */
+export type StyleTextOutcome =
+    | { kind: 'ok'; anchor: string | null }
+    | { kind: 'offline' }
+    | { kind: 'lease-held' }
+    | { kind: 'rejected'; status: number }
+    | { kind: 'no-match' }
 
 /** Send a text vibe to the live jam. mrt2-lane's /style_text endpoint
  * matches the text against the 16 named style-map anchors (token overlap)
  * and applies the nearest anchor's tokens via the existing surf_tokens_for
  * path — live-verified ('funky techno' matched the funky anchor, tokens
- * identical to the standalone probe). Fire-and-forget; the dial applies it
- * immediately server-side without dropping the stream. Returns the matched
- * anchor name, or null on a network/parse failure. */
-export async function sendStyleText(text: string): Promise<string | null> {
-    if (!text.trim()) return null
+ * identical to the standalone probe). Applies server-side without dropping
+ * the stream. */
+export async function sendStyleText(text: string): Promise<StyleTextOutcome> {
+    if (!text.trim()) return { kind: 'no-match' }
     let res: Response
     try {
-        res = await fetch(`${JAM_HTTP_URL}/style_text`, {
+        res = await fetch(`${activeHttpUrl()}/style_text`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: text.trim() })
         })
     } catch {
-        return null
+        return { kind: 'offline' }
     }
-    if (!res.ok) return null
+    if (res.status === 409) return { kind: 'lease-held' }
+    if (!res.ok) return { kind: 'rejected', status: res.status }
     try {
         const j = await res.json()
-        return typeof j.anchor === 'string' ? j.anchor : null
+        if (typeof j.anchor === 'string') return { kind: 'ok', anchor: j.anchor }
+        return { kind: 'ok', anchor: null }
     } catch {
-        return null
+        return { kind: 'no-match' }
     }
+}
+
+/** Legacy string-or-null shape for callers not yet on StyleTextOutcome. */
+export async function sendStyleTextLegacy(text: string): Promise<string | null> {
+    const r = await sendStyleText(text)
+    return r.kind === 'ok' ? r.anchor : null
 }
 
 /** Measured-good pitch×band pairs (ear-scored, same seed/frames family).
@@ -820,20 +910,23 @@ export const SUMMIT_STATE = 4
 
 /** Continuous style morph: t in [0,1] between the current style's table
  * rows and the +500-offset companion rows. mrt2-lane wired /style_interp
- * live (msg 1606): t=0.0/0.5/1.0 all ack, poison zone [0.74,0.82] snaps to
- * 0.72 (a whine spike in the fine map). Fire-and-forget; the LM applies it
- * per frame. Returns true when the LM ack'd (ack byte 8). */
-export async function setStyleMorph(t: number): Promise<boolean> {
-    const tt = Math.max(0, Math.min(1, t))
+ * live (msg 1606). SINGLE MORPH TRUTH: the poison zone [0.74,0.82] (whine
+ * spike, fine map) is clamped client-side via clampMorphT — the same value
+ * the slider shows and the server receives. Returns a discriminated
+ * JamResult so offline/lease-held surface distinctly. */
+export async function setStyleMorph(t: number): Promise<JamResult<boolean>> {
+    const tt = clampMorphT(t)
     let res: Response
     try {
-        res = await fetch(`${JAM_HTTP_URL}/style_interp`, {
+        res = await fetch(`${activeHttpUrl()}/style_interp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ t: tt })
         })
     } catch {
-        return false
+        return jamOffline()
     }
-    return res.ok
+    if (res.ok) return jamOk(true)
+    if (res.status === 409) return jamLeaseHeld()
+    return jamRejected(res.status)
 }

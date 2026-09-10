@@ -23,8 +23,25 @@ import {
     isRecorderSupported,
     isRecording,
     startJamRecording,
-    stopJamRecording
+    stopJamRecording,
+    pickRecordingMime,
+    recordingExtension,
+    getLastSteerNotice,
+    clearLastSteerNotice
 } from '../../src/lib/audio/jam-radio'
+import { jamResultLabel, jamOk, jamOffline, jamLeaseHeld, jamRejected } from '../../src/lib/audio/jam-result'
+import {
+    jamUrlsFromHost,
+    isPlausibleJamHost,
+    saveJamHost,
+    getJamHost,
+    clearJamHost,
+    getRecentJamHosts,
+    resolveJamUrls
+} from '../../src/lib/audio/jam-config'
+import { volumeToGain, setSharedVolume, getSharedVolume, resetSharedAudioForTest } from '../../src/lib/audio/jam-engine'
+import { getRig, patchRig, subscribeRig, resetRigForTest, JAM_RIG_DEFAULTS } from '../../src/lib/audio/jam-rig'
+import { MUSICIAN_PRESETS, presetById } from '../../src/lib/audio/jam-presets'
 
 describe('send queue (messages before the socket opens)', () => {
     it('queues a message when the socket is closed and flushes on open', () => {
@@ -294,7 +311,153 @@ describe('stallState (half-open socket detector)', () => {
         expect(stallState(1_000_000, 1_008_001)).toBe('stalled')
         expect(stallState(1_000_000, 1_008_000)).toBe('ok')
     })
+    it('pauses while the tab is hidden (no background false-positive)', () => {
+        expect(stallState(1_000_000, 1_999_999, true)).toBe('ok')
+        expect(stallState(null, 1_999_999, true)).toBe('waiting')
+    })
 })
+
+describe('jam-result discriminated outcomes', () => {
+    it('labels ok as null (nothing to report)', () => {
+        expect(jamResultLabel(jamOk(true))).toBeNull()
+    })
+    it('distinguishes offline from lease-held from rejected', () => {
+        expect(jamResultLabel(jamOffline())).toMatch(/not reachable/)
+        expect(jamResultLabel(jamLeaseHeld())).toMatch(/Another session/)
+        expect(jamResultLabel(jamRejected(500))).toMatch(/500/)
+    })
+    it('steer notice starts empty', () => {
+        clearLastSteerNotice()
+        expect(getLastSteerNotice()).toBeNull()
+    })
+})
+
+describe('jam-config host override', () => {
+    function fakeHostStorage() {
+        const raw = new Map<string, string>()
+        return {
+            getItem: (k: string) => (raw.has(k) ? (raw.get(k) as string) : null),
+            setItem: (k: string, v: string) => {
+                raw.set(k, String(v))
+            },
+            removeItem: (k: string) => {
+                raw.delete(k)
+            }
+        }
+    }
+    it('parses bare host, urls, and ws schemes', () => {
+        expect(jamUrlsFromHost('127.0.0.1:8083')).toEqual({
+            http: 'http://127.0.0.1:8083',
+            ws: 'ws://127.0.0.1:8083'
+        })
+        expect(jamUrlsFromHost('http://box:9000')?.http).toBe('http://box:9000')
+        expect(jamUrlsFromHost('ws://box:9000/')?.http).toBe('http://box:9000')
+    })
+    it('upgrades to wss/https on secure pages (no silent mixed-content kill)', () => {
+        const u = jamUrlsFromHost('http://box:8083', true)
+        expect(u?.http).toBe('https://box:8083')
+        expect(u?.ws).toBe('wss://box:8083')
+    })
+    it('rejects garbage hosts', () => {
+        expect(isPlausibleJamHost('')).toBe(false)
+        expect(isPlausibleJamHost('not a host!!')).toBe(false)
+        expect(jamUrlsFromHost('not a host!!')).toBeNull()
+    })
+    it('persists the override and resolves it', () => {
+        const store = fakeHostStorage()
+        vi.stubGlobal('localStorage', store)
+        try {
+            clearJamHost()
+            expect(getJamHost()).toBeNull()
+            expect(saveJamHost('192.168.1.20:8083')).toBe('192.168.1.20:8083')
+            expect(getJamHost()).toBe('192.168.1.20:8083')
+            expect(resolveJamUrls().http).toBe('http://192.168.1.20:8083')
+            expect(getRecentJamHosts()).toContain('192.168.1.20:8083')
+            clearJamHost()
+            expect(resolveJamUrls().http).toBe('http://127.0.0.1:8083')
+        } finally {
+            vi.unstubAllGlobals()
+        }
+    })
+})
+
+describe('jam-engine shared chain', () => {
+    it('maps linear volume to gain with a v^2 taper', () => {
+        expect(volumeToGain(0)).toBe(0)
+        expect(volumeToGain(0.5)).toBeCloseTo(0.25, 6)
+        expect(volumeToGain(1)).toBe(1)
+        expect(volumeToGain(2)).toBe(4)
+        expect(volumeToGain(99)).toBe(4)
+        expect(volumeToGain(-3)).toBe(0)
+    })
+    it('set/get round-trips and clamps without a context', () => {
+        resetSharedAudioForTest()
+        try {
+            expect(setSharedVolume(0.5)).toBe(0.5)
+            expect(getSharedVolume()).toBe(0.5)
+            expect(setSharedVolume(9)).toBe(2)
+            expect(setSharedVolume(-1)).toBe(0)
+        } finally {
+            resetSharedAudioForTest()
+            setSharedVolume(1)
+        }
+    })
+})
+
+describe('jam-rig shared dial truth', () => {
+    it('starts at summit defaults and patches notify subscribers', () => {
+        const raw = new Map<string, string>()
+        vi.stubGlobal('localStorage', {
+            getItem: (k: string) => (raw.has(k) ? (raw.get(k) as string) : null),
+            setItem: (k: string, v: string) => {
+                raw.set(k, String(v))
+            },
+            removeItem: (k: string) => {
+                raw.delete(k)
+            }
+        })
+        try {
+            resetRigForTest()
+            expect(getRig().noteState).toBe(JAM_RIG_DEFAULTS.noteState)
+            const seen: number[] = []
+            const unsub = subscribeRig((s) => seen.push(s.noteState))
+            patchRig({ noteState: 7 })
+            expect(getRig().noteState).toBe(7)
+            expect(seen).toEqual([7])
+            unsub()
+            patchRig({ noteState: 3 })
+            expect(seen).toEqual([7])
+        } finally {
+            vi.unstubAllGlobals()
+            resetRigForTest()
+        }
+    })
+})
+
+describe('jam-presets musician layer', () => {
+    it('names sounds, not scores, over the same measured slots', () => {
+        expect(MUSICIAN_PRESETS.length).toBeGreaterThanOrEqual(3)
+        expect(presetById('summit')?.name).toBe('Clean summit')
+        expect(presetById('nope')).toBeNull()
+        for (const p of MUSICIAN_PRESETS) {
+            expect(p.musical.length).toBeGreaterThan(0)
+            expect(p.blurb).toMatch(/whine|beat|100|93|82/)
+        }
+    })
+})
+
+describe('recording mime probing', () => {
+    it('prefers opus webm, falls back to mp4, defaults to empty', () => {
+        const opusOnly = { isTypeSupported: (m: string) => m.includes('opus') } as unknown as typeof MediaRecorder
+        expect(pickRecordingMime(opusOnly)).toBe('audio/webm;codecs=opus')
+        const mp4Only = { isTypeSupported: (m: string) => m === 'audio/mp4' } as unknown as typeof MediaRecorder
+        expect(pickRecordingMime(mp4Only)).toBe('audio/mp4')
+        const none = { isTypeSupported: () => false } as unknown as typeof MediaRecorder
+        expect(pickRecordingMime(none)).toBe('')
+        expect(recordingExtension()).toBe('webm')
+    })
+})
+
 
 describe('midiMessageToNote', () => {
     it('maps note-on (0x9n, velocity>0) to note_on with the given state', () => {

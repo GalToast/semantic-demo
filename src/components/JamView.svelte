@@ -55,11 +55,14 @@
         saveJamSettings,
         getRadioVolume,
         setRadioVolume,
+        getLastSteerNotice,
+        clearLastSteerNotice,
         stallState,
         isRecorderSupported,
         isRecording,
         startJamRecording,
-        stopJamRecording
+        stopJamRecording,
+        recordingExtension
     } from '@lib/audio/jam-radio'
     import {
         MEASURED_SLOT_PRESETS,
@@ -67,34 +70,73 @@
         clampMorphT,
         type MeasuredSlotPreset
     } from '@lib/audio/jam-steer'
+    import { jamResultLabel } from '@lib/audio/jam-result'
+    import {
+        getJamHost,
+        saveJamHost,
+        clearJamHost,
+        getRecentJamHosts,
+        resolveJamUrls,
+        isPlausibleJamHost
+    } from '@lib/audio/jam-config'
+    import { MUSICIAN_PRESETS } from '@lib/audio/jam-presets'
+    import { getRig, patchRig, subscribeRig } from '@lib/audio/jam-rig'
 
+    const rig0 = getRig()
     const savedSettings = loadJamSettings()
     let radioState = $state<RadioState>('idle')
     const live = $derived(radioState === 'live')
     const connecting = $derived(radioState === 'connecting')
-    let noteState = $state(savedSettings.noteState ?? 4)
-    let bandMode = $state<RadioBandMode>(savedSettings.bandMode ?? 'tone')
+    // Rig truth is shared with SonicIdentity via jam-rig: local dials mirror
+    // it, writes go through patchRig, and a subscription pulls cross-tab /
+    // cross-surface changes in. Never write localStorage directly here.
+    let noteState = $state(rig0.noteState)
+    let bandMode = $state<RadioBandMode>(rig0.bandMode)
     let progPlaying = $state(false)
     let progStatus = $state<RadioProgStatus | null>(null)
     let midiCount = $state(0)
     let vocalOn = $state(false)
     let presetLabel = $state<string | null>(null)
-    let progSpec = $state(savedSettings.progSpec ?? DEFAULT_PROG_SPEC)
-    let progBpm = $state(savedSettings.progBpm ?? DEFAULT_PROG_BPM)
-    let volume = $state(savedSettings.volume ?? getRadioVolume())
+    let progSpec = $state(rig0.progSpec)
+    let progBpm = $state(rig0.progBpm)
+    let volume = $state(rig0.volume)
     const recSupported = isRecorderSupported()
     let recActive = $state(false)
     let recUrl = $state<string | null>(null)
+    let recExt = $state('webm')
     let progError = $state<string | null>(null)
     let vocalDenied = $state(false)
     let connectError = $state<string | null>(null)
+    let steerNotice = $state<string | null>(null)
+    let styleError = $state<string | null>(null)
+    let showAdvanced = $state(false)
+    // Connection screen: host override + recent hosts + active endpoints.
+    let jamHost = $state(getJamHost() ?? '')
+    let recentHosts = $state<string[]>(getRecentJamHosts())
+    let hostError = $state<string | null>(null)
+    let activeEndpoints = $state(resolveJamUrls())
+    function refreshEndpoints(): void {
+        try {
+            activeEndpoints = resolveJamUrls()
+        } catch {
+            // keep last known — the connect attempt reports the failure
+        }
+        recentHosts = getRecentJamHosts()
+    }
     // Signal readout: audio-frame count + smoothed peak level 0..1.
     // This is the user-visible answer to "is sound actually flowing".
     let audioFrames = $state(0)
+    let audioAt = $state<number | null>(null)
     let level = $state(0)
     let lastMsgAt = $state<number | null>(null)
     let nowTs = $state(0)
-    const stall = $derived(live ? stallState(lastMsgAt, nowTs) : 'ok')
+    // Split stalls: audio silence vs metrics silence are different faults
+    // (dead decode vs dead steering loop). A metrics-only keepalive must not
+    // mask dead audio, and background-tab timer jitter must not false-positive.
+    const audioStall = $derived(live ? stallState(audioAt, nowTs, document.hidden) : 'ok')
+    const metricsStall = $derived(live && metrics ? stallState(lastMsgAt, nowTs, document.hidden) : 'ok')
+    const stall = $derived(audioStall === 'stalled' || metricsStall === 'stalled' ? 'stalled' : 'ok')
+    const degraded = $derived(live && stall === 'stalled')
     // Transport telemetry: buffer/drops/latency name the cause every time
     // the meter sits at zero (starving server vs stall vs suspended ctx).
     let metrics = $state<RadioMetrics | null>(null)
@@ -107,7 +149,8 @@
 
     function onAudioFrame(frame?: { data?: unknown }): void {
         audioFrames += 1
-        lastMsgAt = Date.now()
+        audioAt = Date.now()
+        lastMsgAt = audioAt
         if (typeof window !== 'undefined') {
             const w = window as Window & { __audioFrames?: number }
             w.__audioFrames = (w.__audioFrames || 0) + 1
@@ -131,11 +174,14 @@
         radioState = s
         if (s === 'live') {
             connectError = null
+            steerNotice = getLastSteerNotice()
             // Apply the configured dial (restored or pre-set idle) to the
             // fresh session instead of forcing summit defaults — the rig
             // connects as it looks. Fresh profiles still land on summit.
             setRadioNoteState(noteState)
-            setRadioBandMode(bandMode)
+            void setRadioBandMode(bandMode).then((r) => {
+                steerNotice = jamResultLabel(r)
+            })
             void startMidiBridge().then(ok => {
                 if (ok) bridgeChordToMidi(getRadioHeldNotes())
             })
@@ -157,12 +203,14 @@
             const url = await stopJamRecording()
             if (recUrl) URL.revokeObjectURL(recUrl)
             recUrl = url
+            recExt = recordingExtension()
         } else {
             if (recUrl) {
                 URL.revokeObjectURL(recUrl)
                 recUrl = null
             }
             recActive = startJamRecording()
+            recExt = recordingExtension()
         }
     }
     async function toggleRadio(): Promise<void> {
@@ -185,20 +233,78 @@
             progStatus = null
             metrics = null
             lastMsgAt = null
+            audioAt = null
             nowTs = Date.now()
             connectError = null
+            steerNotice = null
+            clearLastSteerNotice()
+            refreshEndpoints()
             const ok = await startJamRadio({ onState: onRadioState, onProgStatus, onAudioFrame, onMetrics })
             if (!ok) {
+                // Discriminate refused vs lease-held vs down: the connect
+                // attempt leaves the last steering notice behind, and a
+                // failed socket open means the server never answered at all.
+                const notice = getLastSteerNotice()
                 connectError =
-                    "Couldn't reach the jam server — it may be busy (measurement lease held by another session) or down. Wait a few seconds and retry."
+                    notice ??
+                    `Couldn't reach the jam server at ${activeEndpoints.ws} — it may be down. Check the Server address below, or start the jam stack and retry.`
             }
         }
+    }
+    function applyHost(): void {
+        hostError = null
+        if (!jamHost.trim()) {
+            clearJamHost()
+            refreshEndpoints()
+            return
+        }
+        if (!isPlausibleJamHost(jamHost)) {
+            hostError = 'That address doesn’t parse — try host:port, e.g. 192.168.1.20:8083.'
+            return
+        }
+        const saved = saveJamHost(jamHost)
+        if (!saved) {
+            hostError = 'That address doesn’t parse — try host:port, e.g. 192.168.1.20:8083.'
+            return
+        }
+        jamHost = saved
+        refreshEndpoints()
+    }
+    function useRecentHost(h: string): void {
+        jamHost = h
+        hostError = null
+        saveJamHost(h)
+        refreshEndpoints()
+    }
+    function resetHost(): void {
+        clearJamHost()
+        jamHost = ''
+        hostError = null
+        refreshEndpoints()
+    }
+    function syncRig(): void {
+        patchRig({ noteState, bandMode, progSpec, progBpm, morphT, volume })
     }
     function applySlotPreset(p: MeasuredSlotPreset): void {
         noteState = SUMMIT_STATE
         presetLabel = p.label
         setRadioNoteState(SUMMIT_STATE)
-        void steerJamBandSlots(p.slots)
+        void steerJamBandSlots(p.slots).then((r) => {
+            steerNotice = jamResultLabel(r)
+        })
+        syncRig()
+    }
+    function applyMusicianPreset(id: string): void {
+        const found = MUSICIAN_PRESETS.find((m) => m.id === id)
+        if (!found) return
+        noteState = found.state
+        bandMode = found.mode
+        presetLabel = found.name
+        setRadioNoteState(found.state)
+        void setRadioBandMode(found.mode).then((r) => {
+            steerNotice = jamResultLabel(r)
+        })
+        syncRig()
     }
     function cycleNoteState(): void {
         presetLabel = null
@@ -207,16 +313,21 @@
         void import('@lib/audio/jam-midi').then(m => {
             if (m.isMidiBridgeOn()) m.bridgeChordToMidi(getRadioHeldNotes())
         })
+        syncRig()
     }
     function stepNoteState(delta: -1 | 1): void {
         presetLabel = null
         noteState = (noteState + delta + 12) % 12
         setRadioNoteState(noteState)
+        syncRig()
     }
     function cycleBandMode(): void {
         presetLabel = null
         bandMode = bandMode === 'tone' ? 'beat' : 'tone'
-        setRadioBandMode(bandMode)
+        void setRadioBandMode(bandMode).then((r) => {
+            steerNotice = jamResultLabel(r)
+        })
+        syncRig()
     }
     function toggleProg(): void {
         if (progPlaying) {
@@ -250,7 +361,10 @@
         noteState = SUMMIT_STATE
         bandMode = 'tone'
         setRadioNoteState(SUMMIT_STATE)
-        setRadioBandMode('tone')
+        void setRadioBandMode('tone').then((r) => {
+            steerNotice = jamResultLabel(r)
+        })
+        syncRig()
     }
     async function toggleMidi(): Promise<void> {
         if (midiCount > 0) {
@@ -271,26 +385,45 @@
         if (!vocalOn) vocalDenied = true
     }
 
-    let morphT = $state(savedSettings.morphT ?? 0)
+    let morphT = $state(rig0.morphT)
     let morphDebounce: ReturnType<typeof setTimeout> | null = null
 
     function onMorphInput(ev: Event & { currentTarget: HTMLInputElement }): void {
         presetLabel = null
-        morphT = parseFloat(ev.currentTarget.value)
+        // SINGLE MORPH TRUTH: clamp client-side so the thumb always equals
+        // the sent value — the slider never lies, then apologizes.
+        morphT = clampMorphT(parseFloat(ev.currentTarget.value))
+        ev.currentTarget.value = String(morphT)
         if (morphDebounce) clearTimeout(morphDebounce)
         morphDebounce = setTimeout(() => {
-            void setStyleMorph(morphT)
+            void setStyleMorph(morphT).then((r) => {
+                steerNotice = jamResultLabel(r)
+            })
         }, 120)
+        syncRig()
     }
     let styleText = $state('')
     let styleAnchor = $state<string | null>(null)
 
+    const STYLE_SUGGESTIONS = ['funky techno', 'dark ambient drone', 'bright disco pulse', 'heavy metal drive']
+
     async function postStyleText(): Promise<void> {
         if (!styleText.trim()) return
         presetLabel = null
-        const anchor = await sendStyleText(styleText.trim())
-        styleAnchor = anchor
-        styleText = ''
+        styleError = null
+        const outcome = await sendStyleText(styleText.trim())
+        if (outcome.kind === 'ok') {
+            styleAnchor = outcome.anchor
+            styleText = ''
+        } else if (outcome.kind === 'offline') {
+            styleError = 'Jam server not reachable — vibe not applied.'
+        } else if (outcome.kind === 'lease-held') {
+            styleError = 'Another session owns the live stream — vibe not applied.'
+        } else if (outcome.kind === 'rejected') {
+            styleError = `Jam server declined that vibe (${outcome.status}) — try another.`
+        } else {
+            styleError = 'No close match — try one of the suggestions below.'
+        }
     }
 
     function onKey(ev: KeyboardEvent): void {
@@ -309,21 +442,46 @@
     function onVolumeInput(ev: Event & { currentTarget: HTMLInputElement }): void {
         volume = parseFloat(ev.currentTarget.value)
         setRadioVolume(volume)
+        syncRig()
     }
 
     $effect(() => {
         setRadioVolume(volume)
-        saveJamSettings({ noteState, bandMode, progSpec, progBpm, morphT, volume })
+        syncRig()
     })
+
+    // Cross-tab / cross-surface rig sync: SonicIdentity writes arrive here.
+    $effect(() => {
+        const unsub = subscribeRig((s) => {
+            noteState = s.noteState
+            bandMode = s.bandMode
+            progSpec = s.progSpec
+            progBpm = s.progBpm
+            morphT = s.morphT
+            volume = s.volume
+        })
+        return unsub
+    })
+
+    // Pause stall clocks when hidden: background-tab timer jitter must not
+    // false-positive a stall. nowTs still ticks so resume is instant.
+    function onVisibility(): void {
+        nowTs = Date.now()
+    }
 
     $effect(() => {
         window.addEventListener('keydown', onKey)
+        document.addEventListener('visibilitychange', onVisibility)
         meterTimer = setInterval(() => {
             if (level > 0) level = Math.max(0, level - 0.09)
             nowTs = Date.now()
+            // Surface steering outcomes that arrived without a click context
+            // (connect-time summit mask). Cleared on next user steering.
+            if (!steerNotice) steerNotice = getLastSteerNotice()
         }, 120)
         return () => {
             window.removeEventListener('keydown', onKey)
+            document.removeEventListener('visibilitychange', onVisibility)
             if (meterTimer) clearInterval(meterTimer)
             meterTimer = null
         }
@@ -341,12 +499,14 @@
     })
 </script>
 
-<main class="jam-view" data-testid="jam-view" data-live={live ? 'true' : 'false'}>
+<main class="jam-view" data-testid="jam-view" data-live={degraded ? 'degraded' : live ? 'true' : 'false'}>
     <header class="jam-head">
-        <h1 class="jam-title">Live Jam <span class="jam-dot" data-on={live} aria-hidden="true"></span></h1>
+        <h1 class="jam-title">Live Jam <span class="jam-dot" data-on={live} data-degraded={degraded} aria-hidden="true"></span></h1>
         <p class="jam-status" role="status">
             {#if !live}
                 {connecting ? 'Connecting…' : 'Radio idle — press play.'}
+            {:else if degraded}
+                Stream degraded — {audioStall === 'stalled' ? 'no audio' : 'no meter data'} for a while. Stop and press play again.
             {:else}
                 Live · state {noteState} {STATE_LABELS[noteState]} · {bandMode === 'tone'
                     ? 'tone {2,11}'
@@ -357,7 +517,41 @@
         {#if connectError}
             <p class="jam-error" role="alert">{connectError}</p>
         {/if}
+        {#if steerNotice}
+            <p class="jam-notice" role="status">{steerNotice}</p>
+        {/if}
     </header>
+
+    <section class="jam-card" aria-label="Server connection">
+        <h2 class="jam-card-title">Server</h2>
+        <div class="jam-dial-row">
+            <input
+                id="jam-host"
+                class="jam-style-input"
+                type="text"
+                bind:value={jamHost}
+                placeholder="127.0.0.1:8083"
+                aria-label="Jam server address (host and port)"
+                maxlength="128"
+                disabled={live}
+            />
+            <button id="jam-host-apply" class="jam-chip" type="button" onclick={applyHost} disabled={live} aria-label="Apply jam server address">connect</button>
+            {#if jamHost}
+                <button id="jam-host-reset" class="jam-chip" type="button" onclick={resetHost} disabled={live} aria-label="Reset to default server">reset</button>
+            {/if}
+        </div>
+        {#if hostError}
+            <p class="jam-prog-error" role="alert">{hostError}</p>
+        {/if}
+        {#if recentHosts.length > 0}
+            <div class="jam-dial-row jam-recents">
+                {#each recentHosts as h}
+                    <button class="jam-chip jam-recent" type="button" onclick={() => useRecentHost(h)} disabled={live} aria-label={`Use jam server ${h}`}>{h}</button>
+                {/each}
+            </div>
+        {/if}
+        <p class="jam-endpoints">audio {activeEndpoints.ws} · control {activeEndpoints.http}</p>
+    </section>
 
     <section class="jam-card jam-transport" aria-label="Transport">
         <button
@@ -377,7 +571,9 @@
                     <span class="jam-seg" data-on={i < meterFilled}></span>
                 {/each}
             </div>
-            <span id="jam-frames" class="jam-frames">{audioFrames} audio frame{audioFrames === 1 ? '' : 's'}</span>
+            <span id="jam-frames" class="jam-frames" role="status" aria-live="polite"
+                >{audioFrames} audio frame{audioFrames === 1 ? '' : 's'}</span
+            >
             {#if metrics}
                 <div id="jam-health" class="jam-health" role="status" aria-label="Stream health">
                     <div class="jam-bufbar" aria-hidden="true">
@@ -402,7 +598,7 @@
                     aria-pressed={recActive}>{recActive ? '■ stop' : '● rec'}</button
                 >
                 {#if recUrl}
-                    <a id="jam-download" class="jam-chip jam-download" href={recUrl} download="jam-session.webm">⤓ take</a>
+                    <a id="jam-download" class="jam-chip jam-download" href={recUrl} download={`jam-session.${recExt}`}>⤓ take</a>
                 {/if}
             {/if}
             <label class="jam-vol-label" for="jam-volume">vol</label>
@@ -423,35 +619,33 @@
             {/if}
             {#if stall === 'stalled'}
                 <p id="jam-stalled" class="jam-error" role="alert">
-                    Stream stalled — no data for a while. The connection may be half-open; stop and press play again.
+                    {#if audioStall === 'stalled' && metricsStall === 'stalled'}
+                        Stream stalled — no audio or meter data for a while. The connection may be half-open; stop and press play again.
+                    {:else if audioStall === 'stalled'}
+                        No audio for a while — the decoder may be down (meter still alive). Stop and press play again.
+                    {:else}
+                        No meter data for a while — audio still flowing. The steering loop may be down.
+                    {/if}
                 </p>
             {/if}
         </div>
     </section>
 
-    <section class="jam-card" aria-label="Pitch dial">
-        <h2 class="jam-card-title">Dial</h2>
+    <section class="jam-card" aria-label="Voices">
+        <h2 class="jam-card-title">Voices</h2>
         <div class="jam-dial-row">
-            <button
-                id="jam-state"
-                class="jam-dial"
-                type="button"
-                onclick={cycleNoteState}
-                disabled={!live}
-                aria-label={`Pitch-slot state ${noteState}: ${STATE_LABELS[noteState]}`}
-            >
-                <span class="jam-dial-num">{noteState}</span>
-                <small>{STATE_LABELS[noteState]}</small>
-            </button>
-            <button
-                id="jam-band"
-                class="jam-chip"
-                type="button"
-                onclick={cycleBandMode}
-                disabled={!live}
-                aria-label={bandMode === 'tone' ? 'Switch to beat preset' : 'Switch to tone preset'}
-                aria-pressed={bandMode === 'beat'}
-            >{bandMode === 'tone' ? '🎻 tone' : '🥁 beat'}</button>
+            {#each MUSICIAN_PRESETS as m}
+                <button
+                    id={`jam-voice-${m.id}`}
+                    class="jam-chip"
+                    type="button"
+                    onclick={() => applyMusicianPreset(m.id)}
+                    disabled={!live}
+                    aria-label={`${m.name}: ${m.musical}`}
+                    aria-pressed={presetLabel === m.name}
+                    title={m.musical}>{m.name}</button
+                >
+            {/each}
             <button
                 id="jam-summit"
                 class="jam-chip"
@@ -461,19 +655,54 @@
                 aria-label="Restore summit pair (state 4 + tone)">★ summit</button
             >
         </div>
-        <div class="jam-dial-row jam-presets">
-            {#each MEASURED_SLOT_PRESETS as p}
+        <div class="jam-dial-row">
+            <button
+                id="jam-advanced-toggle"
+                class="jam-chip jam-subtle"
+                type="button"
+                onclick={() => (showAdvanced = !showAdvanced)}
+                aria-expanded={showAdvanced}
+                aria-controls="jam-advanced"
+                >{showAdvanced ? '▾ hide lab dials' : '▸ lab dials'}</button
+            >
+        </div>
+        {#if showAdvanced}
+            <div id="jam-advanced" class="jam-dial-row">
                 <button
-                    id={`jam-preset-${p.id}`}
+                    id="jam-state"
+                    class="jam-dial"
+                    type="button"
+                    onclick={cycleNoteState}
+                    disabled={!live}
+                    aria-label={`Pitch-slot state ${noteState}: ${STATE_LABELS[noteState]}`}
+                >
+                    <span class="jam-dial-num">{noteState}</span>
+                    <small>{STATE_LABELS[noteState]}</small>
+                </button>
+                <button
+                    id="jam-band"
                     class="jam-chip"
                     type="button"
-                    onclick={() => applySlotPreset(p)}
+                    onclick={cycleBandMode}
                     disabled={!live}
-                    aria-label={`Apply measured preset ${p.label}: ${p.blurb}`}
-                    title={p.blurb}>{p.label}</button
-                >
-            {/each}
-        </div>
+                    aria-label={bandMode === 'tone' ? 'Switch to beat preset' : 'Switch to tone preset'}
+                    aria-pressed={bandMode === 'beat'}
+                >{bandMode === 'tone' ? '🎻 tone' : '🥁 beat'}</button>
+            </div>
+            <div class="jam-dial-row jam-presets">
+                {#each MEASURED_SLOT_PRESETS as p}
+                    <button
+                        id={`jam-preset-${p.id}`}
+                        class="jam-chip"
+                        type="button"
+                        onclick={() => applySlotPreset(p)}
+                        disabled={!live}
+                        aria-label={`Apply measured preset ${p.label}: ${p.blurb}`}
+                        title={p.blurb}>{p.label}</button
+                    >
+                {/each}
+            </div>
+        {/if}
     </section>
 
     <section class="jam-card" aria-label="Progression">
@@ -566,11 +795,7 @@
                 oninput={onMorphInput}
                 aria-label="Continuous style morph t"
             />
-            <span id="jam-morph-val" class="jam-morph-val"
-                >{morphT.toFixed(2)}{clampMorphT(morphT) !== morphT
-                    ? ` → ${clampMorphT(morphT).toFixed(2)} whine-zone`
-                    : ''}</span
-            >
+            <span id="jam-morph-val" class="jam-morph-val">{morphT.toFixed(2)}</span>
         </div>
         <div class="jam-dial-row">
             <input
@@ -588,6 +813,24 @@
             {#if styleAnchor}
                 <span class="jam-style-anchor" role="status">matched: {styleAnchor}</span>
             {/if}
+            {#if styleError}
+                <p class="jam-prog-error" role="alert">{styleError}</p>
+            {/if}
+        </div>
+        {#if !live}
+            <div class="jam-dial-row jam-suggest">
+                {#each STYLE_SUGGESTIONS as s}
+                    <button
+                        class="jam-chip jam-subtle"
+                        type="button"
+                        onclick={() => {
+                            styleText = s
+                        }}
+                        aria-label={`Try vibe ${s}`}>{s}</button
+                    >
+                {/each}
+            </div>
+        {/if}
         </div>
         <p class="jam-hint">Space plays / stops · [ and ] step the dial · configure first, then press play.</p>
     </section>
@@ -630,10 +873,45 @@
         background: #ff6b6b;
         box-shadow: 0 0 8px #ff6b6b;
     }
+    .jam-dot[data-degraded='true'] {
+        background: #ffd27d;
+        box-shadow: 0 0 8px #ffd27d;
+    }
     .jam-status {
         font-size: 0.85rem;
         opacity: 0.8;
         margin: 0.5rem 0 0;
+    }
+    .jam-notice {
+        font-size: 0.78rem;
+        color: #ffd27d;
+        background: rgba(255, 210, 125, 0.08);
+        border: 1px solid rgba(255, 210, 125, 0.35);
+        border-radius: 0.6rem;
+        padding: 0.5rem 0.8rem;
+        margin: 0.6rem 0 0;
+    }
+    .jam-endpoints {
+        font-size: 0.68rem;
+        opacity: 0.65;
+        margin: 0.5rem 0 0;
+        text-align: center;
+        word-break: break-all;
+    }
+    .jam-recents {
+        margin-top: 0.5rem;
+    }
+    .jam-recent {
+        font-size: 0.72rem;
+        padding: 0.4rem 0.7rem;
+    }
+    .jam-subtle {
+        opacity: 0.85;
+        font-size: 0.75rem;
+        padding: 0.45rem 0.75rem;
+    }
+    .jam-suggest {
+        margin-top: 0.5rem;
     }
     .jam-unmeasured {
         color: #ffd27d;
@@ -856,8 +1134,21 @@
         text-decoration: none;
     }
     .jam-morph {
-        width: 7rem;
+        width: 10rem;
+        min-height: 2.75rem;
         accent-color: #9fd0ff;
+    }
+    @media (max-width: 28rem) {
+        .jam-transport {
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+        .jam-morph {
+            width: 100%;
+        }
+        .jam-style-input {
+            min-width: 0;
+        }
     }
     .jam-morph-val {
         font-size: 0.72rem;
@@ -865,8 +1156,8 @@
         font-variant-numeric: tabular-nums;
     }
     .jam-hint {
-        font-size: 0.7rem;
-        opacity: 0.8;
+        font-size: 0.75rem;
+        opacity: 0.9;
         margin: 0.6rem 0 0;
         text-align: center;
     }
