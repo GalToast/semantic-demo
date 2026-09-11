@@ -440,6 +440,13 @@ test.describe('Boot journey', () => {
             await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
         }
 
+        // The orchestrator guards on appState.points (the async-loaded record
+        // array). Nav-state focusedIndex can be set before records finish
+        // loading under load — wait for the actual precondition.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 0, null, {
+            timeout: 30000,
+            polling: 100
+        })
         await page.evaluate(() => {
             // This journey must exercise the canonical app focus pipeline:
             // __navActions__.focusOnNode is intentionally nav-only for legacy
@@ -448,7 +455,11 @@ test.describe('Boot journey', () => {
             if (!actions || typeof actions.focusOnNode !== 'function') {
                 throw new Error('__APP_ACTIONS__.focusOnNode is not exposed')
             }
-            if (!actions.focusOnNode(0)) throw new Error('focusOnNode(0) returned falsy')
+            // fromCanvasNode: true — the deep-link boot performs a thread-settler
+            // traversal that arms suppressCanvasFocusUntil (boot+1200ms hover
+            // debounce), which correctly drops hover-like focus calls. Clicks
+            // always win (H4 fix), so exercise the canonical click path.
+            if (!actions.focusOnNode(0, { fromCanvasNode: true })) throw new Error('focusOnNode(0) returned falsy')
         })
         await page.waitForFunction(() => document.title !== 'Montgomery County Semantic Explorer | Case Study', null, {
             timeout: 15000,
