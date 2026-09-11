@@ -211,11 +211,19 @@
     /* A populated peek needs room for its complete interaction: the result
        count, one anchor card, and the 44px Show-more control. The old fixed
        72px viewport only fit the card, leaving the control below the fixed
-       sheet and making it discoverable only through an accidental scroll. */
+       sheet and making it discoverable only through an accidental scroll.
+
+       2026-09-11 recalibration (W63): the 286px budget was tuned on runs where
+       WebGL never initialized (data-render-kind='placeholder2d' hides
+       #search-result-list, so the anchor card rendered 0px tall). On the real
+       GPU path (render-kind='webgl', --use-angle=d3d11) the anchor card renders
+       its designed 64px min-height and the button landed 7.84px below the fold.
+       286 -> 306 restores the full interaction (count + 64px card + 44px
+       button) on the real render path; verified at 390x844 d3d11. */
     body.surface-search[data-panel-surface-detail='peek'] #info-panel.info-panel:has(#search-results.active) {
-        height: min(286px, max(218px, calc(100dvh - 90px)));
-        min-height: min(286px, max(218px, calc(100dvh - 90px)));
-        max-height: min(286px, max(218px, calc(100dvh - 90px)));
+        height: min(306px, max(218px, calc(100dvh - 90px)));
+        min-height: min(306px, max(218px, calc(100dvh - 90px)));
+        max-height: min(306px, max(218px, calc(100dvh - 90px)));
     }
 
     body.surface-search[data-panel-surface-detail='peek'] .search-container.has-query #search-results.active {

@@ -1367,7 +1367,10 @@ test.describe('Focus journey', () => {
         expect(
             portraitAfterLandscape.panel?.height,
             'restored portrait sheet must use the compact envelope'
-        ).toBeLessThanOrEqual(286 + 1)
+            // 2026-09-11: peek budget recalibrated 286→306 (see
+            // mobile_premium__state.css) so the populated peek fits the real
+            // WebGL render path; the pin tracks the CSS constant.
+        ).toBeLessThanOrEqual(306 + 1)
         expect(
             portraitAfterLandscape.showMore?.bottom,
             'restored portrait Show-more must fit inside the viewport'
