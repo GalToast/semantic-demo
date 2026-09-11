@@ -302,8 +302,14 @@ function connect() {
     })
     ws.on('error', (err) => {
         console.error(`[soak] ws error: ${err.message}`)
-        if (!everOpened && soakStart === 0) {
-            finish(2, ['connect-failed: ' + err.message])
+        if (!everOpened) {
+            if (now() - soakStart < SOAK_SECONDS * 1000) {
+                reconnects++
+                console.log(`[soak] connect refused — retrying (#${reconnects})`)
+                setTimeout(connect, 2000)
+            } else {
+                finish(2, ['connect-failed: ' + err.message], {})
+            }
         }
     })
     ws.on('open', () => {
