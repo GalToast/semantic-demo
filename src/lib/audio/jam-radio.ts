@@ -89,6 +89,9 @@ export interface RadioMetrics {
     droppedFrames: number
     bufferAvail: number
     bufferCap: number
+    audioBufferAvail?: number
+    decodeMs?: number
+    decodeBlockFrames?: number
 }
 
 /** Audio frame payload, as streamed by the jam server. `data` is a base64

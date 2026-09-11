@@ -106,10 +106,36 @@ function jamRssMB(pid) {
     try {
         const out = execFileSync(
             'powershell',
-            ['-NoLogo', '-NoProfile', '-Command', `(Get-Process -Id ${pid}).WorkingSet64 / 1MB`],
+            ['-NoLogo', '-NoProfile', '-Command', `(Get-Process -Id ${pid} -ErrorAction Stop).WorkingSet64`],
             { encoding: 'utf8' }
         )
-        return Number(out.trim()) || null
+        const bytes = Number(out.trim())
+        return Number.isFinite(bytes) && bytes >= 0 ? bytes / 1048576 : null
+    } catch {
+        return null
+    }
+}
+
+function downstreamState(pid) {
+    if (!pid) return null
+    try {
+        const command = `$jamOwner = ${pid}; `
+            + '$links = @(Get-NetTCPConnection -State Established -ErrorAction SilentlyContinue '
+            + '| Where-Object { $_.OwningProcess -eq $jamOwner -and $_.RemoteAddress -eq "127.0.0.1" }); '
+            + '[pscustomobject]@{ '
+            + 'lmEstablished = @($links | Where-Object { $_.RemotePort -eq 8796 }).Count -gt 0; '
+            + 'decodeEstablished = @($links | Where-Object { $_.RemotePort -eq 8797 }).Count -gt 0 '
+            + '} | ConvertTo-Json -Compress'
+        const out = execFileSync(
+            'powershell',
+            ['-NoLogo', '-NoProfile', '-Command', command],
+            { encoding: 'utf8' }
+        )
+        const value = JSON.parse(out.trim())
+        return {
+            lmEstablished: value.lmEstablished === true,
+            decodeEstablished: value.decodeEstablished === true
+        }
     } catch {
         return null
     }
@@ -137,6 +163,9 @@ function summarize() {
     const bufFractions = buckets.map((b) => b.bufFrac).filter((v) => v != null)
     const bufTrend = bufFractions.length > 4 ? bufFractions[bufFractions.length - 1] - bufFractions[0] : 0
     const stalled = buckets.filter((b) => b.audioFrames < T.minAudioFramesPerBucket).length
+    const downstreamBothSamples = soak.linkSamples.filter((sample) =>
+        sample.lmEstablished && sample.decodeEstablished
+    ).length
     return {
         audioFramesTotal: audioFrames,
         audioMB: +(audioBytes / 1048576).toFixed(2),
@@ -148,6 +177,10 @@ function summarize() {
         bufferFracTrend: +bufTrend.toFixed(3),
         stalledBuckets: stalled,
         bucketCount: buckets.length,
+        downstreamLinkSamples: soak.linkSamples.length,
+        downstreamBothSamples,
+        downstreamLinksObserved: downstreamBothSamples > 0,
+        downstreamLinkSampleDetail: soak.linkSamples,
         jamRssStartMB: soak.rssStart,
         jamRssEndMB: soak.rssEnd,
         jamRssGrowthMB: soak.rssStart != null && soak.rssEnd != null ? +(soak.rssEnd - soak.rssStart).toFixed(1) : null
@@ -155,6 +188,16 @@ function summarize() {
 }
 
 const soak = { rssStart: null, rssEnd: null, pid: null }
+soak.rssSamples = []
+soak.linkSamples = []
+
+function sampleHealth() {
+    const t = soakStart > 0 ? +(now() - soakStart).toFixed(0) : 0
+    const rssMB = jamRssMB(soak.pid)
+    if (rssMB != null) soak.rssSamples.push({ tMs: t, rssMB: +rssMB.toFixed(1) })
+    const links = downstreamState(soak.pid)
+    if (links) soak.linkSamples.push({ tMs: t, ...links })
+}
 
 function assertGate(s) {
     const failures = []
@@ -165,6 +208,8 @@ function assertGate(s) {
         failures.push(`drop slope ${s.dropsPerMin}/min > ${T.maxDroppedFramesPerMin}`)
     if (Math.abs(s.driftMsPerMin) > T.maxDriftMsPerMin)
         failures.push(`clock drift ${s.driftMsPerMin}ms/min > ${T.maxDriftMsPerMin}`)
+    if (!s.downstreamLinksObserved)
+        failures.push('no sample observed with both Jam→LM:8796 and Jam→decode:8797 established')
     if (s.bufferFracTrend > T.maxBufferAvailFractionGrowth)
         failures.push(`buffer fill trending up: +${s.bufferFracTrend}`)
     if (s.jamRssGrowthMB != null && s.jamRssGrowthMB > T.maxJamRssGrowthMB)
@@ -202,16 +247,27 @@ let soakStart = 0
 let soakDone = false
 let everOpened = false
 
-function finish(code, failures, summary) {
+function finish(code, failures) {
     if (soakDone) return
     soakDone = true
+    sampleHealth()
     soak.rssEnd = jamRssMB(soak.pid)
-    const s = summary ?? summarize()
+    if (soak.rssEnd == null && soak.rssSamples.length) {
+        soak.rssEnd = soak.rssSamples[soak.rssSamples.length - 1].rssMB
+    }
+    // Rebuild the summary after the terminal health sample so RSS and
+    // downstream-link evidence cannot be omitted from the report that decides
+    // the gate. Keep connection-failure code 2 distinct from assertion code 1.
+    const s = summarize()
+    const finalFailures = code === 2
+        ? (failures ?? [])
+        : [...new Set([...(failures ?? []), ...assertGate(s)])]
+    const finalCode = code === 2 ? 2 : (finalFailures.length ? 1 : code)
     s.reconnects = reconnects
-    writeReport(s, failures ?? [], code)
+    writeReport(s, finalFailures, finalCode)
     console.log('[soak] summary', JSON.stringify(s, null, 1))
-    if (code === 0) console.log('[soak] GATE PASS')
-    else console.error('[soak] GATE FAIL:', (failures ?? []).join('; '))
+    if (finalCode === 0) console.log('[soak] GATE PASS')
+    else console.error('[soak] GATE FAIL:', finalFailures.join('; '))
     clearTimeout(soakTimer)
     clearInterval(bucketTimer)
     clearTimeout(silenceTimer)
@@ -220,7 +276,7 @@ function finish(code, failures, summary) {
     } catch {
         /* noop */
     }
-    setTimeout(() => process.exit(code), 100)
+    setTimeout(() => process.exit(finalCode), 100)
 }
 
 function connect() {
@@ -247,7 +303,7 @@ function connect() {
     ws.on('error', (err) => {
         console.error(`[soak] ws error: ${err.message}`)
         if (!everOpened && soakStart === 0) {
-            finish(2, ['connect-failed: ' + err.message], {})
+            finish(2, ['connect-failed: ' + err.message])
         }
     })
     ws.on('open', () => {
@@ -299,7 +355,7 @@ function connect() {
             console.log(`[soak] connection lost — reconnecting (#${reconnects})`)
             setTimeout(connect, 400)
         } else {
-            finish(1, ['ws closed after window'], {})
+            finish(1, ['ws closed after window'])
         }
     }
 }
@@ -308,10 +364,12 @@ function main() {
     soak.pid = jamPid()
     soak.rssStart = jamRssMB(soak.pid)
     soakStart = now()
+    sampleHealth()
     console.log(
         `[soak] starting ${SOAK_SECONDS}s against ${WS_URL} (jam pid ${soak.pid}, rss ${soak.rssStart?.toFixed(0) ?? '?'}MB)`
     )
     bucketTimer = setInterval(() => {
+        sampleHealth()
         buckets.push({ t: now() - soakStart, audioFrames: 0, bufFrac: null })
     }, BUCKET_SECONDS * 1000)
     buckets.push({ t: 0, audioFrames: 0, bufFrac: null })
@@ -323,7 +381,7 @@ function main() {
         }
         const s = summarize()
         const failures = assertGate(s)
-        finish(failures.length ? 1 : 0, failures, s)
+        finish(failures.length ? 1 : 0, failures)
     }, SOAK_SECONDS * 1000)
     connect()
 }

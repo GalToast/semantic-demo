@@ -38,6 +38,13 @@ export function steerJam(pole: JamPole): Promise<JamResult<boolean>> {
 - `{type:'audio', data:<base64 int16 interleaved stereo>, rate:48000}`
 - `{type:'metrics', frameMs, droppedFrames, bufferAvail, bufferCap}`
 
+`bufferAvail/bufferCap` report the bounded server-side decode-input queue.
+Current MRT2 Jam builds may also include `audioBufferAvail`, `decodeMs`, and
+`decodeBlockFrames` for diagnostics; clients must tolerate those additive
+fields. The live torch path keeps its decode TCP connection open across
+length-prefixed requests, and batches 16 fresh token frames with retained
+context before emitting audio.
+
 Client → server:
 
 - `{type:'note_on', note:N}` / `{type:'note_off', note:N}` / `{type:'uiReady'}` / `{type:'param', index, value}`
