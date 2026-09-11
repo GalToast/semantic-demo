@@ -234,14 +234,13 @@ test.describe('Mobile and semantic upgrade', () => {
             await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
         }
 
-        // (idle) Harmonized invite — gap check for 8b029ac4 / c038df64
-        const idleInvite = page.locator('#trail-context-idle, #focus-stage-progress, .trail-context-text').first()
-        await expect(idleInvite).toContainText("Choose a business to see what's nearby.")
-
-        // (1) Focus a node so the journey stage mounts, then assert the chrome
-        // container carries NO live region: trail context/progress text changes on
-        // every focus step, and a container-level aria-live spams screen readers
-        // while double-announcing the scoped role=status regions inside.
+        // (idle) Harmonized invite — gap check for 8b029ac4 / c038df64.
+        // 2026-09-11: the M3 idle gate hides #journey-chrome entirely while the
+        // journey AND compass are both idle, so the invite is not reachable in
+        // pure idle (it renders when the chrome is visible without focus, e.g.
+        // compass-active transitions). The harmonized copy is pinned by the
+        // structural twin tests (da149c01c); here we mount the chrome via a
+        // shim focus and assert the reachable harmonized states.
         await page.evaluate(() => {
             const actions = window.__navActions__
             if (!actions || typeof actions.focusOnNode !== 'function') {
@@ -251,6 +250,11 @@ test.describe('Mobile and semantic upgrade', () => {
         })
         const chrome = page.locator('#journey-chrome')
         await chrome.waitFor({ state: 'attached', timeout: 15000 })
+
+        // (1) Focus a node so the journey stage mounts, then assert the chrome
+        // container carries NO live region: trail context/progress text changes on
+        // every focus step, and a container-level aria-live spams screen readers
+        // while double-announcing the scoped role=status regions inside.
         await expect(chrome, 'container-level aria-live must stay removed (SR announcement spam)').not.toHaveAttribute(
             'aria-live',
             /.+/
@@ -285,6 +289,19 @@ test.describe('Mobile and semantic upgrade', () => {
             const a = window.__navActions__
             if (!a?.focusOnNode) throw new Error('focusOnNode missing')
             if (!a.focusOnNode(7)) throw new Error('focusOnNode(7) failed')
+            // 2026-09-11: the legacy focus shim populates the focus pocket but
+            // does not run the journey trail seed (that fires behind the real
+            // interaction's CAMERA_NODE_FOCUSED publish — proven by probe: a
+            // real canvas click shows "Step 1 · N nearby" immediately). Seed
+            // via the sanctioned journey action so the candidate pipeline
+            // matches the real user path.
+            const actions = window.__APP_ACTIONS__
+            if (!actions?.setTrailFromSeed) throw new Error('setTrailFromSeed missing')
+            actions.setTrailFromSeed(7)
+            // Start the trail like a real interaction does (depth 0 shows the
+            // "N nearby to explore" invite; the Step counter needs depth >= 1).
+            if (typeof actions.traverseNeighbor !== 'function') throw new Error('traverseNeighbor missing')
+            actions.traverseNeighbor(1)
         })
         const progress = page.locator('#focus-stage-progress .progress-text, .progress-text')
         await progress.waitFor({ state: 'visible', timeout: 15000 })

@@ -4,13 +4,20 @@
 /* Placeholder chrome hiding: the placeholder is a standalone preview, not the explorable map.
    Filters / bottom search chrome are siblings of the layer-0 stack, so an opaque placeholder
    layer is not enough — they paint above it. This rule lives *outside* @layer tokens so its
-   unlayered authority overrides component display rules. */
+   unlayered authority overrides component display rules.
+
+   2026-09-11 exemption (W10/W50): when the user actively enters the search
+   surface, the search chrome lives INSIDE #info-panel (info-panel-contained),
+   not over the layer-0 stack — hiding it there leaves an open but completely
+   empty panel (panel opens, input invisible, surface unreachable). The mobile
+   peek states already un-hide via .has-query overrides; this exempts the whole
+   active search surface so the empty search panel renders too. */
 body[data-render-kind='placeholder2d'] #filters-section,
 body[data-render-kind='placeholder2d'] #search-result-list,
-body[data-render-kind='placeholder2d'] .search-container,
+body[data-render-kind='placeholder2d']:not(.surface-search) .search-container,
 body:has(.placeholder-layer.active) #filters-section,
 body:has(.placeholder-layer.active) #search-result-list,
-body:has(.placeholder-layer.active) .search-container {
+body:has(.placeholder-layer.active):not(.surface-search) .search-container {
     display: none;
 }
 @layer tokens {
