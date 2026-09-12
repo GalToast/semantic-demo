@@ -14,6 +14,7 @@
  * Usage:
  *   node scripts/jam-soak-gate.mjs [--url ws://127.0.0.1:8083/] [--seconds 300]
  *       [--buckets 30] [--report tmp/jam-soak-report.json] [--jam-pid auto]
+ *       [--require-realtime]
  *
  * Exit 0 = gate passed; exit 1 = one or more assertions failed; exit 2 = could
  * not connect / preconditions missing. JSON report written even on failure.
@@ -35,6 +36,14 @@ const SOAK_SECONDS = Number(argOf('--seconds', '300'))
 const BUCKET_SECONDS = Number(argOf('--buckets', '30'))
 const REPORT = argOf('--report', 'tmp/jam-soak-report.json')
 const JAM_PID = argOf('--jam-pid', 'auto')
+const REQUIRE_REALTIME = args.includes('--require-realtime')
+
+// Jam audio payloads are stereo signed 16-bit PCM at 48 kHz. The old gate
+// counted websocket messages, which proves transport flow but not realtime.
+const AUDIO_SAMPLE_RATE = 48000
+const AUDIO_CHANNELS = 2
+const AUDIO_BYTES_PER_SAMPLE = 2
+const KEEPALIVE_MAX_PCM_BYTES = 4096
 
 // ---------- thresholds (P0-3 gate) ----------
 const T = {
@@ -42,7 +51,8 @@ const T = {
     maxDroppedFramesPerMin: 60, // server-side decode/lm drop budget
     maxDriftMsPerMin: 500, // arrival-clock drift vs wall clock
     maxBufferAvailFractionGrowth: 0.9, // bufferAvail/cap must not trend to full
-    maxJamRssGrowthMB: 80 // server process leak cap over the window
+    maxJamRssGrowthMB: 80, // server process leak cap over the window
+    minGeneratedAudioRtf: 1.0 // only enforced with --require-realtime
 }
 
 const buckets = []
@@ -52,6 +62,8 @@ let firstMetrics = null
 let lastMetrics = null
 let audioFrames = 0
 let audioBytes = 0
+let audioPcmBytes = 0
+let generatedAudioPcmBytes = 0
 let ws = null
 let soakTimer = null
 let bucketTimer = null
@@ -62,7 +74,11 @@ let reconnects = 0
  * second browser tab) can steal the single act["ws"] slot — jam serves
  * audio ONLY to the newest active connection. If no frames arrive for a
  * while, reconnect and re-take the slot; count displacements. */
-const SILENCE_MS = 5000
+// CUDA-graph capture on a cold LM can take 5–10s. The server sends a short
+// silence preframe before capture, so a 5s client watchdog reconnects during a
+// legitimate warm-up and then collides with Jam's single-client lease. Keep
+// the watchdog finite, but longer than the measured cold-start window.
+const SILENCE_MS = 15000
 
 function armSilenceWatchdog() {
     clearTimeout(silenceTimer)
@@ -147,7 +163,8 @@ function send(obj) {
 
 function summarize() {
     const droppedDelta = (lastMetrics?.droppedFrames ?? 0) - (firstMetrics?.droppedFrames ?? 0)
-    const minutes = SOAK_SECONDS / 60
+    const elapsedSeconds = Math.max((now() - soakStart) / 1000, 0.001)
+    const minutes = elapsedSeconds / 60
     // Linear-regression slope of arrival intervals over sequence (ms per minute of soak)
     let driftSlope = 0
     if (arrivalIntervals.length > 8) {
@@ -166,9 +183,21 @@ function summarize() {
     const downstreamBothSamples = soak.linkSamples.filter((sample) =>
         sample.lmEstablished && sample.decodeEstablished
     ).length
+    const pcmBytesPerSecond = AUDIO_SAMPLE_RATE * AUDIO_CHANNELS * AUDIO_BYTES_PER_SAMPLE
+    const audioSeconds = audioPcmBytes / pcmBytesPerSecond
+    const generatedAudioSeconds = generatedAudioPcmBytes / pcmBytesPerSecond
     return {
         audioFramesTotal: audioFrames,
         audioMB: +(audioBytes / 1048576).toFixed(2),
+        audioWireMB: +(audioBytes / 1048576).toFixed(2),
+        audioPcmMB: +(audioPcmBytes / 1048576).toFixed(2),
+        generatedAudioPcmMB: +(generatedAudioPcmBytes / 1048576).toFixed(2),
+        elapsedSeconds: +elapsedSeconds.toFixed(3),
+        audioSeconds: +audioSeconds.toFixed(3),
+        generatedAudioSeconds: +generatedAudioSeconds.toFixed(3),
+        audioRtf: +(audioSeconds / elapsedSeconds).toFixed(3),
+        generatedAudioRtf: +(generatedAudioSeconds / elapsedSeconds).toFixed(3),
+        requireRealtime: REQUIRE_REALTIME,
         droppedFramesDelta: droppedDelta,
         dropsPerMin: +(droppedDelta / minutes).toFixed(2),
         driftMsPerMin: +driftSlope.toFixed(2),
@@ -204,6 +233,8 @@ function assertGate(s) {
     if (s.audioFramesTotal < T.minAudioFramesPerBucket * 2) failures.push(`frame flow too low: ${s.audioFramesTotal}`)
     if (s.stalledBuckets > 0)
         failures.push(`${s.stalledBuckets} stalled bucket(s) (< ${T.minAudioFramesPerBucket} frames)`)
+    if (REQUIRE_REALTIME && s.generatedAudioRtf < T.minGeneratedAudioRtf)
+        failures.push(`generated audio RTF ${s.generatedAudioRtf}x < ${T.minGeneratedAudioRtf}x`)
     if (s.dropsPerMin > T.maxDroppedFramesPerMin)
         failures.push(`drop slope ${s.dropsPerMin}/min > ${T.maxDroppedFramesPerMin}`)
     if (Math.abs(s.driftMsPerMin) > T.maxDriftMsPerMin)
@@ -337,6 +368,19 @@ function connect() {
         if (msg.type === 'audio') {
             audioFrames++
             audioBytes += msg.data?.length ?? 0
+            if (typeof msg.data === 'string') {
+                try {
+                    const pcmBytes = Buffer.from(msg.data, 'base64').length
+                    audioPcmBytes += pcmBytes
+                    // The server emits short mono PCM silence as a transport
+                    // keep-alive. Exclude it from generated-audio RTF so a
+                    // healthy socket cannot make a stalled generator look
+                    // realtime.
+                    if (pcmBytes > KEEPALIVE_MAX_PCM_BYTES) generatedAudioPcmBytes += pcmBytes
+                } catch {
+                    /* malformed payload is covered by the transport gate */
+                }
+            }
             if (b) b.audioFrames++
             const t = now()
             if (lastAudioArrival != null) arrivalIntervals.push(t - lastAudioArrival)
