@@ -21,7 +21,8 @@
   import { usePanelCleanup } from '@lib/ui/use-panel-cleanup.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
   import { removeStaticPlaceholder, computeDevToolsVisible, isPlaywrightEnvironment, isContractBootTest } from '@lib/app/app-lifecycle.ts';  import { createAppBootHandlers } from '@lib/app/app-event-handlers.ts';
-  import { focusSearchInputUntilLanded } from '@lib/app/app-render.ts';
+  import { focusSearchInputUntilLanded, focusElementUntilLanded } from '@lib/app/app-render.ts';
+  import { untrack } from 'svelte';
 
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
@@ -287,7 +288,27 @@
   // cancels the pending rAF on effect cleanup / unmount (M11 hardening).
   $effect(() => {
     if (!engineReady.value) return
-    return focusSearchInputUntilLanded()
+    // W50 (2026-09-11): the mobile place-first default (app-init.ts:206) routes
+    // bare boots on ≤768px to surface 'map', which renders NO search chrome —
+    // the input will never mount there, so a search-only focus loop strands
+    // screen-reader users on <body>. Decide the target once at the boot moment:
+    // the map container is focusable and aria-labelled. untracked so later
+    // surface changes don't re-run this boot-time effect and steal focus.
+    if (surface.mapModeActive && untrack(() => navStore().currentView) === 'map') {
+      // 4000ms: the map container mounts after the Leaflet lazy chunk; on cold
+      // boots that exceeds the old 1500ms keyboard-pop window. No keyboard-pop
+      // concern here (the target is not an input), and stable-land still stops
+      // the loop as soon as focus settles.
+      return focusElementUntilLanded(() => document.getElementById('map-container') as HTMLElement | null, {
+        maxMs: 4000
+      })
+    }
+    return focusSearchInputUntilLanded({
+      // Belt-and-braces: if the search surface is also absent (lazy mount never
+      // fired), fall back to the map container on the place-first boot.
+      getFallback: () => document.getElementById('map-container') as HTMLElement | null,
+      maxMs: 4000
+    })
   });
 
   $effect(() => legacyCompassSurfaceLazy.ensure(surface.legacyCompassSurfaceActive));

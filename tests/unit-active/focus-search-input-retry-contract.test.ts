@@ -176,4 +176,70 @@ describe('focusSearchInputUntilLanded — bounded cold-start retry', () => {
         expect(driver.pending()).toBe(0)
         expect(input.focus).not.toHaveBeenCalled()
     })
+
+    // W50 (2026-09-11): mobile place-first map boots never render search
+    // chrome, so the input-absent frames must drive focus to the configured
+    // fallback target instead of spinning out and stranding on <body>.
+    it('(g) W50 fallback: focuses the fallback target while the input is absent', () => {
+        const input = makeInput()
+        const map = makeInput()
+        const driver = createRafDriver()
+        focusSearchInputUntilLanded({
+            raf: driver.raf,
+            cancelRaf: driver.cancelRaf,
+            now: () => 0,
+            getInput: () => null, // search input never mounts (map surface)
+            getActive: map.active,
+            getFallback: () => map.input
+        })
+        driver.tick() // input absent -> fallback probed -> focus(map)
+        expect(map.isFocused()).toBe(true)
+        expect(input.focus).not.toHaveBeenCalled()
+        driver.tick()
+        driver.tick()
+        driver.tick() // stable=3 -> stop
+        expect(map.focus).toHaveBeenCalledTimes(1)
+        expect(driver.pending()).toBe(0)
+    })
+
+    it('(h) W50 fallback: input takes precedence over the fallback when it appears', () => {
+        const input = makeInput()
+        const map = makeInput()
+        const driver = createRafDriver()
+        let inputPresent = false
+        focusSearchInputUntilLanded({
+            raf: driver.raf,
+            cancelRaf: driver.cancelRaf,
+            now: () => 0,
+            getInput: () => (inputPresent ? input.input : null),
+            getActive: input.active,
+            getFallback: () => map.input
+        })
+        driver.tick() // fallback lands on map
+        expect(map.isFocused()).toBe(true)
+        inputPresent = true
+        driver.tick() // input present AND not active -> steals focus to input
+        expect(input.isFocused()).toBe(true)
+        expect(input.focus).toHaveBeenCalledTimes(1)
+        driver.tick()
+        driver.tick()
+        driver.tick() // stable -> stop
+        expect(driver.pending()).toBe(0)
+    })
+
+    it('(i) W50 fallback: no fallback configured -> unchanged spin-out behavior', () => {
+        const driver = createRafDriver()
+        let t = 0
+        focusSearchInputUntilLanded({
+            raf: driver.raf,
+            cancelRaf: driver.cancelRaf,
+            maxMs: 100,
+            now: () => (t += 200),
+            getInput: () => null,
+            getActive: () => null
+            // no getFallback
+        })
+        driver.tick()
+        expect(driver.pending()).toBe(0) // bounded window still applies
+    })
 })

@@ -897,32 +897,40 @@ test.describe('Search journey', () => {
             await page.waitForTimeout(300) // allow focus effect to re-run after dialog close
         }
 
-        // The fix: focus must be on #search-input, NOT <body>.
-        // Focus lands via a requestAnimationFrame effect after splash dismiss /
-        // help-dialog close. Wait for it rather than reading immediately — the
-        // navigation-store split added latency that exposed this race (focus
-        // sometimes still on <body> at read time). If it never lands, the
-        // assertion below fails with a clear activeId mismatch.
-        await page
-            .waitForFunction(() => document.activeElement && document.activeElement.id === 'search-input', null, {
-                timeout: 5000,
-                polling: 100
-            })
-            .catch(() => {})
-
+        // W50 contract, restated 2026-09-11 for the mobile place-first default
+        // (app-init.ts:206): a bare boot on ≤768px lands on surface 'map', which
+        // renders NO search chrome by design. The a11y invariant is therefore
+        // not "focus is on #search-input" but "focus lands on a REACHABLE
+        // target appropriate to the booted surface — never stranded on <body>".
+        //  - map boot (place-first): focus lands on #map-container
+        //    (focusable, aria-labelled). A SearchBar there would be a
+        //        regression against the place-first design.
+        //  - idle/placeholder boot (?placeholder=1): SearchBar mounts, focus
+        //    lands on #search-input (the original W50 regression).
         const focusState = await page.evaluate(() => {
             const el = document.activeElement
             const input = document.getElementById('search-input')
+            const map = document.getElementById('map-container')
             return {
+                surface: window.__APP_STATE__?.navState?.surface ?? null,
                 activeId: el ? el.id || el.tagName.toLowerCase() : 'null',
                 inputExists: !!input,
-                inputVisible: input ? input.offsetParent !== null : false
+                inputVisible: input ? input.offsetParent !== null : false,
+                mapExists: !!map
             }
         })
-        expect(focusState.inputExists, '#search-input must exist in the DOM after splash dismiss').toBe(true)
-        expect(focusState.activeId, 'mobile screen-reader users must land on #search-input, not body').toBe(
-            'search-input'
-        )
+        if (focusState.surface === 'map') {
+            expect(focusState.mapExists, 'place-first map boot must render the map container').toBe(true)
+            expect(focusState.inputExists, 'map surface intentionally renders no search chrome').toBe(false)
+            expect(focusState.activeId, 'map boot: focus must land on the map container, not body').toBe(
+                'map-container'
+            )
+        } else {
+            expect(focusState.inputExists, '#search-input must exist after splash dismiss on idle surfaces').toBe(
+                true
+            )
+            expect(focusState.activeId, 'mobile SR users must land on #search-input, not body').toBe('search-input')
+        }
     })
 
     test('W71: URL query hydrates and runs search without a second input event', async ({ page }) => {

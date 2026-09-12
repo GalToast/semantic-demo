@@ -28,6 +28,10 @@ export interface FocusSearchInputUntilLandedOptions {
     getActive?: () => Element | null
     maxMs?: number
     stableFrames?: number
+    /** Fallback target when the search input never mounts (e.g. the mobile
+     *  place-first map boot renders no search chrome). Probed once per run
+     *  frame while the input is absent; the first non-null hit takes over. */
+    getFallback?: () => HTMLElement | null
 }
 
 /**
@@ -43,12 +47,18 @@ export function focusSearchInputUntilLanded(
     const now = options.now ?? (() => performance.now())
     const getInput = options.getInput ?? (() => document.getElementById('search-input') as HTMLInputElement | null)
     const getActive = options.getActive ?? (() => document.activeElement)
+    const getFallback = options.getFallback
     const maxMs = options.maxMs ?? 1500
     const stableFrames = Math.max(1, options.stableFrames ?? 3)
     const startedAt = now()
     let canceled = false
     let frameId: number | null = null
     let landedFrames = 0
+    // W50 (2026-09-11): when the search input never mounts (mobile place-first
+    // map boot — surface 'map' renders no search chrome by design), focus must
+    // still land somewhere reachable instead of stranding on <body>. Lazily
+    // probe the fallback on frames where the input is absent.
+    let fallbackTarget: HTMLElement | null = null
 
     const schedule = (): void => {
         if (!canceled) frameId = raf(step)
@@ -60,6 +70,23 @@ export function focusSearchInputUntilLanded(
 
         const input = getInput()
         if (!input) {
+            // Fallback probe (W50): input absent — if a fallback target is
+            // configured and reachable, drive focus there instead of spinning
+            // out and stranding on <body>.
+            if (getFallback) {
+                fallbackTarget ??= getFallback()
+                if (fallbackTarget) {
+                    if (getActive() !== fallbackTarget) {
+                        landedFrames = 0
+                        fallbackTarget.focus()
+                        schedule()
+                        return
+                    }
+                    landedFrames += 1
+                    if (landedFrames < stableFrames) schedule()
+                    return
+                }
+            }
             landedFrames = 0
             schedule()
             return
@@ -82,4 +109,18 @@ export function focusSearchInputUntilLanded(
         if (frameId !== null) cancelRaf(frameId)
         frameId = null
     }
+}
+
+/**
+ * Surface-agnostic twin of focusSearchInputUntilLanded: drive focus to any
+ * single target (W50: the mobile place-first map container) with the same
+ * bounded-retry / stable-land / cancelable-teardown contract. Shares the
+ * retry implementation via delegation — the search-input loop with a forced
+ * getter is behaviorally identical to a generic target loop.
+ */
+export function focusElementUntilLanded(
+    getTarget: () => HTMLElement | null,
+    options: Omit<FocusSearchInputUntilLandedOptions, 'getInput' | 'getFallback'> = {}
+): () => void {
+    return focusSearchInputUntilLanded({ ...options, getInput: getTarget, getFallback: undefined })
 }
