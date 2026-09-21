@@ -3,6 +3,8 @@
 # Subagent Lane Inventory — Semantic Explorer
 
 > **LIVE MODEL HEALTH (2026-09-16 sweep):** before picking a subagent model, check `docs/subagent-model-health.md` — 114-probe key-router sweep: 25 ALIVE routes with quick-pick table + benchmark notes; 41 403s = mount auth walls; ALL logfare models dead (upstream wedged); refresh commands inside. The 2026-09-04 probe below is history; the health doc supersedes it for dispatch decisions.
+>
+> **2026-09-21 model-providers ghost sweep (pi-main):** all `deepseek-v4-flash*` entries removed from `~/.pi/agent/model-providers.json` (34 entries/fields; logfare live catalog lacks the family, nvidia 410 Gone on `-0731`). `deepseek-v4-pro-0813` KEPT — confirmed serving. Backup: `model-providers.json.bak-v4flash-sweep-20260921`.
 
 > **COMPRESSED HISTORY (2026-08-11):** the 59 dated run-entries below are history; durable lessons → docs/subagent-delegation.md (Landmine classes). The live coordination state is in the un-dated sections.
 
