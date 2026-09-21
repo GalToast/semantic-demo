@@ -1110,12 +1110,19 @@ External-subagent dispatch (read-only audit scope) died BEFORE tool use on both 
 fell back to main-lane execution (its audit then verified on disk, GOAL: NOT MET — the finding
 is provider-side, not source-side):
 
-| route (worker dispatch)                        | result                                  |
-| ---------------------------------------------- | --------------------------------------- |
-| `kilo/z-ai/glm-5.2:free` (ocw_17d7527a)        | ❌ 404 "no tool-capable endpoint" — catalog entry has no agentic/tool surface |
-| `nvidia/deepseek-ai/deepseek-v4-flash-0731` (ocw_ab89d64e) | ❌ 410 (no body) — gone at the nvidia segment |
+| route (worker dispatch)                                    | result                                                                        |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `kilo/z-ai/glm-5.2:free` (ocw_17d7527a)                    | ❌ 404 "no tool-capable endpoint" — catalog entry has no agentic/tool surface |
+| `nvidia/deepseek-ai/deepseek-v4-flash-0731` (ocw_ab89d64e) | ❌ 410 (no body) — gone at the nvidia segment                                 |
 
 → Do not re-add either as a tool-capable worker lane; both are chat/probe-only or catalog
 ghosts at dispatch time. Distinct from the main-lane router routes (same model ids can still be
 fine for interactive chat — this is a worker-surface finding). No blind retries were performed;
 the owning lane completed the work in its main lane instead.
+
+## 2026-09-21: LOGFARE route-truth re-probe (acceptance-audit lane, bounded, key[0] from logfare-keys.json)
+
+- `/v1/models` = **23 ids LIVE** (the 22-id view is the STALE ROUTER CACHE; refresh before judging). `deepseek-v4-pro-0813` =
+  LISTED + chat-SERVED (finish_reason=length) -> KEEP. The `deepseek-v4-flash*` family (flash / flash-0731 / :free / %3Afree)
+  = ABSENT from the live catalog -> ghosts pending the owner's backup-first sweep (the 2026-09-21 rebuild missed them).
+- moondream3.1 ctx = **32768** (32K, web-verified; the 262144 in the pi blocks was the stale-write clobber, since restored).
