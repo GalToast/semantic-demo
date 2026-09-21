@@ -2,6 +2,8 @@
 
 # Subagent Lane Inventory — Semantic Explorer
 
+> **LIVE MODEL HEALTH (2026-09-16 sweep):** before picking a subagent model, check `docs/subagent-model-health.md` — 114-probe key-router sweep: 25 ALIVE routes with quick-pick table + benchmark notes; 41 403s = mount auth walls; ALL logfare models dead (upstream wedged); refresh commands inside. The 2026-09-04 probe below is history; the health doc supersedes it for dispatch decisions.
+
 > **COMPRESSED HISTORY (2026-08-11):** the 59 dated run-entries below are history; durable lessons → docs/subagent-delegation.md (Landmine classes). The live coordination state is in the un-dated sections.
 
 Moved out of `AGENTS.md` (Prompt Budget: no large reference tables in the hot-path file). `docs/subagent-delegation.md` remains the source for lifecycle/rate/vision rules; this doc is just the live per-model viability table.
@@ -27,18 +29,18 @@ bare body id by an adapter.
 
 Selected live catalog metadata (context window; input -> output) is:
 
-| family | context | modalities |
-| --- | ---: | --- |
-| Laguna S/XS | 262,144 | text -> text |
-| North Mini Code | 256,000 | text -> text |
-| Dots3-Note | 512,000 | text + image -> text |
-| MiniMax M2.7 | 196,608 | text -> text |
-| MiniMax M3 | 1,048,576 | text + image + video -> text |
-| Nemotron 3.5 Lightning / Ultra | 1,000,000 | text -> text |
-| Nemotron 3 Nano Omni | 256,000 | text + image + audio + video -> text |
-| Gemma 4 26B / 31B | 262,144 | text + image + video -> text |
-| Inkling / Inkling Small | 1,048,576 | text + image + audio -> text |
-| GLM 5.2 | 256,000 | text -> text |
+| family                         |   context | modalities                           |
+| ------------------------------ | --------: | ------------------------------------ |
+| Laguna S/XS                    |   262,144 | text -> text                         |
+| North Mini Code                |   256,000 | text -> text                         |
+| Dots3-Note                     |   512,000 | text + image -> text                 |
+| MiniMax M2.7                   |   196,608 | text -> text                         |
+| MiniMax M3                     | 1,048,576 | text + image + video -> text         |
+| Nemotron 3.5 Lightning / Ultra | 1,000,000 | text -> text                         |
+| Nemotron 3 Nano Omni           |   256,000 | text + image + audio + video -> text |
+| Gemma 4 26B / 31B              |   262,144 | text + image + video -> text         |
+| Inkling / Inkling Small        | 1,048,576 | text + image + audio -> text         |
+| GLM 5.2                        |   256,000 | text -> text                         |
 
 The live rows generally omit `top_provider.max_completion_tokens`, so output
 budgets remain route-specific policy/override values in Qwen settings; never
@@ -302,6 +304,8 @@ Lane probes were run via opencode-zen 2026-07-27..08-04, so "opencode-zen" in th
     - `agnes/agnes-2.5-pro` ✅ **subagent-viable 2026-08-03** — **free to us** (no billing configured on the account; the wiki's $0.45/M in / $0.90/M out "paid" label never hits our keys — if the gateway accepts, it's free), 1M ctx/65.5K out. Lane probe exit 0; **~116s first-token latency** (reasoning + `--thinking max`), so never use the 90s smoke cap for these — needs ≥5 min runway.
     - `agnes/agnes-2.5-pro-alpha` ✅ **subagent-viable 2026-08-03** — free to us (same no-billing account), same caps as pro. Pro is the commercial stable release (2026-08-01) of the same benchmark model (alpha = 2026-07-24 preview): same scores, prefer `agnes-2.5-pro`; alpha only for A/B.
     - **Config:** allowlist lives in `~/.qwen/settings.json` → `modelProviders.openai` (read per-call, no restart) + `~/.pi/agent/model-providers.json`; mmx.js `qwenLocalCapabilityOverride` has an agnes-2.5 caps branch (active after external-subagents MCP restart). Reasoning-agnus workers die at `output:16` without the maxTokens pin.
+    - **Direct Agnes 3.0 Flash (live probe 2026-09-13):** `agnes/agnes-3.0-flash` is admitted through `pi:router-agnes/agnes-3.0-flash`; the local `/agnes/v1/models` catalog lists it and a clean one-shot worker completed with visible reasoning. After the local admission-policy change and router restart, `/health` reports `keys:2`, `activeKeys:2`, `modelConcurrency.enabled:false`, and `limit:0`; a bounded three-request parallel probe returned HTTP 200 with all three markers. The two configured keys are therefore not evidence of a two-request concurrency cap. One historical 504 was classified as `fetch-upstream-header-timeout` after 30 seconds; upstream quota/rate behavior beyond this bounded probe remains unproven. Evidence: `tmp/agnes3-concurrency-gate-20260913.json` and `tmp/agnes3-fanout-20260913.md`.
+    - **Fresh Kilo/OpenRouter candidates (catalog + route probe 2026-09-13):** both local catalogs list `inception/mercury-2.5`, `deepseek/deepseek-v4.1-flash`, and `inclusionai/ling-3.0-flash-vl:free`. Kilo Ling passed a higher-budget final-content probe (`200`, exact marker, reasoning present); its short-budget failure was reasoning-token exhaustion. OpenRouter Ling was reachable (`200`) in the first six-way batch, but a health-gated higher-budget retry also returned provider `429`, so it is not currently cleared for fan-out. Mercury returned `402` on both routes (credits required); both gateways returned `400` for DeepSeek and identified an unsupported normalized upstream model ID, so this is a catalog/provider mapping mismatch rather than a proven local admission failure. Evidence: `tmp/kilo-openrouter-fresh-models-20260913.json`, `tmp/kilo-ling-budget-check-20260913.mjs`, and `tmp/openrouter-ling-budget-check-20260913.mjs`.
 - **Free fallbacks:**
     - `ling-3.0-flash-free` ✅ **subagent-viable 2026-07-29** (via `opencode-zen/ling-3.0-flash-free` → `router-opencode-zen`) — passed a real find-and-fix graduation trial removing an unused `onMount` import; lint + 3380 unit tests passed. **W58 reconfirm (UI/chrome+demo slice, qwen harness):** found real UI bug where `DemoChoreography.requestReplay()` ignored the `?nodemo=1` suppress guard; main-lane fix committed `2b6821fb` (tmp/w58-findui-REPORT.md).
     - `laguna-s-2.1-free` **route-dependent** — ❌ on OpenCode Zen (2026-07-29: subagent tasks stuck in long reasoning loops and hit 200MB+ stdout cap), ✅ via `/poolside` `poolside/laguna-s-2.1` and `/openrouter` `poolside/laguna-s-2.1:free` for direct completion probes. **Subagent benchmark 2026-07-29 (Pi harness, poolside route):** ❌ NOT subagent-viable — launched with `--thinking max`, spun in reasoning loops producing zero output for 41–88s on both a complex audit task and a trivial one-sentence prompt. Root cause: Pi harness defaults to `--thinking max` for reasoning-capable models; laguna-s-2.1 supports reasoning but loops indefinitely at max thinking. The `external_subagent_start` API does not expose a thinking-level override. Avoid for subagent coding tasks until a `--thinking low/off` option is available. **W58 re-verify 2026-07-30 (post hermes session_start hang fix):** `poolside/laguna-s-2.1` via `router-poolside` SUCCEEDED exit-0 on a same-scope UI components+css jargon audit (sentinel `UI AUDIT DONE POOLSIDE-LAGUNA`, `provider_health: ok`, `stop_reason: stop`, clean report `tmp/jargon-audit-ui-poolside-laguna.md`, ~$0.003 paid). The 2026-07-29 "reasoning loops / 41-88s zero output" was the hermes `session_start` DB contention (4.5GB sessions.db) misattributed to laguna — now fixed by `apply-hermes-session-start-defer-patch.mjs` (full-defer via `setImmediate`). **`poolside/laguna-s-2.1` IS subagent-viable for audit tasks via `router-poolside`** (provider-qualified model ref); the `--thinking max` concern stands for heavy coding tasks until a thinking-override is exposed.
@@ -1099,3 +1103,19 @@ OK). Re-probe before dispatching on kilo/openrouter; don't assume qwen3-coder-ne
 → Use `logfare/minimax-m3` as the lane; others: catalog ghosts (impacted router keys).
 
 > **2026-08-26 route-truth map (main lane, corrected):** Full pipeline mapped: `opencode.json` provider `limit.{context,output}` (ROUTER TRUTH, authoritative) + `pi-model-providers/index.ts` route-quota constants → catalog daemon → `model-catalog-manifest.json` + `model-providers.json` (regenerated every ~15 min from in-memory state; disk edits to either file are CLOBBERED until Pi restarts). VERDICT: the logfare/dots metadata is scoped route truth, not error — e.g. logfare minimax-m3 out 32768 is a deliberate quota-2056 workaround (131K/524K trigger the logfare quota edge, 1M=empty; see tmp/minimax-m3-logfare-empty-content-investigation.md); deepseek-v4-flash-0731 16384 and qwen-3.8-27b 131072/32768 are explicit opencode.json route limits; glm-5.2 131072 = 128K (correct). MODEL ceilings are higher on other routes (minimax 1M/524288 main-lane measured; flash 384K per DeepSeek metadata). Only change shipped: dots3-note-prev ctx 512000→524288 (exact 512K) — ctx truth only; its 262144 output stays (documented routed ceiling). Web-verified model ceilings: dots3-note 524288/49152-benchmark, minimax 1M/524288, glm-5.2 1M/128K, deepseek-v4-flash/pro 1M/384K, qwen-3.8-27b 262K ctx, qwen-3.8-2.4t-a95b 1M ctx. Repro: dot patches clobber ~15 min after apply.
+
+## 2026-09-21: WORKER-DISPATCH route failures (codex-shittiest-lane probes, board #3958-#3961)
+
+External-subagent dispatch (read-only audit scope) died BEFORE tool use on both routes; the lane
+fell back to main-lane execution (its audit then verified on disk, GOAL: NOT MET — the finding
+is provider-side, not source-side):
+
+| route (worker dispatch)                        | result                                  |
+| ---------------------------------------------- | --------------------------------------- |
+| `kilo/z-ai/glm-5.2:free` (ocw_17d7527a)        | ❌ 404 "no tool-capable endpoint" — catalog entry has no agentic/tool surface |
+| `nvidia/deepseek-ai/deepseek-v4-flash-0731` (ocw_ab89d64e) | ❌ 410 (no body) — gone at the nvidia segment |
+
+→ Do not re-add either as a tool-capable worker lane; both are chat/probe-only or catalog
+ghosts at dispatch time. Distinct from the main-lane router routes (same model ids can still be
+fine for interactive chat — this is a worker-surface finding). No blind retries were performed;
+the owning lane completed the work in its main lane instead.
