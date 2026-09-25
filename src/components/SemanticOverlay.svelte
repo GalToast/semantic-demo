@@ -2,8 +2,8 @@
   @components/SemanticOverlay.svelte — Manifold + lens overlay
 
   Ported from:
- - (semantic overlay rendering)
- - (manifold, lens uniforms)
+    - js/modules/journey-semantic-overlay.js (semantic overlay rendering)
+    - js/modules/three-interaction-visuals.js (manifold, lens uniforms)
 
   Renders the semantic manifold and lens overlays that show relationship
   density and semantic proximity. Delegates WebGL operations to the engine
@@ -12,7 +12,7 @@
 <script lang="ts">
   import { hasFocus, focusedIndex, currentSurface } from '@lib/stores/navigation.svelte.ts';
   import { threadInspectorActive } from '@lib/stores/focus.svelte.ts';
-  import { viewport } from '@lib/stores/viewport.svelte.ts';
+  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
 
   interface Props {
     /** Whether the overlay chrome is visible */
@@ -44,10 +44,11 @@
   <div
     class="semantic-overlay"
     id="semantic-overlay"
-    aria-label="Relationship overlay"
+    aria-label="Semantic overlay"
+    role="presentation"
   >
     <!-- Overlay indicator badge -->
-    <div class="overlay-badge" class:thread={overlayMode === 'thread'} title={overlayMode === 'thread' ? 'Connected businesses showing the strongest match.' : overlayMode === 'lens' ? 'Deep exploration lens focused on a single neighborhood.' : 'Nearby businesses are highlighted.'}>
+    <div class="overlay-badge" class:thread={overlayMode === 'thread'}>
       {#if overlayMode === 'manifold'}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/>
@@ -65,7 +66,7 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
         </svg>
-        <span class="badge-label">Path</span>
+        <span class="badge-label">Thread</span>
       {/if}
     </div>
 
@@ -79,11 +80,11 @@
     {#if !$viewport.isCompact}
       <div class="overlay-hint">
         {#if overlayMode === 'manifold'}
-          Nearby businesses highlighted
+          Semantic proximity active
         {:else if overlayMode === 'lens'}
           Deep exploration lens
         {:else if overlayMode === 'thread'}
-          Connections visible
+          Thread connections visible
         {/if}
       </div>
     {/if}
@@ -110,40 +111,22 @@
     padding: 0.2rem 0.5rem;
     background: rgba(7, 16, 24, 0.8);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
+    border: 1px solid rgba(78, 205, 196, 0.2);
     border-radius: 0.3rem;
-    color: var(--color-primary-alt);
+    color: #4ecdc4;
     font-size: 0.6rem;
     font-family: 'Nunito Sans', sans-serif;
     font-weight: 600;
-    /* PR-E1: Auto-dismiss the badge after ~4s. Fade-out in last 0.3s.
-       Keeps first-visit context while removing recurring noise — the chip
-       rail already signals the active mode (Focus / Inside). */
-    animation: overlay-in 0.3s ease-out, overlay-out 0.3s ease-in 4s forwards;
+    animation: overlay-in 0.3s ease-out;
   }
   .overlay-badge.thread {
     border-color: rgba(255, 107, 107, 0.25);
-    color: var(--status-danger);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .overlay-badge {
-      /* Disable animation entirely for users who prefer reduced motion.
-         The badge remains visible (base state) so content is not lost;
-         auto-dismiss is handled by a time-bounded visibility effect in
-         the component script to avoid persistent click occlusion. */
-      animation: none;
-    }
+    color: #ff6b6b;
   }
 
   @keyframes overlay-in {
     from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes overlay-out {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-4px); pointer-events: none; }
   }
 
   .badge-label {
@@ -154,22 +137,12 @@
   .overlay-node-indicator {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.55rem;
-    color: rgba(176, 208, 208, 0.85); /* a11y-ok: caption-text — mono node indicator */
-    /* PR-E1: Node index fades alongside the badge. */
-    animation: overlay-out 0.3s ease-in 4s forwards;
+    color: rgba(176, 208, 208, 0.4);
   }
 
   .overlay-hint {
     font-size: 0.55rem;
-    color: rgba(176, 208, 208, 0.85); /* a11y-ok: caption-text — italic overlay hint */
+    color: rgba(176, 208, 208, 0.35);
     font-style: italic;
-    /* PR-E1: Hint text fades alongside the badge (desktop only). */
-    animation: overlay-out 0.3s ease-in 4s forwards;
-  }
-
-  @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
-    .semantic-overlay {
-      top: 9rem;
-    }
   }
 </style>

@@ -1,930 +1,258 @@
-import { svelte } from '@sveltejs/vite-plugin-svelte'
-import { visualizer } from 'rollup-plugin-visualizer'
-import { createReadStream } from 'node:fs'
-import { copyFile, cp, mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises'
-import { sep } from 'node:path'
-import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:http'
-import { execSync } from 'node:child_process'
-import { fileURLToPath } from 'url'
-import { basename, dirname, extname, join, normalize, resolve } from 'path'
-import { tmpdir } from 'os'
-import { promisify } from 'node:util'
-import { brotliCompress, gzip, constants as zlibConstants } from 'node:zlib'
-import { transform as lightningTransform } from 'lightningcss'
-import { defineConfig, type Plugin } from 'vite'
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { visualizer } from 'rollup-plugin-visualizer';
+import { createReadStream } from 'node:fs';
+import { copyFile, cp, mkdir, stat } from 'node:fs/promises';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { fileURLToPath } from 'url';
+import { dirname, extname, normalize, resolve } from 'path';
+import { defineConfig, type Plugin } from 'vite';
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-const PROJECT_ROOT = __dirname
-const SRC_DIR = resolve(PROJECT_ROOT, 'src')
-const SVELTE_OUT_DIR = resolve(PROJECT_ROOT, 'dist/svelte')
-const brotliCompressAsync = promisify(brotliCompress)
-const gzipAsync = promisify(gzip)
-const BROTLI_QUALITY = Number(process.env.VITE_BROTLI_QUALITY || 5)
-const GZIP_LEVEL = Number(process.env.VITE_GZIP_LEVEL || 6)
-
-// Stable per-build identifier used for cache-busting static data assets.
-// Git hash is preferred so repeat builds with no code change share a cache key;
-// fallback to a base36 timestamp when git is unavailable (e.g. shallow CI).
-const BUILD_ID = (() => {
-    try {
-        return execSync('git rev-parse --short HEAD', { cwd: __dirname, encoding: 'utf8' }).trim()
-    } catch {
-        return Date.now().toString(36)
-    }
-})()
-
-// W44 Phase F: list of large runtime-data assets that benefit from precompression.
-// Keep this allowlist explicit so we never accidentally compress chunk-manifest JSON.
-const COMPRESSION_ALLOWLIST = new Set([
-    'data.dat',
-    'semantic_threads_ui.dat',
-    'semantic_threads.dat',
-    'semantic_space_layout_manifest.json',
-    'leadEnrichment.public.json',
-    'sonic/manifest.json'
-])
-
-// W44 Quick Win: CSS files benefit hugely from brotli (~70% off) and gzip
-// (~80% off). Total minified CSS payload is ~339KB; brotli cuts it to ~73KB.
-// This applies to root-level CSS files (css/*.css, semantic-demo.css,
-// vector-explorer-pandora.css) AND to hashed Svelte component CSS chunks in
-// assets/*.css — all of them are text with high redundancy.
-const COMPRESS_CSS = true
-
-// J52 (2026-08-17, simplex1-br): JS chunks are the last uncompressed family:
-// 1,690,770 raw → 387,362 br (77.1% on the elephant; ~1.3 MB transfer saved).
-// .htaccess already rewrites .js.br/.js.gz + sets Content-Encoding (L103-116);
-// only the twins were missing on disk. Enable → build writes them everywhere.
-const COMPRESS_JS = true
-
-// Brotli/gzip frame headers are ~30-50 bytes; files smaller than this produce
-// compressed output LARGER than the original. Skip them.
-const COMPRESSION_MIN_BYTES = 100
+const PROJECT_ROOT = __dirname;
+const SRC_DIR = resolve(PROJECT_ROOT, 'src');
+const SVELTE_OUT_DIR = resolve(PROJECT_ROOT, 'dist/svelte');
 
 const ROOT_ASSETS = new Map<string, string>([
-    ['/semantic-demo.css', 'semantic-demo.css'],
-    ['/vector-explorer-pandora.css', 'vector-explorer-pandora.css'],
-    ['/case-study.html', 'case-study.html'],
-    ['/data.dat', 'src/data.dat'],
-    ['/data.dat.gz', 'src/data.dat.gz'],
-    ['/semantic_threads_ui.dat', 'public/data/semantic_threads_ui.dat'],
-    ['/semantic_threads.dat', 'public/data/semantic_threads.dat'],
-    ['/sonic/manifest.json', 'public/sonic/manifest.json'],
-    ['/sonic/clips/general-business-s7.wav', 'public/sonic/clips/general-business-s7.wav'],
-    ['/sonic/clips/general-business-s13.wav', 'public/sonic/clips/general-business-s13.wav'],
-    ['/sonic/clips/general-business-s21.wav', 'public/sonic/clips/general-business-s21.wav'],
-    ['/sonic/clips/construction-s21.wav', 'public/sonic/clips/construction-s21.wav'],
-    ['/sonic/clips/construction-s7.wav', 'public/sonic/clips/construction-s7.wav'],
-    ['/sonic/clips/construction-s13.wav', 'public/sonic/clips/construction-s13.wav'],
-    ['/sonic/clips/beauty-wellness-s7.wav', 'public/sonic/clips/beauty-wellness-s7.wav'],
-    ['/sonic/clips/beauty-wellness-s13.wav', 'public/sonic/clips/beauty-wellness-s13.wav'],
-    ['/sonic/clips/beauty-wellness-s21.wav', 'public/sonic/clips/beauty-wellness-s21.wav'],
-    ['/sonic/clips/real-estate-s21.wav', 'public/sonic/clips/real-estate-s21.wav'],
-    ['/sonic/clips/real-estate-s7.wav', 'public/sonic/clips/real-estate-s7.wav'],
-    ['/sonic/clips/real-estate-s13.wav', 'public/sonic/clips/real-estate-s13.wav'],
-    ['/sonic/clips/industrial-s13.wav', 'public/sonic/clips/industrial-s13.wav'],
-    ['/sonic/clips/industrial-s7.wav', 'public/sonic/clips/industrial-s7.wav'],
-    ['/sonic/clips/industrial-s21.wav', 'public/sonic/clips/industrial-s21.wav'],
-    ['/sonic/clips/agriculture-s13.wav', 'public/sonic/clips/agriculture-s13.wav'],
-    ['/sonic/clips/agriculture-s7.wav', 'public/sonic/clips/agriculture-s7.wav'],
-    ['/sonic/clips/agriculture-s21.wav', 'public/sonic/clips/agriculture-s21.wav'],
-    ['/sonic/clips/automotive-s13.wav', 'public/sonic/clips/automotive-s13.wav'],
-    ['/sonic/clips/automotive-s7.wav', 'public/sonic/clips/automotive-s7.wav'],
-    ['/sonic/clips/automotive-s21.wav', 'public/sonic/clips/automotive-s21.wav'],
-    ['/sonic/clips/therapy-s21.wav', 'public/sonic/clips/therapy-s21.wav'],
-    ['/sonic/clips/therapy-s13.wav', 'public/sonic/clips/therapy-s13.wav'],
-    ['/sonic/clips/therapy-s7.wav', 'public/sonic/clips/therapy-s7.wav'],
-    ['/sonic/clips/education-s13.wav', 'public/sonic/clips/education-s13.wav'],
-    ['/sonic/clips/education-s7.wav', 'public/sonic/clips/education-s7.wav'],
-    ['/sonic/clips/education-s21.wav', 'public/sonic/clips/education-s21.wav'],
-    ['/sonic/clips/faith-ministries-s21.wav', 'public/sonic/clips/faith-ministries-s21.wav'],
-    ['/sonic/clips/faith-ministries-s7.wav', 'public/sonic/clips/faith-ministries-s7.wav'],
-    ['/sonic/clips/faith-ministries-s13.wav', 'public/sonic/clips/faith-ministries-s13.wav'],
-    ['/sonic/clips/nonprofits-s13.wav', 'public/sonic/clips/nonprofits-s13.wav'],
-    ['/sonic/clips/nonprofits-s21.wav', 'public/sonic/clips/nonprofits-s21.wav'],
-    ['/sonic/clips/nonprofits-s7.wav', 'public/sonic/clips/nonprofits-s7.wav'],
-    ['/sonic/clips/foundations-s13.wav', 'public/sonic/clips/foundations-s13.wav'],
-    ['/sonic/clips/foundations-s7.wav', 'public/sonic/clips/foundations-s7.wav'],
-    ['/sonic/clips/foundations-s21.wav', 'public/sonic/clips/foundations-s21.wav'],
-    ['/sonic/clips/economic-dev-s13.wav', 'public/sonic/clips/economic-dev-s13.wav'],
-    ['/sonic/clips/economic-dev-s21.wav', 'public/sonic/clips/economic-dev-s21.wav'],
-    ['/sonic/clips/economic-dev-s7.wav', 'public/sonic/clips/economic-dev-s7.wav'],
-    ['/sonic/clips/public-agencies-s7.wav', 'public/sonic/clips/public-agencies-s7.wav'],
-    ['/sonic/clips/public-agencies-s21.wav', 'public/sonic/clips/public-agencies-s21.wav'],
-    ['/sonic/clips/public-agencies-s13.wav', 'public/sonic/clips/public-agencies-s13.wav'],
-    ['/sonic/clips/enterprise-brands-s13.wav', 'public/sonic/clips/enterprise-brands-s13.wav'],
-    ['/sonic/clips/enterprise-brands-s7.wav', 'public/sonic/clips/enterprise-brands-s7.wav'],
-    ['/sonic/clips/enterprise-brands-s21.wav', 'public/sonic/clips/enterprise-brands-s21.wav'],
-    ['/semantic_space_layout_manifest.json', 'public/data/semantic_space_layout_manifest.json'],
-    ['/scripts/leadEnrichment.public.json', 'public/data/leadEnrichment.public.json']
-])
+  ['/semantic-demo.css', 'semantic-demo.css'],
+  ['/vector-explorer-pandora.css', 'vector-explorer-pandora.css'],
+  ['/data.dat', 'data.dat'],
+  ['/data.dat.gz', 'data.dat.gz'],
+  ['/semantic_threads_ui.dat', 'semantic_threads_ui.dat'],
+  ['/semantic_threads.dat', 'semantic_threads.dat'],
+  ['/semantic_space_layout_manifest.json', 'semantic_space_layout_manifest.json'],
+  ['/scripts/leadEnrichment.public.json', 'scripts/leadEnrichment.public.json'],
+]);
 
-const ROOT_ASSET_DIRS = ['css']
+const ROOT_ASSET_DIRS = ['css'];
 
-type RootAssetMiddleware = (req: IncomingMessage, res: ServerResponse, next: () => void) => void | Promise<void>
+type RootAssetMiddleware = (
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: () => void
+) => void | Promise<void>;
 
 type RootAssetMiddlewareStack = {
-    use: (middleware: RootAssetMiddleware) => void
-}
+  use: (middleware: RootAssetMiddleware) => void;
+};
 
 const LEGACY_CSS_LINKS = [
-    '<link rel="stylesheet" href="semantic-demo.css">',
-    '<link rel="stylesheet" href="css/tokens.css">',
-    '<link rel="stylesheet" href="css/base.css">',
-    '<link rel="stylesheet" href="css/loading.css">',
-    '<link rel="stylesheet" href="css/shell.css">',
-    '<link rel="stylesheet" href="css/time_weather.css">',
-    '<link rel="stylesheet" href="css/synthesis.css">',
-    '<link rel="stylesheet" href="css/controls.css">',
-    '<link rel="stylesheet" href="css/layout_base.css">',
-    '<link rel="stylesheet" href="css/search.css">',
-    '<link rel="stylesheet" href="css/mobile_base.css">',
-    '<link rel="stylesheet" href="css/journey_steps.css">',
-    '<link rel="stylesheet" href="css/journey_active.css">',
-    '<link rel="stylesheet" href="css/clusters.css">',
-    '<link rel="stylesheet" href="css/progressive_disclosure.css">',
-    '<link rel="stylesheet" href="css/strands.css">',
-    '<link rel="stylesheet" href="css/animations.css">',
-    '<link rel="stylesheet" href="vector-explorer-pandora.css">',
-    '<link rel="stylesheet" href="css/mobile_premium__components.css">',
-    '<link rel="stylesheet" href="css/mobile_premium__layout.css">',
-    '<link rel="stylesheet" href="css/mobile_premium__state.css">',
-    '<link rel="stylesheet" href="css/modules/focus_stage.css">'
-]
+  '<link rel="stylesheet" href="semantic-demo.css">',
+  '<link rel="stylesheet" href="vector-explorer-pandora.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__focus-dive.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__chrome.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__state.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__idle.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__map.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__surfaces.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__narrow.css">',
+  '<link rel="stylesheet" href="css/modules/focus_stage.css">',
+];
 
 function legacyRootAssetPlugin(): Plugin {
-    return {
-        name: 'legacy-root-assets',
-        configureServer(server) {
-            serveRootAssets(server.middlewares)
-        },
-        configurePreviewServer(server) {
-            serveRootAssets(server.middlewares)
-        },
-        transformIndexHtml(html) {
-            // Inject legacy CSS <link> tags into the HTML. These files live at the
-            // project root (outside Vite's src/ root), so they cannot be static
-            // <link> tags in src/index.html — Vite would warn they don't exist.
-            const legacyBlock = LEGACY_CSS_LINKS.join('\n  ')
-            return html.replace(
-                '<!--\n    Legacy CSS links (semantic-demo.css, vector-explorer-pandora.css,',
-                `${legacyBlock}\n  <!--\n    Legacy CSS links (semantic-demo.css, vector-explorer-pandora.css,`
-            )
-        }
-    }
+  return {
+    name: 'legacy-root-assets',
+    configureServer(server) {
+      serveRootAssets(server.middlewares);
+    },
+    configurePreviewServer(server) {
+      serveRootAssets(server.middlewares);
+    },
+    transformIndexHtml(html) {
+      // Inject legacy CSS <link> tags into the HTML. These files live at the
+      // project root (outside Vite's src/ root), so they cannot be static
+      // <link> tags in src/index.html — Vite would warn they don't exist.
+      const legacyBlock = LEGACY_CSS_LINKS.join('\n  ');
+      return html.replace(
+        '<!--\n    Legacy CSS links (semantic-demo.css, vector-explorer-pandora.css,',
+        `${legacyBlock}\n  <!--\n    Legacy CSS links (semantic-demo.css, vector-explorer-pandora.css,`,
+      );
+    },
+  };
 }
 
 function copyRuntimeAssetsPlugin(): Plugin {
-    return {
-        name: 'copy-runtime-assets',
-        apply: 'build',
-        async writeBundle(bundle) {
-            await Promise.all([
-                ...Array.from(ROOT_ASSETS.values()).map(async (relativePath) => {
-                    const sourcePath = normalize(resolve(PROJECT_ROOT, relativePath))
-                    const distRelativePath = relativePath.replace(/^public\//, '').replace(/^src\//, '')
-                    const targetPath = normalize(resolve(SVELTE_OUT_DIR, distRelativePath))
-                    try {
-                        const fileStat = await stat(sourcePath)
-                        if (!fileStat.isFile()) return
-                    } catch {
-                        return
-                    }
-                    await mkdir(dirname(targetPath), { recursive: true })
-                    // W44 Quick Win: minify root-level CSS files as they're copied
-                    // into the build output. Svelte component CSS (in dist/svelte/assets/)
-                    // is already minified by Vite's CSS pipeline. These root-level files
-                    // (semantic-demo.css, vector-explorer-pandora.css, css/*.css) bypass
-                    // Vite because they live outside src/, so they need explicit
-                    // minification. Saves ~310KB unminified → ~241KB minified (56% off).
-                    if (extname(targetPath) === '.css') {
-                        const raw = await readFile(sourcePath)
-                        const result = lightningTransform({
-                            filename: relativePath,
-                            code: raw,
-                            minify: true,
-                            // 2026-08-10 3d-spec root cause: plain css/*.css uses Svelte
-                            // `:global(...)` wrappers which lightningcss rejects as an
-                            // invalid pseudo-class. errorRecovery:true keeps valid rules
-                            // and skips the wrappers (no-op in unscoped css) instead of
-                            // failing the transform → webServer boot failed → every 3d
-                            // spec died at cold-load (band-aided by 180s timeouts).
-                            errorRecovery: true
-                        })
-                        await writeFile(targetPath, result.code)
-                    } else {
-                        await copyFile(sourcePath, targetPath)
-                    }
-                }),
-                ...ROOT_ASSET_DIRS.map(async (relativePath) => {
-                    const sourcePath = normalize(resolve(PROJECT_ROOT, relativePath))
-                    const targetPath = normalize(resolve(SVELTE_OUT_DIR, relativePath))
-                    try {
-                        const fileStat = await stat(sourcePath)
-                        if (!fileStat.isDirectory()) return
-                    } catch {
-                        return
-                    }
-                    // W44 Quick Win: minify CSS files inside directory copies (the
-                    // `css/` directory holds mobile_premium__*.css, focus_stage.css,
-                    // etc.). Walk the source tree and minify each .css file in place.
-                    if (relativePath === 'css') {
-                        await cp(sourcePath, targetPath, {
-                            recursive: true,
-                            force: true,
-                            filter: async (src) => {
-                                const s = await stat(src)
-                                if (!s.isFile()) return true
-                                if (extname(src) !== '.css') return true
-                                const raw = await readFile(src)
-                                const result = lightningTransform({
-                                    filename: src,
-                                    code: raw,
-                                    minify: true,
-                                    errorRecovery: true
-                                })
-                                // Compute the destination path relative to the source root
-                                const dest = normalize(
-                                    join(targetPath, src.slice(sourcePath.length + 1).replace(/\\/g, '/'))
-                                )
-                                await mkdir(dirname(dest), { recursive: true })
-                                await writeFile(dest, result.code)
-                                return false // tell cp to skip this file (we wrote it ourselves)
-                            }
-                        })
-                    } else {
-                        await cp(sourcePath, targetPath, {
-                            recursive: true,
-                            force: true
-                        })
-                    }
-                })
-            ])
+  return {
+    name: 'copy-runtime-assets',
+    apply: 'build',
+    async writeBundle() {
+      await Promise.all([
+        ...Array.from(ROOT_ASSETS.values()).map(async (relativePath) => {
+          const sourcePath = normalize(resolve(PROJECT_ROOT, relativePath));
+          const targetPath = normalize(resolve(SVELTE_OUT_DIR, relativePath));
 
-            // Mirror the emitted hashed web-worker entry to a stable filename so
-            // the runtime fallback URL (`./assets/data-worker.js`) resolves
-            // correctly before the dynamic worker URL promise settles.
-            try {
-                const assetsDir = resolve(SVELTE_OUT_DIR, 'assets')
-                const entries = await readdir(assetsDir)
-                const workerFiles = entries.filter((name) => /^data-worker-[A-Za-z0-9_-]+\.js$/.test(name))
-                let actualWorker = ''
-                for (const name of workerFiles) {
-                    const code = await readFile(resolve(assetsDir, name), 'utf8')
-                    const match = code.match(/new URL\("(data-worker-[A-Za-z0-9_-]+\.js)",import\.meta\.url\)/)
-                    if (match?.[1]) {
-                        actualWorker = match[1]
-                        break
-                    }
-                }
-                if (actualWorker) {
-                    await copyFile(resolve(assetsDir, actualWorker), resolve(assetsDir, 'data-worker.js'))
-                }
-            } catch {
-                // Non-fatal: the dynamic worker URL is the primary path.
+          try {
+            const fileStat = await stat(sourcePath);
+            if (!fileStat.isFile()) {
+              return;
             }
-        }
-    }
+          } catch {
+            return;
+          }
+
+          await mkdir(dirname(targetPath), { recursive: true });
+          await copyFile(sourcePath, targetPath);
+        }),
+        ...ROOT_ASSET_DIRS.map(async (relativePath) => {
+          const sourcePath = normalize(resolve(PROJECT_ROOT, relativePath));
+          const targetPath = normalize(resolve(SVELTE_OUT_DIR, relativePath));
+
+          try {
+            const fileStat = await stat(sourcePath);
+            if (!fileStat.isDirectory()) {
+              return;
+            }
+          } catch {
+            return;
+          }
+
+          await cp(sourcePath, targetPath, {
+            recursive: true,
+            force: true,
+          });
+        }),
+      ]);
+    },
+  };
 }
 
 function serveRootAssets(middlewares: RootAssetMiddlewareStack): void {
-    middlewares.use(async (req, res, next) => {
-        const urlPath = req.url?.split('?')[0] ?? ''
-        let relativePath = ROOT_ASSETS.get(urlPath) ?? null
-        if (!relativePath && urlPath.startsWith('/css/')) {
-            relativePath = urlPath.slice(1)
-        }
-        if (!relativePath && urlPath.startsWith('/data/')) {
-            relativePath = `public${urlPath}`
-        }
-        if (!relativePath) {
-            next()
-            return
-        }
+  middlewares.use(async (req, res, next) => {
+    const urlPath = req.url?.split('?')[0] ?? '';
+    let relativePath = ROOT_ASSETS.get(urlPath) ?? null;
 
-        // Resolve from PROJECT_ROOT first (dev server), then SVELTE_OUT_DIR
-        // (preview server). The ROOT_ASSETS map points to src/ paths; in preview
-        // mode the files live in dist/svelte/.
-        let filePath = normalize(resolve(PROJECT_ROOT, relativePath))
-        try {
-            const fileStat = await stat(filePath)
-            if (!fileStat.isFile()) {
-                filePath = normalize(resolve(SVELTE_OUT_DIR, relativePath.replace(/^src\//, '')))
-            }
-        } catch {
-            filePath = normalize(resolve(SVELTE_OUT_DIR, relativePath.replace(/^src\//, '')))
-        }
+    if (!relativePath && urlPath.startsWith('/css/')) {
+      relativePath = urlPath.slice(1);
+    }
 
-        const normalizedRoot = normalize(PROJECT_ROOT)
-        const normalizedOut = normalize(SVELTE_OUT_DIR)
-        const isInsideRoot =
-            filePath === normalizedRoot ||
-            filePath.startsWith(`${normalizedRoot}${normalize('/')}`) ||
-            filePath === normalizedOut ||
-            filePath.startsWith(`${normalizedOut}${normalize('/')}`)
+    if (!relativePath) {
+      next();
+      return;
+    }
 
-        if (!isInsideRoot) {
-            next()
-            return
-        }
+    const filePath = normalize(resolve(PROJECT_ROOT, relativePath));
+    const normalizedRoot = normalize(PROJECT_ROOT);
+    const isInsideRoot = filePath === normalizedRoot || filePath.startsWith(`${normalizedRoot}${normalize('/')}`);
 
-        try {
-            const fileStat = await stat(filePath)
-            if (!fileStat.isFile()) {
-                next()
-                return
-            }
-        } catch {
-            next()
-            return
-        }
+    if (!isInsideRoot) {
+      next();
+      return;
+    }
 
-        if (!res.getHeader('Cache-Control')) {
-            res.setHeader('Cache-Control', 'no-cache')
-        }
-        res.setHeader('Content-Type', contentType(filePath))
+    try {
+      const fileStat = await stat(filePath);
+      if (!fileStat.isFile()) {
+        next();
+        return;
+      }
+    } catch {
+      next();
+      return;
+    }
 
-        // W44 Quick Win: apply runtime gzip/brotli compression for text assets
-        // served from project root (CSS, JS). Without this, Vite's compression
-        // middleware doesn't run because serveRootAssets bypasses the static
-        // handler. Browser sends Accept-Encoding; we honor it.
-        const acceptEncoding = (req.headers['accept-encoding'] || '').toLowerCase()
-        const isCompressible = /\.(css|js|mjs|json|html?|svg)$/.test(filePath)
-
-        // W44 Phase F: prefer pre-compressed .br/.gz siblings for .dat assets
-        // when the browser supports them. The build writes semantic_threads.dat
-        // (79 MB) + semantic_threads_ui.dat (40 MB) + leadEnrichment.json
-        // (18 MB) alongside their brotli/gzip twins; serving the raw files
-        // means 137 MB transfer for what should be a ~10 MB payload.
-        if (!isCompressible && acceptEncoding) {
-            for (const ext of ['br', 'gz'] as const) {
-                if (acceptEncoding.includes(ext)) {
-                    // Check both PROJECT_ROOT (dev) and SVELTE_OUT_DIR (preview)
-                    // for pre-compressed twins — the build writes them to dist/.
-                    const candidates = [
-                        `${filePath}.${ext}`,
-                        normalize(
-                            resolve(
-                                SVELTE_OUT_DIR,
-                                relativePath.replace(/^public\//, '').replace(/^src\//, '') + `.${ext}`
-                            )
-                        )
-                    ]
-                    for (const compressedPath of candidates) {
-                        try {
-                            const cstat = await stat(compressedPath)
-                            if (cstat.isFile()) {
-                                res.setHeader('Content-Encoding', ext)
-                                res.setHeader('Vary', 'Accept-Encoding')
-                                createReadStream(compressedPath).pipe(res)
-                                return
-                            }
-                        } catch {
-                            // Try next candidate
-                        }
-                    }
-                }
-            }
-        }
-
-        if (isCompressible && acceptEncoding) {
-            try {
-                const raw = await readFile(filePath)
-                let body: Buffer = raw
-                let encoding: 'br' | 'gzip' | null = null
-                if (acceptEncoding.includes('br')) {
-                    body = await brotliCompressAsync(raw, {
-                        params: { [zlibConstants.BROTLI_PARAM_QUALITY]: BROTLI_QUALITY }
-                    })
-                    encoding = 'br'
-                } else if (acceptEncoding.includes('gzip')) {
-                    body = await gzipAsync(raw, { level: GZIP_LEVEL })
-                    encoding = 'gzip'
-                }
-                if (encoding) {
-                    res.setHeader('Content-Encoding', encoding)
-                    res.setHeader('Vary', 'Accept-Encoding')
-                    res.end(body)
-                    return
-                }
-            } catch {
-                // Fall through to raw stream on compression error
-            }
-        }
-
-        createReadStream(filePath).pipe(res)
-    })
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Content-Type', contentType(filePath));
+    createReadStream(filePath).pipe(res);
+  });
 }
 
 function contentType(filePath: string): string {
-    switch (extname(filePath)) {
-        case '.css':
-            return 'text/css; charset=utf-8'
-        case '.js':
-        case '.mjs':
-            return 'text/javascript; charset=utf-8'
-        case '.json':
-            return 'application/json; charset=utf-8'
-        case '.dat':
-        case '.dat.gz':
-            return 'application/octet-stream'
-        default:
-            return 'application/octet-stream'
-    }
-}
-
-/* W44 Phase F — brotli/gzip precompression of large runtime-data assets during build.
- * The `apply: 'build'` gate ensures dev work never pays the cost.
- *
- * W44 perf (2026-08-18, build-time-optimizer swarm): this plugin compresses
- * ~136 MB of data assets (semantic_threads.dat 78.7 MB + semantic_threads_ui.dat
- * 39.5 MB + leadEnrichment.json 17.8 MB) on every build — ~2-4s of the total.
- * For rapid iteration, gate behind VITE_COMPRESS_ASSETS=false to skip it.
- * CI/release builds keep it on (default).
- */
-const COMPRESS_ASSETS = process.env.VITE_COMPRESS_ASSETS !== 'false'
-
-function w44AssetCompressionPlugin(): Plugin {
-    return {
-        name: 'w44-asset-compression',
-        apply: 'build',
-        async closeBundle() {
-            if (!COMPRESS_ASSETS) return
-            const entries = await readdir(SVELTE_OUT_DIR, { recursive: true, withFileTypes: true })
-            // First pass: stat each candidate to filter by size threshold.
-            // Files smaller than COMPRESSION_MIN_BYTES produce compressed output
-            // LARGER than the original (frame headers exceed the content).
-            const candidates: Array<{ filePath: string; parentPath: string }> = []
-            await Promise.all(
-                entries.map(async (entry) => {
-                    if (!entry.isFile()) return
-                    // COMPRESSION_ALLOWLIST entries are dist-relative paths
-                    // (e.g. 'sonic/manifest.json'), but entry.name is just the
-                    // basename — matching the two directly misses every asset
-                    // living in a subdirectory. Reconstruct the dist-relative
-                    // path from parentPath so the allowlist actually fires.
-                    // (Caught 2026-09-05: manifest.json sat in dist/svelte/sonic/
-                    // and was silently skipped, failing the compression gate.)
-                    const relPath = join(entry.parentPath, entry.name)
-                        .replace(SVELTE_OUT_DIR + sep, '')
-                        .replace(/\\/g, '/')
-                    const isAllowlisted = COMPRESSION_ALLOWLIST.has(entry.name) || COMPRESSION_ALLOWLIST.has(relPath)
-                    const isCss = COMPRESS_CSS && entry.name.endsWith('.css')
-                    const isJs = COMPRESS_JS && entry.name.endsWith('.js')
-                    if (!isAllowlisted && !isCss && !isJs) return
-                    const filePath = join(entry.parentPath, entry.name)
-                    const fileSize = (await stat(filePath)).size
-                    if (fileSize < COMPRESSION_MIN_BYTES) return
-                    candidates.push({ filePath, parentPath: entry.parentPath })
-                })
-            )
-            async function readFileWithRetry(filePath: string, retries = 5, delay = 200): Promise<Buffer> {
-                let lastErr: unknown
-                for (let i = 0; i < retries; i++) {
-                    try {
-                        return await readFile(filePath)
-                    } catch (err) {
-                        lastErr = err
-                        const code = (err as NodeJS.ErrnoException).code
-                        if (code === 'EBUSY' || code === 'EPERM') {
-                            await new Promise((r) => setTimeout(r, delay * (i + 1)))
-                            continue
-                        }
-                        throw err
-                    }
-                }
-                throw lastErr
-            }
-
-            const tasks: Promise<unknown>[] = candidates.map(({ filePath, parentPath }) =>
-                readFileWithRetry(filePath).then(async (buf) => {
-                    // Quality 11 blocks local builds for minutes on large data assets.
-                    // Defaults favor fast repeat builds; CI/release can override via env.
-                    const br = await brotliCompressAsync(buf, {
-                        params: { [zlibConstants.BROTLI_PARAM_QUALITY]: BROTLI_QUALITY }
-                    })
-                    const gz = await gzipAsync(buf, { level: GZIP_LEVEL })
-                    await mkdir(parentPath, { recursive: true })
-                    await Promise.all([writeFile(`${filePath}.br`, br), writeFile(`${filePath}.gz`, gz)])
-                })
-            )
-            await Promise.all(tasks)
-            // W44 Phase F: after writing .br/.gz twins, remove the uncompressed
-            // originals for data assets. The serveRootAssets middleware serves
-            // the compressed twins when the browser supports them; the raw
-            // 79 MB / 40 MB / 18 MB files are never needed at runtime.
-            // This runs in closeBundle (after writeBundle copied the files),
-            // so the twins exist when we check.
-            // W44 Phase F: after writing .br/.gz twins, remove the uncompressed
-            // originals for data assets. The serveRootAssets middleware serves
-            // the compressed twins when the browser origin supports them; the raw
-            // 79 MB / 40 MB / 18 MB files are never needed at runtime.
-            //
-            // EXCEPTION — keep `data.dat` raw. The compression gate
-            // (scripts/check-data-compression.mjs `UNCOMPRESSED_EXEMPTIONS`)
-            // requires the uncompressed original on non-Vite origins (PHP 8795,
-            // visual-audit static server): those have no serveRootAssets
-            // middleware, so `data.dat` 404s, the data worker never resolves,
-            // and the engine renders an empty mycelium. Mirror the gate's
-            // exemption set here so the two rules stay in agreement.
-            const UNCOMPRESSED_RAW_KEEP = new Set(['data.dat'])
-            for (const { filePath } of candidates) {
-                if (
-                    /(\.dat|\.json)$/.test(filePath) &&
-                    !/\.(br|gz)$/.test(filePath) &&
-                    !UNCOMPRESSED_RAW_KEEP.has(basename(filePath))
-                ) {
-                    try {
-                        await unlink(filePath)
-                    } catch {
-                        /* already gone or not ours */
-                    }
-                }
-            }
-        }
-    }
-}
-
-/* W44 Phase F — preview-server cache headers that win over Vite's internal
- * `Cache-Control: no-cache`. We install a middleware at the front of the connect
- * stack (index 0) so the response object's `setHeader`, `writeHead`, and
- * `removeHeader` are patched before Vite's serveStatic handler touches them.
- */
-function w44PreviewCacheHeadersPlugin(): Plugin {
-    return {
-        name: 'w44-preview-cache-headers',
-        async configurePreviewServer(server) {
-            const middlewares = server.middlewares as unknown as {
-                stack: Array<{
-                    route?: string
-                    handle: (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => void
-                }>
-            }
-            // Insert a properly-shaped connect Layer at index 0 (Vite's dispatcher reads
-            // `route`/`handle` directly; passing a bare function crashes its internal
-            // stack walk).
-            middlewares.stack.unshift({
-                route: '',
-                handle: (req, res, next) => {
-                    const rawUrl = req.url
-                    if (!rawUrl) return next()
-                    const url = rawUrl.split('?')[0] ?? ''
-                    // Vite names hashed assets as `<name>-<8charhash><.ext>`. The previous
-                    // regex required a literal `.` before the hash and missed names like
-                    // `index-BJLe-Toy.js`. Use `-` as separator to cover Vite's convention.
-                    const hashed =
-                        /[-][A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json|wasm)(\.gz|\.br)?$/.test(
-                            url
-                        )
-                    const dataAsset = /\.(dat|json)(\.gz|\.br)?$/.test(url)
-
-                    const writeHead = res.writeHead.bind(res)
-                    const setHeader = res.setHeader.bind(res)
-                    const removeHeader = res.removeHeader.bind(res)
-                    let patched = false
-
-                    const applyPolicy = () => {
-                        setHeader('Vary', 'Accept-Encoding')
-                        if (hashed) {
-                            setHeader('Cache-Control', 'public, max-age=31536000, immutable')
-                        } else if (dataAsset) {
-                            setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400')
-                        }
-                        if (url.endsWith('.br')) setHeader('Content-Encoding', 'br')
-                        else if (url.endsWith('.gz')) setHeader('Content-Encoding', 'gzip')
-                    }
-
-                    res.writeHead = function patchedWriteHead(
-                        status: number,
-                        a?: string | OutgoingHttpHeaders,
-                        b?: OutgoingHttpHeaders
-                    ) {
-                        if (!patched) {
-                            patched = true
-                            applyPolicy()
-                        }
-                        // Vite's static middleware may pass a headers object containing
-                        // `Cache-Control: no-cache`; strip our policy keys before delegating
-                        // so we win the final header merge.
-                        let headersObj: OutgoingHttpHeaders | undefined
-                        if (typeof a === 'string' || a === undefined) {
-                            headersObj = b
-                        } else {
-                            headersObj = a
-                        }
-                        if (headersObj && typeof headersObj === 'object') {
-                            delete headersObj['Cache-Control']
-                            delete headersObj['Vary']
-                            // Only strip Content-Encoding for our precompressed assets
-                            // (.br/.gz served from disk by legacyRootAssetPlugin). For
-                            // runtime-compressed HTML/JS, preserve Vite's Content-Encoding
-                            // so the browser knows the body is compressed.
-                            if (url.endsWith('.br') || url.endsWith('.gz')) {
-                                delete headersObj['Content-Encoding']
-                            }
-                        }
-                        if (typeof a === 'string' || a === undefined) {
-                            return writeHead(status, a, headersObj)
-                        }
-                        return writeHead(status, headersObj)
-                    } as typeof res.writeHead
-
-                    // Only intercept Vite's auto-compression headers for compressed
-                    // precompressed asset URLs we serve ourselves (.br/.gz). For
-                    // runtime-compressed HTML/JS, let Vite's compression middleware
-                    // set Content-Encoding normally — without the header, the
-                    // browser displays compressed bytes as raw text.
-                    res.setHeader = function patchedSetHeader(
-                        name: string,
-                        value: string | number | readonly string[]
-                    ) {
-                        if (name === 'Cache-Control' || name === 'Vary') return
-                        if (name === 'Content-Encoding' && !url.endsWith('.br') && !url.endsWith('.gz')) {
-                            // Let Vite's compression middleware set it for runtime-encoded responses.
-                            return setHeader(name, value)
-                        }
-                        if (name === 'Content-Encoding') return
-                        return setHeader(name, value)
-                    } as typeof res.setHeader
-
-                    res.removeHeader = function patchedRemoveHeader(name: string) {
-                        if (name === 'Cache-Control' || name === 'Vary') return
-                        if (name === 'Content-Encoding' && !url.endsWith('.br') && !url.endsWith('.gz')) {
-                            return removeHeader(name)
-                        }
-                        if (name === 'Content-Encoding') return
-                        return removeHeader(name)
-                    } as typeof res.removeHeader
-
-                    next()
-                }
-            })
-        }
-    }
-}
-
-function chunkGraphAnalyzerPlugin(): Plugin {
-    return {
-        name: 'chunk-graph-analyzer',
-        apply: 'build',
-        async generateBundle(_, bundle) {
-            const graph: Record<
-                string,
-                { isEntry: boolean; imports: string[]; dynamicImports: string[]; modules: string[] }
-            > = {}
-            for (const [name, chunk] of Object.entries(bundle)) {
-                if (chunk.type === 'chunk') {
-                    graph[name] = {
-                        isEntry: chunk.isEntry,
-                        imports: chunk.imports,
-                        dynamicImports: chunk.dynamicImports,
-                        modules: Object.keys(chunk.modules)
-                    }
-                }
-            }
-            // Write outside project dir so parallel-session builds can't overwrite it.
-            // os.tmpdir() keeps that guarantee AND exists on CI runners — the hardcoded
-            // C:/Users/HP path ENOENT'd them (all Aug-12 runs red).
-            await writeFile(join(tmpdir(), 'semantic-chunk-graph-latest.json'), JSON.stringify(graph, null, 2))
-        }
-    }
+  switch (extname(filePath)) {
+    case '.css':
+      return 'text/css; charset=utf-8';
+    case '.js':
+    case '.mjs':
+      return 'text/javascript; charset=utf-8';
+    case '.json':
+      return 'application/json; charset=utf-8';
+    case '.dat':
+    case '.dat.gz':
+      return 'application/octet-stream';
+    default:
+      return 'application/octet-stream';
+  }
 }
 
 // https://vite.dev/config/
 export default defineConfig({
-    root: SRC_DIR,
-    base: './',
-    define: {
-        // Expose a per-build identifier so data assets can be cache-busted by
-        // deployment rather than by the wall clock (which defeats browser caches).
-        'import.meta.env.VITE_BUILD_ID': JSON.stringify(BUILD_ID)
-    },
-    plugins: [
-        chunkGraphAnalyzerPlugin(),
-        legacyRootAssetPlugin(),
-        copyRuntimeAssetsPlugin(),
-        w44AssetCompressionPlugin(),
-        w44PreviewCacheHeadersPlugin(),
-        svelte(),
-        // Bundle analyzer — generates dist/svelte/stats.html with a treemap of
-        // every module in the production bundle. Open in any browser to read.
-        // Tree-shaking still applies (it's a build-time plugin), so the stats
-        // reflect exactly what ships. Gated to `npm run build:svelte` (not dev).
-        //
-        // W44 perf (2026-08-18, build-time-optimizer): the visualizer is
-        // the most variable single hook (3.2s → 8.3s measured across 6 builds).
-        // It is not needed for production deploys — only for bundle analysis.
-        // Gate behind VITE_VISUALIZER=true so regular builds skip it entirely.
-        ...(process.env.VITE_VISUALIZER === 'true'
-            ? [
-                  visualizer({
-                      filename: 'dist/svelte/stats.html',
-                      gzipSize: true,
-                      brotliSize: true,
-                      template: 'treemap'
-                  })
-              ]
-            : [])
-    ],
-    resolve: {
-        alias: {
-            '@': SRC_DIR,
-            '@lib': resolve(SRC_DIR, 'lib'),
-            '@components': resolve(SRC_DIR, 'components')
-            // Three.js dedup (Win #2 from tmp/bundle-decomposition-2026-06-12.md)
-            // is still pending deeper investigation. Initial attempts with
-            // `resolve.alias['three/build/three.core.js']` and
-            // `resolve.dedupe: ['three']` did not collapse the duplicate, even
-            // with `optimizeDeps.exclude: ['three']`. The webgpu build in
-            // node_modules/three/build/three.webgpu.js does
-            // `import './three.core.js'`, which is the source of the dup, but
-            // we don't use the webgpu build. Tracking this as follow-up work.
-        }
-    },
-    server: {
-        port: 5173,
-        strictPort: false,
-        open: false,
-        // Allow serving source files and node_modules (resolved from project root)
-        fs: {
-            allow: [
-                SRC_DIR,
-                resolve(__dirname, 'node_modules'),
-                resolve(__dirname, 'src/data.dat'),
-                resolve(__dirname, 'src/data.dat.gz'),
-                resolve(__dirname, 'js'),
-                resolve(__dirname, 'css'),
-                resolve(__dirname, 'semantic-demo.css'),
-                resolve(__dirname, 'vector-explorer-pandora.css'),
-                resolve(__dirname, 'semantic_threads_ui.dat'),
-                resolve(__dirname, 'semantic_threads.dat'),
-                resolve(__dirname, 'semantic_space_layout_manifest.json')
-            ]
-        },
-        // Proxy the PHP backend at 127.0.0.1:8795 during coexistence
-        proxy: {
-            '/api': {
-                target: 'http://127.0.0.1:8795',
-                changeOrigin: true
-            }
-        }
-    },
-    build: {
-        target: 'es2022',
-        outDir: SVELTE_OUT_DIR,
-        emptyOutDir: true,
-        sourcemap: false,
-        reportCompressedSize: false,
-        chunkSizeWarningLimit: 1500,
-        minify: 'terser',
-        terserOptions: {
-            compress: {
-                drop_console: true,
-                drop_debugger: true,
-                pure_funcs: ['console.debug', 'console.trace'],
-                passes: 2
-            },
-            mangle: {
-                safari10: true
-            },
-            format: {
-                comments: false
-            }
-        },
-        modulePreload: {
-            resolveDependencies: (_filename, deps) => {
-                return deps.filter((dep) => {
-                    if (dep.includes('three')) return false
-                    if (dep.includes('point-color')) return false
-                    if (dep.includes('search-glows')) return false
-                    if (dep.includes('focus-pocket')) return false
-                    // W44: Exclude non-critical chunks from eager preload to improve LCP
-                    if (dep.includes('demo.svelte-')) return false
-                    if (dep.includes('weather.svelte-')) return false
-                    if (dep.includes('camera.svelte-')) return false
-                    return true
-                })
-            }
-        },
-        rollupOptions: {
-            output: {
-                manualChunks(id) {
-                    const nid = id.replace(/\\/g, '/')
-                    // (a) Three.js engine → isolated chunk. It is loaded eagerly by the
-                    // WebGL scene path, but we keep it as its own named chunk and exclude
-                    // it from module preload (see modulePreload.resolveDependencies) so the
-                    // bytes are not inlined into the entry and are fetched on a dedicated
-                    // request rather than bloating the initial parse.
-                    if (nid.includes('node_modules/three/')) {
-                        return 'three'
-                    }
-                    // (a.2) P3-LCP (2026-08-21): isolate all engine three-helpers so they never
-                    // co-bundle with boot chunks (parity-attrs, app.svelte, etc.) via shared deps.
-                    if (nid.includes('/src/lib/engine/')) {
-                        return 'engine-three'
-                    }
-                    if (
-                        nid.includes('/src/lib/journey/point-color') ||
-                        nid.includes('/src/lib/journey/focus-pocket') ||
-                        nid.includes('/src/lib/journey/route-trace') ||
-                        nid.includes('/src/lib/journey/semantic-overlay') ||
-                        nid.includes('/src/lib/journey/canvas-hit') ||
-                        nid.includes('/src/lib/journey/canvas-node') ||
-                        nid.includes('/src/lib/journey/thread-inspector-webgl') ||
-                        nid.includes('/src/lib/journey/arrival-handoff') ||
-                        nid.includes('/src/lib/journey/focus-anchor') ||
-                        nid.includes('/src/lib/journey/webgl-utils') ||
-                        nid.includes('/src/lib/journey/canvas-interaction')
-                    ) {
-                        return 'engine-three'
-                    }
-                    if (
-                        nid.includes('/src/lib/stores/search-glows.ts') ||
-                        nid.includes('/src/lib/journey/focus-ui.ts')
-                    ) {
-                        return 'ui-leaf'
-                    }
-                    if (
-                        nid.includes('/src/lib/utils/camera-math-utils') ||
-                        nid.includes('/src/lib/utils/three-textures') ||
-                        nid.includes('/src/lib/utils/ui-presentation-three') ||
-                        nid.includes('/src/lib/ui/cluster-labels')
-                    ) {
-                        return 'engine-three'
-                    }
-                    // (b) Heavy mode-transition transitive deps → isolated chunk. The
-                    // mode-transitions dispatcher itself is tiny (~10KB src), but it
-                    // statically pulls in the entire navigation/orchestration/journey/search
-                    // cluster (the 212KB `mode-transitions.svelte-*.js` balloon). Route that
-                    // transitive closure into its own chunk so the dispatcher stays lean and
-                    // the heavy deps live in a clearly separated, cacheable artifact.
-                    //
-                    // W61 perf note: splitting this cluster further (boot-core vs
-                    // journey/search) does NOT defer bytes — the boot orchestration layer
-                    // (triggers.ts, url-state.ts, adapters.ts, compass-controller.ts,
-                    // lifecycle.ts) statically subscribes into journey/search at startup,
-                    // so any journey/search chunk is modulepreloaded with the entry
-                    // regardless. Real deflation needs a designed lazification pass
-                    // (convert orchestrator imports to dynamic), which collides with
-                    // active orchestration work — deferred.
-                    //
-                    // W61 update (2026-07-31, audit at HEAD ~5222e684): an empirical
-                    // magistral-small-latest lazify audit (ocw_f376f0a5) confirmed the
-                    // source-level dynamic-import conversion is ALSO boot-unsafe for
-                    // deep-links. The url-state helpers
-                    //   _frameCameraOnAnchor, _restoreFocusStateForAnchor,
-                    //   _restoreSearchFromParams
-                    // run via the PR-B2/B4 splash bypass at COLD BOOT for ?anchor/
-                    // ?record/?q deep-links — so they execute before any user gesture,
-                    // not just inside post-boot handlers as the audit assumed.
-                    // `await import(...)` inside the `:void` reg.schedule(500, () => {...})
-                    // callback those helpers use is a TS compile-break (no async context),
-                    // and accepting a focus-overlay flash on deep-link cold-load would
-                    // be a UX regression. Designed-eager is final unless deep-link-aware
-                    // async gating (overlay-flash tolerance) is intentionally added.
-                    // Audit details: harness failures.md key
-                    //   w61-mode-transition-deps-lazify-rejected.
-                    if (
-                        nid.includes('/src/lib/stores/navigation.svelte.ts') ||
-                        nid.includes('/src/lib/stores/navigation/') ||
-                        nid.includes('/src/lib/stores/search.svelte') ||
-                        nid.includes('/src/lib/stores/focus.svelte') ||
-                        nid.includes('/src/lib/stores/journey.svelte') ||
-                        nid.includes('/src/lib/orchestration/') ||
-                        nid.includes('/src/lib/journey/') ||
-                        nid.includes('/src/lib/search/') ||
-                        nid.includes('/src/lib/navigation-actions')
-                    ) {
-                        return 'mode-transition-deps'
-                    }
-                    // (c) Svelte runtime → isolated vendor chunk so it is not inlined into
-                    // the entry chunk. This keeps the entry `index-*.js` file smaller while
-                    // every Svelte component still shares one runtime chunk.
-                    if (nid.includes('node_modules/svelte/')) {
-                        return 'svelte-vendor'
-                    }
-                }
-            }
-        },
-        // W1 (2026-08-18): Suppress INEFFECTIVE_DYNAMIC_IMPORT for webgl.ts and
-        // route-trace.ts. Both are dynamically imported for lazy-load gating but
-        // also statically imported by peers in the same deps chunk, so Rollup's
-        // chunk-splitting cannot move them anywhere else. Converting to static
-        // imports would be a regression (eager-path coupling). Evidence: chunk
-        // graph shows both modules land in mode-transition-deps-nCuiURFI.js
-        // regardless; the empty wrapper chunks (webgl-DmIg9fI0.js,
-        // route-trace-BmJcpUHp.js) have zero modules. See
-        // tmp/build-warning-resolution/report.md for full audit.
-        rolldownOptions: {
-            onwarn(warning, defaultHandler) {
-                if (warning.code === 'INEFFECTIVE_DYNAMIC_IMPORT') {
-                    return
-                }
-                defaultHandler(warning)
-            }
-        }
-        // Vite auto-discovers index.html in the root directory (which is src/)
+  root: SRC_DIR,
+  base: './',
+  plugins: [
+    legacyRootAssetPlugin(),
+    copyRuntimeAssetsPlugin(),
+    svelte(),
+    // Bundle analyzer — generates dist/svelte/stats.html with a treemap of
+    // every module in the production bundle. Open in any browser to read.
+    // Tree-shaking still applies (it's a build-time plugin), so the stats
+    // reflect exactly what ships. Gated to `npm run build:svelte` (not dev).
+    visualizer({
+      filename: 'dist/svelte/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+      template: 'treemap',
+    }),
+  ],
+  resolve: {
+    alias: {
+      '@': SRC_DIR,
+      '@lib': resolve(SRC_DIR, 'lib'),
+      '@components': resolve(SRC_DIR, 'components'),
+      // Three.js dedup (Win #2 from tmp/bundle-decomposition-2026-06-12.md)
+      // is still pending deeper investigation. Initial attempts with
+      // `resolve.alias['three/build/three.core.js']` and
+      // `resolve.dedupe: ['three']` did not collapse the duplicate, even
+      // with `optimizeDeps.exclude: ['three']`. The webgpu build in
+      // node_modules/three/build/three.webgpu.js does
+      // `import './three.core.js'`, which is the source of the dup, but
+      // we don't use the webgpu build. Tracking this as follow-up work.
     }
-})
+  },
+  server: {
+    port: 5173,
+    strictPort: false,
+    open: false,
+    // Allow serving source files and node_modules (resolved from project root)
+    fs: {
+      allow: [
+        SRC_DIR,
+        resolve(__dirname, 'node_modules'),
+        resolve(__dirname, 'data.dat'),
+        resolve(__dirname, 'data.dat.gz'),
+        resolve(__dirname, 'js'),
+        resolve(__dirname, 'css'),
+        resolve(__dirname, 'semantic-demo.css'),
+        resolve(__dirname, 'vector-explorer-pandora.css'),
+        resolve(__dirname, 'semantic_threads_ui.dat'),
+        resolve(__dirname, 'semantic_threads.dat'),
+        resolve(__dirname, 'semantic_space_layout_manifest.json')
+      ]
+    },
+    // Proxy the PHP backend at 127.0.0.1:8795 during coexistence
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8795',
+        changeOrigin: true
+      }
+    }
+  },
+  css: {
+    devSourcemap: true
+  },
+  build: {
+    target: 'es2022',
+    outDir: SVELTE_OUT_DIR,
+    emptyOutDir: true,
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/three/')) {
+            return 'three';
+          }
+        }
+      }
+    }
+    // Vite auto-discovers index.html in the root directory (which is src/)
+  }
+});

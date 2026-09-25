@@ -4,12 +4,6 @@ import { test, expect } from '@playwright/test';
  * Live Interaction Reset Proof - wave for real keyboard/Escape path
  * through mocked semantic search responses.
  *
- * ⚠️ LEGACY SHELL TEST — targets `index.html` (legacy static HTML shell).
- * This test validates the legacy app's reset flow, NOT the Svelte build
- * (which lives at `dist/svelte/index.html` or is served by Vite on :5173).
- * Every page.goto() call uses the legacy shell path; selector references and
- * __TEST_STATE__ globals are legacy-specific.
- *
  * Validates the real event path:
  *   keyboard(Escape) -> handleGlobalKeydown -> clearSearch + resetExplorationFocus
  *
@@ -70,7 +64,7 @@ async function waitForResults(page, timeout = 15000) {
   try {
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 });
   } catch {
-    await page.evaluate((q) => { window.__navActions__?.search?.(q); }, 'coffee');
+    await page.evaluate((q) => { if (typeof (window.__APP_ACTIONS__?.search) === 'function') window.__APP_ACTIONS__.search(q); }, 'coffee');
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: timeout });
   }
 }
@@ -102,8 +96,8 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
   test('Escape from search-with-results clears input, results, and exploration state via real keyboard event', async ({ page }) => {
     test.setTimeout(60000);
 
-    await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof window.__navActions__?.clearSearch === 'function', { timeout: 20000 });
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // --- 1. Establish search state with results ---
@@ -137,8 +131,8 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
   test('Escape from focus state resets focusedNode and trail via real keyboard event', async ({ page }) => {
     test.setTimeout(60000);
 
-    await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof window.__navActions__?.clearSearch === 'function', { timeout: 20000 });
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // --- 1. Search -> click result to enter focus state ---
@@ -181,8 +175,8 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
   test('Escape triggers clearSearch via event-bindings searchInput keydown handler (not global)', async ({ page }) => {
     test.setTimeout(45000);
 
-    await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof window.__navActions__?.clearSearch === 'function', { timeout: 20000 });
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     await enterSearchQuery(page, 'espresso');
@@ -197,8 +191,8 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
   test('real Escape press is captured by handleGlobalKeydown when no element is focused', async ({ page }) => {
     test.setTimeout(45000);
 
-    await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof window.__navActions__?.clearSearch === 'function', { timeout: 20000 });
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     await enterSearchQuery(page, 'coffee');
@@ -213,8 +207,8 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
   test('clear button click clears search via DOM click event (not keyboard)', async ({ page }) => {
     test.setTimeout(45000);
 
-    await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof window.__navActions__?.clearSearch === 'function', { timeout: 20000 });
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     await enterSearchQuery(page, 'coffee');
@@ -235,8 +229,8 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
   test('keyboard-operable clear button: Enter key activates it', async ({ page }) => {
     test.setTimeout(45000);
 
-    await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof window.__navActions__?.clearSearch === 'function', { timeout: 20000 });
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     await enterSearchQuery(page, 'cafe');
@@ -255,8 +249,8 @@ test.describe(`Live Interaction Proof: Escape key -> clearSearch + resetExplorat
   test('resetExplorationFocus called from clearSearch chain preserves no timers', async ({ page }) => {
     test.setTimeout(90000);
 
-    await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof window.__navActions__?.resetExplorationFocus === 'function', { timeout: 20000 });
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Enter focus state

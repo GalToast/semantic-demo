@@ -1,0 +1,138 @@
+You are completing **Ticket A2-6: Add H1 heading**. One MEDIUM-severity a11y issue.
+
+## Goal
+
+Add a visually hidden H1 heading so the heading hierarchy starts at H1 instead of H3.
+
+## Working directory
+
+`C:\Users\HP\Desktop\Temp while my comp is at the shop\semantic-explorer`
+
+## Background
+
+The a11y audit (2026-06-14) found:
+- **A2-6 (MEDIUM):** The heading hierarchy has no H1. Visible headings are H3 "Categories" (legend) and H3 "Business Details" (info panel). Screen readers use headings for page structure navigation. Starting at H3 confuses the document outline.
+
+**WCAG:** 1.3.1 Info and Relationships (Level A)
+
+**Evidence:**
+```
+Headings found:
+- H3 "Categories" (visible)
+- H3 "Business Details" (visible)
+- H4 "Status" (hidden)
+- H4 "Contact" (hidden)
+- H4 "City" (hidden)
+No H1 or H2 anywhere in the DOM.
+```
+
+## Specific steps
+
+### Step 1: Read App.svelte and index.html
+
+Read `src/App.svelte` and `src/index.html` to understand the current structure.
+
+### Step 2: Add a visually hidden H1
+
+Add an H1 heading near the top of the page content. The H1 should:
+- Use the existing `.sr-only` class (defined in `css/base.css`) for visual hiding
+- Contain the app name: "Semantic Explorer"
+- Be placed inside the `<main>` element (if A2-1 has been applied) or at the top of `#semantic-explorer`
+
+**Option A (if A2-1 is already applied):**
+```svelte
+<main id="main-content">
+  <h1 class="sr-only">Semantic Explorer</h1>
+  <!-- ... rest of content ... -->
+</main>
+```
+
+**Option B (if A2-1 is NOT yet applied):**
+```svelte
+<div id="semantic-explorer">
+  <h1 class="sr-only">Semantic Explorer</h1>
+  <!-- ... rest of content ... -->
+</div>
+```
+
+**Important:** The `.sr-only` class is already defined in `css/base.css`:
+```css
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+```
+
+### Step 3: Verify
+
+All MUST pass clean:
+- `npm run check` → 0 errors
+- `svelte-check` → 0 errors in `src/`
+- `npm run test:unit` → all tests pass
+- `npm run test:contract` → all tests pass
+
+### Step 4: Verify with Playwright
+
+Use Playwright MCP to verify:
+1. Navigate to `http://localhost:5173/?nodemo=1`
+2. Run `document.querySelectorAll('h1, h2, h3, h4, h5, h6')` to check heading hierarchy
+3. Verify H1 exists with text "Semantic Explorer"
+4. Verify the H1 is visually hidden (`.sr-only` class applied)
+5. Take a snapshot to confirm the heading appears in the accessibility tree
+
+### Step 5: Commit + push
+
+Suggested commit message:
+```
+fix(a11y): add visually hidden H1 heading (A2-6)
+
+Per a11y audit 2026-06-14, the heading hierarchy started at H3,
+confusing screen reader navigation.
+
+Now:
+- H1 "Semantic Explorer" exists at the top of the content
+- Heading hierarchy is valid (H1 → H3 → H4)
+- H1 is visually hidden via .sr-only class
+
+Verified: svelte-check 0 errors, unit tests pass, Playwright confirms
+H1 exists in accessibility tree.
+```
+
+Push to `origin master`.
+
+## Out of scope (DO NOT TOUCH)
+
+- The 7 off-limits state writers (per AGENTS.md)
+- The engine kernel (js/modules/*)
+- The `.sr-only` class in `css/base.css` (already correct)
+- The existing H3/H4 headings (don't change their levels)
+
+## File scope
+
+You CAN edit:
+- `src/App.svelte` (add H1)
+
+You CAN add:
+- Nothing new (using existing `.sr-only` class)
+
+## Tool surface check
+
+Report exposed tools at start. If Read/Write/Edit/Bash/Glob/Grep are missing, stop and report.
+
+## Reporting
+
+When done, return:
+1. The commit SHA
+2. Verification gates pass/fail
+3. Playwright evidence (heading hierarchy check)
+4. The exact files changed
+5. Any surprises
+
+If you hit a blocker, return BLOCKED: with details. Do not commit broken state.

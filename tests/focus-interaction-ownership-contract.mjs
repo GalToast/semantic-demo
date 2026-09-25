@@ -7,10 +7,8 @@
  */
 
 import { chromium } from 'playwright';
-import { refreshCompositionState, focusOnNode } from '@lib/orchestration/lifecycle'
-import { inspectThreadNeighbor } from '@lib/journey/thread-inspector-state'
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&q=coffee&nodemo=1';
+const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.INTERACTION_OWNERSHIP_URL || DEFAULT_URL;
 const FOCUS_INDEX = Number(process.env.INTERACTION_OWNERSHIP_INDEX || 3060);
 
@@ -28,13 +26,14 @@ function withCacheBust(url) {
 async function waitForReady(page) {
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
-
+    const actions = window.__APP_ACTIONS__ || {};
     return Array.isArray(state.points) &&
       state.points.length > 100 &&
-      typeof focusOnNode === 'function' &&
+      typeof actions.focusOnNode === 'function' &&
       typeof actions.walkThreadNeighbor === 'function' &&
       state.applyingUrlState === false &&
-            state.sceneRevealActive === false &&
+      window.history.state?.semanticDemo &&
+      state.sceneRevealActive === false &&
       document.body.dataset.sceneReveal === 'inactive';
   }, null, { timeout: 45000 });
 }
@@ -135,9 +134,7 @@ async function followButtonStability(page) {
   });
 }
 
-// SwiftShader gate (see visual-state-audit.mjs)
-const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
-const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 1,
@@ -150,7 +147,7 @@ try {
   await waitForReady(page);
 
   const bridge = await page.evaluate(() => {
-
+    const actions = window.__APP_ACTIONS__ || {};
     return [
       'search',
       'clearSearch',
@@ -177,8 +174,8 @@ try {
   });
 
   await page.evaluate((index) => {
-    focusOnNode(index, { fromSearchResult: true, skipUrlSync: true });
-    refreshCompositionState();
+    window.__APP_ACTIONS__.focusOnNode(index, { fromSearchResult: true, skipUrlSync: true });
+    window.__APP_ACTIONS__.refreshCompositionState();
   }, FOCUS_INDEX);
 
   await page.waitForFunction((index) => {
@@ -201,7 +198,7 @@ try {
   assert(Number.isFinite(candidate), 'focused node should expose a reachable thread/focus candidate');
 
   await page.evaluate((index) => {
-    inspectThreadNeighbor(index, { force: true, surface: 'contract' });
+    window.__APP_ACTIONS__.inspectThreadNeighbor(index, { force: true, surface: 'contract' });
   }, candidate);
   await page.waitForFunction((index) => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
@@ -251,7 +248,7 @@ try {
   assert(Number.isFinite(followCandidate), 'focused node should expose a fresh follow candidate after pin/clear');
 
   await page.evaluate((index) => {
-    inspectThreadNeighbor(index, { force: true, surface: 'contract' });
+    window.__APP_ACTIONS__.inspectThreadNeighbor(index, { force: true, surface: 'contract' });
   }, followCandidate);
   await page.waitForFunction((index) => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};

@@ -7,36 +7,16 @@
  */
 
 import type { Point } from '@lib/state/state-types';
-import { appState as state } from '@lib/state/app.svelte';
-import { formatBusinessName, cleanPublicNoteText, getPublicRecordStatusLabel } from '@lib/utils/dom-formatters';
-import { describeCluster } from '@lib/utils/ui-presentation';
-
-// ── Types (inlined from semantic-guide-payload-adapter.ts) ──────────────────
-
-export interface SearchContextSnapshot {
-    currentSearchSummary: SearchSummarySnapshot | null
-    currentView: string
-}
-
-export interface SearchSummarySnapshot {
-    query: string
-    resultIndices: number[]
-    anchorIndex?: number
-    visibleMatches?: number
-    [key: string]: unknown
-}
-
-export interface PayloadResult {
-    lead_id: string | number
-    name: string
-    city: string
-    cluster_label: string
-    status: string
-    public_note: string
-    public_detail: string
-    address: string
-    naics: string
-}
+import {
+    formatBusinessName,
+    getAnchorPoint,
+    getPoints,
+    getResultContextMap,
+    type SearchSummarySnapshot,
+    getSearchContextSnapshot,
+    buildSemanticGuidePayloadResult as buildPayloadResultFromSnapshot,
+    mapResultIndicesToPayloadResults
+} from '@lib/journey/semantic-guide-payload-adapter';
 
 export interface SemanticGuidePayloadResult {
     lead_id: string | number;
@@ -61,85 +41,17 @@ export interface SemanticGuideRequestPayload {
 
 export type SearchSummary = SearchSummarySnapshot;
 
-// ── Internal helpers (inlined from semantic-guide-payload-adapter.ts) ───────
-// W10 adapter-fold: getSearchContextSnapshot was an export of the deleted
-// adapter; the fold inlined it. Re-exported (additive) so the adapter's
-// public contract (semantic-guide-payload-contract.mjs runtime section)
-// continues to resolve it.
-export function getSearchContextSnapshot(): SearchContextSnapshot {
-    return {
-        currentSearchSummary: state.searchState.currentSearchSummary as SearchSummarySnapshot | null,
-        currentView: state.currentView
-    };
-}
-
-// W10 adapter-fold: getPoints/getResultContextMap/mapResultIndicesToPayloadResults/
-// getAnchorPoint were PUBLIC on the deleted adapter; the fold inlined them but
-// they must keep being exported so the adapter contract (semantic-guide-
-// payload-contract runtime section) still resolves them.
-export function getPoints(): readonly Point[] {
-    return state.points;
-}
-
-export function getResultContextMap(): Map<string, unknown> {
-    return state.semanticResultContextByLeadId as Map<string, unknown>;
-}
-
-function buildPayloadResultFromSnapshot(
-    index: number,
-    points: readonly Point[],
-    contextMap: Map<string, unknown>
-): PayloadResult | null {
-    if (!points) return null;
-    if (!(Number.isFinite(index) && index >= 0 && index < points.length)) return null;
-    const point = points[index];
-    if (!point) return null;
-    const context = (contextMap?.get?.(String(point.lead_id)) || {}) as Record<string, unknown>;
-
-    return {
-        lead_id: point.lead_id ?? '',
-        name: formatBusinessName(point.name ?? ''),
-        city: cleanPublicNoteText((point.city || context.city || '') as string),
-        cluster_label: describeCluster(point.cluster ?? 0),
-        status: getPublicRecordStatusLabel(point.status ?? ''),
-        public_note: cleanPublicNoteText((context.public_note || point.what || '') as string),
-        public_detail: cleanPublicNoteText((context.public_detail || '') as string),
-        address: cleanPublicNoteText((context.address || '') as string),
-        naics: cleanPublicNoteText((context.naics || '') as string)
-    };
-}
-
-export function mapResultIndicesToPayloadResults(
-    resultIndices: number[],
-    points: readonly Point[],
-    contextMap: Map<string, unknown>
-): PayloadResult[] {
-    if (!resultIndices?.length) return [];
-    return resultIndices
-        .slice(0, 6)
-        .map((idx) => buildPayloadResultFromSnapshot(idx, points, contextMap))
-        .filter((r): r is PayloadResult => r !== null);
-}
-
-export function getAnchorPoint(currentSearchSummary: SearchSummarySnapshot | null, points: readonly Point[]): Point | null {
-    const idx = currentSearchSummary?.anchorIndex as number | undefined;
-    if (!Number.isFinite(idx) || !points) return null;
-    return points[idx as number] || null;
-}
-
-// ── Public API ──────────────────────────────────────────────────────────────
-
 export function buildSemanticGuidePayloadResult(
     index: number,
-    points: readonly Point[] = getPoints(),
+    points: Point[] = getPoints(),
     contextMap: Map<string, unknown> = getResultContextMap()
 ): SemanticGuidePayloadResult | null {
-    return buildPayloadResultFromSnapshot(index, points, contextMap) as SemanticGuidePayloadResult | null;
+    return buildPayloadResultFromSnapshot(index, points, contextMap);
 }
 
 export function getSemanticGuidePayloadResults(summary: SearchSummary): SemanticGuidePayloadResult[] {
     if (!summary?.resultIndices?.length) return [];
-    return mapResultIndicesToPayloadResults(summary.resultIndices, getPoints(), getResultContextMap()) as SemanticGuidePayloadResult[];
+    return mapResultIndicesToPayloadResults(summary.resultIndices, getPoints(), getResultContextMap());
 }
 
 export function getSemanticGuideAnchorPoint(summary: SearchSummary): Point | null {

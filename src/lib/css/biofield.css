@@ -17,7 +17,7 @@
 
 @keyframes biofieldDrift {
   0% { transform: rotate(0deg) scale(1); opacity: 0.3; }
-  50% { transform: rotate(180deg) scale(1.1); opacity: 0.38; }
+  50% { transform: rotate(180deg) scale(1.1); opacity: 0.6; }
   100% { transform: rotate(360deg) scale(1); opacity: 0.3; }
 }
 
@@ -48,21 +48,9 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(0, 255, 170, 0.08) 0%, transparent 50%);
+  background: radial-gradient(circle, rgba(0,255,170,0.15) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
   animation: biofieldDrift 8s infinite linear;
-  mix-blend-mode: normal;
+  mix-blend-mode: screen;
 }
-
-@media (prefers-reduced-motion: reduce) {
-    /* Silence biofield pulse and drift animations for users who prefer reduced motion.
-     * Originally added to css/modules/biofield.css in commit 5b1b740a, but those
-     * guards never reached users because the modules/ file was orphaned (no imports).
-     * Ported here to src/lib/css/biofield.css (the live, imported version). */
-    .biofield-glow,
-    .biofield-glow::before {
-        animation: none;
-    }
-}
-

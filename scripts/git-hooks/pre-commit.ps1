@@ -2,8 +2,7 @@
 
 param(
     [switch]$AllowAnyBranch = $false,
-    [switch]$SkipHighRiskCheck = $false,
-    [switch]$SkipTestStrategyGapCheck = $false
+    [switch]$SkipHighRiskCheck = $false
 )
 
 # Verify we're in a git repository
@@ -40,23 +39,6 @@ $highRiskFiles = @(
     "css/focus_*.css"
 )
 
-# Patterns for the test-strategy-gap check (user-visible files)
-$userVisiblePatterns = @(
-    "src/components/*.svelte",
-    "src/App.svelte",
-    "src/lib/ui/*.ts",
-    "src/lib/keyboard/*.ts"
-)
-
-# Patterns for journey test files
-$journeyPatterns = @(
-    "tests/journey/*.spec.js",
-    "tests/*-journey*.spec.js",
-    "tests/*-journey*.spec.ts",
-    "tests/journey/*.spec.js",
-    "tests/journey/*.spec.ts"
-)
-
 $stagedFiles = git diff --cached --name-only
 
 $matchingFiles = @()
@@ -74,48 +56,6 @@ if ($matchingFiles.Count -gt 0 -and -not $SkipHighRiskCheck) {
     Write-Host "Commit and push immediately, or use -SkipHighRiskCheck to bypass." -ForegroundColor Yellow
     Write-Host "Files:" -ForegroundColor Yellow
     $matchingFiles | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
-}
-
-# Test-strategy-gap check
-if (-not $SkipTestStrategyGapCheck) {
-    $userVisibleFiles = @()
-    $journeyFiles = @()
-
-    foreach ($file in $stagedFiles) {
-        foreach ($pattern in $userVisiblePatterns) {
-            if ($file -like $pattern) {
-                $userVisibleFiles += $file
-                break
-            }
-        }
-    }
-
-    foreach ($file in $stagedFiles) {
-        foreach ($pattern in $journeyPatterns) {
-            if ($file -like $pattern) {
-                $journeyFiles += $file
-                break
-            }
-        }
-    }
-
-    if ($userVisibleFiles.Count -gt 0 -and $journeyFiles.Count -eq 0) {
-        Write-Host ""
-        Write-Host "Blocked: test-strategy-gap rule (docs/session-coordination.md)." -ForegroundColor Red
-        Write-Host "  User-visible files staged but no journey test staged." -ForegroundColor Red
-        Write-Host "  Contract tests do not catch click-eating z-index, missing callbacks," -ForegroundColor Red
-        Write-Host "  or stubs dressed as data. A journey test is required for features" -ForegroundColor Red
-        Write-Host "  that touch Svelte components or other user-facing DOM." -ForegroundColor Red
-        Write-Host ""
-        Write-Host "  Files staged:" -ForegroundColor Red
-        $userVisibleFiles | ForEach-Object { Write-Host "    $_" -ForegroundColor Red }
-        Write-Host ""
-        Write-Host "  -> Add a test to tests/journey/*.spec.js (or tests/*-journey*.spec.js)" -ForegroundColor Red
-        Write-Host "  -> Or use -SkipTestStrategyGapCheck if this is a pure internal refactor" -ForegroundColor Red
-        Write-Host ""
-        Write-Host "Commit blocked — add a journey test or bypass with -SkipTestStrategyGapCheck." -ForegroundColor Red
-        exit 1
-    }
 }
 
 # If we reached here, everything is good

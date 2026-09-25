@@ -14,7 +14,7 @@ describe('buildSelectedBusinessProps', () => {
       return { display: name, raw: name, showRaw: false }
     },
     sanitizePublicFacingNote: (what: string) => what || '',
-    describeCluster: (c: number | undefined) => `Category ${c}`,
+    describeCluster: (c: number | undefined) => `Cluster ${c}`,
     getPublicRecordStatusLabel: (s: string) => (s === 'active' ? 'Active' : 'Unknown Status'),
     COPY: {
       selectedEmptyName: 'Empty Name',
@@ -47,7 +47,7 @@ describe('buildSelectedBusinessProps', () => {
 
     expect(props.name).toBe('Unknown')
     expect(props.showFiledAs).toBe(false)
-    expect(props.mapText).toBe('Empty Map')
+    expect(props.mapText).toBe('No geocoded point')
     expect(props.status).toBe('Active')
   })
 
@@ -58,7 +58,7 @@ describe('buildSelectedBusinessProps', () => {
     expect(props.name).toBe('Slug Name 123')
     expect(props.showFiledAs).toBe(true)
     expect(props.filedAs).toBe('Filed specifically as slug-name-123')
-    expect(props.mapText).toBe('Montgomery County')
+    expect(props.mapText).toBe('Mapped at 30.1000, -95.2000')
   })
 
   it('formats badges and facts', () => {

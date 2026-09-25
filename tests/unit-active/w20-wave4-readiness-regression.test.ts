@@ -5,9 +5,9 @@
  *
  * Structure:
  * 1. Hard invariants (must always pass — regressions if they fail)
- * - No deep-relative ../../src/lib/ imports in js/modules/
+ *    - No deep-relative ../../src/lib/ imports in js/modules/
  *    - W20 canonical files exist and are wired correctly
- *    - canonical lifecycle/composition regression tests exist
+ *    - 3 companion regression tests exist
  * 2. Wave 4 cleanup status (expected to fail until parallel session lands)
  *    - File deletions pending: lifecycle.ts, lifecycle-modes.ts, lifecycle-reset.ts
  *    - Import violations from deleted lifecycle.ts: 5 files still importing
@@ -40,6 +40,7 @@ const PENDING_DELETIONS = ['lifecycle.ts', 'lifecycle-modes.ts', 'lifecycle-rese
 const MUST_EXIST_FILES = [
     join('src', 'lib', 'orchestration', 'composition-state.ts'),
     join('src', 'lib', 'orchestration', 'lifecycle.ts'),
+    join('tests', 'unit-active', 'lifecycle-bridge-canonical-regression.test.ts'),
     join('tests', 'unit-active', 'lifecycle-canonical-semantic-dive-mode-regression.test.ts'),
     join('tests', 'unit-active', 'composition-state-canonical-regression.test.ts')
 ] as const
@@ -149,13 +150,11 @@ describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
             expect(src).toMatch(/from ['"]@lib\/stores\/lifecycle['"]/)
         })
 
-        it('lifecycle bridge is retired; demo-choreography.ts retired alongside it', () => {
+        it('lifecycle-bridge imports from @lib/orchestration/lifecycle (not legacy js/modules)', () => {
             const bridge = join(PROJECT_ROOT, 'src/lib/engine/lifecycle-bridge.ts')
-            expect(existsSync(bridge), 'src/lib/engine/lifecycle-bridge.ts should stay retired').toBe(false)
-            const demoChoreography = join(PROJECT_ROOT, 'src/lib/engine/demo-choreography.ts')
-            expect(existsSync(demoChoreography), 'src/lib/engine/demo-choreography.ts was retired in the W20 sweep').toBe(false)
-            const barrel = readFileSync(join(PROJECT_ROOT, 'src/lib/engine/index.ts'), 'utf-8')
-            expect(barrel).not.toContain("from './demo-choreography'")
+            const src = readFileSync(bridge, 'utf-8')
+            expect(src).toContain("from '@lib/orchestration/lifecycle'")
+            expect(src).not.toContain("from '../../../js/modules/lifecycle'")
         })
     })
 
@@ -177,7 +176,7 @@ describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
             if (pending.length > 0) {
                 console.log(
                     `\n⚠ PENDING WAVE 4 CLEANUP — ${pending.length} file(s) still exist:\n` +
-                        pending.map((f) => ` • js/modules/${f}`).join('\n') +
+                        pending.map((f) => `  • js/modules/${f}`).join('\n') +
                         `\n\nThese should be deleted by the parallel session's W20 arc.\n` +
                         `Once deleted, these assertions will pass automatically.\n`
                 )
@@ -213,7 +212,7 @@ describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
                     `\n⚠ PENDING WAVE 4 CLEANUP — ${lifecycleImporters.length} file(s) still import from ./lifecycle.ts:\n` +
                         lifecycleImporters.map((f) => `  • ${f}`).join('\n') +
                         `\n\nThese imports must be rewritten to @lib/orchestration/lifecycle\n` +
-                        `before can be deleted.\n`
+                        `before js/modules/lifecycle.ts can be deleted.\n`
                 )
             }
         })

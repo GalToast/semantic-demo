@@ -8,18 +8,16 @@
  * Usage:
  *   node tests/mode-chip-state-render-contract.mjs [url]
  *
- * Default URL: http://127.0.0.1:8795/dist/svelte/index.html
+ * Default URL: http://127.0.0.1:8795/vector-explorer-polished.html
  */
 
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
-import { mutate } from './helpers/state-harness.js';
-// SwiftShader gate (see visual-state-audit.mjs)
-const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
+import { mutate } from './helpers/state-harness.ts';
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html';
+const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
 let targetUrl = process.argv[2] || DEFAULT_URL;
 const USE_LOCAL_SERVER = process.argv.length <= 2;
 
@@ -27,7 +25,7 @@ function startServer(rootDir, port) {
   return new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
       const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
-      const rel = urlPath === '/' ? 'dist/svelte/index.html' : urlPath.replace(/^\/+/, '');
+      const rel = urlPath === '/' ? 'vector-explorer-polished.html' : urlPath.replace(/^\/+/, '');
       const fullPath = path.resolve(rootDir, rel);
       if (fullPath !== rootDir && !fullPath.startsWith(`${rootDir}${path.sep}`)) {
         res.writeHead(403);
@@ -44,8 +42,6 @@ function startServer(rootDir, port) {
         const type = {
           '.html': 'text/html',
           '.css': 'text/css',
-          '.js': 'application/javascript',
-          '.mjs': 'application/javascript',
           '.ts': 'application/javascript',
           '.json': 'application/json',
           '.dat': 'application/json',
@@ -83,9 +79,9 @@ async function main() {
   if (USE_LOCAL_SERVER) {
     server = await startServer(process.cwd(), 0);
     const address = server.address();
-    targetUrl = `http://127.0.0.1:${address.port}/dist/svelte/index.html`;
+    targetUrl = `http://127.0.0.1:${address.port}/vector-explorer-polished.html`;
   }
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const context = await browser.newContext();
   const page = await context.newPage();
 
@@ -96,7 +92,8 @@ async function main() {
     await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await page.waitForFunction(() =>
       (window.__APP_STATE__ ?? window.__TEST_STATE__)
-      && document.querySelectorAll('#mode-grid .mode-chip, #mode-chips .mode-chip').length >= 2,
+      && typeof window.updateExplorationUi === 'function'
+      && document.querySelectorAll('#mode-grid .mode-chip').length >= 2,
       { timeout: 20000 }
     );
     await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
@@ -121,26 +118,12 @@ async function main() {
   });
   // state mutation applied synchronously
 
-  // -- 0b. Freeze CSS transitions before any computed-style assertion --------
-  // `.mode-chip { transition: all 0.15s }` (ModeChipRail.svelte) means a
-  // getComputedStyle read immediately after a class mutation returns the
-  // IN-FLIGHT interpolated value, not the declared target. So the .is-waiting
-  // and :disabled opacity assertions raced that 150ms transition and flapped:
-  // 1 failure on a fast machine, 2 on a slow one, 0 when the transition had
-  // already been running. The CSS contract itself is correct — measured with
-  // transitions off: .is-waiting => 0.75, :disabled => 0.7, both < 1.
-  // Freezing the transition makes the assertions deterministic and still
-  // measures exactly what the contract asks for: the settled rendered state.
-  await page.addStyleTag({
-    content: '#mode-chips .mode-chip { transition: none !important; }',
-  });
-
   // -- 1. Mode grid and chips exist ------------------------------------------
-  const modeGrid = page.locator('#mode-grid, #mode-chips');
+  const modeGrid = page.locator('#mode-grid');
   if (await modeGrid.count() === 0) {
-    fail('mode chip container (#mode-grid or #mode-chips) does not exist in DOM');
+    fail('mode-grid #mode-grid does not exist in DOM');
   } else {
-    const chips = page.locator('#mode-grid .mode-chip, #mode-chips .mode-chip');
+    const chips = modeGrid.locator('.mode-chip');
     const chipCount = await chips.count();
     if (chipCount < 2) {
       fail(`Expected at least 2 mode-chip elements, found ${chipCount}`);
@@ -152,16 +135,13 @@ async function main() {
     }
   }
 
-  // -- 2. Default active chip -------------------------------------------------
-  const activeChip = page.locator('#mode-chips .mode-chip.active');
+  // -- 2. Default active chip (County View / data-mode="default") ------------
+  const activeChip = page.locator('.mode-chip.active');
   if (await activeChip.count() === 0) {
-    fail('No .mode-chip.active found - expected one active chip by default');
+    fail('No .mode-chip.active found - expected County View chip to be active by default');
   } else {
     const ariaPressed = await activeChip.getAttribute('aria-pressed');
-    const ariaChecked = await activeChip.getAttribute('aria-checked');
-    if (ariaPressed !== 'true' && ariaChecked !== 'true') {
-      fail(`active chip aria-pressed="${ariaPressed}" aria-checked="${ariaChecked}", expected one true state`);
-    }
+    if (ariaPressed !== 'true') fail(`active chip aria-pressed="${ariaPressed}", expected "true"`);
     const bg = await activeChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('background'));
     const ch = rgbaChannels(bg);
     if (!ch || ch.a < 0.05) fail(`active chip background="${bg}" appears transparent`);
@@ -170,7 +150,7 @@ async function main() {
   // -- 3. Locked chip style (.is-locked) via state machine -------------------
   // lifecycle.js: is-locked is applied when trailDepth >= 1 on the Trail chip.
   // Drive trailDepth=1 via state, then call updateExplorationUi if available.
-  const trailChip = page.locator('#mode-chips .mode-chip[data-mode="trail"]');
+  const trailChip = page.locator('.mode-chip[data-mode="trail"]');
   if (await trailChip.count() > 0) {
     // Drive trailDepth=1 via named harness mutation, then call updateExplorationUi.
     await mutate(page, 'setTrailDepth', { trailDepth: 1 });
@@ -189,12 +169,8 @@ async function main() {
       fail(`is-locked chip background="${lockedBg}" appears transparent`);
     }
     const lockedShadow = await trailChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('box-shadow'));
-    // Contract (2026-08-10, ModeChipRail.svelte .is-locked): locked chips are
-    // deliberately FLAT — box-shadow:none is the design intent (dimmed palette
-    // + hover re-veal, no glow). Previously the test asserted shadow ~= none,
-    // which was inverted vs the actual .is-locked rule (drift, was failing).
-    if (lockedShadow && lockedShadow !== 'none') {
-      fail(`is-locked chip box-shadow="${lockedShadow}" should be none (flat design)`);
+    if (!lockedShadow || lockedShadow === 'none' || lockedShadow.match(/^0px\s+0px\s+0px\s+0px\s+transparent/)) {
+      fail(`is-locked chip box-shadow="${lockedShadow}" missing or none`);
     }
 
     // Reset state
@@ -204,61 +180,47 @@ async function main() {
     fail('Trail chip [data-mode="trail"] not found - cannot test is-locked state');
   }
 
-  // -- 4. Waiting chip style (.is-waiting) -----------------------------------
-  // Validate the generic waiting style against an existing chip. Legacy used
-  // bloom; the Svelte rail exposes overview/search/trail/focus/inside/map.
-  const waitingChip = page.locator('#mode-chips .mode-chip[data-mode="trail"], #mode-chips .mode-chip').first();
-  if (await waitingChip.count() > 0) {
-    const isWaiting = await waitingChip.evaluate((el) => el.classList.contains('is-waiting'));
+  // -- 4. Waiting chip style (.is-waiting) via state machine -----------------
+  // lifecycle.js: is-waiting is applied to Trail chip when focusedNode === null.
+  // (bloom chip does NOT receive is-waiting from the state machine)
+  // For CSS contract validation, inject directly on the bloom chip.
+  const bloomChip = page.locator('.mode-chip[data-mode="bloom"]');
+  if (await bloomChip.count() > 0) {
+    const isWaiting = await bloomChip.evaluate((el) => el.classList.contains('is-waiting'));
     if (!isWaiting) {
-      await waitingChip.evaluate((el) => el.classList.add('is-waiting'));
+      await bloomChip.evaluate((el) => el.classList.add('is-waiting'));
     }
-    const waitOpacity = await waitingChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('opacity'));
+    const waitOpacity = await bloomChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('opacity'));
     if (Number(waitOpacity) >= 1) fail(`is-waiting chip opacity="${waitOpacity}" should be < 1`);
-    const waitBorderStyle = await waitingChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('border-style'));
+    const waitBorderStyle = await bloomChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('border-style'));
     if (waitBorderStyle !== 'solid') fail(`is-waiting chip border-style="${waitBorderStyle}", expected "solid"`);
-    // Reset: .is-waiting used to leak into the :disabled assertion below, so
-    // step 5 measured a chip that was BOTH waiting and disabled (0.7) instead
-    // of :disabled alone. Both happen to be < 1, so the bug was invisible —
-    // but it meant the :disabled contract was never actually verified.
-    await waitingChip.evaluate((el) => el.classList.remove('is-waiting'));
   } else {
-    fail('No mode chip found - cannot test is-waiting state');
+    fail('Bloom chip [data-mode="bloom"] not found - cannot test is-waiting state');
   }
 
   // -- 5. Disabled chip style (:disabled) ------------------------------------
-  const disabledChip = page.locator('#mode-chips .mode-chip[data-mode="inside"], #mode-chips .mode-chip').first();
-  if (await disabledChip.count() > 0) {
-    const isDisabled = await disabledChip.evaluate((el) => el.disabled);
+  const bridgeChip = page.locator('.mode-chip[data-mode="bridge"]');
+  if (await bridgeChip.count() > 0) {
+    const isDisabled = await bridgeChip.evaluate((el) => el.disabled);
     if (!isDisabled) {
-      await disabledChip.evaluate((el) => { el.disabled = true; });
+      await bridgeChip.evaluate((el) => { el.disabled = true; });
     }
-    const disabledCursor = await disabledChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('cursor'));
+    const disabledCursor = await bridgeChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('cursor'));
     if (disabledCursor !== 'not-allowed') fail(`disabled chip cursor="${disabledCursor}", expected "not-allowed"`);
-    const disabledOpacity = await disabledChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('opacity'));
+    const disabledOpacity = await bridgeChip.evaluate((el) => window.getComputedStyle(el).getPropertyValue('opacity'));
     if (Number(disabledOpacity) >= 1) fail(`disabled chip opacity="${disabledOpacity}" should be < 1`);
-    await disabledChip.evaluate((el) => { el.disabled = false; });
   } else {
-    fail('No mode chip found - cannot test :disabled state');
+    fail('Bridge chip [data-mode="bridge"] not found - cannot test :disabled state');
   }
 
   // -- 6. Galaxy active view override ----------------------------------------
-  await page.locator('#mode-chips .mode-chip').evaluateAll((chips) => {
-    for (const chip of chips) {
-      chip.classList.remove('is-locked', 'is-waiting');
-      chip.disabled = false;
-    }
-  });
-
-  const overviewChip = page.locator('#mode-chips .mode-chip[data-mode="overview"], #mode-chips .mode-chip', { hasText: /overview/i }).first();
-  if (await overviewChip.count() > 0) {
-    await overviewChip.click();
-  } else {
-    await page.evaluate(() => document.body.setAttribute('data-active-view', 'galaxy'));
-  }
+  // Switch to galaxy and verify active chip uses the teal galaxy palette.
+  // NOTE: Active-view state bodies are documented as acceptable targets for DOM
+  // dataset manipulation in this CSS contract test — they are not app state.
+  await page.evaluate(() => document.body.setAttribute('data-active-view', 'galaxy'));
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
-  const galaxyActiveChip = page.locator('#mode-chips .mode-chip.active');
+  const galaxyActiveChip = page.locator('.mode-chip.active');
   if (await galaxyActiveChip.count() === 0) {
     fail('No .mode-chip.active found in galaxy view');
   } else {
@@ -274,19 +236,14 @@ async function main() {
   // -- 7. Map active view keeps active chips visible --------------------------
   // This contract checks behavior, not exact hue ownership. CSS visual audits
   // cover whether map should use a distinct palette from galaxy.
-  const mapChip = page.locator('#mode-chips .mode-chip[data-mode="map"], #mode-chips .mode-chip', { hasText: /^map$/i }).first();
-  if (await mapChip.count() > 0) {
-    await mapChip.click();
-  } else {
-    await page.evaluate(() => {
-      document.body.setAttribute('data-active-view', 'map');
-      document.documentElement.setAttribute('data-active-view', 'map');
-    });
-  }
-  await page.waitForFunction(() => document.body.getAttribute('data-active-view') === 'map', null, { timeout: 5000 }).catch(() => {});
+  await page.evaluate(() => {
+    document.body.setAttribute('data-active-view', 'map');
+    document.documentElement.setAttribute('data-active-view', 'map');
+  });
+  await page.waitForFunction(() => document.body.getAttribute('data-active-view') === 'map');
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
-  const mapActiveChip = page.locator('#mode-chips .mode-chip.active');
+  const mapActiveChip = page.locator('.mode-chip.active');
   if (await mapActiveChip.count() === 0) {
     fail('No .mode-chip.active found in map view');
   } else {

@@ -1,5 +1,4 @@
-// Svelte types are imported below as `import type { ComponentType } from 'svelte'`,
-// so the legacy triple-slash ambient reference is no longer required.
+/// <reference types="svelte" />
 
 /**
  * @/src/app.d.ts — Ambient type declarations for the Svelte project
@@ -26,7 +25,7 @@ interface Window {
     withStateMutation?: <T>(fn: () => T) => T
     /**
      * Leaflet global injected at runtime by the asset loader
- * (:loadLeafletAssets). The local LeafletApi
+     * (js/modules/map-state.ts:loadLeafletAssets). The local LeafletApi
      * interface narrows the cast site; declaring it as `unknown` here
      * keeps the global permissive without pulling the upstream @types/leaflet.
      */

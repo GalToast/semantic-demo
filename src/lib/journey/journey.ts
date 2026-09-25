@@ -1,17 +1,12 @@
 /**
  * src/lib/journey/journey.ts
  *
- * TypeScript port of
+ * TypeScript port of js/modules/journey.ts.
  * Facade module for the Semantic Journey / Exploration Trail feature set.
  */
+import { state, withStateMutation } from '@lib/engine/state-bridge'
 
-import { get } from 'svelte/store'
-import { appState as state } from '@lib/state/app.svelte'
-
-import { engineStatusStore } from '@lib/stores/engine.svelte.ts'
-
-import { subscribeKeyed, publish, EVENTS } from '@lib/orchestration/event-bus'
-import { debugWarn } from '@lib/utils/debug'
+import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus'
 import {
     resetRouteTraceDiagnostics,
     removeRouteTraceOverlay,
@@ -25,7 +20,7 @@ import {
     syncArrivalHandoffOverlay,
     updateArrivalHandoffOverlay,
     disposeArrivalHandoffOverlay
-} from '@lib/engine/journey-webgl-lazy'
+} from '@lib/engine/journey-webgl-bridge'
 import {
     normalizeLeadId,
     buildSpatialGrid,
@@ -34,26 +29,25 @@ import {
     getGeometricThreadCandidates,
     getSemanticThreadCandidates,
     getThreadCandidatesForIndex
-} from './thread-model'
+} from '@lib/engine/journey-thread-model-bridge'
 import {
     initJourneyTimerAdapter,
     getStrandArrivalNote,
     getInsideRelationshipLabel,
     summarizeNeighborReason,
-    walkThreadNeighbor,
-    traverseNeighbor,
-    previewInsideNextThread
-} from './thread-settler'
+    walkThreadNeighbor
+} from '@lib/engine/journey-thread-settler-bridge'
+import { traverseNeighbor, previewInsideNextThread } from './thread-settler-adapter'
 import {
     getThreadInspectionState,
+    renderThreadInspection,
     inspectThreadNeighbor,
     pinThreadNeighbor,
     unpinThreadInspection,
     scheduleCanvasThreadInspectionClear,
     clearThreadInspection
-} from './thread-inspector-state'
-import { renderThreadInspection } from './thread-inspector-render'
-import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
+} from '@lib/engine/thread-inspector-bridge'
+import { setStrandContinuityState, clearStrandContinuityState } from '@lib/engine/strand-continuity-bridge'
 import {
     initJourneyNeighborhoodAdapter,
     getSemanticThreadDisplayLimit,
@@ -69,21 +63,23 @@ import {
     primeBoundedSemanticNeighborhoodForTraversal,
     setTrailFromSeed,
     updateTrailIndices
-} from '@lib/journey/neighborhood'
-import { updateSelectedBusiness, syncFocusStage } from '@lib/journey/selected-card'
+} from '@lib/engine/journey-neighborhood-bridge'
+import { updateSelectedBusiness, syncFocusStage } from '@lib/engine/journey-selected-card-bridge'
 import {
     updateSelectedCardHeading,
     renderSelectedMetaStrip,
     renderSelectedMatchPanel,
     renderSelectedActionRow,
     syncSelectedCardContentVariant
-} from '@lib/focus/stage-renderer'
+} from '@lib/engine/lifecycle-bridge'
 import {
     isCondensedFocusStageViewport,
     hasColdDegradedSemanticFallback,
+    updateFocusNeighborRail,
     updateTraversalUi,
+    initFocusNeighborRailSubscriptions,
     shouldUseFloatingFocusJourneyOnly
-} from '@lib/journey/focus-ui'
+} from '@lib/engine/journey-focus-ui-bridge'
 import {
     ensureCanvasNodeInteractionBindings as _ensureCanvasNodeInteractionBindings,
     isThreadCandidateVisibleOnCanvas as _isThreadCandidateVisibleOnCanvas,
@@ -96,22 +92,13 @@ export function isThreadCandidateVisibleOnCanvas(index: number, margin: number =
 export function ensureCanvasNodeInteractionBindings(): void {
     _ensureCanvasNodeInteractionBindings()
 }
-import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
-import { describeThreadLensForPoint } from './thread-lens'
-// P3-LCP: point-color lazified — see stores/lifecycle pattern. Journey is engine-lazy
-// (Canvas) so not boot-critical, but keep the same deferred shape for consistency.
-function applyPointFilterColorsLazy(): void {
-    void import('./point-color')
-        .then((m) => m.applyPointFilterColors())
-        .catch((err) => debugWarn('[journey] point-color lazy load failed', err))
-}
-import { scheduleJourneyFocusTimer } from './journey-focus-timers'
+import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket'
+import { applyPointFilterColors, describeThreadLensForPoint } from '@lib/engine/journey-point-color-bridge'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from '@lib/journey/text-helpers'
-import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/orchestration/lifecycle'
+import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/engine/lifecycle-bridge'
+import { appState } from '@lib/state/app.svelte';
 
-export { disposeJourneyFocusTimers } from './journey-focus-timers'
-
-subscribeKeyed('journey:CAMERA_NODE_FOCUSED', EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
+subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
     const index = typeof payload.index === 'number' ? payload.index : NaN
     if (Number.isFinite(index)) {
         const strandState = state.strandContinuityState as { phase?: string; targetIndex?: number | null } | null
@@ -122,54 +109,19 @@ subscribeKeyed('journey:CAMERA_NODE_FOCUSED', EVENTS.CAMERA_NODE_FOCUSED, (paylo
         ) {
             return
         }
-        // Defer the heavier trail-seed computation to avoid a reactive/effect
-        // cascade while the camera focus choreographer is still in the same
-        // synchronous publish block (W46 fix). FocusPocket.svelte watches
-        // threadCandidates and will rebuild the pocket once the deferred work
-        // populates it. When the engine/FocusPocket effect is not active (e.g.
-        // headless tests that call __navActions__.focusOnNode without mounting
-        // the scene), we still need to populate the pocket here.
-        scheduleJourneyFocusTimer(0, () => {
-            // M12: liveness guard — a superseding CAMERA_NODE_FOCUSED in the
-            // same publish block (or a navigation/mode-switch in this tick)
-            // would leave this deferred callback to rebuild the trail seed +
-            // focus pocket for a stale index. Re-check focusedIndex matches,
-            // mirroring the sibling tryBuild retry at :146.
-            if (state.navState.focusedIndex !== index) return
-            setTrailFromSeed(index)
-            const engineIsReady = get(engineStatusStore) === 'ready'
-            if (!engineIsReady) {
-                applyLocalNeighborhoodFocus(index)
-            }
-        })
+        setTrailFromSeed(index)
         updateTrailIndices(index)
-        const built = applyLocalNeighborhoodFocus(index)
-        // F15 determinism: headless tests may fire focus before the data-worker
-        // has populated originalPositions. If the synchronous build fails, retry
-        // a bounded number of times so the focus pocket is never left empty.
-        if (!built) {
-            let attempts = 0
-            const tryBuild = (): void => {
-                attempts += 1
-                if (attempts > 10) return
-                if (state.navState.focusedIndex !== index) return
-                if ((state.navState.focusPocketIndices || []).length > 0) return
-                if (applyLocalNeighborhoodFocus(index)) return
-                scheduleJourneyFocusTimer(200, tryBuild)
-            }
-            scheduleJourneyFocusTimer(200, tryBuild)
-        }
     }
 })
 
 export function initJourneyState(): void {
-    {
+    withStateMutation(() => {
         state.trailIndices = state.trailIndices ?? new Set<number>()
-        state.focusState.inspectedThreadIndex ??= null
-        state.focusState.pinnedThreadIndex ??= null
+        state.inspectedThreadIndex ??= null
+        state.pinnedThreadIndex ??= null
         state.canvasThreadInspectionClearTimer ??= null
-        state.focusState.threadInspectorPointerInside ??= false
-        state.focusState.inspectedStrandDiagnostics ??= {
+        state.threadInspectorPointerInside ??= false
+        state.inspectedStrandDiagnostics ??= {
             active: false,
             source: 'idle',
             index: null,
@@ -197,16 +149,19 @@ export function initJourneyState(): void {
             settleTimeoutId: undefined
         }
         state.myceliumMode ??= 'default'
-        // bloomIndices / bridgeIndices retired 2026-08-07 (semantic-signal component never wired)
+        state.bloomIndices ??= new Set<number>()
+        state.bridgeIndices ??= new Set<number>()
         state.projectedNeighborGrid ??= null
         state.projectedNeighborCache ??= new Map()
-        state.canvasThreadInspectionClearTimer ??= null
+        state.canvasFieldHoverClearTimer ??= null
         state.stableCanvasHover ??= null
-        // signalScores / bridgeScores retired 2026-08-07 (semantic-signal component never wired)
+        state.pointIndexByLeadId ??= new Map()
+        state.signalScores ??= []
+        state.bridgeScores ??= []
         state.semanticDiveMode ??= false
-        state.focusState.pocketTransitionStartedAt ??= 0
-        state.focusState.pocketMotionByIndex ??= new Map()
-    }
+        state.focusPocketTransitionStartedAt ??= 0
+        state.focusPocketMotionByIndex ??= new Map()
+    })
 }
 
 globalThis.queueMicrotask(() => {
@@ -217,7 +172,11 @@ globalThis.queueMicrotask(() => {
         applyLocalNeighborhoodFocus
     })
     initJourneyCanvasInteractionAdapter({
-        summarizeNeighborReason: summarizeNeighborReason as unknown as (candidate: unknown) => string,
+        summarizeNeighborReason: summarizeNeighborReason as unknown as (
+            candidate: Record<string, unknown> | null,
+            candidatePoint: Record<string, unknown> | null,
+            focusPoint: Record<string, unknown> | null
+        ) => string,
         walkThreadNeighbor: (index: number, options?: Record<string, unknown>) => !!walkThreadNeighbor(index, options),
         inspectThreadNeighbor,
         scheduleCanvasThreadInspectionClear
@@ -241,21 +200,21 @@ export function setTrailDepth(depth: number, options: Record<string, unknown> = 
     publish(EVENTS.TRAIL_DEPTH_UPDATE_REQUESTED, { depth, options })
 }
 
-function restoreFocusTrailState(priorFocused: number | null = state.focusedNode): void {
-    if (!Number.isFinite(priorFocused) || priorFocused! < 0 || priorFocused! >= state.points.length) return
+function restoreFocusTrailState(priorFocused: number | null = appState.focusedNode): void {
+    if (!Number.isFinite(priorFocused) || priorFocused! < 0 || priorFocused! >= appState.points.length) return
     setTrailFromSeed(priorFocused!)
 
-    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused! })
+    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused! } as never)
 
-    {
-        state.navState.lastTraversalReason = state.navState?.lastTraversalReason || null
-    }
+    withStateMutation(() => {
+        state.navState.lastTraversalReason = appState.navState?.lastTraversalReason || null
+    })
     updateTrailIndices(priorFocused!)
     refreshFocusSemanticOverlay()
     applyLocalNeighborhoodFocus(priorFocused!)
-    applyPointFilterColorsLazy()
-    const priorPoint = state.points[priorFocused!] || null
-    syncFocusStage(priorPoint || state.focusState.selectedPoint || null)
+    applyPointFilterColors()
+    const priorPoint = appState.points[priorFocused!] || null
+    syncFocusStage((priorPoint || appState.selectedPoint || null) as never)
     updateTraversalUi()
 }
 
@@ -282,8 +241,10 @@ export {
     isCondensedFocusStageViewport,
     hasColdDegradedSemanticFallback,
     shouldUseFloatingFocusJourneyOnly,
+    initFocusNeighborRailSubscriptions,
+    updateFocusNeighborRail,
     updateTraversalUi,
-    applyPointFilterColorsLazy as applyPointFilterColors,
+    applyPointFilterColors,
     describeThreadLensForPoint,
     truncateMicrocopy,
     getSharedTrailTopicLabel,

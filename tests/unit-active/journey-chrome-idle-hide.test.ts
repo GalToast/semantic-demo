@@ -29,12 +29,6 @@ function readSource(): string {
 // -- Setup -------------------------------------------------------------------
 
 beforeEach(() => {
-  // JourneyStoreState.phase is currently typed as NavMode in production, but
-  // this test was authored when the legacy type union included 'idle' and
-  // 'walking' (JourneyPhase). Preserve the original test contract by casting
-  // the whole snapshot to JourneyStoreState at the boundary; runtime values
-  // flow through unchanged. If nav↔journey types are unified, these casts
-  // can be removed.
   journeyStore.set({
     phase: 'idle',
     trail: [],
@@ -60,7 +54,7 @@ beforeEach(() => {
     terrainHandoffPhase: 'idle',
     routeExplorationPhase: 'idle',
     routeChoreographyPhase: 'overview'
-  } as unknown as JourneyStoreState);
+  });
 });
 
 afterEach(() => {
@@ -117,18 +111,18 @@ describe('JourneyChrome idle-hide guard (UI-1)', () => {
     expect(state.compass?.phase).toBe('idle');
 
     const isJourneyIdle =
-      ((state.phase as unknown as string) === 'idle' || (state.phase as unknown as string) === 'overview') &&
-      ((state.compass?.phase ?? 'idle') as string) === 'idle';
+      (state.phase === 'idle' || state.phase === 'overview') &&
+      (state.compass?.phase ?? 'idle') === 'idle';
     expect(isJourneyIdle).toBe(true);
   });
 
   it('shows when journey.phase is not idle', () => {
-    journeyStore.update((s: JourneyStoreState) => ({ ...s, phase: 'walking' }) as unknown as JourneyStoreState);
+    journeyStore.update((s: JourneyStoreState) => ({ ...s, phase: 'walking' }));
     const state = journeyStore();
 
     const isJourneyIdle =
-      ((state.phase as unknown as string) === 'idle' || (state.phase as unknown as string) === 'overview') &&
-      ((state.compass?.phase ?? 'idle') as string) === 'idle';
+      (state.phase === 'idle' || state.phase === 'overview') &&
+      (state.compass?.phase ?? 'idle') === 'idle';
     expect(isJourneyIdle).toBe(false);
   });
 
@@ -136,12 +130,12 @@ describe('JourneyChrome idle-hide guard (UI-1)', () => {
     journeyStore.update((s: JourneyStoreState) => ({
       ...s,
       compass: { ...s.compass, phase: 'active' }
-    }) as unknown as JourneyStoreState);
+    }));
     const state = journeyStore();
 
     const isJourneyIdle =
-      ((state.phase as unknown as string) === 'idle' || (state.phase as unknown as string) === 'overview') &&
-      ((state.compass?.phase ?? 'idle') as string) === 'idle';
+      (state.phase === 'idle' || state.phase === 'overview') &&
+      (state.compass?.phase ?? 'idle') === 'idle';
     expect(isJourneyIdle).toBe(false);
   });
 
@@ -150,12 +144,12 @@ describe('JourneyChrome idle-hide guard (UI-1)', () => {
       ...s,
       phase: 'inside',
       compass: { ...s.compass, phase: 'active' }
-    }) as unknown as JourneyStoreState);
+    }));
     const state = journeyStore();
 
     const isJourneyIdle =
-      ((state.phase as unknown as string) === 'idle' || (state.phase as unknown as string) === 'overview') &&
-      ((state.compass?.phase ?? 'idle') as string) === 'idle';
+      (state.phase === 'idle' || state.phase === 'overview') &&
+      (state.compass?.phase ?? 'idle') === 'idle';
     expect(isJourneyIdle).toBe(false);
   });
 

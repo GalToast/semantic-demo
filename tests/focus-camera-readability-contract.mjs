@@ -11,7 +11,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { inflateSync } from 'node:zlib';
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1&contract-boot=1';
+const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.FOCUS_CAMERA_URL || DEFAULT_URL;
 const KNOWN_FOCUS_INDEX = Number(process.env.FOCUS_CAMERA_INDEX || 42);
 const OUT_DIR = path.resolve(process.cwd(), 'tmp', 'focus-readability-contract');
@@ -146,9 +146,7 @@ function analyzeFocusScene(buffer) {
   };
 }
 
-// SwiftShader gate (see visual-state-audit.mjs)
-const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
-const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 1,
@@ -157,9 +155,6 @@ const page = await browser.newPage({
 });
 
 try {
-  await page.addInitScript(() => {
-    window.__PLAYWRIGHT__ = true;
-  });
   await page.goto(withCacheBust(TARGET_URL), { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
@@ -174,8 +169,8 @@ try {
   }, null, { timeout: 45000 });
 
   await page.evaluate((index) => {
-    window.__APP_ACTIONS__?.focusOnNode(index, { fromSearchResult: true, skipUrlSync: true });
-    window.__APP_ACTIONS__?.setTrailDepth(1, { skipUrlSync: true });
+    window.__APP_ACTIONS__?.focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true });
+    window.__APP_ACTIONS__?.setTrailDepth?.(1, { skipUrlSync: true });
     window.__APP_ACTIONS__?.refreshCompositionState?.();
   }, KNOWN_FOCUS_INDEX);
 

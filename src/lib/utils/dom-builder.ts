@@ -3,7 +3,7 @@
  *
  * Prevents XSS by using programmatic node creation and text node escaping.
  *
- * Port of
+ * Port of js/modules/utils/dom-builder.ts
  */
 
 /** A valid child for the `el` and `setChildren` helpers. */

@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 
-const APP_URL = process.env.APP_URL || 'http://127.0.0.1:8795/index.html';
-const FALLBACK_URL = 'http://127.0.0.1:8766/index.html';
+const APP_URL = process.env.APP_URL || 'http://127.0.0.1:8795/vector-explorer-polished.html';
+const FALLBACK_URL = 'http://127.0.0.1:8766/vector-explorer-polished.html';
 
 const VIEWPORTS = [
   { name: 'tablet', width: 768, height: 900 },
@@ -85,6 +85,7 @@ async function runTestForViewport(browser, viewport) {
   const idleChecks = [
     { selector: '#search-input', name: 'search-input' },
     { selector: '#btn-launch', name: 'btn-launch' },
+    { selector: '.demo-starter-chip', name: 'demo-starter-chip' },
   ];
 
   for (const check of idleChecks) {
@@ -120,6 +121,7 @@ async function runTestForViewport(browser, viewport) {
   const postSearchChecks = [
     { selector: '#search-input', name: 'search-input' },
     { selector: '#btn-launch', name: 'btn-launch' },
+    { selector: '.demo-starter-chip', name: 'demo-starter-chip' },
     { selector: '.info-panel', name: 'info-panel' },
   ];
 

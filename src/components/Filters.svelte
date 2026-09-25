@@ -11,14 +11,13 @@
 -->
 <script lang="ts">
   import {
+    filterState,
     hasActiveFilters,
     activeFilterCount,
     toggleFilter,
     resetFilters,
     getFilterState
   } from '@lib/stores/filter.svelte';
-  import { businessRecords } from '@lib/data-store';
-  import FilterChipGroup from '@lib/components/filters/FilterChipGroup.svelte';
 
   interface Props {
     /** Whether the filter panel is open */
@@ -26,21 +25,6 @@
   }
 
   let { open = false }: Props = $props();
-
-  let detailsEl: HTMLDetailsElement;
-  let detailsOpen = $state(false);
-
-  $effect(() => {
-    detailsOpen = open;
-  });
-
-  function handleDetailsToggle(): void {
-    detailsOpen = detailsEl?.open ?? false;
-  }
-
-  function handleScrimClick() {
-    if (detailsEl) detailsEl.open = false;
-  }
 
   interface FilterOption {
     id: string;
@@ -83,7 +67,7 @@
     toggleFilter('status', id);
   }
 
-function handleContactToggle(id: string): void {
+  function handleContactToggle(id: string): void {
     const fs = getFilterState();
     switch (id) {
       case 'website':
@@ -98,67 +82,6 @@ function handleContactToggle(id: string): void {
     }
   }
 
-  // W48-F: build the city list from the actual business records so the
-  // dropdown reflects every city in the dataset (32 distinct cities vs. the
-  // previous 5 hardcoded options, which silently hid Willis, Cleveland,
-  // Houston, Cut And Shoot, and ~25 others). Sorted by record count DESC
-  // so the most populous cities appear first — matches the user's
-  // intuition about where to look.
-  //
-  // W51-F6: sanitize city values before bucketing — the raw `city` field
-  // contains garbage that the audit flagged:
-  //   - Full street addresses (e.g. "13070 S. HWY 242 Conroe (1)")
-  //   - Bare ZIP codes ("77301 (2nd location: 12762 Hwy 105 E (1)")
-  //   - Malformed parens ("unknown (Conroe (1)")
-  //   - Case duplicates ("Cut And Shoot (13)" + "Cut and Shoot (1)")
-  //   - Misspellings ("Clevland (1)" + "Cleveland (796)")
-  // We drop entries that look like addresses / ZIPs / obvious junk and
-  // normalize case + trim whitespace before bucketing. Misspellings are
-  // still listed as-is (we don't silently rewrite them — that's a data-
-  // quality fix upstream, not a UI lie).
-  function normalizeCityKey(raw: string): string | null {
-    const trimmed = raw.trim()
-    if (!trimmed) return null
-    // Drop leading/trailing parens, ZIP+note combos, and street addresses.
-    // Heuristic: if it starts with a digit, contains a digit+letter mix,
-    // or has an unmatched paren, treat it as junk.
-    if (/^\d/.test(trimmed)) return null
-    if (/[a-zA-Z]\s+\d|\d+\s+[a-zA-Z]/.test(trimmed)) return null
-    if (/[a-zA-Z]\d{2,}/.test(trimmed)) return null
-    if ((trimmed.match(/\(/g) ?? []).length !== (trimmed.match(/\)/g) ?? []).length) return null
-    if (trimmed.length < 2) return null
-    // Normalize for the dedup key ONLY (display label preserves original):
-    //   - collapse internal whitespace so 'Cold Spring' and 'Coldspring' dedupe
-    //   - drop apostrophes/hyphens so "O'Brien" and "OBrien" dedupe
-    //   - lowercase for case-insensitive compare
-    return trimmed.replace(/\s+/g, '').replace(/['\u2019-]/g, '').toLowerCase()
-  }
-  // W51-F10: read $businessRecords (auto-subscribed) so Svelte 5 tracks
-  // the dependency and the derived re-runs once data hydrates.
-  // `getBusinessRecords()` is a non-reactive snapshot helper — using it
-  // inside $derived.by froze the dropdown at the initial empty state.
-  const cityOptions = $derived.by(() => {
-    const records = $businessRecords
-    if (records.length === 0) return []
-    const counts = new Map<string, { label: string; count: number }>()
-    for (const r of records) {
-      const raw = r.city?.trim()
-      if (!raw) continue
-      const key = normalizeCityKey(raw)
-      if (!key) continue
-      // Preserve the most-common capitalization as the display label
-      const existing = counts.get(key)
-      if (existing) {
-        existing.count += 1
-      } else {
-        counts.set(key, { label: raw, count: 1 })
-      }
-    }
-    return Array.from(counts.values())
-      .sort((a, b) => b.count - a.count)
-      .map(({ label, count }) => ({ city: label, count }))
-  })
-
   function handleCityChange(e: Event): void {
     const target = e.target as HTMLSelectElement;
     toggleFilter('city', target.value);
@@ -168,64 +91,83 @@ function handleContactToggle(id: string): void {
     resetFilters();
   }
 
-
+  // ── Keyboard navigation ─────────────────────────────────────────────────────
+  function handleChipKeydown(event: KeyboardEvent, filterId: string, group: 'status' | 'contact') {
+    const chips = Array.from(
+      (event.currentTarget as HTMLElement).closest('.filter-group')?.querySelectorAll('.filter-chip') ?? []
+    ) as HTMLElement[];
+    const idx = chips.findIndex((c) => c.dataset.statusFilter === filterId || c.dataset.contactFilter === filterId);
+    if (idx === -1) return;
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      const next = chips[(idx + 1) % chips.length];
+      next?.focus();
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      const prev = chips[(idx - 1 + chips.length) % chips.length];
+      prev?.focus();
+    }
+  }
 </script>
 
 <details
   class="filters-section rail-section"
   id="filters-section"
   aria-label="Business filters"
-  open={detailsOpen}
-  ontoggle={handleDetailsToggle}
-  bind:this={detailsEl}
+  {open}
 >
-  <summary class="filter-toggle" aria-label="Toggle business filters">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-      <path d="M1 3h12M3 7h8M5 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-    </svg>
-    <span class="filter-toggle-label">Filters</span>
-    {#if $activeFilterCount > 0}
-      <span class="filter-badge" aria-label="{$activeFilterCount} active filters">{$activeFilterCount}</span>
-    {/if}
-  </summary>
   <div class="filter-toolbar">
-    <FilterChipGroup
-      title="Status"
-      options={statusFilters}
-      dataAttr="status-filter"
-      isActive={isStatusActive}
-      onToggle={handleStatusToggle}
-    />
+    <!-- Status filter chips -->
+    <div class="filter-group">
+      <h4 class="filter-group-title">Status</h4>
+      {#each statusFilters as filter (filter.id)}
+        <button
+          class="filter-chip"
+          class:active={isStatusActive(filter.id)}
+          data-status-filter={filter.id}
+          onclick={() => handleStatusToggle(filter.id)}
+          onkeydown={(e) => handleChipKeydown(e, filter.id, 'status')}
+          aria-pressed={isStatusActive(filter.id)}
+          type="button"
+        >
+          {filter.label}
+        </button>
+      {/each}
+    </div>
 
-    <FilterChipGroup
-      title="Contact"
-      options={contactFilters}
-      dataAttr="signal-filter"
-      isActive={isContactActive}
-      onToggle={handleContactToggle}
-    />
+    <!-- Contact/signal filter chips -->
+    <div class="filter-group">
+      <h4 class="filter-group-title">Contact</h4>
+      {#each contactFilters as filter (filter.id)}
+        <button
+          class="filter-chip"
+          class:active={isContactActive(filter.id)}
+          data-contact-filter={filter.id}
+          onclick={() => handleContactToggle(filter.id)}
+          onkeydown={(e) => handleChipKeydown(e, filter.id, 'contact')}
+          aria-pressed={isContactActive(filter.id)}
+          type="button"
+        >
+          {filter.label}
+        </button>
+      {/each}
+    </div>
 
     <!-- City filter select -->
     <div class="filter-group">
       <h4 class="filter-group-title">City</h4>
       <select
         id="city-filter"
-        aria-label="Filter by city"
         class="city-filter"
-        value={getFilterState().city}
+        value={$filterState.city}
         onchange={handleCityChange}
-        disabled={$businessRecords.length === 0}
       >
-        <option value="">
-          {#if $businessRecords.length === 0}
-            All Cities (loading…)
-          {:else}
-            All Cities ({$businessRecords.length})
-          {/if}
-        </option>
-        {#each cityOptions as opt (opt.city)}
-          <option value={opt.city}>{opt.city} ({opt.count})</option>
-        {/each}
+        <option value="">All Cities</option>
+        <option value="Conroe">Conroe</option>
+        <option value="The Woodlands">The Woodlands</option>
+        <option value="Spring">Spring</option>
+        <option value="Magnolia">Magnolia</option>
+        <option value="Montgomery">Montgomery</option>
       </select>
     </div>
 
@@ -238,53 +180,28 @@ function handleContactToggle(id: string): void {
       type="button"
       disabled={!$hasActiveFilters}
     >
-      <!-- Count shown only when filters are active: a disabled "Reset (0)" reads
-           like it is counting something the user can't see. -->
-      {$activeFilterCount > 0 ? `Reset (${$activeFilterCount})` : 'Reset'}
-    </button>  </div>
+      Reset ({$activeFilterCount})
+    </button>
+  </div>
 </details>
-
-<!-- Scrim backdrop — appears when filters panel is open, dismisses on tap -->
-<div
-  class="filters-scrim"
-  onclick={handleScrimClick}
-  role="presentation"
-  aria-hidden="true"
-  tabindex="-1"
-></div>
 
 <style>
   .filters-section {
-    position: fixed;
+    position: absolute;
     bottom: 1rem;
     left: 50%;
     transform: translateX(-50%);
     z-index: var(--z-controls, 50);
   }
-  @media (max-width: 768px) {
-    .filters-section {
-      bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-      max-width: calc(100vw - 1rem);
-    }
-  }
   .filter-toolbar {
     display: flex;
     gap: 1rem;
-    background: rgba(var(--color-surface-chrome-rgb), 0.92);
+    background: rgba(7, 16, 24, 0.92);
     backdrop-filter: blur(12px);
-    border-radius: var(--radius-tight);
+    border-radius: 0.5rem;
     padding: 0.6rem 0.75rem;
     align-items: center;
     flex-wrap: wrap;
-  }
-  @media (max-width: 768px) {
-    .filter-toolbar {
-      flex-direction: column;
-      /* 90vw leaks past the centered rail on small screens; fill the
-         rail's content box instead so chips never run off-viewport. */
-      width: 100%;
-      box-sizing: border-box;
-    }
   }
   .filter-group {
     display: flex;
@@ -296,30 +213,56 @@ function handleContactToggle(id: string): void {
     font-size: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--color-primary-alt);
+    color: #4ecdc4;
     margin-right: 0.3rem;
-    font-family: var(--font-display);
+    font-family: 'Bricolage Grotesque', sans-serif;
     margin: 0;
   }
-
+  .filter-chip {
+    padding: 0 0.5rem;
+    background: rgba(78, 205, 196, 0.08);
+    border: 1px solid rgba(78, 205, 196, 0.15);
+    border-radius: 0.3rem;
+    color: #b0d0d0;
+    font-size: 0.65rem;
+    font-family: 'Nunito Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    height: 44px;
+    min-width: 44px;
+    width: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    line-height: 44px;
+  }
+  .filter-chip:hover {
+    border-color: rgba(78, 205, 196, 0.35);
+  }
+  .filter-chip.active {
+    background: rgba(78, 205, 196, 0.2);
+    border-color: #4ecdc4;
+    color: #4ecdc4;
+  }
   .city-filter {
     padding: 0.3rem 0.5rem;
-    background: rgba(var(--color-primary-alt-rgb), 0.08);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
+    background: rgba(78, 205, 196, 0.08);
+    border: 1px solid rgba(78, 205, 196, 0.15);
     border-radius: 0.3rem;
-    color: var(--color-text-teal-muted);
+    color: #b0d0d0;
     font-size: 0.65rem;
-    font-family: var(--font-body);
+    font-family: 'Nunito Sans', sans-serif;
     height: 44px;
     cursor: pointer;
     box-sizing: border-box;
   }
   .city-filter:focus {
-    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
+    border-color: rgba(78, 205, 196, 0.5);
     outline: none;
   }
   .city-filter:focus-visible {
-    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
+    outline: 2px solid rgba(78, 205, 196, 0.6);
     outline-offset: 2px;
   }
   .filter-reset {
@@ -327,9 +270,9 @@ function handleContactToggle(id: string): void {
     background: rgba(255, 107, 107, 0.12);
     border: 1px solid rgba(255, 107, 107, 0.3);
     border-radius: 0.3rem;
-    color: var(--status-danger);
+    color: #ff6b6b;
     font-size: 0.6rem;
-    font-family: var(--font-body);
+    font-family: 'Nunito Sans', sans-serif;
     cursor: pointer;
     transition: all 0.15s;
     white-space: nowrap;
@@ -345,92 +288,14 @@ function handleContactToggle(id: string): void {
   }
   .filter-reset:hover:not(:disabled) {
     background: rgba(255, 107, 107, 0.22);
-    border-color: var(--status-danger);
+    border-color: #ff6b6b;
   }
 
-  .filter-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.65rem;
-    background: rgba(var(--color-surface-chrome-rgb), 0.85);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
-    border-radius: var(--radius-tight);
-    cursor: pointer;
-    user-select: none;
-    /* Hide native <details> disclosure triangle */
-    list-style: none;
-  }
-
-  .filter-toggle::-webkit-details-marker {
-    display: none;
-  }
-  .filter-toggle-label {
-    font-family: var(--font-display);
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--color-text-teal-light);
-  }
-  .filter-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 0.3rem;
-    background: var(--color-primary-alt);
-    color: var(--color-surface-deep);
-    font-size: 0.6rem;
-    font-weight: 700;
-    border-radius: 9999px;
-    font-family: var(--font-mono);
-  }
-
-  /* W50-LAYOUT-1: One-time pulse-glow on the FILTERS pill to boost
-     discoverability on first idle splash. Runs once then stops. */
-  :global(body[data-panel-surface='idle'] .filters-section:not([open]) .filter-toggle) {
-    animation: filters-pulse-glow 3.6s ease-in-out 1;
-  }
-  :global {
-    @keyframes filters-pulse-glow {
-      0%, 100% {
-        box-shadow: none;
-        border-color: rgba(var(--color-primary-alt-rgb), 0.25);
-      }
-      50% {
-        box-shadow: 0 0 14px 4px rgba(var(--color-primary-alt-rgb), 0.35);
-        border-color: rgba(var(--color-primary-alt-rgb), 0.6);
-      }
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    :global(body[data-panel-surface='idle'] .filters-section:not([open]) .filter-toggle) {
-      animation: none;
-    }
-  }
   @media (max-width: 768px) {
     .filter-toolbar {
       flex-direction: column;
-      /* fill the centered rail content box; 90vw leaked past the
-         viewport on small screens (chips overflowed right edge) */
-      width: 100%;
+      width: 90vw;
       bottom: 0.5rem;
     }
-  }
-  /* ── Scrim backdrop ───────────────────────────────────────────────────── */
-  .filters-scrim {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 14, 24, 0.55);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: var(--z-overlay-elevated);
-    cursor: pointer;
-    pointer-events: auto;
-    transition: opacity 0.2s ease;
-  }
-  details[open] ~ .filters-scrim {
-    display: block;
   }
 </style>

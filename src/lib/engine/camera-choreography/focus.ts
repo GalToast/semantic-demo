@@ -2,334 +2,310 @@
  * @lib/engine/camera-choreography/focus.ts
  * Focus camera animation — animateCameraToNode, cancelFocusCameraAnimation
  *
- * Ported from:
+ * Ported from: js/modules/camera-controls-choreography-focus.ts
  */
 import { Vector3 } from 'three'
 import { appState } from '@lib/state/app.svelte'
-import type { NodePosition } from '@lib/state/state-types'
+import type { NodePosition, NavFocusPocketMeta } from '@lib/state/state-types'
 import { prefersReducedMotion } from '@lib/utils/environment'
 import {
-    type AppStateLike,
-    getCanvasUnobstructedRegion,
-    computeFocusPocketScreenBounds,
-    computeSafeAreaCameraTargetOffset
+  type AppStateLike,
+  getCanvasUnobstructedRegion,
+  computeFocusPocketScreenBounds,
+  computeSafeAreaCameraTargetOffset
 } from './framing-utils'
 import {
-    type FramingParams,
-    type PocketProfile,
-    computeTravelVectorHeading,
-    computeOrbitBiasHeading,
-    computeCameraArcControlPoints
+  type FramingParams,
+  type PocketProfile,
+  computeTravelVectorHeading,
+  computeOrbitBiasHeading,
+  computeCameraArcControlPoints
 } from '@lib/utils/camera-math-utils'
 import {
-    easeInOutSine,
-    easeInOutCubic,
-    quadraticBezierComponent,
-    easeOutBack,
-    easeOutQuint
+  easeInOutSine,
+  easeInOutCubic,
+  quadraticBezierComponent,
+  easeOutBack,
+  easeOutQuint
 } from '@lib/utils/math-easing'
-import { setFocusTransitionMode, startFocusCameraAssist, setFocusCameraOffset } from '../camera-controls-core'
-import { scheduleFrameTask } from '../frame-scheduler'
+import { setFocusTransitionMode, startFocusCameraAssist } from '../camera-controls-core'
+import type {
+  ChoreographyCamera,
+  ChoreographyControls,
+  ChoreographyPersonality
+} from './types'
+
 interface FocusFramingOptions extends FramingParams {
-    transitionStyle?: string
-    distance?: number
-    verticalLift?: number
-    framingDrop?: number
-    targetOffset?: Vector3
-    duration?: number
+  transitionStyle?: string
+  distance?: number
+  verticalLift?: number
+  framingDrop?: number
+  targetOffset?: Vector3
+  duration?: number
 }
 
 /** Public alias consumed by camera-choreography/index.ts barrel re-export. */
 export type AnimateCameraToNodeOptions = FocusFramingOptions
 
-/** Camera-readable personality shape. Structurally compatible with
- * `appState.navState.currentPersonality: Record<string, unknown> | null`
- * via the `[key: string]: unknown` index signature. */
-interface FocusPersonality {
-    type?: string
-    cameraDuration?: number
-    cameraArc?: string
-    easing?: string
-    [key: string]: unknown
+interface FocusPocketProfile extends PocketProfile {
+  targetOffsetLimit?: number
+}
+
+interface FocusPersonality extends ChoreographyPersonality {
+  [key: string]: unknown
+  cameraDuration?: number
+  easing?: string
+}
+
+/** Narrowed navState for focus camera animation. Overrides base types with camera-specific shapes. */
+interface FocusNavState {
+  mode: string
+  focusedIndex: number | null
+  threadSource: string
+  focusPocketIndices: number[]
+  focusPocketMeta: (NavFocusPocketMeta & { viewportProfile?: FocusPocketProfile }) | null
+  focusFramingMeta: Partial<FocusFramingOptions> | null
+  currentPersonality: FocusPersonality | null
+  [key: string]: unknown
+}
+
+function getTypedNavState(): FocusNavState {
+  return appState.navState as unknown as FocusNavState
 }
 
 // -----------------------------------------------------------------------------
 // FOCUS CAMERA ANIMATION — animateCameraToNode
 // -----------------------------------------------------------------------------
 
-let _focusCameraTaskCancel: (() => void) | null = null
+let _focusCameraRafId: number | null = null;
 
 export function cancelFocusCameraAnimation() {
-    _focusCameraTaskCancel?.()
-    _focusCameraTaskCancel = null
+    if (_focusCameraRafId !== null) {
+        window.cancelAnimationFrame(_focusCameraRafId);
+        _focusCameraRafId = null;
+    }
 }
 
 export function animateCameraToNode(index: number, options: FocusFramingOptions = {}) {
-    // BS-A F3: orphaned-cancel leak — the previous tween's frame task stays in
-    // the scheduler one extra frame if we overwrite _focusCameraTaskCancel here.
-    // Cancel it explicitly so no stale step() survives into the new animation.
-    cancelFocusCameraAnimation()
-    if (!appState.camera || !appState.controls) return
-    const camera = appState.camera
-    const controls = appState.controls
-    const targetPosition: NodePosition | undefined = appState.nodePositions[index] || appState.originalPositions[index]
-    if (!targetPosition) return
-    // NavFocusFramingMeta and FocusFramingOptions have similar shape but
-    // NavFocusFramingMeta.targetOffset is `unknown` while FocusFramingOptions
-    // expects `Vector3`. Spread is sound at runtime; the final `as
-    // FocusFramingOptions` documents the intentional narrowing.
-    const framing = {
-        ...(appState.navState.focusFramingMeta || {}),
-        ...options
-    } as FocusFramingOptions
-    const transitionStyle = framing.transitionStyle || 'focus'
-    const tx = targetPosition.x,
-        ty = targetPosition.y,
-        tz = targetPosition.z
-    if (!Number.isFinite(tx) || !Number.isFinite(ty) || !Number.isFinite(tz)) return
-    const nodePos = new Vector3(tx, ty, tz)
-    if (!controls.target || !camera.position) return
-    const startTarget = controls.target.clone()
-    const startPos = camera.position.clone()
-    const currentHeading = camera.position.clone().sub(controls.target).normalize()
+  if (!appState.camera || !appState.controls) return
+  const camera = appState.camera as unknown as ChoreographyCamera
+  const controls = appState.controls as unknown as ChoreographyControls
+  const targetPosition: NodePosition | undefined = appState.nodePositions[index] || appState.originalPositions[index]
+  if (!targetPosition) return
+  const framing = {
+    ...(getTypedNavState().focusFramingMeta || {}),
+    ...options
+  } as FocusFramingOptions
+  const transitionStyle = framing.transitionStyle || 'focus'
+  const tx = targetPosition.x, ty = targetPosition.y, tz = targetPosition.z
+  if (!Number.isFinite(tx) || !Number.isFinite(ty) || !Number.isFinite(tz)) return
+  const nodePos = new Vector3(tx, ty, tz)
+  if (!controls.target || !camera.position) return
+  const startTarget = controls.target.clone()
+  const startPos = camera.position.clone()
+  const currentHeading = camera.position.clone().sub(controls.target).normalize()
 
-    let defaultDistance = 0.88
-    if (transitionStyle === 'search') defaultDistance = 0.95
-    if (transitionStyle === 'walk' || transitionStyle === 'dive' || transitionStyle === 'dive-walk')
-        defaultDistance = 0.88
-    let distance = framing.distance || defaultDistance
+  let defaultDistance = 0.86
+  if (transitionStyle === 'search') defaultDistance = 1.08
+  if (transitionStyle === 'walk' || transitionStyle === 'dive' || transitionStyle === 'dive-walk')
+    defaultDistance = 1.0
+  const distance = framing.distance || defaultDistance
 
-    const verticalLift = framing.verticalLift || 0.045
-    const framingDrop = framing.framingDrop ?? 0.02
-    const framingOffset = framing.targetOffset?.clone ? framing.targetOffset.clone() : new Vector3()
-    let focusTarget = nodePos
-        .clone()
-        .add(framingOffset)
-        .add(new Vector3(0, -framingDrop, 0))
-    if (!appState.focusCameraTargetOffset?.copy) appState.focusCameraTargetOffset = new Vector3()
-    let heading = currentHeading.clone()
-    let stageRightVector: Vector3 | null = null
-    let safeTargetOffset: Vector3 | null = null
-    const navState = appState.navState
-    // shittiest-parts #1: frame the whole pocket (not just the anchor) whenever a
-    // focus pocket is active — including 'geometric-fallback' deep-link boots where
-    // threadSource is not 'semantic' but the pocket (focusPocketIndices) is genuinely
-    // built. Previously deep-link focus left the pocket + connection rays off-screen
-    // in the full 8,406-node mycelium cloud because pocket-framing was gated on
-    // threadSource === 'semantic'.
-    const isSemanticPocketFocus =
-        navState.focusPocketMeta?.active === true && (navState.focusPocketIndices?.length ?? 0) > 0
+  const verticalLift = framing.verticalLift || 0.045
+  const framingDrop = framing.framingDrop ?? 0.02
+  const framingOffset = framing.targetOffset?.clone ? framing.targetOffset.clone() : new Vector3()
+  let focusTarget = nodePos
+    .clone()
+    .add(framingOffset)
+    .add(new Vector3(0, -framingDrop, 0))
+  if (!appState.focusCameraTargetOffset?.copy) appState.focusCameraTargetOffset = new Vector3()
+  let heading = currentHeading.clone()
+  let stageRightVector: Vector3 | null = null
+  let safeTargetOffset: Vector3 | null = null
+  const navState = getTypedNavState()
+  const isSemanticPocketFocus = navState.threadSource === 'semantic' && navState.focusPocketMeta?.active
 
-    if (isSemanticPocketFocus && navState.focusPocketIndices?.length) {
-        const pocketBounds = computeFocusPocketScreenBounds(
-            navState.focusedIndex,
-            // computeFocusPocketScreenBounds expects mutable number[] but
-            // navState.focusPocketIndices is readonly. Spread to copy.
-            [...navState.focusPocketIndices],
-            appState as unknown as AppStateLike
-        )
-        if (pocketBounds) {
-            const region = getCanvasUnobstructedRegion()
-            const camDist = camera.position.distanceTo(controls.target)
-            const safeOffset = computeSafeAreaCameraTargetOffset(pocketBounds, region, camDist, camera, controls)
-            if (safeOffset) {
-                const pocketProfile = navState.focusPocketMeta?.viewportProfile
-                const rawOffsetLimit: number | undefined =
-                    pocketProfile && typeof pocketProfile === 'object'
-                        ? (pocketProfile as { targetOffsetLimit?: number }).targetOffsetLimit
-                        : undefined
-                const offsetLimit = Number.isFinite(rawOffsetLimit) ? Number(rawOffsetLimit) : 0.12
-                if (safeOffset.length() > offsetLimit) safeOffset.setLength(offsetLimit)
-                const nudgeTarget = focusTarget.clone().add(safeOffset)
-                if (
-                    Number.isFinite(nudgeTarget.x) &&
-                    Number.isFinite(nudgeTarget.y) &&
-                    Number.isFinite(nudgeTarget.z)
-                ) {
-                    safeTargetOffset = safeOffset
-                }
-            }
-        }
-    }
-    // shittiest-parts #1: ensure a minimum readable distance for an active
-    // focus pocket so the gathered neighborhood reads as prominent against
-    // the full 8,406-dot cloud without crowding the selected node. Only
-    // when the caller didn't specify an explicit distance.
-    if (isSemanticPocketFocus && !framing.distance) distance = Math.max(distance, 1.02)
-    if (safeTargetOffset) {
-        focusTarget = focusTarget.clone().add(safeTargetOffset)
-    }
-
-    if (
-        (transitionStyle === 'walk' || transitionStyle === 'dive' || transitionStyle === 'dive-walk') &&
-        framing.travelVector
-    ) {
-        const res = computeTravelVectorHeading(focusTarget, currentHeading, transitionStyle, framing)
-        focusTarget = res.focusTarget
-        heading = res.heading
-    }
-
-    if (
-        (transitionStyle === 'search' ||
-            transitionStyle === 'focus' ||
-            transitionStyle === 'walk' ||
-            transitionStyle === 'dive' ||
-            transitionStyle === 'dive-walk') &&
-        isSemanticPocketFocus
-    ) {
-        const pocketProfile = appState.navState.focusPocketMeta?.viewportProfile
-        // computeOrbitBiasHeading expects PocketProfile (key?: string).
-        // viewportProfile has key?: string + extras; structurally compatible.
-        const res = computeOrbitBiasHeading(currentHeading, transitionStyle, (pocketProfile ?? {}) as PocketProfile)
-        heading = res.heading
-        stageRightVector = res.stageRightVector
-    }
-
-    const desiredCamPos = focusTarget
-        .clone()
-        .add(heading.multiplyScalar(distance))
-        .add(new Vector3(0, verticalLift, 0))
-
-    const personality = (appState.navState.currentPersonality as FocusPersonality | null) || {
-        type: 'STANDARD',
-        cameraDuration: 980,
-        cameraArc: 'standard',
-        easing: 'easeInOutCubic'
-    }
-    const baseDuration = framing.duration || (transitionStyle === 'dive' ? 1480 : personality.cameraDuration || 980)
-    const prefersReducedCameraMotion = prefersReducedMotion()
-    const duration = prefersReducedCameraMotion ? 1 : baseDuration
-
-    // W61 #7: validate the full numeric state BEFORE mutating appState or
-    // starting the assist. The previous placement ran after
-    // focusCameraOffset/focusCameraTargetOffset writes, setFocusTransitionMode
-    // and startFocusCameraAssist, so a degenerate camera/target state could
-    // leave a NaN focusCameraOffset and an assist with no animation behind.
-    if (
-        !Number.isFinite(
-            startTarget.x +
-                startTarget.y +
-                startTarget.z +
-                startPos.x +
-                startPos.y +
-                startPos.z +
-                focusTarget.x +
-                focusTarget.y +
-                focusTarget.z +
-                desiredCamPos.x +
-                desiredCamPos.y +
-                desiredCamPos.z
-        )
+  if (isSemanticPocketFocus && navState.focusPocketIndices?.length) {
+    const pocketBounds = computeFocusPocketScreenBounds(
+      navState.focusedIndex,
+      navState.focusPocketIndices,
+      appState as unknown as AppStateLike
     )
-        return
-
-    const animationToken = ++appState.focusCameraAnimationToken
-    setFocusCameraOffset(desiredCamPos.clone().sub(focusTarget))
-    if (!appState.focusCameraTargetOffset || typeof appState.focusCameraTargetOffset.copy !== 'function') {
-        appState.focusCameraTargetOffset = new Vector3()
-    }
-    if (appState.focusCameraTargetOffset) {
-        appState.focusCameraTargetOffset?.copy?.(focusTarget.clone().sub(nodePos))
-    }
-    setFocusTransitionMode(transitionStyle, { duration })
-    if (prefersReducedCameraMotion) {
-        controls.target.copy(focusTarget)
-        camera.position.copy(desiredCamPos)
-        controls.update()
-        // F4 (W61): the reduced-motion path skips the rAF completion step
-        // where focusCameraOffset is normally nulled; clear it here so the
-        // stale offset can't mis-trigger releaseFocusCameraAssist later.
-        setFocusCameraOffset(null)
-        return
-    }
-
-    startFocusCameraAssist(duration + 100, transitionStyle)
-    const startTime = performance.now()
-
-    const stageArcActive =
-        isSemanticPocketFocus &&
-        (transitionStyle === 'search' ||
-            transitionStyle === 'focus' ||
-            transitionStyle === 'walk' ||
-            transitionStyle === 'dive' ||
-            transitionStyle === 'dive-walk')
-    let cameraControlPoint: Vector3 | null = null
-    let targetControlPoint: Vector3 | null = null
-
-    if (stageArcActive) {
-        const pocketProfile = (appState.navState.focusPocketMeta?.viewportProfile as PocketProfile | undefined) ?? {
-            key: undefined
+    if (pocketBounds) {
+      const region = getCanvasUnobstructedRegion()
+      const camDist = camera.position.distanceTo(controls.target)
+      const safeOffset = computeSafeAreaCameraTargetOffset(
+        pocketBounds,
+        region,
+        camDist,
+        camera,
+        controls
+      )
+      if (safeOffset) {
+        const pocketProfile = navState.focusPocketMeta?.viewportProfile || {}
+        const rawOffsetLimit = pocketProfile.targetOffsetLimit
+        const offsetLimit = Number.isFinite(rawOffsetLimit)
+          ? Number(rawOffsetLimit)
+          : 0.12
+        if (safeOffset.length() > offsetLimit) safeOffset.setLength(offsetLimit)
+        const nudgeTarget = focusTarget.clone().add(safeOffset)
+        if (
+          Number.isFinite(nudgeTarget.x) &&
+          Number.isFinite(nudgeTarget.y) &&
+          Number.isFinite(nudgeTarget.z)
+        ) {
+          safeTargetOffset = safeOffset
         }
-        const res = computeCameraArcControlPoints(
-            startPos,
-            startTarget,
-            desiredCamPos,
-            focusTarget,
-            currentHeading,
-            distance,
-            transitionStyle,
-            personality,
-            pocketProfile,
-            stageRightVector
-        )
-        cameraControlPoint = res.cameraControlPoint
-        targetControlPoint = res.targetControlPoint
+      }
+    }
+  }
+  if (safeTargetOffset) {
+    focusTarget = focusTarget.clone().add(safeTargetOffset)
+  }
+
+  if (
+    (transitionStyle === 'walk' || transitionStyle === 'dive' || transitionStyle === 'dive-walk') &&
+    framing.travelVector
+  ) {
+    const res = computeTravelVectorHeading(focusTarget, currentHeading, transitionStyle, framing)
+    focusTarget = res.focusTarget
+    heading = res.heading
+  }
+
+  if (
+    (transitionStyle === 'search' ||
+      transitionStyle === 'focus' ||
+      transitionStyle === 'walk' ||
+      transitionStyle === 'dive' ||
+      transitionStyle === 'dive-walk') &&
+    isSemanticPocketFocus
+  ) {
+    const pocketProfile = getTypedNavState().focusPocketMeta?.viewportProfile || {}
+    const res = computeOrbitBiasHeading(currentHeading, transitionStyle, pocketProfile)
+    heading = res.heading
+    stageRightVector = res.stageRightVector
+  }
+
+  const desiredCamPos = focusTarget
+    .clone()
+    .add(heading.multiplyScalar(distance))
+    .add(new Vector3(0, verticalLift, 0))
+
+  const personality = getTypedNavState().currentPersonality || {
+    type: 'STANDARD',
+    cameraDuration: 980,
+    cameraArc: 'standard',
+    easing: 'easeInOutCubic'
+  }
+  const baseDuration = framing.duration || (transitionStyle === 'dive' ? 1480 : personality.cameraDuration || 980)
+  const prefersReducedCameraMotion = prefersReducedMotion()
+  const duration = prefersReducedCameraMotion ? 1 : baseDuration
+
+  const animationToken = ++appState.focusCameraAnimationToken
+  appState.focusCameraOffset = desiredCamPos.clone().sub(focusTarget)
+  if (!appState.focusCameraTargetOffset || typeof appState.focusCameraTargetOffset.copy !== 'function') {
+    appState.focusCameraTargetOffset = new Vector3()
+  }
+  if (appState.focusCameraTargetOffset) {
+    appState.focusCameraTargetOffset?.copy?.(focusTarget.clone().sub(nodePos))
+  }
+  setFocusTransitionMode(transitionStyle, { duration })
+  if (prefersReducedCameraMotion) {
+    controls.target.copy(focusTarget)
+    camera.position.copy(desiredCamPos)
+    controls.update()
+    return
+  }
+
+  startFocusCameraAssist(duration + 100, transitionStyle)
+  const startTime = performance.now()
+  if (
+    !Number.isFinite(
+      startTarget.x +
+      startTarget.y +
+      startTarget.z +
+      startPos.x +
+      startPos.y +
+      startPos.z +
+      focusTarget.x +
+      focusTarget.y +
+      focusTarget.z +
+      desiredCamPos.x +
+      desiredCamPos.y +
+      desiredCamPos.z
+    )
+  )
+    return
+
+  const stageArcActive =
+    isSemanticPocketFocus &&
+    (transitionStyle === 'search' ||
+      transitionStyle === 'focus' ||
+      transitionStyle === 'walk' ||
+      transitionStyle === 'dive' ||
+      transitionStyle === 'dive-walk')
+  let cameraControlPoint: Vector3 | null = null
+  let targetControlPoint: Vector3 | null = null
+
+  if (stageArcActive) {
+    const pocketProfile = (appState.navState as any).focusPocketMeta?.viewportProfile || {}
+    const res = computeCameraArcControlPoints(
+      startPos, startTarget, desiredCamPos, focusTarget,
+      currentHeading, distance, transitionStyle, personality, pocketProfile, stageRightVector
+    )
+    cameraControlPoint = res.cameraControlPoint
+    targetControlPoint = res.targetControlPoint
+  }
+
+  function step(now: number) {
+    if (animationToken !== appState.focusCameraAnimationToken) return
+    const t = Math.min((now - startTime) / duration, 1)
+
+    const personalityEasing =
+      personality.easing === 'easeOutBack'
+        ? easeOutBack(t)
+        : personality.easing === 'easeOutQuint'
+          ? easeOutQuint(t)
+          : easeInOutCubic(t)
+    const eased = stageArcActive
+      ? personality.type === 'TIGHT_CLUSTER'
+        ? easeInOutCubic(t)
+        : easeInOutSine(t)
+      : transitionStyle === 'walk' || transitionStyle === 'dive-walk'
+        ? easeInOutCubic(t)
+        : transitionStyle === 'search'
+          ? easeInOutCubic(t)
+          : personalityEasing
+
+    if (cameraControlPoint && targetControlPoint) {
+      controls.target.set(
+        quadraticBezierComponent(startTarget.x, targetControlPoint.x, focusTarget.x, eased),
+        quadraticBezierComponent(startTarget.y, targetControlPoint.y, focusTarget.y, eased),
+        quadraticBezierComponent(startTarget.z, targetControlPoint.z, focusTarget.z, eased)
+      )
+      camera.position.set(
+        quadraticBezierComponent(startPos.x, cameraControlPoint.x, desiredCamPos.x, eased),
+        quadraticBezierComponent(startPos.y, cameraControlPoint.y, desiredCamPos.y, eased),
+        quadraticBezierComponent(startPos.z, cameraControlPoint.z, desiredCamPos.z, eased)
+      )
+    } else {
+      controls.target.lerpVectors(startTarget, focusTarget, eased)
+      camera.position.lerpVectors(startPos, desiredCamPos, eased)
     }
 
-    function step(now: number): boolean {
-        if (animationToken !== appState.focusCameraAnimationToken) {
-            _focusCameraTaskCancel = null
-            return true
-        }
-        const t = Math.min((now - startTime) / duration, 1)
-
-        const personalityEasing =
-            personality.easing === 'easeOutBack'
-                ? easeOutBack(t)
-                : personality.easing === 'easeOutQuint'
-                  ? easeOutQuint(t)
-                  : easeInOutCubic(t)
-        const eased = stageArcActive
-            ? personality.type === 'TIGHT_CLUSTER'
-                ? easeInOutCubic(t)
-                : easeInOutSine(t)
-            : transitionStyle === 'walk' || transitionStyle === 'dive-walk'
-              ? easeInOutCubic(t)
-              : transitionStyle === 'search'
-                ? easeInOutCubic(t)
-                : personalityEasing
-
-        if (cameraControlPoint && targetControlPoint) {
-            controls.target.set(
-                quadraticBezierComponent(startTarget.x, targetControlPoint.x, focusTarget.x, eased),
-                quadraticBezierComponent(startTarget.y, targetControlPoint.y, focusTarget.y, eased),
-                quadraticBezierComponent(startTarget.z, targetControlPoint.z, focusTarget.z, eased)
-            )
-            camera.position.set(
-                quadraticBezierComponent(startPos.x, cameraControlPoint.x, desiredCamPos.x, eased),
-                quadraticBezierComponent(startPos.y, cameraControlPoint.y, desiredCamPos.y, eased),
-                quadraticBezierComponent(startPos.z, cameraControlPoint.z, desiredCamPos.z, eased)
-            )
-        } else {
-            controls.target.lerpVectors(startTarget, focusTarget, eased)
-            camera.position.lerpVectors(startPos, desiredCamPos, eased)
-        }
-
-        if (t > 0.85 && t < 1 && stageArcActive && !prefersReducedCameraMotion) {
-            const driftIntensity = (t - 0.85) * 0.15
-            const worldUp = new Vector3(0, 1, 0)
-            const driftDir = new Vector3().crossVectors(worldUp, currentHeading).normalize()
-            camera.position.add(driftDir.multiplyScalar(driftIntensity * 0.02))
-        }
-
-        controls.update()
-        if (t < 1) {
-            return false
-        } else {
-            setFocusCameraOffset(null)
-            _focusCameraTaskCancel = null
-            return true
-        }
+    if (t > 0.85 && stageArcActive && !prefersReducedCameraMotion) {
+      const driftIntensity = (t - 0.85) * 0.15
+      const worldUp = new Vector3(0, 1, 0)
+      const driftDir = new Vector3().crossVectors(worldUp, currentHeading).normalize()
+      camera.position.add(driftDir.multiplyScalar(driftIntensity * 0.02))
     }
-    _focusCameraTaskCancel = scheduleFrameTask(step)
+
+    controls.update()
+    if (t < 1) {
+      _focusCameraRafId = requestAnimationFrame(step)
+    } else {
+      appState.focusCameraOffset = null
+    }
+  }
+  _focusCameraRafId = requestAnimationFrame(step)
 }

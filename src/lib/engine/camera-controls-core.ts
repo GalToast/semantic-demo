@@ -16,7 +16,6 @@ export {
     focusCameraAssistIsActive,
     syncCameraAssistDataset,
     setCameraAssistChoreography,
-    setFocusCameraOffset,
     setRouteExplorationState,
     clearRouteExploration,
     markRouteExploration,

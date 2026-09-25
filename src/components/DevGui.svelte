@@ -13,8 +13,6 @@
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
-import { debugLog, debugError } from '@lib/utils/debug'
-import { appState } from '@lib/state/app.svelte'
 
   interface Props {
     visible?: boolean;
@@ -28,7 +26,7 @@ import { appState } from '@lib/state/app.svelte'
   onMount(() => {
     if (!visible) return;
 
-    let guiInstance: import("lil-gui").default | undefined;
+    let guiInstance: any;
 
     void (async () => {
       // Lazy import — keeps the lil-gui bundle out of the main chunk and
@@ -49,14 +47,19 @@ import { appState } from '@lib/state/app.svelte'
           try {
             localStorage.clear();
             sessionStorage.clear();
-            debugLog('[dev-gui] cleared local + session storage');
+            console.log('[dev-gui] cleared local + session storage');
           } catch (err) {
-            debugError('[dev-gui] clearStorage failed', err);
+            console.error('[dev-gui] clearStorage failed', err);
           }
         },
+        logSemanticState: () => {
+          const state = (window as unknown as { __semanticState?: unknown }).__semanticState;
+          console.log('[dev-gui] window.__semanticState:', state);
+        },
       };
-      gui.add(actions, 'triggerDemo').name('Trigger demo');
-      gui.add(actions, 'clearStorage').name('Clear storage');
+      gui.add(actions, 'triggerDemo').name('▶ Trigger demo');
+      gui.add(actions, 'clearStorage').name('🗑 Clear storage');
+      gui.add(actions, 'logSemanticState').name('🔍 Log state');
 
       // --- Scene folder ---
       const sceneFolder = gui.addFolder('Scene');
@@ -65,14 +68,15 @@ import { appState } from '@lib/state/app.svelte'
         .name('Auto-rotate')
         .onChange((v: boolean) => {
           autoRotateEnabled = v;
-          // F2 (2026-08-07): window.__semanticCamera was declared but never
-          // written anywhere in src — the toggle silently no-op'd. Wire to the
-          // real OrbitControls source (appState.controls) instead.
-          if (appState.controls) {
-            appState.controls.autoRotate = v;
-            debugLog('[dev-gui] camera.autoRotate =', v);
+          // Bridge to legacy camera-controls when running in coexistence mode.
+          const camera = (window as unknown as {
+            __semanticCamera?: { autoRotate?: boolean; userAutoRotateSpeed?: number };
+          }).__semanticCamera;
+          if (camera) {
+            camera.autoRotate = v;
+            console.log('[dev-gui] camera.autoRotate =', v);
           } else {
-            debugLog('[dev-gui] autoRotate toggle =', v, '(controls not ready yet)');
+            console.log('[dev-gui] autoRotate toggle =', v, '(no camera bridge yet)');
           }
         });
 
@@ -87,18 +91,21 @@ import { appState } from '@lib/state/app.svelte'
         .name('Force personality')
         .onChange((v: string) => {
           focusPersonalityOverride = v;
-          // The legacy `window.__semanticState` write here was retired in
-          // PR-D8: that global is declared in window.d.ts but never set, and
-          // lifecycle.ts:37 documents that fact. The override now lives only
-          // in the local $state rune above and is consumed by the focus
-          // pocket via the normal test-compat proxy.
-          debugLog('[dev-gui] focusPersonalityOverride =', v);
+          const state = (window as unknown as {
+            __semanticState?: { focusPersonalityOverride?: string };
+          }).__semanticState;
+          if (state) {
+            state.focusPersonalityOverride = v === 'auto' ? undefined : v;
+            console.log('[dev-gui] focusPersonalityOverride =', v);
+          } else {
+            console.log('[dev-gui] focusPersonalityOverride =', v, '(no state bridge yet)');
+          }
         });
 
       pocketFolder.open();
 
       // --- Postprocessing folder ---
-      let ppEnabled = window.__semanticPostprocessing?.isPremiumMode?.() ?? false;
+      let ppEnabled = document.body.dataset.premiumMode === 'true';
       let bloomIntensity = 0.5;
       let bloomThreshold = 0.6;
       let bloomRadius = 0.6;
@@ -111,12 +118,20 @@ import { appState } from '@lib/state/app.svelte'
         .onChange((v: boolean) => {
           ppEnabled = v;
           // Bridge to three-postprocessing module
-          const pp = window.__semanticPostprocessing
+          const pp = (window as unknown as {
+            __semanticPostprocessing?: { setPremiumMode?: (v: boolean) => void };
+          }).__semanticPostprocessing;
           if (pp?.setPremiumMode) {
             pp.setPremiumMode(v);
-            debugLog('[dev-gui] premium mode =', v);
+            console.log('[dev-gui] premium mode =', v);
           } else {
-            debugLog('[dev-gui] premium mode =', v, '(postprocessing module not ready)');
+            // Fallback: set body attribute directly
+            if (v) {
+              document.body.dataset.premiumMode = 'true';
+            } else {
+              delete document.body.dataset.premiumMode;
+            }
+            console.log('[dev-gui] premium mode =', v, '(body attr only)');
           }
         });
 
@@ -125,7 +140,9 @@ import { appState } from '@lib/state/app.svelte'
         .name('Bloom intensity')
         .onChange((v: number) => {
           bloomIntensity = v;
-          const pp = window.__semanticPostprocessing;
+          const pp = (window as unknown as {
+            __semanticPostprocessing?: { updateBloomParams?: (p: Record<string, number>) => void };
+          }).__semanticPostprocessing;
           pp?.updateBloomParams?.({ intensity: v });
         });
 
@@ -134,7 +151,9 @@ import { appState } from '@lib/state/app.svelte'
         .name('Bloom threshold')
         .onChange((v: number) => {
           bloomThreshold = v;
-          const pp = window.__semanticPostprocessing;
+          const pp = (window as unknown as {
+            __semanticPostprocessing?: { updateBloomParams?: (p: Record<string, number>) => void };
+          }).__semanticPostprocessing;
           pp?.updateBloomParams?.({ luminanceThreshold: v });
         });
 
@@ -143,7 +162,9 @@ import { appState } from '@lib/state/app.svelte'
         .name('Bloom radius')
         .onChange((v: number) => {
           bloomRadius = v;
-          const pp = window.__semanticPostprocessing;
+          const pp = (window as unknown as {
+            __semanticPostprocessing?: { updateBloomParams?: (p: Record<string, number>) => void };
+          }).__semanticPostprocessing;
           pp?.updateBloomParams?.({ radius: v });
         });
 
@@ -152,9 +173,11 @@ import { appState } from '@lib/state/app.svelte'
         .name('Depth-of-field')
         .onChange((v: boolean) => {
           dofEnabled = v;
-          const pp = window.__semanticPostprocessing;
+          const pp = (window as unknown as {
+            __semanticPostprocessing?: { setDofEnabled?: (v: boolean) => void };
+          }).__semanticPostprocessing;
           pp?.setDofEnabled?.(v);
-          debugLog('[dev-gui] DOF =', v);
+          console.log('[dev-gui] DOF =', v);
         });
 
       ppFolder.open();

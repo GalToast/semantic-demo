@@ -20,78 +20,83 @@
  * at the bottom (EXPLORATION_FOCUS_SYNC, SEARCH_STATE_RESET_REQUESTED,
  * SUMMARY_CARD_HIDE_REQUESTED, SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED)
  * are Svelte-native mirrors of the legacy
- * `initEventBusSubscriptions` calls in The legacy
+ * `initEventBusSubscriptions()` calls in js/modules/app.ts. The legacy
  * subscribers stay in place during the transition; the Svelte subscribers
  * are the new canonical handlers. Once all callers publish to the
  * Svelte bus, the legacy `subscribeKeyed` calls can be retired.
  */
-import { subscribeKeyed as _subscribeKeyedRaw, publish, EVENTS, type EventPayloads } from '@lib/orchestration/event-bus'
-
-// ── Teardown support ──────────────────────────────────────────────────────────
-//
-// The 19 subscribeKeyed subscriptions below are installed at module scope when
-// triggers.ts is first imported. subscribeKeyed is idempotent per key (re-import
-// replaces the old callback), so HMR/re-init does not duplicate handlers.
-// However, a full app teardown (teardownAppShell) does NOT re-evaluate the
-// module, so the event-bus `_subscribers` Set entries would persist until
-// clearAllSubscribers() (tests only). Track the unsubscribe handles here so
-// teardownAppShell() can release exactly these subscriptions without nuking
-// other modules' keyed subscribers (canvas-hover-preview, focus-ui, etc.).
-//
-// The local `subscribeKeyed` shadow keeps the call-site spelling identical to
-// the raw event-bus import (w11-t6 structural contract tests regex-match the
-// call-site name) while recording every handle for teardown.
-const _triggerUnsubscribes: Array<() => void> = []
-
-/**
- * Explicitly release all event-bus subscriptions installed by triggers.ts.
- * Safe to call more than once (handles are idempotent via Set.delete).
- */
-export function teardownTriggers(): void {
-    while (_triggerUnsubscribes.length > 0) {
-        _triggerUnsubscribes.pop()?.()
-    }
-}
-
-function subscribeKeyed<K extends keyof EventPayloads>(
-    key: string,
-    eventName: K,
-    callback: (payload: EventPayloads[K]) => void
-): () => void {
-    const unsubscribe = _subscribeKeyedRaw(key, eventName, callback)
-    _triggerUnsubscribes.push(unsubscribe)
-    return unsubscribe
-}
+import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { refreshCompositionState } from '@lib/stores/lifecycle/modes'
 import { recordEmptySearch } from '@lib/stores/lifecycle/search-sync'
 import { setActiveResult, setSearchStatus } from '@lib/stores/search.svelte'
-import { resetExplorationFocus, setSemanticLaneUiState } from './lifecycle'
-import { hideSummaryCard } from '@lib/journey/semantic-guide'
+import {
+    returnToOverview,
+    recenterFocusedNode,
+    resetExplorationFocus,
+    hideSummaryCard,
+    setSemanticLaneUiState
+} from './lifecycle'
 import { updateUrlState } from '@lib/orchestration/url-state'
 import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
-import {
-    navStore,
-    dispatchNavTransition,
-    NAV_TRANSITION_ACTIONS,
-    writeNavStateMirror,
-    getLastCommittedView
-} from '@lib/stores/navigation.svelte'
+import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
+import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte'
+import { activeClusterFilter } from '@lib/stores/filter.svelte'
 import { addTrailStop, setThreadCandidates, setTrailDepth, setTrailNeighborIndices } from '@lib/stores/journey.svelte'
-import { debugWarn } from '@lib/utils/debug'
 import { getBusinessRecords } from '@lib/data-store'
 import { appState } from '@lib/state/app.svelte.ts'
-import { buildNeighborhoodManifest, getSemanticThreadDisplayLimit, setTrailFromSeed } from '@lib/journey/neighborhood'
-import {
-    bindSearchResultInteractions,
-    getPendingFocusTransitionToken,
-    clearPendingFocusTransitionToken
-} from '@lib/search/orchestration'
-import type { BusinessRecord } from '@lib/types/business'
-import type { SearchResult } from '@lib/types/state'
-import type { SearchContext } from '@lib/search/state'
+import { buildNeighborhoodManifest, getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood'
+import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
+import { bindSearchResultInteractions } from '@lib/search/orchestration'
 import { get } from 'svelte/store'
-import { clearMobileSearchSheetState } from '@lib/search/search-panel-adapter'
+
+// ── Keyboard Support ──────────────────────────────────────────────────────────
+
+function isKeyboardTextEntryTarget(target: HTMLElement): boolean {
+    if (!target || typeof target.tagName !== 'string') return false
+    const tagName = target.tagName.toLowerCase()
+    const type = (target as HTMLInputElement).type?.toLowerCase() ?? ''
+    return (
+        (tagName === 'input' && ['text', 'search', 'email', 'url', 'password'].includes(type)) ||
+        tagName === 'textarea' ||
+        target.isContentEditable
+    )
+}
+
+/**
+ * Top-level keydown handler for the application shell.
+ * Replaces the imperative listeners from global-bindings.js.
+ */
+export function handleGlobalKeydown(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement
+    if (isKeyboardTextEntryTarget(target)) return
+
+    const key = event.key
+
+    if (key === 'Escape') {
+        // Check if we have anything to reset
+        const nav = get(navStore)
+        if (nav.focusedIndex !== null || nav.currentView !== 'galaxy' || get(activeClusterFilter) !== null) {
+            event.preventDefault()
+            returnToOverview()
+        }
+        return
+    }
+
+    if (key === 'ArrowLeft' || key === 'ArrowUp') {
+        event.preventDefault()
+        traverseNeighbor(-1)
+    } else if (key === 'ArrowRight' || key === 'ArrowDown') {
+        event.preventDefault()
+        traverseNeighbor(1)
+    } else if (key === 'Home') {
+        event.preventDefault()
+        returnToOverview()
+    } else if (key === 'End' || (key === 'c' && !event.ctrlKey && !event.metaKey)) {
+        event.preventDefault()
+        recenterFocusedNode()
+    }
+}
 
 // ── Search → Compass Subscriptions ────────────────────────────────────────────
 //
@@ -99,53 +104,34 @@ import { clearMobileSearchSheetState } from '@lib/search/search-panel-adapter'
 // here eliminates search-sync's import of compass-controller, which was
 // the reverse edge of the cycle.
 
-subscribeKeyed('triggers.ts:SEARCH_SUCCESS', EVENTS.SEARCH_SUCCESS, () => {
+subscribe(EVENTS.SEARCH_SUCCESS, () => {
     refreshCompositionState()
     updateJourneyCompass()
 })
 
-subscribeKeyed('triggers.ts:SEARCH_EMPTY', EVENTS.SEARCH_EMPTY, ({ query }) => {
+subscribe(EVENTS.SEARCH_EMPTY, ({ query }) => {
     refreshCompositionState()
     updateJourneyCompass()
     recordEmptySearch(query)
 })
 
-subscribeKeyed('triggers.ts:SEARCH_STARTED', EVENTS.SEARCH_STARTED, () => {
+subscribe(EVENTS.SEARCH_STARTED, () => {
     refreshCompositionState()
 })
 
-subscribeKeyed('triggers.ts:SEARCH_CLEARED', EVENTS.SEARCH_CLEARED, () => {
-    clearMobileSearchSheetState()
+subscribe(EVENTS.SEARCH_CLEARED, () => {
     refreshCompositionState()
     updateJourneyCompass()
 })
 
-subscribeKeyed('triggers.ts:SEARCH_FOCUS_TRANSITION_STARTED', EVENTS.SEARCH_FOCUS_TRANSITION_STARTED, () => {
+subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_STARTED, () => {
     refreshCompositionState()
     updateJourneyCompass()
 })
 
-subscribeKeyed('triggers.ts:SEARCH_FOCUS_TRANSITION_SETTLED', EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
+subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
     refreshCompositionState()
     updateJourneyCompass()
-    // W-view-preserve (2026-08-04, probe matrix): the click-driven focus
-    // transition reconciles surface/mode AFTER the camera settles, and that
-    // reconciliation includes a raw Svelte-$state write of currentView back
-    // to 'galaxy' that bypasses writeNavStateMirror — so a user-initiated
-    // map switch that lands while the settle is pending gets clobbered
-    // (the switch commits, VIEW_CHANGED fires, then the settle tail restores
-    // galaxy; dataset.activeView never flips). Re-assert the last view the
-    // user/flow committed through the canonical mirror API once the settle
-    // reconciliation has run. Deferred via queueMicrotask so we run AFTER
-    // any synchronous settle writers; post-settle re-assertions are stable
-    // (settled-state switches always stick — E2 probe matrix).
-    const committedView = getLastCommittedView()
-    queueMicrotask(() => {
-        const cur = get(navStore)
-        if (cur.currentView !== committedView) {
-            writeNavStateMirror({ currentView: committedView })
-        }
-    })
 })
 
 // ── Engine → Compass Subscriptions ───────────────────────────────────────────
@@ -159,11 +145,10 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_TRANSITION_SETTLED', EVENTS.SEARCH_FOCU
 // stage render with the new anchor. We preserve an existing 'focus-search'
 // surface so a search-result click that emits CAMERA_NODE_FOCUSED right
 // after SEARCH_FOCUS_REQUESTED keeps its search context.
-subscribeKeyed(
-    'triggers.ts:CAMERA_NODE_FOCUSED',
+subscribe(
     EVENTS.CAMERA_NODE_FOCUSED,
-    (payload: { index?: number; point?: unknown; options?: Record<string, unknown> } = {}) => {
-        const index = Number(payload?.index)
+    (payload: { index?: number; point?: unknown; options?: Record<string, unknown> } = {} as any) => {
+        const index = Number((payload as any)?.index)
         if (Number.isFinite(index) && index >= 0) {
             // Guard: when SEARCH_FOCUS_REQUESTED fires just before this event (the
             // search-click hot path), it has already set focusedIndex, mode, surface
@@ -176,205 +161,129 @@ subscribeKeyed(
             // (idempotent for the same focus context).
             const current = get(navStore) as { focusedIndex?: number | null }
             if (current.focusedIndex !== index) {
-                const $nav = get(navStore)
-                writeNavStateMirror({
+                navStore.update((s) => ({
+                    ...s,
                     focusedIndex: index,
                     mode: 'focus',
-                    surface: $nav.surface === 'focus-search' ? $nav.surface : 'focus',
-                    trailDepth: Math.max(1, $nav.trailDepth ?? 0),
-                    // Write trailSeedIndex on the canvas-click focus path too, mirroring
-                    // the SEARCH_FOCUS_REQUESTED subscriber (line ~211). Without this,
-                    // navState.trailSeedIndex stays stale until setTrailFromSeed fires
-                    // via setTimeout(0), and any syncSvelteNavFromLegacy in that window
-                    // propagates the stale value to the Svelte store (W58 F1).
-                    trailSeedIndex: index
-                })
+                    surface: s.surface === 'focus-search' ? s.surface : 'focus',
+                    trailDepth: Math.max(1, s.trailDepth ?? 0)
+                }))
             }
         }
         updateJourneyCompass()
-
-        const pendingToken = getPendingFocusTransitionToken()
-        if (pendingToken !== null) {
-            publish(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, { transitionToken: pendingToken })
-            clearPendingFocusTransitionToken()
-        }
     }
 )
-subscribeKeyed('triggers.ts:EXPLORATION_DEPTH_CHANGED', EVENTS.EXPLORATION_DEPTH_CHANGED, updateJourneyCompass)
-subscribeKeyed('triggers.ts:STATE_RESET', EVENTS.STATE_RESET, updateJourneyCompass)
+subscribe(EVENTS.EXPLORATION_DEPTH_CHANGED, updateJourneyCompass)
+subscribe(EVENTS.STATE_RESET, updateJourneyCompass)
 
 // ── Search Focus → Nav Subscriptions ─────────────────────────────────────────
 //
-// Ported from subscribeKeyed('app:search-focus-requested', ...).
+// Ported from js/modules/app.ts subscribeKeyed('app:search-focus-requested', ...).
 // The Svelte migration owns focus/nav state in navState; we set the focused
 // index + mode here so FocusPocket, ThreadInspector, and the focus stage
 // reactively render. The legacy engine reads the same focus state via its
 // own state mirror.
 
-subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index?: number }) => {
+subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index?: number }) => {
     if (typeof index !== 'number' || !Number.isFinite(index)) return
-    if (appState.searchState.searchError) return // Don't focus if there's a search error
     const focusIndex = index
-    // W68 H3: same-index re-publishes (url-state anchor sync at url-state.ts:617/764/884/888,
-    // search-result re-click at SearchResults.svelte:331, search/orchestration.ts:260/354)
-    // re-ran the full cascade below -- the exact W15-T1 redundant-reactivity class the
-    // sibling CAMERA_NODE_FOCUSED subscriber guards against. Re-fires also forcibly reset
-    // trailDepth to 1 even when the user advanced deeper. Skip the mirror/manifest/setters
-    // when the index is already current; the idempotent refreshCompositionState +
-    // updateJourneyCompass still run below the guard.
-    const currentFocus = get(navStore) as {
-        focusedIndex?: number | null
-        threadCandidates?: readonly unknown[]
-    }
-    // 2026-08-22 deep-link convergence: W68-H3's same-index skip also swallowed
-    // _setupDeferredNeighborRefire's re-fire (url-restore-deep-link.ts), which
-    // exists precisely to repopulate candidates once the lazily-loaded semantic
-    // thread artifact lands — leaving ?q=&anchor=N deep links stuck at "0 related
-    // businesses" forever. Allow a same-index recompute ONLY when the candidate
-    // set is empty, and then write ONLY candidate fields: mode/surface/trailDepth
-    // stay untouched so a ?surface=inside deep link converges without being
-    // dragged back to focus-search (W68-H3's redundant-cascade protection is
-    // fully preserved for non-empty candidate sets).
-    const candidatesEmpty = !currentFocus.threadCandidates || currentFocus.threadCandidates.length === 0
-    if (currentFocus.focusedIndex === focusIndex && candidatesEmpty) {
-        // 2026-08-23 thin-set fix: converging through buildNeighborhoodManifest
-        // (routeIndices=search results) keeps only query results that ALSO have
-        // a direct anchor edge — for ?q=coffee&anchor=<coffee shop> that is
-        // typically ONE business, while the anchor's true semantic neighborhood
-        // (17) lives in the seed pipeline. setTrailFromSeed is the SAME source
-        // the natural focus flow uses post-thread-load; its memo was invalidated
-        // when the artifact landed (invalidateTrailSeedCache), so this recomputes
-        // fresh. It writes ONLY candidate/trail-seed fields via the mirror —
-        // mode/surface/trailDepth stay untouched.
-        try {
-            setTrailFromSeed(focusIndex)
-        } catch (e) {
-            debugWarn('[triggers] deferred same-index seed rebuild failed', e)
+    const searchSummary = appState.currentSearchSummary
+    const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || []
+    const manifest = buildNeighborhoodManifest(focusIndex, resultIndices, {
+        displayLimit: getSemanticThreadDisplayLimit()
+    })
+    const candidateIndices: number[] = [...(manifest?.candidateIndices ?? [])]
+    const threadSource = manifest && manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback'
+    const threadReasonByIndex = new Map<number, string>(
+        candidateIndices.map((candidateIndex: number) => [
+            candidateIndex,
+            threadSource === 'semantic' ? 'semantic neighbor' : 'geometric proximity'
+        ])
+    )
+    navStore.update((s) => ({
+        ...s,
+        focusedIndex: focusIndex,
+        mode: 'focus',
+        surface: 'focus-search',
+        trailDepth: 1,
+        trailSeedIndex: focusIndex,
+        trailNeighborIndices: candidateIndices,
+        threadCandidates: candidateIndices,
+        threadReasonByIndex,
+        threadSource
+    }))
+    withStateMutation(() => {
+        const nav = legacyState.navState as unknown as {
+            trailSeedIndex?: number | null
+            trailNeighborIndices?: number[]
+            threadCandidates?: Array<{ index: number; source: string; reason: string }>
+            threadReasonByIndex?: Map<number, string>
+            threadSource?: string
         }
-    }
-    if (currentFocus.focusedIndex !== focusIndex) {
-        const searchSummary = appState.searchState.currentSearchSummary
-        const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || []
-        const manifest = buildNeighborhoodManifest(focusIndex, resultIndices, {
-            displayLimit: getSemanticThreadDisplayLimit()
+        nav.trailSeedIndex = index
+        nav.trailNeighborIndices = [...candidateIndices]
+        nav.threadCandidates = candidateIndices.map((candidateIndex: number) => ({
+            index: candidateIndex,
+            source: threadSource,
+            reason: threadReasonByIndex.get(candidateIndex) ?? 'nearby business relationship'
+        }))
+        nav.threadReasonByIndex = threadReasonByIndex
+        nav.threadSource = threadSource
+    })
+    // Add the focused node as the first trail stop so MapSummary
+    // (which gates on hasTrail() && trail.length > 0) renders.
+    // Guard against duplicate trail stops when SEARCH_FOCUS_REQUESTED re-fires
+    // (e.g. the url-state post-search re-publish for numeric anchors — see
+    // docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md).
+    const records = getBusinessRecords()
+    const record = records[Number(index)]
+    const walkHist = appState.navState.walkHistoryIndices ?? []
+    const lastTrailIndex = walkHist.length > 0 ? walkHist[walkHist.length - 1] : null
+    if (lastTrailIndex !== Number(index)) {
+        addTrailStop({
+            index: Number(index),
+            name: record?.name ?? `Node ${index}`,
+            reason: 'search-focus',
+            visitedAt: Date.now()
         })
-        const candidateIndices: number[] = [...(manifest?.candidateIndices ?? [])]
-        const threadSource = manifest && manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback'
-        const threadReasonByIndex = new Map<number, string>(
-            candidateIndices.map((candidateIndex: number) => [
-                candidateIndex,
-                threadSource === 'semantic' ? 'semantic neighbor' : 'geometric proximity'
-            ])
-        )
-        writeNavStateMirror({
-            focusedIndex: focusIndex,
-            mode: 'focus',
-            surface: 'focus-search',
-            trailDepth: 1,
-            trailSeedIndex: focusIndex,
-            trailNeighborIndices: candidateIndices,
-            threadCandidates: candidateIndices.map((idx) => ({
-                index: idx,
-                source: threadSource,
-                reason: threadReasonByIndex.get(idx) ?? ''
-            })),
-            threadReasonByIndex,
-            threadSource
-        })
-        {
-            // appState.navState is `NavState | null`; withStateMutation guarantees
-            // the state is initialized, so the structural cast is safe. We only write
-            // 5 fields here; the inline shape uses a loose threadCandidates element
-            // type (only `index`, `source`, `reason`) rather than the strict
-            // `ThreadCandidateLike` because we don't compute the scoring fields
-            // (`score`, `semanticScore`, `sameCity`, `sameStatus`) at this layer.
-            const nav = appState.navState as unknown as {
-                trailSeedIndex?: number | null
-                trailNeighborIndices?: number[]
-                threadCandidates?: Array<{ index: number; source: string; reason: string }>
-                threadReasonByIndex?: Map<number, string>
-                threadSource?: string
-            }
-            nav.trailSeedIndex = index
-            nav.trailNeighborIndices = [...candidateIndices]
-            nav.threadCandidates = candidateIndices.map((candidateIndex: number) => ({
-                index: candidateIndex,
-                source: threadSource,
-                reason: threadReasonByIndex.get(candidateIndex) ?? 'nearby business relationship'
-            }))
-            nav.threadReasonByIndex = threadReasonByIndex
-            nav.threadSource = threadSource
-        }
-        // Add the focused node as the first trail stop so MapSummary
-        // (which gates on hasTrail() && trail.length > 0) renders.
-        // Guard against duplicate trail stops when SEARCH_FOCUS_REQUESTED re-fires
-        // (e.g. the url-state post-search re-publish for numeric anchors — see
-        // docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md).
-        const records = getBusinessRecords()
-        const record = records[Number(index)]
-        const walkHist = appState.navState.walkHistoryIndices ?? []
-        const lastTrailIndex = walkHist.length > 0 ? walkHist[walkHist.length - 1] : null
-        if (lastTrailIndex !== Number(index)) {
-            addTrailStop({
-                index: Number(index),
-                name: record?.name ?? `Node ${index}`,
-                reason: 'search-focus',
-                visitedAt: Date.now()
-            })
-        }
-        setTrailNeighborIndices(candidateIndices)
-        setThreadCandidates(candidateIndices)
-        setTrailDepth(1)
-        setActiveResult(String(index))
-        setSearchStatus('focusing')
     }
+    setTrailNeighborIndices(candidateIndices)
+    setThreadCandidates(candidateIndices)
+    setTrailDepth(1)
+    setActiveResult(String(index))
+    setSearchStatus('focusing')
     refreshCompositionState()
     updateJourneyCompass()
 })
 
 // ── Engine → Nav Sync Subscriptions ──────────────────────────────────────────
 //
-// Ported from ::initEventBusSubscriptions.
+// Ported from js/modules/app.ts::initEventBusSubscriptions().
 // The engine kernel publishes these events from the legacy track; the
 // Svelte track needs to mirror the side effects so the Svelte navStore
 // and the Svelte focus card stay in lockstep with the engine's
 // exploration state.
 
 /**
- * EXPLORATION_FOCUS_SYNC is published on exploration-state restore
- * (restoreFocusTrailState in journey.ts:248, currently dormant — no live
- * callers). The legacy code used it to dispatch a
- * NAV_TRANSITION_ACTIONS.FOCUS_NODE with skipHistory: true so the
- * navigation history isn't pushed twice. The Svelte navStore handles
- * focusedIndex / mode / surface via the FOCUS_NODE branch of
- * dispatchNavTransition, so we mirror that here.
- *
- * Guard: mirrors the W68 SEARCH_FOCUS_REQUESTED same-index protection —
- * FOCUS_NODE dispatch (mode-transitions.svelte.ts:124-149) writes
- * mode/surface 'focus' unconditionally, so a same-index re-publish would
- * collapse a deeper surface (inside/trail) back to 'focus'. Skip when the
- * index is already current AND already on the focus surface; a re-publish
- * from a deeper surface must still dispatch so the user can return.
+ * EXPLORATION_FOCUS_SYNC is published by the engine after a canvas node
+ * pick, a search-result focus, or a thread traversal. The legacy code
+ * used it to dispatch a NAV_TRANSITION_ACTIONS.FOCUS_NODE with
+ * skipHistory: true so the navigation history isn't pushed twice. The
+ * Svelte navStore handles focusedIndex / mode / surface via the FOCUS_NODE
+ * branch of dispatchNavTransition, so we mirror that here.
  */
-subscribeKeyed(
-    'triggers.ts:EXPLORATION_FOCUS_SYNC',
-    EVENTS.EXPLORATION_FOCUS_SYNC,
-    (payload: { index?: number; skipHistory?: boolean } = {}) => {
-        const index = Number(payload?.index)
-        if (!Number.isFinite(index) || index < 0) return
-        const currentFocus = get(navStore) as { focusedIndex?: number | null; mode?: string; surface?: string }
-        if (currentFocus.focusedIndex === index && currentFocus.mode === 'focus' && currentFocus.surface === 'focus')
-            return
-        dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
-            index,
-            // The Svelte navStore does not have a skipHistory flag, but
-            // appendHistory:false is the closest equivalent and prevents
-            // duplicate history entries when the engine has already recorded
-            // the focus.
-            appendHistory: payload.skipHistory === true ? false : true
-        })
-    }
-)
+subscribe(EVENTS.EXPLORATION_FOCUS_SYNC, (payload: { index: number; skipHistory?: boolean } = {} as any) => {
+    const index = Number((payload as any)?.index)
+    if (!Number.isFinite(index) || index < 0) return
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
+        index,
+        // The Svelte navStore does not have a skipHistory flag, but
+        // appendHistory:false is the closest equivalent and prevents
+        // duplicate history entries when the engine has already recorded
+        // the focus.
+        appendHistory: (payload as any)?.skipHistory === true ? false : true
+    })
+})
 
 /**
  * SEARCH_STATE_RESET_REQUESTED is published by the search pipeline when
@@ -382,22 +291,17 @@ subscribeKeyed(
  * resetExplorationFocus preserves the current search summary by default,
  * matching the legacy preserveSearch:true default in lifecycle-reset.ts.
  */
-subscribeKeyed(
-    'triggers.ts:SEARCH_STATE_RESET_REQUESTED',
-    EVENTS.SEARCH_STATE_RESET_REQUESTED,
-    (options: Record<string, unknown> = {}) => {
-        resetExplorationFocus(options as Parameters<typeof resetExplorationFocus>[0])
-    }
-)
+subscribe(EVENTS.SEARCH_STATE_RESET_REQUESTED, (options: Record<string, unknown> = {}) => {
+    resetExplorationFocus(options as Parameters<typeof resetExplorationFocus>[0])
+})
 
 /**
  * SUMMARY_CARD_HIDE_REQUESTED is published when the summary card should
- * be hidden. Delegates to the canonical implementation in
- * journey/semantic-guide.ts (was previously a no-op proxy via
- * orchestration/lifecycle.ts — fixed in W46-T2-a when the dead no-op
- * stubs in lifecycle.ts were traced to their real implementations).
+ * be hidden. The Svelte focus store already owns the selected business
+ * state; hideSummaryCard is a no-op proxy that lives in the orchestration
+ * layer for API symmetry with the legacy event-bus contract.
  */
-subscribeKeyed('triggers.ts:SUMMARY_CARD_HIDE_REQUESTED', EVENTS.SUMMARY_CARD_HIDE_REQUESTED, () => {
+subscribe(EVENTS.SUMMARY_CARD_HIDE_REQUESTED, () => {
     hideSummaryCard()
 })
 
@@ -407,17 +311,13 @@ subscribeKeyed('triggers.ts:SUMMARY_CARD_HIDE_REQUESTED', EVENTS.SUMMARY_CARD_HI
  * owns its own state via the focus store, so this subscription is a
  * documented no-op (matches the legacy stub at app.ts:228-231).
  */
-subscribeKeyed(
-    'triggers.ts:SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED',
-    EVENTS.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED,
-    () => {
-        // Handled reactively by the Svelte focus store and semantic-guide component.
-    }
-)
+subscribe(EVENTS.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED, () => {
+    // Handled reactively by the Svelte focus store and semantic-guide component.
+})
 
 // ── W11-T6 Wave 2: Remaining event-bus subscriptions ────────────────────────
 //
-// Ported from ::initEventBusSubscriptions lines 289-339.
+// Ported from js/modules/app.ts::initEventBusSubscriptions() lines 289-339.
 // These five subscriptions complete the Svelte-native mirror of the legacy
 // event-bus wiring. The legacy subscribeKeyed calls stay in place until all
 // callers publish to the Svelte bus.
@@ -427,10 +327,8 @@ subscribeKeyed(
  * synchronized. The Svelte url-state module owns URL updates; we
  * forward params and options directly.
  */
-subscribeKeyed('triggers.ts:URL_SYNC_REQUESTED', EVENTS.URL_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
-    const params = payload.params as Record<string, string | null | undefined> | undefined
-    const reason = payload.reason as string | undefined
-    const mode = payload.mode as 'push' | 'replace' | undefined
+subscribe(EVENTS.URL_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
+    const { params, reason, mode } = payload as any
     updateUrlState(params ?? {}, { reason, mode })
 })
 
@@ -441,46 +339,39 @@ subscribeKeyed('triggers.ts:URL_SYNC_REQUESTED', EVENTS.URL_SYNC_REQUESTED, (pay
  * The Svelte search orchestration module owns rebinding for DOM results
  * rendered outside the component lifecycle.
  */
-subscribeKeyed(
-    'triggers.ts:SEARCH_UI_SYNC_REQUESTED',
-    EVENTS.SEARCH_UI_SYNC_REQUESTED,
-    (payload: Record<string, unknown> = {}) => {
-        const resultsEl = payload.resultsEl instanceof HTMLElement ? payload.resultsEl : null
-        const statusEl = payload.statusEl instanceof HTMLElement ? payload.statusEl : null
-        const results = Array.isArray(payload.results) ? (payload.results as SearchResult[]) : null
-        const renderContext = payload.renderContext as SearchContext | undefined
-        if (!resultsEl || !statusEl || !results || !renderContext) return
-        bindSearchResultInteractions(resultsEl, statusEl, results, renderContext)
-    }
-)
+subscribe(EVENTS.SEARCH_UI_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
+    const { resultsEl, statusEl, results, renderContext } = payload as any
+    if (!resultsEl || !statusEl || !Array.isArray(results) || !renderContext) return
+    bindSearchResultInteractions(resultsEl, statusEl, results, renderContext)
+})
 
 /**
  * SEARCH_STATUS_SYNC_REQUESTED is published when the search status
  * display should update to reflect focus on a specific point. The Svelte
  * ui-feedback module owns the status DOM sync.
  */
-subscribeKeyed(
-    'triggers.ts:SEARCH_STATUS_SYNC_REQUESTED',
-    EVENTS.SEARCH_STATUS_SYNC_REQUESTED,
-    (payload: Record<string, unknown> = {}) => {
-        const point = payload.point as BusinessRecord | undefined
-        const options = payload.options as Record<string, unknown> | undefined
-        if (!point) return
-        syncSearchStatusForFocus(point, options)
-    }
-)
+subscribe(EVENTS.SEARCH_STATUS_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
+    const { point, options } = payload as any
+    syncSearchStatusForFocus(point, options)
+})
 
 /**
  * SEMANTIC_LANE_STATE_REQUESTED is published when the semantic lane
  * health state should update. The Svelte lifecycle module owns this
  * as a no-op (state is managed reactively in the Svelte store).
  */
-subscribeKeyed(
-    'triggers.ts:SEMANTIC_LANE_STATE_REQUESTED',
-    EVENTS.SEMANTIC_LANE_STATE_REQUESTED,
-    (payload: Record<string, unknown> = {}) => {
-        const laneState = payload.laneState as string | undefined
-        const options = payload.options as Record<string, unknown> | undefined
-        setSemanticLaneUiState(laneState ?? '', options)
-    }
-)
+subscribe(EVENTS.SEMANTIC_LANE_STATE_REQUESTED, (payload: Record<string, unknown> = {}) => {
+    const { laneState, options } = payload as any
+    setSemanticLaneUiState(laneState, options)
+})
+
+/**
+ * TOOLTIP_HIDE_REQUESTED is published when the tooltip should be hidden.
+ * The real hideTooltip lives in js/modules/tooltip.ts and is not yet
+ * exposed via a Svelte/TS bridge. Once a tooltip bridge exists in
+ * src/lib/, replace this no-op with the imported function.
+ */
+subscribe(EVENTS.TOOLTIP_HIDE_REQUESTED, () => {
+    // TODO (Wave 2): legacy function — engine bridge not yet wired.
+    // hideTooltip();
+})

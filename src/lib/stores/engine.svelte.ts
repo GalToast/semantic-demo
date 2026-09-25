@@ -1,55 +1,24 @@
 /**
- * @lib/stores/engine.svelte.ts — Engine lifecycle status store (Svelte 5 Runes)
+ * @lib/stores/engine.svelte.ts — Engine lifecycle status store
  *
  * Single source of truth for the engine's lifecycle status.
- * Migrated to Svelte 5 runes with backward compatibility for legacy subscribers.
+ * Replaces the mutable ctx.status field on the legacy BridgeContext.
  */
 
-import type { Readable } from 'svelte/store'
+import { writable, type Readable } from 'svelte/store'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type EngineStatus = 'idle' | 'loading' | 'ready' | 'degraded' | 'destroyed'
 
-// ── State Class ──────────────────────────────────────────────────────────────
+// ── State ────────────────────────────────────────────────────────────────────
 
-class EngineStatusState {
-    status = $state<EngineStatus>('idle')
-    private subscribers = new Set<(_v: EngineStatus) => void>()
-
-    set(next: EngineStatus): void {
-        this.status = next
-        this.notify()
-    }
-
-    get(): EngineStatus {
-        return this.status
-    }
-
-    subscribe(run: (_v: EngineStatus) => void): () => void {
-        this.subscribers.add(run)
-        // Svelte 4 Readable contract: subscribe is executed immediately with the current value
-        run(this.status)
-        return () => {
-            this.subscribers.delete(run)
-        }
-    }
-
-    private notify(): void {
-        for (const run of this.subscribers) {
-            run(this.status)
-        }
-    }
-}
-
-const _engineStatus = new EngineStatusState()
+const _engineStatus = writable<EngineStatus>('idle')
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /** Reactive readable store for engine status. */
-export const engineStatusStore: Readable<EngineStatus> = {
-    subscribe: (run) => _engineStatus.subscribe(run)
-}
+export const engineStatusStore: Readable<EngineStatus> = _engineStatus
 
 /**
  * Update the engine status.
@@ -59,8 +28,12 @@ export function setEngineStatus(next: EngineStatus): void {
 }
 
 /**
- * Get the current engine status (reactive/non-reactive safe read).
+ * Get the current engine status (non-reactive read).
  */
 export function getEngineStatus(): EngineStatus {
-    return _engineStatus.get()
+    let current: EngineStatus = 'idle'
+    _engineStatus.subscribe((v) => {
+        current = v
+    })()
+    return current
 }

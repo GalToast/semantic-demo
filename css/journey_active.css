@@ -25,146 +25,13 @@
         box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* A2.1 (2026-07-15): at ≤360px the narrow tier (css/mobile_premium__layout.css,
-   the ≤360 block gated on body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any))
-   re-pins .journey-compass with left:10px; right:10px but never clears the base
-   translateX(-50%) centering from the rule above. The result: the compass panel
-   is shoved half its width off the left viewport edge (rail centering offset).
-   journey_active.css is @import-ed into semantic-demo.css (the first legacy link),
-   so it cascades BEFORE mobile_premium__layout.css — this override must mirror the
-   narrow gate exactly so it only clears the transform where narrow re-pins left/right.
-   Surface-map-any / idle keep translateX(-50%) centering (correct at these widths);
-   widths ≥361px keep translateX(-50%) centering untouched. */
-@media (max-width: 360px) {
-    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .journey-compass {
-        transform: none;
-    }
-}
-
-/* D: Hide the journey compass panel in map mode (no active route context).
- * The component sets data-density='hidden' to signal "I'm not relevant now"
- * (see src/lib/orchestration/compass-controller.ts: density = 'hidden' when
- * phase === 'map' && !hasActiveRouteContext). The mobile chrome cascade
- * honors this signal in @media (max-width: 768px) — extend it to all
- * viewports. Without this rule, desktop users in ?view=map see a 560×339
- * panel duplicating the top chip rail (mode switching) and the
- * .map-empty-state (the "Choose a business to map its neighborhood"
- * prompt). The panel has no unique purpose on desktop in this state. */
-body.surface-map-any .journey-compass[data-density='hidden'] {
-    display: none;
-    visibility: hidden;
-    pointer-events: none;
-}
-
-/* D: Compact the .map-empty-state at desktop in map-idle mode.
- * The base rule in css/shell.css positions the empty state at viewport
- * center (top:50%; left:50%; transform:translate(-50%, -50%)) at
- * 320×207 — this blocks the map center where the colorful markers
- * cluster. The mobile idle rule (css/mobile_premium__layout.css:300)
- * moves it to bottom-anchor, but only inside @media (max-width: 768px).
- * On desktop (1440×900) the user gets the 320×207 panel dead-center
- * with no map visible behind it.
- *
- * The fix: place the empty state as a compact pill just below the
- * map-view-header (24px header top + 60px header height), narrow it
- * to 280px, and trim the padding. It now reads as a top-aligned
- * onboarding nudge instead of a modal blocking the map.
- */
-body.surface-map-idle .map-empty-state {
-    top: calc(24px + env(safe-area-inset-top, 0px) + 64px);
-    bottom: auto;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(280px, calc(100vw - 48px));
-    min-height: 0;
-    gap: 5px;
-    padding: 12px 16px 14px;
-    border-radius: 12px;
-    /* W53 vision-refresh issue #4: the 0.84/0.78 gradient fully occluded the
-       dense marker cluster behind the compact top pill. Lower alpha to 0.6/0.5
-       so the colorful map markers read through while the title/note text
-       (rgba 0.94 / 0.85) keeps AA contrast over the darker gradient stop.
-       W53 jury-rerun (2026-07-18): 3/4 jurors still read 0.6/0.5 as "opaque /
-       too heavy" (llama-90b called it subtle/fine — split). Nudged the TOP
-       stop 0.6→0.5 for a hintier read; BOTTOM stays 0.5 so the
-       .map-empty-state-note (0.85 white) keeps ≥4.5:1 AA — lowering the
-       bottom stop would break note contrast, so the jurors' "~30%" ask is
-       blocked by AA. */
-    background: linear-gradient(180deg, rgba(18, 23, 30, 0.5), rgba(8, 12, 18, 0.5));
-    box-shadow:
-        inset 0 1px 0 var(--glass-reflection-muted),
-        0 8px 24px var(--shadow-penumbra);
-}
-
-body.surface-map-idle .map-empty-state-icon {
-    width: 22px;
-    height: 22px;
-}
-
-body.surface-map-idle .map-empty-state-title {
-    font-size: 13px;
-    line-height: 1.2;
-    font-weight: 700;
-    max-width: 240px;
-}
-
-body.surface-map-idle .map-empty-state-note {
-    font-size: 11px;
-    line-height: 1.3;
-    max-width: 240px;
-    /* W52-vision-fix-E (2026-07-16): The base shell.css rule colors the
-       note with `var(--color-text-muted)` which resolves to
-       rgba(255,255,255,0.58) — a fade the W52 vision jury flagged as
-       "low-contrast white text" on Surface 06 (desktop map @view=map).
-       Pull desktop note contrast up to match the mobile idle overlay in
-       css/mobile_premium__layout.css `.map-empty-state-note` override
-       (rgba(218,232,229,0.85)) so both surfaces read at the same A-RANK
-       contrast against the 0.82-alpha dark gradient pill background.
-       Title is already concentrated at rgba(255,255,255,0.94) and
-       needs no change. */
-    color: rgba(228, 240, 240, 0.85);
-}
-
-/* D: Hide the redundant "County terrain" h2 in map-idle mode.
- * In idle state the .map-empty-state's "Choose a business to map its
- * neighborhood" title is the actionable prompt; the header's "County
- * terrain" h2 is just a static landmark that competes for attention
- * in the same top-left corner. Both panels also share the "MAP |
- * MONTGOMERY COUNTY" framing in different forms. Hide the h2 in idle
- * to let the empty state own the message; the h2 reappears in
- * non-idle states (e.g. when a trail is showing on the map). */
-body.surface-map-idle .map-view-title {
-    display: none;
-}
-
-/* W56: suppress the a11y h1.app-title in the map surface. The
- * .map-view-header (z-index 800, absolute top:24) provides the
- * visible identity ("MAP | MONTGOMERY COUNTY" + "County terrain"),
- * and the h1.app-title (12.48px, z-index 50, margin-top:56) leaks a
- * fragment behind the map header at the left edge. The W50-UX
- * margin-top:56 was calibrated for the app-header banner (height 56)
- * but the map-view-header extends to y~83, overlapping the h1.
- * Visually hide via the sr-only pattern (SR/SEO still read it),
- * mirroring the mobile <=768px sr-only rule in App.svelte. */
-body.surface-map .app-title {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
-
 @media (min-width: 769px) {
     .journey-compass {
         left: calc(360px + (100vw - 360px) / 2);
         max-width: calc(100vw - 392px);
     }
 
-    body.view-galaxy:is(
+    body[data-active-view='galaxy']:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -189,12 +56,17 @@ body.surface-map .app-title {
         transform: none;
     }
 
-    body.view-galaxy:is(
+    body[data-active-view='galaxy']:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
         )
-        body.view-galaxy:is(
+        .journey-compass-copy {
+        width: 100%;
+        min-width: 0;
+    }
+
+    body[data-active-view='galaxy']:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -203,7 +75,7 @@ body.surface-map .app-title {
         white-space: nowrap;
     }
 
-    body.view-galaxy:is(
+    body[data-active-view='galaxy']:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -212,29 +84,22 @@ body.surface-map .app-title {
         max-width: none;
     }
 
-    /* Focus/trail keeps the header mode chips as the navigation rail. The
-       journey compass spans are decorative duplicates in this surface, but
-       trailDepth used to bypass the phase-based suppress-step-indicators
-       class and expand the compact compass into a tall vertical stack. */
-    body.view-galaxy:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
-        .journey-compass
-        [data-journey-step] {
+    body[data-active-view='galaxy']:is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
+        .journey-compass-rail {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body.view-galaxy:is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='semantic-dive']
-        )
-
     /* D39a: In map view, the journey-compass rail (~360px of 5 step buttons)
        squeezes the copy column into ~120px and the title wraps vertically
        word-by-word. Stack the rail below the copy and let the copy span
        the full compass width. */
-    .journey-compass[data-active-view='map'] {
+    body[data-active-view='map'] .journey-compass {
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: auto auto;
         row-gap: 10px;
@@ -242,26 +107,26 @@ body.surface-map .app-title {
         max-width: calc(100vw - 392px);
     }
 
-    .journey-compass[data-active-view='map'] .journey-compass-copy {
+    body[data-active-view='map'] .journey-compass-copy {
         width: 100%;
         min-width: 0;
     }
 
-    .journey-compass[data-active-view='map'] .journey-compass-title {
+    body[data-active-view='map'] .journey-compass-title {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 100%;
     }
 
-    .journey-compass[data-active-view='map'] .journey-compass-rail {
+    body[data-active-view='map'] .journey-compass-rail {
         grid-row: 2;
         grid-column: 1;
         justify-content: flex-start;
         min-width: 0;
     }
 
-    .journey-compass[data-active-view='map'] .journey-compass-rail .journey-compass-step {
+    body[data-active-view='map'] .journey-compass-rail .journey-compass-step {
         min-width: 0;
     }
 
@@ -271,7 +136,7 @@ body.surface-map .app-title {
        on legacy absolute .map-strip-title rules"). The legacy floating-
        pill design positions the title at y=-68 (above the viewport)
        because the 40-71px strip with bottom:120px leaves negative space. */
-    .map-strip-title[data-route-director='map-trail'] {
+    body[data-route-director='map-trail'] .map-strip-title {
         position: static;
         inset: auto;
         transform: none;
@@ -352,15 +217,32 @@ body.surface-map .app-title {
 .journey-compass-note {
     margin-top: 3px;
     max-width: 48ch;
-    color: rgba(218, 238, 236, 0.85);
+    color: rgba(218, 238, 236, 0.72);
     font-size: 10.5px;
     line-height: 1.34;
 }
 
-.journey-compass[data-panel-surface='focus'] .journey-compass-note {
+body[data-panel-surface='focus'] .journey-compass-note {
     max-width: 52ch;
     font-size: 12px;
     line-height: 18px;
+}
+
+.journey-compass-rail {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    gap: 8px;
+    min-width: 0;
+    padding: 2px 8px;
+    scroll-snap-type: x mandatory;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12px, #000 calc(100% - 12px), transparent 100%);
+}
+.journey-compass-rail::-webkit-scrollbar {
+    display: none;
 }
 
 .journey-compass-actions {
@@ -388,10 +270,6 @@ body.surface-map .app-title {
     line-height: 1;
     text-transform: uppercase;
     white-space: nowrap;
-}
-.journey-compass-action:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
-    outline-offset: 2px;
 }
 
 .journey-compass-action[hidden],
@@ -430,7 +308,8 @@ body.surface-map .app-title {
 }
 
 @media (min-width: 769px) {
-    body:not(.surface-idle) .journey-compass-actions {
+    body.is-active .journey-compass-actions,
+    body:not(.is-active) .journey-compass-actions {
         display: none;
     }
 }
@@ -456,12 +335,6 @@ body.surface-map .app-title {
     overflow-y: hidden;
     overflow-x: hidden;
     scroll-snap-align: center;
-    /* PR-G: Shrink to content in grid mode (map view single-column layout).
-       The journey-compass grid uses minmax(0, 1fr) which forces children to
-       fill the cell. Without this, each step pill expands to ~530px wide
-       and the six steps stack vertically, dominating the header area. */
-    width: max-content;
-    justify-self: start;
     transition:
         color 0.24s ease,
         background 0.24s ease,
@@ -470,7 +343,7 @@ body.surface-map .app-title {
 }
 
 .journey-compass-step:not(.current):not(.done) {
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255, 255, 255, 0.55);
 }
 
 .journey-compass-step.done {
@@ -530,14 +403,14 @@ body.surface-map .app-title {
 }
 
 @media (min-width: 769px) {
-    .journey-compass[data-active-view='galaxy'] .journey-compass-rail {
+    body[data-active-view='galaxy'] .journey-compass-rail {
         grid-template-columns: repeat(5, minmax(58px, 1fr));
         justify-content: start;
         width: 100%;
         max-width: 100%;
     }
 
-    .journey-compass[data-active-view='galaxy'] .journey-compass-step {
+    body[data-active-view='galaxy'] .journey-compass-step {
         min-width: 58px;
         padding: 0 9px;
         overflow: visible;
@@ -548,7 +421,7 @@ body.surface-map .app-title {
 
 /* polish184: mobile focus cockpit hierarchy after the field-first search beat. */
 @media (max-width: 768px) {
-    body.surface-focus-search #synthesize-trigger {
+    body[data-panel-surface='focus-search'] #synthesize-trigger {
         margin: 7px 0 8px;
         padding: 7px 8px;
         border-radius: 14px;
@@ -561,15 +434,15 @@ body.surface-map .app-title {
             0 10px 26px var(--shadow-antumbra);
     }
 
-    body.surface-focus-search #synthesize-trigger::before,
-    body.surface-focus-search #synthesize-trigger .guide-cta-kicker,
-    body.surface-focus-search #synthesize-trigger .guide-cta-note {
+    body[data-panel-surface='focus-search'] #synthesize-trigger::before,
+    body[data-panel-surface='focus-search'] #synthesize-trigger .guide-cta-kicker,
+    body[data-panel-surface='focus-search'] #synthesize-trigger .guide-cta-note {
         display: none;
     }
 
-    body.surface-focus-search #synthesize-trigger .btn-synthesize {
+    body[data-panel-surface='focus-search'] #synthesize-trigger .btn-synthesize {
         justify-content: flex-start;
-        min-height: 44px;
+        min-height: 36px;
         padding: 7px 9px;
         border-radius: 12px;
         font-size: 11px;
@@ -581,10 +454,10 @@ body.surface-map .app-title {
         box-shadow: inset 0 1px 0 var(--glass-reflection-soft);
     }
 
-    body.surface-focus-search #synthesize-trigger .btn-synthesize::after {
+    body[data-panel-surface='focus-search'] #synthesize-trigger .btn-synthesize::after {
         content: 'optional read';
         margin-left: auto;
-        color: rgba(255, 226, 132, 0.85);
+        color: rgba(255, 226, 132, 0.66);
         font-family: 'JetBrains Mono', monospace;
         font-size: 8px;
         font-weight: 700;
@@ -592,39 +465,38 @@ body.surface-map .app-title {
         text-transform: uppercase;
     }
 
-    body.surface-focus-search #synthesize-trigger .sparkle {
+    body[data-panel-surface='focus-search'] #synthesize-trigger .sparkle {
         width: 18px;
         height: 18px;
         flex-basis: 18px;
         animation: none;
     }
 
-    body.surface-focus-search #synthesize-trigger .sparkle .ui-icon {
+    body[data-panel-surface='focus-search'] #synthesize-trigger .sparkle .ui-icon {
         width: 12px;
         height: 12px;
     }
 
-    body.surface-focus-search .selected-card {
+    body[data-panel-surface='focus-search'] .selected-card {
         display: none;
     }
 
-    /* LOW1: hide stale search DOM behind focus pocket — SearchResults.svelte is .search-results-wrapper, not legacy .search-results */
-    body.surface-focus-search .search-results.active,
-    body.surface-focus-search .search-results-wrapper {
-        display: none;
-    }
-    body.surface-focus .search-results-wrapper,
-    body.surface-semantic-dive .search-results-wrapper,
-    body.surface-inside .search-results-wrapper {
-        display: none;
+    body[data-panel-surface='focus-search'] .search-results.active {
+        max-height: min(24vh, 180px);
+        margin: 8px 0 0;
+        padding: 6px;
+        opacity: 0.94;
+        overflow-y: auto;
+        overflow-x: hidden;
+        pointer-events: auto;
     }
 
-    body.surface-focus-search .focus-lens-truth {
+    body[data-panel-surface='focus-search'] .focus-lens-truth {
         padding: 6px 8px;
         border-radius: 12px;
     }
 
-    body.surface-focus-search .focus-thread-inspector:not(.active) {
+    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) {
         grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
         gap: 5px 7px;
@@ -635,25 +507,25 @@ body.surface-map .app-title {
         background: rgba(5, 12, 17, 0.38);
     }
 
-    body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-copy,
-    body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-meta,
-    body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-actions {
+    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) .focus-thread-inspector-copy,
+    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) .focus-thread-inspector-meta,
+    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) .focus-thread-inspector-actions {
         display: none;
     }
 
-    body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-kicker {
-        color: rgba(255, 226, 132, 0.85);
+    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) .focus-thread-inspector-kicker {
+        color: rgba(255, 226, 132, 0.6);
     }
 
-    body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-title {
-        color: rgba(220, 241, 238, 0.85);
+    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) .focus-thread-inspector-title {
+        color: rgba(220, 241, 238, 0.72);
         font-size: 9.5px;
         font-weight: 700;
     }
 }
 
-body.surface-focus .focus-stage-journey.active,
-body.surface-focus-search .focus-stage-journey.active {
+body[data-panel-surface='focus'] .focus-stage-journey.active,
+body[data-panel-surface='focus-search'] .focus-stage-journey.active {
     display: grid;
     grid-template-columns: 54px minmax(0, 1fr) 64px;
     align-items: stretch;
@@ -674,8 +546,8 @@ body.surface-focus-search .focus-stage-journey.active {
         border-color 0.34s ease;
 }
 
-body.surface-focus .focus-stage-journey-meta,
-body.surface-focus-search .focus-stage-journey-meta {
+body[data-panel-surface='focus'] .focus-stage-journey-meta,
+body[data-panel-surface='focus-search'] .focus-stage-journey-meta {
     padding: 7px 10px 8px;
     border-radius: 15px;
     text-align: left;
@@ -690,30 +562,3 @@ body.surface-focus-search .focus-stage-journey-meta {
     margin-top: 10px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    /* Silence action-beacon and other journey-active animations for users who prefer reduced motion. */
-    .journey-compass-action.primary[data-journey-action='center-anchor']::after,
-    .journey-compass-action.primary[data-journey-action='next-stop']::after {
-        animation: none;
-    }
-}
-
-/* TrailControls owns Show trail + Prev + context + Next as a single toolbar
-   element, but the parent `.focus-stage-journey.active` grid above splits
-   the row into 3 columns (54px / 1fr / 64px). Without this span, the
-   trail-controls lands in column 1 (~42px after gap) and its 4 flex
-   children wrap into a vertical stack, breaking the row chrome and
-   truncating the trail-context text to 1–2 chars per line. */
-body.surface-focus .focus-stage-journey.active > #trail-controls,
-body.surface-focus-search .focus-stage-journey.active > #trail-controls {
-    grid-column: 1 / -1;
-    min-width: 0;
-    width: 100%;
-    flex-wrap: nowrap;
-}
-
-body.surface-focus .focus-stage-journey.active > #trail-controls .trail-context-wrapper,
-body.surface-focus-search .focus-stage-journey.active > #trail-controls .trail-context-wrapper {
-    min-width: 0;
-    overflow: hidden;
-}

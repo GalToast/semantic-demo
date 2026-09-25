@@ -7,114 +7,51 @@
   applyLocalNeighborhoodFocus / clearPocketNodes. Keyboard/screen-reader surface lives
   in FocusPocketA11y.svelte.
 
-  navState is read directly from appState (a Svelte 5 rune-backed $state) via $derived,
-  so no svelte/store subscribe mirror is needed.
+  The navStore → $state mirror is required because navStore is a svelte/store writable;
+  reading it via get() inside $effect does NOT register a tracked dependency under
+  Svelte 5 runes.
 -->
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket';
+  import { navStore } from '@lib/stores/navigation.svelte.ts';
+  import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
   import { clearPocketNodes } from '@lib/stores/focus.svelte';
-  import { dataLoadState } from '@lib/data-store';
-  import { engineStatusStore, type EngineStatus } from '@lib/stores/engine.svelte.ts';
-  import { appState } from '@lib/state/app.svelte';
+  import { getDataLoadState } from '@lib/data-store.svelte';
 
-  // navState is a Svelte 5 rune-backed $state on appState — read it directly via $derived.
-  let nav = $derived(appState.navState);
+  // Reactive navStore mirror — bridge svelte/store writable into Svelte 5 $state.
+  let nav = $state(navStore());
+  $effect(() => navStore.subscribe(($s) => (nav = $s)));
 
   const focusedIndex_ = $derived(
     typeof nav.focusedIndex === 'number' && Number.isFinite(nav.focusedIndex)
       ? nav.focusedIndex
       : null
   );
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
   const hasFocus_ = $derived(
     nav.mode === 'focus' || nav.mode === 'inside' || focusedIndex_ != null
   );
 
-  // W46: also react to threadCandidates so the pocket is rebuilt after the
-  // deferred setTrailFromSeed populates the candidate list.
-  const threadCandidates_ = $derived(
-    Array.isArray(nav.threadCandidates) ? nav.threadCandidates : []
-  );
-
-  // Loading state: true while data is loading and focus is active.
-  // M7/M8: read the reactive $state-backed store (auto-subscribed via
-  // `$dataLoadState`) instead of the non-reactive getDataLoadState() snapshot,
-  // so this $derived re-runs when the data flips ready.
+  // Loading state: true while data is loading and focus is active
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use positive equality + negation instead.
   let isLoading = $derived(
-    hasFocus_ && !($dataLoadState.status === 'ready')
+    hasFocus_ && !(getDataLoadState().status === 'ready')
   );
 
-  let engineStatus = $state<EngineStatus>('idle');
-  $effect(() => {
-    const unsub = engineStatusStore.subscribe((s) => { engineStatus = s; });
-    return unsub;
-  });
-
-  // Last-applied index prevents redundant rebuilds on data-status ticks;
-  // lastCandidateSignature lets us rebuild when deferred setTrailFromSeed
-  // populates the candidate list after the initial focus.
+  // Last-applied index prevents redundant rebuilds on data-status ticks.
   let lastFocusIndex: number | null = null;
-  let lastCandidateSignature: string | null = null;
 
-  // Build the pocket as soon as the DATA is ready — do NOT hard-block on
-  // engineStatus === 'ready'. The WebGL engine init is scheduled via
-  // requestIdleCallback and initThreeJS can take 20+ s in headless/test
-  // environments; hard-blocking leaves a deep-link ?anchor=N with a BLANK
-  // focus pocket for that whole window even though the data has loaded and
-  // the scene appears ready (the body.sceneReady flag comes from the data
-  // loading phase, separately from the engine lifecycle). The pocket indices +
-  // compressed positions are a pure-data operation — applyLocalNeighborhoodFocus
-  // only touches navState + targetPositions derived from originalPositions and
-  // does not require the WebGL renderer/scene/camera.
-  // initThreeJS → createPoints() RESETS targetPositions to the original
-  // positions the instant the engine becomes ready, wiping any compressed
-  // pocket positions we applied pre-ready. We force exactly one rebuild once
-  // the engine flips ready (after createPoints resets positions) so the
-  // compressed pocket positions are re-applied. Reset the flag if the engine
-  // returns to a non-ready state (re-init / context-loss reinit) so a future
-  // ready transition re-triggers.
-  let engineReadyRebuildDone = false;
-
-  $effect((): void => {
-    if (!($dataLoadState.status === 'ready')) return;
-
-    const engineNowReady = engineStatus === 'ready';
-    if (engineNowReady) {
-      if (!engineReadyRebuildDone) {
-        engineReadyRebuildDone = true;
-        // createPoints just reset positions; if we built pre-ready, force a rebuild
-        // to re-apply the compressed pocket positions.
-        if (lastFocusIndex != null) {
-          lastFocusIndex = null;
-          lastCandidateSignature = null;
-        }
-      }
-    } else {
-      // engine left ready (re-init / context loss): allow a future ready to re-trigger
-      engineReadyRebuildDone = false;
-    }
-
+  $effect(() => {
+    if (getDataLoadState().status !== 'ready') return;
     const idx = focusedIndex_;
-    const signature = threadCandidates_.map((c: { index?: number }) => c.index).join(',') || '';
-    if (
-      hasFocus_ &&
-      idx != null &&
-      (!(idx === lastFocusIndex) || signature !== lastCandidateSignature)
-    ) {
-      const ok = applyLocalNeighborhoodFocus(idx);
-      if (ok) {
-        lastFocusIndex = idx;
-        lastCandidateSignature = signature;
-      }
-    } else if (!hasFocus_ && lastFocusIndex != null) {
+    if (hasFocus_ && idx !== null && idx !== lastFocusIndex) {
+      lastFocusIndex = idx;
+      applyLocalNeighborhoodFocus(idx);
+    } else if (!hasFocus_ && lastFocusIndex !== null) { // audit-ok: plain Ln() callback, not transformed
       lastFocusIndex = null;
-      lastCandidateSignature = null;
       clearPocketNodes();
     }
-  });
-
-  onDestroy(() => {
-    clearPocketNodes();
   });
 </script>
 
@@ -162,13 +99,6 @@
     width: 40px;
     animation-delay: 0.2s;
   }
-
-  @media (prefers-reduced-motion: reduce) {
-    .pocket-shimmer {
-      animation: none;
-    }
-  }
-
   @keyframes pocketShimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }

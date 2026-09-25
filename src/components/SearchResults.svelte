@@ -1,7 +1,7 @@
 <!--
   @components/SearchResults.svelte — Search results list
 
- Ported from legacy SearchResultsList.svelte
+  Ported from legacy SearchResultsList.svelte (js/modules/components/SearchResultsList.svelte)
   Full DOM contract parity for contract tests.
 
   DOM ids/classes expected by contract tests:
@@ -9,7 +9,7 @@
     .search-results-count-suffix, .search-results-count-shown, .search-results-count-divider,
     .search-results-count-hidden, #search-result-list, .search-result-list,
     .search-result-listitem, .search-result, .search-result-row,
-    .search-result-eyebrow, .search-result-rank,
+    .search-result-eyebrow, .search-result-rank, .search-result-strength,
     .search-result-name, .search-result-match, .search-result-badges,
     .search-result-badge.website, .search-result-badge.email, .search-result-badge.phone,
     .search-result-what, .search-result-context, .search-result-bar,
@@ -23,23 +23,15 @@
 -->
 <script lang="ts">
   import { tick } from 'svelte';
-  import { searchState, setActiveResult, clearSearch as clearSearchState } from '@lib/stores/search.svelte';
+  import { searchState, hasResults, activeResult, setActiveResult, clearSearch } from '@lib/stores/search.svelte';
+  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { searchVisibleCount as searchVisibleCountFn, setSearchVisibleCount } from '@lib/stores/search.svelte';
   import { activeClusterFilter } from '@lib/stores/filter.svelte';
-  import { getBusinessRecords, getPointIndexByLeadId } from '@lib/data-store';
+  import { getBusinessRecords } from '@lib/data-store';
   import { describeCluster } from '@lib/utils/ui-presentation';
-  import { prefersReducedMotion } from '@lib/utils/environment';
+  import { formatBusinessName } from '@lib/utils/dom-formatters';
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
-  import { showErrorToast, showToastSpec } from '@lib/orchestration/toast';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
-  import { SearchDispatch } from '@lib/search/search-dispatch';
-  import { appState } from '@lib/state/app.svelte';
-  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
-  import { friendlyErrorMessage } from '@lib/utils/error-messages';
-  import type { SearchResult } from '@lib/types/state';
-  import SearchErrorState from '@lib/components/search/SearchErrorState.svelte';
-  import SearchEmptyState from '@lib/components/search/SearchEmptyState.svelte';
-  import SearchResultList from '@lib/components/search/SearchResultList.svelte';
 
   interface Props {
     /** Whether the results panel is visible */
@@ -48,42 +40,79 @@
 
   let { visible = true }: Props = $props();
 
-  // BUG-6 (bugsweep ds4): the Svelte error-card Retry button re-runs the
-  // same query through SearchDispatch.dispatchSearch — the canonical
-  // typed-input entry that owns the startSearch lease (search-abort.ts,
-  // BUG-3 fix) and routes through runSearch -> setSearchError on failure
-  // (so the Svelte card re-mounts consistently instead of mixing in the
-  // legacy applySemanticSearchDegradedState DOM path that orchestration
-  // search() uses on its catch). Never schedules debounces, so a shared
-  // instance is sufficient; dispose is a debounce no-op for this use.
-  const retryDispatch = new SearchDispatch();
+  // ── Types ──────────────────────────────────────────────────────────────────────
+
+  interface SearchResult {
+    id?: string;
+    name?: string;
+    index: number;
+    category?: string;
+    snippet?: string;
+    point?: {
+      name?: string;
+      what?: string;
+      cluster?: number;
+      city?: string;
+      website?: string;
+      email?: string;
+      phone?: string;
+    };
+    score?: number;
+  }
+
+  interface SearchSummary {
+    query?: string;
+    mode?: string;
+    renderContext?: {
+      trimmedQuery: string;
+      topIndex: number | null;
+      anchorIndex: number | null;
+      topScore: number;
+    };
+  }
+
+  interface SearchError {
+    type: string;
+    query?: string;
+  }
+
+  interface HighlightSegment {
+    text: string;
+    match: boolean;
+  }
+
+  interface SearchResultProps {
+    index: number | string;
+    order: number;
+    strength: number;
+    strengthLabel: string;
+    rankLabel: string;
+    cardClasses: string;
+    point: NonNullable<SearchResult['point']>;
+    snippetText: string;
+    contextText: string;
+    businessName: string;
+  }
 
   // ── Derived ───────────────────────────────────────────────────────────────────
 
   let results = $derived($searchState.results);
   let status = $derived($searchState.status);
   let summary = $derived($searchState.summary);
+  let hasQuery = $derived($searchState.hasQuery);
   let activeId = $derived($searchState.activeResultId);
-  let searchError = $derived(appState.searchState.searchError);
+  let visibleCount = $derived(searchVisibleCountFn());
+  let searchError: { type: string; query?: string } | null = $derived(
+    status === 'error' ? { type: 'full', query: $searchState.query } : null
+  );
   let isSearching = $derived(status === 'searching');
 
-  // total MUST be derived before visibleCount so the clamp below can read it.
+  const resultSlice = $derived(results.slice(0, visibleCount) as any[]);
   const total = $derived(results.length);
-
-  // FIX (search-results count overshoot): clamp the persisted visible-count to
-  // the current result set so we never render "18 of 17" (visibleCount > total)
-  // and never hide the Show more control while results remain unreachable.
-  // searchVisibleCountFn() reads sessionStorage, which can hold a value larger
-  // than the current results length after a shorter follow-up search — e.g. the
-  // deep-link runSearch path (url-state.ts) does NOT clear the stored count the
-  // way orchestration.search() does.
-  const visibleCount = $derived(Math.min(searchVisibleCountFn(), total));
-
-  const resultSlice = $derived(results.slice(0, visibleCount));
   const remaining = $derived(total - visibleCount);
   const showMore = $derived(total > visibleCount);
 
-  const renderContext = $derived(summary?.renderContext || {
+  const renderContext = $derived((summary as any)?.renderContext || {
     trimmedQuery: '',
     topIndex: null,
     anchorIndex: null,
@@ -110,13 +139,6 @@
 
   let isFullError = $derived(searchError != null && searchError.type === 'full');
   let isInlineError = $derived(searchError != null && searchError.type === 'inline');
-  // W48-H: normalize the raw searchError.message ("Failed to fetch",
-  // "NetworkError...", etc.) into user-friendly copy via the shared
-  // friendlyErrorMessage() normalizer. Both the full error panel and the
-  // inline retry banner use the same friendly title/detail.
-  let friendlyError = $derived(isFullError || isInlineError ? friendlyErrorMessage(searchError?.message) : null);
-  const isResultsSurfaceActive = $derived(isSearching || isFullError || isEmpty || total > 0);
-  const isPeek = $derived(parityMap.panelSurfaceDetail === 'peek');
 
   // ── Roving tabindex active index ──────────────────────────────────────────────
 
@@ -124,7 +146,7 @@
   let activeIndex = $derived.by(() => {
     if (resultSlice.length === 0) return -1;
     // Find the result matching the store's activeResultId
-    const matchIdx = resultSlice.findIndex(
+    const matchIdx = (resultSlice as SearchResult[]).findIndex(
       (r) => r.id === activeId
     );
     return matchIdx >= 0 ? matchIdx : 0;
@@ -133,25 +155,9 @@
   /** Set the active result by its position in the visible slice. */
   function setActiveResultByIndex(idx: number): void {
     const clamped = Math.max(0, Math.min(idx, resultSlice.length - 1));
-    const result = resultSlice[clamped];
+    const result = (resultSlice as SearchResult[])[clamped];
     if (result?.id) {
       setActiveResult(result.id);
-    }
-    // W48-E: scroll the active listitem into view. The listbox renders all
-    // items in resultSlice but the wrapper has max-height: min(52vh, 420px)
-    // with overflow-y: auto, so items past the cap are scrolled out of
-    // view. Without this scrollIntoView, ArrowDown past the cap updates
-    // aria-activedescendant but the user can't see what's now highlighted.
-    // Block: 'nearest' keeps the scroll minimal (no yank if the item is
-    // already visible); reduced-motion is honored for instant scroll.
-    if (typeof document !== 'undefined') {
-      const item = document.getElementById(`search-result-option-${clamped}`)
-      if (item && typeof item.scrollIntoView === 'function') {
-        item.scrollIntoView({
-          block: 'nearest',
-          behavior: prefersReducedMotion() ? 'auto' : 'smooth'
-        })
-      }
     }
   }
 
@@ -165,14 +171,7 @@
       lastQuery = currentQuery;
       // Defer to next tick so resultSlice has updated with new results.
       void tick().then(() => {
-        // `focusedIndex` is also the scene-focus source of truth. Do not write
-        // the first result there merely because a typed query changed while
-        // the input owns focus: that promotes the search surface to
-        // `focus-search` and steals the mobile search layout. Only preserve
-        // roving-list behavior when the user is already navigating inside the
-        // list; typing remains a search-only interaction.
-        const list = document.getElementById('search-result-list');
-        if (resultSlice.length > 0 && list?.contains(document.activeElement)) {
+        if (resultSlice.length > 0) {
           setActiveResultByIndex(0);
         }
       });
@@ -182,69 +181,28 @@
   // ── Screen reader live announcement for active result (WCAG 4.1.3) ──────────
   let liveAnnouncement = $state('');
   $effect(() => {
-    // Search state changes take priority over keyboard nav announcements
-    if (isSearching) {
-      liveAnnouncement = 'Searching...';
-      return;
-    }
-    if (isFullError) {
-      const detail = searchError?.query ? `for "${searchError.query}"` : '';
-      liveAnnouncement = `Search error ${detail ? detail + ' ' : ''}Retry or clear.`;
-      return;
-    }
-    if (isEmpty) {
-      const q = summary?.query ? `"${summary.query}"` : '';
-      liveAnnouncement = `No results found ${q ? q + ' ' : ''}. Try a different term.`;
-      return;
-    }
-    if (isInlineError) {
-      const q = searchError?.query ? `"${searchError.query}"` : '';
-      liveAnnouncement = `Search is recovering ${q ? q + ' ' : ''}.`;
-      return;
-    }
-    
-    // Keyboard navigation within results
     const idx = activeIndex;
     if (idx < 0 || resultSlice.length === 0) {
       liveAnnouncement = '';
       return;
     }
-    const active = resultSlice[idx];
+    const active = (resultSlice as SearchResult[])[idx];
     if (active) {
-      // Stale-status guard (2026-08-24, bug #5): activeResultId is a projection
-      // of navState.focusedIndex that only refreshes when the search store is
-      // notified. After app focus moves outside the list (trail walk, canvas
-      // pick, deep-link restore of an out-of-query record), the derived cursor
-      // can still point at an old row — announcing "Focus X" then would name a
-      // business that is NOT focused. Only announce when the active row IS the
-      // focused business; list navigation keeps them equal via setActiveResult.
-      if (Number(active.index) !== appState.navState.focusedIndex) {
-        liveAnnouncement = '';
-        return;
-      }
-      const pt = active.point ?? getBusinessRecords()[Number(active.index)] ?? null;      const name = pt?.name ?? active.name ?? 'Unknown';
-      const rank = idx === 0 ? 'Top match' : `Match ${idx + 1}`;
-      // P1-3 fix: avoid duplicating button aria-label (name+snippet+context) —
-      // the focused button already announces its label; live region only adds position.
-      // Keep "Focus" prefix for a11y contract (w42b/w43a) while dropping verbose snippet/context.
-      liveAnnouncement = `Focus ${name}. ${rank}. (${idx + 1} of ${resultSlice.length})`;
+      const model = itemModel(active, idx);
+      liveAnnouncement = `${model.ariaLabel} (${idx + 1} of ${resultSlice.length})`;
     }
   });
-  // Sync DOM focus with the roving active index — but ONLY when the user is
-  // already navigating within the result list (DOM focus inside the listbox).
-  // Never steal focus from the search input while the user is typing: when
-  // results render mid-keystroke, activeIndex flips -1→0 and an ungated effect
-  // would yank focus to the first result, freezing the query. Entry into the
-  // list is the explicit ArrowDown gesture in SearchInput.handleKeydown; this
-  // effect only keeps focus in sync once that gesture has happened.
+
+  // Sync DOM focus with the roving active index (runs after each render).
   $effect(() => {
     const idx = activeIndex;
     if (idx < 0) return;
+    // Use tick() to ensure the DOM has updated before focusing.
     void tick().then(() => {
       const list = document.getElementById('search-result-list');
-      // If focus is on the input (user typing) or outside the list, don't move it.
-      if (!list || !list.contains(document.activeElement)) return;
-      const btn = list.querySelector(`[data-order="${idx}"]`) as HTMLElement | null;
+      const btn = list?.querySelector(
+        `[data-order="${idx}"]`
+      ) as HTMLElement | null;
       if (btn && document.activeElement !== btn) {
         btn.focus({ preventScroll: false });
       }
@@ -254,26 +212,19 @@
   // ── Handlers ──────────────────────────────────────────────────────────────────
 
   function handleShowMore(): void {
-    // Defensive clamp: the persisted visible count must never exceed the current
-    // result set (mirrors the derived-site clamp above). The follow-up search
-    // clears the stored count, but this guard protects any path that increments
-    // from a stale source. nextVisibleCount is already <= total here.
     const nextVisibleCount = total;
     const firstNewIndex = visibleCount;
 
     setSearchVisibleCount(nextVisibleCount);
     try {
       sessionStorage.setItem('searchVisibleCount', String(nextVisibleCount));
-    } catch {
-      // sessionStorage may be unavailable (Safari private mode, disabled storage).
-      // Failure is non-fatal: the in-memory count is still accurate for this tab.
-    }
+    } catch {}
 
     publish(EVENTS.URL_SYNC_REQUESTED, { params: { offset: null }, reason: 'search-more' });
 
     requestAnimationFrame(() => {
-      const firstNewItem = document.querySelector(`[data-index="${results[firstNewIndex]?.index}"]`);
-      if (firstNewItem) firstNewItem.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
+      const firstNewItem = document.querySelector(`[data-index="${(results as unknown as SearchResult[])[firstNewIndex]?.index}"]`);
+      if (firstNewItem) firstNewItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   }
 
@@ -283,34 +234,11 @@
 
     const key = event.key;
 
-    // W48-D: only ArrowDown / ArrowUp navigate the list (the WAI-ARIA listbox
-    // pattern). ArrowLeft / ArrowRight are intentionally NOT bound — they
-    // would surprise users by re-mapping horizontal-arrow expectations
-    // (cursor movement inside a search input, RTL flips, etc.). Home / End /
-    // Enter / Escape keep their existing semantics.
-    if (key === 'ArrowDown') {
+    if (key === 'ArrowDown' || key === 'ArrowRight') {
       event.preventDefault();
-      if (activeIndex < count - 1) {
-        setActiveResultByIndex(activeIndex + 1);
-      } else {
-        // W48-D: at the bottom — don't silently wrap (a11y + UX surprise).
-        // Mirror the canvas-keyboard-nav 'End of cluster' toast so the user
-        // gets explicit feedback that they hit the boundary. Focus stays on
-        // the last result; pressing Esc clears the search.
-        // W10 BS-B#8: one toast per boundary, not per keypress — a stable
-        // dedupeKey makes repeat Escape past-end a single queued toast
-        // instead of spamming the FIFO queue.
-        showToastSpec({ title: 'End of results', copy: 'Press Escape to clear search.', dedupeKey: 'search:end-of-results' });      }
-    } else if (key === 'ArrowUp') {
+      setActiveResultByIndex(activeIndex < count - 1 ? activeIndex + 1 : 0);
+    } else if (key === 'ArrowUp' || key === 'ArrowLeft') {
       event.preventDefault();
-      if (activeIndex === 0) {
-        // Return focus to search input when moving up from first result
-        const input = document.getElementById('search-input');
-        if (input) {
-          input.focus();
-          return;
-        }
-      }
       setActiveResultByIndex(activeIndex > 0 ? activeIndex - 1 : count - 1);
     } else if (key === 'Home') {
       event.preventDefault();
@@ -321,37 +249,44 @@
     } else if (key === 'Enter' || key === ' ') {
       event.preventDefault();
       if (activeIndex >= 0) {
-        const active = resultSlice[activeIndex];
+        const active = (resultSlice as SearchResult[])[activeIndex];
         if (active) handleResultClick(active.index);
       }
     } else if (key === 'Escape') {
       event.preventDefault();
-      // stopPropagation so the GLOBAL Esc→return-to-overview handler (W10
-      // bugsweep) does NOT also fire after we clear-and-stay-in-search — the
-      // on-screen toast promises 'Press Escape to clear search'; without this
-      // the same keypress ALSO performed a full RETURN_OVERVIEW (query wiped).
-      event.stopPropagation();
       onClear();
       // Return focus to the search input after clearing.
       requestAnimationFrame(() => {
         document.getElementById('search-input')?.focus();
       });
-    }    // Do NOT preventDefault for Tab — let Tab move to the next landmark.
+    }
+    // Do NOT preventDefault for Tab — let Tab move to the next landmark.
+  }
+
+  function handleResultClick(index: number | string): void {
+    const result = (results as unknown as SearchResult[]).find((item) => Number(item.index) === Number(index));
+    const point = result ? getResultPoint(result) : null;
+    if (point) {
+      const actions = typeof window !== 'undefined'
+        ? (window as unknown as {
+            __APP_ACTIONS__?: {
+              focusOnNode?: (nodeIndex: number, options?: Record<string, unknown>) => unknown;
+            };
+          }).__APP_ACTIONS__
+        : undefined;
+      // Publish focus-request event BEFORE calling the legacy focusOnNode so
+      // triggers.ts can populate legacy navState (threadCandidates, etc.) before
+      // the route-trace overlay refreshes in response to CAMERA_NODE_FOCUSED.
+      publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: Number(index) } as any);
+      actions?.focusOnNode?.(Number(index), { fromSearchResult: true });
+    }
   }
 
   function getResultPoint(result: SearchResult): NonNullable<SearchResult['point']> | null {
     if (result.point) return result.point;
-    const records = getBusinessRecords();
-    // Legacy/cast results may omit `point`, but their id is normally the
-    // lead_id. Resolve that before treating `index` as a record position so a
-    // page-order result cannot borrow another business's details.
-    const recordByLeadId = result.id
-      ? records.find((candidate) => String(candidate.lead_id) === String(result.id))
-      : undefined;
-    const record = recordByLeadId ?? records[Number(result.index)];
+    const record = getBusinessRecords()[Number(result.index)];
     if (!record && !result.name) return null;
     return {
-      lead_id: record?.lead_id,
       name: record?.name ?? result.name ?? 'Unknown',
       what: record?.what ?? result.snippet ?? result.category ?? '',
       cluster: record?.cluster,
@@ -362,33 +297,60 @@
     };
   }
 
-  function handleResultClick(index: number | string): void {
-    const result = results.find((item) => Number(item.index) === Number(index));
-    let point = result ? getResultPoint(result) : null;
-    // Default focus target: the handed-in index. Mapper-produced results
-    // normally already carry the canonical corpus index, but legacy/cast
-    // results can retain API page order, so resolve by lead_id when possible.
-    let focusIndex = Number(index);
-    const leadId = point?.lead_id ?? (result as { lead_id?: string | number } | null)?.lead_id;
-    if (leadId != null) {
-      const canonicalIndex = getPointIndexByLeadId().get(String(leadId));
-      if (canonicalIndex != null && Number.isFinite(canonicalIndex) && canonicalIndex >= 0) {
-        focusIndex = canonicalIndex;
-      }
-    }
-    if (point) {
-      const actions = typeof window !== 'undefined' ? window.__APP_ACTIONS__ : undefined;
-      // Publish focus-request event BEFORE calling the legacy focusOnNode so
-      // triggers.ts can populate legacy navState (threadCandidates, etc.) before
-      // the route-trace overlay refreshes in response to CAMERA_NODE_FOCUSED.
-      publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: focusIndex });
-      actions?.focusOnNode?.(focusIndex, { fromSearchResult: true });
-    } else {
-      showErrorToast(
-        'Selection unavailable',
-        'This business is missing its details. Please retry the search.'
-      );
-    }
+  function highlightSegments(text: string | undefined, query: string | undefined): HighlightSegment[] {
+    const safeText = String(text || '');
+    const safeQuery = query === null || query === undefined ? '' : String(query);
+    if (!safeText || !safeQuery) return [{ text: safeText, match: false }];
+
+    const index = safeText.toLowerCase().indexOf(safeQuery.toLowerCase());
+    if (index === -1) return [{ text: safeText, match: false }];
+
+    return [
+      { text: safeText.slice(0, index), match: false },
+      { text: safeText.slice(index, index + safeQuery.length), match: true },
+      { text: safeText.slice(index + safeQuery.length), match: false }
+    ].filter((segment: HighlightSegment) => segment.text);
+  }
+
+  function itemModel(result: SearchResult, order: number): SearchResultProps & { highlight: HighlightSegment[]; animationDelay: string; ariaLabel: string } {
+    const point = getResultPoint(result) ?? {
+      name: result.name ?? 'Unknown',
+      what: result.snippet ?? '',
+      city: result.category ?? ''
+    };
+    const deps = {
+      getSearchResultStrength: (r: SearchResult) => r.score || 0,
+      getSearchResultStrengthLabel: (strength: number) => strength > 0.8 ? 'Strong match' : strength > 0.5 ? 'Good match' : 'Related',
+      buildSearchRankLabel: (order: number, _ctx: typeof renderContext) => order === 0 ? 'Top match' : `Match ${order + 1}`,
+      getSearchResultCardClasses: () => 'search-result',
+      buildSearchResultSnippet: () => point.what || result.snippet || '',
+      describeCluster,
+      formatBusinessName
+    };
+
+    const strength = deps.getSearchResultStrength(result);
+    const strengthLabel = deps.getSearchResultStrengthLabel(strength);
+    const rankLabel = deps.buildSearchRankLabel(order, renderContext);
+    const cardClasses = `${deps.getSearchResultCardClasses()} search-result-item`;
+    const snippetText = deps.buildSearchResultSnippet();
+    const contextText = point.city || result.category || '';
+    const businessName = deps.formatBusinessName(point.name || result.name || 'Unknown');
+
+    return {
+      index: result.index,
+      order,
+      strength,
+      strengthLabel,
+      rankLabel,
+      cardClasses,
+      point,
+      snippetText,
+      contextText,
+      businessName,
+      highlight: highlightSegments(businessName, renderContext.trimmedQuery),
+      animationDelay: `${Math.min(order * 32, 224)}ms`,
+      ariaLabel: `Focus ${businessName}. ${rankLabel}. ${snippetText} ${contextText}.`
+    };
   }
 
   function onSuggestionClick(suggestion: string): void {
@@ -400,48 +362,23 @@
     }
   }
 
-  // BUG-6 (bugsweep ds4): the error-card Retry/Clear buttons previously only
-  // published SEARCH_CLEARED, never clearing the Svelte error card
-  // (isFullError derives from appState.searchState.searchError) and never
-  // re-running a search. The common typed-input error path renders this card
-  // via runSearch -> setSearchError, so without this wiring the user is stuck
-  // on the error card. Retry routes through SearchDispatch.dispatchSearch
-  // (startSearch lease + runSearch -> setSearchError) so the BUG-3 stale-completion
-  // guards still apply and the Svelte card re-mounts consistently if the
-  // retry also fails.
   function onRetry(): void {
-    // Prefer the query on the failed searchError (the query that produced the
-    // card); fall back to the current summary. Retry only makes sense with a
-    // query to re-run.
-    const query = searchError?.query ?? summary?.query;
-    if (!query) return;
-    // Clear the stale error so the card dismisses into the searching state;
-    // dispatchSearch's runSearch will setSearchError re-sets the card if this
-    // attempt also fails, and setSearchResults clears searchError on success
-    // (card stays dismissed). store clearSearch notifies subscribers with no
-    // SEARCH_CLEARED, so ?q= stays mid-retry.
-    clearSearchState();
-    retryDispatch.dispatchSearch(query);
+    if (summary?.query) {
+      publish(EVENTS.SEARCH_CLEARED, { query: summary.query, preferCachedResults: false } as any);
+    }
   }
 
   function onClear(): void {
-    // Clear the store (error + results + summary) so the card actually
-    // dismisses, then preserve the existing SEARCH_CLEARED notification so
-    // downstream subscribers (url-state strips `q`, compass refresh) still
-    // react — the same surface callers relied on before.
-    clearSearchState();
     publish(EVENTS.SEARCH_CLEARED);
   }
 </script>
 
 {#if visible}
-  <!-- Screen reader live region for announcing active result during keyboard navigation (WCAG 4.1.3).
-       aria-live="polite": this announces selection/navigation position, not an error,
-       so it must not interrupt (assertive is reserved for critical alerts/errors). -->
-  <div class="sr-only" aria-live="polite" aria-atomic="true" role="status">
+  <!-- Screen reader live region for announcing active result during keyboard navigation (WCAG 4.1.3) -->
+  <div class="sr-only" aria-live="assertive" aria-atomic="true" role="status">
     {liveAnnouncement}
   </div>
-  <div id="search-results" class="search-results-wrapper" class:active={isResultsSurfaceActive}>
+  <div id="search-results" class="search-results-wrapper" class:active={total > 0}>
     <!-- Loading state -->
     {#if isSearching}
       <div class="search-loading">
@@ -449,36 +386,160 @@
         <div class="search-loading-text">Searching...</div>
       </div>
     {:else if isFullError}
-      <SearchErrorState
-        {searchError}
-        {friendlyError}
-        onRetry={onRetry}
-        onDismiss={onClear}
-      />
+      <div class="search-error-state" role="status" aria-live="polite">
+        <span class="search-error-kicker">Retry needed</span>
+        <div class="search-error-text">
+          We could not finish "<strong>{searchError?.query}</strong>" just now. Retry the live search or clear it and keep exploring.
+        </div>
+        <div class="search-error-actions">
+          <button class="search-error-retry-btn" type="button" aria-label={`Retry search for ${searchError?.query}`} onclick={onRetry}>Retry</button>
+          <button class="search-error-dismiss-btn" type="button" aria-label="Clear search and dismiss" onclick={onClear}>Clear</button>
+        </div>
+      </div>
     {:else if isEmpty}
-      <SearchEmptyState
-        query={summary?.query || ''}
-        {suggestions}
-        onSuggestionClick={onSuggestionClick}
-      />
+      <div class="search-empty-state fade-in" role="status" aria-live="polite">
+        <div class="search-empty-icon-wrap">
+          <svg class="search-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M16.5 16.5L21 21"></path>
+            <path d="M7 11h8" stroke-opacity="0.5"></path>
+          </svg>
+        </div>
+        <p class="search-empty-title">No results found for "{summary?.query || ''}"</p>
+        <p class="search-empty-note">Try clearing filters or searching nearby categories:</p>
+        <div class="search-empty-suggestions">
+          <div class="search-suggestion-buttons">
+            {#each suggestions as suggestion}
+              <button class="search-suggestion-chip" type="button" aria-label={`Try search for ${suggestion}`} onclick={() => onSuggestionClick(suggestion)}>
+                {suggestion}
+              </button>
+            {/each}
+          </div>
+        </div>
+        <div class="search-empty-discovery">
+          <span class="discovery-tag">Pro Tip</span>
+          <span class="discovery-text">The mycelium thrives on semantic relationships. Try searching for a specific trade like "HVAC" or a mood like "cozy".</span>
+        </div>
+      </div>
     {:else if total > 0}
-      <SearchResultList
-        {resultSlice}
-        {activeIndex}
-        {renderContext}
-        {total}
-        {visibleCount}
-        {showMore}
-        {remaining}
-        {isPeek}
-        {isInlineError}
-        {friendlyError}
-        {searchError}
-        onContainerKeyDown={handleContainerKeyDown}
-        onShowMore={handleShowMore}
-        onResultClick={handleResultClick}
-        onRetry={onRetry}
-      />
+      {#if isInlineError}
+        <div class="search-error-inline-retry" role="status" aria-live="polite">
+          <span class="search-error-inline-msg">
+            Search is recovering for "<strong>{searchError?.query}</strong>".
+          </span>
+          <button class="search-error-retry-btn compact" type="button" aria-label={`Retry search for ${searchError?.query}`} onclick={onRetry}>Retry</button>
+        </div>
+      {/if}
+
+      <div id="search-results-count" class="search-results-count" role="status" aria-live="polite" aria-atomic="true">
+        {#if total === 1}
+          <span class="search-results-count-anchor">Top match</span>
+        {:else if (summary as any)?.mode === 'peek'}
+          <span class="search-results-count-anchor">Top match</span>
+          <span class="search-results-count-divider" aria-hidden="true">·</span>
+          <span class="search-results-count-hidden">{total - visibleCount} more</span>
+        {:else if visibleCount >= total}
+          <span class="search-results-count-all">All {total}</span>
+          <span class="search-results-count-suffix"> matches</span>
+        {:else}
+          <span class="search-results-count-shown">{visibleCount} of {total}</span>
+          <span class="search-results-count-divider" aria-hidden="true">·</span>
+          <span class="search-results-count-hidden">{total - visibleCount} behind</span>
+        {/if}
+      </div>
+
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <div
+        id="search-result-list"
+        class="search-result-list"
+        role="listbox"
+        tabindex="-1"
+        aria-label="Search result businesses"
+        aria-activedescendant={activeIndex >= 0 ? `search-result-${Number((resultSlice as SearchResult[])[activeIndex]?.index)}` : undefined}
+        aria-keyshortcuts="ArrowDown ArrowUp ArrowLeft ArrowRight Home End Enter Escape"
+        onkeydown={handleContainerKeyDown}
+      >
+        {#each resultSlice as result, order (result.index ?? order)}
+          {@const item = itemModel(result, order)}
+          <div class="search-result-listitem" role="option" id={`search-result-option-${order}`} aria-selected={order === activeIndex}>
+            <button
+              class={`${item.cardClasses}${order === activeIndex ? ' active' : ''}`}
+              id={`search-result-${Number(result.index)}`}
+              data-index={result.index}
+              data-order={order}
+              type="button"
+              tabindex={order === activeIndex ? 0 : -1}
+              aria-label={item.ariaLabel}
+              style={`animation-delay: ${item.animationDelay}`}
+              onclick={() => handleResultClick(result.index)}
+            >
+              <div class="search-result-row">
+                <div class="search-result-eyebrow">
+                  <span class="search-result-rank">{item.rankLabel}</span>
+                  <span class="search-result-strength">{item.strengthLabel}</span>
+                </div>
+                <div class="search-result-name">
+                  {#each item.highlight as segment}
+                    {#if segment.match}
+                      <mark class="search-result-match">{segment.text}</mark>
+                    {:else}
+                      {segment.text}
+                    {/if}
+                  {/each}
+                </div>
+                {#if item.point.website || item.point.email || item.point.phone}
+                  <div class="search-result-badges">
+                    {#if item.point.website}
+                      <span class="search-result-badge website" title="Website available" aria-label="Website available">
+                        <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="9"></circle>
+                          <path d="M3 12h18"></path>
+                          <path d="M12 3a13.5 13.5 0 0 1 0 18"></path>
+                          <path d="M12 3a13.5 13.5 0 0 0 0 18"></path>
+                        </svg>
+                      </span>
+                    {/if}
+                    {#if item.point.email}
+                      <span class="search-result-badge email" title="Email available" aria-label="Email available">
+                        <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="3.5" y="5.5" width="17" height="13" rx="2"></rect>
+                          <path d="m4.5 7 7.5 6 7.5-6"></path>
+                        </svg>
+                      </span>
+                    {/if}
+                    {#if item.point.phone}
+                      <span class="search-result-badge phone" title="Phone available" aria-label="Phone available">
+                        <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M7.5 4.5 10 7 8.4 9.1c1 2.2 2.3 3.5 4.5 4.5L15 12l2.5 2.5-.8 3.1c-.2.7-.9 1.1-1.6 1A12.5 12.5 0 0 1 5.4 8.9c-.1-.7.3-1.4 1-1.6l1.1-.3Z"></path>
+                        </svg>
+                      </span>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+              <div class="search-result-what">{item.snippetText}</div>
+              <div class="search-result-context">{item.contextText}</div>
+              <div class="search-result-bar">
+                <span style={`width: ${item.strength}%`}></span>
+              </div>
+            </button>
+          </div>
+        {/each}
+      </div>
+
+      {#if showMore}
+        <button
+          class="search-show-more-btn"
+          type="button"
+          aria-label={`Show ${remaining} more search results`}
+          aria-expanded="false"
+          aria-controls="search-result-list"
+          aria-describedby="search-results-count"
+          onclick={handleShowMore}
+        >
+          Show {remaining} more results
+        </button>
+      {/if}
     {/if}
   </div>
 {/if}
@@ -517,23 +578,6 @@
     z-index: calc(var(--z-search, 100) - 1);
     max-height: min(52vh, 420px);
     overflow-y: auto;
-    overscroll-behavior: contain;
-    touch-action: pan-y;
-    /* Visual styles previously on orphaned .search-results selector */
-    background: rgba(var(--color-surface-chrome-rgb), 0.95);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: var(--radius-tight);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
-    scrollbar-width: thin;
-    scrollbar-color: rgba(var(--color-primary-alt-rgb), 0.2) transparent;
-  }
-  .search-results-wrapper::-webkit-scrollbar {
-    width: 4px;
-  }
-  .search-results-wrapper::-webkit-scrollbar-thumb {
-    background: rgba(var(--color-primary-alt-rgb), 0.2);
-    border-radius: 2px;
   }
 
   :global(.search-container.info-panel-contained) .search-results-wrapper {
@@ -543,21 +587,6 @@
     right: auto;
     z-index: calc(var(--z-search, 100) + 1);
     margin-top: 0.5rem;
-    /* W48-UX: in panel-contained mode the wrapper's own border + dark
-       background created a "3 stacked search boxes" reading. Strip
-       both so the results flow as a continuation of the search input,
-       and let the InfoPanel surface chrome provide the visual
-       container. */
-    background: transparent;
-    border: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    /* W48-UX: the parent .info-panel-content has overflow:hidden which
-       clips wider-than-parent result text ("Top match" → "atch") if
-       any horizontal scrollLeft drift occurs. Constrain the wrapper
-       to its parent to prevent this. */
-    max-width: 100%;
-    overflow-x: hidden;
   }
 
   /* Mobile: constrain results to prevent overlapping with mode chips */
@@ -565,5 +594,141 @@
     .search-results-wrapper {
       max-height: min(40vh, 320px);
     }
+  }
+
+  /* ── Status messages ──────────────────────────────────────────────────────── */
+  .search-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    color: #4ecdc4;
+  }
+  .search-error {
+    color: #ff6b6b;
+  }
+  .search-empty {
+    color: rgba(224, 240, 240, 0.45);
+  }
+  .search-hint {
+    color: rgba(224, 240, 240, 0.3);
+    font-style: italic;
+  }
+
+  /* ── Summary bar ──────────────────────────────────────────────────────────── */
+  .search-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.65rem;
+    color: rgba(224, 240, 240, 0.4);
+    margin-bottom: 0.35rem;
+  }
+  .summary-score {
+    font-family: 'JetBrains Mono', monospace;
+    color: #96ceb4;
+  }
+  .summary-type {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.6;
+  }
+
+  /* ── Results list ─────────────────────────────────────────────────────────── */
+  .search-results {
+    background: rgba(7, 16, 24, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(78, 205, 196, 0.15);
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(78, 205, 196, 0.2) transparent;
+  }
+  .search-results::-webkit-scrollbar {
+    width: 4px;
+  }
+  .search-results::-webkit-scrollbar-thumb {
+    background: rgba(78, 205, 196, 0.2);
+    border-radius: 2px;
+  }
+  .search-results.is-compact {
+    max-height: 40vh;
+  }
+
+  /* ── Individual result row ────────────────────────────────────────────────── */
+  .search-result {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(78, 205, 196, 0.06);
+    color: #e0f0f0;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    font-size: 0.8rem;
+    transition: background 0.1s ease;
+  }
+  .search-result:last-child {
+    border-bottom: none;
+  }
+  .search-result:hover {
+    background: rgba(78, 205, 196, 0.08);
+  }
+  .search-result.active {
+    background: rgba(78, 205, 196, 0.14);
+    border-left: 2px solid #4ecdc4;
+  }
+  /* A2-8: Visible focus ring for keyboard navigation on active result */
+  .search-result.active:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.8);
+    outline-offset: -2px;
+  }
+
+  .result-main {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .result-name {
+    flex: 1;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .result-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: #96ceb4;
+    flex-shrink: 0;
+  }
+
+  .result-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+  }
+  .result-category {
+    color: #4ecdc4;
+    opacity: 0.8;
+    white-space: nowrap;
+  }
+  .result-snippet {
+    color: rgba(224, 240, 240, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
   }
 </style>

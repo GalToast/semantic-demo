@@ -1,7 +1,7 @@
 /**
  * @lib/journey/semantic-guide.ts — Semantic guide summary card and request lifecycle
  *
- * Ported from: (302 lines, 6 exports)
+ * Ported from: js/modules/semantic-guide.ts (302 lines, 6 exports)
  *
  * Exports:
  *   - semanticGuideIcon(id, label?)          — SVG icon helper
@@ -12,172 +12,130 @@
  *   - requestSemanticGuide()                  — async request + render cycle
  *
  * Dependencies still in legacy path (will migrate later):
- *   - @lib/state/app.svelte (canonical AppState)
- * - ../../../ (buildSemanticGuideRequestPayload)
- * - ../../../ (updateLegendGuideState)
- * - ../../../ (showSemanticThreadsDetail)
- * - ../../../ (semanticGuideStateStore)
+ *   - @lib/engine/state-bridge (canonical AppState compatibility state)
+ *   - ../../../js/modules/semantic-guide-payload.ts (buildSemanticGuideRequestPayload)
+ *   - ../../../js/modules/legend-ui.ts (updateLegendGuideState)
+ *   - ../../../js/modules/connection-analysis.ts (showSemanticThreadsDetail)
+ *   - ../../../js/modules/stores.ts (semanticGuideStateStore)
  */
 
-import { appState } from '@lib/state/app.svelte'
-import { escapeHtml } from '@lib/utils/dom-formatters'
-import { buildSemanticGuideRequestPayload, type SemanticGuideRequestPayload } from '@lib/journey/semantic-guide-payload'
-import { updateLegendGuideState } from '@lib/stores/legend-panel.svelte.ts'
-import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
-import { apiUrl } from '@lib/utils/api-url'
+import { state } from '@lib/engine/state-bridge';
+import { escapeHtml } from '@lib/utils/dom-formatters';
+import {
+  buildSemanticGuideRequestPayload,
+  updateLegendGuideState,
+  showSemanticThreadsDetail,
+  semanticGuideStateStore
+} from '@lib/engine/lifecycle-bridge';
 
-// ── Types ────────────────────────────────────────────────────────────────────
-
-interface SemanticGuideSuggestion {
-    lead_id?: string | number | null
-    label?: string
-    name?: string
-    city?: string
-    reason?: string
-    [key: string]: unknown
+function getMostFrequent(values: string[]): string | null {
+    if (!values?.length) return null;
+    const counts: Record<string, number> = values.reduce((acc: Record<string, number>, value: string) => {
+        acc[value] = (acc[value] || 0) + 1;
+        return acc;
+    }, {});
+    return Object.keys(counts).reduce((a, b) => ((counts[a] ?? 0) > (counts[b] ?? 0) ? a : b));
 }
 
-interface GuideConfig {
-    title?: string
-    text?: string
-    summary?: string
-    degraded?: boolean
-    cached?: boolean
-    suggestions?: SemanticGuideSuggestion[]
-    laneStatus?: string
-    instant?: boolean
-    [key: string]: unknown
-}
+function generateLogicalSynthesis(payload: any): string {
+    const results = Array.isArray(payload?.results) ? payload.results : [];
+    if (!results.length) return 'Search opens a trail — explore the neighborhood below.';
 
-interface SemanticGuidePayloadRow {
-    lead_id?: string | number | null
-    cluster_label?: string
-    city?: string
-    name?: string
-    [key: string]: unknown
-}
-
-interface SemanticGuidePayload {
-    query?: string
-    visible_matches?: number
-    anchor_lead_id?: string | number | null
-    results?: SemanticGuidePayloadRow[]
-}
-
-function getMostFrequent(values: Array<string | undefined | null>): string | null {
-    if (!values?.length) return null
-    const counts: Record<string, number> = values.reduce(
-        (acc: Record<string, number>, value: string | undefined | null) => {
-            if (!value) return acc
-            acc[value] = (acc[value] || 0) + 1
-            return acc
-        },
-        {}
-    )
-    return Object.keys(counts).reduce((a, b) => ((counts[a] ?? 0) > (counts[b] ?? 0) ? a : b))
-}
-
-function generateLogicalSynthesis(payload: SemanticGuidePayload): string {
-    const results = Array.isArray(payload?.results) ? payload.results : []
-    if (!results.length) return 'Search shows related businesses — explore the neighborhood below.'
-
-    const query = payload.query || 'this search'
-    const clusters = results.map((row: SemanticGuidePayloadRow) => row.cluster_label).filter(Boolean)
-    const cities = [...new Set(results.map((row: SemanticGuidePayloadRow) => row.city).filter(Boolean))]
-    const topCluster = clusters.length ? getMostFrequent(clusters) : 'mixed themes'
+    const query = payload.query || 'this search';
+    const clusters = results.map((row: any) => row.cluster_label).filter(Boolean);
+    const cities = [...new Set(results.map((row: any) => row.city).filter(Boolean))];
+    const topCluster = clusters.length ? getMostFrequent(clusters) : 'mixed themes';
     const citySummary =
-        cities.length > 1
-            ? `${cities.length} cities including ${cities.slice(0, 2).join(' and ')}`
-            : cities[0] || 'Montgomery County'
+        cities.length > 1 ? `${cities.length} cities including ${cities.slice(0, 2).join(' and ')}` : cities[0] || 'Montgomery County';
 
-    return `${payload.visible_matches || results.length} businesses match "${query}". Most fall under ${topCluster}, with matches across ${citySummary}. Starting with ${results[0]?.name || 'the top match'}.`
+    return `Logical mapping of ${payload.visible_matches || results.length} matches for "${query}". Strongest thematic overlap in ${topCluster} with signal across ${citySummary}. Trail anchored by ${results[0]?.name || 'the primary match'}.`;
 }
 
-function buildClientSemanticGuideFallback(payload: SemanticGuidePayload): GuideConfig {
-    const results = Array.isArray(payload?.results) ? payload.results : []
-    const anchor =
-        results.find((row: SemanticGuidePayloadRow) => String(row.lead_id) === String(payload?.anchor_lead_id)) ||
-        results[0] ||
-        null
-    const suggestions = results.slice(0, 3).map(
-        (row: SemanticGuidePayloadRow, index: number): SemanticGuideSuggestion => ({
-            lead_id: row.lead_id,
-            label: index === 0 ? 'Starting point' : index === 1 ? 'Next stop' : 'Side stop',
-            name: row.name,
-            city: row.city || '',
-            reason:
-                index === 0
-                    ? 'Start with the strongest match.'
-                    : row.cluster_label
-                      ? `See more ${row.cluster_label} businesses.`
-                      : 'Keep exploring the current neighborhood.'
-        })
-    )
+function buildClientSemanticGuideFallback(payload: any): any {
+    const results = Array.isArray(payload?.results) ? payload.results : [];
+    const anchor = results.find((row: any) => String(row.lead_id) === String(payload?.anchor_lead_id)) || results[0] || null;
+    const suggestions = results.slice(0, 3).map((row: any, index: number) => ({
+        lead_id: row.lead_id,
+        label: index === 0 ? 'Trail anchor' : index === 1 ? 'Next stop' : 'Side trail',
+        name: row.name,
+        city: row.city || '',
+        reason:
+            index === 0
+                ? 'Start with the strongest semantic anchor.'
+                : row.cluster_label
+                  ? `Follow the ${row.cluster_label} trail.`
+                  : 'Keep exploring the current semantic neighborhood.'
+    }));
 
     return {
-        title: anchor?.name ? `${anchor.name} is the starting point` : `Guide for "${payload?.query || 'this search'}"`,
+        title: anchor?.name ? `${anchor.name} anchors this trail` : `Guide for "${payload?.query || 'this trail'}"`,
         summary: generateLogicalSynthesis(payload),
         suggestions,
         degraded: true,
         cached: false,
         source: 'deterministic',
         mode: 'fallback'
-    }
+    };
 }
 
 export function semanticGuideIcon(id: string, label = ''): string {
-    if (!id) return ''
-    return `<svg class="ui-icon" aria-hidden="${label ? 'false' : 'true'}"${label ? ` aria-label="${escapeHtml(label)}"` : ''}><use href="#icon-${escapeHtml(id)}"></use></svg>`
+    if (!id) return '';
+    return `<svg class="ui-icon" aria-hidden="${label ? 'false' : 'true'}"${label ? ` aria-label="${escapeHtml(label)}"` : ''}><use href="#icon-${escapeHtml(id)}"></use></svg>`;
 }
 
-export function setSemanticGuideButtonState(mode = 'ready', options: Record<string, unknown> = {}): void {
-    appState.semanticGuideState.buttonMode = mode
-    appState.semanticGuideState.buttonOptions = options
+export function setSemanticGuideButtonState(mode = 'ready', options: Record<string, any> = {}): void {
+    let currentState: any;
+    semanticGuideStateStore.subscribe((s: any) => currentState = s)();
+    semanticGuideStateStore.set({
+        ...currentState,
+        buttonMode: mode,
+        buttonOptions: options
+    });
 }
 
-function getSemanticGuideLoadingCardConfig(): GuideConfig {
+function getSemanticGuideLoadingCardConfig(): any {
     return {
         title: 'READING CONNECTIONS',
-        text: 'The guide is reading this neighborhood and preparing the next three strongest stops.',
+        text: 'The semantic guide is reading this neighborhood and preparing the next three strongest stops.',
         suggestions: [],
-        laneStatus: 'Preparing stops',
+        laneStatus: 'Preparing trail',
         instant: true
-    }
+    };
 }
 
-export function getSemanticGuideTitle(guide: GuideConfig = {}): string {
-    if (guide.title) return String(guide.title).toUpperCase()
-    if (guide.degraded) return 'FAST FALLBACK'
-    if (guide.cached) return 'SAVED SUMMARY'
-    return 'SEARCH SUMMARY'
+export function getSemanticGuideTitle(guide: any = {}): string {
+    if (guide.title) return String(guide.title).toUpperCase();
+    if (guide.degraded) return 'FAST FALLBACK';
+    if (guide.cached) return 'SAVED SUMMARY';
+    return 'SEARCH SUMMARY';
 }
 
-function getSemanticGuideLaneStatus(guide: GuideConfig = {}): string {
-    if (guide.degraded) return 'Quick summary ready'
-    return guide.cached ? 'Saved summary' : 'Fresh summary'
+function getSemanticGuideLaneStatus(guide: any = {}): string {
+    if (guide.degraded) return 'Quick summary ready';
+    return guide.cached ? 'Saved summary' : 'Fresh summary';
 }
 
-function buildSemanticGuideCardConfig(guide: GuideConfig = {}): GuideConfig {
+function buildSemanticGuideCardConfig(guide: any = {}): any {
     return {
         title: getSemanticGuideTitle(guide),
         text: guide.summary || 'The current neighborhood is ready.',
         suggestions: guide.suggestions || [],
         laneStatus: getSemanticGuideLaneStatus(guide)
-    }
+    };
 }
 
-function buildSemanticGuideFallbackCardConfig(fallback: GuideConfig = {}): GuideConfig {
+function buildSemanticGuideFallbackCardConfig(fallback: any = {}): any {
     return {
         title: (fallback.title || 'FAST FALLBACK').toUpperCase(),
-        text: fallback.summary || 'Search shows related businesses — explore the neighborhood below.',
+        text: fallback.summary || 'Search opens a trail — explore the neighborhood below.',
         suggestions: fallback.suggestions || [],
         laneStatus: 'Deterministic fallback active',
         instant: true
-    }
+    };
 }
 
-function normalizeSummaryCardConfig(config: GuideConfig | string = {}): GuideConfig {
-    const settings = typeof config === 'string' ? { text: config } : config || {}
+function normalizeSummaryCardConfig(config: any = {}): any {
+    const settings = typeof config === 'string' ? { text: config } : config || {};
     return {
         ...settings,
         text: String(settings.text || ''),
@@ -185,66 +143,63 @@ function normalizeSummaryCardConfig(config: GuideConfig | string = {}): GuideCon
         laneStatus: String(settings.laneStatus || 'Ready').trim() || 'Ready',
         suggestions: Array.isArray(settings.suggestions) ? settings.suggestions : [],
         instant: !!settings.instant
-    }
+    };
 }
 
-export function showSummaryCard(config: GuideConfig | string = {}): void {
-    const settings = normalizeSummaryCardConfig(config)
-    appState.searchState.summaryCardTypeToken = (appState.searchState.summaryCardTypeToken || 0) + 1
+export function showSummaryCard(config: any = {}): void {
+    const settings = normalizeSummaryCardConfig(config);
+    state.currentSemanticGuide = settings;
+    (state as any).summaryCardTypeToken = ((state as any).summaryCardTypeToken || 0) + 1;
 
-    appState.semanticGuideState.isVisible = true
-    appState.semanticGuideState.config = settings
-    appState.semanticGuideState.typeToken = appState.searchState.summaryCardTypeToken
+    let currentState: any;
+    semanticGuideStateStore.subscribe((s: any) => currentState = s)();
+    semanticGuideStateStore.set({
+        ...currentState,
+        isVisible: true,
+        config: settings,
+        typeToken: (state as any).summaryCardTypeToken
+    });
 }
 
 export function hideSummaryCard(): void {
-    appState.searchState.summaryCardTypeToken = (appState.searchState.summaryCardTypeToken || 0) + 1
-    appState.semanticGuideState.isVisible = false
-    appState.semanticGuideState.config = null
-    appState.semanticGuideState.typeToken = appState.searchState.summaryCardTypeToken
-    appState.semanticGuideState.isSynthesizing = false
+    (state as any).summaryCardTypeToken = ((state as any).summaryCardTypeToken || 0) + 1;
+    let currentState: any;
+    semanticGuideStateStore.subscribe((s: any) => currentState = s)();
+    semanticGuideStateStore.set({
+        ...currentState,
+        isVisible: false,
+        config: null,
+        typeToken: (state as any).summaryCardTypeToken,
+        isSynthesizing: false
+    });
 }
 
-/**
- * Read the semantic-guide request timeout (ms) from the developer override
- * \`window.__SEMANTIC_GUIDE_TIMEOUT_MS__\` (typed in window.d.ts), falling back
- * to a 30s default. The override is intentionally NOT exposed via the test
- * bridge (window-test-bridge.ts) — it's a local dev hook for tightening
- * the timeout during manual API testing.
- */
 function getSemanticGuideTimeoutMs(): number {
-    if (
-        typeof window !== 'undefined' &&
-        typeof window.__SEMANTIC_GUIDE_TIMEOUT_MS__ === 'number' &&
-        window.__SEMANTIC_GUIDE_TIMEOUT_MS__ > 0
-    ) {
-        return window.__SEMANTIC_GUIDE_TIMEOUT_MS__
+    if (typeof window !== 'undefined' && typeof (window as any).__SEMANTIC_GUIDE_TIMEOUT_MS__ === 'number' && (window as any).__SEMANTIC_GUIDE_TIMEOUT_MS__ > 0) {
+        return (window as any).__SEMANTIC_GUIDE_TIMEOUT_MS__;
     }
-    return 30000
+    return 30000;
 }
 
-async function fetchSemanticGuide(
-    payload: SemanticGuideRequestPayload,
-    signal: AbortSignal | undefined
-): Promise<unknown> {
-    const timeoutController = new AbortController()
-    let timedOut = false
-    const timeoutMs = getSemanticGuideTimeoutMs()
+async function fetchSemanticGuide(payload: any, signal: AbortSignal | undefined): Promise<any> {
+    const timeoutController = new AbortController();
+    let timedOut = false;
+    const timeoutMs = getSemanticGuideTimeoutMs();
     const timeoutId = window.setTimeout(() => {
-        timedOut = true
-        timeoutController.abort()
-    }, timeoutMs)
-    const abortFromRequest = () => timeoutController.abort(signal?.reason)
+        timedOut = true;
+        timeoutController.abort();
+    }, timeoutMs);
+    const abortFromRequest = () => timeoutController.abort(signal?.reason);
 
     if (signal?.aborted) {
-        abortFromRequest()
+        abortFromRequest();
     } else {
-        signal?.addEventListener('abort', abortFromRequest, { once: true })
+        signal?.addEventListener('abort', abortFromRequest, { once: true });
     }
 
-    let response: Response
+    let response: Response;
     try {
-        response = await fetch(apiUrl('api.php?action=semantic_guide'), {
+        response = await fetch('api.php?action=semantic_guide', {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -253,114 +208,112 @@ async function fetchSemanticGuide(
             cache: 'no-store',
             body: JSON.stringify(payload),
             signal: timeoutController.signal
-        })
-    } catch (error) {
+        });
+    } catch (error: any) {
         if (timedOut) {
-            const timeoutError = new Error('Guide response timed out. Showing a local summary instead.')
-            Object.defineProperty(timeoutError, 'correlationId', {
-                value: crypto.randomUUID(),
-                writable: false,
-                configurable: false
-            })
-            throw timeoutError
+            const timeoutError: any = new Error('Guide response timed out. Showing a local summary instead.');
+            Object.defineProperty(timeoutError, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: false });
+            throw timeoutError;
         }
-        throw error
+        throw error;
     } finally {
-        window.clearTimeout(timeoutId)
-        signal?.removeEventListener('abort', abortFromRequest)
+        window.clearTimeout(timeoutId);
+        signal?.removeEventListener('abort', abortFromRequest);
     }
 
-    let result: unknown
+    let result: any;
     try {
-        result = await response.json()
-    } catch (jsonErr) {
-        Object.defineProperty(jsonErr, 'correlationId', {
-            value: crypto.randomUUID(),
-            writable: false,
-            configurable: false
-        })
-        throw new Error('Guide response returned invalid JSON.', { cause: jsonErr })
+        result = await response.json();
+    } catch (jsonErr: any) {
+        Object.defineProperty(jsonErr, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: false });
+        throw new Error('Guide response returned invalid JSON.', { cause: jsonErr });
     }
 
-    if (!response.ok || !(result as { ok?: boolean })?.ok) {
-        const err = new Error((result as { error?: string })?.error || 'Guide response is unavailable right now.')
-        Object.defineProperty(err, 'correlationId', {
-            value: crypto.randomUUID(),
-            writable: false,
-            configurable: false
-        })
-        throw err
+    if (!response.ok || !result?.ok) {
+        const err: any = new Error(result?.error || 'Guide response is unavailable right now.');
+        Object.defineProperty(err, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: false });
+        throw err;
     }
 
-    return result
+    return result;
 }
 
 function startSemanticGuideRequest(): { requestId: number; controller: AbortController } {
-    if (appState.semanticGuideAbortController) {
-        appState.semanticGuideAbortController.abort()
-        appState.semanticGuideAbortController = null
+    if (state.semanticGuideAbortController) {
+        state.semanticGuideAbortController.abort();
+        state.semanticGuideAbortController = null;
     }
-    const requestId = (appState.searchState.semanticGuideRequestSequence = (appState.searchState.semanticGuideRequestSequence || 0) + 1)
-    const controller = new AbortController()
-    appState.semanticGuideAbortController = controller
-    setSemanticGuideButtonState('loading')
+    const requestId = ((state as any).semanticGuideRequestSequence = ((state as any).semanticGuideRequestSequence || 0) + 1);
+    const controller = new AbortController();
+    state.semanticGuideAbortController = controller;
+    setSemanticGuideButtonState('loading');
 
-    appState.semanticGuideState.isSynthesizing = true
+    let currentState: any;
+    semanticGuideStateStore.subscribe((s: any) => currentState = s)();
+    semanticGuideStateStore.set({
+        ...currentState,
+        isSynthesizing: true
+    });
 
-    showSummaryCard(getSemanticGuideLoadingCardConfig())
+    showSummaryCard(getSemanticGuideLoadingCardConfig());
 
-    return { requestId, controller }
+    return { requestId, controller };
 }
 
 function isSemanticGuideRequestCurrent(requestId: number): boolean {
-    return requestId === appState.searchState.semanticGuideRequestSequence
+    return requestId === (state as any).semanticGuideRequestSequence;
 }
 
 function isSemanticGuideRequestCancelled(requestId: number, controller: AbortController): boolean {
-    return controller.signal.aborted || !isSemanticGuideRequestCurrent(requestId)
+    return controller.signal.aborted || !isSemanticGuideRequestCurrent(requestId);
 }
 
-function showSemanticGuideSuccess(guide: GuideConfig | unknown): void {
-    showSummaryCard(buildSemanticGuideCardConfig(guide as GuideConfig))
+function showSemanticGuideSuccess(guide: any): void {
+    showSummaryCard(buildSemanticGuideCardConfig(guide));
 }
 
-function showSemanticGuideFailure(payload: SemanticGuideRequestPayload, _error: unknown): void {
-    appState.semanticGuideState.isSynthesizing = false
-    const fallback = buildClientSemanticGuideFallback(payload as unknown as SemanticGuidePayload)
-    showSummaryCard(buildSemanticGuideFallbackCardConfig(fallback))
+function showSemanticGuideFailure(payload: any, error: any): void {
+    let currentState: any;
+    semanticGuideStateStore.subscribe((s: any) => currentState = s)();
+    semanticGuideStateStore.set({
+        ...currentState,
+        isSynthesizing: false
+    });
+    const fallback = buildClientSemanticGuideFallback(payload);
+    showSummaryCard(buildSemanticGuideFallbackCardConfig(fallback));
 }
 
 function finishSemanticGuideRequest(controller: AbortController): void {
-    if (appState.semanticGuideAbortController === controller) {
-        appState.semanticGuideAbortController = null
+    if (state.semanticGuideAbortController === controller) {
+        state.semanticGuideAbortController = null;
     }
-    setSemanticGuideButtonState('refresh', { disabled: false })
-    if (typeof updateLegendGuideState === 'function') updateLegendGuideState()
+    setSemanticGuideButtonState('refresh', { disabled: false });
+    if (typeof updateLegendGuideState === 'function') updateLegendGuideState();
 }
 
-function ensureSemanticGuideCorrelationId(error: unknown): void {
-    if (!error || typeof error !== 'object' || Object.prototype.hasOwnProperty.call(error, 'correlationId')) return
-    Object.defineProperty(error, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: false })
+function ensureSemanticGuideCorrelationId(error: any): void {
+    if (!error || Object.prototype.hasOwnProperty.call(error, 'correlationId')) return;
+    Object.defineProperty(error, 'correlationId', { value: crypto.randomUUID(), writable: false, configurable: false });
 }
 
 export async function requestSemanticGuide(): Promise<void> {
-    const payload = buildSemanticGuideRequestPayload()
-    if (!payload) return
+    const payload = buildSemanticGuideRequestPayload();
+    if (!payload) return;
 
-    const { requestId, controller } = startSemanticGuideRequest()
+    const { requestId, controller } = startSemanticGuideRequest();
 
     try {
-        const guide = await fetchSemanticGuide(payload, controller.signal)
-        if (!isSemanticGuideRequestCurrent(requestId)) return
-        showSemanticGuideSuccess(guide)
+        const guide = await fetchSemanticGuide(payload, controller.signal);
+        if (!isSemanticGuideRequestCurrent(requestId)) return;
+        showSemanticGuideSuccess(guide);
         if (typeof showSemanticThreadsDetail === 'function') {
-            showSemanticThreadsDetail()
+            showSemanticThreadsDetail();
         }
-    } catch (error) {
-        if (isSemanticGuideRequestCancelled(requestId, controller)) return
-        ensureSemanticGuideCorrelationId(error)
-        showSemanticGuideFailure(payload, error)
+    } catch (error: any) {
+        if (isSemanticGuideRequestCancelled(requestId, controller)) return;
+        ensureSemanticGuideCorrelationId(error);
+        showSemanticGuideFailure(payload, error);
     } finally {
-        finishSemanticGuideRequest(controller)
+        finishSemanticGuideRequest(controller);
     }
 }

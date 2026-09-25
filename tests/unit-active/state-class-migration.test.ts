@@ -20,7 +20,9 @@ const _compassState = vi.hoisted(() => ({
 
 const _cameraState = vi.hoisted(() => ({
     autoRotate: false,
-    autoRotateSuspended: false
+    autoRotateSuspended: false,
+    autoRotateResumeDueAt: 0,
+    autoRotateSoftResumeStartedAt: 0
 }))
 
 const _legendState = vi.hoisted(() => ({
@@ -36,7 +38,7 @@ const _filterState = vi.hoisted(() => ({
         city: '' as string,
         website: false,
         email: false,
-        geocoded: false
+        geocoded: false,
     }
 }))
 
@@ -61,8 +63,7 @@ const _searchState = vi.hoisted(() => ({
 
 const _weatherState = vi.hoisted(() => ({
     weather: null as any,
-    weatherInitialized: false,
-    weatherState: { lastFetch: 0, fallback: false }
+    weatherInitialized: false
 }))
 
 // ── Mock factories ───────────────────────────────────────────────────────────
@@ -85,16 +86,6 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
                 }
             }
         },
-        // Viewport mock shape
-        get viewportState() {
-            return {
-                viewportWidth: 1280,
-                viewportHeight: 720,
-                viewportDpr: 1,
-                viewportReducedMotion: false,
-                viewportIsCompact: false
-            }
-        },
         // Camera mock shape
         get autoRotate() {
             return _cameraState.autoRotate
@@ -108,165 +99,77 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
         set autoRotateSuspended(v: boolean) {
             _cameraState.autoRotateSuspended = v
         },
+        get autoRotateResumeDueAt() {
+            return _cameraState.autoRotateResumeDueAt
+        },
+        set autoRotateResumeDueAt(v: number) {
+            _cameraState.autoRotateResumeDueAt = v
+        },
+        get autoRotateSoftResumeStartedAt() {
+            return _cameraState.autoRotateSoftResumeStartedAt
+        },
+        set autoRotateSoftResumeStartedAt(v: number) {
+            _cameraState.autoRotateSoftResumeStartedAt = v
+        },
+        withMutation: (fn: () => unknown) => fn(),
         // Legend mock shape
-        get legendOpen() {
-            return _legendState.legendOpen
-        },
-        set legendOpen(v: boolean) {
-            _legendState.legendOpen = v
-        },
+        get legendOpen() { return _legendState.legendOpen },
+        set legendOpen(v: boolean) { _legendState.legendOpen = v },
         // Filter mock shape
-        get filterVersion() {
-            return _filterState.filterVersion
-        },
-        set filterVersion(v: number) {
-            _filterState.filterVersion = v
-        },
-        get filterColorVersion() {
-            return _filterState.filterColorVersion
-        },
-        set filterColorVersion(v: number) {
-            _filterState.filterColorVersion = v
-        },
-        get activeClusterFilter() {
-            return _filterState.activeClusterFilter
-        },
-        set activeClusterFilter(v: number | null) {
-            _filterState.activeClusterFilter = v
-        },
-        get activeFilters() {
-            return _filterState.activeFilters
-        },
-        set activeFilters(v: any) {
-            _filterState.activeFilters = v
-        },
+        get filterVersion() { return _filterState.filterVersion },
+        set filterVersion(v: number) { _filterState.filterVersion = v },
+        get filterColorVersion() { return _filterState.filterColorVersion },
+        set filterColorVersion(v: number) { _filterState.filterColorVersion = v },
+        get activeClusterFilter() { return _filterState.activeClusterFilter },
+        set activeClusterFilter(v: number | null) { _filterState.activeClusterFilter = v },
+        get activeFilters() { return _filterState.activeFilters },
+        set activeFilters(v: any) { _filterState.activeFilters = v },
         // Search mock shape
-        get searchState() {
-            return _searchState
-        },
-        get currentSearchSummary() {
-            return _searchState.currentSearchSummary
-        },
-        set currentSearchSummary(v: any) {
-            _searchState.currentSearchSummary = v
-        },
-        get searchStatus() {
-            return _searchState.searchStatus
-        },
-        set searchStatus(v: string) {
-            _searchState.searchStatus = v
-        },
-        get searchRequestSequence() {
-            return _searchState.searchRequestSequence
-        },
-        set searchRequestSequence(v: number) {
-            _searchState.searchRequestSequence = v
-        },
-        get searchAnchorIndex() {
-            return _searchState.searchAnchorIndex
-        },
-        set searchAnchorIndex(v: number | null) {
-            _searchState.searchAnchorIndex = v
-        },
-        get searchPreviewIndex() {
-            return _searchState.searchPreviewIndex
-        },
-        set searchPreviewIndex(v: number | null) {
-            _searchState.searchPreviewIndex = v
-        },
-        get searchGlowIndices() {
-            return _searchState.searchGlowIndices
-        },
-        set searchGlowIndices(v: Set<number>) {
-            _searchState.searchGlowIndices = v
-        },
-        get searchGlowTopIndex() {
-            return _searchState.searchGlowTopIndex
-        },
-        set searchGlowTopIndex(v: number | null) {
-            _searchState.searchGlowTopIndex = v
-        },
-        get searchGlowActive() {
-            return _searchState.searchGlowActive
-        },
-        set searchGlowActive(v: boolean) {
-            _searchState.searchGlowActive = v
-        },
-        get currentEmptyQuery() {
-            return _searchState.currentEmptyQuery
-        },
-        set currentEmptyQuery(v: string | null) {
-            _searchState.currentEmptyQuery = v
-        },
-        get searchFocusTransitionToken() {
-            return _searchState.searchFocusTransitionToken
-        },
-        set searchFocusTransitionToken(v: number) {
-            _searchState.searchFocusTransitionToken = v
-        },
-        get semanticTrailCue() {
-            return _searchState.semanticTrailCue
-        },
-        set semanticTrailCue(v: string) {
-            _searchState.semanticTrailCue = v
-        },
-        get isCompactViewport() {
-            return _searchState.isCompactViewport
-        },
-        set isCompactViewport(v: boolean) {
-            _searchState.isCompactViewport = v
-        },
-        get semanticGuideRequestSequence() {
-            return _searchState.semanticGuideRequestSequence
-        },
-        set semanticGuideRequestSequence(v: number) {
-            _searchState.semanticGuideRequestSequence = v
-        },
-        get currentSemanticGuide() {
-            return _searchState.currentSemanticGuide
-        },
-        set currentSemanticGuide(v: string | null) {
-            _searchState.currentSemanticGuide = v
-        },
-        get summaryCardTypeToken() {
-            return _searchState.summaryCardTypeToken
-        },
-        set summaryCardTypeToken(v: number) {
-            _searchState.summaryCardTypeToken = v
-        },
+        get currentSearchSummary() { return _searchState.currentSearchSummary },
+        set currentSearchSummary(v: any) { _searchState.currentSearchSummary = v },
+        get searchStatus() { return _searchState.searchStatus },
+        set searchStatus(v: string) { _searchState.searchStatus = v },
+        get searchRequestSequence() { return _searchState.searchRequestSequence },
+        set searchRequestSequence(v: number) { _searchState.searchRequestSequence = v },
+        get searchAnchorIndex() { return _searchState.searchAnchorIndex },
+        set searchAnchorIndex(v: number | null) { _searchState.searchAnchorIndex = v },
+        get searchPreviewIndex() { return _searchState.searchPreviewIndex },
+        set searchPreviewIndex(v: number | null) { _searchState.searchPreviewIndex = v },
+        get searchGlowIndices() { return _searchState.searchGlowIndices },
+        set searchGlowIndices(v: Set<number>) { _searchState.searchGlowIndices = v },
+        get searchGlowTopIndex() { return _searchState.searchGlowTopIndex },
+        set searchGlowTopIndex(v: number | null) { _searchState.searchGlowTopIndex = v },
+        get searchGlowActive() { return _searchState.searchGlowActive },
+        set searchGlowActive(v: boolean) { _searchState.searchGlowActive = v },
+        get currentEmptyQuery() { return _searchState.currentEmptyQuery },
+        set currentEmptyQuery(v: string | null) { _searchState.currentEmptyQuery = v },
+        get searchFocusTransitionToken() { return _searchState.searchFocusTransitionToken },
+        set searchFocusTransitionToken(v: number) { _searchState.searchFocusTransitionToken = v },
+        get semanticTrailCue() { return _searchState.semanticTrailCue },
+        set semanticTrailCue(v: string) { _searchState.semanticTrailCue = v },
+        get isCompactViewport() { return _searchState.isCompactViewport },
+        set isCompactViewport(v: boolean) { _searchState.isCompactViewport = v },
+        get semanticGuideRequestSequence() { return _searchState.semanticGuideRequestSequence },
+        set semanticGuideRequestSequence(v: number) { _searchState.semanticGuideRequestSequence = v },
+        get currentSemanticGuide() { return _searchState.currentSemanticGuide },
+        set currentSemanticGuide(v: string | null) { _searchState.currentSemanticGuide = v },
+        get summaryCardTypeToken() { return _searchState.summaryCardTypeToken },
+        set summaryCardTypeToken(v: number) { _searchState.summaryCardTypeToken = v },
         // Weather mock shape
-        get weather() {
-            return _weatherState.weather
-        },
-        set weather(v: any) {
-            _weatherState.weather = v
-        },
-        get weatherInitialized() {
-            return _weatherState.weatherInitialized
-        },
-        set weatherInitialized(v: boolean) {
-            _weatherState.weatherInitialized = v
-        },
-        get weatherState() {
-            return _weatherState.weatherState
-        },
-        set weatherState(v: any) {
-            _weatherState.weatherState = v
-        },
-        withMutation(fn: () => void) {
-            fn()
-        }
+        get weather() { return _weatherState.weather },
+        set weather(v: any) { _weatherState.weather = v },
+        get weatherInitialized() { return _weatherState.weatherInitialized },
+        set weatherInitialized(v: boolean) { _weatherState.weatherInitialized = v }
     }
 }))
 
 vi.mock('@lib/stores/journey.svelte', () => ({
-    journeyPhase: () => _compassState.mode,
-    JOURNEY_COMPASS_PHASE_ORDER: ['overview', 'search', 'focus', 'inside', 'map']
+    journeyPhase: () => _compassState.mode
 }))
 
 // ── Imports (must appear AFTER vi.mock) ──────────────────────────────────────
 
-import { compassSteps, JOURNEY_ACTIONS } from '@lib/stores/compass.svelte.ts'
+import { compassSteps, buildCompassStatus, JOURNEY_ACTIONS } from '@lib/stores/compass.svelte.ts'
 
 import {
     cameraStore,
@@ -304,7 +207,7 @@ import {
     pointMatchesActiveFilters,
     setClusterFilter
 } from '@lib/stores/filter.svelte.ts'
-import type { ActiveFilters } from '@lib/types/state'
+import type { ActiveFilters } from '@lib/stores/filter.svelte.ts'
 
 import {
     searchStore,
@@ -349,7 +252,10 @@ import {
     hasWeather,
     isWeatherInitialized,
     setWeatherInitialized,
-    fetchWeather
+    updateWeather,
+    CONDITION_ICONS,
+    type WeatherData,
+    type WeatherCondition
 } from '@lib/stores/weather.svelte.ts'
 
 // ── Compass tests ────────────────────────────────────────────────────────────
@@ -363,11 +269,11 @@ describe('compass store — state-class appState regression', () => {
         _compassState.mode = 'focus'
         const steps = compassSteps()
         expect(steps).toHaveLength(5)
-        expect(steps[0]).toMatchObject({ phase: 'overview', state: 'done' })
-        expect(steps[1]).toMatchObject({ phase: 'search', state: 'done' })
-        expect(steps[2]).toMatchObject({ phase: 'focus', state: 'current' })
-        expect(steps[3]).toMatchObject({ phase: 'inside', state: 'upcoming' })
-        expect(steps[4]).toMatchObject({ phase: 'map', state: 'upcoming' })
+        expect(steps[0]).toEqual({ phase: 'overview', state: 'done' })
+        expect(steps[1]).toEqual({ phase: 'search', state: 'done' })
+        expect(steps[2]).toEqual({ phase: 'focus', state: 'current' })
+        expect(steps[3]).toEqual({ phase: 'inside', state: 'upcoming' })
+        expect(steps[4]).toEqual({ phase: 'map', state: 'upcoming' })
     })
 
     it('compassSteps marks all done when mode is map', () => {
@@ -382,6 +288,141 @@ describe('compass store — state-class appState regression', () => {
         const steps = compassSteps()
         expect(steps[0].state).toBe('current')
         expect(steps.slice(1).every((s) => s.state === 'upcoming')).toBe(true)
+    })
+
+    it('buildCompassStatus returns overview when no search/focus/inside', () => {
+        const status = buildCompassStatus({
+            currentView: 'galaxy',
+            focusedName: '',
+            queryLabel: '',
+            isSearching: false,
+            isFocusing: false,
+            hasSearch: false,
+            hasFocus: false,
+            insideActive: false,
+            resultCount: 0,
+            walkDepth: 0,
+            isSearchFocus: false,
+            isSearchAnchor: false,
+            isTrailStop: false,
+            hasAnchor: false,
+            clusterName: '',
+            routeCount: 0,
+            nextPointName: null,
+            idleNote: 'Explore the network',
+            isDiscovery: false,
+            isSemanticDegraded: false
+        })
+        expect(status.phase).toBe('overview')
+        expect(status.primaryAction.action).toBe(JOURNEY_ACTIONS.FOCUS_SEARCH)
+    })
+
+    it('buildCompassStatus returns search phase when hasSearch', () => {
+        const status = buildCompassStatus({
+            currentView: 'galaxy',
+            focusedName: '',
+            queryLabel: 'coffee',
+            isSearching: false,
+            isFocusing: false,
+            hasSearch: true,
+            hasFocus: false,
+            insideActive: false,
+            resultCount: 3,
+            walkDepth: 0,
+            isSearchFocus: false,
+            isSearchAnchor: false,
+            isTrailStop: false,
+            hasAnchor: false,
+            clusterName: '',
+            routeCount: 0,
+            nextPointName: null,
+            idleNote: '',
+            isDiscovery: false,
+            isSemanticDegraded: false
+        })
+        expect(status.phase).toBe('search')
+        expect(status.primaryAction.action).toBe(JOURNEY_ACTIONS.FOCUS_SEARCH)
+    })
+
+    it('buildCompassStatus returns focus phase when hasFocus', () => {
+        const status = buildCompassStatus({
+            currentView: 'galaxy',
+            focusedName: 'ABC Store',
+            queryLabel: '',
+            isSearching: false,
+            isFocusing: true,
+            hasSearch: false,
+            hasFocus: true,
+            insideActive: false,
+            resultCount: 0,
+            walkDepth: 1,
+            isSearchFocus: false,
+            isSearchAnchor: false,
+            isTrailStop: false,
+            hasAnchor: false,
+            clusterName: 'Downtown',
+            routeCount: 0,
+            nextPointName: null,
+            idleNote: '',
+            isDiscovery: false,
+            isSemanticDegraded: false
+        })
+        expect(status.phase).toBe('focus')
+        expect(status.primaryAction.action).toBe(JOURNEY_ACTIONS.ENTER_INSIDE)
+    })
+
+    it('buildCompassStatus returns inside phase when insideActive', () => {
+        const status = buildCompassStatus({
+            currentView: 'galaxy',
+            focusedName: 'ABC Store',
+            queryLabel: '',
+            isSearching: false,
+            isFocusing: false,
+            hasSearch: false,
+            hasFocus: true,
+            insideActive: true,
+            resultCount: 0,
+            walkDepth: 1,
+            isSearchFocus: false,
+            isSearchAnchor: false,
+            isTrailStop: false,
+            hasAnchor: false,
+            clusterName: 'Downtown',
+            routeCount: 0,
+            nextPointName: 'XYZ Cafe',
+            idleNote: '',
+            isDiscovery: false,
+            isSemanticDegraded: false
+        })
+        expect(status.phase).toBe('inside')
+        expect(status.primaryAction.action).toBe(JOURNEY_ACTIONS.NEXT_STOP)
+    })
+
+    it('buildCompassStatus returns map phase when currentView is map', () => {
+        const status = buildCompassStatus({
+            currentView: 'map',
+            focusedName: 'ABC Store',
+            queryLabel: '',
+            isSearching: false,
+            isFocusing: false,
+            hasSearch: false,
+            hasFocus: true,
+            insideActive: false,
+            resultCount: 0,
+            walkDepth: 0,
+            isSearchFocus: false,
+            isSearchAnchor: false,
+            isTrailStop: false,
+            hasAnchor: false,
+            clusterName: '',
+            routeCount: 2,
+            nextPointName: null,
+            idleNote: '',
+            isDiscovery: false,
+            isSemanticDegraded: false
+        })
+        expect(status.phase).toBe('map')
+        expect(status.primaryAction.action).toBe(JOURNEY_ACTIONS.OPEN_MYCELIUM)
     })
 
     it('JOURNEY_ACTIONS has all expected actions', () => {
@@ -403,6 +444,8 @@ describe('camera store — T4 writable + withCameraNotify migration', () => {
         resetCamera()
         _cameraState.autoRotate = false
         _cameraState.autoRotateSuspended = false
+        _cameraState.autoRotateResumeDueAt = 0
+        _cameraState.autoRotateSoftResumeStartedAt = 0
     })
 
     it('cameraStore is readable and has property accessors', () => {
@@ -485,7 +528,7 @@ describe('camera store — T4 writable + withCameraNotify migration', () => {
         setCameraPosition([99, 99, 99])
         setCameraTarget([88, 88, 88])
         resetCamera()
-        expect(cameraPosition()).toEqual([2.05, 1.55, 2.75])
+        expect(cameraPosition()).toEqual([0, 0, 3])
         expect(cameraTarget()).toEqual([0, 0, 0])
     })
 
@@ -495,6 +538,8 @@ describe('camera store — T4 writable + withCameraNotify migration', () => {
         resetCamera()
         expect(_cameraState.autoRotate).toBe(false)
         expect(_cameraState.autoRotateSuspended).toBe(false)
+        expect(_cameraState.autoRotateResumeDueAt).toBe(0)
+        expect(_cameraState.autoRotateSoftResumeStartedAt).toBe(0)
     })
 
     it('CAMERA_CONFIG exposes numeric constants', () => {
@@ -774,7 +819,7 @@ describe('search store — T4 writable + withSearchNotify migration', () => {
     it('setSearchResults updates result indices and count', () => {
         setSearchResults([
             { id: '1', name: 'A', index: 0, score: 1, category: '', snippet: '' },
-            { id: '2', name: 'B', index: 1, score: 0.9, category: '', snippet: '' }
+            { id: '2', name: 'B', index: 1, score: 0.9, category: '', snippet: '' },
         ])
         expect(_searchState.currentSearchSummary.resultIndices).toEqual([0, 1])
         expect(_searchState.currentSearchSummary.resultCount).toBe(2)
@@ -877,16 +922,9 @@ describe('search store — T4 writable + withSearchNotify migration', () => {
 
     it('derived getters read from appState', () => {
         _searchState.currentSearchSummary = {
-            query: 'pizza',
-            totalMatches: 5,
-            totalSemanticMatches: 3,
-            visibleMatches: 5,
-            resultCount: 5,
-            topScore: 0.9,
-            anchorIndex: 0,
-            topIndex: 0,
-            resultIndices: [1, 2, 3, 4, 5],
-            summaryType: 'text'
+            query: 'pizza', totalMatches: 5, totalSemanticMatches: 3, visibleMatches: 5,
+            resultCount: 5, topScore: 0.9, anchorIndex: 0, topIndex: 0,
+            resultIndices: [1, 2, 3, 4, 5], summaryType: 'text'
         }
         _searchState.searchStatus = 'results'
 
@@ -986,20 +1024,18 @@ describe('engine status store — canonical engine lifecycle status', () => {
 // ── Weather tests ────────────────────────────────────────────────────────────
 
 describe('weather store — state-class appState regression', () => {
-    /** Canonical weather shape written by the Open-Meteo client. */
-    const FAKE_WEATHER = {
-        temp: 72,
+    const FAKE_WEATHER: WeatherData = {
+        temperature: 72,
+        feelsLike: 74,
+        condition: 'clear' as WeatherCondition,
+        label: 'Clear Sky',
         humidity: 55,
-        code: 0,
-        description: 'Clear Sky',
-        icon: 'sun' as const,
-        condition: 'sun' as const,
         windSpeed: 5,
-        windDirection: 0,
-        windGust: null,
-        source: 'open-meteo'
+        windDirection: 'N',
+        forecast: 'Clear skies today',
+        location: 'Montgomery County, TX',
+        updatedAt: 1,
     }
-
     beforeEach(() => {
         _weatherState.weather = null
         _weatherState.weatherInitialized = false
@@ -1010,27 +1046,31 @@ describe('weather store — state-class appState regression', () => {
         expect(weatherData.condition).toBe('clear')
         expect(weatherData.label).toBe('--')
         expect(weatherData.forecast).toBe('')
+        expect(weatherData.updatedAt).toBe(0)
     })
 
-    it('weatherData getters read from appState when canonical shape is set', () => {
+    it('weatherData getters read from appState when set', () => {
         _weatherState.weather = FAKE_WEATHER
         expect(weatherData.temperature).toBe(72)
         expect(weatherData.condition).toBe('clear')
         expect(weatherData.label).toBe('Clear Sky')
+        expect(weatherData.forecast).toBe('Clear skies today')
+        expect(weatherData.updatedAt).toBe(1)
     })
 
-    it('derived getters read from canonical shape', () => {
+    it('derived getters read from appState', () => {
         _weatherState.weather = FAKE_WEATHER
         expect(weatherTemperature()).toBe(72)
         expect(weatherCondition()).toBe('clear')
         expect(weatherLabel()).toBe('Clear Sky')
+        expect(weatherForecast()).toBe('Clear skies today')
     })
 
     it('hasWeather returns false when weather is null', () => {
         expect(hasWeather()).toBe(false)
     })
 
-    it('hasWeather returns true when canonical weather is set', () => {
+    it('hasWeather returns true when updatedAt > 0', () => {
         _weatherState.weather = FAKE_WEATHER
         expect(hasWeather()).toBe(true)
     })
@@ -1048,8 +1088,30 @@ describe('weather store — state-class appState regression', () => {
         expect(_weatherState.weatherInitialized).toBe(false)
     })
 
-    it('fetchWeather delegates to canonical client without throwing', async () => {
-        // fetchWeather swallows errors so the widget's onMount doesn't reject.
-        await expect(fetchWeather()).resolves.toBeUndefined()
+    it('updateWeather merges into appState and sets initialized', () => {
+        updateWeather({ temperature: 85, condition: 'rain', label: 'Light Rain' })
+        const w = _weatherState.weather as WeatherData
+        expect(w.temperature).toBe(85)
+        expect(w.condition).toBe('rain')
+        expect(w.label).toBe('Light Rain')
+        expect(_weatherState.weatherInitialized).toBe(true)
+    })
+
+    it('updateWeather preserves untouched fields', () => {
+        _weatherState.weather = FAKE_WEATHER
+        updateWeather({ temperature: 90 })
+        const w = _weatherState.weather as WeatherData
+        expect(w.temperature).toBe(90)
+        expect(w.condition).toBe('clear')
+        expect(w.windSpeed).toBe(5)
+    })
+
+    it('CONDITION_ICONS contains unicode icons for each condition', () => {
+        expect(CONDITION_ICONS.clear).toBeTruthy()
+        expect(CONDITION_ICONS.clouds).toBeTruthy()
+        expect(CONDITION_ICONS.rain).toBeTruthy()
+        expect(CONDITION_ICONS.storm).toBeTruthy()
+        expect(CONDITION_ICONS.fog).toBeTruthy()
+        expect(CONDITION_ICONS.wind).toBeTruthy()
     })
 })

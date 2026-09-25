@@ -1,0 +1,11 @@
+{
+  "model": "Qwen3-Embedding-0.6B",
+  "model_path": "C:\\Users\\HP\\.cache\\huggingface\\hub\\models--Qwen--Qwen3-Embedding-0.6B\\snapshots\\c54f2e6e80b2d7b7de06f51cec4959f6b3e03418",
+  "dimensions": 1024,
+  "count": 8406,
+  "query_instruction": "Given a Montgomery County business discovery query, retrieve the most relevant businesses, venues, and service providers that best satisfy the request.",
+  "query_format": "plain",
+  "max_text_chars": 4000,
+  "embedding_input_avg_chars": 1009,
+  "generated_at": "2026-06-04T05:50:01Z"
+}

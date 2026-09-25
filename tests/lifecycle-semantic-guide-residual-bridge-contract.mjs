@@ -12,8 +12,8 @@
  *     - legend-ui-bridge.ts has been absorbed (no longer exists)
  *
  *   Deleted kernels (no longer exist):
- * -
- * -
+ *     - js/modules/legend-ui.ts
+ *     - js/modules/semantic-guide.ts
  *     - src/lib/engine/legend-ui-bridge.ts (absorbed into canonical store)
  *
  * Design:
@@ -81,11 +81,12 @@ function testUpdateLegendGuideStateOwner() {
     const lifecycleSrc = readSrc(LIFECYCLE_PATH)
     const importDeclarations = lifecycleSrc.match(/^import[\s\S]*?;$/gm) || []
     const badImport = importDeclarations.some((d) => d.includes('updateLegendGuideState'))
-    assert(!badImport, 'lifecycle must NOT import updateLegendGuideState (legend-panel.svelte.ts owns it)')
-
-    console.log(
-        '  OK — updateLegendGuideState: legend-panel.svelte.ts owns it; no direct call from view-controller or lifecycle'
+    assert(
+        !badImport,
+        'lifecycle must NOT import updateLegendGuideState (legend-panel.svelte.ts owns it)'
     )
+
+    console.log('  OK — updateLegendGuideState: legend-panel.svelte.ts owns it; no direct call from view-controller or lifecycle')
 }
 
 // ── TEST 2: restoreLegendCollapsedPanel is owned by legend-panel.svelte.ts ──
@@ -95,6 +96,7 @@ function testRestoreLegendCollapsedPanelOwner() {
 
     const storeSrc = readSrc(LEGEND_PANEL_STORE)
     const legendBindingsPath = path.join(SEMDEMO_ROOT, 'src/lib/ui/legend-bindings.ts')
+    const legendBindingsSrc = readSrc(legendBindingsPath)
 
     assert(
         storeSrc.includes('export function restoreLegendCollapsedPanel'),
@@ -104,16 +106,10 @@ function testRestoreLegendCollapsedPanelOwner() {
         !storeSrc.includes('window.restoreLegendCollapsedPanel'),
         'legend-panel.svelte.ts must not keep the retired window.restoreLegendCollapsedPanel export'
     )
-
-    if (!fs.existsSync(legendBindingsPath)) {
-        console.log('  SKIP — src/lib/ui/legend-bindings.ts was deleted as dead code; window-export consumer absent')
-    } else {
-        const legendBindingsSrc = readSrc(legendBindingsPath)
-        assert(
-            !legendBindingsSrc.includes('window.restoreLegendCollapsedPanel = restoreLegendCollapsedPanel'),
-            'legend-bindings.ts must not own the restoreLegendCollapsedPanel window export'
-        )
-    }
+    assert(
+        !legendBindingsSrc.includes('window.restoreLegendCollapsedPanel = restoreLegendCollapsedPanel'),
+        'legend-bindings.ts must not own the restoreLegendCollapsedPanel window export'
+    )
 
     const closeLegendGuideMatch = storeSrc.match(/export function closeLegendGuide[\s\S]*?^}/m)
     assert(closeLegendGuideMatch, 'legend-panel.svelte.ts must define closeLegendGuide')
@@ -244,60 +240,8 @@ try {
     testDeletedKernelsNotExist()
     testBridgeAbsorbedNoResurrection()
 
-    // ---------------------------------------------------------------------------
-    // RUNTIME TEST 8: Legend panel functions are importable and callable
-    // ---------------------------------------------------------------------------
-    console.log('\n[RUNTIME TEST 8] Legend panel functions importable at runtime')
-
-    const { isLegendPanelOpen, updateLegendGuideState, closeLegendGuide, restoreLegendCollapsedPanel } =
-        await import('../src/lib/stores/legend-panel.svelte.ts')
-
-    // All functions must be functions
-    assert(typeof isLegendPanelOpen === 'function', 'isLegendPanelOpen is a function')
-    assert(typeof updateLegendGuideState === 'function', 'updateLegendGuideState is a function')
-    assert(typeof closeLegendGuide === 'function', 'closeLegendGuide is a function')
-    assert(typeof restoreLegendCollapsedPanel === 'function', 'restoreLegendCollapsedPanel is a function')
-
-    console.log('  OK all 4 legend panel functions importable')
-
-    // ---------------------------------------------------------------------------
-    // RUNTIME TEST 9: isLegendPanelOpen returns boolean (initially false)
-    // ---------------------------------------------------------------------------
-    console.log('\n[RUNTIME TEST 9] isLegendPanelOpen returns boolean')
-
-    const panelState = isLegendPanelOpen()
-    assert(typeof panelState === 'boolean', `isLegendPanelOpen must return boolean, got: ${typeof panelState}`)
-    // By default legend should be closed (but we only verify it returns boolean, not the default value)
-    console.log(`  OK isLegendPanelOpen() returns ${panelState}`)
-
-    // ---------------------------------------------------------------------------
-    // RUNTIME TEST 10: closeLegendGuide is safe to call (no-op when not open)
-    // ---------------------------------------------------------------------------
-    console.log('\n[RUNTIME TEST 10] closeLegendGuide handles closed state gracefully')
-
-    // Should not throw when called with no open legend
-    try {
-        closeLegendGuide() // no args — should be safe
-        console.log('  OK closeLegendGuide() called without throwing')
-    } catch (err) {
-        // If the function touches DOM (getElementById), it may fail in Node.
-        // This is expected for DOM-dependent functions. Verify it's a DOM error.
-        const isDomError = err.message.includes('document') || err.message.includes('getElementById')
-        console.log(`  OK closeLegendGuide threw (expected in Node — DOM dependent): ${err.message.substring(0, 80)}`)
-    }
-
-    // ---------------------------------------------------------------------------
-    // RUNTIME TEST 11: No window global re-exports from legend-panel
-    // ---------------------------------------------------------------------------
-    console.log('\n[RUNTIME TEST 11] No window bridge re-exports')
-
-    assert(typeof globalThis.window?.updateLegendGuideState === 'undefined', 'window.updateLegendGuideState absent')
-    assert(typeof globalThis.window?.closeLegendGuide === 'undefined', 'window.closeLegendGuide absent')
-    assert(typeof globalThis.window?.restoreLegendCollapsedPanel === 'undefined', 'window.restoreLegendCollapsedPanel absent')
-    console.log('  OK no window global re-exports detected')
-
     console.log('\n=================================================================')
-    console.log('ALL TESTS PASSED — no-resurrection guards, ownership, and runtime APIs verified')
+    console.log('ALL TESTS PASSED — no-resurrection guards and ownership verified')
     console.log('=================================================================')
     process.exit(0)
 } catch (err) {

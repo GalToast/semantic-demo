@@ -26,7 +26,7 @@ globalThis.performance = globalThis.window.performance;
 globalThis.requestAnimationFrame = globalThis.window.requestAnimationFrame;
 globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame;
 
-const { state } = await import('./helpers/canonical-state.mjs');
+const { state } = await import('../src/lib/engine/state-bridge.ts');
 const { syncRuntimeState, getRuntimeStateSnapshot } = await import('../src/lib/journey/focus-pocket.ts');
 
 const original = getRuntimeStateSnapshot();
@@ -46,12 +46,7 @@ try {
   });
 
   const snapshot = getRuntimeStateSnapshot();
-  // navState is SHALLOW-CLONED by design (47a46ae0 defensive copy — live
-  // reference would let syncRuntimeState alias canonical navState and bypass
-  // writeNavstateMirror traps). Assert value equality; collections survive by
-  // reference so they keep identity semantics.
-  assert(snapshot.navState.focusedIndex === 7, 'snapshot should expose current navState values');
-  assert(JSON.stringify(snapshot.navState.focusPocketIndices) === JSON.stringify([7, 8]), 'navState focusPocketIndices cloned by value');
+  assert(snapshot.navState === navState, 'snapshot should expose current navState reference');
   assert(snapshot.targetPositions === targetPositions, 'snapshot should expose current targetPositions reference');
   assert(snapshot.pocketMotionByIndex === pocketMotionByIndex, 'snapshot should expose current motion Map reference');
   assert(snapshot.pocketTransitionStartedAt === 1234, 'snapshot should expose transition start time');

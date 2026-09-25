@@ -30,21 +30,9 @@ const VITEST_CONFIG = join(PROJECT_ROOT, 'vitest.config.js');
 function collectFiles(dir: string, files: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const fullPath = join(dir, entry);
-    let stat;
-    try {
-      stat = statSync(fullPath);
-    } catch (error) {
-      if ((error as { code?: string }).code === 'ENOENT') continue;
-      throw error;
-    }
+    const stat = statSync(fullPath);
     if (stat.isDirectory()) {
-      if (
-        entry === 'node_modules' ||
-        entry === 'dist' ||
-        entry === '.git' ||
-        entry === 'tmp' ||
-        entry.startsWith('ci-mirror-test-')
-      ) {
+      if (entry === 'node_modules' || entry === 'dist' || entry === '.git' || entry === 'tmp') {
         continue;
       }
       collectFiles(fullPath, files);
@@ -53,15 +41,6 @@ function collectFiles(dir: string, files: string[] = []): string[] {
     }
   }
   return files;
-}
-
-function readCollectedFile(file: string): string | null {
-  try {
-    return readFileSync(file, 'utf-8');
-  } catch (error) {
-    if ((error as { code?: string }).code === 'ENOENT') return null;
-    throw error;
-  }
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -89,8 +68,7 @@ describe('both-bridge retirement invariant', () => {
     const violations: string[] = [];
 
     for (const file of files) {
-      const content = readCollectedFile(file);
-      if (content === null) continue;
+      const content = readFileSync(file, 'utf-8');
       // Look for actual import/export from @legacy-js
       const lines = content.split('\n');
       for (let i = 0; i < lines.length; i++) {
@@ -114,8 +92,7 @@ describe('both-bridge retirement invariant', () => {
     const violations: string[] = [];
 
     for (const file of files) {
-      const content = readCollectedFile(file);
-      if (content === null) continue;
+      const content = readFileSync(file, 'utf-8');
       const lines = content.split('\n');
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];

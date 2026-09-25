@@ -1,21 +1,29 @@
 /**
  * @lib/journey/compass-state.ts
  *
- * Ported from:
+ * Ported from: js/modules/journey-compass-state.ts
  * Journey compass state machine and action synthesis.
  */
 
-import { formatBusinessName } from '@lib/utils/dom-formatters'
-import { describeCluster } from '@lib/utils/ui-presentation'
-import { getNextExploreCandidateForIndex } from './thread-model'
-import { getNextWalkCandidateForIndex } from './lifecycle-adapter'
-import type { Point } from '@lib/state/state-types'
-import { appState } from '@lib/state/app.svelte'
+import { getInterestingBusinessNote } from './lifecycle-adapter';
+import { formatBusinessName } from '@lib/utils/dom-formatters';
+import { describeCluster } from '@lib/utils/ui-presentation';
+import { getNextExploreCandidateForIndex } from './thread-model';
+import { getNextWalkCandidateForIndex } from './lifecycle-adapter';
+import { seededUnit } from '@lib/utils/seeded-random';
+import type { Point } from '@lib/engine/state-bridge';
+import { appState } from '@lib/state/app.svelte';
 
-let routeEmbodimentReader: () => unknown[] = () => []
+let routeEmbodimentReader: () => any[] = () => [];
 
-export function registerRouteEmbodimentReader(fn: () => unknown[]): void {
-    routeEmbodimentReader = fn
+// Idle-note cache: prevents non-deterministic flicker when getJourneyCompassState()
+// is called repeatedly in the overview phase.  The index is re-seeded only when
+// the points array length changes (data mutation) or the cache is cold.
+let _cachedIdleIndex = -1;
+let _cachedIdlePointsLength = 0;
+
+export function registerRouteEmbodimentReader(fn: () => any[]): void {
+    routeEmbodimentReader = fn;
 }
 
 export const JOURNEY_ACTIONS = Object.freeze({
@@ -27,95 +35,69 @@ export const JOURNEY_ACTIONS = Object.freeze({
     OPEN_MAP: 'open-map',
     OPEN_MYCELIUM: 'open-mycelium',
     COUNTY_OVERVIEW: 'county-overview'
-} as const)
+} as const);
 
 export function getFocusedJourneyPoint(): Point | null {
-    if (appState.focusState.selectedPoint) return appState.focusState.selectedPoint
-    if (Number.isFinite(appState.focusedNode) && appState.points) return appState.points[appState.focusedNode!] || null
-    if (Number.isFinite(appState.navState?.focusedIndex) && appState.points)
-        return appState.points[appState.navState!.focusedIndex!] || null
-    return null
+    if (appState.selectedPoint) return appState.selectedPoint;
+    if (Number.isFinite(appState.focusedNode) && appState.points) return appState.points[appState.focusedNode!] || null;
+    if (Number.isFinite(appState.navState?.focusedIndex) && appState.points) return appState.points[appState.navState!.focusedIndex!] || null;
+    return null;
 }
 
 export interface CompassAction {
-    label: string
-    action: string
-    hint?: string
+    label: string;
+    action: string;
+    hint?: string;
 }
 
 export interface CompassState {
-    phase: string
-    kicker: string
-    title: string
-    note: string
-    primaryAction: CompassAction
-    secondaryAction: CompassAction | null
-    tertiaryAction: CompassAction | null
+    phase: string;
+    kicker: string;
+    title: string;
+    note: string;
+    primaryAction: CompassAction | null;
+    secondaryAction: CompassAction | null;
+    tertiaryAction: CompassAction | null;
+    discovery?: boolean;
 }
 
-// ── Back-compat aliases ────────────────────────────────────────────────────────
-// Kept after the W46-T3 cleanup of orchestration/compass-state.ts. Any code
-// that previously imported these names from the legacy stub continues to
-// work. Safe to remove in a future pass once no consumers reference them.
-export type CompassStateContext = CompassState
-export type { CompassStatus, JourneyAction } from '@lib/stores/compass.svelte.ts'
-
 export function getJourneyCompassState(): CompassState {
-    const cueBeat: string = appState.searchState.semanticTrailCue || 'idle'
-    const focusedPoint = getFocusedJourneyPoint()
-    const focusedName: string = focusedPoint ? formatBusinessName(focusedPoint.name || 'this business') : ''
-    const summary = appState.searchState.currentSearchSummary as {
-        query?: string
-        dedupedResultCount?: number
-        resultIndices?: unknown[]
-        anchorIndex?: number
-    } | null
-    const queryLabel: string = summary?.query ? `"${summary.query}"` : 'search'
-    const isSearching: boolean = cueBeat === 'searching'
-    const isFocusing: boolean = cueBeat === 'focusing'
-    const hasSearch: boolean = !!summary || isSearching
-    const hasFocus: boolean = !!focusedPoint
-    const insideActive: boolean = !!(appState.semanticDiveMode && appState.currentView === 'galaxy' && hasFocus)
+    const cueBeat: string = appState.semanticTrailCue || 'idle';
+    const focusedPoint = getFocusedJourneyPoint();
+    const focusedName: string = focusedPoint ? formatBusinessName(focusedPoint.name || 'this business') : '';
+    const summary = appState.currentSearchSummary as Record<string, any> | null;
+    const queryLabel: string = summary?.query ? `"${summary.query}"` : 'semantic search';
+    const isSearching: boolean = cueBeat === 'searching';
+    const isFocusing: boolean = cueBeat === 'focusing';
+    const hasSearch: boolean = !!summary || isSearching;
+    const hasFocus: boolean = !!focusedPoint;
+    const insideActive: boolean = !!(appState.semanticDiveMode && appState.currentView === 'galaxy' && hasFocus);
 
     if (appState.currentView === 'map') {
-        const routeCount: number = routeEmbodimentReader().length
-        const isCountyMapOverview: boolean = !hasFocus && !hasSearch && Number(appState.trailDepth || 0) === 0
+        const routeCount: number = routeEmbodimentReader().length;
+        const isCountyMapOverview: boolean = !hasFocus && !hasSearch && Number(appState.trailDepth || 0) === 0;
         return {
             phase: 'map',
             kicker: routeCount > 1 ? 'Map | Terrain Bridge' : 'Map | Physical Distance',
             title: hasFocus ? `${focusedName} pinned to map` : 'Montgomery County Map',
-            note:
-                routeCount > 1
-                    ? 'The connection trail is now projected onto physical streets. Return to Field view to explore more connections.'
-                    : 'This is the geography layer — physical proximity between related businesses.',
-            primaryAction: { label: 'Return to Field', action: JOURNEY_ACTIONS.OPEN_MYCELIUM },
-            secondaryAction: isCountyMapOverview
-                ? null
-                : { label: 'County Reset', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW },
+            note: routeCount > 1
+                ? 'The connection trail is now projected onto physical streets. Return to Mycelium to lift back into the living network.'
+                : 'This is the geography layer: physical proximity after semantic similarity.',
+            primaryAction: { label: 'Return to Mycelium', action: JOURNEY_ACTIONS.OPEN_MYCELIUM },
+            secondaryAction: isCountyMapOverview ? null : { label: 'County Reset', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW },
             tertiaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH }
-        }
+        };
     }
 
-    // M3 — explicit trail phase.
-    // Previously the compass folded trail into 'focus', so JourneyCompass
-    // could never show a 'trail' phase and the rail step highlight disagreed
-    // with the journey-compass content. Emit 'trail' whenever the journey is
-    // in trail mode or a trail is being walked (trailDepth > 0).
-    const trailDepthVal: number = Number(appState.trailDepth || 0)
-    const inTrailMode: boolean = appState.navState?.mode === 'trail' || trailDepthVal > 0
-
-    // Dive wins: evaluate the inside-active (semantic dive) phase BEFORE
-    // trail mode so a dive in progress emits 'inside' (Neighborhood kicker)
-    // rather than 'trail' with a contradictory "Trail Step N" label.
     if (insideActive) {
         const focusIndex: number = Number.isFinite(appState.navState?.focusedIndex)
             ? appState.navState!.focusedIndex!
-            : appState.focusedNode!
-        const nextCandidate = getNextExploreCandidateForIndex(focusIndex, getNextWalkCandidateForIndex)
-        const pts = appState.points!
-        const nextPointCandidate = nextCandidate ? (pts[nextCandidate.index] ?? null) : null
-        const nextPoint = nextPointCandidate as Point | null
-        const clusterName: string = focusedPoint ? describeCluster(focusedPoint.cluster!) : 'Neighborhood'
+            : appState.focusedNode!;
+        const nextCandidate = getNextExploreCandidateForIndex(focusIndex, getNextWalkCandidateForIndex as any);
+        const pts = appState.points!;
+        const nextPointCandidate = nextCandidate ? (pts[nextCandidate.index] ?? null) : null;
+        const nextPoint = nextPointCandidate as Point | null;
+        const clusterName: string = focusedPoint ? describeCluster(focusedPoint.cluster!) : 'Neighborhood';
 
         return {
             phase: 'inside',
@@ -129,123 +111,121 @@ export function getJourneyCompassState(): CompassState {
                 : { label: 'End of Trail', action: JOURNEY_ACTIONS.SHOW_TRAIL_PANEL },
             secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
             tertiaryAction: { label: 'County View', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW, hint: 'Exit trail' }
-        }
-    }
-
-    if (inTrailMode) {
-        const trailWalkIndices: readonly number[] = Array.isArray(appState.navState?.walkHistoryIndices)
-            ? appState.navState!.walkHistoryIndices!
-            : []
-        const trailWalkLength: number = trailWalkIndices.length
-        const trailClusterName: string = focusedPoint ? describeCluster(focusedPoint.cluster!) : 'Trail'
-        return {
-            phase: 'trail',
-            kicker:
-                trailWalkLength >= 1
-                    ? `Trail Step ${trailWalkLength} | ${trailClusterName}`
-                    : `Trail | ${trailClusterName}`,
-            title: '',
-            note: 'Follow the trail linking related Montgomery County businesses.',
-            primaryAction: { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE },
-            secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
-            tertiaryAction: { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW, hint: 'Exit trail' }
-        }
+        };
     }
 
     if (hasFocus || isFocusing) {
-        const walkHistory: readonly number[] = Array.isArray(appState.navState?.walkHistoryIndices)
+        const walkHistory: number[] = Array.isArray(appState.navState?.walkHistoryIndices)
             ? appState.navState!.walkHistoryIndices
-            : appState.navState?.explorationHistoryIndices || []
-        const walkDepth: number = Math.max(0, walkHistory.length - 1)
-        const isSearchFocus: boolean = !!summary && walkDepth === 0
-        const isSearchAnchor: boolean = !!(
-            summary &&
-            Number.isFinite(summary.anchorIndex) &&
-            appState.focusedNode === summary.anchorIndex
-        )
-        const isTrailStop: boolean =
-            walkDepth > 0 || (appState.navState?.mode === 'trail' && (appState.trailDepth ?? 0) >= 1 && !isSearchAnchor)
-        const hasAnchor: boolean = !!summary
-        const clusterName: string = focusedPoint ? describeCluster(focusedPoint.cluster!) : 'Focus'
+            : ((appState.navState as any)?.explorationHistoryIndices || []);
+        const walkHistoryLength: number = walkHistory.length;
+        const walkDepth: number = Math.max(0, walkHistory.length - 1);
+        const isSearchFocus: boolean = !!summary && walkDepth === 0;
+        const isSearchAnchor: boolean = !!(summary && Number.isFinite(summary.anchorIndex) && appState.focusedNode === summary.anchorIndex);
+        const isTrailStop: boolean = walkDepth > 0 || (appState.navState?.mode === 'trail' && (appState.trailDepth ?? 0) >= 1 && !isSearchAnchor);
+        const hasAnchor: boolean = !!summary;
+        const clusterName: string = focusedPoint ? describeCluster(focusedPoint.cluster!) : 'Focus';
 
-        // eslint-disable-next-line no-useless-assignment -- branches below overwrite in every reachable case; null is just a TS strict-mode placeholder.
-        let primaryAction: CompassAction | null = null
-        // eslint-disable-next-line no-useless-assignment -- branches below overwrite in every reachable case; null is just a TS strict-mode placeholder.
-        let secondaryAction: CompassAction | null = null
-        let tertiaryAction: CompassAction | null = null
+        let primaryAction: CompassAction | null = null;
+        let secondaryAction: CompassAction | null = null;
+        let tertiaryAction: CompassAction | null = null;
 
         if (isSearchAnchor) {
-            primaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE }
-            secondaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP }
-            tertiaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW }
+            primaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE };
+            secondaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
+            tertiaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
         } else if (isTrailStop) {
-            primaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE }
-            secondaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP }
+            primaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE };
+            secondaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
             tertiaryAction = hasAnchor
-                ? {
-                      label: 'Center on anchor',
-                      action: JOURNEY_ACTIONS.CENTER_ANCHOR,
-                      hint: 'Return to search starting point'
-                  }
-                : { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW }
+                ? { label: 'Center on anchor', action: JOURNEY_ACTIONS.CENTER_ANCHOR, hint: 'Return to search starting point' }
+                : { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
         } else {
-            primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP }
-            secondaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW }
+            primaryAction = { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP };
+            secondaryAction = { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW };
         }
 
         return {
             phase: 'focus',
-            kicker: `Focus | ${clusterName}`,
+            kicker: walkHistoryLength > 1
+                ? `Trail Step ${walkHistoryLength} | ${clusterName}`
+                : `Focus | ${clusterName}`,
             title: '',
             note: isSearchFocus
-                ? 'The strongest match for this search.'
+                ? 'The strongest semantic match for this search.'
                 : 'A local constellation of related businesses. Hover any glowing connection to see why it exists.',
             primaryAction,
             secondaryAction,
             tertiaryAction
-        }
+        };
     }
 
     if (hasSearch) {
-        const resultCount: number = summary?.dedupedResultCount ?? summary?.resultIndices?.length ?? 0
-        const hasNoResults: boolean = !isSearching && !!summary && resultCount === 0
+        const resultCount: number = summary?.dedupedResultCount ?? summary?.resultIndices?.length ?? 0;
+        const hasNoResults: boolean = !isSearching && !!summary && resultCount === 0;
         return {
             phase: 'search',
             kicker: isSearching ? 'Searching the Field' : `Search | ${queryLabel}`,
             title: isSearching
                 ? `Finding ${queryLabel}...`
                 : hasNoResults
-                  ? `No results for ${queryLabel}`
-                  : `Found ${resultCount} ${resultCount === 1 ? 'spot' : 'spots'} for ${queryLabel}`,
+                    ? `No results for ${queryLabel}`
+                    : `Found ${resultCount} ${resultCount === 1 ? 'spot' : 'spots'} for ${queryLabel}`,
             note: isSearching
-                ? 'Looking for related matches before building connections around your query.'
+                ? 'Looking for semantic anchors before gathering the trail around your query.'
                 : hasNoResults
-                  ? 'Try a broader term or one of the suggested popular categories below.'
-                  : 'The first strong match is the anchor. Center any listing to explore its local connections.',
+                    ? 'Try a broader term or one of the suggested high-signal categories below.'
+                    : 'The first strong match is the anchor. Center any record to enter its local neighborhood.',
             primaryAction: Number.isFinite(summary?.anchorIndex)
                 ? { label: 'Center on anchor', action: JOURNEY_ACTIONS.CENTER_ANCHOR }
                 : { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
             secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
             tertiaryAction: null
+        };
+    }
+
+    if (appState.currentEmptyQuery) {
+        const label: string = `"${appState.currentEmptyQuery}"`;
+        return {
+            phase: 'search',
+            kicker: `Search | ${label}`,
+            title: `No results for ${label}`,
+            note: 'Try a broader term or one of the suggested high-signal categories below.',
+            primaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
+            secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
+            tertiaryAction: null
+        };
+    }
+
+    let idleNote = 'Start wide, then search by need or clue to open one trail through the network.';
+    let isDiscovery = false;
+    const isSemanticDegraded: boolean = (appState.semanticLaneSnapshot as any)?.state === 'degraded';
+    if (!isSemanticDegraded && (appState.points?.length ?? 0) > 0) {
+        // Deterministic idle pick: re-seed only when the points array length
+        // changes (data mutation) or the cache is cold.  This prevents the
+        // note from flickering on every recomputation while still giving a
+        // fresh discovery on data reload.
+        const pointsLength = appState.points!.length;
+        if (_cachedIdleIndex < 0 || _cachedIdlePointsLength !== pointsLength) {
+            _cachedIdleIndex = Math.floor(seededUnit(pointsLength, 42) * pointsLength);
+            _cachedIdlePointsLength = pointsLength;
+        }
+        const randomPoint = appState.points![_cachedIdleIndex];
+        const snippet: string | null = randomPoint ? getInterestingBusinessNote(randomPoint) : null;
+        if (snippet) {
+            idleNote = `Discover: ${snippet}`;
+            isDiscovery = true;
         }
     }
 
-    const idleNote = '8,406 Montgomery County businesses — search by what they do, not just where they are.'
-
     return {
         phase: 'overview',
-        /* PR-K (2026-06-30): drop ' | Montgomery County' from the kicker
-           and drop the 'The MoCo Mycelium' title. Both phrases repeated
-           "Montgomery County" which the header description already
-           provides ("See all 8,406 Montgomery County businesses in one
-           view."). Net result: JourneyCompass now shows just "Overview"
-           as the kicker and no title — matching the chip rail's active
-           chip and letting the header description own the location copy. */
-        kicker: 'Overview',
-        title: '',
+        kicker: 'Overview | Montgomery County',
+        title: 'The MoCo Mycelium',
         note: idleNote,
+        discovery: isDiscovery,
         primaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
         secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
         tertiaryAction: null
-    }
+    };
 }

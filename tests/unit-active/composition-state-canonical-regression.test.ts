@@ -40,7 +40,7 @@ describe('@lib/orchestration/composition-state canonical (7b67cfc / 5f69f27)', (
         expect(src).toContain("from '@lib/stores/lifecycle'")
         // The canonical must NOT import from js/modules/ (relative or absolute).
         // Note: a docstring mentioning 'js/modules' is fine — only an actual
-        // import path is forbidden. Match `from '...'` pattern.
+        // import path is forbidden. Match `from '...js/modules/...'` pattern.
         expect(src).not.toMatch(/from\s+['"][^'"]*js\/modules/)
     })
 

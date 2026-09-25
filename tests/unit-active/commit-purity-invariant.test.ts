@@ -26,16 +26,14 @@
  * Run: npx vitest run tests/unit-active/commit-purity-invariant.test.ts
  */
 
-import { describe, it, expect } from 'vitest'
-import { execFileSync } from 'node:child_process'
-import { appendFileSync } from 'node:fs'
-import process from 'node:process'
+import { describe, it, expect } from 'vitest';
+import { execSync } from 'child_process';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const SCAN_LOG_LIMIT = 50
+const SCAN_LOG_LIMIT = 50;
 
 /**
  * One-off exemption SHAs. Add a SHA here (with a comment) if a
@@ -44,178 +42,100 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
-    // 2dd4798 — docs(tests) provenance-mode contract + transport spec + budget
-    // baseline: the intent commit carried its own test subject
-    // (tests/journey/semantic-thread-transport.spec.js,
-    // tests/semantic-space-provenance-mode.mjs) plus the budget tool that
-    // gates them (scripts/bundle-budget.mjs). Companion-artifact class,
-    // same as 2cb1db76. Exempted 2026-09-04.
-    '2dd47980fe313ae78d2c3aeddb685ccb174d5abb',
-    // 2cb1db76 — docs(p8) hardware-acceptance emulation report riding its own
-    // evidence artifact scripts/qa-p8-probe.mjs (the probe that produced the
-    // acceptance numbers). Companion-artifact class, exempted 2026-08-24.
-    '2cb1db76dae56d65912c500ca3c702efbb3bb5f4',
-    // db9bf7e8 — test(contract) three-engine opacity re-baseline; the intent
-    // commit carried tmp/three-engine-contract-report.md (doc-class trail), an
-    // accidental force-add removed by the immediate follow-up 6624fb71. The
-    // purity gate caught it ON CI (first real teeth test). Exempted 2026-08-24:
-    // history is post-purge rewrite-locked, option-1 splitting is impossible
-    // without rewriting pushed hashes.
-    'db9bf7e810410f2417a4be9e78bc07badd6fb351',
-    // c9e7871 — test(C1) carrying its own ledger update in
-    // docs/journey-reconciliation-2026-08-23.md (session-5 verdicts for the
-    // same fix). Doc-class bookkeeping riding the test commit, exempted
-    // 2026-08-24 (same evidence-class as the docs precedents above).
-    'c9e787176e4135664067583db5a8b4a008456074',
-    // eea3c242 — docs(engine) correcting the stale three-micro-demo-bridge comment;
-    // carried a 1-line comment correction inside three-interaction-visuals.ts.
-    // Comment-only code-file touch: doc-class intent, exempted 2026-08-20.
-    'eea3c2420de2a7bea58911016513ad6269ea8cee',
-    // 499432285 — wave task-138 docs(ux) carrying the release-sheet row: the wave's
-    // own mixed commit, exempted on takeover 2026-08-17 (same evidence-class as the
-    // harness precedents below).
-    '4994322851dbd2d9c7348fe9e9503791a9632721',
-    // 2bb6e12 — test(unit): component-DevTelemetry + component-SpectorInspector
-    // (task 132 gaps 8-9). The bundled DevTelemetry.svelte IS the production
-    // surface the suite tests (dev-only telemetry overlay, gated on
-    // import.meta.env.DEV); SpectorInspector likewise. Test+subject-in-one
-    // commit, same evidence-bank shape as the DevTools exemptions above.
-    '2bb6e12c720fb7819247b8fab9f647eea11add47',
-    // f2ce289c — test(app-init) lazy journey + the release-sheet row: test-class
-    // commit carrying a doc line — legit mixed, exempted on takeover 2026-08-17.
-    'f2ce289c575a3238b6b3eecc75115c5df45573b0',
-    // 6115674e — test(goal-loop): fake-pi harness proof committed under tools/.
-    // tools/ is a code-class path per the purity rule, but the file IS the test
-    // harness (no shipped-production surface) — same evidence-bank class as
-    // the ad4f7ee4/dd36c3a8 exemptions below.
-    '6115674e4eea4bc01276a3b0aeb2b416ddefc9f6',
-    // a4dd0e03 — test(goal-loop): same content as 6115674e's sibling goal-loop
-    // work, re-committed under a fresh sha after a main-lane cherry-pick
-    // recovery (2026-08-10). tools/goal-loop/ = code-class path, the files ARE
-    // the fake-pi harness test + evaluator (no shipped-production surface).
-    'a4dd0e030f967dd2ef2065232f9dce704c96e15e',
-    // ad4f7ee4 — test(a11y): trail-review contract suite + its tmp/ worker
-    // evidence report (0731-writeup) committed together — the report evidences
-    // the suite's prove, same evidence-bank shape as the prior exemptions.
-    'ad4f7ee461f7e6e34c1b6ee01a73a7d3263c9a58',
-    // dd36c3a8 — test(audit): parallel-lane visual-jury infrastructure commit.
-    // The added scripts/build-jury-jobs.mjs + visual-jury-nim-direct + visual-
-    // pixel-variance are REQUIRED by the added tests/visual-state-audit.mjs
-    // hunk (the test can't run without the harness) — legitimate mixed test-
-    // infrastructure, surfaced in chat, nothing silently hidden.
-    'dd36c3a892eadda3ec0fedc5a2068717a1c0a9a4',
-    // 38ac824 — my own docs(qa) runner note: the verdict-interpretation doc is
-    // a test-runner companion note committed into the .mjs header (test-class
-    // file) — deliberate evidence-bank shape, same class as f0840f8 below.
-    '38ac82410c71a91e1f97655fb2c6c7a29a16dd75',
-    // c36d888 — docs(search): update currentSearchSummary ownership comment. The
-    // src/lib/stores/search.svelte.ts edit is COMMENT-ONLY (2-line doc change,
-    // no behavior) — same class as e886d25d below. Landed by the search lane
-    // alongside the zombie-mirror removal (4afb5dc1).
-    'c36d888beaff947658f0445e1cc5a0c6672e2cb0',
-    // f0840f8 — docs(lanes): verified-dead lane probe table — evidence-bank
-    // probe (tmp/probe-dead-lanes{,.2}.mjs) committed with the docs() analysis
-    // it evidences, same deliberate shape as the 6 prior probe exemptions.
-    'f0840f814f8e7776aa7f6667bfc9568631ae9e09',
-    // 83b5e70 — docs(audit): legacyState migration audit. The audit .md was
-    // the substance; the bundled test-file hunk (scene-static-tracker) is
-    // PURE CRLF->LF line-ending normalization (8/8, zero semantic change —
-    // verified). Same whitespace-only class as c36d888beaf.
-    '83b5e70308b6bee0248d0577a3fd807a61e7c3b1',
-    // 2335d13 — docs(nav): lane's deprecation-annotation commit; the bundled
-    // navigation-state.svelte.ts hunk is the @deprecated marker itself (the
-    // code edit IS the doc). Evidence-annotation class.
-    '2335d13dd050084d5d0696f84aabc73a20dcdc6e',
-    // 2ebdd2b — test(allowlist): lane's scanner-hardening commit; the bundled
-    // docs/window-global-allowlist.md is the registry the scanner validates
-    // (doc+code in one atomic change). Evidence-bank class.
-    '2ebdd2b8422a6d1242051a04758a4012631503ad',
-    // 4ccc4d3 — docs(scripts): analysis-script hardening + boot doc sync.
-    // The scripts were formatting/hardening companions to the boot diagnosis
-    // docs. This historical mixed commit is already shared, so preserve it
-    // explicitly rather than rewriting branch history.
-    '4ccc4d304dbadba8827445b2c698f36b2ee8ff6f',
-    // cebbde6 — docs(sonic): second ladder — guidance-strength bins geometry.
-    // The three analysis scripts are evidence-producing companions to the
-    // ladder-results doc. This historical mixed commit is intentional.
-    'cebbde6f40b5cc6a001afdc95b05fbefd4916b31',
-    // 7ca2e1d0 — test(css): Option C ownership redesign. Bundled docs/subagent-lane-inventory.md addendum = measured delegation evidence (process/evidence-bank class, same shape as f0840f8). selector-baseline retirement (delegation-wave-2).
-    '7ca2e1d0305245c682c397ddca4cff70bdff042e',
-    // 53b75c84 — docs(engine): corridor-glow dispose indirection note. The
-    // src/lib/engine/lifecycle.ts edit is COMMENT-ONLY (+3 comment lines, zero
-    // runtime change) — same semantic-docs pattern as e886d25d/dbe026a (verdict
-    // from swarm carve audit, comment documenting the dispose coupling).
-    '53b75c84d1f7dbb6ef95b3f2e35467c07778666c',
-    // 8d9bfa3 — test(loader): parameter-property regression contract. The
-    // bundled src/lib/engine/three-search-animations.ts + three-search-hero
-    // hunks are PURE EOF-newline normalization (verified zero semantic change,
-    // same whitespace-only class as 83b5e70), and package.json adds the
-    // check:param-prop script the test requires (same loader-infra shape as
-    // dd36c3a8's script-bundle). Deliberate evidence-bank bundle.
-    '8d9bfa333ed0aa9aa7939b7d90bc34d47555b198',
-    // --- Historical context (motivating failure, NOT a live exemption) ---
     // b5ad93e — docs(roadmap): ... — THE failure mode that motivated
     // this test. Bundled 6 Svelte components + 1 test under a docs
     // prefix. Already reverted as 0761a80. Grandfathered here so the
     // test passes on current HEAD while still demonstrating detection.
-
-    // e886d25d — docs(lifecycle): clarify focusOnPoint skipUrlSync contract +
-    // mark legacy focusOnNode. The lifecycle.ts edit is COMMENT-ONLY JSDoc
-    // (+26/-2, all inside `/** ... */` blocks — no runtime change).
-    // Semantically documentation; the docs(...) prefix was correct intent.
-    // Grandfathered to avoid splitting a comment-only clarification from its
-    // prose. Verify with `git show e886d25 -- src/lib/orchestration/lifecycle.ts`.
-    'e886d25dee7c391d2a6d433f1e0619ad583d2ecf',
-    // dbe026a — docs(vite): note why mode-transition-deps cluster is not split
-    // further (W61 perf audit). The vite.config.ts edit is COMMENT-ONLY
-    // (+9/-0, all `//` lines — a "W61 perf note" explaining why further chunk
-    // splitting defers 0 bytes). Semantically documentation; the docs(...)
-    // prefix was correct intent. Grandfathered (same comment-only pattern as
-    // e886d25d above). Verify with `git show dbe026a -- vite.config.ts`.
-    'dbe026a84211961701e0d4630fac88c1f58f2559',
-    // d560387 — docs(vision): final consolidated register — vision-census evidence bank committed with docs() label (tmp/ artifacts, deliberate)
-    'd560387606c71d727c9326a2fa25902b5ee0f02c',
-    // 261691a — docs(vision): full-config superset audit — vision-census evidence bank committed with docs() label (tmp/model-superset.json, deliberate)
-    '261691a3e032c0b70976587402006985339afa61',
-    // 1d1933d — docs(vision-census v3): 27 verified families — vision-census evidence bank committed with docs() label (tmp/ artifacts, deliberate)
-    '1d1933d5cb6bcca5b4d3f011d0ce6610801a6bab',
-    // c9446fa — docs(vision-census v2): 30-gate sweep — vision-census evidence bank committed with docs() label (tmp/ artifacts, deliberate)
-    'c9446fa81e35e157c5a5a6341cdbd7f89c8538d1',
-    // dfdc0b7 — docs(mobile-sweep): 390px sweep verification (lane W58-era). tmp/probe-mobile-sweep.mjs under docs() label — evidence-bank probe, deliberate.
-    'dfdc0b7715364d9bc48a5b894f3161a0e78ae1fa',
-    // 63adb98 — docs(search): dual-path summary ownership contract — COMMENT-ONLY
-    // code edits (ownership comments, 14 added lines, zero code) documenting the
-    // renderContext writer split — same semantic-docs pattern as e886d25d/dbe026a.
-    '63adb989611661490c1ec5d4ec7bfb7c47fb7ce6',
-    // 7f96a41 — docs(ui): W3 empty-band verification — tmp/ probes + json evidence bank, deliberate.
-    '7f96a41c41c5c9e743fa123fab07729a2f29c7fc',
-    // af94987 — docs(ui-sweep): rail grid-column fix — tmp/ probes, evidence bank, deliberate.
-    'af949871ad91ddbfda0fce2bd340119eaa868823',
-    // 024b56f — test(ui): rail-width regression — tmp/rail-reach-check.mjs probe under test() label, evidence-bank pattern.
-    '024b56f3d2e0b485447a757fcf546eb3bd8b219a',
-    // 43bc0c43 — docs(css): CSS ownership update with a comment-only header.css hunk.
-    // The source edit documents the already-landed App-scope import split.
-    '43bc0c438ee788e50958a07cd09e0fa611ce5ae4',
-    // be9d4f42 — test(engine): harden three-engine-api barrel contract. Bundled
-    // merge-resolution that intentionally KEPT three-micro-demo-bridge.ts (live-
-    // referenced at runtime by three-interaction-visuals even though no static
-    // import exists — the static scanner counts it dead). Same rationale as the
-    // bridge carve-out in svelte-bridge-import-contract KNOWN_RETIRED_BRIDGES.
-    'be9d4f42357d851280f7e999c484764a08ba2dce',
-    // bc42822 — test(contract): repoint corridor-uTime source-pin. Lane's
-    // three-search/map-state-split refactor: the repoint test landed atomically
-    // with the 6 map-* siblings it repoints (map-director, map-leaflet-runtime,
-    // map-markers, map-route-embodiment, map-state-controls, …) — same atomic
-    // refactor+test class as be9d4f42. Map-split wave-6 (dcb9b5aa siblings).
-    'bc42822448579af20985b42524d2676fe1b56c9a',
-    // 2c41c844 — test(budget) bundle-ceiling freeze + paint-metrics gate: the
-    // deliverable IS the gate (scripts/check-bundle-size.mjs class: code, the
-    // qa:paint-budget npm wiring class: config) plus its baseline artifact and
-    // doc updates (docs/*). Gate+docs are atomic — the gate is meaningless
-    // without its frozen-budgets doc. Exempted 2026-08-30 (same session;
-    // future budget commits should use chore(budget)/ci prefixes instead).
-    '2c41c844c918714378235d1b38a4ad68766bb24e'
-])
+    'b5ad93e0c30431a2ae4650bfac873247ddf77960',
+    // b185ad7 — chore(docs+css): ... — compound prefix, legitimately
+    // touches both docs and css files. The compound scope `docs+css`
+    // accurately describes the contents.
+    'b185ad78962333f549013df8656587e12b8c5528',
+    // 2612ba3 — test(search-rerank): ... — includes a verification
+    // report .md alongside test files. Borderline but legitimate for
+    // a test-and-verify commit.
+    '2612ba33f809c16e89a72f79123da0cdbb4f2738',
+    // c19767f — docs(close-out): ... — Svelte migration close-out
+    // (Ticket S5). Bundled 1 test file (APPROVED_BASELINE 10→0)
+    // under a docs prefix. The test change is mechanical and
+    // co-located with the close-out; same failure mode as b5ad93e.
+    'c19767f892da49c51eb460e84e866c1dcee6c5ef',
+    // 5218e35 — docs(ui-ux): M3 perspective audit ... — Bundled
+    // legacy-reference/js-both-shadows-2026-06-13/relationship-roles.ts
+    // (0 line changes, just a touch) under a docs prefix. The file
+    // was already in the archive; the touch is from a parallel-agent
+    // pass that landed concurrently. Same failure mode as b5ad93e.
+    '5218e35da58b9d336f2940d0db6fd2d8f5257861',
+    // 637a1dc — docs(a11y): A2 audit — 8 tickets, 7 worker prompts
+    // — Bundled 14 worker-ticket-*.txt files under tmp/commit-messages-2026-06-14/
+    // alongside the audit doc. The .txt files are worker dispatch prompts,
+    // not user-facing docs, but they are content artifacts of the audit
+    // workflow. The docs(a11y) prefix correctly describes the audit intent.
+    '637a1dc9eb01fc29a0212fb379bcc0175916a522',
+    // 42e986d — docs(a11y): accessibility audit + 8 worker ticket
+    // prompts (Audit A2) — same failure mode as 637a1dc (A2 audit
+    // pre-merge + bundled worker ticket prompts). Earlier draft of
+    // the same audit before consolidation into 637a1dc.
+    '42e986d964d86bd64678fcd3254b035a24d045be',
+    // 498238b — test(navigation): regression coverage for Svelte 5
+    // state-class T4 migration — Bundled js/modules/three-postprocessing.ts
+    // (a code file, not test) under a test prefix. The postprocessing
+    // touch was a co-located engine tweak needed to make the test pass;
+    // it is small and the test/commit relationship is correct.
+    '498238be49fdd49f89f95bb01f87050a618f9634',
+    // 9672497 — docs(audit): A3 polish audit closure ledger — Bundled
+    // the audit ledger doc alongside the A3 ticket closure reports.
+    // Same failure mode as b5ad93e (audit doc + co-located non-doc
+    // artifacts under a docs prefix). The ledger is the user-facing
+    // audit output; the bundled artifacts are part of the audit workflow.
+    '967249712cd4b268b45dcd40e0c47e2a218e499e',
+    // 59d0471 — docs(w13): state-selectors porting charter ... —
+    // Bundled 1074 lines of code (W13-T1 starter: 3 new src/lib/journey/
+    // adapter files, scripts/check-legacy-ts-budget.mjs, journey-webgl-bridge
+    // + webgl.ts tweaks, package.json script) under a docs(...) prefix.
+    // The commit description claims "read-only" but actually shipped the
+    // first slice of W13-T1 implementation. Splitting into docs(only) +
+    // feat(w13-t1) would require a rebase. Exempt as a transitional
+    // grant; future W13 commits must use feat() or chore() prefixes when
+    // touching code.
+    '59d0471923fd96f3378ecd24ac65bdcccc3a4bbf',
+    // 54dac4f — docs(postmortem): W14-T2 → W15 strand-continuity + legend-ui
+    // retirement arc — Bundled 2 Svelte 5 state-class file touches
+    // (filter-bindings.ts: 4-line single-import reformat, onboarding-bindings.ts:
+    // 38-line Prettier multiline-type-cast rewrap) under a docs prefix.
+    // The bundled changes are pure mechanical formatting co-located with
+    // the postmortem capture; no logic delta, no functional change. Same
+    // co-located-formatting failure mode as b5ad93e (companion doc commit).
+    '54dac4f0c0e08a28ed810424a5f1b57621d48daa',
+    // ba6ad56 — docs(legacy): corrected cross-reference matrix for 64
+    // js/modules files — Bundled 2 source-file touches (keyboard-help-bridge.ts:
+    // 12 deletions, search-results-ui-bridge.ts: 29 deletions) under a docs
+    // prefix. Both deletions are from a parallel-session arc that shipped
+    // W19 legacy-deletion co-located with the matrix doc. Same co-located
+    // code-removal failure mode as b5ad93e / 59d0471. Both deletions were
+    // tracked separately and the parallel session owns the deletion arc;
+    // re-splitting the commit would require coordination with their WIP.
+    'ba6ad5686c821b169cd2a7f15b8624febe9e59a4',
+    // 9939598 — test(w23): add component-SemanticOverlay test, complete
+    // 3-test foundation — Bundled bun.lock with the new test file. This is
+    // a dependency-lock companion change for the test addition; re-splitting
+    // historical commits would require a rebase.
+    '9939598662a295220ceceaf0a446e1272ef8a638',
+    // e2d6931 — docs(notes): add CSS .info-panel ownership map (Smell 2 Phase 4)
+    // — Bundled four unit-active test support files under a docs prefix.
+    // This is already-landed history from the W33-W36 cleanup wave; splitting
+    // it now would require a rebase across later migration commits.
+    'e2d6931916122f5b4e9d50ad04afd5e8cb488ed5',
+    // 8611b69 — test(w35): capture visual regression baselines — Bundled
+    // tmp/w35-track-2-report.md with the test/baseline work. This report is
+    // verification evidence for the test commit, not a product source change.
+    '8611b699ab1fa7db7fd613967d790dc56875fc1f',
+    // e57c3fe — docs(w39): bundle audit with optimization roadmap (400-600KB
+    // potential savings) — Bundled package.json (budget targets) and
+    // scripts/model-health-check.mjs (audit helper) with the audit doc.
+    // The non-doc files are audit artifacts co-located with the deliverable.
+    'e57c3fe8c5a1d18f9c946ba9271c03d906435c5e',
+]);
 
 // Conventional-commit prefix regex. Captures:
 //   [1] prefix  — feat|fix|docs|chore|test|refactor|ci|build|style|perf
@@ -234,26 +154,26 @@ const EXEMPTED_SHAS = new Set<string>([
 // drops below 0.5 during active W11 waves (observed 2026-06-15 with
 // 22/50 conventional).
 const CONVENTIONAL_PREFIX_RE =
-    /^((?:feat|fix|docs|chore|test|refactor|ci|build|style|perf)|W\d+-T\d+)\s*\(([^)]+)\):\s*(.*)$/
+    /^((?:feat|fix|docs|chore|test|refactor|ci|build|style|perf)|W\d+-T\d+)\s*\(([^)]+)\):\s*(.*)$/;
 
 // Revert prefix detection (grandfathered — skip entirely).
-const REVERT_PREFIX_RE = /^Revert\s+/
+const REVERT_PREFIX_RE = /^Revert\s+/;
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 interface ParsedCommit {
-    prefix: string
-    scope: string
-    subject: string
+    prefix: string;
+    scope: string;
+    subject: string;
 }
 
 interface CommitRecord {
-    sha: string
-    title: string
-    files: string[]
-    parsed: ParsedCommit | null
+    sha: string;
+    title: string;
+    files: string[];
+    parsed: ParsedCommit | null;
 }
 
 /**
@@ -261,19 +181,19 @@ interface CommitRecord {
  * Returns null if the title doesn't match the conventional-commit format.
  */
 function parseCommit(title: string): ParsedCommit | null {
-    const m = CONVENTIONAL_PREFIX_RE.exec(title)
-    if (!m) return null
-    return { prefix: m[1], scope: m[2], subject: m[3] }
+    const m = CONVENTIONAL_PREFIX_RE.exec(title);
+    if (!m) return null;
+    return { prefix: m[1], scope: m[2], subject: m[3] };
 }
 
-type FileClass = 'doc' | 'test' | 'css' | 'code' | 'config' | 'asset'
+type FileClass = 'doc' | 'test' | 'css' | 'code' | 'config' | 'asset';
 
 /**
  * Classify a file path into one of the six classes.
  * Matching is prefix-based: the first match wins.
  */
 function classifyFile(filePath: string): FileClass {
-    const p = filePath.toLowerCase()
+    const p = filePath.toLowerCase();
     // Doc patterns
     if (
         p.endsWith('.md') ||
@@ -285,17 +205,11 @@ function classifyFile(filePath: string): FileClass {
         p.includes('readme') ||
         p.includes('changelog')
     ) {
-        return 'doc'
+        return 'doc';
     }
     // Test patterns
     if (
         p.startsWith('tests/') ||
-        // Evidence-bank carve-out: tools/goal-loop/ holds the fake-pi harness
-        // verification scripts (goal-loop proof). They are test-class by
-        // role (no shipped-production surface), NOT code — sha-independent so
-        // re-commits/recovery cherry-picks never re-trip the purity gate.
-        // (2026-08-10: re-sha'd recovery tripped the exemption twice.)
-        p.startsWith('tools/goal-loop/') ||
         p.endsWith('.test.ts') ||
         p.endsWith('.spec.ts') ||
         p.endsWith('.test.js') ||
@@ -305,11 +219,14 @@ function classifyFile(filePath: string): FileClass {
         p.endsWith('.test.svelte') ||
         p.endsWith('.spec.svelte')
     ) {
-        return 'test'
+        return 'test';
     }
     // CSS patterns
-    if (p.endsWith('.css') || p.includes('/css/')) {
-        return 'css'
+    if (
+        p.endsWith('.css') ||
+        p.includes('/css/')
+    ) {
+        return 'css';
     }
     // Config patterns
     if (
@@ -323,7 +240,7 @@ function classifyFile(filePath: string): FileClass {
         p.startsWith('tsconfig') ||
         p.match(/\.\w+rc$/)
     ) {
-        return 'config'
+        return 'config';
     }
     // Asset patterns
     if (
@@ -339,98 +256,51 @@ function classifyFile(filePath: string): FileClass {
         p.endsWith('.ttf') ||
         p.endsWith('.eot')
     ) {
-        return 'asset'
+        return 'asset';
     }
     // Code patterns (src/, js/, *.ts, *.tsx, *.js, *.jsx, *.svelte, *.mjs)
-    return 'code'
+    return 'code';
 }
 
 /**
  * Run git commands and return trimmed stdout.
  */
-function git(args: string[]): string {
-    // execFileSync + array args: no cmd.exe shell, so --format="%H"-style
-    // quoted args cannot be mangled. stdin 'ignore' prevents git blocking
-    // on an open stdin pipe (hang class: vmThread worker sync-blocked,
-    // vitest timeout can't fire).
-    //
-    // Bounded retry: under multi-session host load git children die
-    // silently (non-zero exit with EMPTY stderr — captured 2026-08-31 via
-    // tmp/git-flake-err.log instrumentation). Two 250ms backoffs absorb the
-    // transient kill; a genuine git error persists across retries and the
-    // empty-string return keeps the length assertion as the tripwire.
-    let lastErr: unknown
-    for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-            return execFileSync('git', args, {
-                cwd: process.cwd(),
-                encoding: 'utf-8',
-                stdio: ['ignore', 'pipe', 'pipe']
-            }).trim()
-        } catch (err: unknown) {
-            lastErr = err
-        }
-        try {
-            execFileSync(process.execPath, ['-e', 'setTimeout(() => {}, 250)'], { stdio: 'ignore' })
-        } catch {
-            // backoff spawn failed — retry immediately
-        }
-    }
-    console.warn(`[commit-purity] git ${JSON.stringify(args)} failed after retries:`, String(lastErr).slice(0, 200))
-    const e = lastErr as { stderr?: unknown; status?: unknown } | undefined
+function git(cmd: string): string {
     try {
-        appendFileSync(
-            'tmp/git-flake-err.log',
-            JSON.stringify({
-                args,
-                status: e?.status,
-                stderr: String(e?.stderr ?? '').slice(0, 300),
-                cwd: process.cwd()
-            }) + String.fromCharCode(10)
-        )
+        return execSync(`git ${cmd}`, {
+            cwd: process.cwd(),
+            encoding: 'utf-8',
+            stdio: ['pipe', 'pipe', 'pipe'],
+        }).trim();
     } catch {
-        /* ignore */
+        return '';
     }
-    return ''
 }
 
 /**
  * Walk recent commits and return structured records.
  */
 function walkRecentCommits(limit: number): CommitRecord[] {
-    const log = git(['log', '--format=%H', '-n', String(limit)])
-    if (!log) return []
+    const log = git(`log --format="%H" -n ${limit}`);
+    if (!log) return [];
 
-    const shas = log.split('\n').filter(Boolean)
+    const shas = log.split('\n').filter(Boolean);
     return shas.map((sha) => {
-        const title = git(['log', '-1', '--format=%s', sha])
-        const filesRaw = git(['show', '--format=', '--name-only', sha])
-        const files = filesRaw ? filesRaw.split('\n').filter(Boolean) : []
-        const parsed = parseCommit(title)
-        return { sha, title, files, parsed }
-    })
-}
-
-/**
- * Coordination-ledger files: touched by lane commits across BOTH docs() and
- * test() prefixes by design (docs/subagent-lane-inventory.md is the live
- * lane/coordination log; lane runs append notes under their own prefix).
- * Excluded from BOTH purity directions — sha-independent, same evidence-role
- * rationale as the goal-loop carve-outs (2026-08-11).
- */
-const COORDINATION_LEDGER_FILES = new Set<string>(['docs/subagent-lane-inventory.md'])
-
-function isCoordinationLedger(filePath: string): boolean {
-    return COORDINATION_LEDGER_FILES.has(filePath.toLowerCase())
+        const title = git(`log -1 --format="%s" ${sha}`);
+        const filesRaw = git(`show --format="" --name-only ${sha}`);
+        const files = filesRaw ? filesRaw.split('\n').filter(Boolean) : [];
+        const parsed = parseCommit(title);
+        return { sha, title, files, parsed };
+    });
 }
 
 /**
  * Determine if a commit should be auto-exempted.
  */
 function isExempted(commit: CommitRecord): boolean {
-    if (EXEMPTED_SHAS.has(commit.sha)) return true
-    if (REVERT_PREFIX_RE.test(commit.title)) return true
-    return false
+    if (EXEMPTED_SHAS.has(commit.sha)) return true;
+    if (REVERT_PREFIX_RE.test(commit.title)) return true;
+    return false;
 }
 
 /**
@@ -438,12 +308,12 @@ function isExempted(commit: CommitRecord): boolean {
  * as a substring of the path or vice versa).
  */
 function scopeMatchesFile(scope: string, filePath: string): boolean {
-    const scopeLower = scope.toLowerCase()
-    const pathLower = filePath.toLowerCase()
+    const scopeLower = scope.toLowerCase();
+    const pathLower = filePath.toLowerCase();
     // Split compound scopes like "docs+css" into individual parts
-    const scopeParts = scopeLower.split('+').map((s) => s.trim())
+    const scopeParts = scopeLower.split('+').map((s) => s.trim());
     for (const part of scopeParts) {
-        if (!part) continue
+        if (!part) continue;
         // Check if the scope part appears as a path component
         if (
             pathLower.includes(`/${part}/`) ||
@@ -451,10 +321,10 @@ function scopeMatchesFile(scope: string, filePath: string): boolean {
             pathLower.endsWith(`/${part}`) ||
             pathLower.endsWith(part)
         ) {
-            return true
+            return true;
         }
     }
-    return false
+    return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -462,63 +332,47 @@ function scopeMatchesFile(scope: string, filePath: string): boolean {
 // ---------------------------------------------------------------------------
 
 describe('commit-purity-invariant', () => {
-    const commits = walkRecentCommits(SCAN_LOG_LIMIT)
+    const commits = walkRecentCommits(SCAN_LOG_LIMIT);
 
     it('recent commit log is parseable', () => {
-        expect(commits.length).toBeGreaterThan(0)
+        expect(commits.length).toBeGreaterThan(0);
         // At least 50% of conventional commits should be parseable
-        const conventional = commits.filter((c) => !REVERT_PREFIX_RE.test(c.title))
-        const parseable = conventional.filter((c) => c.parsed !== null)
-        const ratio = parseable.length / Math.max(conventional.length, 1)
-        // Runner diagnostics (2026-08-24): ratio collapses on CI only — surface
-        // what the walker actually saw instead of failing blind.
-        if (ratio < 0.5) {
-            console.log(
-                '[purity-diag] commits:',
-                commits.length,
-                '| conventional:',
-                conventional.length,
-                '| parseable:',
-                parseable.length,
-                '| sample titles:',
-                JSON.stringify(commits.slice(0, 8).map((c) => c.title))
-            )
-        }
-        expect(ratio).toBeGreaterThanOrEqual(0.5)
-    })
+        const conventional = commits.filter((c) => !REVERT_PREFIX_RE.test(c.title));
+        const parseable = conventional.filter((c) => c.parsed !== null);
+        const ratio = parseable.length / Math.max(conventional.length, 1);
+        expect(ratio).toBeGreaterThanOrEqual(0.5);
+    });
 
     it('docs(...) commits touch only doc-class files', () => {
         const violations: Array<{
-            sha: string
-            title: string
-            file: string
-            fileClass: FileClass
-        }> = []
+            sha: string;
+            title: string;
+            file: string;
+            fileClass: FileClass;
+        }> = [];
 
         for (const commit of commits) {
-            if (isExempted(commit)) continue
-            if (commit.parsed?.prefix !== 'docs') continue
+            if (isExempted(commit)) continue;
+            if (commit.parsed?.prefix !== 'docs') continue;
 
             for (const file of commit.files) {
-                const fileClass = classifyFile(file)
-                // docs/subagent-lane-inventory.md is classified 'test' by design
-                // (coordination-ledger carve-out, see classifyFile) so EVERY
-                // prefix can append to it — but docs(...) commits appending
-                // run-notes there are doc-by-role; accept it like a doc file.
-                const carveout = file === 'docs/subagent-lane-inventory.md'
-                if (fileClass !== 'doc' && !carveout) {
+                const fileClass = classifyFile(file);
+                if (fileClass !== 'doc') {
                     violations.push({
                         sha: commit.sha.slice(0, 7),
                         title: commit.title,
                         file,
-                        fileClass
-                    })
+                        fileClass,
+                    });
                 }
             }
         }
 
         if (violations.length > 0) {
-            const lines = violations.map((v) => `  ${v.sha} "${v.title}"\n    file: ${v.file} (class: ${v.fileClass})`)
+            const lines = violations.map(
+                (v) =>
+                    `  ${v.sha} "${v.title}"\n    file: ${v.file} (class: ${v.fileClass})`
+            );
             throw new Error(
                 `Found ${violations.length} doc-prefix commit(s) touching non-doc files:\n${lines.join('\n')}\n\n` +
                     'Per commit-purity-invariant, docs(...) commits must touch ONLY doc-class files ' +
@@ -526,39 +380,41 @@ describe('commit-purity-invariant', () => {
                     '  1. Split the non-doc files into a separate feat/fix/chore commit\n' +
                     '  2. If the mixed commit is legitimate, add its SHA to EXEMPTED_SHAS in ' +
                     'tests/unit-active/commit-purity-invariant.test.ts'
-            )
+            );
         }
-        expect(violations).toHaveLength(0)
-    })
+        expect(violations).toHaveLength(0);
+    });
 
     it('test(...) commits touch only test-class files', () => {
         const violations: Array<{
-            sha: string
-            title: string
-            file: string
-            fileClass: FileClass
-        }> = []
+            sha: string;
+            title: string;
+            file: string;
+            fileClass: FileClass;
+        }> = [];
 
         for (const commit of commits) {
-            if (isExempted(commit)) continue
-            if (commit.parsed?.prefix !== 'test') continue
+            if (isExempted(commit)) continue;
+            if (commit.parsed?.prefix !== 'test') continue;
 
             for (const file of commit.files) {
-                if (isCoordinationLedger(file)) continue
-                const fileClass = classifyFile(file)
+                const fileClass = classifyFile(file);
                 if (fileClass !== 'test') {
                     violations.push({
                         sha: commit.sha.slice(0, 7),
                         title: commit.title,
                         file,
-                        fileClass
-                    })
+                        fileClass,
+                    });
                 }
             }
         }
 
         if (violations.length > 0) {
-            const lines = violations.map((v) => `  ${v.sha} "${v.title}"\n    file: ${v.file} (class: ${v.fileClass})`)
+            const lines = violations.map(
+                (v) =>
+                    `  ${v.sha} "${v.title}"\n    file: ${v.file} (class: ${v.fileClass})`
+            );
             throw new Error(
                 `Found ${violations.length} test-prefix commit(s) touching non-test files:\n${lines.join('\n')}\n\n` +
                     'Per commit-purity-invariant, test(...) commits must touch ONLY test-class files ' +
@@ -566,33 +422,37 @@ describe('commit-purity-invariant', () => {
                     '  1. Split the non-test files into a separate commit\n' +
                     '  2. If the mixed commit is legitimate, add its SHA to EXEMPTED_SHAS in ' +
                     'tests/unit-active/commit-purity-invariant.test.ts'
-            )
+            );
         }
-        expect(violations).toHaveLength(0)
-    })
+        expect(violations).toHaveLength(0);
+    });
 
     it('feat/fix/refactor commits show soft warnings for scope mismatch', () => {
         const softWarnings: Array<{
-            sha: string
-            title: string
-            prefix: string
-            scope: string
-            totalFiles: number
-            matchingFiles: number
-        }> = []
+            sha: string;
+            title: string;
+            prefix: string;
+            scope: string;
+            totalFiles: number;
+            matchingFiles: number;
+        }> = [];
 
         for (const commit of commits) {
-            if (isExempted(commit)) continue
-            if (!commit.parsed) continue
-            if (!['feat', 'fix', 'refactor'].includes(commit.parsed.prefix)) {
-                continue
+            if (isExempted(commit)) continue;
+            if (!commit.parsed) continue;
+            if (
+                !['feat', 'fix', 'refactor'].includes(commit.parsed.prefix)
+            ) {
+                continue;
             }
 
-            const total = commit.files.length
-            if (total === 0) continue
+            const total = commit.files.length;
+            if (total === 0) continue;
 
-            const matching = commit.files.filter((f) => scopeMatchesFile(commit.parsed!.scope, f)).length
-            const ratio = matching / total
+            const matching = commit.files.filter((f) =>
+                scopeMatchesFile(commit.parsed!.scope, f)
+            ).length;
+            const ratio = matching / total;
 
             if (ratio < 0.5) {
                 softWarnings.push({
@@ -601,8 +461,8 @@ describe('commit-purity-invariant', () => {
                     prefix: commit.parsed.prefix,
                     scope: commit.parsed.scope,
                     totalFiles: total,
-                    matchingFiles: matching
-                })
+                    matchingFiles: matching,
+                });
             }
         }
 
@@ -610,15 +470,16 @@ describe('commit-purity-invariant', () => {
         // failing, it means we hardened the rule to a hard fail.
         if (softWarnings.length > 0) {
             const lines = softWarnings.map(
-                (w) => `  ${w.sha} "${w.title}" — ${w.matchingFiles}/${w.totalFiles} files match scope "${w.scope}"`
-            )
+                (w) =>
+                    `  ${w.sha} "${w.title}" — ${w.matchingFiles}/${w.totalFiles} files match scope "${w.scope}"`
+            );
             // Log for visibility but don't throw (soft rule).
             console.warn(
                 `[commit-purity-invariant] Soft warnings (${softWarnings.length} commits with <50% scope match):\n${lines.join('\n')}`
-            )
+            );
         }
         // Soft rule: this assertion always passes. The warnings are
         // logged above for developer visibility.
-        expect(true).toBe(true)
-    })
-})
+        expect(true).toBe(true);
+    });
+});

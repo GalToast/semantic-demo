@@ -1,46 +1,169 @@
 /**
- * demo-choreography-exports.test.ts — assert-ABSENCE for the retired module.
+ * demo-choreography-exports.test.ts — Unit tests for demo-choreography.ts
  *
- * src/lib/engine/demo-choreography.ts was retired in the W20 sweep. This test
- * guards that the file and its barrel re-exports are GONE so the module cannot
- * be silently re-imported. Mirrors the t1 absence-guard pattern
- * (tests/unit-active/t1-keyboard-help-replay-no-stack.test.ts).
+ * Covers (Ticket 9C — static import verification):
+ *  - Public API exports exist and have correct types
+ *  - Phase constants are complete and stable
+ *  - Pure state functions work (getDemoPhase, getDemoNodeIndex, etc.)
+ *  - Structural invariant: no dynamic @legacy/* imports remain in the file
+ *  - All 7 legacy modules are statically imported (not lazy-loaded)
  */
-import { describe, it, expect } from 'vitest'
-import { existsSync, readFileSync } from 'node:fs'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
+import {
+    PHASE,
+    getDemoPhase,
+    getDemoNodeIndex,
+    isDemoCancelled,
+    setDemoNodeIndex,
+    clearDemoTimers,
+    resetRetryState,
+    isMicroDemoRunning,
+    runDemo,
+    cancelChoreography
+} from '../../src/lib/engine/demo-choreography'
+import type { DemoPhase } from '../../src/lib/types/state'
+
+// ── Source file path for structural checks ────────────────────────────────────
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-const DOOMED_PATH = resolve(__dirname, '../../src/lib/engine/demo-choreography.ts')
-const BARREL_PATH = resolve(__dirname, '../../src/lib/engine/index.ts')
+const SRC_PATH = resolve(__dirname, '../../src/lib/engine/demo-choreography.ts')
 
-function readBarrel(): string {
-    return readFileSync(BARREL_PATH, 'utf-8')
+function readSource(): string {
+    return readFileSync(SRC_PATH, 'utf-8')
 }
 
-describe('demo-choreography — retired module absence', () => {
-    it('src/lib/engine/demo-choreography.ts no longer exists', () => {
-        expect(existsSync(DOOMED_PATH), 'demo-choreography.ts should have been removed').toBe(false)
+// ── Tests ────────────────────────────────────────────────────────────────────
+
+describe('demo-choreography — static import invariant (Ticket 9C)', () => {
+    it('has zero dynamic @legacy-js/* imports in the source file', () => {
+        const src = readSource()
+        const dynamicLegacyImports = src.match(/import\(['"]@legacy-js\//g)
+        expect(dynamicLegacyImports).toBeNull()
     })
 
-    it('importing the doomed module path would fail', () => {
-        // The retired lifecycle.ts dynamic-import (`import('@lib/engine/demo-choreography')`)
-        // now resolves to a missing module. Assert the file is absent so a
-        // re-add would surface as a hard failure rather than a silent no-op.
-        expect(existsSync(DOOMED_PATH)).toBe(false)
+    it('has zero dynamic import() calls targeting any @legacy-js module', () => {
+        const src = readSource()
+        const allDynamicImports = src.match(/import\(['"][^'"]+['"]\)/g) ?? []
+        const legacyDynamic = allDynamicImports.filter((imp) => imp.includes('@legacy-js/'))
+        expect(legacyDynamic).toHaveLength(0)
     })
 
-    it('barrel index.ts no longer re-exports the retired demo-choreography exports', () => {
-        const barrel = readBarrel()
-        expect(barrel).not.toContain("from './demo-choreography'")
-        expect(barrel).not.toContain('clearDemoTimers')
-        expect(barrel).not.toContain('runDemo')
-        expect(barrel).not.toContain('cancelChoreography')
-        expect(barrel).not.toContain('isMicroDemoRunning')
-        expect(barrel).not.toContain('resetRetryState')
-        expect(barrel).not.toContain('DemoChoreographyPhase')
+    it('statically imports journey modules via split direct paths (point-color + selected-card)', () => {
+        const src = readSource()
+        expect(src).toContain("from '@lib/journey/point-color'")
+        expect(src).toContain("from '@lib/journey/selected-card'")
+        expect(src).not.toContain("from '../../../js/modules/journey'")
+    })
+
+    it('imports journey-compass-controller via the bridge (not direct legacy path)', () => {
+        const src = readSource()
+        expect(src).toContain("from '@lib/engine/journey-compass-controller-bridge'")
+    })
+
+    it('imports panel bindings via the UI binding port (not direct legacy path)', () => {
+        const src = readSource()
+        expect(src).toContain("from '@lib/ui/panel-bindings'")
+        expect(src).not.toContain("from '../../../js/modules/bindings/panel-bindings'")
+    })
+
+    it('imports lifecycle via the bridge (not direct legacy path)', () => {
+        const src = readSource()
+        expect(src).toContain("from '@lib/engine/lifecycle-bridge'")
+        expect(src).not.toContain("from '../../../js/modules/lifecycle'")
+    })
+
+    it('also statically imports the previously-converted modules via relative paths (extensionless)', () => {
+        const src = readSource()
+        // Ticket W11-T5: state import migrated to appState
+        expect(src).toContain("from '@lib/state/app.svelte'")
+        // W14-Tier-2: camera-controls death-bridge retired; canonical paths now
+        expect(src).toContain("from '@lib/engine/camera-choreography'")
+        expect(src).toContain("from '@lib/engine/camera-controls-restore-bridge'")
+        expect(src).toContain("from '@lib/journey/focus-pocket'")
+        expect(src).toContain("from '@lib/demo/guards'")
+        expect(src).toContain("from '@lib/demo/camera'")
+        expect(src).toContain("from '@lib/demo/ui'")
+    })
+})
+
+describe('demo-choreography — PHASE constants', () => {
+    it('contains all 9 phase values', () => {
+        const expectedPhases: DemoPhase[] = [
+            'IDLE',
+            'GLIDING',
+            'ARRIVED',
+            'CARD_VISIBLE',
+            'PULLBACK',
+            'WIDE_VIEW',
+            'RETURNING',
+            'COMPLETE',
+            'CANCELLED'
+        ]
+        for (const phase of expectedPhases) {
+            expect(PHASE[phase]).toBe(phase)
+        }
+    })
+
+    it('PHASE values are stable strings (no enum drift)', () => {
+        expect(PHASE.IDLE).toBe('IDLE')
+        expect(PHASE.COMPLETE).toBe('COMPLETE')
+        expect(PHASE.CANCELLED).toBe('CANCELLED')
+    })
+})
+
+describe('demo-choreography — pure state functions', () => {
+    beforeEach(() => {
+        resetRetryState()
+    })
+
+    it('getDemoPhase returns IDLE after reset', () => {
+        resetRetryState()
+        expect(getDemoPhase()).toBe('IDLE')
+    })
+
+    it('getDemoNodeIndex returns null after reset', () => {
+        resetRetryState()
+        expect(getDemoNodeIndex()).toBeNull()
+    })
+
+    it('isDemoCancelled returns false after reset', () => {
+        resetRetryState()
+        expect(isDemoCancelled()).toBe(false)
+    })
+
+    it('setDemoNodeIndex updates the node index', () => {
+        resetRetryState()
+        setDemoNodeIndex(42)
+        expect(getDemoNodeIndex()).toBe(42)
+    })
+
+    it('setDemoNodeIndex(null) clears the node index', () => {
+        setDemoNodeIndex(42)
+        setDemoNodeIndex(null)
+        expect(getDemoNodeIndex()).toBeNull()
+    })
+
+    it('isMicroDemoRunning returns false when phase is IDLE', () => {
+        resetRetryState()
+        expect(isMicroDemoRunning()).toBe(false)
+    })
+
+    it('clearDemoTimers is callable without error', () => {
+        expect(() => clearDemoTimers()).not.toThrow()
+    })
+})
+
+describe('demo-choreography — async functions are importable', () => {
+    it('runDemo is a function', () => {
+        expect(typeof runDemo).toBe('function')
+    })
+
+    it('cancelChoreography is a function', () => {
+        expect(typeof cancelChoreography).toBe('function')
     })
 })

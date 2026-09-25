@@ -1,14 +1,15 @@
 /**
  * @lib/engine/camera-choreography/cursor.ts — Focus node orchestrator (focusOnNode)
  *
- * Ported from:
+ * Ported from: js/modules/camera-controls-choreography-cursor.ts
  *
  * Orchestrates the full focus-on-node flow: dispatches navigation transitions,
  * syncs DOM attributes, publishes events, updates journey/compass state, and
  * triggers the camera animation (delegated to focus.ts).
  */
 
-import { appState } from '@lib/state/app.svelte.ts'
+import { appState } from '@lib/state/app.svelte'
+import type { Point } from '@lib/state/state-types'
 import type { PanelSurface } from '@lib/types/state'
 
 import { isMobile } from '@lib/utils/environment'
@@ -19,25 +20,25 @@ import {
     NAV_TRANSITION_ACTIONS,
     setTrailDepth,
     setMyceliumMode,
-    updateExplorationUi
+    updateExplorationUi,
+    syncSearchStatusForFocus
 } from '@lib/orchestration/lifecycle'
-import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
-import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
+import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
 import { currentSurface } from '@lib/stores/navigation.svelte'
-import { syncFocusStage, updateSelectedBusiness } from '@lib/journey/selected-card'
-import { unpinThreadInspection } from '@lib/journey/thread-inspector-state'
+import { applyParityAttributes, computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
+import { applyPointFilterColors } from '@lib/journey/point-color'
+import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
-// P3-LCP: lazy to keep engine chunk off boot preload; cursor is engine-lazy (Canvas)
-function applyPointFilterColorsLazy(): void {
-    void import('@lib/journey/point-color')
-        .then((m) => m.applyPointFilterColors())
-        .catch((err) => debugWarn('[cursor] point-color lazy load failed', err))
-}
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
-import { debugWarn } from '@lib/utils/debug'
 import { clearRouteExploration } from '../camera-controls-core'
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 import { animateCameraToNode } from './focus'
+
+// Narrow local alias for onboarding-hint dynamic properties (matches onboarding-bindings.ts pattern)
+type OnboardingHint = HTMLElement & {
+    _dismissedThisSession?: boolean
+    _autoHideTimer?: ReturnType<typeof setTimeout> | null
+}
 
 // Local options interface matching runtime usage across all callers
 export interface FocusOnNodeOptions {
@@ -57,23 +58,20 @@ export interface FocusOnNodeOptions {
 // -----------------------------------------------------------------------------
 
 export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): boolean {
-    const points = appState.points
+    const points = appState.points as Point[]
     if (!Number.isFinite(index) || index < 0 || !points || index >= points.length) return false
     const point = points[index]
     if (!point) return false
-    // H4 fix (Jul-10 bugsweep): was checking suppress on fromCanvasNode (click)
-    // while thread-settler set it on !fromCanvasNode (hover) — inverted, so
-    // clicks <1200ms after hover were dropped. Now hover path is debounced
-    // after a click/traversal; click/traversal always wins.
-    const suppressCanvasFocusUntil = Number(appState.suppressCanvasFocusUntil) || 0
-    const isHoverLike = !options.fromCanvasNode && !options.fromTraversal && !options.fromSearchResult
-    if (isHoverLike && typeof performance !== 'undefined' && performance.now() < suppressCanvasFocusUntil) {
+    const suppressCanvasFocusUntil = Number((appState as any).suppressCanvasFocusUntil) || 0
+    if (options.fromCanvasNode && typeof performance !== 'undefined' && performance.now() < suppressCanvasFocusUntil) {
         return false
     }
 
-    appState.hoverHighlightIndex = -1
-    unpinThreadInspection()
-    updateSelectedBusiness(point, { revealCard: true })
+    appState.withMutation(() => {
+        appState.selectedPoint = point
+        appState.hoverHighlightIndex = -1
+        appState.pinnedThreadIndex = null
+    })
 
     // Preserve the 'focus-search' surface that the SEARCH_FOCUS_REQUESTED
     // subscriber (triggers.ts:176-203) sets just before this orchestrator
@@ -117,12 +115,18 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
         setTrailDepth(1, { skipUrlSync: true })
     }
 
-    if (appState.navState?.mode === 'trail' && appState.myceliumMode !== 'trail') {
+    if ((appState as any).navState?.mode === 'trail' && appState.myceliumMode !== 'trail') {
         setMyceliumMode('trail', { skipUrlSync: true })
     }
 
     document.querySelectorAll('.search-result-item.is-processing').forEach((el) => el.classList.remove('is-processing'))
 
+    document.getElementById('onboarding-hint')?.classList.remove('visible')
+    const hint = document.getElementById('onboarding-hint') as OnboardingHint | null
+    if (hint) {
+        hint._dismissedThisSession = true
+        if (hint._autoHideTimer) clearTimeout(hint._autoHideTimer)
+    }
     document.body.dataset.focusOrigin = options.fromCanvasNode
         ? 'field-node'
         : options.fromSearchResult
@@ -144,7 +148,7 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     publish(EVENTS.CAMERA_MOVED, { reason: 'focus-node', index })
     publish(EVENTS.CAMERA_NODE_FOCUSED, { index, point, options })
 
-    applyPointFilterColorsLazy()
+    applyPointFilterColors()
     updateExplorationUi()
 
     syncFocusStage(point)
@@ -171,9 +175,14 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
         })
     }
     updateJourneyCompass()
-    // Phase 1 timing-maze fix: the parity mirror now runs synchronously on
-    // every store change (see parity-attrs.svelte.ts). No need for manual
-    // applyParityAttributes calls or setTimeout delays here — the mirror's
-    // store subscriptions fire immediately when stores update.
+    // W15+ parity-attrs fix: re-write parity attributes after updateJourneyCompass
+    // and any deferred legacy subscribers. The legacy updateJourneyCompass in
+    // dist/svelte/assets/panel-bindings-* still writes data-journeyPhase from
+    // journey.phase (legacy state, never updated to 'focus'). A full fix requires
+    // rebuilding the Svelte bundle (npm run build:svelte) so the legacy code
+    // no longer overwrites the parity attrs.
+    queueMicrotask(() => applyParityAttributes(computeParityAttributes()))
+    setTimeout(() => applyParityAttributes(computeParityAttributes()), 50)
+    setTimeout(() => applyParityAttributes(computeParityAttributes()), 250)
     return true
 }

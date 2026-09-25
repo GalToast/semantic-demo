@@ -8,8 +8,6 @@
  */
 
 import { chromium } from 'playwright';
-import { refreshCompositionState, focusOnNode } from '@lib/orchestration/lifecycle'
-import { setTrailDepth } from '@lib/stores/journey.svelte'
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.FOCUS_SEARCH_SURFACE_URL || DEFAULT_URL;
@@ -26,9 +24,7 @@ function withCacheBust(url) {
   return parsed.href;
 }
 
-// SwiftShader gate (see visual-state-audit.mjs)
-const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
-const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 1,
@@ -49,13 +45,13 @@ try {
   }, null, { timeout: 45000 });
 
   await page.evaluate((index) => {
-    focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true });
-    setTrailDepth?.(1, { skipUrlSync: true });
+    window.__APP_ACTIONS__?.focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true });
+    window.__APP_ACTIONS__?.setTrailDepth?.(1, { skipUrlSync: true });
     const input = document.getElementById('search-input');
     if (input) {
       input.value = 'coffee';
     }
-    refreshCompositionState?.();
+    window.__APP_ACTIONS__?.refreshCompositionState?.();
   }, KNOWN_COFFEE_INDEX);
 
   await page.waitForFunction(() => {

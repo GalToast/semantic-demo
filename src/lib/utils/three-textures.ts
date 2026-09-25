@@ -4,7 +4,7 @@
  * Generates point-sprite textures using Canvas2D. No THREE namespace parameter —
  * imports CanvasTexture directly.
  *
- * Port of
+ * Port of js/modules/utils/three-textures.ts
  */
 
 import { CanvasTexture } from 'three';

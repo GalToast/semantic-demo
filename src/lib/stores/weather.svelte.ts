@@ -1,176 +1,144 @@
 /**
  * @lib/stores/weather.svelte.ts — Weather data store (Svelte 5 runes)
  *
- * W46-D4: thin adapter over the canonical Open-Meteo client at
- * `@lib/utils/weather`. The canonical owns the network call, backend
- * fallback, and writes its normalized shape to `appState.weather`. This
- * store exposes a stable getter API the widget already consumes.
- *
- * Canonical `appState.weather` shape → store getters:
- *   temp          → weatherTemperature()
- *   description   → weatherLabel()
- *   condition     → weatherCondition() (mapped through ICON_TO_CONDITION)
- *   icon          → weatherIconKey()    ('sun' | 'cloud' | 'rain')
- *   humidity      → weatherHumidity()
- *   windSpeed     → weatherWindSpeed()
- *   windDirection → weatherWindDirection() (deg → compass)
+ * Provides weather conditions for the Montgomery County TX area.
+ * In production this would fetch from a weather API; currently provides
+ * realistic mock data for UI rendering.
  */
-import { appState } from '@lib/state/app.svelte.ts'
-import { fetchWeather as fetchWeatherCanonical } from '@lib/utils/weather'
+import { appState } from '@lib/state/app.svelte.ts';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-/** UI-facing condition enum (stable API for the widget). */
-export type WeatherCondition = 'clear' | 'clouds' | 'rain' | 'storm' | 'fog' | 'wind'
+export type WeatherCondition = 'clear' | 'clouds' | 'rain' | 'storm' | 'fog' | 'wind';
 
-/** Canonical icon key, used by the widget to pick the inline SVG. */
-export type WeatherIconKey = 'sun' | 'cloud' | 'rain'
-
-/** Canonical (open-meteo) condition slug, used for the condition→icon map. */
-export type CanonicalCondition = 'sun' | 'cloud' | 'fog' | 'rain' | 'snow' | 'storm'
-
-// ── Canonical shape (internal) ────────────────────────────────────────────────
-
-interface CanonicalWeather {
-    temp: number
-    feelsLike: number
-    humidity: number | null
-    code: number
-    description: string
-    icon: WeatherIconKey
-    condition: CanonicalCondition
-    windSpeed: number
-    windDirection: number
-    windGust: number | null
-    source: string
+export interface WeatherData {
+  /** Current temperature in Fahrenheit */
+  temperature: number;
+  /** Feels-like temperature in Fahrenheit */
+  feelsLike: number;
+  /** Weather condition keyword */
+  condition: WeatherCondition;
+  /** Human-readable condition label */
+  label: string;
+  /** Humidity percentage */
+  humidity: number;
+  /** Wind speed in mph */
+  windSpeed: number;
+  /** Wind direction */
+  windDirection: string;
+  /** Short forecast text */
+  forecast: string;
+  /** Location name */
+  location: string;
+  /** Last updated timestamp */
+  updatedAt: number;
 }
 
-function readCanonical(): CanonicalWeather | null {
-    const w = appState.weather
-    if (!w) return null
-    // Canonical Open-Meteo client writes this shape.
-    if (typeof w.temp === 'number') {
-        return w as CanonicalWeather
-    }
-    return null
-}
+// ── Default (idle) state ──────────────────────────────────────────────────────
 
-function readLastFetch(): number {
-    const ws = (appState as { weatherState?: { lastFetch?: number } }).weatherState
-    return ws?.lastFetch ?? 0
-}
+const INITIAL_WEATHER: WeatherData = {
+  temperature: 0,
+  feelsLike: 0,
+  condition: 'clear',
+  label: '--',
+  humidity: 0,
+  windSpeed: 0,
+  windDirection: '--',
+  forecast: 'Loading weather...',
+  location: 'Montgomery County, TX',
+  updatedAt: 0
+};
 
-// ── Maps ──────────────────────────────────────────────────────────────────────
+// ── Store (reactive binding) ──────────────────────────────────────────────────
 
-/** Canonical condition slug → UI enum. */
-const ICON_TO_CONDITION: Record<CanonicalCondition, WeatherCondition> = {
-    sun: 'clear',
-    cloud: 'clouds',
-    fog: 'fog',
-    rain: 'rain',
-    snow: 'clouds',
-    storm: 'storm'
-}
-
-/** Wind direction in degrees → compass string. */
-function degToCompass(deg: number): string {
-    if (!Number.isFinite(deg)) return '--'
-    const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
-    return dirs[Math.round(deg / 22.5) % 16] ?? '--'
-}
-
-// ── Store proxy ──────────────────────────────────────────────────────────────
-
-/**
- * Weather data proxy. Components read properties directly in Svelte 5.
- * Adapts the canonical `appState.weather` shape to the legacy field names
- * the widget already uses.
+/** 
+ * Weather data proxy. In Svelte 5, components can read properties directly.
+ * We cast appState.weather (which is unknown in the kernel) to WeatherData.
  */
 export const weatherData = {
-    get temperature(): number {
-        return readCanonical()?.temp ?? 0
-    },
-    get feelsLike(): number {
-        return readCanonical()?.feelsLike ?? readCanonical()?.temp ?? 0
-    },
-    get condition(): WeatherCondition {
-        const c = readCanonical()?.condition
-        return c ? ICON_TO_CONDITION[c] : 'clear'
-    },
-    get label(): string {
-        return readCanonical()?.description ?? '--'
-    },
-    get forecast(): string {
-        return ''
-    },
-    get updatedAt(): number {
-        return readLastFetch() || (readCanonical() ? Date.now() : 0)
-    }
-}
+  get temperature() { return (appState.weather as WeatherData)?.temperature ?? 0; },
+  get condition() { return (appState.weather as WeatherData)?.condition ?? 'clear'; },
+  get label() { return (appState.weather as WeatherData)?.label ?? '--'; },
+  get forecast() { return (appState.weather as WeatherData)?.forecast ?? ''; },
+  get updatedAt() { return (appState.weather as WeatherData)?.updatedAt ?? 0; }
+};
 
 // ── Initialization guard ──────────────────────────────────────────────────────
 
 /** Whether weather has been initialized (prevents double-init). */
-export function isWeatherInitialized(): boolean {
-    return appState.weatherInitialized
-}
+export function isWeatherInitialized(): boolean { return appState.weatherInitialized; }
 
 /** Backward-compatible derived getter exported by the store barrel. */
-export const weatherInitialized = isWeatherInitialized
+export const weatherInitialized = isWeatherInitialized;
 
-/** Mark weather as initialized. */
-export function setWeatherInitialized(value: boolean): void {
-    appState.weatherInitialized = value
+/** Mark weather as initialized. Called after first successful initWeather(). */
+export function setWeatherInitialized(value: boolean): void { 
+  appState.withMutation(() => {
+    appState.weatherInitialized = value;
+  });
 }
 
-// ── Derived (UI-facing) ───────────────────────────────────────────────────────
+// ── Derived ───────────────────────────────────────────────────────────────────
 
-export function weatherTemperature(): number {
-    return weatherData.temperature
-}
-export function weatherFeelsLike(): number {
-    return weatherData.feelsLike
-}
-export function weatherCondition(): WeatherCondition {
-    return weatherData.condition
-}
-export function weatherLabel(): string {
-    return weatherData.label
-}
-export function weatherForecast(): string {
-    return weatherData.forecast
-}
-export function hasWeather(): boolean {
-    return readCanonical() !== null
-}
-export function weatherHumidity(): number {
-    return readCanonical()?.humidity ?? 0
-}
-export function weatherWindSpeed(): number {
-    return readCanonical()?.windSpeed ?? 0
-}
-export function weatherWindDirection(): string {
-    const deg = readCanonical()?.windDirection
-    return typeof deg === 'number' ? degToCompass(deg) : '--'
-}
-export function weatherIconKey(): WeatherIconKey {
-    return readCanonical()?.icon ?? 'cloud'
-}
+export function weatherTemperature(): number { return weatherData.temperature; }
+export function weatherCondition(): WeatherCondition { return weatherData.condition; }
+export function weatherLabel(): string { return weatherData.label; }
+export function weatherForecast(): string { return weatherData.forecast; }
+export function hasWeather(): boolean { return weatherData.updatedAt > 0; }
+
+// ── Condition icon mapping ────────────────────────────────────────────────────
+
+export const CONDITION_ICONS: Record<WeatherCondition, string> = {
+  clear: '\u2600',
+  clouds: '\u2601',
+  rain: '\u{1F327}',
+  storm: '\u2608',
+  fog: '\u{1F32B}',
+  wind: '\u{1F32C}'
+};
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 /**
- * Fetch weather from the canonical Open-Meteo client.
- * The canonical handles the network call, error fallback, and writes its
- * normalized shape to `appState.weather` directly. We expose this as the
- * store's `fetchWeather` so the widget's `onMount` → `fetchWeather()` call
- * path keeps working.
+ * Update weather data. In production this would be called from a weather API
+ * poller. For development, simulates realistic Montgomery County weather.
+ */
+export function updateWeather(data: Partial<WeatherData>): void {
+  appState.withMutation(() => {
+    const current = (appState.weather as WeatherData) || { ...INITIAL_WEATHER };
+    appState.weather = { ...current, ...data, updatedAt: performance.now() };
+    appState.weatherInitialized = true;
+  });
+}
+
+/**
+ * Fetch weather (simulated). Returns mock data for Montgomery County TX.
  */
 export async function fetchWeather(): Promise<void> {
-    try {
-        await fetchWeatherCanonical()
-    } catch {
-        // Canonical already catches its own errors and sets appState.weatherState.fallback.
-        // Swallow here so the widget's onMount promise doesn't reject.
-    }
+  // Simulate a brief network delay
+  await new Promise((resolve) => setTimeout(resolve, 120));
+
+  const conditions: WeatherCondition[] = ['clear', 'clouds', 'rain', 'wind'];
+  const condition = conditions[Math.floor(Math.random() * conditions.length)] ?? 'clear';
+  const baseTemp = 72 + Math.floor(Math.random() * 20) - 5;
+
+  const LABELS: Record<WeatherCondition, string> = {
+    clear: 'Clear Sky',
+    clouds: 'Partly Cloudy',
+    rain: 'Light Rain',
+    storm: 'Thunderstorm',
+    fog: 'Morning Fog',
+    wind: 'Breezy'
+  };
+
+  updateWeather({
+    temperature: baseTemp,
+    feelsLike: baseTemp + Math.floor(Math.random() * 6) - 3,
+    condition,
+    label: LABELS[condition],
+    humidity: 55 + Math.floor(Math.random() * 30),
+    windSpeed: 5 + Math.floor(Math.random() * 15),
+    windDirection: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.floor(Math.random() * 8)] ?? 'N',
+    forecast: `Montgomery County: ${LABELS[condition]}, ${baseTemp}\u00B0F`
+  });
 }

@@ -1,299 +1,202 @@
 /**
  * audio-scape.ts
  *
- *
+ * Canonical port of js/modules/audio-scape.ts.
  * Phase 3: Generative Audio Scape (Reactive)
  * Uses Web Audio API to create a low-amplitude 'data hum'
  * that reacts to camera velocity and local mycelium density.
  */
 
-import { appState as _state } from '@lib/state/app.svelte'
-import { pointIndexByLeadId } from '@lib/data-store'
-const state = _state
-import { debugWarn } from '@lib/utils/debug'
-import type { NavState } from '@lib/types/state'
-import { masterStageFor, sharedAudioContext } from '@lib/audio/jam-engine'
+import { state } from '@lib/engine/state-bridge';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Local boundary types ────────────────────────────────────────────────────
 
 /** Minimal camera shape used by this module. */
 interface CameraLike {
-    position: { clone(): Vector3Like; distanceTo(v: Vector3Like): number }
+    position: { clone(): Vector3Like; distanceTo(v: Vector3Like): number };
 }
 
 /** Minimal 3D vector shape used by this module. */
 interface Vector3Like {
-    x: number
-    y: number
-    z: number
-    distanceTo?(v: Vector3Like): number
-}
-
-/** Minimal camera shape used by this module. */
-interface CameraLike {
-    position: { clone(): Vector3Like; distanceTo(v: Vector3Like): number }
-}
-
-/** Minimal 3D vector shape used by this module. */
-interface Vector3Like {
-    x: number
-    y: number
-    z: number
-    distanceTo?(v: Vector3Like): number
-}
-
-/**
- * Runtime-extended navState shape. `activeRoutePath` is dynamically added
- * by route-choreography modules at runtime — not present on the ambient
- * NavState type. Featured as a typed-accessor consolidation (Phase 16).
- */
-interface NavStateWithRoute extends NavState {
-    activeRoutePath?: Array<string | number> | null
-}
-
-function getCameraLike(): CameraLike | null {
-    return state.camera
-}
-
-function getNavStateWithRoute(): NavStateWithRoute {
-    return state.navState as NavStateWithRoute
-}
-
-function getAudioPoints(): readonly AudioPoint[] {
-    return state.points as readonly AudioPoint[]
+    x: number;
+    y: number;
+    z: number;
+    distanceTo?(v: Vector3Like): number;
 }
 
 // ── Module-scoped mutable state ─────────────────────────────────────────────
 
 /** Lightweight point shape for audio density lookups. */
 interface AudioPoint {
-    cluster?: number | null
-    x?: number
-    y?: number
-    z?: number
+    cluster?: number;
+    x?: number;
+    y?: number;
+    z?: number;
 }
 
-/**
- * Module-scoped mutable state, consolidated into one object so the audio
- * engine can be reasoned about as a unit. Replaces 8 separate `let` bindings
- * that previously polluted the module scope. A future bite can promote
- * this to a proper `class AudioEngine` with encapsulation and test
- * isolation; for now, the consolidated object is the documented seam.
- */
-const audioState = {
-    audioCtx: null as AudioContext | null,
-    mainOsc: null as OscillatorNode | null,
-    gainNode: null as GainNode | null,
-    filterNode: null as BiquadFilterNode | null,
-    rafId: null as number | null,
-    lastCameraPos: null as Vector3Like | null,
-    currentVelocity: 0,
-    smoothVelocity: 0
-}
+let audioCtx: AudioContext | null = null;
+let mainOsc: OscillatorNode | null = null;
+let gainNode: GainNode | null = null;
+let filterNode: BiquadFilterNode | null = null;
+let _audioRafId: number | null = null;
 
-/**
- * Mute state persisted across dispose→re-init. Module-level (not on
- * audioState) so a user mute survives engine teardown: the gain re-assert in
- * updateAudio is gated on this flag, and setAudioMuted's 0-automation stays
- * in place while muted. Deliberately NOT reset in disposeAudio.
- */
-let _muted = false
-
-/** Tracks whether the visibilitychange resume handler is currently registered. */
-let _visibilityBound = false
+let lastCameraPos: Vector3Like | null = null;
+let currentVelocity = 0;
+let smoothVelocity = 0;
 
 // ── Public API (export parity with audio-scape.js) ──────────────────────────
 
 export function initAudio(): void {
-    if (navigator.webdriver) return
-
-    // Re-register the tab-restore resume handler on EVERY init, including the
-    // early-return path: disposeAudio may have removed it while a gesture had
-    // already created the context, and a suspended context would otherwise
-    // never resume on tab-restore.
-    if (!_visibilityBound) {
-        document.addEventListener('visibilitychange', handleVisibilityChange)
-        _visibilityBound = true
-    }
-
-    if (audioState.audioCtx) return
+    if (audioCtx) return;
+    if (navigator.webdriver) return;
 
     // Start context on user interaction
-    const startEvents = ['mousedown', 'keydown', 'touchstart'] as const
-    startEvents.forEach((evt) => {
-        document.addEventListener(evt, startAudioContext, { once: true })
-    })
-}
-
-function handleVisibilityChange(): void {
-    if (document.visibilityState === 'visible' && audioState.audioCtx && audioState.audioCtx.state === 'suspended') {
-        audioState.audioCtx.resume().catch((err: unknown) => {
-            debugWarn('[audio] AudioContext resume failed on visibility change', err)
-        })
-    }
+    const startEvents = ['mousedown', 'keydown', 'touchstart'] as const;
+    startEvents.forEach(evt => {
+        document.addEventListener(evt, startAudioContext, { once: true });
+    });
 }
 
 function startAudioContext(): void {
-    if (audioState.audioCtx) return
+    if (audioCtx) return;
 
     try {
-        const ctx = sharedAudioContext()
-        if (!ctx) return
-        audioState.audioCtx = ctx
+        audioCtx = new ((window as unknown as { AudioContext: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
 
-        audioState.mainOsc = ctx.createOscillator()
-        audioState.mainOsc.type = 'sine'
-        audioState.mainOsc.frequency.setValueAtTime(55, ctx.currentTime) // Low A
+        mainOsc = audioCtx.createOscillator();
+        mainOsc.type = 'sine';
+        mainOsc.frequency.setValueAtTime(55, audioCtx.currentTime); // Low A
 
-        audioState.gainNode = ctx.createGain()
-        audioState.gainNode.gain.setValueAtTime(0, ctx.currentTime)
+        gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
 
-        audioState.filterNode = ctx.createBiquadFilter()
-        audioState.filterNode.type = 'lowpass'
-        audioState.filterNode.frequency.setValueAtTime(200, ctx.currentTime)
+        filterNode = audioCtx.createBiquadFilter();
+        filterNode.type = 'lowpass';
+        filterNode.frequency.setValueAtTime(200, audioCtx.currentTime);
 
-        audioState.mainOsc.connect(audioState.filterNode)
-        audioState.filterNode.connect(audioState.gainNode)
-        const stage = masterStageFor(ctx)
-        if (stage) audioState.gainNode.connect(stage)
-        else audioState.gainNode.connect(ctx.destination)
+        mainOsc.connect(filterNode);
+        filterNode.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
 
-        audioState.mainOsc.start()
+        mainOsc.start();
 
-        debugWarn('[audio] Reactive scape initialized.')
-        audioState.rafId = requestAnimationFrame(updateAudio)
+        debugWarn('[audio] Reactive scape initialized.');
+        _audioRafId = requestAnimationFrame(updateAudio);
     } catch (e: unknown) {
-        debugWarn('[audio] Web Audio API initialization failed.', e)
+        debugWarn('[audio] Web Audio API initialization failed.', e);
     }
 }
 
 function updateAudio(): void {
-    if (!audioState.audioCtx || audioState.audioCtx.state === 'closed') return
+    if (!audioCtx || audioCtx.state === 'closed') return;
+    if (!state.camera) {
+        _audioRafId = requestAnimationFrame(updateAudio);
+        return;
+    }
+
     // 1. Calculate Camera Velocity
-    const camera = getCameraLike()
-    if (!camera) {
-        audioState.rafId = requestAnimationFrame(updateAudio)
-        return
+    const camera = state.camera as unknown as CameraLike;
+    const currentPos: Vector3Like = camera.position.clone();
+    if (lastCameraPos) {
+        const dist = camera.position.distanceTo(lastCameraPos);
+        currentVelocity = Number.isFinite(dist) ? dist * 60 : 0; // Normalize to approx units/sec
     }
-    const currentPos: Vector3Like = camera.position.clone()
-    if (audioState.lastCameraPos) {
-        const dist = camera.position.distanceTo(audioState.lastCameraPos)
-        audioState.currentVelocity = Number.isFinite(dist) ? dist * 60 : 0 // Normalize to approx units/sec
-    }
-    audioState.lastCameraPos = currentPos
+    lastCameraPos = currentPos;
 
     // Smooth velocity to avoid audio pops
-    // Guard: ensure audioState.smoothVelocity never becomes NaN/Infinity
-    if (!Number.isFinite(audioState.smoothVelocity)) audioState.smoothVelocity = 0
-    audioState.smoothVelocity += (audioState.currentVelocity - audioState.smoothVelocity) * 0.1
-    if (!Number.isFinite(audioState.smoothVelocity)) audioState.smoothVelocity = 0
+    // Guard: ensure smoothVelocity never becomes NaN/Infinity
+    if (!Number.isFinite(smoothVelocity)) smoothVelocity = 0;
+    smoothVelocity += (currentVelocity - smoothVelocity) * 0.1;
+    if (!Number.isFinite(smoothVelocity)) smoothVelocity = 0;
 
     // 2. Base Density & Path Proximity
-    let density = 0.3
-    let pathProximity = 0 // 0 (far) to 1 (near)
-    let clusterFreqOffset = 0
+    let density = 0.3;
+    let pathProximity = 0; // 0 (far) to 1 (near)
+    let clusterFreqOffset = 0;
 
     if (state.navState?.focusedIndex !== null) {
-        density = 0.7
-        if (state.semanticDiveMode) density = 0.9
+        density = 0.7;
+        if (state.semanticDiveMode) density = 0.9;
 
         // Audio Symphony: Cluster-based frequency shift (Phase 3 refinement)
-        const point = getAudioPoints()[state.navState.focusedIndex!]
+        const points = state.points as AudioPoint[];
+        const point = points[state.navState.focusedIndex!];
         if (point && typeof point.cluster === 'number') {
-            clusterFreqOffset = (point.cluster % 12) * 12
+            clusterFreqOffset = (point.cluster % 12) * 12;
         }
     }
 
     // Path Proximity (Phase 3)
-    const navWithRoute = getNavStateWithRoute()
-    if (navWithRoute.activeRoutePath && navWithRoute.activeRoutePath.length > 0 && pointIndexByLeadId.getSnapshot()) {
-        const audioPoints = getAudioPoints()
-        let minDist = Infinity
+    // Boundary cast: activeRoutePath is dynamically added to navState at runtime
+    // by route-choreography modules — not declared in the ambient NavState type.
+    const navWithRoute = state.navState as unknown as { activeRoutePath?: Array<string | number> | null };
+    if (navWithRoute.activeRoutePath && navWithRoute.activeRoutePath.length > 0 && state.pointIndexByLeadId) {
+        const audioPoints = state.points as AudioPoint[];
+        let minDist = Infinity;
         navWithRoute.activeRoutePath.forEach((id: string | number) => {
-            const idx = pointIndexByLeadId.getSnapshot().get(String(id))
+            const idx = state.pointIndexByLeadId.get(String(id));
             if (idx !== undefined && audioPoints[idx]) {
-                const p = audioPoints[idx]
-                const target = { x: p.x ?? 0, y: p.y ?? 0, z: p.z ?? 0 }
-                const d = currentPos.distanceTo?.(target) ?? 0
-                if (d < minDist) minDist = d
+                const p = audioPoints[idx];
+                const target = { x: p.x ?? 0, y: p.y ?? 0, z: p.z ?? 0 };
+                const d = currentPos.distanceTo?.(target) ?? 0;
+                if (d < minDist) minDist = d;
             }
-        })
-        pathProximity = Math.max(0, 1 - minDist / 2.0)
+        });
+        pathProximity = Math.max(0, 1 - (minDist / 2.0));
     }
 
     // 3. Map to Audio Parameters
-    const baseFreq = 55 + clusterFreqOffset
-    const freqMod = audioState.smoothVelocity * 50 + density * 20 + pathProximity * 110
-    const rawTargetFreq = baseFreq + freqMod
-    const targetFreq = Number.isFinite(rawTargetFreq) ? rawTargetFreq : 55
+    const baseFreq = 55 + clusterFreqOffset;
+    const freqMod = (smoothVelocity * 50) + (density * 20) + (pathProximity * 110);
+    const rawTargetFreq = baseFreq + freqMod;
+    const targetFreq = Number.isFinite(rawTargetFreq) ? rawTargetFreq : 55;
 
-    const baseGain = 0.005
-    const gainMod = audioState.smoothVelocity * 0.02 + density * 0.01 + pathProximity * 0.03
-    const rawTargetGain = Math.min(0.06, baseGain + gainMod)
-    const targetGain = Number.isFinite(rawTargetGain) ? rawTargetGain : 0.005
+    const baseGain = 0.005;
+    const gainMod = (smoothVelocity * 0.02) + (density * 0.01) + (pathProximity * 0.03);
+    const rawTargetGain = Math.min(0.06, baseGain + gainMod);
+    const targetGain = Number.isFinite(rawTargetGain) ? rawTargetGain : 0.005;
 
-    const rawTargetFilter = 150 + density * 400 + audioState.smoothVelocity * 200 + pathProximity * 800
-    const targetFilter = Number.isFinite(rawTargetFilter) ? rawTargetFilter : 200
+    const rawTargetFilter = 150 + (density * 400) + (smoothVelocity * 200) + (pathProximity * 800);
+    const targetFilter = Number.isFinite(rawTargetFilter) ? rawTargetFilter : 200;
 
-    // Guard: audio nodes may be null after disposeAudio() races with RAF.
-    if (!audioState.mainOsc || !audioState.gainNode || !audioState.filterNode || !audioState.audioCtx) {
-        audioState.rafId = requestAnimationFrame(updateAudio)
-        return
-    }
-    audioState.mainOsc.frequency.setTargetAtTime(targetFreq, audioState.audioCtx.currentTime, 0.1)
-    // Mute gate: while muted, skip the per-frame gain re-assert so the
-    // 0-target automation from setAudioMuted stays in effect. Re-asserting the
-    // ambient level (~0.005+) every frame would push gain back up (exponential
-    // decay ~8%/frame never reaches 0), functionally defeating mute.
-    if (!_muted) {
-        audioState.gainNode.gain.setTargetAtTime(targetGain, audioState.audioCtx.currentTime, 0.1)
-    }
-    audioState.filterNode.frequency.setTargetAtTime(targetFilter, audioState.audioCtx.currentTime, 0.1)
+    mainOsc!.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.1);
+    gainNode!.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.1);
+    filterNode!.frequency.setTargetAtTime(targetFilter, audioCtx.currentTime, 0.1);
 
-    audioState.rafId = requestAnimationFrame(updateAudio)
+    _audioRafId = requestAnimationFrame(updateAudio);
 }
 
 export function setAudioMuted(muted: boolean): void {
-    if (!audioState.gainNode || !audioState.audioCtx) return
-    _muted = muted
-    audioState.gainNode.gain.setTargetAtTime(muted ? 0 : 0.01, audioState.audioCtx.currentTime, 0.2)
-}
-
-export function isAudioMuted(): boolean {
-    if (!audioState.gainNode || !audioState.audioCtx) return true
-    // _muted is authoritative — under the τ=0.2 automation gain.value only
-    // approaches 0 asymptotically, so exact equality would almost always
-    // report unmuted even after setAudioMuted(true).
-    return _muted || audioState.gainNode.gain.value === 0
+    if (!gainNode || !audioCtx) return;
+    gainNode.gain.setTargetAtTime(muted ? 0 : 0.01, audioCtx.currentTime, 0.2);
 }
 
 /**
  * 10/10 Polish: High-frequency 'shimmer' sound for corridor animations.
  */
 export function triggerCorridorBloom(): void {
-    if (!audioState.audioCtx || audioState.audioCtx.state === 'suspended') return
+    if (!audioCtx || audioCtx.state === 'suspended') return;
 
     try {
-        const osc = audioState.audioCtx.createOscillator()
-        const g = audioState.audioCtx.createGain()
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
 
-        osc.type = 'sine'
-        const freqWithRandom = 880 + Math.random() * 440
-        osc.frequency.setValueAtTime(freqWithRandom, audioState.audioCtx.currentTime)
-        const endFreqWithRandom = 1760 + Math.random() * 880
-        osc.frequency.exponentialRampToValueAtTime(endFreqWithRandom, audioState.audioCtx.currentTime + 0.4)
+        osc.type = 'sine';
+        const freqWithRandom = 880 + Math.random() * 440;
+        osc.frequency.setValueAtTime(freqWithRandom, audioCtx.currentTime);
+        const endFreqWithRandom = 1760 + Math.random() * 880;
+        osc.frequency.exponentialRampToValueAtTime(endFreqWithRandom, audioCtx.currentTime + 0.4);
 
-        g.gain.setValueAtTime(0, audioState.audioCtx.currentTime)
-        g.gain.linearRampToValueAtTime(0.012, audioState.audioCtx.currentTime + 0.05)
-        g.gain.exponentialRampToValueAtTime(0.0001, audioState.audioCtx.currentTime + 0.8)
+        g.gain.setValueAtTime(0, audioCtx.currentTime);
+        g.gain.linearRampToValueAtTime(0.012, audioCtx.currentTime + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
 
-        osc.connect(g)
-        const stage = masterStageFor(audioState.audioCtx)
-        if (stage) g.connect(stage)
-        else g.connect(audioState.audioCtx.destination)
+        osc.connect(g);
+        g.connect(audioCtx.destination);
 
-        osc.start()
-        osc.stop(audioState.audioCtx.currentTime + 0.8)
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.8);
     } catch {
         // Silent fail for transient audio
     }
@@ -305,56 +208,40 @@ export function triggerCorridorBloom(): void {
  */
 export function trigger(name: string): void {
     if (name === 'corridor-bloom') {
-        triggerCorridorBloom()
+        triggerCorridorBloom();
     }
 }
 
-export const play = trigger
+export const play = trigger;
 
 /**
  * Dispose audio resources and cancel the RAF loop.
  * Called during engine deinit to prevent leaks across re-inits.
  */
 export function disposeAudio(): void {
-    // Remove the once-gesture listeners so a post-teardown gesture cannot
-    // create an unowned AudioContext + RAF loop (the once-listeners otherwise
-    // survive teardown with no removal path).
-    const startEvents = ['mousedown', 'keydown', 'touchstart'] as const
-    startEvents.forEach((evt) => {
-        document.removeEventListener(evt, startAudioContext)
-    })
-    if (_visibilityBound) {
-        document.removeEventListener('visibilitychange', handleVisibilityChange)
-        _visibilityBound = false
+    if (_audioRafId !== null) {
+        window.cancelAnimationFrame(_audioRafId);
+        _audioRafId = null;
     }
-
-    if (audioState.rafId !== null) {
-        window.cancelAnimationFrame(audioState.rafId)
-        audioState.rafId = null
+    if (mainOsc) {
+        try { mainOsc.stop(); } catch (_) {}
+        mainOsc.disconnect();
+        mainOsc = null;
     }
-    if (audioState.mainOsc) {
-        try {
-            audioState.mainOsc.stop()
-        } catch {
-            // oscillator may already be stopped — safe to ignore
-        }
-        audioState.mainOsc.disconnect()
-        audioState.mainOsc = null
+    if (filterNode) {
+        filterNode.disconnect();
+        filterNode = null;
     }
-    if (audioState.filterNode) {
-        audioState.filterNode.disconnect()
-        audioState.filterNode = null
+    if (gainNode) {
+        gainNode.disconnect();
+        gainNode = null;
     }
-    if (audioState.gainNode) {
-        audioState.gainNode.disconnect()
-        audioState.gainNode = null
+    if (audioCtx && audioCtx.state !== 'closed') {
+        try { audioCtx.close(); } catch (_) {}
+        audioCtx = null;
     }
-    // The context belongs to jam-engine and may still be carrying radio,
-    // vocal, or sonic-identity nodes. Disconnect only this surface; closing
-    // here would tear down unrelated playback and defeat the shared engine.
-    audioState.audioCtx = null
-    audioState.lastCameraPos = null
-    audioState.currentVelocity = 0
-    audioState.smoothVelocity = 0
-    debugWarn('[audio] Reactive scape disposed.')
+    lastCameraPos = null;
+    currentVelocity = 0;
+    smoothVelocity = 0;
+    debugWarn('[audio] Reactive scape disposed.');
 }

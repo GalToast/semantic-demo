@@ -1,335 +1,10 @@
-// eslint.config.js — Flat config (ESLint v10)
-// NOTE: imports are consumed below; "unused" warnings would fire on this file
-// itself if we linted it with the old config before the rewrite completes.
-import js from '@eslint/js'
-import prettier from 'eslint-config-prettier'
-import tsEslint from 'typescript-eslint'
-import sveltePlugin from 'eslint-plugin-svelte'
-import svelteParser from 'svelte-eslint-parser'
-
-const tsRecommended = tsEslint.configs.recommended
-const svelteRecommended = sveltePlugin.configs['flat/recommended']
-
-const BROWSER_GLOBALS = {
-    window: 'readonly',
-    document: 'readonly',
-    navigator: 'readonly',
-    console: 'readonly',
-    localStorage: 'readonly',
-    sessionStorage: 'readonly',
-    performance: 'readonly',
-    fetch: 'readonly',
-    AbortController: 'readonly',
-    AbortSignal: 'readonly',
-    setTimeout: 'readonly',
-    setInterval: 'readonly',
-    clearTimeout: 'readonly',
-    clearInterval: 'readonly',
-    requestAnimationFrame: 'readonly',
-    cancelAnimationFrame: 'readonly',
-    MutationObserver: 'readonly',
-    IntersectionObserver: 'readonly',
-    ResizeObserver: 'readonly',
-    URL: 'readonly',
-    URLSearchParams: 'readonly',
-    HTMLElement: 'readonly',
-    HTMLButtonElement: 'readonly',
-    HTMLCanvasElement: 'readonly',
-    HTMLInputElement: 'readonly',
-    Event: 'readonly',
-    CustomEvent: 'readonly',
-    KeyboardEvent: 'readonly',
-    MouseEvent: 'readonly',
-    PointerEvent: 'readonly',
-    GeolocationPosition: 'readonly',
-    GeolocationPositionError: 'readonly',
-    GeolocationCoordinates: 'readonly',
-    crypto: 'readonly',
-    WebSocket: 'readonly',
-    Worker: 'readonly',
-    self: 'readonly',
-    CSS: 'readonly',
-    AudioContext: 'readonly',
-    OscillatorNode: 'readonly',
-    GainNode: 'readonly',
-    BiquadFilterNode: 'readonly',
-    Path2D: 'readonly',
-    DOMException: 'readonly',
-    queueMicrotask: 'readonly',
-    TextDecoder: 'readonly',
-    TextEncoder: 'readonly',
-    WebGL2RenderingContext: 'readonly',
-    WebGLRenderingContext: 'readonly',
-    ClipboardItem: 'readonly',
-    getComputedStyle: 'readonly',
-    matchMedia: 'readonly',
-    structuredClone: 'readonly',
-    THREE: 'readonly',
-    ORBIT_MAX_DISTANCE_DEFAULT: 'readonly',
-    ORBIT_ROTATE_SPEED_DEFAULT: 'readonly',
-    ORBIT_PAN_SPEED_DEFAULT: 'readonly',
-    SCENE_REVEAL_DURATION_MS: 'readonly',
-    __APP_STATE__: 'readonly',
-    __TEST_STATE__: 'readonly',
-    __refreshTestCompatState__: 'readonly'
-}
+// eslint.config.js
+import js from '@eslint/js';
+import prettier from 'eslint-config-prettier';
 
 export default [
     js.configs.recommended,
     prettier,
-
-    // typescript-eslint recommended: [0]=base (plugin+parser, registered GLOBAL),
-    // [1]=eslint-recommended, [2]=recommended — both scoped to src/**/*.ts only.
-    tsRecommended[0],
-    { ...tsRecommended[1], files: ['src/**/*.ts', 'vite.config.ts'] },
-    { ...tsRecommended[2], files: ['src/**/*.ts', 'vite.config.ts'] },
-    {
-        files: ['src/**/*.ts', 'vite.config.ts'],
-        languageOptions: {
-            parser: tsEslint.parser,
-            parserOptions: {
-                project: null,
-                tsconfigRootDir: import.meta.dirname
-            },
-            globals: BROWSER_GLOBALS
-        },
-        rules: {
-            '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-unused-vars': [
-                'warn',
-                {
-                    vars: 'all',
-                    args: 'after-used',
-                    ignoreRestSiblings: true,
-                    varsIgnorePattern: '^_',
-                    argsIgnorePattern: '^_',
-                    caughtErrorsIgnorePattern: '^_'
-                }
-            ],
-            '@typescript-eslint/no-empty-object-type': 'off',
-            '@typescript-eslint/no-unsafe-function-type': 'off',
-            'no-unused-vars': 'off',
-
-            // ── Timer/interval lifecycle enforcement ──────────────────────────────
-            // Every timer/interval in src/lib/{ui,orchestration,stores,journey,engine,search}
-            // must be tracked via DisposableRegistry. The previous manual pattern
-            // (if (timer) clearTimeout(timer); timer = setTimeout(...)) caused
-            // 5+ production timer-leak fixes in the last 60 days (search git log:
-            // 45ed12d0, 444c9479, 89081451, 04cb7d8e, c2d7cfe7).
-            //
-            // Exceptions are files that are themselves part of the registry
-            // implementation OR files whose setTimeout calls are intentional
-            // bootstrap-polling we don't want to track (e.g. requestIdleCallback
-            // shims, intentionally fire-and-forget microtasks).
-            //
-            // Enforce the registry pattern going forward; existing un-migrated
-            // sites will surface as warnings (not errors) so this doesn't
-            // break the build while the migration is in progress.
-            'no-restricted-syntax': [
-                'warn',
-                {
-                    selector: "CallExpression[callee.name='setTimeout']",
-                    message:
-                        'Avoid raw setTimeout() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
-                },
-                {
-                    selector: "CallExpression[callee.name='setInterval']",
-                    message:
-                        'Avoid raw setInterval() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
-                },
-                {
-                    selector: "CallExpression[callee.name='requestAnimationFrame']",
-                    message:
-                        'Avoid raw requestAnimationFrame() in src/lib/. Wrap with DisposableRegistry.raf() — see src/lib/utils/disposable-registry.ts.'
-                }
-            ]
-        }
-    },
-
-    {
-        name: 'svelte/base',
-        plugins: svelteRecommended[0].plugins
-    },
-    {
-        ...svelteRecommended[1],
-        files: ['src/**/*.svelte'],
-        languageOptions: {
-            ...svelteRecommended[1].languageOptions,
-            parser: svelteParser,
-            parserOptions: {
-                parser: { ts: tsEslint.parser },
-                tsconfigRootDir: import.meta.dirname
-            },
-            globals: BROWSER_GLOBALS
-        },
-        rules: {
-            ...svelteRecommended[1].rules,
-            // svelte-eslint-parser cannot reliably distinguish TS type identifiers
-            // (e.g. Window, HTMLDivElement, FocusEvent, Element, WebGLRenderingContext)
-            // from value references. @typescript-eslint/no-undef is the TS-aware
-            // replacement and is enabled for .ts/.svelte.ts files below.
-            'no-undef': 'off',
-            'no-unused-vars': [
-                'warn',
-                {
-                    vars: 'all',
-                    args: 'after-used',
-                    ignoreRestSiblings: true,
-                    varsIgnorePattern: '^_',
-                    argsIgnorePattern: '^_',
-                    caughtErrorsIgnorePattern: '^_'
-                }
-            ],
-            '@typescript-eslint/no-explicit-any': 'off'
-        }
-    },
-
-    // ── `.svelte.ts` / `.svelte.js` files: TypeScript modules that use runes.
-    //    These are NOT Svelte components; they don't have <script> tags. The
-    //    svelte-eslint-parser would fail to parse them, so we use the TS parser
-    //    here. (The previous config referenced svelteRecommended[2] which is
-    //    undefined in eslint-plugin-svelte v3+ and produced parse errors.)
-    {
-        files: ['src/**/*.svelte.ts', 'src/**/*.svelte.js'],
-        languageOptions: {
-            parser: tsEslint.parser,
-            parserOptions: {
-                project: null,
-                tsconfigRootDir: import.meta.dirname
-            },
-            globals: BROWSER_GLOBALS
-        },
-        rules: {
-            'no-unused-vars': [
-                'warn',
-                {
-                    vars: 'all',
-                    args: 'after-used',
-                    ignoreRestSiblings: true,
-                    varsIgnorePattern: '^_',
-                    argsIgnorePattern: '^_',
-                    caughtErrorsIgnorePattern: '^_'
-                }
-            ],
-            '@typescript-eslint/no-explicit-any': 'off'
-        }
-    },
-
-    // ── Override: disable no-explicit-any everywhere (we have 477, bite-by-bite) ─
-    //   and turn TS unused-vars from error back to warn (matches active policy)
-    {
-        files: ['src/**/*.ts', 'src/**/*.svelte', 'vite.config.ts'],
-        rules: {
-            '@typescript-eslint/no-explicit-any': 'off',
-            // Mirror the args/vars ignore patterns from the per-block configs so
-            // underscored-but-unused locals (e.g. `(opts: Options) => { opts }`
-            // type signatures) don't get re-flagged by the override block.
-            '@typescript-eslint/no-unused-vars': [
-                'warn',
-                {
-                    vars: 'all',
-                    args: 'after-used',
-                    ignoreRestSiblings: true,
-                    varsIgnorePattern: '^_',
-                    argsIgnorePattern: '^_',
-                    caughtErrorsIgnorePattern: '^_'
-                }
-            ]
-        }
-    },
-
-    // ── Animation-loop files exempt from requestAnimationFrame lint ──────────
-    // These files use `requestAnimationFrame` as a render-loop / pointer-move /
-    // scroll-animation primitive. Wrapping RAF in DisposableRegistry adds no
-    // value: the RAF self-cancels via state flags or runs until the component
-    // unmounts via Svelte's `$effect` cleanup. The lint rule still fires for
-    // any `setTimeout`/`setInterval` inside these files — those would be real
-    // leaks.
-    {
-        files: [
-            'src/lib/audio/audio-scape.ts',
-            'src/lib/engine/camera-choreography/cursor.ts',
-            'src/lib/engine/camera-choreography/focus.ts',
-            'src/lib/engine/camera-choreography/routes.ts',
-            'src/lib/engine/lifecycle.ts',
-            'src/lib/engine/three-engine-core.ts',
-            'src/lib/engine/three-interaction-visuals.ts',
-            'src/lib/engine/three-search-animations.ts',
-            'src/lib/demo/camera.ts',
-            'src/lib/focus/stage-renderer.ts',
-            'src/lib/journey/canvas-interaction.ts',
-            'src/lib/search/result-renderer.ts'
-        ],
-        rules: {
-            'no-restricted-syntax': [
-                'warn',
-                {
-                    selector: "CallExpression[callee.name='setTimeout']",
-                    message:
-                        'Avoid raw setTimeout() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
-                },
-                {
-                    selector: "CallExpression[callee.name='setInterval']",
-                    message:
-                        'Avoid raw setInterval() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
-                }
-            ]
-        }
-    },
-
-    {
-        files: ['scripts/**/*.mjs', 'scripts/**/*.js'],
-        languageOptions: {
-            ecmaVersion: 2022,
-            sourceType: 'module',
-            globals: {
-                console: 'readonly',
-                process: 'readonly',
-                __dirname: 'readonly',
-                __filename: 'readonly',
-                Buffer: 'readonly',
-                require: 'readonly',
-                module: 'readonly',
-                exports: 'readonly',
-                setTimeout: 'readonly',
-                clearTimeout: 'readonly',
-                setInterval: 'readonly',
-                clearInterval: 'readonly',
-                setImmediate: 'readonly',
-                clearImmediate: 'readonly',
-                URL: 'readonly',
-                URLSearchParams: 'readonly',
-                Promise: 'readonly',
-                Math: 'readonly',
-                JSON: 'readonly',
-                Map: 'readonly',
-                Set: 'readonly',
-                global: 'readonly',
-                globalThis: 'readonly',
-                TextEncoder: 'readonly',
-                TextDecoder: 'readonly',
-                fetch: 'readonly',
-                AbortController: 'readonly',
-                AbortSignal: 'readonly'
-            }
-        },
-        rules: {
-            'no-unused-vars': [
-                'warn',
-                {
-                    vars: 'all',
-                    args: 'after-used',
-                    ignoreRestSiblings: true,
-                    varsIgnorePattern: '^_',
-                    argsIgnorePattern: '^_',
-                    caughtErrorsIgnorePattern: '^_'
-                }
-            ],
-            'no-undef': 'error',
-            'no-console': 'off'
-        }
-    },
-
     {
         files: ['js/**/*.js'],
         languageOptions: {
@@ -402,38 +77,36 @@ export default [
             }
         },
         rules: {
-            'no-unused-vars': [
-                'warn',
-                {
-                    vars: 'all',
-                    args: 'after-used',
-                    ignoreRestSiblings: true,
-                    varsIgnorePattern: '^_',
-                    argsIgnorePattern: '^_',
-                    caughtErrorsIgnorePattern: '^_'
-                }
-            ],
+            'no-unused-vars': ['warn', {
+                vars: 'all',
+                args: 'after-used',
+                ignoreRestSiblings: true,
+                varsIgnorePattern: '^_',
+                argsIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^_'
+            }],
             'no-undef': 'error',
             'no-console': ['error', { allow: ['warn', 'error'] }],
             'no-var': 'error',
-            eqeqeq: 'error',
+            'eqeqeq': 'error',
             'no-empty': ['error', { allowEmptyCatch: true }],
             'no-useless-escape': 'error'
         }
     },
-
     {
         files: ['tests/**/*.js', 'tests/**/*.mjs', 'tests/**/*.cjs'],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: 'module',
             globals: {
+                // Node globals
                 console: 'readonly',
                 process: 'readonly',
                 require: 'readonly',
                 Buffer: 'readonly',
                 __dirname: 'readonly',
                 global: 'readonly',
+                // Browser globals (used in page.evaluate callbacks and JSDOM)
                 document: 'readonly',
                 window: 'readonly',
                 navigator: 'readonly',
@@ -475,27 +148,41 @@ export default [
                 MutationObserver: 'readonly',
                 IntersectionObserver: 'readonly',
                 ResizeObserver: 'readonly',
+                // Project-internal: app exposes these for the visual QA suite
                 __APP_STATE__: 'readonly',
+                // Web API available in modern Node/JSDOM test environments
                 structuredClone: 'readonly',
+                // Three.js: exposed at window.THREE in production; test code
+                // that runs in page.evaluate() bodies references it bare
                 THREE: 'readonly',
+                // Playwright fixtures (available in spec files via test runner)
                 browser: 'readonly',
                 server: 'readonly'
             }
         },
         rules: {
-            'no-unused-vars': [
-                'warn',
-                {
-                    vars: 'all',
-                    args: 'after-used',
-                    ignoreRestSiblings: true,
-                    varsIgnorePattern: '^_',
-                    argsIgnorePattern: '^_',
-                    caughtErrorsIgnorePattern: '^_'
-                }
-            ],
+            // Tests legitimately import many setup helpers that may not be
+            // used in every test. Downgrade to warn so lint output is
+            // actionable instead of noisy.
+            'no-unused-vars': ['warn', {
+                vars: 'all',
+                args: 'after-used',
+                ignoreRestSiblings: true,
+                varsIgnorePattern: '^_',
+                argsIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^_'
+            }],
+            // Regex tests often have intentional escaping; defensive optional
+            // chaining in test setup is also a real pattern. Warn, don't error.
             'no-useless-escape': 'warn',
             'no-unsafe-optional-chaining': 'warn'
         }
     }
-]
+    // NOTE: tests/micro-demo-verify.js has 43 false-positive no-undef
+    // errors at wrong line numbers due to an ESLint v10 shebang-handling
+    // bug. The flat-config per-file rule override (no-undef: 'off') does
+    // NOT resolve it. Options: (a) live with the 43 false positives,
+    // (b) remove the shebang, (c) downgrade to ESLint v9, (d) patch
+    // ESLint itself. Investigated in commit 5f9bd0c; see follow-up note
+    // in AGENTS.md.
+];

@@ -1,46 +1,38 @@
 /**
  * search-panel-adapter.ts
  *
- *
+ * Canonical port of js/modules/search-panel-adapter.ts.
  * Owns search panel container/body visual state so search-state.js can keep
  * search decisions separate from cross-surface DOM flags.
  */
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
-
 interface SearchContainerState {
-    searching?: boolean
-    focusing?: boolean
-    hasQuery?: boolean
-    resultsRendered?: boolean
-    resultsExpanded?: boolean
-    degraded?: boolean
+    searching?: boolean;
+    focusing?: boolean;
+    hasQuery?: boolean;
+    resultsRendered?: boolean;
+    resultsExpanded?: boolean;
+    degraded?: boolean;
 }
 
-type PanelSurfaceDetail = 'none' | 'expanded' | 'peek'
+type PanelSurfaceDetail = 'none' | 'expanded' | 'peek';
 
-type MobileSearchSheetMode = 'expanded' | 'peek'
+type MobileSearchSheetMode = 'expanded' | 'peek';
 
 interface MobileSearchSheetOptions {
-    userInitiated?: boolean
+    userInitiated?: boolean;
 }
 
 interface SetupMobileSearchSheetToggleOptions {
-    isCompactSearchViewport?: (() => boolean) | undefined
+    isCompactSearchViewport?: (() => boolean) | undefined;
 }
-
-let compactViewportMediaQuery: MediaQueryList | null = null
-let compactViewportChangeBound = false
-let latestCompactViewportDetector: (() => boolean) | null = null
-let mobileSheetLabelRetryQueued = false
-const _sheetLabelRetryReg = new DisposableRegistry({ label: 'search-sheet-label-retry' })
 
 // ── Functions ──────────────────────────────────────────────────────────────
 
-export function getSearchContainer(): HTMLElement | null {
-    return document.querySelector('.search-container') as HTMLElement | null
+export function getSearchContainer(): Element | null {
+    return document.querySelector('.search-container');
 }
 
 export function setSearchContainerState({
@@ -51,200 +43,124 @@ export function setSearchContainerState({
     resultsExpanded,
     degraded
 }: SearchContainerState = {}): void {
-    const searchContainer = getSearchContainer()
-    if (!searchContainer) return
+    const searchContainer = getSearchContainer();
+    if (!searchContainer) return;
 
     if (typeof searching === 'boolean') {
-        searchContainer.classList.toggle('searching', searching)
+        searchContainer.classList.toggle('searching', searching);
     }
     if (typeof focusing === 'boolean') {
-        searchContainer.classList.toggle('focusing', focusing)
+        searchContainer.classList.toggle('focusing', focusing);
     }
     if (typeof hasQuery === 'boolean') {
-        searchContainer.classList.toggle('has-query', hasQuery)
+        searchContainer.classList.toggle('has-query', hasQuery);
     }
     if (typeof resultsRendered === 'boolean') {
-        searchContainer.classList.toggle('results-rendered', resultsRendered)
+        searchContainer.classList.toggle('results-rendered', resultsRendered);
     }
     if (typeof resultsExpanded === 'boolean') {
-        searchContainer.classList.toggle('has-expanded-results', resultsExpanded)
+        searchContainer.classList.toggle('has-expanded-results', resultsExpanded);
     }
     if (typeof degraded === 'boolean') {
-        searchContainer.classList.toggle('search-degraded', degraded)
+        searchContainer.classList.toggle('search-degraded', degraded);
     }
 }
 
 export function setSearchGlowState(active: boolean): void {
-    document.body.dataset.searchGlow = active ? 'active' : 'inactive'
+    if (!document.body?.dataset) return;
+    document.body.dataset.searchGlow = active ? 'active' : 'inactive';
 }
 
 export function getPanelSurfaceDetailFromMobileSheet(
     context: string = (document.body?.dataset?.panelSurface ?? 'search') as string
 ): PanelSurfaceDetail {
-    if (!document.body?.dataset) return 'none'
-    const hasSheetState = Boolean(document.body.dataset.mobileSearchSheet)
+    if (!document.body?.dataset) return 'none';
+    const hasSheetState = Boolean(document.body.dataset.mobileSearchSheet);
     return hasSheetState && (context === 'search' || context === 'focus-search')
-        ? document.body.dataset.mobileSearchSheet === 'expanded'
-            ? 'expanded'
-            : 'peek'
-        : 'none'
+        ? (document.body.dataset.mobileSearchSheet === 'expanded' ? 'expanded' : 'peek')
+        : 'none';
 }
 
 export function syncPanelSurfaceDetailFromMobileSheet(
     context: string = (document.body?.dataset?.panelSurface ?? 'search') as string
 ): PanelSurfaceDetail {
-    if (!document.body?.dataset) return 'none'
-    const detail = getPanelSurfaceDetailFromMobileSheet(context)
-    // NOTE: body.dataset.panelSurfaceDetail write removed — parity-attrs.svelte.ts handles this.
-    return detail
+    if (!document.body?.dataset) return 'none';
+    const detail = getPanelSurfaceDetailFromMobileSheet(context);
+    document.body.dataset.panelSurfaceDetail = detail;
+    return detail;
 }
 
 export function setMobileSearchSheetMode(
     mode: MobileSearchSheetMode = 'peek',
     { userInitiated = false }: MobileSearchSheetOptions = {}
 ): void {
-    const safeMode: MobileSearchSheetMode = mode === 'expanded' ? 'expanded' : 'peek'
-    document.body.dataset.mobileSearchSheet = safeMode
-    syncPanelSurfaceDetailFromMobileSheet(document.body.dataset.panelSurface || 'search')
-    if (userInitiated) document.body.dataset.mobileSearchSheetUser = 'true'
+    const safeMode: MobileSearchSheetMode = mode === 'expanded' ? 'expanded' : 'peek';
+    document.body.dataset.mobileSearchSheet = safeMode;
+    syncPanelSurfaceDetailFromMobileSheet(document.body.dataset.panelSurface || 'search');
+    if (userInitiated) document.body.dataset.mobileSearchSheetUser = 'true';
 
     if (safeMode === 'peek') {
-        const content = document.getElementById('info-panel-content')
-        if (content) content.scrollTop = 0
+        const content = document.getElementById('info-panel-content');
+        if (content) content.scrollTop = 0;
     }
 
-    const label = document.querySelector('.search-label')
+    const label = document.querySelector('.search-label');
     if (label) {
-        label.setAttribute('aria-expanded', String(safeMode === 'expanded'))
-        label.setAttribute(
-            'aria-label',
-            safeMode === 'expanded' ? 'Collapse search results panel' : 'Expand search results panel'
-        )
+        label.setAttribute('aria-expanded', String(safeMode === 'expanded'));
+        label.setAttribute('aria-label', safeMode === 'expanded' ? 'Collapse search results panel' : 'Expand search results panel');
     }
 }
 
 export function clearMobileSearchSheetState(): void {
-    if (!document.body?.dataset) return
-    delete document.body.dataset.mobileSearchSheet
-    delete document.body.dataset.mobileSearchSheetUser
-    syncPanelSurfaceDetailFromMobileSheet()
-    const label = document.querySelector('.search-label')
-    if (label) {
-        label.removeAttribute('aria-expanded')
-        label.removeAttribute('aria-label')
-    }
+    if (!document.body?.dataset) return;
+    delete document.body.dataset.mobileSearchSheet;
+    delete document.body.dataset.mobileSearchSheetUser;
+    syncPanelSurfaceDetailFromMobileSheet();
 }
 
-function syncMobileSearchSheetForViewport(isCompact: () => boolean): void {
-    const searchContainer = getSearchContainer()
-    const rawLabel = searchContainer?.querySelector?.('.search-label')
-    if (!searchContainer || !rawLabel) return
-    const label = rawLabel as HTMLElement
+export function setupMobileSearchSheetToggle(
+    { isCompactSearchViewport }: SetupMobileSearchSheetToggleOptions = {}
+): void {
+    const searchContainer = getSearchContainer();
+    const rawLabel = searchContainer?.querySelector?.('.search-label');
+    if (!searchContainer || !rawLabel) return;
+    const label = rawLabel as HTMLElement;
+    const isCompact = typeof isCompactSearchViewport === 'function' ? isCompactSearchViewport : () => false;
 
-    if (isCompact() && searchContainer.classList.contains('has-query')) {
-        if (!document.body.dataset.mobileSearchSheetUser) setMobileSearchSheetMode('peek')
-        else setMobileSearchSheetMode((document.body.dataset.mobileSearchSheet as MobileSearchSheetMode) || 'peek')
-    } else {
-        clearMobileSearchSheetState()
-        label.removeAttribute('aria-expanded')
-        label.removeAttribute('aria-label')
-    }
-}
-
-function bindCompactViewportChange(isCompact: () => boolean): void {
-    latestCompactViewportDetector = isCompact
-    if (compactViewportChangeBound || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
-
-    compactViewportMediaQuery = window.matchMedia('(max-width: 768px)')
-    const handleChange = (): void => {
-        const detector = latestCompactViewportDetector
-        if (detector) syncMobileSearchSheetForViewport(detector)
-    }
-    if (typeof compactViewportMediaQuery.addEventListener === 'function') {
-        compactViewportMediaQuery.addEventListener('change', handleChange)
-    } else {
-        compactViewportMediaQuery.addListener(handleChange)
-    }
-    compactViewportChangeBound = true
-}
-
-export function setupMobileSearchSheetToggle({
-    isCompactSearchViewport
-}: SetupMobileSearchSheetToggleOptions = {}): void {
-    // W64 fix (2026-08-23): bind the compact-viewport MQ listener FIRST and
-    // unconditionally. The old early-return below fired whenever the search
-    // chrome (.search-container/.search-label) was not yet mounted at call
-    // time — which is exactly when initAdapters() and the first successful
-    // search() reach this function on mobile placeholder boots — and nothing
-    // ever retried, so `(max-width: 768px)` never got a listener and
-    // orientation changes left `mobileSearchSheet` unset forever (detail
-    // stuck at 'none'; W64 sheet-resync dead). The MQ handler re-queries the
-    // container on every fire (syncMobileSearchSheetForViewport), so it does
-    // not need the label to exist at bind time. Bind is idempotent via
-    // compactViewportChangeBound.
-    const isCompact = typeof isCompactSearchViewport === 'function' ? isCompactSearchViewport : () => false
-    bindCompactViewportChange(isCompact)
-
-    const searchContainer = getSearchContainer()
-    const rawLabel = searchContainer?.querySelector?.('.search-label')
-    if (!searchContainer || !rawLabel) {
-        // Chrome not mounted yet: the MQ sync above is live, but the label
-        // toggle wiring still needs a mounted label. Retry bounded (~3s of
-        // rAF ticks) so a late mount gets wired exactly once.
-        if (typeof requestAnimationFrame === 'function' && !mobileSheetLabelRetryQueued) {
-            mobileSheetLabelRetryQueued = true
-            let tries = 0
-            const retryWire = (): void => {
-                const c = getSearchContainer()
-                const l = c?.querySelector?.('.search-label')
-                if (c && l) {
-                    mobileSheetLabelRetryQueued = false
-                    setupMobileSearchSheetToggle({ isCompactSearchViewport })
-                    return
-                }
-                if (++tries < 60) {
-                    // eslint-disable-next-line no-restricted-syntax -- rAF is registered with _sheetLabelRetryReg.raf() immediately below
-                    const id = requestAnimationFrame(retryWire)
-                    _sheetLabelRetryReg.raf(id)
-                } else {
-                    mobileSheetLabelRetryQueued = false
-                }
-            }
-            // eslint-disable-next-line no-restricted-syntax -- rAF is registered with _sheetLabelRetryReg.raf() immediately below
-            const firstId = requestAnimationFrame(retryWire)
-            _sheetLabelRetryReg.raf(firstId)
-        }
-        return
-    }
-    const label = rawLabel as HTMLElement
-
-    label.setAttribute('aria-controls', 'search-results')
+    label.setAttribute('aria-controls', 'search-results');
 
     if (!label.dataset.mobileSheetToggleBound) {
         const focusSearchInput = (): void => {
-            const searchInput = document.getElementById('search-input')
-            if (searchInput) searchInput.focus()
-        }
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) searchInput.focus();
+        };
         const toggleSheet = (): void => {
             // The toggle's primary job is to put the cursor in the search
             // field. Focus is unconditional so a fresh page (no query yet)
             // and any viewport size still hand focus to the input on click.
             // Sheet expansion is secondary and stays gated on has-query since
             // there are no results to expand until the user has typed.
-            focusSearchInput()
-            if (!isCompact() || !searchContainer.classList.contains('has-query')) return
-            const isOpening = document.body.dataset.mobileSearchSheet !== 'expanded'
-            const nextMode: MobileSearchSheetMode = isOpening ? 'expanded' : 'peek'
-            setMobileSearchSheetMode(nextMode, { userInitiated: true })
-        }
-        label.addEventListener('click', toggleSheet)
+            focusSearchInput();
+            if (!isCompact() || !searchContainer.classList.contains('has-query')) return;
+            const isOpening = document.body.dataset.mobileSearchSheet !== 'expanded';
+            const nextMode: MobileSearchSheetMode = isOpening ? 'expanded' : 'peek';
+            setMobileSearchSheetMode(nextMode, { userInitiated: true });
+        };
+        label.addEventListener('click', toggleSheet);
         label.addEventListener('keydown', (event: KeyboardEvent) => {
-            if (event.key !== 'Enter' && event.key !== ' ') return
-            event.preventDefault()
-            toggleSheet()
-        })
-        label.dataset.mobileSheetToggleBound = 'true'
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            toggleSheet();
+        });
+        label.dataset.mobileSheetToggleBound = 'true';
     }
 
-    syncMobileSearchSheetForViewport(isCompact)
+    if (isCompact() && searchContainer.classList.contains('has-query')) {
+        if (!document.body.dataset.mobileSearchSheetUser) setMobileSearchSheetMode('peek');
+        else setMobileSearchSheetMode((document.body.dataset.mobileSearchSheet as MobileSearchSheetMode) || 'peek');
+    } else {
+        clearMobileSearchSheetState();
+        label.removeAttribute('aria-expanded');
+        label.removeAttribute('aria-label');
+    }
 }

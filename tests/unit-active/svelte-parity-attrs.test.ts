@@ -19,361 +19,369 @@
  * Run: npx vitest run tests/unit-active/svelte-parity-attrs.test.ts
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { get } from 'svelte/store'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { get } from 'svelte/store';
 
 import {
-    PARITY_ATTRIBUTES,
-    PARITY_ATTRIBUTE_KEYS,
-    computeParityAttributes,
-    applyParityAttributes,
-    installParityAttributeSync,
-    readParityAttributesFromBody,
-    resetParityAttributeCache
-} from '@lib/orchestration/parity-attrs.svelte'
+  PARITY_ATTRIBUTES,
+  PARITY_ATTRIBUTE_KEYS,
+  computeParityAttributes,
+  applyParityAttributes,
+  installParityAttributeSync,
+  readParityAttributesFromBody,
+  resetParityAttributeCache
+} from '@lib/orchestration/parity-attrs';
 
-import { navStore, resetNavState } from '@lib/stores/navigation.svelte.ts'
-import { journeyStore, resetJourney } from '@lib/stores/journey.svelte.ts'
-import { focusStore, resetFocus } from '@lib/stores/focus.svelte.ts'
-import { searchStore } from '@lib/stores/search.svelte'
-import { filterState, resetFilters } from '@lib/stores/filter.svelte'
-import { viewport } from '@lib/stores/viewport.svelte.ts'
-import { demoStore as demoPhaseStore, resetDemo } from '@lib/stores/demo.svelte.ts'
-import { cameraStore, resetCamera } from '@lib/stores/camera.svelte.ts'
-import { loadingPhaseStore, graphicsModeStore } from '@lib/data-store'
+import { navStore, resetNavState } from '@lib/stores/navigation.svelte.ts';
+import { journeyStore, resetJourney } from '@lib/stores/journey.svelte.ts';
+import { focusStore, resetFocus } from '@lib/stores/focus.svelte.ts';
+import { searchStore } from '@lib/stores/search.svelte';
+import { filterState, resetFilters } from '@lib/stores/filter.svelte';
+import { viewport } from '@lib/stores/viewport.svelte.ts';
+import { demoStore as demoPhaseStore, resetDemo } from '@lib/stores/demo.svelte.ts';
+import { cameraStore, resetCamera } from '@lib/stores/camera.svelte.ts';
+import { loadingPhaseStore, graphicsModeStore } from '@lib/data-store';
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-/**
- * Deep clone helpers.
- *
- * structuredClone() chokes on a few fields in our store snapshots
- * (notably Maps whose values are class instances, and the Svelte-5
- * focusStore writable being a class instance). The test only needs
- * structural equality, so a recursive walk handles Maps + Arrays +
- * plain objects. Non-cloneable values are dropped.
- */
-function clonePlain<T>(value: T): T {
-    if (value === null || typeof value !== 'object') return value
-    if (value instanceof Map) {
-        return new Map(Array.from(value, ([k, v]) => [k, clonePlain(v)])) as unknown as T
-    }
-    if (Array.isArray(value)) return value.map(clonePlain) as unknown as T
-    const out: Record<string, unknown> = {}
-    for (const k of Object.keys(value as Record<string, unknown>)) {
-        const field = (value as Record<string, unknown>)[k]
-        // Drop non-cloneable class instances (e.g. Vector3, Object3D)
-        // — the test only inspects primitive fields.
-        if (field !== null && typeof field === 'object' && !(field instanceof Map) && !Array.isArray(field)) {
-            out[k] = clonePlain(field)
-        } else {
-            out[k] = field
-        }
-    }
-    return out as T
-}
-
 function snapshotStores() {
-    return {
-        nav: clonePlain(navStore()),
-        journey: clonePlain(journeyStore()),
-        focus: clonePlain(focusStore()),
-        search: clonePlain(get(searchStore)),
-        filters: clonePlain(get(filterState)),
-        vp: clonePlain(viewport()),
-        loadingPhase: get(loadingPhaseStore),
-        demoPhase: get(demoPhaseStore),
-        graphicsMode: get(graphicsModeStore)
-    }
+  return {
+    nav: structuredClone(navStore()),
+    journey: structuredClone(journeyStore()),
+    focus: structuredClone(focusStore()),
+    search: structuredClone(get(searchStore)),
+    filters: structuredClone(get(filterState)),
+    vp: structuredClone(viewport()),
+    loadingPhase: get(loadingPhaseStore),
+    demoPhase: get(demoPhaseStore),
+    graphicsMode: get(graphicsModeStore),
+  };
 }
 
 function setBodyDataset(map: Record<string, string>): void {
-    // Reset body.dataset to a known starting point
-    for (const k of Object.keys(document.body.dataset)) {
-        delete document.body.dataset[k as keyof DOMStringMap]
-    }
-    for (const [k, v] of Object.entries(map)) {
-        document.body.dataset[k as keyof DOMStringMap] = v
-    }
+  // Reset body.dataset to a known starting point
+  for (const k of Object.keys(document.body.dataset)) {
+    delete document.body.dataset[k as keyof DOMStringMap];
+  }
+  for (const [k, v] of Object.entries(map)) {
+    document.body.dataset[k as keyof DOMStringMap] = v;
+  }
 }
 
 function readBodyDataset(): Record<string, string> {
-    return { ...document.body.dataset } as Record<string, string>
+  return { ...document.body.dataset } as Record<string, string>;
 }
 
 // ── Setup ───────────────────────────────────────────────────────────────
 
 beforeEach(() => {
-    // Clean DOM and reset the installer's internal cache
-    setBodyDataset({})
-    resetParityAttributeCache()
-    // Reset singleton stores so mutations from prior tests don't leak
-    resetNavState()
-    resetJourney()
-    resetFocus()
-    resetFilters()
-    resetDemo()
-    resetCamera()
-})
+  // Clean DOM and reset the installer's internal cache
+  setBodyDataset({});
+  resetParityAttributeCache();
+  // Reset singleton stores so mutations from prior tests don't leak
+  resetNavState();
+  resetJourney();
+  resetFocus();
+  resetFilters();
+  resetDemo();
+  resetCamera();
+});
 
 afterEach(() => {
-    setBodyDataset({})
-    resetParityAttributeCache()
-    vi.restoreAllMocks()
-})
+  setBodyDataset({});
+  resetParityAttributeCache();
+  vi.restoreAllMocks();
+});
 
 // ── Tests ──────────────────────────────────────────────────────────────
 
 describe('PARITY_ATTRIBUTES manifest', () => {
-    it('covers the legacy canvas-hit-test required attrs', () => {
-        // Note: journeyCompassDensity / journeyCompassCopy were retired in
-        // commit 501bc59f ("remove 5 dead body.dataset descriptor keys") —
-        // they were declared but never read in src/. journeyCompassPhase +
-        // journeyNavigationOwner carry the same semantics. journeyCompass
-        // (the bare alias) was retired for the same reason.
-        const required = [
-            'semanticDive',
-            'panelSurface',
-            'trailDepth',
-            'journeyCompassPhase',
-            'journeyNavigationOwner',
-            'focusedNode',
-            'navMode',
-            'navSurface',
-            'filtersActive',
-            'graphContext',
-            'strandJourney'
-        ]
-        for (const key of required) {
-            expect(PARITY_ATTRIBUTE_KEYS.has(key), `manifest must include ${key}`).toBe(true)
-        }
-    })
+  it('covers the legacy canvas-hit-test required attrs', () => {
+    const required = [
+      'semanticDive',
+      'panelSurface',
+      'trailDepth',
+      'journeyCompassPhase',
+      'journeyCompassDensity',
+      'journeyCompassCopy',
+      'journeyNavigationOwner',
+      'focusedNode',
+      'navMode',
+      'navSurface',
+      'filtersActive',
+      'graphContext',
+      'strandJourney'
+    ];
+    for (const key of required) {
+      expect(PARITY_ATTRIBUTE_KEYS.has(key), `manifest must include ${key}`).toBe(true);
+    }
+  });
 
-    it('covers the Svelte-native attrs owned by parity (focusTransition, searchStatus, cameraSlack)', () => {
-        // These three are Svelte-native attributes that legacy modules used to
-        // write directly. The parity layer is the sole writer now, so the
-        // manifest must include them to keep the DOM in sync with stores.
-        for (const key of ['focusTransition', 'searchStatus', 'cameraSlack']) {
-            expect(PARITY_ATTRIBUTE_KEYS.has(key), `manifest must include ${key}`).toBe(true)
-        }
-    })
+  it('covers the Svelte-native attrs owned by parity (focusTransition, searchStatus, cameraSlack)', () => {
+    // These three are Svelte-native attributes that legacy modules used to
+    // write directly. The parity layer is the sole writer now, so the
+    // manifest must include them to keep the DOM in sync with stores.
+    for (const key of ['focusTransition', 'searchStatus', 'cameraSlack']) {
+      expect(PARITY_ATTRIBUTE_KEYS.has(key), `manifest must include ${key}`).toBe(true);
+    }
+  });
 
-    it('manifest entries have non-empty key and source', () => {
-        for (const entry of PARITY_ATTRIBUTES) {
-            expect(entry.key.length, 'key must be non-empty').toBeGreaterThan(0)
-            expect(entry.source.length, 'source must be non-empty').toBeGreaterThan(0)
-            expect(entry.description.length, 'description must be non-empty').toBeGreaterThan(0)
-        }
-    })
-})
+  it('manifest entries have non-empty key and source', () => {
+    for (const entry of PARITY_ATTRIBUTES) {
+      expect(entry.key.length, 'key must be non-empty').toBeGreaterThan(0);
+      expect(entry.source.length, 'source must be non-empty').toBeGreaterThan(0);
+      expect(entry.description.length, 'description must be non-empty').toBeGreaterThan(0);
+    }
+  });
+});
 
 describe('computeParityAttributes', () => {
-    it('returns overview defaults for empty stores', () => {
-        const stores = snapshotStores()
-        const map = computeParityAttributes()
+  it('returns overview defaults for empty stores', () => {
+    const stores = snapshotStores();
+    const map = computeParityAttributes(
+      stores.nav, stores.journey, stores.focus,
+      stores.search, stores.filters, stores.vp,
+      stores.loadingPhase, stores.demoPhase, stores.graphicsMode
+    );
 
-        expect(map.navMode).toBe('overview')
-        expect(map.navSurface).toBe('idle')
-        expect(map.panelSurface).toBe('idle')
-        expect(map.journeyCompassPhase).toBe('idle')
-        expect(map.semanticDive).toBe('inactive')
-        expect(map.trailState).toBe('inactive')
-        expect(map.focusedNode).toBeNull()
-        expect(map.testReady).toBe('true')
-    })
+    expect(map.navMode).toBe('overview');
+    expect(map.navSurface).toBe('idle');
+    expect(map.panelSurface).toBe('idle');
+    expect(map.journeyCompassPhase).toBe('idle');
+    expect(map.semanticDive).toBe('inactive');
+    expect(map.trailState).toBe('inactive');
+    expect(map.focusedNode).toBeNull();
+    expect(map.testReady).toBe('true');
+  });
 
-    it('reflects focus state via focused-node attribute', () => {
-        navStore.update((s) => ({ ...s, focusedIndex: 42 }))
-        try {
-            const stores = snapshotStores()
-            const map = computeParityAttributes()
-            expect(map.focusedNode).toBe('42')
-            expect(map.navMode).toBe('overview') // mode stays until reducer runs
-        } finally {
-            navStore.update((s) => ({ ...s, focusedIndex: null }))
-        }
-    })
+  it('reflects focus state via focused-node attribute', () => {
+    navStore.update((s) => ({ ...s, focusedIndex: 42 }));
+    try {
+      const stores = snapshotStores();
+      const map = computeParityAttributes(
+        stores.nav, stores.journey, stores.focus,
+        stores.search, stores.filters, stores.vp,
+        stores.loadingPhase, stores.demoPhase, stores.graphicsMode
+      );
+      expect(map.focusedNode).toBe('42');
+      expect(map.navMode).toBe('overview'); // mode stays until reducer runs
+    } finally {
+      navStore.update((s) => ({ ...s, focusedIndex: null }));
+    }
+  });
 
-    it('semantic-dive wins over panel-surface for panelSurfaceMode', () => {
-        navStore.update((s) => ({ ...s, focusedIndex: 42 }))
-        focusStore.update((s) => ({ ...s, semanticDiveMode: true }))
-        try {
-            const stores = snapshotStores()
-            const map = computeParityAttributes()
-            expect(map.semanticDive).toBe('active')
-            expect(map.panelSurfaceMode).toBe('semantic-dive')
-        } finally {
-            navStore.update((s) => ({ ...s, focusedIndex: null }))
-            focusStore.update((s) => ({ ...s, semanticDiveMode: false }))
-        }
-    })
+  it('semantic-dive wins over panel-surface for panelSurfaceMode', () => {
+    focusStore.update((s) => ({ ...s, semanticDiveMode: true }));
+    try {
+      const stores = snapshotStores();
+      const map = computeParityAttributes(
+        stores.nav, stores.journey, stores.focus,
+        stores.search, stores.filters, stores.vp,
+        stores.loadingPhase, stores.demoPhase, stores.graphicsMode
+      );
+      expect(map.semanticDive).toBe('active');
+      expect(map.panelSurfaceMode).toBe('semantic-dive');
+    } finally {
+      focusStore.update((s) => ({ ...s, semanticDiveMode: false }));
+    }
+  });
 
-    it('semantic-dive reports inactive when trailDepth >= 2 without the armed deadline (77f4d771 single-writer)', () => {
-        navStore.update((s) => ({ ...s, focusedIndex: 42 }))
-        focusStore.update((s) => ({ ...s, semanticDiveMode: false }))
-        journeyStore.update((s) => ({ ...s, trailDepth: 2 }))
-        try {
-            const stores = snapshotStores()
-            const map = computeParityAttributes()
-            // 77f4d771 re-scoped 'transitioning' to the _semanticDiveTransitionDeadline
-            // window (single writer) — this sibling twin updated in lockstep
-            // (AGENTS.md symmetric-gate rule). Without an armed window a bare deep
-            // trail shows 'inactive'; the armed-entrance maps to 'transitioning'
-            // (covered by parity-attrs-derivation.test.ts).
-            expect(map.semanticDive).toBe('inactive')
-            expect(map.trailDepth).toBe('2')
-            expect(map.trailState).toBe('active')
-        } finally {
-            navStore.update((s) => ({ ...s, focusedIndex: null }))
-            journeyStore.update((s) => ({ ...s, trailDepth: 0 }))
-        }
-    })
+  it('semantic-dive reports transitioning when trailDepth >= 2 but no active flag', () => {
+    focusStore.update((s) => ({ ...s, semanticDiveMode: false }));
+    journeyStore.update((s) => ({ ...s, trailDepth: 2 }));
+    try {
+      const stores = snapshotStores();
+      const map = computeParityAttributes(
+        stores.nav, stores.journey, stores.focus,
+        stores.search, stores.filters, stores.vp,
+        stores.loadingPhase, stores.demoPhase, stores.graphicsMode
+      );
+      expect(map.semanticDive).toBe('transitioning');
+      expect(map.trailDepth).toBe('2');
+      expect(map.trailState).toBe('active');
+    } finally {
+      journeyStore.update((s) => ({ ...s, trailDepth: 0 }));
+    }
+  });
 
-    it('graph-context reflects inside / focus / search / overview', () => {
-        // Inside phase wins
-        navStore.update((s) => ({ ...s, mode: 'inside' }))
-        let stores = snapshotStores()
-        expect(computeParityAttributes().graphContext).toBe('inside')
+  it('graph-context reflects inside / focus / search / overview', () => {
+    // Inside phase wins
+    navStore.update((s) => ({ ...s, mode: 'inside' }));
+    let stores = snapshotStores();
+    expect(computeParityAttributes(stores.nav, stores.journey, stores.focus, stores.search, stores.filters, stores.vp, stores.loadingPhase, stores.demoPhase, stores.graphicsMode).graphContext).toBe('inside');
 
-        // Focus phase
-        navStore.update((s) => ({ ...s, mode: 'focus', focusedIndex: 42 }))
-        stores = snapshotStores()
-        expect(computeParityAttributes().graphContext).toBe('focus')
+    // Focus phase
+    navStore.update((s) => ({ ...s, mode: 'focus' }));
+    stores = snapshotStores();
+    expect(computeParityAttributes(stores.nav, stores.journey, stores.focus, stores.search, stores.filters, stores.vp, stores.loadingPhase, stores.demoPhase, stores.graphicsMode).graphContext).toBe('focus');
 
-        // Map view wins over mode
-        navStore.update((s) => ({ ...s, mode: 'overview', currentView: 'map' }))
-        stores = snapshotStores()
-        expect(computeParityAttributes().graphContext).toBe('map')
+    // Map view wins over mode
+    navStore.update((s) => ({ ...s, mode: 'overview', currentView: 'map' }));
+    stores = snapshotStores();
+    expect(computeParityAttributes(stores.nav, stores.journey, stores.focus, stores.search, stores.filters, stores.vp, stores.loadingPhase, stores.demoPhase, stores.graphicsMode).graphContext).toBe('map');
 
-        // Back to overview
-        navStore.update((s) => ({ ...s, mode: 'overview', currentView: 'galaxy' }))
-    })
+    // Back to overview
+    navStore.update((s) => ({ ...s, mode: 'overview', currentView: 'galaxy' }));
+  });
 
-    it('strandJourney defaults to idle when strandContinuityPhase is unset', () => {
-        const stores = snapshotStores()
-        const map = computeParityAttributes()
-        expect(map.strandJourney).toBe('idle')
-    })
+  it('strandJourney defaults to idle when strandContinuityPhase is unset', () => {
+    const stores = snapshotStores();
+    const map = computeParityAttributes(
+      stores.nav, stores.journey, stores.focus,
+      stores.search, stores.filters, stores.vp,
+      stores.loadingPhase, stores.demoPhase, stores.graphicsMode
+    );
+    expect(map.strandJourney).toBe('idle');
+  });
 
-    it('strandJourney reflects exploring phase from focus store', () => {
-        focusStore.update((s) => ({ ...s, strandContinuityPhase: 'exploring' }))
-        try {
-            const stores = snapshotStores()
-            const map = computeParityAttributes()
-            expect(map.strandJourney).toBe('exploring')
-        } finally {
-            focusStore.update((s) => ({ ...s, strandContinuityPhase: 'idle' }))
-        }
-    })
+  it('strandJourney reflects exploring phase from focus store', () => {
+    focusStore.update((s) => ({ ...s, strandContinuityPhase: 'exploring' }));
+    try {
+      const stores = snapshotStores();
+      const map = computeParityAttributes(
+        stores.nav, stores.journey, stores.focus,
+        stores.search, stores.filters, stores.vp,
+        stores.loadingPhase, stores.demoPhase, stores.graphicsMode
+      );
+      expect(map.strandJourney).toBe('exploring');
+    } finally {
+      focusStore.update((s) => ({ ...s, strandContinuityPhase: 'idle' }));
+    }
+  });
 
-    it('strandJourney reflects arrived phase from focus store', () => {
-        focusStore.update((s) => ({ ...s, strandContinuityPhase: 'arrived' }))
-        try {
-            const stores = snapshotStores()
-            const map = computeParityAttributes()
-            expect(map.strandJourney).toBe('arrived')
-        } finally {
-            focusStore.update((s) => ({ ...s, strandContinuityPhase: 'idle' }))
-        }
-    })
+  it('strandJourney reflects arrived phase from focus store', () => {
+    focusStore.update((s) => ({ ...s, strandContinuityPhase: 'arrived' }));
+    try {
+      const stores = snapshotStores();
+      const map = computeParityAttributes(
+        stores.nav, stores.journey, stores.focus,
+        stores.search, stores.filters, stores.vp,
+        stores.loadingPhase, stores.demoPhase, stores.graphicsMode
+      );
+      expect(map.strandJourney).toBe('arrived');
+    } finally {
+      focusStore.update((s) => ({ ...s, strandContinuityPhase: 'idle' }));
+    }
+  });
 
-    it('focused-node is null (not "null" string) when no index set', () => {
-        navStore.update((s) => ({ ...s, focusedIndex: null }))
-        const stores = snapshotStores()
-        const map = computeParityAttributes()
-        expect(map.focusedNode).toBeNull()
-    })
+  it('focused-node is null (not "null" string) when no index set', () => {
+    navStore.update((s) => ({ ...s, focusedIndex: null }));
+    const stores = snapshotStores();
+    const map = computeParityAttributes(
+      stores.nav, stores.journey, stores.focus,
+      stores.search, stores.filters, stores.vp,
+      stores.loadingPhase, stores.demoPhase, stores.graphicsMode
+    );
+    expect(map.focusedNode).toBeNull();
+  });
 
-    it('focusTransition mirrors focusStore.transitionMode', () => {
-        const stores = snapshotStores()
-        const initial = computeParityAttributes()
-        expect(initial.focusTransition).toBe('idle')
+  it('focusTransition mirrors focusStore.transitionMode', () => {
+    const stores = snapshotStores();
+    const initial = computeParityAttributes(
+      stores.nav, stores.journey, stores.focus,
+      stores.search, stores.filters, stores.vp,
+      stores.loadingPhase, stores.demoPhase, stores.graphicsMode
+    );
+    expect(initial.focusTransition).toBe('idle');
 
-        focusStore.update((s) => ({ ...s, transitionMode: 'entering' }))
-        try {
-            const after = computeParityAttributes()
-            expect(after.focusTransition).toBe('entering')
-        } finally {
-            focusStore.update((s) => ({ ...s, transitionMode: 'idle' }))
-        }
-    })
+    focusStore.update((s) => ({ ...s, transitionMode: 'entering' }));
+    try {
+      const after = computeParityAttributes(
+        navStore(), journeyStore(), focusStore(),
+        get(searchStore), get(filterState), viewport(),
+        get(loadingPhaseStore), get(demoPhaseStore), get(graphicsModeStore)
+      );
+      expect(after.focusTransition).toBe('entering');
+    } finally {
+      focusStore.update((s) => ({ ...s, transitionMode: 'idle' }));
+    }
+  });
 
-    it('searchStatus mirrors searchStore.status', () => {
-        searchStore.update((s) => ({ ...s, status: 'searching' }))
-        try {
-            const stores = snapshotStores()
-            const map = computeParityAttributes()
-            expect(map.searchStatus).toBe('searching')
-        } finally {
-            searchStore.update((s) => ({ ...s, status: 'idle' }))
-        }
-    })
+  it('searchStatus mirrors searchStore.status', () => {
+    searchStore.update((s) => ({ ...s, status: 'searching' }));
+    try {
+      const stores = snapshotStores();
+      const map = computeParityAttributes(
+        stores.nav, stores.journey, stores.focus,
+        stores.search, stores.filters, stores.vp,
+        stores.loadingPhase, stores.demoPhase, stores.graphicsMode
+      );
+      expect(map.searchStatus).toBe('searching');
+    } finally {
+      searchStore.update((s) => ({ ...s, status: 'idle' }));
+    }
+  });
 
-    it('cameraSlack mirrors cameraStore.orbitSlack.phase', () => {
-        cameraStore.update((s) => ({ ...s, orbitSlack: { ...s.orbitSlack, phase: 'active' } }))
-        try {
-            const stores = snapshotStores()
-            // Pass camera state explicitly as 10th arg
-            const map = computeParityAttributes()
-            expect(map.cameraSlack).toBe('active')
-        } finally {
-            cameraStore.update((s) => ({ ...s, orbitSlack: { ...s.orbitSlack, phase: 'idle' } }))
-        }
-    })
-})
+  it('cameraSlack mirrors cameraStore.orbitSlack.phase', () => {
+    cameraStore.update((s) => ({ ...s, orbitSlack: { ...s.orbitSlack, phase: 'active' } }));
+    try {
+      const stores = snapshotStores();
+      // Pass camera state explicitly as 10th arg
+      const map = computeParityAttributes(
+        stores.nav, stores.journey, stores.focus,
+        stores.search, stores.filters, stores.vp,
+        stores.loadingPhase, stores.demoPhase, stores.graphicsMode,
+        get(cameraStore)
+      );
+      expect(map.cameraSlack).toBe('active');
+    } finally {
+      cameraStore.update((s) => ({ ...s, orbitSlack: { ...s.orbitSlack, phase: 'idle' } }));
+    }
+  });
+});
 
 describe('applyParityAttributes', () => {
-    it('writes each non-null key to body.dataset', () => {
-        const map: Record<string, string | null> = {
-            navMode: 'overview',
-            navSurface: 'idle',
-            panelSurface: 'idle',
-            focusedNode: null,
-            semanticDive: 'inactive',
-            trailDepth: '0'
-        }
-        applyParityAttributes(map)
-        const ds = readBodyDataset()
-        expect(ds.navMode).toBe('overview')
-        expect(ds.navSurface).toBe('idle')
-        expect(ds.panelSurface).toBe('idle')
-        expect(ds.semanticDive).toBe('inactive')
-        expect(ds.trailDepth).toBe('0')
-        expect(ds.focusedNode).toBeUndefined()
-    })
+  it('writes each non-null key to body.dataset', () => {
+    const map: Record<string, string | null> = {
+      navMode: 'overview',
+      navSurface: 'idle',
+      panelSurface: 'idle',
+      focusedNode: null,
+      semanticDive: 'inactive',
+      trailDepth: '0'
+    };
+    applyParityAttributes(map);
+    const ds = readBodyDataset();
+    expect(ds.navMode).toBe('overview');
+    expect(ds.navSurface).toBe('idle');
+    expect(ds.panelSurface).toBe('idle');
+    expect(ds.semanticDive).toBe('inactive');
+    expect(ds.trailDepth).toBe('0');
+    expect(ds.focusedNode).toBeUndefined();
+  });
 
-    it('removes keys when the new value is null', () => {
-        setBodyDataset({ focusedNode: '7', navMode: 'overview' })
-        applyParityAttributes({ focusedNode: null, navMode: 'focus' })
-        const ds = readBodyDataset()
-        expect(ds.focusedNode).toBeUndefined()
-        expect(ds.navMode).toBe('focus')
-    })
-})
+  it('removes keys when the new value is null', () => {
+    setBodyDataset({ focusedNode: '7', navMode: 'overview' });
+    applyParityAttributes({ focusedNode: null, navMode: 'focus' });
+    const ds = readBodyDataset();
+    expect(ds.focusedNode).toBeUndefined();
+    expect(ds.navMode).toBe('focus');
+  });
+});
 
 describe('installParityAttributeSync', () => {
-    it('writes the initial parity snapshot to body on install', () => {
-        const cleanup = installParityAttributeSync()
-        try {
-            const ds = readBodyDataset()
-            expect(ds.testReady).toBe('true')
-            expect(ds.navMode).toBe('overview')
-            expect(ds.navSurface).toBe('idle')
-            expect(ds.semanticDive).toBe('inactive')
-            expect(ds.journeyCompassPhase).toBe('idle')
-        } finally {
-            cleanup()
-        }
-    })
+  it('writes the initial parity snapshot to body on install', () => {
+    const cleanup = installParityAttributeSync();
+    try {
+      const ds = readBodyDataset();
+      expect(ds.testReady).toBe('true');
+      expect(ds.navMode).toBe('overview');
+      expect(ds.navSurface).toBe('idle');
+      expect(ds.semanticDive).toBe('inactive');
+      expect(ds.journeyCompassPhase).toBe('idle');
+    } finally {
+      cleanup();
+    }
+  });
 
-    it('readParityAttributesFromBody returns the live DOM snapshot', () => {
-        const cleanup = installParityAttributeSync()
-        try {
-            const live = readParityAttributesFromBody()
-            expect(live.testReady).toBe('true')
-            expect(live.navMode).toBe('overview')
-        } finally {
-            cleanup()
-        }
-    })
-})
+  it('readParityAttributesFromBody returns the live DOM snapshot', () => {
+    const cleanup = installParityAttributeSync();
+    try {
+      const live = readParityAttributesFromBody();
+      expect(live.testReady).toBe('true');
+      expect(live.navMode).toBe('overview');
+    } finally {
+      cleanup();
+    }
+  });
+});

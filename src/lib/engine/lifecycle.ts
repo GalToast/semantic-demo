@@ -7,6 +7,7 @@
  *
  * Bug fixes over the bridge:
  *   FIX #1 (resize): Added missing resizePostProcessing() call
+ *   FIX #2 (destroy): Added missing disposeTooltipEventBusSubscriptions() call
  *
  * Public API:
  *   initEngine, resizeEngine, destroyEngine, getEngineStatus
@@ -28,119 +29,98 @@ export interface EngineCallbacks {
 
 // ── Imports ──────────────────────────────────────────────────────────────────
 
+import { get } from 'svelte/store'
+import {
+    isDataReady,
+    businessRecords,
+    positionBuffer,
+    clustersBuffer,
+    leadEnrichment,
+    pointIndexByLeadId
+} from '@lib/data-store'
 import { appState } from '@lib/state/app.svelte'
 import { setEngineStatus, getEngineStatus as _getEngineStatus } from '@lib/stores/engine.svelte.ts'
 import type { EngineStatus } from '@lib/stores/engine.svelte.ts'
 
 // Engine sub-modules
-import {
-    initThreeJS,
-    invalidateInitGeneration,
-    startRenderLoop,
-    onWindowResize,
-    cancelAnimate,
-    updateCameraViewportOffset,
-    createPoints,
-    disposeInteractionVisuals,
-    invalidateRestoreMachine
-} from '@lib/engine/three-engine'
-// M2 (W47): disposeHeroAnimation is not re-exported through the three-engine
-// barrel, so import it directly. disposeInteractionVisuals() also calls it
-// internally, but we call it explicitly to mirror deinit() and cancel the
-// corridor-glow timers deterministically.
-import { disposeHeroAnimation } from '@lib/engine/three-search-animations'
-import { disposeAudio } from '@lib/audio/audio-scape'
-import { cancelOverviewCameraAnimation } from '@lib/demo/camera'
-import { cancelDemo, cancelAllDemoTimers, resetDemo, isDemoActive } from '@lib/stores/demo.svelte.ts'
-import { disposeEventListeners } from '@lib/ui/global-bindings'
-import { destroyMap } from '@lib/engine/map-state'
-import { createMycelium, MYCELIUM_INITIAL_LOD_SEGMENTS_PER_PAIR } from '@lib/engine/thread-manager'
-import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
+import { initThreeJS, onWindowResize, cancelAnimate, updateCameraViewportOffset } from '@lib/engine/three-engine'
+import { createMycelium } from '@lib/engine/thread-manager'
 // Dynamic import: postprocessing is code-split to save ~150-200 kB
 let _ppResize: ((w: number, h: number) => void) | null = null
-// INP deferral state: at most one deferred postprocessing load may be pending;
-// every resize while pending just updates the dims the load will apply.
-let _ppLoadPending = false
-let _ppPendingDims: { width: number; height: number } | null = null
 
 // Interaction & UI
 import {
     ensureCanvasNodeInteractionBindings,
     disposeCanvasNodeInteractionBindings
 } from '@lib/journey/canvas-interaction'
-import { destroyCanvasHoverPreview } from '@lib/journey/canvas-hover-preview'
 import { initTooltipEventBusSubscriptions, disposeTooltipEventBusSubscriptions } from '@lib/ui/tooltip'
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
-// Semantic threads are loaded in the heavy idle path to keep this chunk out of
-// the first-paint bundle.
+// Semantic threads
+import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads'
 
 // Event bus
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 
-// Data readiness
-import { isDataReady, setDataLoadError } from '@lib/data-store'
-import { debugWarn } from '@lib/utils/debug'
-import { debugLog, debugError } from '@lib/utils/debug'
-
-// ── Legacy-access helpers ────────────────────────────────────────────────────
-// Consolidate `window as unknown as Record<string, unknown>` casts that appear
-// at multiple sites for __THREE_APP__ exposure.
-
-function getLegacyWindow(): Record<string, unknown> {
-    return window as unknown as Record<string, unknown>
-}
-
 // ── Module-scoped State ──────────────────────────────────────────────────────
 
 let _eventUnsubs: Array<() => void> = []
+let _sceneReadyHandler: (() => void) | null = null
 let _canvasInteractionBound = false
 let _destroyed = false
-let _dataReadyUnsub: (() => void) | null = null
-// W53 M5: track the dev-only simulateWebGLContextLoss restore timer so it can
-// be cleared on engine teardown before it fires against a disposed context.
-let _webglContextLossTimer: ReturnType<typeof setTimeout> | null = null
-// w20 F2: track the engine-init safety-valve timer so it can be cleared on
-// teardown before it fires against a destroyed engine (f543c062 regression).
-let _engineInitSafetyTimer: ReturnType<typeof setTimeout> | null = null
 
-// Tracks all module-scoped setTimeout timers for centralized disposal on
-// destroyEngine(). Replaces 3 eslint-disable --no-restricted-syntax suppressions.
-const engineLifecycleReg = new DisposableRegistry({ label: 'engine-lifecycle' })
-
-// ── Data readiness subscription ─────────────────────────────────────────────
+// ── Data Sync (temporary — mirrors adapters/data-bridge.ts) ──────────────────
 
 /**
- * When data arrives after the engine has already initialized (e.g. user
- * clicked Enter before the data worker finished), create the points and
- * mycelium geometry that were skipped during the earlier init pass.
+ * Sync Svelte data stores into the legacy state singleton so the Three.js
+ * engine can consume them during init.
+ *
+ * Polls for data readiness with a 15-second ceiling.
+ * Temporarily retained as a bridge call during migration.
  */
-function _onDataReady(): void {
-    if (_getEngineStatus() !== 'ready') return
-    if (!appState.renderer) return
-    if (appState.pointsMesh) return
+async function syncDataToLegacyState(): Promise<void> {
+    if (get(isDataReady)) {
+        _syncDataFields()
+        return
+    }
 
-    try {
-        createPoints()
-        if (appState.points?.length && appState.nodePositions?.length) {
-            void createMycelium({ segmentsPerPair: MYCELIUM_INITIAL_LOD_SEGMENTS_PER_PAIR })
+    const start = Date.now()
+    while (!get(isDataReady) && Date.now() - start < 15_000) {
+        await new Promise((r) => setTimeout(r, 200))
+    }
+
+    if (!get(isDataReady)) {
+        console.warn('[engine/lifecycle] syncDataToLegacyState: data not ready after 15s, proceeding anyway')
+    }
+
+    _syncDataFields()
+}
+
+function _syncDataFields(): void {
+    const records = get(businessRecords)
+    const posBuf = get(positionBuffer)
+    const clustBuf = get(clustersBuffer)
+    const enrichment = get(leadEnrichment)
+    const indexMap = get(pointIndexByLeadId)
+
+    appState.withMutation(() => {
+        if (records.length > 0) {
+            appState.points = records as unknown as typeof appState.points
         }
-    } catch (err) {
-        debugWarn('[engine/lifecycle] Late geometry creation failed:', err)
+        if (posBuf) {
+            appState.rawPositionsBuffer = posBuf
+        }
+        if (clustBuf) {
+            appState.rawClustersBuffer = clustBuf as unknown as typeof appState.rawClustersBuffer
+        }
+    })
+
+    if (enrichment) {
+        ;(appState as unknown as Record<string, unknown>).leadEnrichment = enrichment
+    }
+    if (indexMap) {
+        ;(appState as unknown as Record<string, unknown>).pointIndexByLeadId = indexMap
     }
 }
-
-// Subscribe once at module load; the guard inside _onDataReady makes it safe
-// to fire before or after initEngine() runs. Re-armed by initEngine() after
-// destroyEngine() nulls it (render sweep 2026-08-07) so destroy→re-init keeps
-// late-geometry creation alive.
-function ensureDataReadySubscription(): void {
-    if (_dataReadyUnsub) return
-    _dataReadyUnsub = isDataReady.subscribe((ready) => {
-        if (ready) _onDataReady()
-    })
-}
-ensureDataReadySubscription()
 
 // ── Event Bridge ─────────────────────────────────────────────────────────────
 
@@ -153,12 +133,13 @@ function bindEventBridge(callbacks: EngineCallbacks): void {
     try {
         _eventUnsubs.push(
             subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
-                // The only emitter (camera-choreography/cursor.ts focusOnNode)
-                // always carries a finite index. The legacy point-shape fallback
-                // was removed 2026-08-30: records never carry x/y/z (AGENTS.md
-                // invariant) so it could never match, and undefined===undefined
-                // would have returned index 0 — a silent misfocus had it ever run.
-                const index = payload.index as number | undefined
+                let index = payload.index as number | undefined
+                if (!Number.isFinite(index)) {
+                    const point = payload.point as { x: number; y: number; z: number } | undefined
+                    if (point && appState.points) {
+                        index = appState.points.findIndex((p) => p.x === point.x && p.y === point.y && p.z === point.z)
+                    }
+                }
                 if (Number.isFinite(index) && index! >= 0) {
                     callbacks.onNodePicked?.(index!)
                 }
@@ -183,17 +164,13 @@ function bindEventBridge(callbacks: EngineCallbacks): void {
             })
         )
     } catch (busErr) {
-        debugWarn('[engine/lifecycle] Event bus subscription failed:', busErr)
+        console.warn('[engine/lifecycle] Event bus subscription failed:', busErr)
     }
 
-    // lifecycle no longer self-listens for the 'scene-ready' window event. The
-    // direct `callbacks.onLoadingPhase?.('launch', 1)` call at the end of
-    // initEngineHeavy is the single in-process scene-ready signal (Canvas.svelte
-    // reads it via the callbacks object, not the window event). The window event
-    // is still dispatched for legacy/external window-level listeners only;
-    // converting it back into onLoadingPhase here caused a duplicate 'launch'
-    // fire (two "Canvas: Scene ready" logs at the same ms) and a double
-    // signalSceneReady() — which re-triggers DemoChoreography attemptStart.
+    _sceneReadyHandler = (): void => {
+        callbacks.onLoadingPhase?.('launch', 1)
+    }
+    window.addEventListener('scene-ready', _sceneReadyHandler as EventListener)
 }
 
 /** Tear down all event-bus and DOM event subscriptions. */
@@ -201,11 +178,16 @@ function unbindEventBridge(): void {
     for (const unsub of _eventUnsubs) {
         try {
             unsub()
-        } catch (error) {
-            debugWarn('[engine/lifecycle] Best-effort event unsubscribe failed:', error)
+        } catch (_) {
+            /* best-effort */
         }
     }
     _eventUnsubs = []
+
+    if (_sceneReadyHandler) {
+        window.removeEventListener('scene-ready', _sceneReadyHandler as EventListener)
+        _sceneReadyHandler = null
+    }
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -222,28 +204,16 @@ function unbindEventBridge(): void {
 export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCallbacks = {}): Promise<void> {
     const currentStatus = _getEngineStatus()
     if (currentStatus === 'ready' || currentStatus === 'loading') {
-        debugWarn('[engine/lifecycle] initEngine: already initialized, ignoring')
+        console.warn('[engine/lifecycle] initEngine: already initialized, ignoring')
         return
     }
 
     _destroyed = false
     setEngineStatus('loading')
 
-    // Re-arm the data-ready subscription if destroyEngine() cleared it, so
-    // late-game geometry creation survives destroy→re-init (render sweep
-    // 2026-08-07 P2-2).
-    ensureDataReadySubscription()
-
-    // T3-9: Clear any stale event-bus subscriptions from a previous init
-    // so that calling initEngine() twice (without destroy in between) does
-    // not register duplicate 'scene-ready' listeners.
-    unbindEventBridge()
-
     try {
-        const _perf = typeof performance?.mark === 'function'
-        if (_perf) performance.mark('engine-init-start')
-
-        if (_perf) performance.mark('engine-init-sync-done')
+        // 1. Sync Svelte data stores into the legacy state singleton
+        await syncDataToLegacyState()
 
         // 2. Ensure #canvas-container exists for initThreeJS()
         const parentEl = canvas.parentElement
@@ -256,165 +226,26 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
             container.appendChild(canvas)
         }
 
-        // 3. Schedule heavy GPU init after first paint (off critical path)
-        const heavyInit = new Promise<void>((resolve) => {
-            const run = (): void => {
-                initEngineHeavy(callbacks).finally(resolve)
-            }
-            if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-                window.requestIdleCallback(run, { timeout: 5000 })
-            } else {
-                // Fallback for Node/SSR or browsers without requestIdleCallback
-                Promise.resolve().then(run)
-            }
-        })
-        await heavyInit
-    } catch (err) {
-        if (typeof performance?.mark === 'function') performance.mark('engine-init-failed')
-        debugError('[engine/lifecycle] initEngine: setup failed', err)
-        unbindEventBridge()
-        setEngineStatus('degraded')
-        callbacks.onGraphicsStateChange?.('fallback')
-    }
-}
-
-/**
- * Yield to the browser between heavy init phases so Total Blocking Time
- * stays under 200 ms. Each initThreeJS sub-step (initThreeJS itself, mycelium
- * geometry, interaction bindings, semantic-thread attach) can spend 200-600 ms
- * on a cold load; without yields they fuse into a single 1-2 s long task that
- * Lighthouse flags as TBT. We use `requestIdleCallback` with a small timeout
- * (50 ms) so the yield returns quickly on busy frames and waits for an idle
- * slot when available. A `setTimeout(0)` fallback covers environments without
- * requestIdleCallback (tests, SSR).
- *
- * Why per-phase, not one big yield: the W44 baseline showed that the
- * `lifecycle-*.js` chunk is dominated by the *combined* time of initThreeJS +
- * createPoints + createMycelium + initSemanticLens + initSemanticManifold.
- * Splitting into 4 yields (init, geometry, interaction, semantic) cuts the
- * longest-task contribution in half on a typical machine.
- */
-function yieldToBrowser(): Promise<void> {
-    if (typeof window === 'undefined') return Promise.resolve()
-    // Starvation-proof yield (2026-08-26, boot-arm-stall class): rIC's
-    // {timeout:50} fires only when the idle loop runs — under GPU saturation
-    // the main thread can delay it past 75s (measured: boot stuck at
-    // 'three-done' with the render loop never arming, frozen overlay).
-    // Race rIC against an absolute 2s setTimeout cap so init always proceeds.
-    return new Promise<void>((resolve) => {
-        let done = false
-        const finish = () => {
-            if (done) return
-            done = true
-            clearTimeout(cap)
-            resolve()
-        }
-        const cap = window.setTimeout(finish, 2000)
-        if ('requestIdleCallback' in window) {
-            window.requestIdleCallback(finish, { timeout: 50 })
-        } else {
-            engineLifecycleReg.schedule(0, finish)
-        }
-    })
-}
-
-function engineInitStillActive(phase: string): boolean {
-    const status = _getEngineStatus()
-    if (!_destroyed && (status === 'loading' || status === 'ready')) return true
-    debugWarn(`[engine/lifecycle] initEngineHeavy: aborted after ${phase}`)
-    return false
-}
-
-/** Heavy GPU + geometry init — runs in requestIdleCallback after first paint. */
-async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
-    // task-145 breadcrumbs: every milestone appends to a window-visible trace
-    // so any future stall self-reports its last completed phase (probes and
-    // the safety valve read this instead of guessing). Fully guarded —
-    // diagnostics must never throw.
-    const initTrace = (phase: string): void => {
-        try {
-            const w = window as unknown as { __ENGINE_INIT_TRACE__?: Array<{ p: string; t: number }> }
-            ;(w.__ENGINE_INIT_TRACE__ ??= []).push({ p: phase, t: Math.round(performance.now()) })
-        } catch {
-            /* diagnostics only */
-        }
-    }
-    const dumpTrace = (why: string): void => {
-        try {
-            const w = window as unknown as { __ENGINE_INIT_TRACE__?: Array<{ p: string; t: number }> }
-            debugError(`[engine/lifecycle] init trace (${why}):`, JSON.stringify(w.__ENGINE_INIT_TRACE__ ?? []))
-        } catch {
-            /* diagnostics only */
-        }
-    }
-    initTrace('heavy-start')
-
-    // Guard: if engine was destroyed or degraded before we ran, abort
-    const currentStatus = _getEngineStatus()
-    if (_destroyed || currentStatus === 'degraded') {
-        debugWarn('[engine/lifecycle] initEngineHeavy: engine not in valid init state, aborting')
-        return
-    }
-
-    // ── Engine init safety valve (w20 F2) ─────────────────────────────────
-    // Install a timeout that fires if GPU init hangs or stalls silently.
-    // The data-load overlay already hid (phase='launch' from initData), so
-    // without this valve the user sees a dark canvas with zero feedback.
-    if (_engineInitSafetyTimer !== null) {
-        clearTimeout(_engineInitSafetyTimer)
-    }
-    _engineInitSafetyTimer = engineLifecycleReg.schedule(8_000, () => {
-        if (_getEngineStatus() !== 'loading') return // already resolved
-        debugError('[engine/lifecycle] Engine init safety valve: GPU init timed out after 8s.')
-        dumpTrace('safety-valve-timeout')
-        // #187 (2026-08-25): when the engine boots invisibly behind the mobile
-        // 2D placeholder (sessionStorage-persisted engineReady reload), the
-        // placeholder IS the user feedback — stamping "graphics hardware may
-        // not be supported" over a working preview is wrong and contradicts
-        // this valve's own rationale ("dark canvas with zero feedback").
-        // Degrade silently on that surface; diagnostics (log + trace + status
-        // machine + fallback graphics state) are unchanged.
-        let onPlaceholderSurface = false
-        try {
-            onPlaceholderSurface = document.body?.dataset?.renderKind === 'placeholder2d'
-        } catch {
-            /* no DOM — keep the loud error path */
-        }
-        if (!onPlaceholderSurface) {
-            setDataLoadError('Scene initialization timed out. Your graphics hardware may not be supported.')
-        }
-        setEngineStatus('degraded')
-        callbacks.onGraphicsStateChange?.('fallback')
-        _engineInitSafetyTimer = null
-    })
-
-    try {
-        const _perf = typeof performance?.mark === 'function'
-        if (_perf) performance.mark('engine-init-gpu-start')
-        initTrace('three-start')
-        // 3b. Initialise the Three.js scene (renderer + scene + camera + lights)
-        // This is the largest single CPU+GPU step on cold load (~300-500 ms).
-        // W8: initThreeJS() is now async and yields internally to break the
-        // long task into sub-200ms chunks.
-        const success = await initThreeJS()
-        initTrace('three-done')
+        // 3. Initialise the Three.js scene
+        const success = initThreeJS()
         if (!success) {
-            if (_engineInitSafetyTimer !== null) {
-                clearTimeout(_engineInitSafetyTimer)
-                _engineInitSafetyTimer = null
-            }
-            initTrace('three-failed')
             setEngineStatus('degraded')
             callbacks.onGraphicsStateChange?.('fallback')
             return
         }
 
-        // W5-T1b: yield between initThreeJS and the geometry / data sync steps
-        // so the long task breaks into multiple sub-200 ms chunks.
-        await yieldToBrowser()
-        if (!engineInitStillActive('three-init-yield')) return
+        // 4. Sync geometry from legacy state to Svelte appState
+        const legacyState = appState as unknown as Record<string, unknown>
+        const nodePositions = legacyState.nodePositions
+        const targetPositions = legacyState.targetPositions
+        const originalPositions = legacyState.originalPositions
+        if (Array.isArray(nodePositions)) appState.nodePositions = nodePositions as typeof appState.nodePositions
+        if (Array.isArray(targetPositions))
+            appState.targetPositions = targetPositions as typeof appState.targetPositions
+        if (Array.isArray(originalPositions))
+            appState.originalPositions = originalPositions as typeof appState.originalPositions
 
-        // 4. Set canvas CSS sizing
+        // 5. Set canvas CSS sizing
         if (appState.renderer?.domElement) {
             const liveCanvas = appState.renderer.domElement
             liveCanvas.style.width = '100%'
@@ -422,59 +253,33 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             liveCanvas.style.display = 'block'
         }
 
-        // W5-T1b: yield between canvas CSS sizing and interaction bindings
-        // so the long task breaks into multiple sub-200 ms chunks.
-        await yieldToBrowser()
-        if (!engineInitStillActive('geometry-yield')) return
+        // 6. Create mycelium thread geometry
+        if (appState.points?.length && appState.nodePositions?.length) {
+            try {
+                createMycelium()
+            } catch (threadErr) {
+                console.warn('[engine/lifecycle] mycelium creation failed:', threadErr)
+            }
+        }
 
-        // 5. Wire canvas click/hover interaction bindings
+        // 7. Wire canvas click/hover interaction bindings
         try {
             ensureCanvasNodeInteractionBindings()
             _canvasInteractionBound = true
-            initTrace('interactions-bound')
         } catch (interactionErr) {
-            if (_engineInitSafetyTimer !== null) {
-                clearTimeout(_engineInitSafetyTimer)
-                _engineInitSafetyTimer = null
-            }
-            debugWarn('[engine/lifecycle] Canvas interaction binding failed:', interactionErr)
+            console.warn('[engine/lifecycle] Canvas interaction binding failed:', interactionErr)
             setEngineStatus('degraded')
             callbacks.onGraphicsStateChange?.('fallback')
             return
         }
 
-        // 7. Expose engine handle for tests and visual audit tools
+        // 8. Expose engine handle for tests and visual audit tools
         if (typeof window !== 'undefined') {
-            const w = getLegacyWindow()
+            const w = window as unknown as Record<string, unknown>
             w.__THREE_APP__ = {
                 renderer: appState.renderer,
                 scene: appState.scene,
-                camera: appState.camera,
-                simulateWebGLContextLoss: () => {
-                    const canvas = document.querySelector('canvas')
-                    if (!canvas) {
-                        debugWarn('[simulateWebGLContextLoss] No canvas found')
-                        return false
-                    }
-                    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
-                    if (!gl) {
-                        debugWarn('[simulateWebGLContextLoss] WebGL context not found')
-                        return false
-                    }
-                    const ext = gl.getExtension('WEBGL_lose_context')
-                    if (!ext) {
-                        debugWarn('[simulateWebGLContextLoss] WEBGL_lose_context extension not available')
-                        return false
-                    }
-                    debugLog('[simulateWebGLContextLoss] Triggering artificial context loss')
-                    ext.loseContext()
-                    _webglContextLossTimer = engineLifecycleReg.schedule(500, () => {
-                        debugLog('[simulateWebGLContextLoss] Triggering artificial context restoration')
-                        ext.restoreContext()
-                        _webglContextLossTimer = null
-                    })
-                    return true
-                }
+                camera: (appState as unknown as Record<string, unknown>).camera
             }
             w.__LEGACY_APP_STATE__ = appState
             if (typeof w.__refreshTestCompatState__ === 'function') {
@@ -482,68 +287,31 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             }
         }
 
-        // W5-T1b: yield before semantic-thread dynamic import (the import itself
-        // resolves the semantic-threads module + its .dat worker; we want this
-        // off the main task even though it's already a separate chunk).
-        await yieldToBrowser()
-        if (!engineInitStillActive('semantic-thread-yield')) return
-
-        // 8. Attach legacy state to semantic threads (thread loading is deferred to
-        // the deferred-hydration phase in ui/loading.ts to avoid blocking startup).
-        const semanticThreads = await import('@lib/engine/semantic-threads')
-        semanticThreads.attachLegacyState(appState)
-        initTrace('semantic-attached')
-        semanticThreads.loadSemanticThreads({ reason: 'lifecycle-init' }).catch((err: unknown) => {
-            debugWarn('[engine/lifecycle] semantic-thread load failed:', err)
+        // 9. Attach legacy state to semantic threads + kick off background load
+        attachLegacyState(appState as unknown as Record<string, unknown>)
+        loadSemanticThreads({ reason: 'lifecycle-init' }).catch((err: unknown) => {
+            console.warn('[engine/lifecycle] Semantic threads background load failed:', err)
         })
 
-        // 9. Subscribe to the legacy event bus
+        // 10. Subscribe to the legacy event bus
         bindEventBridge(callbacks)
 
-        // 9a. Subscribe to tooltip hide requests
+        // 11. Wire tooltip event-bus subscriptions
         initTooltipEventBusSubscriptions()
 
-        // 10. Publish readiness before the first GPU render. The initial shader
-        // compile may block headless/software WebGL, so the first frame is
-        // scheduled only after the Svelte scene-ready callback has run.
+        // 12. Start the animation loop
+        // _animate() is started internally by initThreeJS on success
 
-        // 12. Mark ready
-        initTrace('ready')
+        // 13. Mark ready
         setEngineStatus('ready')
-
-        // Notify Canvas.svelte (and other consumers) that the scene is ready.
-        //     The direct onLoadingPhase('launch') call below is the SINGLE source
-        //     of the in-process signal — lifecycle no longer self-listens for the
-        //     'scene-ready' window event (that caused a duplicate 'launch' fire
-        //     and double signalSceneReady()). The orphaned window dispatch was
-        //     removed; zero listeners exist repo-wide.
-        if (typeof performance?.mark === 'function') {
-            performance.mark('engine-init-ready')
-            try {
-                performance.measure('engine-init-total', 'engine-init-start', 'engine-init-ready')
-                performance.measure('engine-init-gpu', 'engine-init-gpu-start', 'engine-init-ready')
-            } catch (error) {
-                debugWarn('[engine/lifecycle] performance marks absent (SSR or pre-init):', error)
-            }
-        }
-        if (_engineInitSafetyTimer !== null) {
-            clearTimeout(_engineInitSafetyTimer)
-            _engineInitSafetyTimer = null
-        }
-        callbacks.onLoadingPhase?.('launch', 1)
-        startRenderLoop()
     } catch (err) {
-        if (_engineInitSafetyTimer !== null) {
-            clearTimeout(_engineInitSafetyTimer)
-            _engineInitSafetyTimer = null
-        }
-        if (typeof performance?.mark === 'function') performance.mark('engine-init-failed')
-        debugError('[engine/lifecycle] initEngineHeavy: initialization failed', err)
+        console.error('[engine/lifecycle] initEngine: initialization failed', err)
         unbindEventBridge()
         setEngineStatus('degraded')
         callbacks.onGraphicsStateChange?.('fallback')
     }
 }
+
 /**
  * Resize the engine to match new dimensions.
  *
@@ -564,40 +332,10 @@ export function resizeEngine(width: number, height: number): void {
     // FIX #1: Resize postprocessing composer (was missing in bridge resize)
     // Lazy-load to keep postprocessing out of the main chunk.
     if (!_ppResize) {
-        // Convert a lazy postprocessing-chunk load failure (transient network / broken
-        // build) into a logged warning so resizeEngine never converts the unhandled
-        // promise rejection into a page crash. The next resizeEngine call will
-        // retry the dynamic import once the chunk is available.
-        //
-        // INP campaign (2026-08-24): this first-resize eval lands INSIDE the
-        // post-tap interaction window (82KB chunk — visible slice of the
-        // ~880ms sampled module-eval blob, see tmp/inp-attribution.md).
-        // Defer it past the window via requestIdleCallback (setTimeout
-        // fallback for jsdom); pending dimensions are applied when the
-        // module lands, so nothing is lost — effects appear ~a frame later.
-        const loadAndApply = (): void => {
-            _ppLoadPending = false
-            const dims = _ppPendingDims ?? { width, height }
-            import('@lib/engine/three-postprocessing')
-                .then((m) => {
-                    _ppResize = m.resizePostProcessing
-                    _ppResize?.(dims.width, dims.height)
-                })
-                .catch((e: unknown) => {
-                    debugWarn('[lifecycle] postprocessing lazy-load failed during resize:', e)
-                })
-        }
-        // Single-flight: coalesce overlapping resizes while the 82KB chunk is
-        // deferred — one load, applying the LATEST dims.
-        _ppPendingDims = { width, height }
-        if (!_ppLoadPending) {
-            _ppLoadPending = true
-            if (typeof requestIdleCallback === 'function') {
-                requestIdleCallback(() => loadAndApply(), { timeout: 500 })
-            } else {
-                setTimeout(loadAndApply, 120)
-            }
-        }
+        import('@lib/engine/three-postprocessing').then((m) => {
+            _ppResize = m.resizePostProcessing
+            _ppResize?.(width, height)
+        })
     } else {
         _ppResize(width, height)
     }
@@ -605,187 +343,45 @@ export function resizeEngine(width: number, height: number): void {
 
 /**
  * Destroy the engine and release all resources.
+ *
+ * FIX #2: Calls disposeTooltipEventBusSubscriptions() which was missing
+ * in the bridge destroy.
  */
 export function destroyEngine(): void {
     if (_destroyed) return
     _destroyed = true
 
-    // Invalidate any init that is still awaiting scene construction before
-    // cancelAnimate clears the engine-owned handles. Otherwise a late scene
-    // build can publish an orphan renderer after this teardown completes.
-    invalidateInitGeneration()
-
-    // 0. Clear any pending dev-only WebGL context-loss restore timer so its
-    //    callback cannot run against a disposed context (W53 M5).
-    if (_webglContextLossTimer !== null) {
-        clearTimeout(_webglContextLossTimer)
-        _webglContextLossTimer = null
-    }
-
-    // w20 F2: clear the engine-init safety-valve timer so it cannot fire
-    // against a destroyed engine (f543c062 regression guard).
-    if (_engineInitSafetyTimer !== null) {
-        clearTimeout(_engineInitSafetyTimer)
-        _engineInitSafetyTimer = null
-    }
-
-    // 0a. Dispose all module-scoped timers tracked by the lifecycle registry
-    engineLifecycleReg.disposeAll()
-    // Re-arm immediately: engine remounts reuse this singleton registry and
-    // schedule() again (dispose-then-schedule is the documented reuse pattern;
-    // the DEV build otherwise warns 'Adding disposable after disposeAll').
-    engineLifecycleReg.rearm()
-
     // 1. Cancel the animation loop
     cancelAnimate()
 
-    // 1a. P1-1: invalidate restore retry machine so a pending backoff timer
-    //     cannot fire 1-3s after teardown and resurrect the RAF loop against
-    //     a destroyed engine (zombie-loop class F4).
-    invalidateRestoreMachine()
-
     // 2. Unbind event bridge
     unbindEventBridge()
-
-    // 2a. Dispose tooltip event bus subscriptions
-    disposeTooltipEventBusSubscriptions()
-
-    // 2b. Unsubscribe from data readiness
-    _dataReadyUnsub?.()
-    _dataReadyUnsub = null
 
     // 3. Remove canvas interaction bindings
     if (_canvasInteractionBound) {
         try {
             disposeCanvasNodeInteractionBindings()
-        } catch (error) {
-            debugWarn('[engine/lifecycle] Best-effort canvas interaction dispose failed:', error)
+        } catch (_) {
+            /* best-effort */
         }
         _canvasInteractionBound = false
     }
 
-    // 3a. Tear down canvas hover preview (fixes listener leak HIGH-1)
+    // FIX #2: Dispose tooltip event-bus subscriptions (was missing in bridge)
     try {
-        destroyCanvasHoverPreview()
-    } catch (error) {
-        debugWarn('[engine/lifecycle] Best-effort canvas hover preview dispose failed:', error)
-    }
-
-    // FIX #3: Dispose Leaflet Map state recursively (was missing in bridge)
-    try {
-        destroyMap()
-    } catch (error) {
-        debugWarn('[engine/lifecycle] Best-effort Leaflet map dispose failed:', error)
+        disposeTooltipEventBusSubscriptions()
+    } catch (_) {
+        /* best-effort */
     }
 
     // 4. Clear engine handle from window
     if (typeof window !== 'undefined') {
-        const w = getLegacyWindow()
+        const w = window as unknown as Record<string, unknown>
         w.__THREE_APP__ = null
     }
 
-    // 4b. Dispose interaction visuals + search hero animation (mirrors the
-    //     now-dead three-engine-core deinit() teardown, W47 M2). Called BEFORE
-    //     the appState null-out below so the THREE objects are still referenced
-    //     while being disposed.
-    try {
-        disposeInteractionVisuals()
-    } catch (error) {
-        debugWarn('[engine/lifecycle] interaction visuals dispose failed:', error)
-    }
-    // Corridor/anchor glow teardown (disposeCorridorGlow) is covered by
-    // disposeInteractionVisuals() above — it is NOT named directly here, so
-    // keep the call above: dropping it would silently leak corridor glow.
-    try {
-        disposeHeroAnimation()
-    } catch (error) {
-        debugWarn('[engine/lifecycle] hero animation dispose failed:', error)
-    }
-    // P2-1 (render sweep 2026-08-07): destroyEngine never called deinit(), so the
-    // audio scape, global window listeners (popstate/focus/visibilitychange) and
-    // demo overview-camera RAF persisted across destroy→re-init cycles — the exact
-    // leak audio-scape.ts:298 documents as needing teardown. Call the exported
-    // pieces directly (deinit() would double-dispose interaction-visuals/map which
-    // destroyEngine already handled above). Idempotent + try/catch guarded.
-    try {
-        disposeAudio()
-    } catch (error) {
-        debugWarn('[engine/lifecycle] audio dispose failed:', error)
-    }
-    try {
-        disposeEventListeners()
-    } catch (error) {
-        debugWarn('[engine/lifecycle] global event listeners dispose failed:', error)
-    }
-    try {
-        cancelOverviewCameraAnimation()
-    } catch (error) {
-        debugWarn('[engine/lifecycle] overview camera animation dispose failed:', error)
-    }
-    try {
-        disposeJourneyFocusTimers()
-    } catch (error) {
-        debugWarn('[engine/lifecycle] journey focus timer dispose failed:', error)
-    }
-
-    // H-1 (engine lifecycle bugsweep 2026-08-07): terminate the semantic-threads
-    // data worker on engine teardown. resetSemanticThreadWorker() was only wired
-    // to AppBoot/beforeunload, so every destroy->re-init (HMR) spawned a new
-    // Worker while the old one lived as a detached zombie (~2-5 MB each).
-    import('@lib/engine/semantic-threads')
-        .then((m) => m.resetSemanticThreadWorker())
-        .catch((error) => {
-            debugWarn('[engine/lifecycle] semantic-threads worker terminate failed:', error)
-        })
-
-    // M-2: dispose the canonical demo timers/state on teardown so the
-    // 10-phase choreography timers/state don't survive a destroy->re-init.
-    // Mirrors DemoChoreography.svelte requestReplay()/onDestroy() cancel path
-    // (cancelAllDemoTimers + cancelDemo + resetDemo) from @lib/stores/demo.svelte.ts.
-    cancelAllDemoTimers()
-    if (isDemoActive()) cancelDemo()
-    try {
-        resetDemo()
-    } catch {
-        /* no-op: teardown race */
-    }
-
-    // 5. Null out engine THREE-object references so a hot remount never sees
-    //    disposed refs (W47 M1). Mirrors three-engine-core deinit() cleanup but
-    //    targets appState (the Svelte 5 state source of truth). disposeInteractionVisuals()
-    //    already nulled the focus/semantic lens refs; the remainder are asserted
-    //    here for determinism so reinit starts clean.
-    appState.scene = null
-    appState.renderer = null
-    appState.camera = null
-    appState.controls = null
-    appState.pointsMesh = null
-    appState.nodeSporeMesh = null
-    appState.myceliumGroup = null
-    appState.myceliumCoreLines = null
-    appState.myceliumWispyLines = null
-    appState.myceliumBridgeLines = null
-    appState.searchCorridorGroup = null
-    appState.focusSemanticLines = null
-    appState.focusAnchorGroup = null
-    appState.focusAnchorRingMesh = null
-    appState.focusAnchorHaloSprite = null
-    appState.focusLens = null
-    appState.focusHalo = null
-    appState.focusCore = null
-    appState.focusMoteGroup = null
-    appState.focusMotes = []
-    appState.focusPetalGroup = null
-    appState.focusPetals = []
-    appState.focusFilaments = null
-    appState.hoverHalo = null
-    appState.anchorBloomLight = null
-    appState.semanticManifold = null
-
-    // M-4 (engine lifecycle bugsweep 2026-08-07): clear the lazy-loaded
-    // post-processing resize cache so a destroy->re-init re-imports fresh
-    // (the old closure would reference disposed post-processing).
-    _ppResize = null
+    // 5. Null out scene references
+    appState.scene = null as unknown as typeof appState.scene
 
     // 6. Set status to idle
     setEngineStatus('idle')

@@ -10,7 +10,7 @@ import { DATA_COLUMNS } from '../src/lib/utils/data-schema.ts'
 import { normalizeSlugName, mapRawRecordToPoint } from '../src/lib/utils/data-mapper.ts'
 
 const SEMDEMO_ROOT = path.resolve(process.cwd())
-const WORKER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/workers/data-worker.ts')
+const WORKER_PATH = path.join(SEMDEMO_ROOT, 'js/workers/data-worker.ts')
 
 function assert(cond, msg) {
     if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
@@ -24,40 +24,21 @@ function testSchemaConsistency() {
     console.log('\n[TEST] Schema Consistency (Main vs Worker)')
 
     const workerSrc = fs.readFileSync(WORKER_PATH, 'utf-8')
+    const workerSchemaMatch = workerSrc.match(/const DATA_COLUMNS = (\{[^}]+\});/)
 
-    // Worker uses PointRecord interface instead of DATA_COLUMNS constant.
-    // Verify PointRecord exists and its field names cover all DATA_COLUMNS keys.
-    const pointRecordMatch = workerSrc.match(/interface PointRecord \{([^}]+)\}/s)
-    assert(pointRecordMatch, 'Worker should contain PointRecord interface definition')
+    assert(workerSchemaMatch, 'Worker should contain DATA_COLUMNS definition')
 
-    const pointRecordBody = pointRecordMatch[1]
-    const workerFields = new Set(
-        [...pointRecordBody.matchAll(/\b(\w+)\s*:/g)].map((m) => m[1])
-    )
+    // Simple crude parse of the worker's DATA_COLUMNS
+    const workerSchemaStr = workerSchemaMatch[1]
+        .replace(/\/\/.*$/gm, '') // remove comments
+        .replace(/\s+/g, '') // remove whitespace
 
-    // Map DATA_COLUMNS keys (uppercase) to PointRecord field names.
-    // X, Y, Z are excluded — they go into positionsBuffer (Float32Array), not PointRecord.
-    const keyToField = {
-        CLUSTER: 'cluster', NAME: 'name', WHAT: 'what', CITY: 'city',
-        LEAD_ID: 'lead_id', LAT: 'lat', LNG: 'lng', WEBSITE: 'website',
-        EMAIL: 'email', PHONE: 'phone', TRIVIA: 'trivia', STATUS: 'status',
-        NAICS: 'naics'
-    }
+    Object.entries(DATA_COLUMNS).forEach(([key, value]) => {
+        const expected = `${key}:${value}`
+        assert(workerSchemaStr.includes(expected), `Worker schema should include ${expected}`)
+    })
 
-    for (const [key, expectedField] of Object.entries(keyToField)) {
-        assert(
-            workerFields.has(expectedField),
-            `Worker PointRecord should include field '${expectedField}' (for DATA_COLUMNS.${key})`
-        )
-    }
-
-    // Verify the position buffer exists separately
-    assert(
-        workerSrc.includes('positionsBuffer'),
-        'Worker should provide positionsBuffer for X/Y/Z coordinates'
-    )
-
-    console.log('  OK Worker PointRecord interface covers all DATA_COLUMNS keys')
+    console.log('  OK Worker schema matches main-thread schema')
 }
 
 // ---------------------------------------------------------------------------

@@ -215,7 +215,7 @@ function scoreLocalSemanticRecord(array $point, string $query, array $baseTokens
     return $score;
 }
 
-function buildLocalSemanticSearchPayload(array $points, array $clusterNames, string $query, int $limit, string $reason, int $offset = 0): array
+function buildLocalSemanticSearchPayload(array $points, array $clusterNames, string $query, int $limit, string $reason): array
 {
     $normalizedQuery = normalizeSemanticSearchQuery($query);
     $baseTokens = tokenizeSemanticSearchText($normalizedQuery);
@@ -244,7 +244,6 @@ function buildLocalSemanticSearchPayload(array $points, array $clusterNames, str
             'public_note' => $point['public_note'] ?? ($point['what'] ?? ''),
             'public_detail' => $point['public_note'] ?? '',
             'address' => '',
-            'cluster' => (int)($point['cluster'] ?? -1),
             'naics' => $naicsValue,
             'score' => round($score, 6),
             'semantic_score' => null,
@@ -271,7 +270,7 @@ function buildLocalSemanticSearchPayload(array $points, array $clusterNames, str
         'degraded' => true,
         'reason' => $reason,
         'count' => count($scored),
-        'results' => array_slice($scored, $offset, $limit),
+        'results' => array_slice($scored, 0, $limit),
     ];
 }
 

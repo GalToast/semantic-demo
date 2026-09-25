@@ -12,35 +12,33 @@
  *    `nvidia/llama-nemotron-rerank-1b-v2` returns 404).
  *  - The response field is `rankings` (not `rerank_results`).
  */
-import type { SearchResult } from '@lib/types/state'
-import { debugWarn } from '@lib/utils/debug'
-import { getEnvFlag } from '@lib/utils/env-flag'
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
+import type { SearchResult } from '@lib/types/state';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface RerankOptions {
-    /** Only send the top-N results to NIM (default: min(results.length, 20)). */
-    topN?: number
-    /** Fetch timeout in ms (default: 3000). */
-    timeoutMs?: number
+  /** Only send the top-N results to NIM (default: min(results.length, 20)). */
+  topN?: number;
+  /** Fetch timeout in ms (default: 3000). */
+  timeoutMs?: number;
 }
 
 interface NIMRanking {
-    index: number
-    logit: number
+  index: number;
+  logit: number;
 }
 
 interface NIMResponse {
-    rankings?: NIMRanking[]
+  rankings?: NIMRanking[];
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const NIM_ENDPOINT = 'https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking'
-const NIM_MODEL = 'nvidia/rerank-qa-mistral-4b'
-const DEFAULT_TOP_N = 20
-const DEFAULT_TIMEOUT_MS = 3000
+const NIM_ENDPOINT = 'https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking';
+const NIM_MODEL = 'nvidia/rerank-qa-mistral-4b';
+const DEFAULT_TOP_N = 20;
+const DEFAULT_TIMEOUT_MS = 3000;
 
 /**
  * Normalize a NIM logit to a 0-1 score.
@@ -49,7 +47,7 @@ const DEFAULT_TIMEOUT_MS = 3000
  *   logit -8 → 0, logit +8 → 1, clamped to [0, 1].
  */
 function normalizeLogit(logit: number): number {
-    return Math.min(1, Math.max(0, (logit + 8) / 16))
+  return Math.min(1, Math.max(0, (logit + 8) / 16));
 }
 
 /**
@@ -57,7 +55,7 @@ function normalizeLogit(logit: number): number {
  * Combines name + snippet for the richest semantic signal.
  */
 function passageText(r: SearchResult): string {
-    return `${r.name}. ${r.snippet}`.trim()
+  return `${r.name}. ${r.snippet}`.trim();
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -77,93 +75,94 @@ function passageText(r: SearchResult): string {
  * @returns The re-ranked results, or the original results on failure.
  */
 export async function rerankResults(
-    query: string,
-    results: SearchResult[],
-    options?: RerankOptions
+  query: string,
+  results: SearchResult[],
+  options?: RerankOptions
 ): Promise<SearchResult[]> {
-    if (results.length === 0) return results
+  if (results.length === 0) return results;
 
-    const topN = Math.min(results.length, options?.topN ?? DEFAULT_TOP_N)
-    const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  const topN = Math.min(
+    results.length,
+    options?.topN ?? DEFAULT_TOP_N
+  );
+  const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-    // Slice the top-N for NIM; the rest keep original order.
-    const topResults = results.slice(0, topN)
-    const remainingResults = results.slice(topN)
+  // Slice the top-N for NIM; the rest keep original order.
+  const topResults = results.slice(0, topN);
+  const remainingResults = results.slice(topN);
 
-    // Build passages array — each entry is an object with `text` key.
-    const passages = topResults.map((r) => ({ text: passageText(r) }))
+  // Build passages array — each entry is an object with `text` key.
+  const passages = topResults.map((r) => ({ text: passageText(r) }));
 
-    // Build request body — query and passages are dicts, NOT plain strings.
-    const body = {
-        model: NIM_MODEL,
-        query: { text: query },
-        passages,
-        top_n: topN
+  // Build request body — query and passages are dicts, NOT plain strings.
+  const body = {
+    model: NIM_MODEL,
+    query: { text: query },
+    passages,
+    top_n: topN,
+  };
+
+  // Fetch with timeout via AbortController.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const apiKey = getNimApiKey();
+    const response = await fetch(NIM_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const statusText = response.statusText || response.status;
+      debugWarn(`[rerank] NIM returned ${statusText}, falling back to original order`);
+      return results;
     }
 
-    // Fetch with timeout via AbortController.
-    const controller = new AbortController()
-    const reg = new DisposableRegistry({ label: 'rerank' })
-    const timeoutId = reg.schedule(timeoutMs, () => controller.abort())
+    const data = (await response.json()) as NIMResponse;
+    const rankings = data.rankings;
 
-    try {
-        const apiKey = getNimApiKey()
-        const response = await fetch(NIM_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${apiKey}`
-            },
-            body: JSON.stringify(body),
-            signal: controller.signal
-        })
-
-        if (!response.ok) {
-            const statusText = response.statusText || response.status
-            debugWarn(`[rerank] NIM returned ${statusText}, falling back to original order`)
-            return results
-        }
-
-        const data = (await response.json()) as NIMResponse
-        const rankings = data.rankings
-
-        if (!Array.isArray(rankings) || rankings.length === 0) {
-            debugWarn('[rerank] NIM returned empty rankings, falling back to original order')
-            return results
-        }
-
-        // Build the reranked subset: sort by logit descending, normalize scores.
-        const rerankedSubset = rankings
-            .filter((r) => r.index >= 0 && r.index < topResults.length)
-            .sort((a, b) => b.logit - a.logit)
-            .map((r): SearchResult | null => {
-                const result = topResults[r.index]
-                if (!result) return null
-                return {
-                    ...result,
-                    score: normalizeLogit(r.logit)
-                }
-            })
-            .filter((r): r is SearchResult => r !== null)
-
-        // If NIM returned fewer rankings than topN, append the unranked ones
-        // at the end of the reranked subset (in their original relative order).
-        const rerankedIds = new Set(rerankedSubset.map((r) => r.id))
-        const unrankedTopResults = topResults.filter((r) => !rerankedIds.has(r.id))
-        const mergedTop = [...rerankedSubset, ...unrankedTopResults]
-
-        // Final result: reranked top + remaining (beyond topN) in original order.
-        return [...mergedTop, ...remainingResults]
-    } catch (err) {
-        // AbortError from timeout, network error, JSON parse error — all fall back.
-        const msg = err instanceof Error ? err.message : String(err)
-        debugWarn(`[rerank] NIM call failed (${msg}), falling back to original order`)
-        return results
-    } finally {
-        clearTimeout(timeoutId)
-        reg.disposeAll()
+    if (!Array.isArray(rankings) || rankings.length === 0) {
+      debugWarn('[rerank] NIM returned empty rankings, falling back to original order');
+      return results;
     }
+
+    // Build the reranked subset: sort by logit descending, normalize scores.
+    const rerankedSubset = rankings
+      .filter((r) => r.index >= 0 && r.index < topResults.length)
+      .sort((a, b) => b.logit - a.logit)
+      .map((r): SearchResult | null => {
+        const result = topResults[r.index];
+        if (!result) return null;
+        return {
+          ...result,
+          score: normalizeLogit(r.logit),
+        };
+      })
+      .filter((r): r is SearchResult => r !== null);
+
+    // If NIM returned fewer rankings than topN, append the unranked ones
+    // at the end of the reranked subset (in their original relative order).
+    const rerankedIds = new Set(rerankedSubset.map((r) => r.id));
+    const unrankedTopResults = topResults.filter((r) => !rerankedIds.has(r.id));
+    const mergedTop = [...rerankedSubset, ...unrankedTopResults];
+
+    // Final result: reranked top + remaining (beyond topN) in original order.
+    return [...mergedTop, ...remainingResults];
+  } catch (err) {
+    // AbortError from timeout, network error, JSON parse error — all fall back.
+    const msg = err instanceof Error ? err.message : String(err);
+    debugWarn(`[rerank] NIM call failed (${msg}), falling back to original order`);
+    return results;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 // ── Internal: API Key ────────────────────────────────────────────────────────
@@ -174,5 +173,12 @@ export async function rerankResults(
  * and the caller falls back gracefully.
  */
 function getNimApiKey(): string {
-    return getEnvFlag('VITE_NIM_API_KEY') ?? ''
+  try {
+    return (
+      (import.meta as unknown as { env?: Record<string, string> })?.env
+        ?.VITE_NIM_API_KEY ?? ''
+    );
+  } catch {
+    return '';
+  }
 }

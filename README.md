@@ -8,28 +8,11 @@ A 3D semantic mycelium visualization for exploring business relationships in Mon
 
 ```bash
 npm install              # install dependencies
-npm run dev:svelte       # start dev server (Vite + HMR) on http://127.0.0.1:5173
+npm run dev:svelte       # start dev server (Vite + HMR)
 npm run build:svelte     # production build → dist/svelte/
 ```
 
-Then open the **repo-root `index.html`** in a browser — it's a hub linking to both the built app and the case study. Or go directly to `http://127.0.0.1:5173` for the live dev app.
-
-### Where things live
-
-| What | Where |
-|------|-------|
-| App source (Vite root) | `src/index.html` |
-| App build output | `dist/svelte/index.html` (serve this directory statically) |
-| Repo-root front door | `index.html` (hub — no auto-redirect) |
-| Case study page | `case-study.html` (untracked WIP, linked from hub) |
-
-### Quick start (< 30 s)
-
-```bash
-npm install && npm run build:svelte
-python3 -m http.server 8799 --bind 127.0.0.1   # from repo root
-# open http://127.0.0.1:8799 — hub page with two buttons
-```
+Then open `http://127.0.0.1:5173` (dev) or serve `dist/svelte/` statically.
 
 ## Architecture
 
@@ -52,22 +35,21 @@ src/
 ```
 
 **Key patterns:**
-
 - `data-panel-surface` and related `data-*` body attributes are the canonical state interface between JS and CSS.
 - Engine bridge layer in `src/lib/engine/` mediates between Svelte components and the Three.js rendering core.
 - Typed Svelte stores in `src/lib/state/` and `src/lib/stores/` replace legacy UI state slices.
 
 ## Commands
 
-| Command                              | Description                              |
-| ------------------------------------ | ---------------------------------------- |
-| `npm run dev:svelte`                 | Vite dev server with HMR                 |
-| `npm run build:svelte`               | Production build (Vite)                  |
-| `npm run serve`                      | Static server on `127.0.0.1:8795`        |
-| `npm run test`                       | Shell, CSS ownership, and cache checks   |
-| `npm run test:contract`              | Structural JS/DOM contract tests         |
-| `npm run qa:contract:all`            | Fast DOM/layout assertions (17 surfaces) |
-| `npm run qa:surface:all`             | Visual screenshot audit (22 states)      |
+| Command | Description |
+|---------|-------------|
+| `npm run dev:svelte` | Vite dev server with HMR |
+| `npm run build:svelte` | Production build (Vite) |
+| `npm run serve` | Static server on `127.0.0.1:8795` |
+| `npm run test` | Shell, CSS ownership, and cache checks |
+| `npm run test:contract` | Structural JS/DOM contract tests |
+| `npm run qa:contract:all` | Fast DOM/layout assertions (17 surfaces) |
+| `npm run qa:surface:all` | Visual screenshot audit (22 states) |
 | `npm run qa:short-landscape:release` | Constrained layout + transition behavior |
 
 ## QA & Verification
@@ -94,14 +76,14 @@ https://mccullough.cloud/semantic-demo/vector-explorer-polished.html
 
 ## Documentation
 
-- `docs/archive/w38-charter-2026-06-17.md` — current charter
-- `docs/archive/w40-bundle-audit-2026-06-18.md` — bundle analysis
+- `docs/w38-charter-2026-06-17.md` — current charter
+- `docs/w40-bundle-audit-2026-06-18.md` — bundle analysis
 - `docs/performance-budget.md` — performance ceilings
 - `docs/semantic-demo-design-tokens.md` — design token reference
 - `docs/semantic-demo-state-transition-table.md` — state machine truth table
 - `docs/semantic-demo-surface-style-matrix.md` — surface ↔ style mapping
-- `docs/archive/bug-thread-inspector-baseline-and-activation-2026-06-18.md` — bug archive
-- `docs/archive/a11y-baseline-2026-06-18.md` — accessibility baseline
+- `docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md` — active bug
+- `docs/a11y-baseline-2026-06-18.md` — accessibility baseline
 - `docs/window-global-allowlist.md` — window/global policy
 - `docs/archive/` — historical migration docs, charters, and audit reports
 - `AGENTS.md` — local agent guidance

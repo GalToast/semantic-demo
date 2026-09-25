@@ -2,9 +2,9 @@
   @components/CompassRail.svelte — Journey compass rail
 
   Ported from:
- - (compass state synthesis)
- - (step rendering, updateJourneyCompass)
- - (skeleton → wired)
+    - js/modules/journey-compass-state.js (compass state synthesis)
+    - js/modules/journey-compass-controller.js (step rendering, updateJourneyCompass)
+    - js/modules/CompassRail.svelte (skeleton → wired)
 
   Compass steps follow the ordered milestones:
     overview → search → focus → inside → map
@@ -17,17 +17,9 @@
 -->
 <script lang="ts">
   import { compassSteps } from '@lib/stores/compass.svelte';
-  import { compassPhase, transitionCompass, setJourneyPhase } from '@lib/stores/journey.svelte';
+  import type { CompassStep } from '@lib/stores/compass.svelte';
+  import { compassPhase, transitionCompass } from '@lib/stores/journey.svelte';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
-
-  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
-  import { selectMode as applyModeSelect, type SelectModeContext } from '@lib/components/header/mode-nav';
-  import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller';
-  import { JOURNEY_ACTIONS } from '@lib/journey/compass-state';
-  import { appState } from '@lib/state/app.svelte';
-  import { updateUrlState } from '@lib/orchestration/url-state';
-  import { debugWarn } from '@lib/utils/debug';
-  import type { NavMode } from '@lib/types/state';
 
   interface Props {
     /** Whether the compass rail is visible */
@@ -36,56 +28,22 @@
 
   let { visible = false }: Props = $props();
 
-  // ── Parity-attrs reactive reads (replaces inline parity computation) ────
-  const parity = useParityAttrs();
-
-  // Whether a business node is currently focused (enables selection-dependent modes).
-  let hasSelection = $derived(
-    appState.navState.focusedIndex != null && Number.isFinite(appState.navState.focusedIndex as number)
-  );
+  let bodyPanelSurface = $state('');
+  let bodyGraphContext = $state('');
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    const sync = () => {
+      bodyPanelSurface = document.body.dataset.panelSurface || '';
+      bodyGraphContext = document.body.dataset.graphContext || '';
+    };
+    const obs = new MutationObserver(sync);
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface', 'data-graph-context'] });
+    sync();
+    return () => obs.disconnect();
+  });
 
   // Track pending timeouts so they can be cleared on unmount.
   const pendingTimers: ReturnType<typeof setTimeout>[] = [];
-
-  // ── W48-D: roving tabindex + arrow-key navigation ────────────────────────
-  // Without this, screen-reader and keyboard-only users must Tab through
-  // every compass step individually. With roving tabindex + ArrowUp/Down,
-  // they can navigate the journey phases like a vertical WAI-ARIA tablist.
-  // Tracks which step has focus so arrow keys move focus + activate on Enter/Space.
-  let compassFocusIndex = $state(0);
-
-  function handleCompassKeydown(event: KeyboardEvent): void {
-    const steps = compassSteps();
-    if (steps.length === 0) return;
-    const last = steps.length - 1;
-    let nextIndex: number;
-
-    switch (event.key) {
-      case 'ArrowDown':
-        nextIndex = compassFocusIndex < last ? compassFocusIndex + 1 : 0;
-        break;
-      case 'ArrowUp':
-        nextIndex = compassFocusIndex > 0 ? compassFocusIndex - 1 : last;
-        break;
-      case 'Home':
-        nextIndex = 0;
-        break;
-      case 'End':
-        nextIndex = last;
-        break;
-      case 'Enter':
-      case ' ':
-        event.preventDefault();
-        handleAction(steps[compassFocusIndex]?.phase ?? '');
-        return;
-      default:
-        return;
-    }
-    event.preventDefault();
-    compassFocusIndex = nextIndex;
-    const buttons = document.querySelectorAll<HTMLButtonElement>('.compass-rail .compass-step');
-    buttons[nextIndex]?.focus();
-  }
 
   /**
    * Dispatch nav transition + compass state animation for a clicked step.
@@ -102,25 +60,26 @@
     // 1. Start compass animation
     transitionCompass('checking');
 
-    // 2. Dispatch nav transition using the shared selectMode helper.
-    //    selectMode handles all 7 known modes (overview, search, focus, inside, trail, map)
-    //    plus lock-guard for selection-dependent modes and URL sync.
-    const KNOWN_NAV_MODES: readonly string[] = ['overview', 'search', 'focus', 'inside', 'trail', 'map'];
-    if (KNOWN_NAV_MODES.includes(phase)) {
-      const selectedIndex = applyModeSelect(phase as NavMode, hasSelection, {
-        navActions: NAV_TRANSITION_ACTIONS,
-        dispatchNavTransition,
-        updateUrlState,
-        debugWarn,
-        setJourneyPhase,
-      } as SelectModeContext);
-      // Header and keyboard entry both engage the semantic dive after selecting
-      // Inside. Keep the rail's equivalent entry point on the same funnel.
-      if (phase === 'inside' && selectedIndex >= 0) {
-        executeJourneyCompassAction(JOURNEY_ACTIONS.ENTER_INSIDE);
-      }
-    } else {
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESET);
+    // 2. Dispatch nav transition for the clicked phase
+    switch (phase) {
+      case 'overview':
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
+        break;
+      case 'search':
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' });
+        break;
+      case 'focus':
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' });
+        break;
+      case 'inside':
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' });
+        break;
+      case 'map':
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
+        break;
+      default:
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESET);
+        break;
     }
 
     // 3. Animate through the state machine (tracked for cleanup)
@@ -143,37 +102,30 @@
 </script>
 
 {#if visible}
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <nav
+  <div
     class="compass-rail compass-steps"
     class:active={compassPhase() === 'active'}
     class:checking={compassPhase() === 'checking'}
     class:synthesizing={compassPhase() === 'synthesizing'}
     id="compass-rail"
+    role="navigation"
     aria-label="Journey compass"
-    aria-keyshortcuts="ArrowUp ArrowDown Home End Enter Space"
-    onpointerdown={(e) => e.stopPropagation()}
-    onwheel={(e) => e.stopPropagation()}
-    ondblclick={(e) => e.stopPropagation()}
-    onkeydown={handleCompassKeydown}
   >
-    {#each compassSteps() as step, idx (step.phase)}
+    {#each compassSteps() as step (step.phase)}
       <button
         class="compass-step"
-        class:primary={step.phase === 'search' && (parity.focusSearchForced) || step.state === 'current' || step.state === 'done'}
+        class:primary={step.phase === 'search' && (bodyPanelSurface === 'focus-search' || bodyGraphContext === 'focus-search') || step.state === 'current' || step.state === 'done'}
         class:current={step.state === 'current'}
         class:done={step.state === 'done'}
         onclick={() => handleAction(step.phase)}
-        aria-label="Navigate to {step.label}"
+        aria-label="Navigate to {step.phase}"
         aria-current={step.state === 'current' ? 'step' : undefined}
-        tabindex={idx === compassFocusIndex ? 0 : -1}
-        type="button"
       >
         <span class="step-dot"></span>
-        <span class="step-label">{step.label}</span>
+        <span class="step-label">{step.phase}</span>
       </button>
-        {/each}
-  </nav>
+    {/each}
+  </div>
 {/if}
 
 <style>
@@ -207,16 +159,16 @@
     border-radius: 0.3rem;
     cursor: pointer;
     transition: all 0.15s;
-    color: var(--color-text-teal-dark);
+    color: #6a8a8a;
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.65rem;
   }
   .compass-step:hover {
-    color: var(--color-text-teal-muted);
+    color: #b0d0d0;
     background: rgba(78, 205, 196, 0.08);
   }
   .compass-step.current {
-    color: var(--color-primary-alt);
+    color: #4ecdc4;
   }
   .compass-step.done {
     opacity: 0.5;
@@ -249,14 +201,6 @@
     }
     .step-label {
       display: none;
-    }
-  }
-
-  /* Reduced-motion: the step hover/state transition is decorative; disable
-     it for users who prefer reduced motion. Steady-state layout is unchanged. */
-  @media (prefers-reduced-motion: reduce) {
-    .compass-step {
-      transition: none;
     }
   }
 </style>

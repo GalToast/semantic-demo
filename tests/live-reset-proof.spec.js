@@ -4,13 +4,6 @@ import { SEMANTIC_HEALTH_STUB, SEARCH_STUB } from './helpers/mock-semantic-searc
 /**
  * Live reset interaction proof — Wave 2
  *
- * ⚠️ LEGACY SHELL TEST — targets `index.html` (legacy static HTML shell).
- * This test validates the legacy app's reset flow, NOT the Svelte build
- * (which lives at `dist/svelte/index.html` or is served by Vite on :5173).
- * The page.goto() calls use the legacy shell path; selector references
- * (#search-input, #search-results, #btn-focus-overview) and __TEST_STATE__
- * globals are legacy-specific.
- *
  * Flow: mock search → focus/exploration state → Escape → clearSearch + resetExplorationFocus
  *
  * Validates:
@@ -34,7 +27,9 @@ async function performMockedSearch(page, query = 'coffee') {
     return;
   } catch {
     await page.evaluate((searchQuery) => {
-      window.__navActions__?.search?.(searchQuery);
+      if (typeof (window.__APP_ACTIONS__?.search) === 'function') {
+        window.__APP_ACTIONS__.search(searchQuery);
+      }
     }, query);
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
   }
@@ -63,8 +58,8 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) });
     });
 
-    await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof window.__navActions__?.resetExplorationFocus === 'function', { timeout: 20000 });
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // --- 1. Perform search ---
@@ -134,8 +129,8 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) });
     });
 
-    await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof window.__navActions__?.resetExplorationFocus === 'function', { timeout: 20000 });
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Enter focus state via search click
@@ -146,7 +141,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     // Call resetExplorationFocus directly (preserves search per its contract)
     await page.evaluate(() => {
-      window.__navActions__?.resetExplorationFocus?.();
+      window.__APP_ACTIONS__?.resetExplorationFocus?.();
     });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
@@ -172,8 +167,8 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) });
     });
 
-    await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof window.__navActions__?.returnToOverview === 'function', { timeout: 20000 });
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.returnToOverview) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Establish search + focus state
@@ -184,7 +179,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
 
     // returnToOverview = full reset (clears search too)
     await page.evaluate(() => {
-      window.__navActions__?.returnToOverview?.();
+      window.__APP_ACTIONS__?.returnToOverview?.();
     });
     await page.waitForFunction(
       () => document.body.dataset.activeView === 'galaxy',
@@ -212,8 +207,8 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) });
     });
 
-    await page.goto(`${BASE_URL}/index.html`);
-    await page.waitForFunction(() => typeof window.__navActions__?.resetExplorationFocus === 'function', { timeout: 20000 });
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.resetExplorationFocus) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // Enter focus state

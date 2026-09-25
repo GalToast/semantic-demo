@@ -1,27 +1,24 @@
 /**
  * Motion/state contract for inspectable transition ownership.
  *
- * Static pins guard the source-level invariants (function existence, DOM dataset
- * wiring). Runtime behavioral tests exercise the actual DOM-state setters so the
- * contract survives refactors that rename functions but preserve behavior.
+ * This is intentionally static. Motion bugs often come from state that exists
+ * only in JS booleans, which makes browser QA and reduced-motion checks blind.
  */
 
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { resolveSource } from './source-path.mjs'
-import './helpers/svelte-rune-shim.mjs'
 
 const root = process.cwd()
 const source = {
     search: readFileSync(resolveSource('src/lib/search/state.ts', root), 'utf8'),
-    searchAdapter: readFileSync(resolveSource('src/lib/search/search-panel-adapter.ts', root), 'utf8'),
+    searchAdapter: readFileSync(resolveSource('js/modules/search-panel-adapter.ts', root), 'utf8'),
     sceneReveal: readFileSync(resolveSource('src/lib/engine/scene-reveal.ts', root), 'utf8'),
-    threeSetup: readFileSync(resolveSource('src/lib/engine/three-engine-core.ts', root), 'utf8'),
-    frameUpdates: readFileSync(resolveSource('src/lib/engine/three-engine-frame-updates.ts', root), 'utf8'),
+    threeSetup: readFileSync(resolveSource('src/lib/engine/three-engine.ts', root), 'utf8'),
     journey: readFileSync(resolveSource('src/lib/journey/journey.ts', root), 'utf8'),
-    journeyWebgl: readFileSync(resolveSource('src/lib/journey/route-trace.ts', root), 'utf8'),
-    lifecycle: readFileSync(resolveSource('src/lib/stores/lifecycle.ts', root), 'utf8'),
-    journeyCompassController: readFileSync(resolveSource('src/lib/journey/compass-state.ts', root), 'utf8')
+    journeyWebgl: readFileSync(resolveSource('js/modules/journey-route-trace.ts', root), 'utf8'),
+    lifecycle: readFileSync(resolveSource('js/modules/lifecycle.ts', root), 'utf8'),
+    journeyCompassController: readFileSync(resolveSource('js/modules/journey-compass-controller.ts', root), 'utf8')
 }
 
 const checks = [
@@ -54,11 +51,11 @@ const checks = [
     {
         name: 'renderer completion clears scene reveal DOM state',
         pass:
-            /import\s+\*\s+as\s+sceneRevealMod\s+from\s+['"](?:@lib\/engine\/scene-reveal|\.\/scene-reveal)['"]/.test(
-                source.frameUpdates
+            /import\s*\{[^}]*setSceneRevealDataset[^}]*\}\s*from\s*['"]\.\/scene-reveal\.(?:js|ts)['"]/.test(
+                source.threeSetup
             ) &&
-            /revealProgress\s*>=\s*1[\s\S]*?state\.sceneRevealActive\s*=\s*false[\s\S]*?sceneRevealMod\.setSceneRevealDataset\s*\(\s*false\s*\)/.test(
-                source.frameUpdates
+            /revealProgress\s*>=\s*1[\s\S]*?state\.sceneRevealActive\s*=\s*false[\s\S]*?setSceneRevealDataset\s*\(\s*false\s*\)/.test(
+                source.threeSetup
             )
     },
     {
@@ -72,10 +69,9 @@ const checks = [
     {
         name: 'focus plus search intent owns focus-search panel surface',
         pass:
-            /if\s*\(\s*hasFocus\s*&&\s*hasSearchIntent\s*\)\s*return\s+['"]focus-search['"]/.test(source.lifecycle) &&
-            /if\s*\(\s*graphContext\s*===\s*['"]focus-search['"]\s*\)\s*return\s+['"]focus-search['"]/.test(
+            /if\s*\(\s*hasSearchIntent\s*\)\s*return\s+hasFocus\s*\?\s*['"]focus-search['"]\s*:\s*['"]search['"]/.test(
                 source.lifecycle
-            )
+            ) && /context\s*=\s*['"]focus-search['"]/.test(source.lifecycle)
     }
 ]
 
@@ -87,95 +83,6 @@ for (const check of checks) {
     }
 }
 
-let staticPassed = checks.length - failed
-console.log(`motion-state-contract static: ${staticPassed}/${checks.length} passed`)
-
-// ── Runtime Behavioral Tests ──────────────────────────────────────────────────
-
-// DOM shim for runtime tests
-if (!globalThis.document) {
-    globalThis.document = {
-        body: {
-            dataset: {},
-            classList: { add() {}, remove() {}, contains() { return false; }, toggle() { return false; } }
-        }
-    }
-}
-
-const runtimeTests = []
-
-async function runRuntimeTests() {
-    // R1: setSceneRevealDataset sets body.dataset.sceneReveal
-    try {
-        const { setSceneRevealDataset } = await import('../src/lib/engine/scene-reveal.ts')
-
-        setSceneRevealDataset(true)
-        if (document.body.dataset.sceneReveal !== 'active') {
-            throw new Error(`expected 'active', got '${document.body.dataset.sceneReveal}'`)
-        }
-        console.log('  R1 PASS: setSceneRevealDataset(true) → body.dataset.sceneReveal = active')
-        runtimeTests.push(true)
-
-        setSceneRevealDataset(false)
-        if (document.body.dataset.sceneReveal !== 'inactive') {
-            throw new Error(`expected 'inactive', got '${document.body.dataset.sceneReveal}'`)
-        }
-        console.log('  R2 PASS: setSceneRevealDataset(false) → body.dataset.sceneReveal = inactive')
-        runtimeTests.push(true)
-    } catch (e) {
-        console.error(`  R1/R2 FAIL: ${e.message}`)
-        runtimeTests.push(false, false)
-    }
-
-    // R3: setSearchGlowState sets body.dataset.searchGlow
-    try {
-        const { setSearchGlowState } = await import('../src/lib/search/search-panel-adapter.ts')
-
-        setSearchGlowState(true)
-        if (document.body.dataset.searchGlow !== 'active') {
-            throw new Error(`expected 'active', got '${document.body.dataset.searchGlow}'`)
-        }
-        console.log('  R3 PASS: setSearchGlowState(true) → body.dataset.searchGlow = active')
-        runtimeTests.push(true)
-
-        setSearchGlowState(false)
-        if (document.body.dataset.searchGlow !== 'inactive') {
-            throw new Error(`expected 'inactive', got '${document.body.dataset.searchGlow}'`)
-        }
-        console.log('  R4 PASS: setSearchGlowState(false) → body.dataset.searchGlow = inactive')
-        runtimeTests.push(true)
-    } catch (e) {
-        console.error(`  R3/R4 FAIL: ${e.message}`)
-        runtimeTests.push(false, false)
-    }
-
-    // R5: Both functions follow the same active/inactive contract pattern
-    try {
-        const { setSceneRevealDataset } = await import('../src/lib/engine/scene-reveal.ts')
-        const { setSearchGlowState } = await import('../src/lib/search/search-panel-adapter.ts')
-
-        // Reset to known state
-        setSceneRevealDataset(false)
-        setSearchGlowState(false)
-
-        // Cross-verify: setting one doesn't affect the other
-        setSceneRevealDataset(true)
-        if (document.body.dataset.searchGlow === 'active') {
-            throw new Error('setSceneRevealDataset should not affect searchGlow')
-        }
-        console.log('  R5 PASS: dataset keys are independent (sceneReveal ≠ searchGlow)')
-        runtimeTests.push(true)
-    } catch (e) {
-        console.error(`  R5 FAIL: ${e.message}`)
-        runtimeTests.push(false)
-    }
-}
-
-await runRuntimeTests()
-
-const rtPassed = runtimeTests.filter(Boolean).length
-const rtTotal = runtimeTests.length
-const totalPassed = staticPassed + rtPassed
-const totalAll = checks.length + rtTotal
-console.log(`motion-state-contract results: ${staticPassed}/${checks.length} static + ${rtPassed}/${rtTotal} runtime = ${totalPassed}/${totalAll} passed`)
-if (failed > 0 || rtPassed < rtTotal) process.exit(1)
+const passed = checks.length - failed
+console.log(`motion-state-contract results: ${passed}/${checks.length} passed`)
+if (failed) process.exit(1)

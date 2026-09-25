@@ -2,9 +2,6 @@ DirectoryIndex index.html
 
 RedirectMatch 301 ^/semantic-demo/?$ https://mccullough.cloud/semantic-demo/case-study.html
 
-# ── Dual-URL normalization (2026-08) ──────────────────────────────────
-# Legacy shell now redirects (308) to the canonical entry; same build.
-Redirect 308 /semantic-demo/vector-explorer-polished.html /semantic-demo/index.html
 # ── Block development artifacts ──────────────────────────────────────
 # Source maps
 <FilesMatch "\.map$">
@@ -69,115 +66,16 @@ RewriteRule ^reports/ - [F,L]
     Header set Referrer-Policy "strict-origin-when-cross-origin"
 
     # Content-Security-Policy
-    # Designed for the Vite-built shell (dist/svelte/index.html):
-    #   script-src: 'self' for hashed module assets + https://unpkg.com (Leaflet runtime JS).
-    #   style-src:  'self' + 'unsafe-inline' (inline <style> layer vars) + https://unpkg.com (Leaflet CSS).
-    #   font-src:   'self' (self-hosted woff2 in fonts/; no Google Fonts CDN).
-    #   img-src:    'self' + data: (inline SVG favicon) + https://*.basemaps.cartocdn.com (Leaflet tiles).
-    #   connect-src: 'self' (api.php, data.dat) + https://api.open-meteo.com (weather).
-    #   worker-src: 'self' (data-worker via new Worker(new URL(...))).
-    #   No reranker hosted, so ai.api.nvidia.com is intentionally excluded.
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self'; img-src 'self' data: https://*.basemaps.cartocdn.com; connect-src 'self' https://api.open-meteo.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; object-src 'none';"
-</IfModule>
-
-# ── Precompressed static assets (dist/assets/*.gz / *.br) ──────────────────
-# Vite emits gzip+brotli twins for every hashed asset. Serve them directly
-# (precompressed) instead of letting the server re-compress on the fly:
-# keeps LCP payload bytes minimal on slow mobile links (measured 11.7s LCP
-# is transfer-bound). Falls back to mod_deflate output only when neither
-# twin exists.
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    # brotli twin (preferred)
-    RewriteCond %{HTTP:Accept-Encoding} br
-    RewriteCond %{REQUEST_FILENAME}\.br -f
-    RewriteCond %{REQUEST_FILENAME} \.(js|css|json|svg|woff2|html|dat)$ [NC]
-    RewriteRule ^(.*)$ $1.br [L,QSA]
-    # gzip twin
-    RewriteCond %{HTTP:Accept-Encoding} gzip
-    RewriteCond %{REQUEST_FILENAME}\.gz -f
-    RewriteCond %{REQUEST_FILENAME} \.(js|css|json|svg|woff2|html|dat)$ [NC]
-    RewriteRule ^(.*)$ $1.gz [L,QSA]
-</IfModule>
-<IfModule mod_headers.c>
-    # Force per-extension Content-Type on precompressed twins. FilesMatch
-    # sections CANNOT be nested in Apache/LiteSpeed — a nested <FilesMatch>
-    # is silently ignored, which previously left .js.br/.css.br twins served
-    # as text/plain (and .gz twins as application/gzip). Combined with the
-    # global X-Content-Type-Options: nosniff above, browsers refuse to run
-    # the module scripts/CSS — the app shell never mounted on prod. These
-    # flat, top-level blocks are the correct form.
-    <FilesMatch "\.js\.br$">
-        Header set Content-Encoding br
-        Header set Content-Type application/javascript
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.css\.br$">
-        Header set Content-Encoding br
-        Header set Content-Type text/css
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.json\.br$">
-        Header set Content-Encoding br
-        Header set Content-Type application/json
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.svg\.br$">
-        Header set Content-Encoding br
-        Header set Content-Type image/svg+xml
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.woff2\.br$">
-        Header set Content-Encoding br
-        Header set Content-Type font/woff2
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.dat\.br$">
-        Header set Content-Encoding br
-        Header set Content-Type application/octet-stream
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.html\.br$">
-        Header set Content-Encoding br
-        Header set Content-Type text/html
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.js\.gz$">
-        Header set Content-Encoding gzip
-        Header set Content-Type application/javascript
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.css\.gz$">
-        Header set Content-Encoding gzip
-        Header set Content-Type text/css
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.json\.gz$">
-        Header set Content-Encoding gzip
-        Header set Content-Type application/json
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.svg\.gz$">
-        Header set Content-Encoding gzip
-        Header set Content-Type image/svg+xml
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.woff2\.gz$">
-        Header set Content-Encoding gzip
-        Header set Content-Type font/woff2
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.dat\.gz$">
-        Header set Content-Encoding gzip
-        Header set Content-Type application/octet-stream
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-    <FilesMatch "\.html\.gz$">
-        Header set Content-Encoding gzip
-        Header set Content-Type text/html
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-</IfModule><IfModule mod_mime.c>
-    AddEncoding gzip .gz
-    AddEncoding br   .br
+    # Designed for the legacy shell (vector-explorer-polished.html):
+    #   script-src: 'self' for dist/bundle.js + worker initiator;
+    #              cdn.jsdelivr.net for three.js modules via importmap.
+    #              The inline importmap is allowed by exact sha256 hash.
+    #              No 'unsafe-inline' needed.
+    #   style-src:  'unsafe-inline' required for SVG style="..." attributes
+    #               and JS element.style.* assignments.
+    #   font-src:   fonts.gstatic.com for Google Fonts WOFF2.
+    #   img-src:    data: for inline SVG favicon.
+    #   connect-src: api.open-meteo.com for weather widget (CORS fetch).
+    #   worker-src: js/workers/data-worker.js via new Worker().
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'sha256-lGEOGKyonii9j2P4RYFKZhnwl8Yl+BS7clpvKExzXrM='; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.open-meteo.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; object-src 'none';"
 </IfModule>

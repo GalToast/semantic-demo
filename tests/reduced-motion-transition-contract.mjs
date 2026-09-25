@@ -5,26 +5,18 @@
  *
  * Two-layer validation:
  *
- *  Layer 1 — Static CSS scan (NODE-RUNNABLE):
+ *  Layer 1 — Static CSS scan:
  *    Verifies the canonical late reduced-motion owner exists and reports
  *    per-file motion declarations as advisory context. This repo intentionally
  *    centralizes broad reduced-motion suppression late in the cascade, so
  *    individual source files are not required to own local suppression blocks.
  *
- *  Layer 2 — Playwright browser proof (BROWSER-ONLY):
+ *  Layer 2 — Playwright browser proof:
  *    Loads the page with reducedMotion:'reduce' emulated.
  *    Collects transition-duration from all elements that have CSS transitions.
  *    Asserts every computed transition-duration is <= 1ms (or 0s).
  *    Falls back to 0s (instant) under reduced-motion — any non-zero duration
  *    that exceeds 1ms is a defect.
- *
- * Environment:
- *   SEMANTIC_FORCE_WEBGL_SOFTWARE=1  — use SwiftShader for software WebGL
- *   REDUCED_MOTION_LAYER1_ONLY=1     — run Layer 1 only (Node, no browser);
- *                                       exits 0 if static scan passes
- *
- * Wave-2 __dirname fix: replaced ESM-unavailable __dirname with
- * `dirname(fileURLToPath(import.meta.url))` — module loads cleanly.
  *
  * Exit:
  *   0  — all checks pass
@@ -38,12 +30,10 @@ import { resolve, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
-const LAYER1_ONLY = process.env.REDUCED_MOTION_LAYER1_ONLY === '1';
-
-// SwiftShader gate (see visual-state-audit.mjs)
-const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
+
+const OUT_DIR = resolve(root, 'tmp', 'reduced-motion-video-proof-2026-05-20');
 
 const CSS_FILES = readdirSync(resolve(root, 'css')).filter(
   (f) => extname(f) === '.css'
@@ -176,8 +166,6 @@ async function startServer(port) {
   const mimeTypes = {
     '.html': 'text/html',
     '.css': 'text/css',
-    '.js': 'application/javascript',
-    '.mjs': 'application/javascript',
     '.ts': 'application/javascript',
     '.png': 'image/png',
   };
@@ -185,7 +173,7 @@ async function startServer(port) {
   const server = http.createServer((req, res) => {
     let urlPath = req.url.split('?')[0];
     if (urlPath === '/' || !urlPath.includes('.')) {
-      urlPath = '/index.html';
+      urlPath = '/vector-explorer-polished.html';
     }
     const filePath = resolve(root, urlPath.replace(/^\//, ''));
     try {
@@ -222,15 +210,12 @@ async function waitForReady(page) {
 
 async function runBrowserProof(port) {
   const server = await startServer(port);
-  // This proof only inspects DOM/computed styles. Keep Chromium headless by
-  // default so the gate does not compete with interactive browser sessions;
-  // set PLAYWRIGHT_HEADED=1 when a visible run is specifically needed.
-  const browser = await chromium.launch({ headless: process.env.PLAYWRIGHT_HEADED !== '1', args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 
   const desktopPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await desktopPage.emulateMedia({ reducedMotion: 'reduce' });
 
-  const url = `http://127.0.0.1:${port}/dist/svelte/index.html?nodemo=1`;
+  const url = `http://127.0.0.1:${port}/vector-explorer-polished.html?nodemo=1`;
   await desktopPage.goto(url, { waitUntil: 'commit', timeout: 15000 });
   await waitForReady(desktopPage);
 
@@ -388,51 +373,7 @@ async function run() {
 
   console.log(`\nStatic summary: ${staticResult.results.length - staticResult.advisory.length}/${staticResult.results.length} CSS files have local suppression or no motion; ${staticResult.advisory.length} rely on canonical suppression`);
 
-  // -------------------------------------------------------------------------
-  // RUNTIME VERIFICATION — Layer 1 deterministic checks (wave7b P3 hardening)
-  // -------------------------------------------------------------------------
-  // These verify the static scan is deterministic and the canonical owner
-  // covers the expected selectors. Layer 1 is Node-runnable; Layer 2 below
-  // is browser-only (requires Playwright + Chromium + built app).
-
-  const ownerFile = staticResult.owner.file;
-  const requiredSelectors = ['#canvas-container', '#map-container', '.journey-compass',
-    '.view-toggle', '#btn-legend', '.search-container', '.info-panel', '.focus-stage'];
-
-  // R-V1: canonical owner file exists and has suppression
-  if (!staticResult.owner.hasSuppression) {
-    console.error(`FAIL [runtime] ${ownerFile}: missing @media (prefers-reduced-motion) suppression`);
-    process.exit(1);
-  }
-  console.log(`PASS [runtime] ${ownerFile}: canonical reduced-motion owner verified`);
-
-  // R-V2: all required selectors in owner
-  if (staticResult.owner.missingSelectors.length > 0) {
-    console.error(`FAIL [runtime] ${ownerFile}: missing selectors: ${staticResult.owner.missingSelectors.join(', ')}`);
-    process.exit(1);
-  }
-  console.log(`PASS [runtime] ${ownerFile}: all ${requiredSelectors.length} required selectors covered`);
-
-  // R-V3: at least 15 CSS files scanned
-  if (staticResult.results.length < 15) {
-    console.error(`FAIL [runtime] CSS scan: only ${staticResult.results.length} files (expected >=15)`);
-    process.exit(1);
-  }
-  console.log(`PASS [runtime] CSS scan: ${staticResult.results.length} files analyzed`);
-
-  // R-V4: advisory files (rely on canonical suppression) are documented
-  console.log(`PASS [runtime] advisory: ${staticResult.advisory.length} file(s) rely on canonical late suppression (${staticResult.advisory.map(r => r.file).join(', ') || 'none'})`);
-
-  // --- Browser boundary gate ---
-  if (LAYER1_ONLY) {
-    console.log('\n[LAYER1_ONLY] Skipping Layer 2 (Playwright browser proof).');
-    console.log('  Layer 1 (static CSS scan + runtime verification) completed successfully.');
-    console.log('  Set REDUCED_MOTION_LAYER1_ONLY=0 to run the full browser proof.');
-    console.log('  The browser proof requires: built app (dist/svelte), Chromium, port 8816.');
-    process.exit(0);
-  }
-
-  console.log('\n=== Layer 2: Playwright browser proof (BROWSER-ONLY) ===');
+  console.log('\n=== Layer 2: Playwright browser proof ===');
   let browserResult;
   try {
     browserResult = await runBrowserProof(8816);
@@ -459,17 +400,7 @@ async function run() {
 
   const staticFailed = staticResult.owner.passed ? 0 : 1;
   const browserFailed = failures.length;
-  // Most of the probe selectors are intentionally absent or hidden on the
-  // idle route. Require evidence from both viewports and at least two visible
-  // selectors instead of a fixed pass count that treats hidden markup as a
-  // missing assertion.
-  const observed = [
-    ...(browserResult.desktop || []).map((item) => ({ ...item, viewport: 'desktop' })),
-    ...(browserResult.mobile || []).map((item) => ({ ...item, viewport: 'mobile' })),
-  ].filter((item) => item.present && item.display !== 'none' && item.visibility !== 'hidden');
-  const observedViewportCount = new Set(observed.map((item) => item.viewport)).size;
-  const observedSelectorCount = new Set(observed.map((item) => item.selector)).size;
-  const coverageFailed = observedViewportCount < 2 || observedSelectorCount < 2 ? 1 : 0;
+  const coverageFailed = passes.length < 20 ? 1 : 0;
   const totalFailed = staticFailed + browserFailed + coverageFailed;
 
   const report = {
@@ -488,8 +419,6 @@ async function run() {
       failures: failures.length,
       failureDetails: failures,
       coverageFailed: coverageFailed === 1,
-      observedViewportCount,
-      observedSelectorCount,
       desktopElements: (browserResult.desktop || []).length,
       mobileElements: (browserResult.mobile || []).length,
     },

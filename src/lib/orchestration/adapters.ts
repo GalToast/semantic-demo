@@ -6,51 +6,44 @@
  * arbitrary data, or external bridge layer where the concrete type is
  * not yet available in the Svelte layer).
  */
-import { initJourneyLifecycleAdapter } from '@lib/journey/lifecycle-adapter'
-import { initJourneyCompassAdapter } from '@lib/orchestration/compass-controller'
-import { initJourneySelectedCard } from '@lib/journey/selected-card'
-import { initSemanticDiveUiSubscriptions } from '@lib/journey/semantic-dive'
-
-import { initMapStateSubscriptions } from '@lib/engine/map-state'
-import { initViewControllerAdapter } from '@lib/orchestration/view-controller'
-import { initCanvasHoverPreviewSubscription } from '@lib/journey/canvas-hover-preview'
-import { setupMobileSearchSheetToggle } from '@lib/search/search-panel-adapter'
-import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-model'
-
-/**
- * Neighbor candidate shape consumed by `summarizeNeighborReason` and
- * `getInsideRelationshipLabel` in `@lib/journey/thread-settler`.
- * Mirrors the consumer's inline parameter type; the index signature
- * keeps the bridge permissive for legacy call sites that carry extra
- * metadata fields.
- */
-export interface NeighborCandidate {
-    index?: number
-    reason?: string
-    threadType?: string
-    source?: string
-    relationshipRole?: string
-    roleReason?: string
-    sameCity?: boolean
-    sameStatus?: boolean
-    [key: string]: unknown
-}
+import {
+  initJourneyLifecycleAdapter,
+  initClusterFilterAdapter,
+  initJourneyCompassAdapter,
+  initJourneySelectedCard,
+  initSemanticDiveUiSubscriptions,
+  initFocusNeighborRailSubscriptions,
+  initRouteTraceSubscriptions,
+  initThreadInspectorAdapter,
+  initMapStateSubscriptions,
+  initViewControllerAdapter,
+  setupMobileSearchSheetToggle,
+} from '@lib/engine/adapters-bridge';
+import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-model';
 
 /**
- * 3D position shape carried across the journey↔thread-inspector bridge.
- * Fields are optional because legacy callers pass partial objects (e.g. seed
- * clusters that only carry `cluster`); the index signature preserves any
- * extra business fields the caller may want to thread through.
- *
- * Note: distinct from the stricter `Point3D` in `@lib/types/webgl` (which
- * requires x/y/z). Use this loose form at adapter boundaries only.
+ * Loose 3D point — matches the structural shape of the legacy
+ * `Point3D` in `js/modules/thread-inspector-adapter.ts` (optional x/y/z).
+ * The strict `Point3D` in `@lib/types/webgl` is required x/y/z, which is
+ * narrower than the bridge contract. Use this loose form for adapter
+ * bridges until the consumer is tightened.
  */
-export interface Point3D {
-    x?: number
-    y?: number
-    z?: number
-    [key: string]: unknown
-}
+type LoosePoint3D = { x?: number; y?: number; z?: number };
+
+/**
+ * Loose neighbor candidate — matches the structural shape of the legacy
+ * `NeighborCandidate` in `js/modules/thread-inspector-adapter.ts`. The
+ * legacy type allows `reason?: string` and arbitrary extra fields.
+ */
+type LooseNeighborCandidate = { reason?: string; [key: string]: unknown };
+
+/**
+ * Loose business point — used where the legacy `Point` type from
+ * `js/state.ts` is consumed. No direct Svelte-5 equivalent exists yet;
+ * `BusinessRecord` from `@lib/types/business` is the canonical
+ * replacement once the consumer is tightened.
+ */
+type LoosePoint = Record<string, unknown>;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,27 +58,35 @@ export interface Point3D {
  * - Bridge layers where the concrete type is not yet available
  */
 export interface JourneyLifecycleDeps {
-    previewInsideNextThread: (options?: unknown) => void
-    getNextWalkCandidateForIndex: (currentIndex: number, options?: WalkCandidateOptions) => ThreadCandidate | null
-    setSemanticDiveMode: (mode: unknown) => void
-    getInterestingBusinessNote: (point: Record<string, unknown> | null) => string | null
-    buildSelectedMatchNarrative: (point: Record<string, unknown> | null) => string
-    hasColdDegradedSemanticFallback: () => boolean
-    getColdDegradedRouteCopy: () => null
-    getSelectedBusinessRoleLabel: (point: unknown) => string
-    isFieldNodeFocusContext: () => boolean
-    revealSelectedBusinessCard: (...args: unknown[]) => void
-    describeThreadLensForPoint: (point: unknown) => unknown
-    hydrateLeadContext: (point: unknown, options: unknown) => void
-    shouldUseFloatingFocusJourneyOnly: () => boolean
-    setLastCanvasNodePick: (val: unknown) => void
-    setLastCanvasNodeHover: (val: unknown) => void
-    setLastCanvasNodeFocusPick: (val: unknown) => void
+  previewInsideNextThread: (options?: unknown) => void;
+  getNextWalkCandidateForIndex: (currentIndex: number, options?: WalkCandidateOptions) => ThreadCandidate | null;
+  applyLocalNeighborhoodFocus: (...args: unknown[]) => void;
+  setSemanticDiveMode: (mode: unknown) => void;
+  getInterestingBusinessNote: (point: LoosePoint) => string | null;
+  buildSelectedMatchNarrative: (point: LoosePoint) => string;
+  hasColdDegradedSemanticFallback: () => boolean;
+  getColdDegradedRouteCopy: () => null;
+  getSelectedBusinessRoleLabel: (point: unknown) => string;
+  isFieldNodeFocusContext: () => boolean;
+  revealSelectedBusinessCard: (...args: unknown[]) => void;
+  describeThreadLensForPoint: (point: unknown) => unknown;
+  hydrateLeadContext: (point: unknown, options: unknown) => void;
+  shouldUseFloatingFocusJourneyOnly: () => boolean;
+  setLastCanvasNodePick: (val: unknown) => void;
+  setLastCanvasNodeHover: (val: unknown) => void;
+  setLastCanvasNodeFocusPick: (val: unknown) => void;
 }
 
 /**
  * Dependencies for the cluster filter adapter (4 functions).
  */
+export interface ClusterFilterDeps {
+  applyFilters: () => void;
+  clearSearchGlow: () => void;
+  updateUrlState: (extra: Record<string, unknown>, options: Record<string, unknown>) => void;
+  clearShortSemanticSearchState: (resultsEl: Element | null, statusEl: Element | null) => void;
+}
+
 /**
  * Dependencies for the thread inspector adapter (4 functions).
  *
@@ -93,9 +94,10 @@ export interface JourneyLifecycleDeps {
  * across the legacy adapter layer (sometimes Edge, sometimes Record).
  */
 export interface ThreadInspectorDeps {
-    summarizeNeighborReason: (candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D) => string
-    getInsideRelationshipLabel: (candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D) => string
-    getCurrentTrailFocusIndex: () => number | null
+  summarizeNeighborReason: (candidate: LooseNeighborCandidate, point: LoosePoint3D, focusPoint: LoosePoint3D) => string;
+  getInsideRelationshipLabel: (candidate: LooseNeighborCandidate, point: LoosePoint3D, focusPoint: LoosePoint3D) => string;
+  getCurrentTrailFocusIndex: () => number | null;
+  getFocusThreadCurvePoint: (edge: unknown, t: number) => LoosePoint3D | null;
 }
 
 /**
@@ -103,51 +105,35 @@ export interface ThreadInspectorDeps {
  * Mirrors the dependency surface of the legacy initAdapters() in app.ts.
  */
 export interface AdapterDeps {
-    /** 14-function deps bag for journey lifecycle */
-    journeyLifecycle: JourneyLifecycleDeps
-    /** View-switch function for compass adapter */
-    switchView: (view: string) => void
-    /** Journey selected card deps */
-    journeySelectedCard: {
-        getStrandArrivalNote: (...args: unknown[]) => unknown
-        updateTraversalUi: (...args: unknown[]) => void
-        hydrateLeadContext: (point: unknown, options?: Record<string, unknown>) => void
-    }
-    /** 4-function deps bag for thread inspector */
-    threadInspector: ThreadInspectorDeps
-    /** Composition refresh for view controller */
-    refreshCompositionState: () => void
-    /** Compact-viewport predicate for mobile search */
-    isCompactSearchViewport: () => boolean
-}
-
-// ── Thread inspector adapter (inlined from thread-inspector-adapter.ts) ─────
-
-interface ThreadInspectorAdapterDeps {
-    summarizeNeighborReason?: ((candidate: NeighborCandidate) => string) | null;
-    getInsideRelationshipLabel?: ((candidate: NeighborCandidate) => string) | null;
-    getCurrentTrailFocusIndex?: (() => number | null) | null;
-}
-
-let _summarizeNeighborReason: ((candidate: NeighborCandidate) => string) | null = null;
-let _getInsideRelationshipLabel: ((candidate: NeighborCandidate) => string) | null = null;
-let _getCurrentTrailFocusIndex: (() => number | null) | null = null;
-
-function initThreadInspectorAdapter(deps: ThreadInspectorAdapterDeps = {}): void {
-    _summarizeNeighborReason = typeof deps.summarizeNeighborReason === 'function' ? deps.summarizeNeighborReason : null;
-    _getInsideRelationshipLabel = typeof deps.getInsideRelationshipLabel === 'function' ? deps.getInsideRelationshipLabel : null;
-    _getCurrentTrailFocusIndex = typeof deps.getCurrentTrailFocusIndex === 'function' ? deps.getCurrentTrailFocusIndex : null;
+  /** 14-function deps bag for journey lifecycle */
+  journeyLifecycle: JourneyLifecycleDeps;
+  /** 4-function deps bag for cluster filter */
+  clusterFilter: ClusterFilterDeps;
+  /** View-switch function for compass adapter */
+  switchView: (view: string) => void;
+  /** Journey selected card deps */
+  journeySelectedCard: {
+    getStrandArrivalNote: (...args: unknown[]) => unknown;
+    updateTraversalUi: (...args: unknown[]) => void;
+    hydrateLeadContext: (point: unknown, options?: Record<string, unknown>) => void;
+  };
+  /** 4-function deps bag for thread inspector */
+  threadInspector: ThreadInspectorDeps;
+  /** Composition refresh for view controller */
+  refreshCompositionState: () => void;
+  /** Compact-viewport predicate for mobile search */
+  isCompactSearchViewport: () => boolean;
 }
 
 // ── Module-level State ───────────────────────────────────────────────────────
 
-let _adaptersInitialized = false
+let _adaptersInitialized = false;
 
 /**
  * Returns true if initAdapters() has been called in this session.
  */
 export function areAdaptersInitialized(): boolean {
-    return _adaptersInitialized
+  return _adaptersInitialized;
 }
 
 // ── Initialization ───────────────────────────────────────────────────────────
@@ -162,49 +148,40 @@ export function areAdaptersInitialized(): boolean {
  * @param deps — Cross-module function references needed by the adapters.
  */
 export function initAdapters(deps: AdapterDeps): void {
-    if (_adaptersInitialized) return
+  if (_adaptersInitialized) return;
 
-    // 1. Journey lifecycle adapter (14 deps)
-    initJourneyLifecycleAdapter(deps.journeyLifecycle)
+  // 1. Journey lifecycle adapter (14 deps)
+  initJourneyLifecycleAdapter(deps.journeyLifecycle);
 
-    // 2. Journey compass adapter (view-switch)
-    initJourneyCompassAdapter({ switchView: deps.switchView })
+  // 2. Cluster filter adapter (4 deps)
+  initClusterFilterAdapter(deps.clusterFilter);
 
-    // 3. Journey selected card adapter (3 deps)
-    initJourneySelectedCard(deps.journeySelectedCard)
+  // 3. Journey compass adapter (view-switch)
+  initJourneyCompassAdapter({ switchView: deps.switchView });
 
-    // 4. Semantic dive UI subscriptions (no deps)
-    initSemanticDiveUiSubscriptions()
+  // 4. Journey selected card adapter (3 deps)
+  initJourneySelectedCard(deps.journeySelectedCard);
 
-    // 5. W48-B: Canvas hover preview — keyboard / AT parity. Subscribes to
-    //    CAMERA_NODE_FOCUSED so focused businesses get the same cluster +
-    //    signal preview that mouse-hover users get.
-    initCanvasHoverPreviewSubscription()
+  // 5. Semantic dive UI subscriptions (no deps)
+  initSemanticDiveUiSubscriptions();
 
-    // 7. Route trace subscriptions — MOVED to main.ts engineReady.subscribe.
-    // W45 correction (2026-08-23, mobile-LCP measurement): a boot-time dynamic
-    // import still downloads route-trace AND its static dependency three.js
-    // before any user gesture — measured three.module at ~5.7 s on a real-phone
-    // ?nodemo=1 cold load. The stale "keeps three out of the cold-load set"
-    // rationale only held for the static preload list in index.html, not for
-    // runtime bytes over the wire. main.ts already registers these
-    // subscriptions behind the first-gesture gate; that is now the single
-    // owner so three stays off the pre-gesture network path.
+  // 6. Focus neighbor rail subscriptions (no deps)
+  initFocusNeighborRailSubscriptions();
 
-    // 8. Thread inspector adapter (4 deps).
-    // Adapter was tightened to `Point3D` during W12-T8 but the dependency
-    // bag above uses `BusinessRecord | null`. Cast at this boundary to keep
-    // the call site typed (the injected function tolerates any record shape).
-    initThreadInspectorAdapter(deps.threadInspector as unknown as ThreadInspectorAdapterDeps)
+  // 7. Route trace subscriptions (no deps)
+  initRouteTraceSubscriptions();
 
-    // 9. Map state subscriptions (no deps)
-    initMapStateSubscriptions()
+  // 8. Thread inspector adapter (4 deps)
+  initThreadInspectorAdapter(deps.threadInspector);
 
-    // 10. View controller adapter (1 dep)
-    initViewControllerAdapter({ refreshCompositionState: deps.refreshCompositionState })
+  // 9. Map state subscriptions (no deps)
+  initMapStateSubscriptions();
 
-    // 11. Mobile search sheet toggle (1 dep)
-    setupMobileSearchSheetToggle({ isCompactSearchViewport: deps.isCompactSearchViewport })
+  // 10. View controller adapter (1 dep)
+  initViewControllerAdapter({ refreshCompositionState: deps.refreshCompositionState });
 
-    _adaptersInitialized = true
+  // 11. Mobile search sheet toggle (1 dep)
+  setupMobileSearchSheetToggle({ isCompactSearchViewport: deps.isCompactSearchViewport });
+
+  _adaptersInitialized = true;
 }

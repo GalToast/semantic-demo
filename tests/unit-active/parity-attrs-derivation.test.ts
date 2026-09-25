@@ -81,10 +81,6 @@ const _camera = vi.hoisted(() => ({
 }))
 
 const _loadingPhase = vi.hoisted(() => ({ value: 'launch' as string }))
-const _appState = vi.hoisted(() => ({
-    focusCameraAssistActive: false as boolean,
-    focusCameraAssistUntil: 0 as number
-}))
 const _graphicsMode = vi.hoisted(() => ({ value: 'webgl' as string }))
 const _demoPhase = vi.hoisted(() => ({ value: 'IDLE' as string }))
 
@@ -106,88 +102,98 @@ const _compassPresentation = vi.hoisted(() => ({
 
 // ── Module mocks ────────────────────────────────────────────────────────────
 
-vi.mock('@lib/stores/navigation.svelte', () => ({
-    navStore: () => _nav
-}))
+vi.mock('@lib/stores/navigation.svelte', async () => {
+    return {
+        navStore: vi.fn(() => _nav)
+    }
+})
 
-vi.mock('@lib/stores/journey.svelte', () => ({
-    journeyStore: () => _journey
-}))
+vi.mock('@lib/stores/journey.svelte', async () => {
+    return {
+        journeyStore: vi.fn(() => _journey)
+    }
+})
 
-vi.mock('@lib/stores/focus.svelte', () => ({
-    focusStore: () => _focus
-}))
+vi.mock('@lib/stores/focus.svelte', async () => {
+    return {
+        focusStore: vi.fn(() => _focus)
+    }
+})
 
-vi.mock('@lib/stores/search.svelte', () => ({
-    searchStore: {
-        subscribe: (fn: (v: typeof _search) => void) => {
-            fn(_search)
-            return () => {}
+vi.mock('@lib/stores/search.svelte', async () => {
+    return {
+        searchStore: {
+            subscribe: (fn: (v: typeof _search) => void) => {
+                fn(_search)
+                return () => {}
+            }
         }
     }
-}))
+})
 
-vi.mock('@lib/stores/filter.svelte', () => ({
-    filterState: {
-        subscribe: (fn: (v: typeof _filter) => void) => {
-            fn(_filter)
-            return () => {}
+vi.mock('@lib/stores/filter.svelte', async () => {
+    return {
+        filterState: {
+            subscribe: (fn: (v: typeof _filter) => void) => {
+                fn(_filter)
+                return () => {}
+            }
         }
     }
-}))
+})
 
-vi.mock('@lib/stores/viewport.svelte', () => ({
-    viewport: () => _viewport
-}))
+vi.mock('@lib/stores/viewport.svelte', async () => {
+    return {
+        viewport: vi.fn(() => _viewport)
+    }
+})
 
-vi.mock('@lib/stores/camera.svelte', () => ({
-    cameraStore: {
-        subscribe: (fn: (v: typeof _camera) => void) => {
-            fn(_camera)
-            return () => {}
+vi.mock('@lib/stores/camera.svelte', async () => {
+    return {
+        cameraStore: {
+            subscribe: (fn: (v: typeof _camera) => void) => {
+                fn(_camera)
+                return () => {}
+            }
         }
     }
-}))
+})
 
-vi.mock('@lib/stores/demo.svelte', () => ({
-    demoStore: () => ({ phase: _demoPhase.value }),
-    demoPhase: () => _demoPhase.value,
-    isDemoActive: () => _demoPhase.value !== 'IDLE'
-}))
+vi.mock('@lib/stores/demo.svelte', async () => {
+    return {
+        demoStore: vi.fn(() => ({ phase: _demoPhase.value })),
+        demoPhase: vi.fn(() => _demoPhase.value)
+    }
+})
 
-vi.mock('@lib/state/app.svelte', () => ({
-    appState: {
-        get focusCameraAssistActive() {
-            return _appState.focusCameraAssistActive
+vi.mock('@lib/data-store', async () => {
+    return {
+        loadingPhaseStore: {
+            subscribe: (fn: (v: string) => void) => {
+                fn(_loadingPhase.value)
+                return () => {}
+            }
         },
-        get focusCameraAssistUntil() {
-            return _appState.focusCameraAssistUntil
+        graphicsModeStore: {
+            subscribe: (fn: (v: string) => void) => {
+                fn(_graphicsMode.value)
+                return () => {}
+            }
         }
     }
-}))
+})
 
-vi.mock('@lib/data-store', () => ({
-    loadingPhaseStore: {
-        subscribe: (fn: (v: string) => void) => {
-            fn(_loadingPhase.value)
-            return () => {}
-        }
-    },
-    graphicsModeStore: {
-        subscribe: (fn: (v: string) => void) => {
-            fn(_graphicsMode.value)
-            return () => {}
-        }
+vi.mock('@lib/orchestration/compass-state', async () => {
+    return {
+        getJourneyCompassState: vi.fn(() => _compassState)
     }
-}))
+})
 
-vi.mock('@lib/journey/compass-state', () => ({
-    getJourneyCompassState: () => _compassState
-}))
-
-vi.mock('@lib/orchestration/compass-controller', () => ({
-    getJourneyCompassPresentationState: () => _compassPresentation
-}))
+vi.mock('@lib/orchestration/compass-controller', async () => {
+    return {
+        getJourneyCompassPresentationState: vi.fn(() => _compassPresentation)
+    }
+})
 
 // ── Import under test (must appear AFTER vi.mock) ───────────────────────────
 
@@ -237,6 +243,7 @@ function resetAllSnapshots(): void {
     _graphicsMode.value = 'webgl'
     _demoPhase.value = 'IDLE'
 
+
     _compassState.phase = 'idle'
     _compassPresentation.density = 'expanded'
     _compassPresentation.copy = 'full'
@@ -245,9 +252,7 @@ function resetAllSnapshots(): void {
     // Reset legacy window state
     try {
         delete (window as any).__APP_STATE__
-    } catch {
-        /* ignore */
-    }
+    } catch { /* ignore */ }
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────
@@ -281,14 +286,12 @@ describe('computeParityAttributes IIFE derivations', () => {
 
         it('returns "focus" when mode is "focus"', () => {
             _nav.mode = 'focus'
-            _nav.focusedIndex = 42
             const result = computeParityAttributes()
             expect(result.graphContext).toBe('focus')
         })
 
         it('returns "focus" when mode is "trail"', () => {
             _nav.mode = 'trail'
-            _nav.focusedIndex = 42
             const result = computeParityAttributes()
             expect(result.graphContext).toBe('focus')
         })
@@ -391,25 +394,15 @@ describe('computeParityAttributes IIFE derivations', () => {
         describe('non-map view surfaces', () => {
             it('returns "focus-search" when surface is "focus-search"', () => {
                 _nav.surface = 'focus-search'
-                _nav.focusedIndex = 42
                 const result = computeParityAttributes()
                 expect(result.panelSurfaceMode).toBe('focus-search')
             })
 
             it('returns "semantic-dive" when semanticDiveMode is true', () => {
                 _nav.surface = 'idle'
-                _nav.focusedIndex = 42
                 _focus.semanticDiveMode = true
                 const result = computeParityAttributes()
                 expect(result.panelSurfaceMode).toBe('semantic-dive')
-            })
-
-            it('returns "idle" when a stale semanticDiveMode flag has no focus', () => {
-                _nav.surface = 'idle'
-                _focus.semanticDiveMode = true
-                const result = computeParityAttributes()
-                expect(result.panelSurfaceMode).toBe('idle')
-                expect(result.semanticDive).toBe('inactive')
             })
 
             it('returns "semantic-dive" over stale focus-search surface when semanticDiveMode is true', () => {
@@ -763,43 +756,20 @@ describe('computeParityAttributes IIFE derivations', () => {
     })
 
     describe('semanticDive', () => {
-        it('returns "active" when semanticDiveMode is true (no transient window)', () => {
-            _nav.focusedIndex = 42
+        it('returns "active" when semanticDiveMode is true', () => {
             _focus.semanticDiveMode = true
             const result = computeParityAttributes()
             expect(result.semanticDive).toBe('active')
         })
 
-        it('returns "transitioning" only inside the armed deadline window (dive entrance )', () => {
-            _nav.focusedIndex = 42
-            _focus.semanticDiveMode = true
-            ;(window as any).__APP_STATE__ = {
-                focusState: { _semanticDiveTransitionDeadline: Date.now() + 1200 }
-            }
-            try {
-                const result = computeParityAttributes()
-                expect(result.semanticDive).toBe('transitioning')
-            } finally {
-                delete (window as any).__APP_STATE__
-            }
+        it('returns "transitioning" when journey.depth >= 2', () => {
+            _journey.depth = 2
+            _journey.trailDepth = 2
+            const result = computeParityAttributes()
+            expect(result.semanticDive).toBe('transitioning')
         })
 
-        it('returns "active" once the deadline window has lapsed', () => {
-            _nav.focusedIndex = 42
-            _focus.semanticDiveMode = true
-            ;(window as any).__APP_STATE__ = {
-                // Boundary: deadline set in the past (no longer in the 1200ms window)
-                focusState: { _semanticDiveTransitionDeadline: Date.now() - 100 }
-            }
-            try {
-                const result = computeParityAttributes()
-                expect(result.semanticDive).toBe('active')
-            } finally {
-                delete (window as any).__APP_STATE__
-            }
-        })
-
-        it('returns "inactive" when not diving', () => {
+        it('returns "inactive" when not diving and depth < 2', () => {
             const result = computeParityAttributes()
             expect(result.semanticDive).toBe('inactive')
         })
@@ -821,49 +791,7 @@ describe('computeParityAttributes IIFE derivations', () => {
             expect(result.loadingOverlay).toBe('visible')
             expect(result.sceneReady).toBe('false')
             expect(result.viewHandoffActive).toBe('true')
-            // cameraAssist is decoupled from loadingPhase in W47+ tier-2 fix.
-            // It's tied to appState.focusCameraAssistActive, not launchReady.
-            expect(result.cameraAssist).toBe('free')
-        })
-    })
-
-    describe('cameraAssist (camera-in-flight state, tier-2 fix)', () => {
-        it('returns "free" when appState.focusCameraAssistActive is false', () => {
-            _loadingPhase.value = 'records' // loading state, but camera not in flight
-            _appState.focusCameraAssistActive = false
-            const result = computeParityAttributes()
-            expect(result.cameraAssist).toBe('free')
-        })
-
-        it('returns "arriving" when appState.focusCameraAssistActive is true and unexpired', () => {
-            _loadingPhase.value = 'launch' // launch state, AND camera in flight
-            _appState.focusCameraAssistActive = true
-            _appState.focusCameraAssistUntil = performance.now() + 5000
-            const result = computeParityAttributes()
-            expect(result.cameraAssist).toBe('arriving')
-        })
-
-        it('returns "arriving" regardless of loadingPhase when camera is in flight', () => {
-            // Verify decoupling: loading phase should not affect cameraAssist.
-            _loadingPhase.value = 'records'
-            _appState.focusCameraAssistActive = true
-            _appState.focusCameraAssistUntil = performance.now() + 5000
-            const result = computeParityAttributes()
-            expect(result.cameraAssist).toBe('arriving')
-            // Other attrs still reflect loadingPhase
-            expect(result.loadingOverlay).toBe('visible')
-            expect(result.sceneReady).toBe('false')
-        })
-
-        it('returns "free" once the assist window has lapsed even while the flag lingers (bugsweep 2026-08-07)', () => {
-            // Regression: parity previously resurrected a stale 'arriving' after
-            // focusCameraAssistUntil expired but before the frame-loop cleared
-            // the flag — the #map-container arrival glow lingered. Mirror the
-            // imperative writer's self-expiry in resolveCameraAssist.
-            _appState.focusCameraAssistActive = true
-            _appState.focusCameraAssistUntil = performance.now() - 100 // lapsed
-            const result = computeParityAttributes()
-            expect(result.cameraAssist).toBe('free')
+            expect(result.cameraAssist).toBe('loading')
         })
     })
 
@@ -909,37 +837,38 @@ describe('computeParityAttributes IIFE derivations', () => {
     })
 
     describe('compass attributes', () => {
-        // Note: bare `journeyCompass` and `journeyCompassDensity` were
-        // retired in commit 501bc59f — they were declared but never read in
-        // src/. journeyCompassPhase and journeyNavigationOwner carry the
-        // same semantics. Tests below verify the surviving attributes.
-
         it('reflects compass phase from journey.compass', () => {
             _journey.compass = { phase: 'active' }
             const result = computeParityAttributes()
+            expect(result.journeyCompass).toBe('active')
             expect(result.journeyCompassPhase).toBe('active')
         })
 
         it('defaults compass phase to "idle" when journey.compass is null', () => {
             _journey.compass = null as any
             const result = computeParityAttributes()
-            expect(result.journeyCompassPhase).toBe('idle')
+            expect(result.journeyCompass).toBe('idle')
+        })
+
+        it('reflects compass presentation density', () => {
+            _compassPresentation.density = 'compact'
+            const result = computeParityAttributes()
+            expect(result.journeyCompassDensity).toBe('compact')
         })
     })
 
-    describe('threadInspectSurface', () => {
-        // Note: bare `threadInspect` attr was retired in commit 501bc59f —
-        // threadInspectSurface carries the active state.
-
+    describe('threadInspect', () => {
         it('returns "active" when threadInspector is active', () => {
             _focus.threadInspector = { active: true, source: 'canvas', inspectedIndex: 42 }
             const result = computeParityAttributes()
+            expect(result.threadInspect).toBe('active')
             expect(result.threadInspectSurface).toBe('canvas')
             expect(result.inspectedThreadIndex).toBe('42')
         })
 
-        it('returns "idle" for threadInspectSurface when inactive', () => {
+        it('returns null for threadInspect when inactive', () => {
             const result = computeParityAttributes()
+            expect(result.threadInspect).toBeNull()
             expect(result.threadInspectSurface).toBe('idle')
             expect(result.inspectedThreadIndex).toBeNull()
         })
@@ -962,14 +891,12 @@ describe('computeParityAttributes IIFE derivations', () => {
         })
     })
 
-    describe('activeView (viewMode was retired)', () => {
-        it('mirrors nav.currentView to activeView only (viewMode was a pure alias)', () => {
+    describe('activeView and viewMode', () => {
+        it('mirrors nav.currentView to both activeView and viewMode', () => {
             _nav.currentView = 'map'
             const result = computeParityAttributes()
             expect(result.activeView).toBe('map')
-            // viewMode retired in 3f388412 — pure alias of activeView, only read by
-            // one legacy contract test. The mirror now writes only activeView.
-            expect(result.viewMode).toBeUndefined()
+            expect(result.viewMode).toBe('map')
         })
     })
 

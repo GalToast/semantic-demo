@@ -1,0 +1,26 @@
+{
+  "worker_id": "ocw_e4f05aad-029c-4c4f-b1b2-e758da99e5e2",
+  "name": "mimo-release-gate-fix",
+  "status": "completed",
+  "cwd": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer",
+  "backend": "qwen",
+  "requested_model": "opencode-go/mimo-v2.5",
+  "model": "mimo-v2.5",
+  "attempted_models": [
+    "mimo-v2.5"
+  ],
+  "session_id": "68759d47-216c-45df-adec-f3e353230c95",
+  "stdout_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\ocw_e4f05aad-029c-4c4f-b1b2-e758da99e5e2\\stdout.log",
+  "stderr_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\ocw_e4f05aad-029c-4c4f-b1b2-e758da99e5e2\\stderr.log",
+  "prompt_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\ocw_e4f05aad-029c-4c4f-b1b2-e758da99e5e2\\prompt.txt",
+  "metadata_path": "C:\\Users\\HP\\Desktop\\Temp while my comp is at the shop\\semantic-explorer\\ocw_e4f05aad-029c-4c4f-b1b2-e758da99e5e2\\metadata.json",
+  "created_at": "2026-06-09T04:25:46.410Z",
+  "updated_at": "2026-06-09T04:46:09.777Z",
+  "pid": 26944,
+  "child_pid": 26944,
+  "exit_code": 0,
+  "signal": null,
+  "last_text_preview": "80Happ.js` → `app.ts`. |\\n| `tests/semantic-thread-relationship-role-contract.mjs` |\r\n\u001b[23;80H| Updated all module reads from `.js` → `.ts`, relaxed `normalizeCityForFilter` r\r\n\u001b[23;80Hregex for TS `(as any)` casts. |\\n| `vector-explorer-polished.html` | Cache buste\r\n\u001b[23;80Hers refreshed via `--fix`. |\\n| `dist/bundle.js` | Rebuilt fresh. |\\n\\n### Root C\r\n\u001b[23;80HCause\\nThe TS migration deleted all `js/modules/*.js` files but left `js/modules/\r\n\u001b[23;80H/*.ts` untracked. Release-gate tests were hard-coded to read `.js` paths, and bri\r\n\u001b[23;80Hidge-degraded mocks pointed to deleted `.js` files while `lifecycle-bridge.ts` im\r\n\u001b[23;80Hmported via `@legacy/modules/*.js` aliases (which vitest resolved to `.ts`).\\n\\n#\r\n\u001b[23;80H### Remaining Blockers\\nNone. All four release gates are green. The 101 lint warn\r\n\u001b[23;80Hnings are all pre-existing unused-var/no-unsafe-optional-chaining in test files a\r\n\u001b[23;80Hand are configured as `warn` level, not `error`.\\n\\n### Finds Outside Scope\\nNone\r\n\u001b[23;80He discovered during this slice.\",\"usage\":{\"input_tokens\":10453838,\"output_tokens\"\r\n\u001b[23;80H\":38250,\"cache_read_input_tokens\":10022272,\"total_tokens\":10492088},\"permission_d\r\n\u001b[23;80Hdenials\":[]}\r\n",
+  "stdout_bytes": 2632143,
+  "stderr_bytes": 3538
+}

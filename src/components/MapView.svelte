@@ -8,16 +8,11 @@
 -->
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts';
+  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
-  import { updateUrlState } from '@lib/orchestration/url-state';
+  import { switchView } from '@lib/orchestration/view-controller';
   import { appState } from '@lib/state/app.svelte';
-  import { debugWarn } from '@lib/utils/debug'
-  import { DisposableRegistry } from '@lib/utils/disposable-registry'
-  import { friendlyErrorMessage } from '@lib/utils/error-messages'
-  import MapBackButton from '@lib/components/MapBackButton.svelte'
-  import MapStatusOverlay from '@lib/components/MapStatusOverlay.svelte'
-  import { publish, EVENTS } from '@lib/orchestration/event-bus';
+  import { withStateMutation } from '@lib/state/with-state-mutation';
   import {
     centerMapOnRouteAnchor,
     initMap,
@@ -26,92 +21,47 @@
     refreshMapRouteEmbodiment
   } from '@lib/engine/map-state';
 
-  /**
-   * Leaflet's invalidateSize signature isn't visible from appState.map's
-   * loose Record<string, unknown> type. Mirrors the structural-typing
-   * pattern in @lib/engine/map-state.ts (LeafletMapWithFitBounds).
-   */
-  interface LeafletMapWithInvalidateSize {
-    invalidateSize?: () => void
-  }
-
-  function getLeafletMapForResize(): LeafletMapWithInvalidateSize | null {
-    return appState.map
-      ? (appState.map as unknown as LeafletMapWithInvalidateSize)
-      : null;
-  }
-
   type MapStatus = 'loading' | 'ready' | 'error';
 
-  // eslint-disable-next-line no-empty-pattern -- empty $props() destructuring is the Svelte 5 idiom for "no props accepted"
-  let {} = $props();
-
-  const _registry = new DisposableRegistry({ label: 'MapView', warnAfterDispose: false });
-
-  let status = $state<MapStatus>('loading');
-  // W48-H: statusDetail surfaces the map-load state. We hold a separate
-  // rawError so the error state can be normalized through friendlyErrorMessage
-  // — Leaflet/Cloudflare failures produce technical messages like
-  // "Failed to fetch" or HTML error pages that are incomprehensible to
-  // users. The friendly title + detail are derived from rawError.
-  let statusDetail = $state('Loading county terrain');
-  let rawError: unknown = $state(null);
-  let friendlyMapError = $derived(status === 'error' ? friendlyErrorMessage(rawError) : null);
-  let mounted = false;
-  let activationToken = 0;
-  let lastObservedView: string | null = null;
-  // H5: observes #map-container so Leaflet recalculates tile layout on viewport
-  // resizes (notably mobile orientation changes). Disconnected on teardown.
-  let resizeObserver: ResizeObserver | null = null;
-
-  function activateMapShell(): void {
-    // Ensure the map container exists — Canvas.svelte may not be loaded yet
-    // when MapView mounts (e.g., Playwright contract tests preload MapView
-    // but Canvas is gated on engineReady.value).
-    let mapContainer = document.getElementById('map-container');
-    if (!mapContainer) {
-      mapContainer = document.createElement('div');
-      mapContainer.id = 'map-container';
-      mapContainer.className = 'map-container';
-      mapContainer.setAttribute('aria-hidden', 'true');
-      mapContainer.dataset.activeView = 'idle';
-      const semanticExplorer = document.getElementById('semantic-explorer');
-      if (semanticExplorer) {
-        semanticExplorer.insertBefore(mapContainer, semanticExplorer.firstChild);
-      } else {
-        document.body.appendChild(mapContainer);
-      }
-    }
-    mapContainer.classList.add('active');
-    mapContainer.classList.remove('arriving');
-    mapContainer.setAttribute('aria-hidden', 'false');
-    mapContainer.dataset.activeView = 'map';
-    mapContainer.style.removeProperty('opacity');
-    mapContainer.style.removeProperty('pointer-events');
+  interface RuntimeMap {
+    invalidateSize?: () => void;
   }
 
-  /**
-   * Set `appState.currentView` directly, bypassing the nav-store/url-sync/
-   * handoff prelude that `switchView()` triggers. Used during initial mount
-   * (where the nav store may not be initialized yet) and on canvas re-show
-   * (where we just want to flip `currentView` without animation/sync overhead).
-   *
-   * Direct assignment is type-safe: `view: 'galaxy' | 'map'` matches
-   * `ViewName` ('galaxy' | 'map'), so TS
-   * accepts the write without any cast. The previous `as unknown as RuntimeState`
-   * cast was dishonest — it widened `currentView` from a 5-value union to
-   * `string` via a locally-fabricated `RuntimeState` interface, hiding the
-   * type contract.
-   */
-  /**
-   * Set `appState.currentView` through the canonical funnel.
-   * writeNavStateMirror handles the navState/navMirror update,
-   * the appState.currentView mirror, EVENTS.VIEW_CHANGED publish,
-   * and the nav-drift baseline refresh — a single call replaces
-   * the previous direct write + hand-rolled publish (sprawl backlog #1).
-   */
+  interface RuntimeState {
+    currentView?: string;
+    map?: RuntimeMap | null;
+  }
+
+  interface Props {}
+  let {} = $props();
+
+  let status = $state<MapStatus>('loading');
+  let statusDetail = $state('Loading county terrain');
+  let mounted = false;
+  let activationToken = 0;
+
+  function activateMapShell(): void {
+    switchView('map', {
+      skipTerrainPrelude: true,
+      skipUrlSync: true,
+      silentHandoff: true,
+    });
+
+    const mapContainer = document.getElementById('map-container');
+    if (mapContainer) {
+      mapContainer.classList.add('active');
+      mapContainer.classList.remove('arriving');
+      mapContainer.setAttribute('aria-hidden', 'false');
+      mapContainer.dataset.activeView = 'map';
+      mapContainer.style.removeProperty('opacity');
+      mapContainer.style.removeProperty('pointer-events');
+    }
+  }
+
   function setLegacyView(view: 'galaxy' | 'map'): void {
-    writeNavStateMirror({ currentView: view });
+    withStateMutation(() => {
+      (appState as unknown as RuntimeState).currentView = view;
+    });
   }
 
   function deactivateMapShell(): void {
@@ -128,9 +78,6 @@
     }
 
     setLegacyView('galaxy');
-    // W49-E: returning to galaxy. The canvas hover preview will start
-    // showing again the moment the cursor moves over a node; no need to
-    // actively show it here.
   }
 
   async function activateLeafletMap(): Promise<void> {
@@ -140,104 +87,46 @@
 
     try {
       await tick();
-      if (!mounted || token !== activationToken) return;
+      if (!mounted || token !== activationToken) return; // audit-ok: plain async function, not transformed
 
       activateMapShell();
 
-      if (!mounted || token !== activationToken) return;
-
-      // W61-F5.4: re-check the token right before the view write. The click
-      // path (returnToOverview) bumps activationToken to cancel an in-flight
-      // activation, and the other checkpoints honor it — but setLegacyView
-      // ('map') sat between checkpoints, so a back-click landing in that gap
-      // flipped currentView to 'galaxy' and was then silently reverted to
-      // 'map' a microtask later (found by the W54 smoke journey test: early
-      // back-clicks were swallowed, late ones worked).
-      if (!mounted || token !== activationToken) return;
-
-      // M16: guard against prematurely flipping currentView to 'map' at boot.
-      // App.svelte's isPlaywright condition mounts MapView eagerly so
-      // #map-container exists in the DOM for contract tests, even when the
-      // view is 'galaxy'. In that case we should activate the shell (for DOM
-      // presence) but NOT write currentView='map' — the view-switch path
-      // (switchView → navStore mirror) handles that when the user actually
-      // clicks the Map button. The url-state early-return (parallel session)
-      // removed the resetStateBeforeUrlRestore() call that previously masked
-      // this bug by resetting currentView to 'galaxy' after MapView's
-      // premature write.
-      if (appState.currentView === 'galaxy') {
-        // Mark as dormant (not an error) so the template shows neither
-        // loading-spinner nor error state. The DOM shell (#map-container)
-        // is already created by activateMapShell() above and remains
-        // present for contract tests.
-        status = 'ready'
-        statusDetail = 'Map dormant (galaxy view active)'
-        return
-      }
+      if (!mounted || token !== activationToken) return; // audit-ok: plain async function, not transformed
 
       setLegacyView('map');
-
-      // W49-E: hide the canvas hover preview when the map takes over the
-      // surface. The preview is positioned `fixed` near the cursor and
-      // is meant for the galaxy view; without this publish it would
-      // remain visible on top of the map tiles, drawing the eye to a
-      // 2D preview over a 2D map. The bridge in @lib/ui/tooltip.ts
-      // subscribes to TOOLTIP_HIDE_REQUESTED and calls
-      // hideCanvasHoverPreview() in response.
-      publish(EVENTS.TOOLTIP_HIDE_REQUESTED);
 
       initMapStateSubscriptions();
       await initMap();
 
-      if (!mounted || token !== activationToken) return;
+      if (!mounted || token !== activationToken) return; // audit-ok: plain async function, not transformed
 
       refreshMapMarkers();
       refreshMapRouteEmbodiment();
       centerMapOnRouteAnchor();
 
       requestAnimationFrame(() => {
-        const map = getLeafletMapForResize();
+        const map = (appState as any).map;
         map?.invalidateSize?.();
-        _registry.schedule(120, () => map?.invalidateSize?.());
+        setTimeout(() => map?.invalidateSize?.(), 120);
       });
-
-      // H5: keep Leaflet tiles sized to the viewport on resize. The container is
-      // created by Canvas (or MapView's fallback); we observe whatever exists and
-      // bail gracefully if it is absent at activation time.
-      const mc = document.getElementById('map-container');
-      if (mc && !resizeObserver) {
-        resizeObserver = new ResizeObserver(() => {
-          const map = getLeafletMapForResize();
-          map?.invalidateSize?.();
-        });
-        resizeObserver.observe(mc);
-      }
 
       status = 'ready';
       statusDetail = 'County terrain active';
     } catch (error) {
-      debugWarn('MapView Leaflet activation failed:', error);
+      console.warn('MapView Leaflet activation failed:', error);
       status = 'error';
-      rawError = error;
       statusDetail = error instanceof Error ? error.message : 'Map failed to load';
     }
   }
 
   function returnToOverview(): void {
     activationToken += 1;
-    // W-fix: do NOT call switchView() here — dispatchNavTransition(RETURN_OVERVIEW)
-    // already sets mode/overview + surface/idle + currentView/galaxy via
-    // returnToOverviewState(). Calling switchView() first would pre-set
-    // currentView to galaxy, then returnToOverviewState's writeNavStateMirror
-    // could noop on the already-set currentView, and on desktop (no record)
-    // the surface transit from 'map' to 'idle' might not propagate correctly.
-    // The Escape-key handler (global-shortcuts.ts) uses this same pattern and
-    // works correctly for both desktop and mobile.
+    switchView('galaxy', {
+      skipUrlSync: true,
+      silentHandoff: true,
+    });
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' });
-    // Sync the URL to remove ?view=map so the URL matches the galaxy state.
-    // This matches the Escape handler pattern (global-shortcuts.ts).
-    updateUrlState({}, { reason: 'return-overview' });
   }
 
   onMount(() => {
@@ -247,38 +136,9 @@
     return () => {
       mounted = false;
       activationToken += 1;
-      resizeObserver?.disconnect();
-      resizeObserver = null;
       deactivateMapShell();
-      _registry.disposeAll();
     };
   });
-
-  // M16 companion: the URL / deep-link path flips appState.currentView to
-  // 'map' AFTER MapView has already mounted eagerly — App.svelte renders
-  // MapView under __PLAYWRIGHT__ even when the view is still 'galaxy' so
-  // #map-container exists for contract tests, and the M16 dormant bail above
-  // defers activation for that early mount. onMount alone would never catch
-  // the later flip (same component instance stays mounted: the lazy
-  // mapViewLazy.ensure(mapModeActive) effect only loads the chunk, it does
-  // not remount). Real user clicks avoid the hole because they remount via
-  // the view switch; only the URL-driven flip lands here. Watching currentView
-  // re-activates the shared controller exactly once per map entry. A failed
-  // activation changes status to 'error'; without the transition guard below,
-  // that error would immediately trigger a second activation, which can attach
-  // to an already-failed Leaflet script and leave the surface loading forever.
-  $effect(() => {
-    if (!mounted) return
-    const currentView = appState.currentView
-    if (currentView !== 'map') {
-      lastObservedView = currentView
-      return
-    }
-    if (lastObservedView === 'map') return
-    lastObservedView = 'map'
-    if (appState.map || status === 'loading') return
-    void activateLeafletMap()
-  })
 </script>
 
 <section
@@ -294,11 +154,34 @@
     <h2 class="map-view-title">County terrain</h2>
   </header>
 
-  <MapStatusOverlay {status} {statusDetail} friendlyError={friendlyMapError} onRetry={() => void activateLeafletMap()} />
+  {#if status === 'loading'}
+    <div class="map-shimmer" aria-hidden="true">
+      <div class="shimmer-row"></div>
+      <div class="shimmer-row short"></div>
+      <div class="shimmer-row medium"></div>
+    </div>
+  {/if}
+
+  {#if !(status === 'ready')}
+    <div class="map-status" class:is-error={status === 'error'} role="status" aria-live="polite">
+      <span class="map-status-dot" aria-hidden="true"></span>
+      <span>{statusDetail}</span>
+      {#if status === 'error'}
+        <button class="map-retry-btn" type="button" onclick={activateLeafletMap}>Retry</button>
+      {/if}
+    </div>
+  {/if}
 
   <footer class="map-view-footer">
-    <MapBackButton onClick={returnToOverview} label="Overview" ariaLabel="Return to overview" />
-    <span class="map-attribution">Tiles &copy; Esri</span>
+    <button
+      class="map-back-btn"
+      type="button"
+      onclick={returnToOverview}
+      aria-label="Return to overview"
+    >
+      Overview
+    </button>
+    <span class="map-attribution">OpenStreetMap | CARTO</span>
   </footer>
 </section>
 
@@ -334,10 +217,11 @@
   }
 
   .map-view-header,
-  .map-view-footer {
+  .map-view-footer,
+  .map-status {
     position: absolute;
     pointer-events: auto;
-    z-index: var(--z-controls, 1);
+    z-index: 1;
   }
 
   .map-view-header {
@@ -364,14 +248,48 @@
     letter-spacing: 0;
     color: #f5fff9;
     text-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
-    /* W10-kimi: the h2 could clip mid-word at narrow widths (the
-       h1.app-title leak was already sr-only'd, but the title itself
-       needs a wrap guarantee). max-width + overflow-wrap keep the
-       brand word intact at every viewport. */
-    max-width: 100%;
-    overflow-wrap: break-word;
-    hyphens: auto;
   }
+
+  .map-status {
+    left: 50%;
+    top: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    max-width: min(420px, calc(100vw - 32px));
+    padding: 10px 14px;
+    border: 1px solid rgba(126, 231, 219, 0.22);
+    border-radius: 8px;
+    background: rgba(7, 16, 24, 0.82);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+    transform: translate(-50%, -50%);
+    color: rgba(238, 255, 251, 0.9);
+    font-size: 0.86rem;
+    font-weight: 700;
+    backdrop-filter: blur(20px) saturate(150%);
+  }
+
+  .map-status.is-error {
+    border-color: rgba(255, 151, 107, 0.38);
+    color: #ffe1d1;
+  }
+
+  .map-status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: #7ee7db;
+    box-shadow: 0 0 18px rgba(126, 231, 219, 0.9);
+    animation: mapStatusPulse 1.3s ease-in-out infinite;
+  }
+
+  .map-status.is-error .map-status-dot {
+    background: #ff976b;
+    box-shadow: 0 0 18px rgba(255, 151, 107, 0.75);
+    animation: none;
+  }
+
   .map-view-footer {
     left: 24px;
     right: 24px;
@@ -382,11 +300,46 @@
     gap: 14px;
   }
 
+  .map-back-btn,
+  .map-retry-btn {
+    min-height: 42px;
+    border: 1px solid rgba(126, 231, 219, 0.35);
+    border-radius: 8px;
+    background: rgba(10, 23, 29, 0.78);
+    color: #eafffb;
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    cursor: pointer;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+    transition:
+      background 0.16s ease,
+      border-color 0.16s ease,
+      transform 0.16s ease;
+  }
+
+  .map-back-btn {
+    padding: 0 16px;
+  }
+
+  .map-retry-btn {
+    min-height: 34px;
+    padding: 0 12px;
+  }
+
+  .map-back-btn:hover,
+  .map-retry-btn:hover {
+    background: rgba(17, 41, 47, 0.92);
+    border-color: rgba(126, 231, 219, 0.64);
+    transform: translateY(-1px);
+  }
+
   .map-attribution {
     padding: 7px 10px;
     border-radius: 8px;
     background: rgba(4, 10, 13, 0.55);
-    color: rgba(218, 239, 234, 0.85);
+    color: rgba(218, 239, 234, 0.72);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.66rem;
   }
@@ -406,28 +359,65 @@
     display: none;
   }
 
-  :global(#map-container) {
-    display: flow-root;
-    /* Cap to the parent's content box (100%, not 100vw) so the map shell never
-       produces a horizontal scrollbar on mobile where 100vw exceeds the layout
-       viewport. clip (not hidden) avoids scroll containers while still preventing
-       overflow paint. No !important needed — this id selector outranks defaults. */
-    max-width: 100%;
-    overflow: clip;
-  }
-
   :global(#map-container.active) {
     opacity: 1;
     pointer-events: auto;
   }
 
-  :global(#map-container .leaflet-container.leaflet-container.leaflet-container) {
-    /* Force the Leaflet surface to fill #map-container so its rendered width
-       matches the viewport-capped container instead of Leaflet's own initial
-       size calc, which otherwise leaves scrollWidth > clientWidth and clips
-       the map at the edges (BUG H5). Triple class selector outranks Leaflet's
-       inline width without !important. */
-    width: 100%;
+  :global(#map-container .leaflet-container) {
     background: #071018;
+  }
+
+  @keyframes mapStatusPulse {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(0.82);
+    }
+
+    50% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* ── Loading shimmer ──────────────────────────────────────────────────────── */
+  .map-shimmer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    pointer-events: none;
+  }
+  .shimmer-row {
+    width: min(320px, 70vw);
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(
+      90deg,
+      rgba(78, 205, 196, 0.04) 0%,
+      rgba(78, 205, 196, 0.12) 40%,
+      rgba(78, 205, 196, 0.04) 80%
+    );
+    background-size: 200% 100%;
+    animation: shimmerSlide 1.6s ease-in-out infinite;
+  }
+  .shimmer-row.short {
+    width: min(200px, 50vw);
+    animation-delay: 0.15s;
+  }
+  .shimmer-row.medium {
+    width: min(260px, 60vw);
+    animation-delay: 0.3s;
+  }
+
+  @keyframes shimmerSlide {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 </style>

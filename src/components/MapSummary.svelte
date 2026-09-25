@@ -2,8 +2,8 @@
   @components/MapSummary.svelte — Mini-map trail overlay
 
   Ported from:
- - (route trace rendering)
- - (neighborhood manifest)
+    - js/modules/journey-route-trace.js (route trace rendering)
+    - js/modules/journey-neighborhood.js (neighborhood manifest)
 
   Renders a mini-map showing the current journey trail as connected nodes.
   Positioned in the bottom-left corner above the legend.
@@ -40,8 +40,8 @@
   let currentIdx = $derived(focusedIndex());
 
   function getStopName(idx: number): string {
-    if (!getIsDataReady() || getBusinessRecords().length === 0) return `Stop ${idx}`;
-    return getBusinessRecords()[idx]?.name ?? `Stop ${idx}`;
+    if (!getIsDataReady() || getBusinessRecords().length === 0) return `Node ${idx}`;
+    return getBusinessRecords()[idx]?.name ?? `Node ${idx}`;
   }
 </script>
 
@@ -49,24 +49,11 @@
   <div
     class="map-summary"
     id="map-trail"
-    aria-labelledby="map-trail-title"
-    role="region"
+    aria-label="Journey trail mini-map"
+    role="img"
   >
-    <h2 class="map-title" id="map-trail-title">Trail</h2>
-
-    <svg
-      class="map-svg"
-      viewBox="0 0 164 70"
-      role="img"
-      aria-labelledby="map-trail-svg-title"
-      aria-describedby="map-trail-desc"
-    >
-      <title id="map-trail-svg-title">Journey path</title>
-      <desc id="map-trail-desc">
-        {trail.length} stop{trail.length === 1 ? '' : 's'} on the current route.
-        {#if currentIdx != null}Currently focused: stop {trail.findIndex((s) => s.index === currentIdx) + 1} of {trail.length}.{/if}
-      </desc>
-
+    <span class="map-title">Trail</span>
+    <svg class="map-svg" viewBox="0 0 164 70" aria-hidden="true">
       <!-- Connection lines -->
       {#each trail as stop, i}
         {#if i > 0}
@@ -77,10 +64,9 @@
             y1={prev.y}
             x2={curr.x}
             y2={curr.y}
-            stroke="rgba(var(--color-primary-alt-rgb), 0.3)"
+            stroke="rgba(78, 205, 196, 0.3)"
             stroke-width="1.5"
             stroke-linecap="round"
-            aria-hidden="true"
           />
         {/if}
       {/each}
@@ -93,37 +79,21 @@
           cx={pos.x}
           cy={pos.y}
           r={isCurrent ? 4 : 3}
-          fill={isCurrent ? 'var(--color-primary-alt)' : 'rgba(var(--color-primary-alt-rgb), 0.5)'}
+          fill={isCurrent ? '#4ecdc4' : 'rgba(78, 205, 196, 0.5)'}
           stroke={isCurrent ? '#fff' : 'none'}
           stroke-width={isCurrent ? 1 : 0}
-          aria-hidden="true"
         />
       {/each}
     </svg>
 
-    <!-- W48-I: replace role="img" + flat span list with role="region" + a
-         proper ordered list (<ol>). Each <li> carries aria-current="step"
-         so screen readers announce the focused stop, plus a stable
-         step-position label. A separate <p aria-live="polite"> announces
-         the current stop whenever the user navigates the trail. -->
-    <p class="sr-only" id="map-trail-status" aria-live="polite" aria-atomic="true">
-      {#if currentIdx != null && trail.length > 0}
-        Now on step {trail.findIndex((s) => s.index === currentIdx) + 1} of {trail.length}: {getStopName(currentIdx)}.
-      {/if}
-    </p>
-    <ol class="map-stops" aria-label="Journey stops">
+    <div class="map-stops">
       {#each trail as stop, i}
-        {@const isCurrent = currentIdx === stop.index}
-        <li
-          class="map-stop"
-          class:current={isCurrent}
-          aria-current={isCurrent ? 'step' : undefined}
-        >
-          <span class="stop-num" aria-hidden="true">{i + 1}</span>
+        <span class="map-stop" class:current={currentIdx === stop.index}>
+          <span class="stop-num">{i + 1}</span>
           <span class="stop-name">{getStopName(stop.index)}</span>
-        </li>
+        </span>
       {/each}
-    </ol>
+    </div>
   </div>
 {/if}
 
@@ -135,7 +105,7 @@
     z-index: var(--z-legend, 50);
     background: rgba(7, 16, 24, 0.88);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.12);
+    border: 1px solid rgba(78, 205, 196, 0.12);
     border-radius: 0.5rem;
     padding: 0.5rem;
     width: 180px;
@@ -147,7 +117,7 @@
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.6rem;
     font-weight: 600;
-    color: rgba(var(--color-primary-alt-rgb), 0.6);
+    color: rgba(78, 205, 196, 0.6);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 0.3rem;
@@ -170,11 +140,11 @@
     align-items: center;
     gap: 0.3rem;
     font-size: 0.55rem;
-    color: rgba(176, 208, 208, 0.85); /* a11y-ok: caption-text — small map-stop label */
+    color: rgba(176, 208, 208, 0.5);
     line-height: 1.3;
   }
   .map-stop.current {
-    color: var(--color-primary-alt);
+    color: #4ecdc4;
     font-weight: 600;
   }
 

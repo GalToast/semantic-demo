@@ -1,7 +1,7 @@
 /**
  * @lib/engine/camera-controls-restore.svelte.ts — Svelte 5 rune-class for auto-rotate state machine and camera restore
  *
- * Ticket W11-T6: Parallel artifact to
+ * Ticket W11-T6: Parallel artifact to js/modules/camera-controls-restore.ts.
  * The Svelte 5 class owns the reactive state via $state fields. Legacy state
  * writes are kept for backward compatibility with choreography files that
  * still import from the legacy path directly.
@@ -10,94 +10,92 @@
  *   autoRotate, autoRotateSuspended, autoRotateSoftResumeStartedAt,
  *   autoRotateResumeTimer, autoRotateResumeDueAt.
  *
- * These fields are the canonical source — they are NOT mirrored into
- * appState. Consumers that need resume timing read from this class
- * (or from cameraStore, which proxies through cameraControlsRestore).
- *
  * Three.js object mutations (controls.autoRotate, controls.autoRotateSpeed)
  * stay imperative — they're not Svelte state.
  */
 
-import { appState } from '@lib/state/app.svelte'
-import { prefersReducedMotion } from '@lib/utils/environment'
-import { easeInOutCubic } from '@lib/utils/math-easing'
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
+import { state } from '@lib/engine/state-bridge';
+import type { CameraLike, ControlsLike, SemanticState } from '@lib/state/state-types';
+import { prefersReducedMotion } from '@lib/utils/environment';
+import { easeInOutCubic } from '@lib/utils/math-easing';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 export const OVERVIEW_CAMERA_POSE = Object.freeze({
     position: Object.freeze([2.05, 1.55, 2.75]) as readonly [number, number, number],
     target: Object.freeze([0, 0, 0]) as readonly [number, number, number]
-})
+});
 
-const AUTO_ROTATE_IDLE_MS = 3600
-const AUTO_ROTATE_SOFT_RESUME_MS = 1800
-const AUTO_ROTATE_BASE_SPEED = 0.34
+const AUTO_ROTATE_IDLE_MS = 3600;
+const AUTO_ROTATE_SOFT_RESUME_MS = 1800;
+const AUTO_ROTATE_BASE_SPEED = 0.34;
 
 // ── CameraControlsRestore class ──────────────────────────────────────────────
 
 class CameraControlsRestore {
     // ── Auto-rotate state ─────────────────────────────────────────────────
-    autoRotate = $state<boolean>(false)
-    autoRotateSuspended = $state<boolean>(false)
-    autoRotateSoftResumeStartedAt = $state<number>(0)
-    autoRotateResumeTimer = $state<ReturnType<typeof setTimeout> | null>(null)
-    autoRotateResumeDueAt = $state<number>(0)
+    autoRotate = $state<boolean>(false);
+    autoRotateSuspended = $state<boolean>(false);
+    autoRotateSoftResumeStartedAt = $state<number>(0);
+    autoRotateResumeTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+    autoRotateResumeDueAt = $state<number>(0);
 
     // ── Camera overview pose ──────────────────────────────────────────────
 
     settleCameraToOverviewPose(): boolean {
-        if (appState.camera == null || appState.controls == null) return false
-        if (appState.sceneRevealActive) return false
-        if (appState.focusedNode != null) return false
-        if (appState.focusState.selectedPoint != null) return false
-        const _mode = appState.navState?.mode
-        if (_mode === 'overview') {
-            /* ok — fall through */
-        } else return false
-        if (appState.trailDepth === 0) {
-            /* ok — fall through */
-        } else return false
+        const _s = state as unknown as SemanticState;
+        if (_s.camera == null || _s.controls == null) return false;
+        if (_s.sceneRevealActive) return false;
+        // Note: avoid `!==` on Svelte-5-rune state properties — the strict-mode
+        // compiler bug inverts `!==` to `===`. Use `!= null` (Pattern 3) and
+        // positive equality (Pattern 2) instead.
+        if (_s.focusedNode != null) return false;
+        if (_s.selectedPoint != null) return false;
+        const _mode = _s.navState?.mode;
+        if (_mode === 'overview') { /* ok — fall through */ } else return false;
+        if (_s.trailDepth === 0) { /* ok — fall through */ } else return false;
 
-        const cam = appState.camera
-        const ctrl = appState.controls
-        const [px, py, pz] = OVERVIEW_CAMERA_POSE.position
-        const [tx, ty, tz] = OVERVIEW_CAMERA_POSE.target
-        cam.position.set?.(px, py, pz)
-        ctrl.target.set?.(tx, ty, tz)
-        cam.lookAt?.(tx, ty, tz)
-        ctrl.update()
-        return true
+        const cam = _s.camera as CameraLike;
+        const ctrl = _s.controls as ControlsLike;
+        const [px, py, pz] = OVERVIEW_CAMERA_POSE.position;
+        const [tx, ty, tz] = OVERVIEW_CAMERA_POSE.target;
+        cam.position.set?.(px, py, pz);
+        ctrl.target.set?.(tx, ty, tz);
+        cam.lookAt?.(tx, ty, tz);
+        ctrl.update();
+        return true;
     }
 
     // ── Auto-rotate allowed check ─────────────────────────────────────────
 
     isCameraIdleOrbitAllowed(): boolean {
-        const prefersReduced = prefersReducedMotion()
+        const _s = state as unknown as SemanticState;
+        const prefersReduced = prefersReducedMotion();
         return (
             this.autoRotate &&
             !prefersReduced &&
-            appState.currentView === 'galaxy' &&
-            appState.focusedNode === null &&
-            appState.focusState.selectedPoint === null &&
-            appState.navState.mode === 'overview' &&
+            _s.currentView === 'galaxy' &&
+            _s.focusedNode === null &&
+            _s.selectedPoint === null &&
+            _s.navState.mode === 'overview' &&
             !this.autoRotateSuspended &&
-            !appState.sceneRevealActive &&
-            !appState.searchState.searchGlowActive
-        )
+            !_s.sceneRevealActive &&
+            !_s.searchGlowActive
+        );
     }
 
     // ── Orbit sync ────────────────────────────────────────────────────────
 
     syncOrbitAutoRotate(): void {
-        if (appState.controls != null) {
-            const allowed = this.isCameraIdleOrbitAllowed()
-            appState.controls.autoRotate = allowed
+        const _s = state as unknown as SemanticState;
+        if (_s.controls != null) {
+            const allowed = this.isCameraIdleOrbitAllowed();
+            _s.controls.autoRotate = allowed;
             if (!allowed) {
-                appState.controls.autoRotateSpeed = 0
-                if (this.autoRotateSoftResumeStartedAt) this.autoRotateSoftResumeStartedAt = 0
-            } else if (!this.autoRotateSoftResumeStartedAt && (appState.controls.autoRotateSpeed ?? 0) <= 0) {
-                appState.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED
+                _s.controls.autoRotateSpeed = 0;
+                if (this.autoRotateSoftResumeStartedAt) this.autoRotateSoftResumeStartedAt = 0;
+            } else if (!this.autoRotateSoftResumeStartedAt && (_s.controls.autoRotateSpeed ?? 0) <= 0) {
+                _s.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED;
             }
         }
     }
@@ -105,163 +103,179 @@ class CameraControlsRestore {
     // ── Suspend/resume ────────────────────────────────────────────────────
 
     setAutoRotateSuspended(suspended: boolean): void {
-        if (this.autoRotateSuspended === suspended) return
-        this.autoRotateSuspended = suspended
-        appState.autoRotateSuspended = suspended
+        if (this.autoRotateSuspended === suspended) return;
+        this.autoRotateSuspended = suspended;
+        // Legacy mirror
+        const _s = state as unknown as SemanticState;
+        _s.autoRotateSuspended = suspended;
         if (suspended) {
-            this.autoRotateSoftResumeStartedAt = 0
+            this.autoRotateSoftResumeStartedAt = 0;
+            _s.autoRotateSoftResumeStartedAt = 0;
         } else {
-            this.autoRotateSoftResumeStartedAt = performance.now()
+            this.autoRotateSoftResumeStartedAt = performance.now();
+            _s.autoRotateSoftResumeStartedAt = this.autoRotateSoftResumeStartedAt;
         }
-        this.syncOrbitAutoRotate()
+        this.syncOrbitAutoRotate();
     }
 
     clearAutoRotateResumeTimer(): void {
-        if (!this.autoRotateResumeTimer) return
-        clearTimeout(this.autoRotateResumeTimer)
-        this.autoRotateResumeTimer = null
-        this.autoRotateResumeDueAt = 0
+        if (!this.autoRotateResumeTimer) return;
+        clearTimeout(this.autoRotateResumeTimer);
+        this.autoRotateResumeTimer = null;
+        this.autoRotateResumeDueAt = 0;
+        // Legacy mirror
+        const _s = state as unknown as SemanticState;
+        _s.autoRotateResumeTimer = null;
+        _s.autoRotateResumeDueAt = 0;
     }
 
     scheduleAutoRotateResume(delay: number = AUTO_ROTATE_IDLE_MS): void {
-        this.clearAutoRotateResumeTimer()
-        if (prefersReducedMotion()) return
-        const _isGalaxy = appState.currentView === 'galaxy'
-        const _noFocus = appState.focusedNode == null
-        const _noSelection = appState.focusState.selectedPoint == null
-        const _isOverview = appState.navState.mode === 'overview'
-        const _pocketActive = (appState.navState.focusPocketMeta as { active?: boolean } | null)?.active === true
-        const _trailZero = appState.trailDepth === 0
+        this.clearAutoRotateResumeTimer();
+        if (prefersReducedMotion()) return;
+        const _s = state as unknown as SemanticState;
+        // Note: avoid `!==` on Svelte-5-rune state properties — the strict-mode
+        // compiler bug inverts `!==` to `===`. Use positive equality (Pattern 2)
+        // and `!= null` (Pattern 3) instead.
+        const _isGalaxy = _s.currentView === 'galaxy';
+        const _noFocus = _s.focusedNode == null;
+        const _noSelection = _s.selectedPoint == null;
+        const _isOverview = _s.navState.mode === 'overview';
+        const _pocketActive = (_s.navState.focusPocketMeta as { active?: boolean } | null)?.active === true;
+        const _trailZero = _s.trailDepth === 0;
         if (
             !this.autoRotate ||
             !_isGalaxy ||
             !_noFocus ||
             !_noSelection ||
-            appState.sceneRevealActive ||
+            _s.sceneRevealActive ||
             !_isOverview ||
             _pocketActive ||
             !_trailZero
         )
-            return
-        this.autoRotateResumeDueAt = performance.now() + delay
-        const _reg = new DisposableRegistry({ label: 'camera-controls-restore' })
-        this.autoRotateResumeTimer = _reg.schedule(delay, () => {
-            this.autoRotateResumeTimer = null
-            this.autoRotateResumeDueAt = 0
+            return;
+        this.autoRotateResumeDueAt = performance.now() + delay;
+        _s.autoRotateResumeDueAt = this.autoRotateResumeDueAt;
+        this.autoRotateResumeTimer = setTimeout(() => {
+            this.autoRotateResumeTimer = null;
+            this.autoRotateResumeDueAt = 0;
+            _s.autoRotateResumeTimer = null;
+            _s.autoRotateResumeDueAt = 0;
             if (
                 this.autoRotate &&
-                appState.currentView === 'galaxy' &&
-                appState.focusedNode == null &&
-                appState.focusState.selectedPoint == null &&
-                appState.navState.mode === 'overview' &&
-                !appState.sceneRevealActive &&
-                (appState.navState.focusPocketMeta as { active?: boolean } | null)?.active !== true &&
-                appState.trailDepth === 0
+                _s.currentView === 'galaxy' &&
+                _s.focusedNode == null &&
+                _s.selectedPoint == null &&
+                _s.navState.mode === 'overview' &&
+                !_s.sceneRevealActive &&
+                (_s.navState.focusPocketMeta as { active?: boolean } | null)?.active !== true && // audit-ok: plain function, not transformed — bundle preserves native !==
+                _s.trailDepth === 0
             ) {
-                this.setAutoRotateSuspended(false)
+                this.setAutoRotateSuspended(false);
             }
-        })
+        }, delay);
     }
 
     noteSceneInteraction(delay: number = AUTO_ROTATE_IDLE_MS): void {
-        this.setAutoRotateSuspended(true)
-        this.scheduleAutoRotateResume(delay)
+        this.setAutoRotateSuspended(true);
+        this.scheduleAutoRotateResume(delay);
     }
 
     // ── Soft resume progress ──────────────────────────────────────────────
 
     updateAutoRotateSoftResume(now: number = performance.now()): void {
-        if (appState.controls == null) return
-        this.syncOrbitAutoRotate()
-        if (!appState.controls.autoRotate) return
+        const _s = state as unknown as SemanticState;
+        if (_s.controls == null) return;
+        this.syncOrbitAutoRotate();
+        if (!_s.controls.autoRotate) return;
         if (!this.autoRotateSoftResumeStartedAt) {
-            appState.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED
-            return
+            _s.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED;
+            return;
         }
 
         const progress = Math.min(
             1,
             Math.max(0, (now - this.autoRotateSoftResumeStartedAt) / AUTO_ROTATE_SOFT_RESUME_MS)
-        )
-        const eased = easeInOutCubic(progress)
-        appState.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED * eased
+        );
+        const eased = easeInOutCubic(progress);
+        _s.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED * eased;
         if (progress >= 1) {
-            this.autoRotateSoftResumeStartedAt = 0
-            appState.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED
+            this.autoRotateSoftResumeStartedAt = 0;
+            _s.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED;
         }
     }
 
     // ── Toggle ────────────────────────────────────────────────────────────
 
     toggleAutoRotate(): void {
-        const prefersReduced = prefersReducedMotion()
+        const _s = state as unknown as SemanticState;
+        const prefersReduced = prefersReducedMotion();
         if (prefersReduced) {
-            this.autoRotate = false
-            appState.autoRotate = false
-            if (appState.controls != null) {
-                appState.controls.autoRotate = false
-                appState.controls.autoRotateSpeed = 0
+            this.autoRotate = false;
+            _s.autoRotate = false;
+            if (_s.controls != null) {
+                _s.controls.autoRotate = false;
+                _s.controls.autoRotateSpeed = 0;
             }
-            const rotateBtn = document.getElementById('btn-rotate')
+            const rotateBtn = document.getElementById('btn-rotate');
             if (rotateBtn) {
-                rotateBtn.setAttribute('aria-pressed', 'false')
-                rotateBtn.setAttribute('aria-disabled', 'true')
+                rotateBtn.setAttribute('aria-pressed', 'false');
+                rotateBtn.setAttribute('aria-disabled', 'true');
             }
-            return
+            return;
         }
-        this.autoRotate = !this.autoRotate
-        appState.autoRotate = this.autoRotate
-        if (appState.controls != null) {
-            appState.controls.autoRotate = this.autoRotate && !this.autoRotateSuspended
+        this.autoRotate = !this.autoRotate;
+        _s.autoRotate = this.autoRotate;
+        if (_s.controls != null) {
+            _s.controls.autoRotate = this.autoRotate && !this.autoRotateSuspended;
         }
-        const rotateBtn = document.getElementById('btn-rotate')
+        const rotateBtn = document.getElementById('btn-rotate');
         if (rotateBtn) {
-            rotateBtn.setAttribute('aria-pressed', String(this.autoRotate === true))
-            rotateBtn.removeAttribute('aria-disabled')
+            rotateBtn.setAttribute('aria-pressed', String(this.autoRotate === true));
+            rotateBtn.removeAttribute('aria-disabled');
         }
     }
 }
 
 // ── Singleton ────────────────────────────────────────────────────────────────
 
-export const cameraControlsRestore = new CameraControlsRestore()
+export const cameraControlsRestore = new CameraControlsRestore();
 
 // ── Legacy-compatible function exports ───────────────────────────────────────
-// These maintain the same API surface as
+// These maintain the same API surface as js/modules/camera-controls-restore.ts
 // so existing consumers (choreography, bridge) don't need import changes.
 
 export function settleCameraToOverviewPose(): boolean {
-    return cameraControlsRestore.settleCameraToOverviewPose()
+    return cameraControlsRestore.settleCameraToOverviewPose();
 }
 
 export function isCameraIdleOrbitAllowed(): boolean {
-    return cameraControlsRestore.isCameraIdleOrbitAllowed()
+    return cameraControlsRestore.isCameraIdleOrbitAllowed();
 }
 
 export function syncOrbitAutoRotate(): void {
-    cameraControlsRestore.syncOrbitAutoRotate()
+    cameraControlsRestore.syncOrbitAutoRotate();
 }
 
 export function setAutoRotateSuspended(suspended: boolean): void {
-    cameraControlsRestore.setAutoRotateSuspended(suspended)
+    cameraControlsRestore.setAutoRotateSuspended(suspended);
 }
 
 export function clearAutoRotateResumeTimer(): void {
-    cameraControlsRestore.clearAutoRotateResumeTimer()
+    cameraControlsRestore.clearAutoRotateResumeTimer();
 }
 
 export function scheduleAutoRotateResume(delay: number = AUTO_ROTATE_IDLE_MS): void {
-    cameraControlsRestore.scheduleAutoRotateResume(delay)
+    cameraControlsRestore.scheduleAutoRotateResume(delay);
 }
 
 export function noteSceneInteraction(delay: number = AUTO_ROTATE_IDLE_MS): void {
-    cameraControlsRestore.noteSceneInteraction(delay)
+    cameraControlsRestore.noteSceneInteraction(delay);
 }
 
 export function updateAutoRotateSoftResume(now: number = performance.now()): void {
-    cameraControlsRestore.updateAutoRotateSoftResume(now)
+    cameraControlsRestore.updateAutoRotateSoftResume(now);
 }
 
 export function toggleAutoRotate(): void {
-    cameraControlsRestore.toggleAutoRotate()
+    cameraControlsRestore.toggleAutoRotate();
 }

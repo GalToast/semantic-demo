@@ -11,156 +11,40 @@
  *
  * Usage:
  *   node tests/search-peek-expanded-render-contract.mjs [url]
- *   Default URL: http://127.0.0.1:8812/index.html
+ *   Default URL: http://127.0.0.1:8812/vector-explorer-polished.html
  */
 
-// ── RUNTIME BEHAVIORAL TESTS (Wave 7a P3 hardening) ────────────────────────
-// These tests run in Node against the search panel adapter functions that
-// control peek/expanded state. The legacy Playwright browser tests below
-// are preserved for reference but only run with --browser flag.
+import { chromium } from 'playwright';
+import { createServer } from 'http';
+import { readFileSync } from 'fs';
+import { join, extname } from 'path';
 
-const rt = { passed: 0, failed: 0 }
-function rtPass(name) { rt.passed++; console.log(`  PASS  runtime  ${name}`) }
-function rtFail(name, msg) { rt.failed++; console.error(`  FAIL  runtime  ${name} — ${msg}`) }
-
-try {
-  // Set up minimal DOM shim BEFORE calling functions that touch document
-  if (!globalThis.document) {
-    globalThis.document = {
-      body: { dataset: {} },
-      querySelector: () => null,
-      getElementById: () => null
-    }
-  }
-
-  const adapter = await import('../src/lib/search/search-panel-adapter.ts')
-
-  // R1: All 7 exported functions are importable
-  const expectedExports = [
-    'getSearchContainer', 'setSearchContainerState', 'setSearchGlowState',
-    'getPanelSurfaceDetailFromMobileSheet', 'syncPanelSurfaceDetailFromMobileSheet',
-    'setMobileSearchSheetMode', 'clearMobileSearchSheetState'
-  ]
-  for (const name of expectedExports) {
-    if (typeof adapter[name] === 'function')
-      rtPass(`R1:${name} is function`)
-    else
-      rtFail(`R1:${name}`, `type=${typeof adapter[name]}`)
-  }
-
-  // R2: getSearchContainer returns null in Node (no DOM)
-  const container = adapter.getSearchContainer()
-  if (container === null)
-    rtPass('R2:getSearchContainer returns null (no DOM)')
-  else
-    rtFail('R2:getSearchContainer', `expected null, got ${typeof container}`)
-
-  // R3: setSearchContainerState no-throw with no DOM
-  try {
-    adapter.setSearchContainerState({ searching: true, hasQuery: true })
-    rtPass('R3:setSearchContainerState no-throw (no DOM)')
-  } catch (e) {
-    rtFail('R3:setSearchContainerState', `threw: ${e.message}`)
-  }
-
-  // R4: clearMobileSearchSheetState no-throw with no DOM
-  try {
-    adapter.clearMobileSearchSheetState()
-    rtPass('R4:clearMobileSearchSheetState no-throw (no DOM)')
-  } catch (e) {
-    rtFail('R4:clearMobileSearchSheetState', `threw: ${e.message}`)
-  }
-
-  // R5: setMobileSearchSheetMode('peek') works with DOM shim
-  try {
-    adapter.setMobileSearchSheetMode('peek')
-    rtPass('R5:setMobileSearchSheetMode peek no-throw (DOM shim)')
-  } catch (e) {
-    rtFail('R5:setMobileSearchSheetMode', `threw: ${e.message}`)
-  }
-
-  // R6: setMobileSearchSheetMode('expanded') works
-  try {
-    adapter.setMobileSearchSheetMode('expanded')
-    rtPass('R6:setMobileSearchSheetMode expanded no-throw')
-  } catch (e) {
-    rtFail('R6:setMobileSearchSheetMode expanded', `threw: ${e.message}`)
-  }
-
-} catch (e) {
-  rtFail('import', `could not import search-panel-adapter: ${e.message.split('\n')[0]}`)
-}
-
-console.log(`\nruntime results: ${rt.passed}/${rt.passed + rt.failed} passed`)
-if (rt.failed > 0) {
-  console.error(`${rt.failed} runtime test(s) FAILED`)
-  process.exit(1)
-}
-console.log('All runtime behavioral tests passed.')
-
-// Gate Playwright tests: only run if --browser flag is passed
-const runBrowser = process.argv.includes('--browser')
-if (!runBrowser) {
-  console.log('\n[SKIP] Legacy Playwright browser tests — pass --browser to run them.')
-  console.log('search-peek-expanded-render-contract passed (Node runtime + static)')
-  process.exit(0)
-}
-
-// ---------------------------------------------------------------------------
-// LEGACY PLAYWRIGHT TESTS (superseded, run only with --browser flag)
-// ---------------------------------------------------------------------------
-// These tests inject synthetic HTML and validate CSS rendering. They are
-// preserved for visual regression testing against the legacy HTML fixture.
-// The Svelte app's reactive DOM wipes injected HTML, so these tests cannot
-// validate the current product. Real visual testing is done via Playwright
-// journey tests (npm run qa:journey).
-
-import { chromium } from 'playwright'
-import { createServer } from 'http'
-import { readFileSync } from 'fs'
-import { extname, resolve } from 'path'
-
-const ROOT = process.cwd()
-const headed =
-    process.env.CONTRACT_HEADED === '1' || process.env.PLAYWRIGHT_HEADED === '1' || process.env.PWDEBUG === '1'
-// SwiftShader gate (see visual-state-audit.mjs)
-const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
+const ROOT = process.cwd();
 
 // ---------------------------------------------------------------------------
 // Inline HTTP server (serves project files, auto-shutdown)
 // ---------------------------------------------------------------------------
 
-// The contract fixture is docs/archive/vector-explorer-polished-legacy.html
-// (frozen build artifact preserved for browser-side CSS contract tests).
-// Its <link rel="stylesheet"> references resolve to live source css/ files
-// at the project root, so this test always exercises the current CSS state
-// machine, not a frozen copy.
-const LEGACY_HTML_FIXTURE = 'docs/archive/vector-explorer-polished-legacy.html'
-
 function startServer(port) {
-    return new Promise((resolvePromise) => {
-        const server = createServer((req, res) => {
-            // Strip query string and decode URI; on Windows, path.resolve treats
-            // '/foo' as absolute (no drive), so we strip leading slashes to
-            // resolve against cwd. Matches tests/focus-stage-render-contract.mjs.
-            const reqPath = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '')
-            const fp = resolve(
-                ROOT,
-                reqPath === '' || reqPath === 'vector-explorer-polished.html' ? LEGACY_HTML_FIXTURE : reqPath
-            )
-            try {
-                const content = readFileSync(fp)
-                const ct =
-                    extname(fp) === '.css' ? 'text/css' : extname(fp) === '.ts' ? 'application/javascript' : 'text/html'
-                res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'no-cache' })
-                res.end(content)
-            } catch {
-                res.writeHead(404)
-                res.end('Not found')
-            }
-        })
-        server.listen(port, () => resolvePromise(server))
-    })
+  return new Promise((resolve) => {
+    const server = createServer((req, res) => {
+      const pathname = new URL(req.url, `http://127.0.0.1:${port}`).pathname;
+      const url = pathname === '/' ? '/vector-explorer-polished.html' : pathname;
+      const file = join(ROOT, url);
+      try {
+        const content = readFileSync(file);
+        const ct = extname(file) === '.css' ? 'text/css'
+          : extname(file) === '.ts' ? 'application/javascript'
+          : 'text/html';
+        res.writeHead(200, { 'Content-Type': ct });
+        res.end(content);
+      } catch {
+        res.writeHead(404);
+        res.end('Not found');
+      }
+    });
+    server.listen(port, () => resolve(server));
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -218,67 +102,57 @@ const SAMPLE_RESULTS_HTML = `
   </div>
 </div>
 <button class="search-show-more-btn" type="button" aria-label="Show 2 more search results">Show 2 more results</button>
-`
+`;
 
 async function waitForAppSettled(page) {
-    await page
-        .waitForFunction(
-            () => {
-                const body = document.body
-                const overlay = document.getElementById('loading-overlay')
-                return (
-                    Boolean(document.querySelector('.search-container') && document.querySelector('#search-results')) ||
-                    body?.dataset?.sceneReady === 'true' ||
-                    body?.dataset?.loadingOverlay === 'hidden' ||
-                    overlay?.hidden === true ||
-                    overlay?.classList.contains('hidden')
-                )
-            },
-            { timeout: 3000 }
-        )
-        .catch(() => {})
+  await page.waitForFunction(() => {
+    const body = document.body;
+    const overlay = document.getElementById('loading-overlay');
+    return Boolean(document.querySelector('.search-container') && document.querySelector('#search-results'))
+      || body?.dataset?.sceneReady === 'true'
+      || body?.dataset?.loadingOverlay === 'hidden'
+      || overlay?.hidden === true
+      || overlay?.classList.contains('hidden');
+  }, { timeout: 3000 }).catch(() => {});
 }
 
 async function installSearchFixture(page, detail = 'peek') {
-    await page.evaluate(
-        ({ html, detail }) => {
-            document.body.classList.add('is-active')
-            document.body.dataset.activeView = 'galaxy'
-            document.body.dataset.graphContext = 'search'
-            document.body.dataset.panelSurface = 'search'
-            document.body.dataset.panelSurfaceDetail = detail
-            document.body.dataset.mobileSearchSheet = detail
+  await page.evaluate(({ html, detail }) => {
+    document.body.classList.add('is-active');
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'search';
+    document.body.dataset.panelSurface = 'search';
+    document.body.dataset.panelSurfaceDetail = detail;
+    document.body.dataset.mobileSearchSheet = detail;
 
-            let container = document.querySelector('.search-container')
-            if (!container) {
-                container = document.createElement('section')
-                container.className = 'search-container glass-medium'
-                container.setAttribute('role', 'search')
-                document.body.appendChild(container)
-            }
+    let container = document.querySelector('.search-container');
+    if (!container) {
+      container = document.createElement('section');
+      container.className = 'search-container glass-medium';
+      container.setAttribute('role', 'search');
+      document.body.appendChild(container);
+    }
 
-            let results = document.querySelector('#search-results')
-            if (!results) {
-                results = document.createElement('div')
-                results.id = 'search-results'
-                results.className = 'search-results glass-light'
-                results.setAttribute('role', 'region')
-                results.setAttribute('aria-label', 'Search results')
-                container.appendChild(results)
-            } else if (!container.contains(results)) {
-                container.appendChild(results)
-            }
+    let results = document.querySelector('#search-results');
+    if (!results) {
+      results = document.createElement('div');
+      results.id = 'search-results';
+      results.className = 'search-results glass-light';
+      results.setAttribute('role', 'region');
+      results.setAttribute('aria-label', 'Search results');
+      container.appendChild(results);
+    } else if (!container.contains(results)) {
+      container.appendChild(results);
+    }
 
-            if (container && results) {
-                results.innerHTML = html
-                results.classList.add('active')
-                results.classList.toggle('is-expanded', detail === 'expanded')
-                container.classList.add('has-query', 'results-rendered')
-                container.classList.toggle('has-expanded-results', detail === 'expanded')
-            }
-        },
-        { html: SAMPLE_RESULTS_HTML, detail }
-    )
+    if (container && results) {
+      results.innerHTML = html;
+      results.classList.add('active');
+      results.classList.toggle('is-expanded', detail === 'expanded');
+      container.classList.add('has-query', 'results-rendered');
+      container.classList.toggle('has-expanded-results', detail === 'expanded');
+    }
+  }, { html: SAMPLE_RESULTS_HTML, detail });
 }
 
 // ---------------------------------------------------------------------------
@@ -294,177 +168,134 @@ async function installSearchFixture(page, detail = 'peek') {
 // ---------------------------------------------------------------------------
 
 async function assertPeekMode(page, ctx) {
-    const info = await page.evaluate(() => {
-        function textClipped(el) {
-            if (!el) return false
-            const s = getComputedStyle(el)
-            if (s.display === 'none' || s.visibility === 'hidden') return false
-            const rect = el.getBoundingClientRect()
-            return el.scrollWidth > rect.width + 3 || el.scrollHeight > rect.height + 3
-        }
-
-        const results = document.querySelector('#search-results')
-        const countEl = document.querySelector('#search-results-count')
-        const allItems = Array.from(results?.querySelectorAll('.search-result-item') || [])
-        const firstItem = allItems[0] || null
-        const firstRank = firstItem?.querySelector('.search-result-rank')
-        const firstName = firstItem?.querySelector('.search-result-name')
-        const peekWhat = firstItem?.querySelector('.search-result-what')
-        const peekMeta = firstItem?.querySelector('.search-result-meta')
-        const peekContext = firstItem?.querySelector('.search-result-context')
-        const peekBar = firstItem?.querySelector('.search-result-bar')
-        const nonFirst = allItems.slice(1)
-
-        const firstItemDisplay = firstItem ? getComputedStyle(firstItem).display : null
-        const firstItemRect = firstItem?.getBoundingClientRect()
-        const resultsStyle = results ? getComputedStyle(results) : null
-        const resultsRect = results?.getBoundingClientRect()
-        const firstItemClipped = textClipped(firstRank) || textClipped(firstName)
-        const countDisplay = countEl ? getComputedStyle(countEl).display : null
-        const countClipped = textClipped(countEl)
-
-        return {
-            bodyClasses: Array.from(document.body.classList),
-            panelSurface: document.body.dataset.panelSurface,
-            panelSurfaceDetail: document.body.dataset.panelSurfaceDetail,
-            resultsPresent: results !== null,
-            resultsHeight: resultsRect?.height ?? null,
-            resultsComputedHeight: resultsStyle?.height ?? null,
-            resultsMinHeight: resultsStyle?.minHeight ?? null,
-            resultsMaxHeight: resultsStyle?.maxHeight ?? null,
-            resultsFlexBasis: resultsStyle?.flexBasis ?? null,
-            firstItemDisplay,
-            firstItemHeight: firstItemRect?.height,
-            firstItemClipped,
-            countDisplay,
-            countClipped,
-            whatDisplay: peekWhat ? getComputedStyle(peekWhat).display : null,
-            metaDisplay: peekMeta ? getComputedStyle(peekMeta).display : null,
-            contextDisplay: peekContext ? getComputedStyle(peekContext).display : null,
-            barDisplay: peekBar ? getComputedStyle(peekBar).display : null,
-            nonFirstDisplays: nonFirst.map((el) => getComputedStyle(el).display),
-            nonFirstOverflow: nonFirst.map((el) => getComputedStyle(el).overflow),
-            overflowX: document.documentElement.scrollWidth > window.innerWidth,
-            totalItems: allItems.length
-        }
-    })
-
-    if (info.resultsPresent) ctx.pass('peek', 'dom:search-results')
-    else {
-        ctx.fail('peek', 'dom:search-results', 'missing #search-results')
-        return info
+  const info = await page.evaluate(() => {
+    function textClipped(el) {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      if (s.display === 'none' || s.visibility === 'hidden') return false;
+      const rect = el.getBoundingClientRect();
+      return el.scrollWidth > rect.width + 3 || el.scrollHeight > rect.height + 3;
     }
 
-    if (info.panelSurface === 'search' && info.panelSurfaceDetail === 'peek') {
-        ctx.pass('peek', 'state:panel-surface-detail')
-    } else {
-        ctx.fail(
-            'peek',
-            'state:panel-surface-detail',
-            `expected search/peek, got ${info.panelSurface || 'missing'}/${info.panelSurfaceDetail || 'missing'}`
-        )
-    }
+    const results = document.querySelector('#search-results');
+    const countEl = document.querySelector('#search-results-count');
+    const allItems = Array.from(results?.querySelectorAll('.search-result-item') || []);
+    const firstItem = allItems[0] || null;
+    const firstRank = firstItem?.querySelector('.search-result-rank');
+    const firstName = firstItem?.querySelector('.search-result-name');
+    const peekWhat = firstItem?.querySelector('.search-result-what');
+    const peekMeta = firstItem?.querySelector('.search-result-meta');
+    const peekContext = firstItem?.querySelector('.search-result-context');
+    const peekBar = firstItem?.querySelector('.search-result-bar');
+    const nonFirst = allItems.slice(1);
 
-    if (info.resultsHeight >= 71.5) {
-        ctx.pass('peek', 'layout:results-height-72px')
-    } else {
-        ctx.fail(
-            'peek',
-            'layout:results-height-72px',
-            `#search-results.active height ${info.resultsHeight}px; expected >= 72px`
-        )
-    }
+    const firstItemDisplay = firstItem ? getComputedStyle(firstItem).display : null;
+    const firstItemRect = firstItem?.getBoundingClientRect();
+    const resultsStyle = results ? getComputedStyle(results) : null;
+    const resultsRect = results?.getBoundingClientRect();
+    const firstItemClipped = textClipped(firstRank) || textClipped(firstName);
+    const countDisplay = countEl ? getComputedStyle(countEl).display : null;
+    const countClipped = textClipped(countEl);
 
-    if (info.resultsMinHeight === '72px' && info.resultsMaxHeight === '72px') {
-        ctx.pass('peek', 'layout:results-min-max-height-72px')
-    } else {
-        ctx.fail(
-            'peek',
-            'layout:results-min-max-height-72px',
-            `computed min/max height ${info.resultsMinHeight}/${info.resultsMaxHeight}; expected 72px/72px`
-        )
-    }
+    return {
+      bodyClasses: Array.from(document.body.classList),
+      panelSurface: document.body.dataset.panelSurface,
+      panelSurfaceDetail: document.body.dataset.panelSurfaceDetail,
+      resultsPresent: results !== null,
+      resultsHeight: resultsRect?.height ?? null,
+      resultsComputedHeight: resultsStyle?.height ?? null,
+      resultsMinHeight: resultsStyle?.minHeight ?? null,
+      resultsMaxHeight: resultsStyle?.maxHeight ?? null,
+      resultsFlexBasis: resultsStyle?.flexBasis ?? null,
+      firstItemDisplay,
+      firstItemHeight: firstItemRect?.height,
+      firstItemClipped,
+      countDisplay,
+      countClipped,
+      whatDisplay: peekWhat ? getComputedStyle(peekWhat).display : null,
+      metaDisplay: peekMeta ? getComputedStyle(peekMeta).display : null,
+      contextDisplay: peekContext ? getComputedStyle(peekContext).display : null,
+      barDisplay: peekBar ? getComputedStyle(peekBar).display : null,
+      nonFirstDisplays: nonFirst.map(el => getComputedStyle(el).display),
+      nonFirstOverflow: nonFirst.map(el => getComputedStyle(el).overflow),
+      overflowX: document.documentElement.scrollWidth > window.innerWidth,
+      totalItems: allItems.length,
+    };
+  });
 
-    if (info.resultsFlexBasis === '72px') {
-        ctx.pass('peek', 'layout:results-flex-basis-72px')
-    } else {
-        ctx.fail(
-            'peek',
-            'layout:results-flex-basis-72px',
-            `computed flex-basis ${info.resultsFlexBasis}; expected 72px`
-        )
-    }
+  if (info.resultsPresent) ctx.pass('peek', 'dom:search-results');
+  else { ctx.fail('peek', 'dom:search-results', 'missing #search-results'); return info; }
 
-    if (info.firstItemDisplay !== 'none') ctx.pass('peek', 'visibility:first-result-display-not-none')
-    else ctx.fail('peek', 'visibility:first-result-display-not-none', 'first result has display:none')
+  if (info.panelSurface === 'search' && info.panelSurfaceDetail === 'peek') {
+    ctx.pass('peek', 'state:panel-surface-detail');
+  } else {
+    ctx.fail('peek', 'state:panel-surface-detail', `expected search/peek, got ${info.panelSurface || 'missing'}/${info.panelSurfaceDetail || 'missing'}`);
+  }
 
-    if (!info.firstItemClipped) ctx.pass('peek', 'text-clipping:first-result')
-    else ctx.fail('peek', 'text-clipping:first-result', 'first result text is clipped')
+  if (info.resultsHeight >= 71.5) {
+    ctx.pass('peek', 'layout:results-height-72px');
+  } else {
+    ctx.fail(
+      'peek',
+      'layout:results-height-72px',
+      `#search-results.active height ${info.resultsHeight}px; expected >= 72px`
+    );
+  }
 
-    // count hidden via display:none
-    if (info.countDisplay === 'none') ctx.pass('peek', 'visibility:count-hidden-in-peek')
-    else
-        ctx.fail(
-            'peek',
-            'visibility:count-hidden-in-peek',
-            `.search-results-count display="${info.countDisplay}" should be "none"`
-        )
+  if (info.resultsMinHeight === '72px' && info.resultsMaxHeight === '72px') {
+    ctx.pass('peek', 'layout:results-min-max-height-72px');
+  } else {
+    ctx.fail(
+      'peek',
+      'layout:results-min-max-height-72px',
+      `computed min/max height ${info.resultsMinHeight}/${info.resultsMaxHeight}; expected 72px/72px`
+    );
+  }
 
-    // what/meta/context/bar hidden via display:none
-    if (info.whatDisplay === 'none') ctx.pass('peek', 'visibility:result-what-hidden-in-peek')
-    else
-        ctx.fail(
-            'peek',
-            'visibility:result-what-hidden-in-peek',
-            `.search-result-what display="${info.whatDisplay}" should be "none"`
-        )
+  if (info.resultsFlexBasis === '72px') {
+    ctx.pass('peek', 'layout:results-flex-basis-72px');
+  } else {
+    ctx.fail(
+      'peek',
+      'layout:results-flex-basis-72px',
+      `computed flex-basis ${info.resultsFlexBasis}; expected 72px`
+    );
+  }
 
-    if (info.metaDisplay === 'none') ctx.pass('peek', 'visibility:result-meta-hidden-in-peek')
-    else
-        ctx.fail(
-            'peek',
-            'visibility:result-meta-hidden-in-peek',
-            `.search-result-meta display="${info.metaDisplay}" should be "none"`
-        )
+  if (info.firstItemDisplay !== 'none') ctx.pass('peek', 'visibility:first-result-display-not-none');
+  else ctx.fail('peek', 'visibility:first-result-display-not-none', 'first result has display:none');
 
-    if (info.contextDisplay === 'none') ctx.pass('peek', 'visibility:result-context-hidden-in-peek')
-    else
-        ctx.fail(
-            'peek',
-            'visibility:result-context-hidden-in-peek',
-            `.search-result-context display="${info.contextDisplay}" should be "none"`
-        )
+  if (!info.firstItemClipped) ctx.pass('peek', 'text-clipping:first-result');
+  else ctx.fail('peek', 'text-clipping:first-result', 'first result text is clipped');
 
-    if (info.barDisplay === 'none') ctx.pass('peek', 'visibility:result-bar-hidden-in-peek')
-    else
-        ctx.fail(
-            'peek',
-            'visibility:result-bar-hidden-in-peek',
-            `.search-result-bar display="${info.barDisplay}" should be "none"`
-        )
+  // count hidden via display:none
+  if (info.countDisplay === 'none') ctx.pass('peek', 'visibility:count-hidden-in-peek');
+  else ctx.fail('peek', 'visibility:count-hidden-in-peek', `.search-results-count display="${info.countDisplay}" should be "none"`);
 
-    const allNonFirstHidden = info.nonFirstDisplays.every((display) => display === 'none')
-    if (allNonFirstHidden)
-        ctx.pass(
-            'peek',
-            'visibility:non-first-results-hidden-in-peek',
-            'non-first items are hidden in collapsed peek mode'
-        )
-    else {
-        const details = info.nonFirstDisplays
-            .map((display, i) => `${display} (overflow: ${info.nonFirstOverflow[i]})`)
-            .join(', ')
-        ctx.fail(
-            'peek',
-            'visibility:non-first-results-hidden-in-peek',
-            `non-first item displays: [${details}], body classes: [${info.bodyClasses.join(', ')}]`
-        )
-    }
+  // what/meta/context/bar hidden via display:none
+  if (info.whatDisplay === 'none') ctx.pass('peek', 'visibility:result-what-hidden-in-peek');
+  else ctx.fail('peek', 'visibility:result-what-hidden-in-peek', `.search-result-what display="${info.whatDisplay}" should be "none"`);
 
-    if (!info.overflowX) ctx.pass('peek', 'layout:no-overflow-x')
-    else ctx.fail('peek', 'layout:overflow-x', 'horizontal overflow in peek mode')
+  if (info.metaDisplay === 'none') ctx.pass('peek', 'visibility:result-meta-hidden-in-peek');
+  else ctx.fail('peek', 'visibility:result-meta-hidden-in-peek', `.search-result-meta display="${info.metaDisplay}" should be "none"`);
 
-    return info
+  if (info.contextDisplay === 'none') ctx.pass('peek', 'visibility:result-context-hidden-in-peek');
+  else ctx.fail('peek', 'visibility:result-context-hidden-in-peek', `.search-result-context display="${info.contextDisplay}" should be "none"`);
+
+  if (info.barDisplay === 'none') ctx.pass('peek', 'visibility:result-bar-hidden-in-peek');
+  else ctx.fail('peek', 'visibility:result-bar-hidden-in-peek', `.search-result-bar display="${info.barDisplay}" should be "none"`);
+
+  const allNonFirstHidden = info.nonFirstDisplays.every(display => display === 'none');
+  if (allNonFirstHidden) ctx.pass('peek', 'visibility:non-first-results-hidden-in-peek', 'non-first items are hidden in collapsed peek mode');
+  else {
+    const details = info.nonFirstDisplays.map((display, i) => `${display} (overflow: ${info.nonFirstOverflow[i]})`).join(', ');
+    ctx.fail('peek', 'visibility:non-first-results-hidden-in-peek', `non-first item displays: [${details}], body classes: [${info.bodyClasses.join(', ')}]`);
+  }
+
+  if (!info.overflowX) ctx.pass('peek', 'layout:no-overflow-x');
+  else ctx.fail('peek', 'layout:overflow-x', 'horizontal overflow in peek mode');
+
+  return info;
 }
 
 // ---------------------------------------------------------------------------
@@ -472,111 +303,77 @@ async function assertPeekMode(page, ctx) {
 // ---------------------------------------------------------------------------
 
 async function assertExpandedMode(page, ctx) {
-    const info = await page.evaluate(() => {
-        function textClipped(el) {
-            if (!el) return false
-            const s = getComputedStyle(el)
-            if (s.display === 'none' || s.visibility === 'hidden') return false
-            const rect = el.getBoundingClientRect()
-            return el.scrollWidth > rect.width + 3 || el.scrollHeight > rect.height + 3
-        }
-
-        function isVisible(el) {
-            if (!el) return false
-            const s = getComputedStyle(el)
-            return s.display !== 'none' && s.visibility !== 'hidden' && el.getBoundingClientRect().height > 0
-        }
-
-        const results = document.querySelector('#search-results')
-        const countEl = document.querySelector('#search-results-count')
-        const allItems = Array.from(results?.querySelectorAll('.search-result-item') || [])
-        const firstItem = allItems[0] || null
-        const peekWhat = firstItem?.querySelector('.search-result-what')
-        const peekMeta = firstItem?.querySelector('.search-result-meta')
-        const peekContext = firstItem?.querySelector('.search-result-context')
-        const peekBar = firstItem?.querySelector('.search-result-bar')
-        const visibleItems = allItems.filter(isVisible)
-
-        return {
-            resultsPresent: results !== null,
-            countDisplay: countEl ? getComputedStyle(countEl).display : null,
-            countClipped: textClipped(countEl),
-            whatDisplay: peekWhat ? getComputedStyle(peekWhat).display : null,
-            whatClipped: textClipped(peekWhat),
-            metaDisplay: peekMeta ? getComputedStyle(peekMeta).display : null,
-            contextDisplay: peekContext ? getComputedStyle(peekContext).display : null,
-            barDisplay: peekBar ? getComputedStyle(peekBar).display : null,
-            visibleItemsCount: visibleItems.length,
-            overflowX: document.documentElement.scrollWidth > window.innerWidth,
-            totalItems: allItems.length
-        }
-    })
-
-    if (info.resultsPresent) ctx.pass('expanded', 'dom:search-results')
-    else {
-        ctx.fail('expanded', 'dom:search-results', 'missing #search-results')
-        return info
+  const info = await page.evaluate(() => {
+    function textClipped(el) {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      if (s.display === 'none' || s.visibility === 'hidden') return false;
+      const rect = el.getBoundingClientRect();
+      return el.scrollWidth > rect.width + 3 || el.scrollHeight > rect.height + 3;
     }
 
-    if (info.countDisplay !== 'none') ctx.pass('expanded', 'visibility:count-visible')
-    else
-        ctx.fail(
-            'expanded',
-            'visibility:count-visible',
-            `.search-results-count display="${info.countDisplay}" should not be "none"`
-        )
+    function isVisible(el) {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      return s.display !== 'none' && s.visibility !== 'hidden' && el.getBoundingClientRect().height > 0;
+    }
 
-    if (!info.countClipped) ctx.pass('expanded', 'text-clipping:count')
-    else ctx.fail('expanded', 'text-clipping:count', 'result count text is clipped')
+    const results = document.querySelector('#search-results');
+    const countEl = document.querySelector('#search-results-count');
+    const allItems = Array.from(results?.querySelectorAll('.search-result-item') || []);
+    const firstItem = allItems[0] || null;
+    const peekWhat = firstItem?.querySelector('.search-result-what');
+    const peekMeta = firstItem?.querySelector('.search-result-meta');
+    const peekContext = firstItem?.querySelector('.search-result-context');
+    const peekBar = firstItem?.querySelector('.search-result-bar');
+    const visibleItems = allItems.filter(isVisible);
 
-    if (info.whatDisplay !== 'none') ctx.pass('expanded', 'visibility:result-what-visible')
-    else
-        ctx.fail(
-            'expanded',
-            'visibility:result-what-visible',
-            `.search-result-what display="${info.whatDisplay}" should not be "none"`
-        )
+    return {
+      resultsPresent: results !== null,
+      countDisplay: countEl ? getComputedStyle(countEl).display : null,
+      countClipped: textClipped(countEl),
+      whatDisplay: peekWhat ? getComputedStyle(peekWhat).display : null,
+      whatClipped: textClipped(peekWhat),
+      metaDisplay: peekMeta ? getComputedStyle(peekMeta).display : null,
+      contextDisplay: peekContext ? getComputedStyle(peekContext).display : null,
+      barDisplay: peekBar ? getComputedStyle(peekBar).display : null,
+      visibleItemsCount: visibleItems.length,
+      overflowX: document.documentElement.scrollWidth > window.innerWidth,
+      totalItems: allItems.length,
+    };
+  });
 
-    if (!info.whatClipped) ctx.pass('expanded', 'text-clipping:result-what')
-    else ctx.fail('expanded', 'text-clipping:result-what', '.search-result-what text is clipped')
+  if (info.resultsPresent) ctx.pass('expanded', 'dom:search-results');
+  else { ctx.fail('expanded', 'dom:search-results', 'missing #search-results'); return info; }
 
-    if (info.metaDisplay !== 'none') ctx.pass('expanded', 'visibility:result-meta-visible')
-    else
-        ctx.fail(
-            'expanded',
-            'visibility:result-meta-visible',
-            `.search-result-meta display="${info.metaDisplay}" should not be "none"`
-        )
+  if (info.countDisplay !== 'none') ctx.pass('expanded', 'visibility:count-visible');
+  else ctx.fail('expanded', 'visibility:count-visible', `.search-results-count display="${info.countDisplay}" should not be "none"`);
 
-    if (info.contextDisplay !== 'none') ctx.pass('expanded', 'visibility:result-context-visible')
-    else
-        ctx.fail(
-            'expanded',
-            'visibility:result-context-visible',
-            `.search-result-context display="${info.contextDisplay}" should not be "none"`
-        )
+  if (!info.countClipped) ctx.pass('expanded', 'text-clipping:count');
+  else ctx.fail('expanded', 'text-clipping:count', 'result count text is clipped');
 
-    if (info.barDisplay !== 'none') ctx.pass('expanded', 'visibility:result-bar-visible')
-    else
-        ctx.fail(
-            'expanded',
-            'visibility:result-bar-visible',
-            `.search-result-bar display="${info.barDisplay}" should not be "none"`
-        )
+  if (info.whatDisplay !== 'none') ctx.pass('expanded', 'visibility:result-what-visible');
+  else ctx.fail('expanded', 'visibility:result-what-visible', `.search-result-what display="${info.whatDisplay}" should not be "none"`);
 
-    if (info.visibleItemsCount >= 2)
-        ctx.pass('expanded', 'visibility:multiple-results-visible', `${info.visibleItemsCount} results visible`)
-    else
-        ctx.fail(
-            'expanded',
-            'visibility:multiple-results-visible',
-            `only ${info.visibleItemsCount} result(s) visible — expected ≥2`
-        )
+  if (!info.whatClipped) ctx.pass('expanded', 'text-clipping:result-what');
+  else ctx.fail('expanded', 'text-clipping:result-what', '.search-result-what text is clipped');
 
-    if (!info.overflowX) ctx.pass('expanded', 'layout:no-overflow-x')
-    else ctx.fail('expanded', 'layout:overflow-x', 'horizontal overflow in expanded mode')
+  if (info.metaDisplay !== 'none') ctx.pass('expanded', 'visibility:result-meta-visible');
+  else ctx.fail('expanded', 'visibility:result-meta-visible', `.search-result-meta display="${info.metaDisplay}" should not be "none"`);
 
-    return info
+  if (info.contextDisplay !== 'none') ctx.pass('expanded', 'visibility:result-context-visible');
+  else ctx.fail('expanded', 'visibility:result-context-visible', `.search-result-context display="${info.contextDisplay}" should not be "none"`);
+
+  if (info.barDisplay !== 'none') ctx.pass('expanded', 'visibility:result-bar-visible');
+  else ctx.fail('expanded', 'visibility:result-bar-visible', `.search-result-bar display="${info.barDisplay}" should not be "none"`);
+
+  if (info.visibleItemsCount >= 2) ctx.pass('expanded', 'visibility:multiple-results-visible', `${info.visibleItemsCount} results visible`);
+  else ctx.fail('expanded', 'visibility:multiple-results-visible', `only ${info.visibleItemsCount} result(s) visible — expected ≥2`);
+
+  if (!info.overflowX) ctx.pass('expanded', 'layout:no-overflow-x');
+  else ctx.fail('expanded', 'layout:overflow-x', 'horizontal overflow in expanded mode');
+
+  return info;
 }
 
 // ---------------------------------------------------------------------------
@@ -585,28 +382,28 @@ async function assertExpandedMode(page, ctx) {
 // ---------------------------------------------------------------------------
 
 async function assertErrorState(page, ctx) {
-    await page.evaluate(() => {
-        document.body.classList.add('is-active')
-        document.body.dataset.activeView = 'galaxy'
-        document.body.dataset.graphContext = 'search'
-        document.body.dataset.panelSurface = 'search'
-        document.body.dataset.panelSurfaceDetail = 'expanded'
-        document.body.dataset.mobileSearchSheet = 'expanded'
+  await page.evaluate(() => {
+    document.body.classList.add('is-active');
+    document.body.dataset.activeView = 'galaxy';
+    document.body.dataset.graphContext = 'search';
+    document.body.dataset.panelSurface = 'search';
+    document.body.dataset.panelSurfaceDetail = 'expanded';
+    document.body.dataset.mobileSearchSheet = 'expanded';
 
-        const results = document.querySelector('#search-results')
-        let status = document.getElementById('search-status')
-        if (!status) {
-            status = document.createElement('div')
-            status.id = 'search-status'
-            document.body.appendChild(status)
-        }
+    const results = document.querySelector('#search-results');
+    let status = document.getElementById('search-status');
+    if (!status) {
+      status = document.createElement('div');
+      status.id = 'search-status';
+      document.body.appendChild(status);
+    }
 
-        if (typeof window.applySemanticSearchDegradedState === 'function') {
-            window.applySemanticSearchDegradedState(results, status, 'coffee', new Error('Simulated failure'))
-        } else {
-            results.classList.remove('searching')
-            results.classList.add('active')
-            results.innerHTML = `
+    if (typeof window.applySemanticSearchDegradedState === 'function') {
+      window.applySemanticSearchDegradedState(results, status, 'coffee', new Error('Simulated failure'));
+    } else {
+      results.classList.remove('searching');
+      results.classList.add('active');
+      results.innerHTML = `
         <div class="search-error-state" role="alert">
           <span class="search-error-kicker">Retry needed</span>
           <p class="search-error-text">We could not finish "<strong>coffee</strong>" just now.</p>
@@ -614,85 +411,75 @@ async function assertErrorState(page, ctx) {
             <button class="search-error-retry-btn" type="button" aria-label="Retry search for coffee">Retry</button>
             <button class="search-error-dismiss-btn" type="button" aria-label="Clear search and dismiss">Clear</button>
           </div>
-        </div>`
-            status.classList.add('active', 'search-status-compact')
-            status.textContent = 'Search paused for "coffee". Try again in a moment.'
-            const container = document.querySelector('.search-container')
-            if (container)
-                container.classList.add('has-query', 'results-rendered', 'has-expanded-results', 'search-degraded')
-        }
-    })
-    await page
-        .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
-        .catch(() => {})
+        </div>`;
+      status.classList.add('active', 'search-status-compact');
+      status.textContent = 'Search paused for "coffee". Try again in a moment.';
+      const container = document.querySelector('.search-container');
+      if (container) container.classList.add('has-query', 'results-rendered', 'has-expanded-results', 'search-degraded');
+    }
+  });
+  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
-    const info = await page.evaluate(() => {
-        function touchTargetInfo(el) {
-            if (!el) return { width: null, height: null, display: null }
-            const r = el.getBoundingClientRect()
-            return { width: r.width, height: r.height, display: getComputedStyle(el).display }
-        }
-
-        function touchTargetOk(el) {
-            if (!el) return null
-            const r = el.getBoundingClientRect()
-            return r.width >= 43.5 && r.height >= 43.5
-        }
-
-        const errorState = document.querySelector('.search-error-state')
-        const retryBtn = document.querySelector('.search-error-retry-btn')
-        const dismissBtn = document.querySelector('.search-error-dismiss-btn')
-
-        return {
-            errorStatePresent: errorState !== null,
-            errorStateVisible: errorState
-                ? getComputedStyle(errorState).display !== 'none' &&
-                  getComputedStyle(errorState).visibility !== 'hidden'
-                : null,
-            retryBtnPresent: retryBtn !== null,
-            retryBtnInfo: touchTargetInfo(retryBtn),
-            retryBtnTouchTarget: touchTargetOk(retryBtn),
-            dismissBtnPresent: dismissBtn !== null,
-            dismissBtnInfo: touchTargetInfo(dismissBtn),
-            dismissBtnTouchTarget: touchTargetOk(dismissBtn)
-        }
-    })
-
-    if (info.errorStatePresent) ctx.pass('error', 'dom:search-error-state')
-    else ctx.fail('error', 'dom:search-error-state', '.search-error-state not found')
-
-    if (info.errorStateVisible) ctx.pass('error', 'visibility:search-error-state')
-    else ctx.fail('error', 'visibility:search-error-state', 'search error state is hidden')
-
-    if (info.retryBtnPresent) ctx.pass('error', 'dom:retry-btn')
-    else ctx.fail('error', 'dom:retry-btn', '.search-error-retry-btn not found')
-
-    if (info.retryBtnTouchTarget === true) ctx.pass('error', 'touch-target:retry-btn')
-    else if (info.retryBtnTouchTarget === false) {
-        ctx.fail(
-            'error',
-            'touch-target:retry-btn',
-            `retry button (${info.retryBtnInfo.width?.toFixed(1)}×${info.retryBtnInfo.height?.toFixed(1)}px, display=${info.retryBtnInfo.display}) < 44px tall`
-        )
-    } else {
-        ctx.fail('error', 'touch-target:retry-btn', 'retry button not in DOM')
+  const info = await page.evaluate(() => {
+    function touchTargetInfo(el) {
+      if (!el) return { width: null, height: null, display: null };
+      const r = el.getBoundingClientRect();
+      return { width: r.width, height: r.height, display: getComputedStyle(el).display };
     }
 
-    if (info.dismissBtnPresent) ctx.pass('error', 'dom:dismiss-btn')
-    else ctx.fail('error', 'dom:dismiss-btn', '.search-error-dismiss-btn not found')
-
-    if (info.dismissBtnTouchTarget === true) ctx.pass('error', 'touch-target:dismiss-btn')
-    else if (info.dismissBtnTouchTarget === false) {
-        ctx.fail(
-            'error',
-            'touch-target:dismiss-btn',
-            `dismiss button (${info.dismissBtnInfo.width?.toFixed(1)}×${info.dismissBtnInfo.height?.toFixed(1)}px) < 44px tall`
-        )
-    } else {
-        ctx.fail('error', 'touch-target:dismiss-btn', 'dismiss button not in DOM')
+    function touchTargetOk(el) {
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return r.width >= 43.5 && r.height >= 43.5;
     }
 
-    return info
+    const errorState = document.querySelector('.search-error-state');
+    const retryBtn = document.querySelector('.search-error-retry-btn');
+    const dismissBtn = document.querySelector('.search-error-dismiss-btn');
+
+    return {
+      errorStatePresent: errorState !== null,
+      errorStateVisible: errorState
+        ? getComputedStyle(errorState).display !== 'none' && getComputedStyle(errorState).visibility !== 'hidden'
+        : null,
+      retryBtnPresent: retryBtn !== null,
+      retryBtnInfo: touchTargetInfo(retryBtn),
+      retryBtnTouchTarget: touchTargetOk(retryBtn),
+      dismissBtnPresent: dismissBtn !== null,
+      dismissBtnInfo: touchTargetInfo(dismissBtn),
+      dismissBtnTouchTarget: touchTargetOk(dismissBtn),
+    };
+  });
+
+  if (info.errorStatePresent) ctx.pass('error', 'dom:search-error-state');
+  else ctx.fail('error', 'dom:search-error-state', '.search-error-state not found');
+
+  if (info.errorStateVisible) ctx.pass('error', 'visibility:search-error-state');
+  else ctx.fail('error', 'visibility:search-error-state', 'search error state is hidden');
+
+  if (info.retryBtnPresent) ctx.pass('error', 'dom:retry-btn');
+  else ctx.fail('error', 'dom:retry-btn', '.search-error-retry-btn not found');
+
+  if (info.retryBtnTouchTarget === true) ctx.pass('error', 'touch-target:retry-btn');
+  else if (info.retryBtnTouchTarget === false) {
+    ctx.fail('error', 'touch-target:retry-btn',
+      `retry button (${info.retryBtnInfo.width?.toFixed(1)}×${info.retryBtnInfo.height?.toFixed(1)}px, display=${info.retryBtnInfo.display}) < 44px tall`);
+  } else {
+    ctx.fail('error', 'touch-target:retry-btn', 'retry button not in DOM');
+  }
+
+  if (info.dismissBtnPresent) ctx.pass('error', 'dom:dismiss-btn');
+  else ctx.fail('error', 'dom:dismiss-btn', '.search-error-dismiss-btn not found');
+
+  if (info.dismissBtnTouchTarget === true) ctx.pass('error', 'touch-target:dismiss-btn');
+  else if (info.dismissBtnTouchTarget === false) {
+    ctx.fail('error', 'touch-target:dismiss-btn',
+      `dismiss button (${info.dismissBtnInfo.width?.toFixed(1)}×${info.dismissBtnInfo.height?.toFixed(1)}px) < 44px tall`);
+  } else {
+    ctx.fail('error', 'touch-target:dismiss-btn', 'dismiss button not in DOM');
+  }
+
+  return info;
 }
 
 // ---------------------------------------------------------------------------
@@ -700,145 +487,111 @@ async function assertErrorState(page, ctx) {
 // ---------------------------------------------------------------------------
 
 async function main() {
-    const requestedUrl = process.argv[2] || null
+  const requestedUrl = process.argv[2] || null;
 
-    if (requestedUrl && !requestedUrl.startsWith('http')) {
-        console.error('URL must start with http:// or https://')
-        process.exit(1)
-    }
+  if (requestedUrl && !requestedUrl.startsWith('http')) {
+    console.error('URL must start with http:// or https://');
+    process.exit(1);
+  }
 
-    const server = requestedUrl ? null : await startServer(0)
-    const localPort = server?.address()?.port
-    const url = requestedUrl || `http://127.0.0.1:${localPort}/index.html`
-    if (server) console.log(`Server started on http://127.0.0.1:${localPort}`)
+  const server = requestedUrl ? null : await startServer(0);
+  const localPort = server?.address()?.port;
+  const url = requestedUrl || `http://127.0.0.1:${localPort}/vector-explorer-polished.html`;
+  if (server) console.log(`Server started on http://127.0.0.1:${localPort}`);
 
-    const browser = await chromium.launch({
-        headless: !headed,
-        args: headed
-            ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])]
-            : ['--no-sandbox', ...(forceSoftwareWebgl ? ['--ignore-gpu-blocklist', '--use-gl=angle', '--enable-webgl', '--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])]
-    })
-    const context = await browser.newContext({
-        viewport: { width: 390, height: 844 },
-        deviceScaleFactor: 2,
-        isMobile: true,
-        javaScriptEnabled: true
-    })
-    let passed = 0
-    let failed = 0
-    const failures = []
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    javaScriptEnabled: true,
+  });
+  let passed = 0;
+  let failed = 0;
+  const failures = [];
 
-    const ctx = {
-        pass(surface, check) {
-            passed++
-            console.log(`  PASS  ${surface}  ${check}`)
-        },
-        fail(surface, check, msg) {
-            failed++
-            failures.push({ surface, check, msg })
-            console.log(`  FAIL  ${surface}  ${check}  — ${msg}`)
-        }
-    }
+  const ctx = {
+    pass(surface, check) {
+      passed++;
+      console.log(`  PASS  ${surface}  ${check}`);
+    },
+    fail(surface, check, msg) {
+      failed++;
+      failures.push({ surface, check, msg });
+      console.log(`  FAIL  ${surface}  ${check}  — ${msg}`);
+    },
+  };
 
-    try {
-        const page = await context.newPage()
+  try {
+    const page = await context.newPage();
 
-        console.log(`\n=== Search Peek/Expanded Render Contract ===\n`)
-        console.log(`URL: ${url}`)
-        console.log(`Viewport: 390×844 mobile\n`)
+    console.log(`\n=== Search Peek/Expanded Render Contract ===\n`);
+    console.log(`URL: ${url}`);
+    console.log(`Viewport: 390×844 mobile\n`);
 
-        console.log('[1/4] Loading app...')
-        await page.goto(url, { waitUntil: 'domcontentloaded' })
-        await page.waitForLoadState('load', { timeout: 5000 }).catch(() => {})
-        await page.evaluate(() => document.fonts?.ready).catch(() => {})
-        await waitForAppSettled(page)
+    console.log('[1/4] Loading app...');
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('load', { timeout: 5000 }).catch(() => {});
+    await page.evaluate(() => document.fonts?.ready).catch(() => {});
+    await waitForAppSettled(page);
 
-        console.log('[2/4] Injecting deterministic search results DOM...')
-        await installSearchFixture(page, 'peek')
-        await page
-            .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
-            .catch(() => {})
+    console.log('[2/4] Injecting deterministic search results DOM...');
+    await installSearchFixture(page, 'peek');
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
-        const itemCount = await page.evaluate(() => document.querySelectorAll('.search-result-item').length)
-        console.log(`Injected ${itemCount} search result items.\n`)
+    const itemCount = await page.evaluate(() =>
+      document.querySelectorAll('.search-result-item').length
+    );
+    console.log(`Injected ${itemCount} search result items.\n`);
 
-        if (itemCount === 0) {
-            console.log('ERROR: Could not inject search results — .search-container or #search-results not found.')
-            failed++
-        } else {
-            console.log('[3/4] Testing PEEK mode...')
-            await installSearchFixture(page, 'peek')
-            // Inject peek-mode CSS rules that the standalone HTML page doesn't load.
-            // These mirror css/mobile_premium__state.css L324-337 and
-            // css/mobile_premium__state.css L757-762.
-            await page.addStyleTag({
-                content: `
-        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-container #search-results.active {
-          flex: 0 0 72px; min-height: 72px; max-height: 72px;
-        }
-        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-results-count,
-        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-what,
-        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-meta,
-        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-context,
-        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-bar,
-        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-badges,
-        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-listitem:not(:first-child),
-        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-listitem:not(:first-child) .search-result-item {
-          display: none; visibility: hidden;
-        }
-        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-item {
-          overflow: hidden;
-        }
-        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-row {
-          flex-wrap: nowrap; overflow: hidden;
-        }
-      `
-            })
-            await page
-                .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
-                .catch(() => {})
-            await assertPeekMode(page, ctx)
-            console.log('')
-
-            console.log('[4/4] Testing EXPANDED mode...')
-            await installSearchFixture(page, 'expanded')
-            await page
-                .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
-                .catch(() => {})
-            await assertExpandedMode(page, ctx)
-            console.log('')
-
-            console.log('[BONUS] Testing ERROR state...')
-            await assertErrorState(page, ctx)
-            console.log('')
-        }
-    } catch (err) {
-        console.error('Test runner error:', err.message)
-        failed++
-    } finally {
-        await context.close()
-        await browser.close()
-        if (server) server.close()
-    }
-
-    console.log('=== Summary ===')
-    console.log(`Passed: ${passed}`)
-    console.log(`Failed: ${failed}`)
-    if (failures.length > 0) {
-        console.log('\nFailure details:')
-        failures.forEach(({ surface, check, msg }) => {
-            console.log(`  ${surface} / ${check}: ${msg}`)
-        })
-    }
-    console.log('')
-
-    if (failed > 0) {
-        console.log('search-peek-expanded-render-contract FAILED')
-        process.exit(1)
+    if (itemCount === 0) {
+      console.log('ERROR: Could not inject search results — .search-container or #search-results not found.');
+      failed++;
     } else {
-        console.log('search-peek-expanded-render-contract passed')
-        process.exit(0)
+      console.log('[3/4] Testing PEEK mode...');
+      await installSearchFixture(page, 'peek');
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
+      await assertPeekMode(page, ctx);
+      console.log('');
+
+      console.log('[4/4] Testing EXPANDED mode...');
+      await installSearchFixture(page, 'expanded');
+      await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
+      await assertExpandedMode(page, ctx);
+      console.log('');
+
+      console.log('[BONUS] Testing ERROR state...');
+      await assertErrorState(page, ctx);
+      console.log('');
     }
+
+  } catch (err) {
+    console.error('Test runner error:', err.message);
+    failed++;
+  } finally {
+    await context.close();
+    await browser.close();
+    if (server) server.close();
+  }
+
+  console.log('=== Summary ===');
+  console.log(`Passed: ${passed}`);
+  console.log(`Failed: ${failed}`);
+  if (failures.length > 0) {
+    console.log('\nFailure details:');
+    failures.forEach(({ surface, check, msg }) => {
+      console.log(`  ${surface} / ${check}: ${msg}`);
+    });
+  }
+  console.log('');
+
+  if (failed > 0) {
+    console.log('search-peek-expanded-render-contract FAILED');
+    process.exit(1);
+  } else {
+    console.log('search-peek-expanded-render-contract passed');
+    process.exit(0);
+  }
 }
 
-main()
+main();

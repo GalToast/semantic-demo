@@ -2,28 +2,9 @@
  * tests/async-integrity-stress-contract.mjs
  *
  * Stress test for search race conditions and rapid view transitions.
- *
- * Uses the current runSearch(query, signal) API (replaces the former
- * search() export). Mocks global fetch to simulate overlapping slow/fast
- * responses and verifies the race-condition guard (request sequence
- * tracking via incrementRequestSequence + isRequestCurrent) prevents
- * a stale early request from overwriting a later one.
  */
 
-// ── Shim global DOM before imports (search-trail-cue-renderer references document) ──
-
-globalThis.document = {
-  getElementById: () => null,
-  querySelector: () => null,
-  querySelectorAll: () => [],
-  body: { dataset: {} },
-  createElement: () => ({ style: {}, appendChild: () => {}, setAttribute: () => {} })
-};
-globalThis.sessionStorage = { removeItem: () => {}, getItem: () => null, setItem: () => {} };
-globalThis.window = { requestAnimationFrame: (cb) => cb() };
-
-import { state, withStateMutation } from './helpers/canonical-state.mjs';
-import { runSearch, searchState, searchStatus, searchQuery, searchResults, getSearchSummary, clearSearch } from '../src/lib/stores/search.svelte.ts';
+import { state, withStateMutation } from '../src/lib/engine/state-bridge.ts';
 
 function assert(condition, message) {
   if (!condition) throw new Error('ASSERTION FAILED: ' + message);
@@ -34,95 +15,88 @@ async function main() {
   console.log('Async Integrity Stress Contract');
   console.log('================================================================');
 
-  // ── Setup: initialize appState search fields ──────────────────────────────
-
-  withStateMutation(() => {
-    state.points = [{ lead_id: 'LI_001', name: 'Biz B', index: 0 }];
-    state.pointIndexByLeadId = new Map([['LI_001', 0]]);
-    state.searchResults = [];
-    state.semanticLaneState = 'healthy';
-    state.navState = { focusedIndex: null };
-    state.searchState = {
-      currentSearchSummary: null,
-      searchStatus: 'idle',
-      searchError: null,
-      isSearching: false,
-      searchRequestSequence: 0,
-      searchAnchorIndex: null,
-      searchPreviewIndex: null,
-      searchGlowIndices: new Set(),
-      searchGlowTopIndex: null,
-      searchGlowActive: false,
-      currentEmptyQuery: null,
-      searchFocusTransitionToken: 0,
-      semanticTrailCue: 'idle',
-      isCompactViewport: false,
-      semanticGuideRequestSequence: 0,
-      currentSemanticGuide: null,
-      summaryCardTypeToken: 0
-    };
+  // Shim DOM
+  const makeEl = (id) => ({
+      id,
+      classList: { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false },
+      appendChild: (c) => c,
+      querySelectorAll: () => [],
+      querySelector: (sel) => makeEl(sel),
+      dataset: {},
+      style: { setProperty: () => {}, removeProperty: () => {} },
+      blur: () => {},
+      value: '',
+      setAttribute: () => {},
+      getAttribute: () => null,
+      removeAttribute: () => {},
+      hidden: false,
+      tagName: 'DIV'
   });
 
-  // ── Simulate rapid search "Query Alpha" then "Query Bravo" ─────────────────
+  globalThis.document = {
+    getElementById: (id) => makeEl(id),
+    querySelector: (sel) => makeEl(sel),
+    querySelectorAll: (sel) => [],
+    body: makeEl('body'),
+    createElement: (tag) => makeEl(tag)
+  };
+  globalThis.sessionStorage = { removeItem: () => {}, getItem: () => null };
 
+  const { search } = await import('../js/modules/search-state.ts');
+
+  // 1. Simulate rapid search "Query Alpha" then "Query Bravo"
   console.log('[TEST] Rapid Search Overlap (Alpha -> Bravo)');
-
+  
   const originalFetch = globalThis.fetch;
-
+  
   // Mock fetch with artificial delay
-  // Alpha is slow and returns empty results
-  // Bravo is faster and returns actual results
   globalThis.fetch = async (url) => {
-    if (typeof url === 'string' && url.includes('Alpha')) {
+    if (url.includes('Alpha')) {
       await new Promise(r => setTimeout(r, 150)); // Alpha is slow
-      return {
-        ok: true,
-        text: () => Promise.resolve(JSON.stringify({
-          ok: true,
-          query: 'Query Alpha',
-          results: [] // Alpha has no results
-        }))
+      return { 
+        ok: true, 
+        text: () => Promise.resolve(JSON.stringify({ 
+            ok: true, 
+            query: 'Query Alpha', 
+            results: [] // Alpha has no results
+        })) 
       };
     }
-    if (typeof url === 'string' && url.includes('Bravo')) {
+    if (url.includes('Bravo')) {
       await new Promise(r => setTimeout(r, 50)); // Bravo is faster but still delayed
-      return {
-        ok: true,
-        text: () => Promise.resolve(JSON.stringify({
-          ok: true,
-          query: 'Query Bravo',
-          results: [{ lead_id: 'LI_001', score: 1 }]
-        }))
+      return { 
+        ok: true, 
+        text: () => Promise.resolve(JSON.stringify({ 
+          ok: true, 
+          query: 'Query Bravo', 
+          results: [{ lead_id: 'LI_001', score: 1 }] 
+        })) 
       };
     }
-    // Fallback for any other fetch
-    return originalFetch ? originalFetch(url) : { ok: false, text: () => Promise.resolve('{}') };
   };
 
-  // Start Alpha and Bravo with separate AbortControllers
-  const ctrlA = new AbortController();
-  const ctrlB = new AbortController();
+  // Mock results mapping
+  withStateMutation(() => {
+    state.points = [{ lead_id: 'LI_001', name: 'Biz B' }];
+    state.pointIndexByLeadId = new Map([['LI_001', 0]]); 
+    state.semanticLaneState = 'healthy';
+    state.navState = { focusedIndex: null };
+  });
 
-  const promiseA = runSearch('Query Alpha', ctrlA.signal);
+  // Start Alpha
+  const promiseA = search('Query Alpha');
   // Wait a tiny bit then start Bravo
   await new Promise(r => setTimeout(r, 20));
-  const promiseB = runSearch('Query Bravo', ctrlB.signal);
+  const promiseB = search('Query Bravo');
 
   await Promise.all([promiseA, promiseB]);
 
-  // The race-condition guard (incrementRequestSequence + isRequestCurrent)
-  // must ensure that Bravo's results win, not Alpha's stale empty results.
-  const summary = getSearchSummary();
-  assert(summary !== null, 'Search summary should not be null');
-  assert(summary.query === 'Query Bravo',
-    `Expected Query Bravo, found ${summary.query}`);
-
+  assert(state.currentSearchSummary !== null, 'Search summary should not be null');
+  assert(state.currentSearchSummary.query === 'Query Bravo', 'Expected Query Bravo, found ' + state.currentSearchSummary.query);
   console.log('  OK — stale empty result for Alpha did not clobber search Bravo');
 
-  // ── Cleanup ───────────────────────────────────────────────────────────────
-
+  // Restore fetch
   globalThis.fetch = originalFetch;
-  clearSearch();
 
   console.log('\n================================================================');
   console.log('ALL ASYNC INTEGRITY CHECKS PASSED');

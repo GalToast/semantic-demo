@@ -1,13 +1,13 @@
 /**
  * @lib/orchestration/app-init.ts — Svelte-first app initialization orchestration
  *
- * Replaces the init from for the Svelte shell.
+ * Replaces the init() from js/modules/app.ts for the Svelte shell.
  *
  * Coordinates the startup sequence:
  *   1. Safety valve timers (detect stuck loading overlay)
  *   2. Data loading (delegates to initData from data-store)
  *   3. URL state application (after data loads)
- *   4. Window globals for Playwright test compat (__APP_STATE__, __navActions__)
+ *   4. Window globals for Playwright test compat (__APP_STATE__, __APP_ACTIONS__)
  *   5. WebGL context restore handler
  *   6. First-paint coordination (scene reveal, hide overlay, deferred hydration, demo)
  *
@@ -17,51 +17,50 @@
  * orchestration glue.
  */
 
-import { initData, setLoadingPhase, setDataLoadError } from '@lib/data-store'
-import { prewarmLocalIndex } from '@lib/search/local-search-index'
-import { initViewportListeners } from '@lib/stores/viewport.svelte.ts'
-import { isMobileViewport } from '@lib/utils/environment'
-import { getSearchParams, hasRestorableUrlState } from '@lib/orchestration/url-params'
-import { writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
-import { debugWarn } from '@lib/utils/debug'
-import { initAdapters } from '@lib/orchestration/adapters'
-import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
-import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts'
-import { debugError } from '@lib/utils/debug'
-import { isAutomatedBrowserSession } from '@lib/app/app-lifecycle.ts'
-import { teardownViewController } from '@lib/orchestration/view-controller'
-import { claimRestoreOwnership, isRestoreOwned, releaseRestoreOwnership } from '@lib/engine/webgl-restore-ownership'
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
-import { disposeJourneyFocusTimers } from '@lib/journey/journey-focus-timers'
-
-// P3-LCP (2026-08-21): the former static `import '@lib/journey/journey'`
-// pulled the Three.js engine graph (~570KB) into the cold boot path of the
-// mobile 2D-preview surface where the engine never runs. journey.ts is now
-// lazily loaded by Canvas.svelte's initLifecycle() (the engine boot seam),
-// which still satisfies the 'must load before engine init' contract (the
-// module registers the CAMERA_NODE_FOCUSED subscription + journey state).
-// The side-effect cancel path below only calls the timer helper statically.
-
-// ── Debug Window Extensions (Playwright test compat) ────────────────────────
-// `__APP_STATE__` and `__navActions__` are debug/test shims. Their types are
-// declared in src/window.d.ts (the canonical location for window globals).
-// The action bag itself lives in window-test-bridge.ts; this module only
-// invokes install/teardown.
+import { get } from 'svelte/store';
+import { initData, setLoadingPhase } from '@lib/data-store.svelte';
+import { navStore } from '@lib/stores/navigation.svelte';
+import { focusStore } from '@lib/stores/focus.svelte';
+import { appState } from '@lib/state/app.svelte';
+import { returnToOverview as returnToOverviewAction } from '@lib/stores/lifecycle';
+import {
+  focusOnNode as focusOnNodeAction,
+  refreshCompositionState as refreshCompositionStateAction,
+  resetExperienceState as resetExperienceStateAction,
+  resetExplorationFocus as resetExplorationFocusAction,
+  setSemanticDiveMode as setSemanticDiveModeAction,
+  setTrailDepth as setTrailDepthAction,
+} from '@lib/orchestration/lifecycle';
+import { switchView as switchViewAction } from '@lib/orchestration/view-controller';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { initAdapters } from '@lib/orchestration/adapters';
+import { buildAdapterDeps } from '@lib/orchestration/adapter-deps';
+import { search, clearSearch as clearSearchAction } from '@lib/engine/window-actions-bridge';
+import { setTrailFromSeed } from '@lib/engine/journey-neighborhood-bridge';
+import { traverseNeighbor, walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge';
+import {
+  inspectThreadNeighbor,
+  pinThreadNeighbor,
+  pinFirstAvailableNeighbor,
+  unpinThreadInspection,
+  clearThreadInspection,
+} from '@lib/engine/thread-inspector-bridge';
+import { updateTraversalUi } from '@lib/engine/journey-focus-ui-bridge';
+import { requestSemanticGuide } from '@lib/journey/semantic-guide';
+import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SafetyTimers {
-    slowProgress: ReturnType<typeof setTimeout>
-    safetyValve: ReturnType<typeof setTimeout>
+  slowProgress: ReturnType<typeof setTimeout>;
+  safetyValve: ReturnType<typeof setTimeout>;
 }
 
 interface AppInitOptions {
-    /** Force demo to run regardless of eligibility */
-    forceDemo?: boolean
-    /** Suppress demo entirely */
-    noDemo?: boolean
-    /** Whether the current URL is a deep-link (anchor/record/view=q/search). Gates lazy url-state import. */
-    isDeepLink?: boolean
+  /** Force demo to run regardless of eligibility */
+  forceDemo?: boolean;
+  /** Suppress demo entirely */
+  noDemo?: boolean;
 }
 
 // ── Configuration ────────────────────────────────────────────────────────────
@@ -71,119 +70,215 @@ interface AppInitOptions {
  * network. The slow-progress threshold drops from 8s to 4s so the
  * "still preparing" UI surfaces earlier.
  */
-const SLOW_PROGRESS_MS = 4000
+const SLOW_PROGRESS_MS = 4000;
 
 /**
  * The 15s safety valve is a last-resort fallback for genuinely broken
  * networks. Shows error state if the overlay is still visible.
  */
-const SAFETY_VALVE_MS = 15_000
+const SAFETY_VALVE_MS = 15_000;
 
 // ── Internal State ───────────────────────────────────────────────────────────
 
-let _initCalled = false
-let _safetyTimers: SafetyTimers | null = null
-let _unsubWindowGlobals: (() => void) | null = null
-let _unsubWebglRestore: (() => void) | null = null
-let _unsubViewport: (() => void) | null = null
-let _unsubParity: (() => void) | null = null
-let _lastCleanup: (() => void) | null = null
-let _prewarmTimer: ReturnType<typeof setTimeout> | null = null
+let _initCalled = false;
+let _safetyTimers: SafetyTimers | null = null;
+let _unsubWindowGlobals: (() => void) | null = null;
+let _unsubWebglRestore: (() => void) | null = null;
 
-// Module-level registry: tracks all app-init timers as a safety net so teardown
-const _appInitReg = new DisposableRegistry({ label: 'app-init' })
+function refreshTraversalUiForCompatAction(action: string): void {
+  try {
+    updateTraversalUi();
+  } catch (error) {
+    debugWarn('AppInit', `${action}: traversal UI refresh failed`, error);
+  }
+}
 
 // ── Safety Valves ────────────────────────────────────────────────────────────
 
 function setupSafetyValves(): SafetyTimers {
-    const slowProgress = _appInitReg.schedule(SLOW_PROGRESS_MS, () => {
-        if (typeof document === 'undefined') return
-        const overlay = document.getElementById('loading-overlay')
-        // When the Svelte LoadingOverlay hides via {#if actuallyVisible}, the
-        // DOM element is removed entirely. Treat a missing overlay the same as
-        // a hidden one — the overlay has already been dismissed.
-        if (!overlay || overlay.classList.contains('hidden')) return
+  const slowProgress = setTimeout(() => {
+    if (typeof document === 'undefined') return;
+    const overlay = document.getElementById('loading-overlay');
+    // When the Svelte LoadingOverlay hides via {#if actuallyVisible}, the
+    // DOM element is removed entirely. Treat a missing overlay the same as
+    // a hidden one — the overlay has already been dismissed.
+    if (!overlay || overlay.classList.contains('hidden')) return;
 
-        setLoadingPhase('restore')
-        // Push overrides via DOM (matches legacy setLoadingPhase override pattern)
-        const noteEl = document.getElementById('loading-note')
-        const footEl = document.getElementById('loading-foot')
-        if (noteEl) noteEl.textContent = 'Still preparing the scene…'
-        if (footEl) footEl.textContent = 'Taking longer than usual. Hold on a moment longer.'
-    })
+    setLoadingPhase('restore');
+    // Push overrides via DOM (matches legacy setLoadingPhase override pattern)
+    const noteEl = document.getElementById('loading-note');
+    const footEl = document.getElementById('loading-foot');
+    if (noteEl) noteEl.textContent = 'Still preparing the scene…';
+    if (footEl) footEl.textContent = 'Taking longer than usual. Hold on a moment longer.';
+  }, SLOW_PROGRESS_MS);
 
-    const safetyValve = _appInitReg.schedule(SAFETY_VALVE_MS, () => {
-        if (typeof document === 'undefined') return
-        const overlay = document.getElementById('loading-overlay')
-        if (overlay?.classList.contains('hidden')) return
+  const safetyValve = setTimeout(() => {
+    if (typeof document === 'undefined') return;
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay?.classList.contains('hidden')) return;
 
-        if (!overlay) return
-        debugError('[app-init] Safety valve: loading overlay stuck after 15s. Showing error state.')
+    if (!overlay) return;
+    console.error(
+      '[app-init] Safety valve: loading overlay stuck after 15s. Showing error state.'
+    );
 
-        // Apply error state to the overlay (matches legacy applyLoadingErrorState)
-        // — built with DOM API per pi-lens innerHTML safety rule.
-        const shell = document.createElement('div')
-        shell.setAttribute('role', 'alert')
-        shell.className = 'loading-shell'
+    // Apply error state to the overlay (matches legacy applyLoadingErrorState)
+    // — built with DOM API per pi-lens innerHTML safety rule.
+    const shell = document.createElement('div');
+    shell.setAttribute('role', 'alert');
+    shell.className = 'loading-shell';
 
-        const kicker = document.createElement('div')
-        kicker.className = 'loading-kicker'
-        kicker.textContent = 'Graph unavailable'
-        shell.appendChild(kicker)
+    const kicker = document.createElement('div');
+    kicker.className = 'loading-kicker';
+    kicker.textContent = 'Graph unavailable';
+    shell.appendChild(kicker);
 
-        const titleEl = document.createElement('div')
-        titleEl.className = 'loading-title'
-        titleEl.textContent = 'Failed to load'
-        shell.appendChild(titleEl)
+    const titleEl = document.createElement('div');
+    titleEl.className = 'loading-title';
+    titleEl.textContent = 'Failed to load';
+    shell.appendChild(titleEl);
 
-        const noteEl = document.createElement('div')
-        noteEl.className = 'loading-note'
-        noteEl.textContent = 'Initialization timed out after 15 seconds. Refresh after the connection recovers.'
-        shell.appendChild(noteEl)
+    const noteEl = document.createElement('div');
+    noteEl.className = 'loading-note';
+    noteEl.textContent =
+      'Initialization timed out after 15 seconds. Refresh after the connection recovers.';
+    shell.appendChild(noteEl);
 
-        const footEl = document.createElement('div')
-        footEl.className = 'loading-foot'
-        footEl.textContent = 'Safety valve triggered.'
-        shell.appendChild(footEl)
+    const footEl = document.createElement('div');
+    footEl.className = 'loading-foot';
+    footEl.textContent = 'Safety valve triggered.';
+    shell.appendChild(footEl);
 
-        overlay.replaceChildren(shell)
-        overlay.hidden = false
-        overlay.inert = false
-        overlay.removeAttribute('aria-hidden')
-        overlay.classList.remove('hidden', 'launching')
-        overlay.dataset.loadingState = 'error'
-        // W47-D: also update the store so the reactively-bound LoadingOverlay
-        // can hide on the error state. Previously the safety valve only
-        // touched the DOM, leaving dataLoadState.status stuck at 'loading'
-        // and LoadingOverlay blocking all subsequent clicks.
-        setDataLoadError('Loading timed out after 15 seconds. Refresh after the connection recovers.')
-    })
+    overlay.replaceChildren(shell);
+    overlay.hidden = false;
+    overlay.inert = false;
+    overlay.removeAttribute('aria-hidden');
+    overlay.classList.remove('hidden', 'launching');
+    overlay.dataset.loadingState = 'error';
+  }, SAFETY_VALVE_MS);
 
-    return { slowProgress, safetyValve }
+  return { slowProgress, safetyValve };
 }
 
 function clearSafetyTimers(timers: SafetyTimers | null): void {
-    _appInitReg.disposeAll()
-    _appInitReg.rearm() // module-singleton reuse across init cycles
-    if (timers?.slowProgress) clearTimeout(timers.slowProgress)
-    if (timers?.safetyValve) clearTimeout(timers.safetyValve)
+  if (timers?.slowProgress) clearTimeout(timers.slowProgress);
+  if (timers?.safetyValve) clearTimeout(timers.safetyValve);
 }
 
-function clearPrewarmTimer(): void {
-    _appInitReg.disposeAll()
-    _appInitReg.rearm() // module-singleton reuse across init cycles
-    if (_prewarmTimer !== null) {
-        clearTimeout(_prewarmTimer)
-        _prewarmTimer = null
-    }
-}
+// ── Window Globals for Test Compat ───────────────────────────────────────────
 
-function scheduleSearchIndexPrewarm(): void {
-    clearPrewarmTimer()
-    _prewarmTimer = _appInitReg.schedule(0, () => {
-        _prewarmTimer = null
-        void prewarmLocalIndex()
-    })
+/**
+ * Install window globals expected by Playwright surface tests and
+ * visual audit harnesses. The testState derived store is the Svelte-native
+ * source of truth; __TEST_STATE__ is synced via subscription in main.ts.
+ *
+ * __APP_STATE__ exposes the legacy state shape for backward compat with
+ * contract tests that read window.__APP_STATE__.state.*.
+ *
+ * __APP_ACTIONS__ provides action handles for Playwright test automation.
+ * Each action is a thin wrapper that delegates to the store or orchestration layer.
+ */
+function installWindowGlobals(): () => void {
+  if (typeof window === 'undefined') return () => {};
+
+  // Expose a read-only snapshot of the current nav state for tests that
+  // read window.__APP_STATE__ for mode/view/focus state.
+  // Note: `routeTraceLines` lives on the legacy state for now; the Svelte 5
+  // port hasn't been updated to carry it yet. Cast through `any` to avoid a
+  // type-blocker until the W11-T8 search/journey subsubsystem migration adds
+  // it to the AppState class.
+  (window as any).__APP_STATE__ = {
+    get state() {
+      return {
+        currentView: get(navStore).currentView,
+        navState: get(navStore),
+        activeFilters: focusStore(),
+        routeTraceDiagnostics: appState.routeTraceDiagnostics,
+        routeTraceLines: (appState as any).routeTraceLines,
+        points: appState.points,
+      };
+    },
+  };
+
+  // __APP_ACTIONS__: synchronous action handles for Playwright test automation.
+  // Contract tests call these inside page.evaluate() without awaiting returned
+  // promises, so these wrappers must not use lazy dynamic imports.
+  (window as any).__APP_ACTIONS__ = {
+    switchView: (view: string) => {
+      switchViewAction(view as any);
+    },
+    focusOnNode: (index: number, options?: Record<string, unknown>) => {
+      const result = focusOnNodeAction(index, options);
+      refreshTraversalUiForCompatAction('focusOnNode');
+      return result;
+    },
+    setTrailDepth: (depth: number, _options?: Record<string, unknown>) => {
+      setTrailDepthAction(depth);
+      refreshTraversalUiForCompatAction('setTrailDepth');
+    },
+    setSemanticDiveMode: (enabled: boolean) => {
+      setSemanticDiveModeAction(enabled);
+    },
+    refreshCompositionState: () => {
+      refreshCompositionStateAction();
+      refreshTraversalUiForCompatAction('refreshCompositionState');
+    },
+    resetExplorationFocus: (options?: Record<string, unknown>) => {
+      resetExplorationFocusAction(options);
+    },
+    resetExperienceState: () => {
+      resetExperienceStateAction();
+    },
+    clearSearch: () => {
+      returnToOverviewAction();
+    },
+    returnToOverview: () => {
+      returnToOverviewAction();
+    },
+  };
+
+  // ── Extended actions (W11-T8 Wave 1) ────────────────────────────────────
+  // These fill the gap between the initial 9-action skeleton and the full
+  // legacy __APP_ACTIONS__ set (js/modules/app.ts:377-396).
+  (window as any).__APP_ACTIONS__.search = (query: string, options?: Record<string, unknown>) => {
+    return search(query, options);
+  };
+  (window as any).__APP_ACTIONS__.setTrailFromSeed = (index: number) => {
+    setTrailFromSeed(index);
+  };
+  (window as any).__APP_ACTIONS__.traverseNeighbor = (step: number) => {
+    traverseNeighbor(step);
+  };
+  (window as any).__APP_ACTIONS__.inspectThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+    return inspectThreadNeighbor(index, options);
+  };
+  (window as any).__APP_ACTIONS__.pinThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+    return pinThreadNeighbor(index, options);
+  };
+  (window as any).__APP_ACTIONS__.pinFirstAvailableNeighbor = (options?: Record<string, unknown>) => {
+    return pinFirstAvailableNeighbor(options);
+  };
+  (window as any).__APP_ACTIONS__.unpinThreadInspection = () => {
+    return unpinThreadInspection();
+  };
+  (window as any).__APP_ACTIONS__.clearThreadInspection = (options?: Record<string, unknown>) => {
+    return clearThreadInspection(options);
+  };
+  (window as any).__APP_ACTIONS__.walkThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+    return walkThreadNeighbor(index, options);
+  };
+  (window as any).__APP_ACTIONS__.requestSemanticGuide = (_point?: unknown) => {
+    return requestSemanticGuide();
+  };
+  (window as any).__APP_ACTIONS__.showSemanticThreadsDetail = () => {
+    return showSemanticThreadsDetail();
+  };
+
+  // No cleanup needed — window globals persist for the page lifetime.
+  return () => {
+    delete (window as any).__APP_STATE__;
+    delete (window as any).__APP_ACTIONS__;
+  };
 }
 
 // ── URL State Application ────────────────────────────────────────────────────
@@ -193,27 +288,13 @@ function scheduleSearchIndexPrewarm(): void {
  * params (view, focusedIndex, filters, search query) that need the data
  * layer to be ready before they can be resolved.
  */
-import { applyUrlState } from '@lib/orchestration/url-state'
-
-async function applyUrlStateAfterData(isDeepLink: boolean): Promise<void> {
-    if (!isDeepLink) {
-        // Mobile place-first default (2026-08-28): fresh bare boot on ≤768px
-        // lands in the Leaflet map instead of galaxy/placeholder; the 3D
-        // mycelium stays one explicit CTA away. Any navigation-intent param
-        // (view/q/anchor/record/story/surface/mode/cluster/depth/filters) or
-        // ?placeholder=1 keeps the old surface so deep-links and compact-UI
-        // tests stay deterministic.
-        const params = getSearchParams()
-        if (isMobileViewport() && !hasRestorableUrlState(params) && !params.has('placeholder')) {
-            writeNavStateMirror({ currentView: 'map', surface: 'map' })
-        }
-        return
-    }
-    try {
-        await applyUrlState()
-    } catch (err) {
-        debugError('[app-init] applyUrlState failed during init:', err)
-    }
+async function applyUrlStateAfterData(): Promise<void> {
+  try {
+    const { applyUrlState } = await import('@lib/orchestration/url-state');
+    await applyUrlState();
+  } catch (err) {
+    console.error('[app-init] applyUrlState failed during init:', err);
+  }
 }
 
 // ── WebGL Context Restore ─────────────────────────────────────────────────
@@ -223,78 +304,38 @@ async function applyUrlStateAfterData(isDeepLink: boolean): Promise<void> {
  * On restore, re-run the Svelte-first init to re-create the Three.js scene.
  *
  * This mirrors the legacy setWebGLContextRestoreHandler(init) call at the
- * bottom of
+ * bottom of js/modules/app.ts.
  *
  * @returns A cleanup function that removes the event listeners.
  */
-export function setupWebglContextRestore(): () => void {
-    // H1 fix (Jul-10 bugsweep cross-seam): previously queried #engine-canvas
-    // which is REMOVED by scene-init.ts:90 (all canvases != renderer.domElement
-    // are stripped). So lost/restored listeners on detached #engine-canvas
-    // never fired — context loss left animate() dead forever and W53 M5 dev
-    // test simulateWebGLContextLoss never restored.
-    //
-    // Canonical source of truth is now three-listener-registration which owns
-    // C5/C6 on renderer.domElement inside the DisposableRegistry. This app-init
-    // path remains as a safety re-init path and is re-bound lazily to the live
-    // renderer.domElement if available. If no live canvas yet, return no-op;
-    // the registry will handle restore when engine inits.
-    // Prefer live renderer.domElement if already mounted; fallback to id query
-    // only for very early boot before three init (will be superseded by registry).
-    // (2026-08-07: removed a dead `__APP_STATE__?.renderer?.domElement` proxy read —
-    // its `_appState` binding was never referenced; canvas comes from the DOM query
-    // below. compat-proxy-wrongpath-scan flagged it as needless proxy read.)
-    // Try to resolve live canvas without importing appState statically (keeps module acyclic).
-    // The registry path is now primary; this fallback ensures restore still re-inits if registry torn down.
-    const liveCanvasFromDom =
-        (typeof document !== 'undefined'
-            ? document.querySelector<HTMLCanvasElement>('#canvas-container canvas')
-            : null) ??
-        document?.querySelector<HTMLCanvasElement>('#engine-canvas') ??
-        null
-    const canvas = liveCanvasFromDom
-    if (!canvas) return () => {}
+function setupWebglContextRestore(): () => void {
+  const canvas = document.querySelector<HTMLCanvasElement>('canvas');
+  if (!canvas) return () => {};
 
-    // Ownership check: if the engine registry already owns restore handling
-    // for this canvas, yield to it. The registry path is primary and handles
-    // the full re-init via webglNeedsRestoreReinit + animate() wakeup.
-    if (isRestoreOwned(canvas)) {
-        debugWarn('[app-init] Restore ownership claimed by engine registry; fallback yielding')
-        return () => {}
+  const handleContextLost = (event: Event) => {
+    event.preventDefault();
+    console.warn('[app-init] WebGL context lost');
+  };
+
+  const handleContextRestored = async () => {
+    console.warn('[app-init] WebGL context restored; reinitializing');
+    // Re-run the Svelte-first init. The init guard (_initCalled) will
+    // prevent double-init, so we reset it first.
+    _initCalled = false;
+    try {
+      await appInit();
+    } catch (err) {
+      console.error('[app-init] WebGL restore reinit failed:', err);
     }
+  };
 
-    const handleContextLost = (event: Event) => {
-        event.preventDefault()
-        debugWarn('[app-init] WebGL context lost (app-init fallback)')
-    }
+  canvas.addEventListener('webglcontextlost', handleContextLost);
+  canvas.addEventListener('webglcontextrestored', handleContextRestored);
 
-    const handleContextRestored = async () => {
-        debugWarn('[app-init] WebGL context restored; reinitializing (app-init fallback)')
-        _initCalled = false
-        try {
-            await appInit()
-        } catch (err) {
-            debugError('[app-init] WebGL restore reinit failed:', err)
-        }
-    }
-
-    const fallbackOwner = {}
-    const cleanup = () => {
-        canvas.removeEventListener('webglcontextlost', handleContextLost)
-        canvas.removeEventListener('webglcontextrestored', handleContextRestored)
-        releaseRestoreOwnership(canvas, fallbackOwner)
-    }
-
-    // Claim the fallback explicitly so a later engine init can remove this
-    // listener pair before installing its primary handlers on the same canvas.
-    if (!claimRestoreOwnership(canvas, fallbackOwner, { kind: 'fallback', cleanup })) {
-        return () => {}
-    }
-
-    canvas.addEventListener('webglcontextlost', handleContextLost)
-    canvas.addEventListener('webglcontextrestored', handleContextRestored)
-
-    return cleanup
+  return () => {
+    canvas.removeEventListener('webglcontextlost', handleContextLost);
+    canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+  };
 }
 
 // ── Main Init ────────────────────────────────────────────────────────────────
@@ -316,153 +357,77 @@ export function setupWebglContextRestore(): () => void {
  * @returns A cleanup function that tears down listeners and timers.
  */
 export async function appInit(options: AppInitOptions = {}): Promise<() => void> {
-    if (_initCalled) {
-        debugWarn('[app-init] init() called more than once; skipping.')
-        return () => {}
-    }
-    _initCalled = true
+  if (_initCalled) {
+    debugWarn('[app-init] init() called more than once; skipping.');
+    return () => {};
+  }
+  _initCalled = true;
 
-    // F6 fix (context-restore cleanup accumulation): dispose the previous
-    // run's resources before re-initializing. The WebGL context-restore path
-    // sets _initCalled=false and re-enters appInit(); without this, safety
-    // timers and window-global subscriptions from earlier runs accumulate.
-    _lastCleanup?.()
-    _lastCleanup = null
+  const { forceDemo: _forceDemo = false, noDemo: _noDemo = false } = options;
 
-    const { forceDemo: _forceDemo = false, noDemo: _noDemo = false } = options
+  debugWarn('[app-init] Starting Svelte-first initialization…');
 
-    debugWarn('[app-init] Starting Svelte-first initialization…')
+  // ── Phase 1: Safety valves ────────────────────────────────────────────────
+  _safetyTimers = setupSafetyValves();
 
-    // ── Phase 1: Safety valves ────────────────────────────────────────────────
-    _safetyTimers = setupSafetyValves()
+  // ── Phase 2: Window globals (immediate, before async work) ────────────────
+  _unsubWindowGlobals = installWindowGlobals();
 
-    // ── Phase 2: Window globals (immediate, before async work) ────────────────
-    // P3-LCP (2026-08-21): test-globals transitively imports focus-pocket (Vector3/three)
-    // into the cold boot graph via app-init static import. Gate the entire module to
-    // Playwright so real users (esp. mobile 2D placeholder) never fetch it.
-    if (isAutomatedBrowserSession()) {
-        try {
-            const { installTestStoreGlobals: installTestGlobals } = await import('@lib/orchestration/test-globals')
-            _unsubWindowGlobals = installTestGlobals()
-        } catch (err) {
-            debugWarn('[app-init] test globals install failed', err)
-        }
-    } else {
-        _unsubWindowGlobals = () => {}
-    }
+  // ── Phase 3: Data loading ─────────────────────────────────────────────────
+  //
+  // initData() is async and loads business records + semantic threads.
+  // LoadingOverlay.svelte reads loadingPhaseStore reactively, so phase
+  // transitions (records → scene → restore → launch) appear immediately.
+  //
+  // We don't await here — the data loads in the background while the engine
+  // bridge initializes WebGL via Canvas.svelte. The URL state application
+  // (Phase 4) awaits data readiness before running.
+  const dataReadyPromise = initData().catch((err) => {
+    console.error('[app-init] initData failed:', err);
+    // Non-fatal: data-store sets error state; UI shows error overlay
+  });
 
-    // ── Phase 2.5: Viewport listeners + parity attribute sync ─────────────────
-    // W46-B1: These were previously installed by App.svelte's onMount, which
-    // duplicated the orchestration seam. Moving them here makes App.svelte a
-    // thin shell that delegates lifecycle to appInit(). Cleanups are exposed
-    // via teardownAppShell() so App.svelte's onMount return-cleanup can drive
-    // teardown without re-importing the installers.
-    // F6 fix: previous-run teardown is now handled by _lastCleanup at the
-    // top of appInit(); no need for individual _unsub*?.() calls here.
-    _unsubViewport = initViewportListeners()
-    _unsubParity = installParityAttributeSync()
+  // ── Phase 3.5: Adapter initialization ─────────────────────────────────
+  initAdapters(buildAdapterDeps());
 
-    // ── Phase 3: Data loading ─────────────────────────────────────────────────
-    //
-    // initData() is async and loads business records + semantic threads.
-    // LoadingOverlay.svelte reads loadingPhaseStore reactively, so phase
-    // transitions (records → scene → restore → launch) appear immediately.
-    //
-    // We don't await here — the data loads in the background while the engine
-    // bridge initializes WebGL via Canvas.svelte. The URL state application
-    // (Phase 4) awaits data readiness before running.
-    const dataReadyPromise = initData().catch((err) => {
-        debugError('[app-init] initData failed:', err)
-        // Non-fatal: data-store sets error state; UI shows error overlay
-    })
+  // ── Phase 4: URL state (after data is ready) ──────────────────────────────
+  //
+  // URL state may reference focusedIndex, view, filters, or search query —
+  // all of which need business data to be loaded. Awaiting dataReadyPromise
+  // ensures the URL state can resolve against loaded records.
+  await dataReadyPromise;
+  await applyUrlStateAfterData();
 
-    // ── Phase 3.5: Adapter initialization ─────────────────────────────────
-    initAdapters(buildAdapterDeps())
+  // ── Phase 5: WebGL context restore handler ────────────────────────────────
+  _unsubWebglRestore = setupWebglContextRestore();
 
-    // ── Phase 4: URL state (after data is ready) ──────────────────────────────
-    //
-    // URL state may reference focusedIndex, view, filters, or search query —
-    // all of which need business data to be loaded. Awaiting dataReadyPromise
-    // ensures the URL state can resolve against loaded records.
-    await dataReadyPromise
-    // Prewarm the local search index off the first-search path: the lazy
-    // getLocalIndex() build over the full corpus (8,406 records) freezes the
-    // main thread for seconds — it stalled the demo's SEARCH phase and made
-    // first user searches (and journey tests) feel hung. Deferred tick keeps
-    // the boot/URL-restore flow unblocked.
-    scheduleSearchIndexPrewarm()
-    // Fix B (tmp/focus-blank-investigation.md): don't block first paint on the
-    // deep-link URL-state restore, which awaits a network search (up to 30 s).
-    // Run it fire-and-forget so the loading overlay / safety valve clears
-    // immediately; the focus pocket still rebuilds when the restore resolves
-    // (and Fix A guarantees it's non-empty even before then).
-    void applyUrlStateAfterData(options.isDeepLink ?? false)
+  // ── Phase 6: First-paint coordination ─────────────────────────────────────
+  //
+  // The LoadingOverlay component hides itself when loadingPhaseStore = 'launch'.
+  // The Canvas bridge fires onLoadingPhase('launch') once WebGL is ready.
+  // DemoChoreography.svelte handles demo eligibility and choreography.
+  //
+  // The safety valve timer (Phase 1) is cleared once we reach this point.
+  if (_safetyTimers) {
+    clearSafetyTimers(_safetyTimers);
+    _safetyTimers = null;
+  }
 
-    // ── Phase 5: WebGL context restore handler ────────────────────────────────
-    // F6 fix: prior-handler teardown is now handled by _lastCleanup at the top.
-    _unsubWebglRestore = setupWebglContextRestore()
+  debugWarn('[app-init] Initialization orchestration complete.');
 
-    // ── Phase 6: First-paint coordination ─────────────────────────────────────
-    //
-    // The LoadingOverlay component hides itself when loadingPhaseStore = 'launch'.
-    // The Canvas bridge fires onLoadingPhase('launch') once WebGL is ready.
-    // DemoChoreography.svelte handles demo eligibility and choreography.
-    //
-    // The safety valve timer (Phase 1) is cleared once we reach this point.
-    if (_safetyTimers) {
-        clearSafetyTimers(_safetyTimers)
-        _safetyTimers = null
-    }
-
-    // ── Phase 7: Audio Scape Initialization ─────────────────────────────────
-    try {
-        const { initAudio } = await import('@lib/audio/audio-scape')
-        initAudio()
-    } catch (err) {
-        debugError('[app-init] initAudio failed:', err)
-    }
-
-    debugWarn('[app-init] Initialization orchestration complete.')
-
-    // ── Return cleanup function ───────────────────────────────────────────────
-    const cleanup = () => {
-        clearSafetyTimers(_safetyTimers)
-        _safetyTimers = null
-        clearPrewarmTimer()
-        disposeJourneyFocusTimers()
-        _unsubWindowGlobals?.()
-        _unsubViewport?.()
-        _unsubParity?.()
-        _unsubWebglRestore?.()
-        _initCalled = false
-    }
-    _lastCleanup = cleanup
-    return cleanup
+  // ── Return cleanup function ───────────────────────────────────────────────
+  return () => {
+    clearSafetyTimers(_safetyTimers);
+    _safetyTimers = null;
+    _unsubWindowGlobals?.();
+    _unsubWebglRestore?.();
+    _initCalled = false;
+  };
 }
 
 /**
  * Check whether the app initialization has been called.
  */
 export function isAppInitComplete(): boolean {
-    return _initCalled
-}
-
-/**
- * Explicit teardown for App.svelte's onMount return-cleanup.
- * Calls the viewport and parity cleanups installed by appInit() Phase 2.5.
- * Safe to call even if appInit() never ran (no-op).
- */
-export function teardownAppShell(): void {
-    _unsubViewport?.()
-    _unsubViewport = null
-    _unsubParity?.()
-    _unsubParity = null
-    teardownViewController()
-    // Lazify seam-1: fire-and-forget dynamic import so teardownTriggers
-    // (and its closure) leave the boot-side module graph entirely.
-    // teardownAppShell() stays sync; callers (AppBoot.svelte onMount cleanup)
-    // do not await.
-    void import('@lib/orchestration/triggers')
-        .then((m) => m.teardownTriggers())
-        .catch((err) => debugWarn('[lazify] trigger teardown failed', err))
+  return _initCalled;
 }

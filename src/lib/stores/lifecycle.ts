@@ -1,68 +1,79 @@
 /**
- * @lib/stores/lifecycle — Lifecycle helpers ported from *.js
+ * @lib/stores/lifecycle — Lifecycle helpers ported from js/modules/lifecycle-*.js
  *
  * Functions here read from and write to the Svelte stores (navStore,
  * focusStore, searchStore, journeyStore) and derive body data attributes
  * for CSS composition.  The event-bus publish() call keeps the legacy
  * engine bridge subscribers in sync.
  *
- * The lifecycle delegates keep navigation, focus, and composition state
- * aligned; setTrailDepth also repairs the semantic-dive mirror at the depth-2
- * boundary.
+ * The 3 working delegates (setTrailDepth, setMyceliumMode,
+ * setSemanticDiveMode) remain unchanged.
  */
 import { get } from 'svelte/store'
 import {
+    navStore,
     updateNavState,
-    writeNavStateMirror,
     switchView,
     currentView,
     setMyceliumMode as _setMyceliumMode
 } from './navigation.svelte'
-import { appState } from '@lib/state/app.svelte'
+import { applyParityAttributes, computeParityAttributes } from '../orchestration/parity-attrs.svelte'
 import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } from './focus.svelte'
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
 import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'
 import { publish, EVENTS } from '../orchestration/event-bus'
-import { debugWarn } from '@lib/utils/debug'
-// P3-LCP (2026-08-21): point-color uses three Color at runtime and dragged three into the
-// boot chain via window-actions → lifecycle. Lazify so mobile 2D does not fetch three.
-function applyPointFilterColorsLazy(): void {
-    void import('../journey/point-color')
-        .then((m) => m.applyPointFilterColors())
-        .catch((err) => debugWarn('[lifecycle] point-color lazy load failed', err))
-}
-import { registerOpenDialog, unregisterOpenDialog } from '@lib/utils/focus-trap-bindings'
-import { computeParityAttributes, applyParityAttributes } from '../orchestration/parity-attrs.svelte.ts'
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Delegates to real stores ─────────────────────────────────────────────────
 
-export function setTrailDepth(depth: number, _options?: unknown): void {
+export function setTrailDepth(depth: number, _options?: any): void {
     const nextDepth = Math.max(0, Number(depth) || 0)
-    // G1/G2 state-coverage audit: `semanticDiveMode` is a separate writable
-    // on focusStore — focus.svelte.ts _readFocusSnapshot reads the mirror, not
-    // appState.navState.trailDepth. setSemanticDiveMode updates BOTH the mirror
-    // and trailDepth, but callers of this delegate funnel that set trailDepth
-    // directly — ThreadInspectorPanel's setTrailDepth(max(1, depth)) and the
-    // test-bridge window.__navActions__.setTrailDepth — never touch the mirror,
-    // leaving parity-attrs (reads the mirror) stale vs appState / semantic-dive.ts
-    // (read navState.trailDepth). Close the seam at the canonical funnel: sync
-    // the mirror whenever the dive-active state transitions (enter depth 2, or
-    // leave depth 2), but only when the mirror actually differs, so the explicit
-    // setSemanticDiveMode(true) in ENTER_INSIDE is a no-op here. Recursion-safe:
-    // _setSemanticDiveMode -> withFocusNotify -> writeNavStateMirror({trailDepth})
-    // never re-enters this function.
     _setTrailDepth(nextDepth)
-    const targetDive = nextDepth === 2
-    if (get(focusStore).semanticDiveMode !== targetDive) {
-        _setSemanticDiveMode(targetDive)
-    }
     updateNavState({ trailDepth: nextDepth })
+
+    if (typeof window !== 'undefined') {
+        const stateWindow = window as Window & {
+            __APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            __TEST_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            __LEGACY_APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            __semanticState?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            state?: Record<string, unknown> & { navState?: Record<string, unknown> }
+        }
+        for (const appState of [
+            stateWindow.__APP_STATE__,
+            stateWindow.__TEST_STATE__,
+            stateWindow.__LEGACY_APP_STATE__,
+            stateWindow.__semanticState,
+            stateWindow.state
+        ]) {
+            if (!appState) continue
+            appState.trailDepth = nextDepth
+            if (appState.navState) {
+                appState.navState.trailDepth = nextDepth
+            }
+        }
+    }
 }
 export const setSemanticDiveMode = _setSemanticDiveMode
 export const setMyceliumMode = _setMyceliumMode
 
-// ── Composition State (ported from ) ──────────────────
+// ── Composition State (ported from js/modules/lifecycle.js) ──────────────────
+
+/**
+ * Derive the graph-context from the current nav/search state.
+ * Matches the legacy `deriveGraphContext` in lifecycle.js.
+ */
+function deriveGraphContext(
+    view: string,
+    hasFocus: boolean,
+    hasSearchIntent: boolean,
+    mapContextOverride?: string
+): string {
+    if (mapContextOverride !== undefined) return mapContextOverride
+    if (hasFocus && hasSearchIntent) return 'focus-search'
+    if (hasFocus) return 'focus'
+    if (hasSearchIntent) return 'search'
+    return 'idle'
+}
 
 /**
  * Derive the panel surface label from view, graph context, semantic dive,
@@ -78,7 +89,7 @@ export function derivePanelSurface(opts: {
     hasFocus: boolean
     hasActiveTrailState: boolean
 }): string {
-    const { view, graphContext, mapContext, semanticDive, hasFocus, hasSearchIntent } = opts
+    const { view, graphContext, mapContext, semanticDive } = opts
     if (view !== 'galaxy') {
         if (mapContext === 'focus-search') return 'map-focus-search'
         if (mapContext === 'focus') return 'map-focus'
@@ -87,7 +98,6 @@ export function derivePanelSurface(opts: {
         return 'map-idle'
     }
     if (semanticDive === 'active' || semanticDive === 'transitioning') return 'semantic-dive'
-    if (hasFocus && hasSearchIntent) return 'focus-search'
     if (graphContext === 'focus-search') return 'focus-search'
     if (graphContext === 'focus') return 'focus'
     if (graphContext === 'search') return 'search'
@@ -96,52 +106,46 @@ export function derivePanelSurface(opts: {
 
 /**
  * Apply current state to body data-attributes for CSS composition.
- *
- * Mirrored attrs (activeView, trailState, trailDepth, graphContext,
- * mapContext, semanticDive, panelSurface, panelSurfaceDetail) are
- * written by parity-attrs.svelte.ts via refreshCompositionState →
- * applyParityAttributes(computeParityAttributes()). We do not write them
- * here to avoid races.
- *
- * What lifecycle.ts still owns:
- *   - searchGlow — not in PARITY_ATTRIBUTES, no parity mirror
- *
- * W47+ parity migration: mobileRoutePeek + mobileRoutePeekReason moved
- * from bypass writes here to PARITY_ATTRIBUTES parity-attrs.svelte.ts
- * (sources: appState.mobileRoutePeekActive / .mobileRoutePeekReason).
- * The clear-on-graphContext !== 'idle' rule is now enforced by
- * callers of clearMobileRouteFieldPeek in results-ui.ts (see
- * orchestration.ts), which clear the appState runes; parity-attrs
- * deletes the body data attrs and the route-peek class on the
- * next snapshot.
- *
- * `derivePanelSurface` is still exported (line 83) for callers that need
- * the computed surface value without a DOM side effect (e.g., tests,
- * info-panel-state). This function does not call it.
+ * Matches the legacy `applyCompositionState` in lifecycle.js.
  */
 export function applyCompositionState(): void {
+    const $nav = get(navStore)
     const $focus = get(focusStore)
     const $search = get(searchStore)
 
-    // graphContext, activeView, hasSearchIntent are no longer needed in this
-    // function (W47+ parity migration moved mobileRoutePeek clear-on-non-idle
-    // logic to parity-attrs). The deriveGraphContext helper was deleted
-    // entirely; derivePanelSurface is kept for callers/tests.
+    const activeView = $nav.currentView || 'galaxy'
+    const hasFocus = !!($nav.focusedIndex != null || $focus.selectedBusiness)
+    const hasSearchIntent = !!($search.summary || $search.query.trim().length >= 2)
+    const hasActiveTrailState =
+        activeView === 'map' ? hasSearchIntent || hasFocus : hasFocus && ($nav.mode === 'trail' || hasSearchIntent)
+
+    const semanticDive = $focus.semanticDiveMode && hasFocus ? 'active' : 'inactive'
+
+    const graphContext = deriveGraphContext(activeView, hasFocus, hasSearchIntent)
+    const mapContext =
+        activeView === 'map' ? deriveGraphContext(activeView, hasFocus, hasSearchIntent, undefined) : 'idle'
+
+    const panelSurface = derivePanelSurface({
+        view: activeView,
+        graphContext: activeView === 'galaxy' ? graphContext : mapContext,
+        mapContext,
+        semanticDive,
+        hasSearchIntent,
+        hasFocus,
+        hasActiveTrailState
+    })
 
     const root = document.body
     if (root?.dataset) {
-        // searchGlow is non-mirrored; parity-attrs does not own it.
+        root.dataset.activeView = activeView
         root.dataset.searchGlow = $search.glowActive ? 'active' : 'inactive'
-    }
-
-    // Keep the focus-store compatibility view current for the test bridge.
-    // Navigation fields are already synchronized by writeNavStateMirror();
-    // writing appState.navState here would bypass that canonical funnel and
-    // reintroduce the state drift this function is meant to expose.
-    if (typeof window !== 'undefined') {
-        if (appState.focusState) {
-            appState.focusState.selectedPoint = $focus.selectedBusiness
-        }
+        root.dataset.trailState = hasActiveTrailState ? 'active' : 'inactive'
+        root.dataset.trailDepth = String($nav.trailDepth ?? 0)
+        root.dataset.graphContext = activeView === 'galaxy' ? graphContext : 'idle'
+        root.dataset.mapContext = mapContext
+        root.dataset.semanticDive = activeView === 'galaxy' ? semanticDive : 'inactive'
+        root.dataset.panelSurface = panelSurface
+        root.dataset.panelSurfaceDetail = panelSurface
     }
 }
 
@@ -153,13 +157,10 @@ export function applyCompositionState(): void {
 export function refreshCompositionState(): void {
     applyCompositionState()
     // W15+ parity-attrs fix: the $effect.root() subscription in parity-attrs
-    // doesn't fire reliably in the live browser or in Node contract tests.
-    // Force-write the full parity attribute set on every composition refresh
-    // so body data-attrs (mode, navMode, navSurface, panelSurfaceMode,
-    // journeyPhase, etc.) always reflect the current Svelte 5 navStore.
-    // The manual call is idempotent in production because parity-attrs'
-    // $effect.root() will write the same values. See
-    // tmp/parity-attrs-diagnostic-2026-06-17.md.
+    // doesn't fire reliably in the live browser. Force-write the full
+    // parity attribute set on every composition refresh so body data-attrs
+    // (mode, navMode, navSurface, panelSurfaceMode, journeyPhase, etc.) always
+    // reflect the current Svelte 5 navStore. See tmp/parity-attrs-diagnostic-2026-06-17.md.
     applyParityAttributes(computeParityAttributes())
     publish(EVENTS.COMPOSITION_UPDATED)
 }
@@ -172,7 +173,33 @@ export function updateExplorationUi(): void {
     refreshCompositionState()
 }
 
-// ── Focus Reset (ported from ) ─────────────────
+// ── Bloom / Bridge Indices (legacy state bridge) ────────────────────────────
+
+/**
+ * Get bloom indices from the legacy global state.
+ * The bloom/bridge computation lives in the legacy lifecycle.js (recomputeBloomIndices)
+ * and operates on the global state.points array, so we bridge through window.
+ */
+export function getBloomIndices(): number[] {
+    const s = (window as unknown as Record<string, unknown>).__semanticState as
+        | { bloomIndices?: Set<number> }
+        | undefined
+    if (!s?.bloomIndices) return []
+    return Array.from(s.bloomIndices)
+}
+
+/**
+ * Get bridge indices from the legacy global state.
+ */
+export function getBridgeIndices(): number[] {
+    const s = (window as unknown as Record<string, unknown>).__semanticState as
+        | { bridgeIndices?: Set<number> }
+        | undefined
+    if (!s?.bridgeIndices) return []
+    return Array.from(s.bridgeIndices)
+}
+
+// ── Focus Reset (ported from js/modules/lifecycle-reset.js) ─────────────────
 
 /**
  * Reset exploration focus: clears navState focus fields, trail depth,
@@ -219,29 +246,32 @@ export function resetExplorationFocus(options?: {
         publish(EVENTS.STATE_RESET, { reason: 'manual-reset', options })
     }
 
-    // Mirror the reset through the canonical navigation helper. appState is
-    // the only runtime state object, so trailDepth, semanticDiveMode, and
-    // focusedNode aliases all follow the navState patch while subscribers see
-    // one ordered write. window.state was retired 2026-05-27.
     if (typeof window !== 'undefined') {
-        if (appState.navState) {
-            writeNavStateMirror({
-                focusedIndex: null,
-                surface: 'idle',
-                mode: 'overview',
-                trailDepth: 0,
-                walkHistoryIndices: [],
-                threadCandidates: [],
-                trailNeighborIndices: []
-            })
+        const stateWindow = window as Window & {
+            __APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            __TEST_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            state?: Record<string, unknown> & { navState?: Record<string, unknown> }
+        }
+        for (const appState of [stateWindow.__APP_STATE__, stateWindow.__TEST_STATE__, stateWindow.state]) {
+            if (!appState) continue
+            appState.trailDepth = 0
+            appState.semanticDiveMode = false
+            appState.focusedNode = null
+            if (appState.navState) {
+                appState.navState.focusedIndex = null
+                appState.navState.trailDepth = 0
+                appState.navState.walkHistoryIndices = []
+                appState.navState.threadCandidates = []
+                appState.navState.trailNeighborIndices = []
+                appState.navState.surface = 'idle'
+                appState.navState.mode = 'overview'
+            }
         }
     }
 
-    // NOTE: body.dataset.threadInspectSurface + mapContext writes removed —
-    // parity-attrs.svelte.ts derives both from store state. After the
-    // appState.navState reset above (surface='idle', mode='overview'), the
-    // mirror produces threadInspectSurface='idle' and mapContext='idle'.
     if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.threadInspectSurface = 'idle'
+        document.body.dataset.mapContext = 'idle'
         document.body.removeAttribute('data-focused-node')
     }
 
@@ -257,7 +287,7 @@ export function resetNodePositions(_options?: object): void {
     resetExplorationFocus(_options as Parameters<typeof resetExplorationFocus>[0])
 }
 
-// ── Experience Reset (ported from ) ─────────────
+// ── Experience Reset (ported from js/modules/lifecycle-reset.js) ─────────────
 
 /**
  * Full experience reset: clears everything — focus, search, empty query,
@@ -286,19 +316,15 @@ export function resetExperienceState(): void {
     const searchResults = document.getElementById('search-results')
     if (searchResults) {
         searchResults.classList.remove('active')
-        const reg = new DisposableRegistry({ label: 'store-lifecycle-search-results' })
-        reg.schedule(450, () => {
+        setTimeout(() => {
             if (!searchResults.classList.contains('active')) {
                 searchResults.hidden = true
             }
-        })
+        }, 450)
     }
 
     setSearchStatus('idle')
     refreshCompositionState()
-    // Restore point colors after any focus/trail dimming (F14, 2026-07-15) —
-    // applyPointFilterColors early-returns when the color state key is unchanged.
-    applyPointFilterColorsLazy()
     publish(EVENTS.STATE_RESET, { reason: 'manual-reset' })
 }
 
@@ -312,12 +338,9 @@ export function returnToOverview(): void {
         switchView('galaxy')
     }
     refreshCompositionState()
-    // Mode + focus have settled by here; rewrite colors so the field-dim lifts
-    // on focus exit (F14, 2026-07-15). No-op when colors are already current.
-    applyPointFilterColorsLazy()
 }
 
-// ── Search Glow (ported from ) ────────────
+// ── Search Glow (ported from js/modules/lifecycle-search-sync.js) ────────────
 
 /**
  * Activate search glow on the field: sets the search summary and glow
@@ -344,7 +367,7 @@ export function activateSearchGlow(summary?: unknown): void {
     refreshCompositionState()
 }
 
-// ── Empty Query Tracking (ported from ) ───
+// ── Empty Query Tracking (ported from js/modules/lifecycle-search-sync.js) ───
 
 /**
  * Get the last recorded empty query (for no-results fallback suggestions).
@@ -363,7 +386,7 @@ export function getCurrentEmptyQuery(): string | null {
  * which the elaborate `search-empty-state` branch in `SearchResults.svelte:351-360`
  * reads via `$searchState.summary?.query` to render. Nullifying here made
  * `$searchState.summary` (subscribed to the writable) diverge from
- * `appState.searchState.currentSearchSummary` and prevented the empty state from firing
+ * `appState.currentSearchSummary` and prevented the empty state from firing
  * after the static-dev fallback returned zero results.
  */
 export function recordEmptySearch(query?: string): void {
@@ -373,10 +396,9 @@ export function recordEmptySearch(query?: string): void {
     }))
 }
 
-// ── Trail Review Overlay (ported from ) ───
+// ── Trail Review Overlay (ported from js/modules/lifecycle-search-sync.js) ───
 
 let _trailReviewPreviouslyFocused: HTMLElement | null = null
-let _trailReviewEscHandler: ((e: KeyboardEvent) => void) | null = null
 
 /**
  * Show the trail-review overlay DOM element.
@@ -387,99 +409,13 @@ export function showExploreTrailReview(_summary?: unknown): void {
     if (!overlay) return
 
     overlay.setAttribute('aria-hidden', 'false')
-    // w23 a11y M3: this overlay gates interaction (full-scene dialog the user
-    // must dismiss via the Show-walk toggle), so announce it as modal when
-    // visible instead of the hardcoded aria-modal="false" in App.svelte.
-    overlay.setAttribute('aria-modal', 'true')
     overlay.hidden = false
     overlay.classList.add('visible')
-    // a11y containment (2026-08-08): the overlay claims aria-modal — register it
-    // so the global Escape handler bails (hasOpenNestedDialog) instead of
-    // clearing search / returning to overview while the walk review is open.
-    registerOpenDialog('trail-review-overlay')
 
-    // M3 completeness: the overlay in App.svelte is an empty shell (just
-    // <div class="trail-review-overlay" id="trail-review-overlay" role="dialog" ...>).
-    // After f05ed2a4 it has a close button + Escape, but the dialog body is
-    // empty — users clicking "Show walk" see a dark void. Inject a minimal
-    // content block (h2 title + guidance paragraph) and wire aria-labelledby
-    // so the modal is labeled. Walk-data rendering is a future pass; this
-    // is the static guidance that makes the dialog non-empty and accessible.
-    //
-    // Order matters: query the close button up front (so we can place
-    // content ahead of it), then inject content idempotently, then
-    // (re)inject the close button if still missing. This keeps the close-
-    // button block below unchanged in behavior while satisfying TDZ.
-    const existingCloseBtn = overlay.querySelector('.trail-review-close') as HTMLElement | null
-
-    let content = overlay.querySelector('.trail-review-content') as HTMLElement | null
-    if (!content) {
-        content = document.createElement('div')
-        content.className = 'trail-review-content'
-
-        const heading = document.createElement('h2')
-        heading.id = 'trail-review-title'
-        heading.textContent = 'Walk review'
-
-        const guidance = document.createElement('p')
-        guidance.className = 'trail-review-guidance'
-        guidance.textContent =
-            'Use the controls below the sheet to step through this business walk. Press Escape or the × to close.'
-
-        content.append(heading, guidance)
-        // Insert before the close button (if it exists) so the title is
-        // announced in DOM order before the dismiss control. If the close
-        // button doesn't exist yet, pre-pend so the close-button block
-        // below appends after content.
-        if (existingCloseBtn) {
-            overlay.insertBefore(content, existingCloseBtn)
-        } else {
-            overlay.insertBefore(content, overlay.firstChild)
-        }
-    }
-
-    // M3 completeness: label the modal dialog by its heading so assistive tech
-    // announces "Walk review dialog" instead of an unlabeled shell.
-    overlay.setAttribute('aria-labelledby', 'trail-review-title')
-
-    let closeBtn = existingCloseBtn
-    if (!closeBtn) {
-        // M3 follow-up (a11y report gap): the overlay in App.svelte is an empty
-        // shell — no .trail-review-close exists, so closeBtn was always null and
-        // focus stayed parked on the Show-walk button (hidden behind the modal)
-        // with no visible dismiss path. Inject the close button here instead of
-        // touching App.svelte's markup. The querySelector above still wins if a
-        // real close button ever lands in the markup.
-        const btn = document.createElement('button')
-        btn.type = 'button'
-        btn.className = 'trail-review-close'
-        btn.setAttribute('aria-label', 'Close trail review')
-        btn.textContent = '✕'
-        btn.addEventListener('click', () => hideExploreTrailReview())
-        // Append after the content block so DOM order is: title → guidance → ✕.
-        // If content ended up elsewhere, fall back to the prior plain append.
-        if (content && content.parentNode === overlay) {
-            overlay.appendChild(btn)
-        } else {
-            overlay.append(btn)
-        }
-        closeBtn = btn
-    }
-
-    _trailReviewPreviouslyFocused = document.activeElement as HTMLElement | null
-    closeBtn.focus()
-
-    // M3 follow-up: one-time Escape-to-close. The dialog has no other keyboard
-    // dismiss path, so register a single document-level keydown listener for the
-    // visible lifetime of the overlay; hideExploreTrailReview removes it.
-    if (!_trailReviewEscHandler && typeof document.addEventListener === 'function') {
-        const handler = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                hideExploreTrailReview()
-            }
-        }
-        _trailReviewEscHandler = handler
-        document.addEventListener('keydown', handler)
+    const closeBtn = overlay.querySelector('.trail-review-close') as HTMLElement | null
+    if (closeBtn) {
+        _trailReviewPreviouslyFocused = document.activeElement as HTMLElement | null
+        closeBtn.focus()
     }
 }
 
@@ -491,25 +427,13 @@ export function hideExploreTrailReview(): void {
     const overlay = document.getElementById('trail-review-overlay')
     if (overlay) {
         overlay.setAttribute('aria-hidden', 'true')
-        overlay.setAttribute('aria-modal', 'false')
         overlay.hidden = true
         overlay.classList.remove('visible')
-        // Unregister from the nested-dialog set so the global Escape handler
-        // treats the overlay as closed again (containment symmetry).
-        unregisterOpenDialog('trail-review-overlay')
 
         if (_trailReviewPreviouslyFocused && typeof _trailReviewPreviouslyFocused.focus === 'function') {
             _trailReviewPreviouslyFocused.focus()
         }
         _trailReviewPreviouslyFocused = null
-    }
-
-    // Remove the one-time Escape listener when the overlay closes (M3 follow-up).
-    if (_trailReviewEscHandler) {
-        if (typeof document.removeEventListener === 'function') {
-            document.removeEventListener('keydown', _trailReviewEscHandler)
-        }
-        _trailReviewEscHandler = null
     }
 
     searchStore.update((s) => ({ ...s, summary: null, glowActive: false }))

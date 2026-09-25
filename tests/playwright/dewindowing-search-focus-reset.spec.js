@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { SNAPSHOT_FIELDS, snapshot, stateField } from '../helpers/state-harness.js';
-import { clearSearch } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 
@@ -66,8 +65,8 @@ for (const viewportProfile of VIEWPORTS) {
       test.setTimeout(60000);
 
       await setupMockSearch(page);
-      await page.goto(`${BASE_URL}/index.html`);
-      await page.waitForFunction(() => typeof (clearSearch) === 'function', { timeout: 20000 });
+      await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+      await page.waitForFunction(() => typeof (window.__APP_ACTIONS__?.clearSearch) === 'function', { timeout: 20000 });
 
       await enterSearchQuery(page, 'coffee');
       await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });

@@ -24,8 +24,6 @@ const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(
 const STORAGE_KEY_DEMO = 'moco_mycelium_demo_v1';
 const STORAGE_KEY_KH_DISMISSED = 'kh_dismissed';
 const STORAGE_KEY_SEARCH_VISIBLE = 'searchVisibleCount';
-// SwiftShader gate (see visual-state-audit.mjs)
-const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
 const SEMANTIC_HEALTH_STUB = {
   ok: true, state: 'healthy',
@@ -55,42 +53,34 @@ async function setupNetworkStubs(page) {
 }
 
 async function waitForAppReady(page) {
-  // Canonical boot path (?q=coffee&nodemo=1) populates __TEST_STATE__.points.
-  // Modern readiness (2026-08-11, mirror focus-trap-contract.mjs): the legacy
-  // window globals (cleared-search store hook + composition refresh helper)
-  // were REMOVED in the Svelte-5-native migration — waiting on them as bare
-  // identifiers inside page.waitForFunction (which runs in the browser) never
-  // resolves. The canonical test hook is __APP_STATE__ / __TEST_STATE__.points.
-  // Wait on the hook, not the gone globals.
-  await page.goto(`${BASE_URL}/dist/svelte/index.html?q=coffee&nodemo=1&view=galaxy`);
+  await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
   await page.waitForFunction(() => (
+    typeof (window.__APP_ACTIONS__?.clearSearch) === 'function' &&
+    typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
-  ), undefined, { timeout: 30000 });
+  ), undefined, { timeout: 20000 });
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 }
 
 async function performSearch(page, query = 'coffee') {
-  // Canonical driver (2026-08-11, same as widget-journey + focus-trap): the
-  // app fires search on Enter, not raw input events. Earlier versions of this
-  // helper had a self-shadowed store import that left the search function
-  // undefined, so no search ever fired. fill + Enter is the real path.
-  await page.fill('#search-input', query);
-  await page.keyboard.press('Enter');
-  // Result-readiness signal: canonical store probe (W71 journey + B1
-  // regression test). DOM fallback keeps the helper robust when the store
-  // signal is gated by a still-in-flight hydration. Result items render with
-  // .search-result-listitem (the presentation refactor renamed
-  // .search-result-item -> .search-result-listitem; see SearchResultItem.svelte
-  // + widget-journey.spec.js).
-  await page.waitForFunction(() => {
-    const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
-    return Array.isArray(s.searchResults) && s.searchResults.length >= 0;
-  }, undefined, { timeout: 20000 });
+  const input = page.locator('#search-input');
+  await input.focus();
+  await input.fill(query);
+  await page.evaluate(async (q) => {
+    const el = document.getElementById('search-input');
+    if (!el) return;
+    el.value = q;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    const search = window.__APP_ACTIONS__?.search;
+    if (typeof search === 'function') {
+      await search(q, { preferCachedResults: false });
+    }
+  }, query);
   await page.waitForFunction(() => (
-    document.querySelectorAll('.search-result-listitem').length > 0 ||
-    document.getElementById('search-results')?.innerHTML?.includes('search-result-listitem')
-  ), undefined, { timeout: 20000 });
+    document.querySelectorAll('.search-result-item').length > 0 ||
+    document.getElementById('search-results')?.innerHTML?.includes('search-result-item')
+  ), undefined, { timeout: 15000 });
 }
 
 async function expandSearchResults(page) {
@@ -103,7 +93,7 @@ async function expandSearchResults(page) {
 }
 
 async function openKeyboardHelp(page) {
-  const khBtn = page.locator('#btn-keyboard-help').first();
+  const khBtn = page.locator('#btn-keyboard-help, button:has-text("?"), button[aria-label*="keyboard" i]').first();
   const btnVisible = await khBtn.isVisible().catch(() => false);
   if (!btnVisible) return false;
   await khBtn.click();
@@ -130,14 +120,8 @@ async function getStorageValue(page, storageType, key) {
 
 // ── Sub-test 1: kh_dismissed persistence ──────────────────────────────────────
 
-// Current keyboard-help panel: keyboard-hint-panel (id), role=region,
-// aria-label "Keyboard shortcuts". Dismiss button is .kh-close (aria-label
-// "Dismiss shortcuts panel"); clicking it calls closePanel() which writes
-// sessionStorage kh_dismissed='1' (keyboard-help.ts:229).
-const KH_PANEL_SELECTOR = '#keyboard-hint-panel, [role="region"][aria-label="Keyboard shortcuts"]';
-
 async function test_kh_dismissed_persistence() {
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 
@@ -151,16 +135,16 @@ async function test_kh_dismissed_persistence() {
     if (khBtnVisible) {
       const opened = await openKeyboardHelp(page);
       if (opened) {
-        const panelBefore = await page.locator(KH_PANEL_SELECTOR).isVisible().catch(() => false);
+        const panelBefore = await page.locator('#keyboard-shortcuts, .keyboard-shortcuts, .kh-panel').isVisible().catch(() => false);
         if (panelBefore) {
           await dismissKeyboardHelp(page);
-          const panelAfter = await page.locator(KH_PANEL_SELECTOR).isVisible().catch(() => true);
+          const panelAfter = await page.locator('#keyboard-shortcuts, .keyboard-shortcuts, .kh-panel').isVisible().catch(() => true);
           const dismissed = await getStorageValue(page, 'sessionStorage', STORAGE_KEY_KH_DISMISSED);
           if (dismissed) {
             // Reload the page
             await page.reload();
             await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
-            const panelOnReload = await page.locator(KH_PANEL_SELECTOR).isVisible().catch(() => false);
+            const panelOnReload = await page.locator('#keyboard-shortcuts, .keyboard-shortcuts, .kh-panel').isVisible().catch(() => false);
             if (panelOnReload) {
               throw new Error('kh_dismissed: keyboard help reappeared after reload despite dismissal flag');
             }
@@ -178,7 +162,7 @@ async function test_kh_dismissed_persistence() {
 // ── Sub-test 2: micro-demo localStorage flag ──────────────────────────────────
 
 async function test_micro_demo_localStorage_flag() {
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 
@@ -186,12 +170,13 @@ async function test_micro_demo_localStorage_flag() {
     await setupNetworkStubs(page);
 
     // Step 1: navigate with ?nodemo to bypass micro-demo auto-start
-    // This lets us control localStorage before startDemo() runs
-    await page.goto(`${BASE_URL}/dist/svelte/index.html?q=coffee&nodemo=1&view=galaxy`);
+    // This lets us control localStorage before initMicroDemo() runs
+    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo`);
     await page.waitForFunction(() => (
+      typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function' &&
       Array.isArray(window.__TEST_STATE__?.points) &&
       (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
-    ), undefined, { timeout: 30000 });
+    ), undefined, { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 
     // Pre-set the localStorage flag to simulate completed demo
@@ -200,21 +185,21 @@ async function test_micro_demo_localStorage_flag() {
       localStorage.setItem(key, JSON.stringify({ seen: true, timestamp: new Date().toISOString() }));
     }, STORAGE_KEY_DEMO);
 
-    // Also pre-set sessionStorage so shouldRunDemo() sees both flags on first check
+    // Also pre-set sessionStorage so shouldRunMicroDemo() returns false on first check
     await page.evaluate((key) => {
       sessionStorage.setItem(key, new Date().toISOString());
     }, 'moco_mycelium_demo_session_v1');
 
-    // Now reload without nodemo — shouldRunDemo() should see both flags
+    // Now reload without nodemo — shouldRunMicroDemo() should see both flags
     await page.reload();
     await page.waitForFunction(() => (
-      Array.isArray(window.__TEST_STATE__?.points) &&
-      (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
-    ), undefined, { timeout: 30000 });
+      typeof window.isMicroDemoRunning === 'function' &&
+      typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function'
+    ), undefined, { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     const demoState = await page.evaluate((key) => ({
-      running: document.body.dataset.demoActive === 'true',
+      running: window.isMicroDemoRunning?.() === true,
       active: document.body.dataset.demoActive === 'true',
       blocker: Boolean(document.getElementById('micro-demo-blocker')),
       stored: localStorage.getItem(key),
@@ -235,7 +220,7 @@ async function test_micro_demo_localStorage_flag() {
 // ── Sub-test 3: searchVisibleCount persistence ───────────────────────────────
 
 async function test_searchVisibleCount_persistence() {
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 
@@ -265,7 +250,7 @@ async function test_searchVisibleCount_persistence() {
       // If all 8 results are already shown (searchVisibleCount persisted from a previous interaction),
       // the count should be set to 8
       const currentCount = await page.evaluate(() => {
-        const list = document.querySelectorAll('.search-result-listitem');
+        const list = document.querySelectorAll('.search-result-item');
         return list.length;
       });
       console.log(`  INFO: current result count=${currentCount}, savedCount="${savedCount}"`);
@@ -282,9 +267,9 @@ async function test_searchVisibleCount_persistence() {
     // Reload the page
     await page.reload();
     await page.waitForFunction(() => (
-      Array.isArray(window.__TEST_STATE__?.points) &&
-      (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0
-    ), undefined, { timeout: 30000 });
+      typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function' &&
+      window.__TEST_STATE__?.points?.length > 0
+    ), undefined, { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
     // Re-run search to restore state (input was cleared on reload)

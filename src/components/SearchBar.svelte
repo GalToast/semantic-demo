@@ -13,10 +13,8 @@
   import { onMount } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat.svelte.ts';
   import { searchState } from '@lib/stores/search.svelte';
-  import { currentSurface } from '@lib/stores/navigation.svelte.ts';
   import SearchInput from './SearchInput.svelte';
-  import { viewport } from '@lib/stores/viewport.svelte.ts';
-  import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
+  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -31,81 +29,41 @@
 
   // ── Test Compatibility ────────────────────────────────────────────────────────
 
-  let testLoadingPhase = $derived($testCompatStore.loadingPhase);
+  let testPanelSurface = $derived(testCompatStore().panelSurface || testCompatStore().navSurface);
+  let testLoadingPhase = $derived(testCompatStore().loadingPhase);
 
-  // Sync test state on mount (one-shot — tests set body attrs before mount)
+  // Sync test state on mount
   onMount(() => {
     syncTestStateFromBody();
+    const observer = new MutationObserver(() => syncTestStateFromBody());
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface', 'data-nav-surface', 'data-loading-phase'] });
+    return () => observer.disconnect();
   });
 
   // ── Derived ───────────────────────────────────────────────────────────────────
 
   let hasQuery = $derived($searchState.hasQuery || $searchState.query.trim().length > 0);
-  let hasSearchSummary = $derived(Boolean($searchState.summary?.query?.trim()));
-  let showResults = $derived($searchState.resultsRendered || $searchState.results.length > 0 || hasSearchSummary);
+  let showResults = $derived($searchState.resultsRendered || $searchState.results.length > 0);
   let isExpanded = $derived(expanded || hasQuery || showResults);
   let showLoading = $derived(testLoadingPhase === 'searching');
   let isError = $derived(testLoadingPhase === 'error');
-  let isStoreError = $derived($searchState.status === 'error');
   let isEmpty = $derived(testLoadingPhase === 'empty');
 
-  let searchInputRef: SearchInput | undefined = $state(undefined);
-
+  // ── Lazy-load SearchResults (27 KB) ─────────────────────────────────────────
   // Only loaded when search results/loading/error/empty state is active.
   // Defers ~27 KB chunk until user actually searches.
   type SearchResultsModule = typeof import('./SearchResults.svelte');
   let SearchResultsComponent: SearchResultsModule['default'] | null = $state(null);
 
   $effect(() => {
-    if (showResults || showLoading || isError || isStoreError || isEmpty) {
-      // M13: liveness guard — if the condition flips false (user clears the
-      // query) while the dynamic import is in-flight, the `.then` would
-      // overwrite the `null` set by the else-branch and leave a stale
-      // <SearchResultsComponent /> mounted off-search (the render guard at
-      // :124 is `{#if SearchResultsComponent}`, not the show conditions, so a
-      // stale non-null renders persistently). Return a cleanup that cancels
-      // the `.then` when the $effect is invalidated (condition change or
-      // unmount) — Svelte 5 runs the prior cleanup before the next body, so
-      // `cancelled` is set before the else-branch null.
-      let cancelled = false;
+    if (showResults || showLoading || isError || isEmpty) {
       import('./SearchResults.svelte').then(mod => {
-        if (!cancelled) SearchResultsComponent = mod.default;
+        SearchResultsComponent = mod.default;
       });
-      return () => {
-        cancelled = true;
-      };
     } else {
       SearchResultsComponent = null;
     }
   });
-
-  // W47-E / M10: dev-only mock-data banner. Shown ONLY when the search
-  // engine genuinely falls back to the 20-business mock catalog
-  // (`@lib/search/mock-catalog.ts`), signaled by SEARCH_MOCK_FALLBACK.
-  // This is distinct from the common API-down case where the engine serves
-  // the real local 8,406-record index — that path must NOT trip the banner
-  // (it would be a misleading false-positive). The banner makes the genuine
-  // mock fallback explicit so a developer doesn't mistake the 20-business
-  // fake for the full dataset.
-  //
-  // Previously this polled sessionStorage every 750ms (timer sprawl) and
-  // later keyed off generic api_unreachable flag which fired on ANY failed
-  // API call — including the real local-index fallback. Now event-driven on
-  // SEARCH_MOCK_FALLBACK (show) / SEARCH_SUCCESS (hide).
-  let mockBannerVisible = $state(false)
-  onMount(() => {
-    mockBannerVisible = false
-    const unsubMock = subscribe(EVENTS.SEARCH_MOCK_FALLBACK, () => {
-      mockBannerVisible = true
-    })
-    const unsubSuccess = subscribe(EVENTS.SEARCH_SUCCESS, () => {
-      mockBannerVisible = false
-    })
-    return () => {
-      unsubMock()
-      unsubSuccess()
-    }
-  })
 </script>
 
 <div
@@ -117,17 +75,10 @@
   class:is-compact={$viewport.isCompact}
   class:info-panel-contained={panelContained}
   role="search"
-  aria-label="Search businesses"
-  onpointerdown={(e) => e.stopPropagation()}
-  onwheel={(e) => e.stopPropagation()}
-  ondblclick={(e) => e.stopPropagation()}
+  aria-label="Search businesses in the semantic field"
 >
-  {#if mockBannerVisible}
-    <div class="mock-banner" role="status" data-testid="mock-banner">
-      Live data is unavailable — searching local records
-    </div>
-  {/if}
-  <SearchInput bind:this={searchInputRef} expanded={isExpanded} surface={currentSurface()} />  {#if SearchResultsComponent}
+  <SearchInput expanded={isExpanded} />
+  {#if SearchResultsComponent}
     <SearchResultsComponent />
   {/if}
 </div>
@@ -154,50 +105,11 @@
   .search-container.info-panel-contained {
     position: sticky;
     top: 0;
-    left: 0;
+    left: auto;
     transform: none;
     width: 100%;
-    z-index: var(--z-search-bar, 2);
-    margin: -1rem -1rem 0 0;
+    z-index: 2;
+    margin: -2rem -1rem 0;
     padding: 0 1rem;
   }
-
-  /* W48-UX: search-panel inner elements (search-input-wrap + search-results)
-     each have their own borders; the outer container border created a
-     "3 stacked search boxes" visual when all three nested borders are
-     visible at once. Drop the outer container border + background when
-     the container is inside an info panel — the inner elements provide
-     sufficient surface distinction. */
-  .search-container.info-panel-contained {
-    border: none;
-    background: transparent;
-    padding: 0;
-  }
-
-  /* W47-E: dev-only mock-data banner. W48-UX compact to a single-line
-     status pill so it doesn't displace the search layout (the previous
-     multi-line version took ~150px and clipped the "Top match" label
-     below). The full diagnostic text lives in the title attribute for
-     hover / screen-reader access. */
-  .mock-banner {
-    background: rgba(255, 193, 7, 0.16);
-    border: 1px solid rgba(255, 193, 7, 0.5);
-    color: rgba(255, 224, 130, 0.96);
-    font-size: 0.7rem;
-    line-height: 1.3;
-    padding: 0.3rem 0.55rem;
-    border-radius: 6px;
-    margin-bottom: 0.4rem;
-    font-family: 'Nunito Sans', system-ui, sans-serif;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  /* Fix #1 Map: floating search bar overlaps MapView header at 1rem */
-  :global(body[data-active-view='map'] .search-container.search-container:not(.info-panel-contained)) {
-    top: 4.5rem;
-    width: min(420px, 90vw);
-    left: 50%;
-    transform: translateX(-50%);
-    right: auto;
-  }</style>
+</style>

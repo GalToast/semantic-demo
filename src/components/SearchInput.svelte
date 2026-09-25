@@ -2,8 +2,8 @@
   @components/SearchInput.svelte — Search input box
 
   Ported from:
- - (query tokenization, debounce)
- - (input event wiring)
+    - js/modules/search-state.js (query tokenization, debounce)
+    - js/modules/bindings/search.js (input event wiring)
 
   Extracted from SearchBar.svelte as the input-only component.
   Drives the search store with debounced queries.
@@ -11,25 +11,20 @@
   DOM ids/classes expected by contract tests:
     #search-input, .search-input-wrap, #search-clear-btn,
     .search-icon, #semantic-lane-pill
-
-  Chrome (pill, buttons, icons, spinner, status) is delegated to
-  SearchInputChrome.svelte — this component owns the input element
-  and all keyboard/compose/debounce/search-dispatch logic.
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { get } from 'svelte/store';
   import {
     searchState,
     setSearchQuery,
-    requestSearchInputFocus,
-    consumeSearchInputFocusIntent
+    setSearchStatus,
+    setSearchResults
   } from '@lib/stores/search.svelte';
-  import { engineReady } from '@lib/stores/engine-ready.svelte';
-  import { isDataReady } from '@lib/data-store';
-  import { pendingSearch } from '@lib/stores/pending-search.svelte';
-  import { SearchDispatch } from '@lib/search/search-dispatch';
-  import SearchInputChrome from '@lib/components/search/SearchInputChrome.svelte';
+  import { performSearch } from '@lib/search-engine';
+  import {
+    dispatchNavTransition,
+    NAV_TRANSITION_ACTIONS
+  } from '@lib/stores/navigation.svelte.ts';
 
   interface Props {
     /** Placeholder text for the input */
@@ -38,43 +33,33 @@
     debounceMs?: number;
     /** Whether the input is visually expanded */
     expanded?: boolean;
-    /** Current nav surface — drives CSS instead of body attribute reads */
-    surface?: string;
   }
 
   let {
     placeholder = 'Search (press /)',
     debounceMs = 300,
-    expanded = false,
-    surface = 'idle'
+    expanded = false
   }: Props = $props();
 
   // ── Local state ───────────────────────────────────────────────────────────────
 
   let queryInput = $state('');
-  let inputEl = $state<HTMLInputElement | undefined>(undefined);
-  let dispatch = new SearchDispatch({
-    onQuerySet: (q) => { queryInput = q; },
-    getInputElement: () => inputEl
-  });
-  let _pendingEnterFocus = $state(false);
-
-  // ── Exported actions ────────────────────────────────────────────────────────
-  export function focusInput(): void {
-    inputEl?.focus();
-  }
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let searchAbortController: AbortController | null = null;
+  let surfaceSwitchedToSearch = false;
 
   // ── Derived ───────────────────────────────────────────────────────────────────
 
   let status = $derived($searchState.status);
-  // Reactive data-readiness for the Path-C splash-fulfillment gate: the store
-  // flips after the local index loads; passing it into fulfillPending lets the
-  // controller defer (not drop) a splash submit that lands pre-data.
-  let dataReady = $derived($isDataReady);
   let showLoading = $derived(status === 'searching');
   let hasQuery = $derived(queryInput.trim().length > 0);
-  let hasResults = $derived($searchState.results.length > 0);
-  let searchActive = $derived(surface === 'search' || surface === 'focus-search');
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
+  let _activeResultId = $derived(
+    $searchState.activeResultId != null
+      ? `search-result-${Number($searchState.activeResultId)}`
+      : undefined
+  );
 
   $effect(() => {
     const storeQuery = $searchState.query ?? '';
@@ -83,177 +68,110 @@
     }
   });
 
-  // ── Deferred splash-search fulfillment ───────────────────────────────────────
-  // This component mounts early (during the idle-surface splash phase) but must
-  // not run a search until the user opts in via the gate. The Splash component
-  // stages an intent here on submit; once engineReady flips true AND the data
-  // index is loaded we fulfill it through the normal dispatch path. onMount's
-  // one-shot `?q=` read already ran at boot, so the URL param alone is not
-  // enough for the splash-submit case.
-  $effect(() => {
-    dispatch.fulfillPending(pendingSearch.value, engineReady.value, dataReady);
-  });
+  // ── Search dispatch ───────────────────────────────────────────────────────────
 
-  // ── Deferred Enter-focus fulfillment ───────────────────────────────────────-
-  // W48-G (fix): previously the Enter handler synchronously focused the first
-  // result via document.getElementById('search-result-list'). The list does
-  // not exist yet because the search is async, so the focus call hit a
-  // null list and silently did nothing. Defer the focus until the store
-  // reports 'results' with at least one row, then focus the first item.
-  $effect(() => {
-    if (!_pendingEnterFocus) return;
-    const status = $searchState.status;
-    const results = $searchState.results;
-    if (status === 'results' && results.length > 0) {
-      _pendingEnterFocus = false;
-      requestAnimationFrame(() => {
-        const list = document.getElementById('search-result-list');
-        if (list) {
-          const first = list.querySelector('[data-order="0"]') as HTMLElement | null;
-          first?.focus();
+  function dispatchSearch(query: string): void {
+    if (searchAbortController) {
+      searchAbortController.abort();
+      searchAbortController = null;
+    }
+
+    const trimmed = query.trim();
+
+    if (trimmed.length === 0) {
+      dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
+      surfaceSwitchedToSearch = false;
+      return;
+    }
+
+    if (trimmed.length < 2) {
+      setSearchStatus('idle');
+      if (surfaceSwitchedToSearch) {
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' });
+        surfaceSwitchedToSearch = false;
+      }
+      return;
+    }
+
+    searchAbortController = new AbortController();
+    const signal = searchAbortController.signal;
+    setSearchStatus('searching');
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' });
+    surfaceSwitchedToSearch = true;
+
+    performSearch(trimmed, signal)
+      .then((results) => {
+        if (searchAbortController !== null && signal === searchAbortController.signal) {
+          setSearchResults(results);
+        }
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        if (searchAbortController !== null && signal === searchAbortController.signal) {
+          setSearchStatus('error');
         }
       });
-    }
-  });
+  }
 
-  // ── Search dispatch ───────────────────────────────────────────────────────────
-  // Orchestrated by SearchDispatch (src/lib/search/search-dispatch.ts).
+  function debounceDispatch(query: string): void {
+    if (debounceTimer !== null) {
+      clearTimeout(debounceTimer);
+    }
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      dispatchSearch(query);
+    }, debounceMs);
+  }
 
   // ── Event handlers ────────────────────────────────────────────────────────────
 
   function handleInput(e: Event): void {
     const target = e.target as HTMLInputElement;
-    const value = target.value;
-    // Defense-in-depth: if the input value already matches the store
-    // query (e.g. url-state restored `?q=` while we're still mounted),
-    // the reactive sync will update `queryInput` from the store and
-    // the search has already been kicked off. Skip the redundant
-    // setSearchQuery + debounceDispatch to avoid a second `runSearch`
-    // call. See PR-O5 followup + tmp/performsearch-dup-audit-2026-07-01.md.
-    if (value === ($searchState.query ?? '')) {
-      queryInput = value;
-      return;
-    }
-    queryInput = value;
-    // User is typing — flag that the next mount (idle→search-surface swap)
-    // must reclaim focus so the keystroke stream isn't interrupted.
-    requestSearchInputFocus();
+    queryInput = target.value;
     setSearchQuery(queryInput);
-    dispatch.debounceDispatch(queryInput, debounceMs);
-  }
-
-  function handleClearQuery(): void {
-    queryInput = '';
-    setSearchQuery('');
-    // Stay in the search surface: wipe the query but keep the user where they
-    // are so they can immediately type a new one. The previous code routed this
-    // through dispatch.clear() (RETURN_OVERVIEW), which teleported the user back
-    // to the galaxy on every clear — a surprising UX regression
-    // (tmp/shittiest-ui-journey-20260812/report.md #1). clearQuery() cancels
-    // the in-flight search, drops any auto-focused result, and pins the surface
-    // back to 'search' so the input stays visible and focused.
-    dispatch.clearQuery();
-    // Return focus after the navigation reset has flushed.
-    requestAnimationFrame(() => inputEl?.focus());
+    debounceDispatch(queryInput);
   }
 
   function handleClear(): void {
     queryInput = '';
-    dispatch.clear();
+    if (debounceTimer !== null) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    if (searchAbortController) {
+      searchAbortController.abort();
+      searchAbortController = null;
+    }
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
+    surfaceSwitchedToSearch = false;
     requestAnimationFrame(() => {
       document.getElementById('search-input')?.focus();
     });
   }
 
   function handleKeydown(e: KeyboardEvent): void {
-    // W52-UX-esc: Escape behavior is contextual:
-    //  - If a search is currently in-flight (`showLoading` true), abort it
-    //    AND keep the typed query so the user can edit and retry without
-    //    re-typing. This matches the cancel button affordance.
-    //  - Otherwise, clear the query via the standard wipe flow.
-    if (e.key === 'Escape') {
-      if (showLoading) {
-        e.preventDefault();
-        handleCancel();
-        return;
-      }
-      if (queryInput.length > 0) {
-        e.preventDefault();
-        handleClear();
-      }
-    } else if (e.key === 'Enter') {
-      // W48-G: pressing Enter in the search input used to do nothing (the
-      // input isn't wrapped in a form). The 300ms debounce handles auto-fire
-      // on typing, but impatient users who type-then-Enter saw no immediate
-      // action. Fire the search immediately AND move focus to the first
-      // result so the user can navigate with Enter / ArrowDown as in the
-      // WAI-ARIA combobox/listbox pattern.
-      e.preventDefault()
-      const q = queryInput.trim()
-      if (q.length > 0) {
-        dispatch.cancelDebounce()
-        _pendingEnterFocus = true
-        dispatch.dispatchSearch(q)
-      }
-    } else if (e.key === 'ArrowDown') {
-      // Move focus to first search result if results are visible
-      const list = document.getElementById('search-result-list');
-      if (list) {
-        const first = list.querySelector('[data-order="0"]') as HTMLElement | null;
-        first?.focus();
-      }
+    if (e.key === 'Escape' && queryInput.length > 0) {
+      handleClear();
     }
-  }
-
-  function handleCancel(): void {
-    const cancelledQuery = queryInput.trim();
-    dispatch.cancel(cancelledQuery);
   }
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────────
 
   $effect(() => {
     return () => {
-      // Cleanup runs on both remix-mount AND full unmount. The author-intent
-      // note about preserving debounce across view swaps conflicts with the
-      // reality of component destruction — be conservative here and clear.
-      dispatch.dispose();
+      if (debounceTimer !== null) clearTimeout(debounceTimer);
+      // Do not abort an in-flight search just because this input remounts
+      // during the intentional idle -> search surface transition. The result
+      // store is global and should be allowed to settle.
     };
   });
 
   onMount(() => {
-    // Restore focus if this input was just remounted mid-typing (the
-    // idle→search-surface swap destroys the previously-focused input).
-    if (consumeSearchInputFocusIntent()) {
-      requestAnimationFrame(() => inputEl?.focus());
-    }
     const query = new URLSearchParams(window.location.search || '').get('q')?.trim();
-    if (!query || query.length < 2) return;
-    const storeQuery = ($searchState.query ?? '').trim();
-    // Guard against re-dispatching a query the URL-restore path already
-    // fulfilled. 'empty' is included: a deep-link search that settled with
-    // zero results must not fire a second API request from this mount.
-    if (
-      storeQuery === query &&
-      ['searching', 'results', 'error', 'empty'].includes($searchState.status)
-    ) {
-      queryInput = query;
-      return;
-    }
-    // Data-gate (deep-link ?q= render nondeterminism): performSearch has no
-    // data-ready guard, so dispatching before initData() resolves searches the
-    // not-yet-loaded local index → setResults([]) + status 'empty' + storeQuery
-    // 'coffee'. That poisoned state makes the later URL-restore path (app-init
-    // → applyUrlState → _restoreSearchFromParams, which DOES await initData and
-    // owns the deep-link search) see isNew:false and wait-for-settle instead of
-    // re-running, leaving the deep-link stuck with zero results — and handleInput's
-    // redundant-fill guard (`value === storeQuery`) then skips a manual re-kick.
-    // Deferring to the URL-restore path makes the deep-link search deterministic.
-    // When data is already ready by mount time, dispatching here is safe.
-    if (!get(isDataReady)) return;
+    if (!query || queryInput || query.length < 2) return;
     queryInput = query;
     setSearchQuery(query);
-    dispatch.dispatchSearch(query);
+    dispatchSearch(query);
   });
 </script>
 
@@ -262,39 +180,72 @@
   class:expanded
   class:has-query={hasQuery}
   class:searching={showLoading}
-  class:search-active={searchActive}
 >
-  <SearchInputChrome
-    {hasQuery}
-    {showLoading}
-    {status}
-    {hasResults}
-    {searchActive}
-    onClear={handleClear}
-    onClearQuery={handleClearQuery}
-    onCancel={handleCancel}
-  >
-    {#snippet children()}
-      <input
-        bind:this={inputEl}
-        id="search-input"
-        aria-label="Search businesses"
-        type="search"
-        class="search-input"
-        {placeholder}
-        value={queryInput}
-        oninput={handleInput}
-        onkeydown={handleKeydown}
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        spellcheck="false"
-        role="combobox"
-        aria-controls="search-result-list"
-        aria-haspopup="true"
-        aria-expanded={hasQuery}      />
-    {/snippet}
-  </SearchInputChrome>
+  <!-- Semantic lane pill (health indicator) -->
+  <div id="semantic-lane-pill" class="semantic-lane-pill" data-state="healthy">
+    <span class="lane-pill-dot"></span>
+  </div>
+
+  <!-- Search label -->
+  <span class="search-label-text">Search</span>
+
+  <!-- Input row -->
+  <div class="search-input-wrap">
+    <!-- Back button (visible only in search state) -->
+    <button
+      class="search-back-btn"
+      onclick={handleClear}
+      aria-label="Back to overview"
+      type="button"
+      tabindex="0"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M19 12H5M12 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="5.8" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="m15 15 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <input
+      id="search-input"
+      type="search"
+      class="search-input"
+      {placeholder}
+      value={queryInput}
+      oninput={handleInput}
+      onkeydown={handleKeydown}
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+      role="combobox"
+      aria-label="Search businesses"
+      aria-controls="search-result-list"
+      aria-haspopup="listbox"
+      aria-expanded={hasQuery}
+      aria-activedescendant={_activeResultId}
+    />
+    <kbd class="search-shortcut-hint" aria-hidden="true">/</kbd>
+    {#if hasQuery}
+      <button class="search-clear" id="search-clear-btn" onclick={handleClear} aria-label="Clear search" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    {/if}
+  </div>
+
+  <div class="search-status search-hint" id="search-status" role="status" aria-live="polite" hidden={status === 'idle' || status === 'results' || $searchState.results.length > 0}>
+    <span class="search-spinner" id="search-spinner" aria-hidden={status !== 'searching'}></span> <!-- audit-ok: template attribute, not transformed — bundle preserves native !== -->
+    {status === 'searching'
+      ? 'Searching semantic field...'
+      : status === 'error'
+        ? 'Search is unavailable right now.'
+        : status === 'empty'
+          ? 'No matching businesses found.'
+          : ''}
+  </div>
 </div>
 
 <style>
@@ -310,48 +261,192 @@
     position: relative;
     z-index: var(--z-search, 100);
     width: min(420px, 90vw);
-    /* PR-L: never overflow the info-panel's content area. The base rule
-       caps at 420px (or 90vw on narrow viewports), but when the search
-       lives inside .info-panel-content (~284px wide on desktop), the
-       420px overflows the parent. info-panel-content has overflow:hidden,
-       so the overflow gets clipped — but a stale scrollLeft of ~88px
-       drifts into view, making every text line look truncated on the
-       left ("Top match" → "atch", "Angel Fire Coffee" → "e Coffee"). */
-    max-width: 100%;
     font-family: 'Nunito Sans', system-ui, sans-serif;
   }
 
+  /* ── Semantic lane pill ───────────────────────────────────────────────────── */
+  .semantic-lane-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0.4rem;
+    background: rgba(78, 205, 196, 0.08);
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+    /* lane pill is decorative; don't intercept pointer events from the
+     * result list that visually sits below it. */
+    pointer-events: none;
+  }
+  .lane-pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4ecdc4;
+  }
+
+  /* ── Search label ─────────────────────────────────────────────────────────── */
+  .search-label-text {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(78, 205, 196, 0.5);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.25rem;
+    /* label is decorative; let clicks fall through to whatever sits below */
+    pointer-events: none;
+  }
+
+  /* ── Input wrapper ────────────────────────────────────────────────────────── */
+  .search-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(7, 16, 24, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(78, 205, 196, 0.2);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .search-input-wrap:focus-within {
+    border-color: rgba(78, 205, 196, 0.6);
+    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.18);
+  }
+  .searching .search-input-wrap {
+    border-color: rgba(78, 205, 196, 0.35);
+  }
+
+  .search-icon {
+    color: #4ecdc4;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
   .search-input {
-    /* Input field (owned by this component; chrome delegated to SearchInputChrome) */
     flex: 1;
     min-height: 44px;
     background: none;
     border: none;
-    outline: none; /* a11y-ok: focus-visible fallback provided below */
-    color: var(--color-text-teal-light);
+    outline: none;
+    color: #e0f0f0;
     font-family: inherit;
     font-size: 0.875rem;
-    /* W54-fix: override global `body .search-input { min-width: 44px; }` with
-       at least 44px so the input can never shrink to zero in a flex context.
-       The previous `min-width: 0` allowed the flex container to collapse the
-       input to zero width when the parent container had dimensions under
-       certain layout conditions (panel-contained search in info panel).
-       This ensures the input stays above touch-target minimum. */
-    min-width: 44px;
+    min-width: 0;
   }
   .search-input:focus-visible {
-    /* SearchInputChrome.svelte paints the focus ring on the wrapper with
-       .search-input-wrap:focus-within box-shadow. Removing this inner
-       outline avoids the double-ring look and prevents the outline from
-       crowding the placeholder text. */
-    outline: none;
-  }  /* W50-UX: placeholder color raised to 0.62 (≈ 5.4:1 on bg-surface-chrome
-   * ~0.07 alpha over a dark canvas) so the search bar's affordance is
-   * actually readable. Previous 0.35 was ≈ 2.5:1 — failed WCAG 2 AA. */
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: -2px;
+    border-radius: 0.25rem;
+  }
   .search-input::placeholder {
-    color: rgba(224, 240, 240, 0.85);
+    color: rgba(224, 240, 240, 0.35);
   }
   .search-input::-webkit-search-cancel-button {
     display: none;
+  }
+
+  /* ── Shortcut hint chip ──────────────────────────────────────────────────── */
+  .search-shortcut-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.55);
+    font-family: 'Bricolage Grotesque', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: auto;
+    pointer-events: none;
+    flex-shrink: 0;
+    transition: opacity 0.2s ease;
+  }
+  .search-input-wrap:focus-within .search-shortcut-hint {
+    opacity: 0;
+  }
+
+  .search-clear {
+    background: none;
+    border: none;
+    color: rgba(224, 240, 240, 0.5);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease;
+  }
+  .search-clear:hover {
+    color: #ff6b6b;
+  }
+
+  /* ── Back button (visible only in search state) ──────────────────────────── */
+  .search-back-btn {
+    display: none;               /* hidden in idle */
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: rgba(78, 205, 196, 0.1);
+    border: 1px solid rgba(78, 205, 196, 0.25);
+    border-radius: 0.375rem;
+    color: #4ecdc4;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .search-back-btn:hover {
+    background: rgba(78, 205, 196, 0.2);
+    border-color: rgba(78, 205, 196, 0.5);
+  }
+  .search-back-btn:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: 2px;
+  }
+  .search-back-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  /* Show back button only in search state */
+  :global(body[data-panel-surface='search']) .search-back-btn {
+    display: inline-flex;
+  }
+
+  /* ── Status messages ──────────────────────────────────────────────────────── */
+  .search-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    color: #4ecdc4;
+    margin-top: 0.35rem;
+    /* status is a11y-only (aria-live); clicks should fall through to the
+     * result list which sits in the same visual region once the user has
+     * a query. */
+    pointer-events: none;
+  }
+
+  /* ── Spinner ──────────────────────────────────────────────────────────────── */
+  .search-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(78, 205, 196, 0.2);
+    border-top-color: #4ecdc4;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 </style>

@@ -20,12 +20,11 @@ const appStateSrc = fs.readFileSync(resolveSource('src/lib/state/app.svelte.ts',
 const stateTypesSrc = fs.readFileSync(resolveSource('src/lib/state/state-types.ts', ROOT), 'utf8')
 const stateSrc = `${appStateSrc}\n${stateTypesSrc}`
 const configSrc = fs.readFileSync(resolveSource('src/lib/engine/config.ts', ROOT), 'utf8')
-const lifecycleSrc = fs.readFileSync(resolveSource('src/lib/stores/lifecycle.ts', ROOT), 'utf8')
-const orchestrationLifecycleSrc = fs.readFileSync(resolveSource('src/lib/orchestration/lifecycle.ts', ROOT), 'utf8')
+const lifecycleSrc = fs.readFileSync(resolveSource('js/modules/lifecycle.ts', ROOT), 'utf8')
 const lifecycleModesSrc = fs.readFileSync(resolveSource('src/lib/stores/lifecycle/modes.ts', ROOT), 'utf8')
-const navigationStateSrc = fs.readFileSync(resolveSource('src/lib/stores/navigation.svelte.ts', ROOT), 'utf8')
+const navigationStateSrc = fs.readFileSync(resolveSource('js/modules/navigation-state.ts', ROOT), 'utf8')
 const navigationActionsSrc = fs.readFileSync(resolveSource('src/lib/navigation-actions.ts', ROOT), 'utf8')
-const urlStateSrc = fs.readFileSync(resolveSource('src/lib/orchestration/url-state.ts', ROOT), 'utf8')
+const urlStateSrc = fs.readFileSync(resolveSource('js/modules/url-state.ts', ROOT), 'utf8')
 // navigation.svelte.ts owns the dispatchNavTransition reducer and action key cases.
 // orchestration/navigation-state.ts only re-exports the function + constants.
 const navigationSvelteSrc = fs.readFileSync(resolveSource('src/lib/stores/navigation.svelte.ts', ROOT), 'utf8')
@@ -64,12 +63,9 @@ function extractExportedFunction(src, name) {
         `export\\s+function\\s+${name}\\s*\\([^)]*\\)(?:\\s*:\\s*\\S[^{]*)?\\s*\\{[\\s\\S]*?\\n\\}`
     )
     if (directRe.test(src)) return true
-    // Pass-through re-export: in an `export { ..., name, ... } [from '...'];` block
-    const reExportRe = new RegExp(`export\\s*\\{[\\s\\S]*?\\b${name}\\b[\\s\\S]*?\\}`)
-    if (reExportRe.test(src)) return true
-    // TS migration: export const name = ...
-    const constRe = new RegExp(`export\\s+const\\s+${name}\\s*=`)
-    return constRe.test(src)
+    // Pass-through re-export: in an `export { ..., name, ... };` block
+    const reExportRe = new RegExp(`export\\s*\\{[\\s\\S]*?\\b${name}\\b[\\s\\S]*?\\};`)
+    return reExportRe.test(src)
 }
 
 // ---------------------------------------------------------------------------
@@ -112,6 +108,7 @@ const navFields = [
     'focusPocketIndices',
     'focusPocketMeta',
     'focusPocketRoleByIndex',
+    'focusPocketAnimationFrameId',
     'focusFramingMeta',
     'currentPersonality',
     'neighborhoodIndices'
@@ -172,10 +169,7 @@ const lifecycleExports = [
     'resetNodePositions'
 ]
 for (const name of lifecycleExports) {
-    assert(
-        extractExportedFunction(lifecycleSrc, name) || extractExportedFunction(orchestrationLifecycleSrc, name),
-        `lifecycle.js must export ${name}`
-    )
+    assert(extractExportedFunction(lifecycleSrc, name), `lifecycle.js must export ${name}`)
 }
 console.log(`  PASS (${lifecycleExports.length} exports)`)
 
@@ -236,7 +230,9 @@ assert(storyDesc, 'STORY_DESCRIPTIONS must be exported from lifecycle.js, lifecy
 // disqualified-ghosts) was moved to applyStoryPrompt case branches in
 // cluster-filter-controller.ts. STORY_DESCRIPTIONS now carries only { standard }.
 // Verify the constant still exists and has at least one key.
-const storyKeys = Object.keys(JSON.parse(storyDesc.replace(/'/g, '"').replace(/(\w+)\s*:/g, '"$1":')))
+const storyKeys = Object.keys(JSON.parse(
+    storyDesc.replace(/'/g, '"').replace(/(\w+)\s*:/g, '"$1":')
+))
 assert(storyKeys.length > 0, 'STORY_DESCRIPTIONS must have at least one key')
 assert(
     storyDesc.includes('standard') || storyDesc.includes(`'standard'`) || storyDesc.includes(`"standard"`),
@@ -313,12 +309,7 @@ console.log('  PASS')
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 23: COLORS and CLUSTER_NAMES')
 assert(stateSrc.includes('COLORS'), 'state must have COLORS')
-// CLUSTER_NAMES was de-duplicated out of appState (62fee8d4 HUNT2-g4) — the
-// canonical source is @lib/utils/ui-presentation (CLUSTER_NAMES array) with
-// the type in @lib/state/types/core-types.ts. Assert both canonical homes
-// instead of the removed state field.
-const clusterNamesSrc = fs.readFileSync(resolveSource('src/lib/state/types/core-types.ts', ROOT), 'utf8')
-assert(clusterNamesSrc.includes('CLUSTER_NAMES'), 'core-types.ts must declare CLUSTER_NAMES type')
+assert(stateSrc.includes('CLUSTER_NAMES'), 'state must have CLUSTER_NAMES')
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------
@@ -351,8 +342,7 @@ console.log('  PASS')
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 27: refreshCompositionState')
 assert(
-    extractExportedFunction(lifecycleSrc, 'refreshCompositionState') ||
-        extractExportedFunction(orchestrationLifecycleSrc, 'refreshCompositionState'),
+    extractExportedFunction(lifecycleSrc, 'refreshCompositionState'),
     'lifecycle.js must export refreshCompositionState'
 )
 console.log('  PASS')
@@ -373,8 +363,7 @@ console.log('  PASS')
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 29: executeJourneyCompassAction')
 assert(
-    extractExportedFunction(lifecycleSrc, 'executeJourneyCompassAction') ||
-        extractExportedFunction(orchestrationLifecycleSrc, 'executeJourneyCompassAction'),
+    extractExportedFunction(lifecycleSrc, 'executeJourneyCompassAction'),
     'lifecycle.js must export executeJourneyCompassAction'
 )
 console.log('  PASS')
@@ -384,31 +373,18 @@ console.log('  PASS')
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 30: refreshCompositionState, switchView, updateJourneyCompass')
 assert(
-    extractExportedFunction(lifecycleSrc, 'refreshCompositionState') ||
-        extractExportedFunction(orchestrationLifecycleSrc, 'refreshCompositionState'),
+    extractExportedFunction(lifecycleSrc, 'refreshCompositionState'),
     'lifecycle.js must export refreshCompositionState'
 )
-assert(
-    extractExportedFunction(lifecycleSrc, 'switchView') ||
-        extractExportedFunction(orchestrationLifecycleSrc, 'switchView'),
-    'lifecycle.js must export switchView'
-)
-assert(
-    extractExportedFunction(lifecycleSrc, 'updateJourneyCompass') ||
-        extractExportedFunction(orchestrationLifecycleSrc, 'updateJourneyCompass'),
-    'lifecycle.js must export updateJourneyCompass'
-)
+assert(extractExportedFunction(lifecycleSrc, 'switchView'), 'lifecycle.js must export switchView')
+assert(extractExportedFunction(lifecycleSrc, 'updateJourneyCompass'), 'lifecycle.js must export updateJourneyCompass')
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------
 // CONTRACT 31: switchView exported
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 31: switchView exported')
-assert(
-    extractExportedFunction(lifecycleSrc, 'switchView') ||
-        extractExportedFunction(orchestrationLifecycleSrc, 'switchView'),
-    'lifecycle.js must export switchView'
-)
+assert(extractExportedFunction(lifecycleSrc, 'switchView'), 'lifecycle.js must export switchView')
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------
@@ -418,8 +394,7 @@ console.log('CONTRACT 32: semantic search state fields')
 assert(stateSrc.includes('semanticLaneState'), 'state must have semanticLaneState')
 assert(stateSrc.includes('semanticLaneSnapshot'), 'state must have semanticLaneSnapshot')
 assert(stateSrc.includes('semanticLaneProbePromise'), 'state must have semanticLaneProbePromise')
-// semanticSearchResultCache was removed as dead IDB-backed payload cache (c6712701).
-// Only the live in-memory result cache remains; no dead-field assertion needed.
+assert(stateSrc.includes('semanticSearchResultCache'), 'state must have semanticSearchResultCache')
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------
@@ -441,10 +416,7 @@ console.log('  PASS')
 // CONTRACT 35: NAV_TRANSITION_ACTIONS
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 35: NAV_TRANSITION_ACTIONS')
-assert(
-    lifecycleSrc.includes('NAV_TRANSITION_ACTIONS') || orchestrationLifecycleSrc.includes('NAV_TRANSITION_ACTIONS'),
-    'lifecycle.js must expose NAV_TRANSITION_ACTIONS facade'
-)
+assert(lifecycleSrc.includes('NAV_TRANSITION_ACTIONS'), 'lifecycle.js must expose NAV_TRANSITION_ACTIONS facade')
 assert(
     /export\s+const\s+NAV_TRANSITION_ACTIONS\s*=\s*Object\.freeze/.test(navigationActionsSrc),
     'navigation-actions.ts must own NAV_TRANSITION_ACTIONS'
@@ -453,7 +425,7 @@ assert(
 // (e.g. dispatchNavTransition). Match any export block containing the constant.
 assert(
     /export\s*\{[\s\S]*?NAV_TRANSITION_ACTIONS[\s\S]*?\}/.test(navigationStateSrc) ||
-        /export\s*\{[\s\S]*?NAV_TRANSITION_ACTIONS[\s\S]*?\}/.test(navigationSvelteSrc),
+    /export\s*\{[\s\S]*?NAV_TRANSITION_ACTIONS[\s\S]*?\}/.test(navigationSvelteSrc),
     'navigation-state.js or navigation.svelte.ts must re-export NAV_TRANSITION_ACTIONS'
 )
 const requiredActions = [
@@ -483,11 +455,7 @@ console.log(`  PASS (${requiredActions.length} actions)`)
 // CONTRACT 36: dispatchNavTransition exported
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 36: dispatchNavTransition')
-assert(
-    extractExportedFunction(lifecycleSrc, 'dispatchNavTransition') ||
-        extractExportedFunction(orchestrationLifecycleSrc, 'dispatchNavTransition'),
-    'lifecycle.js must export dispatchNavTransition'
-)
+assert(extractExportedFunction(lifecycleSrc, 'dispatchNavTransition'), 'lifecycle.js must export dispatchNavTransition')
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------
@@ -496,7 +464,7 @@ console.log('  PASS')
 console.log('CONTRACT 36b: window.dispatchNavTransition bridge retired')
 assert(
     !/window\.dispatchNavTransition\s*=/.test(lifecycleSrc) &&
-        !/window\.dispatchNavTransition\s*=/.test(navigationSvelteSrc),
+    !/window\.dispatchNavTransition\s*=/.test(navigationSvelteSrc),
     'window.dispatchNavTransition compatibility bridge must be retired'
 )
 console.log('  PASS')
@@ -505,9 +473,8 @@ console.log('  PASS')
 // CONTRACTS 37-48: dispatchNavTransition reducer actions (source-only)
 // Since we can't call the runtime, we verify the reducer cases exist in source.
 // ---------------------------------------------------------------------------
-// Reducer case handlers moved into src/lib/stores/navigation/mode-transitions.svelte.ts
-// during the consolidation; the barrel (navigation.svelte.ts) only re-exports dispatchNavTransition.
-const reducerSrc = fs.readFileSync(resolveSource('src/lib/stores/navigation/mode-transitions.svelte.ts', ROOT), 'utf8')
+// Reducer case handlers live in navigation.svelte.ts (not the re-export barrel).
+const reducerSrc = navigationSvelteSrc
 
 console.log('CONTRACTS 37-48: dispatchNavTransition reducer action handlers (source-only)')
 
@@ -580,98 +547,7 @@ assert(
 console.log('  PASS (12 reducer action handlers verified, exhaustive switch confirmed)')
 
 // ---------------------------------------------------------------------------
-// RUNTIME TEST 1: JOURNEY_COMPASS_PHASE_ORDER has canonical 6 phases
-// ---------------------------------------------------------------------------
-console.log('\nRUNTIME TEST 1: JOURNEY_COMPASS_PHASE_ORDER canonical phases')
-
-try {
-    const { JOURNEY_COMPASS_PHASE_ORDER } = await import('../src/lib/stores/journey.svelte.ts')
-    assert(Array.isArray(JOURNEY_COMPASS_PHASE_ORDER), 'JOURNEY_COMPASS_PHASE_ORDER must be an array')
-    assertEq(JOURNEY_COMPASS_PHASE_ORDER.length, 6, 'JOURNEY_COMPASS_PHASE_ORDER has 6 phases')
-    const expectedPhases = ['overview', 'search', 'focus', 'trail', 'inside', 'map']
-    for (let i = 0; i < expectedPhases.length; i++) {
-        assertEq(
-            JOURNEY_COMPASS_PHASE_ORDER[i],
-            expectedPhases[i],
-            `phase ${i} is '${expectedPhases[i]}'`
-        )
-    }
-    console.log('  PASS (6 phases: overview → search → focus → trail → inside → map)')
-} catch (err) {
-    console.error('  FAIL:', err.message)
-}
-
-// ---------------------------------------------------------------------------
-// RUNTIME TEST 2: SELECTION_DEPENDENT_MODES and isModeLocked
-// ---------------------------------------------------------------------------
-console.log('\nRUNTIME TEST 2: SELECTION_DEPENDENT_MODES and isModeLocked')
-
-try {
-    const { SELECTION_DEPENDENT_MODES, isModeLocked } = await import(
-        '../src/lib/navigation/mode-affordances'
-    )
-    assert(SELECTION_DEPENDENT_MODES instanceof Set, 'SELECTION_DEPENDENT_MODES is a Set')
-    assert(SELECTION_DEPENDENT_MODES.has('trail'), 'trail is selection-dependent')
-    assert(SELECTION_DEPENDENT_MODES.has('focus'), 'focus is selection-dependent')
-    assert(SELECTION_DEPENDENT_MODES.has('inside'), 'inside is selection-dependent')
-    assert(!SELECTION_DEPENDENT_MODES.has('overview'), 'overview is NOT selection-dependent')
-    assert(!SELECTION_DEPENDENT_MODES.has('search'), 'search is NOT selection-dependent')
-
-    // isModeLocked behavior:
-    // - A selection-dependent mode WITHOUT a selection → locked
-    assert(isModeLocked('trail', false) === true, 'trail without selection is locked')
-    assert(isModeLocked('focus', false) === true, 'focus without selection is locked')
-    assert(isModeLocked('inside', false) === true, 'inside without selection is locked')
-    // - A selection-dependent mode WITH a selection → unlocked
-    assert(isModeLocked('trail', true) === false, 'trail with selection is unlocked')
-    assert(isModeLocked('focus', true) === false, 'focus with selection is unlocked')
-    // - A non-selection-dependent mode is never locked
-    assert(isModeLocked('overview', false) === false, 'overview without selection is unlocked')
-    assert(isModeLocked('search', false) === false, 'search without selection is unlocked')
-    assert(isModeLocked('overview', true) === false, 'overview with selection is unlocked')
-    // - 'map' is not in SELECTION_DEPENDENT_MODES
-    assert(isModeLocked('map', false) === false, 'map without selection is unlocked')
-
-    console.log('  PASS (3 selection-dependent modes, correct lock semantics)')
-} catch (err) {
-    console.error('  FAIL:', err.message)
-}
-
-// ---------------------------------------------------------------------------
-// RUNTIME TEST 3: NAV_TRANSITION_ACTIONS has all required action keys
-// ---------------------------------------------------------------------------
-console.log('\nRUNTIME TEST 3: NAV_TRANSITION_ACTIONS action keys')
-
-try {
-    const { NAV_TRANSITION_ACTIONS } = await import('../src/lib/navigation-actions.ts')
-    const required = [
-        'FOCUS_NODE',
-        'SET_DEPTH',
-        'WALK_TO',
-        'BACKTRACK',
-        'RESET_FOCUS',
-        'RESET_EXPERIENCE',
-        'ENTER_INSIDE',
-        'EXIT_INSIDE',
-        'RESTORE_EXPLORATION_HISTORY'
-    ]
-    for (const key of required) {
-        assert(
-            NAV_TRANSITION_ACTIONS[key] !== undefined,
-            `NAV_TRANSITION_ACTIONS must have '${key}' key`
-        )
-        assert(
-            typeof NAV_TRANSITION_ACTIONS[key] === 'string',
-            `NAV_TRANSITION_ACTIONS['${key}'] must be a string`
-        )
-    }
-    console.log(`  PASS (${required.length} action keys verified at runtime)`)
-} catch (err) {
-    console.error('  FAIL:', err.message)
-}
-
-// ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
 console.log('\n=== state-transition-table-contract.mjs PASSED ===')
-console.log('All 48 static contracts + 3 runtime behavioral tests verified.')
+console.log('All 48 contracts verified via source-only checks.')

@@ -2,15 +2,11 @@
  * @lib/orchestration/parity-attrs.svelte.ts
  *
  * Single source of truth for the body DOM state that the legacy
- * production shell (archived at docs/archive/vector-explorer-polished-legacy.html) requires: body
+ * production shell (vector-explorer-polished.html) requires: body
  * data-* attributes (focus-search, journey-compass, semantic-dive,
  * navigation, viewport, filter, etc.) AND the body classes that
- * gate mobile CSS rules (surface-{value}, view-{value},
- * navigation-{value}, focus-transition). See `applyParityAttributes`
- * for context.
- *
- * Phase B3d removed the `is-active` body class (redundant with
- * surface-{value}: is-active ≡ panelSurface !== 'idle').
+ * gate mobile CSS rules (`is-active` is the main one — see
+ * `applyParityAttributes` for context).
  *
  * Migrated to Svelte 5 runes: uses $effect.root() for reactive DOM sync
  * instead of manual .subscribe() calls. The $effect auto-tracks all rune
@@ -22,6 +18,7 @@
 
 // ── Store Imports (re-exported for consumers) ─────────────────────────────────
 
+import { get } from 'svelte/store'
 import { navStore } from '@lib/stores/navigation.svelte'
 // NavState type removed after direct store reads were inlined
 import { journeyStore } from '@lib/stores/journey.svelte'
@@ -30,49 +27,201 @@ import { searchStore } from '@lib/stores/search.svelte'
 import { filterState } from '@lib/stores/filter.svelte'
 import { viewport } from '@lib/stores/viewport.svelte'
 import { cameraStore } from '@lib/stores/camera.svelte'
-import { demoStore } from '@lib/stores/demo.svelte'
+import { demoStore, demoPhase as demoPhaseGetter } from '@lib/stores/demo.svelte'
 import { graphicsModeStore, loadingPhaseStore } from '@lib/data-store'
-import { engineReady } from '@lib/stores/engine-ready.svelte'
-import { appState } from '@lib/state/app.svelte'
+import { getJourneyCompassState } from './compass-state'
+import { getJourneyCompassPresentationState, type CompassPresentationState } from './compass-controller'
+import type { LoadingPhase } from '@lib/types/state'
 
-// ── Decomposition: pure resolvers for computeParityAttributes() ───────────
+// ── Attribute Manifest ──────────────────────────────────────────────────────
 //
-// The 245-LOC IIFE body was decomposed into 13 pure resolvers (plus the
-// context bundle) on 2026-06-28, following the neighborhood.ts template
-// (commit 300906d9). See parity/parity-context.ts and parity/parity-resolvers.ts.
+// Each entry maps a body data-attr key to its current desired value and a
+// short description of who reads it. The manifest is exported so the focused
+// test can assert that the parity layer covers everything the legacy shell
+// expects.
 
-import { resolveParityContext } from './parity/parity-context'
-import {
-    resolveFocusContext,
-    resolveSearchContext,
-    resolveGraphContext,
-    resolvePanelSurfaceMode,
-    resolveMapContext,
-    resolveMapTrailState,
-    resolveSemanticDive,
-    resolveThreadInspection,
-    resolvePanelSurfaceDetail,
-    resolveLaunchState,
-    resolveCameraAssist,
-    resolveFilterActive,
-    resolveJourneyPhase
-} from './parity/parity-resolvers'
+export interface ParityAttributeDescriptor {
+    /** Body data-attr key (without the `data-` prefix). */
+    readonly key: string
+    /** What the value means / who reads it. */
+    readonly description: string
+    /** Which store slice is the source of truth. */
+    readonly source: string
+}
 
-// ── Attribute Manifest (extracted to parity-attrs-manifest.ts) ──────────────
-//
-// The descriptor table is pure static data (~170 lines); it lives in
-// parity-attrs-manifest.ts so node contracts / docs tooling can load it
-// without the Svelte rune runtime. Re-exported here for consumer
-// compatibility — existing imports keep working unchanged.
+export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
+    // Journey compass (legacy #journey-compass + .journey-compass CSS hooks)
+    { key: 'journeyCompass', description: 'Legacy alias for journey compass lifecycle phase', source: 'compass.phase' },
+    {
+        key: 'journeyCompassPhase',
+        description: 'Journey compass lifecycle phase (idle|checking|synthesizing|active|interrupted)',
+        source: 'compass.phase'
+    },
+    {
+        key: 'journeyCompassDensity',
+        description: 'Compass density (hidden|compact|expanded)',
+        source: 'compass.presentationState'
+    },
+    { key: 'journeyCompassCopy', description: 'Compass copy mode (quiet|full)', source: 'compass.presentationState' },
+    {
+        key: 'journeyNavigationOwner',
+        description: 'Who owns navigation chrome (journey-compass|map-trail-strip|map-controls|scene|inside-walk)',
+        source: 'compass.presentationState'
+    },
 
-export {
-    type ParityAttributeDescriptor,
-    PARITY_ATTRIBUTES,
-    PARITY_ATTRIBUTE_KEYS
-} from './parity-attrs-manifest'
+    // Navigation (legacy navigation-state.js)
+    { key: 'navMode', description: 'Navigation mode (overview|search|trail|focus|inside)', source: 'navStore.mode' },
+    {
+        key: 'navSurface',
+        description:
+            'Navigation surface (idle|search|focus|focus-search|map|map-trail|map-focus|map-focus-search|inside|thread-inspect|semantic-dive)',
+        source: 'navStore.surface'
+    },
+    {
+        key: 'panelSurface',
+        description: 'Mirrors navSurface; some legacy code reads this name',
+        source: 'navStore.surface'
+    },
+    {
+        key: 'panelSurfaceMode',
+        description: 'Mode of the panel surface (focus-search|semantic-dive|...)',
+        source: 'derived'
+    },
+    {
+        key: 'panelSurfaceDetail',
+        description:
+            'Info panel surface detail (none|expanded|peek) — used by mobile_premium__state.css to switch the info panel layout on search/focus-search',
+        source: 'derived from panelSurfaceMode + mobileSearchSheet'
+    },
+    { key: 'activeView', description: 'Current view (galaxy|map)', source: 'navStore.currentView' },
+    { key: 'viewMode', description: 'Mirrors activeView for legacy code', source: 'navStore.currentView' },
+    {
+        key: 'focusedNode',
+        description: 'Currently focused node index, or removed when null',
+        source: 'navStore.focusedIndex'
+    },
+    {
+        key: 'graphContext',
+        description: 'Graph context label (idle|counties|corridor|focus|inside|map)',
+        source: 'derived'
+    },
+    {
+        key: 'mapContext',
+        description: 'Map context label (idle|search|focus|focus-search|trail)',
+        source: 'derived'
+    },
+    { key: 'routeExploration', description: 'Route exploration phase', source: 'journeyStore.routeExplorationPhase' },
 
-// Internal consumers (createParitySyncEffectBody) read the manifest directly.
-import { PARITY_ATTRIBUTES } from './parity-attrs-manifest'
+    // Trail (legacy lifecycle.js + setTrailDepth)
+    { key: 'trailDepth', description: 'Current trail depth (0|1|2+)', source: 'journeyStore.trailDepth' },
+    { key: 'trailState', description: 'Trail state (inactive|active)', source: 'derived' },
+
+    // Semantic dive (legacy semantic-dive-ui.js)
+    {
+        key: 'semanticDive',
+        description: 'Semantic dive state (inactive|transitioning|active)',
+        source: 'focusStore.semanticDiveMode'
+    },
+    {
+        key: 'insideWalkState',
+        description: 'Inside walk state (idle|walking|exploring|...)',
+        source: 'focusStore.strandContinuityPhase'
+    },
+
+    // Focus transition (legacy camera-controls.js / focus.ts)
+    {
+        key: 'focusTransition',
+        description: 'Focus transition mode (idle|entering|settling|inside|exiting)',
+        source: 'focusStore.transitionMode'
+    },
+
+    // Search status (legacy lifecycle-modes.js / search-state.js)
+    {
+        key: 'searchStatus',
+        description: 'Search lifecycle status (idle|searching|focusing|results|empty|error)',
+        source: 'searchStore.status'
+    },
+
+    // Strand journey (legacy strand-continuity.js — CSS journey_steps.css reads data-strand-journey)
+    {
+        key: 'strandJourney',
+        description: 'Strand journey phase (idle|preview|pinned|exploring|arrived|returning)',
+        source: 'focusStore.strandContinuityPhase'
+    },
+    {
+        key: 'threadInspect',
+        description: 'Whether the thread inspector is active',
+        source: 'focusStore.threadInspector'
+    },
+    {
+        key: 'threadInspectSurface',
+        description: 'Thread inspector surface owner (idle|rail|canvas|pinned|inside-cue)',
+        source: 'focusStore.threadInspector'
+    },
+    {
+        key: 'inspectedThreadIndex',
+        description: 'Currently inspected thread index, or removed when inactive',
+        source: 'focusStore.threadInspector'
+    },
+
+    // Journey phase
+    {
+        key: 'journeyPhase',
+        description:
+            'Journey phase lifecycle (idle|overview|search|focus|inside|map|thread-inspect|walking|arriving|settling)',
+        source: 'journeyStore.phase'
+    },
+    {
+        key: 'terrainHandoff',
+        description: 'Terrain handoff phase (idle|prelude|transition|settle)',
+        source: 'journeyStore.terrainHandoffPhase'
+    },
+    { key: 'demoPhase', description: 'Demo choreography phase', source: 'demoStore.phase' },
+
+    // Filters (legacy filter-state.js)
+    { key: 'filtersActive', description: 'Whether any filter is active', source: 'filterState' },
+
+    // Viewport
+    { key: 'reducedMotion', description: 'OS-level reduced motion preference', source: 'viewport.reducedMotion' },
+    {
+        key: 'compact',
+        description: 'Whether viewport is at or below the mobile breakpoint',
+        source: 'viewport.isCompact'
+    },
+    { key: 'mobile', description: 'Whether viewport is mobile (alias of compact)', source: 'viewport.isMobile' },
+    { key: 'mode', description: 'Current visual mode (overview|focus|inside|map)', source: 'navStore.mode' },
+
+    // Loading / scene readiness (all derived from loadingPhaseStore + graphicsModeStore)
+    { key: 'loadingOverlay', description: 'Loading overlay visibility (hidden|visible)', source: 'loadingPhaseStore' },
+    { key: 'loadingPhase', description: 'Loading phase (records|scene|restore|launch)', source: 'loadingPhaseStore' },
+    { key: 'sceneReady', description: 'Whether the WebGL scene is ready', source: 'loadingPhaseStore' },
+    {
+        key: 'viewHandoffActive',
+        description: 'Whether a view-handoff animation is in progress',
+        source: 'loadingPhaseStore'
+    },
+    { key: 'cameraAssist', description: 'Camera assistance state (free|suspended)', source: 'loadingPhaseStore' },
+    { key: 'graphicsMode', description: 'Graphics mode (webgl|fallback)', source: 'graphicsModeStore' },
+    { key: 'testReady', description: 'Test readiness flag (true once parity is installed)', source: 'derived' },
+
+    // Camera orbit slack (legacy camera-orbit-slack.js / camera.ts)
+    {
+        key: 'cameraSlack',
+        description: 'Camera orbit slack phase (idle|active|settling)',
+        source: 'cameraStore.orbitSlack.phase'
+    },
+    {
+        key: 'cameraSlackReason',
+        description: 'Reason string for the current camera orbit slack phase',
+        source: 'cameraStore.orbitSlack.reason'
+    }
+] as const
+
+/**
+ * Set of attribute keys this module owns.
+ * Useful for tests that want to assert "every legacy attr is covered".
+ */
+export const PARITY_ATTRIBUTE_KEYS: ReadonlySet<string> = new Set(PARITY_ATTRIBUTES.map((a) => a.key))
 
 // ── Attribute Computation ────────────────────────────────────────────────────
 
@@ -85,55 +234,161 @@ export interface ParityAttributeMap {
 }
 
 export function computeParityAttributes(): ParityAttributeMap {
-    // ── Orchestrator: delegates to pure resolvers ─────────────────────────
-    //
-    // The 245-LOC IIFE body was decomposed into 13 pure resolvers (plus
-    // the context bundle) on 2026-06-28. Each resolver is independently
-    // testable and the orchestrator is now a thin wiring layer.
+    // Direct reads from rune stores (auto-tracked when called inside $effect)
+    const nav = navStore()
+    const journey = journeyStore()
+    const focus = focusStore()
+    const search = get(searchStore)
+    const filters = get(filterState)
+    const vp = viewport()
+    const demoPhaseValue: string = demoPhaseGetter()
+    const camera = get(cameraStore)
 
-    const ctx = resolveParityContext()
-    const { focusedNode, hasFocusContext: resolvedFocusContext } = resolveFocusContext(ctx)
-    // Test-only contract override — AppBoot.svelte's
-    // `window.__forceSemanticDiveContractSurface` flips the dive flag WITHOUT a
-    // real selection flow, so resolveFocusContext() finds no focused business.
-    // resolvePanelSurfaceMode() then falls through its `hasFocus` guard to
-    // 'idle', and applyBodyClassMirrors() removes the `surface-semantic-dive`
-    // class the hook just added (prefix-sibling removal) while
-    // applyDataAttributes() rewrites data-panel-surface back to 'idle' — the
-    // hook's DOM write and the parity map fight each other. Widening the focus
-    // context for the forced surface keeps body classes, body dataset, and
-    // `parityMap` in agreement instead. `_semanticDiveContractForced` is only
-    // ever set by the test hook, so production behavior is unchanged and the
-    // "stale dive flag without a focused business" guard (parity-resolvers.ts)
-    // stays intact for every real code path.
-    const hasFocusContext = resolvedFocusContext || ctx.semanticDiveContractForced
-    const { hasSearchContext } = resolveSearchContext(ctx)
-    const { graphContext } = resolveGraphContext(ctx, hasFocusContext, hasSearchContext)
-    const { panelSurfaceMode } = resolvePanelSurfaceMode(ctx, hasFocusContext, hasSearchContext)
-    const { mapContext } = resolveMapContext(ctx, panelSurfaceMode)
-    const { trailState } = resolveMapTrailState(ctx, hasFocusContext, hasSearchContext, panelSurfaceMode, graphContext)
-    const { semanticDive } = resolveSemanticDive(ctx, hasFocusContext)
-    const { threadInspectionActive, inspectedThreadIndex } = resolveThreadInspection(ctx)
-    const { panelSurfaceDetail } = resolvePanelSurfaceDetail(panelSurfaceMode)
-    const { loadingOverlay, sceneReady, viewHandoffActive } = resolveLaunchState(ctx)
-    const { cameraAssist } = resolveCameraAssist()
-    const { filtersActive } = resolveFilterActive(ctx)
-    const { journeyPhase } = resolveJourneyPhase(ctx, hasFocusContext, hasSearchContext)
+    const compassStateVal = getJourneyCompassState()
+    const presentation: CompassPresentationState = getJourneyCompassPresentationState(compassStateVal)
 
-    const nav = ctx.nav
-    const journey = ctx.journey
-    const focus = ctx.focus
-    const search = ctx.search
-    const vp = ctx.viewport
-    const presentation = ctx.presentation
-    const loadingPhaseValue = ctx.loadingPhase
-    const graphicsModeValue = ctx.graphicsMode
-    const demoPhase = ctx.demoPhase
-    const camera = ctx.camera
+    // Loading/graphics state comes from the Svelte data-store. Canvas.svelte
+    // advances this store to `launch` when WebGL is ready; nav.loadingPhaseKey
+    // is a legacy mirror and can lag behind.
+    const loadingPhaseValue: LoadingPhase = get(loadingPhaseStore)
+    const graphicsModeValue = get(graphicsModeStore)
+
+    const focusedNodeForAttrs = (() => {
+        // Primary: Svelte navStore rune (set by Svelte-side focus flows).
+        if (nav.focusedIndex !== null && Number.isFinite(nav.focusedIndex)) {
+            return String(nav.focusedIndex)
+        }
+        // Fallback: legacy `__APP_STATE__.navState.focusedIndex`. Legacy
+        // `applyLocalNeighborhoodFocus` writes to the legacy state but the
+        // Svelte navStore is not updated by the legacy code path, so this
+        // fallback is what actually carries the focus index in production.
+        // Mirrors the same pattern in FocusCard.svelte::currentFocusedIdx.
+        try {
+            const w = window as unknown as { __APP_STATE__?: { navState?: { focusedIndex?: unknown } } }
+            const legacy = w.__APP_STATE__?.navState?.focusedIndex
+            if (typeof legacy === 'number' && Number.isFinite(legacy)) return String(legacy)
+        } catch {
+            /* ignore */
+        }
+        return null
+    })()
+    const hasFocusContext =
+        focusedNodeForAttrs !== null ||
+        (typeof focus.selectedBusiness === 'object' && focus.selectedBusiness !== null) // audit-ok: typeof-guarded branch, not transformed
+    const hasSearchContext =
+        !!search.summary ||
+        (typeof search.query === 'string' && search.query.trim().length >= 2) ||
+        nav.surface === 'focus-search' ||
+        nav.surface === 'search'
+
+    // graph-context: legacy uses these values across CSS hooks
+    const graphContext = (() => {
+        if (vp.isCompact && camera.routeExplorationPhase === 'exploring') return 'corridor'
+        if (nav.currentView === 'map') return 'map'
+        if (nav.mode === 'inside') return 'inside'
+        if (nav.mode === 'focus' || nav.mode === 'trail') return 'focus'
+        if (nav.mode === 'search' || search.summary) return 'corridor'
+        if (nav.mode === 'overview') return 'idle'
+        return 'idle'
+    })()
+
+    const panelSurfaceMode = ((): string => {
+        if (nav.currentView === 'map') {
+            if (nav.surface === 'map-focus-search') return 'map-focus-search'
+            if (nav.surface === 'map-trail') return 'map-trail'
+            if (hasFocusContext && hasSearchContext) return 'map-focus-search'
+            if (nav.surface === 'focus-search' || nav.surface === 'search' || search.summary) return 'map-search'
+            if (nav.surface === 'focus') return 'map-focus'
+            if (nav.surface === 'map') return 'map'
+            return 'map-idle'
+        }
+        if (focus.semanticDiveMode) return 'semantic-dive'
+        if (nav.surface === 'focus-search') return 'focus-search'
+        if (nav.surface === 'map-focus-search') return 'map-focus-search'
+        if (nav.surface === 'map-trail') return 'map-trail'
+        if (nav.surface === 'thread-inspect') return 'thread-inspect'
+        if (nav.surface === 'search') return 'search'
+        if (nav.surface === 'focus') return 'focus'
+        if (nav.surface === 'inside') return 'inside'
+        if (nav.surface === 'map') return 'map'
+        return 'idle'
+    })()
+
+    const mapContext = ((): string => {
+        if (nav.currentView !== 'map') return 'idle'
+        if (panelSurfaceMode === 'map-focus-search') return 'focus-search'
+        if (panelSurfaceMode === 'map-focus') return 'focus'
+        if (panelSurfaceMode === 'map-search') return 'search'
+        if (panelSurfaceMode === 'map-trail') return 'trail'
+        return 'idle'
+    })()
+
+    const hasMapTrailIntent =
+        nav.currentView === 'map' &&
+        (nav.focusedIndex !== null || Boolean(search.summary) || nav.surface === 'map-focus-search' || nav.surface === 'map-trail')
+    const trailState =
+        journey.depth > 0 || hasMapTrailIntent || presentation.navigationOwner === 'map-trail-strip'
+            ? 'active'
+            : 'inactive'
+    const semanticDive =
+        nav.currentView === 'galaxy'
+            ? focus.semanticDiveMode
+                ? 'active'
+                : journey.depth >= 2
+                  ? 'transitioning'
+                  : 'inactive'
+            : 'inactive'
+    const threadInspectionActive = focus.threadInspector.active
+    const inspectedThreadIndex = focus.threadInspector.inspectedIndex
+
     const mode = nav.mode
 
+    // panelSurfaceDetail: 'none' | 'expanded' | 'peek'. Mirrors the legacy
+    // composition-state.ts → getPanelSurfaceDetailFromMobileSheet() logic,
+    // which reads the mobileSearchSheet attr (set by setMobileSearchSheetMode
+    // in search-panel-adapter.ts) and decides how the info panel renders
+    // on search/focus-search. The mobile CSS rules at
+    // mobile_premium__state.css:516+ gate on this attr. In the Svelte track
+    // the mobileSearchSheet attr is typically not set (the legacy
+    // setMobileSearchSheetMode() is not called from Svelte), so the
+    // derived value is 'none' in the common case — but writing it
+    // unconditionally keeps the parity contract symmetric with the
+    // legacy code path and unblocks future Svelte-side sheet toggling.
+    //
+    // Note: we use `=== search || === focus-search` (positive form) and
+    // an early return instead of the more natural `!== search && !==
+    // focus-search` (negative form). Svelte 5 strict-mode compilation
+    // has a bug where `!==` is incorrectly compiled to `$.strict_equals(a,
+    // b, false)` (which is `===`), silently inverting the check. See the
+    // audit at qa-screenshots/PARITY_GAP_AUDIT.md for the symptom and
+    // the Svelte compiler gotcha.
+    const panelSurfaceDetail: string = ((): string => {
+        const isSearchContext = panelSurfaceMode === 'search' || panelSurfaceMode === 'focus-search'
+        if (!isSearchContext) return 'none'
+        const mobileSearchSheet = document.body.dataset.mobileSearchSheet
+        if (!mobileSearchSheet) return 'none'
+        return mobileSearchSheet === 'expanded' ? 'expanded' : 'peek'
+    })()
+
+    const demoPhase = demoPhaseValue
+
+    const filterActive =
+        filters.status !== 'all' || filters.city !== '' || filters.website || filters.email || filters.geocoded // audit-ok: intentional — || chain where bug inversion produces false-negatives not false-positives, per audit doc
+
+    // Use positive equality here. This file is compiled by Svelte 5, and
+    // nearby parity logic documents a strict-mode compiler bug where `!==`
+    // can invert under rune compilation.
+    const launchReady = loadingPhaseValue === 'launch'
+    const loadingOverlay = launchReady ? 'hidden' : 'visible'
+    const sceneReady = launchReady ? 'true' : 'false'
+    const viewHandoffActive = launchReady ? 'false' : 'true'
+    const cameraAssist = launchReady ? 'free' : 'loading'
+
     return {
+        journeyCompass: journey.compass?.phase ?? 'idle',
         journeyCompassPhase: journey.compass?.phase ?? 'idle',
+        journeyCompassDensity: presentation.density,
+        journeyCompassCopy: presentation.copy,
         journeyNavigationOwner: presentation.navigationOwner,
 
         navMode: nav.mode,
@@ -142,7 +397,8 @@ export function computeParityAttributes(): ParityAttributeMap {
         panelSurfaceMode,
         panelSurfaceDetail,
         activeView: nav.currentView,
-        focusedNode,
+        viewMode: nav.currentView,
+        focusedNode: focusedNodeForAttrs,
         graphContext,
         mapContext,
         routeExploration: journey.routeExplorationPhase || 'idle',
@@ -151,19 +407,52 @@ export function computeParityAttributes(): ParityAttributeMap {
         trailState,
 
         semanticDive,
+        insideWalkState: focus.strandContinuityPhase || 'idle',
 
         focusTransition: focus.transitionMode || 'idle',
         searchStatus: search.status || 'idle',
 
         strandJourney: focus.strandContinuityPhase || 'idle',
+        threadInspect: threadInspectionActive ? 'active' : null,
         threadInspectSurface: threadInspectionActive ? focus.threadInspector.source || 'rail' : 'idle',
         inspectedThreadIndex:
             threadInspectionActive && inspectedThreadIndex !== null ? String(inspectedThreadIndex) : null,
-        journeyPhase,
+        journeyPhase: ((): string => {
+            // W15+ parity-attrs fix: journey.phase reads appState.navState.mode
+            // (legacy), which the Svelte track never updates. Derive journeyPhase
+            // directly from nav state + search intent so body data-journey-phase
+            // reflects the focus state immediately after a search-result click.
+            // Avoid `===` and `!==` here — Svelte 5 strict-mode compilation
+            // incorrectly inverts `!==` to `===` (see canonical note at line 228).
+            const _focusedIdx = nav.focusedIndex
+            const _selBiz = focus.selectedBusiness
+            const _hasFocus =
+                (typeof _focusedIdx === 'number' && Number.isFinite(_focusedIdx)) ||
+                (typeof _selBiz === 'object' && _selBiz !== null) // audit-ok: typeof-guarded branch, not transformed
+            const _q = search.query
+            const _hasSearchIntent = !!search.summary || (typeof _q === 'string' && _q.trim().length >= 2)
+            const explicit = journey.phase as string
+            // W15+ parity-attrs fix: trust derivation over `journey.phase`
+            // (which reads appState.navState.mode). The Svelte track now
+            // mirrors mode/surface to appState.navState (commit 37636fe),
+            // but during the first focus click after navigation, journey.phase
+            // can still race ahead of appState.navState.mode updates. The
+            // derivation below handles every case correctly; we only fall
+            // back to `explicit` for phases the derivation doesn't model
+            // (e.g. 'walking', 'arrived', 'preview', 'pinned', 'settled',
+            // 'returning', 'idle').
+            if (_hasFocus && _hasSearchIntent) return 'focus-search'
+            if (_hasFocus) return 'focus'
+            if (_hasSearchIntent) return 'search'
+            if (nav.mode === 'inside') return 'inside'
+            if (nav.mode === 'trail') return 'walking'
+            if (typeof explicit === 'string' && explicit.length > 0 && explicit !== 'idle') return explicit // audit-ok: typeof-guarded branch, not transformed
+            return 'idle'
+        })(),
         terrainHandoff: journey.terrainHandoffPhase || 'idle',
         demoPhase,
 
-        filtersActive: String(filtersActive),
+        filtersActive: String(filterActive),
 
         reducedMotion: String(vp.reducedMotion),
         compact: String(vp.isCompact),
@@ -185,13 +474,24 @@ export function computeParityAttributes(): ParityAttributeMap {
 
 // ── DOM Writer ──────────────────────────────────────────────────────────────
 
-// ── applyParityAttributes helpers ─────────────────────────────────────────
-
 /**
- * Write the computed parity map entries to body data-* attributes.
- * Null/undefined values remove the attribute; strings set it.
+ * Apply the parity attribute map to document.body.
+ * SSR-safe (no-op when document/body is unavailable).
+ * Idempotent: setting the same value is a no-op for browser.
+ *
+ * Also manages the body class list — the legacy composition-state.ts:106
+ * line `root.classList.toggle('is-active', Boolean(surface))` was the
+ * single source of truth for many mobile CSS rules (e.g.,
+ * mobile_premium__chrome.css:789 hides the welcome card on search
+ * mode, gated on `body.is-active`). The Svelte parity port originally
+ * scoped itself to data-* only and missed the class toggle, which
+ * left dozens of CSS rules silently dormant. This function now owns
+ * the class along with the data-* attrs so the parity contract is
+ * complete.
  */
-function applyDataAttributes(map: ParityAttributeMap): void {
+export function applyParityAttributes(map: ParityAttributeMap): void {
+    if (typeof document === 'undefined' || !document.body) return
+
     for (const [key, value] of Object.entries(map)) {
         if (value === null || value === undefined) {
             if (document.body.dataset[key] !== undefined) {
@@ -204,113 +504,21 @@ function applyDataAttributes(map: ParityAttributeMap): void {
             document.body.dataset[key] = str
         }
     }
-}
 
-/**
- * Emit data-surface-settled once the surface layout is stable:
- * loading overlay hidden AND route settled (scene ready / view-handoff
- * finished / camera free / graphics fallback).
- */
-function applySurfaceSettledSignal(map: ParityAttributeMap): void {
-    const overlayHidden = map.loadingOverlay === 'hidden'
-    const routeSettled =
-        map.sceneReady === 'true' ||
-        map.viewHandoffActive === 'false' ||
-        map.cameraAssist === 'free' ||
-        map.graphicsMode === 'fallback'
-    if (overlayHidden && routeSettled) {
-        // This is a readiness flag, not a second surface-name channel. The
-        // active surface already has its own data-panel-surface mirror, while
-        // consumers intentionally wait for the literal boolean-like value.
-        if (document.body.dataset.surfaceSettled !== 'true') {
-            document.body.dataset.surfaceSettled = 'true'
-        }
-    } else if (document.body.dataset.surfaceSettled !== undefined) {
-        delete document.body.dataset.surfaceSettled
-    }
-}
-
-/**
- * Keep body CSS classes in sync with data-* attributes. Manages:
- * - Value-based mirrors (panelSurface→surface-*, activeView→view-*, etc.)
- * - Static compound mirrors (surface-map-any, route-peek)
- */
-function applyBodyClassMirrors(map: ParityAttributeMap): void {
-    // Value-based class mirrors
-    const BODY_CLASS_MAP: Record<string, string> = {
-        panelSurface: 'surface',
-        activeView: 'view',
-        journeyNavigationOwner: 'navigation',
-        focusTransition: 'focus-transition'
-    }
-
-    for (const [attrKey, prefix] of Object.entries(BODY_CLASS_MAP)) {
-        const value = map[attrKey]
-        if (value === null || value === undefined || value === '') {
-            // Remove any existing class with this prefix
-            for (const cls of Array.from(document.body.classList)) {
-                if (cls.startsWith(prefix + '-')) {
-                    document.body.classList.remove(cls)
-                }
-            }
-            continue
-        }
-        const desiredClass = `${prefix}-${String(value)}`
-        // Remove stale siblings, add desired
-        for (const cls of Array.from(document.body.classList)) {
-            if (cls.startsWith(prefix + '-') && cls !== desiredClass) {
-                document.body.classList.remove(cls)
-            }
-        }
-        if (!document.body.classList.contains(desiredClass)) {
-            document.body.classList.add(desiredClass)
-        }
-    }
-
-    // Static compound class: surface-map-any
-    const isMapSurface = typeof map.panelSurface === 'string' && (map.panelSurface as string).startsWith('map-')
-    if (isMapSurface) {
-        if (!document.body.classList.contains('surface-map-any')) {
-            document.body.classList.add('surface-map-any')
-        }
-    } else if (document.body.classList.contains('surface-map-any')) {
-        document.body.classList.remove('surface-map-any')
-    }
-}
-
-// ── Orchestrator ───────────────────────────────────────────────────────────
-
-/**
- * Apply the parity attribute map to document.body.
- * SSR-safe (no-op when document/body is unavailable).
- * Idempotent: setting the same value is a no-op for browser.
- *
- * Also manages the body class list — the legacy composition-state.ts:106
- * line `root.classList.toggle('is-active', Boolean(surface))` was the
- * single source of truth for many mobile CSS rules (e.g.,
- * mobile_premium__layout.css:789 hides the welcome card on search
- * mode, gated on `body.is-active`). The Svelte parity port originally
- * scoped itself to data-* only and missed the class toggle, which
- * left dozens of CSS rules silently dormant. This function now owns
- * the class along with the data-* attrs so the parity contract is
- * complete.
- */
-export function applyParityAttributes(map: ParityAttributeMap): void {
-    if (typeof document === 'undefined' || !document.body) return
-
-    applyDataAttributes(map)
-    applySurfaceSettledSignal(map)
-    applyBodyClassMirrors(map)
-
-    // Note: The `is-active` body class was removed in Phase B3d.3.
-    // It was redundant with the surface-{value} classes (is-active
-    // ≡ panelSurface !== 'idle' ≡ :not(.surface-idle)). All CSS
-    // rules that previously used `body.is-active` have been migrated
-    // to use surface-{value} classes directly.
+    // Body class management. `is-active` is the meta-gate the legacy
+    // composition-state.ts wrote on the body whenever the user was on
+    // a non-idle surface. Many mobile CSS rules (including the
+    // journey-compass hide rule) are gated on it.
     //
-    // Test contract hooks (e.g., __forceSemanticDiveContractSurface)
-    // may still add `is-active` directly to body for backward compat,
-    // but parity-attrs no longer manages it.
+    // Note: we use `===` + `!` (positive form) instead of `!==` because
+    // Svelte 5 strict-mode compilation has a bug where `!==` is
+    // incorrectly compiled to `$.strict_equals(a, b, false)` (which is
+    // `===`), silently inverting the check. See
+    // qa-screenshots/PARITY_GAP_AUDIT.md for context.
+    const isActive = Boolean(map.panelSurface) && !(map.panelSurface === 'idle')
+    if (document.body.classList.contains('is-active') !== isActive) {
+        document.body.classList.toggle('is-active', isActive)
+    }
 }
 
 // ── Installer (rune-based) ─────────────────────────────────────────────────
@@ -324,302 +532,6 @@ let _lastSnapshot: string | null = null
  * Internal: root effect handle for cleanup.
  */
 let _effectRoot: (() => void) | null = null
-
-/**
- * Reactive rune-backed parity attribute map.
- *
- * Svelte 5 `$state` proxy that mirrors the current `ParityAttributeMap`
- * computed by `computeParityAttributes()`. Updated inside
- * `installParityAttributeSync()`'s `$effect.root()` block via
- * `Object.assign(parityMap, map)` so that any consumer reading
- * `parityMap.panelSurface` (etc.) inside a reactive context (template,
- * `$derived`, `$effect`) gets automatic re-runs when the underlying
- * rune stores change.
- *
- * Replaces the body-attr MutationObserver mirror pattern previously
- * duplicated in App.svelte, CompassRail, FocusCard, Legend, JourneyCompass,
- * and WeatherWidget. Those components now read `parityMap.x` directly
- * instead of mirroring body dataset attrs into local `$state`.
- *
- * Consumers MUST treat this as read-only. The write side is owned by
- * `installParityAttributeSync()`; mutating from outside will cause parity
- * to diverge from body. TypeScript does not enforce this — it's a
- * convention enforced by code review and the parity-attrs contract tests.
- *
- * The object is empty until `installParityAttributeSync()` runs
- * (i.e., after `app-init.ts:251` in the production app boot sequence).
- * Tests that read it before install must either call
- * `installParityAttributeSync({ initialSync: true })` first or read
- * `body.dataset` directly.
- */
-export const parityMap: ParityAttributeMap = $state<ParityAttributeMap>({} as ParityAttributeMap)
-
-// ── Bypass attribute accessors ────────────────────────────────────────
-
-/**
- * Bypass body data-* attributes that are intentionally written by code
- * OUTSIDE parity-attrs (engine code, legacy orchestrators, search panel
- * adapter, bootstrap path). These are NOT owned by parity-attrs and
- * are NOT in PARITY_ATTRIBUTES — the writes are the canonical source.
- *
- * What parity-attrs DOES provide for these attrs:
- *   - A single shared MutationObserver on document.body that re-fires
- *     when any of these attrs changes (vs. each component running its
- *     own observer).
- *   - A reactive rune-backed snapshot so Svelte 5 components can read
- *     them via `$derived(getBypassAttr('focusPanelMode'))` without
- *     mirroring into local `$state`.
- *
- * Bypass attrs (and their canonical writers):
- *   - `focusPanelMode`   setFocusPanelMode()  src/lib/utils/focus-panel-mode.ts:27
- *   - `insideWalkState`  semantic-dive.ts setJourneyPhase()  src/lib/journey/semantic-dive.ts:123
- *   - `renderKind`       initial = main.ts:112; engine-ready = stores/engine-ready.svelte.ts:27
- *   - `mobileSearchSheet` setMobileSearchSheetMode()  src/lib/search/search-panel-adapter.ts:98
- */
-export type BypassAttrKey = 'focusPanelMode' | 'insideWalkState' | 'renderKind' | 'mobileSearchSheet'
-
-const _bypassSnapshot: Record<BypassAttrKey, string | null> = $state<Record<BypassAttrKey, string | null>>({
-    focusPanelMode: null,
-    insideWalkState: null,
-    renderKind: null,
-    mobileSearchSheet: null
-})
-
-let _bypassObserver: MutationObserver | null = null
-let _requestParitySync: (() => void) | null = null
-
-/**
- * Read a bypass attr's current value reactively.
- *
- * The returned value updates whenever the shared MutationObserver in
- * `installParityAttributeSync()` fires (i.e., whenever any of the 4
- * bypass attrs changes on `body.dataset`). Components use this inside
- * `$derived` to react to changes without running their own observer.
- *
- * Returns null when the attr is unset.
- */
-export function getBypassAttr(key: BypassAttrKey): string | null {
-    return _bypassSnapshot[key]
-}
-
-/**
- * Single-source writer for the `renderKind` bypass attr.
- *
- * Main.ts and engine-ready.svelte.ts both need to flip `data-render-kind`
- * (and its `render-kind-*` CSS class twin). Writing directly to
- * `body.dataset` triggers the parity MutationObserver async, so when both
- * writers race the observer may set `_bypassSnapshot.renderKind` to a stale
- * value — visible flicker or wrong initial CSS state.
- *
- * This helper writes to `body.dataset`, syncs the body CSS class, AND
- * updates `_bypassSnapshot` in the same synchronous tick so callers never
- * observe the racer's intermediate state.
- */
-export function setRenderKind(value: string): void {
-    if (typeof document === 'undefined' || !document.body) return
-    document.body.dataset.renderKind = value
-    _bypassSnapshot.renderKind = value
-    for (const cls of Array.from(document.body.classList)) {
-        if (cls.startsWith('render-kind-')) document.body.classList.remove(cls)
-    }
-    document.body.classList.add(`render-kind-${value}`)
-}
-
-/**
- * Install the parity attribute sync layer.
- *
- * Subscribes to every Svelte store that feeds computeParityAttributes().
- * Note: calling a store's function form (e.g. `navStore()`) inside a
- * `$effect` is a snapshot read — Svelte 5's rune tracking does NOT
- * establish a reactive subscription on transient `get()` calls. We
- * therefore use explicit `.subscribe()` per store so the effect actually
- * re-runs on store changes. (See qa-screenshots/PARITY_GAP_AUDIT.md
- * for the Svelte 5 reactivity gotcha and how it bites this module.)
- *
- * Returns a cleanup function that stops all subscriptions.
- *
- * @param options.initialSync When true (default), performs an initial
- *   sync after subscription. Useful for tests that want a deterministic
- *   first read.
- */
-// ── installParityAttributeSync helpers ────────────────────────────────────
-
-/**
- * Tear down any previous parity sync state (effect root + bypass observer).
- */
-function cleanupPreviousParityState(): void {
-    if (_effectRoot) {
-        _effectRoot()
-        _effectRoot = null
-    }
-    if (_bypassObserver) {
-        _bypassObserver.disconnect()
-        _bypassObserver = null
-    }
-}
-
-/**
- * Install the shared MutationObserver for bypass attrs (focusPanelMode,
- * insideWalkState, renderKind, mobileSearchSheet). Each component used
- * to run its own observer with its own attributeFilter — consolidating
- * here means N components → 1 observer + 4 fast property reads on
- * each fire. _bypassSnapshot is $state so consumers reading
- * getBypassAttr() inside `$derived` automatically re-run.
- */
-function installBypassObserver(): void {
-    const syncBypassSnapshot = (): void => {
-        _bypassSnapshot.focusPanelMode = document.body.dataset.focusPanelMode ?? null
-        _bypassSnapshot.insideWalkState = document.body.dataset.insideWalkState ?? null
-        _bypassSnapshot.renderKind = document.body.dataset.renderKind ?? null
-        _bypassSnapshot.mobileSearchSheet = document.body.dataset.mobileSearchSheet ?? null
-        // Bypass writers are outside the Svelte stores that normally drive
-        // parity. Keep the rune map and body mirrors in step when one of
-        // those writers changes an attribute directly.
-        _requestParitySync?.()
-    }
-    syncBypassSnapshot()
-    _bypassObserver = new MutationObserver(syncBypassSnapshot)
-    _bypassObserver.observe(document.body, {
-        attributes: true,
-        attributeFilter: [
-            'data-focus-panel-mode',
-            'data-inside-walk-state',
-            'data-render-kind',
-            'data-mobile-search-sheet'
-        ]
-    })
-}
-
-/**
- * Create the reactive sync effect body: subscribes to all parity feeds,
- * recomputes + applies parity attributes on change via microtask coalescing.
- * Returns the inner disposer that unsubscribes all store subscriptions.
- */
-function createParitySyncEffectBody(initialSync: boolean): () => void {
-    let scheduled = false
-    let deadlineTimer: ReturnType<typeof setTimeout> | null = null
-
-    const clearDeadlineTimer = (): void => {
-        if (deadlineTimer !== null) {
-            clearTimeout(deadlineTimer)
-            deadlineTimer = null
-        }
-    }
-
-    const armDeadlineTimer = (deadline: number | null): void => {
-        clearDeadlineTimer()
-        if (typeof deadline !== 'number' || !Number.isFinite(deadline) || deadline <= 0) return
-        const delay = Math.max(0, deadline - Date.now())
-        if (delay <= 0) {
-            scheduleSync()
-            return
-        }
-        // effect-owned timer: $effect.root disposer calls clearDeadlineTimer();
-        // a DisposableRegistry would add accidental lifetime coupling between module-level and effect-local state.
-        // eslint-disable-next-line no-restricted-syntax
-        deadlineTimer = setTimeout(() => {
-            deadlineTimer = null
-            scheduleSync()
-        }, delay)
-    }
-
-    // Phase 1 timing-maze fix: the mirror's single timing layer is
-    // queueMicrotask(syncNow). This gives Svelte 5 reactivity time to
-    // settle (Object.assign(parityMap, map) triggers $derived/$effect
-    // cascades that may call back into store mutators) before we write
-    // to body.dataset.
-    //
-    // The CALLERS' timing workarounds (cursor.ts queueMicrotask,
-    // setTimeout 50ms/250ms) have been removed — the mirror's microtask
-    // is the single source of truth for body.dataset writes.
-    //
-    // `scheduled` is reset in `finally` to guarantee it's cleared even
-    // when the snapshot short-circuit returns early. This prevents the
-    // mirror from being permanently disabled by a JSON-equal snapshot.
-    const syncNow = (): void => {
-        try {
-            const map = computeParityAttributes()
-
-            // Mirror the computed map into the rune-backed `parityMap` so
-            // Svelte 5 components that read `parityMap.x` inside a
-            // reactive context (template, $derived, $effect) get auto-
-            // re-runs. Object.assign triggers per-key reactivity so
-            // components only re-run when their specific key changes.
-            //
-            // Done BEFORE the snapshot short-circuit so consumers see
-            // parityMap updates even when the DOM write is skipped (e.g.,
-            // when two consecutive snapshots are JSON-equal).
-            Object.assign(parityMap, map)
-
-            // Cheap short-circuit: same JSON snapshot means no DOM changes needed.
-            const snapshot = JSON.stringify(map)
-            if (snapshot === _lastSnapshot) return
-            _lastSnapshot = snapshot
-
-            applyParityAttributes(map)
-        } finally {
-            // Always reset scheduled, even on early return, so the next
-            // external store change can trigger a fresh sync.
-            scheduled = false
-        }
-    }
-    const scheduleSync = (): void => {
-        if (scheduled) return
-        scheduled = true
-        // Coalesce multiple store updates in the same tick to avoid
-        // redundant recomputes (e.g., when navigation fires both
-        // navStore and journeyStore). The microtask gives Svelte 5
-        // reactivity time to settle before the body.dataset write.
-        queueMicrotask(syncNow)
-    }
-
-    _requestParitySync = scheduleSync
-
-    // Track the live dive-transition deadline and re-arm the timer whenever
-    // it changes, so the parity attr expires even when no other store fires.
-    $effect(() => {
-        const deadline = appState._semanticDiveTransitionDeadline
-        armDeadlineTimer(deadline)
-    })
-
-    // Explicit .subscribe() per store. Plain function-call reads
-    // (e.g. `navStore()`) inside $effect are transient in Svelte 5 and
-    // do NOT establish a dependency; .subscribe() does.
-    const unsubNav = navStore.subscribe(scheduleSync)
-    const unsubJourney = journeyStore.subscribe(scheduleSync)
-    const unsubFocus = focusStore.subscribe(scheduleSync)
-    const unsubSearch = searchStore.subscribe(scheduleSync)
-    const unsubFilter = filterState.subscribe(scheduleSync)
-    const unsubViewport = viewport.subscribe(scheduleSync)
-    const unsubDemo = demoStore.subscribe(scheduleSync)
-    const unsubCamera = cameraStore.subscribe(scheduleSync)
-    const unsubLoadingPhase = loadingPhaseStore.subscribe(scheduleSync)
-    const unsubGraphicsMode = graphicsModeStore.subscribe(scheduleSync)
-    const unsubEngineReady = engineReady.subscribe(scheduleSync)
-
-    if (initialSync) {
-        // Force an initial compute on install
-        syncNow()
-    }
-
-    return () => {
-        if (_requestParitySync === scheduleSync) _requestParitySync = null
-        unsubNav()
-        unsubJourney()
-        unsubFocus()
-        unsubSearch()
-        unsubFilter()
-        unsubViewport()
-        unsubDemo()
-        unsubCamera()
-        unsubLoadingPhase()
-        unsubGraphicsMode()
-        unsubEngineReady()
-        clearDeadlineTimer()
-    }
-}
-
-// ── Orchestrator ───────────────────────────────────────────────────────────
 
 /**
  * Install the parity attribute sync layer.
@@ -645,19 +557,70 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
         return () => {}
     }
 
-    cleanupPreviousParityState()
-    installBypassObserver()
+    // Clean up any previous root
+    if (_effectRoot) {
+        _effectRoot()
+        _effectRoot = null
+    }
 
-    _effectRoot = $effect.root(() => createParitySyncEffectBody(initialSync))
+    _effectRoot = $effect.root(() => {
+        let scheduled = false
+        const syncNow = (): void => {
+            scheduled = false
+            const map = computeParityAttributes()
+
+            // Cheap short-circuit: same JSON snapshot means no DOM changes needed.
+            const snapshot = JSON.stringify(map)
+            if (snapshot === _lastSnapshot) return
+            _lastSnapshot = snapshot
+
+            applyParityAttributes(map)
+        }
+        const scheduleSync = (): void => {
+            if (scheduled) return
+            scheduled = true
+            // Coalesce multiple store updates in the same tick to avoid redundant
+            // recomputes (e.g., when navigation fires both navStore and journeyStore).
+            queueMicrotask(syncNow)
+        }
+
+        // Explicit .subscribe() per store. Plain function-call reads
+        // (e.g. `navStore()`) inside $effect are transient in Svelte 5 and
+        // do NOT establish a dependency; .subscribe() does.
+        const unsubNav = navStore.subscribe(scheduleSync)
+        const unsubJourney = journeyStore.subscribe(scheduleSync)
+        const unsubFocus = focusStore.subscribe(scheduleSync)
+        const unsubSearch = searchStore.subscribe(scheduleSync)
+        const unsubFilter = filterState.subscribe(scheduleSync)
+        const unsubViewport = (viewport as any).subscribe(scheduleSync)
+        const unsubDemo = (demoStore as any).subscribe(scheduleSync)
+        const unsubCamera = (cameraStore as any).subscribe(scheduleSync)
+        const unsubLoadingPhase = loadingPhaseStore.subscribe(scheduleSync)
+        const unsubGraphicsMode = graphicsModeStore.subscribe(scheduleSync)
+
+        if (initialSync) {
+            // Force an initial compute on install
+            syncNow()
+        }
+
+        return () => {
+            unsubNav()
+            unsubJourney()
+            unsubFocus()
+            unsubSearch()
+            unsubFilter()
+            unsubViewport()
+            unsubDemo()
+            unsubCamera()
+            unsubLoadingPhase()
+            unsubGraphicsMode()
+        }
+    })
 
     return () => {
         if (_effectRoot) {
             _effectRoot()
             _effectRoot = null
-        }
-        if (_bypassObserver) {
-            _bypassObserver.disconnect()
-            _bypassObserver = null
         }
         _lastSnapshot = null
     }
@@ -673,14 +636,6 @@ export function readParityAttributesFromBody(): ParityAttributeMap {
     for (const desc of PARITY_ATTRIBUTES) {
         const v = document.body.dataset[desc.key]
         if (v !== undefined) out[desc.key] = v
-    }
-    // L3 (bugsweep): also surface the four bypass attrs that are written by
-    // external code (not via applyParityAttributes) so tests/probes reading
-    // via this function don't miss them.
-    const bypassKeys = ['focusPanelMode', 'insideWalkState', 'renderKind', 'mobileSearchSheet']
-    for (const key of bypassKeys) {
-        const v = document.body.dataset[key]
-        if (v !== undefined) out[key] = v
     }
     return out
 }

@@ -1,7 +1,7 @@
 /* Clusters/cards: galaxy labels, selected cards, trail controls, and badges. */
 
 /* Dead selectors removed 2026-06-06 (bug-sweep):
-   .cluster-overlay, .cluster-legend, body.view-map .cluster-legend,
+   .cluster-overlay, .cluster-legend, body[data-active-view='map'] .cluster-legend,
    .cluster-legend-title, .cluster-dot — superseded by WebGL Sprite-only labels.
    Verified no JS/TS/HTML/Svelte references remain. */
 
@@ -80,6 +80,12 @@
     opacity: 0;
 }
 
+.selected-card.reveal-focus {
+    border-color: rgb(var(--cluster-rgb) / 0.56);
+    box-shadow:
+        0 0 0 1px rgb(var(--cluster-rgb) / 0.18),
+        0 18px 34px rgba(6, 18, 24, 0.36);
+}
 
 /* Empty/populated visibility is renderer-owned; this file owns the empty composition. */
 .selected-empty {
@@ -94,6 +100,11 @@
 }
 
 /* --- Selected Card Internal Layout & Aesthetics --- */
+.selected-empty-icon {
+    width: 52px;
+    height: 52px;
+    opacity: 0.8;
+}
 
 .selected-hero {
     display: flex;
@@ -109,7 +120,6 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    min-width: 0;
 }
 
 .selected-card h3 {
@@ -117,25 +127,6 @@
     font-size: 16px;
     font-weight: 700;
     line-height: 1.2;
-    /*
-     * Long business names (sometimes 60+ chars from county records) would push
-     * the role badge and meta strip down unboundedly. Clamp visually to 2 lines
-     * with an ellipsis; the title + aria-label attributes still expose the full
-     * name to keyboard / screen-reader users per WCAG 1.4.13.
-     */
-    /* W53 corrective: overflow-wrap:break-word (not anywhere) so long business
-       names break at word boundaries rather than arbitrary character positions,
-       preventing a jagged clipped look at narrow card widths (260px FocusCard,
-       320px InfoPanel). The -webkit-line-clamp:2 + text-overflow:ellipsis still
-       truncate to 2 lines with an ellipsis on the second line. */
-    overflow: hidden;
-    overflow-wrap: break-word;
-    word-break: break-word;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
 }
 
 .selected-subtitle {
@@ -153,7 +144,7 @@
 .selected-role-badge {
     flex-shrink: 0;
     padding: 4px 8px;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -204,20 +195,25 @@
 
 /* ── Panel Surface Coordination ─────────────────────────────────────────── */
 
-body.surface-focus .selected-card,
-body.surface-focus-search .selected-card {
+body[data-panel-surface='focus'] .selected-card,
+body[data-panel-surface='focus-search'] .selected-card {
     display: block;
     opacity: 1;
     transform: translateX(0);
     pointer-events: auto;
 }
 
-body.surface-focus .trail-context,
-body.surface-focus-search .trail-context {
+body[data-panel-surface='focus'] .selected-card .panel-section-title,
+body[data-panel-surface='focus-search'] .selected-card .panel-section-title {
+    color: rgb(var(--cluster-rgb));
+}
+
+body[data-panel-surface='focus'] .trail-context,
+body[data-panel-surface='focus-search'] .trail-context {
     display: block;
 }
 
-body.surface-map-any .selected-card {
+body[data-panel-surface^='map-'] .selected-card {
     position: fixed;
     bottom: 24px;
     left: 24px;
@@ -228,61 +224,67 @@ body.surface-map-any .selected-card {
     margin: 0 auto;
 }
 
-body.surface-map-trail .selected-card {
+body[data-panel-surface='map-trail'] .selected-card {
     bottom: 80px;
 }
 
-body.surface-map-focus .selected-card,
-body.surface-map-focus-search .selected-card {
+body[data-panel-surface='map-focus'] .selected-card,
+body[data-panel-surface='map-focus-search'] .selected-card {
     display: block;
     opacity: 1;
     transform: translateY(0);
 }
 
 /* Standard desktop cards */
-body.surface-focus .selected-card,
-body.surface-focus-search .selected-card,
-body.surface-map-focus .selected-card,
-body.surface-map-focus-search .selected-card {
+body[data-panel-surface='focus'] .selected-card,
+body[data-panel-surface='focus-search'] .selected-card,
+body[data-panel-surface='map-focus'] .selected-card,
+body[data-panel-surface='map-focus-search'] .selected-card {
     background: var(--glass-bg-deep);
     border: var(--glass-border);
     backdrop-filter: blur(var(--glass-blur-deep));
     -webkit-backdrop-filter: blur(var(--glass-blur-deep));
 }
 
-body.surface-focus .selected-card h3,
-body.surface-focus-search .selected-card h3,
-body.surface-map-focus .selected-card h3,
-body.surface-map-focus-search .selected-card h3 {
+body[data-panel-surface='focus'] .selected-card h3,
+body[data-panel-surface='focus-search'] .selected-card h3,
+body[data-panel-surface='map-focus'] .selected-card h3,
+body[data-panel-surface='map-focus-search'] .selected-card h3 {
     font-family: 'Bricolage Grotesque', sans-serif;
     color: var(--color-text-primary);
 }
 
-body.surface-focus .selected-role-badge,
-body.surface-focus-search .selected-role-badge,
-body.surface-map-focus .selected-role-badge,
-body.surface-map-focus-search .selected-role-badge {
+body[data-panel-surface='focus'] .selected-role-badge,
+body[data-panel-surface='focus-search'] .selected-role-badge,
+body[data-panel-surface='map-focus'] .selected-role-badge,
+body[data-panel-surface='map-focus-search'] .selected-role-badge {
     background: rgb(var(--cluster-rgb) / 0.15);
     color: rgb(var(--cluster-rgb));
     border: 1px solid rgb(var(--cluster-rgb) / 0.3);
 }
 
 @media (max-width: 768px) {
-    #focus-card-selected,
-    body.surface-focus .selected-card,
-    body.surface-focus-search .selected-card {
-        position: fixed;
-        top: auto;
+    body[data-panel-surface='focus'] .selected-card,
+    body[data-panel-surface='focus-search'] .selected-card {
         bottom: 12px;
         left: 12px;
         right: 12px;
-        max-height: 40vh;
-        overflow-y: auto;
+        top: auto;
+        width: auto;
     }
 }
 
-body.surface-map-focus .selected-card h3,
-body.surface-map-focus-search .selected-card h3 {
+body[data-panel-surface^='map-'] .selected-card .panel-section-title {
+    font-size: 11px;
+}
+
+body[data-panel-surface='map-focus'] .selected-card .panel-section-title,
+body[data-panel-surface='map-focus-search'] .selected-card .panel-section-title {
+    color: var(--color-accent);
+}
+
+body[data-panel-surface='map-focus'] .selected-card h3,
+body[data-panel-surface='map-focus-search'] .selected-card h3 {
     font-size: 18px;
 }
 
@@ -293,28 +295,17 @@ body.surface-map-focus-search .selected-card h3 {
     align-items: center;
     justify-content: center;
     padding: 8px 12px;
-    /* PR-D (2026-06-30): View on Map button was wrapping to 3 lines on
-       mobile (390px viewport) because the button had no
-       `white-space: nowrap`. Locking it to a single line keeps the
-       button readable. Also `min-width: 88px` gives it a stable
-       tap target so the text doesn't squeeze when the panel is narrow. */
-    white-space: nowrap;
-    min-width: 88px;
-}
-.selected-action-row .action-btn:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
-    outline-offset: 2px;
 }
 
-body.surface-map-focus .trail-controls,
-body.surface-map-focus-search .trail-controls {
+body[data-panel-surface='map-focus'] .trail-controls,
+body[data-panel-surface='map-focus-search'] .trail-controls {
     margin-top: 12px;
     padding: 10px;
     background: var(--glass-reflection-soft);
 }
 
-body.surface-map-focus .trail-context,
-body.surface-map-focus-search .trail-context {
+body[data-panel-surface='map-focus'] .trail-context,
+body[data-panel-surface='map-focus-search'] .trail-context {
     border-top: 1px solid var(--glass-reflection);
 }
 

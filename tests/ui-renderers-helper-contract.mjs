@@ -1,5 +1,4 @@
 import './helpers/node-window-shim.mjs'
-import './helpers/svelte-rune-shim.mjs'
 
 /**
  * Contract: selected-business narrative helpers live in ui-renderers.
@@ -10,12 +9,12 @@ import './helpers/svelte-rune-shim.mjs'
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { state } from './helpers/canonical-state.mjs'
-import { buildSelectedMatchNarrative, getInterestingBusinessNote } from '../src/lib/ui/renderers.ts'
+import { state } from '../src/lib/engine/state-bridge.ts'
+import { buildSelectedMatchNarrative, getInterestingBusinessNote } from '../src/lib/ui-renderers.ts'
 
 const ROOT = process.cwd()
-const UI_RENDERERS = join(ROOT, 'src/lib/ui/renderers.ts')
-const FOCUS_STAGE_RENDERER = join(ROOT, 'src/lib/focus/stage-renderer.ts')
+const UI_RENDERERS = join(ROOT, 'src/lib/ui-renderers.ts')
+const FOCUS_STAGE_RENDERER = join(ROOT, 'src/lib/journey/focus-stage-renderer.ts')
 const LIFECYCLE = join(ROOT, 'src/lib/orchestration/lifecycle.ts')
 
 function assert(condition, message) {
@@ -51,19 +50,19 @@ function testInterestingBusinessNote() {
 }
 
 function testSelectedMatchNarrative() {
-    const previous = state.searchState.currentSearchSummary
+    const previous = state.currentSearchSummary
     try {
-        state.searchState.currentSearchSummary = null
+        state.currentSearchSummary = null
         assert(buildSelectedMatchNarrative({ name: 'Example' }) === '', 'empty narrative without search reason')
         assert(buildSelectedMatchNarrative(null) === '', 'empty narrative without point')
 
-        state.searchState.currentSearchSummary = { reason: 'Matched the search because the record mentions emergency repair.' }
+        state.currentSearchSummary = { reason: 'Matched the search because the record mentions emergency repair.' }
         assert(
-            buildSelectedMatchNarrative({ name: 'Example' }) === state.searchState.currentSearchSummary.reason,
+            buildSelectedMatchNarrative({ name: 'Example' }) === state.currentSearchSummary.reason,
             'narrative uses current search reason'
         )
     } finally {
-        state.searchState.currentSearchSummary = previous
+        state.currentSearchSummary = previous
     }
 }
 

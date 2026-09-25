@@ -1,27 +1,26 @@
 <!--
   @components/WeatherWidget.svelte — Weather display
 
-  W46-D4 polish: real Open-Meteo data via @lib/stores/weather, inline SVG
-  icons (sun/cloud/rain), temperature always visible in the pill, and the
-  FORECAST row removed (CONDITION + FEELS LIKE + HUMIDITY + WIND are
-  sufficient — real data is more useful than a redundant text string).
+  Ported from:
+    - js/modules/weather-widget.js (weather data fetch + render)
+
+  Shows current weather conditions for Montgomery County TX.
+  Fetches weather data on mount and displays temperature, condition, and forecast.
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import {
+    weatherData,
     weatherTemperature,
-    weatherFeelsLike,
+    weatherCondition,
     weatherLabel,
-    weatherIconKey,
-    weatherHumidity,
-    weatherWindSpeed,
-    weatherWindDirection,
+    weatherForecast,
     hasWeather,
+    CONDITION_ICONS,
     fetchWeather
   } from '@lib/stores/weather.svelte';
-  import { viewport } from '@lib/stores/viewport.svelte';
-  import { parityMap, getBypassAttr } from '@lib/orchestration/parity-attrs.svelte';
-
+  import type { WeatherCondition } from '@lib/stores/weather.svelte';
+  import { viewport, isCompact } from '@lib/stores/viewport.svelte';
 
   interface Props {
     /** Whether the widget is visible */
@@ -32,33 +31,17 @@
 
   let expanded = $state(false);
 
-  // ── Body state for CSS class derivation ────────────────────────────────────
-  // bodyPanelSurface is kept in sync by parity-attrs.svelte.ts:installParityAttributeSync()
-  // via the reactive parityMap proxy — no $state mirror or MutationObserver needed.
-  let bodyPanelSurface = $derived(parityMap.panelSurface || '');
-  // bodyFocusPanelMode is a bypass attr — parity-attrs owns the observer;
-  // getBypassAttr() reads the reactive bypass store directly.
-  let bodyFocusPanelMode = $derived(getBypassAttr('focusPanelMode') ?? '');
-
   let temperature = $derived(weatherTemperature());
-  let feelsLikeVal = $derived(weatherFeelsLike());
+  let condition = $derived(weatherCondition());
   let label = $derived(weatherLabel());
-  let iconKey = $derived(weatherIconKey());
-  let humidity = $derived(weatherHumidity());
-  let windSpeed = $derived(weatherWindSpeed());
-  let windDir = $derived(weatherWindDirection());
+  let forecast = $derived(weatherForecast());
   let loaded = $derived(hasWeather());
+  let icon = $derived(CONDITION_ICONS[weatherCondition()] ?? '\u2600');
 
   onMount(() => {
-    // W53 fix: wrap in try/catch — fetchWeather() may throw synchronously
-    // before returning a promise (e.g. guard clause), which .catch() misses.
-    try {
-      fetchWeather().catch(() => {
-        // Weather is non-critical; silently degrade
-      });
-    } catch {
+    fetchWeather().catch(() => {
       // Weather is non-critical; silently degrade
-    }
+    });
   });
 
   function toggleExpanded(): void {
@@ -66,482 +49,138 @@
   }
 </script>
 
-{#snippet iconSvg(key: string)}
-  {#if key === 'sun'}
-    <!-- Disc + halo ring: stays unambiguous at 14px (thin-ray suns read as
-         snowflakes/asterisks at pill size — visual-QA nit 2026-08-24). -->
-    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
-      <circle cx="12" cy="12" r="5" fill="var(--color-primary-alt)" />
-      <circle
-        cx="12"
-        cy="12"
-        r="8.5"
-        fill="none"
-        stroke="var(--color-primary-alt)"
-        stroke-width="1.6"
-        opacity="0.55"
-      />
-    </svg>
-  {:else if key === 'rain'}
-    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
-      <path
-        d="M17.5 13a4.5 4.5 0 1 0-1.4-8.78 6.5 6.5 0 0 0-12.6 1.78A4 4 0 0 0 4 13h13.5z"        fill="var(--color-primary-alt)"
-      />
-      <g stroke="var(--color-primary-alt)" stroke-width="2" stroke-linecap="round">
-        <line x1="8" y1="17" x2="7" y2="20" />
-        <line x1="12" y1="17" x2="11" y2="20" />
-        <line x1="16" y1="17" x2="15" y2="20" />
-      </g>
-    </svg>
-  {:else}
-    <!-- cloud (default) -->
-    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
-      <path
-        d="M17.5 19a4.5 4.5 0 1 0-1.4-8.78 6.5 6.5 0 0 0-12.6 1.78A4 4 0 0 0 4 19h13.5z"
-        fill="var(--color-primary-alt)"
-      />
-    </svg>
-  {/if}
-{/snippet}
-
 {#if visible}
   <div
     class="weather-widget"
     class:expanded
     class:compact={$viewport.isCompact}
-    class:surface-focus-search={bodyPanelSurface === 'focus-search'}
-    class:mode-field-node={bodyFocusPanelMode === 'field-node'}
     id="weather-widget"
-    aria-label="Weather conditions for Montgomery County"
-    title="Current conditions for Montgomery County"
+    aria-label="Weather conditions"
   >
-    <button
-      class="weather-toggle"
-      onclick={toggleExpanded}
-      aria-label="Toggle weather details — current conditions for Montgomery County"
-      title="Current conditions for Montgomery County"
-      aria-expanded={expanded}
-      aria-controls={expanded && loaded ? 'weather-details' : undefined}
-      type="button"
-    >
-      <span
-        class="weather-icon"
-        class:icon-sun={iconKey === 'sun'}
-        class:icon-cloud={iconKey === 'cloud'}
-        class:icon-rain={iconKey === 'rain'}
-      >{@render iconSvg(iconKey)}</span>
+    <button class="weather-toggle" onclick={toggleExpanded} aria-label="Toggle weather details" type="button">
+      <span class="weather-icon">{icon}</span>
       {#if loaded}
         <span class="weather-temp">{temperature}&deg;</span>
-        <span class="weather-cond">{label}</span>
       {/if}
     </button>
 
     {#if expanded && loaded}
-      <div class="weather-details" id="weather-details">
-        <div class="weather-details-header">
-          <span class="weather-details-loc">Montgomery County</span>
-          <span class="weather-details-live" role="img" aria-label="Live conditions"><span class="live-dot" aria-hidden="true"></span>Live</span>
-        </div>
+      <div class="weather-details">
         <div class="weather-detail-row">
           <span class="detail-label">Condition</span>
           <span class="detail-value">{label}</span>
         </div>
         <div class="weather-detail-row">
           <span class="detail-label">Feels like</span>
-          <span class="detail-value detail-num">{feelsLikeVal}&deg;F</span>
+          <span class="detail-value">{temperature}&deg;F</span>
         </div>
         <div class="weather-detail-row">
-          <span class="detail-label">Humidity</span>
-          <span class="detail-value detail-num">{humidity}%</span>
-        </div>
-        <div class="weather-detail-row">
-          <span class="detail-label">Wind</span>
-          <span class="detail-value detail-num">{windSpeed} mph <span class="wind-dir">{windDir}</span></span>
+          <span class="detail-label">Forecast</span>
+          <span class="detail-value forecast">{forecast}</span>
         </div>
       </div>
-    {/if}  </div>
+    {/if}
+  </div>
 {/if}
 
 <style>
   .weather-widget {
     position: absolute;
-    /* Clear the app header (60.8px) AND the fixed chrome buttons that
-       sit below the header at top:117px (legend) and top:169px (help).
-       W46-D2: previous value of `+ 0.5rem` (~67px) put the pill behind
-       the legend button (z=100, fixed). `+ 10rem` (~221px) clears both
-       buttons with an 8px gap. */
-    top: calc(var(--app-header-height, 60.8px) + 10rem);
-    right: 0.75rem;
+    top: 0.5rem;
+    right: 0.5rem;
     z-index: var(--z-legend, 50);
     pointer-events: auto;
-    display: block;
-
-    /* Reset legacy time_weather.css styles that leak onto this component.
-       The old CSS treats .weather-widget as the pill itself; this component
-       uses the div as a positioning wrapper and styles the button inside. */
-    padding: 0;
-    border: none;
-    border-radius: 0;
-    background: none;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    overflow: visible;
-    font-size: inherit;
-    color: inherit;
-    gap: 0;
-    align-items: stretch;
-    transition: none;
   }
 
-  /* W46-D4: pill always shows icon + temperature. No more icon-only
-     collapsed state — the temperature is the primary signal.
-     W53: min-height 44px enforced for WCAG 2.5.8 touch-targets:all-44px
-     (global-spacing surface contract). */
   .weather-toggle {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.45rem 0.75rem;
-    min-height: 44px;
-    background: linear-gradient(
-      180deg,
-      rgba(11, 22, 32, 0.78),
-      rgba(7, 16, 24, 0.92)
-    );
-    backdrop-filter: blur(10px) saturate(140%);
-    -webkit-backdrop-filter: blur(10px) saturate(140%);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.45);
-    border-radius: 999px;
-    color: #eaf6f4;
+    gap: 0.3rem;
+    padding: 0.3rem 0.5rem;
+    background: rgba(7, 16, 24, 0.82);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(78, 205, 196, 0.15);
+    border-radius: 0.4rem;
+    color: #b0d0d0;
     cursor: pointer;
     font-family: 'Nunito Sans', sans-serif;
-    font-size: 0.85rem;
-    line-height: 1;
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.06) inset,
-      0 6px 18px rgba(0, 0, 0, 0.4),
-      0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.12),
-      0 0 16px rgba(var(--color-primary-alt-rgb), 0.16);
-    transition:
-      border-color 0.18s ease,
-      background 0.18s ease,
-      box-shadow 0.18s ease,
-      transform 0.18s ease;
+    font-size: 0.7rem;
+    transition: all 0.15s;
   }
-  .weather-toggle:hover,
-  .weather-widget.expanded .weather-toggle,
-  .weather-toggle:focus-visible {
-    border-color: rgba(var(--color-primary-alt-rgb), 0.45);
-    background: linear-gradient(
-      180deg,
-      rgba(15, 30, 42, 0.85),
-      rgba(9, 20, 28, 0.95)
-    );
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.05) inset,
-      0 8px 22px rgba(0, 0, 0, 0.45),
-      0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.08),
-      0 0 18px rgba(var(--color-primary-alt-rgb), 0.12);
-  }
-  .weather-toggle:focus-visible {
-    border-color: rgba(var(--color-primary-alt-rgb), 0.6);
-  }
-  .weather-toggle:active {
-    transform: translateY(0.5px);
+  .weather-toggle:hover {
+    border-color: rgba(78, 205, 196, 0.35);
+    color: #e0f0f0;
   }
 
   .weather-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    line-height: 1;
-    filter: drop-shadow(0 0 5px rgba(var(--color-primary-alt-rgb), 0.35));
-    /* Note (2026-08-24): the icon defaults to 'cloud' and swaps once when the
-       async fetch resolves. A fade-in on swap is NOT feasible here — the
-       per-condition infinite animations below own the opacity property and
-       override any transition. Accepted: the swap happens once, pre-interaction. */
-  }
-  .weather-icon :global(svg) {
-    display: block;
-    width: 18px;
-    height: 18px;
-  }  /* Per-condition micro-animation — matches the app's biofield-glow language.
-     All are subtle (2–8px travel / 6–14s periods) and disabled under
-     prefers-reduced-motion below. */
-  .weather-icon.icon-sun :global(svg) {
-    animation: weatherSunGlow 6s ease-in-out infinite;
-  }
-  .weather-icon.icon-cloud :global(svg) {
-    animation: weatherCloudDrift 7s ease-in-out infinite;
-  }
-  .weather-icon.icon-rain :global(svg) {
-    animation: weatherRainNudge 1.6s ease-in-out infinite;
-  }
-  @keyframes weatherSunGlow {
-    0%,
-    100% {
-      filter: drop-shadow(0 0 3px rgba(var(--color-primary-alt-rgb), 0.3));
-      transform: scale(1);
-    }
-    50% {
-      filter: drop-shadow(0 0 8px rgba(var(--color-primary-alt-rgb), 0.55));
-      transform: scale(1.06);
-    }
-  }
-  @keyframes weatherCloudDrift {
-    0%,
-    100% {
-      transform: translateX(0);
-    }
-    50% {
-      transform: translateX(-1.5px);
-    }
-  }
-  @keyframes weatherRainNudge {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(1px);
-    }
+    font-size: 0.85rem;
   }
 
-  /* W46-D4: temperature is always visible — primary data point.
-     Raised contrast from var(--color-primary-alt) to a brighter
-     white-teal for WCAG 2.1 AA (4.5:1) against the dark pill background. */
   .weather-temp {
     font-family: 'JetBrains Mono', monospace;
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: #eefaf8;
-    white-space: nowrap;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: #4ecdc4;
   }
 
-  /* Condition word next to the temp ("72° Clear") — hidden on compact so the
-     mobile pill stays icon+temp only. Truncates long descriptions. */
-  .weather-cond {
-    font-family: 'Nunito Sans', sans-serif;
-    font-size: 0.62rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: rgba(176, 214, 210, 0.92);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 9ch;
-    border-left: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
-    padding-left: 0.45rem;
-    line-height: 1;
-  }
   .weather-details {
-    margin-top: 0.45rem;
-    background: linear-gradient(
-      180deg,
-      rgba(11, 22, 32, 0.88),
-      rgba(7, 16, 24, 0.95)
-    );
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.22);
-    border-radius: 0.65rem;
-    padding: 0.5rem 0.75rem 0.6rem;
-    min-width: 208px;
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.04) inset,
-      0 10px 28px rgba(0, 0, 0, 0.5),
-      0 0 14px rgba(var(--color-primary-alt-rgb), 0.08);
+    margin-top: 0.3rem;
+    background: rgba(7, 16, 24, 0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(78, 205, 196, 0.15);
+    border-radius: 0.4rem;
+    padding: 0.5rem;
+    min-width: 160px;
     animation: details-in 0.2s ease-out;
   }
 
-  .weather-details-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 0.6rem;
-    padding-bottom: 0.32rem;
-    margin-bottom: 0.24rem;
-    border-bottom: 1px solid rgba(var(--color-primary-alt-rgb), 0.14);
-  }
-  .weather-details-loc {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 0.62rem;
-    font-weight: 600;
-    color: #cfe9e5;
-    letter-spacing: 0.02em;
-  }
-  .weather-details-live {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.28rem;
-    font-size: 0.52rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: rgba(126, 231, 219, 0.85);
-  }
-  .live-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 999px;
-    background: #7ee7db;
-    box-shadow: 0 0 6px rgba(126, 231, 219, 0.8);
-    animation: livePulse 2s ease-in-out infinite;
-  }
-  @keyframes livePulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.35;
-    }
-  }
   @keyframes details-in {
-    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .weather-detail-row {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 0.6rem;
-    padding: 0.18rem 0;
+    gap: 0.5rem;
+    padding: 0.15rem 0;
   }
   .weather-detail-row + .weather-detail-row {
-    border-top: 1px solid rgba(var(--color-primary-alt-rgb), 0.07);
-    margin-top: 0.1rem;
-    padding-top: 0.28rem;
+    border-top: 1px solid rgba(78, 205, 196, 0.06);
   }
 
   .detail-label {
-    font-size: 0.55rem;
-    color: rgba(176, 208, 208, 0.85); /* a11y-ok: caption-text — UPPERCASE tracked label */
+    font-size: 0.6rem;
+    color: rgba(176, 208, 208, 0.5);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 600;
+    letter-spacing: 0.04em;
     flex-shrink: 0;
   }
   .detail-value {
-    font-size: 0.72rem;
-    color: #d4eaea;
+    font-size: 0.65rem;
+    color: #b0d0d0;
     text-align: right;
-    font-family: 'Nunito Sans', sans-serif;
   }
-  .detail-value.detail-num {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    font-size: 0.68rem;
-  }
-  .wind-dir {
-    display: inline-block;
-    padding: 0.05rem 0.28rem;
-    margin-left: 0.15rem;
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.3);
-    border-radius: 0.25rem;
+  .detail-value.forecast {
     font-size: 0.55rem;
-    letter-spacing: 0.04em;
-    color: rgba(176, 214, 210, 0.95);
+    color: rgba(176, 208, 208, 0.6);
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
+
   .weather-widget.compact {
-    /* The real mobile header is 94–121px tall (mode chips + brand), not the
-       ~48px the previous comment assumed. Use a fixed top offset that clears
-       the full header across all mobile states. */
-    top: 8.5rem;
-    right: 0.3rem;
-    display: block;
+    top: 0.25rem;
+    right: 0.25rem;
   }
 
-  /* Respect reduced motion: skip the expand/hover transitions AND the
-     per-condition icon animations + live dot pulse (decorative only). */
-  @media (prefers-reduced-motion: reduce) {
-    .weather-toggle,
-    .weather-details {
-      transition: none;
-      animation: none;
-    }
-    .weather-icon.icon-sun :global(svg),
-    .weather-icon.icon-cloud :global(svg),
-    .weather-icon.icon-rain :global(svg),
-    .live-dot {
-      animation: none;
-    }
-  }
-
-  /* Compact viewport: hide the condition word — icon + temp is the whole
-     story at mobile widths and keeps the pill under the touch floor. */
-  .weather-widget.compact .weather-cond {
-    display: none;
-  }
   @media (max-width: 768px) {
-    .weather-widget.surface-focus-search.mode-field-node {
+    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .weather-widget,
+    :global(body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .weather-widget {
       display: none;
       visibility: hidden;
       pointer-events: none;
     }
-  }
-
-  /* Short-landscape focus/dive: WeatherWidget owns its visibility, so the
-     suppression rule lives here (not in chrome.css—see
-     tests/weather-surface-ownership-contract.mjs). Mirrors the wave-G
-     short-landscape focus-surface chrome rule. */
-  @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
-    :global(body.surface-focus) .weather-widget,
-    :global(body.surface-focus-search) .weather-widget,
-    :global(body.surface-semantic-dive) .weather-widget {
-      display: none;
-      visibility: hidden;
-      pointer-events: none;
-    }
-  }
-
-  /* Desktop focus/dive: the focus card (z600, fixed, right:1rem, w:260px) spans
-     x≈1164–1424 — covering the weather pill (z50, right:0.75rem, x≈1335–1428).
-     Hide weather on desktop focus surfaces so it isn't painted underneath the
-     card. Mirrors the short-landscape rule above and the focus_stage.css
-     utility-chrome suppression pattern. */
-  @media (min-width: 901px) {
-    :global(body.surface-focus) .weather-widget,
-    :global(body.surface-focus-search) .weather-widget,
-    :global(body.surface-semantic-dive) .weather-widget {
-      display: none;
-      visibility: hidden;
-      pointer-events: none;
-    }
-  }
-
-  /* Narrow-portrait focus/dive (320–360 px wide, e.g. the 320×740 semantic-dive
-     state): the focus card is a full-width bottom sheet (z600, left:0, right:0,
-     bottom:0) that spans the entire viewport width — the weather pill (z50,
-     top-right, ~93×44 px) paints directly over it. Neither the short-landscape
-     rule (requires max-height:430px + landscape) nor the desktop rule
-     (requires min-width:901px) fires here, so the overlap is uncaught by the
-     existing suppression set. Hide weather on narrow-portrait focus/dive
-     surfaces to match. */
-  @media (max-width: 360px) {
-    :global(body.surface-focus) .weather-widget,
-    :global(body.surface-focus-search) .weather-widget,
-    :global(body.surface-semantic-dive) .weather-widget {
-      display: none;
-      visibility: hidden;
-      pointer-events: none;
-    }
-  }
-  /* Map surfaces: the map-trail search sheet (.search-container/.search-results,
-     z99-150) overlays the weather pill (z50) top-right when search is open —
-     same class of collision as the focus-card case above. Map mode already
-     suppresses non-map utility chrome (time-display, view-toggle, compass) in
-     mobile_premium__state.css; hide weather to match. */
-  :global(body.surface-map-any) .weather-widget {
-    display: none;
-    visibility: hidden;
-    pointer-events: none;
   }
 </style>

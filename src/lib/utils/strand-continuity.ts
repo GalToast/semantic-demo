@@ -1,7 +1,7 @@
 /**
  * @lib/utils/strand-continuity.ts — Bug-fixed strand continuity state management
  *
- * Port of with fixes:
+ * Port of js/modules/strand-continuity.js with fixes:
  * - Timer IDs tracked in a Map keyed by purpose (prevents timer-ID drop bug)
  * - Never replaces the whole state object — only mutates individual fields
  * - Provides cancelAll() that clears every tracked timer
@@ -21,18 +21,13 @@
  * `js/modules/strand-continuity.ts` kernel stays alive as a death-bridge
  * shell until full W16 retirement.
  */
-import { appState as state } from '@lib/state/app.svelte'
-import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from '@lib/engine/journey-webgl-lazy'
+import { state, withStateMutation } from '@lib/engine/state-bridge'
+import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from '@lib/engine/journey-webgl-bridge'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import type { StrandContinuityState } from '@lib/state/state-types'
 
-// W53 follow-up to 9f2c326c: previously aliased to bare `string`, which widened
-// the manager's `state.phase` past the canonical union (`'idle' | 'preview' | ...
-// | 'returning'`) exported from `@lib/types/state` and broke the L107/L219
-// `StrandContinuityState` assignments downstream. Re-export the canonical union so
-// changes in the canonical file propagate here too.
-import type { StrandContinuityPhase as _CanonPhase } from '@lib/types/state'
-export type StrandContinuityPhase = _CanonPhase
+/** Phase value type (simple string, but kept as alias for clarity) */
+export type StrandContinuityPhase = string
 
 /** Valid phase transitions for strand continuity */
 const VALID_PHASES = new Set<string>(['idle', 'preview', 'pinned', 'exploring', 'arrived', 'returning'])
@@ -60,7 +55,7 @@ export interface StrandContinuityConfig {
  */
 export class StrandContinuityManager {
     state = {
-        phase: 'idle' as StrandContinuityPhase,
+        phase: 'idle' as string,
         targetIndex: null as number | null,
         fromIndex: null as number | null,
         reason: '',
@@ -86,7 +81,7 @@ export class StrandContinuityManager {
             reason?: string
         } = {}
     ): StrandContinuityState {
-        const normalizedPhase = (VALID_PHASES.has(phase) ? phase : 'idle') as StrandContinuityPhase
+        const normalizedPhase = VALID_PHASES.has(phase) ? phase : 'idle'
 
         // Update state fields individually — never replace the whole object
         this.state.phase = normalizedPhase
@@ -218,7 +213,7 @@ function getWrapperManager(): StrandContinuityManager {
             // Mirror to the legacy `state.strandContinuityState` global so kernel
             // consumers that read `state.strandContinuityState.phase` etc.
             // (4 files in js/modules plus src/lib/journey/journey.ts) stay correct.
-            {
+            withStateMutation(() => {
                 state.strandContinuityState = {
                     phase: managerState.phase,
                     targetIndex: managerState.targetIndex,
@@ -232,13 +227,18 @@ function getWrapperManager(): StrandContinuityManager {
                     arrivalTimeoutId: undefined,
                     settleTimeoutId: undefined
                 }
-            }
+            })
         },
-        onBodySync: (_managerState) => {
-            // NOTE: body.dataset writes removed.
-            // strandJourney is managed by parity-attrs.svelte.ts from focusStore.strandContinuityPhase.
-            // strandJourneyTarget/From/Reason were not used by CSS or JS readers.
-            // The state is already mirrored to state.strandContinuityState in onPhaseChange.
+        onBodySync: (managerState) => {
+            if (typeof document === 'undefined' || !document.body) return
+            document.body.dataset.strandJourney = managerState.phase
+            document.body.dataset.strandJourneyTarget = Number.isFinite(managerState.targetIndex)
+                ? String(managerState.targetIndex)
+                : ''
+            document.body.dataset.strandJourneyFrom = Number.isFinite(managerState.fromIndex)
+                ? String(managerState.fromIndex)
+                : ''
+            document.body.dataset.strandJourneyReason = managerState.reason ?? ''
         },
         onArrivalSync: () => {
             try {
@@ -296,10 +296,10 @@ export function clearStrandContinuityState(reason: string = 'clear'): StrandCont
 
 // ── Standalone timer wrappers (legacy kernel import-API) ───────────────────
 //
-// The legacy kernel exported top-level `setTimer` and `clearTimer` consumed
-// by thread-inspector and journey-thread-settler. These thin wrappers
-// delegate to the wrapper manager so consumers can switch import paths
-// without touching call sites.
+// The legacy kernel (`js/modules/strand-continuity.ts`) exported top-level
+// `setTimer`, `clearTimer`, and `disposeTimers` consumed by thread-inspector
+// and journey-thread-settler. These thin wrappers delegate to the wrapper
+// manager so consumers can switch import paths without touching call sites.
 
 /**
  * Set a named timer via the wrapper manager. Drop-in for the kernel's
@@ -315,6 +315,14 @@ export function setTimer(key: string, ms: number, callback: () => void): void {
  */
 export function clearTimer(key: string): void {
     getWrapperManager().clearTimer(key)
+}
+
+/**
+ * Clear ALL tracked timers via the wrapper manager. Drop-in for the
+ * kernel's `disposeTimers()` (maps to the manager's `cancelAll()`).
+ */
+export function disposeTimers(): void {
+    getWrapperManager().cancelAll()
 }
 
 // ── Standalone getStrandArrivalNote ────────────────────────────────────────

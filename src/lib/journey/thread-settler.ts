@@ -1,7 +1,7 @@
 /**
  * @lib/journey/thread-settler.ts — Thread walk traversal, neighbor timers, inspection settle flow
  *
- * Ported from:
+ * Ported from: js/modules/journey-thread-settler.js
  *
  * Uses StrandContinuityManager for all timer management.
  * Fixes Bug #6: Race between walkThreadNeighbor and stale arrival callbacks.
@@ -9,14 +9,14 @@
 
 import { get } from 'svelte/store'
 import type { BusinessRecord } from '@lib/types/business'
-import { formatBusinessName } from '@lib/utils/dom-formatters'
+import { formatBusinessName, cleanOptionalValue } from '@lib/utils/dom-formatters'
 import { getStrandContinuityManager } from '@lib/utils/strand-continuity'
-
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { NAV_TRANSITION_ACTIONS } from '@lib/navigation-actions'
-import { navStore, dispatchNavTransition, writeNavStateMirror, setFocusedIndex } from '@lib/stores/navigation.svelte'
+import { navStore, dispatchNavTransition, writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { appState } from '@lib/state/app.svelte.ts'
 import { getBusinessRecords } from '@lib/data-store'
-
+import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
 import {
     getCurrentTrailFocusIndex,
     isBoundedNeighborhoodActive,
@@ -24,48 +24,18 @@ import {
     getBoundedNeighborhoodWalkCandidate,
     getNextWalkCandidateForIndex
 } from '@lib/journey/neighborhood'
-import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
-// #186: lazily loaded — focusOnNode fires only during keyboard traversal
-// (post-gesture); a static import here would pin camera-controls →
-// camera-choreography → three.module onto the mobile cold-boot path.
-let _cameraControls: Promise<typeof import('@lib/engine/camera-controls')> | null = null
-function loadCameraControls(): Promise<typeof import('@lib/engine/camera-controls')> {
-    return (_cameraControls ??= import('@lib/engine/camera-controls'))
-}
+import { setStrandContinuityState, clearStrandContinuityState } from '@lib/engine/strand-continuity-bridge'
+import { focusOnNode } from '@lib/engine/camera-controls'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
-import { inspectThreadNeighbor, clearThreadInspection } from './thread-inspector-state'
-import { renderThreadInspection } from './thread-inspector-render'
-import type { ThreadInspectionState } from './thread-inspector-state'
+import {
+    inspectThreadNeighbor,
+    clearThreadInspection,
+    renderThreadInspection
+} from '@lib/engine/thread-inspector-bridge'
 import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { showExperienceToast } from '@lib/orchestration/toast'
-import { setThreadCandidates, syncTrailFromWalkHistory } from '@lib/stores/journey.svelte'
-import { withSearchNotify } from '@lib/stores/search.svelte'
-import { debugWarn } from '@lib/utils/debug'
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/**
- * THE single writer for appState.focusedNode (single-writer contract,
- * 2026-08-07 — sprawl backlog #5). thread-settler semantically owns the
- * focused node: it sets it while walking threads. The reset-to-null paths in
- * url-state (clearExplorationFocusSelection) and main.ts (test-compat proxy)
- * route through this helper instead of writing appState directly.
- *
- * appState.focusedNode is a top-level alias over navState.focusedIndex (the
- * canonical nav field, also written by the nav funnel writeNavStateMirror
- * alongside this alias — see walkThreadNeighbor); the alias setter already
- * normalizes non-finite values to null.
- */
-export function setFocusedNode(index: number | null): void {
-    // Route through the canonical focused-index writer so the Svelte navStore
-    // mirror, drift baseline, and (when changed) focus events stay in sync. The
-    // bare `appState.focusedNode = index` alias door wrote navState.focusedIndex
-    // without mirror notification. The alias setter normalizes non-finite to
-    // null, so preserve that contract before delegating.
-    setFocusedIndex(Number.isFinite(index) ? Number(index) : null)
-}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -109,28 +79,14 @@ function copyFiniteIndexHistory(value: unknown): number[] {
 
 // ── Timer Helpers ────────────────────────────────────────────────────────────
 
-// Module-level timer hooks allow initJourneyTimerAdapter to inject test
-// doubles (jsdom contracts often need deterministic timers). The defaults
-// delegate to the strand-continuity manager.
-let _setTimer: (purpose: string, ms: number, callback: () => void) => void = (
-    purpose: string,
-    ms: number,
-    callback: () => void
-) => {
+export function setTimer(purpose: string, ms: number, callback: () => void): void {
     const manager = getStrandContinuityManager()
     manager.setTimer(purpose, ms, callback)
 }
-let _clearTimer: (purpose: string) => void = (purpose: string) => {
-    const manager = getStrandContinuityManager()
-    manager.clearTimer(purpose)
-}
-
-export function setTimer(purpose: string, ms: number, callback: () => void): void {
-    _setTimer(purpose, ms, callback)
-}
 
 export function clearTimer(purpose: string): void {
-    _clearTimer(purpose)
+    const manager = getStrandContinuityManager()
+    manager.clearTimer(purpose)
 }
 
 export function cancelAllThreadTimers(): void {
@@ -138,15 +94,7 @@ export function cancelAllThreadTimers(): void {
     manager.cancelAll()
 }
 
-export interface JourneyTimerAdapterDeps {
-    setTimer?: (purpose: string, ms: number, callback: () => void) => void
-    clearTimer?: (purpose: string) => void
-}
-
-export function initJourneyTimerAdapter(deps: JourneyTimerAdapterDeps = {}): void {
-    if (deps.setTimer) _setTimer = deps.setTimer
-    if (deps.clearTimer) _clearTimer = deps.clearTimer
-}
+export function initJourneyTimerAdapter(_deps: unknown = {}): void {}
 
 // ── Neighbor Reason Summaries ─────────────────────────────────────────────────
 
@@ -160,30 +108,43 @@ export function summarizeNeighborReason(
         roleReason?: string
         sameCity?: boolean
         sameStatus?: boolean
-    } = {}
+    } = {},
+    _point?: BusinessRecord | null,
+    _focusPoint?: BusinessRecord | null
 ): string {
     if (!candidate || Object.keys(candidate).length === 0) {
-        return 'Nearby business.'
+        return 'Nearby cloud stop.'
     }
 
     if (candidate.relationshipRole) {
+        if (candidate.roleReason) {
+            const match = candidate.roleReason.match(/^(?:candidate looks like an |acts as an |serves as an )(.+)$/i)
+            if (match) return `An ${match[1]}`
+            return candidate.roleReason.charAt(0).toUpperCase() + candidate.roleReason.slice(1)
+        }
         const roleLabels: Record<string, string> = {
-            core_peer: 'A similar local business',
-            upstream: 'A local input-type business',
-            downstream: 'A local customer-type business',
-            complement: 'A business that complements this one',
-            same_market: 'Another business in the same local market',
-            bridge: 'A business that links different parts of the market',
-            geo_echo: 'A similar business in another nearby town',
-            peer: 'A similar local business'
+            upstream: 'An input provider',
+            downstream: 'A downstream consumer',
+            peer: 'A peer in the network'
         }
         const label = roleLabels[candidate.relationshipRole]
         if (label) return label
     }
 
-    if (candidate.sameCity) return 'A nearby business in the same local market'
-    if (candidate.source === 'semantic') return 'A related local business'
-    return 'A nearby business'
+    if (candidate.reason && candidate.reason.includes('close semantic neighbor')) {
+        if (candidate.sameCity) return 'Same-city relationship grounded in shared record language'
+        return 'Deep record relationship grounded in shared record language'
+    }
+
+    if (candidate.sameCity && candidate.reason?.includes('semantic neighbor')) {
+        return 'Same-city relationship grounded in semantic link'
+    }
+
+    if (candidate.reason) return candidate.reason
+
+    if (candidate.threadType === 'approximate_projected_neighbor') return 'approximate cloud projection neighbor'
+    if (candidate.source === 'semantic') return 'semantic business relationship'
+    return 'nearby business relationship'
 }
 
 export function getInsideRelationshipLabel(
@@ -195,29 +156,26 @@ export function getInsideRelationshipLabel(
         relationshipRole?: string
         sameCity?: boolean
         sameStatus?: boolean
-    } = {}
+    } = {},
+    _point?: BusinessRecord | null,
+    _focusPoint?: BusinessRecord | null
 ): string {
     if (!candidate || Object.keys(candidate).length === 0) return 'Nearby connection'
 
     if (candidate.relationshipRole) {
         const roleLabels: Record<string, string> = {
-            core_peer: 'similar local business',
-            upstream: 'local input-type business',
-            downstream: 'local customer-type business',
-            complement: 'complements this business',
-            same_market: 'same local market',
-            bridge: 'links market areas',
-            geo_echo: 'nearby in another town',
-            peer: 'similar local business'
+            upstream: 'serves trail',
+            downstream: 'served by trail',
+            peer: 'trail peer'
         }
         const label = roleLabels[candidate.relationshipRole]
         if (label) return label
         return candidate.relationshipRole
     }
 
-    if (candidate.sameCity) return 'In the same local market'
-    if (candidate.source === 'semantic') return 'Related local business'
-    if (candidate.sameStatus) return 'Same local market'
+    if (candidate.sameCity) return 'On the same trail'
+    if (candidate.source === 'semantic') return 'related connection'
+    if (candidate.sameStatus) return 'Same trail layer'
 
     return 'Nearby connection'
 }
@@ -249,42 +207,40 @@ export class ThreadSettler {
 
     walkThreadNeighbor(index: number, options: WalkOptions = {}): WalkResult | null {
         if (!Number.isFinite(index)) return null
-        // Guard: re-walking the same focused index from canvas hover is redundant
-        // and can saturate the main thread when many pointermove events fire in
-        // quick succession. Clicks/traversal still run so the user can re-select a
-        // focused node if they explicitly click it again.
         const focusedIndex = get(navStore).focusedIndex
-        if (index === focusedIndex && appState.navState?.mode === 'trail' && !options.fromCanvasNode) {
-            return null
-        }
         const fromIndex = Number.isFinite(options.fromIndex)
             ? (options.fromIndex as number)
             : getCurrentTrailFocusIndex(focusedIndex)
 
         const nav = get(navStore)
-        const candidate = (nav.threadCandidates || []).find((item: { index: number }) => item.index === index)
+        const candidate = (nav.threadCandidates || []).find(
+            (item: any) => item && (typeof item === 'number' ? item === index : item.index === index)
+        )
         const records = getBusinessRecords()
         const targetPoint: BusinessRecord | null =
             index >= 0 && index < records.length ? (records[index] ?? null) : null
+        const fromPoint =
+            fromIndex !== null && fromIndex >= 0 && fromIndex < records.length ? (records[fromIndex] ?? null) : null
+
         const reason =
             options.reason ||
-            summarizeNeighborReason(candidate && typeof candidate === 'object' ? candidate : {}) ||
+            summarizeNeighborReason(
+                candidate && typeof candidate === 'object' ? candidate : {},
+                targetPoint,
+                fromPoint
+            ) ||
             (candidate && typeof candidate === 'object' ? candidate.reason : null) ||
             'nearby business relationship'
 
-        {
-            appState.focusState.pinnedThreadIndex = null
-            appState.focusState.inspectedThreadIndex = null
-            // H4 fix (Jul-10 bugsweep): suppress logic was inverted — it set
-            // the debounce on !fromCanvasNode (hover) and checked it on
-            // fromCanvasNode (click), so every click <1200ms after hover was
-            // silently dropped. Correct intent: after a click/traversal we
-            // debounce hover re-focus; clicks must always succeed.
-            if (options.fromCanvasNode || options.fromTraversal) {
-                appState.suppressCanvasFocusUntil =
-                    typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200
-            }
-        }
+        withStateMutation(() => {
+            ;(legacyState as any).pinnedThreadIndex = null
+            ;(legacyState as any).inspectedThreadIndex = null
+            ;(legacyState as any).suppressCanvasFocusUntil =
+                typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200
+        })
+
+        appState.pinnedThreadIndex = null
+        appState.inspectedThreadIndex = null
 
         cancelAllThreadTimers()
         setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason })
@@ -295,29 +251,34 @@ export class ThreadSettler {
             fromIndex: fromIndex ?? undefined,
             appendHistory: !options.restoreHistory
         })
-        renderThreadInspection(null, { force: true, surface: 'idle' })
+        renderThreadInspection(null, { force: true, surface: 'idle' } as any)
 
-        writeNavStateMirror({ lastTraversalReason: reason })
+        withStateMutation(() => {
+            ;(legacyState.navState as any).lastTraversalReason = reason
+        })
 
         const preserveNeighborhood =
-            appState.currentView === 'galaxy' && isBoundedNeighborhoodActive() && !options.expandNeighborhood
+            legacyState.currentView === 'galaxy' && isBoundedNeighborhoodActive() && !options.expandNeighborhood
 
-        if (appState.currentView === 'map') {
-            focusOnPoint(targetPoint)
+        if (legacyState.currentView === 'map') {
+            focusOnPoint(targetPoint, {
+                fromTraversal: true,
+                appendHistory: !options.restoreHistory,
+                restoreHistory: !!options.restoreHistory,
+                fromIndex: fromIndex ?? undefined
+            } as any)
         } else {
-            void loadCameraControls().then((m) =>
-                m.focusOnNode(index, {
-                    fromCanvasNode: !!options.fromCanvasNode,
-                    fromTraversal: true,
-                    preserveNeighborhood,
-                    appendHistory: !options.restoreHistory,
-                    restoreHistory: !!options.restoreHistory,
-                    fromIndex: fromIndex ?? undefined
-                })
-            )
+            focusOnNode(index, {
+                fromCanvasNode: !!options.fromCanvasNode,
+                fromTraversal: true,
+                preserveNeighborhood,
+                appendHistory: !options.restoreHistory,
+                restoreHistory: !!options.restoreHistory,
+                fromIndex: fromIndex ?? undefined
+            })
         }
 
-        const nextHistory = copyFiniteIndexHistory(appState.navState.walkHistoryIndices)
+        const nextHistory = copyFiniteIndexHistory((legacyState.navState as any).walkHistoryIndices)
         if (typeof fromIndex === 'number' && Number.isFinite(fromIndex) && nextHistory.length === 0) {
             nextHistory.push(fromIndex)
         }
@@ -327,20 +288,21 @@ export class ThreadSettler {
         writeNavStateMirror({
             focusedIndex: index,
             mode: 'trail',
-            surface: appState.navState.surface === 'focus-search' ? 'focus-search' : 'focus',
-            trailDepth: Math.max(1, Number(appState.trailDepth) || 0),
+            surface: 'focus',
+            trailDepth: Math.max(1, Number((legacyState.navState as any).trailDepth) || 0),
             walkHistoryIndices: nextHistory,
             lastTraversalReason: reason
         })
-        {
-            setFocusedNode(index)
-            appState.focusState.inspectedThreadIndex = null
-            appState.focusState.pinnedThreadIndex = null
-        }
+        withStateMutation(() => {
+            ;(legacyState as any).focusedNode = index
+            ;(legacyState as any).trailDepth = Math.max(1, Number((legacyState as any).trailDepth) || 0)
+            ;(legacyState as any).inspectedThreadIndex = null
+            ;(legacyState as any).pinnedThreadIndex = null
+        })
 
         const reassertThreadTarget = (): void => {
             const point = index >= 0 && index < records.length ? records[index] : null
-            const reassertHistory = copyFiniteIndexHistory(appState.navState.walkHistoryIndices)
+            const reassertHistory = copyFiniteIndexHistory((legacyState.navState as any).walkHistoryIndices)
             if (typeof fromIndex === 'number' && Number.isFinite(fromIndex) && reassertHistory.length === 0) {
                 reassertHistory.push(fromIndex)
             }
@@ -348,20 +310,19 @@ export class ThreadSettler {
             writeNavStateMirror({
                 focusedIndex: index,
                 mode: 'trail',
-                surface: appState.navState.surface === 'focus-search' ? 'focus-search' : 'focus',
-                trailDepth: Math.max(1, Number(appState.trailDepth) || 0),
+                surface: 'focus',
+                trailDepth: Math.max(1, Number((legacyState.navState as any).trailDepth) || 0),
                 walkHistoryIndices: reassertHistory,
                 lastTraversalReason: reason
             })
-            {
-                setFocusedNode(index)
-                appState.focusState.selectedPoint = (point ||
-                    appState.focusState.selectedPoint ||
-                    null) as unknown as typeof appState.focusState.selectedPoint
-                appState.focusState.inspectedThreadIndex = null
-                appState.focusState.pinnedThreadIndex = null
-            }
-            syncFocusStage(point || appState.focusState.selectedPoint || null)
+            withStateMutation(() => {
+                ;(legacyState as any).focusedNode = index
+                ;(legacyState as any).selectedPoint = point || (legacyState as any).selectedPoint
+                ;(legacyState as any).trailDepth = Math.max(1, Number((legacyState as any).trailDepth) || 0)
+                ;(legacyState as any).inspectedThreadIndex = null
+                ;(legacyState as any).pinnedThreadIndex = null
+            })
+            syncFocusStage(point || legacyState.selectedPoint || null)
             syncSemanticDiveUi()
             updateJourneyCompass()
         }
@@ -374,7 +335,7 @@ export class ThreadSettler {
 
         showExperienceToast(
             'Following connection',
-            `Moving along the trail to ${formatBusinessName(targetPoint?.name || 'the next stop')}.`
+            `Moving along the semantic trail to ${formatBusinessName(targetPoint?.name || 'the next stop')}.`
         )
 
         const capturedIndex = index
@@ -398,36 +359,9 @@ export class ThreadSettler {
                     reason: capturedReason
                 })
 
-                // Stale-Next fix (2026-08-24): walking A→B leaves the journey-store snapshot
-                // pointing at A's candidates (whose [0] IS B), so the walk HUD "Next:" line
-                // and the NEXT STOP badge kept showing the stop we just came from until
-                // some other trigger re-published them. By arrival time the camera-focus
-                // pipeline (journey.ts deferred setTrailFromSeed) has already refreshed
-                // appState.navState.threadCandidates for B — but that write goes through
-                // the nav mirror ONLY and never notifies the journey writable the HUD
-                // reads (journeySnapshot.threadCandidates). Mirror the fresh indices into
-                // the journey store here so JourneyChrome re-runs. Mirror-only is safe for
-                // preserved bounded neighborhoods too: it copies what the pipeline holds,
-                // it does not recompute or fight any other writer.
-                try {
-                    setThreadCandidates((appState.navState.threadCandidates ?? []).map((c) => c.index))
-                    // Bug #4: project the canonical nav walk history into the journey
-                    // store so ← Prev (canGoBack) and the TRAIL stop count track real
-                    // walks instead of only list-initiated stops.
-                    syncTrailFromWalkHistory(appState.navState.walkHistoryIndices ?? [])
-                    // Bug #5 (stale search status): $searchState.activeResultId is a
-                    // projection of navState.focusedIndex but the search mirror only
-                    // refreshes inside withSearchNotify writers — which the walk path
-                    // never runs. Republish the projection so SearchResults' cursor and
-                    // live announcements track the arrived stop.
-                    withSearchNotify(() => {})
-                } catch (e) {
-                    debugWarn('[thread-settler] arrival candidate sync failed', e)
-                }
-
                 const pointAtArrival =
                     capturedIndex >= 0 && capturedIndex < recordsList.length ? recordsList[capturedIndex] : null
-                syncFocusStage(pointAtArrival || appState.focusState.selectedPoint || null)
+                syncFocusStage(pointAtArrival || legacyState.selectedPoint || null)
                 updateJourneyCompass()
 
                 if (appState.semanticDiveMode) {
@@ -450,7 +384,7 @@ export class ThreadSettler {
 
                 const pointAtSettle =
                     capturedIndex >= 0 && capturedIndex < recordsList.length ? recordsList[capturedIndex] : null
-                syncFocusStage(pointAtSettle || appState.focusState.selectedPoint || null)
+                syncFocusStage(pointAtSettle || legacyState.selectedPoint || null)
             }
         })
 
@@ -492,8 +426,8 @@ export class ThreadSettler {
         }
 
         const nextCandidate = getNextWalkCandidateForIndex(currentIndex, {
-            requireSemantic: appState.currentView === 'galaxy',
-            requireOnCanvas: appState.currentView === 'galaxy',
+            requireSemantic: legacyState.currentView === 'galaxy',
+            requireOnCanvas: legacyState.currentView === 'galaxy',
             commitNeighborhood: true
         })
         if (!nextCandidate) {
@@ -507,8 +441,8 @@ export class ThreadSettler {
         })
     }
 
-    previewInsideNextThread(options: PreviewInsideOptions = {}): ThreadInspectionState | null {
-        if (!appState.semanticDiveMode || appState.currentView !== 'galaxy') return null
+    previewInsideNextThread(options: PreviewInsideOptions = {}): any {
+        if (!appState.semanticDiveMode || legacyState.currentView !== 'galaxy') return null
         const currentIndex = getCurrentTrailFocusIndex(get(navStore).focusedIndex)
         if (currentIndex === null || !Number.isFinite(currentIndex)) return null
         const nextCandidate =
@@ -528,7 +462,7 @@ export class ThreadSettler {
             force: true,
             preserveJourney: true,
             surface: 'inside-cue'
-        })
+        } as any)
     }
 
     clearAllTimers(): void {
@@ -552,6 +486,6 @@ export function traverseNeighbor(step: number): void {
     getThreadSettler().traverseNeighbor(step)
 }
 
-export function previewInsideNextThread(options: PreviewInsideOptions = {}): ThreadInspectionState | null {
+export function previewInsideNextThread(options: PreviewInsideOptions = {}): any {
     return getThreadSettler().previewInsideNextThread(options)
 }

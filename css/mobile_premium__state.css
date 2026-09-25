@@ -1,48 +1,35 @@
-/* Part of the mobile_premium cascade — see mobile_premium__components.css for the cascade header. */
+/* Part of the mobile_premium cascade — see mobile_premium__focus-dive.css for the cascade header. */
 
 /* ─── STATE-MACHINE STYLES ─────────────────────────── */
 @media (max-width: 640px) {
-    body.surface-idle #canvas-container,
-    body:not(.surface-idle) #canvas-container {
+    body.is-active #canvas-container {
         position: fixed;
         top: 0;
         left: 0;
-        /* H5 mobile overflow: 100% (of the fixed viewport containing block)
-           instead of 100vw. Aligns with the base rule in shell.css and
-           sidesteps the iOS 100vw rounding/gutter edge case that can push the
-           fixed canvas a few px past the viewport edge on notched devices. */
-        width: 100%;
+        width: 100vw;
         height: 100dvh;
         z-index: var(--z-base);
-        overflow: clip;
+        overflow: hidden;
         overscroll-behavior: none;
         scrollbar-width: none;
-        /* Keep scaled pseudo-elements and the high-DPR canvas from expanding
-           the scrollable overflow rectangle on Chromium. */
-        contain: paint;
     }
 
-    body.surface-idle #canvas-container::-webkit-scrollbar,
-    body:not(.surface-idle) #canvas-container::-webkit-scrollbar {
+    body.is-active #canvas-container::-webkit-scrollbar {
         width: 0;
         height: 0;
         display: none;
     }
 
-    /* Suppress the 1.02x vignette scale on mobile so it cannot push
-       scrollWidth past clientWidth on high-DPR viewports. */
-    body.surface-idle #canvas-container::after,
-    body:not(.surface-idle) #canvas-container::after {
-        transform: none;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='map-focus-search'])
+    body.is-active:is(
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='map-focus-search']
+        )
         #canvas-container {
         pointer-events: none;
     }
 
     /* Primary sheet base styling */
-    body:not(.surface-idle) .info-panel {
+    body.is-active .info-panel {
         position: fixed;
         bottom: 0;
         left: 0;
@@ -63,7 +50,7 @@
     }
 
     /* 2. IDLE STATE */
-    body.surface-idle .info-panel {
+    body.is-active[data-panel-surface='idle'] .info-panel {
         display: block;
         transform: translate3d(0, 0, 0);
         opacity: 1;
@@ -71,21 +58,60 @@
         max-height: 55dvh;
     }
 
-    body.surface-idle .info-content {
+    body.is-active[data-panel-surface='idle'] .info-content {
         padding: 20px 16px 32px;
         max-height: 48dvh;
         overflow-y: auto;
     }
 
-    body.surface-idle .stats-row {
+    body.is-active:is(
+            [data-panel-surface='search'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='map-search'],
+            [data-panel-surface='map-focus-search']
+        )
+        .demo-starters {
+        display: none;
+    }
+
+    body.is-active[data-panel-surface='idle'] .stats-row {
         margin-bottom: 24px;
         display: flex;
         gap: 12px;
     }
 
+    body.is-active[data-panel-surface='idle'] .stat-box {
+        flex: 1;
+        padding: 12px;
+        background: var(--glass-reflection-fade);
+        border: 1px solid var(--glass-reflection-muted);
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    body.is-active:is(
+            [data-panel-surface='search'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='map-search'],
+            [data-panel-surface='map-focus-search']
+        )
+        .demo-starter-row {
+        display: none;
+    }
+
+    body.is-active:is(
+            [data-panel-surface='search'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='map-search'],
+            [data-panel-surface='map-focus-search']
+        )
+        .demo-starter-chip {
+        display: none;
+    }
+
     /* 3. SEARCH & FOCUS-SEARCH COMMON (Mobile) */
-    body.surface-search .info-panel,
-    body.surface-focus-search .info-panel {
+    body.is-active[data-panel-surface='search'] .info-panel,
+    body.is-active[data-panel-surface='focus-search'] .info-panel {
         display: block;
         top: auto;
         bottom: 0;
@@ -94,8 +120,8 @@
         pointer-events: auto;
     }
 
-    body.surface-search .info-panel,
-    body.surface-focus-search .info-panel {
+    body.is-active[data-panel-surface='search'] .info-panel,
+    body.is-active[data-panel-surface='focus-search'] .info-panel {
         background:
             linear-gradient(180deg, rgba(7, 17, 23, 0.98), rgba(3, 8, 13, 0.96)),
             radial-gradient(circle at 100% 0%, rgba(255, 226, 132, 0.1), transparent 40%);
@@ -107,40 +133,40 @@
     /* ----------------------------------------------------------------
        4. Search and focus-search sheet geometry
        ---------------------------------------------------------------- */
-    body.surface-search .info-panel {
+    body.is-active[data-panel-surface='search'] .info-panel {
         max-height: min(57dvh, 480px);
     }
 
-    body.surface-search .info-content {
+    body.is-active[data-panel-surface='search'] .info-content {
         padding: 16px;
         height: 100%;
     }
 
-    body.surface-search .info-content,
-    body.surface-focus-search .info-content {
+    body[data-panel-surface='search'] .info-content,
+    body[data-panel-surface='focus-search'] .info-content {
         max-height: calc(min(54vh, 456px) - 42px);
         padding: 9px 10px 10px;
         margin-bottom: calc(env(safe-area-inset-bottom, 0px));
     }
 
-    body.surface-search:not([data-panel-surface-detail]) #info-panel.info-panel,
-    body.surface-search[data-panel-surface-detail='none'] #info-panel.info-panel,
-    body.surface-search[data-panel-surface-detail='focus-search'] #info-panel.info-panel {
+    body[data-panel-surface='search']:not([data-panel-surface-detail]) #info-panel.info-panel,
+    body[data-panel-surface='search'][data-panel-surface-detail='none'] #info-panel.info-panel,
+    body[data-panel-surface='search'][data-panel-surface-detail='focus-search'] #info-panel.info-panel {
         height: min(57dvh, 480px);
         max-height: min(57dvh, 480px);
     }
 
-    body.surface-search:not([data-panel-surface-detail]) #info-panel .info-content,
-    body.surface-search[data-panel-surface-detail='none'] #info-panel .info-content,
-    body.surface-search[data-panel-surface-detail='focus-search'] #info-panel .info-content {
+    body[data-panel-surface='search']:not([data-panel-surface-detail]) #info-panel .info-content,
+    body[data-panel-surface='search'][data-panel-surface-detail='none'] #info-panel .info-content,
+    body[data-panel-surface='search'][data-panel-surface-detail='focus-search'] #info-panel .info-content {
         height: 100%;
         min-height: 0;
         overflow: hidden;
     }
 
-    body.surface-search:not([data-panel-surface-detail]) .search-container.has-query,
-    body.surface-search[data-panel-surface-detail='none'] .search-container.has-query,
-    body.surface-search[data-panel-surface-detail='focus-search'] .search-container.has-query {
+    body[data-panel-surface='search']:not([data-panel-surface-detail]) .search-container.has-query,
+    body[data-panel-surface='search'][data-panel-surface-detail='none'] .search-container.has-query,
+    body[data-panel-surface='search'][data-panel-surface-detail='focus-search'] .search-container.has-query {
         display: flex;
         flex-direction: column;
         height: 100%;
@@ -148,8 +174,12 @@
         overflow: hidden;
     }
 
-    body.surface-search:not([data-panel-surface-detail]) .search-container.has-query #search-results.active,
-    body.surface-search[data-panel-surface-detail='none'] .search-container.has-query #search-results.active {
+    body[data-panel-surface='search']:not([data-panel-surface-detail])
+        .search-container.has-query
+        #search-results.active,
+    body[data-panel-surface='search'][data-panel-surface-detail='none']
+        .search-container.has-query
+        #search-results.active {
         flex: 1 1 auto;
         min-height: 0;
         max-height: min(50vh, 400px);
@@ -157,14 +187,14 @@
         overflow-x: hidden;
     }
 
-    body.surface-search .info-header,
-    body.surface-focus-search .info-header,
-    body.surface-search .stat-caption,
-    body.surface-focus-search .stat-caption {
+    body.is-active[data-panel-surface='search'] .info-header,
+    body.is-active[data-panel-surface='focus-search'] .info-header,
+    body.is-active[data-panel-surface='search'] .stat-caption,
+    body.is-active[data-panel-surface='focus-search'] .stat-caption {
         display: none;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .info-panel {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .info-panel {
         top: auto;
         bottom: 0;
         height: calc(218px + env(safe-area-inset-bottom, 0px));
@@ -172,22 +202,22 @@
         max-height: calc(218px + env(safe-area-inset-bottom, 0px));
     }
 
-    body:is(.surface-search, [data-panel-surface='search'])[data-panel-surface-detail='peek'] #info-panel.info-panel {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] #info-panel.info-panel {
         top: auto;
         bottom: 0;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .info-content {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .info-content {
         padding: 15px 12px 12px;
         overflow: hidden;
     }
 
-    body.surface-search #cluster-section,
-    body.surface-search #filters-section,
-    body.surface-search .rail-section,
-    body.surface-focus-search #cluster-section,
-    body.surface-focus-search #filters-section,
-    body.surface-focus-search .rail-section {
+    body[data-panel-surface='search'] #cluster-section,
+    body[data-panel-surface='search'] #filters-section,
+    body[data-panel-surface='search'] .rail-section,
+    body[data-panel-surface='focus-search'] #cluster-section,
+    body[data-panel-surface='focus-search'] #filters-section,
+    body[data-panel-surface='focus-search'] .rail-section {
         display: none;
         visibility: hidden;
         height: 0;
@@ -195,12 +225,12 @@
         pointer-events: none;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-container.has-query {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-container.has-query {
         height: 100%;
         max-height: 100%;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-results.active {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-results.active {
         flex-basis: 72px;
         min-height: 72px;
         max-height: 72px;
@@ -208,47 +238,7 @@
         padding: 8px;
     }
 
-    /* A populated peek needs room for its complete interaction: the result
-       count, one anchor card, and the 44px Show-more control. The old fixed
-       72px viewport only fit the card, leaving the control below the fixed
-       sheet and making it discoverable only through an accidental scroll.
-
-       2026-09-11 recalibration (W63): the 286px budget was tuned on runs where
-       WebGL never initialized (data-render-kind='placeholder2d' hides
-       #search-result-list, so the anchor card rendered 0px tall). On the real
-       GPU path (render-kind='webgl', --use-angle=d3d11) the anchor card renders
-       its designed 64px min-height and the button landed 7.84px below the fold.
-       286 -> 306 restores the full interaction (count + 64px card + 44px
-       button) on the real render path; verified at 390x844 d3d11. */
-    body.surface-search[data-panel-surface-detail='peek'] #info-panel.info-panel:has(#search-results.active) {
-        height: min(306px, max(218px, calc(100dvh - 90px)));
-        min-height: min(306px, max(218px, calc(100dvh - 90px)));
-        max-height: min(306px, max(218px, calc(100dvh - 90px)));
-    }
-
-    body.surface-search[data-panel-surface-detail='peek'] .search-container.has-query #search-results.active {
-        flex: 1 1 auto;
-        min-height: 0;
-        max-height: none;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 0;
-    }
-
-    /* The peek result viewport is intentionally compact. The global loading
-       card is sized for the full search sheet, so its 48px padding and 20px
-       margins otherwise expand past the fixed info-panel and clip the page. */
-    body.surface-search[data-panel-surface-detail='peek'] #search-results.active .search-loading {
-        box-sizing: border-box;
-        height: 100%;
-        min-height: 0;
-        max-height: 100%;
-        margin: 0;
-        padding: 4px 12px;
-        gap: 4px;
-    }
-
-    body.surface-search[data-panel-surface-detail='peek'] .search-label {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-label {
         min-height: 44px;
         margin: 0 0 4px;
         padding: 0 8px;
@@ -256,11 +246,11 @@
         letter-spacing: 0.075em;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-label-text {
-        color: rgba(224, 242, 239, 0.85);
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-label-text {
+        color: rgba(224, 242, 239, 0.78);
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-input-wrapper {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-input-wrapper {
         overflow: hidden;
         border-radius: 12px;
         border: 1px solid rgba(var(--color-primary-tint-rgb), 0.2);
@@ -272,7 +262,7 @@
             inset 0 1px 0 var(--glass-reflection-muted);
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-input {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-input {
         height: 46px;
         min-height: 46px;
         border: 0;
@@ -284,16 +274,16 @@
         box-shadow: none;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-input::placeholder {
-        color: rgba(222, 238, 236, 0.85);
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-input::placeholder {
+        color: rgba(222, 238, 236, 0.58);
         opacity: 1;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-icon {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-icon {
         color: rgba(var(--color-primary-tint-rgb), 0.64);
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-clear-btn {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-clear-btn {
         top: 50%;
         right: 1px;
         transform: translateY(-50%);
@@ -304,7 +294,7 @@
         background: rgba(var(--color-primary-tint-rgb), 0.055);
     }
 
-    body.surface-focus-search[data-panel-surface-detail='peek'] .info-panel {
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .info-panel {
         left: 10px;
         right: 10px;
         width: auto;
@@ -321,29 +311,31 @@
             inset 0 1px 0 var(--glass-reflection-muted);
     }
 
-    body.surface-focus-search[data-panel-surface-detail='peek'] .info-panel::before {
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .info-panel::before {
         width: 28px;
         height: 3px;
         opacity: 0.55;
     }
 
-    body.surface-focus-search[data-panel-surface-detail='peek'] .info-content {
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .info-content {
         padding: 9px 10px 8px;
     }
 
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-container.has-query {
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-container.has-query {
         height: 76px;
         max-height: 76px;
         overflow: hidden;
     }
 
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-container #search-results.active {
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek']
+        .search-container
+        #search-results.active {
         display: none;
     }
 
-    body.surface-focus .search-results.active,
-    body.surface-focus-search .search-results.active,
-    body.surface-semantic-dive .search-results.active {
+    body[data-panel-surface='focus'] .search-results.active,
+    body[data-panel-surface='focus-search'] .search-results.active,
+    body[data-panel-surface='semantic-dive'] .search-results.active {
         max-height: min(28vh, 180px);
         padding: 6px 8px;
         opacity: 0.94;
@@ -351,32 +343,40 @@
         pointer-events: auto;
     }
 
-    body.surface-semantic-dive .search-container,
-    body.surface-semantic-dive .search-results.active,
-    body.surface-semantic-dive #search-results {
+    body[data-panel-surface='semantic-dive'] .search-container,
+    body[data-panel-surface='semantic-dive'] .search-results.active,
+    body[data-panel-surface='semantic-dive'] #search-results {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-what,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-what,
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-meta,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-meta,
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-context,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-context,
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-bar,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-bar,
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-badges,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-badges {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-results-count,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-results-count,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-what,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-what,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-meta,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-meta,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-cluster,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-cluster,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-context,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-context,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-bar,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-bar,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-badges,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-badges {
         display: none;
         visibility: hidden;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-listitem:not(:first-child),
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-listitem:not(:first-child),
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-listitem:not(:first-child) .search-result-item,
-    body.surface-focus-search[data-panel-surface-detail='peek']
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek']
+        .search-result-listitem:not(:first-child),
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek']
+        .search-result-listitem:not(:first-child),
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek']
+        .search-result-listitem:not(:first-child)
+        .search-result-item,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek']
         .search-result-listitem:not(:first-child)
         .search-result-item {
         display: none;
@@ -386,18 +386,18 @@
         pointer-events: none;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-listitem,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-listitem,
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-item,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-item {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-listitem,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-listitem,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-item,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-item {
         width: 100%;
         max-width: 100%;
         min-width: 0;
         box-sizing: border-box;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-item,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-item {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-item,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-item {
         display: flex;
         align-items: center;
         min-height: 64px;
@@ -410,8 +410,8 @@
             0 10px 22px var(--shadow-antumbra);
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-row,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-row {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-row,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-row {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
@@ -419,8 +419,8 @@
         width: 100%;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-rank,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-rank {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-rank,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-rank {
         color: rgba(255, 229, 135, 0.94);
         font-size: 10px;
         font-weight: 800;
@@ -429,8 +429,8 @@
         white-space: nowrap;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-result-name,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-name {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-name,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-result-name {
         color: rgba(247, 255, 253, 0.98);
         text-align: left;
         font-size: 14px;
@@ -444,22 +444,24 @@
     /* Search peek exposes one clean anchor row. Expanded mode owns the full
        result list; clipped secondary-row slivers are a visual regression. */
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-results.active:has(.search-error-state),
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-results.active:has(.search-error-state) {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek']
+        .search-results.active:has(.search-error-state),
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek']
+        .search-results.active:has(.search-error-state) {
         padding: 8px 10px;
         overflow-y: hidden;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-error-state,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-error-state {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-error-state,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-error-state {
         align-items: stretch;
         gap: 4px;
         padding: 0;
         text-align: left;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-error-kicker,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-error-kicker {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-error-kicker,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-error-kicker {
         align-self: flex-start;
         min-height: 18px;
         padding: 3px 8px;
@@ -467,8 +469,8 @@
         letter-spacing: 0.12em;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-error-text,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-error-text {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-error-text,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-error-text {
         max-width: none;
         margin: 0;
         font-size: 11px;
@@ -478,42 +480,44 @@
         text-overflow: ellipsis;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-error-actions,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-error-actions {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-error-actions,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-error-actions {
         justify-content: flex-start;
         flex-wrap: nowrap;
         gap: 8px;
         margin-top: 3px;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-error-retry-btn,
-    body.surface-search[data-panel-surface-detail='peek'] .search-error-dismiss-btn,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-error-retry-btn,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-error-dismiss-btn {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-error-retry-btn,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-error-dismiss-btn,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-error-retry-btn,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-error-dismiss-btn {
         padding: 0 14px;
         font-size: 12px;
     }
 
-    body.surface-search .search-error-retry-btn,
-    body.surface-search .search-error-dismiss-btn,
-    body.surface-focus-search .search-error-retry-btn,
-    body.surface-focus-search .search-error-dismiss-btn {
+    body.is-active[data-panel-surface='search'] .search-error-retry-btn,
+    body.is-active[data-panel-surface='search'] .search-error-dismiss-btn,
+    body.is-active[data-panel-surface='focus-search'] .search-error-retry-btn,
+    body.is-active[data-panel-surface='focus-search'] .search-error-dismiss-btn {
         display: inline-flex;
         min-height: 44px;
         align-items: center;
         justify-content: center;
     }
 
-    body.surface-search[data-panel-surface-detail='expanded'] .info-panel,
-    body.surface-focus-search[data-panel-surface-detail='expanded'] .info-panel {
+    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .info-panel,
+    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .info-panel {
         height: 100dvh;
         max-height: 100dvh;
         border-radius: 0;
     }
 
-    .journey-compass[data-panel-surface='search'][data-panel-surface-detail='expanded'],
-    body.surface-search[data-panel-surface-detail='expanded'] .legend-toggle,
-    body.surface-focus-search[data-panel-surface-detail='expanded'] .legend-toggle {
+    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .journey-compass,
+    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .legend-panel,
+    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .legend-toggle,
+    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .legend-panel,
+    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .legend-toggle {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -527,33 +531,44 @@
         display: none;
     }
 
-    body.surface-search[data-panel-surface-detail='expanded'] .info-content,
-    body.surface-focus-search[data-panel-surface-detail='expanded'] .info-content {
+    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .info-content,
+    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .info-content {
         height: calc(100dvh - 20px);
         max-height: none;
         padding-top: 20px;
         margin-top: calc(env(safe-area-inset-top, 0px));
     }
-    body.surface-search[data-panel-surface-detail='expanded'] .stat-caption,
-    body.surface-focus-search[data-panel-surface-detail='expanded'] .stat-caption,
-    body.surface-search[data-panel-surface-detail='expanded'] #btn-launch,
-    body.surface-focus-search[data-panel-surface-detail='expanded'] #btn-launch{
+
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .stat-row,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .stat-row,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .stat-caption,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .stat-caption,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .demo-starters,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .demo-starters,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] #demo-starters,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] #demo-starters,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .demo-journey-steps,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .demo-journey-steps,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] #btn-launch,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] #btn-launch,
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .surprise-btn,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .surprise-btn {
         display: none;
     }
 
-    body.surface-search .search-container.has-query {
+    body.is-active[data-panel-surface='search'] .search-container.has-query {
         display: flex;
         flex-direction: column;
         height: 100%;
     }
 
-    body.surface-search .search-results.active {
+    body.is-active[data-panel-surface='search'] .search-results.active {
         flex: 1 1 auto;
         overflow-y: auto;
         margin-top: 10px;
     }
 
-    body.surface-search[data-panel-surface-detail='peek'] .search-results.active {
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-results.active {
         flex: 0 0 72px;
         min-height: 72px;
         max-height: 72px;
@@ -569,14 +584,14 @@
     /* ----------------------------------------------------------------
        6. Map view - hide non-map chrome + compass
        ---------------------------------------------------------------- */
-    body.surface-map-any .time-display {
+    body.is-active[data-panel-surface^='map-'] .time-display {
         display: none;
     }
 
-    body.surface-map-trail .view-toggle,
-    .journey-compass[data-panel-surface='map-trail'],
-    body.navigation-map-trail-strip .view-toggle,
-    .journey-compass[data-navigation-owner='map-trail-strip'] {
+    body[data-panel-surface='map-trail'] .view-toggle,
+    body[data-panel-surface='map-trail'] .journey-compass,
+    body[data-journey-navigation-owner='map-trail-strip'] .view-toggle,
+    body[data-journey-navigation-owner='map-trail-strip'] .journey-compass {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -584,7 +599,7 @@
 
     /* SD-143: Restore mobile search in Map mode. layout_base sets top/bottom/left/right
        positioning for map panels; this block handles visibility/display overrides. */
-    body.surface-map-any .info-panel {
+    body.is-active[data-panel-surface^='map-'] .info-panel {
         display: block; /* selector specificity already exceeds layout_base:761 */
         visibility: visible; /* no competing visibility rule in layout/strands */
         pointer-events: none;
@@ -595,7 +610,7 @@
         opacity: 1; /* overrides layout_base collapsed state through normal cascade */
     }
 
-    body.surface-map-any .search-container {
+    body.is-active[data-panel-surface^='map-'] .search-container {
         position: absolute;
         display: block; /* selector specificity already exceeds layout_base:455-485 */
         visibility: visible; /* no competing visibility rule in layout/strands */
@@ -611,37 +626,17 @@
         top: calc(10px + env(safe-area-inset-top, 0px));
         bottom: auto;
         margin: 0;
-        /* W47-e: drop the SearchBar.svelte translateX(-50%) centering transform
-           for Map mode. With left:8px + right:8px the container spans 1264px,
-           so translateX(-50%) shifts the visible area to x=-624..640 and
-           pushes the search-result-row grid first column off-screen left,
-           hiding business names. */
-        transform: none;
         box-shadow: var(--shadow-glass);
         border: var(--glass-border-glow);
     }
 
-    body.surface-map-any .search-container .search-results.active {
+    body.is-active[data-panel-surface^='map-'] .search-container .search-results.active {
         max-height: min(24dvh, 220px);
         overflow-y: auto;
     }
 
-    /* 2026-08-24 visual QA (tmp/visual-qa-findings-2026-08-24.md, P-Map-1):
-       the search-trail-cue pins to top: 5.5rem on mobile — the same top band
-       the map search sheet occupies (top: 10px + safe-area, grows with
-       results) plus the map title (y34) and Manifold badge (y64). The cue
-       strip rendered underneath the result header card and read as broken
-       "QUERY ANCHOR EXPLORE" tab labels. Map mode already suppresses other
-       non-map chrome here; the cue's wayfinding content is redundant on the
-       map surface (results + route are the visible state), so hide it. */
-    body.surface-map-any .search-trail-cue:not([hidden]) {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.surface-map-search .search-result-item,
-    body.surface-map-search .search-result-item.top-result {
+    body.is-active[data-panel-surface='map-search'] .search-result-item,
+    body.is-active[data-panel-surface='map-search'] .search-result-item.top-result {
         display: block;
         width: 100%;
         min-height: 0;
@@ -653,8 +648,8 @@
         text-align: left;
     }
 
-    body.surface-map-search .search-result-list,
-    body.surface-map-search .search-result-listitem {
+    body.is-active[data-panel-surface='map-search'] .search-result-list,
+    body.is-active[data-panel-surface='map-search'] .search-result-listitem {
         display: block;
         width: 100%;
         min-width: 0;
@@ -663,43 +658,47 @@
         list-style: none;
     }
 
-    body.surface-map-search .search-result-row {
+    body.is-active[data-panel-surface='map-search'] .search-result-row {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 4px 8px;
     }
 
-    body.surface-map-search .search-result-name{
+    body.is-active[data-panel-surface='map-search'] .search-result-name,
+    body.is-active[data-panel-surface='map-search'] .search-result-title {
         color: rgba(245, 255, 252, 0.96);
         font-size: 14px;
         line-height: 1.12;
     }
 
-    body.surface-map-search .search-result-what,
-    body.surface-map-search .search-result-meta{
-        color: rgba(211, 228, 224, 0.85);
+    body.is-active[data-panel-surface='map-search'] .search-result-what,
+    body.is-active[data-panel-surface='map-search'] .search-result-meta,
+    body.is-active[data-panel-surface='map-search'] .search-result-type,
+    body.is-active[data-panel-surface='map-search'] .search-result-location {
+        color: rgba(211, 228, 224, 0.76);
         font-size: 12px;
         line-height: 1.22;
     }
 
-    body.surface-map-search .search-result-badges{
-        color: rgba(164, 236, 227, 0.85);
+    body.is-active[data-panel-surface='map-search'] .search-result-badges,
+    body.is-active[data-panel-surface='map-search'] .search-result-actions {
+        color: rgba(164, 236, 227, 0.78);
     }
 
-    body.surface-map-focus-search .search-container {
+    body.is-active[data-panel-surface='map-focus-search'] .search-container {
         height: 52px;
         max-height: 52px;
     }
 
-    body.surface-map-focus-search .search-container #search-results.active {
+    body.is-active[data-panel-surface='map-focus-search'] .search-container #search-results.active {
         display: none;
     }
 
     /* ----------------------------------------------------------------
        7. Map IDLE
        ---------------------------------------------------------------- */
-    .journey-compass[data-panel-surface='map-idle'] {
+    body[data-panel-surface='map-idle'] .journey-compass {
         top: calc(76px + env(safe-area-inset-top, 0px));
         left: 12px;
         right: 12px;
@@ -722,17 +721,17 @@
         border-radius: 18px;
     }
 
-    .journey-compass[data-panel-surface='map-idle'] .journey-compass-copy {
+    body[data-panel-surface='map-idle'] .journey-compass-copy {
         grid-area: copy;
         min-width: 0;
     }
 
-    .journey-compass[data-panel-surface='map-idle'] .journey-compass-kicker {
+    body[data-panel-surface='map-idle'] .journey-compass-kicker {
         font-size: 8px;
         line-height: 1;
     }
 
-    .journey-compass[data-panel-surface='map-idle'] .journey-compass-title {
+    body[data-panel-surface='map-idle'] .journey-compass-title {
         max-width: 100%;
         font-size: 13px;
         line-height: 1.1;
@@ -741,11 +740,11 @@
         text-overflow: ellipsis;
     }
 
-    .journey-compass[data-panel-surface='map-idle'] .journey-compass-note {
+    body[data-panel-surface='map-idle'] .journey-compass-note {
         display: none;
     }
 
-    body.surface-map-idle [aria-label='Journey route controls'] {
+    body[data-panel-surface='map-idle'] [aria-label='Journey route controls'] {
         grid-area: actions;
         display: flex;
         justify-content: flex-end;
@@ -753,7 +752,7 @@
         min-width: 44px;
     }
 
-    .journey-compass[data-panel-surface='map-idle'] .journey-compass-action {
+    body[data-panel-surface='map-idle'] .journey-compass-action {
         min-width: 44px;
         min-height: 44px;
         height: 44px;
@@ -762,7 +761,7 @@
         letter-spacing: 0;
     }
 
-    .journey-compass[data-panel-surface='map-idle'] .journey-compass-action::before {
+    body[data-panel-surface='map-idle'] .journey-compass-action::before {
         font-size: 10px;
         line-height: 1;
         letter-spacing: 0;
@@ -770,7 +769,7 @@
         white-space: nowrap;
     }
 
-    .journey-compass[data-panel-surface='map-idle'] .journey-compass-rail {
+    body[data-panel-surface='map-idle'] .journey-compass-rail {
         grid-area: rail;
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -782,7 +781,7 @@
         pointer-events: auto;
     }
 
-    .journey-compass[data-panel-surface='map-idle'] .journey-compass-step {
+    body[data-panel-surface='map-idle'] .journey-compass-step {
         min-width: 0;
         min-height: 44px;
         padding: 0 3px;
@@ -794,8 +793,8 @@
         text-overflow: clip;
     }
 
-    body.surface-map-idle .info-panel,
-    body.surface-map-idle .search-container {
+    body.is-active[data-panel-surface='map-idle'] .info-panel,
+    body.is-active[data-panel-surface='map-idle'] .search-container {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -806,7 +805,7 @@
     /* ----------------------------------------------------------------
        8. FAB / Launch Button behavior
        ---------------------------------------------------------------- */
-    body:not(.surface-idle):is(
+    body.is-active:is(
             [data-panel-surface='search'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='map-search'],
@@ -819,8 +818,8 @@
     /* ----------------------------------------------------------------
        9. Map Navigation Priority
        ---------------------------------------------------------------- */
-    body.navigation-map-trail-strip .view-toggle,
-    .journey-compass[data-navigation-owner='map-trail-strip'] {
+    body.is-active[data-journey-navigation-owner='map-trail-strip'] .view-toggle,
+    body.is-active[data-journey-navigation-owner='map-trail-strip'] .journey-compass {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -833,9 +832,9 @@
    falling back to the Svelte scoped position:absolute.
    These rules narrow the panel toward its desktop side-panel footprint
    so the 768px↔769px crossing interpolates smoothly via the transition
-   added in mobile_premium__state.css root-sheet-style. */
+   added in mobile_premium__surfaces.css root-sheet-style. */
 @media (min-width: 641px) and (max-width: 768px) {
-    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .info-panel {
+    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel {
         position: fixed;
         left: 0;
         right: 0;
@@ -848,7 +847,7 @@
         border-radius: 28px 28px 0 0;
     }
 
-    body.surface-idle .info-panel {
+    body.is-active[data-panel-surface='idle'] .info-panel {
         max-height: min(48dvh, 400px);
     }
 }
@@ -856,26 +855,26 @@
 /* Map-trail state owns the full compass suppression outside the narrow
    baseline media gate; the compact map strip owns navigation instead. */
 @media (min-width: 641px) and (max-width: 768px) {
-    body.surface-search .info-panel {
+    body[data-panel-surface='search'] .info-panel {
         max-height: min(23vh, 178px);
         opacity: 0.97;
     }
 
-    body.surface-focus-search .info-panel {
+    body[data-panel-surface='focus-search'] .info-panel {
         opacity: 0.97;
     }
 
-    body.surface-search .info-content,
-    body.surface-focus-search .info-content {
+    body[data-panel-surface='search'] .info-content,
+    body[data-panel-surface='focus-search'] .info-content {
         max-height: calc(min(54vh, 456px) - 42px);
         padding: 9px 10px 10px;
         margin-bottom: calc(env(safe-area-inset-bottom, 0px));
     }
 
-    body.surface-map-trail .view-toggle,
-    .journey-compass[data-panel-surface='map-trail'],
-    body.navigation-map-trail-strip .view-toggle,
-    .journey-compass[data-navigation-owner='map-trail-strip'] {
+    body[data-panel-surface='map-trail'] .view-toggle,
+    body[data-panel-surface='map-trail'] .journey-compass,
+    body[data-journey-navigation-owner='map-trail-strip'] .view-toggle,
+    body[data-journey-navigation-owner='map-trail-strip'] .journey-compass {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -884,1661 +883,9 @@
 
 /* canonical: --bp-landscape */
 @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
-    .journey-compass[data-panel-surface='map-trail'] {
+    body.is-active[data-panel-surface='map-trail'] .journey-compass {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
-
-    /* A short landscape viewport can keep detail="none" while the query is
-       already rendered. Key the sheet expansion to the actual query subtree
-       so the late desktop/mobile cascade cannot collapse the result area. */
-    body.surface-search #info-panel.info-panel:has(.search-container.has-query) {
-        top: auto;
-        bottom: max(10px, env(safe-area-inset-bottom, 0px));
-        height: min(var(--landscape-search-panel-height), calc(100dvh - 80px));
-        min-height: min(var(--landscape-search-panel-height), calc(100dvh - 80px));
-        max-height: min(var(--landscape-search-panel-height), calc(100dvh - 80px));
-    }
-
-    body.surface-search #info-panel.info-panel:has(.search-container.has-query) .info-content {
-        flex: 1 1 auto;
-        height: 100%;
-        min-height: 0;
-        max-height: none;
-        overflow: hidden;
-    }
-
-    body.surface-search .search-container.has-query {
-        height: 100%;
-        min-height: 0;
-        overflow: hidden;
-    }
-
-    body.surface-search .search-container.has-query #search-results.active {
-        flex: 1 1 auto;
-        min-height: 0;
-        max-height: none;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 0;
-    }
-
-    /* Keep one complete anchor card visible above the sticky footer. The
-       landscape search-card minimum is sized for a taller viewport and leaves
-       its 44px footer painting over the card in a 390px viewport. */
-    body.surface-search .search-container.has-query .search-result-item {
-        min-height: 52px;
-        padding: 7px 9px;
-    }
-
-    body.surface-search .search-container.has-query .search-result-name {
-        font-size: 12px;
-        line-height: 1.1;
-    }
-
-    body.surface-search .search-container.has-query .search-result-what,
-    body.surface-search .search-container.has-query .search-result-bar {
-        display: none;
-    }
-
-    body.surface-search .search-container.has-query .search-show-more-btn {
-        margin-top: 4px;
-    }
-}
-/* Part of the mobile_premium cascade — see mobile_premium__components.css for the cascade header. */
-
-/* ─── SURFACES (panel-specific) ───────────────────── */
-@media (max-width: 768px) {
-    body:not(.surface-idle) #selected-details.active:not([hidden]) {
-        display: block;
-        opacity: 1;
-    }
-}
-
-/* On narrow mobile idle, the bottom sheet already carries the product
-   title, so the journey compass would be redundant top chrome. The
-   view toggle owns the top lane here; keep this late in the mobile
-   cascade so legacy strand compass geometry cannot recenter the idle
-   compass offscreen. */
-@media (max-width: 768px) {
-    :is(body.surface-idle, body.surface-idle):not(.surface-map-any) .journey-compass[data-phase='overview'] {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    :is(body.surface-idle, body.surface-idle):not(.surface-map-any) .view-toggle {
-        left: 12px;
-        right: 12px;
-        top: calc(18px + env(safe-area-inset-top, 0px));
-        width: auto;
-        transform: none;
-    }
-
-    :is(body[data-panel-surface], body:not(.surface-idle)[data-panel-surface]):not(.surface-map-any)
-        .journey-compass-title {
-        display: none;
-    }
-}
-
-@media (max-width: 768px) {
-    .journey-compass[data-panel-surface]:not(.surface-map-any) {
-        left: 16px;
-        right: 16px;
-        top: calc(18px + env(safe-area-inset-top, 0px));
-        width: auto;
-        box-sizing: border-box;
-        transform: none;
-        height: auto;
-        min-height: 52px;
-        padding: 6px 8px 6px 22px;
-        border-radius: 26px;
-        background: rgba(9, 14, 22, 0.72);
-        backdrop-filter: blur(48px) saturate(210%) contrast(110%);
-        -webkit-backdrop-filter: blur(48px) saturate(210%) contrast(110%);
-        border: 1px solid var(--glass-reflection-glow);
-        box-shadow:
-            0 1px 0 var(--glass-reflection-glow) inset,
-            0 4px 12px rgba(0, 0, 0, 0.25),
-            0 18px 48px var(--shadow-penumbra),
-            0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.04);
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 0;
-        overflow: visible;
-        position: fixed;
-        transition:
-            background-color 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-            border-color 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-            box-shadow 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-            backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-            -webkit-backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        z-index: var(--z-panels-elevated);
-    }
-
-    body.surface-idle #info-panel.info-panel {
-        left: 10px;
-        right: 10px;
-        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-        top: auto;
-        width: auto;
-        height: min(36dvh, 300px);
-        min-height: 214px;
-        max-height: min(36dvh, 300px);
-        overflow: hidden;
-    }
-
-    body.view-galaxy[data-panel-surface='idle'][data-compact='true'] #info-panel.info-panel {
-        position: fixed;
-        left: 10px;
-        right: 10px;
-        top: auto;
-        bottom: max(0px, env(safe-area-inset-bottom, 0px));
-        width: auto;
-        height: auto;
-        min-height: 214px;
-        max-height: min(42dvh, 320px);
-        transform: translateY(0);
-        overflow: hidden;
-    }
-
-    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-copy {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        flex: 1 1 auto;
-        min-width: 0;
-        padding-right: 14px;
-        position: relative;
-    }
-
-    /* Technical Separator (Removed for cleaner typography hierarchy) */
-    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-copy::after {
-        display: none;
-    }
-
-    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-kicker {
-        display: flex;
-        align-items: flex-start;
-        margin: 0 0 2px 0;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 8px;
-        font-weight: 700;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--color-accent);
-    }
-
-    /* Live signal pulse indicator */
-    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-kicker::before {
-        content: '';
-        display: inline-block;
-        flex-shrink: 0;
-        width: 4px;
-        height: 4px;
-        margin-right: 6px;
-        margin-top: 3.5px;
-        border-radius: 50%;
-        background: rgba(var(--color-primary-tint-rgb), 0.7);
-        box-shadow: 0 0 10px rgba(var(--color-primary-alt-rgb), 0.8);
-        transition:
-            background-color 0.4s ease,
-            box-shadow 0.4s ease;
-    }
-
-    body.searching .journey-compass-kicker::before {
-        background: var(--color-accent);
-        box-shadow: 0 0 12px rgba(255, 217, 61, 0.9);
-        animation: statusPulseRapid 0.6s ease-in-out infinite;
-    }
-
-    @keyframes statusPulseRapid {
-        0%,
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
-        50% {
-            transform: scale(1.4);
-            opacity: 0.6;
-        }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        body.searching .journey-compass-kicker::before {
-            animation: none;
-        }
-    }
-
-    /* F3-b (W53): exclude 'search' too so search-chrome surface contract
-       (style:compass-title:white-space / text-overflow) holds — the title
-       must wrap, not nowrap/ellipsis, when panel-surface='search'. */
-    .journey-compass[data-panel-surface]:not(.surface-map-any):not([data-panel-surface='focus-search']):not(
-            [data-panel-surface='semantic-dive']
-        ):not([data-panel-surface='search'])
-        .journey-compass-title {
-        margin: 0;
-        font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
-        font-size: 13.5px;
-        font-weight: 800;
-        line-height: 1.25;
-        letter-spacing: -0.02em;
-        color: rgba(255, 255, 255, 0.98);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        padding-bottom: 2px;
-    }
-
-    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-actions {
-        display: flex;
-        flex-direction: row;
-        gap: 8px;
-        align-items: center;
-        flex: 0 0 auto;
-        width: auto;
-        padding-left: 14px;
-    }
-
-    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-action {
-        min-width: 60px;
-        height: 34px;
-        padding: 0 14px;
-        border-radius: 17px;
-        font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
-        font-size: 8.5px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        background: linear-gradient(180deg, var(--glass-reflection), var(--glass-reflection-fade));
-        border: 1px solid var(--color-border-muted);
-        color: rgba(255, 255, 255, 0.8);
-        transition:
-            background-color 0.3s cubic-bezier(0.23, 1, 0.32, 1),
-            border-color 0.3s cubic-bezier(0.23, 1, 0.32, 1),
-            color 0.3s cubic-bezier(0.23, 1, 0.32, 1),
-            box-shadow 0.3s cubic-bezier(0.23, 1, 0.32, 1),
-            transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-        box-shadow: 0 2px 6px var(--shadow-antumbra);
-    }
-
-    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-action.primary {
-        background: var(--color-primary-alt);
-        color: #0d1b2a;
-        box-shadow:
-            0 0 10px rgba(var(--color-primary-alt-rgb), 0.3),
-            0 2px 6px var(--shadow-antumbra);
-    }
-
-    @media (max-width: 374px) {
-        .journey-compass[data-panel-surface]:not(.surface-map-any) {
-            padding: 0 12px 0 16px;
-        }
-
-        .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-copy {
-            padding-right: 8px;
-        }
-
-        .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-actions {
-            padding-left: 8px;
-            gap: 4px;
-        }
-
-        .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-action {
-            min-width: 48px;
-            padding: 0 10px;
-        }
-
-        body.surface-focus .info-panel {
-            height: clamp(340px, 48dvh, 380px);
-        }
-    }
-
-    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-action:active {
-        transform: scale(0.9);
-        background: var(--glass-reflection-glow);
-        border-color: var(--glass-reflection-glow);
-    }
-
-    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-note {
-        display: none;
-    }
-
-    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-rail {
-        display: none;
-    }
-
-    body.surface-search:not(.surface-map-any) .journey-compass[data-panel-surface='search'] .journey-compass-title {
-        min-width: 0;
-        font-size: 11.5px;
-        line-height: 1.3;
-        white-space: normal;
-        overflow: visible;
-        text-overflow: clip;
-        padding-bottom: 2px;
-    }
-
-    body.surface-search:not(.surface-map-any) .journey-compass {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
-        gap: 10px;
-        width: auto;
-        min-width: 0;
-        max-width: calc(100vw - 32px);
-        min-height: 58px;
-        padding: 7px 8px 7px 18px;
-    }
-
-    body.surface-search:not(.surface-map-any) .journey-compass-copy {
-        padding-right: 10px;
-    }
-
-    body.surface-search:not(.surface-map-any) .journey-compass-actions {
-        gap: 6px;
-        padding-left: 8px;
-    }
-
-    body:not(.surface-idle):is(
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='focus'][data-focus-panel-mode='field-node']
-        )
-        .journey-compass-actions {
-        z-index: var(--z-compass);
-        z-index: var(--z-compass);
-        position: absolute;
-        top: 7px;
-        right: 8px;
-        max-width: 72px;
-        padding-left: 0;
-        justify-content: flex-end;
-        pointer-events: auto;
-    }
-
-    body:not(.surface-idle):is(
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='focus'][data-focus-panel-mode='field-node']
-        )
-        .journey-compass-action:not(.primary) {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body:not(.surface-idle):is(
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='focus'][data-focus-panel-mode='field-node']
-        )
-        .journey-compass-action.primary[data-journey-action='enter-inside'],
-    body.surface-focus-search .journey-compass-action.primary[data-journey-action='open-map'] {
-        /* Keep the compact action readable; "Step Inside" needs more than
-           the 48px touch floor once the label is rendered as text. */
-        width: 64px;
-        min-width: 64px;
-        max-width: 64px;
-        flex: 0 0 64px;
-        height: 44px;
-        min-height: 44px;
-        padding: 0 8px;
-    }
-
-    body.surface-search:not(.surface-map-any) .journey-compass-action {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 52px;
-        height: 44px;
-        padding-inline: 10px;
-        border-radius: 999px;
-    }
-
-    body.surface-search:not(.surface-map-any) .journey-compass-action[data-journey-action='center-anchor'] {
-        min-width: 86px;
-        padding-inline: 12px;
-        line-height: 1;
-    }
-
-    body.surface-search:not(.surface-map-any)
-        .journey-compass-action.primary[data-journey-action='center-anchor']::after {
-        content: none;
-        inset: 0;
-        box-sizing: border-box;
-        animation: none;
-    }
-
-    /* Share button visibility handled by global mobile actions in mobile_base.css */
-
-    body.surface-focus-search #mode-grid .mode-chip,
-    body.surface-focus-search #mode-chips .mode-chip,
-    body.surface-semantic-dive #mode-grid .mode-chip,
-    body.surface-semantic-dive #mode-chips .mode-chip {
-        display: none;
-        visibility: hidden;
-    }
-
-    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
-        .search-container.has-query
-        .search-error-retry-btn,
-    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
-        .search-container.has-query
-        .search-error-dismiss-btn {
-        min-height: 44px;
-    }
-
-    body.surface-search .focus-stage-dive-btn,
-    body.surface-search .focus-stage-dive-btn {
-        display: none;
-    }
-
-    body.surface-focus-search .focus-stage-dive-btn,
-    body.surface-semantic-dive .focus-stage-dive-btn {
-        min-height: 44px;
-    }
-
-    /* ============================================================
-       MOBILE SYSTEM SHEETS (IDLE & FOCUS)
-       Consolidated 10/10 High-Fidelity Realignment
-       ============================================================ */
-
-    /* Root Sheet Style
-       position:fixed is required here to bridge the 641–768px tablet range
-       where layout_base.css (min-width:769px) and mobile_premium__state.css
-       (max-width:640px) both leave the info-panel without an explicit position.
-       The Svelte base uses position:absolute; without this override the panel
-       scrolls with its container instead of anchoring to the viewport. */
-    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .info-panel {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: max(0px, env(safe-area-inset-bottom, 0px));
-        top: auto;
-        width: 100%;
-        max-width: 100%;
-        border-radius: 28px 28px 0 0;
-        background: rgba(13, 18, 25, 0.76);
-        backdrop-filter: blur(24px) saturate(150%);
-        -webkit-backdrop-filter: blur(24px) saturate(150%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-bottom: none;
-        border-left: none;
-        border-right: none;
-        box-shadow:
-            0 -8px 32px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        padding: 0;
-        margin: 0;
-        transform: none;
-        animation-name: none;
-        animation-duration: 0s;
-        /* Include layout properties in the transition so the 768px↔769px
-           breakpoint crossing interpolates width/position instead of snapping. */
-        transition:
-            transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-            background-color 0.4s ease,
-            width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-            left 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-            right 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-            border-radius 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-            max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        z-index: var(--z-panels-elevated);
-    }
-
-    /* Search peek is a full-width bottom sheet. Keep the panel's geometry
-       internally consistent when the legacy mobile surface rule contributes
-       10px side offsets; width:100% plus those offsets otherwise overflows
-       the phone viewport by the gutter amount. Content keeps its inset via
-       .info-panel-surface padding. */
-    body.surface-search[data-panel-surface-detail='peek'] #info-panel.info-panel,
-    body[data-panel-surface='search'][data-panel-surface-detail='peek'] #info-panel.info-panel {
-        left: 0;
-        right: 0;
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-    }
-
-    /* Standardized Typography Reset */
-    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .info-panel * {
-        font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
-        box-sizing: border-box;
-    }
-
-    /* Override desktop sticky top: 52px positioning on mobile */
-    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .search-container {
-        position: relative;
-        top: auto;
-        left: 0;
-        right: 0;
-        margin: 0;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        box-shadow: none;
-        z-index: var(--z-chrome-elevated);
-        width: 100%;
-        max-width: 100%;
-    }
-
-    body.surface-search #canvas-container::after,
-    body.surface-focus-search #canvas-container::after {
-        opacity: 0.62;
-        background:
-            linear-gradient(180deg, rgba(3, 7, 11, 0.1) 0%, rgba(3, 7, 11, 0.22) 46%, rgba(3, 7, 11, 0.72) 100%),
-            radial-gradient(circle at 50% 44%, transparent 0 30%, rgba(3, 7, 11, 0.24) 70%, rgba(3, 7, 11, 0.64) 100%);
-        /* Mobile overflow guard: any pseudo-element scale expands the fixed
-           canvas scrollWidth past clientWidth on high-DPR viewports. */
-        transform: none;
-    }
-
-    /* Sheet Handle */
-    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .info-panel::before {
-        content: '';
-        position: absolute;
-        top: 8px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 36px;
-        height: 4px;
-        border-radius: 2px;
-        background: rgba(255, 255, 255, 0.35);
-        z-index: var(--z-overlay);
-    }
-
-    /* Search/focus-search: search-container is a transparent child of the
-       info-panel glass sheet -- suppress all glass primitives so only the
-       inner .search-input retains its own styling. */
-    body.surface-search .search-container,
-    body.surface-focus-search .search-container {
-        background: rgba(4, 9, 14, 0.22);
-        backdrop-filter: blur(4px) saturate(1.35);
-        -webkit-backdrop-filter: blur(4px) saturate(1.35);
-        border: 0;
-        box-shadow: none;
-    }
-
-    /* 1. IDLE STATE REFINEMENTS */
-    body.surface-idle .info-panel {
-        left: 0;
-        right: 0;
-        top: auto;
-        bottom: max(0px, env(safe-area-inset-bottom, 0px));
-        width: 100%;
-        max-width: 100%;
-        height: auto;
-        min-height: 0;
-        box-sizing: border-box;
-        transform: translate3d(0, 0, 0);
-        animation-name: none;
-        animation-duration: 0s;
-        max-height: min(52dvh, 440px);
-    }
-
-    /* 2. FOCUS STATE REFINEMENTS */
-
-    /* Premium Action Buttons */
-    body:not(.surface-idle):is(
-            :not([data-panel-surface='focus']):not([data-panel-surface='focus-search']),
-            [data-focus-panel-mode='field-node']
-        )[data-panel-surface]:not([data-panel-surface='semantic-dive']):not(.surface-map-any)
-        .focus-stage-actions {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-        padding: 0 16px;
-        margin-bottom: 12px;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-focus-panel-mode='field-node']
-        )
-        #focus-stage
-        .trail-controls {
-        display: none;
-    }
-
-    /* Trail/Journey Navigation (The 'Rough' one) */
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface='focus-search']):not(
-            [data-panel-surface='semantic-dive']
-        ):not(.surface-map-any)
-        #trail-controls,
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface='focus-search']):not(
-            [data-panel-surface='semantic-dive']
-        ):not(.surface-map-any)
-        .focus-stage-journey.active {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin: 0 20px 18px;
-        padding: 10px 14px;
-        border-radius: 16px;
-        background: var(--glass-reflection-fade);
-        border: 1px solid var(--glass-reflection-muted);
-        height: auto;
-    }
-
-    body[data-panel-surface='search'][data-focus-panel-mode='field-node'] .journey-compass,
-    body[data-focus-panel-mode='field-node'] .journey-compass {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(112px, max-content);
-        align-items: center;
-        gap: 7px;
-        height: auto;
-        min-height: 52px;
-        padding-top: 4px;
-        padding-bottom: 4px;
-    }
-
-    body[data-panel-surface='search'][data-focus-panel-mode='field-node'] .journey-compass-copy,
-    body[data-focus-panel-mode='field-node'] .journey-compass-copy {
-        min-width: 0;
-    }
-
-    body[data-focus-panel-mode='field-node'] .journey-compass .journey-compass-title {
-        font-size: 12px;
-        line-height: normal;
-        white-space: normal;
-        overflow: visible;
-        text-overflow: clip;
-        padding-bottom: 2px;
-        width: 100%;
-    }
-
-    body[data-panel-surface='search'][data-focus-panel-mode='field-node'] .journey-compass-actions,
-    body[data-focus-panel-mode='field-node'] .journey-compass-actions {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(50px, 1fr));
-        gap: 6px;
-        min-width: 112px;
-        justify-content: stretch;
-    }
-
-    body[data-panel-surface='search'][data-focus-panel-mode='field-node'] .journey-compass-action,
-    body[data-focus-panel-mode='field-node'] .journey-compass-action {
-        width: auto;
-        min-width: 44px;
-        height: 44px;
-        min-height: 44px;
-        padding: 0 7px;
-        border-radius: 999px;
-        font-size: 0;
-        letter-spacing: 0;
-        overflow: hidden;
-    }
-
-    body[data-panel-surface='search'][data-focus-panel-mode='field-node'] .journey-compass-action::before,
-    body[data-focus-panel-mode='field-node'] .journey-compass-action::before {
-        font-size: 10.5px;
-        line-height: 1;
-        letter-spacing: 0.02em;
-        white-space: nowrap;
-    }
-
-    .journey-compass[data-focus-panel-mode='field-node']
-        .journey-compass-action[data-journey-action='center-anchor']::before {
-        content: 'Center';
-    }
-
-    .journey-compass[data-focus-panel-mode='field-node']
-        .journey-compass-action[data-journey-action='next-stop']::before {
-        content: 'Next';
-    }
-
-    .journey-compass[data-focus-panel-mode='field-node']
-        .journey-compass-action[data-journey-action='open-map']::before {
-        content: 'Map';
-    }
-
-    .journey-compass[data-focus-panel-mode='field-node']
-        .journey-compass-action[data-journey-action='search-field']::before {
-        content: 'Search';
-    }
-
-    body.surface-idle:not(.surface-map-any) .journey-compass {
-        display: grid;
-        grid-template-columns: minmax(140px, 1fr) minmax(142px, 42vw);
-        align-items: center;
-        gap: 7px;
-    }
-
-    body.surface-idle:not(.surface-map-any) .journey-compass-copy {
-        min-width: 0;
-    }
-
-    body.surface-idle:not(.surface-map-any) .journey-compass-actions {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 6px;
-        min-width: 0;
-        padding-left: 0;
-    }
-
-    body.surface-idle:not(.surface-map-any) .journey-compass-action,
-    body.surface-idle:not(.surface-map-any) .journey-compass-action.action-btn {
-        width: auto;
-        min-width: 0;
-        height: 44px;
-        min-height: 44px;
-        padding: 0 7px;
-        border-radius: 22px;
-        font-size: 0;
-        letter-spacing: 0;
-        white-space: normal;
-        overflow: visible;
-        text-overflow: clip;
-    }
-
-    body.surface-idle:not(.surface-map-any) .journey-compass-action::before,
-    body.surface-idle:not(.surface-map-any) .journey-compass-action.action-btn::before {
-        font-size: 10.5px;
-        line-height: 1;
-        letter-spacing: 0.02em;
-        white-space: nowrap;
-    }
-
-    body:not(.surface-idle) #btn-journey-primary[hidden],
-    body:not(.surface-idle) #btn-journey-secondary[hidden],
-    body:not(.surface-idle) #btn-journey-tertiary[hidden],
-    body:not(.surface-idle) #btn-journey-primary[aria-hidden='true'],
-    body:not(.surface-idle) #btn-journey-secondary[aria-hidden='true'],
-    body:not(.surface-idle) #btn-journey-tertiary[aria-hidden='true'] {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.surface-idle .search-container {
-        position: relative;
-        left: 0;
-        right: 0;
-        width: calc(100% - 12px);
-        max-width: calc(100% - 12px);
-        margin-left: 6px;
-        margin-right: 6px;
-        box-sizing: border-box;
-        transform: none;
-        animation-name: none;
-        animation-duration: 0s;
-    }
-
-    body.surface-search .search-container.has-query,
-    body.surface-focus-search .search-container.has-query {
-        left: 0;
-        right: 0;
-        margin-left: 0;
-        margin-right: 0;
-        max-width: 100%;
-        box-sizing: border-box;
-        transform: none;
-        animation-name: none;
-        animation-duration: 0s;
-    }
-
-    body.surface-search #info-panel.info-panel {
-        overflow: hidden;
-    }
-
-    body.surface-search #info-panel-content.info-panel-content {
-        height: 100%;
-        min-height: 0;
-        max-height: 100%;
-        overflow: hidden;
-    }
-
-    body.surface-search .search-container.info-panel-contained {
-        position: relative;
-        top: auto;
-        left: 0;
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        height: 100%;
-        min-height: 0;
-        max-height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-    }
-
-    body.surface-search .search-container #search-results {
-        flex: 1 1 auto;
-        min-height: 0;
-        max-height: none;
-        overflow-y: auto;
-    }
-
-    body.surface-search[data-panel-surface-detail='peek'] .search-container #search-results.active {
-        flex: 0 0 72px;
-        min-height: 72px;
-        max-height: 72px;
-    }
-
-    body:is([data-panel-surface='search'], [data-panel-surface='focus'], [data-panel-surface='focus-search'])
-        .info-panel-surface-selection {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.surface-search #btn-panel,
-    body.surface-search #btn-share-view,
-    body.surface-search #btn-legend,
-    /* #mode-chips intentionally NOT hidden here. Hiding the rail on
-       surface-search resurrected exactly what the A2-4 UX audit closure
-       removed (2026-06-16: "mode chips are always visible"), and made the
-       map chip unreachable after entering search (T1-4 waitFor-visible
-       timeout). Utility buttons may still yield the stage; the nav rail
-       stays. */
-    body.surface-search #mode-grid,
-    body.surface-search .controls {
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transform: translateY(8px) scale(0.96);
-    }
-
-    /* focus-search vertical space guard: constrain search results panel height so it
-       cannot crowd the focus-stage below. At 390x844 the info/search sheet and
-       focus-stage share the viewport; without this cap the results can expand and
-       compress focus-stage controls off the bottom. */
-    body.surface-focus-search .search-container {
-        max-height: min(30dvh, 260px);
-        overflow-y: auto;
-    }
-
-    body.surface-focus-search .search-container #search-results.active {
-        max-height: min(28dvh, 240px);
-        overflow-y: auto;
-    }
-
-    @media (min-width: 641px) {
-        body.surface-focus-search .search-container {
-            max-height: min(34dvh, 340px);
-            overflow-y: auto;
-        }
-
-        body.surface-focus-search .search-container #search-results.active {
-            max-height: min(30dvh, 320px);
-            overflow-y: auto;
-        }
-    }
-
-    /* Progress Indicators */
-    .focus-stage-route {
-        display: flex;
-        gap: 6px;
-        margin-top: 6px;
-    }
-
-    /* Neighbors/Insights List */
-    .focus-stage-neighbors.active {
-        margin: 0 20px 24px;
-    }
-
-    .focus-stage-neighbor-kicker {
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--color-primary, var(--color-primary-alt));
-        margin-bottom: 12px;
-    }
-
-    .focus-stage-neighbor-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    body.surface-semantic-dive #focus-stage {
-        display: block;
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-        transform: none;
-    }
-
-    /* Legacy focus fragments stay hidden by default; premium focus owns state-specific suppression. */
-    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) #trail-controls:not(.active),
-    #trail-controls:not(.active) {
-        display: none;
-    }
-
-    body.surface-semantic-dive:not(.surface-map-any) #trail-controls,
-    body.surface-semantic-dive:not(.surface-map-any) .trail-controls {
-        display: none;
-        pointer-events: none;
-    }
-
-    /* Map-search final geometry guard: keep map chrome out of the content lane. */
-    body.surface-map-any .info-panel {
-        left: 8px;
-        right: 8px;
-        width: auto;
-        max-width: none;
-    }
-
-    body.surface-map-any .search-container {
-        left: 0;
-        right: 0;
-        top: clamp(336px, 41dvh, 360px);
-        width: 100%;
-        max-width: none;
-        max-height: min(38dvh, 320px);
-        box-sizing: border-box;
-        /* W47-e: drop the SearchBar.svelte translateX(-50%) centering transform
-           for Map mode. With width:100% the -50% shifts visible content off-screen
-           left and the search-result-row grid first column hides business names. */
-        transform: none;
-    }
-
-    body.surface-map-any .search-container .search-results.active {
-        box-sizing: border-box;
-        max-height: min(22dvh, 180px);
-    }
-
-    /* A2-4: Mode chips (#mode-chips) are always visible per UX audit closure.
-       Previous rule hid them in search/focus-search; removed 2026-06-16. */
-
-    body.surface-focus-search[data-trail-state='active'][data-thread-inspect-surface='walk-next']
-        #thread-inspector.active {
-        display: block;
-        visibility: visible;
-        opacity: 1;
-        pointer-events: auto;
-    }
-
-    body.surface-focus-search[data-trail-state='active'][data-thread-inspect-surface='walk-next']
-        #thread-inspector.active
-        .focus-thread-inspector {
-        display: grid;
-        visibility: visible;
-        opacity: 1;
-        max-height: 76px;
-        min-height: 64px;
-        padding: 6px 8px;
-        gap: 3px;
-        overflow: hidden;
-    }
-
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
-        #info-panel.info-panel:not(.open),
-    body:not(.surface-idle):is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='semantic-dive']
-        )
-        #info-panel.info-panel:not(.open) {
-        display: none;
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    body:not(.surface-idle):is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='semantic-dive']
-        )
-        .search-container {
-        display: none;
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='semantic-dive']) #focus-stage-inside-controls,
-    body:not(.surface-idle):is([data-panel-surface='semantic-dive']) .focus-stage-inside-controls {
-        display: grid;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage
-        .focus-stage-dive-btn,
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage
-        .focus-stage-neighbors.active,
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage
-        .focus-stage-neighbors,
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        .focus-stage-neighbors {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    /* Final focus cockpit conflict guard. The Svelte #journey-chrome lane owns
-       visible journey navigation; legacy focus-stage journey fragments must
-       not draw inside or over the selected-business card. This belongs in
-       mobile_premium__state.css (loaded after mobile_premium__components.css). */
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
-        .focus-stage-journey,
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
-        .focus-stage-neighbors,
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
-        .focus-stage-actions {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    /* Focus owns the selected-business surface on mobile. The legacy
-       info-panel can remain open as an empty 20px shell while its contents
-       are hidden, which steals the CTA's bottom edge and leaves a stray
-       sliver below the sheet. */
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
-        #info-panel.info-panel {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    /* The dive CTA contains a title and supporting copy. Keep those lines
-       stacked at the mobile breakpoint so the copy cannot run into the
-       title or the viewport edge. */
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
-        #btn-focus-dive.focus-stage-dive-btn {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        gap: 3px;
-        height: auto;
-        min-height: 60px;
-        padding: 10px 16px;
-        text-align: left;
-        line-height: 1.15;
-    }
-
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
-        #btn-focus-dive.focus-stage-dive-btn
-        .focus-stage-dive-label {
-        letter-spacing: 0;
-    }
-
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
-        #btn-focus-dive.focus-stage-dive-btn
-        .focus-stage-dive-copy {
-        margin-top: 0;
-        letter-spacing: 0;
-        text-transform: none;
-    }
-
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
-        #journey-chrome
-        .focus-stage-journey {
-        display: contents;
-        visibility: visible;
-        pointer-events: auto;
-    }
-
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
-        #journey-chrome
-        .focus-stage-neighbors {
-        display: flex;
-        visibility: visible;
-        pointer-events: auto;
-    }
-
-    body.surface-focus:not(.surface-map-any) #journey-chrome,
-    body.surface-focus-search:not(.surface-map-any):not([data-trail-state='active']) #journey-chrome,
-    body.surface-focus-search[data-focus-panel-mode='field-node']:not(.surface-map-any) #journey-chrome {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage.focus-stage {
-        bottom: max(8px, env(safe-area-inset-bottom, 0px));
-        max-height: calc(100dvh - 120px);
-        min-height: 1px;
-        min-width: 1px;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage
-        #thread-inspector {
-        display: block;
-        visibility: visible;
-        opacity: 1;
-        pointer-events: auto;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage
-        .focus-thread-inspector.active {
-        display: grid;
-        visibility: visible;
-        opacity: 1;
-        max-height: min(22dvh, 176px);
-        min-height: 112px;
-        padding: 6px 8px;
-        gap: 3px;
-        overflow-y: auto;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage
-        .focus-thread-inspector-copy,
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage
-        .focus-thread-inspector-meta {
-        display: block;
-        visibility: visible;
-        max-height: none;
-        overflow: visible;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage
-        :is(#trail-controls, #trail-context) {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage
-        .focus-thread-inspector-title {
-        font-size: 10px;
-        line-height: 1.1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage
-        .focus-thread-inspector-actions {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 5px;
-        margin-top: 2px;
-    }
-
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
-            [data-thread-inspect-surface='idle']
-        )
-        #focus-stage
-        .focus-thread-inspector-btn {
-        min-height: 44px;
-        height: 44px;
-        padding-inline: 5px;
-        border-radius: 10px;
-    }
-
-    /* Map-focus-search owns the selected-card drawer; search chrome and
-       legacy info-panel content must not become competing map drawers. */
-    body.surface-map-focus-search #info-panel.info-panel {
-        left: 10px;
-        right: 10px;
-        bottom: max(0px, env(safe-area-inset-bottom, 0px));
-        top: auto;
-        width: auto;
-        height: min(22dvh, 192px);
-        min-height: 0;
-        max-height: min(22dvh, 192px);
-        display: block;
-        visibility: visible;
-        overflow: hidden;
-        pointer-events: auto;
-        z-index: var(--z-overlay-floating);
-        border-color: rgba(var(--color-primary-tint-rgb), 0.28);
-        border-radius: 14px 14px 0 0;
-        background:
-            linear-gradient(180deg, rgba(8, 21, 25, 0.96), rgba(5, 12, 16, 0.94)),
-            radial-gradient(circle at 88% 0%, rgba(255, 226, 132, 0.12), transparent 36%);
-        box-shadow:
-            inset 0 1px 0 var(--glass-reflection-muted),
-            0 -16px 38px var(--shadow-penumbra);
-    }
-
-    body.surface-map-focus-search #info-panel .info-content {
-        height: 100%;
-        max-height: 100%;
-        padding: 10px 12px 12px;
-        overflow: hidden;
-        pointer-events: auto;
-    }
-
-    body.surface-map-focus-search .info-header,
-    body.surface-map-focus-search #info-panel-title,
-    body.surface-map-focus-search .stats-row,
-    body.surface-map-focus-search .stat-caption,
-    body.surface-map-focus-search #filters-section,
-    body.surface-map-focus-search #cluster-section,
-    body.surface-map-focus-search #mode-grid,
-    body.surface-map-focus-search #mode-chips,
-    body.surface-map-focus-search #trail-controls,
-    body.surface-map-focus-search .trail-controls,
-    body.surface-map-focus-search #trail-context,
-    body.surface-map-focus-search .trail-context,
-    body.surface-map-focus-search .search-container {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.surface-map-focus-search #selected-card.selected-card {
-        position: static;
-        inset: auto;
-        display: block;
-        visibility: visible;
-        opacity: 1;
-        width: 100%;
-        height: 100%;
-        min-height: 0;
-        max-width: 100%;
-        max-height: 100%;
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-        border: 0;
-        border-radius: 0;
-        background: transparent;
-        box-shadow: none;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-        overflow: hidden;
-        pointer-events: auto;
-        transform: none;
-    }
-
-    body.surface-map-focus-search #selected-details.info-panel-surface-selection {
-        display: grid;
-        grid-template-rows: minmax(0, 1fr) auto;
-        gap: 6px;
-        height: 100%;
-        min-height: 0;
-        max-height: 100%;
-        overflow: hidden;
-    }
-
-    body.surface-map-focus-search #selected-details .selected-hero {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 8px;
-        min-height: 0;
-        overflow: hidden;
-    }
-
-    body.surface-map-focus-search #selected-name {
-        margin: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    body.surface-map-focus-search #selected-what {
-        display: -webkit-box;
-        max-height: 42px;
-        overflow: hidden;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-    }
-
-    body.surface-map-focus-search #selected-match-panel {
-        max-height: 48px;
-        overflow: hidden;
-    }
-
-    body.surface-map-focus-search #selected-meta-strip,
-    body.surface-map-focus-search #selected-badges,
-    body.surface-map-focus-search #selected-facts,
-    body.surface-map-focus-search #selected-sensitivity,
-    body.surface-map-focus-search #selected-action-row,
-    body.surface-map-focus-search .selected-grid,
-    body.surface-map-focus-search #selected-trivia {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.surface-map-focus-search #selected-card #vector-cascade-bg {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.surface-map-focus-search #selected-details[hidden] {
-        display: none;
-    }
-
-    /* Map trail can be declared either as the panel surface or by the real
-       strip-owner tuple while the panel reducer is still on map-search. */
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        .info-panel {
-        display: block;
-        visibility: visible;
-        pointer-events: none;
-        left: 0;
-        right: 0;
-        bottom: auto;
-        width: 100%;
-        height: 0;
-        min-height: 0;
-        max-height: 0;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        box-shadow: none;
-        overflow: visible;
-    }
-
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        .info-content {
-        display: block;
-        height: 0;
-        min-height: 0;
-        max-height: 0;
-        padding: 0;
-        overflow: visible;
-        pointer-events: none;
-    }
-
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        .info-header,
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        #info-panel-title,
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        .stats-row,
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        #filters-section,
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        #cluster-section,
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        #mode-grid,
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        #mode-chips,
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        #selected-card,
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        .selected-card,
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        .selected-empty {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        .search-container {
-        position: fixed;
-        left: 8px;
-        right: 8px;
-        top: calc(148px + env(safe-area-inset-top, 0px));
-        bottom: auto;
-        width: auto;
-        max-width: none;
-        max-height: min(34dvh, 288px);
-        pointer-events: auto;
-        z-index: var(--z-overlay-elevated);
-    }
-
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        .search-results-count,
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        .search-result-listitem:not(:first-child),
-    body:not(.surface-idle):is(
-            [data-panel-surface='map-trail'],
-            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
-            [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
-        )
-        .search-result-item:not(:first-child) {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    /* Fallback: when navigation ownership is map-trail-strip but the panel
-       surface reducer hasn't narrowed to map-trail/map-focus-search/map-search,
-       still collapse the info-panel shell and suppress the legacy selected-card
-       so the map-trail strip + search lane own the viewport. */
-    body.navigation-map-trail-strip .info-panel {
-        display: block;
-        visibility: visible;
-        pointer-events: none;
-        left: 0;
-        right: 0;
-        bottom: auto;
-        width: 100%;
-        height: 0;
-        min-height: 0;
-        max-height: 0;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        box-shadow: none;
-        overflow: visible;
-    }
-
-    body.navigation-map-trail-strip .info-content {
-        display: block;
-        height: 0;
-        min-height: 0;
-        max-height: 0;
-        padding: 0;
-        overflow: visible;
-        pointer-events: none;
-    }
-
-    body.navigation-map-trail-strip #selected-card,
-    body.navigation-map-trail-strip .selected-card,
-    body.navigation-map-trail-strip .selected-empty {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.surface-map-any #btn-launch,
-    body.surface-map-any #synthesize-trigger {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    body.surface-map-any #map-container .leaflet-control-attribution {
-        display: none;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        body .info-panel,
-        body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .info-panel,
-        body[data-panel-surface]:not(.surface-map-any) .info-panel,
-        .journey-compass[data-panel-surface]:not(.surface-map-any),
-        .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-action,
-        body[data-panel-surface]:not(.surface-map-any) .search-container {
-            transition: none;
-            animation-name: none;
-        }
-    }
-
-    /* Map marker â search result visual link.
-       Subtle left accent bars echo the marker's glow color in map view,
-       making the correspondence legible without extra icons or badges. */
-    body.surface-map-any .search-result-item.is-anchor {
-        border-left: 3px solid rgba(255, 226, 122, 0.72);
-        box-shadow:
-            inset 3px 0 0 rgba(255, 226, 122, 0.72),
-            inset 0 1px 0 var(--glass-reflection-soft),
-            0 12px 30px rgba(20, 24, 12, 0.18);
-    }
-    body.surface-map-any .search-result-item.is-anchor .search-result-rank {
-        color: rgba(255, 233, 161, 0.94);
-    }
-    body.surface-map-any .search-result-item.is-anchor .search-result-rank::before {
-        background: rgba(255, 226, 122, 0.92);
-        box-shadow: 0 0 0 5px rgba(255, 226, 122, 0.12);
-    }
-    body.surface-map-any .search-result-item.top-result {
-        border-left: 3px solid rgba(var(--color-primary-alt-rgb), 0.6);
-    }
-    body.surface-map-any .search-result-item.top-result .search-result-rank {
-        color: rgba(150, 223, 216, 0.88);
-    }
-    body.surface-map-any .search-result-item.top-result .search-result-rank::before {
-        background: currentColor;
-    }
-    body.surface-map-any .search-result-item.active-focus {
-        border-left: 3px solid rgba(var(--color-primary-alt-rgb), 0.8);
-        box-shadow:
-            inset 3px 0 0 rgba(var(--color-primary-alt-rgb), 0.8),
-            0 20px 44px var(--shadow-penumbra),
-            0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.18);
-    }
-
-    @media (max-width: 480px) {
-        .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-kicker {
-            display: none;
-        }
-    }
-
-    /* In focus-search peek mode the search container is intentionally
-       suppressed so the focus stage owns the lower chrome. */
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-container,
-    body.surface-focus-search[data-panel-surface-detail='peek'] .search-container,
-    body.surface-focus-search[data-panel-surface-detail='peek'] #info-panel.info-panel,
-    body.surface-focus-search[data-panel-surface-detail='peek'] #info-panel.info-panel {
-        display: none;
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    /* In focus-search the legacy selected-business drawer is intentionally
-       suppressed so the search/focus surfaces do not duplicate ownership. */
-    body.surface-focus-search:not([data-focus-panel-mode='field-node']) #selected-card,
-    body.surface-focus-search:not([data-focus-panel-mode='field-node']) #selected-card {
-        display: none;
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    /* Header caption vs mode-chip overlap (2026-08-04 inline-vision find):
-       in focus-family surfaces the mobile header caption row (y≈33-60)
-       overlaps the mode-chip row (y≈38-84) and is ellipsized to two lines
-       ("See all businesses linked to the focused one, ranked by how
-       strongly t…"). The focus-stage compass already owns intent copy, so
-       suppress the redundant caption in these surfaces. */
-    body[data-panel-surface='focus'] .header-description,
-    body[data-panel-surface='focus-search'] .header-description,
-    body[data-panel-surface='semantic-dive'] .header-description {
-        display: none;
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-    }
-}
-
-/* W58 parity guard: at tablet widths the bottom-left proximity legend (300px,
-   absolute) collides with the focus-search results panel (verified overlap
-   69px @936, 47px @1024, 0px @1280+). Hold it out of the way while a focus
-   panel is open; legend still shows on idle/map/overview. 2026-08-05 */
-
-/* ── Design-call polish (2026-08-05) ─────────────────────────────────────────
-   1. Focus card name: 2-line clamp on focus-search (long legal names cut at
-      one line looked broken; map-focus chip keeps its 1-line nowrap).
-   2. Empty-state line under the name: brighter + slightly bigger so it reads
-      off the glowing network backdrop. */
-body[data-panel-surface='focus-search'] #selected-name {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    white-space: normal;
-    overflow-wrap: anywhere;
-}
-
-#journey-chrome .journey-empty-state {
-    color: #f2f7f9;
-    font-size: 0.95rem;
-    font-weight: 450;
-    letter-spacing: 0.01em;
 }

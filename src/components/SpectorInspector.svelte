@@ -19,40 +19,6 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-import { debugWarn, debugLog } from '@lib/utils/debug'
-
-  // Dev-engine handle published on window in DEV builds only by
-  // src/lib/engine/three-engine.ts. Widened to include the status
-  // snapshot bridge so the two `window as unknown as` call sites
-  // below (pre-render probe + status publisher) share one shape.
-  interface SpectorDevWindow {
-    __semanticEngine?: { renderOnce?: () => void };
-    __spectorStatus?: {
-      phase: LoadPhase;
-      loadError: string | null;
-      loadDetail: string | null;
-      lastCommandCount: number;
-      lastCaptureAt: number | null;
-      bridgeReady: boolean;
-    };
-  }
-
-  // Spector.js capture event bus. The npm package ships no public
-  // types for these handlers, so we declare the minimal surface
-  // we use and cast `spector as SpectorCaptureApi` at one call site.
-  interface SpectorCaptureApi {
-    onCapture?: SpectorEventHandler;
-    onError?: SpectorEventHandler;
-  }
-  interface SpectorEventHandler {
-    add(_handler: (..._args: unknown[]) => void): void;
-  }
-
-  // Single typed accessor for window — replaces both `window as
-  // unknown as { … }` sites in the capture bridge and publisher.
-  function getSpectorDevWindow(): SpectorDevWindow {
-    return window;
-  }
 
   interface Props {
     visible?: boolean;
@@ -75,10 +41,6 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
   let activeCanvas: HTMLCanvasElement | null = null;
   let lastCommandCount = $state(0);
   let lastCaptureAt = $state<number | null>(null);
-  // T6 fix: the 5s capture timeout started inside the capture() promise was
-  // never cleared on component teardown (it was only cleared on success/error
-  // via clearTimeout(timeout)). Keep the handle here so onDestroy can clear it.
-  let captureTimeout: ReturnType<typeof setTimeout> | null = null;
 
   onMount(async () => {
     if (!visible || !import.meta.env.DEV) {
@@ -103,7 +65,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
         (mod.default as unknown) ??
         mod;
       const Ctor = candidate as new () => {
-        captureCanvas: (_canvas: HTMLCanvasElement) => void;
+        captureCanvas: (canvas: HTMLCanvasElement) => void;
         pauseCapture: () => void;
         playCapture: () => void;
         getCurrentResult: () => unknown;
@@ -129,34 +91,28 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
       const isImportError = err instanceof TypeError && /import|fetch|module/i.test(message);
       loadError = isImportError ? 'import-failed' : 'init-failed';
       phase = 'error';
-      debugWarn('[spector-inspector] failed to load spectorjs', err);
+      console.warn('[spector-inspector] failed to load spectorjs', err);
       publishStatus();
       return;
     }
 
-    // Sightly widened handle: the base capture methods plus the
-    // optional onCapture/onError event bus. Declaring the event
-    // bus inline avoids a second `spector as unknown as` cast when
-    // wiring capture/errror callbacks below.
     type SpectorHandle = {
-      captureCanvas: (_canvas: HTMLCanvasElement, _maxFrames?: number, _quickCapture?: boolean, _fullCapture?: boolean) => void;
+      captureCanvas: (canvas: HTMLCanvasElement, maxFrames?: number, quickCapture?: boolean, fullCapture?: boolean) => void;
       captureContext: (
-        _context: WebGLRenderingContext | WebGL2RenderingContext,
-        _maxFrames?: number,
-        _quickCapture?: boolean,
-        _fullCapture?: boolean,
+        context: WebGLRenderingContext | WebGL2RenderingContext,
+        maxFrames?: number,
+        quickCapture?: boolean,
+        fullCapture?: boolean,
       ) => void;
       pauseCapture: () => void;
       playCapture: () => void;
       getCurrentResult: () => unknown;
-      onCapture?: SpectorEventHandler;
-      onError?: SpectorEventHandler;
     };
     const spector = spectorInstance as SpectorHandle;
 
     isReady = true;
 
-    const bridge: NonNullable<Window['__spector']> = {
+    const bridge = {
       isReady: () => isReady,
       listCanvases: () => {
         const canvases = Array.from(document.querySelectorAll('canvas'));
@@ -171,8 +127,8 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
       //
       // Pre-render trick: Spector's frame-finder needs to see a draw
       // call dispatched on the captured context during its capture
-      // window. Three.js only renders when state.currentView === 'galaxy'.
-      // We force a synchronous renderer.render() call
+      // window. Three.js only renders when state.currentView === 'galaxy'
+      // (or forceAnimate). We force a synchronous renderer.render() call
       // right before captureContext() via the dev-only __semanticEngine
       // handle so the frame-finder always finds commands.
       capture: async (canvasSelector?: string, maxFrames = 0) => {
@@ -195,24 +151,25 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
         // Force a render right before capture so Spector sees WebGL
         // commands during its capture window. The handle is published by
         // src/lib/engine/three-engine.ts in DEV builds only.
-        const devEngine = getSpectorDevWindow().__semanticEngine;
+        const devEngine = (window as unknown as {
+          __semanticEngine?: { renderOnce?: () => void };
+        }).__semanticEngine;
         try {
           devEngine?.renderOnce?.();
         } catch (renderErr) {
           // Non-fatal — Spector will report "No frames detected" if the
           // engine is mid-teardown, but the bridge shouldn't fail the
           // call for this.
-          debugLog('[spector-inspector] pre-render threw:', renderErr);
+          console.debug('[spector-inspector] pre-render threw:', renderErr);
         }
         return new Promise((resolve) => {
-          captureTimeout = setTimeout(() => {
+          const timeout = setTimeout(() => {
             resolve({ ok: false, reason: 'timeout' });
           }, 5000);
           try {
             // onCapture fires when a capture completes with commands.
             const onCapture = (capture: unknown) => {
-              if (captureTimeout !== null) clearTimeout(captureTimeout);
-              captureTimeout = null;
+              clearTimeout(timeout);
               activeCanvas = canvas;
               lastCapture = capture;
               const cmds = (capture as { commands?: unknown[] } | null)?.commands ?? [];
@@ -224,9 +181,13 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
                 capture,
               });
             };
-            // spector already carries onCapture/onError on SpectorHandle,
-            // so it narrows to SpectorCaptureApi without a cast.
-            const spectorWithEvents: SpectorCaptureApi = spector;
+            type SpectorEventHandle = {
+              add: (cb: (...args: unknown[]) => void) => void;
+            };
+            const spectorWithEvents = spector as unknown as {
+              onCapture?: SpectorEventHandle;
+              onError?: SpectorEventHandle;
+            };
             // Track capture metadata so the dev-only status panel can
             // show the most recent command count and capture timestamp
             // without needing a Playwright probe.
@@ -237,22 +198,15 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
               publishStatus();
               onCapture(capture);
             };
-            // onCaptureTracked / the onError closure both accept a
-            // single `unknown` param, which is structurally a subtype of
-            // the `(...args: unknown[]) => void` signature
-            // SpectorEventHandler.add expects (TS bivariance for
-            // functions with fewer parameters), so no cast is needed.
-            spectorWithEvents.onCapture?.add(onCaptureTracked);
-            spectorWithEvents.onError?.add((err: unknown) => {
-              if (captureTimeout !== null) clearTimeout(captureTimeout);
-              captureTimeout = null;
+            spectorWithEvents.onCapture?.add(onCaptureTracked as unknown as (...args: unknown[]) => void);
+            spectorWithEvents.onError?.add(((err: unknown) => {
+              clearTimeout(timeout);
               resolve({ ok: false, reason: 'spector-error', error: String(err) });
-            });
+            }) as unknown as (...args: unknown[]) => void);
             // maxFrames=0 means "capture the next frame"
             spector.captureContext(existingCtx, maxFrames, false, false);
           } catch (err) {
-            clearTimeout(captureTimeout);
-            captureTimeout = null;
+            clearTimeout(timeout);
             resolve({ ok: false, reason: 'capture-failed', error: String(err) });
           }
         });
@@ -276,10 +230,11 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
       getLastCapture: () => lastCapture,
       getActiveCanvas: () => (activeCanvas ? 'captured' : 'idle'),
     };
-    window.__spector = bridge;
+
+    (window as unknown as { __spector: typeof bridge }).__spector = bridge;
     phase = 'ready';
     publishStatus();
-    debugLog('[spector-inspector] ready; call window.__spector.capture() to begin');
+    console.log('[spector-inspector] ready; call window.__spector.capture() to begin');
   });
 
   // Publish a read-only status snapshot on window.__spectorStatus so
@@ -288,9 +243,16 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
   // minimal — the bridge is the authoritative API.
   function publishStatus() {
     if (typeof window === 'undefined') return;
-    // Assign through the shared accessor — shape is declared on
-    // SpectorDevWindow, the single typed bridge for window.__*.
-    getSpectorDevWindow().__spectorStatus = {
+    (window as unknown as {
+      __spectorStatus: {
+        phase: LoadPhase;
+        loadError: string | null;
+        loadDetail: string | null;
+        lastCommandCount: number;
+        lastCaptureAt: number | null;
+        bridgeReady: boolean;
+      };
+    }).__spectorStatus = {
       phase,
       loadError,
       loadDetail,
@@ -301,10 +263,9 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
   }
 
   onDestroy(() => {
-    if (captureTimeout !== null) clearTimeout(captureTimeout);
     if (typeof window !== 'undefined') {
-      delete window.__spector;
-      delete window.__spectorStatus;
+      delete (window as unknown as { __spector?: unknown }).__spector;
+      delete (window as unknown as { __spectorStatus?: unknown }).__spectorStatus;
     }
   });
 </script>
@@ -344,7 +305,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
     position: fixed;
     top: 6px;
     right: 6px;
-    z-index: var(--z-devtools, 5);
+    z-index: 5;
     pointer-events: none;
     display: inline-flex;
     align-items: center;
@@ -369,7 +330,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
     animation: spector-pulse 1.2s ease-in-out infinite;
   }
   .spector-status[data-phase="ready"] .spector-status__dot {
-    background: var(--color-primary-alt);
+    background: #4ecdc4;
   }
   .spector-status[data-phase="error"] .spector-status__dot,
   .spector-status[data-phase="unsupported"] .spector-status__dot {
@@ -390,8 +351,5 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
   @keyframes spector-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.35; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .spector-status__dot { animation: none; }
   }
 </style>

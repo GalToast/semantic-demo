@@ -3,75 +3,12 @@
  * Random/similar/neighbor suggestion controls.
  */
 
-import { appState as _state } from '@lib/state/app.svelte'
-import type { BusinessRecord } from '@lib/types/business'
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
-const state = _state
+import { state as _state } from '@lib/engine/state-bridge'
+const state = _state as any
 import { bindClick } from '@lib/ui/view-bindings'
 import { focusOnNode } from '@lib/engine/camera-choreography'
-import { clearShortSemanticSearchState } from '@lib/search/state'
+import { clearShortSemanticSearchState } from '@lib/engine/search-state-bridge'
 import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
-import { seededUnit } from '@lib/utils/seeded-random'
-
-/**
- * Monotonic counter that feeds seededUnit() to give suggestion picks a
- * deterministic uniform distribution in [0, 1). Replaces the previous
- * Math.random() calls so suggestion ordering is reproducible across runs
- * and predictable in tests.
- */
-let _suggestionPickSeed = 0
-const _nextSeededRandom = (): number => seededUnit(_suggestionPickSeed++, 0)
-
-// ── Memoized O(8406) caches ────────────────────────────────────────────────
-
-/** Cached eligible-points list (status !== 'disqualified'), invalidated on dataset change. */
-let _cachedEligiblePoints: BusinessRecord[] | null = null
-let _cachedPointsLength = 0
-let _cachedEligibleLength = 0
-
-/** Get the cached eligible-points list, recomputing only when the dataset length changes. */
-function _getEligiblePoints(): BusinessRecord[] {
-    const pts = state.points
-    const len = pts?.length ?? 0
-    if (_cachedEligiblePoints !== null && _cachedPointsLength === len) {
-        return _cachedEligiblePoints
-    }
-    const eligible = pts.filter((p) => p && p.status !== 'disqualified')
-    _cachedEligiblePoints = eligible
-    _cachedPointsLength = len
-    _cachedEligibleLength = eligible.length
-    return eligible
-}
-
-/** Memoized cluster-index map: for each cluster, list of point indices (excluding the focused index). */
-let _cachedClusterIndex: number | null = null
-let _cachedSameCluster: { p: BusinessRecord; i: number }[] | null = null
-
-function _getSameCluster(focusedIdx: number): { p: BusinessRecord; i: number }[] {
-    const cluster = state.points[focusedIdx]?.cluster
-    if (Number.isFinite(cluster)) {
-        if (_cachedClusterIndex === focusedIdx && _cachedSameCluster !== null) {
-            return _cachedSameCluster
-        }
-        const same = state.points
-            .map((p, i) => ({ p, i }))
-            .filter(({ p, i }: { p: BusinessRecord; i: number }) => p && p.cluster === cluster && i !== focusedIdx)
-        _cachedClusterIndex = focusedIdx
-        _cachedSameCluster = same
-        return same
-    }
-    return []
-}
-
-/** Memoized nearest-neighbor index per focused point index. */
-let _cachedNearestIdx: number | null = null
-let _cachedNearestFocusedIdx: number | null = null
-
-const _registry = new DisposableRegistry({ label: 'suggestion' })
-
-export function disposeSuggestionBindings(): void {
-    _registry.disposeAll()
-}
 
 interface SuggestionEvent extends MouseEvent {
     target: HTMLElement
@@ -91,8 +28,8 @@ export function bindSuggestionControls(): void {
             btn.textContent = 'Finding...'
         }
 
-        _registry.schedule(0, () => {
-            const eligible = _getEligiblePoints()
+        setTimeout(() => {
+            const eligible = state.points.filter((p: any) => p && p.status !== 'disqualified')
             if (!eligible.length) {
                 const summaryEl = document.getElementById('summary-text')
                 if (summaryEl) summaryEl.textContent = 'No eligible businesses for surprise selection.'
@@ -113,7 +50,7 @@ export function bindSuggestionControls(): void {
                 btn.textContent = originalText
             }
 
-            const rand = eligible[Math.floor(_nextSeededRandom() * _cachedEligibleLength)]!
+            const rand = eligible[Math.floor(Math.random() * eligible.length)]
             const idx = state.points.indexOf(rand)
 
             if (idx >= 0) {
@@ -123,7 +60,7 @@ export function bindSuggestionControls(): void {
 
                 focusOnNode(idx, { fromCanvasNode: true })
             }
-        })
+        }, 800)
     }
 
     bindClick('btn-launch', focusRandomBusiness, { optional: true })
@@ -147,17 +84,19 @@ export function bindSuggestionControls(): void {
                 if (btn) {
                     btn.classList.add('shake')
                     btn.title = 'Select a business first'
-                    _registry.schedule(400, () => btn.classList.remove('shake'))
+                    setTimeout(() => btn.classList.remove('shake'), 400)
                 }
                 return
             }
-            const sameCluster = _getSameCluster(focusedIdx)
-            if (sameCluster.length) {
-                const _randPick = sameCluster[Math.floor(_nextSeededRandom() * sameCluster.length)] as
-                    | { p: BusinessRecord; i: number }
-                    | undefined
-                const i = _randPick ? _randPick.i : -1
-                focusOnNode(i, { fromCanvasNode: true })
+            const cluster = state.points[focusedIdx]?.cluster
+            if (Number.isFinite(cluster)) {
+                const sameCluster = state.points
+                    .map((p: any, i: number) => ({ p, i }))
+                    .filter(({ p, i }: { p: any; i: number }) => p && p.cluster === cluster && i !== focusedIdx)
+                if (sameCluster.length) {
+                    const { i } = sameCluster[Math.floor(Math.random() * sameCluster.length)]
+                    focusOnNode(i, { fromCanvasNode: true })
+                }
             }
         } else if (action === 'neighbor') {
             if (focusedIdx === null) {
@@ -166,31 +105,26 @@ export function bindSuggestionControls(): void {
                 if (btn) {
                     btn.classList.add('shake')
                     btn.title = 'Select a business first'
-                    _registry.schedule(400, () => btn.classList.remove('shake'))
+                    setTimeout(() => btn.classList.remove('shake'), 400)
                 }
                 return
             }
             if (!state.points) return
             const fp = state.points[focusedIdx]
             if (fp) {
-                let nearest: number | null = _cachedNearestIdx
-                if (_cachedNearestFocusedIdx !== focusedIdx || nearest === null) {
-                    nearest = null
-                    let nearestDist = Infinity
-                    state.points.forEach((p, i) => {
-                        if (!p || i === focusedIdx) return
-                        const dx = (Number(p.x) || 0) - (Number(fp.x) || 0)
-                        const dy = (Number(p.y) || 0) - (Number(fp.y) || 0)
-                        const dz = (Number(p.z) || 0) - (Number(fp.z) || 0)
-                        const d = dx * dx + dy * dy + dz * dz
-                        if (d < nearestDist) {
-                            nearestDist = d
-                            nearest = i
-                        }
-                    })
-                    _cachedNearestIdx = nearest
-                    _cachedNearestFocusedIdx = focusedIdx
-                }
+                let nearest: number | null = null
+                let nearestDist = Infinity
+                state.points.forEach((p: any, i: number) => {
+                    if (!p || i === focusedIdx) return
+                    const dx = p.x - fp.x
+                    const dy = p.y - fp.y
+                    const dz = p.z - fp.z
+                    const d = dx * dx + dy * dy + dz * dz
+                    if (d < nearestDist) {
+                        nearestDist = d
+                        nearest = i
+                    }
+                })
                 if (nearest !== null) focusOnNode(nearest, { fromCanvasNode: true })
             }
         } else if (action === 'report') {

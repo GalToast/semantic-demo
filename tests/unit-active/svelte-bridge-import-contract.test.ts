@@ -5,7 +5,7 @@
  *   1. No file outside src/lib/engine/* should import directly from js/ — they
  *      must go through the engine bridge.
  *   2. Every src/lib/engine/*-bridge.ts that exists must have ≥1 consumer.
- * 3. Bridges that point at legacy (js/modules/*) are the work-to-do for
+ *   3. Bridges that point at legacy (js/modules/*) are the work-to-do for
  *      W11-T9/T10 (kernel port + render loop). They are NOT anti-patterns —
  *      they're the migration seam.
  *
@@ -79,11 +79,11 @@ function isInAllowlist(file: string): boolean {
 // Excluded paths: the test infrastructure itself + archived reference
 function isExcluded(file: string): boolean {
     const rel = relative(PROJECT_ROOT, file)
-    return rel.startsWith('tests/') || rel.startsWith('docs/archive/legacy-reference/')
+    return rel.startsWith('tests/') || rel.startsWith('legacy-reference/')
 }
 
 describe('Svelte-bridge import contract (S7)', () => {
-    if (process.env['REFACTOR_BASELINE_OVERRIDE']) {
+    if (process.env.REFACTOR_BASELINE_OVERRIDE) {
         it('skips during active refactor wave (unset REFACTOR_BASELINE_OVERRIDE to re-enable)', () => {
             expect(true).toBe(true)
         })
@@ -169,24 +169,36 @@ describe('Bridge health (W11 retirement progress)', () => {
      * paths before lookup so Windows backslashes match.
      */
     const KNOWN_RETIRED_BRIDGES: ReadonlySet<string> = new Set([
-        'src/lib/engine/state-bridge.ts',
+        'src/lib/engine/focus-pocket-bridge.ts', // W11-T7 (Focus Subsystem Svelte 5 Port) — consumer migrated to @lib/focus/geometry + appState
         'src/lib/engine/adapter-deps-bridge.ts',
         'src/lib/engine/search-trail-cue-renderer-bridge.ts', // W11-T5 Wave 1 — search-* sanctioned passthrough (W11-T6 Wave 2 search subsystem)
         'src/lib/engine/search-panel-adapter-bridge.ts', // W11-T5 Wave 1 — search-* sanctioned passthrough (W11-T6 Wave 2 search subsystem)
+        'src/lib/engine/data-worker-url-bridge.ts', // W11-T5 Wave 1 — Vite ?worker&url magic import; trivial wrapper, no Svelte path needed
         'src/lib/engine/weather-bridge.ts', // W11-T5 Wave 1 — weather widget fetch; trivial wrapper, no Svelte port justified
         'src/lib/engine/ui-renderers-bridge.ts', // Retired ui-renderers-bridge — logic relocated to lifecycle-bridge
         'src/lib/engine/semantic-dive-bridge.ts', // Retired semantic-dive-bridge — logic relocated to lifecycle-bridge
         'src/lib/engine/ui-feedback-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
+        'src/lib/engine/map-flattening-layout-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
+        'src/lib/engine/focus-anchor-indicator-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
+        'src/lib/engine/audio-scape-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
         'src/lib/engine/event-bindings-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
 
+        'src/lib/engine/cluster-labels-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+        'src/lib/engine/focus-pocket-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; Svelte 5 port exists in @lib/focus/pocket but render loop still uses legacy module surface
+        'src/lib/engine/scene-reveal-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; Svelte 5 port exists in @lib/engine/scene-reveal but render loop still uses legacy module surface
+        'src/lib/engine/mycelium-engine-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+        'src/lib/engine/inspected-strand-overlay-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+        'src/lib/engine/route-arrival-overlay-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+        'src/lib/engine/three-search-animations-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+        'src/lib/engine/three-interaction-visuals-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
         'src/lib/engine/search-state-bridge.ts', // W15-T1 — search-state port; bridge created, consumers not yet wired
         // ── W11-T5 Wave 2 ─────────────────────────────────────────
         'src/lib/engine/event-bus-bridge.ts', // W11-T5 Wave 2 — T9 retires when journey files land
         'src/lib/engine/micro-demo-choreography-bridge.ts', // W11-T5 Wave 2 — sanctioned passthrough (micro-demo legacy)
         // ── W15-T-SEARCH-STATE (partial port, 2026-06-15) ────────
         'src/lib/engine/search-state-bridge.ts', // W15-T-SEARCH-STATE — bridge created with clearSearch(options) signature fix; consumers in js/modules/* still use the old path; rewiring is a follow-up ticket
-        'src/lib/engine/legend-ui-bridge.ts', // Retired legend-ui-bridge — logic relocated to @lib/journey/legend-ui + @lib/stores/legend-panel.svelte.ts; zero consumers remain
-        'src/lib/engine/three-micro-demo-bridge.ts' // be9d4f4 merge-resolution — kept live-referenced by three-interaction-visuals (runtime import, not static; see commit msg)
+        'src/lib/engine/camera-controls-restore-bridge.ts', // W16-T-CAM-3 — bridge for js/modules/camera-controls-restore.ts retirement; canonical Svelte 5 implementation lives in camera-controls-restore.svelte.ts; kernel consumers wired in W16 follow-up
+        'src/lib/engine/legend-ui-bridge.ts' // Retired legend-ui-bridge — logic relocated to @lib/journey/legend-ui + @lib/stores/legend-panel.svelte.ts; zero consumers remain
     ])
 
     function listBridgeFiles(): string[] {

@@ -1,13 +1,13 @@
 /**
  * panel-bindings.ts
- * Canonical location (ported from — W15).
+ * Canonical location (ported from js/modules/bindings/panel-bindings.ts — W15).
  * Info panel toggle, resize, and state management.
  */
 
 import { bindClick } from '@lib/ui/view-bindings';
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
 import { closeLegendPanel } from '@lib/stores/legend-panel';
-import { cancelDemo } from '@lib/stores/demo.svelte.ts';
+import { cancelMicroDemo } from '@lib/demo/choreography';
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 
 let _previouslyFocusedInfoPanel: Element | null = null;
@@ -96,14 +96,12 @@ export function bindPanelControls(onWindowResize: WindowResizeHandler): void {
     window.addEventListener('resize', _activeResizeHandler, { signal: controller.signal });
 
     bindClick('info-panel-toggle', () => {
-        // W2B-step1: migrated from cancelMicroDemo('user-input'). cancelDemo() takes no reason
-        // argument (signature: cancelDemo(): boolean at src/lib/stores/demo.svelte.ts:170).
-        cancelDemo();
+        cancelMicroDemo('user-input');
         setInfoPanelOpen();
     });
 
     bindClick('btn-panel', () => {
-        cancelDemo();
+        cancelMicroDemo('user-input');
         const panelOpen = setInfoPanelOpen();
         if (isCompactFocusStageViewport() && panelOpen) {
             const legendPanel = document.getElementById('legend-panel');

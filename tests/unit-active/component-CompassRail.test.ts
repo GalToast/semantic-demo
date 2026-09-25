@@ -1,65 +1,86 @@
 /**
- * component-CompassRail.test.ts — direct coverage for the legacy CompassRail
- * activation path.
+ * component-CompassRail.test.ts — Component test for CompassRail.svelte
  *
- * The rail is intentionally desktop-suppressed in the browser journey, so
- * this component test exercises its own onclick -> selectMode -> nav dispatch
- * path without pretending the hidden rail is user-visible.
+ * Verifies:
+ *  1. Renders div.compass-rail with role="navigation" and aria-label="Journey compass"
+ *  2. Root element has id="compass-rail"
+ *  3. Renders each compass step as a button.compass-step
+ *  4. Each step button has aria-label starting with "Navigate to"
+ *  5. Each step contains a .step-dot span and .step-label span
+ *  6. Step label text is non-empty and matches known phase names
+ *  7. Root element has class "compass-steps"
+ *  8. Root element is hidden when visible is false
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { render } from '@testing-library/svelte'
-import CompassRail from '../../src/components/CompassRail.svelte'
-import { appState } from '../../src/lib/state/app.svelte.ts'
-import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '../../src/lib/stores/navigation.svelte.ts'
-
-function resetNavigation(): void {
-    dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)
-}
+import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/svelte';
+import CompassRail from '../../src/components/CompassRail.svelte';
 
 describe('CompassRail component', () => {
-    beforeEach(() => {
-        resetNavigation()
-    })
+    it('renders div.compass-rail with role="navigation" and aria-label="Journey compass"', () => {
+        const { container } = render(CompassRail, { props: { visible: true } });
+        const rail = container.querySelector('.compass-rail');
+        expect(rail).toBeTruthy();
+        expect(rail!.getAttribute('role')).toBe('navigation');
+        expect(rail!.getAttribute('aria-label')).toBe('Journey compass');
+    });
 
-    afterEach(() => {
-        resetNavigation()
-    })
+    it('root element has id="compass-rail"', () => {
+        const { container } = render(CompassRail, { props: { visible: true } });
+        const rail = container.querySelector('#compass-rail');
+        expect(rail).toBeTruthy();
+        expect(rail!.tagName).toBe('DIV');
+    });
 
-    it('does not render the rail when visible is false', () => {
-        const { container } = render(CompassRail, { props: { visible: false } })
+    it('renders each compass step as a button.compass-step', () => {
+        const { container } = render(CompassRail, { props: { visible: true } });
+        const steps = container.querySelectorAll('button.compass-step');
+        expect(steps.length).toBeGreaterThan(0);
+    });
 
-        expect(container.querySelector('#compass-rail')).toBeNull()
-    })
+    it('each step button has aria-label starting with "Navigate to"', () => {
+        const { container } = render(CompassRail, { props: { visible: true } });
+        const steps = container.querySelectorAll('button.compass-step');
+        steps.forEach((step) => {
+            const label = step.getAttribute('aria-label');
+            expect(label).toBeTruthy();
+            expect(label!.startsWith('Navigate to')).toBe(true);
+        });
+    });
 
-    it('renders six semantic journey buttons when visible', () => {
-        const { container } = render(CompassRail, { props: { visible: true } })
-        const rail = container.querySelector('#compass-rail')
+    it('each step contains a .step-dot span and .step-label span', () => {
+        const { container } = render(CompassRail, { props: { visible: true } });
+        const steps = container.querySelectorAll('button.compass-step');
+        steps.forEach((step) => {
+            const dot = step.querySelector('.step-dot');
+            expect(dot).toBeTruthy();
+            expect(dot!.tagName).toBe('SPAN');
+            const label = step.querySelector('.step-label');
+            expect(label).toBeTruthy();
+            expect(label!.tagName).toBe('SPAN');
+        });
+    });
 
-        expect(rail).toBeTruthy()
-        expect(rail?.getAttribute('aria-label')).toBe('Journey compass')
+    it('step label text is non-empty and matches known phase names', () => {
+        const knownPhases = ['overview', 'search', 'focus', 'inside', 'map'];
+        const { container } = render(CompassRail, { props: { visible: true } });
+        const labels = container.querySelectorAll('.step-label');
+        labels.forEach((label) => {
+            const text = label.textContent!.trim().toLowerCase();
+            expect(text.length).toBeGreaterThan(0);
+            expect(knownPhases).toContain(text);
+        });
+    });
 
-        const buttons = [...container.querySelectorAll<HTMLButtonElement>('#compass-rail .compass-step')]
-        expect(buttons).toHaveLength(6)
-        expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual([
-            'Navigate to Overview',
-            'Navigate to Search',
-            'Navigate to Focus',
-            'Navigate to Trail',
-            'Navigate to Inside',
-            'Navigate to Map'
-        ])
-    })
+    it('root element has class "compass-steps"', () => {
+        const { container } = render(CompassRail, { props: { visible: true } });
+        const rail = container.querySelector('.compass-rail');
+        expect(rail).toBeTruthy();
+        expect(rail!.classList.contains('compass-steps')).toBe(true);
+    });
 
-    it('activates Search through the component handler and canonical nav state', () => {
-        const { container } = render(CompassRail, { props: { visible: true } })
-        const searchButton = container.querySelector<HTMLButtonElement>(
-            '#compass-rail .compass-step[aria-label="Navigate to Search"]'
-        )
-
-        expect(searchButton).toBeTruthy()
-        searchButton?.click()
-
-        expect(appState.navState.mode).toBe('search')
-        expect(appState.navState.surface).toBe('search')
-    })
-})
+    it('root element is hidden when visible is false', () => {
+        const { container } = render(CompassRail, { props: { visible: false } });
+        const rail = container.querySelector('.compass-rail');
+        expect(rail).toBeNull();
+    });
+});

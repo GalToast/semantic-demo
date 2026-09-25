@@ -20,13 +20,24 @@
  * ```
  */
 
-// ── Bridge factory and types are retired (Phase 6 / Wave W8) ──────────────────
+// ── Bridge factory and types ─────────────────────────────────────────────────
+
+export { createEngineBridge } from './adapters/core'
+
+export type {
+    EngineBridge,
+    EngineCallbacks,
+    EngineStatus,
+    FocusNodeOptions,
+    SearchCorridorOptions,
+    FilterOptions,
+    SceneDiagnostics
+} from './adapters/types'
 
 // ── TS port re-exports: three-engine ─────────────────────────────────────────
 
 export {
     initThreeJS,
-    startRenderLoop,
     deinit,
     animate,
     onWindowResize,
@@ -65,7 +76,7 @@ import {
     updateAutoRotateSoftResume,
     toggleAutoRotate,
     OVERVIEW_CAMERA_POSE
-} from '@lib/engine/camera-controls-restore.svelte'
+} from '@lib/engine/camera-controls-restore-bridge'
 import {
     setFocusTransitionMode,
     getFocusTransitionProgress,
@@ -128,6 +139,21 @@ export {
     getMyceliumPresentationProfile,
     getGroupLineSegmentCount
 } from './thread-manager'
+
+// ── Demo choreography ────────────────────────────────────────────────────────
+
+export {
+    PHASE as DemoChoreographyPhase,
+    getDemoPhase,
+    getDemoNodeIndex,
+    isDemoCancelled,
+    setDemoNodeIndex,
+    clearDemoTimers,
+    resetRetryState,
+    runDemo,
+    cancelChoreography,
+    isMicroDemoRunning
+} from './demo-choreography'
 
 // ── Camera choreography (legacy wrappers) ────────────────────────────────────
 

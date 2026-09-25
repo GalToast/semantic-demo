@@ -1,33 +1,27 @@
 /**
  * @lib/search/scoring.ts — Field-weighted scoring for mock/dev semantic search results.
  *
- * Port of
+ * Port of js/modules/semantic-search-scoring.ts
  */
 
-import type { Point } from '../state/state-types'
-import {
-    normalizeMockSearchText,
-    MOCK_QUERY_ALIASES,
-    MOCK_QUERY_NAICS_PREFIX,
-    MOCK_QUERY_NAICS_DENY
-} from './mock-constants'
-import { tokenizeSearchText } from './tokenizer'
+import { state, type Point } from '../engine/state-bridge';
+import { normalizeMockSearchText, MOCK_QUERY_ALIASES, MOCK_QUERY_NAICS_PREFIX, MOCK_QUERY_NAICS_DENY } from './mock-catalog';
 
 interface FieldWeights {
-    snapshot: number
-    business_overview: number
-    observations: number
-    business_overview_extended: number
-    audit_highlights: number
-    contact_decision_makers: number
-    what: number
-    name: number
-    naics_prefix: number
-    city: number
-    address: number
-    evidence: number
-    snapshot_alt: number
-    [key: string]: number
+    snapshot: number;
+    business_overview: number;
+    observations: number;
+    business_overview_extended: number;
+    audit_highlights: number;
+    contact_decision_makers: number;
+    what: number;
+    name: number;
+    naics_prefix: number;
+    city: number;
+    address: number;
+    evidence: number;
+    snapshot_alt: number;
+    [key: string]: number;
 }
 
 const FIELD_WEIGHTS: FieldWeights = Object.freeze({
@@ -44,153 +38,140 @@ const FIELD_WEIGHTS: FieldWeights = Object.freeze({
     address: 2,
     evidence: 3,
     snapshot_alt: 9
-})
+});
 
 interface MockPointSearchFields {
-    name: string
-    what: string
-    city: string
-    naics_prefix: string | null
-    address: string
-    snapshot: string
-    snapshot_alt: string
-    business_overview: string
-    business_overview_extended: string
-    observations: string
-    contact_decision_makers: string
-    audit_highlights: string
-    evidence: string
+    name: string;
+    what: string;
+    city: string;
+    naics_prefix: string | null;
+    address: string;
+    snapshot: string;
+    snapshot_alt: string;
+    business_overview: string;
+    business_overview_extended: string;
+    observations: string;
+    contact_decision_makers: string;
+    audit_highlights: string;
+    evidence: string;
 }
 
-interface MockSearchDataset {
-    points: Point[]
-    leadEnrichment: Record<string, Record<string, unknown>> | null
-}
-
-function getMockPointSearchFields(point: Point, dataset: MockSearchDataset): MockPointSearchFields {
-    const enrichment = point.lead_id != null ? (dataset.leadEnrichment?.[String(point.lead_id)] ?? null) : null
+function getMockPointSearchFields(point: Point): MockPointSearchFields {
+    const enrichment = point?.lead_id !== null && point?.lead_id !== undefined
+        ? (state.leadEnrichment as Record<string, Record<string, unknown>> | null)?.[String(point.lead_id)]
+        : null;
     return {
-        name: normalizeMockSearchText(point.name),
-        what: normalizeMockSearchText(point.what),
-        city: normalizeMockSearchText(point.city),
-        naics_prefix: point.naics ? (String(point.naics).match(/^(\d{2,6})/)?.[1] ?? null) : null,
-        address: normalizeMockSearchText(enrichment?.address || point.address),
+        name: normalizeMockSearchText(point?.name),
+        what: normalizeMockSearchText(point?.what),
+        city: normalizeMockSearchText(point?.city),
+        naics_prefix: point?.naics ? String(point.naics).match(/^(\d{6})/)?.[1] ?? null : null,
+        address: normalizeMockSearchText(enrichment?.address || point?.address),
         snapshot: normalizeMockSearchText(enrichment?.snapshot),
-        snapshot_alt: normalizeMockSearchText(enrichment?.snapshot_alt),
-        business_overview: normalizeMockSearchText(enrichment?.business_overview),
+        snapshot_alt: normalizeMockSearchText(enrichment?.business_overview),
+        business_overview: normalizeMockSearchText(enrichment?.business_overview_extended),
         business_overview_extended: normalizeMockSearchText(enrichment?.business_overview_extended),
         observations: normalizeMockSearchText(enrichment?.observations),
         contact_decision_makers: normalizeMockSearchText(enrichment?.contact_decision_makers),
         audit_highlights: normalizeMockSearchText(enrichment?.audit_highlights),
         evidence: normalizeMockSearchText(enrichment?.evidence)
-    }
+    };
 }
 
 function getMockDatasetTerms(query: string, matchedTerm: string | null): string[] {
-    // Use the canonical tokenizer so this path accepts exactly the same tokens
-    // as the live search path. A local re-tokenization used to drift (>= 3
-    // chars vs the canonical > 1), silently dropping 2-char tokens like "TX"
-    // or "OK" that the canonical tokenizer scores (length > 1, non-stop-word).
-    // tokenizer.ts has no imports, so importing it here cannot create a cycle.
-    const queryTokens = tokenizeSearchText(query)
-    const aliases = matchedTerm ? MOCK_QUERY_ALIASES[matchedTerm] || [matchedTerm] : []
-    return [...new Set([...aliases, ...queryTokens].map(normalizeMockSearchText).filter(Boolean))]
+    const queryTokens = normalizeMockSearchText(query)
+        .split(/\s+/)
+        .filter((token) => token.length >= 3);
+    const aliases = matchedTerm ? MOCK_QUERY_ALIASES[matchedTerm] || [matchedTerm] : [];
+    return [...new Set([...aliases, ...queryTokens].map(normalizeMockSearchText).filter(Boolean))];
 }
 
 interface ScoredResult {
-    lead_id: string
-    name: string
-    score: number
-    provenance: string
-    thread_type: string
-    city: string
-    naics: string
-    public_note: string
-    website: boolean
-    email: boolean
-    phone: boolean
-    isMock: boolean
+    lead_id: string;
+    name: string;
+    score: number;
+    provenance: string;
+    thread_type: string;
+    city: string;
+    naics: string;
+    public_note: string;
+    website: boolean;
+    email: boolean;
+    phone: boolean;
+    isMock: boolean;
 }
 
 export function buildDatasetBackedMockResults(
     query: string,
     matchedTerm: string | null,
-    scoreBase: number,
-    dataset: MockSearchDataset
+    scoreBase: number
 ): ScoredResult[] {
-    if (!Array.isArray(dataset.points) || dataset.points.length === 0) return []
-    const terms = getMockDatasetTerms(query, matchedTerm)
-    if (!terms.length) return []
+    if (!Array.isArray(state.points) || state.points.length === 0) return [];
+    const terms = getMockDatasetTerms(query, matchedTerm);
+    if (!terms.length) return [];
 
-    const naicsPrefix = matchedTerm ? MOCK_QUERY_NAICS_PREFIX[matchedTerm] : null
-    const naicsDenyList = matchedTerm ? MOCK_QUERY_NAICS_DENY[matchedTerm] : null
-    // Sort deny prefixes longest-first so a more specific prefix is checked
-    // before a shorter one that would also match. M is tiny (<=5 entries per
-    // category), so the sort cost is negligible and done once per call.
-    const sortedDenyList = naicsDenyList ? [...naicsDenyList].sort((a, b) => b.length - a.length) : null
+    const naicsPrefix = matchedTerm ? MOCK_QUERY_NAICS_PREFIX[matchedTerm] : null;
+    const naicsDenyList = matchedTerm ? MOCK_QUERY_NAICS_DENY[matchedTerm] : null;
     const pointNaicsPrefix = (point: Point): string | null => {
-        const n = point?.naics
-        if (!n) return null
-        const m = String(n).match(/^(\d{2,6})/)
-        return m?.[1] ?? null
-    }
+        const n = point?.naics;
+        if (!n) return null;
+        const m = String(n).match(/^(\d{6})/);
+        return m?.[1] ?? null;
+    };
 
-    return dataset.points
+    return state.points
         .map((point, index) => {
-            if (!point || point.lead_id === null || point.lead_id === undefined || point.lead_id === '') return null
-            const fields = getMockPointSearchFields(point, dataset)
-            let score = 0
-            const pNaicsPrefix = pointNaicsPrefix(point)
-            if (sortedDenyList && pNaicsPrefix && sortedDenyList.some((deny) => pNaicsPrefix.startsWith(deny))) {
-                return null
+            if (!point || point.lead_id === null || point.lead_id === undefined || point.lead_id === '') return null;
+            const fields = getMockPointSearchFields(point);
+            let score = 0;
+            const pNaicsPrefix = pointNaicsPrefix(point);
+            if (naicsDenyList && pNaicsPrefix && naicsDenyList.some((deny) => pNaicsPrefix.startsWith(deny))) {
+                return null;
             }
             if (naicsPrefix && pNaicsPrefix && pNaicsPrefix.startsWith(naicsPrefix)) {
-                score += FIELD_WEIGHTS.naics_prefix
+                score += FIELD_WEIGHTS.naics_prefix;
             }
-            const strictMode = Boolean(matchedTerm)
-            const matchedTermHit =
-                matchedTerm &&
-                terms.some((term) => term && Object.values(fields).some((val) => val && String(val).includes(term)))
+            const strictMode = Boolean(matchedTerm);
+            const matchedTermHit = matchedTerm && terms.some((term) =>
+                term && Object.values(fields).some((val) => val && String(val).includes(term))
+            );
             if (matchedTermHit) {
                 for (const [fieldName, fieldText] of Object.entries(fields)) {
-                    if (!fieldText) continue
+                    if (!fieldText) continue;
                     if (terms.some((term) => term && fieldText.includes(term))) {
-                        const weight = FIELD_WEIGHTS[fieldName] || 0
+                        const weight = FIELD_WEIGHTS[fieldName] || 0;
                         if (strictMode && matchedTerm && !fieldText.includes(matchedTerm)) {
-                            continue
+                            continue;
                         }
-                        score += weight
+                        score += weight;
                     }
                 }
             } else if (!strictMode) {
                 for (const [fieldName, fieldText] of Object.entries(fields)) {
-                    if (!fieldText) continue
-                    const weight = FIELD_WEIGHTS[fieldName] || 0
-                    if (weight < 5) continue
+                    if (!fieldText) continue;
+                    const weight = FIELD_WEIGHTS[fieldName] || 0;
+                    if (weight < 5) continue;
                     if (terms.some((term) => term && fieldText.includes(term))) {
-                        score += weight * 0.5
+                        score += weight * 0.5;
                     }
                 }
             }
-            if (point.website) score += 0.4
-            if (point.email) score += 0.3
-            if (point.phone) score += 0.2
-            if (score <= 0) return null
-            return { point, index, score }
+            if (point.website) score += 0.4;
+            if (point.email) score += 0.3;
+            if (point.phone) score += 0.2;
+            if (score <= 0) return null;
+            return { point, index, score };
         })
         .filter((r): r is { point: Point; index: number; score: number } => r !== null)
         .sort((a, b) => b.score - a.score || a.index - b.index)
         .slice(0, 5)
-        .map(({ point, score }) => {
-            const enrichment = point.lead_id != null ? (dataset.leadEnrichment?.[String(point.lead_id)] ?? null) : null
+        .map(({ point, score }, i) => {
+            const enrichment = point.lead_id !== null && point.lead_id !== undefined
+                ? (state.leadEnrichment as Record<string, Record<string, unknown>> | null)?.[String(point.lead_id)]
+                : null;
             return {
                 lead_id: String(point.lead_id),
                 name: point.name ?? '',
-                // Score reflects the field-weighted relevance (`score`) rather
-                // than rank: `scoreBase` is a per-query floor and the relevance
-                // term scales the accumulated field weight. Ordering is already
-                // fixed by the upstream sort, so no rank penalty is applied here.
-                score: Math.max(0.5, scoreBase + Math.min(score, 30) * 0.01),
+                score: Math.max(0.5, scoreBase - i * 0.05 + Math.min(score, 30) * 0.003),
                 provenance: 'Static dev dataset fallback',
                 thread_type: 'Search match',
                 city: point.city ?? '',
@@ -200,6 +181,6 @@ export function buildDatasetBackedMockResults(
                 email: Boolean(point.email),
                 phone: Boolean(point.phone),
                 isMock: true
-            }
-        })
+            };
+        });
 }

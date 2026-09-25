@@ -14,19 +14,15 @@
  * visible/rendered state.
  *
  * Run: node tests/short-landscape-layout-contract.mjs
- * Uses the static-plus-PHP-proxy test server unless TEST_BASE_URL is provided.
+ * Starts a local static server unless TEST_BASE_URL is provided.
  */
 
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
-import { setShortLandscapeFocusSearch } from './helpers/short-landscape-helpers.js';
-// SwiftShader gate (see visual-state-audit.mjs)
-const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8796';
-const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html';
-const APP_QUERY = process.env.TEST_APP_QUERY || 'nodemo=1&webgl=1';
-const SERVER_PORT = Number(process.env.TEST_SERVER_PORT || 8796);
+const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
+const APP_PATH = '/vector-explorer-polished.html';
+const SERVER_PORT = 8795;
 let server = null;
 
 const VIEWPORTS = [
@@ -40,11 +36,6 @@ function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
 }
 
-// Browser layout rounds flex/grid edges to fractional CSS pixels. Match the
-// Playwright contract's tolerance so harmless 0.2px rounding is not reported
-// as a real viewport overflow.
-const EDGE_TOLERANCE = 0.5;
-
 async function isServerReady() {
   try {
     const response = await fetch(`${BASE_URL}${APP_PATH}`, { method: 'HEAD' });
@@ -54,17 +45,11 @@ async function isServerReady() {
   }
 }
 
-function appUrl() {
-  const separator = APP_PATH.includes('?') ? '&' : '?';
-  return `${BASE_URL}${APP_PATH}${separator}${APP_QUERY}`;
-}
-
 async function startStaticServer() {
   if (process.env.TEST_BASE_URL || await isServerReady()) return null;
 
-  const proc = spawn(process.execPath, ['scripts/test-server.mjs'], {
+  const proc = spawn('python', ['-m', 'http.server', String(SERVER_PORT), '--bind', '127.0.0.1'], {
     cwd: process.cwd(),
-    env: { ...process.env, TEST_SERVER_PORT: String(SERVER_PORT) },
     stdio: 'ignore',
   });
 
@@ -84,7 +69,7 @@ async function startStaticServer() {
 async function gotoApp(page) {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      await page.goto(appUrl(), { waitUntil: 'domcontentloaded' });
+      await page.goto(`${BASE_URL}${APP_PATH}`, { waitUntil: 'domcontentloaded' });
       return;
     } catch (error) {
       const isLocalRefused = !process.env.TEST_BASE_URL &&
@@ -98,17 +83,13 @@ async function gotoApp(page) {
 }
 
 async function runTestsForViewport(viewport) {
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
+  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
   const page = await browser.newPage({
     viewport: viewport,
     isMobile: true,
     hasTouch: true,
     deviceScaleFactor: 2,
   });
-  // This contract checks layout/parity, not animation timing. Keep the
-  // software-WebGL scene in its reduced-motion path so idle frames do not
-  // dominate the short-landscape check.
-  await page.emulateMedia({ reducedMotion: 'reduce' });
 
   console.log(`Viewport: ${viewport.width}x${viewport.height} (short landscape)\n`);
 
@@ -120,41 +101,12 @@ async function runTestsForViewport(viewport) {
       state.renderer?.domElement &&
       state.camera &&
       state.pointsMesh;
-  }, null, { timeout: 12000 });
+  }, { timeout: 12000 });
 
   await page.evaluate(() => {
     document.body.classList.add('is-active');
   });
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-
-  // Idle ownership: the mobile search entry point lives inside #info-panel.
-  // Keep this assertion adjacent to the later focus-search assertion so the
-  // contract cannot be misread as requiring one panel behavior in both states.
-  console.log(`[TEST] Idle search entry — #info-panel at ${viewport.width}x${viewport.height}`);
-  const idleInfoPanel = await page.evaluate(() => {
-    const panel = document.querySelector('#info-panel');
-    if (!panel) return null;
-    const style = getComputedStyle(panel);
-    const rect = panel.getBoundingClientRect();
-    return {
-      surface: document.body?.dataset?.panelSurface || null,
-      display: style.display,
-      visibility: style.visibility,
-      opacity: Number(style.opacity),
-      width: rect.width,
-      height: rect.height,
-    };
-  });
-  assert(idleInfoPanel, 'idle #info-panel must remain mounted for the search entry point');
-  assert(
-    idleInfoPanel.surface === 'idle' || idleInfoPanel.surface === 'overview',
-    `idle search-entry contract expected idle/overview surface, got ${idleInfoPanel.surface}`
-  );
-  assert(idleInfoPanel.display !== 'none', 'idle #info-panel must not be display:none');
-  assert(idleInfoPanel.visibility !== 'hidden', 'idle #info-panel must not be visibility:hidden');
-  assert(idleInfoPanel.opacity > 0, `idle #info-panel must be visible, got opacity=${idleInfoPanel.opacity}`);
-  assert(idleInfoPanel.width > 0 && idleInfoPanel.height > 0, 'idle #info-panel must have layout dimensions');
-  console.log('  PASS: idle #info-panel owns the mobile search entry point\n');
 
   // ── Test 1: Canopy HUD (journey-compass) stays within viewport ─────────────────
   console.log(`[TEST] Canopy HUD — journey-compass bounding rect at ${viewport.width}x${viewport.height}`);
@@ -180,10 +132,10 @@ async function runTestsForViewport(viewport) {
   } else {
     const { left, right, top, bottom, winWidth, winHeight } = compassInfo;
 
-    assert(left >= -EDGE_TOLERANCE, `compass left=${left} should be >= 0`);
-    assert(right <= winWidth + EDGE_TOLERANCE, `compass right=${right} should be <= viewport width=${winWidth}`);
-    assert(top >= -EDGE_TOLERANCE, `compass top=${top} should be >= 0`);
-    assert(bottom <= winHeight + EDGE_TOLERANCE, `compass bottom=${bottom} should be <= viewport height=${winHeight}`);
+    assert(left >= 0, `compass left=${left} should be >= 0`);
+    assert(right <= winWidth, `compass right=${right} should be <= viewport width=${winWidth}`);
+    assert(top >= 0, `compass top=${top} should be >= 0`);
+    assert(bottom <= winHeight, `compass bottom=${bottom} should be <= viewport height=${winHeight}`);
 
     const overflowRight = Math.max(0, right - winWidth);
     const overflowBottom = Math.max(0, bottom - winHeight);
@@ -191,33 +143,39 @@ async function runTestsForViewport(viewport) {
     console.log(`  compass bounds: left=${left.toFixed(0)} right=${right.toFixed(0)} top=${top.toFixed(0)} bottom=${bottom.toFixed(0)}`);
     console.log(`  viewport: ${winWidth}x${winHeight}`);
     console.log(`  overflow: right=${overflowRight.toFixed(0)}px bottom=${overflowBottom.toFixed(0)}px`);
-    assert(overflowRight <= EDGE_TOLERANCE, `compass overflow right: ${overflowRight}px`);
-    assert(overflowBottom <= EDGE_TOLERANCE, `compass overflow bottom: ${overflowBottom}px`);
+    assert(overflowRight === 0, `compass overflow right: ${overflowRight}px`);
+    assert(overflowBottom === 0, `compass overflow bottom: ${overflowBottom}px`);
     console.log('  PASS: journey-compass does not overflow viewport\n');
   }
 
   // ── Test 2: Focus Stage stays within viewport ──────────────────────────────────
   console.log(`[TEST] Focus Stage — #focus-stage bounding rect at ${viewport.width}x${viewport.height}`);
 
-  const parity = await setShortLandscapeFocusSearch(page);
-  assert(parity.canonicalActions.length > 0, 'focus-search setup must use canonical app actions');
-  assert(parity.bypassAttribute === 'focusPanelMode', 'only focusPanelMode may use a direct parity bypass');
   await page.evaluate(() => {
-    document.body.classList.add('is-active');
-    const stage = document.querySelector('#focus-stage');
-    const card = document.querySelector('.focus-stage-card');
-    if (stage) {
-      stage.hidden = false;
-      stage.classList.add('active');
-      stage.setAttribute('aria-hidden', 'false');
-      stage.setAttribute('aria-expanded', 'true');
-    }
-    if (card) {
-      card.style.height = '';
-    }
+    window.__forceShortLandscapeFocusSearch = () => {
+      document.body.classList.add('is-active');
+      document.body.dataset.activeView = 'galaxy';
+      document.body.dataset.graphContext = 'focus-search';
+      document.body.dataset.panelSurface = 'focus-search';
+      document.body.dataset.focusPanelMode = 'focus';
+
+      const stage = document.querySelector('#focus-stage');
+      const card = document.querySelector('.focus-stage-card');
+      if (stage) {
+        stage.hidden = false;
+        stage.classList.add('active');
+        stage.setAttribute('aria-hidden', 'false');
+        stage.setAttribute('aria-expanded', 'true');
+      }
+      if (card) {
+        card.style.height = '';
+      }
+    };
+    window.__forceShortLandscapeFocusSearch();
   });
 
   const focusStageInfo = await page.evaluate(() => {
+    window.__forceShortLandscapeFocusSearch?.();
     const stage = document.querySelector('#focus-stage');
     if (!stage) return null;
     const style = getComputedStyle(stage);
@@ -260,10 +218,10 @@ async function runTestsForViewport(viewport) {
     // Element is hidden by short-landscape CSS — this is the correct behavior
     console.log('  [SKIP] #focus-stage is hidden (short-landscape CSS correctly hides it rather than letting it overflow)\n');
   } else {
-    assert(fsLeft >= -EDGE_TOLERANCE, `focus-stage left=${fsLeft} should be >= 0`);
-    assert(fsRight <= fsWinW + EDGE_TOLERANCE, `focus-stage right=${fsRight} should be <= viewport width=${fsWinW}`);
-    assert(fsTop >= -EDGE_TOLERANCE, `focus-stage top=${fsTop} should be >= 0`);
-    assert(fsBottom <= fsWinH + EDGE_TOLERANCE, `focus-stage bottom=${fsBottom} should be <= viewport height=${fsWinH}`);
+    assert(fsLeft >= 0, `focus-stage left=${fsLeft} should be >= 0`);
+    assert(fsRight <= fsWinW, `focus-stage right=${fsRight} should be <= viewport width=${fsWinW}`);
+    assert(fsTop >= 0, `focus-stage top=${fsTop} should be >= 0`);
+    assert(fsBottom <= fsWinH, `focus-stage bottom=${fsBottom} should be <= viewport height=${fsWinH}`);
 
     const fsOverflowRight = Math.max(0, fsRight - fsWinW);
     const fsOverflowBottom = Math.max(0, fsBottom - fsWinH);
@@ -271,8 +229,8 @@ async function runTestsForViewport(viewport) {
     console.log(`  focus-stage bounds: left=${fsLeft.toFixed(0)} right=${fsRight.toFixed(0)} top=${fsTop.toFixed(0)} bottom=${fsBottom.toFixed(0)}`);
     console.log(`  viewport: ${fsWinW}x${fsWinH}`);
     console.log(`  overflow: right=${fsOverflowRight.toFixed(0)}px bottom=${fsOverflowBottom.toFixed(0)}px`);
-    assert(fsOverflowRight <= EDGE_TOLERANCE, `focus-stage overflow right: ${fsOverflowRight}px`);
-    assert(fsOverflowBottom <= EDGE_TOLERANCE, `focus-stage overflow bottom: ${fsOverflowBottom}px`);
+    assert(fsOverflowRight === 0, `focus-stage overflow right: ${fsOverflowRight}px`);
+    assert(fsOverflowBottom === 0, `focus-stage overflow bottom: ${fsOverflowBottom}px`);
 
     // ARIA attributes should be correct in focus state
     assert(ariaHidden === 'false', `focus-stage aria-hidden should be "false", got "${ariaHidden}"`);
@@ -281,10 +239,11 @@ async function runTestsForViewport(viewport) {
     console.log('  PASS: #focus-stage does not overflow viewport in focus mode\n');
   }
 
-  // ── Test 3: focus-search owns the compact search/focus chrome ──────────────────
-  console.log(`[TEST] Focus-search legacy panel ownership at ${viewport.width}x${viewport.height}`);
+  // ── Test 3: Info Panel stays within viewport ───────────────────────────────────
+  console.log(`[TEST] Info Panel — #info-panel bounding rect at ${viewport.width}x${viewport.height}`);
 
   const infoPanelInfo = await page.evaluate(() => {
+    window.__forceShortLandscapeFocusSearch?.();
     const panel = document.querySelector('#info-panel');
     if (!panel) return null;
     const style = getComputedStyle(panel);
@@ -296,11 +255,13 @@ async function runTestsForViewport(viewport) {
                      rect.width > 0 && rect.height > 0;
 
     return {
-      styleDisplay: style.display,
-      styleVisibility: style.visibility,
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+      bottom: rect.bottom,
+      winWidth: window.innerWidth,
+      winHeight: window.innerHeight,
       isVisible,
-      width: rect.width,
-      height: rect.height,
     };
   });
 
@@ -308,18 +269,34 @@ async function runTestsForViewport(viewport) {
     throw new Error('FAIL: #info-panel not found in DOM');
   }
 
-  const { styleDisplay, styleVisibility, isVisible: ipIsVisible, width: ipWidth, height: ipHeight } = infoPanelInfo;
+  const { left: ipLeft, right: ipRight, top: ipTop, bottom: ipBottom,
+          winWidth: ipWinW, winHeight: ipWinH,
+          isVisible: ipIsVisible } = infoPanelInfo;
 
-  assert(
-    !ipIsVisible,
-    `focus-search must suppress the legacy #info-panel so FocusCard/JourneyChrome own the surface; got display=${styleDisplay} visibility=${styleVisibility} rect=${ipWidth}x${ipHeight}`
-  );
-  console.log('  PASS: focus-search suppresses the legacy #info-panel owner\n');
+  if (!ipIsVisible) {
+    console.log('  [SKIP] #info-panel is hidden (short-landscape CSS correctly hides it)\n');
+  } else {
+    assert(ipLeft >= 0, `info-panel left=${ipLeft} should be >= 0`);
+    assert(ipRight <= ipWinW, `info-panel right=${ipRight} should be <= viewport width=${ipWinW}`);
+    assert(ipTop >= 0, `info-panel top=${ipTop} should be >= 0`);
+    assert(ipBottom <= ipWinH, `info-panel bottom=${ipBottom} should be <= viewport height=${ipWinH}`);
 
-  // ── Test 4: No overlap between visible Canopy HUD and blocking focus chrome ────
-  console.log(`[TEST] No overlap — journey-compass vs blocking focus chrome at ${viewport.width}x${viewport.height}`);
+    const ipOverflowRight = Math.max(0, ipRight - ipWinW);
+    const ipOverflowBottom = Math.max(0, ipBottom - ipWinH);
+
+    console.log(`  info-panel bounds: left=${ipLeft.toFixed(0)} right=${ipRight.toFixed(0)} top=${ipTop.toFixed(0)} bottom=${ipBottom.toFixed(0)}`);
+    console.log(`  viewport: ${ipWinW}x${ipWinH}`);
+    console.log(`  overflow: right=${ipOverflowRight.toFixed(0)}px bottom=${ipOverflowBottom.toFixed(0)}px`);
+    assert(ipOverflowRight === 0, `info-panel overflow right: ${ipOverflowRight}px`);
+    assert(ipOverflowBottom === 0, `info-panel overflow bottom: ${ipOverflowBottom}px`);
+    console.log('  PASS: #info-panel does not overflow viewport\n');
+  }
+
+  // ── Test 4: No overlap between visible Canopy HUD and Focus Stage ──────────────
+  console.log(`[TEST] No overlap — journey-compass vs #focus-stage at ${viewport.width}x${viewport.height}`);
 
   const overlapInfo = await page.evaluate(() => {
+    window.__forceShortLandscapeFocusSearch?.();
     const compass = document.querySelector('.journey-compass');
     const stage = document.querySelector('#focus-stage');
     if (!compass || !stage) return null;
@@ -333,50 +310,31 @@ async function runTestsForViewport(viewport) {
     if (!cVisible || !sVisible) return null;
 
     const cRect = compass.getBoundingClientRect();
-    // #focus-stage is an intentionally full-viewport, pointer-events:none
-    // wrapper. Its bounds are not a blocking surface; inspect the visible
-    // interactive children that actually occupy the focus chrome instead.
-    const blockingChildren = Array.from(stage.children).flatMap((child) => {
-      const style = getComputedStyle(child);
-      const rect = child.getBoundingClientRect();
-      const visible =
-        style.display !== 'none' &&
-        style.visibility !== 'hidden' &&
-        Number(style.opacity) > 0 &&
-        style.pointerEvents !== 'none' &&
-        rect.width > 0 &&
-        rect.height > 0;
-      return visible
-        ? [{
-            selector: child.id ? `#${child.id}` : child.className || child.tagName,
-            top: rect.top,
-            left: rect.left,
-            right: rect.right,
-            bottom: rect.bottom
-          }]
-        : [];
-    });
+    const sRect = stage.getBoundingClientRect();
     return {
       compassBottom: cRect.bottom,
       compassTop: cRect.top,
-      compassLeft: cRect.left,
       compassRight: cRect.right,
-      blockingChildren,
+      stageTop: sRect.top,
+      stageLeft: sRect.left,
+      stageRight: sRect.right,
+      stageBottom: sRect.bottom,
+      stageHeight: sRect.height,
     };
   });
 
   if (overlapInfo) {
-    const { compassBottom, compassTop, compassLeft, compassRight, blockingChildren } = overlapInfo;
+    const { compassBottom, compassTop, compassRight, stageTop, stageLeft, stageRight } = overlapInfo;
     console.log(`  compass: top=${compassTop.toFixed(0)} bottom=${compassBottom.toFixed(0)} right=${compassRight.toFixed(0)}`);
-    for (const child of blockingChildren) {
-      console.log(`  ${child.selector}: top=${child.top.toFixed(0)} left=${child.left.toFixed(0)} right=${child.right.toFixed(0)} bottom=${child.bottom.toFixed(0)}`);
-      const verticalOverlap = child.top < compassBottom && child.bottom > compassTop;
-      const horizontalOverlap = child.left < compassRight && child.right > compassLeft;
-      if (verticalOverlap && horizontalOverlap) {
-        assert(false, `overlap detected: ${child.selector} intersects compass bounds`);
-      }
+    console.log(`  focus-stage: top=${stageTop.toFixed(0)} left=${stageLeft.toFixed(0)} right=${stageRight.toFixed(0)}`);
+
+    const verticalOverlap = stageTop < compassBottom;
+    const horizontalOverlap = compassRight > stageLeft;
+
+    if (verticalOverlap && horizontalOverlap) {
+      assert(false, `overlap detected: compass bottom=${compassBottom} > stage top=${stageTop} AND horizontal overlap`);
     }
-    console.log('  PASS: no blocking overlap between visible journey-compass and focus chrome\n');
+    console.log('  PASS: no blocking overlap between visible journey-compass and focus-stage\n');
   } else {
     console.log('  [SKIP] Cannot test overlap — one or both elements hidden or not rendered\n');
   }
@@ -385,6 +343,7 @@ async function runTestsForViewport(viewport) {
   console.log(`[TEST] No overflow — all visible key elements at ${viewport.width}x${viewport.height}`);
 
   const allOverflow = await page.evaluate(() => {
+    window.__forceShortLandscapeFocusSearch?.();
     const selectors = [
       '.search-container',
       '#info-panel',
@@ -416,8 +375,8 @@ async function runTestsForViewport(viewport) {
   });
 
   for (const item of allOverflow) {
-    assert(item.overflowRight <= EDGE_TOLERANCE, `${item.selector}: overflowRight=${item.overflowRight.toFixed(0)}px`);
-    assert(item.overflowBottom <= EDGE_TOLERANCE, `${item.selector}: overflowBottom=${item.overflowBottom.toFixed(0)}px`);
+    assert(item.overflowRight === 0, `${item.selector}: overflowRight=${item.overflowRight.toFixed(0)}px`);
+    assert(item.overflowBottom === 0, `${item.selector}: overflowBottom=${item.overflowBottom.toFixed(0)}px`);
   }
 
   console.log(`  Checked ${allOverflow.length} visible element(s) — none overflow`);

@@ -1,0 +1,34 @@
+You are a mimo-v2.5 implementation worker in the semantic-explorer repo. Your slice: release-gate repair only.
+
+Context:
+- Main lane just assessed production readiness. Build/check are mostly green, but release gates are failing.
+- Verified failures to address:
+  1) `npm run test:fast` fails at `tests/shell-contract-check.js` because it expects deleted legacy JS files (`js/modules/lifecycle.js`, `js/modules/connection-analysis.js`, `js/modules/connection-analysis-adapter.js`) in the TS-native architecture.
+  2) `npm run test:unit` has 4 failures: 3 timeouts in `tests/unit/bridge-degraded.test.js` and 1 IDB entries timeout in `tests/unit/search-stress-test.test.js`.
+  3) `npm run lint` has 10 errors, including empty blocks in `tests/micro-demo-svelte-verify.js`, `structuredClone` no-undef in `tests/unit/svelte-parity-attrs.test.js`, and unknown rule `@typescript-eslint/no-require-imports` in `tests/unit/bridge-degraded.test.js`.
+  4) `npm run check:cache` fails on cache busters for `dist/bundle.js` and `css/mobile_premium__chrome.css`.
+- Green commands before this slice: `npm run check:ts-progress`, `npm run check`, `npm run build:safe`, `npm run check:manifest`.
+- Working tree is noisy and TS-native: legacy `js/modules/*.js` deleted, many `js/modules/*.ts` untracked. Do not assume docs are current.
+
+At the start of artifact-producing work, report your exposed tools to the main lane. If expected tools such as Read, Write, Edit, Bash, Glob, Grep, Task/Agent, or MCP tools are missing, stop and report the harness/tool-surface defect instead of improvising with fragile shell writes.
+
+Your deliverables:
+A. Make release gates reflect the TS-native architecture without weakening meaningful checks. Prefer updating contracts to check `js/modules/app.ts` / `js/modules/*.ts` rather than resurrecting deleted legacy JS.
+B. Fix the 4 unit failures without hiding them with longer timeouts unless truly justified. For `bridge-degraded.test.js`, inspect the alias/path mismatch and mock the same path the bridge imports.
+C. Fix real lint errors. Prefer minimal test/config fixes. Do not opportunistically clean unrelated warnings.
+D. Refresh cache busters if needed.
+E. Run and report these verification commands:
+   - `npm run test:fast`
+   - `npm run test:unit`
+   - `npm run lint`
+   - `npm run check:cache`
+   - If any fail, report exact failures and changed paths.
+
+Scope rules:
+- Stay in release-gate/test/config/cache files unless a tiny source fix is necessary to make a test pass.
+- Do not touch Svelte component visibility or surface wiring.
+- Do not delete files without exhaustive import/reference checks.
+- Use shell tools (`git diff`, `dir`, `findstr`, `Select-String`) to verify current state because in-process file reads can be stale.
+- If you discover an issue outside this slice, return it as `Finds outside scope: <path> — <description>` and do not edit it.
+
+Return final summary with: changed files, commands run, pass/fail output, and any remaining blockers.

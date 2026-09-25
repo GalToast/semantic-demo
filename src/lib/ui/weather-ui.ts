@@ -1,243 +1,278 @@
 /**
  * @lib/ui/weather-ui.ts
  *
+ * Ported from: js/modules/weather-ui.ts
  * Weather widget DOM rendering and effects.
- *
- * W49c: replaced module-level `let stalenessIntervalId` / `lightningTimer`
- * with a module-owned DisposableRegistry. The previous design was
- * singleton-soup: timers tracked with module-level `let` variables,
- * never registered with DisposableRegistry, with a dynamic-import
- * teardown path that swallowed errors. If the dynamic import failed
- * (network blip, bundling issue), the 60-second staleness interval
- * would leak forever.
- *
- * Now: all timers go through `_registry.timer()` / `_registry.schedule()`,
- * and `disposeWeatherUi()` is a synchronous `_registry.disposeAll()`
- * call. AppBoot.svelte can import it directly (no dynamic import).
- *
- * `lightningGeneration` stays as a module-level `let` because it's a
- * generation counter for cancellation, not a disposable resource.
- * `_stalenessActive` is a dedupe flag for the 60-second polling timer;
- * reset to false in `disposeWeatherUi()` so re-mount restarts the timer.
  */
 
-import { appState } from '@lib/state/app.svelte'
-import type { WeatherData } from '@lib/utils/weather'
-import { seededUnit } from '@lib/utils/seeded-random'
-import { createDisposableRegistry, type DisposableRegistry } from '@lib/utils/disposable-registry'
+import { weatherStateStore, compositionStore } from '@lib/stores/legacy-stores';
+import { seededUnit } from '@lib/utils/seeded-random';
 
-/** Generation counter for the lightning loop — bumped on each scheduleLightning()
- *  call so a stale flash chain self-aborts. Module-level because it's a
- *  counter, not a disposable resource. */
-let lightningGeneration: number = 0
-
-/** Dedupe flag for the 60-second staleness polling timer. Reset to false
- *  in `disposeWeatherUi()` so re-mount restarts the timer. */
-let _stalenessActive: boolean = false
-
-/** Module-owned disposable registry. Owns the staleness interval and the
- *  lightning flash timers. Created at module load, cleared by
- *  `disposeWeatherUi()`. Replaces the previous module-level `let`s. */
-const _registry: DisposableRegistry = createDisposableRegistry({ label: 'weather-ui' })
+let lightningTimer: number | null = null;
+let lightningGeneration: number = 0;
+let stalenessIntervalId: number | null = null;
 
 function canUseWeatherDom(): boolean {
-    return (
-        typeof document !== 'undefined' &&
-        typeof document.getElementById === 'function' &&
-        typeof document.querySelector === 'function'
-    )
+    return typeof document !== 'undefined'
+        && typeof document.getElementById === 'function'
+        && typeof document.querySelector === 'function';
+}
+
+function getStoreValue<T>(store: { subscribe: (fn: (v: T) => void) => () => void }): T {
+    let value: T;
+    store.subscribe((v: T) => { value = v; })();
+    return value!;
 }
 
 interface WeatherStateValue {
-    weather: WeatherData | null
-    lastFetch: number | null
-    fallback: boolean
-    stalenessMsg: string
+    weather: Record<string, unknown> | null;
+    lastFetch: number | null;
+    fallback: boolean;
+    stalenessMsg: string;
 }
 
-/** Reactive handler — call whenever appState.weatherState changes. */
-export function onWeatherStateChange(): void {
-    if (!canUseWeatherDom()) return
-    const state = appState.weatherState
+interface CompositionState {
+    activeView: string;
+}
+
+weatherStateStore.subscribe((state: WeatherStateValue) => {
+    if (!canUseWeatherDom() || !state) return;
     if (state.fallback) {
-        renderWeatherFallback(state)
+        renderWeatherFallback(state);
     } else if (state.weather) {
-        updateWeatherUi(state)
+        updateWeatherUi(state);
     }
-}
+});
 
-export function updateWeatherStaleness(lastFetch: number | null): void {
-    const el = document.getElementById('weather-staleness')
-    if (!el) return
-    if (!lastFetch) {
-        el.textContent = ''
-        return
-    }
-    const age = Math.floor((Date.now() - lastFetch) / 60000)
-    if (age < 5) {
-        el.textContent = ''
-    } else if (age < 30) {
-        el.textContent = `Updated ${age}m ago`
-    } else if (age < 120) {
-        el.textContent = `Updated ${Math.floor(age / 60)}h ago`
+compositionStore.subscribe((comp: CompositionState) => {
+    if (!canUseWeatherDom()) return;
+    if (comp.activeView !== 'map') {
+        clearWeatherEffects();
     } else {
-        el.textContent = 'Stale data — refresh for latest'
+        const weatherState = getStoreValue<WeatherStateValue>(weatherStateStore);
+        if (weatherState?.weather && !weatherState.fallback) {
+            applyWeatherEffects(weatherState.weather);
+        }
     }
-}
-
-/** Start the 60-second staleness polling timer. Idempotent — if already
- *  running, this is a no-op. Caller doesn't need to track; the registry
- *  owns the interval. */
-function startStalenessPolling(): void {
-    if (_stalenessActive || _registry.isDisposed || typeof window === 'undefined') return
-    _stalenessActive = true
-    _registry.timer(window.setInterval(() => updateWeatherStaleness(appState.weatherState?.lastFetch), 60000))
-}
+});
 
 export function updateWeatherUi(state: WeatherStateValue): void {
-    if (!canUseWeatherDom()) return
-    const weather = state.weather
-    if (!weather) return
+    if (!canUseWeatherDom()) return;
+    revealWeatherWidget();
+    const weather = state.weather!;
+    const icon = normalizeWeatherIcon(weather.icon as string);
+    const condition = (weather.condition as string) || icon;
+    const desc = (weather.description as string) || getWeatherDescription(weather.code as number);
 
-    const tempEl = document.getElementById('weather-temp')
-    const descEl = document.getElementById('weather-desc')
-    const windSpeedEl = document.getElementById('wind-speed')
-    const windArrowEl = document.getElementById('wind-arrow')
+    const weatherIconEl = document.getElementById('weather-icon');
+    const conditionUseEl = weatherIconEl?.querySelector('.weather-condition-icon use') as SVGSVGElement | null;
+    const tempEl = document.getElementById('weather-temp');
+    const descEl = document.getElementById('weather-desc');
+    const windSpeedEl = document.getElementById('wind-speed');
+    const windArrowEl = document.getElementById('wind-arrow');
 
-    const temp = Number(weather.temp)
-    const condition = String(weather.condition || '')
-    const windSpeed = Number(weather.windSpeed)
-    const windDirection = Number(weather.windDirection)
-
-    if (tempEl) tempEl.textContent = `${temp}°F`
-    if (descEl) descEl.textContent = condition
-    if (windSpeedEl) windSpeedEl.textContent = `${windSpeed} mph`
-    if (windArrowEl && Number.isFinite(windDirection)) {
-        windArrowEl.style.transform = `rotate(${windDirection}deg)`
+    if (conditionUseEl) conditionUseEl.setAttribute('href', `#icon-${icon}`);
+    if (weatherIconEl) {
+        weatherIconEl.setAttribute('role', 'img');
+        weatherIconEl.setAttribute('aria-label', desc);
+        weatherIconEl.dataset.condition = condition;
+    }
+    if (tempEl) tempEl.textContent = `${weather.temp}F`;
+    if (descEl) descEl.textContent = desc;
+    if (windSpeedEl) windSpeedEl.textContent = `${weather.windSpeed} mph`;
+    if (windArrowEl && Number.isFinite(weather.windDirection)) {
+        windArrowEl.style.transform = `rotate(${weather.windDirection}deg)`;
     }
 
-    updateWeatherStaleness(state.lastFetch)
+    updateWeatherStaleness(state.lastFetch);
 
-    if (appState.currentView === 'map') {
-        applyWeatherEffects(weather)
+    const comp = getStoreValue<CompositionState>(compositionStore);
+    if (comp.activeView === 'map') {
+        applyWeatherEffects(weather);
     }
 
-    startStalenessPolling()
+    if (!stalenessIntervalId && typeof window !== 'undefined') {
+        stalenessIntervalId = window.setInterval(() => updateWeatherStaleness(getStoreValue<WeatherStateValue>(weatherStateStore)?.lastFetch), 60000);
+    }
 }
 
 export function renderWeatherFallback(state: WeatherStateValue): void {
-    if (!canUseWeatherDom()) return
-    revealWeatherWidget()
-    const tempEl = document.getElementById('weather-temp')
-    const descEl = document.getElementById('weather-desc')
-    const windSpeedEl = document.getElementById('wind-speed')
+    if (!canUseWeatherDom()) return;
+    revealWeatherWidget();
+    const tempEl = document.getElementById('weather-temp');
+    const descEl = document.getElementById('weather-desc');
+    const windSpeedEl = document.getElementById('wind-speed');
+    const weatherIconEl = document.getElementById('weather-icon');
+    const conditionUseEl = weatherIconEl?.querySelector('.weather-condition-icon use') as SVGSVGElement | null;
+    const stalenessEl = document.getElementById('weather-staleness');
 
-    if (tempEl) tempEl.textContent = '--°F'
-    if (descEl) descEl.textContent = state.stalenessMsg || 'Weather unavailable'
-    if (windSpeedEl) windSpeedEl.textContent = '-- mph'
-}
-
-export function applyWeatherEffects(weather: WeatherData): void {
-    if (!canUseWeatherDom()) return
-    clearWeatherEffects()
-
-    const condition = (weather.condition || '').toLowerCase()
-    const container = document.getElementById('map-weather-overlay')
-    if (!container) return
-
-    if (condition.includes('rain') || condition.includes('storm')) {
-        createRain()
-        if (condition.includes('storm')) scheduleLightning()
-    } else if (condition.includes('snow')) {
-        createSnow()
-    } else if (condition.includes('fog') || condition.includes('mist')) {
-        container.classList.add('fog-active')
+    if (conditionUseEl) conditionUseEl.setAttribute('href', '#icon-cloud');
+    if (weatherIconEl) {
+        weatherIconEl.setAttribute('aria-label', 'Weather unavailable');
+        weatherIconEl.dataset.condition = 'cloud';
     }
 
-    const brightness = Number(weather.brightness) || 1
-    container.style.filter = `brightness(${brightness})`
-}
-
-export function clearWeatherEffects(): void {
-    if (!canUseWeatherDom()) return
-    const rainContainer = document.getElementById('rain-container')
-    const snowContainer = document.getElementById('snow-container')
-    const mapOverlay = document.getElementById('map-weather-overlay')
-    if (rainContainer) rainContainer.replaceChildren()
-    if (snowContainer) snowContainer.replaceChildren()
-    if (mapOverlay) {
-        mapOverlay.classList.remove('fog-active')
-        mapOverlay.style.filter = ''
+    if (state.lastFetch) {
+        if (descEl) descEl.textContent = 'Service lost';
+        updateWeatherStaleness(state.lastFetch);
+        if (stalenessEl) {
+            stalenessEl.textContent += ' (Stale)';
+            stalenessEl.style.color = '#ff9b9b';
+        }
+    } else {
+        if (tempEl) tempEl.textContent = '';
+        if (descEl) descEl.textContent = 'Unavailable';
+        if (windSpeedEl) windSpeedEl.textContent = '-- mph';
+        updateWeatherStaleness(state.lastFetch);
     }
+    clearWeatherEffects();
 }
 
 function revealWeatherWidget(): void {
-    const el = document.getElementById('weather-widget')
-    if (el?.style) el.style.display = 'block'
+    if (!canUseWeatherDom()) return;
+    const widget = document.querySelector<HTMLElement>('.weather-widget');
+    if (widget) {
+        if (!document.fonts || document.fonts.status === 'loaded') {
+            widget.hidden = false;
+        } else {
+            document.fonts.ready.then(() => { widget.hidden = false; });
+        }
+    }
+}
+
+function normalizeWeatherIcon(icon: string): string {
+    return ['sun', 'cloud', 'rain'].includes(icon) ? icon : 'cloud';
+}
+
+function getWeatherDescription(code: number): string {
+    if (code === 0) return 'Clear';
+    if (code <= 3) return 'Partly cloudy';
+    if (code <= 49) return 'Fog';
+    if (code <= 59) return 'Drizzle';
+    if (code <= 69) return 'Rain';
+    if (code <= 79) return 'Snow';
+    if (code <= 82) return 'Rain showers';
+    if (code <= 86) return 'Snow showers';
+    if (code <= 99) return 'Thunderstorm';
+    return 'Current weather';
+}
+
+export function updateWeatherStaleness(lastFetch: number | null): void {
+    if (!canUseWeatherDom()) return;
+    const el = document.getElementById('weather-staleness');
+    if (!el) return;
+    if (!lastFetch) {
+        el.textContent = '';
+        el.removeAttribute('aria-label');
+        return;
+    }
+    const mins = Math.floor((Date.now() - lastFetch) / 60000);
+    if (mins < 1) {
+        el.textContent = 'Updated just now';
+    } else if (mins === 1) {
+        el.textContent = 'Updated 1 min ago';
+    } else {
+        el.textContent = `Updated ${mins} min ago`;
+    }
+    el.setAttribute('aria-label', el.textContent);
+}
+
+export function applyWeatherEffects(weather: Record<string, unknown>): void {
+    if (!weather || !canUseWeatherDom()) return;
+    const overlay = document.getElementById('weather-overlay');
+    if (!overlay) return;
+
+    if (overlay.classList) overlay.classList.add('active');
+    clearWeatherEffectNodes();
+
+    const condition = (weather.condition as string) || normalizeWeatherIcon(weather.icon as string);
+    if (condition === 'sun') showById('sun-rays');
+    if (condition === 'fog') showById('fog-overlay');
+    if (condition === 'rain' || condition === 'storm') createRain();
+    if (condition === 'snow') createSnow();
+    if (condition === 'storm') scheduleLightning();
+}
+
+export function clearWeatherEffects(): void {
+    if (!canUseWeatherDom()) return;
+    const overlay = document.getElementById('weather-overlay');
+    if (overlay?.classList) overlay.classList.remove('active');
+    clearWeatherEffectNodes();
+}
+
+function clearWeatherEffectNodes(): void {
+    hideById('sun-rays');
+    hideById('fog-overlay');
+    clearChildren('rain-container');
+    clearChildren('snow-container');
+    lightningGeneration += 1;
+    if (lightningTimer && typeof window !== 'undefined') {
+        window.clearTimeout(lightningTimer);
+        lightningTimer = null;
+    }
+}
+
+function showById(id: string): void {
+    const el = document.getElementById(id);
+    if (el?.style) el.style.display = 'block';
+}
+
+function hideById(id: string): void {
+    const el = document.getElementById(id);
+    if (el?.style) el.style.display = 'none';
+}
+
+function clearChildren(id: string): void {
+    const el = document.getElementById(id);
+    if (el?.replaceChildren) el.replaceChildren();
 }
 
 function createRain(): void {
-    const container = document.getElementById('rain-container')
-    if (!container) return
+    const container = document.getElementById('rain-container');
+    if (!container) return;
     for (let i = 0; i < 80; i += 1) {
-        const drop = document.createElement('div')
-        drop.className = 'rain-drop'
-        drop.style.left = `${seededUnit(i, 0xa111) * 100}%`
-        drop.style.animationDuration = `${0.5 + seededUnit(i, 0xa112) * 0.5}s`
-        drop.style.animationDelay = `${seededUnit(i, 0xa113) * 2}s`
-        container.appendChild(drop)
+        const drop = document.createElement('div');
+        drop.className = 'rain-drop';
+        drop.style.left = `${seededUnit(i, 0xA111) * 100}%`;
+        drop.style.animationDuration = `${0.5 + seededUnit(i, 0xA112) * 0.5}s`;
+        drop.style.animationDelay = `${seededUnit(i, 0xA113) * 2}s`;
+        container.appendChild(drop);
     }
 }
 
 function createSnow(): void {
-    const container = document.getElementById('snow-container')
-    if (!container) return
+    const container = document.getElementById('snow-container');
+    if (!container) return;
     for (let i = 0; i < 42; i += 1) {
-        const flake = document.createElement('div')
-        flake.className = 'snow-flake'
-        flake.style.left = `${seededUnit(i, 0xbeef) * 100}%`
-        flake.style.animationDuration = `${3 + seededUnit(i, 0xcafe) * 4}s`
-        flake.style.animationDelay = `${seededUnit(i, 0xdead) * 5}s`
-        flake.style.width = `${4 + seededUnit(i, 0xf00d) * 6}px`
-        flake.style.height = flake.style.width
-        container.appendChild(flake)
+        const flake = document.createElement('div');
+        flake.className = 'snow-flake';
+        flake.style.left = `${seededUnit(i, 0xBEEF) * 100}%`;
+        flake.style.animationDuration = `${3 + seededUnit(i, 0xCAFE) * 4}s`;
+        flake.style.animationDelay = `${seededUnit(i, 0xDEAD) * 5}s`;
+        flake.style.width = `${4 + seededUnit(i, 0xF00D) * 6}px`;
+        flake.style.height = flake.style.width;
+        container.appendChild(flake);
     }
 }
 
 function scheduleLightning(): void {
-    if (typeof window === 'undefined') return
-    const generation = lightningGeneration + 1
-    lightningGeneration = generation
-    let flashCount = 0
+    if (typeof window === 'undefined') return;
+    const generation = lightningGeneration + 1;
+    lightningGeneration = generation;
+    let flashCount = 0;
     const flash = (): void => {
-        if (generation !== lightningGeneration) return
-        if (appState.currentView !== 'map') return
-        const lightning = document.getElementById('lightning-flash')
+        if (generation !== lightningGeneration) return;
+        const comp = getStoreValue<CompositionState>(compositionStore);
+        if (comp.activeView !== 'map') return;
+        const lightning = document.getElementById('lightning-flash');
         if (lightning) {
-            lightning.classList.add('flash')
-            // 200ms flash removal — track with registry so disposal cancels it.
-            _registry.timer(window.setTimeout(() => lightning.classList.remove('flash'), 200))
+            lightning.classList.add('flash');
+            window.setTimeout(() => lightning.classList.remove('flash'), 200);
         }
         if (generation === lightningGeneration) {
-            flashCount += 1
-            _registry.timer(window.setTimeout(flash, 5000 + seededUnit(flashCount, 0x71cd) * 15000))
+            flashCount += 1;
+            lightningTimer = window.setTimeout(flash, 5000 + seededUnit(flashCount, 0x71CD) * 15000);
         }
-    }
-    _registry.timer(window.setTimeout(flash, 3000))
-}
-
-/**
- * Synchronously tear down all weather-ui timers and DOM state.
- *
- * W49c: replaces the previous implementation that manually tracked
- * `stalenessIntervalId` / `lightningTimer` and the dynamic-import teardown
- * path in AppBoot.svelte that swallowed errors. Now we delegate to the
- * module-owned DisposableRegistry, which clears every registered timer
- * in reverse order.
- *
- * Safe to call multiple times (registry's disposeAll is idempotent).
- */
-export function disposeWeatherUi(): void {
-    _registry.disposeAll()
-    _stalenessActive = false
+    };
+    lightningTimer = window.setTimeout(flash, 3000);
 }

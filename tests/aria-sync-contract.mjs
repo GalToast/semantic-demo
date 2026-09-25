@@ -149,39 +149,14 @@ function assert(cond, msg) {
 
 // ── Import real modules ───────────────────────────────────────────────────────
 
-const { state, withStateMutation } = await import('./helpers/canonical-state.mjs')
+const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts')
 
 let refreshCompositionState
-let setSearchSummaryAction
-let searchStoreRef
-let setTrailDepthAction
-let setSemanticDiveModeAction
-
 try {
-    const lc = await import('../src/lib/stores/lifecycle.ts')
+    const lc = await import('../js/modules/lifecycle.ts')
     refreshCompositionState = lc.refreshCompositionState
-    setTrailDepthAction = lc.setTrailDepth
-    setSemanticDiveModeAction = lc.setSemanticDiveMode
 } catch (e) {
     refreshCompositionState = globalThis.window.refreshCompositionState
-}
-try {
-    const searchMod = await import('../src/lib/stores/search.svelte.ts')
-    setSearchSummaryAction = searchMod.setSearchSummary
-    searchStoreRef = searchMod.searchStore
-} catch (e) {
-    // fall back to raw appState writes (legacy env)
-}
-// The Svelte store facade returns a snapshot that only refreshes when
-// something subscribes (the real app subscribes via components/$effect).
-// Without this, parity's get(searchStore) reads the initial snapshot and the
-// search → panelSurface flip never lands. Subscribe once, like the app does.
-if (searchStoreRef) {
-    try {
-        searchStoreRef.subscribe(() => {})
-    } catch {
-        // ignore legacy
-    }
 }
 assert(typeof refreshCompositionState === 'function', 'refreshCompositionState is callable')
 
@@ -191,7 +166,7 @@ function resetState() {
     withStateMutation(() => {
         state.currentView = 'galaxy'
         state.focusedNode = null
-        state.focusState.selectedPoint = null
+        state.selectedPoint = null
         state.navState.focusedIndex = null
         state.navState.mode = 'overview'
         state.navState.trailCursor = -1
@@ -201,7 +176,7 @@ function resetState() {
         state.navState.threadCandidates = []
         state.trailDepth = 0
         state.semanticDiveMode = false
-        setSearchSummaryAction(null)
+        state.currentSearchSummary = null
         state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false }
     })
     state.trailIndices.clear()
@@ -286,14 +261,14 @@ console.log('  PASS: overview idle — dataset state and ARIA contract correct\n
 // PHASE 2: search active
 console.log('[PHASE] search — search intent active, no focus')
 resetState()
-setSearchSummaryAction({ query: 'coffee', visibleMatches: 5 })
+state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
 const searchInput = new FakeElement('input')
 searchInput.value = 'coffee'
 elementsById.set('search-input', searchInput)
 commit('search')
 
 assert(ds('panelSurface') === 'search', 'search: panelSurface is search')
-assert(ds('graphContext') === 'corridor', 'search: graphContext is corridor (search context)')
+assert(ds('graphContext') === 'search', 'search: graphContext is search')
 assert(ds('semanticDive') === 'inactive', 'search: semanticDive is inactive')
 assert(ds('trailState') === 'inactive', 'search: trailState is inactive (no focus yet)')
 assert(
@@ -311,7 +286,7 @@ console.log('[PHASE] focus — node selected, search intent present')
 resetState()
 state.focusedNode = 4
 state.navState.focusedIndex = 4
-setSearchSummaryAction({ query: 'coffee', visibleMatches: 5 })
+state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
 elementsById.set('search-input', new FakeElement('input'))
 commit('focus')
 
@@ -333,16 +308,10 @@ console.log('[PHASE] semantic-dive — trailDepth >= 2, inside-walk mode')
 resetState()
 state.focusedNode = 4
 state.navState.focusedIndex = 4
-if (setSemanticDiveModeAction) {
-    setSemanticDiveModeAction(true) // canonical writer: focusMirror.semanticDiveMode + navState trailDepth
-}
-if (setTrailDepthAction) {
-    setTrailDepthAction(2) // canonical writer: updates navState trailDepth + mirror
-} else {
-    state.trailDepth = 2 // legacy fallback
-}
-setSearchSummaryAction(null) // isolate inside-walk without search context
+state.trailDepth = 2 // trailDepth=2 → semanticDiveMode derived true
+state.currentSearchSummary = null // isolate inside-walk without search context
 commit('semantic-dive')
+
 assert(ds('panelSurface') === 'semantic-dive', 'semantic-dive: panelSurface is semantic-dive')
 assert(ds('semanticDive') === 'active', 'semantic-dive: semanticDive is active')
 assert(ds('graphContext') === 'focus', 'semantic-dive: graphContext is focus')
@@ -362,13 +331,13 @@ console.log('[PHASE] reset — full state clear, return to overview')
 resetState()
 state.focusedNode = 4
 state.navState.focusedIndex = 4
-state.focusState.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
-setSearchSummaryAction({ query: 'coffee', visibleMatches: 5 })
+state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
+state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
 state.trailDepth = 2
 elementsById.set('search-input', new FakeElement('input'))
 commit('pre-reset')
 
-const { resetStateBeforeUrlRestore } = await import('../src/lib/orchestration/url-restore.ts')
+const { resetStateBeforeUrlRestore } = await import('../js/modules/lifecycle.ts')
 resetStateBeforeUrlRestore({ clearSearchInput: true })
 commit('post-reset')
 
@@ -377,8 +346,8 @@ assert(ds('graphContext') === 'idle', 'reset: graphContext is idle')
 assert(ds('semanticDive') === 'inactive', 'reset: semanticDive is inactive')
 assert(ds('trailState') === 'inactive', 'reset: trailState is inactive')
 assert(state.focusedNode === null, 'reset: focusedNode is null')
-assert(state.focusState?.selectedPoint === null, 'reset: selectedPoint is null (focusState.selectedPoint)')
-assert(state.searchState.currentSearchSummary === null, 'reset: currentSearchSummary is null')
+assert(state.selectedPoint === null, 'reset: selectedPoint is null')
+assert(state.currentSearchSummary === null, 'reset: currentSearchSummary is null')
 assert(
     ARIA_BY_STATE['idle']['#focus-stage']['aria-hidden'] === 'true',
     'reset: focus-stage aria-hidden returns to true (hidden after reset)'
@@ -390,7 +359,7 @@ console.log('[EDGE] focus without search — focusedNode only, no search intent'
 resetState()
 state.focusedNode = 7
 state.navState.focusedIndex = 7
-setSearchSummaryAction(null)
+state.currentSearchSummary = null
 commit('focus-no-search')
 
 assert(ds('panelSurface') === 'focus', 'focus-no-search: panelSurface is focus')
@@ -410,7 +379,7 @@ withStateMutation(() => {
 state.focusedNode = 4
 state.navState.focusedIndex = 4
 state.trailDepth = 2
-setSearchSummaryAction({ query: 'coffee', visibleMatches: 5 })
+state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
 elementsById.set('search-input', new FakeElement('input'))
 commit('map-semantic-dive')
 
@@ -430,7 +399,7 @@ withStateMutation(() => {
 })
 state.focusedNode = 4
 state.navState.focusedIndex = 4
-setSearchSummaryAction({ query: 'coffee', visibleMatches: 5 })
+state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
 elementsById.set('search-input', new FakeElement('input'))
 commit('map-focus-search')
 
@@ -441,7 +410,7 @@ console.log('  PASS: map-focus-search — ARIA contract correct\n')
 // EDGE: single-char input below threshold
 console.log('[EDGE] single-char input below threshold')
 resetState()
-setSearchSummaryAction(null)
+state.currentSearchSummary = null
 const shortInput = new FakeElement('input')
 shortInput.value = 'c'
 elementsById.set('search-input', shortInput)

@@ -7,10 +7,8 @@
  */
 
 import { chromium } from 'playwright';
-import { focusOnNode, refreshCompositionState, setSemanticDiveMode } from '@lib/orchestration/lifecycle'
-import { setTrailDepth } from '@lib/stores/journey.svelte'
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&q=coffee&nodemo=1';
+const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.FOCUS_CAMERA_OWNERSHIP_URL || DEFAULT_URL;
 const FOCUS_INDEX = Number(process.env.FOCUS_CAMERA_OWNERSHIP_INDEX || 3060);
 
@@ -33,9 +31,10 @@ async function waitReady(page) {
       state.renderer &&
       state.camera &&
       state.controls &&
-      typeof focusOnNode === 'function' &&
-      typeof setSemanticDiveMode === 'function' &&
+      typeof window.__APP_ACTIONS__?.focusOnNode === 'function' &&
+      typeof window.__APP_ACTIONS__?.setSemanticDiveMode === 'function' &&
       state.applyingUrlState === false &&
+      window.history.state?.semanticDemo &&
       state.sceneRevealActive === false &&
       document.body.dataset.sceneReveal === 'inactive';
   }, null, { timeout: 45000 });
@@ -43,15 +42,15 @@ async function waitReady(page) {
 
 async function focusNode(page, index, { dive = false } = {}) {
   await page.evaluate(({ targetIndex, shouldDive }) => {
-
-    focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
+    const actions = window.__APP_ACTIONS__ || {};
+    actions.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
     if (shouldDive) {
-      setSemanticDiveMode?.(true);
-      setTrailDepth?.(2, { fromUserGesture: true, skipUrlSync: true });
+      actions.setSemanticDiveMode?.(true);
+      actions.setTrailDepth?.(2, { fromUserGesture: true, skipUrlSync: true });
     } else {
-      setTrailDepth?.(1, { skipUrlSync: true });
+      actions.setTrailDepth?.(1, { skipUrlSync: true });
     }
-    refreshCompositionState?.();
+    actions.refreshCompositionState?.();
   }, { targetIndex: index, shouldDive: dive });
 
   await page.waitForFunction(({ targetIndex, shouldDive }) => {
@@ -222,9 +221,7 @@ function assertCameraOwnership(name, snap, {
     `${name}: selected-node halo scale is too large, got ${snap.focusHaloScale}`);
 }
 
-// SwiftShader gate (see visual-state-audit.mjs)
-const forceSoftwareWebgl = process.env.SEMANTIC_FORCE_WEBGL_SOFTWARE === '1'
-const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox', ...(forceSoftwareWebgl ? ['--enable-unsafe-swiftshader', '--enable-webgl-software-rendering'] : [])] });
+const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
 
 try {
   const mobile = await browser.newPage({

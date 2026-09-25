@@ -2,8 +2,8 @@
   @components/FocusCard.svelte — Selected business focus card
 
   Ported from:
- - (card rendering, selected business hydration)
- - (card chrome, selected-card template)
+    - js/modules/journey-selected-card.js (card rendering, selected business hydration)
+    - js/modules/ui-renderers.js (card chrome, selected-card template)
 
   Displays the currently focused business record with full details.
   Surfaces: idle (empty), search match, field focus.
@@ -15,27 +15,10 @@
     #selected-role-badge
 -->
 <script lang="ts">
+  import { navStore } from '@lib/stores/navigation.svelte';
   import { activeResult } from '@lib/stores/search.svelte';
   import { businessRecords } from '@lib/data-store';
-  import { parityMap, getBypassAttr } from '@lib/orchestration/parity-attrs.svelte'
-  import { viewport } from '@lib/stores/viewport.svelte';
-  import { appState } from '@lib/state/app.svelte';
   import type { BusinessRecord } from '@lib/types/business';
-  import { getBusinessNamePresentation, sanitizePublicFacingNote, describeCluster } from '@lib/utils';
-  import { parseLegalName } from '@lib/business/humanize';
-  import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
-  import {
-    normalizeRelationshipRole,
-    getRelationshipRoleLabel,
-    describeRelationshipRoleReason,
-    type RelationshipRole
-  } from '@lib/utils/relationship-roles';
-  import { fade } from 'svelte/transition';
-  import SelectedBusinessDetails from '@components/SelectedBusinessDetails.svelte';
-  import { returnToOverview } from '@lib/orchestration/lifecycle';
-  import FocusCardHeader from '@lib/components/focus/FocusCardHeader.svelte';
-  import SonicIdentity from '@components/sonic/SonicIdentity.svelte';
-
 
   // ── Business records (reactive store subscription) ─────────────────────
   // Subscribe to the businessRecords writable store directly. The store is
@@ -55,26 +38,43 @@
 
   let { visible = false, forceSemanticDiveVisible = false }: Props = $props();
 
-  // ── navStore → appState.navState (Phase 6) ──────────────────────────────
-  // appState.navState is a Svelte 5 rune-backed $state (see app.svelte.ts:223).
-  // Reading it inside $derived registers reactivity directly — no mirror needed.
-  let nav = $derived(appState.navState);
+  // ── navStore → $state bridge (5c51450 pattern) ──────────────────────────
+  // navStore is a regular svelte/store writable. Reading it via get() inside
+  // a $derived does NOT register as a tracked dependency under Svelte 5 runes.
+  // Mirror it into a $state rune so $derived/$effect track its changes.
+  let nav = $state(navStore());
+  $effect(() => navStore.subscribe(($s) => (nav = $s)));
 
-  // ── Cluster names (canonical, imported from @lib/utils/ui-presentation) ──
-  // Previously this component had its own hardcoded 15-entry list that was
-  // stale and showed wrong category names. The hardcoded list was a 15-entry
-  // subset of an older taxonomy (e.g. "Food & Dining") while the data layer
-  // was migrated to a 21-entry taxonomy (e.g. "Food & Hospitality"). The
-  // result was every focus card showing the wrong category for the actual
-  // cluster index. Now uses the shared canonical list, the same source
-  // ProximityLegend and Placeholder2D already use.
+  // ── Cluster names (mirrors CLUSTER_NAMES from state.js) ───────────────────────
+
+  const CLUSTER_NAMES: readonly string[] = [
+    'Food & Dining',
+    'Professional Services',
+    'Retail & Shopping',
+    'Health & Medical',
+    'Home & Garden',
+    'Automotive',
+    'Education & Childcare',
+    'Entertainment & Events',
+    'Construction & Trades',
+    'Real Estate',
+    'Nonprofit & Civic',
+    'Technology',
+    'Manufacturing & Industrial',
+    'Financial Services',
+    'Agriculture & Land'
+  ];
 
   // ── Derived state ─────────────────────────────────────────────────────────────
-  // Source: appState.navState rune (Phase 6).
-  // The body data-focused-node attr is written by parity-attrs from the same
-  // store; we read from the store directly to avoid a body.dataset round-trip.
+  // Primary source: body data attribute (parity attrs write this from the
+  //   legacy code path; reading it registers a dep on bodyFocusedNode so the
+  //   $derived re-evaluates when the body attribute changes).
+  // Secondary: navStore rune (5c51450 pattern, mirrors FocusPocket.svelte).
 
   let currentFocusedIdx = $derived.by(() => {
+    void bodyFocusedNode;
+    const fromBody = bodyFocusedNode !== '' ? Number(bodyFocusedNode) : null;
+    if (fromBody !== null && Number.isFinite(fromBody)) return fromBody;
     const fromNav = nav.focusedIndex;
     if (typeof fromNav === 'number' && Number.isFinite(fromNav)) return fromNav;
     return null;
@@ -82,57 +82,50 @@
   let currentActiveResult = $derived(activeResult());
   // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
   // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
+  let isFocused = $derived(
+    nav.mode === 'focus' || nav.mode === 'inside' || currentFocusedIdx != null
+  );
   let surface = $derived(nav.surface ?? 'idle');
 
-  // ── Derived state from appState.navState (replaces body.dataset reads) ────
-  // The parity layer writes body.dataset.panelSurface, .navMode, .focusedNode,
-  // .sceneReady from these same stores. We read from the stores directly to
-  // avoid the body.dataset → MutationObserver → $state round-trip.
-  let panelSurface = $derived(parityMap.panelSurface ?? '');
-  let panelSurfaceDetail = $derived(parityMap.panelSurfaceDetail ?? '');
+  let bodyPanelSurface = $state('');
+  let bodyPanelSurfaceDetail = $state('');
 
-  // Read body data-focus-panel-mode reactively via shared parity-attrs observer (set by setFocusPanelMode)
-  let bodyFocusPanelMode = $derived(getBypassAttr('focusPanelMode') ?? '');
+  let bodyFocusedNode = $state('');
+  let bodyNavMode = $state('');
+  let bodySceneReady = $state('');
 
-  // Reactive focus detection: read from appState.navState rune so Svelte re-evaluates
-  // when nav state changes (same semantics as the former body.dataset reads).
-  let isFocusedReactive = $derived(
-    currentFocusedIdx != null ||
-    nav.mode === 'focus' ||
-    nav.mode === 'inside'
-  );
-
-  // ── Test-contract bypass: NOT redundant with parityMap ─────────────────
-  // parityMap.panelSurface (`$derived(parityMap.panelSurface)`) reflects
-  // the STORE-derived value computed by computeParityAttributes() — it is
-  // written FROM stores TO both parityMap and body.dataset, but never reads
-  // body.dataset back. Contract tests bypass the nav state machine by
-  // writing directly to body.dataset.panelSurface. The parity bypass observer
-  // (installBypassObserver in parity-attrs.svelte.ts) only tracks
-  // focusPanelMode/insideWalkState/renderKind/mobileSearchSheet — NOT
-  // panelSurface. So this effect IS needed: it catches test-driven body
-  // dataset overrides that parityMap would never see.
-  let testPanelSurface = $state('');
   $effect(() => {
-    if (typeof document === 'undefined' || !document.body) return;
-    const sync = () => {
-      testPanelSurface = document.body.dataset.panelSurface ?? '';
+    if (typeof document === 'undefined') return;
+    const syncBodyPanelSurface = () => {
+      bodyPanelSurface = document.body.dataset.panelSurface ?? '';
+      bodyPanelSurfaceDetail = document.body.dataset.panelSurfaceDetail ?? '';
+      bodyFocusedNode = document.body.dataset.focusedNode ?? '';
+      bodyNavMode = document.body.dataset.navMode ?? '';
+      bodySceneReady = document.body.dataset.sceneReady ?? '';
     };
-    sync();
-    const observer = new MutationObserver(sync);
+    const observer = new MutationObserver(syncBodyPanelSurface);
     observer.observe(document.body, {
       attributes: true,
-      attributeFilter: ['data-panel-surface'],
+      attributeFilter: ['data-panel-surface', 'data-panel-surface-detail', 'data-focused-node', 'data-nav-mode', 'data-scene-ready']
     });
+    syncBodyPanelSurface();
     return () => observer.disconnect();
   });
 
+  // Reactive focus detection: read from body data-attrs so Svelte re-evaluates
+  // when the legacy code updates the DOM.
+  let isFocusedReactive = $derived(
+    bodyFocusedNode !== '' || // audit-ok: inside $derived — previously audited as SAFE (RISKY items already fixed)
+    bodyNavMode === 'focus' ||
+    bodyNavMode === 'inside' ||
+    isFocused
+  );
+
   let semanticDiveActive = $derived(
     forceSemanticDiveVisible ||
-      panelSurface === 'semantic-dive' ||
-      panelSurfaceDetail === 'semantic-dive' ||
-      String(surface) === 'semantic-dive' ||
-      testPanelSurface === 'semantic-dive'
+      bodyPanelSurface === 'semantic-dive' ||
+      bodyPanelSurfaceDetail === 'semantic-dive' ||
+      String(surface) === 'semantic-dive'
   );
 
   let selectedRecord = $derived.by((): BusinessRecord | null => {
@@ -158,166 +151,22 @@
   });
 
   let selectionSource = $derived.by((): 'search' | 'field' | null => {
-    if (!selectedRecord) return null;
-    // A selection is 'search' ONLY when it is an active search result — i.e.
-    // the focused node is a member of the current search summary's result
-    // set. A plain field/canvas focus (focusedIndex set, no active search)
-    // is 'field'. This keeps the de-jargoned badge "Business view" for
-    // normal node selections (UX-2) and reserves "Search result" for real
-    // matches, fixing the 5k regression where activeResult() (keyed off
-    // focusedIndex for ANY focus) mislabeled field clicks as 'search'.
-    const summary = appState.searchState.currentSearchSummary as
-      | { resultIndices?: number[] }
-      | null;
-    const isSearchResult =
-      !!summary &&
-      Array.isArray(summary.resultIndices) &&
-      currentFocusedIdx != null &&
-      summary.resultIndices.includes(currentFocusedIdx as number);
-    if (isSearchResult) return 'search';
-    if (currentFocusedIdx != null && currentFocusedIdx >= 0) return 'field';
+    if (currentActiveResult != null && selectedRecord != null) return 'search';
+    if (currentFocusedIdx != null && currentFocusedIdx >= 0 && selectedRecord != null) return 'field';
     return null;
-  });
-
-  function relationshipContextFor(candidates: unknown): Record<string, unknown> | null {
-    if (!Array.isArray(candidates)) return null;
-    const normalized: Array<{ relationshipRole: RelationshipRole; roleReason: string; reason: string }> = [];
-    for (const c of candidates) {
-      if (!c || typeof c !== 'object') continue;
-      const detail = c as Record<string, unknown>;
-      const role = normalizeRelationshipRole(String(detail.relationshipRole || ''));
-      normalized.push({
-        relationshipRole: role,
-        roleReason: String(detail.roleReason || ''),
-        reason: String(detail.reason || 'Neighborhood connection')
-      });
-    }
-    if (normalized.length === 0) return null;
-
-    const counts = new Map<RelationshipRole, number>();
-    for (const c of normalized) {
-      counts.set(c.relationshipRole, (counts.get(c.relationshipRole) || 0) + 1);
-    }
-    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
-    const top = sorted[0];
-    if (!top) return null;
-    const [dominantRole, dominantCount] = top;
-    const topCandidate = normalized.find((c) => c.relationshipRole === dominantRole);
-    const distribution = sorted.slice(0, 3).map(([role, count]) => ({
-      label: getRelationshipRoleLabel(role, 'rail'),
-      count
-    }));
-
-    return {
-      roleLabel: getRelationshipRoleLabel(dominantRole, 'rail'),
-      roleTitle: getRelationshipRoleLabel(dominantRole, 'title'),
-      roleReason: describeRelationshipRoleReason(dominantRole, topCandidate?.roleReason),
-      dominantCount,
-      total: normalized.length,
-      distribution,
-      hasContext: true
-    };
-  }
-
-  // Audit #2 (2026-08-12): on compact viewports / the 2D placeholder fallback
-  // there is no interactive map to click, so the empty-state copy must not tell
-  // the user to "click the map". Gate the hint on the active surface.
-  let isMobileFallback = $derived(
-    getBypassAttr('renderKind') === 'placeholder2d' || !!$viewport.isCompact
-  )
-  let emptyExploreHint = $derived(
-    isMobileFallback
-      ? 'Tap a business to explore the network.'
-      : 'Click a business on the map to explore.'
-  )
-
-  // ── View Model (mirrors InfoPanel fallback path) ──────────────────────────────
-  let viewModel = $derived.by((): Record<string, unknown> => {
-    if (!selectedRecord) return {
-      name: 'Select a business',
-      filedAs: '',
-      showFiledAs: false,
-      what: emptyExploreHint,
-      role: 'Listing',
-      theme: 'Theme',
-      status: 'Business status',
-      trivia: '',
-      showTrivia: false,
-      matchNarrative: '',
-      showMatchPanel: false,
-      facts: [],
-      sensitivityBadges: [],
-      mapText: 'No map location yet',
-      threadText: 'Waiting for a related path.',
-      isPopulated: false
-    };
-
-    const rawName = selectedRecord.name ?? '';
-    const namePresentation = getBusinessNamePresentation(rawName);
-    // Prefer the human-readable Legal name (from public_note) when present so
-    // the user sees "ANGEL FIRE COFFEE" instead of the slug "519-angel-fire-coffee".
-    // Falls back to the existing slug-derived title-case name otherwise.
-    const legalName = parseLegalName(selectedRecord.public_note);
-    const name = legalName ?? namePresentation.display ?? 'Business Name';
-    const filedAs = '';
-    const showFiledAs = false;
-    const what = sanitizePublicFacingNote(selectedRecord.what ?? '');
-    const theme = describeCluster(selectedRecord.cluster);
-    const status = formatStatus(selectedRecord.status ?? 'active');
-    // PR-UX (UI/UX audit): replace internal-data jargon "Field Node" / "Search Match"
-    // with user-friendly role labels. See docs/ux-copy-rules.md.
-    const role = selectionSource === 'search' ? 'Search result' : 'Business view';
-    const trivia = '';
-    const showTrivia = false;
-    const matchNarrative = '';
-    const showMatchPanel = false;
-    const facts: Record<string, unknown>[] = [];
-    if (selectedRecord.website) {
-      facts.push({ type: 'link', label: 'Website', href: selectedRecord.website, isExternal: true });
-    }
-    if (selectedRecord.email) {
-      facts.push({ type: 'link', label: 'Email', href: `mailto:${selectedRecord.email}`, isExternal: false });
-    }
-    if (selectedRecord.phone) {
-      facts.push({ value: `Phone: ${selectedRecord.phone}` });
-    }
-    const sensitivityBadges: Record<string, unknown>[] = [];
-    const mapText = (selectedRecord.lat != null && selectedRecord.lng != null)
-      ? `${selectedRecord.lat.toFixed(4)}, ${selectedRecord.lng.toFixed(4)}`
-      : 'No map location yet';
-    const threadText = '';
-    const relationshipContext = relationshipContextFor(nav.threadCandidates);
-
-    return {
-      name,
-      filedAs,
-      showFiledAs,
-      what,
-      role,
-      theme,
-      status,
-      trivia,
-      showTrivia,
-      matchNarrative,
-      showMatchPanel,
-      facts,
-      sensitivityBadges,
-      mapText,
-      threadText,
-      relationshipContext,
-      isPopulated: true
-    };
-  });
-
-  let selectedCity = $derived.by(() => {
-    if (!selectedRecord) return 'Montgomery County';
-    return String(selectedRecord.city || 'Montgomery County');
   });
 
   let isEmpty = $derived(!selectedRecord);
   // When a business is focused, always show the card regardless of search surface.
   // The focused business should never be hidden behind the search chrome.
-  let cardVisible = $derived(visible && isFocusedReactive);
+  let cardVisible = $derived(
+    visible && (
+      isFocusedReactive ||
+      semanticDiveActive ||
+      bodyPanelSurface === 'focus' ||
+      (!(String(surface) === 'search') && !(bodyPanelSurface === 'search') && !(bodyPanelSurface === 'focus-search'))
+    )
+  );
 
   // ── Display helpers ───────────────────────────────────────────────────────────
 
@@ -325,12 +174,11 @@
     switch (status) {
       case 'active': return 'Active';
       case 'inactive': return 'Inactive';
-      // Internal CRM jargon ('disqualified') must not reach the public card —
-      // phrased to match thread-lens.ts's public wording.
-      case 'disqualified': return 'No longer active';
+      case 'disqualified': return 'Disqualified';
       default: return status;
     }
   }
+
   function formatClusterName(cluster: number): string {
     return CLUSTER_NAMES[cluster % CLUSTER_NAMES.length] ?? 'Uncategorized';
   }
@@ -339,63 +187,109 @@
     const cluster = formatClusterName(record.cluster);
     return record.category ? `${cluster} \u00B7 ${record.category}` : cluster;
   }
-  void buildTheme;
 </script>
 
 {#if cardVisible}
-  <!-- svelte-ignore a11y_no_noninteractive_tabindex: focusable scroll region for keyboard users -->
   <div
     class="focus-card selected-card focus-stage-card"
-    class:surface-focus={panelSurface === 'focus'}
-    class:surface-focus-search={panelSurface === 'focus-search'}
-    class:surface-semantic-dive={semanticDiveActive}
-    class:mode-field-node={bodyFocusPanelMode === 'field-node'}
-    id="focus-card-selected"
+    id="selected-card"
     class:selected-card-empty={isEmpty}
-    role="region"
     aria-label="Selected business"
-    data-content-owner="focus-stage"
   >
-    {#if !isEmpty}
-      <div class="focus-card-grip">
-        <button
-          class="focus-card-close"
-          type="button"
-          aria-label="Close business card and return to overview"
-          data-test-id="focus-card-close"
-          onclick={() => returnToOverview()}
-        >
-          <!-- W53 close-up jury: bump X to 26px + stroke-width 3 so the teal X
-               survives JPEG capture + VLM downscale + reads as a clear close
-               control (not an "obscure SIGNAL indicator"). -->
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-    {/if}
-    <!-- Empty state (fades out smoothly when populated data arrives —
-         W53 corrective: prevents abrupt DOM swap that could appear as a
-         double-render flash during the load-to-populated transition.) -->
+    <!-- Empty state -->
     {#if isEmpty}
-    <div id="selected-empty" class="selected-empty" transition:fade={{ duration: 150 }}>
+    <div id="selected-empty" class="selected-empty">
       <svg class="empty-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
         <circle cx="12" cy="12" r="10"/>
         <path d="M12 16v-4M12 8h.01"/>
       </svg>
-      <p class="selected-empty-headline">Select a business</p>
-      <p class="selected-empty-sub">{emptyExploreHint}</p>
+      <p class="selected-empty-headline">Select a node</p>
+      <p class="selected-empty-sub">Click a business in the field to explore.</p>
     </div>
     {/if}
 
-    <!-- Populated state (fades in as the empty state fades out,
-         W53 corrective: no double-render during load transition.) -->
+    <!-- Populated state -->
     {#if !isEmpty}
-      <div id="fc-selected-details" class="selected-details" transition:fade={{ duration: 150 }}>
-        <FocusCardHeader {viewModel} {selectedCity} idPrefix="fc-" />
-        <SelectedBusinessDetails {viewModel} {selectedCity} idPrefix="fc-" showHeader={false} />
-        <SonicIdentity cluster={selectedRecord ? selectedRecord.cluster : null} leadId={selectedRecord ? selectedRecord.lead_id : null} />
-      </div>
+    <div id="selected-details" class="selected-details">
+      {#if selectedRecord}
+        <div class="selected-hero">
+          <span class="selected-role-badge" id="selected-role-badge">
+            {selectionSource === 'search' ? 'Search Match' : 'Field Node'}
+          </span>
+        </div>
+
+        <h2 class="selected-card-name focus-stage-name" id="focus-stage-name" aria-live="polite" title={selectedRecord.name} aria-label={selectedRecord.name}>{selectedRecord.name}</h2>
+
+        {#if selectedRecord.what}
+          <p class="selected-card-what focus-stage-what" id="focus-stage-what">{selectedRecord.what}</p>
+        {/if}
+
+        <p class="selected-card-category" id="selected-theme">{buildTheme(selectedRecord)}</p>
+
+        <div class="selected-card-status-row">
+          <span
+            class="selected-card-status"
+            id="selected-status"
+            class:active={selectedRecord.status === 'active'}
+            class:inactive={selectedRecord.status === 'inactive'}
+          >
+            {formatStatus(selectedRecord.status)}
+          </span>
+        </div>
+
+        {#if selectedRecord.city}
+          <div class="selected-card-location">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+              <circle cx="12" cy="9" r="2.5"/>
+            </svg>
+            <span>{selectedRecord.city}{selectedRecord.zip ? `, ${selectedRecord.zip}` : ''}</span>
+          </div>
+        {/if}
+
+        {#if selectedRecord.phone}
+          <div class="selected-card-contact">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            <span>{selectedRecord.phone}</span>
+          </div>
+        {/if}
+
+        {#if selectedRecord.email}
+          <div class="selected-card-contact">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+            <span>{selectedRecord.email}</span>
+          </div>
+        {/if}
+
+        {#if selectedRecord.website}
+          <div class="selected-card-contact">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            <a href={selectedRecord.website} target="_blank" rel="noopener noreferrer" class="selected-card-link">
+              {selectedRecord.website.replace(/^https?:\/\//, '')}
+            </a>
+          </div>
+        {/if}
+
+        {#if selectedRecord}
+          <div class="selected-card-footer">
+            <span class="footer-cluster">{formatClusterName(selectedRecord.cluster)}{selectedRecord.category ? ` · ${selectedRecord.category}` : ''}</span>
+            {#if selectionSource === 'field'}
+              <span class="footer-source">Field focus</span>
+            {:else if selectionSource === 'search'}
+              <span class="footer-source">Search result</span>
+            {/if}
+          </div>
+        {/if}
+      {/if}
+    </div>
     {/if}
   </div>
 {/if}
@@ -411,31 +305,22 @@
     min-width: 0;
     background: rgba(7, 16, 24, 0.92);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
+    border: 1px solid rgba(78, 205, 196, 0.18);
     border-radius: 0.6rem;
     padding: 0.75rem;
     pointer-events: auto;
     animation: card-enter 0.25s ease-out;
-    box-shadow:
-      0 10px 32px rgba(0, 0, 0, 0.55),
-      0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.2);
   }
-
-  @media (prefers-reduced-motion: reduce) {
-    .focus-card {
-      animation: none;
-    }
-  }
-
   /* Offset focus card above journey chrome when both are active
      to avoid vertical collision on narrow viewports. */
-  .focus-card.surface-focus,
-  .focus-card.surface-focus-search {
+  :global(body.is-active[data-panel-surface='focus']) .focus-card,
+  :global(body.is-active[data-panel-surface='focus-search']) .focus-card {
     bottom: 7rem;
   }
 
   @media (max-width: 768px) {
-    .focus-card.surface-focus-search.mode-field-node.selected-card-empty {
+    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .focus-card.selected-card-empty,
+    :global(body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .focus-card.selected-card-empty {
       display: none;
       visibility: hidden;
       pointer-events: none;
@@ -443,8 +328,8 @@
   }
 
   @keyframes card-enter {
-    from { transform: translateY(8px); }
-    to { transform: translateY(0); }
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   /* ── Empty state ─────────────────────────────────────────────────────────── */
@@ -457,18 +342,18 @@
     gap: 0.4rem;
   }
   .empty-icon {
-    color: rgba(var(--color-primary-alt-rgb), 0.25); /* a11y-ok: icon-color — empty-state icon, not body text */
+    color: rgba(78, 205, 196, 0.25);
   }
   .selected-empty-headline {
     font-size: 0.8rem;
-    color: var(--color-text-teal-light);
+    color: #e0f0f0;
     opacity: 0.5;
     font-style: italic;
     margin: 0;
   }
   .selected-empty-sub {
     font-size: 0.7rem;
-    color: rgba(224, 240, 240, 0.85); /* a11y-ok: caption-text — italic empty-state subhead */
+    color: rgba(224, 240, 240, 0.3);
     margin: 0;
   }
 
@@ -478,63 +363,118 @@
     flex-direction: column;
     gap: 0.4rem;
   }
-
-  /* W53 vision-refresh issue #6 (Tier-1 HIGH — only cross-juror consensus
-     HIGH): the FocusCard bottom-sheet (mobile surface-focus /
-     semantic-dive) had no visible dismiss affordance — users could only
-     escape by selecting another business or pressing Escape. Add an inline
-     top-grip with a 44×44 close button (WCAG 2.5.5 touch floor) that calls
-     returnToOverview(), which clears focusedIndex + nav mode → isFocused
-     becomes false → cardVisible ($derived) flips false → card unmounts.
-     Rendered only when a business is populated (not the empty prompt).
-     Inline grip (not absolute) avoids overlapping the role badge on both
-     the 260px desktop card and the full-width mobile bottom-sheet. */
-  .focus-card-grip {
+  .selected-hero {
     display: flex;
-    justify-content: flex-end;
-    margin-bottom: 0.25rem;
-  }
-  .focus-card-close {
-    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0;
-    /* W53 jury-rerun (2026-07-18): v1 (transparent/borderless/75%-opacity)
-       read as "no close button" to 5/5 jurors. v2 (fill 0.16 + border 0.45)
-       fixed DESKTOP (4/5 now see it) but MOBILE bottom-sheet jurors still
-       missed the top-right X against the prominent centered drag-grip —
-       strengthen to fill 0.24 + border 0.62 so the affordance reads
-       clearly on BOTH the 260px desktop card and the full-width mobile
-       bottom-sheet. Full-opacity (1) teal X glyph, ≥44px touch floor. */
-    background: rgba(var(--color-primary-alt-rgb), 0.24);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.62);
-    border-radius: 0.35rem;
-    color: var(--color-text-teal-light);
-    opacity: 1;
-    cursor: pointer;
-    transition: opacity 0.15s, background 0.15s, border-color 0.15s;
+    gap: 0.5rem;
   }
-  .focus-card-close:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.08);
+  .selected-role-badge {
+    font-size: 0.55rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.2rem;
+    background: rgba(78, 205, 196, 0.15);
+    color: #4ecdc4;
   }
-  .focus-card-close:focus-visible {
-    outline: 2px solid var(--color-primary-alt);
-    outline-offset: 2px;
-    opacity: 1;
+
+  .selected-card-name {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #e0f0f0;
+    margin: 0;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
-  @media (prefers-reduced-motion: reduce) {
-    .focus-card-close { transition: none; }
+
+  .selected-card-category {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4ecdc4;
+    margin: 0;
+  }
+
+  .selected-card-what {
+    font-size: 0.72rem;
+    color: rgba(224, 240, 240, 0.65);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* ── Status ────────────────────────────────────────────────────────────────── */
+  .selected-card-status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .selected-card-status {
+    font-size: 0.55rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.2rem;
+  }
+  .selected-card-status.active {
+    background: rgba(150, 206, 180, 0.15);
+    color: #96ceb4;
+  }
+  .selected-card-status.inactive {
+    background: rgba(255, 107, 107, 0.12);
+    color: #ff6b6b;
+  }
+
+  /* ── Location / contact ────────────────────────────────────────────────────── */
+  .selected-card-location,
+  .selected-card-contact {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    color: rgba(224, 240, 240, 0.5);
+  }
+  .selected-card-location svg,
+  .selected-card-contact svg {
+    flex-shrink: 0;
+    color: rgba(78, 205, 196, 0.45);
+  }
+  .selected-card-link {
+    color: #4ecdc4;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .selected-card-link:hover {
+    color: #7eeee6;
+    text-decoration: underline;
+  }
+
+  /* ── Footer ──────────────────────────────────────────────────────────────── */
+  .selected-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid rgba(78, 205, 196, 0.08);
+    margin-top: 0.2rem;
+  }
+  .footer-cluster {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: rgba(224, 240, 240, 0.45);
+  }
+  .footer-source {
+    font-size: 0.55rem;
+    color: rgba(78, 205, 196, 0.4);
   }
 
   @media (max-width: 768px) {
-    #focus-card-selected.focus-card.surface-semantic-dive,
-    #focus-card-selected.focus-card.surface-focus-search,
-    #focus-card-selected.focus-card.surface-focus {
+    :global(body.is-active[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card),
+    :global(body[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card),
+    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) :is(.focus-card, .focus-stage-card),
+    :global(body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) :is(.focus-card, .focus-stage-card) {
       position: fixed;
       left: 0;
       right: 0;
@@ -549,65 +489,18 @@
       z-index: var(--z-focus-card, 600);
     }
 
-    #focus-card-selected.focus-card.surface-semantic-dive {
+    :global(body.is-active[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card),
+    :global(body[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card) {
       border-radius: 22px 22px 0 0;
       padding: 18px 14px 10px;
     }
 
-    /* Narrow-portrait focus/dive (320–360 px wide, e.g. the 320×740
-       semantic-dive state): the focus card is a full-width bottom sheet.
-       With the default max-height (100dvh − 10px ≈ 730 px) the card renders
-       at 695 px — 0.974 of the effective viewport (714 px after the 26 px
-       header), exceeding the 0.88 mobile surface-proportion limit. Tighten
-       the max-height on narrow portrait so the card leaves room for the
-       header and stays within the proportion budget. The card scrolls
-       internally (overflow-y: auto) so no content is lost. */
-    @media (max-width: 360px) {
-      #focus-card-selected.focus-card.surface-semantic-dive,
-      #focus-card-selected.focus-card.surface-focus-search,
-      #focus-card-selected.focus-card.surface-focus {
-        max-height: calc(100dvh - 120px - max(0px, env(safe-area-inset-bottom, 0px)));
-      }
-    }
     /* Bottom-sheet radius for all mobile focus states */
-    #focus-card-selected.focus-card.surface-focus-search,
-    #focus-card-selected.focus-card.surface-focus {
+    :global(body.is-active[data-panel-surface='focus-search']) :is(.focus-card, .focus-stage-card),
+    :global(body[data-panel-surface='focus-search']) :is(.focus-card, .focus-stage-card),
+    :global(body.is-active[data-panel-surface='focus']) :is(.focus-card, .focus-stage-card),
+    :global(body[data-panel-surface='focus']) :is(.focus-card, .focus-stage-card) {
       border-radius: 22px 22px 0 0;
-    }
-
-    /* F1-5 fix (bugsweep W1): the focus card also carries .focus-stage-card,
-       whose z-index is var(--z-panels-elevated)=90 — ABOVE the a11y toggle
-       (var(--z-panels)=80). The shared mobile rule
-       `body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .focus-stage-card`
-       has specificity (0,4,1) (body element + :not()/attr classes) and beats any
-       class-only override on .focus-card. Svelte also strips selectors that
-       reference elements outside the component (html/body), so we stay on the
-       card's own classes and add the always-present ID to reach (1,3,0) —
-       ID + 3 classes beats both the global rule and the legacy clusters.css
-       `#focus-card-selected` rule that was pinning the card at bottom:12px.
-       Covers both focus surface states. */
-    #focus-card-selected.focus-card.focus-stage-card.selected-card.surface-focus,
-    #focus-card-selected.focus-card.focus-stage-card.selected-card.surface-focus-search {
-      z-index: var(--z-focus-stage-card);
-      /* Stage-rail clear (2026-08-04 mobile UI sweep): with the bottom sheet
-         at its full content height, the card's top band (grip + name row)
-         rendered UNDER the neighbor/journey pill rail of #focus-stage
-         (pill rail z700 > card z70) — vision jury read it as "text is
-         cut/clipped where the larger card begins". Keep the card BELOW the
-         rail (z stays --z-focus-stage-card so the nearby-list toggle at
-         --z-panels stays reachable) but cap its height to ~330px below the
-         viewport top; the stage band (compact search box + pill rail) keeps
-         its 0-~320px strip and the card peeks under it, scrollable. Applied
-         only on tall-enough phones; short-landscape keeps its own compact
-         layout. */
-      max-height: calc(100dvh - max(0px, env(safe-area-inset-bottom, 0px)) - 330px);
-    }
-
-    @media (max-width: 768px) and (max-height: 540px) {
-      #focus-card-selected.focus-card.focus-stage-card.selected-card.surface-focus,
-      #focus-card-selected.focus-card.focus-stage-card.selected-card.surface-focus-search {
-        max-height: min(170px, calc(100dvh - max(0px, env(safe-area-inset-bottom, 0px)) - 10px));
-      }
     }
   }
 </style>

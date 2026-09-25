@@ -13,9 +13,8 @@
  * Runs in Node - no Playwright, no browser, no DOM.
  * Source-only assertions via string search + structural analysis.
  *
- * Usage (canonical — imports src modules; @lib needs the ts-resolve-loader):
- *   node --experimental-transform-types --import ./tests/helpers/svelte-rune-shim.mjs  *        --loader ./tests/helpers/ts-resolve-loader.mjs tests/journey-thread-inspector-contract.mjs
- *   (or: node tests/run-all-contracts.js --single=journey-thread-inspector-contract.mjs)
+ * Usage:
+ *   node tests/journey-thread-inspector-contract.mjs
  */
 
 import fs from 'node:fs'
@@ -28,31 +27,12 @@ const JOURNEY_POINT_COLOR_PATH = resolveSource('src/lib/journey/point-color.ts',
 const JOURNEY_CANVAS_INTERACTION_PATH = resolveSource('src/lib/journey/canvas-interaction.ts', SEMDEMO_ROOT)
 const JOURNEY_CANVAS_NODE_PICKING_PATH = resolveSource('src/lib/journey/canvas-node-picking.ts', SEMDEMO_ROOT)
 const JOURNEY_CANVAS_HIT_TEST_PATH = resolveSource('src/lib/journey/canvas-hit-test.ts', SEMDEMO_ROOT)
-const THREAD_INSPECTOR_PATH = resolveSource('src/lib/journey/thread-inspector.ts', SEMDEMO_ROOT)
-const threadInspectorCombinedSrc = () => {
-    const paths = [
-        resolveSource('src/lib/journey/thread-inspector-state.ts', SEMDEMO_ROOT),
-        resolveSource('src/lib/journey/thread-inspector-webgl.ts', SEMDEMO_ROOT),
-        resolveSource('src/lib/journey/thread-inspector-render.ts', SEMDEMO_ROOT),
-        // W10 adapter-fold: thread-inspector-adapter.ts inlined into adapters.ts
-        resolveSource('src/lib/orchestration/adapters.ts', SEMDEMO_ROOT),
-        // PR-T2: Svelte component now owns the button text logic (was
-        // previously the imperative render.ts). Include it in the
-        // combined source so text-content contract assertions
-        // ('Current Stop', 'Pin Connection', etc.) find the strings.
-        resolveSource('src/components/ThreadInspector.svelte', SEMDEMO_ROOT),
-        // PR-T2 extraction: ThreadInspectorPanel.svelte now owns the panel
-        // content + button text logic extracted from ThreadInspector.svelte.
-        resolveSource('src/lib/components/journey/ThreadInspectorPanel.svelte', SEMDEMO_ROOT)
-    ]
-    return paths.map((p) => (fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : '')).join('\n')
-}
+const THREAD_INSPECTOR_PATH = resolveSource('js/modules/thread-inspector.ts', SEMDEMO_ROOT)
 const JOURNEY_THREAD_MODEL_PATH = resolveSource('src/lib/journey/thread-model.ts', SEMDEMO_ROOT)
-// retired journey-thread-model-bridge.ts in Svelte 5 modernization sweep
-const JOURNEY_WEBGL_PATH = resolveSource('src/lib/journey/webgl.ts', SEMDEMO_ROOT)
-const JOURNEY_ROUTE_TRACE_PATH = resolveSource('src/lib/journey/route-trace.ts', SEMDEMO_ROOT)
+const JOURNEY_THREAD_MODEL_BRIDGE_PATH = resolveSource('src/lib/engine/journey-thread-model-bridge.ts', SEMDEMO_ROOT)
+const JOURNEY_WEBGL_PATH = resolveSource('js/modules/journey-webgl.ts', SEMDEMO_ROOT)
+const JOURNEY_ROUTE_TRACE_PATH = resolveSource('js/modules/journey-route-trace.ts', SEMDEMO_ROOT)
 const JOURNEY_SEMANTIC_OVERLAY_PATH = resolveSource('src/lib/journey/semantic-overlay.ts', SEMDEMO_ROOT)
-const JOURNEY_SEMANTIC_MATERIAL_PATH = resolveSource('src/lib/journey/semantic-overlay-material.ts', SEMDEMO_ROOT)
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -70,13 +50,6 @@ function assertContains(haystack, needle, label) {
 function assertNotContains(haystack, needle, label) {
     const found = haystack.includes(needle)
     assert(!found, `${label}: source should NOT contain "${needle}" (removed dead code), but it was found`)
-}
-
-// Whitespace/paren-tolerant matcher for ternary brightness factors that a style
-// sweep (no-semicolons, multi-line ternaries) may reflow across lines. Matches
-// the value sequence regardless of formatting, with optional parentheses.
-function assertMatches(haystack, regex, label) {
-    assert(regex.test(haystack), `${label}: expected source to match ${regex}, but it did not`)
 }
 
 function getThreadInspectorDiagnosticBlock(src) {
@@ -118,7 +91,7 @@ function testNoGhostTeardownReferences() {
     console.log('\n[TEST] No ghost teardown references in journey.js and thread-inspector.ts')
 
     const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8')
-    const threadInspectorSrc = threadInspectorCombinedSrc()
+    const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
 
     const ghostTerms = [
         'ghostTeardown',
@@ -197,32 +170,30 @@ function testApplyPointFilterColorsFactorRanges() {
 
     const pointColorSrc = fs.readFileSync(JOURNEY_POINT_COLOR_PATH, 'utf-8')
 
-    // FOCUS_MEMBER_MIN_FLOOR must be 0.65 (applied in pocket mode); local minFloor is derived from it
-    assertContains(pointColorSrc, 'const FOCUS_MEMBER_MIN_FLOOR = 0.65', 'FOCUS_MEMBER_MIN_FLOOR = 0.65')
-    assertContains(pointColorSrc, 'Math.max(raw, minFloor)', 'minFloor applied via Math.max')
+    // nodeMinFloor must be 0.65 (applied in pocket mode)
+    assertContains(pointColorSrc, 'const nodeMinFloor = 0.65', 'nodeMinFloor = 0.65')
+    assertContains(pointColorSrc, 'Math.max(raw, nodeMinFloor)', 'nodeMinFloor applied via Math.max')
 
     // Trail mode unvisited factor must be >= 0.08 (not invisible)
-    assertMatches(
+    assertContains(
         pointColorSrc,
-        /isVisited\s*\?\s*1\.18\s*:\s*\(?\s*semanticFocus\s*\?\s*0\.24\s*:\s*0\.18\s*\)?/,
+        'isVisited ? 1.18 : (semanticFocus ? 0.24 : 0.18)',
         'trail mode unvisited factor >= 0.18'
     )
-    assertMatches(pointColorSrc, /isVisited\s*\?\s*1\.18\s*:\s*0\.28/, 'trail mode pre-trailIndices unvisited factor')
+    assertContains(pointColorSrc, 'isVisited ? 1.18 : 0.28', 'trail mode pre-trailIndices unvisited factor')
 
-    // Pocket mode non-focusLocalIndices factor now derives from FIELD_BG_RAW
-    // (WIP refactor renamed the old 0.22 literal into FOCUS_FIELD_RAW_* floor
-    // constants; FIELD_BG_RAW = pocketActive ? 0.09 : semanticFocus ? 0.2 : 0.16).
-    assertMatches(
+    // Pocket mode non-focusLocalIndices factor must be >= 0.22
+    assertContains(
         pointColorSrc,
-        /isVisited\s*\?\s*1\.28\s*:\s*FIELD_BG_RAW/,
-        'pocket mode non-focusLocal factor uses FIELD_BG_RAW floor'
+        'isVisited ? 1.28 : (semanticFocus ? 0.32 : 0.22)',
+        'pocket mode non-focusLocal factor >= 0.22'
     )
 
     // Bloom mode dimmed factor must be 0.08 (invisible)
     assertContains(pointColorSrc, 'visible ? 1 : 0.08', 'invisible factor is 0.08')
 
     // Focus anchor factor must be brightest (> 2.0)
-    assertMatches(pointColorSrc, /i\s*===\s*_state\.navState\.focusedIndex\s*\?\s*2\.14/, 'focus anchor factor 2.14')
+    assertContains(pointColorSrc, 'i === _state.navState.focusedIndex ? 2.14', 'focus anchor factor 2.14')
 
     console.log('  OK applyPointFilterColors factor ranges verified')
 }
@@ -236,22 +207,15 @@ function testBuildRouteTraceMaterial() {
 
     const webglSrc = fs.readFileSync(JOURNEY_ROUTE_TRACE_PATH, 'utf-8')
 
-    // Must return ShaderMaterial (form: THREE.ShaderMaterial OR bare ShaderMaterial)
-    const hasThreeForm = webglSrc.includes('return new THREE.ShaderMaterial({')
-    const hasBareForm = webglSrc.includes('return new ShaderMaterial({')
-    assert(
-        hasThreeForm || hasBareForm,
-        'buildRouteTraceMaterial returns ShaderMaterial (three-prefixed or bare import form)'
-    )
+    // Must return THREE.ShaderMaterial
+    assertContains(webglSrc, 'return new THREE.ShaderMaterial({', 'buildRouteTraceMaterial returns ShaderMaterial')
 
     // Must have depthWrite: false, depthTest: false
     assertContains(webglSrc, 'depthWrite: false', 'depthWrite: false in route trace material')
     assertContains(webglSrc, 'depthTest: false', 'depthTest: false in route trace material')
 
     // Must have AdditiveBlending
-    const hasThreeBlend = webglSrc.includes('blending: THREE.AdditiveBlending')
-    const hasBareBlend = webglSrc.includes('blending: AdditiveBlending')
-    assert(hasThreeBlend || hasBareBlend, 'AdditiveBlending in route trace material')
+    assertContains(webglSrc, 'blending: THREE.AdditiveBlending', 'AdditiveBlending in route trace material')
 
     // Shader must declare time uniform for animation
     assertContains(webglSrc, 'uniform float time;', 'time uniform declared in fragment shader')
@@ -259,13 +223,13 @@ function testBuildRouteTraceMaterial() {
     // Must update time uniform in refreshRouteTraceOverlay
     assertContains(
         webglSrc,
-        'material.uniforms.time!.value = now / 1000',
+        'material.uniforms.time.value = now / 1000',
         'time uniform updated in updateRouteTraceOverlayPositions'
     )
 
     // Semantic dive mode must boost baseOpacity to 0.34
-    assertContains(webglSrc, 'baseOpacity!.value = 0.34', 'semantic dive mode boosts baseOpacity to 0.34')
-    assertContains(webglSrc, 'opacity!.value = 0.34', 'semantic dive mode boosts opacity to 0.34')
+    assertContains(webglSrc, 'baseOpacity.value = 0.34', 'semantic dive mode boosts baseOpacity to 0.34')
+    assertContains(webglSrc, 'opacity.value = 0.34', 'semantic dive mode boosts opacity to 0.34')
 
     console.log('  OK buildRouteTraceMaterial verified')
 }
@@ -300,8 +264,7 @@ function testGetCanvasNodePickingMode() {
 
     // Touch/pen must use 34px radius
     assertContains(canvasHitTestSrc, "pointerType === 'touch' || pointerType === 'pen'", 'touch/pen pointer type check')
-    const has34 = canvasHitTestSrc.includes('return 34') || canvasHitTestSrc.includes('return 34;')
-    assert(has34, 'touch/pen returns 34px')
+    assertContains(canvasHitTestSrc, 'return 34;', 'touch/pen returns 34px')
     assertContains(canvasHitTestSrc, 'hasCoarsePointer() ? 34 : 26', 'coarse pointer uses 34px else 26px')
 
     console.log('  OK getCanvasNodePickingMode URL override verified')
@@ -314,19 +277,15 @@ function testGetCanvasNodePickingMode() {
 function testThreadInspectorSemanticFirst() {
     console.log('\n[TEST] Thread-inspector dual candidates - semantic-first strategy')
 
-    const threadInspectorSrc = threadInspectorCombinedSrc()
+    const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
     const journeyModelSrc = fs.readFileSync(JOURNEY_THREAD_MODEL_PATH, 'utf-8')
+    const journeyModelBridgeSrc = fs.readFileSync(JOURNEY_THREAD_MODEL_BRIDGE_PATH, 'utf-8')
     const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8')
 
-    // Thread inspector split into state/webgl/render/adapter; the helpers are
-    // re-exported by journey.ts and neighborhood.ts as the public surface.
+    // Both files must have getSemanticThreadCandidates
     assert(
-        threadInspectorSrc.includes('getSemanticThreadCandidates') ||
-            journeySrc.includes('getSemanticThreadCandidates') ||
-            fs
-                .readFileSync(resolveSource('src/lib/journey/neighborhood.ts', SEMDEMO_ROOT), 'utf-8')
-                .includes('getSemanticThreadCandidates'),
-        'thread-inspector or journey re-exports getSemanticThreadCandidates'
+        threadInspectorSrc.includes('getSemanticThreadCandidates'),
+        'thread-inspector re-exports getSemanticThreadCandidates'
     )
     assertContains(
         journeyModelSrc,
@@ -334,13 +293,10 @@ function testThreadInspectorSemanticFirst() {
         'journey-thread-model exports getSemanticThreadCandidates'
     )
 
+    // Both must have getThreadCandidatesForIndex
     assert(
-        threadInspectorSrc.includes('getThreadCandidatesForIndex') ||
-            journeySrc.includes('getThreadCandidatesForIndex') ||
-            fs
-                .readFileSync(resolveSource('src/lib/journey/neighborhood.ts', SEMDEMO_ROOT), 'utf-8')
-                .includes('getThreadCandidatesForIndex'),
-        'thread-inspector or journey re-exports getThreadCandidatesForIndex'
+        threadInspectorSrc.includes('getThreadCandidatesForIndex'),
+        'thread-inspector re-exports getThreadCandidatesForIndex'
     )
     assertContains(
         journeyModelSrc,
@@ -351,13 +307,22 @@ function testThreadInspectorSemanticFirst() {
     // getThreadCandidatesForIndex must use semantic-first: return semantic if length > 0
     assertContains(
         journeyModelSrc,
-        'if (semanticCandidates.length) return semanticCandidates',
+        'if (semanticCandidates.length) return semanticCandidates;',
         'journey-thread-model: semantic-first strategy'
     )
 
-    // journey.ts must consume the thread model directly, not
-    // through retired engine/adapters or a resurrected direct legacy import.
-    assertContains(journeySrc, "from './thread-model'", 'journey.ts imports from thread-model directly')
+    // journey.ts must consume the thread model through the engine bridge, not
+    // through thread-inspector or a resurrected direct legacy import.
+    assertContains(
+        journeySrc,
+        "from '@lib/engine/journey-thread-model-bridge'",
+        'journey.ts imports from journey-thread-model bridge'
+    )
+    assertContains(
+        journeyModelBridgeSrc,
+        "from '@lib/journey/thread-model'",
+        'journey-thread-model bridge re-exports canonical thread model'
+    )
 
     // thread-inspector.js must NOT re-implement normalizeLeadId; it must use the shared version.
     assert(journeyModelSrc.includes('function normalizeLeadId'), 'journey-thread-model has canonical normalizeLeadId')
@@ -381,6 +346,8 @@ function testThreadInspectorSemanticFirst() {
         assert(tiBlock.includes('exploreThreadNeighbor'), 'window._ti.exploreThreadNeighbor diagnostic access')
     }
 
+    assertContains(journeyModelBridgeSrc, 'normalizeLeadId,', 'bridge exports normalizeLeadId from thread-model')
+
     console.log('  OK thread-inspector dual candidates strategy verified')
 }
 
@@ -392,7 +359,7 @@ function testSharedStrandContinuityOwner() {
     console.log('\n[TEST] Shared strand-continuity owner')
 
     const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8')
-    const threadInspectorSrc = threadInspectorCombinedSrc()
+    const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
     const strandContinuityPath = resolveSource('src/lib/utils/strand-continuity.ts', SEMDEMO_ROOT)
     const strandContinuitySrc = fs.readFileSync(strandContinuityPath, 'utf-8')
 
@@ -404,7 +371,7 @@ function testSharedStrandContinuityOwner() {
     )
     assertContains(
         strandContinuitySrc,
-        "from '@lib/engine/journey-webgl-lazy'",
+        "from '@lib/engine/journey-webgl-bridge'",
         'strand-continuity owns arrival handoff overlay imports'
     )
 
@@ -412,9 +379,6 @@ function testSharedStrandContinuityOwner() {
         /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]\.\/strand-continuity(?:\.ts)?['"]/.test(
             journeySrc
         ) ||
-            /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]@lib\/utils\/strand-continuity['"]/.test(
-                journeySrc
-            ) ||
             /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]@lib\/engine\/strand-continuity-bridge['"]/.test(
                 journeySrc
             ),
@@ -424,9 +388,6 @@ function testSharedStrandContinuityOwner() {
         /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]\.\/strand-continuity(?:\.ts)?['"]/.test(
             threadInspectorSrc
         ) ||
-            /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]@lib\/utils\/strand-continuity['"]/.test(
-                threadInspectorSrc
-            ) ||
             /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]@lib\/engine\/strand-continuity-bridge['"]/.test(
                 threadInspectorSrc
             ),
@@ -455,7 +416,7 @@ function testSharedStrandContinuityOwner() {
 function testWave60ExploreThreadNeighborSettleBehavior() {
     console.log('\n[TEST] Wave60: exploreThreadNeighbor stranded phase=arrived fix + followTargetsCurrent')
 
-    const tiSrc = threadInspectorCombinedSrc()
+    const tiSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
 
     // Timer storage is centralized behind named setTimer/clearTimer helpers.
     // setTimer replaces any existing timer for the same purpose before scheduling.
@@ -494,9 +455,7 @@ function testWave60ExploreThreadNeighborSettleBehavior() {
         'followTargetsCurrent checks index === focusedIndex'
     )
     assert(
-        /followBtn\.disabled\s*=\s*!inspectionState\??\.active\s*\|\|\s*!!?followTargetsCurrent\s*\|\|\s*inspectionState\??\.journeyPhase\s*===\s*['"]exploring['"]/.test(
-            tiSrc
-        ),
+        /followBtn\.disabled\s*=\s*!inspectionState\??\.active\s*\|\|\s*!!?followTargetsCurrent\s*\|\|\s*inspectionState\??\.journeyPhase\s*===\s*['"]exploring['"]/.test(tiSrc),
         'followTargetsCurrent disables followBtn'
     )
     assertContains(tiSrc, 'Current Stop', 'followTargetsCurrent changes button text to Current Stop')
@@ -548,7 +507,7 @@ function testJourneyTextHelpersExtraction() {
 function testThreadInspectorTextHelpersExtraction() {
     console.log('\n[TEST] thread-inspector text helpers extraction (via journey-text-helpers)')
 
-    const threadInspectorSrc = threadInspectorCombinedSrc()
+    const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
     const helperSrc = fs.readFileSync(resolveSource('src/lib/journey/text-helpers.ts', SEMDEMO_ROOT), 'utf-8')
 
     assertContains(
@@ -577,18 +536,13 @@ function testJourneyWebglLineShaderOwnership() {
     console.log('\n[TEST] journey WebGL line shader ownership')
 
     const webglSrc = fs.readFileSync(JOURNEY_ROUTE_TRACE_PATH, 'utf-8')
-    const webglSemanticSrc =
-        fs.readFileSync(JOURNEY_SEMANTIC_OVERLAY_PATH, 'utf-8') +
-        '\n' +
-        (fs.existsSync(JOURNEY_SEMANTIC_MATERIAL_PATH) ? fs.readFileSync(JOURNEY_SEMANTIC_MATERIAL_PATH, 'utf-8') : '')
+    const webglSemanticSrc = fs.readFileSync(JOURNEY_SEMANTIC_OVERLAY_PATH, 'utf-8')
 
     // Route trace uses a plain ShaderMaterial with direct uniforms. It should
     // not depend on LineMaterial's late onBeforeCompile userData.shader path.
     assertContains(webglSrc, 'function buildRouteTraceMaterial()', 'buildRouteTraceMaterial function exists')
-    const hasThreeForm2 = webglSrc.includes('return new THREE.ShaderMaterial({')
-    const hasBareForm2 = webglSrc.includes('return new ShaderMaterial({')
-    assert(hasThreeForm2 || hasBareForm2, 'route trace returns ShaderMaterial')
-    assertContains(webglSrc, 'material.uniforms.time!.value = now / 1000', 'route trace updates direct uniforms')
+    assertContains(webglSrc, 'return new THREE.ShaderMaterial({', 'route trace returns ShaderMaterial')
+    assertContains(webglSrc, 'material.uniforms.time.value = now / 1000;', 'route trace updates direct uniforms')
 
     // Focus semantic lines use LineMaterial; onBeforeCompile must retain the
     // compiled shader handle for custom uniforms, and all update paths must guard it.
@@ -623,12 +577,12 @@ function testJourneyWebglLineShaderOwnership() {
     )
     assertContains(
         webglSemanticSrc,
-        'mat?.userData?.shader',
-        'updateFocusSemanticOverlayPositions guards mat (line.material) userData.shader'
+        'line.material?.userData?.shader',
+        'updateFocusSemanticOverlayPositions guards line.material.userData.shader'
     )
     assertContains(
         webglSemanticSrc,
-        'if (!reducedMotion && mat?.uniforms?.time)',
+        'if (!reducedMotion && line.material?.uniforms?.time)',
         'updateFocusSemanticOverlayPositions keeps direct-uniform fallback'
     )
 
@@ -636,240 +590,10 @@ function testJourneyWebglLineShaderOwnership() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 11: Runtime behavioral — normalizeLeadId, getThreadCandidatesForIndex,
-//           getSemanticThreadCandidates, getNextExploreCandidateForIndex
-//           These runtime tests prove behavioral invariants without pinning
-//           function names — a rename wouldn't break them as long as behavior
-//           holds.
-// ---------------------------------------------------------------------------
-
-async function testRuntimeNormalizeLeadId() {
-    console.log('\n[RUNTIME] normalizeLeadId — all input branches')
-
-    const { normalizeLeadId } = await import('../src/lib/journey/thread-model.ts')
-
-    // null/undefined/empty → null
-    assert(normalizeLeadId(null) === null, 'null → null')
-    assert(normalizeLeadId(undefined) === null, 'undefined → null')
-    assert(normalizeLeadId('') === null, 'empty string → null')
-
-    // number → string
-    assert(normalizeLeadId(42) === '42', 'number 42 → "42"')
-    assert(normalizeLeadId(0) === '0', 'zero → "0"')
-
-    // string → string
-    assert(normalizeLeadId('LI_001') === 'LI_001', 'string preserved')
-    assert(normalizeLeadId('abc-123') === 'abc-123', 'mixed string preserved')
-
-    console.log('  OK normalizeLeadId handles all input types')
-}
-
-async function testRuntimeGetNextExploreCandidateSemanticFirst() {
-    console.log('\n[RUNTIME] getNextExploreCandidateForIndex — semantic-first fallback')
-
-    const { getNextExploreCandidateForIndex } = await import('../src/lib/journey/thread-model.ts')
-
-    // Mock walk candidate function that returns semantic first
-    let callCount = 0
-    const walkFn = (_index, options) => {
-        callCount++
-        if (options.requireSemantic) {
-            return { index: 7, score: 0.9, source: 'semantic' }
-        }
-        return null
-    }
-
-    const result = getNextExploreCandidateForIndex(3, walkFn, {})
-    assert(result !== null, 'returns a candidate')
-    assert(result.index === 7, 'returns semantic candidate')
-    assert(callCount === 1, 'only tries semantic path when it succeeds')
-
-    console.log('  OK getNextExploreCandidateForIndex semantic-first strategy verified')
-}
-
-async function testRuntimeGetNextExploreCandidateFallsBack() {
-    console.log('\n[RUNTIME] getNextExploreCandidateForIndex — falls back to geometric')
-
-    const { getNextExploreCandidateForIndex } = await import('../src/lib/journey/thread-model.ts')
-
-    let callCount = 0
-    const walkFn = (_index, options) => {
-        callCount++
-        if (options.requireSemantic) return null
-        // geometric fallback
-        return { index: 12, score: 0.3, source: 'geometric' }
-    }
-
-    const result = getNextExploreCandidateForIndex(3, walkFn, {})
-    assert(result !== null, 'returns a candidate when semantic fails')
-    assert(result.index === 12, 'falls back to geometric candidate')
-    assert(callCount === 2, 'tries semantic then geometric')
-
-    console.log('  OK getNextExploreCandidateForIndex geometric fallback verified')
-}
-
-async function testRuntimeGetNextExploreCandidateReturnsNull() {
-    console.log('\n[RUNTIME] getNextExploreCandidateForIndex — returns null when both fail')
-
-    const { getNextExploreCandidateForIndex } = await import('../src/lib/journey/thread-model.ts')
-
-    const walkFn = () => null
-    const result = getNextExploreCandidateForIndex(3, walkFn, {})
-    assert(result === null, 'returns null when both paths fail')
-
-    console.log('  OK getNextExploreCandidateForIndex returns null when no candidates')
-}
-
-async function testRuntimeGetThreadCandidatesForIndexSemanticFirst() {
-    console.log('\n[RUNTIME] getThreadCandidatesForIndex — pure-path semantic-first strategy')
-
-    const { getThreadCandidatesForIndex } = await import('../src/lib/journey/thread-model.ts')
-
-    // Mock semantic function that returns results
-    const semanticFn = (_idx) => [
-        {
-            index: 5,
-            score: 0.8,
-            semanticScore: 0.9,
-            sameCity: true,
-            sameStatus: true,
-            bridgeScore: 0,
-            signalScore: 0,
-            threadType: 'semantic',
-            relationshipRole: 'client',
-            relationshipAxis: '',
-            roleReason: '',
-            reason: 'semantic neighbor',
-            source: 'semantic'
-        }
-    ]
-
-    // Mock geometric function
-    let geometricCalled = false
-    const geometricFn = (_idx) => {
-        geometricCalled = true
-        return []
-    }
-
-    const results = getThreadCandidatesForIndex(3, semanticFn, geometricFn)
-    assert(results.length === 1, 'returns semantic candidates')
-    assert(results[0].index === 5, 'correct candidate index')
-    assert(results[0].source === 'semantic', 'source is semantic')
-    assert(!geometricCalled, 'geometric NOT called when semantic succeeds')
-
-    console.log('  OK getThreadCandidatesForIndex semantic-first behavior verified')
-}
-
-async function testRuntimeGetThreadCandidatesForIndexFallsBack() {
-    console.log('\n[RUNTIME] getThreadCandidatesForIndex — falls back to geometric')
-
-    const { getThreadCandidatesForIndex } = await import('../src/lib/journey/thread-model.ts')
-
-    // Mock semantic returns empty
-    const semanticFn = () => []
-
-    // Mock geometric returns results
-    let geometricCalled = false
-    const geometricFn = () => {
-        geometricCalled = true
-        return [
-            {
-                index: 10,
-                score: 0.5,
-                semanticScore: 0,
-                sameCity: false,
-                sameStatus: true,
-                bridgeScore: 0,
-                signalScore: 0,
-                threadType: 'geometric',
-                relationshipRole: 'unclassified',
-                relationshipAxis: '',
-                roleReason: '',
-                reason: 'geometric',
-                source: 'geometric-fallback'
-            }
-        ]
-    }
-
-    const results = getThreadCandidatesForIndex(3, semanticFn, geometricFn)
-    assert(results.length === 1, 'returns geometric candidates when semantic empty')
-    assert(results[0].index === 10, 'correct geometric candidate index')
-    assert(results[0].source === 'geometric-fallback', 'source is geometric-fallback')
-    assert(geometricCalled, 'geometric IS called when semantic returns empty')
-
-    console.log('  OK getThreadCandidatesForIndex geometric fallback verified')
-}
-
-async function testRuntimeGetSemanticThreadCandidatesPurePath() {
-    console.log('\n[RUNTIME] getSemanticThreadCandidates — pure path with mock data')
-
-    const { getSemanticThreadCandidates } = await import('../src/lib/journey/thread-model.ts')
-
-    // Mock points
-    const points = [
-        { lead_id: 'LI_007', name: 'Biz A', city: 'Conroe', cluster: 1, status: 'active' },
-        { lead_id: 'LI_042', name: 'Biz B', city: 'Spring', cluster: 2, status: 'active' },
-        { lead_id: 'LI_099', name: 'Biz C', city: 'Woodlands', cluster: 1, status: 'inactive' }
-    ]
-
-    // Mock neighbor map
-    const neighborMap = new Map()
-    neighborMap.set('LI_007', {
-        neighbors: [
-            {
-                leadId: 'LI_042',
-                score: 0.9,
-                semanticScore: 0.85,
-                sameCity: false,
-                sameStatus: true,
-                bridgeScore: 0,
-                signalScore: 0,
-                threadType: 'local_semantic_neighbor',
-                relationshipRole: 'vendor',
-                reason: 'supplier connection'
-            },
-            {
-                leadId: 'LI_099',
-                score: 0.7,
-                semanticScore: 0.6,
-                sameCity: false,
-                sameStatus: false,
-                bridgeScore: 0,
-                signalScore: 0,
-                threadType: 'local_semantic_neighbor',
-                relationshipRole: 'partner',
-                reason: 'shared cluster'
-            }
-        ]
-    })
-
-    // Mock point index by lead_id
-    const pointIndexByLeadId = new Map([
-        ['LI_007', 0],
-        ['LI_042', 1],
-        ['LI_099', 2]
-    ])
-
-    // Call pure path
-    const results = getSemanticThreadCandidates(0, points, neighborMap, pointIndexByLeadId)
-    assert(results.length === 2, 'returns 2 candidates')
-    assert(results[0].index === 1, 'first candidate is LI_042 (index 1)')
-    assert(results[0].score === 0.9, 'preserves score')
-    assert(results[0].reason === 'supplier connection', 'preserves reason')
-    assert(results[1].index === 2, 'second candidate is LI_099 (index 2)')
-
-    // No neighbors for unknown lead_id
-    const emptyResults = getSemanticThreadCandidates(1, points, neighborMap, pointIndexByLeadId)
-    assert(emptyResults.length === 0, 'empty for point with no thread node')
-
-    console.log('  OK getSemanticThreadCandidates pure path verified')
-}
-
-// ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
 
-async function main() {
+function main() {
     console.log('============================================================')
     console.log('journey-thread-inspector-contract.mjs')
     console.log('Fast contract test: journey + thread-inspector cluster')
@@ -887,13 +611,6 @@ async function main() {
         testThreadInspectorTextHelpersExtraction()
         testWave60ExploreThreadNeighborSettleBehavior()
         testJourneyWebglLineShaderOwnership()
-        await testRuntimeNormalizeLeadId()
-        await testRuntimeGetNextExploreCandidateSemanticFirst()
-        await testRuntimeGetNextExploreCandidateFallsBack()
-        await testRuntimeGetNextExploreCandidateReturnsNull()
-        await testRuntimeGetThreadCandidatesForIndexSemanticFirst()
-        await testRuntimeGetThreadCandidatesForIndexFallsBack()
-        await testRuntimeGetSemanticThreadCandidatesPurePath()
 
         console.log('\n============================================================')
         console.log('ALL TESTS PASSED')
@@ -905,7 +622,4 @@ async function main() {
     }
 }
 
-main().catch((err) => {
-    console.error('\nTEST FAILED:', err.message)
-    process.exit(1)
-})
+main()

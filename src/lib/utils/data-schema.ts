@@ -4,9 +4,9 @@
  * The data.dat file uses a positional array format to minimize payload size.
  * This schema maps those indices to named fields used throughout the application.
  *
- * SYNC_REQUIRED: Keep in sync with src/lib/workers/data-worker.ts
+ * SYNC_REQUIRED: Keep in sync with js/workers/data-worker.js
  *
- * Port of
+ * Port of js/modules/utils/data-schema.ts
  */
 
 /** Column index map for raw positional records in data.dat */

@@ -1,225 +1,199 @@
 /**
- * @lib/search/cache.ts — In-memory result cache for semantic search.
+ * @lib/search/cache.ts — In-memory + IDB cache for semantic search payloads.
  *
- * Removed as dead code (2026-08-30 sweep): the IndexedDB-backed semantic-search
- * payload cache half (no production callers) and the Node-only advisory lock
- * tail (acquireSearchLock + qHash — zero production consumers; qHash existed
- * only for lock filenames). The lock's dynamic `node:fs/promises` / `node:path`
- * imports were the source of the browser-bundle externalize warnings on every
- * build. Only the live in-memory result cache below (used by search-engine.ts)
- * remains.
+ * Canonical home of the semantic search cache. The deprecated
+ * `js/modules/semantic-search-cache.ts` shim and engine bridge were retired
+ * after consumers moved to this module.
  */
 
-import type { SearchResult } from '@lib/types/state'
+import { state, withStateMutation, type SemanticSearchCacheDiagnostics } from '../engine/state-bridge';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import * as idb from '../engine/idb-service-bridge';
 
-// ── Cache Key ────────────────────────────────────────────────────────────────
+export const SEMANTIC_SEARCH_CACHE_MAX_ENTRIES: number = 8;
+export const SEMANTIC_SEARCH_CACHE_TTL_MS: number = 10 * 60 * 1000;
 
-/** Composite cache key: query hash + pagination offset. */
-export interface SearchCacheKey {
-    /** Lowercase trimmed query string. */
-    query: string
-    /** 0-based page index. */
-    page: number
-    /** Result offset (e.g. 0 for first page, 18 for second page). */
-    offset: number
+export interface CacheEntry {
+    storedAt: number;
+    lastAccessedAt: number;
+    payload: SearchPayload;
 }
 
-/** String form of the cache key for Map lookup. */
-function cacheKeyToString(key: SearchCacheKey): string {
-    // Bug #4 (bugsweep): use only effective offset in the cache key.
-    // Different (page, offset) pairs that normalize to the same offset
-    // produce the same API call, so the cache key must not distinguish them.
-    // NUL-collision fix: a raw query may contain a literal NUL (reachable via
-    // URL-decode of %00), which would be ambiguous with the old \0 separator.
-    // encodeURIComponent renders the query losslessly and never emits a bare
-    // '|' (it is encoded as %7C), so `<encoded>|<offset>` is unambiguous for
-    // any query text. Not escaped with '\0' -> '\\0' because a literal
-    // backslash-zero query would then collide with an escaped NUL.
-    return `${encodeURIComponent(key.query)}|${key.offset}`
+export interface SearchPayload {
+    ok: boolean;
+    results: Array<Record<string, unknown>>;
+    client_cache_hit?: boolean;
+    client_cache_age_ms?: number;
+    [key: string]: unknown;
 }
 
-// ── Cache Entry ──────────────────────────────────────────────────────────────
-
-interface SearchCacheEntry {
-    results: SearchResult[]
-    timestamp: number
-    /** Provenance: live API results vs local fallback (index/mock) results. */
-    source?: 'api' | 'fallback'
+export interface CacheDiagnosticsSnapshot extends SemanticSearchCacheDiagnostics {
+    size: number;
+    keys: string[];
+    ttlMs: number;
+    maxEntries: number;
 }
 
-// ── Cache State ──────────────────────────────────────────────────────────────
-
-/** Default TTL: 5 minutes. */
-const DEFAULT_TTL_MS = 5 * 60 * 1000
-
-/** Max entries before LRU eviction. */
-const MAX_ENTRIES = 128
-
-/** In-memory cache store. */
-const _cache = new Map<string, SearchCacheEntry>()
-
-/** In-flight deduplication: prevents concurrent cold-start fetches for the same key.
- *  Tracks promises by key so identical concurrent requests can share one fetch.
- *  If a caller provides an AbortSignal, it is recorded alongside the promise so
- *  later callers with a different signal do not accidentally share an abortable
- *  promise they did not create.
- */
-const _pending = new Map<string, { promise: Promise<SearchResult[]>; signal?: AbortSignal }>()
-
-let _ttlMs = DEFAULT_TTL_MS
-
-// ── LRU Eviction ────────────────────────────────────────────────────────────
-
-function evictIfNeeded(): void {
-    if (_cache.size <= MAX_ENTRIES) return
-    // Evict oldest entries first
-    const entries = Array.from(_cache.entries())
-    entries.sort((a, b) => a[1].timestamp - b[1].timestamp)
-    const toEvict = entries.slice(0, entries.length - MAX_ENTRIES)
-    for (const [key] of toEvict) {
-        _cache.delete(key)
-    }
+if (!state.semanticSearchResultCache) state.semanticSearchResultCache = new Map<string, CacheEntry>();
+if (!state.semanticSearchCacheDiagnostics) {
+    withStateMutation(() => {
+        state.semanticSearchCacheDiagnostics = {
+            hits: 0,
+            misses: 0,
+            stores: 0,
+            evictions: 0,
+            lastKey: null,
+            lastSource: null,
+            lastAgeMs: null
+        };
+    });
 }
 
-// ── Public API ───────────────────────────────────────────────────────────────
-
-/**
- * Get cached search results for a given query + page + offset.
- * Returns null on miss or expiry.
- */
-export function getCachedSearch(
-    query: string,
-    page: number,
-    offset: number,
-    opts?: { allowFallbackSource?: boolean }
-): SearchResult[] | null {
-    const key = cacheKeyToString({ query, page, offset })
-    const entry = _cache.get(key)
-    if (!entry) return null
-    if (Date.now() - entry.timestamp > _ttlMs) {
-        _cache.delete(key)
-        return null
-    }
-    // W71-H2: fallback-sourced entries (local index / mock) are only valid
-    // while the API is known-unreachable. Once the bypass flag clears, drop
-    // them so the next search re-hits the live API instead of serving stale
-    // fallback data cached during the outage window.
-    if (entry.source === 'fallback' && !opts?.allowFallbackSource) {
-        _cache.delete(key)
-        return null
-    }
-    return entry.results
-}
-
-/**
- * Store search results in the cache.
- */
-export function setCachedSearch(
-    query: string,
-    page: number,
-    offset: number,
-    results: SearchResult[],
-    source: 'api' | 'fallback' = 'api'
-): void {
-    const key = cacheKeyToString({ query, page, offset })
-    _cache.set(key, { results, timestamp: Date.now(), source })
-    evictIfNeeded()
-}
-
-/**
- * Register an in-flight search promise for deduplication.
- * If a pending request already exists for this key AND the caller's AbortSignal
- * matches the original signal, returns the existing promise instead of creating
- * a duplicate fetch. Callers with different or new signals get their own promise
- * so their cancellation does not abort an unrelated in-flight request.
- *
- * @returns The existing promise if already in-flight with a compatible signal,
- *          or null if this caller should proceed with a fresh fetch.
- */
-export function getPendingSearch(
-    query: string,
-    page: number,
-    offset: number,
-    signal?: AbortSignal
-): Promise<SearchResult[]> | null {
-    const key = cacheKeyToString({ query, page, offset })
-    const entry = _pending.get(key)
-    if (!entry) return null
-    // Only share an in-flight promise when the caller owns the exact same
-    // signal. This prevents a no-signal caller from accidentally piggybacking
-    // on an abortable promise, and prevents callers with distinct controllers
-    // from being serialized onto a single request they did not create.
-    if (signal !== entry.signal) return null
-    return entry.promise
-}
-
-/**
- * Store an in-flight search promise for deduplication.
- * The optional AbortSignal is recorded so later callers can detect whether
- * their cancellation would affect this in-flight request.
- */
-export function setPendingSearch(
-    query: string,
-    page: number,
-    offset: number,
-    promise: Promise<SearchResult[]>,
-    signal?: AbortSignal
-): void {
-    const key = cacheKeyToString({ query, page, offset })
-    const entry = { promise, signal }
-    _pending.set(key, entry)
-    // Auto-remove when settled. Use then(success, failure) instead of finally()
-    // so a rejected search promise does not create an unhandled child promise.
-    void promise.then(
-        () => {
-            const current = _pending.get(key)
-            if (current && current.promise === promise) {
-                _pending.delete(key)
-            }
-        },
-        () => {
-            const current = _pending.get(key)
-            if (current && current.promise === promise) {
-                _pending.delete(key)
+export async function initSearchCache(): Promise<void> {
+    try {
+        const dbEntries = await idb.entries();
+        const now = Date.now();
+        for (const [key, entry] of dbEntries) {
+            const cacheEntry = entry as CacheEntry;
+            if (!entry || typeof cacheEntry.storedAt !== 'number') continue;
+            const ageMs = now - cacheEntry.storedAt;
+            if (ageMs > SEMANTIC_SEARCH_CACHE_TTL_MS) {
+                idb.remove(key as string).catch((err: unknown) => debugWarn('[idb-service] cleanup failed:', err));
+            } else {
+                state.semanticSearchResultCache.set(key as string, cacheEntry);
             }
         }
-    )
-}
-
-/**
- * Clear the pending entry for a key (e.g. on error).
- */
-export function clearPendingSearch(query: string, page: number, offset: number): void {
-    const key = cacheKeyToString({ query, page, offset })
-    _pending.delete(key)
-}
-
-/**
- * Clear the entire cache.
- */
-export function clearSearchCache(): void {
-    _cache.clear()
-    _pending.clear()
-}
-
-/**
- * Get cache diagnostics (for debug overlay).
- */
-export function getSearchCacheDiagnostics(): {
-    size: number
-    pending: number
-    ttlMs: number
-} {
-    return {
-        size: _cache.size,
-        pending: _pending.size,
-        ttlMs: _ttlMs
+    } catch (err) {
+        debugWarn('[semantic-search-api-cache] Failed to initialize IDB cache:', err);
     }
 }
 
-/**
- * Override the TTL (for testing).
- */
-export function setSearchCacheTTL(ms: number): void {
-    _ttlMs = ms
+function getSemanticSearchCacheKey(query: string, offset: number = 0): string {
+    return String(query || "").trim().normalize("NFC").toLowerCase() + ":" + offset;
+}
+
+function cloneSemanticSearchPayload(payload: SearchPayload): SearchPayload {
+    if (!payload || typeof payload !== 'object') return payload;
+    return {
+        ...payload,
+        results: Array.isArray(payload.results) ? [...payload.results] : payload.results
+    };
+}
+
+function validatePayloadSchema(payload: SearchPayload): boolean {
+    if (!payload?.ok || !Array.isArray(payload?.results)) return false;
+    for (const item of payload.results) {
+        if (typeof item.lead_id === 'undefined' || typeof item.score === 'undefined') {
+            return false;
+        }
+    }
+    return true;
+}
+
+function markSemanticSearchCache(source: string, key: string, entry: CacheEntry | null = null): void {
+    withStateMutation(() => {
+        state.semanticSearchCacheDiagnostics.lastSource = source;
+        state.semanticSearchCacheDiagnostics.lastKey = key || null;
+        state.semanticSearchCacheDiagnostics.lastAgeMs = entry
+            ? Math.max(0, Math.round(Date.now() - entry.storedAt))
+            : null;
+    });
+}
+
+export function getCachedSemanticSearchPayload(query: string, offset: number = 0): SearchPayload | null {
+    const key = getSemanticSearchCacheKey(query, offset);
+    if (!key) return null;
+
+    const cache = state.semanticSearchResultCache as unknown as Map<string, CacheEntry>;
+    const entry = cache.get(key);
+    if (!entry) {
+        state.semanticSearchCacheDiagnostics.misses += 1;
+        markSemanticSearchCache('miss', key);
+        return null;
+    }
+
+    const now = Date.now();
+    const ageMs = now - (entry as CacheEntry).storedAt;
+    if (ageMs > SEMANTIC_SEARCH_CACHE_TTL_MS) {
+        cache.delete(key);
+        idb.remove(key as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
+
+        state.semanticSearchCacheDiagnostics.evictions += 1;
+        state.semanticSearchCacheDiagnostics.misses += 1;
+        markSemanticSearchCache('expired', key, entry as CacheEntry);
+        return null;
+    }
+
+    (entry as CacheEntry).lastAccessedAt = now;
+    idb.set(key as string, entry as CacheEntry).catch((err: unknown) => debugWarn('[idb-service] access update failed:', err));
+
+    state.semanticSearchCacheDiagnostics.hits += 1;
+    markSemanticSearchCache('hit', key, entry as CacheEntry);
+
+    const payload = cloneSemanticSearchPayload((entry as CacheEntry).payload);
+    if (payload && typeof payload === 'object') {
+        payload.client_cache_hit = true;
+        payload.client_cache_age_ms = Math.max(0, Math.round(ageMs));
+    }
+    return payload;
+}
+
+export function storeSemanticSearchPayload(query: string, payload: SearchPayload, offset: number = 0): void {
+    const key = getSemanticSearchCacheKey(query, offset);
+    if (!key || !payload?.ok || !Array.isArray(payload?.results)) return;
+    if (!validatePayloadSchema(payload)) {
+        debugWarn('[semantic-search-api-cache] Payload schema validation failed, treating as cache miss');
+        return;
+    }
+
+    const now = Date.now();
+    const entry: CacheEntry = {
+        storedAt: now,
+        lastAccessedAt: now,
+        payload: cloneSemanticSearchPayload(payload)
+    };
+
+    state.semanticSearchResultCache.set(key, entry);
+    idb.set(key, entry).catch((err: unknown) => debugWarn('[idb-service] store failed:', err));
+
+    state.semanticSearchCacheDiagnostics.stores += 1;
+    markSemanticSearchCache('store', key);
+
+    const cache = state.semanticSearchResultCache as unknown as Map<string, CacheEntry>;
+    while (cache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
+        for (const [k, e] of cache.entries()) {
+            const ce = e as CacheEntry;
+            if (e && (now - ce.storedAt > SEMANTIC_SEARCH_CACHE_TTL_MS)) {
+                cache.delete(k);
+                idb.remove(k as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
+                state.semanticSearchCacheDiagnostics.evictions += 1;
+            }
+        }
+        if (cache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
+            let oldestKey: string | null = null;
+            let oldestTime = Infinity;
+            for (const [k, e] of cache.entries()) {
+                const ce = e as CacheEntry;
+                if (e && Number.isFinite(ce.lastAccessedAt) && ce.lastAccessedAt < oldestTime) {
+                    oldestTime = ce.lastAccessedAt;
+                    oldestKey = k;
+                }
+            }
+            if (!oldestKey) break;
+            cache.delete(oldestKey);
+            idb.remove(oldestKey as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
+            state.semanticSearchCacheDiagnostics.evictions += 1;
+        }
+    }
+}
+
+export function getSemanticSearchCacheDiagnostics(): CacheDiagnosticsSnapshot {
+    const cache = state.semanticSearchResultCache as unknown as Map<string, CacheEntry>;
+    return {
+        ...state.semanticSearchCacheDiagnostics,
+        size: cache?.size || 0,
+        keys: cache ? Array.from(cache.keys()) : [],
+        ttlMs: SEMANTIC_SEARCH_CACHE_TTL_MS,
+        maxEntries: SEMANTIC_SEARCH_CACHE_MAX_ENTRIES
+    };
 }

@@ -2,12 +2,9 @@
   @components/Controls.svelte — Camera/interaction controls
 -->
 <script lang="ts">
-  import { cameraState, setAutoRotate, CAMERA_CONFIG } from '@lib/stores/camera.svelte.ts';
+  import { cameraState, setAutoRotate, startCameraTransition, resetCamera } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
-  import { viewport } from '@lib/stores/viewport.svelte.ts';
-  import { copyCurrentViewLink } from '@lib/orchestration/lifecycle';
-  import { appState } from '@lib/state/app.svelte';
-  import { OVERVIEW_CAMERA_POSE } from '@lib/engine/camera-controls-restore.svelte';
+  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
 
   interface Props {
     visible?: boolean;
@@ -19,150 +16,28 @@
     setAutoRotate(!cameraState.autoRotate);
   }
 
-  /**
-   * Step the camera distance from the target by `factor`. factor < 1 zooms in,
-   * factor > 1 zooms out. Clamped to the orbit distance limits so the camera
-   * never crosses through the target or escapes the scene bounds.
-   *
-   * Camera toolbar fix (2026-08-28): the live Three camera is mutated
-   * imperatively (repo convention — "Three.js object mutations stay
-   * imperative, they're not Svelte state", camera-controls-restore.svelte.ts).
-   * The camera store is a MIRROR — the engine never reads it — so the old
-   * store-only write (startCameraTransition) was a dead write and the buttons
-   * were inert in the live scene while the jsdom unit tests (which assert the
-   * store) stayed green. When no live camera exists (jsdom/unit contexts) the
-   * math falls back to the store so the mirror contract still holds there.
-   */
-  function zoomBy(factor: number): void {
-    const cam = appState.camera;
-    const ctrl = appState.controls;
-    const liveTarget = ctrl?.target;
-    const p: [number, number, number] = cam
-      ? [cam.position.x, cam.position.y, cam.position.z]
-      : [...cameraState.position];
-    const t: [number, number, number] = liveTarget
-      ? [liveTarget.x, liveTarget.y, liveTarget.z]
-      : [...cameraState.target];
-    const dx = p[0] - t[0];
-    const dy = p[1] - t[1];
-    const dz = p[2] - t[2];
-    const currentDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    if (currentDistance < 1e-6) return; // camera coincides with target, nothing to dolly
-    const min = CAMERA_CONFIG.ORBIT_MIN_DISTANCE_DEFAULT;
-    const max = CAMERA_CONFIG.ORBIT_MAX_DISTANCE_DEFAULT;
-    const nextDistance = Math.min(max, Math.max(min, currentDistance * factor));
-    if (nextDistance === currentDistance) return; // already at the clamp
-    const scale = nextDistance / currentDistance;
-    const nextPosition: [number, number, number] = [
-      t[0] + dx * scale,
-      t[1] + dy * scale,
-      t[2] + dz * scale
-    ];
-    if (cam) {
-      cam.position.set?.(nextPosition[0], nextPosition[1], nextPosition[2]);
-      if (liveTarget) cam.lookAt?.(liveTarget.x, liveTarget.y, liveTarget.z);
-      ctrl?.update?.();
-    }
-    // Mirror (or jsdom fallback) — the store never drives the camera.
-    cameraState.position = nextPosition;
-    if (liveTarget) cameraState.target = t;
-  }
-
   function zoomIn(): void {
-    zoomBy(1 / 1.2);
+    startCameraTransition(
+      { position: cameraState.position, target: cameraState.target },
+      300
+    );
   }
 
   function zoomOut(): void {
-    zoomBy(1.2);
+    startCameraTransition(
+      { position: cameraState.position, target: cameraState.target },
+      300
+    );
   }
 
   function resetView(): void {
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
-    // Camera toolbar fix (2026-08-28): reset to the CANONICAL overview pose
-    // (the framing the scene actually boots into, pinned by the three-visual-
-    // polish + camera-restore contracts as [2.05, 1.55, 2.75]) applied
-    // imperatively to the live Three camera. The old resetCamera() store
-    // write never reached the engine (the store is a mirror, not a driver),
-    // and its stale [0,0,3] default framed differently than boot overview.
-    const cam = appState.camera;
-    const ctrl = appState.controls;
-    const [px, py, pz] = OVERVIEW_CAMERA_POSE.position;
-    const [tx, ty, tz] = OVERVIEW_CAMERA_POSE.target;
-    if (cam && ctrl) {
-      cam.position.set?.(px, py, pz);
-      ctrl.target.set?.(tx, ty, tz);
-      cam.lookAt?.(tx, ty, tz);
-      ctrl.update?.();
-    }
-    cameraState.position = [px, py, pz];
-    cameraState.target = [tx, ty, tz];
+    resetCamera();
   }
 
-  /**
-   * Copy the current page URL to the clipboard with stable record=<lead_id>
-   * identity. Delegates to the canonical copyCurrentViewLink() which handles
-   * clipboard write, toast feedback, and the ?anchor→?record conversion for
-   * share-link durability across corpus reorders (BS-B6).
-   */
-  async function shareLink(): Promise<void> {
-    await copyCurrentViewLink()
-  }
-
-  // W51-C4: roving tabindex for the camera toolbar (WAI-ARIA toolbar pattern).
-  // The container is a non-tabbable toolbar (tabindex="-1"); exactly one
-  // button holds the roving tab stop (tabindex="0") and Arrow/Home/End move
-  // focus between buttons. Without this, keyboard users had to Tab through
-  // all five buttons individually.
-  let rovingIndex = $state(0);
-
-  // P2-5 (component-remainder sweep): when visible→false with focus inside the
-  // toolbar, stash document.activeElement and restore on re-show. Prevents focus
-  // from dropping to <body> when compact mode / surface switch hides mid-focus.
-  let savedFocusEl: HTMLElement | null = null;
-  $effect(() => {
-    if (visible) {
-      // Re-show: restore focus if we stashed it AND it's still in the DOM.
-      if (savedFocusEl && document.contains(savedFocusEl)) {
-        savedFocusEl.focus();
-      }
-      savedFocusEl = null;
-    } else {
-      // About to hide: stash focus if it's inside the toolbar.
-      const toolbar = document.getElementById('camera-controls');
-      if (toolbar && toolbar.contains(document.activeElement)) {
-        savedFocusEl = document.activeElement as HTMLElement;
-      }
-    }
-  });
-
-  function onCameraToolbarKeydown(e: KeyboardEvent): void {
-    const toolbar = e.currentTarget as HTMLElement;
-    const buttons = Array.from(toolbar.querySelectorAll<HTMLButtonElement>('button.control-btn'));
-    if (buttons.length === 0) return;
-    const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
-    if (current < 0) return;
-    let next: number;
-    switch (e.key) {
-      case 'ArrowRight':
-      case 'ArrowDown':
-        next = (current + 1) % buttons.length;
-        break;
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        next = (current - 1 + buttons.length) % buttons.length;
-        break;
-      case 'Home':
-        next = 0;
-        break;
-      case 'End':
-        next = buttons.length - 1;
-        break;
-      default:
-        return;
-    }
-    e.preventDefault();
-    rovingIndex = next;
-    buttons[next]?.focus();
+  function shareLink(): void {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).catch(() => {});
   }
 </script>
 
@@ -171,38 +46,30 @@
     class:compact={$viewport.isCompact}
     id="camera-controls"
     role="toolbar"
-    aria-label="Camera controls"
-    tabindex="-1"
+    aria-label="Map controls"
     hidden={!visible}
-    onkeydown={onCameraToolbarKeydown}
-    onpointerdown={(e) => e.stopPropagation()}
-    onwheel={(e) => e.stopPropagation()}
-    ondblclick={(e) => e.stopPropagation()}
   >
-    <button class="control-btn" onclick={zoomIn} title="Zoom in" aria-label="Zoom in" type="button" tabindex={rovingIndex === 0 ? 0 : -1}>
+    <button class="control-btn" onclick={zoomIn} title="Zoom in" aria-label="Zoom in">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="10.5" cy="10.5" r="5.8" fill="none" stroke="currentColor" stroke-width="2"/>
         <path d="M10.5 7.8v5.4M7.8 10.5h5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M15 15l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
-      <span class="control-label">Zoom in</span>
     </button>
 
-    <button class="control-btn" onclick={zoomOut} title="Zoom out" aria-label="Zoom out" type="button" tabindex={rovingIndex === 1 ? 0 : -1}>
+    <button class="control-btn" onclick={zoomOut} title="Zoom out" aria-label="Zoom out">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="10.5" cy="10.5" r="5.8" fill="none" stroke="currentColor" stroke-width="2"/>
         <path d="M7.8 10.5h5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M15 15l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
-      <span class="control-label">Zoom out</span>
     </button>
 
-    <button class="control-btn" onclick={resetView} title="Reset view" aria-label="Reset view" type="button" tabindex={rovingIndex === 2 ? 0 : -1}>
+    <button class="control-btn" onclick={resetView} title="Reset view" aria-label="Reset view">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 8a7 7 0 1 1-1 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M7 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span class="control-label">Reset</span>
     </button>
 
     <div class="control-divider"></div>
@@ -214,36 +81,23 @@
       title="Toggle auto-rotate"
       aria-label="Toggle auto-rotate"
       aria-pressed={cameraState.autoRotate}
-      type="button"
-      tabindex={rovingIndex === 3 ? 0 : -1}
     >
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 4a8 8 0 1 1-7.4 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M4 5v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span class="control-label">Rotate</span>
     </button>
 
-    <button class="control-btn" onclick={shareLink} title="Share link" aria-label="Share link" type="button" tabindex={rovingIndex === 4 ? 0 : -1}>
+    <button class="control-btn" onclick={shareLink} title="Share link" aria-label="Share link">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="7" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
         <circle cx="17" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
         <circle cx="17" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
         <path d="m8.8 11 6.4-4M8.8 13l6.4 4" fill="none" stroke="currentColor" stroke-width="2"/>
       </svg>
-      <span class="control-label">Share</span>
     </button>
 </div>
 
-<!--
-  P2-6 (component-remainder sweep): scoped <style> below re-declares
-  .controls / .control-btn selectors that are OWNED by css/controls.css
-  (per docs/css-ownership.md §2). The component deliberately overrides
-  the module's position:fixed+column layout with position:absolute+row,
-  and replaces glass-bg button styling with a transparent column layout.
-  Module rules still apply to non-component .controls surfaces (map view).
-  Keep both; this comment prevents future de-duplication accidents.
--->
 <style>
   .controls {
     position: absolute;
@@ -252,75 +106,40 @@
     z-index: var(--z-controls);
     display: flex;
     gap: 0.25rem;
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    border-radius: var(--glass-radius-action);
+    background: rgba(7, 16, 24, 0.88);
+    backdrop-filter: blur(10px);
+    border-radius: 0.5rem;
     padding: 0.3rem;
-    border: var(--glass-border);
-    box-shadow: var(--shadow-glass);
+    border: 1px solid rgba(78, 205, 196, 0.12);
   }
   .controls.compact {
     bottom: 4.5rem;
     right: 0.5rem;
   }
-  @media (max-width: 768px) {
-    :global(body.surface-idle) .controls.controls {
-      display: none;
-      visibility: hidden;
-      pointer-events: none;
-    }
-  }  .control-btn {
+  .control-btn {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.15rem;
-    width: 2.75rem;
-    min-height: 4rem;
+    width: 2rem;
+    height: 2rem;
     background: none;
     border: none;
     border-radius: 0.3rem;
-    color: var(--color-text-teal-muted);
+    color: #b0d0d0;
     cursor: pointer;
     transition: all 0.15s;
   }
-  .control-label {
-    font-size: 0.7rem;
-    color: var(--color-text-teal-muted);
-    line-height: 1;
-    pointer-events: none;
-    user-select: none;
-  }
-  .control-btn:hover .control-label {
-    color: var(--color-text-teal-light);
-  }
-  .control-btn.active .control-label {
-    color: var(--color-primary-alt);
-  }
   .control-btn:hover {
-    color: var(--color-text-teal-light);
+    color: #e0f0f0;
     background: rgba(78, 205, 196, 0.1);
   }
   .control-btn.active {
-    color: var(--color-primary-alt);
+    color: #4ecdc4;
     background: rgba(78, 205, 196, 0.15);
-  }
-  .control-btn:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
-    outline-offset: 2px;
   }
   .control-divider {
     width: 1px;
     background: rgba(78, 205, 196, 0.15);
     margin: 0.25rem 0;
-  }
-
-  /* Reduced-motion: the control-button state transition is decorative;
-     disable it for users who prefer reduced motion. Steady-state layout is
-     unchanged. */
-  @media (prefers-reduced-motion: reduce) {
-    .control-btn {
-      transition: none;
-    }
   }
 </style>

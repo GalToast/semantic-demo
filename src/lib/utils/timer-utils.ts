@@ -1,7 +1,7 @@
 /**
  * @lib/utils/timer-utils.ts — Central registry for application-wide timeouts and intervals
  *
- * Port of
+ * Port of js/modules/utils/timer-utils.js
  * Keeps background tasks flushable during state transitions.
  */
 
@@ -61,7 +61,6 @@ export function debounceRAF<T extends (...args: unknown[]) => void>(fn: T): T {
   let rafId: number | null = null;
   const debounced = (...args: unknown[]) => {
     if (rafId !== null) cancelAnimationFrame(rafId);
-    // eslint-disable-next-line no-restricted-syntax -- animation loop helper (intentional RAF call)
     rafId = requestAnimationFrame(() => {
       rafId = null;
       fn(...args);

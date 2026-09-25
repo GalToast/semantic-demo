@@ -1,99 +1,96 @@
 /**
  * @lib/ui/ui-feedback.ts — DOM status/toast feedback operations
  *
- * Provides `syncSearchStatusForFocus` (announces the focused point's
- * relationship to the active search stack).
- *
- * Note: `showExperienceToast` was historically defined here as a DOM-direct
- * mutator (textContent / classList / setAttribute on `#experience-reset-toast`).
- * That implementation is gone — migrated to `@lib/orchestration/toast` which
- * writes to the Svelte `toastStore`. Toast.svelte renders the same DOM IDs
- * (more reliably, since Svelte's render_effect can wipe manual mutations).
- * Callers: `from '@lib/orchestration/toast'` in mode-bindings.ts,
- * map-state.ts, journey-bindings.ts, view-bindings.ts (was `ui-feedback`).
+ * Port of js/modules/ui-feedback.ts.
+ * Provides `showExperienceToast` (transient toast) and `syncSearchStatusForFocus`
+ * (announces the focused point's relationship to the active search stack).
  */
-import { appState } from '@lib/state/app.svelte'
-import { getPointIndexByLeadId } from '@lib/data-store'
-import type { BusinessRecord } from '@lib/types/business'
+import { appState } from '@lib/state/app.svelte';
+import type { Point } from '@lib/engine/state-bridge';
 
-import { isCompactMapViewport, isCompactSearchViewport } from '@lib/utils/ui-presentation'
-import { formatBusinessName } from '@lib/utils/dom-formatters'
-import { setActiveSearchResultRow } from '@lib/search/result-renderer'
-import { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
+import { isCompactMapViewport, isCompactSearchViewport } from '@lib/utils/ui-presentation';
+import { formatBusinessName } from '@lib/utils/dom-formatters';
+import { setActiveSearchResultRow, updateSearchTrailCue } from '@lib/engine/lifecycle-bridge';
 
-// ── PRIVATE HELPERS — typed accessors (Phase 18 cast consolidation) ───────
-
-/**
- * `appState.searchState.currentSearchSummary` is read in three call sites in this
- * module, each shape-narrowing the same `unknown`-bridge. Consolidate
- * behind a typed accessor so the inline `as unknown as Record<...>`
- * dance lives in one helper.
- */
-interface CurrentSearchSummarySnapshot {
-    resultIndices?: readonly number[]
-    query?: string
-}
-
-function getCurrentSearchSummarySnapshot(): CurrentSearchSummarySnapshot | null {
-    return appState.searchState.currentSearchSummary
+export function showExperienceToast(title: string, copy: string): void {
+    const toast = document.getElementById('experience-reset-toast');
+    if (!toast) return;
+    const titleEl = document.getElementById('experience-toast-title');
+    const copyEl = document.getElementById('experience-toast-copy');
+    toast.setAttribute('aria-hidden', 'false');
+    toast.setAttribute('aria-live', 'polite');
+    if (titleEl) titleEl.textContent = title;
+    if (copyEl) copyEl.textContent = copy;
+    toast.classList.add('active');
+    if (appState.experienceResetToastTimer) {
+        clearTimeout(appState.experienceResetToastTimer);
+    }
+    appState.experienceResetToastTimer = setTimeout(() => {
+        toast.classList.remove('active');
+        toast.setAttribute('aria-hidden', 'true');
+        toast.setAttribute('aria-live', 'polite');
+        if (titleEl) titleEl.textContent = '';
+        if (copyEl) copyEl.textContent = '';
+        appState.experienceResetToastTimer = null;
+    }, 2100);
 }
 
 export interface SyncSearchStatusOptions {
-    fromSearchResult?: boolean
-    fromTraversal?: boolean
+    fromSearchResult?: boolean;
+    fromTraversal?: boolean;
 }
 
-export function syncSearchStatusForFocus(point: BusinessRecord, options: SyncSearchStatusOptions = {}): void {
-    const statusEl = document.getElementById('search-status')
-    const resultsEl = document.getElementById('search-results')
-    if (!statusEl || !point || !appState.searchState.currentSearchSummary) return
-    if (!resultsEl?.classList.contains('active')) return
+export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatusOptions = {}): void {
+    const statusEl = document.getElementById('search-status');
+    const resultsEl = document.getElementById('search-results');
+    if (!statusEl || !point || !appState.currentSearchSummary) return;
+    if (!resultsEl?.classList.contains('active')) return;
 
-    const pointIndexByLeadId =
-        point?.lead_id !== null && point?.lead_id !== undefined
-            ? getPointIndexByLeadId().get(String(point.lead_id))
-            : undefined
-    const pointIndex = Number.isFinite(pointIndexByLeadId) ? pointIndexByLeadId : appState.points?.indexOf?.(point)
-    const summary = getCurrentSearchSummarySnapshot()
-    const resultIndices = Array.isArray(summary?.resultIndices) ? summary!.resultIndices : []
-    const pointInResults = Number.isFinite(pointIndex) && resultIndices.includes(pointIndex as number)
+    const pointIndexByLeadId = point?.lead_id !== null && point?.lead_id !== undefined
+        ? (appState.pointIndexByLeadId as Map<string | number, number> | undefined)?.get?.(String(point.lead_id))
+        : undefined;
+    const pointIndex = Number.isFinite(pointIndexByLeadId)
+        ? pointIndexByLeadId
+        : (appState.points as Point[] | undefined)?.indexOf?.(point);
+    const resultIndices = Array.isArray((appState.currentSearchSummary as unknown as Record<string, unknown> | null)?.resultIndices)
+        ? (appState.currentSearchSummary as unknown as Record<string, unknown>).resultIndices as number[]
+        : [];
+    const pointInResults = Number.isFinite(pointIndex) && resultIndices.includes(pointIndex as number);
     const focusedIndex = Number.isFinite(appState.focusedNode)
         ? appState.focusedNode
         : Number.isFinite(appState.navState?.focusedIndex)
           ? appState.navState!.focusedIndex
-          : null
-    const focusedPointOutsideResults =
-        Number.isFinite(focusedIndex) && resultIndices.length > 0 && !resultIndices.includes(focusedIndex!)
+          : null;
+    const focusedPointOutsideResults = Number.isFinite(focusedIndex)
+        && resultIndices.length > 0
+        && !resultIndices.includes(focusedIndex!);
     if (typeof setActiveSearchResultRow === 'function') {
         setActiveSearchResultRow(
             resultsEl,
             focusedPointOutsideResults
                 ? null
-                : options.fromTraversal && pointInResults
-                  ? appState.navState?.focusedIndex
-                  : pointInResults
-                    ? pointIndex
-                    : null
-        )
+                : options.fromTraversal && pointInResults ? appState.navState?.focusedIndex : pointInResults ? pointIndex : null
+        );
     }
 
-    const displayPoint =
-        focusedPointOutsideResults && appState.focusState.selectedPoint ? appState.focusState.selectedPoint : point
-    const pointName = formatBusinessName(displayPoint!.name)
-    const searchSummary = getCurrentSearchSummarySnapshot()
-    const queryLabel = searchSummary?.query ? `"${searchSummary.query}"` : 'this connection path'
-    const compactMapCopy = isCompactMapViewport()
-    const compactGalaxyCopy = isCompactSearchViewport()
+    const displayPoint = focusedPointOutsideResults && appState.selectedPoint ? appState.selectedPoint : point;
+    const pointName = formatBusinessName(displayPoint!.name);
+    const searchSummary = appState.currentSearchSummary as unknown as Record<string, unknown> | null;
+    const queryLabel = searchSummary?.query
+        ? `"${searchSummary.query}"`
+        : 'this connection path';
+    const compactMapCopy = isCompactMapViewport();
+    const compactGalaxyCopy = isCompactSearchViewport();
 
     if (focusedPointOutsideResults || !pointInResults) {
-        statusEl.textContent = `${pointName} is focused outside ${queryLabel}. The ranked stack remains available as the current search trail.`
+        statusEl.textContent = `${pointName} is focused outside ${queryLabel}. The ranked stack remains available as the current search trail.`;
         updateSearchTrailCue({
             beat: 'focus',
-            kicker: 'Focused listing',
+            kicker: 'Focused record',
             title: `${pointName} is focused`,
-            note: `The ranked stack still shows ${queryLabel}; no result row is marked current because this listing is outside that trail.`
-        })
-        return
+            note: `The ranked stack still shows ${queryLabel}; no result row is marked current because this record is outside that trail.`
+        });
+        return;
     }
 
     if (options.fromSearchResult) {
@@ -101,44 +98,44 @@ export function syncSearchStatusForFocus(point: BusinessRecord, options: SyncSea
             ? `${pointName} is centered in ${queryLabel}. Preview in the stack or use Prev / Next to explore.`
             : compactGalaxyCopy
               ? `${pointName} is now centered. Use the pocket controls below to enter, inspect, or explore nearby stops.`
-              : `${pointName} is centered in ${queryLabel}. Hover the stack to preview another pocket, or use Prev / Next to explore further.`
+              : `${pointName} is centered in ${queryLabel}. Hover the stack to preview another pocket, or use Prev / Next to explore further.`;
         updateSearchTrailCue({
             beat: 'focus',
             kicker: 'Anchor locked',
             title: `${pointName} is now centered`,
             note: compactMapCopy
-                ? 'Search found related businesses. Preview nearby matches in the stack or use Prev / Next to explore.'
+                ? 'Search opens a trail. Preview nearby matches in the stack or use Prev / Next to explore.'
                 : compactGalaxyCopy
-                  ? 'Search found related businesses. Inspect connections, or explore the nearby stops below.'
-                  : 'Search found related businesses. Preview ranked matches in the stack, or use Prev / Next to explore outward from this neighborhood.'
-        })
-        return
+                  ? 'Search opens a trail. Enter the mycelium, inspect connections, or explore the nearby stops below.'
+                  : 'Search opens a trail. Preview ranked matches in the stack, or use Prev / Next to explore outward from this neighborhood.'
+        });
+        return;
     }
 
     if (options.fromTraversal) {
         statusEl.textContent = compactMapCopy
             ? `${pointName} is centered in ${queryLabel}. Prev / Next explores nearby businesses.`
-            : `${pointName} is now centered in ${queryLabel}. Use Prev / Next to explore nearby businesses, or the result stack to jump back into ranked matches.`
+            : `${pointName} is now centered in ${queryLabel}. Use Prev / Next to explore nearby businesses, or the result stack to jump back into ranked matches.`;
         updateSearchTrailCue({
             beat: 'walk',
-            kicker: 'Exploration in progress',
+            kicker: 'Semantic exploration in progress',
             title: `Exploring from ${pointName}`,
             note: compactMapCopy
-                ? 'Prev / Next keeps stepping through nearby businesses.'
-                : 'The path is live now. Use Prev / Next to explore further, or jump sideways from the ranked stack.'
-        })
-        return
+                ? 'Prev / Next keeps stepping through this nearby business trail.'
+                : 'The trail is live now. Use Prev / Next to explore further, or jump sideways from the ranked stack.'
+        });
+        return;
     }
 
     statusEl.textContent = compactMapCopy
         ? `${pointName} is centered in ${queryLabel}. Preview or jump from the stack.`
-        : `${pointName} is centered in ${queryLabel}. Use the result stack to preview or jump, or Prev / Next to explore nearby businesses.`
+        : `${pointName} is centered in ${queryLabel}. Use the result stack to preview or jump, or Prev / Next to explore nearby businesses.`;
     updateSearchTrailCue({
         beat: 'focus',
-        kicker: 'Search found related businesses.',
-        title: `${pointName} is the starting point`,
+        kicker: 'Search opens a trail.',
+        title: `${pointName} anchors this trail`,
         note: compactMapCopy
             ? 'Preview another match in the stack, or walk forward from this anchor.'
             : 'The ranked stack still shows the broader query, while this focus keeps the active anchor.'
-    })
+    });
 }

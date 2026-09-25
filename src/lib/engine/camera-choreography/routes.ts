@@ -2,19 +2,16 @@
  * @lib/engine/camera-choreography/routes.ts
  * Search corridor, terrain prelude, semantic centroid, zoom animations
  *
- *
+ * Canonical Svelte 5 implementation (legacy js/modules/ version retired in W16-T-CAM-4)
  */
 import { Vector3, Box3 } from 'three'
 import type { ChoreographyCamera, ChoreographyControls, ChoreographyPersonality } from './types'
 import { easeInOutCubic, quadraticBezierComponent } from '@lib/utils/math-easing'
 import { isMobile, prefersReducedMotion } from '@lib/utils/environment'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
-import { noteSceneInteraction } from '@lib/engine/camera-controls-restore.svelte'
+import { noteSceneInteraction } from '@lib/engine/camera-controls-restore'
 import { setFocusTransitionMode } from '@lib/engine/camera-controls-core'
 import { appState } from '@lib/state/app.svelte'
-import { debugError } from '@lib/utils/debug'
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
-import { scheduleFrameTask } from '../frame-scheduler'
 
 // ── Local Types ──────────────────────────────────────────────────────────────
 
@@ -32,7 +29,7 @@ interface NodePosition {
 
 /** Point shape from the points array. */
 interface Point {
-    cluster?: number | string | null
+    cluster?: number | string
     lead_id?: number | string | null
     [key: string]: unknown
 }
@@ -41,44 +38,6 @@ interface Point {
 
 let _insideCentroidLerpToken = 0
 
-// P1 (2026-08-07): per-frame re-arm guard — track the in-flight centroid
-// tween target so engine-loop calls with the SAME target don't cancel+restart
-// at t=0 (the bug that made the framing never arrive). Requires a tiny
-// epsilon-tolerant vector compare since the engine passes frameNow each tick.
-let _insideCentroidActive = false
-let _insideCentroidTargetX = 0
-let _insideCentroidTargetY = 0
-let _insideCentroidTargetZ = 0
-
-// M7: reusable DisposableRegistry for frame-task cancellation across all
-// route animations. Each animation function clears the previous registry
-// before registering a fresh task with the engine-owned frame scheduler.
-//
-// M4: cancellation callbacks ensure teardown removes pending work rather than
-// relying solely on the module token check at step() top, which would still let
-// a pending task run once against potentially-nulled camera/controls.
-let _routeRafRegistry: DisposableRegistry | null = null
-
-/**
- * Cancel all pending route animations and clear the frame-task registry.
- * Safe to call even when no animation is active.
- */
-export function cancelRouteAnimations(): void {
-    if (_routeRafRegistry) {
-        _routeRafRegistry.disposeAll()
-        _routeRafRegistry = null
-    }
-    // P1 (2026-08-07): a user drag/zoom (C10 listener) or teardown cancels the
-    // frame task but previously left the per-frame centroid re-arm guard armed —
-    // applySemanticCentroidCamera() then early-returned forever on the same
-    // target and centroid framing never re-armed. Reset the guard + bump the
-    // lerp token here so any in-flight stepCentroid() stops and the next
-    // engine-loop call re-arms. applySemanticCentroidCamera() cancels BEFORE it
-    // re-arms, so this reset cannot invalidate its own registration.
-    _insideCentroidActive = false
-    _insideCentroidLerpToken++
-}
-
 // ── animateCameraToSearchCorridor ────────────────────────────────────────────
 
 export function animateCameraToSearchCorridor(
@@ -86,15 +45,15 @@ export function animateCameraToSearchCorridor(
     resultIndices: number[] = [],
     options: RouteOptions = {}
 ): boolean {
-    const camera = appState.camera
-    const controls = appState.controls
+    const camera = appState.camera as ChoreographyCamera | null
+    const controls = appState.controls as ChoreographyControls | null
     if (!camera || !controls || appState.currentView !== 'galaxy') return false
     const activeCamera: ChoreographyCamera = camera
     const activeControls: ChoreographyControls = controls
     if (!Number.isFinite(anchorIndex) || appState.navState.focusedIndex !== null || appState.semanticDiveMode)
         return false
 
-    const isPointVisible = (index: number, points: readonly Point[], clusterFilter: number | null): boolean => {
+    const isPointVisible = (index: number, points: Point[], clusterFilter: number | null): boolean => {
         if (!Number.isFinite(index) || index < 0 || index >= points.length) return false
         const point = points[index]
         if (!point) return false
@@ -105,7 +64,7 @@ export function animateCameraToSearchCorridor(
         return true
     }
 
-    const allPoints = appState.points
+    const allPoints = appState.points as Point[]
     const routeIndices = [...new Set([anchorIndex, ...(resultIndices || [])])]
         .filter(
             (index) =>
@@ -172,8 +131,10 @@ export function animateCameraToSearchCorridor(
     const duration = options.duration || (compact ? 1180 : 1320)
     const startTime = performance.now()
     let animationToken = 0
-    appState.routeCameraAnimationToken = (appState.routeCameraAnimationToken || 0) + 1
-    animationToken = appState.routeCameraAnimationToken
+    appState.withMutation(() => {
+        appState.routeCameraAnimationToken = (appState.routeCameraAnimationToken || 0) + 1
+        animationToken = appState.routeCameraAnimationToken
+    })
 
     publish(EVENTS.TRANSITION_PHASE_CHANGED, {
         phase: 'search-corridor',
@@ -183,23 +144,19 @@ export function animateCameraToSearchCorridor(
             indexCount: routeIndices.length,
             lastCameraMove: 'search-corridor'
         }
-    })
+    } as any)
     noteSceneInteraction(duration + 1200)
 
     const controlTarget = startTarget.clone().lerp(endTarget, 0.56).add(worldUp.clone().multiplyScalar(0.025))
 
-    // M4/M7: cancel any prior route rAF and create a fresh registry for this animation.
-    cancelRouteAnimations()
-    _routeRafRegistry = new DisposableRegistry({ label: 'camera-route-search-corridor' })
-
-    function step(now: number): boolean {
+    function step(now: number) {
         if (
             animationToken! !== appState.routeCameraAnimationToken ||
             appState.navState.focusedIndex !== null ||
             appState.currentView !== 'galaxy'
         )
-            return true
-        if (!activeControls.target || !activeCamera.position) return true
+            return
+        if (!activeControls.target || !activeCamera.position) return
         const t = Math.min((now - startTime) / duration, 1)
         const eased = easeInOutCubic(t)
         activeControls.target.set(
@@ -208,12 +165,9 @@ export function animateCameraToSearchCorridor(
             quadraticBezierComponent(startTarget.z, controlTarget.z, endTarget.z, eased)
         )
         activeCamera.position.lerpVectors(startPos, endPos, eased)
-        if (t < 1) {
-            return false
-        }
-        return true
+        if (t < 1) requestAnimationFrame(step)
     }
-    _routeRafRegistry.add(scheduleFrameTask(step))
+    requestAnimationFrame(step)
     return true
 }
 
@@ -223,16 +177,12 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
     const reducedMotion = prefersReducedMotion()
     const duration = reducedMotion ? 1 : options.duration || appState.MAP_HANDOFF_PRELUDE_MS || 1200
 
-    publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'map-prelude', options: { duration } })
+    publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'map-prelude', options: { duration } } as any)
 
     try {
-        const camera = appState.camera
-        const controls = appState.controls
-        if (!camera || !controls) {
-            // No animation possible — release the 'map-prelude' phase we just announced.
-            publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
-            return
-        }
+        const camera = appState.camera as ChoreographyCamera | null
+        const controls = appState.controls as ChoreographyControls | null
+        if (!camera || !controls) return
         const activeCamera: ChoreographyCamera = camera
         const activeControls: ChoreographyControls = controls
         const startPos = activeCamera.position.clone()
@@ -245,8 +195,6 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
         if (reducedMotion) {
             activeCamera.position.copy(desiredPos)
             activeControls.update()
-            // Reduced-motion arrival is instantaneous, so signal it now.
-            publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
             return
         }
 
@@ -258,23 +206,10 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
         const priorControlsEnabled = activeControls.enabled
         activeControls.enabled = false
 
-        // M4/M7: cancel any prior route rAF and create a fresh registry.
-        cancelRouteAnimations()
-        _routeRafRegistry = new DisposableRegistry({ label: 'camera-route-terrain-prelude' })
-        // M9: restore controls.enabled if this registry is disposed by an
-        // external cancelRouteAnimations() (e.g. cancelAnimate teardown) before
-        // the rAF step can run. The token-mismatch + completion branches below
-        // restore enabled, but the external-cancel path cancels the rAF so
-        // step() never fires — leaving controls disabled on the captured
-        // instance and the 'map-prelude' phase unreleased. Matches M4/M7 intent.
-        _routeRafRegistry.add(() => {
-            activeControls.enabled = priorControlsEnabled
-        })
-
-        function step(now: number): boolean {
+        function step(now: number) {
             if (animationToken !== appState.focusCameraAnimationToken) {
                 activeControls.enabled = priorControlsEnabled
-                return true
+                return
             }
             const t = Math.min((now - startTime) / duration, 1)
             const eased = easeInOutCubic(t)
@@ -282,26 +217,15 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
             activeCamera.position.lerpVectors(startPos, desiredPos, eased)
 
             if (t < 1) {
-                return false
+                requestAnimationFrame(step)
             } else {
                 activeControls.enabled = priorControlsEnabled
-                // Signal arrival WHEN the prelude animation actually completes.
-                // A previous try/finally here published 'idle' synchronously the
-                // instant the rAF was queued, which (a) stomped the 'map-prelude'
-                // phase announced just above and (b) prematurely fired
-                // onCameraArrived → completeCameraTransition, snapping the camera
-                // store position/target to a stale transition.to before a single
-                // prelude frame had run. The token-mismatch cancel branch
-                // intentionally does NOT publish 'idle': the superseding
-                // animation owns the arrival signal.
-                publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
-                return true
             }
         }
-        _routeRafRegistry.add(scheduleFrameTask(step))
+        requestAnimationFrame(step)
     } catch (_err) {
-        debugError('animateCameraToTerrainPrelude failed:', _err)
-        // Error path: release the announced phase so subscribers aren't stuck.
+        console.error('animateCameraToTerrainPrelude failed:', _err)
+    } finally {
         publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
     }
 }
@@ -309,8 +233,8 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
 // ── applySemanticCentroidCamera ───────────────────────────────────────────────
 
 export function applySemanticCentroidCamera(now = performance.now()): void {
-    const camera = appState.camera
-    const controls = appState.controls
+    const camera = appState.camera as ChoreographyCamera | null
+    const controls = appState.controls as ChoreographyControls | null
     if (!camera || !controls) return
     const activeControls: ChoreographyControls = controls
     if (appState.trailDepth !== 2) {
@@ -353,7 +277,7 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
         Number.isFinite(anchorPos.z) ? anchorPos.z : 0
     )
 
-    const personality = (appState.navState.currentPersonality || {}) as ChoreographyPersonality
+    const personality = ((appState.navState as any).currentPersonality || {}) as ChoreographyPersonality
     let centroidWeight: number
     if (personality.type === 'TIGHT_CLUSTER') {
         centroidWeight = 0.12
@@ -364,64 +288,33 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
     }
     const lookAtTarget = anchorVec.clone().lerp(pocketCentroid, centroidWeight)
 
-    // P1 (fleet 2026-08-07): the engine loop calls this fn every frame during
-    // inside/trail (sceneNeedsContinuous while focusedNode set), and each call
-    // used to cancel + re-arm the 1600ms tween at t=0 — so it NEVER progressed
-    // and the centroid framing never arrived. Guard: if a tween for the SAME
-    // target is already running, let it finish (per-frame calls become no-ops);
-    // only a changed target (new pocket/personality) re-arms.
-    if (
-        _insideCentroidActive &&
-        Math.abs(_insideCentroidTargetX - lookAtTarget.x) < 1e-4 &&
-        Math.abs(_insideCentroidTargetY - lookAtTarget.y) < 1e-4 &&
-        Math.abs(_insideCentroidTargetZ - lookAtTarget.z) < 1e-4
-    ) {
-        return
-    }
-    // P1: cancel BEFORE arming — cancelRouteAnimations() now resets
-    // _insideCentroidActive and bumps _insideCentroidLerpToken; if the cancel
-    // ran after arming it would invalidate the token stepCentroid() checks and
-    // the tween would never run.
-    cancelRouteAnimations()
-    _routeRafRegistry = new DisposableRegistry({ label: 'camera-route-centroid' })
-
-    _insideCentroidActive = true
-    _insideCentroidTargetX = lookAtTarget.x
-    _insideCentroidTargetY = lookAtTarget.y
-    _insideCentroidTargetZ = lookAtTarget.z
-
     const token = ++_insideCentroidLerpToken
     const startTarget = activeControls.target.clone()
     const startTime = now
     const reducedMotion = prefersReducedMotion()
     const duration = reducedMotion ? 1 : 1600
 
-    function stepCentroid(nowInner: number): boolean {
-        if (token !== _insideCentroidLerpToken) return true
+    function stepCentroid(nowInner: number) {
+        if (token !== _insideCentroidLerpToken) return
         const t = Math.min(1, (nowInner - startTime) / duration)
         const eased = easeInOutCubic(t)
         activeControls.target.lerpVectors(startTarget, lookAtTarget, eased)
         activeControls.update()
-        if (t < 1) {
-            return false
-        }
-        _insideCentroidActive = false
-        return true
+        if (t < 1) requestAnimationFrame(stepCentroid)
     }
     if (prefersReducedMotion()) {
         activeControls.target.copy(lookAtTarget)
         activeControls.update()
-        _insideCentroidActive = false
     } else {
-        _routeRafRegistry.add(scheduleFrameTask(stepCentroid))
+        requestAnimationFrame(stepCentroid)
     }
 }
 
 // ── zoomCamera ───────────────────────────────────────────────────────────────
 
 export function zoomCamera(multiplier: number): void {
-    const camera = appState.camera
-    const controls = appState.controls
+    const camera = appState.camera as ChoreographyCamera | null
+    const controls = appState.controls as ChoreographyControls | null
     if (!camera || !controls) return
     const target = controls.target
     if (!target) return
@@ -440,5 +333,4 @@ export function zoomCamera(multiplier: number): void {
 
 export function clearInsideCentroid(): void {
     _insideCentroidLerpToken++
-    _insideCentroidActive = false
 }

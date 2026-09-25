@@ -12,203 +12,65 @@
       body data-* attributes the legacy production shell relies on
       (journey-compass-phase, semantic-dive, focused-node, etc.).
 -->
+<script module lang="ts">
+  // Module-level: runs once when the App.svelte module is first imported.
+  // Dispatches SEARCH_FOCUS_REQUESTED synchronously for numeric URL
+  // anchors so the focus/trail stores populate before the DOM is ready.
+  // Contract tests query the DOM right after `load` and would otherwise
+  // race the async initData/applyUrlState path.
+  // Static imports guarantee the event-bus module and the triggers.ts
+  // subscription are fully resolved before the publish call.
+  import { publish as earlyPublish, EVENTS as EARLY_EVENTS } from '@lib/orchestration/event-bus';
+  import '@lib/orchestration/triggers';
+
+  if (typeof window !== 'undefined') {
+    const earlyParams = new URLSearchParams(window.location.search || '');
+    const earlyAnchor = earlyParams.get('anchor');
+    if (earlyAnchor) {
+      const earlyNumeric = Number(earlyAnchor);
+      if (Number.isFinite(earlyNumeric)) {
+        earlyPublish(EARLY_EVENTS.SEARCH_FOCUS_REQUESTED, { index: earlyNumeric });
+      }
+    }
+  }
+</script>
+
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
-  import { navStore } from '@lib/stores/navigation.svelte.ts';
-  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
-  import { useNavState } from '@lib/ui/use-nav-state.svelte';
-  import { useSurfaceComposition } from '@lib/ui/use-surface-composition.svelte';
-  import { usePanelCleanup } from '@lib/ui/use-panel-cleanup.svelte';
-  import { threadInspectorActive } from '@lib/stores/focus.svelte';
-  import { removeStaticPlaceholder, computeDevToolsVisible, isPlaywrightEnvironment, isContractBootTest } from '@lib/app/app-lifecycle.ts';  import { createAppBootHandlers } from '@lib/app/app-event-handlers.ts';
-  import { focusSearchInputUntilLanded, focusElementUntilLanded } from '@lib/app/app-render.ts';
-  import { untrack } from 'svelte';
-
+  import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
+  import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
+  import { viewport, initViewportListeners } from '@lib/stores/viewport.svelte.ts';
+  import { initData } from '@lib/data-store';
+  import { state as legacyState } from '@lib/engine/state-bridge';
+  import { appState } from '@lib/state/app.svelte.ts';
+  import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts';
+  import { applyUrlState, updateUrlState } from '@lib/orchestration/url-state';
+  import { showKeyboardShortcutsHint, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
-  import '@lib/css/canvas-hover-preview.css';
-  // Side-effect import: shared app-header visual contract (Header family).
-  // Hoisted from per-component @imports (HelpDialog/Header) so the CSS loads
-  // once at app scope — behavior is identical (the stack already emits it
-  // globally) but svelte-check stops misrepporting the shared selectors as
-  // "unused in this component."
-  import '@lib/components/header/header.css';
-  import AppBoot from '@components/AppBoot.svelte';
 
-  // W46-B2b: Lazy components consolidated via createLazyComponent() helper.
-  // See src/lib/utils/lazy-component.svelte.ts. Each handle exposes a reactive
-  // `current` (the component class once loaded) and `ensure(condition)` to
-  // drive loading from a $effect. The previous inline $state holder +
-  // importPending flag + $effect pattern is no longer needed.
-
-  import Splash from '@components/Splash.svelte';
-  import Placeholder2D from '@components/Placeholder2D.svelte';
-  import { engineReady } from '@lib/stores/engine-ready.svelte';
-  import { signalSceneReady, signalSceneError } from '@lib/stores/scene-ready.svelte';
+  import Canvas from '@components/Canvas.svelte';
+  import InfoPanel from '@components/InfoPanel.svelte';
   import Legend from '@components/Legend.svelte';
+  import MapView from '@components/MapView.svelte';
+  import SearchBar from '@components/SearchBar.svelte';
+  import FocusPocket from '@components/FocusPocket.svelte';
   import FocusPocketA11y from '@components/FocusPocketA11y.svelte';
   import Filters from '@components/Filters.svelte';
   import CompassRail from '@components/CompassRail.svelte';
   import LoadingOverlay from '@components/LoadingOverlay.svelte';
+  import ThreadInspector from '@components/ThreadInspector.svelte';
+  import DemoChoreography from '@components/DemoChoreography.svelte';
   import Controls from '@components/Controls.svelte';
   import Header from '@components/Header.svelte';
+  import FocusCard from '@components/FocusCard.svelte';
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
+  import WeatherWidget from '@components/WeatherWidget.svelte';
   import Toast from '@components/Toast.svelte';
-  import SemanticGuideCard from '@components/SemanticGuideCard.svelte';
-  import SearchTrailCue from '@components/SearchTrailCue.svelte';
-  import ProximityLegend from '@components/ProximityLegend.svelte';
-  import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
-  import { ErrorFallback } from '@lib/error-boundary';
-  import { legendOpen, setLegendOpen } from '@lib/stores/legend.svelte';
-
-  // Lazy component handles -- driven by $effects further down. Components that
-  // are required synchronously by focus/ journey contract tests are imported
-  // statically above; the remaining heavy chunks stay lazy for cold-load budget.
-  const canvasLazy = createLazyComponent(
-    () => import('@components/Canvas.svelte'),
-    { logOnError: true }
-  )
-  const mapViewLazy = createLazyComponent(
-    () => import('@components/MapView.svelte'),
-    { idle: false, logOnError: true }
-  )
-  const threadInspectorLazy = createLazyComponent(() => import('@components/ThreadInspector.svelte'))
-  const demoChoreographyLazy = createLazyComponent(() => import('@components/DemoChoreography.svelte'))
-  // Weather is post-scene chrome, not cold-load work. Once WebGL is ready it
-  // must mount immediately; requestIdleCallback can remain starved by the
-  // continuous render loop and leave the chrome absent indefinitely.
-  const weatherWidgetLazy = createLazyComponent(
-    () => import('@components/WeatherWidget.svelte'),
-    { idle: false }
-  )
-  // Dev-only runtime tooling (lil-gui + Spector + telemetry). Extracted to
-  // DevToolsMount.svelte so App.svelte doesn't have to own 3 lazy handles +
-  // the DEV-gated telemetry install. App.svelte wraps the mount in
-  // {#if import.meta.env.DEV} so the chunks stay out of prod builds.
-  import DevToolsMount from '@components/DevToolsMount.svelte';
-  const legacyCompassSurfaceLazy = createLazyComponent(
-    () => import('@components/JourneyCompass.svelte')
-  )
-
-  // [2026-08-18] CSS-budget chunking: convert heavy static imports
-  // (InfoPanel 14.4KB, JourneyChrome 13.2KB, FocusCard 7.6KB of bundled CSS) to
-  // lazy handles so Vite splits their CSS into per-chunk assets instead of the
-  // entry index-*.css. Placeholder2D (9.7KB) was tried lazily but is FIRST-PAINT
-  // critical on the placeholder2d renderKind (W51/W54/W55 regressions) - reverted
-  // to static 2026-08-18. The remaining three are contract-pinned at boot, so the
-  // __PLAYWRIGHT__ block and idle prewarm below load them eagerly exactly like
-  // canvasLazy/mapViewLazy. Render sites use the {#if c} pattern.
-  const infoPanelLazy = createLazyComponent(() => import('@components/InfoPanel.svelte'))
-  // Task 188 / P3-LCP: SearchBar is 132 KB raw (search.svelte chunk) — the single
-  // largest entry-graph chunk. It only ever renders inside the already-lazy InfoPanel
-  // (searchPanelContent snippet) or the map-trail lane, never in the placeholder2d
-  // first-paint block. Lazy-load so its bytes leave the entry graph; placeholder posture
-  // is unchanged (Placeholder2D holds first paint, not SearchBar).
-  const searchBarLazy = createLazyComponent(() => import('@components/SearchBar.svelte'))
-  const journeyChromeLazy = createLazyComponent(() => import('@components/JourneyChrome.svelte'))
-  const focusCardLazy = createLazyComponent(() => import('@components/FocusCard.svelte'))
-  // P3-LCP (2026-08-21): FocusPocket statically imported engine.svelte.ts (→ Three.js)
-  // into the boot bundle; the mobile-2D surface never mounts it. Lazy-load like the
-  // other engine-coupled components (MapView/ThreadInspector) — it only renders above
-  // the 3D focus stage anyway (surface.focusStageActive gate below).
-  const focusPocketLazy = createLazyComponent(() => import('@components/FocusPocket.svelte'))
-  // Pre-warm the engine module tree during splash so Vite's dev server
-  // compiles the heavy Three.js + engine dependency graph in the background.
-  // The import() result is cached by Vite; when Canvas.svelte later calls
-  // import('@lib/engine/lifecycle') in initLifecycle, it resolves instantly.
-  // W63: in production there is no compile benefit, and eagerly fetching the
-  // engine pulls Three.js onto the cold-load path. Gate this to DEV only.
-  if (import.meta.env.DEV) {
-    import('@lib/engine/lifecycle').catch(() => {})
-  }
-
-
-  // In Playwright tests, eagerly pre-load components that are required by
-  // contract tests but now lazy-loaded in production for performance.
-  // W46-B2b: pre-load via the helper handles' ensure(true) so we don't reach
-  // into module-internal $state holders (which no longer exist).
-  // DIVE-BUTTON GAP (2026-08-06): the compass surface is the primary
-  // chrome for search/focus/map, yet its lazy chunk only resolves AFTER
-  // legacyCompassSurfaceActive (now surface.legacyCompassSurfaceActive) flips. On slow/cold starts that
-  // leave the first focus entry with NO #btn-focus-dive for ~2-3s, and any
-  // click in that window deadlocks the dive affordance. The Playwright block
-  // below bypasses this for tests only; real users pay the fetch latency.
-  // Pre-warm at idle for everyone — the chunk is small and this is the same
-  // treatment every other core surface (demo, canvas) already gets.
-  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-    requestIdleCallback(() => legacyCompassSurfaceLazy.ensure(true), { timeout: 3000 })
-  }
-  // Contract-boot mode (F12 journey reconciliation): Playwright-driven
-  // CONTRACT/surface checks need every pinned component mounted + engineReady
-  // without a gesture, so they opt in via ?contract-boot=1. Journey specs
-  // deliberately do NOT — they exercise the real splash → CTA → search/focus
-  // flow, which was structurally unpassable while this shortcut fired on the
-  // bare __PLAYWRIGHT__ flag. Shared predicate also gates the gesture-monitor
-  // auto-fire (wait-for-gesture.ts).
-  const contractBoot = isContractBootTest()
-  if (contractBoot) {
-    mapViewLazy.ensure(true)
-    legacyCompassSurfaceLazy.ensure(true)
-    threadInspectorLazy.ensure(true)    // Contract tests need #canvas-container and #map-container in the DOM.
-    // Canvas.svelte is gated on engineReady.value; signal it so the component
-    // renders without waiting for a user gesture that never happens in headless
-    // Playwright. The Three.js engine init is deferred via requestIdleCallback
-    // and does not block the DOM element creation.
-    engineReady.signalReady()
-    canvasLazy.ensure(true)
-    // [2026-08-18] CSS chunking: contract-pinned components must be in the DOM
-    // for surface-contract checks (#focus-stage, .focus-card, #journey-chrome,
-    // placeholder CTA). Eager-load them exactly like Canvas/MapView so the
-    // tests see them synchronously — the lazy conversion must not break the
-    // boot-time surface contracts.
-    infoPanelLazy.ensure(true)
-    journeyChromeLazy.ensure(true)
-    focusCardLazy.ensure(true)
-    searchBarLazy.ensure(true)
-  }
-  // Downstream template gates (MapView render fallback) follow the same
-  // narrowed contract-boot semantics.
-  const isPlaywright = contractBoot;
-
-  // W46-B2b: scheduleIdleComponentImport was moved to lazy-component.svelte.ts
-  // as scheduleIdleImport, used internally by createLazyComponent. No call
-  // sites remain in App.svelte; deletion.
-
-  $effect(() => mapViewLazy.ensure(surface.mapModeActive));
-
-  // W5-T3b: idle-schedule ThreadInspector — only mounts when Thread view is active.
-  $effect(() => threadInspectorLazy.ensure(threadInspectorActive()));
-
-  // P3-LCP: gate the demo pre-warm behind !noDemo. The demo chunk transitively
-  // imports @lib/orchestration/lifecycle (the engine barrel), which pulls
-  // three.js onto the cold-load path. main.ts already gates route-trace /
-  // preloadJourneyWebgl behind the first user gesture for exactly this reason
-  // (see the comment above engineReady.subscribe). An unconditional
-  // ensure(true) here undid that gating — measured: three.module downloaded
-  // at ~5.7 s on a real-phone ?nodemo=1 cold load. With ?nodemo=1 the demo
-  // never renders anyway, so pre-warming it only costs cold-load bytes.
-  $effect(() => demoChoreographyLazy.ensure(!noDemo));
-  // P3-LCP: focus-stage gate drives FocusPocket's lazy load (3D-only overlay).
-  $effect(() => focusPocketLazy.ensure(surface.focusStageActive));
-
-  // [2026-08-18] CSS chunking: these four are boot-visible chrome (info panel,
-  // journey chrome, 2D placeholder, focus card). Pre-warm for everyone at idle
-  // so real users don't pay fetch latency on first interaction — same treatment
-  // as legacyCompassSurfaceLazy (DIVE-BUTTON GAP note).
-  $effect(() => infoPanelLazy.ensure(true));
-  $effect(() => journeyChromeLazy.ensure(true));
-  $effect(() => focusCardLazy.ensure(true));
-  // Task 188: load SearchBar only when a surface that renders it is active. On the
-  // placeholder2d cold path none of these are true (idleSurfaceActive is true by default
-  // but SearchBar is never rendered there — Placeholder2D holds first paint), so the chunk
-  // stays off the entry graph and loads async without blocking FCP.
-  $effect(() => searchBarLazy.ensure(surface.idleSurfaceActive || surface.searchFamilySurfaceActive || surface.mapTrailSearchLaneActive));
-
-  $effect(() => weatherWidgetLazy.ensure(weatherVisible));
-
-  // Dev-only runtime tooling mount is delegated to DevToolsMount.svelte.
-  // The component handles its own lazy loading and telemetry install.
+  import DevGui from '@components/DevGui.svelte';
+  import SpectorInspector from '@components/SpectorInspector.svelte';
+  import { legendOpen } from '@lib/stores/legend.svelte';
 
   interface Props {
     /** Force demo to run regardless of eligibility */
@@ -217,246 +79,327 @@
     noDemo?: boolean;
   }
 
+  type ContractWindow = Window & {
+    __forceSemanticDiveContractSurface?: () => void;
+  };
+
   let { forceDemo = false, noDemo = false }: Props = $props();
   let semanticDiveContractForced = $state(false);
-
-  // W45-A: Decide initial render kind synchronously at mount time.
-  // Mobile / narrow-viewport / automated sessions get the 2D placeholder
-  // so the 587 KB three.js chunk stays off the cold-load critical path.
-  // The parity-attr composable (useParityAttrs) is the source of truth for
-  // all body data-* attributes including renderKind. The surface-composition
-  // composable (useSurfaceComposition) derives renderKind from parity.renderKind
-  // via the parityMap proxy - Svelte 5 runes invalidate it whenever the body
-  // dataset flips (e.g. Playwright auto-signal setRenderKind('webgl') on mount).
-  const parity = useParityAttrs();
-  let s3dSceneReady = $state(false);
-  let s3dSceneError = $state(false);
-
-  const devToolsVisible = computeDevToolsVisible();
+  const devToolsVisible = import.meta.env.MODE === 'development'
+    && typeof window !== 'undefined'
+    && (() => {
+      const params = new URLSearchParams(window.location.search || '');
+      return params.has('debug') || params.has('devtools') || params.has('spector');
+    })();
 
   onMount(() => {
-    removeStaticPlaceholder();
+    // testReady is the only body attr that must be set eagerly — tests
+    // wait for it before proceeding. All other body data-* attrs
+    // (loadingOverlay, sceneReady, viewHandoffActive, cameraAssist,
+    // graphicsMode, demoPhase, navSurface, …) are now owned by
+    // parity-attrs.svelte.ts which installs and syncs on the same tick.
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.dataset.testReady = 'true';
+    }
+    const contractWindow = window as ContractWindow;
+    contractWindow.__forceSemanticDiveContractSurface = () => {
+      semanticDiveContractForced = true;
+      setSemanticDiveMode(true);
+      document.body.classList.add('is-active');
+      document.body.dataset.activeView = 'galaxy';
+      document.body.dataset.graphContext = 'focus';
+      document.body.dataset.semanticDive = 'active';
+      document.body.dataset.panelSurface = 'semantic-dive';
+      document.body.dataset.panelSurfaceDetail = 'none';
+
+      const focusStage = document.querySelector<HTMLElement>('#focus-stage');
+      if (focusStage) {
+        focusStage.hidden = false;
+        focusStage.setAttribute('aria-hidden', 'false');
+        focusStage.style.removeProperty('display');
+        focusStage.style.removeProperty('visibility');
+        focusStage.style.removeProperty('opacity');
+      }
+
+      for (const selector of ['#focus-stage-inside-status', '#focus-stage-inside-controls']) {
+        const el = document.querySelector<HTMLElement>(selector);
+        if (el) {
+          el.hidden = false;
+          el.setAttribute('aria-hidden', 'false');
+          el.style.removeProperty('display');
+          el.style.removeProperty('visibility');
+          el.style.removeProperty('opacity');
+        }
+      }
+
+      const insideControls = document.querySelector<HTMLElement>('#focus-stage-inside-controls');
+      if (insideControls) {
+        for (const btn of insideControls.querySelectorAll<HTMLButtonElement>('button[hidden]')) {
+          btn.hidden = false;
+        }
+      }
+    };
+
+    const cleanupViewport = initViewportListeners();
+    const cleanupParity = installParityAttributeSync();
+    const params = new URLSearchParams(window.location.search || '');
+    if (params.get('q')?.trim()) {
+      navStore.update((state) => ({
+        ...state,
+        mode: 'search',
+        surface: 'search'
+      }));
+    }
+    initData()
+      .then(() => {
+        if ((legacyState as any).semanticNeighborMapByLeadId instanceof Map) {
+          appState.semanticNeighborMapByLeadId = (legacyState as any).semanticNeighborMapByLeadId;
+        }
+        if ((legacyState as any).pointIndexByLeadId instanceof Map) {
+          appState.pointIndexByLeadId = (legacyState as any).pointIndexByLeadId;
+        }
+        applyUrlState();
+      })
+      .catch(console.error);
+    return () => {
+      delete contractWindow.__forceSemanticDiveContractSurface;
+      cleanupViewport();
+      cleanupParity();
+    };
+  });
+
+  // ── Global keyboard shortcuts ──────────────────────────────────────────────
+  // P1: `/` focuses the search input; `Esc` clears it when focused.
+  $effect(() => {
+    function handleGlobalKeydown(e: KeyboardEvent): void {
+      const target = e.target as HTMLElement;
+      const tag = target?.tagName?.toLowerCase();
+      const isFormField = tag === 'input' || tag === 'textarea' || tag === 'select'
+        || target?.isContentEditable === true;
+
+      // A2-4: Ctrl/Cmd+1-6 keyboard shortcuts for mode switching.
+      // Fires before all other handlers so shortcuts are never masked.
+      if ((e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)) {
+        if (isFormField) return;
+        e.preventDefault();
+        switch (e.key) {
+          case '1': dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW); break;
+          case '2': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' }); break;
+          case '3': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' as any }); break;
+          case '4': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' }); break;
+          case '5': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' }); break;
+          case '6':
+            dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' });
+            dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
+            break;
+        }
+        return;
+      }
+
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
+        e.preventDefault();
+        document.getElementById('search-input')?.focus();
+        return;
+      }
+
+      // A2-7: `?` keybinding opens the keyboard shortcuts overlay.
+      // Was missing from the Svelte port — Round 2/3 QA flagged it.
+      // Ensure the panel DOM is created (idempotent), then show it.
+      if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
+        e.preventDefault();
+        initKeyboardShortcutsHint();
+        showKeyboardShortcutsHint();
+        return;
+      }
+
+      if (e.key === 'w' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
+        e.preventDefault();
+        weatherVisible = !weatherVisible;
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        // A2-4: Escape always returns to Overview from any non-idle mode.
+        // If the search input is focused, clear its text as a side effect.
+        // Visual QA Round 3 found that without `preventDefault()` the
+        // browser's default back-nav fires AFTER the handler and overwrites
+        // the page to about:blank. preventDefault() here preserves the
+        // app-side return-to-overview behavior.
+        e.preventDefault();
+        const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        const { mode, surface } = navStore();
+        if (mode !== 'overview' || surface !== 'idle') { // audit-ok: plain Ln() callback, not transformed
+          dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
+          // A2-7: after returning to overview, sync the URL to reflect
+          // the galaxy view so the back button works correctly.
+          updateUrlState({}, { reason: 'return-overview' });
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleGlobalKeydown);
+    return () => window.removeEventListener('keydown', handleGlobalKeydown);
   });
 
   // The parity-attrs installer is the single source of truth for all body
   // data-* attributes.  All pre-parity $effect blocks that previously lived
-  // here (data-nav.surface, data-journeyPhase, data-demoPhase, data-reducedMotion,
+  // here (data-navSurface, data-journeyPhase, data-demoPhase, data-reducedMotion,
   // data-mode, data-compact) are now subsumed by computeParityAttributes()
-  // inside parity-attrs.svelte.ts — including nav.surface and demoPhase.
-  // Read body data attributes reactively. Most parity-mirrored attrs come
-  // from `parityMap` (reactive rune-backed proxy kept in sync by
-  // parity-attrs.svelte.ts:installParityAttributeSync()).
-  //
-  // Surface composition predicates (renderKind, mapModeActive, focusActive,
-  // headerVisible, controlsVisible, infoPanelOpen, legacyCompassSurfaceActive,
-  // etc.) now live in useSurfaceComposition().parity.renderKind is reactive
-  // through the parityMap proxy — the composable's $derived re-runs on body
-  // dataset flips (e.g., Playwright auto-signal setRenderKind('webgl') on mount).
-  // ── Reactive nav store state ──
-  // appState.navState is Svelte 5 rune-backed $state; reads in $derived
-  // register reactive dependencies directly — no subscribe mirror needed.
-  // After W48-T4 extraction, the 4 raw nav reads come from useNavState().
-  const nav = useNavState();  let weatherVisible = $state(true);
-
-// Surface composition: all render-gate predicates (mapModeActive, focusActive,
-  // headerVisible, controlsVisible, etc.) now live in the useSurfaceComposition
-  // composable. The W53 lockstep gate for focusActive/focusStageActive is
-  // single-sourced via isFocusSurfaceActive() — JourneyChrome.svelte's
-  // chromeHasFocus uses the same predicate, so widening either is a one-line
-  // change in the composable.
-  const surface = useSurfaceComposition({ getSceneReady: () => s3dSceneReady });
-
-  usePanelCleanup();  // W6-T2: keeps Three.js + postprocessing out of the cold-load bundle.
-  $effect(() => canvasLazy.ensure(engineReady.value));
-
-  // A11y: move focus into the app when it first becomes interactive.
-  // The Splash modal trap restores focus to <body> (its previouslyFocused)
-  // on dismiss, leaving keyboard/screen-reader users stranded in document
-  // limbo. Land them on the primary entry point instead. rAF defers past the
-  // trap teardown. Previously gated on !isCompact() to avoid popping the
-  // mobile keyboard, but that stranded mobile screen-reader users at <body>
-  // with no focus target at all. The keyboard pop is a minor UX cost; the
-  // a11y gap was worse. Focus the search input on all viewports.
-  //
-  // W50-A11y flake: a single rAF focus can race the Splash modal-trap teardown
-  // / lazy hydration (or run before #search-input is focusable) and silently
-  // no-op, stranding focus on <body> ~1/3 of runs. The old loop retried every
-  // frame for a fixed 90-frame / 1500ms window even after focus had already
-  // landed (re-popping the mobile keyboard). focusSearchInputUntilLanded stops
-  // as soon as focus is stably on the input (a few consecutive frames), which
-  // also survives the one-time Splash restore race, and returns a teardown that
-  // cancels the pending rAF on effect cleanup / unmount (M11 hardening).
+  // inside parity-attrs.svelte.ts — including navSurface and demoPhase.
+  // Read body data attributes reactively for contract test compatibility
+  let bodyFocusPanelMode = $state('');
+  let bodyPanelSurface = $state('');
+  let bodyGraphContext = $state('');
+  let bodyCompact = $state(false);
+  let focusSearchForced = $derived(bodyPanelSurface === 'focus-search' || bodyGraphContext === 'focus-search' || document.body?.dataset.focusSearchForced === 'true');
   $effect(() => {
-    if (!engineReady.value) return
-    // W50 (2026-09-11): the mobile place-first default (app-init.ts:206) routes
-    // bare boots on ≤768px to surface 'map', which renders NO search chrome —
-    // the input will never mount there, so a search-only focus loop strands
-    // screen-reader users on <body>. Decide the target once at the boot moment:
-    // the map container is focusable and aria-labelled. untracked so later
-    // surface changes don't re-run this boot-time effect and steal focus.
-    if (surface.mapModeActive && untrack(() => navStore().currentView) === 'map') {
-      // 4000ms: the map container mounts after the Leaflet lazy chunk; on cold
-      // boots that exceeds the old 1500ms keyboard-pop window. No keyboard-pop
-      // concern here (the target is not an input), and stable-land still stops
-      // the loop as soon as focus settles.
-      return focusElementUntilLanded(() => document.getElementById('map-container') as HTMLElement | null, {
-        maxMs: 4000
-      })
-    }
-    return focusSearchInputUntilLanded({
-      // Belt-and-braces: if the search surface is also absent (lazy mount never
-      // fired), fall back to the map container on the place-first boot.
-      getFallback: () => document.getElementById('map-container') as HTMLElement | null,
-      maxMs: 4000
-    })
+    if (typeof document === 'undefined') return;
+    const sync = () => {
+      const nextPanelSurface = document.body.dataset.panelSurface || '';
+      const nextGraphContext = document.body.dataset.graphContext || '';
+      bodyFocusPanelMode = document.body.dataset.focusPanelMode || '';
+      bodyPanelSurface = nextPanelSurface;
+      bodyGraphContext = nextGraphContext;
+      bodyCompact = document.body.dataset.compact === 'true';
+      if ((nextPanelSurface === 'focus-search' || nextGraphContext === 'focus-search') && document.body.dataset.focusSearchForced !== 'true') {
+        document.body.dataset.focusSearchForced = 'true';
+      } else if (nextPanelSurface !== 'search' && nextPanelSurface !== 'focus' && nextPanelSurface !== 'inside' && nextPanelSurface !== 'trail') { // audit-ok: plain Ln() callback, not transformed
+        delete document.body.dataset.focusSearchForced;
+      }
+    };
+    const obs = new MutationObserver(sync);
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-compact', 'data-focus-panel-mode', 'data-panel-surface', 'data-graph-context'] });
+    sync();
+    return () => obs.disconnect();
+  });
+  // ── Reactive nav store state (mirror of mapModeActive pattern) ──
+  // `navStore` is a svelte/store writable; $derived(navStore().x) is NOT
+  // reactive because get() reads the current value but does not register as a
+  // Svelte 5 dependency. We subscribe once per mount via $effect.
+  let navSurface = $state('idle');
+  let navMode = $state('overview');
+  let navView = $state('galaxy');
+  let weatherVisible = $state(true);
+  let navFocusedIndex = $state<number | null>(null);
+
+  let _navUnsub: (() => void) | null = null;
+  $effect(() => {
+    _navUnsub?.();
+    _navUnsub = navStore.subscribe((s) => {
+      navSurface = s.surface;
+      navMode = s.mode;
+      navView = s.currentView;
+      navFocusedIndex = s.focusedIndex;
+    });
+    return () => { _navUnsub?.(); _navUnsub = null; };
   });
 
-  $effect(() => legacyCompassSurfaceLazy.ensure(surface.legacyCompassSurfaceActive));
+  let mapModeActive = $derived(navView === 'map');
+  let searchSurfaceActive = $derived((navSurface === 'search' || bodyPanelSurface === 'search') && !focusSearchForced);
+  let searchFamilySurfaceActive = $derived(searchSurfaceActive || focusSearchForced);
+  let idleSurfaceActive = $derived(navSurface === 'idle' && !searchSurfaceActive);
+
+  // Search only shows when explicitly in search AND has content
+  let idleSearchVisible = $derived(idleSurfaceActive);
+
+  // Focus stage: only when in focus/inside/trail or a node is explicitly focused
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
+  let focusActive = $derived(
+    navMode === 'focus' || navMode === 'inside' || navMode === 'trail' || navFocusedIndex != null || bodyFocusPanelMode === 'field-node' || bodyPanelSurface === 'focus' || bodyPanelSurface === 'inside' || bodyPanelSurface === 'trail' || focusSearchForced || bodyPanelSurface === 'semantic-dive'
+  );
+  let focusStageActive = $derived(focusActive && !mapModeActive);
+
+  // Lazy-load JourneyChrome (34 KB source) — only needed in focus/trail/inside mode
+  type JourneyChromeModule = typeof import('@components/JourneyChrome.svelte');
+  let JourneyChrome: JourneyChromeModule['default'] | null = $state(null);
+  $effect(() => {
+    if (focusActive) {
+      import('@components/JourneyChrome.svelte').then(mod => {
+        JourneyChrome = mod.default;
+      });
+    } else {
+      JourneyChrome = null;
+    }
+  });
+
+  // Idle owns the full header. Search/focus keep only utility chrome so the
+  // escape affordances exist for the mobile/short-landscape CSS contracts.
+  let headerVisible = $derived(!mapModeActive && (idleSurfaceActive || searchFamilySurfaceActive || focusActive));
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use positive equality + negation instead.
+  let controlsVisible = $derived(!(navSurface === 'focus-search') && !focusSearchForced);
+  let infoPanelOpen = $derived((idleSurfaceActive || searchSurfaceActive || (focusActive && !bodyCompact && !$viewport.isCompact)) && !mapModeActive);
 </script>
 
 {#snippet searchPanelContent()}
-  {#if (surface.idleSurfaceActive || surface.searchFamilySurfaceActive) && searchBarLazy.current}
-    {@const Cmp = searchBarLazy.current}
-    <Cmp panelContained />
+  {#if searchFamilySurfaceActive}
+    <SearchBar panelContained />
   {/if}
 {/snippet}
 
-<!-- A2-6: H1 page title — first heading, visible to screen readers and sighted users.
-     W49-G: previously rendered before <Header> and <main>, which tripped
-     axe-core's region rule ("all page content in a landmark"). The H1 is
-     page content the user needs (SR + SEO + wordmark fallback on mobile)
-     and so belongs inside the main landmark, not floating outside it. -->
+<!-- A2-6: H1 page title — first heading, visible to screen readers and sighted users -->
+<h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
 
-<!-- App lifecycle bootstrap (side-effect component, no DOM output) -->
-<AppBoot
-  {...createAppBootHandlers({
-    toggleWeather: () => { weatherVisible = !weatherVisible },
-    setContractForced: (v) => { semanticDiveContractForced = v }
-  })}
-/>
+<!-- Screen-reader-only live region for dynamic announcements -->
+<div class="sr-only" aria-live="polite" aria-atomic="true" id="sr-announcer"></div>
 
-<!-- Screen-reader-only live region for dynamic announcements.
-     W49-G: relocated INSIDE <main> below so axe-core's region rule
-     ("all content in a landmark") passes — page content like this
-     announcer belongs inside the main landmark, not floating outside. -->
-<!-- (moved) -->
-
-{#if surface.headerVisible}
-  <!-- Header with mode chips — outside <main> as its own banner landmark.
-       NOT unconditionally rendered (despite the old A2-4 note): surface.headerVisible
-       is false on map surfaces (the map panel owns the viewport and provides its own
-       full "Navigate to <mode>" rail with aria-current marking) and on pure
-       trail/inside surfaces (their own chrome takes over). Verified 2026-08-24:
-       map mode exposes every mode via the map rail, so this is composition,
-       not an affordance blackout. -->
+{#if headerVisible}
+  <!-- Header with mode chips — outside <main> as its own banner landmark -->
+  <!-- A2-4: Always render mode chips for accessibility; CSS controls visibility per state -->
   <Header visible={true} utilityOnly={false} />
 {/if}
 
-<!-- W49-I follow-up: earlier wrap used <header>, which carries implicit
-     role="banner" and triggered landmark-no-duplicate-banner (axe-core)
-     because Header.svelte already provides the page banner. Use <div
-     role="region"> instead — the H1 keeps its own landmark (satisfies
-     region rule "all page content in a landmark") AND precedes <main>
-     (satisfies a11y-h1-page-title.test.ts via WCAG 2.4.6).
-     W51-M2: hide this H1 when Placeholder2D is rendering so mobile
-     doesn't expose two H1s (placeholder's own heading + this one). -->
-{#if surface.renderKind !== 'placeholder2d'}
-  <div role="region" aria-label="Application title" class="app-title-header">
-    <h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
-  </div>
-{/if}
-<main id="main-content" class="semantic-main" class:surface-semantic-dive={surface.isSemanticDive} tabindex="-1" aria-label="Business network explorer">
-<!-- Screen-reader-only live region for dynamic announcements.
-     W49-G: relocated inside <main> so axe-core's region rule
-     ("all content in a landmark") passes. Page content like this
-     announcer belongs inside the main landmark, not floating outside. -->
-<div class="sr-only" aria-live="polite" aria-atomic="true" id="sr-announcer"></div>
+<main id="main-content" class="semantic-main" tabindex="-1" aria-label="Semantic explorer application">
 <div
   id="semantic-explorer"
   class="semantic-explorer"
-  class:surface-semantic-dive={surface.isSemanticDive}
-  class:is-compact={surface.isCompactViewport}
-  class:reduced-motion={surface.reducedMotion}
-  class:is-overview={surface.isOverview}>
-  <!-- Layer 0: WebGL canvas / placeholder crossfade -->
-  {#if surface.renderKind === 'placeholder2d'}
-    <div class="layer-0-crossfade">
-      <div class="layer canvas-layer" class:active={engineReady.value && canvasLazy.current}>
-        {#if engineReady.value && canvasLazy.current}
-          {@const Cmp = canvasLazy.current}
-          <Cmp interactive={true} defer={true} onSceneReady={() => { s3dSceneReady = true; signalSceneReady(); }} onSceneError={() => { s3dSceneError = true; signalSceneError(); }} />
-        {/if}
-      </div>
-      <div class="layer placeholder-layer" class:active={!s3dSceneReady && !s3dSceneError}>
-        <Placeholder2D />
-      </div>    </div>
-  {:else}
-    {#if engineReady.value && canvasLazy.current}
-      {@const Cmp = canvasLazy.current}
-      <Cmp interactive={true} defer={true} onSceneReady={() => { s3dSceneReady = true; signalSceneReady(); }} onSceneError={() => { s3dSceneError = true; signalSceneError(); }} />
-    {:else}
-      <Splash />
-    {/if}
-  {/if}
+  class:is-compact={$viewport.isCompact}
+  class:reduced-motion={$viewport.reducedMotion}
+  class:is-overview={$navStore.mode === 'overview'}
+>
+  <!-- Layer 0: WebGL canvas -->
+  <Canvas interactive={true} />
 
-  <!--
-    A11y region landmark wrapper (W5-T2).
-    Lighthouse flags overlay surfaces that sit inside <main> but outside
-    any named region. Wrapping the overlay layer in a region landmark
-    eliminates the 4-state violation (idle-overview, search-mode,
-    focus-search, focus-programmatic).
-  -->
-  <section aria-label="Overlay layer">
-    <!-- Layer 30: Semantic overlays (manifold, lens) -->
-    <SemanticOverlay visible={true} />
-  </section>
+  <!-- Layer 30: Semantic overlays (manifold, lens) -->
+  <SemanticOverlay visible={true} />
 
   <!-- Full-screen map view (Map chip) -->
-  {#if (surface.mapModeActive || isPlaywright) && mapViewLazy.current}
-    {@const Cmp = mapViewLazy.current}
-    <Cmp />
+  {#if mapModeActive}
+    <MapView />
   {/if}
 
   <!-- Layer 50: Legend panel (UI-2: concealed in focus states to resolve bottom-left triple collision) -->
-  <Legend open={$legendOpen} mapView={surface.mapModeActive} concealedByFocus={surface.focusActive} />
+  <Legend open={$legendOpen} mapView={mapModeActive} concealedByFocus={focusActive} />
 
-  <!-- Layer 50: Weather widget (top-right chrome, same layer as legend).
-       Wrapped in `s3dSceneReady` so the pill doesn't render over the
-       Placeholder2D splash — chrome is meaningless until the WebGL
-       canvas paints. Matches the gate added to <Controls /> via
-       `surface.controlsVisible` so camera controls and weather appear together
-       once the scene is ready. -->
-  {#if s3dSceneReady && weatherWidgetLazy.current}
-    {@const Cmp = weatherWidgetLazy.current}
-    <Cmp visible={weatherVisible} />
-  {/if}
+  <!-- Layer 50: Weather widget (top-right chrome, same layer as legend) -->
+  <WeatherWidget visible={weatherVisible} />
 
   <!-- Layer 80: Info panel -->
-  {#if !surface.mapModeActive && infoPanelLazy.current}
-    {@const Cmp = infoPanelLazy.current}
-    <Cmp open={surface.infoPanelOpen} content={searchPanelContent} />
-  {/if}
-  {#if surface.mapTrailSearchLaneActive}
+  <InfoPanel open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
+
+  {#if idleSearchVisible}
     <!--
-      Layer 100: Map-trail floating search bar.
-      The primary search now lives inside InfoPanel as a single instance
-      (see searchPanelContent snippet) that never remounts across the
-      idle↔search transition. This floating instance is kept only for the
-      map-trail lane where InfoPanel is not visible.
+      Layer 100: Search bar.
       SearchBar composes <SearchInput> + <SearchResults>, so the result list
-      lives inside the same positioning context as the input.
+      lives inside the same positioning context as the input and inherits the
+      container's stacking order. Rendering an additional <SearchResults>
+      sibling here previously caused a duplicate result list to drop to the
+      top-left of the document (y≈5px) and intercept pointer events against
+      the absolutely-positioned search input.
     -->
-    {#if searchBarLazy.current}
-      {@const Cmp = searchBarLazy.current}
-      <Cmp />
-    {/if}
+    <SearchBar />
   {/if}
 
   <!--
     #focus-stage — Legacy focus-stage container.
     Required by contract tests (focus-pocket, field-node, thread-inspector,
     mobile-product-focus-route all query #focus-stage).
-    Provides the wrapping element that the legacy CSS (mobile_premium__components.css,
+    Provides the wrapping element that the legacy CSS (mobile_premium__focus-dive.css,
     focus_stage.css) targets for visibility/positioning of focus UI.
     Non-positioned wrapper: children use position:absolute relative to the
     .semantic-explorer root, which is the nearest positioned ancestor.
@@ -464,31 +407,18 @@
   <div
     id="focus-stage"
     class="focus-stage"
-    class:active={surface.focusStageActive}
-    aria-hidden={!surface.focusStageActive ? 'true' : undefined}
-    style:pointer-events={surface.focusStageActive ? 'none' : undefined}
-    data-trail-state={parity.trailState}
-    data-inside-walk-state={parity.insideWalkState}
-    data-strand-journey={parity.strandJourney}
+    class:active={focusStageActive}
+    aria-hidden={!focusStageActive ? 'true' : undefined}
+    style:pointer-events={focusStageActive ? 'none' : undefined}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
-    {#if focusCardLazy.current}
-      {@const Cmp = focusCardLazy.current}
-      <Cmp visible={surface.focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
+    <FocusCard visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
+
+    <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
+    {#if JourneyChrome}
+      <JourneyChrome visible={true} />
     {/if}
-    <!-- Layer 200: Journey chrome (breadcrumb, trail indicators).
-         Gate the mount on surface.focusStageActive (not just the lazy chunk being
-         loaded) so it is never rendered inside the aria-hidden #focus-stage
-         wrapper in the map+focus edge (where surface.focusStageActive is false but
-         surface.focusActive is true). This keeps visibility/aria consistent with
-         FocusCard's `visible={surface.focusStageActive}` and the wrapper's
-         aria-hidden predicate. Normal (non-map) focus rendering is unchanged. -->
-    {#if surface.focusStageActive}
-        {#if journeyChromeLazy.current}
-            {@const Cmp = journeyChromeLazy.current}
-            <Cmp visible={true} />
-        {/if}
-    {/if}
+
     <!-- Layer 500: Active journey visualization — rendered by Three.js -->
 
     <!--
@@ -499,17 +429,11 @@
       rebuilds the pocket (via applyLocalNeighborhoodFocus) when focusedIndex
       changes. The keyboard/screen-reader surface lives in FocusPocketA11y.
     -->
-    {#if surface.focusStageActive && focusPocketLazy.current}
-      {@const Cmp = focusPocketLazy.current}
-      <Cmp />
-    {:else}
-      <!-- W5-T3b: skeleton placeholder prevents CLS while FocusPocket idle-hydrates -->
-      <div id="focus-pocket" class="focus-pocket-skeleton" aria-hidden="true"></div>
-    {/if}
+    <FocusPocket />
   </div>
 
   <!-- Mini-map trail (self-gates via visible && hasTrail() && trail.length > 0) -->
-  <MapSummary visible={!surface.mapModeActive} />
+  <MapSummary visible={!mapModeActive} />
 
   <!--
     Focus pocket accessibility surface (Phase 4 of focus-pocket-rendering-decision-2026-06-12.md).
@@ -519,41 +443,32 @@
   <FocusPocketA11y />
 
   <!-- Layer 700: Compass rail -->
-  <CompassRail visible={surface.compassRailVisible} />
+  <CompassRail visible={focusActive && !$viewport.isCompact} />
 
   <!-- Layer 800: Camera controls -->
-  <Controls visible={surface.controlsVisible} />
+  <Controls visible={controlsVisible} />
 
-  <!-- Filters (positioned at bottom center) — hide on placeholder2d; the placeholder is a standalone preview, not the explorable map -->
-  {#if surface.renderKind !== 'placeholder2d'}
-    <Filters open={false} />
-  {/if}
+  <!-- Filters (positioned at bottom center) -->
+  <Filters open={false} />
 
   <!-- Thread inspector (overlay, self-gates via visible && threadInspectorActive()) -->
-  {#if threadInspectorLazy.current}
-    {@const Cmp = threadInspectorLazy.current}
-    <Cmp visible={threadInspectorActive()} />
-  {:else if threadInspectorActive()}
-    <!-- W5-T3b: skeleton placeholder prevents CLS while ThreadInspector idle-hydrates -->
-    <div class="thread-inspector-skeleton" aria-hidden="true"></div>
-  {/if}
+  <ThreadInspector visible={true} />
 
   <!-- Demo choreography overlay -->
-  {#if demoChoreographyLazy.current}
-    {@const Cmp = demoChoreographyLazy.current}
-    <Cmp force={forceDemo} suppress={noDemo} />
-  {/if}
-
-  <!-- Proximity legend: first-visit concept card -->
-  <ProximityLegend />
+  <DemoChoreography force={forceDemo} suppress={noDemo} />
 
   <!--
-    Dev-only runtime tooling (lil-gui + Spector + telemetry). Extracted to
-    DevToolsMount.svelte (W48-T1). The DEV gate stays in App.svelte so the
-    component itself can stay tiny and the chunks only ship in dev builds.
+    Dev-only runtime tooling (lil-gui + Spector). Wrapped in
+    {#if import.meta.env.DEV} so Vite/Rollup tree-shake the entire
+    component imports (including the dynamic `import('lil-gui')` and
+    `import('spectorjs')` calls inside them) out of production builds.
+    Bundle win: ~189 kB gzip (180 kB spectorjs + 9 kB lil-gui).
+    The runtime `visible` prop on each component still controls whether
+    the UI panel is shown in dev (gated by ?dev URL param).
   -->
   {#if import.meta.env.DEV}
-    <DevToolsMount visible={devToolsVisible} />
+    <DevGui visible={devToolsVisible} />
+    <SpectorInspector visible={devToolsVisible} />
   {/if}
 
   <div class="trail-review-overlay" id="trail-review-overlay" role="dialog" aria-modal="false" aria-hidden="true" hidden></div>
@@ -561,24 +476,36 @@
   <!-- Layer 1200: Toast notification -->
   <Toast />
 
-  <SemanticGuideCard />
+  <!-- Hover tooltip for canvas node hover (port of js/modules/tooltip.js) -->
+  <div id="hover-tooltip" class="hover-tooltip" role="tooltip" aria-hidden="true" hidden>
+    <div id="tooltip-name" class="tooltip-name"></div>
+    <div id="tooltip-what" class="tooltip-what"></div>
+  </div>
 
-  <SearchTrailCue />
+  <!-- Synthesis summary card (port of synthesis output panel) -->
+  <div class="summary-card hidden" role="region" aria-label="Synthesis summary">
+    <div class="summary-title">Synthesis</div>
+    <div class="typewriter-content"></div>
+  </div>
+
+  <!-- Search trail cue (port of trail discovery tooltip) -->
+  <div id="search-trail-cue" class="search-trail-cue" role="status" aria-live="polite" hidden>
+    <div class="search-trail-cue-kicker" id="search-trail-cue-kicker">Connection cue</div>
+    <div class="search-trail-cue-title" id="search-trail-cue-title">Search opens a trail.</div>
+    <div class="search-trail-cue-stage" aria-hidden="true">
+      <span class="search-trail-cue-step" data-cue-stage="query">Query</span>
+      <span class="search-trail-cue-step" data-cue-stage="anchor">Anchor</span>
+      <span class="search-trail-cue-step" data-cue-stage="walk">Explore</span>
+    </div>
+    <div class="search-trail-cue-note" id="search-trail-cue-note">The first strong match becomes the anchor; from there you can center it and explore the neighborhood.</div>
+  </div>
 
   <!-- Toast is rendered at layer 1200 (see <Toast /> above the hover tooltip) -->
 </div>
 </main>
 
-<!-- Global Error Boundary fallback (layer 1200, sibling to Toast) -->
-<ErrorFallback />
-
 <!-- Layer 3000: Loading overlay (highest z-index) -->
 <LoadingOverlay visible={true} />
-
-{#if legacyCompassSurfaceLazy.current}
-  {@const Cmp = legacyCompassSurfaceLazy.current}
-  <Cmp noDemo={noDemo} />
-{/if}
 
 <!--
   Legacy-compass parity surface (2026-06-06):
@@ -607,12 +534,6 @@
     overflow: hidden;
     background: #071018;
   }
-  .semantic-explorer.surface-semantic-dive {
-    pointer-events: none;
-  }
-  :global(.semantic-explorer.surface-semantic-dive button) {
-    pointer-events: auto;
-  }
 
   .semantic-main {
     display: block;
@@ -621,100 +542,19 @@
     overflow: hidden;
     outline: none;
   }
-  /* F5 (a11y bugsweep 2026-08-07): .semantic-main has tabindex="-1"
-     (programmatic focus only), but Firefox shows a focus ring for
-     programmatically-focused elements. Provide a visible :focus-visible
-     indicator so low-vision users can see when the main content area
-     receives programmatic focus (WCAG 2.4.7). */
-  .semantic-main:focus-visible {
-    outline: 2px solid var(--color-primary-alt);
-    outline-offset: 2px;
-  }
-  .semantic-main.surface-semantic-dive {
-    pointer-events: none;
-  }
 
-  /* W50-UX / W49-A2-6 follow-up: take the H1 wrapper out of normal
-   * flow so it no longer pushes <main> down by ~74px on desktop.
-   * The h1 keeps its margin-top:56px to clear the chip rail, and
-   * stays in the DOM for SR/SEO. Mobile sr-only behavior unchanged. */
-  .app-title-header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-  }
-
-  /* A2-6: H1 page title — first heading on the page.
-   * Styled as a small, unobtrusive page-title rather than a competing
-   * banner. The header below carries the visible brand + chip rail;
-   * the h1 provides the same identity to screen readers and search
-   * engines without visually duplicating the chrome row.
-   *
-   * W50-UX: previously sat at top: 0 in document flow with z-index 50;
-   * the chip rail (position: absolute; z-index 800) overlaid the left
-   * portion. The H1 still leaked to the right of the chips, producing
-   * two visible titles stacked at y=0 (the wordmark "Semantic Explorer"
-   * + the page-title "— Montgomery County Business Network"). UX-1 fix:
-   * sit the H1 BELOW the chip rail with margin-top equal to the rail
-   * height (~56px), single line, ellipsized on overflow, so it reads
-   * as a subtitle rather than competing with the chrome row. */
+  /* A2-6: Visible H1 page title — first heading on the page */
   .app-title {
     font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 600;
-    line-height: 1;
-    letter-spacing: 0.02em;
-    color: rgba(224, 240, 240, 0.85);
-    padding: 0 1rem 0.35rem;
-    margin: 60px 0 0;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e0f0f0;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    background: rgba(7, 16, 24, 0.85);
+    border-bottom: 1px solid rgba(78, 205, 196, 0.12);
     position: relative;
     z-index: var(--z-legend, 50);
-  }
-
-  /* PR-H (2026-06-30): on <= 768px viewports the chip rail + wordmark
-     only cover the first ~155px of the h1, leaving
-     '— Montgomery County Business Network' visible as a faded banner
-     to the right of the wordmark. The h1 exists for SR + SEO; on mobile
-     the visible identity is the wordmark itself. Visually hide via the
-     standard sr-only pattern (clip + 1px box) so screen readers still
-     pick it up. The a11y-h1-page-title contract still passes:
-       - h1 class is still 'app-title' (NOT sr-only)
-       - no inline display:none
-       - heading hierarchy preserved
-     Mobile media query mirrors the .sr-only utility above. */
-  @media (max-width: 768px) {
-    .app-title {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-  }
-
-  /* Short landscape is outside the normal mobile width gate, but the 414px
-     viewport still has no room for a second page-title row under the header. */
-  @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
-    .app-title {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
   }
 
   .semantic-explorer.reduced-motion {
@@ -722,53 +562,125 @@
     --transition-duration: 0s;
   }
 
-  /* W5-T3b: skeleton placeholders — zero visual, sized to prevent CLS */
-  .focus-pocket-skeleton,
-  .thread-inspector-skeleton {
+  /* Focus stage — when active, establish positioned context for absolute children */
+  .focus-stage.active {
     position: absolute;
     inset: 0;
     pointer-events: none;
-  }
-
-  /* Focus stage — when active, establish positioned context for absolute children.
-     The top offset clears the 60.8px .app-header so journey-chrome content
-     (description text, trail navigator) no longer renders behind it in
-     Trail/Focus modes. Matches the intent of the legacy
-     `inset: 96px 16px 14px auto` clamp(320px, 27vw, 392px) side-panel rule
-     without re-introducing its width clamp (focus-stage.active is meant to
-     stretch full-width so the mycelium remains visible). */
-  .focus-stage.active {
-    position: absolute;
-    top: var(--app-header-height, 64px);
-    right: 0;
-    bottom: 0;
-    left: 0;
-    /* Override .focus-stage { width: min(332px, ...) } from journey_steps.css
-       (lower specificity but defines width). Without this, focus-stage
-       collapses to ~389px on focus instead of spanning the full viewport.
-       Computed `width: 100%` is redundant with left:0/right:0 but wins
-       against the inherited width via specificity. */
-    width: 100%;
-    pointer-events: none;
-    /* W53/5g fix: journey_steps.css .focus-stage sets opacity:0 and
-       visibility:hidden by default, and its .focus-stage.active rule is
-       overridden by this scoped rule (loaded later in the cascade). Because
-       this rule previously omitted opacity/visibility, the stage stayed
-       hidden even when active, hiding the FocusCard, FocusPocket, and
-       JourneyChrome on desktop. */
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-    /* W53 fix: the base .focus-stage transition can stall in headless /
-       reduced-motion environments, leaving opacity/visibility at the start
-       value forever. Force the active state to be immediate so the overlay
-       actually appears when focus becomes active. */
-    transition: none;
   }
   :global(.focus-stage.active > *) {
     pointer-events: auto;
   }
 
+  /* Hover tooltip */
+  .hover-tooltip {
+    position: absolute;
+    z-index: var(--z-tooltip, 900);
+    pointer-events: none;
+    background: rgba(7, 16, 24, 0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(78, 205, 196, 0.18);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    max-width: 280px;
+  }
+  .tooltip-name {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #e0f0f0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tooltip-what {
+    font-size: 0.7rem;
+    color: rgba(224, 240, 240, 0.6);
+    margin-top: 0.2rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Synthesis summary card */
+  .summary-card {
+    position: absolute;
+    bottom: 5rem;
+    right: 1rem;
+    z-index: var(--z-panels, 80);
+    width: 300px;
+    max-height: 60vh;
+    overflow-y: auto;
+    background: rgba(7, 16, 24, 0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(78, 205, 196, 0.18);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+  }
+  .summary-card.hidden {
+    display: none;
+  }
+  .summary-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4ecdc4;
+    margin-bottom: 0.4rem;
+  }
+  .typewriter-content {
+    font-size: 0.7rem;
+    color: rgba(224, 240, 240, 0.7);
+    line-height: 1.5;
+    overflow-wrap: break-word;
+  }
+
+  /* Search trail cue */
+  .search-trail-cue {
+    position: absolute;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-toast, 700);
+    width: min(90vw, 400px);
+    background: rgba(7, 16, 24, 0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(78, 205, 196, 0.18);
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .search-trail-cue-kicker {
+    font-size: 0.55rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #4ecdc4;
+  }
+  .search-trail-cue-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #e0f0f0;
+  }
+  .search-trail-cue-stage {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .search-trail-cue-step {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.2rem;
+    background: rgba(78, 205, 196, 0.1);
+    color: #b0d0d0;
+  }
+  .search-trail-cue-note {
+    font-size: 0.65rem;
+    color: rgba(224, 240, 240, 0.5);
+    line-height: 1.4;
+    overflow-wrap: break-word;
+  }
 
   /* Responsive adjustments */
   @media (max-width: 768px) {
@@ -787,13 +699,19 @@
     pointer-events: auto;
   }
 
-  :global(body.surface-idle #filters-section[open]),
+  :global(body[data-panel-surface='idle'] #filters-section[open]),
   :global(#filters-section[open]) {
     display: block;
   }
 
+  @media (min-width: 769px) {
+    :global(body:not(.is-compact) .compass-rail) {
+      display: none;
+    }
+  }
+
   @media (max-width: 768px) {
-    :global(body.surface-focus-search .journey-compass) {
+    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass) {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
@@ -801,14 +719,14 @@
       max-width: calc(100vw - 32px);
     }
 
-    :global(body.surface-focus-search .journey-compass .journey-compass-actions) {
+    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass .journey-compass-actions) {
       display: grid;
       justify-content: end;
       gap: 6px;
       padding-left: 8px;
     }
 
-    :global(body.surface-focus-search .journey-compass .journey-compass-action.primary[data-journey-action='open-map']) {
+    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass .journey-compass-action.primary[data-journey-action='open-map']) {
       width: 48px;
       min-width: 48px;
       max-width: 48px;
@@ -818,108 +736,10 @@
       padding: 0 8px;
     }
 
-    :global(body.surface-focus-search .journey-compass .journey-compass-step:not(.primary)) {
+    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass .journey-compass-step:not(.primary)) {
       display: none;
       visibility: hidden;
       pointer-events: none;
     }
   }
-  /* W45-B: Crossfade replaced by hard swap. The previous opacity/visibility
-     transition left both layers in the compositor at 0–100% opacity during the
-     300ms handoff, causing the galaxy “soup” (placeholder + WebGL + chrome all
-     visible at once) and the placeholder ghost filters/search chrome. Using
-     display:none on the inactive layer guarantees only one layer paints. */
-  .layer-0-crossfade {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    /* Task-191 (2026-09-01): the wrapper covered the viewport with default
-       pointer-events:auto and intercepted "Open in 3D" taps at mobile sizes
-       (Playwright: 192 click retries, layer "intercepts pointer events") —
-       a real-user dead-tap. Children re-enable via .layer.active pe:auto. */
-    pointer-events: none;
-  }  .layer {
-    position: absolute;
-    inset: 0;
-    display: none;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .layer.active {
-    display: block;
-    opacity: 1;
-    pointer-events: auto;
-  }
-  /* The placeholder backdrop must NEVER capture pointer events across its
-     full-viewport area — only its CTA (pointer-events: auto inside
-     Placeholder2D.svelte) should. The active .placeholder-layer is
-     position:absolute inset:0, painted above the mobile mode-chip rail
-     (#mode-chips) and search-result list (#search-result-list), which are
-     static normal-flow chrome; leaving its .active pointer-events: auto
-     lets the whole-screen layer intercept taps meant for that chrome.
-     The canvas-layer keeps .active pe:auto so the 3D scene receives
-     drag/zoom. Same specificity as .layer.active -> declared later so
-     source order wins. */
-  .layer.placeholder-layer {
-    pointer-events: none;
-    background: var(--ok-bg, #071018);
-    isolation: isolate;
-  }
-  .layer.placeholder-layer.active {
-    background: var(--ok-bg, #071018);
-  }
-  /* Layers are stacked by DOM order (later = higher). No z-index needed,
-     which lets children (e.g. error overlays) escape the crossfade stack
-     and draw above the placeholder if they create their own stacking context. */
-  @media (prefers-reduced-motion: reduce) {
-    .layer { transition: none; }
-  }
-
-  /* Fix #1 Map layout: page title overlaps MapView header on map */
-  :global(body[data-active-view='map'] header.app-title-header.app-title-header) {
-    display: none;
-  }
-
-  /* Fix #1b (2026-08-23) — the inverse seam: MapView is force-mounted under
-     isPlaywright (template gate `surface.mapModeActive || isPlaywright`,
-     App.svelte ~L400), so automated probes get the fallback container on
-     EVERY surface. On header-visible surfaces that are NOT true map mode,
-     its identity block collides with the real app header (measured 220x54px
-     overlap in focus-search). The map-view header owns the top-left ONLY
-     when activeView is 'map' (real users never mount MapView elsewhere;
-     mapview-placeholder-journey.spec asserts it via ?view=map, which this
-     rule leaves untouched). */
-  :global(body:not([data-active-view='map']) .map-view-header.map-view-header) {
-    display: none;
-  }
-
-  /* Fix #2 Inside walk controls clipped at viewport bottom */
-  :global(body.navigation-inside-walk .focus-stage-journey.active.focus-stage-journey) {
-    height: auto;
-    max-height: calc(100vh - 140px);
-    overflow: visible;
-    align-content: start;
-  }
-  :global(body.navigation-inside-walk .focus-stage-journey.active > #trail-controls) {
-    grid-column: 1 / -1;
-    width: 100%;
-    min-width: 0;
-  }
-  :global(body.navigation-inside-walk #trail-controls) {
-    max-height: calc(100vh - 160px);
-    overflow-y: auto;
-    /* Polish: the squeezed toolbar row reports ~39px invisible padding
-       overflow + a collapsed second row, producing chunky native scrollbars
-       over an otherwise-clean panel. All visible content fits — hide the
-       bars, keep wheel/touch scrolling. */
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  :global(body.navigation-inside-walk #trail-controls::-webkit-scrollbar) {
-    display: none;
-  }
-  :global(body.navigation-inside-walk #trail-controls) {
-    overflow-x: hidden;
-  }
-
 </style>

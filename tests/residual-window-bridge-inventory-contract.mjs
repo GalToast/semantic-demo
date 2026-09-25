@@ -25,13 +25,14 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { execFileSync } from 'node:child_process'
 
 const SEMDEMO_ROOT = path.resolve(process.cwd())
 
 // ── MODULE MAP ──────────────────────────────────────────────────────────────
 
 const MODULES = {
-    lifecycle: path.join(SEMDEMO_ROOT, 'src/lib/stores/lifecycle.ts'),
+    lifecycle: path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts'),
     journey: path.join(SEMDEMO_ROOT, 'src/lib/journey/journey.ts'),
     camera: path.join(SEMDEMO_ROOT, 'src/lib/engine/camera-controls.ts'),
     cameraChoreography: path.join(SEMDEMO_ROOT, 'src/lib/engine/camera-choreography/routes.ts'),
@@ -40,37 +41,29 @@ const MODULES = {
     sceneReveal: path.join(SEMDEMO_ROOT, 'src/lib/engine/scene-reveal.ts'),
     app: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
     appRuntime: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
-    mapState: path.join(SEMDEMO_ROOT, 'src/lib/engine/map-state.ts'),
-    mapRouteEmbodiment: path.join(SEMDEMO_ROOT, 'src/lib/engine/map-route-embodiment.ts'),
-    mapLeafletRuntime: path.join(SEMDEMO_ROOT, 'src/lib/engine/map-leaflet-runtime.ts'),
-    mapDirector: path.join(SEMDEMO_ROOT, 'src/lib/engine/map-director.ts'),
-    // clusterFilter: path.join(SEMDEMO_ROOT, 'src/lib/stores/filter.svelte.ts'),  // REMOVED — file does not exist
-    journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/compass-controller.ts'),
-    journeyCompassState: path.join(SEMDEMO_ROOT, 'src/lib/journey/compass-state.ts'),
+    mapState: path.join(SEMDEMO_ROOT, 'js/modules/map-state.ts'),
+    // clusterFilter: path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.ts'),  // REMOVED — file does not exist
+    journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.ts'),
+    journeyCompassState: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-state.ts'),
     focusPocket: path.join(SEMDEMO_ROOT, 'src/lib/journey/focus-pocket.ts'),
-    threadInspector: path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-inspector-webgl.ts'),
-    threadInspectorState: path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-inspector-state.ts'),
-    threadInspectorRender: path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-inspector-render.ts'),
+    threadInspector: path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.ts'),
     strandContinuity: path.join(SEMDEMO_ROOT, 'src/lib/utils/strand-continuity.ts'),
-    journeyThreadSettler: path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-settler.ts'),
+    journeyThreadSettler: path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-settler.ts'),
     journeyCanvasInteraction: path.join(SEMDEMO_ROOT, 'src/lib/journey/canvas-interaction.ts'),
     clusterLabels: path.join(SEMDEMO_ROOT, 'src/lib/ui/cluster-labels.ts'),
-    audio: path.join(SEMDEMO_ROOT, 'src/lib/audio/audio-scape.ts'),
-    viewController: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/view-controller.ts'),
-    navigationState: path.join(SEMDEMO_ROOT, 'src/lib/stores/navigation.svelte.ts'),
-    journeyWebgl: path.join(SEMDEMO_ROOT, 'src/lib/journey/webgl.ts'),
+    audio: path.join(SEMDEMO_ROOT, 'js/modules/audio-scape.ts'),
+    viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.ts'),
+    navigationState: path.join(SEMDEMO_ROOT, 'js/modules/navigation-state.ts'),
+    journeyWebgl: path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.ts'),
     legendUi: path.join(SEMDEMO_ROOT, 'src/lib/journey/legend-ui.ts'),
     keyboardHelp: path.join(SEMDEMO_ROOT, 'src/lib/keyboard/keyboard-help.ts'),
-    globalShortcuts: path.join(SEMDEMO_ROOT, 'src/lib/keyboard/global-shortcuts.ts'),
-    uiRenderers: path.join(SEMDEMO_ROOT, 'src/lib/ui/renderers.ts'),
-    mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'src/lib/utils/map-flattening-layout.ts'),
+    uiRenderers: path.join(SEMDEMO_ROOT, 'src/lib/ui-renderers.ts'),
+    mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'js/modules/map-flattening-layout.ts'),
     inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/inspected-strand-overlay-adapter.ts'),
     routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/route-arrival-overlay-adapter.ts'),
-    threeSetup: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-render-loop.ts'),
-    threeEngineCore: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-core.ts'),
-    threeEngineState: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-state.ts'),
-    threeSearchAnimations: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-search-corridor-animations.ts'),
-    threeInteractionVisuals: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-interaction-visuals.ts')
+    threeSetup: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine.ts'),
+    threeSearchAnimations: path.join(SEMDEMO_ROOT, 'js/modules/three-search-animations.ts'),
+    threeInteractionVisuals: path.join(SEMDEMO_ROOT, 'js/modules/three-interaction-visuals.ts')
 }
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
@@ -79,37 +72,8 @@ function assert(cond, msg) {
     if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
 }
 
-function assertMatches(source, pattern, label) {
-    if (!pattern.test(source)) throw new Error(`ASSERTION FAILED: ${label}: missing match for ${pattern}`)
-}
-
 function read(mod) {
-    const filePath = MODULES[mod]
-    if (!filePath || !fs.existsSync(filePath)) {
-        // File may have been deleted as dead code; tests that explicitly need
-        // the file should assert its absence or skip module-specific checks.
-        return ''
-    }
-    const src = fs.readFileSync(filePath, 'utf-8')
-    if (mod === 'threeSetup' && MODULES.threeEngineCore && MODULES.threeEngineState) {
-        return (
-            src +
-            '\n' +
-            fs.readFileSync(MODULES.threeEngineCore, 'utf-8') +
-            '\n' +
-            fs.readFileSync(MODULES.threeEngineState, 'utf-8')
-        )
-    }
-    if (mod === 'threadInspector' && MODULES.threadInspectorState && MODULES.threadInspectorRender) {
-        return (
-            src +
-            '\n' +
-            fs.readFileSync(MODULES.threadInspectorState, 'utf-8') +
-            '\n' +
-            fs.readFileSync(MODULES.threadInspectorRender, 'utf-8')
-        )
-    }
-    return src
+    return fs.readFileSync(MODULES[mod], 'utf-8')
 }
 
 // ── EXTRACTION CANDIDATES (documented residual debt) ────────────────────────
@@ -493,7 +457,7 @@ function testBareCallBaseline() {
 function testFocusOnPointRuntimeCallersDewindowed() {
     console.log('\n[TEST 6] Runtime callers do not use window.focusOnPoint')
 
-    const callers = ['journeyThreadSettler', 'mapState', 'threadInspectorState']
+    const callers = ['journeyThreadSettler', 'mapState', 'threadInspector']
     const problems = []
 
     for (const mod of callers) {
@@ -554,28 +518,24 @@ function testJourneyArrivalHandoffDewindowed() {
         }
     }
     assert(
-        /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"](?:\.\/journey-webgl\.(?:js|ts)|@lib\/engine\/journey-webgl-bridge|@lib\/engine\/journey-webgl-lazy)['"]/.test(
+        /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"](?:\.\/journey-webgl\.(?:js|ts)|@lib\/engine\/journey-webgl-bridge)['"]/.test(
             strandContinuitySrc
         ),
         'strand-continuity.ts should import arrival handoff functions directly from journey-webgl (legacy or bridge alias)'
     )
     assert(
         journeySrc.includes("from './strand-continuity.ts'") ||
-            journeySrc.includes("from '@lib/engine/strand-continuity-bridge'") ||
-            journeySrc.includes("from '@lib/utils/strand-continuity'"),
+            journeySrc.includes("from '@lib/engine/strand-continuity-bridge'"),
         'journey.ts should import strand continuity state from the shared owner (legacy or bridge alias)'
     )
     assert(
         threadInspectorSrc.includes("from './strand-continuity.ts'") ||
-            threadInspectorSrc.includes("from '@lib/engine/strand-continuity-bridge'") ||
-            threadInspectorSrc.includes("from '@lib/utils/strand-continuity'"),
+            threadInspectorSrc.includes("from '@lib/engine/strand-continuity-bridge'"),
         'thread-inspector.ts should import strand continuity state from the shared owner (legacy or bridge alias)'
     )
     assert(
-        /import\s+\{[^}]*\bsyncFocusStage\b[^}]*\}\s+from\s+['"][^'"]*(?:selected-card|lifecycle)['"]/.test(
-            threadInspectorSrc
-        ),
-        'thread-inspector.ts should import syncFocusStage from selected-card (or legacy lifecycle) instead of the window bridge'
+        /import\s+\{[^}]*\bsyncFocusStage\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.(?:js|ts)['"]/.test(threadInspectorSrc),
+        'thread-inspector.js should import syncFocusStage through lifecycle.js instead of the window bridge'
     )
     assert(
         !threadInspectorSrc.includes('window.syncFocusStage'),
@@ -593,22 +553,14 @@ function testJourneyArrivalHandoffDewindowed() {
     )
     assert(
         journeyWebglSrc.includes('setRouteArrivalOverlayUpdaters({') &&
-            (journeyWebglSrc.includes('updateRouteTraceOverlayPositions,') ||
-                journeyWebglSrc.includes('lazyUpdateRouteTraceOverlayPositions,')) &&
-            (journeyWebglSrc.includes('updateArrivalHandoffOverlay') ||
-                journeyWebglSrc.includes('lazyUpdateArrivalHandoffOverlay')),
+            journeyWebglSrc.includes('updateRouteTraceOverlayPositions,') &&
+            journeyWebglSrc.includes('updateArrivalHandoffOverlay'),
         'journey-webgl.js should register route/arrival overlay frame updaters with the adapter'
     )
     assert(
-        (threeSetupSrc.includes("from '@lib/engine/route-arrival-overlay-bridge'") ||
-            threeSetupSrc.includes("from '@lib/journey/route-arrival-overlay-adapter'") ||
-            threeSetupSrc.includes("from '@lib/engine/journey-webgl-lazy'")) &&
-            (threeSetupSrc.includes('_routeArrival?.updateRouteTraceOverlayFrame(frameNow)') ||
-                threeSetupSrc.includes('engineState.routeArrival?.updateRouteTraceOverlayFrame(frameNow)') ||
-                threeSetupSrc.includes('updateRouteTraceOverlayFrame(frameNow)')) &&
-            (threeSetupSrc.includes('_routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)') ||
-                threeSetupSrc.includes('engineState.routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)') ||
-                threeSetupSrc.includes('updateArrivalHandoffOverlayFrame(frameNow)')),
+        threeSetupSrc.includes("from '@lib/engine/route-arrival-overlay-bridge'") &&
+            threeSetupSrc.includes('_routeArrival?.updateRouteTraceOverlayFrame(frameNow)') &&
+            threeSetupSrc.includes('_routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)'),
         'three-engine.js should update route/arrival overlays through the adapter'
     )
     assert(
@@ -655,30 +607,31 @@ function testInspectedStrandTopLevelBridgesRetired() {
             `thread-inspector.js should keep ${fn} available on the window._ti diagnostic namespace`
         )
     }
-    // The thread-settler uses inspectThreadNeighbor / renderThreadInspection / clearThreadInspection
-    // via the thread-inspector-bridge, not syncInspectedStrandOverlay directly. The only thing that
-    // matters is that it does NOT reach for the window bridge (asserted below).
+    assert(
+        /import\s+\{[^}]*\bsyncInspectedStrandOverlay\b[^}]*\}\s+from\s+['"]\.\/thread-inspector\.(?:js|ts)['"]/.test(
+            threadSettlerSrc
+        ),
+        'journey-thread-settler.js should import syncInspectedStrandOverlay directly from thread-inspector.ts'
+    )
     assert(
         !journeySrc.includes('window.syncInspectedStrandOverlay') &&
             !threadSettlerSrc.includes('window.syncInspectedStrandOverlay'),
         'journey/thread-settler modules must not call window.syncInspectedStrandOverlay'
     )
     assert(
-        threeSetupSrc.includes("from '@lib/journey/inspected-strand-overlay-adapter'"),
+        threeSetupSrc.includes("from '@lib/engine/inspected-strand-overlay-bridge'"),
         'three-engine.js should import the inspected-strand overlay adapter, not thread-inspector.ts'
     )
     assert(
-        threeSetupSrc.includes('_inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)') ||
-            threeSetupSrc.includes('engineState.inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)'),
+        threeSetupSrc.includes('_inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)'),
         'three-engine.js should update inspected strand overlay through the adapter'
     )
     assert(
         !threeSetupSrc.includes('window.updateInspectedStrandOverlay'),
         'three-engine.js must not call window.updateInspectedStrandOverlay'
     )
-    assertMatches(
-        threadInspectorSrc,
-        /setInspectedStrandOverlayUpdater\(updateInspectedStrandOverlay\);?/,
+    assert(
+        threadInspectorSrc.includes('setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay);'),
         'thread-inspector.js should register updateInspectedStrandOverlay with the adapter'
     )
     assert(
@@ -710,21 +663,14 @@ function testCameraInteractionBridgesRetired() {
         /noteSceneInteraction\(\s*duration\s*\+\s*1200\s*\)/.test(cameraChoreographySrc),
         'camera choreography routes should call noteSceneInteraction directly for search corridor animation'
     )
-    const hasDirectCameraImport =
+    assert(
         /import\s+\{[^}]*\bfocusOnNode\b[^}]*\bnoteSceneInteraction\b[^}]*\breleaseFocusCameraAssist\b[^}]*\}\s+from\s+['"](?:\.\/camera-controls\.(?:js|ts)|@lib\/engine\/camera-controls)['"]/.test(
             canvasInteractionSrc
-        )
-    const hasColdBootSafeLazyImport =
-        /import\(\s*['"]@lib\/engine\/camera-controls['"]\s*\)/.test(canvasInteractionSrc) &&
-        /\bloadCameraControls\(\)/.test(canvasInteractionSrc) &&
-        /\bm\.noteSceneInteraction\(\)/.test(canvasInteractionSrc) &&
-        /\bm\.releaseFocusCameraAssist\(/.test(canvasInteractionSrc)
-    assert(
-        hasDirectCameraImport || hasColdBootSafeLazyImport,
-        'journey-canvas-interaction.js should use direct or cold-boot-safe lazy camera-controls imports'
+        ),
+        'journey-canvas-interaction.js should import camera interaction functions directly from camera-controls.ts'
     )
 
-    console.log('  OK — camera interaction bridges retired; direct or lazy imports remain')
+    console.log('  OK — camera interaction bridges retired; direct imports remain')
 }
 
 // ── TEST 10 — View handoff camera prelude bridge is retired ────────────────
@@ -737,16 +683,11 @@ function testViewHandoffCameraPreludeBridgeRetired() {
     const threeSetupSrc = read('threeSetup')
     const mapFlatteningLayoutSrc = read('mapFlatteningLayout')
 
-    const hasDirectTerrainPreludeImport =
-        /import\s+\{[^}]*\banimateCameraToTerrainPrelude\b[^}]*\}\s+from\s+['"](?:\.\/camera-controls\.(?:js|ts)|@lib\/engine\/(?:camera-controls|camera-choreography))['"]/.test(
-            viewControllerSrc
-        )
-    const hasColdBootSafeLazyTerrainPrelude =
-        /import\(\s*['"]@lib\/engine\/camera-controls['"]\s*\)/.test(viewControllerSrc) &&
-        /\bm\.animateCameraToTerrainPrelude\(/.test(viewControllerSrc)
     assert(
-        hasDirectTerrainPreludeImport || hasColdBootSafeLazyTerrainPrelude,
-        'view-controller.js should use direct or cold-boot-safe lazy camera-controls imports'
+        /import\s+\{[^}]*\banimateCameraToTerrainPrelude\b[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"](?:\.\/camera-controls\.(?:js|ts)|@lib\/engine\/camera-choreography)['"]/.test(
+            viewControllerSrc
+        ),
+        'view-controller.js should import animateCameraToTerrainPrelude directly from camera-controls.ts'
     )
     assert(
         !viewControllerSrc.includes('window.animateCameraToTerrainPrelude'),
@@ -757,9 +698,7 @@ function testViewHandoffCameraPreludeBridgeRetired() {
         'camera-controls.js must not expose the retired window.animateCameraToTerrainPrelude bridge'
     )
     assert(
-        /import\s+\{[^}]*\bapplyMapFlatteningLayout\b[^}]*\}\s+from\s+['"](?:\.\/map-flattening-layout\.ts|@lib\/utils\/map-flattening-layout)['"]/.test(
-            viewControllerSrc
-        ),
+        viewControllerSrc.includes("import { applyMapFlatteningLayout } from './map-flattening-layout.ts';"),
         'view-controller.js should import applyMapFlatteningLayout from the side-effect-free map-flattening-layout owner'
     )
     assert(
@@ -771,8 +710,9 @@ function testViewHandoffCameraPreludeBridgeRetired() {
         'three-engine.js must not expose the retired window.applyMapFlatteningLayout bridge'
     )
     assert(
-        /import\s+\{\s*appState\s*\}\s+from\s+['"]@lib\/state\/app\.svelte['"]/.test(mapFlatteningLayoutSrc) &&
-            /export function applyMapFlatteningLayout/.test(mapFlatteningLayoutSrc),
+        /import\s+\{\s*state(?:\s+as\s+_state)?\s*\}\s+from\s+['"]@lib\/engine\/state-bridge['"]/.test(
+            mapFlatteningLayoutSrc
+        ) && /export function applyMapFlatteningLayout/.test(mapFlatteningLayoutSrc),
         'map-flattening-layout.js should own applyMapFlatteningLayout as a state-only named export'
     )
     assert(
@@ -780,7 +720,7 @@ function testViewHandoffCameraPreludeBridgeRetired() {
         'map-flattening-layout.js must stay side-effect-free with no window references'
     )
 
-    console.log('  OK — view handoff terrain/map flattening bridges retired; direct or lazy imports remain')
+    console.log('  OK — view handoff terrain/map flattening bridges retired; direct imports remain')
 }
 
 // ── TEST 11 — Legend collapsed-panel bridge is retired ─────────────────────
@@ -791,7 +731,7 @@ function testRestoreLegendCollapsedPanelBridgeRetired() {
     const lifecycleSrc = read('lifecycle')
     const eventBindingsSrc = read('eventBindings')
 
-    // The legacy kernel is deleted.
+    // The legacy js/modules/legend-ui.ts kernel is deleted.
     // The canonical owner is now src/lib/stores/legend-panel.svelte.ts.
     const legendPanelSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'src/lib/stores/legend-panel.svelte.ts'), 'utf-8')
     assert(
@@ -816,19 +756,13 @@ function testRestoreLegendCollapsedPanelBridgeRetired() {
     )
 
     // event-bindings (legend-bindings.ts) imports from the canonical store
-    const eventBindingsPath = path.join(SEMDEMO_ROOT, 'src/lib/ui/legend-bindings.ts')
-    if (!fs.existsSync(eventBindingsPath)) {
-        console.log('  SKIP — event-bindings (legend-bindings.ts) deleted as dead code; no consumer to verify')
-    } else {
-        const eventBindingsSrc = read('eventBindings')
-        assert(
-            eventBindingsSrc.includes('restoreLegendCollapsedPanel') &&
-                (eventBindingsSrc.includes("from '@lib/stores/legend-panel'") ||
-                    eventBindingsSrc.includes("from '@lib/stores/legend-panel.svelte.ts'") ||
-                    eventBindingsSrc.includes("from '@lib/engine/legend-ui-bridge'")),
-            'event-bindings.js should import restoreLegendCollapsedPanel from the canonical store'
-        )
-    }
+    assert(
+        eventBindingsSrc.includes('restoreLegendCollapsedPanel') &&
+            (eventBindingsSrc.includes("from '@lib/stores/legend-panel'") ||
+                eventBindingsSrc.includes("from '@lib/stores/legend-panel.svelte.ts'") ||
+                eventBindingsSrc.includes("from '@lib/engine/legend-ui-bridge'")),
+        'event-bindings.js should import restoreLegendCollapsedPanel from the canonical store'
+    )
 
     console.log('  OK — restoreLegendCollapsedPanel bridge retired; canonical store is the owner')
 }
@@ -891,13 +825,13 @@ function testAudioGlobalsRetiredFromWindow() {
     const searchAnimationsSrc = read('threeSearchAnimations')
 
     assert(
-        /import\s+\{[^}]*\btriggerCorridorBloom\b[^}]*\}\s+from\s+['"](?:\.\/audio-scape\.(?:js|ts)|@lib\/audio\/audio-scape)['"]/.test(
+        /import\s+\{[^}]*\btriggerCorridorBloom\b[^}]*\}\s+from\s+['"]\.\/audio-scape\.(?:js|ts)['"]/.test(
             searchAnimationsSrc
         ),
         'three-search-animations.js should import triggerCorridorBloom directly from audio-scape.ts'
     )
     assert(
-        /triggerCorridorBloom\(\);?/.test(searchAnimationsSrc),
+        /triggerCorridorBloom\(\);/.test(searchAnimationsSrc),
         'three-search-animations.js should call triggerCorridorBloom directly for corridor animation audio'
     )
     assert(
@@ -919,7 +853,6 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
     const threadSettlerSrc = read('journeyThreadSettler')
     const journeyCompassSrc = read('journeyCompassCtrl')
     const keyboardSrc = read('keyboardHelp')
-    const globalShortcutsSrc = read('globalShortcuts')
     const uiRenderersSrc = read('uiRenderers')
     const appRuntimeSrc = read('appRuntime')
 
@@ -936,8 +869,7 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
         'three-engine.js should import the camera-controls bridge'
     )
     assert(
-        threeSetupSrc.includes('_cameraControls?.applySemanticCentroidCamera(frameNow)') ||
-            threeSetupSrc.includes('engineState.cameraControls?.applySemanticCentroidCamera(frameNow)'),
+        threeSetupSrc.includes('_cameraControls?.applySemanticCentroidCamera(frameNow)'),
         'three-engine.js should call applySemanticCentroidCamera through the camera-controls bridge during the animation loop'
     )
     assert(
@@ -969,7 +901,7 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
         'journey-compass-controller.js should not import view-controller.js directly'
     )
     assert(
-        journeyCompassSrc.includes("_switchView('map')") && journeyCompassSrc.includes("_switchView('galaxy')"),
+        journeyCompassSrc.includes("_switchView('map');") && journeyCompassSrc.includes("_switchView('galaxy');"),
         'journey-compass-controller.js open-map/open-mycelium actions should use injected switchView adapter'
     )
     assert(
@@ -978,8 +910,8 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
         'journey-compass-controller.js must not use window reset fallbacks'
     )
     assert(
-        /export function setupGlobalShortcuts/.test(globalShortcutsSrc),
-        'global-shortcuts.ts should own keyboard shortcuts via setupGlobalShortcuts'
+        /export function initKeyboardResetOwnership/.test(keyboardSrc),
+        'keyboard-help.js should keep reset ownership injection'
     )
     assert(
         !keyboardSrc.includes('typeof window.returnToOverview') &&
@@ -1006,23 +938,28 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
     console.log('  OK — centroid camera, journey timers, and reset UI actions use module seams')
 }
 
-// ── TEST 15 — Retired window-bridge-gaps-contract is archived ────────────────
-// Active coverage now lives in this residual inventory contract. The older
-// sibling is archived under tests/retired and is not runnable in place because
-// its relative imports intentionally point at its old tests/ location.
+// ── TEST 15 — Verify window-bridge-gaps-contract.mjs still passes ────────────
+// Run the sibling contract to ensure no regressions in the already-dewindowed seams.
 
 function testSiblingContractStillPasses() {
-    console.log('\n[TEST 15] retired window-bridge-gaps-contract.mjs is archived')
+    console.log('\n[TEST 15] sibling window-bridge-gaps-contract.mjs still passes')
 
-    assert(
-        !fs.existsSync(path.join(SEMDEMO_ROOT, 'tests/window-bridge-gaps-contract.mjs')),
-        'window-bridge-gaps-contract.mjs should stay retired from active tests'
-    )
-    assert(
-        fs.existsSync(path.join(SEMDEMO_ROOT, 'tests/retired/window-bridge-gaps-contract.mjs')),
-        'retired window-bridge-gaps-contract.mjs archive should remain available for historical reference'
-    )
-    console.log('  OK — retired window-bridge-gaps-contract.mjs is archived; active checks live here')
+    try {
+        const result = execFileSync(
+            process.execPath,
+            [path.join(SEMDEMO_ROOT, 'tests/window-bridge-gaps-contract.mjs')],
+            { cwd: SEMDEMO_ROOT, encoding: 'utf-8', timeout: 30000 }
+        )
+        if (!result.includes('ALL TESTS PASSED')) {
+            assert(false, `window-bridge-gaps-contract.mjs did not pass. Output:\n${result}`)
+        }
+        console.log('  OK — window-bridge-gaps-contract.mjs: all tests passed')
+    } catch (err) {
+        const stderr = err.stderr || ''
+        const stdout = err.stdout || ''
+        const output = stderr + stdout
+        assert(false, `window-bridge-gaps-contract.mjs failed:\n${output}`)
+    }
 }
 
 // ── MAIN ────────────────────────────────────────────────────────────────────

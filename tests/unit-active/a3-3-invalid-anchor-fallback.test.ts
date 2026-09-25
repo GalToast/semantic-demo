@@ -16,10 +16,10 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const URL_RESTORE_PATH = resolve(__dirname, '../../src/lib/orchestration/url-restore-deep-link.ts'); // 2026-08-17: pointer moved to the split file (refactor landed)
+const URL_STATE_PATH = resolve(__dirname, '../../src/lib/orchestration/url-state.ts');
 
 function readSource(): string {
-  return readFileSync(URL_RESTORE_PATH, 'utf-8');
+  return readFileSync(URL_STATE_PATH, 'utf-8');
 }
 
 describe('A3-3: invalid anchor falls back to overview', () => {
@@ -45,10 +45,9 @@ describe('A3-3: invalid anchor falls back to overview', () => {
   });
 
   it('invalid anchor resets navStore to overview mode', () => {
-    // The invalid-anchor branch must write navState with mode: 'overview'
-    // (via writeNavStateMirror — the dual-store consolidation entry point)
+    // The invalid-anchor branch must update navStore with mode: 'overview'
     const invalidBranch = source.match(
-      /A3-3:[\s\S]*?writeNavStateMirror\(\s*\{[\s\S]*?mode:\s*'overview'/
+      /A3-3:[\s\S]*?navStore\.update\(\(s\)\s*=>\s*\(\{[\s\S]*?mode:\s*'overview'/
     );
     expect(invalidBranch).toBeTruthy();
   });

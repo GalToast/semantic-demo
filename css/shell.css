@@ -5,7 +5,7 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 100dvh;
+    height: 100%;
     transition: opacity 0.4s ease;
 }
 #canvas-container {
@@ -24,7 +24,7 @@
 }
 
 /* Prevent browser page-bounce during Three.js touch interactions. */
-body:not(.surface-idle) {
+body.is-active {
     overscroll-behavior: contain;
 }
 
@@ -49,7 +49,7 @@ body:not(.surface-idle) {
     font-size: 11px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: rgba(150, 235, 227, 0.85);
+    color: rgba(150, 235, 227, 0.78);
 }
 
 .webgl-fallback-notice h2 {
@@ -65,7 +65,7 @@ body:not(.surface-idle) {
     max-width: 34ch;
     font-size: 13px;
     line-height: 1.5;
-    color: rgba(222, 239, 236, 0.85);
+    color: rgba(222, 239, 236, 0.76);
 }
 
 .webgl-fallback-map {
@@ -99,7 +99,7 @@ body[data-semantic-dive='transitioning'] #canvas-container {
     pointer-events: none;
 }
 
-#canvas-container[data-graphics-mode='fallback'] {
+body[data-graphics-mode='fallback'] #canvas-container {
     z-index: var(--z-toast);
 }
 
@@ -115,8 +115,8 @@ body[data-semantic-dive='transitioning'] #canvas-container {
         transform 0.35s ease;
 }
 
-#canvas-container[data-graphics-mode='fallback']::before,
-#canvas-container[data-graphics-mode='fallback']::after {
+body[data-graphics-mode='fallback'] #canvas-container::before,
+body[data-graphics-mode='fallback'] #canvas-container::after {
     display: none;
 }
 
@@ -151,15 +151,15 @@ body[data-semantic-dive='transitioning'] #canvas-container {
     transform: scale(1.02);
 }
 
-body.surface-search #canvas-container::before {
+body[data-panel-surface='search'] #canvas-container::before {
     opacity: 0.24;
 }
 
-body.surface-search #canvas-container::after {
+body[data-panel-surface='search'] #canvas-container::after {
     opacity: 0.42;
 }
 
-#canvas-container[data-route-motion='search-corridor']::before {
+body[data-route-motion='search-corridor'] #canvas-container::before {
     opacity: 0.22;
     background:
         radial-gradient(
@@ -177,7 +177,7 @@ body.surface-search #canvas-container::after {
         );
 }
 
-#canvas-container[data-route-motion='search-corridor']::after {
+body[data-route-motion='search-corridor'] #canvas-container::after {
     opacity: 0.32;
     transform: scale(1.018) rotate(0.001deg);
     background:
@@ -190,15 +190,23 @@ body.surface-search #canvas-container::after {
         );
 }
 
-body.surface-focus #canvas-container::before {
+body[data-mobile-route-peek='active'][data-route-motion='search-corridor'] #canvas-container::before {
+    opacity: 0.14;
+}
+
+body[data-mobile-route-peek='active'][data-route-motion='search-corridor'] #canvas-container::after {
+    opacity: 0.22;
+}
+
+body[data-panel-surface='focus'] #canvas-container::before {
     opacity: 0.24;
 }
 
-body.surface-focus #canvas-container::after {
+body[data-panel-surface='focus'] #canvas-container::after {
     opacity: 0.38;
 }
 
-body.surface-focus-search #canvas-container::before {
+body[data-panel-surface='focus-search'] #canvas-container::before {
     opacity: 0.34;
     background: radial-gradient(
         circle at 51% 50%,
@@ -209,7 +217,7 @@ body.surface-focus-search #canvas-container::before {
     );
 }
 
-body.surface-focus-search #canvas-container::after {
+body[data-panel-surface='focus-search'] #canvas-container::after {
     opacity: 0.46;
     background:
         linear-gradient(
@@ -230,22 +238,22 @@ body.surface-focus-search #canvas-container::after {
         );
 }
 
-body.view-map #canvas-container::before,
-body.view-map #canvas-container::after {
+body[data-active-view='map'] #canvas-container::before,
+body[data-active-view='map'] #canvas-container::after {
     opacity: 0;
 }
 
-body.view-map #canvas-container {
+body[data-active-view='map'] #canvas-container {
     opacity: 0.15;
 }
 
 /* polish206: bridge mycelium to terrain before the layer swap. */
-body.view-galaxy[data-terrain-handoff='flattening'] #canvas-container {
+body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container {
     opacity: 0.82;
     transform: translateZ(0) scale(0.965);
 }
 
-body.view-galaxy[data-terrain-handoff='flattening'] #canvas-container::before {
+body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container::before {
     opacity: 0.76;
     transform: scale(0.99);
     background:
@@ -259,7 +267,7 @@ body.view-galaxy[data-terrain-handoff='flattening'] #canvas-container::before {
         linear-gradient(180deg, rgba(var(--color-primary-tint-rgb), 0.06), rgba(255, 226, 132, 0.08));
 }
 
-body.view-galaxy[data-terrain-handoff='flattening'] #canvas-container::after {
+body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container::after {
     opacity: 0.84;
     transform: scale(1);
     background:
@@ -279,7 +287,11 @@ body.view-galaxy[data-terrain-handoff='flattening'] #canvas-container::after {
         );
 }
 
-#canvas-container[data-route-motion='inside-pocket']::before {
+body[data-route-motion='terrain-prelude'] .biofield-atmosphere {
+    opacity: 0.78;
+}
+
+body[data-route-motion='inside-pocket'] #canvas-container::before {
     opacity: 0.72;
     background: radial-gradient(
         circle at 50% 50%,
@@ -290,7 +302,7 @@ body.view-galaxy[data-terrain-handoff='flattening'] #canvas-container::after {
     );
 }
 
-#canvas-container[data-route-motion='inside-pocket']::after {
+body[data-route-motion='inside-pocket'] #canvas-container::after {
     opacity: 0.88;
     background:
         linear-gradient(
@@ -345,11 +357,8 @@ body[data-trail-depth='2'] #canvas-container::after {
 #map-container {
     z-index: var(--z-base);
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
-    transition:
-        opacity 0.4s ease,
-        visibility 0.4s ease;
+    transition: opacity 0.4s ease;
     overflow: hidden;
     isolation: isolate;
     background: radial-gradient(
@@ -366,7 +375,6 @@ body[data-trail-depth='2'] #canvas-container::after {
 
 #map-container.active {
     opacity: 1;
-    visibility: visible;
     pointer-events: auto;
 }
 
@@ -398,8 +406,23 @@ body[data-trail-depth='2'] #canvas-container::after {
     transition: opacity 0.3s ease;
 }
 
-body.view-map .canvas-color-legend {
+body[data-active-view='map'] .canvas-color-legend {
     display: none;
+}
+
+.canvas-color-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.canvas-color-legend-swatch {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--swatch-color);
+    box-shadow: 0 0 8px var(--swatch-color);
+    flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
@@ -449,58 +472,48 @@ body.view-map .canvas-color-legend {
     transform: scale(1.02);
 }
 
-body.view-map #map-container::before {
+body[data-active-view='map'] #map-container::before {
     opacity: 0.46;
 }
 
-body.view-map #map-container::after {
+body[data-active-view='map'] #map-container::after {
     opacity: 0.42;
 }
 
-body.view-map[data-trail-state='active'] #map-container::before {
+body[data-active-view='map'][data-trail-state='active'] #map-container::before {
     opacity: 0.58;
 }
 
-body.view-map[data-trail-state='active'] #map-container::after {
+body[data-active-view='map'][data-trail-state='active'] #map-container::after {
     opacity: 0.54;
 }
 
-body.view-map[data-terrain-handoff='landing'] #map-container::before {
+body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::before {
     opacity: 0.76;
     animation: terrainBridgeVeil 1.8s ease-out both;
 }
 
-body.view-map[data-terrain-handoff='landing'] #map-container::after {
+body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::after {
     opacity: 0.72;
     transform: scale(1);
     animation: terrainBridgeHalo 1.8s ease-out both;
 }
 
-body.view-map[data-terrain-handoff='settled'][data-trail-state='active'] #map-container::after {
+body[data-active-view='map'][data-terrain-handoff='settled'][data-trail-state='active'] #map-container::after {
     opacity: 0.6;
 }
 
-body.view-map #map-container .leaflet-tile-pane {
+body[data-active-view='map'] #map-container .leaflet-tile-pane {
     filter: saturate(0.74) brightness(0.82) contrast(1.05);
     transition: filter 0.35s ease;
 }
 
-body.view-map[data-trail-state='active'] #map-container .leaflet-tile-pane {
+body[data-active-view='map'][data-trail-state='active'] #map-container .leaflet-tile-pane {
     filter: saturate(0.78) brightness(0.88) contrast(1.16);
 }
 
-body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-tile-pane {
+body[data-active-view='map'][data-terrain-handoff='landing'] #map-container .leaflet-tile-pane {
     filter: saturate(0.86) brightness(0.68) contrast(1.12);
-}
-
-/* W69: leaflet fade opacity fix — Leaflet's JS tile fade sets inline opacity:0
-   then animates to 1 via requestAnimationFrame. On some Chromium / headless
-   paths the rAF never fires (map is hidden during handoff), leaving every
-   .leaflet-tile-loaded at inline opacity:0 and the basemap appears black.
-   Force loaded tiles to visible regardless of JS animation state. */
-#map-container .leaflet-tile.leaflet-tile-loaded {
-    opacity: 1;
-    visibility: visible;
 }
 
 #map-container .leaflet-control-zoom.leaflet-bar {
@@ -534,45 +547,9 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-tile-pane 
 
 #map-container .leaflet-control-attribution a {
     color: rgba(148, 232, 223, 0.88);
-    /* W-audit (global-spacing touch-target): Leaflet's attribution link is a
-       bare <a> injected by Leaflet (no Svelte scope class) and renders at
-       ~14px tall on idle, below the 44px tap-target minimum. Give it a 44px
-       tap target without changing its purpose. On surface-map-any the whole
-       attribution control is display:none (mobile map), so this only affects
-       the idle/desktop states where it is visible. */
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    min-width: 44px;
-    border-radius: 0.3rem;
-}
-
-#map-container .leaflet-control-attribution a:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
-    outline-offset: 2px;
 }
 
 /* Map empty state */
-/* While the splash is up, suppress the map's empty-state prompt.
- *
- * They are two competing "what do I do now" messages. The splash is the entry
- * gate (Search / Explore CTAs); the empty-state says "Choose a business to map
- * its neighborhood". At 375px both rendered at once and the empty-state title
- * overlapped the splash tag by 71% (found by
- * tests/layout-integrity-contract.mjs).
- *
- * Note the empty-state's z-index:1000 does NOT put it above the splash -- it
- * is confined inside .map-container, which is position:fixed z-index:2 and so
- * creates a stacking context. The splash (z-index:400, sibling of that
- * container) paints above it, but its background is only rgba(0,0,0,0.92), so
- * the empty-state text bled through as text-over-text.
- *
- * :has() is already used across css/ (shell, layout_base, mobile_base,
- * mobile_premium__state, tokens, focus_stage). */
-body:has(.splash:not([hidden])) .map-empty-state {
-    display: none;
-}
-
 .map-empty-state {
     position: absolute;
     top: 50%;
@@ -612,78 +589,6 @@ body:has(.splash:not([hidden])) .map-empty-state {
     color: var(--color-text-muted);
     max-width: 240px;
     line-height: 1.5;
-}
-
-/* V2 (W53): dismissible map empty-state. The parent .map-empty-state is
-   pointer-events: none (so underlying map markers stay clickable); the close
-   button opts back in with pointer-events: auto. Absolute-anchored top-right
-   of the glass panel. Touch-target >=44px (mobile, WCAG 2.5.8 / surface
-   touch-targets:all-44px) / accessible. */
-.map-empty-state-close {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    margin: 0;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 50%;
-    background: rgba(10, 20, 28, 0.5);
-    color: var(--color-text-primary, #eefaf8);
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1;
-    cursor: pointer;
-    pointer-events: auto;
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
-    transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        color 0.18s ease;
-}
-
-.map-empty-state-close:hover,
-.map-empty-state-close:focus-visible {
-    background: rgba(60, 220, 200, 0.18);
-    border-color: rgba(121, 235, 222, 0.45);
-    color: #ffffff;
-    outline: none;
-}
-
-.map-empty-state-close:focus-visible {
-    outline: 2px solid rgba(121, 235, 222, 0.7);
-    outline-offset: 2px;
-}
-
-/* V2 (W53): in map view the Leaflet #map-container shares the fixed full-viewport
-   layer with the 3D #canvas-container, but with an implicit z-index (auto/0)
-   below the canvas's z-base=1. That let the full-viewport <canvas> intercept
-   pointer events over the .map-empty-state overlay, making its ✕ unclickable
-   (playwright journey test: locator.click blocked by canvas subtree). Raise the
-   map container above the canvas in map view so the dismiss button is reachable. */
-body.view-map #map-container {
-    z-index: var(--z-base-raised);
-}
-
-/* mobile: dismiss target >=44px hit area (WCAG 2.5.8 / surface
-   touch-targets:all-44px). The 28px desktop default is below AA target;
-   bump mobile media-query to 44px so the surface contract holds. */
-@media (max-width: 640px) {
-    .map-empty-state-close {
-        width: 44px;
-        height: 44px;
-        min-width: 44px;
-        min-height: 44px;
-        top: 4px;
-        right: 4px;
-    }
 }
 
 /* SD-005: map trail strip — compact trail navigation visible in map view
@@ -748,17 +653,23 @@ body.view-map #map-container {
     animation-duration: 2.4s;
 }
 
-body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-interactive.semantic-map-route-line {
+body[data-active-view='map'][data-terrain-handoff='landing']
+    #map-container
+    .leaflet-interactive.semantic-map-route-line {
     filter: drop-shadow(0 0 16px rgba(255, 226, 132, 0.38))
         drop-shadow(0 0 34px rgba(var(--color-primary-tint-rgb), 0.28));
     animation-duration: 1.55s;
 }
 
-body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-interactive.semantic-map-route-line-aura {
+body[data-active-view='map'][data-terrain-handoff='landing']
+    #map-container
+    .leaflet-interactive.semantic-map-route-line-aura {
     filter: blur(1.4px) drop-shadow(0 0 26px rgba(var(--color-primary-tint-rgb), 0.28));
 }
 
-body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-interactive.semantic-map-route-pulse {
+body[data-active-view='map'][data-terrain-handoff='landing']
+    #map-container
+    .leaflet-interactive.semantic-map-route-pulse {
     animation-duration: 1.65s;
 }
 
@@ -826,38 +737,180 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-interactiv
     }
 }
 
-/* ─── V5 + V6: Splash gate polish — mobile touch-target, contrast, safe-area ── */
-/* V5: lift the "Explore" CTA to ≥44×44px touch target + WCAG AA contrast
-   against the dark radial-gradient backdrop. Button gets a subtle teal
-   border + background so it reads as a distinct interactive element
-   rather than an underlined link. */
-button.splash-cta[data-testid='splash-cta'] {
-    min-width: 44px;
-    background: rgba(78, 205, 196, 0.14);
-    border: 1px solid rgba(78, 205, 196, 0.35);
-    border-radius: 8px;
-    color: rgba(244, 252, 251, 0.96);
-    text-decoration: none;
-    padding: 0.5rem 1.25rem;
+.biofield-atmosphere {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-base);
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 0.62;
+    mix-blend-mode: screen;
+    contain: layout paint;
 }
 
-/* V6: safe-area bottom lift for the splash gate dialog so the home indicator
-   on iOS doesn't overlap the bottom content (hint text). Matches the
-   FocusCard pattern: bottom: max(0px, env(safe-area-inset-bottom, 0px)).
-   Using box-sizing: border-box so the padding shrinks the content area
-   rather than extending beyond inset:0. */
-div.splash[role='dialog'] {
-    box-sizing: border-box;
-    padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
+.biofield-atmosphere::before,
+.biofield-atmosphere::after {
+    content: '';
+    position: absolute;
+    inset: -18%;
+    opacity: 0.6;
+    transform: translate3d(0, 0, 0);
+    animation: biofield-drift 28s ease-in-out infinite alternate;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    /* Silence terrain bridge and map route pulse animations for users who prefer reduced motion. */
-    body.view-map[data-terrain-handoff='landing'] #map-container::before,
-    body.view-map[data-terrain-handoff='landing'] #map-container::after,
-    #map-container .leaflet-interactive.semantic-map-route-line,
-    #map-container .leaflet-interactive.semantic-map-route-line-aura,
-    #map-container .leaflet-interactive.semantic-map-route-pulse {
-        animation: none;
+.biofield-atmosphere::before {
+    background:
+        radial-gradient(circle at 18% 72%, rgba(84, 229, 214, 0.16), transparent 23%),
+        radial-gradient(circle at 72% 18%, rgba(135, 231, 223, 0.13), transparent 20%),
+        radial-gradient(circle at 86% 78%, rgba(255, 225, 139, 0.08), transparent 24%);
+    filter: blur(10px);
+}
+
+.biofield-atmosphere::after {
+    background: conic-gradient(
+        from 140deg at 52% 50%,
+        transparent 0 18%,
+        rgba(var(--color-primary-tint-rgb), 0.08) 25%,
+        transparent 34% 62%,
+        rgba(255, 225, 139, 0.055) 72%,
+        transparent 82% 100%
+    );
+    opacity: 0.34;
+    filter: blur(18px);
+    animation-duration: 38s;
+    animation-direction: alternate-reverse;
+}
+
+.biofield-orb,
+.biofield-thread {
+    position: absolute;
+    display: block;
+    border-radius: 999px;
+    transform: translate3d(0, 0, 0);
+}
+
+.biofield-orb {
+    width: var(--orb-size, 9px);
+    height: var(--orb-size, 9px);
+    background: radial-gradient(
+        circle,
+        rgba(235, 255, 250, 0.92) 0 18%,
+        rgba(var(--color-primary-tint-rgb), 0.52) 19% 42%,
+        transparent 72%
+    );
+    box-shadow:
+        0 0 18px rgba(var(--color-primary-tint-rgb), 0.22),
+        0 0 42px rgba(var(--color-primary-alt-rgb), 0.1);
+    opacity: 0.72;
+    animation: biofield-spore-float 18s ease-in-out infinite;
+}
+
+.biofield-thread {
+    width: min(52vw, 620px);
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(var(--color-primary-tint-rgb), 0.22),
+        rgba(255, 225, 139, 0.1),
+        transparent
+    );
+    filter: blur(0.3px) drop-shadow(0 0 10px rgba(var(--color-primary-tint-rgb), 0.14));
+    opacity: 0.32;
+    animation: biofield-thread-breathe 20s ease-in-out infinite alternate;
+}
+
+body[data-active-view='map'] .biofield-atmosphere {
+    opacity: 0.42;
+}
+
+body[data-trail-state="active"] .biofield-atmosphere,
+body[data-panel-surface="focus"] .biofield-atmosphere,
+body[data-panel-surface="focus-search"] .biofield-atmosphere {
+    opacity: 0.18;
+    mix-blend-mode: normal;
+}
+
+body[data-panel-surface='focus'] .biofield-atmosphere::before,
+body[data-panel-surface='focus-search'] .biofield-atmosphere::before {
+    background:
+        radial-gradient(circle at 20% 70%, rgba(53, 179, 168, 0.045), transparent 24%),
+        radial-gradient(circle at 72% 18%, rgba(74, 201, 193, 0.035), transparent 22%),
+        radial-gradient(circle at 86% 78%, rgba(166, 132, 52, 0.024), transparent 26%);
+    filter: blur(14px);
+    opacity: 0.34;
+}
+
+body[data-panel-surface='focus'] .biofield-atmosphere::after,
+body[data-panel-surface='focus-search'] .biofield-atmosphere::after {
+    background: conic-gradient(
+        from 140deg at 52% 50%,
+        transparent 0 20%,
+        rgba(55, 181, 170, 0.026) 27%,
+        transparent 36% 64%,
+        rgba(146, 116, 45, 0.018) 72%,
+        transparent 82% 100%
+    );
+    filter: blur(24px);
+    opacity: 0.2;
+}
+
+body[data-route-motion='search-corridor'] .biofield-atmosphere {
+    opacity: 0.9;
+}
+
+body[data-route-motion='terrain-landing'] .biofield-atmosphere {
+    opacity: 0.5;
+}
+
+body[data-route-motion='inside-pocket'] .biofield-thread {
+    opacity: 0.48;
+}
+
+/* #950: Suppress/reduce biofield orbs in focus/trail/search-focus states */
+body[data-panel-surface="focus"] .biofield-orb,
+body[data-panel-surface="focus-search"] .biofield-orb,
+body[data-panel-surface='search'] .biofield-orb,
+body[data-trail-state='active'] .biofield-orb {
+    opacity: 0.025;
+    animation: none;
+}
+
+@keyframes biofield-drift {
+    0% {
+        transform: translate3d(-1.5%, 0.5%, 0) scale(1);
+    }
+    50% {
+        transform: translate3d(1.2%, -1%, 0) scale(1.035);
+    }
+    100% {
+        transform: translate3d(0.8%, 1.3%, 0) scale(1.02);
+    }
+}
+
+@keyframes biofield-spore-float {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(0.92);
+        opacity: 0.48;
+    }
+    42% {
+        transform: translate3d(18px, -26px, 0) scale(1.12);
+        opacity: 0.82;
+    }
+    68% {
+        transform: translate3d(-10px, -44px, 0) scale(0.98);
+        opacity: 0.62;
+    }
+}
+
+@keyframes biofield-thread-breathe {
+    0% {
+        opacity: 0.08;
+        filter: blur(0.4px) drop-shadow(0 0 7px rgba(var(--color-primary-tint-rgb), 0.06));
+    }
+    100% {
+        opacity: 0.18;
+        filter: blur(0.2px) drop-shadow(0 0 12px rgba(var(--color-primary-tint-rgb), 0.1));
     }
 }

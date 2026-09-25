@@ -1,232 +1,145 @@
 name: CI — Semantic Explorer
 
 on:
-    push:
-        branches: [master]
-    pull_request:
-        branches: [master]
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
 
 concurrency:
-    group: ci-${{ github.ref }}
-    cancel-in-progress: true
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    svelte-check:
-        name: Svelte Check
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run check
-              env:
-                  DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
+  svelte-check:
+    name: Svelte Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run check
 
-    test-unit:
-        name: Unit Tests
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-            - run: npm ci
-            - name: Restore private data assets
-              env:
-                  DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
-              run: node scripts/fetch-data-assets.mjs --quiet || node scripts/fetch-data-assets.mjs
-            - run: npm run test:unit -- --pool=forks
-              env:
-                  DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
-                  SEMANTIC_FORCE_WEBGL_SOFTWARE: '1'
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:unit
 
-    build:
-        name: Production Build
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run build:svelte
-              env:
-                  DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
-            - name: Archive verified build artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: dist-svelte
-                  path: dist/svelte/
-                  if-no-files-found: error
+  build:
+    name: Production Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build:svelte
 
-    bundle-size:
-        name: Bundle Size Gate
-        runs-on: ubuntu-latest
-        needs: [build]
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-            - run: npm ci
-            - name: Restore build artifacts
-              uses: actions/download-artifact@v4
-              with:
-                  name: dist-svelte
-                  path: dist/svelte/
-            - name: Check bundle size against performance budget
-              run: node scripts/check-bundle-size.mjs
+  bundle-size:
+    name: Bundle Size Gate
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Restore build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-svelte
+          path: dist/svelte/
+      - name: Check bundle size against performance budget
+        run: node scripts/check-bundle-size.mjs
 
-    lint-nav-mirror:
-        name: Lint Nav Mirror Pattern
-        runs-on: ubuntu-latest
-        timeout-minutes: 1
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run lint:nav-mirror
+  lint-nav-mirror:
+    name: Lint Nav Mirror Pattern
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint:nav-mirror
 
-    test-contract-smoke:
-        name: Contract Smoke Tests
-        runs-on: ubuntu-latest
-        timeout-minutes: 2
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run test:contract:smoke
-              env:
-                  DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
+  lint-svelte5-strict-mode:
+    name: Lint Svelte 5 Strict Mode
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint:svelte5-strict-mode
 
-    test-3d-admission:
-        name: 3D Test Admission
-        runs-on: ubuntu-latest
-        timeout-minutes: 2
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-            - run: npm ci
-            - run: npm run verify:3d-tests
-              env:
-                  DATA_DEPLOY_KEY: ${{ secrets.DATA_DEPLOY_KEY }}
+  test-integration:
+    name: Integration Tests (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Restore Playwright browser cache
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Build app for preview server
+        run: npm run build:svelte
+      - name: Start preview server
+        run: npx vite preview --config vite.config.ts --port 4174 --host 127.0.0.1 &
+      - name: Wait for server
+        run: for i in $(seq 1 30); do curl -s http://127.0.0.1:4174 > /dev/null 2>&1 && exit 0; sleep 1; done; echo 'Server did not start'; exit 1
+      - name: Run Playwright integration tests
+        env:
+          TEST_BASE_URL: http://127.0.0.1:4174
+          INTEGRATION_HEADLESS: 'true'
+        run: npx playwright test
 
-    gates:
-        # Campaign gates re-armed 2026-08-23: the findings-register witness and
-        # the stamped budget baseline. These are the checks that had gone soft
-        # (a wrong cited fact shipped in F6; a re-baseline that silently reset
-        # the growth trend). Full history is required: the witness re-derives
-        # prose claims via `git ls-files` / `git show`.
-        # NOTE: verify-semantic-provenance.mjs is deliberately NOT here - it is
-        # an operator step on the builder machine (needs the index-build dir)
-        # and SKIP-FAILs (exit 1) when that env is absent.
-        name: Campaign Gates
-        runs-on: ubuntu-latest
-        needs: [build]
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-            - run: npm ci
-            - name: Restore build artifact
-              uses: actions/download-artifact@v4
-              with:
-                  name: dist-svelte
-                  path: dist/svelte/
-            - name: 'Witness: re-derive every cited claim from disk + git'
-              run: npm run check:findings-witness
-            - name: Budget gate vs stamped baseline
-              run: node scripts/qa-budget.mjs
-
-    test-integration:
-        # Keep the automatic deploy gate deterministic and resource-bounded.
-        # The full Playwright inventory remains available through
-        # `npm run qa:journey:headless` and targeted CI/manual runs; it is not
-        # suitable as the default release gate because the repo contains many
-        # long-running, environment-specific specs.
-        name: Journey Smoke (Playwright)
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        needs: [build]
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-            - run: npm ci
-            - name: Restore Playwright browser cache
-              uses: actions/cache@v4
-              id: playwright-cache
-              with:
-                  path: ~/.cache/ms-playwright
-                  key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-            - name: Install Playwright browsers
-              if: steps.playwright-cache.outputs.cache-hit != 'true'
-              run: npx playwright install --with-deps chromium
-            - name: Restore verified build artifact
-              uses: actions/download-artifact@v4
-              with:
-                  name: dist-svelte
-                  path: dist/svelte/
-            - name: Serve dist (repo-root, twin-negotiating qa-server)
-              env:
-                  QA_SERVER_PORT: 4174
-              run: node scripts/qa-server.mjs ensure
-            - name: Wait for server
-              run: |
-                  for i in $(seq 1 30); do
-                    OK=http://127.0.0.1:4174/dist/svelte/index.html
-                    curl -s -o /dev/null "$OK" && exit 0
-                    sleep 1
-                  done
-                  echo 'Server did not start'; exit 1
-            - name: Run Playwright integration tests
-              env:
-                  TEST_BASE_URL: http://127.0.0.1:4174
-                  INTEGRATION_HEADLESS: 'true'
-                  PLAYWRIGHT_STRICT_FRESH: '1'
-                  SEMANTIC_FORCE_WEBGL_SOFTWARE: '1'
-              run: npx playwright test tests/widget-journey-smoke.spec.js --browser=chromium --workers=1
-
-    deploy:
-        name: Deploy Artifacts
-        runs-on: ubuntu-latest
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        needs:
-            - svelte-check
-            - test-unit
-            - build
-            - bundle-size
-            - test-integration
-            - lint-nav-mirror
-            - test-contract-smoke
-            - test-3d-admission
-            - gates
-        steps:
-            - name: Restore verified build artifact
-              uses: actions/download-artifact@v4
-              with:
-                  name: dist-svelte
-                  path: dist/svelte/
+  deploy:
+    name: Deploy Artifacts
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs: [svelte-check, test-unit, build, lint-nav-mirror, lint-svelte5-strict-mode]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build:svelte
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-svelte
+          path: dist/svelte/

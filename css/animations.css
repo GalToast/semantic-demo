@@ -3,6 +3,7 @@
 @media (prefers-reduced-motion: reduce) {
     body #loading-overlay,
     body #loading-overlay *,
+    body #micro-demo-veil,
     body #weather-overlay,
     body #canvas-container,
     body #map-container,
@@ -16,7 +17,9 @@
     body .info-panel,
     body .info-header,
     body .info-toggle-icon,
-    body .legend,
+    body .demo-starters,
+    body .launch-btn,
+    body .legend-panel,
     body .legend-item,
     body .search-container,
     body .search-input-wrapper,
@@ -24,29 +27,7 @@
     body .search-results,
     body .weather-widget,
     body .weather-widget *,
-    body .experience-reset-toast,
-    /* H7: weather children not covered by #weather-overlay * (specificity) */
-    body #weather-overlay .weather-seed-base,
-    body .time-display::before,
-    /* H7/M9: search spinner + shake animations */
-    body .search-spinner,
-    body .fade-in,
-    body.searching .search-spinner,
-    body.searching .search-container.has-query .search-spinner,
-    body .shake-input,
-    body .suggestion-btn.shake {
-        animation: none;
-        transition: none;
-    }
-}
-
-/* M9: shell keyframes — pseudo-elements need matching specificity */
-@media (prefers-reduced-motion: reduce) {
-    body.view-map[data-terrain-handoff='landing'] #map-container::before,
-    body.view-map[data-terrain-handoff='landing'] #map-container::after,
-    body #map-container .leaflet-interactive.semantic-map-route-line,
-    body #map-container .leaflet-interactive.semantic-map-route-line-aura,
-    body #map-container .leaflet-interactive.semantic-map-route-pulse {
+    body .experience-reset-toast {
         animation: none;
         transition: none;
     }
@@ -55,8 +36,8 @@
 /* Relocated prefers-reduced-motion rules (Slice 6) */
 
 @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
-    body.view-galaxy .info-panel,
-    .journey-compass[data-active-view='galaxy'] {
+    body[data-active-view='galaxy'] .info-panel,
+    body[data-active-view='galaxy'] .journey-compass {
         transition: none;
         transition-duration: 0.01ms;
     }
@@ -89,8 +70,8 @@
 }
 
 @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
-    .journey-compass[data-active-view='galaxy'][data-phase='overview'],
-    .journey-compass[data-active-view='galaxy'][data-density='compact'] {
+    body[data-active-view='galaxy'] .journey-compass[data-phase='overview'],
+    body[data-active-view='galaxy'] .journey-compass[data-density='compact'] {
         transition: none;
         transition-duration: 0.01ms;
         backdrop-filter: none;
@@ -104,26 +85,19 @@
     body .focus-stage-action-btn,
     body .focus-stage-dive-btn,
     body .focus-stage-inside-btn,
-    body.surface-semantic-dive #btn-inside-next.focus-stage-inside-btn[aria-busy='true'],
-    body .focus-stage-neighbor-pill,
-    /* Pulse loops on pseudo-elements + scramble that the gate missed
-       (2026-08-06 audit: infinite loops w/ movement under reduce) */
-    body .journey-compass-kicker::before,
-    body .journey-compass-kicker::after,
-    body .focus-stage-inside-status::before,
-    body .search-vector-scramble,
-    body .search-vector-scramble * {
+    body[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn[aria-busy='true'],
+    body .focus-stage-neighbor-pill {
         animation: none;
         transition: none;
     }
 
-    body.view-galaxy .focus-stage,
-    body.view-galaxy .focus-stage-card {
+    body[data-active-view='galaxy'] .focus-stage,
+    body[data-active-view='galaxy'] .focus-stage-card {
         transition: none;
         transition-duration: 0.01ms;
     }
 
-    body.view-galaxy[data-semantic-dive='transitioning'] .focus-stage-card {
+    body[data-active-view='galaxy'][data-semantic-dive='transitioning'] .focus-stage-card {
         opacity: 1;
         pointer-events: auto;
         transform: none;

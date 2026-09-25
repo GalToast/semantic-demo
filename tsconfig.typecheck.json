@@ -1,14 +1,13 @@
 {
-    "extends": "./tsconfig.json",
-    "compilerOptions": {
-        "types": ["node", "three"]
-    },
-    "include": [
-        "types/**/*.d.ts",
-        "scripts/build-app.mjs",
-        "js/modules/**/*.ts",
-        "js/modules/view-models/**/*.ts",
-        "js/modules/utils/**/*.ts",
-        "src/**/*"
-    ]
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "three"]
+  },
+  "include": [
+    "types/**/*.d.ts",
+    "scripts/build-app.mjs",
+    "js/modules/**/*.ts",
+    "js/modules/view-models/**/*.ts",
+    "js/modules/utils/**/*.ts"
+  ]
 }
