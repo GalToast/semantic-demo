@@ -3,7 +3,7 @@
 -->
 <script lang="ts">
   import type { NavMode } from '@lib/types/state';
-  import { currentMode, currentSurface, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
+  import { currentMode, currentView, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
 
   interface Props {
     visible?: boolean;
@@ -40,7 +40,7 @@
   ];
 
   function isActive(modeId: NavMode | 'map'): boolean {
-    if (modeId === 'map') return currentSurface() === 'map';
+    if (modeId === 'map') return currentView() === 'map';
     return currentMode() === modeId;
   }
 
@@ -54,6 +54,7 @@
     } else if (modeId === 'inside') {
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' });
     } else if (modeId === 'map') {
+      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' });
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
     }
   }
@@ -117,6 +118,30 @@
     border-color: #4ecdc4;
     color: #4ecdc4;
     font-weight: 600;
+  }
+  :global(#mode-chips .mode-chip.is-waiting) {
+    opacity: 0.75;
+    border-style: solid;
+    border-color: rgba(255, 176, 30, 0.5);
+    background: rgba(255, 176, 30, 0.08);
+    color: rgba(255, 210, 130, 0.9);
+    box-shadow: 0 0 0 1px rgba(255, 176, 30, 0.15);
+  }
+  :global(#mode-chips .mode-chip.is-locked) {
+    background: rgba(78, 205, 196, 0.18);
+    border-color: rgba(78, 205, 196, 0.55);
+    color: rgba(201, 255, 248, 0.98);
+    box-shadow:
+      0 0 0 1px rgba(78, 205, 196, 0.25),
+      0 0 12px rgba(78, 205, 196, 0.15);
+  }
+  :global(#mode-chips .mode-chip.is-locked .chip-label) {
+    color: rgba(201, 255, 248, 1);
+  }
+  :global(#mode-chips .mode-chip:disabled) {
+    cursor: not-allowed;
+    opacity: 0.45;
+    pointer-events: none;
   }
   .chip-icon {
     display: none;

@@ -155,7 +155,14 @@
     const routeInsideMapHit = (event: MouseEvent) => {
       const target = event.target as Element | null;
       if (target?.closest?.('#btn-inside-map')) return;
-      if (!semanticDiveActive || navState.currentView !== 'galaxy') return;
+      const publicSemanticDiveActive =
+        semanticDiveActive ||
+        document.body.dataset.semanticDive === 'active' ||
+        document.body.dataset.panelSurface === 'semantic-dive';
+      const publicGalaxyView =
+        navState.currentView === 'galaxy' ||
+        document.body.dataset.activeView === 'galaxy';
+      if (!publicSemanticDiveActive || !publicGalaxyView) return;
       const button = document.getElementById('btn-inside-map') as HTMLButtonElement | null;
       if (!button || button.hidden || button.disabled || button.getAttribute('aria-hidden') === 'true') return;
       const rect = button.getBoundingClientRect();

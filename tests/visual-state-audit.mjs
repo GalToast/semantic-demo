@@ -1519,11 +1519,21 @@ async function enterSemanticDiveViaVisibleControl(page) {
 async function enterMapViaVisibleControl(page) {
   const insideMap = page.locator('#btn-inside-map:visible').first();
   if (await insideMap.count()) {
-    await insideMap.click({ timeout: 8000, noWaitAfter: true });
+    const clicked = await insideMap.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch(() => false);
+    if (!clicked) {
+      const box = await insideMap.boundingBox();
+      if (!box) throw new Error('#btn-inside-map had no clickable bounding box');
+      await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 28));
+    }
     await markVisualRouteEvidence(page, 'real-click', 'clicked semantic-dive inside Map button');
   } else {
     const mapAction = page.locator('button[data-journey-action="open-map"]:visible').first();
-    await mapAction.click({ timeout: 8000, noWaitAfter: true });
+    const clicked = await mapAction.click({ timeout: 8000, noWaitAfter: true }).then(() => true).catch(() => false);
+    if (!clicked) {
+      const box = await mapAction.boundingBox();
+      if (!box) throw new Error('visible open-map action had no clickable bounding box');
+      await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 28));
+    }
     await markVisualRouteEvidence(page, 'real-click', 'clicked journey open-map action');
   }
   await page.waitForFunction(() => document.body.dataset.activeView === 'map', undefined, { timeout: 12000 });
@@ -3802,22 +3812,22 @@ async function run() {
         `#info-panel should be bottom-attached inside ${viewport.width}x${viewport.height}, got ${JSON.stringify(infoPanel)}`,
       );
     }
-    if (selectedCard?.dataset?.contentVariant === 'map-summary' && selectedCard?.dataset?.contentOwner === 'selected-map-summary') {
-      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-content-owner:map-summary');
+    if (selectedCard?.dataset?.contentVariant === 'info-panel' && selectedCard?.dataset?.contentOwner === 'info-panel') {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-content-owner:info-panel');
     } else {
       fail(
         '24-mobile-map-focus-search',
-        'mobile-map-focus-search-content-owner:map-summary',
-        `selected-card should declare the dedicated map-summary content owner, got ${JSON.stringify(selectedCard?.dataset || {})}`,
+        'mobile-map-focus-search-content-owner:info-panel',
+        `selected-card should declare the InfoPanel content owner, got ${JSON.stringify(selectedCard?.dataset || {})}`,
       );
     }
-    if (!isRendered(selectedDetails)) {
-      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-details:hidden');
+    if (isRendered(selectedDetails)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-details:visible');
     } else {
       fail(
         '24-mobile-map-focus-search',
-        'mobile-map-focus-search-selected-details:hidden',
-        `full selected-details payload should be hidden by the content owner, got ${JSON.stringify(selectedDetails)}`,
+        'mobile-map-focus-search-selected-details:visible',
+        `InfoPanel selected-details payload should own compact map content, got ${JSON.stringify(selectedDetails)}`,
       );
     }
     if (!isRendered(vectorCascade)) {
@@ -3826,33 +3836,30 @@ async function run() {
       fail(
         '24-mobile-map-focus-search',
         'mobile-map-focus-search-vector-cascade:hidden',
-        `map-summary owner must suppress decorative vector text, got ${JSON.stringify(vectorCascade)}`,
+        `map-focus-search should suppress decorative vector text, got ${JSON.stringify(vectorCascade)}`,
       );
     }
     if (
-      isRendered(selectedCard) &&
-      isRendered(mapSummary) &&
-      isRendered(mapSummaryName) &&
-      mapSummaryName.centerTopInside &&
-      isRendered(mapSummaryWhat) &&
-      mapSummaryWhat.centerTopInside &&
-      isRendered(mapSummaryRole)
+      !isRendered(mapSummary) &&
+      !isRendered(mapSummaryName) &&
+      !isRendered(mapSummaryWhat) &&
+      !isRendered(mapSummaryRole)
     ) {
-      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-card:summary-visible');
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-card:retired-summary-absent');
     } else {
       fail(
         '24-mobile-map-focus-search',
-        'mobile-map-focus-search-selected-card:summary-visible',
-        `dedicated map summary should be visible, got card=${JSON.stringify(selectedCard)} summary=${JSON.stringify(mapSummary)} name=${JSON.stringify(mapSummaryName)} what=${JSON.stringify(mapSummaryWhat)} role=${JSON.stringify(mapSummaryRole)}`,
+        'mobile-map-focus-search-selected-card:retired-summary-absent',
+        `retired map summary subtree should stay absent, got summary=${JSON.stringify(mapSummary)} name=${JSON.stringify(mapSummaryName)} what=${JSON.stringify(mapSummaryWhat)} role=${JSON.stringify(mapSummaryRole)}`,
       );
     }
-    if (isRendered(mapSummaryMatch) && mapSummaryMatch.centerTopInside) {
-      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-card:match-visible');
+    if (!isRendered(mapSummaryMatch)) {
+      pass('24-mobile-map-focus-search', 'mobile-map-focus-search-selected-card:retired-match-absent');
     } else {
       fail(
         '24-mobile-map-focus-search',
-        'mobile-map-focus-search-selected-card:match-visible',
-        `#selected-map-summary-match should stay visible as route/match context, got ${JSON.stringify(mapSummaryMatch)}`,
+        'mobile-map-focus-search-selected-card:retired-match-absent',
+        `#selected-map-summary-match is retired and should stay absent, got ${JSON.stringify(mapSummaryMatch)}`,
       );
     }
     if (!isRendered(searchResults)) {

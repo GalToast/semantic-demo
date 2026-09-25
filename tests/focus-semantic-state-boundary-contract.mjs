@@ -181,9 +181,9 @@ function syncStoresFromState() {
   const surface = (() => {
     if (activeView === 'map') {
       if (hasFocus && hasSearchIntent) return 'map-focus-search';
-      if (hasFocus) return 'focus';
-      if (hasSearchIntent) return 'search';
-      return 'idle';
+      if (hasFocus) return 'map-focus';
+      if (hasSearchIntent) return 'map-search';
+      return 'map';
     }
     if (hasFocus && hasSearchIntent) return 'focus-search';
     if (semanticDiveActive) return 'inside';

@@ -1,15 +1,24 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$defaultSource = "C:/Users/HP/repos/opencode/packages/opencode/src/mcp/mmx.ts"
-$source = if ($env:SEMANTIC_AGENT_RUNTIME_MMX_SOURCE) { $env:SEMANTIC_AGENT_RUNTIME_MMX_SOURCE } else { $defaultSource }
-
-if (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
-    throw "bun was not found on PATH; external-subagents MCP cannot start."
+$node = Get-Command node -ErrorAction SilentlyContinue
+if (-not $node) {
+    throw "node was not found on PATH; external-subagents MCP cannot start."
 }
 
-if (-not (Test-Path -LiteralPath $source)) {
-    throw "external-subagents MCP source was not found: $source"
+$repoRoot = "C:/Users/HP/harness/servers/external-subagents"
+$dist = Join-Path (Join-Path $repoRoot "dist") "mmx.js"
+$tsconfig = Join-Path $repoRoot "tsconfig.json"
+
+if (-not (Test-Path -LiteralPath $dist)) {
+    $tsc = Get-Command npx -ErrorAction SilentlyContinue
+    if (-not $tsc) {
+        throw "compiled dist/mmx.js is missing and npx is not available to build it."
+    }
+    & npx tsc --project $tsconfig
+    if (-not (Test-Path -LiteralPath $dist)) {
+        throw "external-subagents MCP build failed; dist/mmx.js still missing."
+    }
 }
 
-& bun run --conditions=browser $source
+& node $dist

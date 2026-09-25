@@ -414,6 +414,17 @@ body[data-inside-walk-state='walking'] .focus-stage-inside-pulse {
     pointer-events: auto;
 }
 
+body[data-active-view='map'] #focus-stage #focus-stage-neighbors.focus-stage-neighbors,
+body[data-panel-surface^='map-'] #focus-stage #focus-stage-neighbors.focus-stage-neighbors {
+    display: none;
+    visibility: hidden;
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    pointer-events: none;
+}
+
 .focus-stage-neighbor-kicker {
     font-size: 10px;
     text-transform: uppercase;

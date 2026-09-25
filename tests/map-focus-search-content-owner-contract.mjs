@@ -8,7 +8,7 @@
  *   2. FocusCard.svelte — owns the focus-stage overlay #selected-card variant.
  *   3. src/lib/focus/stage-renderer.ts — manages structural slot visibility
  *      (hidden/aria-hidden) on #selected-card, #selected-details,
- *      #selected-map-summary (null-check only, element removed in migration).
+ *      without writing retired map-summary subtree content.
  *   4. src/lib/journey/selected-card.ts — delegates content variant sync
  *      to stage-renderer, not directly to DOM.
  *   5. src/lib/orchestration/info-panel-state.ts — per-surface content
@@ -208,8 +208,18 @@ function testRetiredMapSummaryElementsRemoved() {
     }
   }
 
-  // stage-renderer.ts still has null-checks for these elements (dead code path),
-  // but they must NOT exist in any Svelte component source.
+  // stage-renderer.ts must not keep null-check/content-writer paths for the
+  // retired subtree either; InfoPanel owns the compact map-focus-search payload.
+  const stageRendererSrc = read(STAGE_RENDERER);
+  const journeyRendererSrc = read(JOURNEY_STAGE_RENDERER);
+  for (const id of RETIRED_MAP_SUMMARY_IDS) {
+    assert(
+      !stageRendererSrc.includes(id) && !journeyRendererSrc.includes(id),
+      `stage renderers must not reference retired map-summary element #${id}`
+    );
+  }
+
+  // The retired IDs must NOT exist in any Svelte component source.
   // Verify the HTML shell doesn't have them either:
   const html = read('vector-explorer-polished.html');
   for (const id of RETIRED_MAP_SUMMARY_IDS) {
@@ -364,6 +374,30 @@ function testRetiredModulesRemoved() {
   console.log('  OK - retired legacy modules removed');
 }
 
+// ── Test H: Focus-stage ownership is limited to active focus surfaces ────────
+
+function testFocusStageOwnerSurfaceSetIsBounded() {
+  const src = read(STAGE_RENDERER);
+  const start = src.indexOf('function focusStageOwnsSelectedContent');
+  const end = src.indexOf('export function syncSelectedCardContentVariant', start);
+  assert(start >= 0 && end > start, 'stage-renderer.ts must define focusStageOwnsSelectedContent()');
+
+  const body = src.slice(start, end);
+  for (const surface of ['focus', 'focus-search', 'semantic-dive']) {
+    assert(
+      body.includes(`'${surface}'`) || body.includes(`"${surface}"`),
+      `focusStageOwnsSelectedContent() must include ${surface}`
+    );
+  }
+
+  assert(
+    !body.includes("'idle'") && !body.includes('"idle"') && !body.includes("'map-focus-search'") && !body.includes('"map-focus-search"'),
+    'focusStageOwnsSelectedContent() must not claim idle or map-focus-search selected-card ownership'
+  );
+
+  console.log('  OK - focus-stage selected-card ownership is bounded to active focus surfaces');
+}
+
 // ── Run all tests ────────────────────────────────────────────────────────────
 
 function run() {
@@ -379,6 +413,7 @@ function run() {
   testFocusCardOwnsFocusOverlay();
   testCompositionFlowOwnership();
   testRetiredModulesRemoved();
+  testFocusStageOwnerSurfaceSetIsBounded();
 
   console.log('\n=================================================================');
   console.log('ALL TESTS PASSED');

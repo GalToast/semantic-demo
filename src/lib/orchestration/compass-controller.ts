@@ -30,6 +30,7 @@ import {
   type CompassStateContext
 } from './compass-state';
 import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass.svelte.ts';
+import type { PanelSurface } from '@lib/types/state';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -50,6 +51,27 @@ export interface ViewHandoffModel {
 // ── Internal State ────────────────────────────────────────────────────────
 
 let _switchView: (view: string) => void = (view) => navSwitchView(view as 'galaxy' | 'map');
+
+function deriveOpenMapSurface(): PanelSurface {
+  const $nav = get(navStore);
+  const $search = get(searchStore);
+  const hasFocusContext =
+    Number.isFinite($nav.focusedIndex) ||
+    $nav.surface === 'focus' ||
+    $nav.surface === 'focus-search' ||
+    $nav.surface === 'map-focus' ||
+    $nav.surface === 'map-focus-search';
+  const hasSearchContext =
+    !!$search.summary ||
+    (typeof $search.query === 'string' && $search.query.trim().length >= 2) ||
+    $nav.surface === 'search' ||
+    $nav.surface === 'focus-search' ||
+    $nav.surface === 'map-focus-search';
+
+  if (hasFocusContext && hasSearchContext) return 'map-focus-search';
+  if (hasFocusContext) return 'map-focus';
+  return 'map-trail';
+}
 
 // ── Initialization ────────────────────────────────────────────────────────
 
@@ -341,26 +363,33 @@ export function executeJourneyCompassAction(action: string): void {
       return;
     }
 
-    case JOURNEY_ACTIONS.OPEN_MAP:
+    case JOURNEY_ACTIONS.OPEN_MAP: {
+      const targetSurface = deriveOpenMapSurface();
       setSemanticDiveMode(false);
       journeySetTrailDepth(1);
       navStore.update((state) => ({
         ...state,
         currentView: 'map',
         mode: 'trail',
-        surface: 'map-trail',
+        surface: targetSurface,
         trailDepth: Math.max(Number(state.trailDepth) || 0, 1)
       }));
       if (typeof document !== 'undefined' && document.body) {
         document.body.dataset.semanticDive = 'inactive';
         document.body.dataset.activeView = 'map';
         document.body.dataset.viewMode = 'map';
-        document.body.dataset.panelSurface = 'map-trail';
-        document.body.dataset.panelSurfaceMode = 'map-trail';
+        document.body.dataset.panelSurface = targetSurface;
+        document.body.dataset.panelSurfaceMode = targetSurface;
         document.body.dataset.graphContext = 'map';
+        document.body.dataset.mapContext = targetSurface === 'map-focus-search'
+          ? 'focus-search'
+          : targetSurface === 'map-focus'
+            ? 'focus'
+            : 'trail';
         document.body.dataset.trailDepth = '1';
       }
       return;
+    }
 
     case JOURNEY_ACTIONS.OPEN_MYCELIUM:
       _switchView('galaxy');

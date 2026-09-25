@@ -1806,23 +1806,23 @@ function assertVisualErgonomics(artifacts) {
         fail(label, 'ergonomics:map-focus-callout-compact',
           `map-focus-search should use a compact bottom callout, got ${JSON.stringify(infoPanel)}`);
       }
-      if (selectedCard?.dataset?.contentVariant === 'map-summary' && selectedCard?.dataset?.contentOwner === 'selected-map-summary') {
-        pass(label, 'ergonomics:map-focus-content-owner-summary');
+      if (selectedCard?.dataset?.contentVariant === 'info-panel' && selectedCard?.dataset?.contentOwner === 'info-panel') {
+        pass(label, 'ergonomics:map-focus-content-owner-info-panel');
       } else {
-        fail(label, 'ergonomics:map-focus-content-owner-summary',
-          `selected card should declare the map-summary content owner, got ${JSON.stringify(selectedCard?.dataset || {})}`);
+        fail(label, 'ergonomics:map-focus-content-owner-info-panel',
+          `selected card should declare the InfoPanel content owner, got ${JSON.stringify(selectedCard?.dataset || {})}`);
       }
-      if (!rendered(selectedDetails)) {
-        pass(label, 'ergonomics:map-focus-full-details-hidden');
+      if (rendered(selectedDetails)) {
+        pass(label, 'ergonomics:map-focus-selected-details-visible');
       } else {
-        fail(label, 'ergonomics:map-focus-full-details-hidden',
-          `full selected details should be hidden when map summary owns content, got ${JSON.stringify(selectedDetails)}`);
+        fail(label, 'ergonomics:map-focus-selected-details-visible',
+          `InfoPanel selected details should own compact map-focus-search content, got ${JSON.stringify(selectedDetails)}`);
       }
-      if (rendered(mapSummary) && rendered(mapSummaryName) && rendered(mapSummaryWhat) && rendered(mapSummaryMatch)) {
-        pass(label, 'ergonomics:map-focus-summary-visible');
+      if (!rendered(mapSummary) && !rendered(mapSummaryName) && !rendered(mapSummaryWhat) && !rendered(mapSummaryMatch)) {
+        pass(label, 'ergonomics:map-focus-retired-summary-absent');
       } else {
-        fail(label, 'ergonomics:map-focus-summary-visible',
-          `map-focus-search should render dedicated summary content, got summary=${JSON.stringify(mapSummary)} name=${JSON.stringify(mapSummaryName)} what=${JSON.stringify(mapSummaryWhat)} match=${JSON.stringify(mapSummaryMatch)}`);
+        fail(label, 'ergonomics:map-focus-retired-summary-absent',
+          `retired map summary content should stay absent, got summary=${JSON.stringify(mapSummary)} name=${JSON.stringify(mapSummaryName)} what=${JSON.stringify(mapSummaryWhat)} match=${JSON.stringify(mapSummaryMatch)}`);
       }
       if (!rendered(globalControls)) {
         pass(label, 'ergonomics:map-focus-global-controls-hidden');
